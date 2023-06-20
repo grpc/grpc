@@ -41,6 +41,12 @@
 #define GRPC_ARG_HEALTH_CHECK_SERVICE_NAME \
   "grpc.internal.health_check_service_name"
 
+// A channel arg key prefix used for args that are intended to be used
+// only internally to resolvers and LB policies and should not be part
+// of the subchannel key.  The channel will automatically filter out any
+// args with this prefix from the subchannel's args.
+#define GRPC_ARG_NO_SUBCHANNEL_PREFIX "grpc.internal.no_subchannel."
+
 namespace grpc_core {
 
 // Internal type for LB call state interface.  Provides an interface for

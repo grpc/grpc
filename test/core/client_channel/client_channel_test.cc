@@ -60,6 +60,22 @@ TEST(MakeSubchannelArgs,
   EXPECT_EQ(args.GetString(GRPC_ARG_DEFAULT_AUTHORITY), "bar.example.com");
 }
 
+TEST(MakeSubchannelArgs, ArgsFromChannelTrumpPerAddressArgs) {
+  ChannelArgs args = ClientChannel::MakeSubchannelArgs(
+      ChannelArgs().Set("foo", 1), ChannelArgs().Set("foo", 2), nullptr,
+      "foo.example.com");
+  EXPECT_EQ(args.GetInt("foo"), 1);
+}
+
+TEST(MakeSubchannelArgs, StripsOutNoSubchannelArgs) {
+  ChannelArgs args = ClientChannel::MakeSubchannelArgs(
+      ChannelArgs().Set(GRPC_ARG_NO_SUBCHANNEL_PREFIX "foo", 1),
+      ChannelArgs().Set(GRPC_ARG_NO_SUBCHANNEL_PREFIX "bar", 1), nullptr,
+      "foo.example.com");
+  EXPECT_EQ(args.GetString(GRPC_ARG_NO_SUBCHANNEL_PREFIX "foo"), absl::nullopt);
+  EXPECT_EQ(args.GetString(GRPC_ARG_NO_SUBCHANNEL_PREFIX "bar"), absl::nullopt);
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc_core
