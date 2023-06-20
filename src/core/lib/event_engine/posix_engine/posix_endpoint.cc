@@ -570,24 +570,26 @@ bool PosixEndpointImpl::HandleReadLocked(absl::Status& status) {
 }
 
 void PosixEndpointImpl::HandleRead(absl::Status status) {
-  grpc_core::ReleasableMutexLock lock(&read_mu_);
+  read_mu_.Lock();
   bool ret = false;
-  if (grpc_core::ExecCtx::Get() == nullptr) {
-    grpc_core::ApplicationCallbackExecCtx app_ctx;
-    grpc_core::ExecCtx exec_ctx;
+  grpc_core::EnsureRunInExecCtx([&, this]() mutable {
+    read_mu_.AssertHeld();
     ret = HandleReadLocked(status);
-  } else {
-    ret = HandleReadLocked(status);
-  }
+    if (!ret) {
+      // The lock needs to be released before ExecCtx Flush because the flush
+      // may trigger execution of the reclaimer which may try to acquire the
+      // same lock again causing a deadlock.
+      read_mu_.Unlock();
+    }
+  });
   if (!ret) {
-    lock.Release();
     handle_->NotifyOnRead(on_read_);
     return;
   }
   absl::AnyInvocable<void(absl::Status)> cb = std::move(read_cb_);
   read_cb_ = nullptr;
   incoming_buffer_ = nullptr;
-  lock.Release();
+  read_mu_.Unlock();
   cb(status);
   Unref();
 }
