@@ -71,6 +71,8 @@ TEST_F(LoggingCensusIntegrationTest, Basic) {
   {
     EchoRequest request;
     request.set_message("foo");
+    request.mutable_param()->set_echo_metadata(true);
+    request.mutable_param()->set_echo_metadata_initially(true);
     EchoResponse response;
     grpc::ClientContext context;
     ::opencensus::trace::AlwaysSampler always_sampler;
@@ -83,7 +85,7 @@ TEST_F(LoggingCensusIntegrationTest, Basic) {
     expected_trace_id = app_census_context.Context().trace_id().ToHex();
     context.set_census_context(
         reinterpret_cast<census_context*>(&app_census_context));
-    context.AddMetadata("client-key", "client-value");
+    context.AddMetadata("key", "value");
     traces_recorder_->StartRecording();
     grpc::Status status = stub_->Echo(&context, request, &response);
     EXPECT_TRUE(status.ok());
@@ -106,8 +108,7 @@ TEST_F(LoggingCensusIntegrationTest, Basic) {
                 Field(&LoggingSink::Entry::method_name, Eq("Echo")),
                 Field(&LoggingSink::Entry::payload,
                       Field(&LoggingSink::Entry::Payload::metadata,
-                            UnorderedElementsAre(
-                                Pair("client-key", "client-value")))),
+                            UnorderedElementsAre(Pair("key", "value")))),
                 Field(&LoggingSink::Entry::trace_id, Eq(expected_trace_id)),
                 Field(&LoggingSink::Entry::span_id, Ne("")),
                 Field(&LoggingSink::Entry::is_sampled, true)),
@@ -121,9 +122,10 @@ TEST_F(LoggingCensusIntegrationTest, Basic) {
                 Field(&LoggingSink::Entry::method_name, Eq("Echo")),
                 Field(&LoggingSink::Entry::payload,
                       AllOf(Field(&LoggingSink::Entry::Payload::message_length,
-                                  Eq(5)),
+                                  Eq(12)),
                             Field(&LoggingSink::Entry::Payload::message,
-                                  Eq("\n\003foo")))),
+                                  Eq("\x0a\x03\x66\x6f\x6f\x12\x05\x20\x01\x88"
+                                     "\x01\x01")))),
                 Field(&LoggingSink::Entry::trace_id, Eq(expected_trace_id)),
                 Field(&LoggingSink::Entry::span_id, Ne("")),
                 Field(&LoggingSink::Entry::is_sampled, true)),
@@ -148,8 +150,7 @@ TEST_F(LoggingCensusIntegrationTest, Basic) {
                 Field(&LoggingSink::Entry::method_name, Eq("Echo")),
                 Field(&LoggingSink::Entry::payload,
                       Field(&LoggingSink::Entry::Payload::metadata,
-                            UnorderedElementsAre(Pair("server-header-key",
-                                                      "server-header-value")))),
+                            UnorderedElementsAre(Pair("key", "value")))),
                 Field(&LoggingSink::Entry::trace_id, Eq(expected_trace_id)),
                 Field(&LoggingSink::Entry::span_id, Ne("")),
                 Field(&LoggingSink::Entry::is_sampled, true)),
@@ -169,22 +170,20 @@ TEST_F(LoggingCensusIntegrationTest, Basic) {
                 Field(&LoggingSink::Entry::trace_id, Eq(expected_trace_id)),
                 Field(&LoggingSink::Entry::span_id, Ne("")),
                 Field(&LoggingSink::Entry::is_sampled, true)),
-          AllOf(
-              Field(&LoggingSink::Entry::type,
-                    Eq(LoggingSink::Entry::EventType::kServerTrailer)),
-              Field(&LoggingSink::Entry::logger,
-                    Eq(LoggingSink::Entry::Logger::kClient)),
-              Field(&LoggingSink::Entry::authority, Eq(server_address_)),
-              Field(&LoggingSink::Entry::service_name,
-                    Eq("grpc.testing.EchoTestService")),
-              Field(&LoggingSink::Entry::method_name, Eq("Echo")),
-              Field(&LoggingSink::Entry::payload,
-                    Field(&LoggingSink::Entry::Payload::metadata,
-                          UnorderedElementsAre(Pair("server-trailer-key",
-                                                    "server-trailer-value")))),
-              Field(&LoggingSink::Entry::trace_id, Eq(expected_trace_id)),
-              Field(&LoggingSink::Entry::span_id, Ne("")),
-              Field(&LoggingSink::Entry::is_sampled, true)),
+          AllOf(Field(&LoggingSink::Entry::type,
+                      Eq(LoggingSink::Entry::EventType::kServerTrailer)),
+                Field(&LoggingSink::Entry::logger,
+                      Eq(LoggingSink::Entry::Logger::kClient)),
+                Field(&LoggingSink::Entry::authority, Eq(server_address_)),
+                Field(&LoggingSink::Entry::service_name,
+                      Eq("grpc.testing.EchoTestService")),
+                Field(&LoggingSink::Entry::method_name, Eq("Echo")),
+                Field(&LoggingSink::Entry::payload,
+                      Field(&LoggingSink::Entry::Payload::metadata,
+                            UnorderedElementsAre(Pair("key", "value")))),
+                Field(&LoggingSink::Entry::trace_id, Eq(expected_trace_id)),
+                Field(&LoggingSink::Entry::span_id, Ne("")),
+                Field(&LoggingSink::Entry::is_sampled, true)),
           AllOf(Field(&LoggingSink::Entry::type,
                       Eq(LoggingSink::Entry::EventType::kClientHeader)),
                 Field(&LoggingSink::Entry::logger,
@@ -195,8 +194,7 @@ TEST_F(LoggingCensusIntegrationTest, Basic) {
                 Field(&LoggingSink::Entry::method_name, Eq("Echo")),
                 Field(&LoggingSink::Entry::payload,
                       Field(&LoggingSink::Entry::Payload::metadata,
-                            UnorderedElementsAre(
-                                Pair("client-key", "client-value")))),
+                            UnorderedElementsAre(Pair("key", "value")))),
                 Field(&LoggingSink::Entry::trace_id, Eq(expected_trace_id)),
                 Field(&LoggingSink::Entry::span_id, Ne("")),
                 Field(&LoggingSink::Entry::is_sampled, true)),
@@ -210,9 +208,10 @@ TEST_F(LoggingCensusIntegrationTest, Basic) {
                 Field(&LoggingSink::Entry::method_name, Eq("Echo")),
                 Field(&LoggingSink::Entry::payload,
                       AllOf(Field(&LoggingSink::Entry::Payload::message_length,
-                                  Eq(5)),
+                                  Eq(12)),
                             Field(&LoggingSink::Entry::Payload::message,
-                                  Eq("\n\003foo")))),
+                                  Eq("\x0a\x03\x66\x6f\x6f\x12\x05\x20\x01\x88"
+                                     "\x01\x01")))),
                 Field(&LoggingSink::Entry::trace_id, Eq(expected_trace_id)),
                 Field(&LoggingSink::Entry::span_id, Ne("")),
                 Field(&LoggingSink::Entry::is_sampled, true)),
@@ -237,8 +236,7 @@ TEST_F(LoggingCensusIntegrationTest, Basic) {
                 Field(&LoggingSink::Entry::method_name, Eq("Echo")),
                 Field(&LoggingSink::Entry::payload,
                       Field(&LoggingSink::Entry::Payload::metadata,
-                            UnorderedElementsAre(Pair("server-header-key",
-                                                      "server-header-value")))),
+                            UnorderedElementsAre(Pair("key", "value")))),
                 Field(&LoggingSink::Entry::trace_id, Eq(expected_trace_id)),
                 Field(&LoggingSink::Entry::span_id, Ne("")),
                 Field(&LoggingSink::Entry::is_sampled, true)),
@@ -258,22 +256,20 @@ TEST_F(LoggingCensusIntegrationTest, Basic) {
                 Field(&LoggingSink::Entry::trace_id, Eq(expected_trace_id)),
                 Field(&LoggingSink::Entry::span_id, Ne("")),
                 Field(&LoggingSink::Entry::is_sampled, true)),
-          AllOf(
-              Field(&LoggingSink::Entry::type,
-                    Eq(LoggingSink::Entry::EventType::kServerTrailer)),
-              Field(&LoggingSink::Entry::logger,
-                    Eq(LoggingSink::Entry::Logger::kServer)),
-              Field(&LoggingSink::Entry::authority, Eq(server_address_)),
-              Field(&LoggingSink::Entry::service_name,
-                    Eq("grpc.testing.EchoTestService")),
-              Field(&LoggingSink::Entry::method_name, Eq("Echo")),
-              Field(&LoggingSink::Entry::payload,
-                    Field(&LoggingSink::Entry::Payload::metadata,
-                          UnorderedElementsAre(Pair("server-trailer-key",
-                                                    "server-trailer-value")))),
-              Field(&LoggingSink::Entry::trace_id, Eq(expected_trace_id)),
-              Field(&LoggingSink::Entry::span_id, Ne("")),
-              Field(&LoggingSink::Entry::is_sampled, true))));
+          AllOf(Field(&LoggingSink::Entry::type,
+                      Eq(LoggingSink::Entry::EventType::kServerTrailer)),
+                Field(&LoggingSink::Entry::logger,
+                      Eq(LoggingSink::Entry::Logger::kServer)),
+                Field(&LoggingSink::Entry::authority, Eq(server_address_)),
+                Field(&LoggingSink::Entry::service_name,
+                      Eq("grpc.testing.EchoTestService")),
+                Field(&LoggingSink::Entry::method_name, Eq("Echo")),
+                Field(&LoggingSink::Entry::payload,
+                      Field(&LoggingSink::Entry::Payload::metadata,
+                            UnorderedElementsAre(Pair("key", "value")))),
+                Field(&LoggingSink::Entry::trace_id, Eq(expected_trace_id)),
+                Field(&LoggingSink::Entry::span_id, Ne("")),
+                Field(&LoggingSink::Entry::is_sampled, true))));
 }
 
 }  // namespace testing
