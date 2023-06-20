@@ -228,9 +228,9 @@ static bool g_enable_fork_support;
 
 #if GPR_WINDOWS
 static void grpc_ruby_basic_init(void) {}
-static bool grpc_ruby_forked_after_init(void) { return false; }
-static bool grpc_ruby_on_initial_thread(void) { return true; }
-static bool grpc_ruby_reset_initial_thread(void) {}
+static bool grpc_ruby_initial_pid(void) { return true; }
+static bool grpc_ruby_initial_thread(void) { return true; }
+static bool grpc_ruby_reset_init_state(void) {}
 #else
 static pid_t g_init_pid;
 static pid_t g_init_tid;
@@ -250,16 +250,18 @@ static void grpc_ruby_basic_init(void) {
   fprintf(stderr, "result of fork support check: |%s|\n", res);
 }
 
-static bool grpc_ruby_forked_after_init(void) {
+static bool grpc_ruby_initial_pid(void) {
   GPR_ASSERT(g_init_pid != 0);
-  return g_init_pid != getpid();
+  return g_init_pid == getpid();
 }
 
-static bool grpc_ruby_on_initial_thread(void) {
+static bool grpc_ruby_initial_thread(void) {
+  GPR_ASSERT(g_init_tid != 0);
   return gettid() == g_init_tid;
 }
 
-static bool grpc_ruby_reset_initial_thread(void) {
+static bool grpc_ruby_reset_init_state(void) {
+  g_init_pid = getpid();
   g_init_tid = gettid();
 }
 #endif
@@ -281,14 +283,27 @@ VALUE sym_details = Qundef;
 VALUE sym_metadata = Qundef;
 
 static gpr_once g_once_init = GPR_ONCE_INIT;
+static int64_t g_grpc_rb_prefork_pending;
 
 void grpc_ruby_fork_guard() {
-  if (g_enable_fork_support) return;
-  if (grpc_ruby_forked_after_init()) {
+  // Check if we're using gRPC between prefork and postfork
+  gpr_once_init(&g_once_init, grpc_ruby_basic_init);
+  if (g_grpc_rb_prefork_pending) {
     rb_raise(rb_eRuntimeError,
-             "grpc cannot be used before and after forking unless the "
-             "GRPC_ENABLE_FORK_SUPPORT env var is set to \"1\" and the "
-             "platform supports it");
+             "grpc cannot be used between calls to GRPC.prefork and GRPC.postfork_child or GRPC.postfork_parent");
+  }
+  if (!grpc_ruby_initial_pid()) {
+    if (g_enable_fork_support) {
+      // Only way we can get here is by enabling for support and forking but not calling
+      // prefork
+      rb_raise(rb_eRuntimeError,
+               "grpc is in a broken state: GRPC.prefork must be called before calling fork from a process using grpc");
+    } else {
+      rb_raise(rb_eRuntimeError,
+               "grpc cannot be used before and after forking unless the "
+               "GRPC_ENABLE_FORK_SUPPORT env var is set to \"1\" and the "
+               "platform supports it");
+    }
   }
 }
 
@@ -313,6 +328,7 @@ static int64_t g_grpc_ruby_init_count;
 void grpc_ruby_init() {
   fprintf(stderr, "apolcyn in grpc ruby init\n");
   gpr_once_init(&g_once_init, grpc_ruby_basic_init);
+  grpc_ruby_fork_guard();
   grpc_init();
   rb_mutex_lock(g_bg_thread_init_rb_mu);
   // Hold g_bg_thread_init_rb_mu because the first grpc objects
@@ -327,7 +343,8 @@ void grpc_ruby_init() {
 
 void grpc_ruby_shutdown() {
   GPR_ASSERT(g_grpc_ruby_init_count > 0);
-  if (!grpc_ruby_forked_after_init()) grpc_shutdown();
+  // TODO(apolcyn): call grpc_shutdown() unconditionally?
+  if (grpc_ruby_initial_pid()) grpc_shutdown();
   gpr_log(
       GPR_DEBUG,
       "GRPC_RUBY: grpc_ruby_shutdown - prev g_grpc_ruby_init_count:%" PRId64,
@@ -342,8 +359,6 @@ void grpc_ruby_shutdown() {
 // that the gRPC library is not being called into from *any* thread before
 // calling GRPC::prefork, and this needs to remain until after the subsequent
 // call to GRPC::postfork_{parent,child} completes.
-static bool g_grpc_rb_prefork_pending = false;
-
 static VALUE grpc_rb_prefork(VALUE self) {
   // TODO(apolcyn): check calling thread vs. thread that gRPC was initialized on
   gpr_once_init(
@@ -359,7 +374,7 @@ static VALUE grpc_rb_prefork(VALUE self) {
              "GRPC.prefork already called without a matching "
              "GRPC.postfork_{parent,child}");
   }
-  if (!grpc_ruby_on_initial_thread()) {
+  if (!grpc_ruby_initial_thread()) {
     rb_raise(rb_eRuntimeError,
              "GRPC.prefork and fork need to be called from the same thread that GRPC was initialized on (GRPC lazy-initializes when when the first GRPC object is created");
   }
@@ -378,8 +393,12 @@ static VALUE grpc_rb_postfork_child(VALUE self) {
     rb_raise(rb_eRuntimeError,
              "GRPC::postfork_child can only be called once following a GRPC::prefork");
   }
+  if (grpc_ruby_initial_pid()) {
+    rb_raise(rb_eRuntimeError,
+             "GRPC.postfork_child must be called only from the child process after a fork");
+  }
   g_grpc_rb_prefork_pending = false;
-  grpc_ruby_reset_initial_thread();
+  grpc_ruby_reset_init_state();
   grpc_ruby_init_threads();
   return Qnil;
 }
@@ -390,9 +409,13 @@ static VALUE grpc_rb_postfork_parent(VALUE self) {
     rb_raise(rb_eRuntimeError,
              "GRPC::postfork_parent can only be called once following a GRPC::prefork");
   }
-  if (!grpc_ruby_on_initial_thread()) {
+  if (!grpc_ruby_initial_thread()) {
     rb_raise(rb_eRuntimeError,
              "GRPC.postfork_parent needs to be called from the same thread that GRPC.prefork (and fork) was called from");
+  }
+  if (!grpc_ruby_initial_pid()) {
+    rb_raise(rb_eRuntimeError,
+             "GRPC.postfork_parent must be called only from the parent process after a fork");
   }
   g_grpc_rb_prefork_pending = false;
   grpc_ruby_init_threads();
