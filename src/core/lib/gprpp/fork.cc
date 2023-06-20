@@ -189,19 +189,16 @@ void Fork::DoDecExecCtxCount() {
   NoDestructSingleton<ExecCtxState>::Get()->DecExecCtxCount();
 }
 
-void Fork::SetResetChildPollingEngineFunc(
+bool Fork::RegisterResetChildPollingEngineFunc(
     Fork::child_postfork_func reset_child_polling_engine) {
   if (reset_child_polling_engine_ == nullptr) {
-    reset_child_polling_engine_ = new std::vector<Fork::child_postfork_func>();
+    reset_child_polling_engine_ = new std::set<Fork::child_postfork_func>();
   }
-  if (reset_child_polling_engine == nullptr) {
-    reset_child_polling_engine_->clear();
-  } else {
-    reset_child_polling_engine_->emplace_back(reset_child_polling_engine);
-  }
+  auto ret = reset_child_polling_engine_->inset(reset_child_polling_engine);
+  return ret.second;
 }
 
-const std::vector<Fork::child_postfork_func>&
+const std::set<Fork::child_postfork_func>&
 Fork::GetResetChildPollingEngineFunc() {
   return *reset_child_polling_engine_;
 }
@@ -238,6 +235,6 @@ void Fork::AwaitThreads() {
 
 std::atomic<bool> Fork::support_enabled_(false);
 bool Fork::override_enabled_ = false;
-std::vector<Fork::child_postfork_func>* Fork::reset_child_polling_engine_ =
+std::set<Fork::child_postfork_func>* Fork::reset_child_polling_engine_ =
     nullptr;
 }  // namespace grpc_core
