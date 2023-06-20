@@ -62,6 +62,7 @@ flags.adopt_module_key_flags(xds_k8s_flags)
 TrafficDirectorManager = traffic_director.TrafficDirectorManager
 TrafficDirectorAppNetManager = traffic_director.TrafficDirectorAppNetManager
 TrafficDirectorSecureManager = traffic_director.TrafficDirectorSecureManager
+TrafficDirectorGammaManager = traffic_director.TrafficDirectorGammaManager
 XdsTestServer = server_app.XdsTestServer
 XdsTestClient = client_app.XdsTestClient
 KubernetesServerRunner = k8s_xds_server_runner.KubernetesServerRunner
@@ -792,6 +793,23 @@ class AppNetXdsKubernetesTestCase(RegularXdsKubernetesTestCase):
             network=self.network,
             compute_api_version=self.compute_api_version,
         )
+
+
+class GammaXdsKubernetesTestCase(RegularXdsKubernetesTestCase):
+    td: TrafficDirectorGammaManager
+
+    def initTrafficDirectorManager(self) -> TrafficDirectorGammaManager:
+        return TrafficDirectorGammaManager(
+            self.gcp_api_manager,
+            project=self.project,
+            resource_prefix=self.resource_prefix,
+            resource_suffix=self.resource_suffix,
+            network=self.network,
+            compute_api_version=self.compute_api_version,
+        )
+
+    def create_gamma_mesh(self):
+        pass
 
 
 class SecurityXdsKubernetesTestCase(IsolatedXdsKubernetesTestCase):

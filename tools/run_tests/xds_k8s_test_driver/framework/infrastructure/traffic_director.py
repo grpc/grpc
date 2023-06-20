@@ -831,6 +831,10 @@ class TrafficDirectorAppNetManager(TrafficDirectorManager):
         super().cleanup(force=force)
 
 
+class TrafficDirectorGammaManager(TrafficDirectorManager):
+    """Gamma."""
+
+
 class TrafficDirectorSecureManager(TrafficDirectorManager):
     SERVER_TLS_POLICY_NAME = "server-tls-policy"
     CLIENT_TLS_POLICY_NAME = "client-tls-policy"
