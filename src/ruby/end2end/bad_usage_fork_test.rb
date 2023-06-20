@@ -36,12 +36,14 @@ rescue GRPC::DeadlineExceeded => e
 end
 
 def expect_error_for(action)
+  STDERR.puts "#{action}: begin (pid=#{Process.pid})"
   got_exception = false
   begin
     yield
   rescue RuntimeError => e
     got_exception = true
     STDERR.puts "got (expected) error: #{e}"
+    STDERR.puts "#{action}: done (pid=#{Process.pid})"
     return
   end
   fail "expected an exception due to: #{action}"
@@ -60,17 +62,17 @@ def main
   t.join
   expect_error_for("calling postfork_parent before prefork") { GRPC.postfork_parent }
   expect_error_for("calling postfork_child before prefork") { GRPC.postfork_child }
-  GRPC.prefork
+  with_logging("parent: GRPC.prefork") { GRPC.prefork }
   expect_error_for("calling prefork twice") { GRPC.prefork }
   expect_error_for("calling prefork twice") { GRPC.prefork }
   expect_error_for("using gRPC after prefork") { do_rpc(stub) }
   pid = fork do
     expect_error_for("using gRPC before postfork_child") { do_rpc(stub) }
     expect_error_for("calling postfork_parent from child") { GRPC.postfork_parent }
-    GRPC.postfork_child
+    with_logging("child: GRPC.postfork_child") { GRPC.postfork_child }
     expect_error_for("calling postfork_child twice") { GRPC.postfork_child }
-    do_rpc(stub)
-    do_rpc(stub)
+    with_logging("child: first post-fork RPC") { do_rpc(stub) }
+    with_logging("child: second post-fork RPC") { do_rpc(stub) }
     STDERR.puts "child: done"
   end
   expect_error_for("using gRPC before postfork_parent") { do_rpc(stub) }
@@ -81,10 +83,10 @@ def main
     end
   end
   t.join
-  GRPC.postfork_parent
+  with_logging("parent: GRPC.postfork_parent") { GRPC.postfork_parent }
   expect_error_for("calling postfork_parent twice") { GRPC.postfork_parent }
-  do_rpc(stub)
-  do_rpc(stub)
+  with_logging("parent: first post-fork RPC") { do_rpc(stub) }
+  with_logging("parent: second post-fork RPC") { do_rpc(stub) }
   Process.wait pid
   STDERR.puts "parent: done"
 end

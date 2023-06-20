@@ -149,3 +149,9 @@ def report_controller_port_to_parent(parent_controller_port, client_controller_p
   m.port = client_controller_port.to_i
   stub.set_client_controller_port(m, deadline: Time.now + 10)
 end
+
+def with_logging(action)
+  STDERR.puts "#{action}: begin (pid=#{Process.pid})"
+  yield
+  STDERR.puts "#{action}: done (pid=#{Process.pid})"
+end

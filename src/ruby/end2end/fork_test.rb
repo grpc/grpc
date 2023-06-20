@@ -34,45 +34,25 @@ end
 
 def run_client(stub)
   do_rpc(stub)
-  STDERR.puts "#{Process.pid} pre_fork begin"
-  GRPC.prefork
-  STDERR.puts "#{Process.pid} pre_fork done"
+  with_logging("parent: GRPC.prefork") { GRPC.prefork }
   pid = fork do
-    $stderr.reopen("child1_log", "w")
-    STDERR.puts "#{Process.pid} child1: postfork_child begin"
-    GRPC.postfork_child
-    STDERR.puts "#{Process.pid} child1: postfork_child done"
-    do_rpc(stub)
-    STDERR.puts "#{Process.pid} child1: first post-fork RPC done"
-    STDERR.puts "#{Process.pid} child1: prefork begin"
-    GRPC.prefork
-    STDERR.puts "#{Process.pid} child1: prefork done"
+    with_logging("child1: GRPC.postfork_child") { GRPC.postfork_child }
+    with_logging("child1: first post-fork RPC") { do_rpc(stub) }
+    with_logging("child1: GRPC.prefork") { GRPC.prefork }
     pid2 = fork do
-      $stderr.reopen("child2_log", "w")
-      STDERR.puts "#{Process.pid} child2: postfork_child begin"
-      GRPC.postfork_child
-      STDERR.puts "#{Process.pid} child2: postfork_child done"
-      do_rpc(stub)
-      STDERR.puts "#{Process.pid} child2: first post-fork RPC done"
-      do_rpc(stub)
-      STDERR.puts "#{Process.pid} child2: second post-fork RPC done"
-      STDERR.puts "#{Process.pid} child2: done"
+      with_logging("child2: GRPC.postfork_child") { GRPC.postfork_child }
+      with_logging("child2: first post-fork RPC") { do_rpc(stub) }
+      with_logging("child2: second post-fork RPC") { do_rpc(stub) }
+      STDERR.puts "child2: done"
     end
-    STDERR.puts "#{Process.pid} child1: postfork_parent begin"
-    GRPC.postfork_parent
-    STDERR.puts "#{Process.pid} child1: postfork_parent done"
-    do_rpc(stub)
-    STDERR.puts "#{Process.pid} child1: second post-fork RPC done"
+    with_logging("child1: GRPC.postfork_parent") { GRPC.postfork_parent }
+    with_logging("child1: second post-fork RPC") { do_rpc(stub) }
     Process.wait(pid2)
-    STDERR.puts "#{Process.pid} child1: done"
+    STDERR.puts "child1: done"
   end
-  STDERR.puts "parent: postfork_parent begin"
-  GRPC.postfork_parent
-  STDERR.puts "parent: postfork_parent done"
-  do_rpc(stub)
-  STDERR.puts "parent: first post-fork RPC done"
-  do_rpc(stub)
-  STDERR.puts "parent: second post-fork RPC done"
+  with_logging("parent: GRPC.postfork_parent") { GRPC.postfork_parent }
+  with_logging("parent: first post-fork RPC") { do_rpc(stub) }
+  with_logging("parent: second post-fork RPC") { do_rpc(stub) }
   Process.wait pid
   STDERR.puts "parent: done"
 end

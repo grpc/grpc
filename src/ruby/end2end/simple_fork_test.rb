@@ -39,25 +39,16 @@ def main
   # TODO(apolcyn): point this to a guaranteed-non-listening port
   stub = Echo::EchoServer::Stub.new("localhost:443", :this_channel_is_insecure)
   do_rpc(stub)
-  STDERR.puts "GRPC::pre_fork begin"
-  GRPC.prefork
-  STDERR.puts "GRPC::pre_fork done"
+  with_logging("GRPC.pre_fork") { GRPC.prefork }
   pid = fork do
-    STDERR.puts "child: GRPC::postfork_child begin"
-    GRPC.postfork_child
-    STDERR.puts "child: GRPC::postfork_child done"
-    do_rpc(stub)
-    STDERR.puts "child: first post-fork RPC done"
-    do_rpc(stub)
+    with_logging("child: GRPC.postfork_child") { GRPC.postfork_child }
+    with_logging("child: first post-fork RPC") { do_rpc(stub) }
+    with_logging("child: second post-fork RPC") { do_rpc(stub) }
     STDERR.puts "child: done"
   end
-  STDERR.puts "parent: GRPC::postfork_parent begin"
-  GRPC.postfork_parent
-  STDERR.puts "parent: GRPC::postfork_parent done"
-  do_rpc(stub)
-  STDERR.puts "parent: first post-fork RPC done"
-  do_rpc(stub)
-  STDERR.puts "parent: second post-fork RPC done"
+  with_logging("parent: GRPC.postfork_parent") { GRPC.postfork_parent }
+  with_logging("parent: first post-fork RPC") { do_rpc(stub) }
+  with_logging("parent: second post-fork RPC") { do_rpc(stub) }
   Process.wait pid
   STDERR.puts "parent: done"
 end
