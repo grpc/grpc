@@ -3875,6 +3875,9 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/container:flat_hash_map",
+        "absl/hash",
+        "absl/meta:type_traits",
         "absl/status",
         "absl/strings",
         "absl/strings:cord",

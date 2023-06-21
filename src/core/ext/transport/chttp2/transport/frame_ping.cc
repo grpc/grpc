@@ -25,6 +25,7 @@
 #include <algorithm>
 #include <initializer_list>
 
+#include "absl/container/flat_hash_map.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 

@@ -313,8 +313,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/transport/chttp2/transport/internal.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/parsing.cc )
   s.files += %w( src/core/ext/transport/chttp2/transport/stream_lists.cc )
-  s.files += %w( src/core/ext/transport/chttp2/transport/stream_map.cc )
-  s.files += %w( src/core/ext/transport/chttp2/transport/stream_map.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/varint.cc )
   s.files += %w( src/core/ext/transport/chttp2/transport/varint.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/writing.cc )
