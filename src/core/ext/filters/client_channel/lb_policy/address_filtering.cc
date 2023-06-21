@@ -61,7 +61,7 @@ absl::StatusOr<HierarchicalAddressMap> MakeHierarchicalAddressMap(
       args = args.SetObject(
           MakeRefCounted<HierarchicalPathArg>(std::move(remaining_path)));
     }
-    target_list.emplace_back(address.address(), args, address.attributes());
+    target_list.emplace_back(address.address(), args);
   }
   return result;
 }
