@@ -29,6 +29,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
+#include "event_poller.h"
 
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
@@ -158,6 +159,7 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
     const ResolverOptions options_;
     std::shared_ptr<EventEngine> event_engine_;
     grpc_core::OrphanablePtr<AresResolver> ares_resolver_;
+    PosixEventPoller* poller_;
 #endif  // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_TCP)
   };
 

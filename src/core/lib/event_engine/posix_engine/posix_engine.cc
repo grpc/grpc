@@ -498,10 +498,8 @@ PosixEventEngine::PosixDNSResolver::PosixDNSResolver(
     const ResolverOptions& options, PosixEventPoller* poller,
     std::shared_ptr<EventEngine> event_engine)
     : options_(options),
-      event_engine_(event_engine),
-      ares_resolver_(grpc_core::MakeOrphanable<AresResolver>(
-          std::make_unique<GrpcPolledFdFactoryPosix>(poller),
-          std::move(event_engine))) {}
+      event_engine_(std::move(event_engine)),
+      poller_(poller) {}
 
 PosixEventEngine::PosixDNSResolver::~PosixDNSResolver() {
   // The DNSResolver is held alive by its caller (e.g.
@@ -519,12 +517,17 @@ PosixEventEngine::PosixDNSResolver::~PosixDNSResolver() {
 void PosixEventEngine::PosixDNSResolver::LookupHostname(
     LookupHostnameCallback on_resolve, absl::string_view name,
     absl::string_view default_port) {
-  absl::Status status = ares_resolver_->Initialize(options_.dns_server);
-  if (!status.ok()) {
-    event_engine_->Run([on_resolve = std::move(on_resolve), status]() mutable {
-      on_resolve(status);
-    });
-    return;
+  if (!ares_resolver_) {
+    auto status_or = AresResolver::CreateAresResolver(
+        options_.dns_server,
+        std::make_unique<GrpcPolledFdFactoryPosix>(poller_), event_engine_);
+    if (!status_or.ok()) {
+      event_engine_->Run(
+          [on_resolve = std::move(on_resolve),
+           status = status_or.status()]() mutable { on_resolve(status); });
+      return;
+    }
+    ares_resolver_ = std::move(*status_or);
   }
   ares_resolver_->LookupHostname(
       name, default_port,
@@ -535,12 +538,17 @@ void PosixEventEngine::PosixDNSResolver::LookupHostname(
 
 void PosixEventEngine::PosixDNSResolver::LookupSRV(LookupSRVCallback on_resolve,
                                                    absl::string_view name) {
-  absl::Status status = ares_resolver_->Initialize(options_.dns_server);
-  if (!status.ok()) {
-    event_engine_->Run([on_resolve = std::move(on_resolve), status]() mutable {
-      on_resolve(status);
-    });
-    return;
+  if (!ares_resolver_) {
+    auto status_or = AresResolver::CreateAresResolver(
+        options_.dns_server,
+        std::make_unique<GrpcPolledFdFactoryPosix>(poller_), event_engine_);
+    if (!status_or.ok()) {
+      event_engine_->Run(
+          [on_resolve = std::move(on_resolve),
+           status = status_or.status()]() mutable { on_resolve(status); });
+      return;
+    }
+    ares_resolver_ = std::move(*status_or);
   }
   ares_resolver_->LookupSRV(
       name, [on_resolve = std::move(on_resolve)](
@@ -551,12 +559,17 @@ void PosixEventEngine::PosixDNSResolver::LookupSRV(LookupSRVCallback on_resolve,
 
 void PosixEventEngine::PosixDNSResolver::LookupTXT(LookupTXTCallback on_resolve,
                                                    absl::string_view name) {
-  absl::Status status = ares_resolver_->Initialize(options_.dns_server);
-  if (!status.ok()) {
-    event_engine_->Run([on_resolve = std::move(on_resolve), status]() mutable {
-      on_resolve(status);
-    });
-    return;
+  if (!ares_resolver_) {
+    auto status_or = AresResolver::CreateAresResolver(
+        options_.dns_server,
+        std::make_unique<GrpcPolledFdFactoryPosix>(poller_), event_engine_);
+    if (!status_or.ok()) {
+      event_engine_->Run(
+          [on_resolve = std::move(on_resolve),
+           status = status_or.status()]() mutable { on_resolve(status); });
+      return;
+    }
+    ares_resolver_ = std::move(*status_or);
   }
   ares_resolver_->LookupTXT(
       name, [on_resolve = std::move(on_resolve)](

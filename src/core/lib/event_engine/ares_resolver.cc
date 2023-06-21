@@ -110,6 +110,39 @@ bool IsIpv6LoopbackAvailable() {
 #endif
 }
 
+absl::Status SetRequestDNSServer(absl::string_view dns_server,
+                                 ares_channel channel) {
+  GRPC_ARES_RESOLVER_TRACE_LOG("Using DNS server %s", dns_server.data());
+  grpc_resolved_address addr;
+  struct ares_addr_port_node dns_server_addr = {};
+  if (grpc_parse_ipv4_hostport(dns_server, &addr, /*log_errors=*/false)) {
+    dns_server_addr.family = AF_INET;
+    struct sockaddr_in* in = reinterpret_cast<struct sockaddr_in*>(addr.addr);
+    memcpy(&dns_server_addr.addr.addr4, &in->sin_addr, sizeof(struct in_addr));
+    dns_server_addr.tcp_port = grpc_sockaddr_get_port(&addr);
+    dns_server_addr.udp_port = grpc_sockaddr_get_port(&addr);
+  } else if (grpc_parse_ipv6_hostport(dns_server, &addr,
+                                      /*log_errors=*/false)) {
+    dns_server_addr.family = AF_INET6;
+    struct sockaddr_in6* in6 =
+        reinterpret_cast<struct sockaddr_in6*>(addr.addr);
+    memcpy(&dns_server_addr.addr.addr6, &in6->sin6_addr,
+           sizeof(struct in6_addr));
+    dns_server_addr.tcp_port = grpc_sockaddr_get_port(&addr);
+    dns_server_addr.udp_port = grpc_sockaddr_get_port(&addr);
+  } else {
+    return absl::InvalidArgumentError(
+        absl::StrCat("Cannot parse authority: ", dns_server));
+  }
+  int status = ares_set_servers_ports(channel, &dns_server_addr);
+  if (status != ARES_SUCCESS) {
+    return AresStatusToAbslStatus(
+        status, absl::StrCat("c-ares status is not ARES_SUCCESS: ",
+                             ares_strerror(status)));
+  }
+  return absl::OkStatus();
+}
+
 struct QueryArg {
   QueryArg(AresResolver* ar, int id, absl::string_view name)
       : ares_resolver(ar), callback_map_id(id), qname(name) {}
@@ -126,45 +159,36 @@ struct HostnameQueryArg : public QueryArg {
 
 }  // namespace
 
-AresResolver::AresResolver(
+absl::StatusOr<grpc_core::OrphanablePtr<AresResolver>>
+AresResolver::CreateAresResolver(
+    absl::string_view dns_server,
     std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
-    std::shared_ptr<EventEngine> event_engine)
-    : grpc_core::InternallyRefCounted<AresResolver>(
-          GRPC_TRACE_FLAG_ENABLED(grpc_trace_ares_resolver) ? "AresResolver"
-                                                            : nullptr),
-      polled_fd_factory_(std::move(polled_fd_factory)),
-      event_engine_(std::move(event_engine)) {}
-
-AresResolver::~AresResolver() {
-  GPR_ASSERT(fd_node_list_.empty());
-  GPR_ASSERT(callback_map_.empty());
-  if (initialized_) {
-    ares_destroy(channel_);
-  }
-}
-
-absl::Status AresResolver::Initialize(absl::string_view dns_server) {
-  if (initialized_) {
-    return absl::OkStatus();
-  }
+    std::shared_ptr<EventEngine> event_engine) {
   ares_options opts = {};
   opts.flags |= ARES_FLAG_STAYOPEN;
-  int status = ares_init_options(&channel_, &opts, ARES_OPT_FLAGS);
+  ares_channel channel;
+  int status = ares_init_options(&channel, &opts, ARES_OPT_FLAGS);
   if (status != ARES_SUCCESS) {
     gpr_log(GPR_ERROR, "ares_init_options failed, status: %d", status);
     return AresStatusToAbslStatus(
         status, absl::StrCat("Failed to init ares channel. c-ares error: ",
                              ares_strerror(status)));
   }
-  event_engine_grpc_ares_test_only_inject_config(channel_);
+  event_engine_grpc_ares_test_only_inject_config(channel);
   if (!dns_server.empty()) {
-    absl::Status status = SetRequestDNSServer(dns_server);
+    absl::Status status = SetRequestDNSServer(dns_server, channel);
     if (!status.ok()) {
       return status;
     }
   }
-  initialized_ = true;
-  return absl::OkStatus();
+  return grpc_core::OrphanablePtr<AresResolver>(new AresResolver(
+      std::move(polled_fd_factory), std::move(event_engine), channel));
+}
+
+AresResolver::~AresResolver() {
+  GPR_ASSERT(fd_node_list_.empty());
+  GPR_ASSERT(callback_map_.empty());
+  ares_destroy(channel_);
 }
 
 void AresResolver::Orphan() {
@@ -188,38 +212,148 @@ void AresResolver::Orphan() {
   Unref(DEBUG_LOCATION, "Orphan");
 }
 
-absl::Status AresResolver::SetRequestDNSServer(absl::string_view dns_server) {
-  GRPC_ARES_RESOLVER_TRACE_LOG("request:%p Using DNS server %s", this,
-                               dns_server.data());
+void AresResolver::LookupHostname(
+    absl::string_view name, absl::string_view default_port,
+    EventEngine::DNSResolver::LookupHostnameCallback callback) {
+  absl::string_view host;
+  absl::string_view port_s;
+  if (!grpc_core::SplitHostPort(name, &host, &port_s)) {
+    event_engine_->Run(
+        [callback = std::move(callback),
+         status = absl::InvalidArgumentError(absl::StrCat(
+             "Unparseable name: ", name))]() mutable { callback(status); });
+    return;
+  }
+  GPR_ASSERT(!host.empty());
+  if (port_s.empty()) {
+    if (default_port.empty()) {
+      event_engine_->Run([callback = std::move(callback),
+                          status = absl::InvalidArgumentError(absl::StrFormat(
+                              "No port in name %s or default_port argument",
+                              name.data()))]() mutable { callback(status); });
+      return;
+    }
+    port_s = default_port;
+  }
+  int port = 0;
+  if (port_s == "http") {
+    port = 80;
+  } else if (port_s == "https") {
+    port = 443;
+  } else if (!absl::SimpleAtoi(port_s, &port)) {
+    event_engine_->Run([callback = std::move(callback),
+                        status = absl::InvalidArgumentError(absl::StrCat(
+                            "Failed to parse port in name: ",
+                            name))]() mutable { callback(status); });
+    return;
+  }
+  // TODO(yijiem): Change this when refactoring code in
+  // src/core/lib/address_utils to use EventEngine::ResolvedAddress.
   grpc_resolved_address addr;
-  struct ares_addr_port_node dns_server_addr = {};
-  if (grpc_parse_ipv4_hostport(dns_server, &addr, /*log_errors=*/false)) {
-    dns_server_addr.family = AF_INET;
-    struct sockaddr_in* in = reinterpret_cast<struct sockaddr_in*>(addr.addr);
-    memcpy(&dns_server_addr.addr.addr4, &in->sin_addr, sizeof(struct in_addr));
-    dns_server_addr.tcp_port = grpc_sockaddr_get_port(&addr);
-    dns_server_addr.udp_port = grpc_sockaddr_get_port(&addr);
-  } else if (grpc_parse_ipv6_hostport(dns_server, &addr,
-                                      /*log_errors=*/false)) {
-    dns_server_addr.family = AF_INET6;
-    struct sockaddr_in6* in6 =
-        reinterpret_cast<struct sockaddr_in6*>(addr.addr);
-    memcpy(&dns_server_addr.addr.addr6, &in6->sin6_addr,
-           sizeof(struct in6_addr));
-    dns_server_addr.tcp_port = grpc_sockaddr_get_port(&addr);
-    dns_server_addr.udp_port = grpc_sockaddr_get_port(&addr);
+  const std::string hostport = grpc_core::JoinHostPort(host, port);
+  if (grpc_parse_ipv4_hostport(hostport.c_str(), &addr,
+                               false /* log errors */) ||
+      grpc_parse_ipv6_hostport(hostport.c_str(), &addr,
+                               false /* log errors */)) {
+    // Early out if the target is an ipv4 or ipv6 literal.
+    std::vector<EventEngine::ResolvedAddress> result;
+    result.emplace_back(reinterpret_cast<sockaddr*>(addr.addr), addr.len);
+    event_engine_->Run(
+        [callback = std::move(callback), result = std::move(result)]() mutable {
+          callback(std::move(result));
+        });
+    return;
+  }
+  grpc_core::MutexLock lock(&mutex_);
+  callback_map_.emplace(++id_, std::move(callback));
+  auto* resolver_arg = new HostnameQueryArg(this, id_, name, port);
+  if (IsIpv6LoopbackAvailable()) {
+    ares_gethostbyname(channel_, std::string(host).c_str(), AF_UNSPEC,
+                       &AresResolver::OnHostbynameDoneLocked,
+                       static_cast<void*>(resolver_arg));
   } else {
-    return absl::InvalidArgumentError(
-        absl::StrCat("Cannot parse authority: ", dns_server));
+    ares_gethostbyname(channel_, std::string(host).c_str(), AF_INET,
+                       &AresResolver::OnHostbynameDoneLocked,
+                       static_cast<void*>(resolver_arg));
   }
-  int status = ares_set_servers_ports(channel_, &dns_server_addr);
-  if (status != ARES_SUCCESS) {
-    return AresStatusToAbslStatus(
-        status, absl::StrCat("c-ares status is not ARES_SUCCESS: ",
-                             ares_strerror(status)));
-  }
-  return absl::OkStatus();
+  WorkLocked();
+  MaybeStartTimerLocked();
 }
+
+void AresResolver::LookupSRV(
+    absl::string_view name,
+    EventEngine::DNSResolver::LookupSRVCallback callback) {
+  absl::string_view host;
+  absl::string_view port;
+  if (!grpc_core::SplitHostPort(name, &host, &port)) {
+    event_engine_->Run(
+        [callback = std::move(callback),
+         status = absl::InvalidArgumentError(absl::StrCat(
+             "Unparseable name: ", name))]() mutable { callback(status); });
+    return;
+  }
+  GPR_ASSERT(!host.empty());
+  // Don't query for SRV records if the target is "localhost"
+  if (absl::EqualsIgnoreCase(host, "localhost")) {
+    event_engine_->Run(
+        [callback = std::move(callback),
+         status = absl::UnknownError(
+             "Skip querying for SRV records for localhost target")]() mutable {
+          callback(status);
+        });
+    return;
+  }
+  grpc_core::MutexLock lock(&mutex_);
+  callback_map_.emplace(++id_, std::move(callback));
+  auto* resolver_arg = new QueryArg(this, id_, host);
+  ares_query(channel_, std::string(host).c_str(), ns_c_in, ns_t_srv,
+             &AresResolver::OnSRVQueryDoneLocked,
+             static_cast<void*>(resolver_arg));
+  WorkLocked();
+  MaybeStartTimerLocked();
+}
+
+void AresResolver::LookupTXT(
+    absl::string_view name,
+    EventEngine::DNSResolver::LookupTXTCallback callback) {
+  absl::string_view host;
+  absl::string_view port;
+  if (!grpc_core::SplitHostPort(name, &host, &port)) {
+    event_engine_->Run(
+        [callback = std::move(callback),
+         status = absl::InvalidArgumentError(absl::StrCat(
+             "Unparseable name: ", name))]() mutable { callback(status); });
+    return;
+  }
+  GPR_ASSERT(!host.empty());
+  // Don't query for TXT records if the target is "localhost"
+  if (absl::EqualsIgnoreCase(host, "localhost")) {
+    event_engine_->Run(
+        [callback = std::move(callback),
+         status = absl::UnknownError(
+             "Skip querying for TXT records for localhost target")]() mutable {
+          callback(status);
+        });
+    return;
+  }
+  grpc_core::MutexLock lock(&mutex_);
+  callback_map_.emplace(++id_, std::move(callback));
+  auto* resolver_arg = new QueryArg(this, id_, host);
+  ares_search(channel_, std::string(host).c_str(), ns_c_in, ns_t_txt,
+              &AresResolver::OnTXTDoneLocked, static_cast<void*>(resolver_arg));
+  WorkLocked();
+  MaybeStartTimerLocked();
+}
+
+AresResolver::AresResolver(
+    std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
+    std::shared_ptr<EventEngine> event_engine, ares_channel channel)
+    : grpc_core::InternallyRefCounted<AresResolver>(
+          GRPC_TRACE_FLAG_ENABLED(grpc_trace_ares_resolver) ? "AresResolver"
+                                                            : nullptr),
+      channel_(channel),
+      polled_fd_factory_(std::move(polled_fd_factory)),
+      event_engine_(std::move(event_engine)) {}
 
 void AresResolver::WorkLocked() {
   FdNodeList new_list;
@@ -381,142 +515,6 @@ void AresResolver::OnAresBackupPollAlarm() {
         });
     WorkLocked();
   }
-}
-
-void AresResolver::LookupHostname(
-    absl::string_view name, absl::string_view default_port,
-    EventEngine::DNSResolver::LookupHostnameCallback callback) {
-  absl::string_view host;
-  absl::string_view port_s;
-  if (!grpc_core::SplitHostPort(name, &host, &port_s)) {
-    event_engine_->Run(
-        [callback = std::move(callback),
-         status = absl::InvalidArgumentError(absl::StrCat(
-             "Unparseable name: ", name))]() mutable { callback(status); });
-    return;
-  }
-  GPR_ASSERT(!host.empty());
-  if (port_s.empty()) {
-    if (default_port.empty()) {
-      event_engine_->Run([callback = std::move(callback),
-                          status = absl::InvalidArgumentError(absl::StrFormat(
-                              "No port in name %s or default_port argument",
-                              name.data()))]() mutable { callback(status); });
-      return;
-    }
-    port_s = default_port;
-  }
-  int port = 0;
-  if (port_s == "http") {
-    port = 80;
-  } else if (port_s == "https") {
-    port = 443;
-  } else if (!absl::SimpleAtoi(port_s, &port)) {
-    event_engine_->Run([callback = std::move(callback),
-                        status = absl::InvalidArgumentError(absl::StrCat(
-                            "Failed to parse port in name: ",
-                            name))]() mutable { callback(status); });
-    return;
-  }
-  // TODO(yijiem): Change this when refactoring code in
-  // src/core/lib/address_utils to use EventEngine::ResolvedAddress.
-  grpc_resolved_address addr;
-  const std::string hostport = grpc_core::JoinHostPort(host, port);
-  if (grpc_parse_ipv4_hostport(hostport.c_str(), &addr,
-                               false /* log errors */) ||
-      grpc_parse_ipv6_hostport(hostport.c_str(), &addr,
-                               false /* log errors */)) {
-    // Early out if the target is an ipv4 or ipv6 literal.
-    std::vector<EventEngine::ResolvedAddress> result;
-    result.emplace_back(reinterpret_cast<sockaddr*>(addr.addr), addr.len);
-    event_engine_->Run(
-        [callback = std::move(callback), result = std::move(result)]() mutable {
-          callback(std::move(result));
-        });
-    return;
-  }
-  grpc_core::MutexLock lock(&mutex_);
-  GPR_ASSERT(initialized_);
-  callback_map_.emplace(++id_, std::move(callback));
-  auto* resolver_arg = new HostnameQueryArg(this, id_, name, port);
-  if (IsIpv6LoopbackAvailable()) {
-    ares_gethostbyname(channel_, std::string(host).c_str(), AF_UNSPEC,
-                       &AresResolver::OnHostbynameDoneLocked,
-                       static_cast<void*>(resolver_arg));
-  } else {
-    ares_gethostbyname(channel_, std::string(host).c_str(), AF_INET,
-                       &AresResolver::OnHostbynameDoneLocked,
-                       static_cast<void*>(resolver_arg));
-  }
-  WorkLocked();
-  MaybeStartTimerLocked();
-}
-
-void AresResolver::LookupSRV(
-    absl::string_view name,
-    EventEngine::DNSResolver::LookupSRVCallback callback) {
-  absl::string_view host;
-  absl::string_view port;
-  if (!grpc_core::SplitHostPort(name, &host, &port)) {
-    event_engine_->Run(
-        [callback = std::move(callback),
-         status = absl::InvalidArgumentError(absl::StrCat(
-             "Unparseable name: ", name))]() mutable { callback(status); });
-    return;
-  }
-  GPR_ASSERT(!host.empty());
-  // Don't query for SRV records if the target is "localhost"
-  if (absl::EqualsIgnoreCase(host, "localhost")) {
-    event_engine_->Run(
-        [callback = std::move(callback),
-         status = absl::UnknownError(
-             "Skip querying for SRV records for localhost target")]() mutable {
-          callback(status);
-        });
-    return;
-  }
-  grpc_core::MutexLock lock(&mutex_);
-  GPR_ASSERT(initialized_);
-  callback_map_.emplace(++id_, std::move(callback));
-  auto* resolver_arg = new QueryArg(this, id_, host);
-  ares_query(channel_, std::string(host).c_str(), ns_c_in, ns_t_srv,
-             &AresResolver::OnSRVQueryDoneLocked,
-             static_cast<void*>(resolver_arg));
-  WorkLocked();
-  MaybeStartTimerLocked();
-}
-
-void AresResolver::LookupTXT(
-    absl::string_view name,
-    EventEngine::DNSResolver::LookupTXTCallback callback) {
-  absl::string_view host;
-  absl::string_view port;
-  if (!grpc_core::SplitHostPort(name, &host, &port)) {
-    event_engine_->Run(
-        [callback = std::move(callback),
-         status = absl::InvalidArgumentError(absl::StrCat(
-             "Unparseable name: ", name))]() mutable { callback(status); });
-    return;
-  }
-  GPR_ASSERT(!host.empty());
-  // Don't query for TXT records if the target is "localhost"
-  if (absl::EqualsIgnoreCase(host, "localhost")) {
-    event_engine_->Run(
-        [callback = std::move(callback),
-         status = absl::UnknownError(
-             "Skip querying for TXT records for localhost target")]() mutable {
-          callback(status);
-        });
-    return;
-  }
-  grpc_core::MutexLock lock(&mutex_);
-  GPR_ASSERT(initialized_);
-  callback_map_.emplace(++id_, std::move(callback));
-  auto* resolver_arg = new QueryArg(this, id_, host);
-  ares_search(channel_, std::string(host).c_str(), ns_c_in, ns_t_txt,
-              &AresResolver::OnTXTDoneLocked, static_cast<void*>(resolver_arg));
-  WorkLocked();
-  MaybeStartTimerLocked();
 }
 
 void AresResolver::OnHostbynameDoneLocked(void* arg, int status,

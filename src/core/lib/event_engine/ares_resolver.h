@@ -54,12 +54,12 @@ extern grpc_core::TraceFlag grpc_trace_ares_resolver;
 
 class AresResolver : public grpc_core::InternallyRefCounted<AresResolver> {
  public:
-  AresResolver(std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
-               std::shared_ptr<EventEngine> event_engine);
+  static absl::StatusOr<grpc_core::OrphanablePtr<AresResolver>>
+  CreateAresResolver(absl::string_view dns_server,
+                     std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
+                     std::shared_ptr<EventEngine> event_engine);
 
   ~AresResolver() override;
-
-  absl::Status Initialize(absl::string_view dns_server);
   void Orphan() override;
 
   void LookupHostname(
@@ -99,7 +99,9 @@ class AresResolver : public grpc_core::InternallyRefCounted<AresResolver> {
                     EventEngine::DNSResolver::LookupSRVCallback,
                     EventEngine::DNSResolver::LookupTXTCallback>;
 
-  absl::Status SetRequestDNSServer(absl::string_view dns_server);
+  AresResolver(std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
+               std::shared_ptr<EventEngine> event_engine, ares_channel channel);
+
   void WorkLocked();
   void MaybeStartTimerLocked();
   void OnReadable(FdNode* fd_node, absl::Status status);
@@ -114,7 +116,6 @@ class AresResolver : public grpc_core::InternallyRefCounted<AresResolver> {
                               unsigned char* buf, int len);
 
   grpc_core::Mutex mutex_;
-  bool initialized_ = false;
   bool shutting_down_ = false;
   ares_channel channel_;
   FdNodeList fd_node_list_;
