@@ -1758,6 +1758,8 @@
     <file baseinstalldir="/" name="src/php/ext/grpc/timeval.c" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/timeval.h" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/version.h" role="src" />
+    <file baseinstalldir="/" name="test/core/experiments/test_experiments.cc" role="src" />
+    <file baseinstalldir="/" name="test/core/experiments/test_experiments.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/algorithm/algorithm.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/algorithm/container.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/attributes.h" role="src" />

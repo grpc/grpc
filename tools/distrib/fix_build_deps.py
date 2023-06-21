@@ -158,6 +158,7 @@ INTERNAL_DEPS = {
         "//test/core/event_engine/fuzzing_event_engine"
     ),
     "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h": "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto",
+    "test/core/experiments/test_experiments.h": "//test/core/experiments:test_experiments_lib",
     "google/api/expr/v1alpha1/syntax.upb.h": "google_type_expr_upb",
     "google/rpc/status.upb.h": "google_rpc_status_upb",
     "google/protobuf/any.upb.h": "protobuf_any_upb",

@@ -15,7 +15,7 @@
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_cc_library")
 
 grpc_cc_library(
-    name = "experiments_test_lib",
+    name = "test_experiments_lib",
     srcs = [
         "test_experiments.cc",
         "//src/core:lib/experiments/config.cc",
@@ -51,7 +51,7 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        ":experiments_test_lib",
+        ":test_experiments_lib",
         "//test/core/util:grpc_test_util",
     ],
 )

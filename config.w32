@@ -827,6 +827,7 @@ if (PHP_GRPC != "no") {
     "src\\php\\ext\\grpc\\server.c " +
     "src\\php\\ext\\grpc\\server_credentials.c " +
     "src\\php\\ext\\grpc\\timeval.c " +
+    "test\\core\\experiments\\test_experiments.cc " +
     "third_party\\abseil-cpp\\absl\\base\\internal\\cycleclock.cc " +
     "third_party\\abseil-cpp\\absl\\base\\internal\\low_level_alloc.cc " +
     "third_party\\abseil-cpp\\absl\\base\\internal\\raw_logging.cc " +
@@ -1673,6 +1674,9 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\php");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\php\\ext");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\php\\ext\\grpc");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\test");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\test\\core");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\test\\core\\experiments");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\abseil-cpp\\absl");

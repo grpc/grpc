@@ -130,6 +130,7 @@ grpc_cc_library(
         "no_destruct",
         "//:config_vars",
         "//:gpr",
+        "//test/core/experiments:test_experiments_lib",
     ],
 )
 

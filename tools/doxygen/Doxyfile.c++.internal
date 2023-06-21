@@ -2810,6 +2810,8 @@ src/cpp/util/byte_buffer_cc.cc \
 src/cpp/util/status.cc \
 src/cpp/util/string_ref.cc \
 src/cpp/util/time_cc.cc \
+test/core/experiments/test_experiments.cc \
+test/core/experiments/test_experiments.h \
 third_party/xxhash/xxhash.h
 
 # This tag can be used to specify the character encoding of the source files

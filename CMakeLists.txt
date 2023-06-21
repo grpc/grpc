@@ -2438,6 +2438,7 @@ add_library(grpc
   src/core/tsi/ssl_transport_security_utils.cc
   src/core/tsi/transport_security.cc
   src/core/tsi/transport_security_grpc.cc
+  test/core/experiments/test_experiments.cc
 )
 
 target_compile_features(grpc PUBLIC cxx_std_14)
@@ -3082,6 +3083,7 @@ add_library(grpc_unsecure
   src/core/tsi/local_transport_security.cc
   src/core/tsi/transport_security.cc
   src/core/tsi/transport_security_grpc.cc
+  test/core/experiments/test_experiments.cc
 )
 
 target_compile_features(grpc_unsecure PUBLIC cxx_std_14)
@@ -4606,6 +4608,7 @@ add_library(grpc_authorization_provider
   src/core/tsi/alts/handshaker/transport_security_common_api.cc
   src/core/tsi/transport_security.cc
   src/core/tsi/transport_security_grpc.cc
+  test/core/experiments/test_experiments.cc
 )
 
 target_compile_features(grpc_authorization_provider PUBLIC cxx_std_14)
@@ -8747,6 +8750,7 @@ add_executable(chunked_vector_test
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
+  test/core/experiments/test_experiments.cc
   test/core/gprpp/chunked_vector_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -12165,6 +12169,7 @@ add_executable(flow_control_test
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/transport/bdp_estimator.cc
   src/core/lib/transport/pid_controller.cc
+  test/core/experiments/test_experiments.cc
   test/core/transport/chttp2/flow_control_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -12235,6 +12240,7 @@ add_executable(for_each_test
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
+  test/core/experiments/test_experiments.cc
   test/core/promise/for_each_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -12727,6 +12733,7 @@ add_executable(frame_test
   src/core/lib/transport/transport_op_string.cc
   src/core/lib/uri/uri_parser.cc
   src/core/tsi/alts/handshaker/transport_security_common_api.cc
+  test/core/experiments/test_experiments.cc
   test/core/transport/chaotic_good/frame_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -15373,6 +15380,7 @@ add_executable(interceptor_list_test
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
+  test/core/experiments/test_experiments.cc
   test/core/promise/interceptor_list_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -16381,6 +16389,7 @@ add_executable(map_pipe_test
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
+  test/core/experiments/test_experiments.cc
   test/core/promise/map_pipe_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
