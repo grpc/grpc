@@ -160,7 +160,6 @@ class EventEngineClientChannelDNSResolver : public PollingResolver {
     size_t number_of_balancer_hostnames_resolved_
         ABSL_GUARDED_BY(on_resolved_mu_) = 0;
     bool orphaned_ ABSL_GUARDED_BY(on_resolved_mu_) = false;
-    bool timed_out_ ABSL_GUARDED_BY(on_resolved_mu_) = false;
     absl::optional<EventEngine::TaskHandle> timeout_handle_
         ABSL_GUARDED_BY(on_resolved_mu_);
     std::unique_ptr<EventEngine::DNSResolver> event_engine_resolver_;
@@ -286,7 +285,6 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
   MutexLock lock(&on_resolved_mu_);
   GRPC_EVENT_ENGINE_RESOLVER_TRACE("DNSResolver::%p OnTimeout",
                                    resolver_.get());
-  timed_out_ = true;
   timeout_handle_.reset();
   event_engine_resolver_.reset();
 }
@@ -339,7 +337,7 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     result = OnResolvedLocked();
     return;
   }
-  if (timed_out_) {
+  if (!timeout_handle_.has_value()) {
     // We could reach here if timeout happened while an SRV query was finishing.
     errors_.AddError(
         "timed out - not initiating subsequent balancer hostname requests");
