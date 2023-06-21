@@ -50,7 +50,6 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
-#include "src/core/ext/transport/chttp2/transport/stream_map.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/stats_data.h"
@@ -123,8 +122,7 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
   grpc_core::Duration next_allowed_ping_interval = grpc_core::Duration::Zero();
   if (t->is_client) {
     next_allowed_ping_interval =
-        (t->keepalive_permit_without_calls == 0 &&
-         grpc_chttp2_stream_map_size(&t->stream_map) == 0)
+        (t->keepalive_permit_without_calls == 0 && t->stream_map.empty())
             ? grpc_core::Duration::Hours(2)
             : grpc_core::Duration::Seconds(
                   1);  // A second is added to deal with

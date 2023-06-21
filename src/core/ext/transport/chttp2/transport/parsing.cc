@@ -47,7 +47,6 @@
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http_trace.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
-#include "src/core/ext/transport/chttp2/transport/stream_map.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -621,7 +620,7 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
           t->incoming_stream_id));
       return init_header_skip_frame_parser(t, priority_type);
     } else if (GPR_UNLIKELY(
-                   grpc_chttp2_stream_map_size(&t->stream_map) >=
+                   t->stream_map.size() >=
                    t->settings[GRPC_ACKED_SETTINGS]
                               [GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS])) {
       return GRPC_ERROR_CREATE("Max stream count exceeded");
