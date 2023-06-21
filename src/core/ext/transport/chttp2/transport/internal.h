@@ -805,8 +805,6 @@ void grpc_chttp2_fail_pending_writes(grpc_chttp2_transport* t,
 /// initialization
 void grpc_chttp2_config_default_keepalive_args(grpc_channel_args* args,
                                                bool is_client);
-void grpc_chttp2_config_default_keepalive_args(
-    const grpc_core::ChannelArgs& channel_args, bool is_client);
 
 void grpc_chttp2_retry_initiate_ping(grpc_chttp2_transport* t);
 
