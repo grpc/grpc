@@ -154,8 +154,8 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "configuration_test",
-    srcs = ["configuration_test.cc"],
+    name = "ping_configuration_test",
+    srcs = ["ping_configuration_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
     uses_polling = False,

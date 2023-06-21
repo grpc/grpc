@@ -119,8 +119,9 @@ TEST_F(XdsOverrideHostTest, DelegatesToChild) {
 
 TEST_F(XdsOverrideHostTest, NoConfigReportsError) {
   EXPECT_EQ(
-      ApplyUpdate(BuildUpdate({"ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442"}),
-                  policy_.get()),
+      ApplyUpdate(
+          BuildUpdate({"ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442"}, nullptr),
+          policy_.get()),
       absl::InvalidArgumentError("Missing policy config"));
 }
 
