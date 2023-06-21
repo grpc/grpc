@@ -294,7 +294,7 @@ VALUE sym_details = Qundef;
 VALUE sym_metadata = Qundef;
 
 static gpr_once g_once_init = GPR_ONCE_INIT;
-static int64_t g_grpc_rb_prefork_pending;
+static int64_t g_grpc_rb_prefork_pending;  // synchronized by the GIL
 
 void grpc_ruby_fork_guard() {
   // Check if we're using gRPC between prefork and postfork
@@ -331,11 +331,13 @@ static void grpc_ruby_init_threads() {
   gpr_log(GPR_INFO,
           "GRPC_RUBY: grpc_ruby_init_threads g_bg_thread_init_done=%d",
           g_bg_thread_init_done);
+  rb_mutex_lock(g_bg_thread_init_rb_mu);
   if (!g_bg_thread_init_done) {
     grpc_rb_event_queue_thread_start();
     grpc_rb_channel_polling_thread_start();
     g_bg_thread_init_done = true;
   }
+  rb_mutex_unlock(g_bg_thread_init_rb_mu);
 }
 
 static int64_t g_grpc_ruby_init_count;
@@ -344,11 +346,7 @@ void grpc_ruby_init() {
   gpr_once_init(&g_once_init, grpc_ruby_basic_init);
   grpc_ruby_fork_guard();
   grpc_init();
-  rb_mutex_lock(g_bg_thread_init_rb_mu);
-  // Hold g_bg_thread_init_rb_mu because the first grpc objects
-  // can be initialized concurrently.
   grpc_ruby_init_threads();
-  rb_mutex_unlock(g_bg_thread_init_rb_mu);
   // (only gpr_log after logging has been initialized)
   gpr_log(GPR_DEBUG,
           "GRPC_RUBY: grpc_ruby_init - g_enable_fork_support=%d prev "
@@ -373,14 +371,12 @@ void grpc_ruby_shutdown() {
       g_grpc_ruby_init_count--);
 }
 
-// fork APIs
+// fork APIs, useable on linux with env var: GRPC_ENABLE_FORK_SUPPORT=1
 //
-// Note we don't need to acquire g_bg_thread_init_rb_mu when managing background
-// threads in these APIs, because GRPC fork APIs are not thread safe.
-// In order to avoid undefined behavior, the caller anyways needs to guarantee
-// that the gRPC library is not being called into from *any* thread before
-// calling GRPC::prefork, and this needs to remain until after the subsequent
-// call to GRPC::postfork_{parent,child} completes.
+// Must be called once and only once before forking. Must be called on the
+// same threads that gRPC was (lazy-)initialized on. One must not call
+// into the gRPC library during or after prefork has been called, until
+// the corresponding postfork_{parent,child} APIs have been called.
 static VALUE grpc_rb_prefork(VALUE self) {
   gpr_once_init(
       &g_once_init,
@@ -402,12 +398,14 @@ static VALUE grpc_rb_prefork(VALUE self) {
              "the first GRPC object is created");
   }
   g_grpc_rb_prefork_pending = true;
+  rb_mutex_lock(g_bg_thread_init_rb_mu);
   if (g_bg_thread_init_done) {
     grpc_rb_channel_polling_thread_stop();
     grpc_rb_event_queue_thread_stop();
     // all ruby-level background threads joined at this point
     g_bg_thread_init_done = false;
   }
+  rb_mutex_unlock(g_bg_thread_init_rb_mu);
   return Qnil;
 }
 
