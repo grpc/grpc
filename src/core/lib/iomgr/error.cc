@@ -73,7 +73,7 @@ absl::Status grpc_os_error(const grpc_core::DebugLocation& location, int err,
 std::string WSAErrorToShortDescription(int err) {
   switch (err) {
     case WSAEACCES:
-      return "Permission Denied";
+      return "Permission denied";
     case WSAEFAULT:
       return "Bad address";
     case WSAEMFILE:
@@ -87,9 +87,9 @@ std::string WSAErrorToShortDescription(int err) {
     case WSAENETRESET:
       return "Network dropped connection on reset";
     case WSAECONNABORTED:
-      return "Connection Aborted";
+      return "Connection aborted";
     case WSAECONNRESET:
-      return "Connection Reset";
+      return "Connection reset";
     case WSAETIMEDOUT:
       return "Connection timed out";
     case WSAECONNREFUSED:
