@@ -78,12 +78,8 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
 
   ServerAddress MakeAddressWithHealthStatus(
       absl::string_view address, XdsHealthStatus::HealthStatus status) {
-    std::map<const char*, std::unique_ptr<ServerAddress::AttributeInterface>>
-        attrs;
-    attrs.emplace(XdsEndpointHealthStatusAttribute::kKey,
-                  std::make_unique<XdsEndpointHealthStatusAttribute>(
-                      XdsHealthStatus(status)));
-    return {MakeAddress(address), {}, std::move(attrs)};
+    return ServerAddress(MakeAddress(address),
+                         ChannelArgs().Set(GRPC_ARG_XDS_HEALTH_STATUS, status));
   }
 
   void ApplyUpdateWithHealthStatuses(

@@ -161,7 +161,11 @@ TEST_F(XdsEndpointTest, MinimumValidConfig) {
   auto addr = grpc_sockaddr_to_string(&address.address(), /*normalize=*/false);
   ASSERT_TRUE(addr.ok()) << addr.status();
   EXPECT_EQ(*addr, "127.0.0.1:443");
-  EXPECT_EQ(address.args(), ChannelArgs().Set(GRPC_ARG_ADDRESS_WEIGHT, 1));
+  EXPECT_EQ(address.args(),
+            ChannelArgs()
+                .Set(GRPC_ARG_ADDRESS_WEIGHT, 1)
+                .Set(GRPC_ARG_XDS_HEALTH_STATUS,
+                     XdsHealthStatus::HealthStatus::kUnknown));
   ASSERT_NE(resource.drop_config, nullptr);
   EXPECT_TRUE(resource.drop_config->drop_category_list().empty());
 }
@@ -204,7 +208,11 @@ TEST_F(XdsEndpointTest, EndpointWeight) {
   auto addr = grpc_sockaddr_to_string(&address.address(), /*normalize=*/false);
   ASSERT_TRUE(addr.ok()) << addr.status();
   EXPECT_EQ(*addr, "127.0.0.1:443");
-  EXPECT_EQ(address.args(), ChannelArgs().Set(GRPC_ARG_ADDRESS_WEIGHT, 3));
+  EXPECT_EQ(address.args(),
+            ChannelArgs()
+                .Set(GRPC_ARG_ADDRESS_WEIGHT, 3)
+                .Set(GRPC_ARG_XDS_HEALTH_STATUS,
+                     XdsHealthStatus::HealthStatus::kUnknown));
   ASSERT_NE(resource.drop_config, nullptr);
   EXPECT_TRUE(resource.drop_config->drop_category_list().empty());
 }
@@ -249,7 +257,11 @@ TEST_F(XdsEndpointTest, IgnoresLocalityWithNoWeight) {
   auto addr = grpc_sockaddr_to_string(&address.address(), /*normalize=*/false);
   ASSERT_TRUE(addr.ok()) << addr.status();
   EXPECT_EQ(*addr, "127.0.0.1:443");
-  EXPECT_EQ(address.args(), ChannelArgs().Set(GRPC_ARG_ADDRESS_WEIGHT, 1));
+  EXPECT_EQ(address.args(),
+            ChannelArgs()
+                .Set(GRPC_ARG_ADDRESS_WEIGHT, 1)
+                .Set(GRPC_ARG_XDS_HEALTH_STATUS,
+                     XdsHealthStatus::HealthStatus::kUnknown));
   ASSERT_NE(resource.drop_config, nullptr);
   EXPECT_TRUE(resource.drop_config->drop_category_list().empty());
 }
@@ -295,7 +307,11 @@ TEST_F(XdsEndpointTest, IgnoresLocalityWithZeroWeight) {
   auto addr = grpc_sockaddr_to_string(&address.address(), /*normalize=*/false);
   ASSERT_TRUE(addr.ok()) << addr.status();
   EXPECT_EQ(*addr, "127.0.0.1:443");
-  EXPECT_EQ(address.args(), ChannelArgs().Set(GRPC_ARG_ADDRESS_WEIGHT, 1));
+  EXPECT_EQ(address.args(),
+            ChannelArgs()
+                .Set(GRPC_ARG_ADDRESS_WEIGHT, 1)
+                .Set(GRPC_ARG_XDS_HEALTH_STATUS,
+                     XdsHealthStatus::HealthStatus::kUnknown));
   ASSERT_NE(resource.drop_config, nullptr);
   EXPECT_TRUE(resource.drop_config->drop_category_list().empty());
 }
@@ -991,19 +1007,14 @@ TEST_F(XdsEndpointTest, EndpointHealthStatus) {
   auto addr = grpc_sockaddr_to_string(&address->address(), /*normalize=*/false);
   ASSERT_TRUE(addr.ok()) << addr.status();
   EXPECT_EQ(*addr, "127.0.0.1:443");
-  const auto* health_attribute =
-      static_cast<const XdsEndpointHealthStatusAttribute*>(
-          address->GetAttribute(XdsEndpointHealthStatusAttribute::kKey));
-  ASSERT_NE(health_attribute, nullptr);
-  EXPECT_EQ(health_attribute->status().status(), XdsHealthStatus::kUnknown);
+  EXPECT_EQ(address->args().GetInt(GRPC_ARG_XDS_HEALTH_STATUS),
+            XdsHealthStatus::kUnknown);
   address = &p.second.endpoints[1];
   addr = grpc_sockaddr_to_string(&address->address(), /*normalize=*/false);
   ASSERT_TRUE(addr.ok()) << addr.status();
   EXPECT_EQ(*addr, "127.0.0.2:443");
-  health_attribute = static_cast<const XdsEndpointHealthStatusAttribute*>(
-      address->GetAttribute(XdsEndpointHealthStatusAttribute::kKey));
-  ASSERT_NE(health_attribute, nullptr);
-  EXPECT_EQ(health_attribute->status().status(), XdsHealthStatus::kDraining);
+  EXPECT_EQ(address->args().GetInt(GRPC_ARG_XDS_HEALTH_STATUS),
+            XdsHealthStatus::kDraining);
 }
 
 }  // namespace

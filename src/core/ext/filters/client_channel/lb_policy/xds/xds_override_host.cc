@@ -95,12 +95,10 @@ struct PtrLessThan {
 };
 
 XdsHealthStatus GetAddressHealthStatus(const ServerAddress& address) {
-  auto attribute = address.GetAttribute(XdsEndpointHealthStatusAttribute::kKey);
-  if (attribute == nullptr) {
-    return XdsHealthStatus(XdsHealthStatus::HealthStatus::kUnknown);
-  }
-  return static_cast<const XdsEndpointHealthStatusAttribute*>(attribute)
-      ->status();
+  return XdsHealthStatus(
+      static_cast<XdsHealthStatus::HealthStatus>(
+          address.args().GetInt(GRPC_ARG_XDS_HEALTH_STATUS)
+                        .value_or(XdsHealthStatus::HealthStatus::kUnknown)));
 }
 
 //

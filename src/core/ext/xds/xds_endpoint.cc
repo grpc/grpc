@@ -220,13 +220,10 @@ absl::optional<ServerAddress> ServerAddressParse(
     }
   }
   // Convert to ServerAddress.
-  std::map<const char*, std::unique_ptr<ServerAddress::AttributeInterface>>
-      attributes;
-  attributes[XdsEndpointHealthStatusAttribute::kKey] =
-      std::make_unique<XdsEndpointHealthStatusAttribute>(*status);
   return ServerAddress(grpc_address,
-                       ChannelArgs().Set(GRPC_ARG_ADDRESS_WEIGHT, weight),
-                       std::move(attributes));
+                       ChannelArgs()
+                           .Set(GRPC_ARG_ADDRESS_WEIGHT, weight)
+                           .Set(GRPC_ARG_XDS_HEALTH_STATUS, status->status()));
 }
 
 struct ParsedLocality {

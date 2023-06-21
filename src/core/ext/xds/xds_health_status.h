@@ -30,6 +30,11 @@
 
 #include "src/core/lib/resolver/server_address.h"
 
+// Channel arg key for xDS health status.
+// Value is an XdsHealthStatus::HealthStatus enum.
+#define GRPC_ARG_XDS_HEALTH_STATUS \
+  GRPC_ARG_NO_SUBCHANNEL_PREFIX "xds_health_status"
+
 namespace grpc_core {
 
 class XdsHealthStatus {
@@ -81,28 +86,6 @@ class XdsHealthStatusSet {
 };
 
 bool operator<(const XdsHealthStatus& hs1, const XdsHealthStatus& hs2);
-
-class XdsEndpointHealthStatusAttribute
-    : public ServerAddress::AttributeInterface {
- public:
-  static const char* kKey;
-
-  explicit XdsEndpointHealthStatusAttribute(XdsHealthStatus status)
-      : status_(status) {}
-
-  XdsHealthStatus status() const { return status_; }
-
-  std::unique_ptr<AttributeInterface> Copy() const override {
-    return std::make_unique<XdsEndpointHealthStatusAttribute>(status_);
-  }
-
-  int Cmp(const AttributeInterface* other) const override;
-
-  std::string ToString() const override;
-
- private:
-  XdsHealthStatus status_;
-};
 
 }  // namespace grpc_core
 
