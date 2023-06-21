@@ -1,0 +1,17 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ${service_name}
+  namespace: ${namespace_name}
+  labels:
+    owner: xds-k8s-interop-test
+spec:
+  type: ClusterIP
+  selector:
+    app: ${deployment_name}
+  ports:
+  - port: ${test_port}
+    protocol: TCP
+    targetPort: ${test_port}
+...

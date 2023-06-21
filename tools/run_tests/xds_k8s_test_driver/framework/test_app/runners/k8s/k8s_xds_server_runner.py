@@ -307,8 +307,60 @@ class KubernetesServerRunner(k8s_base_runner.KubernetesBaseRunner):
         return cls._make_namespace_name(resource_prefix, resource_suffix, name)
 
 
-class KubernetesGammaServerRunner(KubernetesServerRunner):
-    def run(  # pylint: disable=arguments-differ,too-many-branches
+class KubernetesGammaServerRunner(k8s_base_runner.KubernetesServerRunner):
+    # Mutable state.
+    # mesh: Optional[k8s.V1Service] = None
+
+    def __init__(
+        self,
+        k8s_namespace: k8s.KubernetesNamespace,
+        *,
+        deployment_name: str,
+        image_name: str,
+        td_bootstrap_image: str,
+        network: str = "default",
+        xds_server_uri: Optional[str] = None,
+        gcp_api_manager: gcp.api.GcpApiManager,
+        gcp_project: str,
+        gcp_service_account: str,
+        service_account_name: Optional[str] = None,
+        service_name: Optional[str] = None,
+        mesh_name: Optional[str] = None,
+        neg_name: Optional[str] = None,
+        deployment_template: str = "server.deployment.yaml",
+        service_account_template: str = "service-account.yaml",
+        service_template: str = "gamma/server.service.yaml",
+        reuse_service: bool = False,
+        reuse_namespace: bool = False,
+        namespace_template: Optional[str] = None,
+        debug_use_port_forwarding: bool = False,
+        enable_workload_identity: bool = True,
+    ):
+        super().__init__(
+            k8s_namespace,
+            deployment_name=deployment_name,
+            image_name=image_name,
+            td_bootstrap_image=td_bootstrap_image,
+            network=network,
+            xds_server_uri=xds_server_uri,
+            gcp_api_manager=gcp_api_manager,
+            gcp_project=gcp_project,
+            gcp_service_account=gcp_service_account,
+            service_account_name=service_account_name,
+            service_name=service_name,
+            mesh_name=mesh_name,
+            neg_name=neg_name,
+            deployment_template=deployment_template,
+            service_account_template=service_account_template,
+            service_template=service_template,
+            reuse_service=reuse_service,
+            reuse_namespace=reuse_namespace,
+            namespace_template=namespace_template,
+            debug_use_port_forwarding=debug_use_port_forwarding,
+            enable_workload_identity=enable_workload_identity,
+        )
+
+    def run(
         self,
         *,
         test_port: int = KubernetesServerRunner.DEFAULT_TEST_PORT,
@@ -362,7 +414,7 @@ class KubernetesGammaServerRunner(KubernetesServerRunner):
 
         # Create gamma mesh.
         self._create_gamma_mesh(
-            template="mesh.yaml",
+            template="tdmesh.yaml",
             mesh_name=self.mesh_name,
             namespace_name=self.k8s_namespace.name,
         )
