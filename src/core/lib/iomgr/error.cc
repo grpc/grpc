@@ -70,12 +70,42 @@ absl::Status grpc_os_error(const grpc_core::DebugLocation& location, int err,
 }
 
 #ifdef GPR_WINDOWS
+std::string WSAErrorToShortDescription(int err) {
+  switch (err) {
+    case WSAEACCES:
+      return "Permission Denied";
+    case WSAEFAULT:
+      return "Bad address";
+    case WSAEMFILE:
+      return "Too many open files";
+    case WSAEMSGSIZE:
+      return "Message too long";
+    case WSAENETDOWN:
+      return "Network is down";
+    case WSAENETUNREACH:
+      return "Network is unreachable";
+    case WSAENETRESET:
+      return "Network dropped connection on reset";
+    case WSAECONNABORTED:
+      return "Connection Aborted";
+    case WSAECONNRESET:
+      return "Connection Reset";
+    case WSAETIMEDOUT:
+      return "Connection timed out";
+    case WSAECONNREFUSED:
+      return "Connection refused";
+    case WSAEHOSTUNREACH:
+      return "No route to host";
+    default:
+      return "WSA Error";
+  };
+}
 // TODO(veblush): lift out of iomgr for use in the WindowsEventEngine
 absl::Status grpc_wsa_error(const grpc_core::DebugLocation& location, int err,
                             absl::string_view call_name) {
   char* utf8_message = gpr_format_message(err);
-  absl::Status s =
-      StatusCreate(absl::StatusCode::kUnavailable, "WSA Error", location, {});
+  absl::Status s = StatusCreate(absl::StatusCode::kUnavailable,
+                                WSAErrorToShortDescription(err), location, {});
   StatusSetInt(&s, grpc_core::StatusIntProperty::kWsaError, err);
   StatusSetInt(&s, grpc_core::StatusIntProperty::kRpcStatus,
                GRPC_STATUS_UNAVAILABLE);
