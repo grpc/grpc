@@ -255,7 +255,7 @@ static bool grpc_ruby_initial_pid(void) {
 
 static bool grpc_ruby_initial_thread(void) {
   GPR_ASSERT(g_init_tid != 0);
-  return gettid() == g_init_tid;
+  return sys_gettid() == g_init_tid;
 }
 
 static void grpc_ruby_reset_init_state(void) {
