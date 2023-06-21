@@ -216,7 +216,7 @@ from your dev environment. You need:
 
 ### Making changes to the driver
 1. Install additional dev packages: `pip install -r requirements-dev.txt`
-2. Use `./bin/yapf.sh` and `./bin/isort.sh` helpers to auto-format code.
+2. Use `./bin/black.sh` and `./bin/isort.sh` helpers to auto-format code.
 
 ### Updating Python Dependencies
 

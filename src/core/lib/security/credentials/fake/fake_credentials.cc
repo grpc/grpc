@@ -36,44 +36,36 @@
 
 // -- Fake transport security credentials. --
 
-namespace {
+grpc_core::RefCountedPtr<grpc_channel_security_connector>
+grpc_fake_channel_credentials::create_security_connector(
+    grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
+    const char* target, grpc_core::ChannelArgs* args) {
+  return grpc_fake_channel_security_connector_create(
+      this->Ref(), std::move(call_creds), target, *args);
+}
 
-class grpc_fake_channel_credentials final : public grpc_channel_credentials {
- public:
-  grpc_core::RefCountedPtr<grpc_channel_security_connector>
-  create_security_connector(
-      grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
-      const char* target, grpc_core::ChannelArgs* args) override {
-    return grpc_fake_channel_security_connector_create(
-        this->Ref(), std::move(call_creds), target, *args);
-  }
+grpc_core::UniqueTypeName grpc_fake_channel_credentials::Type() {
+  static grpc_core::UniqueTypeName::Factory kFactory("Fake");
+  return kFactory.Create();
+}
 
-  grpc_core::UniqueTypeName type() const override {
-    static grpc_core::UniqueTypeName::Factory kFactory("Fake");
-    return kFactory.Create();
-  }
+int grpc_fake_channel_credentials::cmp_impl(
+    const grpc_channel_credentials* other) const {
+  // TODO(yashykt): Check if we can do something better here
+  return grpc_core::QsortCompare(
+      static_cast<const grpc_channel_credentials*>(this), other);
+}
 
- private:
-  int cmp_impl(const grpc_channel_credentials* other) const override {
-    // TODO(yashykt): Check if we can do something better here
-    return grpc_core::QsortCompare(
-        static_cast<const grpc_channel_credentials*>(this), other);
-  }
-};
+grpc_core::RefCountedPtr<grpc_server_security_connector>
+grpc_fake_server_credentials::create_security_connector(
+    const grpc_core::ChannelArgs& /*args*/) {
+  return grpc_fake_server_security_connector_create(this->Ref());
+}
 
-class grpc_fake_server_credentials final : public grpc_server_credentials {
- public:
-  grpc_core::RefCountedPtr<grpc_server_security_connector>
-  create_security_connector(const grpc_core::ChannelArgs& /*args*/) override {
-    return grpc_fake_server_security_connector_create(this->Ref());
-  }
-
-  grpc_core::UniqueTypeName type() const override {
-    static grpc_core::UniqueTypeName::Factory kFactory("Fake");
-    return kFactory.Create();
-  }
-};
-}  // namespace
+grpc_core::UniqueTypeName grpc_fake_server_credentials::Type() {
+  static grpc_core::UniqueTypeName::Factory kFactory("Fake");
+  return kFactory.Create();
+}
 
 grpc_channel_credentials* grpc_fake_transport_security_credentials_create() {
   return new grpc_fake_channel_credentials();

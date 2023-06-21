@@ -296,6 +296,7 @@ class TestServiceImpl : public TestService::Service {
     StreamingOutputCallRequest request;
     StreamingOutputCallResponse response;
     bool write_success = true;
+    std::unique_ptr<grpc_core::MutexLock> orca_oob_lock;
     while (write_success && stream->Read(&request)) {
       if (request.has_response_status()) {
         return Status(
@@ -317,6 +318,15 @@ class TestServiceImpl : public TestService::Service {
         write_success = stream->Write(response);
       }
       if (request.has_orca_oob_report()) {
+        if (orca_oob_lock == nullptr) {
+          orca_oob_lock =
+              std::make_unique<grpc_core::MutexLock>(&orca_oob_server_mu_);
+          server_metric_recorder_->ClearCpuUtilization();
+          server_metric_recorder_->ClearEps();
+          server_metric_recorder_->ClearMemoryUtilization();
+          server_metric_recorder_->SetAllNamedUtilization({});
+          server_metric_recorder_->ClearQps();
+        }
         RecordServerMetrics(request.orca_oob_report());
       }
     }
@@ -381,6 +391,8 @@ class TestServiceImpl : public TestService::Service {
   std::set<std::string> retained_utilization_names_
       ABSL_GUARDED_BY(retained_utilization_names_mu_);
   grpc_core::Mutex retained_utilization_names_mu_;
+  // Only a single client requesting Orca OOB reports is allowed at a time
+  grpc_core::Mutex orca_oob_server_mu_;
 };
 
 void grpc::testing::interop::RunServer(

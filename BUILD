@@ -211,11 +211,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "galvanized"  # @unused
+g_stands_for = "grounded"  # @unused
 
-core_version = "32.0.0"  # @unused
+core_version = "33.0.0"  # @unused
 
-version = "1.56.0-dev"  # @unused
+version = "1.57.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -1330,6 +1330,7 @@ grpc_cc_library(
         "//src/core:lib/iomgr/tcp_windows.cc",
         "//src/core:lib/iomgr/unix_sockets_posix.cc",
         "//src/core:lib/iomgr/unix_sockets_posix_noop.cc",
+        "//src/core:lib/iomgr/vsock.cc",
         "//src/core:lib/iomgr/wakeup_fd_eventfd.cc",
         "//src/core:lib/iomgr/wakeup_fd_nospecial.cc",
         "//src/core:lib/iomgr/wakeup_fd_pipe.cc",
@@ -1426,6 +1427,7 @@ grpc_cc_library(
         "//src/core:lib/iomgr/tcp_server_utils_posix.h",
         "//src/core:lib/iomgr/tcp_windows.h",
         "//src/core:lib/iomgr/unix_sockets_posix.h",
+        "//src/core:lib/iomgr/vsock.h",
         "//src/core:lib/iomgr/wakeup_fd_pipe.h",
         "//src/core:lib/iomgr/wakeup_fd_posix.h",
         "//src/core:lib/resource_quota/api.h",
@@ -1550,6 +1552,7 @@ grpc_cc_library(
         "//src/core:grpc_sockaddr",
         "//src/core:http2_errors",
         "//src/core:if",
+        "//src/core:if_list",
         "//src/core:init_internally",
         "//src/core:iomgr_fwd",
         "//src/core:iomgr_port",
@@ -1589,6 +1592,7 @@ grpc_cc_library(
         "//src/core:transport_fwd",
         "//src/core:try_join",
         "//src/core:try_seq",
+        "//src/core:type_list",
         "//src/core:useful",
         "//src/core:windows_event_engine",
         "//src/core:windows_event_engine_listener",
@@ -2272,6 +2276,28 @@ grpc_cc_library(
         "grpc++",
         "grpc_base",
     ],
+)
+
+grpc_cc_library(
+    name = "grpc_rpc_encoding",
+    srcs = [
+        "src/cpp/ext/filters/census/rpc_encoding.cc",
+    ],
+    hdrs = [
+        "src/cpp/ext/filters/census/rpc_encoding.h",
+    ],
+    external_deps = [
+        "absl/base",
+        "absl/base:core_headers",
+        "absl/meta:type_traits",
+        "absl/status",
+        "absl/strings",
+        "absl/time",
+    ],
+    language = "c++",
+    tags = ["nofixdeps"],
+    visibility = ["@grpc:grpc_python_observability"],
+    deps = ["gpr_platform"],
 )
 
 grpc_cc_library(
@@ -2990,6 +3016,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_public_hdrs",
         "grpc_resolver",
+        "grpc_security_base",
         "grpc_service_config_impl",
         "grpc_trace",
         "http_connect_handshaker",
@@ -3019,6 +3046,7 @@ grpc_cc_library(
         "//src/core:closure",
         "//src/core:construct_destruct",
         "//src/core:context",
+        "//src/core:delegating_helper",
         "//src/core:dual_ref_counted",
         "//src/core:env",
         "//src/core:error",

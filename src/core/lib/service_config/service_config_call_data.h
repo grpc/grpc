@@ -88,6 +88,11 @@ class ServiceConfigCallData {
     call_attributes_.EmplaceBack(value);
   }
 
+  template <typename A>
+  A* GetCallAttribute() const {
+    return static_cast<A*>(GetCallAttribute(A::TypeName()));
+  }
+
   CallAttributeInterface* GetCallAttribute(UniqueTypeName type) const {
     for (CallAttributeInterface* attribute : call_attributes_) {
       if (attribute->type() == type) return attribute;

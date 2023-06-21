@@ -29,18 +29,18 @@ from tests.unit.framework.common import test_constants
 
 @enum.unique
 class Scenario(enum.Enum):
-    UNARY_UNARY = 'unary unary'
-    UNARY_STREAM = 'unary stream'
-    STREAM_UNARY = 'stream unary'
-    STREAM_STREAM = 'stream stream'
-    CONCURRENT_STREAM_UNARY = 'concurrent stream unary'
-    CONCURRENT_STREAM_STREAM = 'concurrent stream stream'
-    CANCEL_UNARY_UNARY = 'cancel unary unary'
-    CANCEL_UNARY_STREAM = 'cancel unary stream'
-    INFINITE_REQUEST_STREAM = 'infinite request stream'
+    UNARY_UNARY = "unary unary"
+    UNARY_STREAM = "unary stream"
+    STREAM_UNARY = "stream unary"
+    STREAM_STREAM = "stream stream"
+    CONCURRENT_STREAM_UNARY = "concurrent stream unary"
+    CONCURRENT_STREAM_STREAM = "concurrent stream stream"
+    CANCEL_UNARY_UNARY = "cancel unary unary"
+    CANCEL_UNARY_STREAM = "cancel unary stream"
+    INFINITE_REQUEST_STREAM = "infinite request stream"
 
 
-class Outcome(collections.namedtuple('Outcome', ('kind', 'code', 'details'))):
+class Outcome(collections.namedtuple("Outcome", ("kind", "code", "details"))):
     """Outcome of a client application scenario.
 
     Attributes:
@@ -51,9 +51,9 @@ class Outcome(collections.namedtuple('Outcome', ('kind', 'code', 'details'))):
 
     @enum.unique
     class Kind(enum.Enum):
-        SATISFACTORY = 'satisfactory'
-        UNSATISFACTORY = 'unsatisfactory'
-        RPC_ERROR = 'rpc error'
+        SATISFACTORY = "satisfactory"
+        UNSATISFACTORY = "unsatisfactory"
+        RPC_ERROR = "rpc error"
 
 
 _SATISFACTORY_OUTCOME = Outcome(Outcome.Kind.SATISFACTORY, None, None)
@@ -61,7 +61,6 @@ _UNSATISFACTORY_OUTCOME = Outcome(Outcome.Kind.UNSATISFACTORY, None, None)
 
 
 class _Pipe(object):
-
     def __init__(self):
         self._condition = threading.Condition()
         self._values = []
@@ -117,9 +116,12 @@ def _run_unary_stream(stub):
 
 def _run_stream_unary(stub):
     response, call = stub.StreUn.with_call(
-        iter((_application_common.STREAM_UNARY_REQUEST,) * 3))
-    if (_application_common.STREAM_UNARY_RESPONSE == response and
-            call.code() is grpc.StatusCode.OK):
+        iter((_application_common.STREAM_UNARY_REQUEST,) * 3)
+    )
+    if (
+        _application_common.STREAM_UNARY_RESPONSE == response
+        and call.code() is grpc.StatusCode.OK
+    ):
         return _SATISFACTORY_OUTCOME
     else:
         return _UNSATISFACTORY_OUTCOME
@@ -139,9 +141,11 @@ def _run_stream_stream(stub):
         unexpected_extra_response = False
     else:
         unexpected_extra_response = True
-    if (first_responses == _application_common.TWO_STREAM_STREAM_RESPONSES and
-            second_responses == _application_common.TWO_STREAM_STREAM_RESPONSES
-            and not unexpected_extra_response):
+    if (
+        first_responses == _application_common.TWO_STREAM_STREAM_RESPONSES
+        and second_responses == _application_common.TWO_STREAM_STREAM_RESPONSES
+        and not unexpected_extra_response
+    ):
         return _SATISFACTORY_OUTCOME
     else:
         return _UNSATISFACTORY_OUTCOME
@@ -149,9 +153,11 @@ def _run_stream_stream(stub):
 
 def _run_concurrent_stream_unary(stub):
     future_calls = tuple(
-        stub.StreUn.future(iter((_application_common.STREAM_UNARY_REQUEST,) *
-                                3))
-        for _ in range(test_constants.THREAD_CONCURRENCY))
+        stub.StreUn.future(
+            iter((_application_common.STREAM_UNARY_REQUEST,) * 3)
+        )
+        for _ in range(test_constants.THREAD_CONCURRENCY)
+    )
     for future_call in future_calls:
         if future_call.code() is grpc.StatusCode.OK:
             response = future_call.result()
@@ -190,7 +196,8 @@ def _run_concurrent_stream_stream(stub):
 
 def _run_cancel_unary_unary(stub):
     response_future_call = stub.UnUn.future(
-        _application_common.UNARY_UNARY_REQUEST)
+        _application_common.UNARY_UNARY_REQUEST
+    )
     initial_metadata = response_future_call.initial_metadata()
     cancelled = response_future_call.cancel()
     if initial_metadata is not None and cancelled:
@@ -200,14 +207,14 @@ def _run_cancel_unary_unary(stub):
 
 
 def _run_infinite_request_stream(stub):
-
     def infinite_request_iterator():
         while True:
             yield _application_common.STREAM_UNARY_REQUEST
 
     response_future_call = stub.StreUn.future(
         infinite_request_iterator(),
-        timeout=_application_common.INFINITE_REQUEST_STREAM_TIMEOUT)
+        timeout=_application_common.INFINITE_REQUEST_STREAM_TIMEOUT,
+    )
     if response_future_call.code() is grpc.StatusCode.DEADLINE_EXCEEDED:
         return _SATISFACTORY_OUTCOME
     else:
@@ -231,5 +238,6 @@ def run(scenario, channel):
     try:
         return _IMPLEMENTATIONS[scenario](stub)
     except grpc.RpcError as rpc_error:
-        return Outcome(Outcome.Kind.RPC_ERROR, rpc_error.code(),
-                       rpc_error.details())
+        return Outcome(
+            Outcome.Kind.RPC_ERROR, rpc_error.code(), rpc_error.details()
+        )

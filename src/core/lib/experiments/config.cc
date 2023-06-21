@@ -24,7 +24,6 @@
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
-#include "absl/strings/ascii.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
@@ -72,12 +71,8 @@ GPR_ATTRIBUTE_NOINLINE Experiments LoadExperimentsFromConfigVariable() {
     }
   }
   // For each comma-separated experiment in the global config:
-  for (auto experiment : absl::StrSplit(
-           absl::string_view(ConfigVars::Get().Experiments()), ',')) {
-    // Strip whitespace.
-    experiment = absl::StripAsciiWhitespace(experiment);
-    // Handle ",," without crashing.
-    if (experiment.empty()) continue;
+  for (auto experiment : absl::StrSplit(ConfigVars::Get().Experiments(), ',',
+                                        absl::SkipWhitespace())) {
     // Enable unless prefixed with '-' (=> disable).
     bool enable = true;
     if (experiment[0] == '-') {
@@ -128,20 +123,29 @@ void PrintExperimentsList() {
         std::max(max_experiment_length, strlen(g_experiment_metadata[i].name));
   }
   for (size_t i = 0; i < kNumExperiments; i++) {
-    gpr_log(GPR_DEBUG, "%s",
-            absl::StrCat(
-                "gRPC EXPERIMENT ", g_experiment_metadata[i].name,
-                std::string(max_experiment_length -
-                                strlen(g_experiment_metadata[i].name) + 1,
-                            ' '),
-                IsExperimentEnabled(i) ? "ON " : "OFF", " (default:",
-                g_experiment_metadata[i].default_value ? "ON" : "OFF",
-                g_forced_experiments[i].forced
-                    ? absl::StrCat(" force:",
-                                   g_forced_experiments[i].value ? "ON" : "OFF")
-                    : std::string(),
-                ")")
-                .c_str());
+    gpr_log(
+        GPR_DEBUG, "%s",
+        absl::StrCat(
+            "gRPC EXPERIMENT ", g_experiment_metadata[i].name,
+            std::string(max_experiment_length -
+                            strlen(g_experiment_metadata[i].name) + 1,
+                        ' '),
+            IsExperimentEnabled(i) ? "ON " : "OFF",
+            " (default:", g_experiment_metadata[i].default_value ? "ON" : "OFF",
+            (g_check_constraints_cb != nullptr
+                 ? absl::StrCat(
+                       " + ", g_experiment_metadata[i].additional_constaints,
+                       " => ",
+                       (*g_check_constraints_cb)(g_experiment_metadata[i])
+                           ? "ON "
+                           : "OFF")
+                 : std::string()),
+            g_forced_experiments[i].forced
+                ? absl::StrCat(" force:",
+                               g_forced_experiments[i].value ? "ON" : "OFF")
+                : std::string(),
+            ")")
+            .c_str());
   }
 }
 

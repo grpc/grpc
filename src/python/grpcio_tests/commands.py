@@ -30,10 +30,10 @@ from setuptools.command import install
 from setuptools.command import test
 
 PYTHON_STEM = os.path.dirname(os.path.abspath(__file__))
-GRPC_STEM = os.path.abspath(PYTHON_STEM + '../../../../')
-GRPC_PROTO_STEM = os.path.join(GRPC_STEM, 'src', 'proto')
-PROTO_STEM = os.path.join(PYTHON_STEM, 'src', 'proto')
-PYTHON_PROTO_TOP_LEVEL = os.path.join(PYTHON_STEM, 'src')
+GRPC_STEM = os.path.abspath(PYTHON_STEM + "../../../../")
+GRPC_PROTO_STEM = os.path.join(GRPC_STEM, "src", "proto")
+PROTO_STEM = os.path.join(PYTHON_STEM, "src", "proto")
+PYTHON_PROTO_TOP_LEVEL = os.path.join(PYTHON_STEM, "src")
 
 
 class CommandError(object):
@@ -41,8 +41,7 @@ class CommandError(object):
 
 
 class GatherProto(setuptools.Command):
-
-    description = 'gather proto dependencies'
+    description = "gather proto dependencies"
     user_options = []
 
     def initialize_options(self):
@@ -61,8 +60,8 @@ class GatherProto(setuptools.Command):
             pass
         shutil.copytree(GRPC_PROTO_STEM, PROTO_STEM)
         for root, _, _ in os.walk(PYTHON_PROTO_TOP_LEVEL):
-            path = os.path.join(root, '__init__.py')
-            open(path, 'a').close()
+            path = os.path.join(root, "__init__.py")
+            open(path, "a").close()
 
 
 class BuildPy(build_py.build_py):
@@ -70,16 +69,16 @@ class BuildPy(build_py.build_py):
 
     def run(self):
         try:
-            self.run_command('build_package_protos')
+            self.run_command("build_package_protos")
         except CommandError as error:
-            sys.stderr.write('warning: %s\n' % error.message)
+            sys.stderr.write("warning: %s\n" % error.message)
         build_py.build_py.run(self)
 
 
 class TestLite(setuptools.Command):
     """Command to run tests without fetching or building anything."""
 
-    description = 'run tests without fetching or building anything.'
+    description = "run tests without fetching or building anything."
     user_options = []
 
     def initialize_options(self):
@@ -93,12 +92,13 @@ class TestLite(setuptools.Command):
         self._add_eggs_to_path()
 
         import tests
+
         loader = tests.Loader()
-        loader.loadTestsFromNames(['tests'])
+        loader.loadTestsFromNames(["tests"])
         runner = tests.Runner(dedicated_threads=True)
         result = runner.run(loader.suite)
         if not result.wasSuccessful():
-            sys.exit('Test failure')
+            sys.exit("Test failure")
 
     def _add_eggs_to_path(self):
         """Fetch install and test requirements"""
@@ -113,7 +113,7 @@ class TestPy3Only(setuptools.Command):
     directory.
     """
 
-    description = 'run tests for py3+ features'
+    description = "run tests for py3+ features"
     user_options = []
 
     def initialize_options(self):
@@ -125,12 +125,13 @@ class TestPy3Only(setuptools.Command):
     def run(self):
         self._add_eggs_to_path()
         import tests
+
         loader = tests.Loader()
-        loader.loadTestsFromNames(['tests_py3_only'])
+        loader.loadTestsFromNames(["tests_py3_only"])
         runner = tests.Runner()
         result = runner.run(loader.suite)
         if not result.wasSuccessful():
-            sys.exit('Test failure')
+            sys.exit("Test failure")
 
     def _add_eggs_to_path(self):
         self.distribution.fetch_build_eggs(self.distribution.install_requires)
@@ -140,7 +141,7 @@ class TestPy3Only(setuptools.Command):
 class TestAio(setuptools.Command):
     """Command to run aio tests without fetching or building anything."""
 
-    description = 'run aio tests without fetching or building anything.'
+    description = "run aio tests without fetching or building anything."
     user_options = []
 
     def initialize_options(self):
@@ -153,15 +154,16 @@ class TestAio(setuptools.Command):
         self._add_eggs_to_path()
 
         import tests
+
         loader = tests.Loader()
-        loader.loadTestsFromNames(['tests_aio'])
+        loader.loadTestsFromNames(["tests_aio"])
         # Even without dedicated threads, the framework will somehow spawn a
         # new thread for tests to run upon. New thread doesn't have event loop
         # attached by default, so initialization is needed.
         runner = tests.Runner(dedicated_threads=False)
         result = runner.run(loader.suite)
         if not result.wasSuccessful():
-            sys.exit('Test failure')
+            sys.exit("Test failure")
 
     def _add_eggs_to_path(self):
         """Fetch install and test requirements"""
@@ -174,67 +176,68 @@ class TestGevent(setuptools.Command):
 
     BANNED_TESTS = (
         # Fork support is not compatible with gevent
-        'fork._fork_interop_test.ForkInteropTest',
+        "fork._fork_interop_test.ForkInteropTest",
         # These tests send a lot of RPCs and are really slow on gevent.  They will
         # eventually succeed, but need to dig into performance issues.
-        'unit._cython._no_messages_server_completion_queue_per_call_test.Test.test_rpcs',
-        'unit._cython._no_messages_single_server_completion_queue_test.Test.test_rpcs',
-        'unit._compression_test',
+        "unit._cython._no_messages_server_completion_queue_per_call_test.Test.test_rpcs",
+        "unit._cython._no_messages_single_server_completion_queue_test.Test.test_rpcs",
+        "unit._compression_test",
         # TODO(https://github.com/grpc/grpc/issues/16890) enable this test
-        'unit._cython._channel_test.ChannelTest.test_multiple_channels_lonely_connectivity',
+        "unit._cython._channel_test.ChannelTest.test_multiple_channels_lonely_connectivity",
         # I have no idea why this doesn't work in gevent, but it shouldn't even be
         # using the c-core
-        'testing._client_test.ClientTest.test_infinite_request_stream_real_time',
+        "testing._client_test.ClientTest.test_infinite_request_stream_real_time",
         # TODO(https://github.com/grpc/grpc/issues/15743) enable this test
-        'unit._session_cache_test.SSLSessionCacheTest.testSSLSessionCacheLRU',
+        "unit._session_cache_test.SSLSessionCacheTest.testSSLSessionCacheLRU",
         # TODO(https://github.com/grpc/grpc/issues/14789) enable this test
-        'unit._server_ssl_cert_config_test',
+        "unit._server_ssl_cert_config_test",
         # TODO(https://github.com/grpc/grpc/issues/14901) enable this test
-        'protoc_plugin._python_plugin_test.PythonPluginTest',
-        'protoc_plugin._python_plugin_test.SimpleStubsPluginTest',
+        "protoc_plugin._python_plugin_test.PythonPluginTest",
+        "protoc_plugin._python_plugin_test.SimpleStubsPluginTest",
         # Beta API is unsupported for gevent
-        'protoc_plugin.beta_python_plugin_test',
-        'unit.beta._beta_features_test',
+        "protoc_plugin.beta_python_plugin_test",
+        "unit.beta._beta_features_test",
         # TODO(https://github.com/grpc/grpc/issues/15411) unpin gevent version
         # This test will stuck while running higher version of gevent
-        'unit._auth_context_test.AuthContextTest.testSessionResumption',
+        "unit._auth_context_test.AuthContextTest.testSessionResumption",
         # TODO(https://github.com/grpc/grpc/issues/15411) enable these tests
-        'unit._channel_ready_future_test.ChannelReadyFutureTest.test_immediately_connectable_channel_connectivity',
+        "unit._channel_ready_future_test.ChannelReadyFutureTest.test_immediately_connectable_channel_connectivity",
         "unit._cython._channel_test.ChannelTest.test_single_channel_lonely_connectivity",
-        'unit._exit_test.ExitTest.test_in_flight_unary_unary_call',
-        'unit._exit_test.ExitTest.test_in_flight_unary_stream_call',
-        'unit._exit_test.ExitTest.test_in_flight_stream_unary_call',
-        'unit._exit_test.ExitTest.test_in_flight_stream_stream_call',
-        'unit._exit_test.ExitTest.test_in_flight_partial_unary_stream_call',
-        'unit._exit_test.ExitTest.test_in_flight_partial_stream_unary_call',
-        'unit._exit_test.ExitTest.test_in_flight_partial_stream_stream_call',
+        "unit._exit_test.ExitTest.test_in_flight_unary_unary_call",
+        "unit._exit_test.ExitTest.test_in_flight_unary_stream_call",
+        "unit._exit_test.ExitTest.test_in_flight_stream_unary_call",
+        "unit._exit_test.ExitTest.test_in_flight_stream_stream_call",
+        "unit._exit_test.ExitTest.test_in_flight_partial_unary_stream_call",
+        "unit._exit_test.ExitTest.test_in_flight_partial_stream_unary_call",
+        "unit._exit_test.ExitTest.test_in_flight_partial_stream_stream_call",
         # TODO(https://github.com/grpc/grpc/issues/18980): Reenable.
-        'unit._signal_handling_test.SignalHandlingTest',
-        'unit._metadata_flags_test',
-        'health_check._health_servicer_test.HealthServicerTest.test_cancelled_watch_removed_from_watch_list',
+        "unit._signal_handling_test.SignalHandlingTest",
+        "unit._metadata_flags_test",
+        "health_check._health_servicer_test.HealthServicerTest.test_cancelled_watch_removed_from_watch_list",
         # TODO(https://github.com/grpc/grpc/issues/17330) enable these three tests
-        'channelz._channelz_servicer_test.ChannelzServicerTest.test_many_subchannels',
-        'channelz._channelz_servicer_test.ChannelzServicerTest.test_many_subchannels_and_sockets',
-        'channelz._channelz_servicer_test.ChannelzServicerTest.test_streaming_rpc',
+        "channelz._channelz_servicer_test.ChannelzServicerTest.test_many_subchannels",
+        "channelz._channelz_servicer_test.ChannelzServicerTest.test_many_subchannels_and_sockets",
+        "channelz._channelz_servicer_test.ChannelzServicerTest.test_streaming_rpc",
         # TODO(https://github.com/grpc/grpc/issues/15411) enable this test
-        'unit._cython._channel_test.ChannelTest.test_negative_deadline_connectivity',
+        "unit._cython._channel_test.ChannelTest.test_negative_deadline_connectivity",
         # TODO(https://github.com/grpc/grpc/issues/15411) enable this test
-        'unit._local_credentials_test.LocalCredentialsTest',
+        "unit._local_credentials_test.LocalCredentialsTest",
         # TODO(https://github.com/grpc/grpc/issues/22020) LocalCredentials
         # aren't supported with custom io managers.
-        'unit._contextvars_propagation_test',
-        'testing._time_test.StrictRealTimeTest',
+        "unit._contextvars_propagation_test",
+        "testing._time_test.StrictRealTimeTest",
     )
     BANNED_WINDOWS_TESTS = (
         # TODO(https://github.com/grpc/grpc/pull/15411) enable this test
-        'unit._dns_resolver_test.DNSResolverTest.test_connect_loopback',
+        "unit._dns_resolver_test.DNSResolverTest.test_connect_loopback",
         # TODO(https://github.com/grpc/grpc/pull/15411) enable this test
-        'unit._server_test.ServerTest.test_failed_port_binding_exception',
+        "unit._server_test.ServerTest.test_failed_port_binding_exception",
     )
     BANNED_MACOS_TESTS = (
         # TODO(https://github.com/grpc/grpc/issues/15411) enable this test
-        'unit._dynamic_stubs_test.DynamicStubTest',)
-    description = 'run tests with gevent.  Assumes grpc/gevent are installed'
+        "unit._dynamic_stubs_test.DynamicStubTest",
+    )
+    description = "run tests with gevent.  Assumes grpc/gevent are installed"
     user_options = []
 
     def initialize_options(self):
@@ -247,6 +250,7 @@ class TestGevent(setuptools.Command):
     def run(self):
         import gevent
         from gevent import monkey
+
         monkey.patch_all()
 
         threadpool = gevent.hub.get_hub().threadpool
@@ -262,38 +266,39 @@ class TestGevent(setuptools.Command):
         import grpc.experimental.gevent
 
         import tests
+
         grpc.experimental.gevent.init_gevent()
 
         import gevent
 
         import tests
+
         loader = tests.Loader()
-        loader.loadTestsFromNames(['tests', 'tests_gevent'])
+        loader.loadTestsFromNames(["tests", "tests_gevent"])
         runner = tests.Runner()
-        if sys.platform == 'win32':
+        if sys.platform == "win32":
             runner.skip_tests(self.BANNED_TESTS + self.BANNED_WINDOWS_TESTS)
-        elif sys.platform == 'darwin':
+        elif sys.platform == "darwin":
             runner.skip_tests(self.BANNED_TESTS + self.BANNED_MACOS_TESTS)
         else:
             runner.skip_tests(self.BANNED_TESTS)
         result = gevent.spawn(runner.run, loader.suite)
         result.join()
         if not result.value.wasSuccessful():
-            sys.exit('Test failure')
+            sys.exit("Test failure")
 
 
 class RunInterop(test.test):
-
-    description = 'run interop test client/server'
+    description = "run interop test client/server"
     user_options = [
-        ('args=', None, 'pass-thru arguments for the client/server'),
-        ('client', None, 'flag indicating to run the client'),
-        ('server', None, 'flag indicating to run the server'),
-        ('use-asyncio', None, 'flag indicating to run the asyncio stack')
+        ("args=", None, "pass-thru arguments for the client/server"),
+        ("client", None, "flag indicating to run the client"),
+        ("server", None, "flag indicating to run the server"),
+        ("use-asyncio", None, "flag indicating to run the asyncio stack"),
     ]
 
     def initialize_options(self):
-        self.args = ''
+        self.args = ""
         self.client = False
         self.server = False
         self.use_asyncio = False
@@ -301,12 +306,14 @@ class RunInterop(test.test):
     def finalize_options(self):
         if self.client and self.server:
             raise _errors.DistutilsOptionError(
-                'you may only specify one of client or server')
+                "you may only specify one of client or server"
+            )
 
     def run(self):
         if self.distribution.install_requires:
             self.distribution.fetch_build_eggs(
-                self.distribution.install_requires)
+                self.distribution.install_requires
+            )
         if self.distribution.tests_require:
             self.distribution.fetch_build_eggs(self.distribution.tests_require)
         if self.client:
@@ -321,10 +328,12 @@ class RunInterop(test.test):
             import asyncio
 
             from tests_aio.interop import server
+
             sys.argv[1:] = self.args.split()
             asyncio.get_event_loop().run_until_complete(server.serve())
         else:
             from tests.interop import server
+
             sys.argv[1:] = self.args.split()
             server.serve()
 
@@ -332,17 +341,17 @@ class RunInterop(test.test):
         # We import here to ensure that our setuptools parent has had a chance to
         # edit the Python system path.
         from tests.interop import client
+
         sys.argv[1:] = self.args.split()
         client.test_interoperability()
 
 
 class RunFork(test.test):
-
-    description = 'run fork test client'
-    user_options = [('args=', 'a', 'pass-thru arguments for the client')]
+    description = "run fork test client"
+    user_options = [("args=", "a", "pass-thru arguments for the client")]
 
     def initialize_options(self):
-        self.args = ''
+        self.args = ""
 
     def finalize_options(self):
         # distutils requires this override.
@@ -351,11 +360,13 @@ class RunFork(test.test):
     def run(self):
         if self.distribution.install_requires:
             self.distribution.fetch_build_eggs(
-                self.distribution.install_requires)
+                self.distribution.install_requires
+            )
         if self.distribution.tests_require:
             self.distribution.fetch_build_eggs(self.distribution.tests_require)
         # We import here to ensure that our setuptools parent has had a chance to
         # edit the Python system path.
         from tests.fork import client
+
         sys.argv[1:] = self.args.split()
         client.test_fork()

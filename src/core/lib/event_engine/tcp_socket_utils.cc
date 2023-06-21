@@ -36,6 +36,10 @@
 #include <sys/un.h>
 #endif
 
+#ifdef GRPC_HAVE_VSOCK
+#include <linux/vm_sockets.h>
+#endif
+
 #include <errno.h>
 #include <inttypes.h>
 #include <stdlib.h>
@@ -70,6 +74,10 @@ absl::StatusOr<std::string> GetScheme(
       return "ipv6";
     case AF_UNIX:
       return "unix";
+#ifdef GRPC_HAVE_VSOCK
+    case AF_VSOCK:
+      return "vsock";
+#endif
     default:
       return absl::InvalidArgumentError(
           absl::StrFormat("Unknown sockaddr family: %d",
@@ -139,6 +147,39 @@ absl::StatusOr<std::string> ResolvedAddrToUnixPathIfPossible(
 absl::StatusOr<std::string> ResolvedAddrToUriUnixIfPossible(
     const EventEngine::ResolvedAddress* /*resolved_addr*/) {
   return absl::InvalidArgumentError("Unix socket is not supported.");
+}
+#endif
+
+#ifdef GRPC_HAVE_VSOCK
+absl::StatusOr<std::string> ResolvedAddrToVsockPathIfPossible(
+    const EventEngine::ResolvedAddress* resolved_addr) {
+  const sockaddr* addr = resolved_addr->address();
+  if (addr->sa_family != AF_VSOCK) {
+    return absl::InvalidArgumentError(
+        absl::StrCat("Socket family is not AF_VSOCK: ", addr->sa_family));
+  }
+  const sockaddr_vm* vm_addr = reinterpret_cast<const sockaddr_vm*>(addr);
+  return absl::StrCat(vm_addr->svm_cid, ":", vm_addr->svm_port);
+}
+
+absl::StatusOr<std::string> ResolvedAddrToUriVsockIfPossible(
+    const EventEngine::ResolvedAddress* resolved_addr) {
+  auto path = ResolvedAddrToVsockPathIfPossible(resolved_addr);
+  absl::StatusOr<grpc_core::URI> uri =
+      grpc_core::URI::Create("vsock", /*authority=*/"", std::move(*path),
+                             /*query_parameter_pairs=*/{}, /*fragment=*/"");
+  if (!uri.ok()) return uri.status();
+  return uri->ToString();
+}
+#else
+absl::StatusOr<std::string> ResolvedAddrToVsockPathIfPossible(
+    const EventEngine::ResolvedAddress* /*resolved_addr*/) {
+  return absl::InvalidArgumentError("VSOCK is not supported.");
+}
+
+absl::StatusOr<std::string> ResolvedAddrToUriVsockIfPossible(
+    const EventEngine::ResolvedAddress* /*resolved_addr*/) {
+  return absl::InvalidArgumentError("VSOCK is not supported.");
 }
 #endif
 
@@ -233,6 +274,10 @@ int ResolvedAddressGetPort(const EventEngine::ResolvedAddress& resolved_addr) {
     case AF_UNIX:
       return 1;
 #endif
+#ifdef GRPC_HAVE_VSOCK
+    case AF_VSOCK:
+      return 1;
+#endif
     default:
       gpr_log(GPR_ERROR, "Unknown socket family %d in ResolvedAddressGetPort",
               addr->sa_family);
@@ -292,6 +337,15 @@ absl::optional<int> ResolvedAddressIsWildcard(
   }
 }
 
+bool ResolvedAddressIsVSock(const EventEngine::ResolvedAddress& resolved_addr) {
+#ifdef GRPC_HAVE_VSOCK
+  return resolved_addr.address()->sa_family == AF_VSOCK;
+#else
+  (void)resolved_addr;
+  return false;
+#endif
+}
+
 absl::StatusOr<std::string> ResolvedAddressToNormalizedString(
     const EventEngine::ResolvedAddress& resolved_addr) {
   EventEngine::ResolvedAddress addr_normalized;
@@ -311,6 +365,10 @@ absl::StatusOr<std::string> ResolvedAddressToString(
     return ResolvedAddrToUnixPathIfPossible(&resolved_addr);
   }
 #endif  // GRPC_HAVE_UNIX_SOCKET
+
+  if (ResolvedAddressIsVSock(resolved_addr)) {
+    return ResolvedAddrToVsockPathIfPossible(&resolved_addr);
+  }
 
   const void* ip = nullptr;
   int port = 0;
@@ -361,6 +419,9 @@ absl::StatusOr<std::string> ResolvedAddressToURI(
   GRPC_RETURN_IF_ERROR(scheme.status());
   if (*scheme == "unix") {
     return ResolvedAddrToUriUnixIfPossible(&addr);
+  }
+  if (*scheme == "vsock") {
+    return ResolvedAddrToUriVsockIfPossible(&addr);
   }
   auto path = ResolvedAddressToString(addr);
   GRPC_RETURN_IF_ERROR(path.status());

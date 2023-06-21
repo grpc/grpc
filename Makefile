@@ -375,7 +375,7 @@ LDFLAGS += -pthread
 endif
 
 ifeq ($(SYSTEM),MINGW32)
-LIBS = m pthread ws2_32 dbghelp bcrypt
+LIBS = m pthread ws2_32 iphlpapi dbghelp bcrypt
 LDFLAGS += -pthread
 endif
 
@@ -410,9 +410,9 @@ E = @echo
 Q = @
 endif
 
-CORE_VERSION = 32.0.0
-CPP_VERSION = 1.56.0-dev
-CSHARP_VERSION = 2.56.0-dev
+CORE_VERSION = 33.0.0
+CPP_VERSION = 1.57.0-dev
+CSHARP_VERSION = 2.57.0-dev
 
 CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
 CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
@@ -448,7 +448,7 @@ SHARED_EXT_CORE = dll
 SHARED_EXT_CPP = dll
 SHARED_EXT_CSHARP = dll
 SHARED_PREFIX =
-SHARED_VERSION_CORE = -32
+SHARED_VERSION_CORE = -33
 SHARED_VERSION_CPP = -1
 SHARED_VERSION_CSHARP = -2
 else ifeq ($(SYSTEM),Darwin)
@@ -826,8 +826,8 @@ $(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE):
 ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBADDRESS_SORTING_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libaddress_sorting.so.32 -o $(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBADDRESS_SORTING_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE).so.32
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libaddress_sorting.so.33 -o $(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBADDRESS_SORTING_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE).so.33
 	$(Q) ln -sf $(SHARED_PREFIX)address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE).so
 endif
 endif
@@ -948,8 +948,8 @@ $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGPR_OB
 ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGPR_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgpr.so.32 -o $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGPR_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).so.32
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgpr.so.33 -o $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGPR_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).so.33
 	$(Q) ln -sf $(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).so
 endif
 endif
@@ -1562,6 +1562,7 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/timer_manager.cc \
     src/core/lib/iomgr/unix_sockets_posix.cc \
     src/core/lib/iomgr/unix_sockets_posix_noop.cc \
+    src/core/lib/iomgr/vsock.cc \
     src/core/lib/iomgr/wakeup_fd_eventfd.cc \
     src/core/lib/iomgr/wakeup_fd_nospecial.cc \
     src/core/lib/iomgr/wakeup_fd_pipe.cc \
@@ -1834,8 +1835,8 @@ $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_
 ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc.so.32 -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so.32
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc.so.33 -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so.33
 	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so
 endif
 endif
@@ -2117,6 +2118,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/timer_manager.cc \
     src/core/lib/iomgr/unix_sockets_posix.cc \
     src/core/lib/iomgr/unix_sockets_posix_noop.cc \
+    src/core/lib/iomgr/vsock.cc \
     src/core/lib/iomgr/wakeup_fd_eventfd.cc \
     src/core/lib/iomgr/wakeup_fd_nospecial.cc \
     src/core/lib/iomgr/wakeup_fd_pipe.cc \
@@ -2321,8 +2323,8 @@ $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $
 ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_UNSECURE_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_unsecure.so.32 -o $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_UNSECURE_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).so.32
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_unsecure.so.33 -o $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_UNSECURE_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).so.33
 	$(Q) ln -sf $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).so
 endif
 endif
@@ -2749,8 +2751,8 @@ $(LIBDIR)/$(CONFIG)/libupb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBUPB_OB
 ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libupb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libupb.so.32 -o $(LIBDIR)/$(CONFIG)/libupb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb$(SHARED_VERSION_CORE).so.32
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libupb.so.33 -o $(LIBDIR)/$(CONFIG)/libupb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb$(SHARED_VERSION_CORE).so.33
 	$(Q) ln -sf $(SHARED_PREFIX)upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb$(SHARED_VERSION_CORE).so
 endif
 endif
@@ -2805,62 +2807,66 @@ endif
 
 # start of build recipe for library "ares" (generated by makelib(lib) template function)
 LIBARES_SRC = \
-    third_party/cares/cares/src/lib/ares_init.c \
-    third_party/cares/cares/src/lib/ares_expand_string.c \
-    third_party/cares/cares/src/lib/ares_strcasecmp.c \
-    third_party/cares/cares/src/lib/ares_destroy.c \
-    third_party/cares/cares/src/lib/ares_free_string.c \
-    third_party/cares/cares/src/lib/ares__timeval.c \
-    third_party/cares/cares/src/lib/ares_library_init.c \
-    third_party/cares/cares/src/lib/ares_getsock.c \
-    third_party/cares/cares/src/lib/ares_process.c \
-    third_party/cares/cares/src/lib/ares_create_query.c \
-    third_party/cares/cares/src/lib/ares_fds.c \
-    third_party/cares/cares/src/lib/ares_gethostbyname.c \
-    third_party/cares/cares/src/lib/ares_mkquery.c \
-    third_party/cares/cares/src/lib/ares_freeaddrinfo.c \
-    third_party/cares/cares/src/lib/ares_strdup.c \
-    third_party/cares/cares/src/lib/ares_timeout.c \
-    third_party/cares/cares/src/lib/ares_getnameinfo.c \
-    third_party/cares/cares/src/lib/ares_parse_soa_reply.c \
-    third_party/cares/cares/src/lib/ares_parse_naptr_reply.c \
-    third_party/cares/cares/src/lib/ares_parse_a_reply.c \
-    third_party/cares/cares/src/lib/ares_send.c \
-    third_party/cares/cares/src/lib/ares_nowarn.c \
-    third_party/cares/cares/src/lib/ares__sortaddrinfo.c \
-    third_party/cares/cares/src/lib/ares_android.c \
-    third_party/cares/cares/src/lib/ares_strerror.c \
-    third_party/cares/cares/src/lib/ares_parse_caa_reply.c \
-    third_party/cares/cares/src/lib/ares__close_sockets.c \
-    third_party/cares/cares/src/lib/ares_llist.c \
-    third_party/cares/cares/src/lib/ares_parse_aaaa_reply.c \
-    third_party/cares/cares/src/lib/ares_getaddrinfo.c \
-    third_party/cares/cares/src/lib/ares_parse_ns_reply.c \
-    third_party/cares/cares/src/lib/windows_port.c \
-    third_party/cares/cares/src/lib/bitncmp.c \
-    third_party/cares/cares/src/lib/ares_strsplit.c \
-    third_party/cares/cares/src/lib/ares_data.c \
-    third_party/cares/cares/src/lib/ares_free_hostent.c \
-    third_party/cares/cares/src/lib/ares_platform.c \
-    third_party/cares/cares/src/lib/ares_parse_txt_reply.c \
-    third_party/cares/cares/src/lib/ares__parse_into_addrinfo.c \
-    third_party/cares/cares/src/lib/ares_gethostbyaddr.c \
-    third_party/cares/cares/src/lib/ares_parse_srv_reply.c \
-    third_party/cares/cares/src/lib/ares_version.c \
-    third_party/cares/cares/src/lib/ares_getenv.c \
-    third_party/cares/cares/src/lib/ares_search.c \
-    third_party/cares/cares/src/lib/ares_parse_mx_reply.c \
-    third_party/cares/cares/src/lib/ares__get_hostent.c \
-    third_party/cares/cares/src/lib/ares__readaddrinfo.c \
-    third_party/cares/cares/src/lib/ares_parse_ptr_reply.c \
     third_party/cares/cares/src/lib/ares__read_line.c \
-    third_party/cares/cares/src/lib/ares_query.c \
-    third_party/cares/cares/src/lib/ares_options.c \
-    third_party/cares/cares/src/lib/inet_net_pton.c \
-    third_party/cares/cares/src/lib/ares_expand_name.c \
-    third_party/cares/cares/src/lib/inet_ntop.c \
+    third_party/cares/cares/src/lib/ares__get_hostent.c \
+    third_party/cares/cares/src/lib/ares__close_sockets.c \
+    third_party/cares/cares/src/lib/ares__timeval.c \
+    third_party/cares/cares/src/lib/ares_gethostbyaddr.c \
+    third_party/cares/cares/src/lib/ares_getenv.c \
+    third_party/cares/cares/src/lib/ares_free_string.c \
+    third_party/cares/cares/src/lib/ares_free_hostent.c \
+    third_party/cares/cares/src/lib/ares_fds.c \
+    third_party/cares/cares/src/lib/ares_expand_string.c \
+    third_party/cares/cares/src/lib/ares_create_query.c \
     third_party/cares/cares/src/lib/ares_cancel.c \
+    third_party/cares/cares/src/lib/ares_android.c \
+    third_party/cares/cares/src/lib/ares_parse_txt_reply.c \
+    third_party/cares/cares/src/lib/ares_parse_srv_reply.c \
+    third_party/cares/cares/src/lib/ares_parse_soa_reply.c \
+    third_party/cares/cares/src/lib/ares_parse_ptr_reply.c \
+    third_party/cares/cares/src/lib/ares_parse_ns_reply.c \
+    third_party/cares/cares/src/lib/ares_parse_naptr_reply.c \
+    third_party/cares/cares/src/lib/ares_parse_mx_reply.c \
+    third_party/cares/cares/src/lib/ares_parse_caa_reply.c \
+    third_party/cares/cares/src/lib/ares_options.c \
+    third_party/cares/cares/src/lib/ares_nowarn.c \
+    third_party/cares/cares/src/lib/ares_mkquery.c \
+    third_party/cares/cares/src/lib/ares_llist.c \
+    third_party/cares/cares/src/lib/ares_getsock.c \
+    third_party/cares/cares/src/lib/ares_getnameinfo.c \
+    third_party/cares/cares/src/lib/bitncmp.c \
     third_party/cares/cares/src/lib/ares_writev.c \
+    third_party/cares/cares/src/lib/ares_version.c \
+    third_party/cares/cares/src/lib/ares_timeout.c \
+    third_party/cares/cares/src/lib/ares_strerror.c \
+    third_party/cares/cares/src/lib/ares_strcasecmp.c \
+    third_party/cares/cares/src/lib/ares_search.c \
+    third_party/cares/cares/src/lib/ares_platform.c \
+    third_party/cares/cares/src/lib/windows_port.c \
+    third_party/cares/cares/src/lib/inet_ntop.c \
+    third_party/cares/cares/src/lib/ares__sortaddrinfo.c \
+    third_party/cares/cares/src/lib/ares__readaddrinfo.c \
+    third_party/cares/cares/src/lib/ares_parse_uri_reply.c \
+    third_party/cares/cares/src/lib/ares__parse_into_addrinfo.c \
+    third_party/cares/cares/src/lib/ares_parse_a_reply.c \
+    third_party/cares/cares/src/lib/ares_parse_aaaa_reply.c \
+    third_party/cares/cares/src/lib/ares_library_init.c \
+    third_party/cares/cares/src/lib/ares_init.c \
+    third_party/cares/cares/src/lib/ares_gethostbyname.c \
+    third_party/cares/cares/src/lib/ares_getaddrinfo.c \
+    third_party/cares/cares/src/lib/ares_freeaddrinfo.c \
+    third_party/cares/cares/src/lib/ares_expand_name.c \
+    third_party/cares/cares/src/lib/ares_destroy.c \
+    third_party/cares/cares/src/lib/ares_data.c \
+    third_party/cares/cares/src/lib/ares__addrinfo_localhost.c \
+    third_party/cares/cares/src/lib/ares__addrinfo2hostent.c \
+    third_party/cares/cares/src/lib/inet_net_pton.c \
+    third_party/cares/cares/src/lib/ares_strsplit.c \
+    third_party/cares/cares/src/lib/ares_strdup.c \
+    third_party/cares/cares/src/lib/ares_send.c \
+    third_party/cares/cares/src/lib/ares_rand.c \
+    third_party/cares/cares/src/lib/ares_query.c \
+    third_party/cares/cares/src/lib/ares_process.c \
 
 
 LIBARES_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBARES_SRC))))
