@@ -235,8 +235,8 @@ static bool g_enable_fork_support;
 static long sys_gettid() { return syscall(__NR_gettid); }
 static bool can_enable_fork_support() { return true; }
 #else
-static long sys_gettid(){return 0};
-static bool can_enable_fork_support(){return false};
+static long sys_gettid() { return 0; }
+static bool can_enable_fork_support() { return false; }
 #endif
 
 #if GPR_WINDOWS
