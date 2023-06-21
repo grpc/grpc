@@ -26,6 +26,7 @@
 
 #include <grpc/grpc.h>
 
+#include "src/core/ext/filters/client_channel/client_channel_internal.h"
 #include "src/core/ext/xds/certificate_provider_store.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_client.h"
@@ -63,7 +64,7 @@ class GrpcXdsClient : public XdsClient {
 
   // Helpers for encoding the XdsClient object in channel args.
   static absl::string_view ChannelArgName() {
-    return "grpc.internal.xds_client";
+    return GRPC_ARG_NO_SUBCHANNEL_PREFIX "xds_client";
   }
   static int ChannelArgsCompare(const XdsClient* a, const XdsClient* b) {
     return QsortCompare(a, b);

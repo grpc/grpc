@@ -3562,6 +3562,7 @@ grpc_cc_library(
     visibility = ["@grpc:grpclb"],
     deps = [
         "gpr_platform",
+        "grpc_client_channel",
         "grpc_public_hdrs",
         "server_address",
         "//src/core:channel_args",

@@ -22,11 +22,13 @@
 
 #include <utility>
 
+#include "src/core/ext/filters/client_channel/client_channel_internal.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/useful.h"
 
 // Channel arg key for the list of balancer addresses.
-#define GRPC_ARG_GRPCLB_BALANCER_ADDRESSES "grpc.grpclb_balancer_addresses"
+#define GRPC_ARG_GRPCLB_BALANCER_ADDRESSES \
+  GRPC_ARG_NO_SUBCHANNEL_PREFIX "grpc.grpclb_balancer_addresses"
 
 namespace grpc_core {
 
