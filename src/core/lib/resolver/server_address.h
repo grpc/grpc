@@ -83,6 +83,14 @@ class ServerAddress {
   const grpc_resolved_address& address() const { return address_; }
   const ChannelArgs& args() const { return args_; }
 
+  std::map<const char*, std::unique_ptr<AttributeInterface>> attributes() const {
+    std::map<const char*, std::unique_ptr<AttributeInterface>> attributes;
+    for (const auto& p : attributes_) {
+      attributes[p.first] = p.second->Copy();
+    }
+    return attributes;
+  }
+
   const AttributeInterface* GetAttribute(const char* key) const;
 
   // Returns a copy of the address with a modified attribute.

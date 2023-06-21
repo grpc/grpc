@@ -775,18 +775,19 @@ ServerAddressList XdsClusterResolverLb::CreateChildPolicyAddressesLocked() {
           if (weight_attribute != nullptr) {
             weight = locality.lb_weight * weight_attribute->weight();
           }
+          std::map<const char*,
+                   std::unique_ptr<ServerAddress::AttributeInterface>>
+              attributes;
+          attributes[kXdsLocalityNameAttributeKey] =
+               std::make_unique<XdsLocalityAttribute>(
+                   locality_name->Ref(), locality.lb_weight);
+          attributes[ServerAddressWeightAttribute::kServerAddressWeightAttributeKey]
+          = std::make_unique<ServerAddressWeightAttribute>(weight);
           addresses.emplace_back(
-              endpoint
-                  .WithAttribute(
-                      kHierarchicalPathAttributeKey,
-                      MakeHierarchicalPathAttribute(hierarchical_path))
-                  .WithAttribute(kXdsLocalityNameAttributeKey,
-                                 std::make_unique<XdsLocalityAttribute>(
-                                     locality_name->Ref(), locality.lb_weight))
-                  .WithAttribute(
-                      ServerAddressWeightAttribute::
-                          kServerAddressWeightAttributeKey,
-                      std::make_unique<ServerAddressWeightAttribute>(weight)));
+              endpoint.address(),
+              endpoint.args().SetObject(
+                  MakeRefCounted<HierarchicalPathArg>(hierarchical_path)),
+              std::move(attributes));
         }
       }
     }

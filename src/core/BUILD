@@ -4539,6 +4539,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "//:gpr_platform",
+        "//:grpc_client_channel",
         "//:server_address",
     ],
 )
