@@ -44,6 +44,11 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#ifdef GPR_LINUX
+#include <sys/syscall.h>
+#include <unistd.h>
+#endif
+
 static VALUE grpc_rb_cTimeVal = Qnil;
 
 static rb_data_type_t grpc_rb_timespec_data_type = {
@@ -226,28 +231,22 @@ static void Init_grpc_time_consts() {
 
 static bool g_enable_fork_support;
 
+#ifdef GPR_LINUX
+static long sys_gettid() { return syscall(__NR_gettid); }
+static bool can_enable_fork_support() { return true; }
+#else
+static long sys_gettid(){return 0};
+static bool can_enable_fork_support(){return false};
+#endif
+
 #if GPR_WINDOWS
 static void grpc_ruby_basic_init(void) {}
 static bool grpc_ruby_initial_pid(void) { return true; }
 static bool grpc_ruby_initial_thread(void) { return true; }
-static bool grpc_ruby_reset_init_state(void) {}
+static void grpc_ruby_reset_init_state(void) {}
 #else
 static pid_t g_init_pid;
-static pid_t g_init_tid;
-
-static void grpc_ruby_basic_init(void) {
-  GPR_ASSERT(g_init_pid == 0);
-  g_init_pid = getpid();
-  GPR_ASSERT(g_init_tid == 0);
-  g_init_tid = gettid();
-  // TODO(apolcyn): ideally, we should share logic with C-core
-  // for determining whether or not fork support is enabled, rather
-  // than parsing the environment variable ourselves.
-  const char* res = getenv("GRPC_ENABLE_FORK_SUPPORT");
-  if (res != NULL && strcmp(res, "1") == 0) {
-    g_enable_fork_support = true;
-  }
-}
+static long g_init_tid;
 
 static bool grpc_ruby_initial_pid(void) {
   GPR_ASSERT(g_init_pid != 0);
@@ -259,9 +258,22 @@ static bool grpc_ruby_initial_thread(void) {
   return gettid() == g_init_tid;
 }
 
-static bool grpc_ruby_reset_init_state(void) {
+static void grpc_ruby_reset_init_state(void) {
   g_init_pid = getpid();
-  g_init_tid = gettid();
+  g_init_tid = sys_gettid();
+}
+
+static void grpc_ruby_basic_init(void) {
+  GPR_ASSERT(g_init_pid == 0);
+  GPR_ASSERT(g_init_tid == 0);
+  grpc_ruby_reset_init_state();
+  // TODO(apolcyn): ideally, we should share logic with C-core
+  // for determining whether or not fork support is enabled, rather
+  // than parsing the environment variable ourselves.
+  const char* res = getenv("GRPC_ENABLE_FORK_SUPPORT");
+  if (res != NULL && strcmp(res, "1") == 0) {
+    g_enable_fork_support = can_enable_fork_support();
+  }
 }
 #endif
 
@@ -303,7 +315,7 @@ void grpc_ruby_fork_guard() {
       rb_raise(rb_eRuntimeError,
                "grpc cannot be used before and after forking unless the "
                "GRPC_ENABLE_FORK_SUPPORT env var is set to \"1\" and the "
-               "platform supports it");
+               "platform supports it (linux only)");
     }
   }
 }
