@@ -15,21 +15,20 @@
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test")
 
 grpc_cc_library(
-    name = "test_experiments_lib",
+    name = "experiments_lib",
     srcs = [
-        "test_experiments.cc",
+        "experiments.cc",
         "//src/core:lib/experiments/config.cc",
     ],
     hdrs = [
-        "test_experiments.h",
+        "experiments.h",
         "//src/core:lib/experiments/config.h",
     ],
-    defines = select({
+    defines = ["GRPC_EXPERIMENTS_TEST_FIXTURE"] + select({
         "//:grpc_experiments_are_final": [
             "GRPC_EXPERIMENTS_ARE_FINAL",
-            "GRPC_EXPERIMENTS_TEST_FIXTURE",
         ],
-        "//conditions:default": ["GRPC_EXPERIMENTS_TEST_FIXTURE"],
+        "//conditions:default": [],
     }),
     external_deps = [
         "absl/functional:any_invocable",
@@ -51,7 +50,7 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        ":test_experiments_lib",
+        ":experiments_lib",
         "//test/core/util:grpc_test_util",
     ],
 )

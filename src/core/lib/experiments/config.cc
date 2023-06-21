@@ -34,7 +34,7 @@
 #ifndef GRPC_EXPERIMENTS_TEST_FIXTURE
 #include "src/core/lib/experiments/experiments.h"
 #else
-#include "test/core/experiments/test_experiments.h"
+#include "test/core/experiments/experiments.h"
 #endif
 #include "src/core/lib/gprpp/crash.h"  // IWYU pragma: keep
 #include "src/core/lib/gprpp/no_destruct.h"

@@ -16,7 +16,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "test/core/experiments/test_experiments.h"
+#include "test/core/experiments/experiments.h"
 
 #ifndef GRPC_EXPERIMENTS_ARE_FINAL
 namespace {

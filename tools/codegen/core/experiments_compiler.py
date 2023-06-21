@@ -68,7 +68,7 @@ def _EXPERIMENTS_TEST_SKELETON(defs, test_body):
     return f"""
 #include <grpc/support/port_platform.h>
 
-#include "test/core/experiments/test_experiments.h"
+#include "test/core/experiments/experiments.h"
 #include "gtest/gtest.h"
 
 #ifndef GRPC_EXPERIMENTS_ARE_FINAL
