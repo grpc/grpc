@@ -231,57 +231,6 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
             return self._api_gke_mesh
         raise NotImplementedError(f"{kind} {api_version} not implemented.")
 
-    @staticmethod
-    def _create_from_dict_custom_object(
-        custom_objects_api, yml_object, verbose=False, **kwargs
-    ):
-        """Based on utils.create_from_yaml_single_item()"""
-        group, _, version = yml_object["apiVersion"].partition("/")
-        if not version or not group:
-            raise AttributeError(
-                "Version and group are required to create k8s custom objects"
-            )
-        # Take care for the case e.g. api_type is "apiextensions.k8s.io".
-        group = group.removesuffix(".k8s.io")
-
-        if "namespace" not in yml_object["metadata"]:
-            raise AttributeError("Expected k8s namespace name in yml_object.")
-
-        namespace = yml_object["metadata"]["namespace"]
-        kwargs["namespace"] = namespace
-
-        resp = custom_objects_api.create_namespaced_custom_object(
-            group=group,
-            version=version,
-            plural="crontabs",
-            body=yml_object,
-            **kwargs,
-        )
-
-        k8s_api = custom_objects_api or k8s_client.CustomObjectsApi()
-        # Replace CamelCased action_type into snake_case
-        kind = yml_object["kind"]
-        kind = utils.create_from_yaml.UPPER_FOLLOWED_BY_LOWER_RE.sub(
-            r"\1_\2", kind
-        )
-        kind = utils.create_from_yaml.LOWER_OR_NUM_FOLLOWED_BY_UPPER_RE.sub(
-            r"\1_\2", kind
-        ).lower()
-
-        if "namespace" in yml_object["metadata"]:
-            namespace = yml_object["metadata"]["namespace"]
-            kwargs["namespace"] = namespace
-        resp = k8s_api.create_namespaced_custom_object(
-            body=yml_object, **kwargs
-        )
-
-        if verbose:
-            msg = "{0} created.".format(kind)
-            if hasattr(resp, "status"):
-                msg += " status='{0}'".format(str(resp.status))
-            print(msg)
-        return resp
-
     def _get_resource(self, method: Callable[[Any], object], *args, **kwargs):
         try:
             return self._execute(method, *args, **kwargs)
