@@ -328,8 +328,10 @@ static void grpc_ruby_init_threads() {
   // in gpr_once_init. In general, it appears to be unsafe to call
   // into the ruby library while holding a non-ruby mutex, because a gil yield
   // could end up trying to lock onto that same mutex and deadlocking.
+  gpr_log(GPR_INFO,
+          "GRPC_RUBY: grpc_ruby_init_threads g_bg_thread_init_done=%d",
+          g_bg_thread_init_done);
   if (!g_bg_thread_init_done) {
-    fprintf(stderr, "apolcyn re-creating ruby threads\n");
     grpc_rb_event_queue_thread_start();
     grpc_rb_channel_polling_thread_start();
     g_bg_thread_init_done = true;
@@ -339,7 +341,6 @@ static void grpc_ruby_init_threads() {
 static int64_t g_grpc_ruby_init_count;
 
 void grpc_ruby_init() {
-  fprintf(stderr, "apolcyn in grpc ruby init\n");
   gpr_once_init(&g_once_init, grpc_ruby_basic_init);
   grpc_ruby_fork_guard();
   grpc_init();
@@ -421,9 +422,9 @@ static VALUE grpc_rb_postfork_child(VALUE self) {
              "GRPC.postfork_child must be called only from the child process "
              "after a fork");
   }
-  g_grpc_rb_prefork_pending = false;
   grpc_ruby_reset_init_state();
   grpc_ruby_init_threads();
+  g_grpc_rb_prefork_pending = false;
   return Qnil;
 }
 
@@ -444,8 +445,8 @@ static VALUE grpc_rb_postfork_parent(VALUE self) {
              "GRPC.postfork_parent must be called only from the parent process "
              "after a fork");
   }
-  g_grpc_rb_prefork_pending = false;
   grpc_ruby_init_threads();
+  g_grpc_rb_prefork_pending = false;
   return Qnil;
 }
 
