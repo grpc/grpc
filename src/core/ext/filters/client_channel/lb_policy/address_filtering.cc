@@ -23,7 +23,6 @@
 #include <algorithm>
 #include <utility>
 
-#include "src/core/ext/filters/client_channel/client_channel_internal.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 

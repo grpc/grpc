@@ -222,11 +222,11 @@ absl::optional<ServerAddress> ServerAddressParse(
   // Convert to ServerAddress.
   std::map<const char*, std::unique_ptr<ServerAddress::AttributeInterface>>
       attributes;
-  attributes[ServerAddressWeightAttribute::kServerAddressWeightAttributeKey] =
-      std::make_unique<ServerAddressWeightAttribute>(weight);
   attributes[XdsEndpointHealthStatusAttribute::kKey] =
       std::make_unique<XdsEndpointHealthStatusAttribute>(*status);
-  return ServerAddress(grpc_address, ChannelArgs(), std::move(attributes));
+  return ServerAddress(grpc_address,
+                       ChannelArgs().Set(GRPC_ARG_ADDRESS_WEIGHT, weight),
+                       std::move(attributes));
 }
 
 struct ParsedLocality {

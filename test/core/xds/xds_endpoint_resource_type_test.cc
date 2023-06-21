@@ -161,12 +161,7 @@ TEST_F(XdsEndpointTest, MinimumValidConfig) {
   auto addr = grpc_sockaddr_to_string(&address.address(), /*normalize=*/false);
   ASSERT_TRUE(addr.ok()) << addr.status();
   EXPECT_EQ(*addr, "127.0.0.1:443");
-  EXPECT_EQ(address.args(), ChannelArgs());
-  const auto* attribute =
-      static_cast<const ServerAddressWeightAttribute*>(address.GetAttribute(
-          ServerAddressWeightAttribute::kServerAddressWeightAttributeKey));
-  ASSERT_NE(attribute, nullptr);
-  EXPECT_EQ(attribute->weight(), 1);
+  EXPECT_EQ(address.args(), ChannelArgs().Set(GRPC_ARG_ADDRESS_WEIGHT, 1));
   ASSERT_NE(resource.drop_config, nullptr);
   EXPECT_TRUE(resource.drop_config->drop_category_list().empty());
 }
@@ -209,12 +204,7 @@ TEST_F(XdsEndpointTest, EndpointWeight) {
   auto addr = grpc_sockaddr_to_string(&address.address(), /*normalize=*/false);
   ASSERT_TRUE(addr.ok()) << addr.status();
   EXPECT_EQ(*addr, "127.0.0.1:443");
-  EXPECT_EQ(address.args(), ChannelArgs());
-  const auto* attribute =
-      static_cast<const ServerAddressWeightAttribute*>(address.GetAttribute(
-          ServerAddressWeightAttribute::kServerAddressWeightAttributeKey));
-  ASSERT_NE(attribute, nullptr);
-  EXPECT_EQ(attribute->weight(), 3);
+  EXPECT_EQ(address.args(), ChannelArgs().Set(GRPC_ARG_ADDRESS_WEIGHT, 3));
   ASSERT_NE(resource.drop_config, nullptr);
   EXPECT_TRUE(resource.drop_config->drop_category_list().empty());
 }
@@ -259,12 +249,7 @@ TEST_F(XdsEndpointTest, IgnoresLocalityWithNoWeight) {
   auto addr = grpc_sockaddr_to_string(&address.address(), /*normalize=*/false);
   ASSERT_TRUE(addr.ok()) << addr.status();
   EXPECT_EQ(*addr, "127.0.0.1:443");
-  EXPECT_EQ(address.args(), ChannelArgs());
-  const auto* attribute =
-      static_cast<const ServerAddressWeightAttribute*>(address.GetAttribute(
-          ServerAddressWeightAttribute::kServerAddressWeightAttributeKey));
-  ASSERT_NE(attribute, nullptr);
-  EXPECT_EQ(attribute->weight(), 1);
+  EXPECT_EQ(address.args(), ChannelArgs().Set(GRPC_ARG_ADDRESS_WEIGHT, 1));
   ASSERT_NE(resource.drop_config, nullptr);
   EXPECT_TRUE(resource.drop_config->drop_category_list().empty());
 }
@@ -310,12 +295,7 @@ TEST_F(XdsEndpointTest, IgnoresLocalityWithZeroWeight) {
   auto addr = grpc_sockaddr_to_string(&address.address(), /*normalize=*/false);
   ASSERT_TRUE(addr.ok()) << addr.status();
   EXPECT_EQ(*addr, "127.0.0.1:443");
-  EXPECT_EQ(address.args(), ChannelArgs());
-  const auto* attribute =
-      static_cast<const ServerAddressWeightAttribute*>(address.GetAttribute(
-          ServerAddressWeightAttribute::kServerAddressWeightAttributeKey));
-  ASSERT_NE(attribute, nullptr);
-  EXPECT_EQ(attribute->weight(), 1);
+  EXPECT_EQ(address.args(), ChannelArgs().Set(GRPC_ARG_ADDRESS_WEIGHT, 1));
   ASSERT_NE(resource.drop_config, nullptr);
   EXPECT_TRUE(resource.drop_config->drop_category_list().empty());
 }

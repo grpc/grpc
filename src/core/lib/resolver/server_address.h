@@ -32,6 +32,15 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 
+// A channel arg key prefix used for args that are intended to be used
+// only internally to resolvers and LB policies and should not be part
+// of the subchannel key.  The channel will automatically filter out any
+// args with this prefix from the subchannel's args.
+#define GRPC_ARG_NO_SUBCHANNEL_PREFIX "grpc.internal.no_subchannel."
+
+// A channel arg indicating the weight of an address.
+#define GRPC_ARG_ADDRESS_WEIGHT GRPC_ARG_NO_SUBCHANNEL_PREFIX "address.weight"
+
 namespace grpc_core {
 
 //
@@ -114,33 +123,6 @@ class ServerAddress {
 //
 
 using ServerAddressList = std::vector<ServerAddress>;
-
-//
-// ServerAddressWeightAttribute
-//
-class ServerAddressWeightAttribute : public ServerAddress::AttributeInterface {
- public:
-  static const char* kServerAddressWeightAttributeKey;
-
-  explicit ServerAddressWeightAttribute(uint32_t weight) : weight_(weight) {}
-
-  uint32_t weight() const { return weight_; }
-
-  std::unique_ptr<AttributeInterface> Copy() const override {
-    return std::make_unique<ServerAddressWeightAttribute>(weight_);
-  }
-
-  int Cmp(const AttributeInterface* other) const override {
-    const auto* other_locality_attr =
-        static_cast<const ServerAddressWeightAttribute*>(other);
-    return QsortCompare(weight_, other_locality_attr->weight_);
-  }
-
-  std::string ToString() const override;
-
- private:
-  uint32_t weight_;
-};
 
 }  // namespace grpc_core
 

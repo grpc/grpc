@@ -22,7 +22,6 @@
 
 #include <utility>
 
-#include "src/core/ext/filters/client_channel/client_channel_internal.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/useful.h"
 

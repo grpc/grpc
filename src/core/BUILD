@@ -4538,8 +4538,8 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "ref_counted",
         "//:gpr_platform",
-        "//:grpc_client_channel",
         "//:server_address",
     ],
 )
@@ -4798,7 +4798,6 @@ grpc_cc_library(
         "time",
         "validation_errors",
         "//:gpr_platform",
-        "//:grpc_client_channel",
         "//:server_address",
     ],
 )

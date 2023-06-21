@@ -26,7 +26,6 @@
 
 #include "absl/types/optional.h"
 
-#include "src/core/ext/filters/client_channel/client_channel_internal.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/json/json.h"

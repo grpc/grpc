@@ -43,12 +43,6 @@
 namespace grpc_core {
 
 //
-// ServerAddressWeightAttribute
-//
-const char* ServerAddressWeightAttribute::kServerAddressWeightAttributeKey =
-    "server_address_weight";
-
-//
 // ServerAddress
 //
 
@@ -166,10 +160,6 @@ std::string ServerAddress::ToString() const {
         absl::StrCat("attributes={", absl::StrJoin(attrs, ", "), "}"));
   }
   return absl::StrJoin(parts, " ");
-}
-
-std::string ServerAddressWeightAttribute::ToString() const {
-  return absl::StrFormat("%d", weight_);
 }
 
 }  // namespace grpc_core

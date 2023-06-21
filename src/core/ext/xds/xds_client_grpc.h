@@ -26,7 +26,6 @@
 
 #include <grpc/grpc.h>
 
-#include "src/core/ext/filters/client_channel/client_channel_internal.h"
 #include "src/core/ext/xds/certificate_provider_store.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_client.h"
@@ -36,6 +35,7 @@
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
+#include "src/core/lib/resolver/server_address.h"
 
 namespace grpc_core {
 

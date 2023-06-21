@@ -768,25 +768,21 @@ ServerAddressList XdsClusterResolverLb::CreateChildPolicyAddressesLocked() {
         std::vector<std::string> hierarchical_path = {
             priority_child_name, locality_name->AsHumanReadableString()};
         for (const auto& endpoint : locality.endpoints) {
-          const ServerAddressWeightAttribute* weight_attribute = static_cast<
-              const ServerAddressWeightAttribute*>(endpoint.GetAttribute(
-              ServerAddressWeightAttribute::kServerAddressWeightAttributeKey));
-          uint32_t weight = locality.lb_weight;
-          if (weight_attribute != nullptr) {
-            weight = locality.lb_weight * weight_attribute->weight();
-          }
+          uint32_t weight =
+              locality.lb_weight *
+              endpoint.args().GetInt(GRPC_ARG_ADDRESS_WEIGHT).value_or(1);
           std::map<const char*,
                    std::unique_ptr<ServerAddress::AttributeInterface>>
-              attributes;
+              attributes = endpoint.attributes();
           attributes[kXdsLocalityNameAttributeKey] =
                std::make_unique<XdsLocalityAttribute>(
                    locality_name->Ref(), locality.lb_weight);
-          attributes[ServerAddressWeightAttribute::kServerAddressWeightAttributeKey]
-          = std::make_unique<ServerAddressWeightAttribute>(weight);
           addresses.emplace_back(
               endpoint.address(),
-              endpoint.args().SetObject(
-                  MakeRefCounted<HierarchicalPathArg>(hierarchical_path)),
+              endpoint.args()
+                  .SetObject(
+                      MakeRefCounted<HierarchicalPathArg>(hierarchical_path))
+                  .Set(GRPC_ARG_ADDRESS_WEIGHT, weight),
               std::move(attributes));
         }
       }
