@@ -1841,6 +1841,7 @@ grpc_cc_library(
         "time",
         "//:debug_location",
         "//:event_engine_base_hdrs",
+        "//:exec_ctx",
         "//:gpr",
         "//:grpc_public_hdrs",
         "//:ref_counted_ptr",
@@ -1942,6 +1943,7 @@ grpc_cc_library(
         "socket_mutator",
         "status_helper",
         "//:event_engine_base_hdrs",
+        "//:exec_ctx",
         "//:gpr",
     ],
 )
