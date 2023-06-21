@@ -58,8 +58,8 @@ absl::StatusOr<HierarchicalAddressMap> MakeHierarchicalAddressMap(
     ++it;
     if (it != path.end()) {
       std::vector<std::string> remaining_path(it, path.end());
-      args = args.SetObject(MakeRefCounted<HierarchicalPathArg>(
-          std::move(remaining_path)));
+      args = args.SetObject(
+          MakeRefCounted<HierarchicalPathArg>(std::move(remaining_path)));
     }
     target_list.emplace_back(address.address(), args, address.attributes());
   }

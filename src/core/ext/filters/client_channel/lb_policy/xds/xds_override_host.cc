@@ -95,10 +95,10 @@ struct PtrLessThan {
 };
 
 XdsHealthStatus GetAddressHealthStatus(const ServerAddress& address) {
-  return XdsHealthStatus(
-      static_cast<XdsHealthStatus::HealthStatus>(
-          address.args().GetInt(GRPC_ARG_XDS_HEALTH_STATUS)
-                        .value_or(XdsHealthStatus::HealthStatus::kUnknown)));
+  return XdsHealthStatus(static_cast<XdsHealthStatus::HealthStatus>(
+      address.args()
+          .GetInt(GRPC_ARG_XDS_HEALTH_STATUS)
+          .value_or(XdsHealthStatus::HealthStatus::kUnknown)));
 }
 
 //

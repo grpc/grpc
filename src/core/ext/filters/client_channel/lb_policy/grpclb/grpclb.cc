@@ -333,7 +333,7 @@ class GrpcLb : public LoadBalancingPolicy {
   class TokenAndClientStatsArg : public RefCounted<TokenAndClientStatsArg> {
    public:
     TokenAndClientStatsArg(std::string lb_token,
-                                 RefCountedPtr<GrpcLbClientStats> client_stats)
+                           RefCountedPtr<GrpcLbClientStats> client_stats)
         : lb_token_(std::move(lb_token)),
           client_stats_(std::move(client_stats)) {}
 
@@ -679,9 +679,8 @@ ServerAddressList GrpcLb::Serverlist::GetServerAddressList(
     }
     // Add address with a channel arg containing LB token and stats object.
     addresses.emplace_back(
-        addr,
-        ChannelArgs().SetObject(MakeRefCounted<TokenAndClientStatsArg>(
-            std::move(lb_token), stats)));
+        addr, ChannelArgs().SetObject(MakeRefCounted<TokenAndClientStatsArg>(
+                  std::move(lb_token), stats)));
   }
   return addresses;
 }
@@ -770,9 +769,9 @@ RefCountedPtr<SubchannelInterface> GrpcLb::Helper::CreateSubchannel(
   if (parent()->shutting_down_) return nullptr;
   const auto* arg = address.args().GetObject<TokenAndClientStatsArg>();
   if (arg == nullptr) {
-    Crash(absl::StrFormat(
-        "[grpclb %p] no TokenAndClientStatsArg for address %p", parent(),
-        address.ToString().c_str()));
+    Crash(
+        absl::StrFormat("[grpclb %p] no TokenAndClientStatsArg for address %p",
+                        parent(), address.ToString().c_str()));
   }
   std::string lb_token = arg->lb_token();
   RefCountedPtr<GrpcLbClientStats> client_stats = arg->client_stats();
