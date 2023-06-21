@@ -4797,6 +4797,7 @@ grpc_cc_library(
         "time",
         "validation_errors",
         "//:gpr_platform",
+        "//:grpc_client_channel",
         "//:server_address",
     ],
 )
