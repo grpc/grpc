@@ -1137,6 +1137,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx periodic_update_test)
   add_dependencies(buildtests_cxx pick_first_test)
   add_dependencies(buildtests_cxx pid_controller_test)
+  add_dependencies(buildtests_cxx ping_configuration_test)
   add_dependencies(buildtests_cxx ping_pong_streaming_test)
   add_dependencies(buildtests_cxx ping_test)
   add_dependencies(buildtests_cxx pipe_test)
@@ -18228,6 +18229,55 @@ target_include_directories(pid_controller_test
 )
 
 target_link_libraries(pid_controller_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(ping_configuration_test
+  test/core/transport/chttp2/ping_configuration_test.cc
+  test/core/util/cmdline.cc
+  test/core/util/fuzzer_util.cc
+  test/core/util/grpc_profiler.cc
+  test/core/util/histogram.cc
+  test/core/util/mock_endpoint.cc
+  test/core/util/parse_hexstring.cc
+  test/core/util/passthru_endpoint.cc
+  test/core/util/resolve_localhost_ip46.cc
+  test/core/util/slice_splitter.cc
+  test/core/util/subprocess_posix.cc
+  test/core/util/subprocess_windows.cc
+  test/core/util/tracer_util.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+target_compile_features(ping_configuration_test PUBLIC cxx_std_14)
+target_include_directories(ping_configuration_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(ping_configuration_test
   ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
