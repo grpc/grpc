@@ -184,8 +184,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/weighted_round_robin.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/xds/cds.cc )
-  s.files += %w( src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.cc )
-  s.files += %w( src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.h )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc )

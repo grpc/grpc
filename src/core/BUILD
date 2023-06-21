@@ -4339,25 +4339,7 @@ grpc_cc_library(
         "ext/filters/client_channel/lb_policy/xds/xds_channel_args.h",
     ],
     language = "c++",
-)
-
-grpc_cc_library(
-    name = "grpc_lb_xds_attributes",
-    srcs = [
-        "ext/filters/client_channel/lb_policy/xds/xds_attributes.cc",
-    ],
-    hdrs = [
-        "ext/filters/client_channel/lb_policy/xds/xds_attributes.h",
-    ],
-    external_deps = ["absl/strings"],
-    language = "c++",
-    deps = [
-        "useful",
-        "//:gpr_platform",
-        "//:ref_counted_ptr",
-        "//:server_address",
-        "//:xds_client",
-    ],
+    deps = ["//:server_address"],
 )
 
 grpc_cc_library(
@@ -4376,7 +4358,6 @@ grpc_cc_library(
         "channel_args",
         "delegating_helper",
         "grpc_lb_address_filtering",
-        "grpc_lb_xds_attributes",
         "grpc_lb_xds_channel_args",
         "grpc_xds_client",
         "json",
@@ -4422,7 +4403,6 @@ grpc_cc_library(
         "channel_args",
         "delegating_helper",
         "grpc_backend_metric_data",
-        "grpc_lb_xds_attributes",
         "grpc_lb_xds_channel_args",
         "grpc_xds_client",
         "json",
@@ -4502,7 +4482,7 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "delegating_helper",
-        "grpc_lb_xds_attributes",
+        "grpc_lb_xds_channel_args",
         "json",
         "json_args",
         "json_object_loader",

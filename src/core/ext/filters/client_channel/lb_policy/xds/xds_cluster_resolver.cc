@@ -42,7 +42,6 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/address_filtering.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
-#include "src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
@@ -768,22 +767,17 @@ ServerAddressList XdsClusterResolverLb::CreateChildPolicyAddressesLocked() {
         std::vector<std::string> hierarchical_path = {
             priority_child_name, locality_name->AsHumanReadableString()};
         for (const auto& endpoint : locality.endpoints) {
-          uint32_t weight =
+          uint32_t endpoint_weight =
               locality.lb_weight *
               endpoint.args().GetInt(GRPC_ARG_ADDRESS_WEIGHT).value_or(1);
-          std::map<const char*,
-                   std::unique_ptr<ServerAddress::AttributeInterface>>
-              attributes = endpoint.attributes();
-          attributes[kXdsLocalityNameAttributeKey] =
-               std::make_unique<XdsLocalityAttribute>(
-                   locality_name->Ref(), locality.lb_weight);
           addresses.emplace_back(
               endpoint.address(),
               endpoint.args()
                   .SetObject(
                       MakeRefCounted<HierarchicalPathArg>(hierarchical_path))
-                  .Set(GRPC_ARG_ADDRESS_WEIGHT, weight),
-              std::move(attributes));
+                  .Set(GRPC_ARG_ADDRESS_WEIGHT, endpoint_weight)
+                  .SetObject(locality_name->Ref())
+                  .Set(GRPC_ARG_XDS_LOCALITY_WEIGHT, locality.lb_weight));
         }
       }
     }

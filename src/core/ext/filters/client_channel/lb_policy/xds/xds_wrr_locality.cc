@@ -32,7 +32,7 @@
 #include <grpc/support/json.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.h"
+#include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
 #include "src/core/ext/xds/xds_client_stats.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
@@ -170,17 +170,16 @@ absl::Status XdsWrrLocalityLb::UpdateLocked(UpdateArgs args) {
   std::map<std::string, uint32_t> locality_weights;
   if (args.addresses.ok()) {
     for (const auto& address : *args.addresses) {
-      auto* attribute = static_cast<const XdsLocalityAttribute*>(
-          address.GetAttribute(kXdsLocalityNameAttributeKey));
-      if (attribute != nullptr) {
+      auto* locality_name = address.args().GetObject<XdsLocalityName>();
+      auto weight = address.args().GetInt(GRPC_ARG_XDS_LOCALITY_WEIGHT);
+      if (locality_name != nullptr && weight.has_value()) {
         auto p = locality_weights.emplace(
-            attribute->locality_name()->AsHumanReadableString(),
-            attribute->weight());
-        if (!p.second && p.first->second != attribute->weight()) {
+            locality_name->AsHumanReadableString(), *weight);
+        if (!p.second && p.first->second != *weight) {
           gpr_log(GPR_ERROR,
                   "INTERNAL ERROR: xds_wrr_locality found different weights "
                   "for locality %s (%d vs %d); using first value",
-                  p.first->first.c_str(), p.first->second, attribute->weight());
+                  p.first->first.c_str(), p.first->second, *weight);
         }
       }
     }
