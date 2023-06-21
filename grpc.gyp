@@ -1030,7 +1030,6 @@
         'src/core/tsi/ssl_transport_security_utils.cc',
         'src/core/tsi/transport_security.cc',
         'src/core/tsi/transport_security_grpc.cc',
-        'test/core/experiments/test_experiments.cc',
       ],
     },
     {
@@ -1468,7 +1467,6 @@
         'src/core/tsi/local_transport_security.cc',
         'src/core/tsi/transport_security.cc',
         'src/core/tsi/transport_security_grpc.cc',
-        'test/core/experiments/test_experiments.cc',
       ],
     },
     {
@@ -1978,7 +1976,6 @@
         'src/core/tsi/alts/handshaker/transport_security_common_api.cc',
         'src/core/tsi/transport_security.cc',
         'src/core/tsi/transport_security_grpc.cc',
-        'test/core/experiments/test_experiments.cc',
       ],
     },
     {

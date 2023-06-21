@@ -126,11 +126,11 @@ grpc_cc_library(
         "absl/strings",
     ],
     language = "c++",
+    tags = ["nofixdeps"],
     deps = [
         "no_destruct",
         "//:config_vars",
         "//:gpr",
-        "//test/core/experiments:test_experiments_lib",
     ],
 )
 

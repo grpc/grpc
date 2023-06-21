@@ -1727,7 +1727,6 @@ LIBGRPC_SRC = \
     src/core/tsi/ssl_transport_security_utils.cc \
     src/core/tsi/transport_security.cc \
     src/core/tsi/transport_security_grpc.cc \
-    test/core/experiments/test_experiments.cc \
 
 PUBLIC_HEADERS_C += \
     include/grpc/byte_buffer.h \
@@ -2226,7 +2225,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/tsi/local_transport_security.cc \
     src/core/tsi/transport_security.cc \
     src/core/tsi/transport_security_grpc.cc \
-    test/core/experiments/test_experiments.cc \
 
 PUBLIC_HEADERS_C += \
     include/grpc/byte_buffer.h \
