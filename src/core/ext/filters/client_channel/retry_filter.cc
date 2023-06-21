@@ -141,13 +141,13 @@ const RetryMethodConfig* RetryFilter::GetRetryPolicy(
 }
 
 const grpc_channel_filter RetryFilter::kVtable = {
-    RetryFilterLegacyCallData::StartTransportStreamOpBatch,
+    RetryFilter::LegacyCallData::StartTransportStreamOpBatch,
     nullptr,
     RetryFilter::StartTransportOp,
-    sizeof(RetryFilterLegacyCallData),
-    RetryFilterLegacyCallData::Init,
-    RetryFilterLegacyCallData::SetPollent,
-    RetryFilterLegacyCallData::Destroy,
+    sizeof(RetryFilter::LegacyCallData),
+    RetryFilter::LegacyCallData::Init,
+    RetryFilter::LegacyCallData::SetPollent,
+    RetryFilter::LegacyCallData::Destroy,
     sizeof(RetryFilter),
     RetryFilter::Init,
     grpc_channel_stack_no_post_init,

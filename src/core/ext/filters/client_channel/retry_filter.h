@@ -51,6 +51,11 @@ class RetryFilter {
  public:
   static const grpc_channel_filter kVtable;
 
+ private:
+  // Old filter-stack style call implementation, in
+  // retry_filter_legacy_call_data.{h,cc}
+  class LegacyCallData;
+
   grpc_event_engine::experimental::EventEngine* event_engine() const {
     return event_engine_;
   }
@@ -72,7 +77,6 @@ class RetryFilter {
     return per_rpc_retry_buffer_size_;
   }
 
- private:
   static size_t GetMaxPerRpcRetryBufferSize(const ChannelArgs& args) {
     // By default, we buffer 256 KiB per RPC for retries.
     // TODO(roth): Do we have any data to suggest a better value?

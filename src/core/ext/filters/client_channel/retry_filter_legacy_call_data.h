@@ -54,7 +54,7 @@
 
 namespace grpc_core {
 
-class RetryFilterLegacyCallData {
+class RetryFilter::LegacyCallData {
  public:
   static grpc_error_handle Init(grpc_call_element* elem,
                                 const grpc_call_element_args* args);
@@ -73,14 +73,14 @@ class RetryFilterLegacyCallData {
     // The pending batch.  If nullptr, this slot is empty.
     grpc_transport_stream_op_batch* batch = nullptr;
     // Indicates whether payload for send ops has been cached in
-    // RetryFilterLegacyCallData.
+    // LegacyCallData.
     bool send_ops_cached = false;
   };
 
   // State associated with each call attempt.
   class CallAttempt : public RefCounted<CallAttempt> {
    public:
-    CallAttempt(RetryFilterLegacyCallData* calld, bool is_transparent_retry);
+    CallAttempt(LegacyCallData* calld, bool is_transparent_retry);
     ~CallAttempt() override;
 
     bool lb_call_committed() const { return lb_call_committed_; }
@@ -255,7 +255,7 @@ class RetryFilterLegacyCallData {
     static void OnPerAttemptRecvTimerLocked(void* arg, grpc_error_handle error);
     void MaybeCancelPerAttemptRecvTimer();
 
-    RetryFilterLegacyCallData* calld_;
+    LegacyCallData* calld_;
     OrphanablePtr<ClientChannel::FilterBasedLoadBalancedCall> lb_call_;
     bool lb_call_committed_ = false;
 
@@ -321,9 +321,8 @@ class RetryFilterLegacyCallData {
     bool abandoned_ : 1;
   };
 
-  RetryFilterLegacyCallData(RetryFilter* chand,
-                            const grpc_call_element_args& args);
-  ~RetryFilterLegacyCallData();
+  LegacyCallData(RetryFilter* chand, const grpc_call_element_args& args);
+  ~LegacyCallData();
 
   void StartTransportStreamOpBatch(grpc_transport_stream_op_batch* batch);
 
