@@ -11407,8 +11407,8 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(experiments_test
   src/core/lib/experiments/config.cc
+  test/core/experiments/experiments.cc
   test/core/experiments/experiments_test.cc
-  test/core/experiments/test_experiments.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
