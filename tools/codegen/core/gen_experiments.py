@@ -85,9 +85,14 @@ def ParseCommandLineArguments(args):
         help="If specified, disables generation of experiments source files",
     )
     flag_parser.add_argument(
-        "--disable_gen_bzl",
-        action="store_true",
-        help="If specified, disables generation of experiments.bzl file",
+        '--disable_gen_test',
+        action='store_true',
+        help='If specified, disables generation of experiments test',
+    )
+    flag_parser.add_argument(
+        '--disable_gen_bzl',
+        action='store_true',
+        help='If specified, disables generation of experiments.bzl file',
     )
     return flag_parser.parse_args(args)
 
@@ -130,6 +135,10 @@ if not args.disable_gen_hdrs:
 if not args.disable_gen_srcs:
     print("Generating experiments srcs")
     compiler.GenerateExperimentsSrc("src/core/lib/experiments/experiments.cc")
+
+if not args.disable_gen_test:
+    print("Generating experiments tests")
+    compiler.GenTest('test/core/experiments/experiments_test.cc')
 
 if not args.disable_gen_bzl:
     print("Generating experiments.bzl")
