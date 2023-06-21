@@ -356,8 +356,6 @@ void CqVerifier::Verify(Duration timeout, SourceLocation location) {
     if (ev.type != GRPC_OP_COMPLETE) {
       FailUnexpectedEvent(&ev, location);
     }
-    gpr_log(GPR_DEBUG, "Got %s %s", TagStr(ev.tag).c_str(),
-            ev.success ? "✅" : "❌");
     bool found = false;
     for (auto it = expectations_.begin(); it != expectations_.end(); ++it) {
       if (it->tag != ev.tag) continue;
