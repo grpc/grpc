@@ -39,7 +39,6 @@
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 
-#include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/log.h>
 
@@ -66,6 +65,7 @@
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
+#include "src/core/lib/load_balancing/delegating_helper.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
@@ -215,27 +215,17 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
     XdsHealthStatusSet override_host_health_status_set_;
   };
 
-  class Helper : public ChannelControlHelper {
+  class Helper
+      : public ParentOwningDelegatingChannelControlHelper<XdsOverrideHostLb> {
    public:
     explicit Helper(RefCountedPtr<XdsOverrideHostLb> xds_override_host_policy)
-        : xds_override_host_policy_(std::move(xds_override_host_policy)) {}
-
-    ~Helper() override {
-      xds_override_host_policy_.reset(DEBUG_LOCATION, "Helper");
-    }
+        : ParentOwningDelegatingChannelControlHelper(
+              std::move(xds_override_host_policy)) {}
 
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
         ServerAddress address, const ChannelArgs& args) override;
     void UpdateState(grpc_connectivity_state state, const absl::Status& status,
                      RefCountedPtr<SubchannelPicker> picker) override;
-    void RequestReresolution() override;
-    absl::string_view GetAuthority() override;
-    grpc_event_engine::experimental::EventEngine* GetEventEngine() override;
-    void AddTraceEvent(TraceSeverity severity,
-                       absl::string_view message) override;
-
-   private:
-    RefCountedPtr<XdsOverrideHostLb> xds_override_host_policy_;
   };
 
   class SubchannelEntry {
@@ -619,42 +609,20 @@ void XdsOverrideHostLb::OnSubchannelConnectivityStateChange(
 RefCountedPtr<SubchannelInterface> XdsOverrideHostLb::Helper::CreateSubchannel(
     ServerAddress address, const ChannelArgs& args) {
   auto subchannel =
-      xds_override_host_policy_->channel_control_helper()->CreateSubchannel(
-          address, args);
-  return xds_override_host_policy_->AdoptSubchannel(address, subchannel);
+      parent()->channel_control_helper()->CreateSubchannel(address, args);
+  return parent()->AdoptSubchannel(address, subchannel);
 }
 
 void XdsOverrideHostLb::Helper::UpdateState(
     grpc_connectivity_state state, const absl::Status& status,
     RefCountedPtr<SubchannelPicker> picker) {
-  if (xds_override_host_policy_->shutting_down_) return;
+  if (parent()->shutting_down_) return;
   // Save the state and picker.
-  xds_override_host_policy_->state_ = state;
-  xds_override_host_policy_->status_ = status;
-  xds_override_host_policy_->picker_ = std::move(picker);
+  parent()->state_ = state;
+  parent()->status_ = status;
+  parent()->picker_ = std::move(picker);
   // Wrap the picker and return it to the channel.
-  xds_override_host_policy_->MaybeUpdatePickerLocked();
-}
-
-void XdsOverrideHostLb::Helper::RequestReresolution() {
-  if (xds_override_host_policy_->shutting_down_) return;
-  xds_override_host_policy_->channel_control_helper()->RequestReresolution();
-}
-
-absl::string_view XdsOverrideHostLb::Helper::GetAuthority() {
-  return xds_override_host_policy_->channel_control_helper()->GetAuthority();
-}
-
-grpc_event_engine::experimental::EventEngine*
-XdsOverrideHostLb::Helper::GetEventEngine() {
-  return xds_override_host_policy_->channel_control_helper()->GetEventEngine();
-}
-
-void XdsOverrideHostLb::Helper::AddTraceEvent(TraceSeverity severity,
-                                              absl::string_view message) {
-  if (xds_override_host_policy_->shutting_down_) return;
-  xds_override_host_policy_->channel_control_helper()->AddTraceEvent(severity,
-                                                                     message);
+  parent()->MaybeUpdatePickerLocked();
 }
 
 //

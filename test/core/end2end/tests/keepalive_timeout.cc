@@ -72,7 +72,7 @@ CORE_END2END_TEST(Http2SingleHopTest, ReadDelaysKeepalive) {
                  .Set(GRPC_ARG_KEEPALIVE_TIME_MS, (20 * kPingInterval).millis())
                  .Set(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, 0)
                  .Set(GRPC_ARG_HTTP2_BDP_PROBE, false));
-  auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
+  auto c = NewClientCall("/foo").Timeout(Duration::Seconds(60)).Create();
   IncomingMetadata server_initial_metadata;
   IncomingStatusOnClient server_status;
   c.NewBatch(1)

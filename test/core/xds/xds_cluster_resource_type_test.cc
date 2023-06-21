@@ -217,6 +217,28 @@ TEST_F(ClusterTypeTest, EdsServiceName) {
   EXPECT_EQ(eds->eds_service_name, "bar");
 }
 
+TEST_F(ClusterTypeTest, EdsServiceNameAbsentWithXdstpName) {
+  Cluster cluster;
+  cluster.set_name("xdstp:foo");
+  cluster.set_type(cluster.EDS);
+  auto* eds_cluster_config = cluster.mutable_eds_cluster_config();
+  eds_cluster_config->mutable_eds_config()->mutable_self();
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "xdstp:foo");
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating Cluster resource: ["
+            "field:eds_cluster_config.service_name "
+            "error:must be set if Cluster resource has an xdstp name]")
+      << decode_result.resource.status();
+}
+
 TEST_F(ClusterTypeTest, DiscoveryTypeNotPresent) {
   Cluster cluster;
   cluster.set_name("foo");

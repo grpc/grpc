@@ -183,6 +183,7 @@ Pod::Spec.new do |s|
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
     ss.dependency 'BoringSSL-GRPC', '0.0.29'
+    ss.dependency 'abseil/algorithm/container', abseil_version
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/core_headers', abseil_version
     ss.dependency 'abseil/cleanup/cleanup', abseil_version
@@ -1517,6 +1518,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/json/json_util.h',
                       'src/core/lib/json/json_writer.cc',
                       'src/core/lib/json/json_writer.h',
+                      'src/core/lib/load_balancing/delegating_helper.h',
                       'src/core/lib/load_balancing/lb_policy.cc',
                       'src/core/lib/load_balancing/lb_policy.h',
                       'src/core/lib/load_balancing/lb_policy_factory.h',
@@ -2705,6 +2707,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/json/json_reader.h',
                               'src/core/lib/json/json_util.h',
                               'src/core/lib/json/json_writer.h',
+                              'src/core/lib/load_balancing/delegating_helper.h',
                               'src/core/lib/load_balancing/lb_policy.h',
                               'src/core/lib/load_balancing/lb_policy_factory.h',
                               'src/core/lib/load_balancing/lb_policy_registry.h',

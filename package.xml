@@ -1405,6 +1405,7 @@
     <file baseinstalldir="/" name="src/core/lib/json/json_util.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_writer.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_writer.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/load_balancing/delegating_helper.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/load_balancing/lb_policy.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/load_balancing/lb_policy.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/load_balancing/lb_policy_factory.h" role="src" />
