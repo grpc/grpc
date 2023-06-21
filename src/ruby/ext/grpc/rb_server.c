@@ -258,7 +258,7 @@ static VALUE grpc_rb_server_request_call_ensure(VALUE value_args) {
 static VALUE grpc_rb_server_request_call(VALUE self) {
   grpc_rb_server* s;
   TypedData_Get_Struct(self, grpc_rb_server, &grpc_rb_server_data_type, s);
-  grpc_rb_fork_guard();
+  grpc_ruby_fork_guard();
   if (s->wrapped == NULL) {
     rb_raise(rb_eRuntimeError, "destroyed!");
   }
