@@ -1967,10 +1967,21 @@ class PromiseBasedCall : public Call,
   void SetCompletionQueue(grpc_completion_queue* cq) override;
   bool Completed() final { return finished_.IsSet(); }
 
+  virtual void OrphanCall() = 0;
+
   // Implementation of call refcounting: move this to DualRefCounted once we
   // don't need to maintain FilterStackCall compatibility
-  void ExternalRef() final { InternalRef("external"); }
-  void ExternalUnref() final { InternalUnref("external"); }
+  void ExternalRef() final {
+    if (external_refs_.fetch_add(1, std::memory_order_relaxed) == 0) {
+      InternalRef("external");
+    }
+  }
+  void ExternalUnref() final {
+    if (external_refs_.fetch_sub(1, std::memory_order_acq_rel) == 1) {
+      OrphanCall();
+      InternalUnref("external");
+    }
+  }
   void InternalRef(const char* reason) final {
     if (grpc_call_refcount_trace.enabled()) {
       gpr_log(GPR_DEBUG, "INTERNAL_REF:%p:%s", this, reason);
@@ -2329,7 +2340,9 @@ class PromiseBasedCall : public Call,
   }
 
   CallContext call_context_{this};
-
+  // Double refcounted for now: party owns the internal refcount, we track the
+  // external refcount. Figure out a better scheme post-promise conversion.
+  std::atomic<size_t> external_refs_;
   // Contexts for various subsystems (security, tracing, ...).
   grpc_call_context_element context_[GRPC_CONTEXT_COUNT] = {};
   grpc_completion_queue* cq_;
@@ -2372,7 +2385,8 @@ PromiseBasedCall::PromiseBasedCall(Arena* arena, uint32_t initial_external_refs,
                                    const grpc_call_create_args& args)
     : Call(arena, args.server_transport_data == nullptr, args.send_deadline,
            args.channel->Ref()),
-      Party(arena, initial_external_refs),
+      Party(arena, initial_external_refs != 0 ? 1 : 0),
+      external_refs_(initial_external_refs),
       cq_(args.cq) {
   if (args.cq != nullptr) {
     GRPC_CQ_INTERNAL_REF(args.cq, "bind");
@@ -2687,7 +2701,17 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
     if (args->send_deadline != Timestamp::InfFuture()) {
       UpdateDeadline(args->send_deadline);
     }
+    Call* parent = Call::FromC(args->parent);
+    if (parent != nullptr) {
+      auto parent_status = InitParent(parent, args->propagation_mask);
+      if (!parent_status.ok()) {
+        CancelWithError(std::move(parent_status));
+      }
+      PublishToParent(parent);
+    }
   }
+
+  void OrphanCall() override { MaybeUnpublishFromParent(); }
 
   ~ClientPromiseBasedCall() override {
     ScopedContext context(this);
@@ -3047,6 +3071,7 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
  public:
   ServerPromiseBasedCall(Arena* arena, grpc_call_create_args* args);
 
+  void OrphanCall() override {}
   void CancelWithError(grpc_error_handle) override;
   grpc_call_error StartBatch(const grpc_op* ops, size_t nops, void* notify_tag,
                              bool is_notify_tag_closure) override;
