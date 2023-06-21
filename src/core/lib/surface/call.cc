@@ -2674,18 +2674,20 @@ void PublishMetadataArray(grpc_metadata_batch* md, grpc_metadata_array* array) {
 class ClientPromiseBasedCall final : public PromiseBasedCall {
  public:
   ClientPromiseBasedCall(Arena* arena, grpc_call_create_args* args)
-      : PromiseBasedCall(arena, 1, *args) {
+      : PromiseBasedCall(arena, 1, *args),
+        polling_entity_(
+            args->cq != nullptr
+                ? grpc_polling_entity_create_from_pollset(
+                      grpc_cq_pollset(args->cq))
+                : (args->pollset_set_alternative != nullptr
+                       ? grpc_polling_entity_create_from_pollset_set(
+                             args->pollset_set_alternative)
+                       : grpc_polling_entity{})) {
     global_stats().IncrementClientCallsCreated();
     if (args->cq != nullptr) {
       GPR_ASSERT(args->pollset_set_alternative == nullptr &&
                  "Only one of 'cq' and 'pollset_set_alternative' should be "
                  "non-nullptr.");
-      polling_entity_.Set(
-          grpc_polling_entity_create_from_pollset(grpc_cq_pollset(args->cq)));
-    }
-    if (args->pollset_set_alternative != nullptr) {
-      polling_entity_.Set(grpc_polling_entity_create_from_pollset_set(
-          args->pollset_set_alternative));
     }
     ScopedContext context(this);
     send_initial_metadata_ =
@@ -2993,7 +2995,9 @@ void ClientPromiseBasedCall::Finish(ServerMetadataHandle trailing_metadata) {
   }
   ResetDeadline();
   set_completed();
-  client_to_server_messages_.sender.Close();
+  client_to_server_messages_.sender.CloseWithError();
+  client_to_server_messages_.receiver.CloseWithError();
+  server_to_client_messages_.receiver.CloseWithError();
   if (auto* channelz_channel = channel()->channelz_node()) {
     if (trailing_metadata->get(GrpcStatusMetadata())
             .value_or(GRPC_STATUS_UNKNOWN) == GRPC_STATUS_OK) {
