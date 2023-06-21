@@ -250,7 +250,13 @@ class KubernetesBaseRunner(base_runner.BaseRunner, metaclass=ABCMeta):
         )
         return templates_path.joinpath(template_name).resolve()
 
-    def _create_from_template(self, template_name, **kwargs) -> object:
+    def _create_from_template(
+        self,
+        template_name,
+        *,
+        custom_object: bool = False,
+        **kwargs,
+    ) -> object:
         template_file = self._template_file_from_name(template_name)
         logger.debug("Loading k8s manifest template: %s", template_file)
 
@@ -270,17 +276,13 @@ class KubernetesBaseRunner(base_runner.BaseRunner, metaclass=ABCMeta):
                 f"Exactly one document expected in manifest {template_file}"
             )
 
-        k8s_objects = self.k8s_namespace.create_single_resource(manifest)
-        if len(k8s_objects) != 1:
-            raise _RunnerError(
-                "Expected exactly one object must created from "
-                f"manifest {template_file}"
-            )
-
-        logger.info(
-            "%s %s created", k8s_objects[0].kind, k8s_objects[0].metadata.name
+        k8s_object = self.k8s_namespace.create_single_resource(
+            manifest,
+            custom_object=custom_object,
         )
-        return k8s_objects[0]
+
+        logger.info("%s %s created", k8s_object.kind, k8s_object.metadata.name)
+        return k8s_object
 
     def _reuse_deployment(self, deployment_name) -> k8s.V1Deployment:
         deployment = self.k8s_namespace.get_deployment(deployment_name)
@@ -440,7 +442,9 @@ class KubernetesBaseRunner(base_runner.BaseRunner, metaclass=ABCMeta):
         return deployment
 
     def _create_gamma_mesh(self, template, **kwargs):
-        gamma_mesh = self._create_from_template(template, **kwargs)
+        gamma_mesh = self._create_from_template(
+            template, custom_object=True, **kwargs
+        )
         # if not isinstance(service, k8s.V1Service):
         #     raise _RunnerError(
         #         f"Expected V1Service to be created from manifest {template}"

@@ -15,6 +15,7 @@
 #   added to get around circular dependencies caused by k8s.py clashing with
 #   k8s/__init__.py
 import datetime
+import functools
 import json
 import logging
 import pathlib
@@ -22,7 +23,10 @@ import threading
 from typing import Any, Callable, List, Optional, Tuple
 
 from kubernetes import client
+from kubernetes import dynamic
 from kubernetes import utils
+from kubernetes.dynamic import exceptions as dynamic_exc
+from kubernetes.dynamic import resource as dynamic_res
 import kubernetes.config
 import urllib3.exceptions
 import yaml
@@ -38,7 +42,6 @@ logger = logging.getLogger(__name__)
 _HighlighterYaml = framework.helpers.highlighter.HighlighterYaml
 PodLogCollector = k8s_log_collector.PodLogCollector
 PortForwarder = k8s_port_forwarder.PortForwarder
-ApiClient = client.ApiClient
 V1Deployment = client.V1Deployment
 V1ServiceAccount = client.V1ServiceAccount
 V1Pod = client.V1Pod
@@ -92,25 +95,50 @@ class NotFound(Exception):
 
 
 class KubernetesApiManager:
-    _client: ApiClient
+    _client: client.ApiClient
+    _dynamic_client: dynamic.DynamicClient
     context: str
     apps: client.AppsV1Api
     core: client.CoreV1Api
     _apis: set
+    # "net.gke.io" => API
+    _dynamic_apis: dict[str, object]
 
     def __init__(self, context: str):
         self.context = context
         self._client = self._new_client_from_context(context)
+        self._dynamic_client = dynamic.DynamicClient(self._client)
         self.apps = client.AppsV1Api(self.client)
         self.core = client.CoreV1Api(self.client)
-        self.custom_objects = client.CustomObjectsApi(self.client)
         self._apis = {self.apps, self.core}
+        self._dynamic_apis = set()
 
     @property
-    def client(self) -> ApiClient:
+    def client(self) -> client.ApiClient:
         return self._client
 
+    @property
+    def dynamic_client(self) -> dynamic.DynamicClient:
+        return self._dynamic_client
+
+    @functools.cache
+    def gke_tdmesh(self, version) -> dynamic_res.Resource:
+        api_name = "net.gke.io"
+        kind = "TDMesh"
+        supported_versions = {"v1alpha1"}
+        if version not in supported_versions:
+            raise NotImplementedError(
+                f"{kind} {api_name}/{version} not implemented."
+            )
+
+        k8s_api: dynamic_res.Resource = self._build_dynamic(
+            api_name, version, kind
+        )
+        self._dynamic_apis.add(k8s_api.group_version)
+        return k8s_api
+
     def close(self):
+        # self.dynamic_client
         self.client.close()
 
     def reload(self):
@@ -122,8 +150,8 @@ class KubernetesApiManager:
         for api in self._apis:
             api.api_client = self._client
 
-    @staticmethod
-    def _new_client_from_context(context: str) -> ApiClient:
+    @classmethod
+    def _new_client_from_context(cls, context: str) -> "client.ApiClient":
         client_instance = kubernetes.config.new_client_from_config(
             context=context
         )
@@ -136,11 +164,24 @@ class KubernetesApiManager:
         client_instance.configuration.retries = 10
         return client_instance
 
+    def _build_dynamic(self, api_name, version, kind):
+        api_version = f"{api_name}/{version}"
+        try:
+            return self.dynamic_client.resources.get(
+                api_version=api_version, kind=kind
+            )
+        except dynamic_exc.ResourceNotFoundError as err:
+            # TODO(sergiitk): add retries if static client retries not apply.
+            raise RuntimeError(
+                "Couldn't discover k8s API %s, resource %s", api_version, kind
+            ) from err
+
 
 class KubernetesNamespace:  # pylint: disable=too-many-public-methods
     _highlighter: framework.helpers.highlighter.Highlighter
     _api: KubernetesApiManager
     _name: str
+    _api_gke_mesh = None
 
     NEG_STATUS_META = "cloud.google.com/neg-status"
     DELETE_GRACE_PERIOD_SEC: int = 5
@@ -165,10 +206,81 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
         logger.info("Reloading k8s api client to refresh the auth.")
         self._api.reload()
 
-    def _apply_manifest(self, manifest):
-        return utils.create_from_dict(
+    def _apply_manifest_single(self, manifest) -> object:
+        k8s_objects = utils.create_from_dict(
             self._api.client, manifest, namespace=self.name
         )
+        if len(k8s_objects) != 1:
+            raise ValueError(
+                f"Expected exactly one k8s object created from"
+                f" manifest {manifest}"
+            )
+        return k8s_objects[0]
+
+    def _apply_manifest_custom_object(
+        self, manifest
+    ) -> dynamic_res.ResourceInstance:
+        api = self._get_dynamic_api(manifest["apiVersion"], manifest["kind"])
+        return api.create(manifest)
+
+    @functools.cache
+    def _get_dynamic_api(self, api_version, kind):
+        group, _, version = api_version.partition("/")
+        if group == "net.gke.io" and kind == "TDMesh":
+            self._api_gke_mesh = self._api.gke_tdmesh(version)
+            return self._api_gke_mesh
+        raise NotImplementedError(f"{kind} {api_version} not implemented.")
+
+    @staticmethod
+    def _create_from_dict_custom_object(
+        custom_objects_api, yml_object, verbose=False, **kwargs
+    ):
+        """Based on utils.create_from_yaml_single_item()"""
+        group, _, version = yml_object["apiVersion"].partition("/")
+        if not version or not group:
+            raise AttributeError(
+                "Version and group are required to create k8s custom objects"
+            )
+        # Take care for the case e.g. api_type is "apiextensions.k8s.io".
+        group = group.removesuffix(".k8s.io")
+
+        if "namespace" not in yml_object["metadata"]:
+            raise AttributeError("Expected k8s namespace name in yml_object.")
+
+        namespace = yml_object["metadata"]["namespace"]
+        kwargs["namespace"] = namespace
+
+        resp = custom_objects_api.create_namespaced_custom_object(
+            group=group,
+            version=version,
+            plural="crontabs",
+            body=yml_object,
+            **kwargs,
+        )
+
+        k8s_api = custom_objects_api or k8s_client.CustomObjectsApi()
+        # Replace CamelCased action_type into snake_case
+        kind = yml_object["kind"]
+        kind = utils.create_from_yaml.UPPER_FOLLOWED_BY_LOWER_RE.sub(
+            r"\1_\2", kind
+        )
+        kind = utils.create_from_yaml.LOWER_OR_NUM_FOLLOWED_BY_UPPER_RE.sub(
+            r"\1_\2", kind
+        ).lower()
+
+        if "namespace" in yml_object["metadata"]:
+            namespace = yml_object["metadata"]["namespace"]
+            kwargs["namespace"] = namespace
+        resp = k8s_api.create_namespaced_custom_object(
+            body=yml_object, **kwargs
+        )
+
+        if verbose:
+            msg = "{0} created.".format(kind)
+            if hasattr(resp, "status"):
+                msg += " status='{0}'".format(str(resp.status))
+            print(msg)
+        return resp
 
     def _get_resource(self, method: Callable[[Any], object], *args, **kwargs):
         try:
@@ -311,8 +423,11 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
         except (KeyError, ValueError):
             return body
 
-    def create_single_resource(self, manifest):
-        return self._execute(self._apply_manifest, manifest)
+    def create_single_resource(self, manifest, custom_object: bool = False):
+        if custom_object:
+            return self._execute(self._apply_manifest_custom_object, manifest)
+
+        return self._execute(self._apply_manifest_single, manifest)
 
     def get_service(self, name) -> V1Service:
         return self._get_resource(
