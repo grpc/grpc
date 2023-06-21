@@ -57,6 +57,25 @@ BZL_LIST_FOR_DEFAULTS = {
 }
 
 
+def _UnionExperimentAttrs(used_experiment_attrs, test_experiment_attrs):
+    """Take oss and google3 experiment definitions and union them."""
+    union = []
+    experiment_names = set()
+    if not used_experiment_attrs:
+        return test_experiment_attrs
+    if not test_experiment_attrs:
+        return used_experiment_attrs
+
+    for experiment_defs in [used_experiment_attrs, test_experiment_attrs]:
+        for attr in experiment_defs:
+            if attr['name'] in experiment_names:
+                print('ERROR: Experiment name: %s redefined' % attr['name'])
+                sys.exit(1)
+            union.append(attr)
+            experiment_names.add(attr['name'])
+    return union
+
+
 def ParseCommandLineArguments(args):
     """Wrapper for argparse command line arguments handling.
 
@@ -85,9 +104,9 @@ def ParseCommandLineArguments(args):
         help="If specified, disables generation of experiments source files",
     )
     flag_parser.add_argument(
-        '--disable_gen_test',
+        '--gen_only_test',
         action='store_true',
-        help='If specified, disables generation of experiments test',
+        help='If specified, only generates experiments test files',
     )
     flag_parser.add_argument(
         '--disable_gen_bzl',
@@ -99,10 +118,24 @@ def ParseCommandLineArguments(args):
 
 args = ParseCommandLineArguments(sys.argv[1:])
 
-with open("src/core/lib/experiments/experiments.yaml") as f:
+_EXPERIMENTS_DEFS = "src/core/lib/experiments/experiments.yaml"
+_EXPERIMENTS_ROLLOUTS = "src/core/lib/experiments/rollouts.yaml"
+_EXPERIMENTS_HDR_FILE = "src/core/lib/experiments/experiments.h"
+_EXPERIMENTS_SRC_FILE = "src/core/lib/experiments/experiments.cc"
+
+if args.gen_only_test:
+    _EXPERIMENTS_DEFS = "test/core/experiments/test_experiments.yaml"
+    _EXPERIMENTS_ROLLOUTS = (
+        "test/core/experiments/test_experiments_rollout.yaml"
+    )
+    _EXPERIMENTS_HDR_FILE = "test/core/experiments/test_experiments.h"
+    _EXPERIMENTS_SRC_FILE = "test/core/experiments/test_experiments.cc"
+
+
+with open(_EXPERIMENTS_DEFS) as f:
     attrs = yaml.safe_load(f.read())
 
-with open("src/core/lib/experiments/rollouts.yaml") as f:
+with open(_EXPERIMENTS_ROLLOUTS) as f:
     rollouts = yaml.safe_load(f.read())
 
 compiler = exp.ExperimentsCompiler(
@@ -130,16 +163,17 @@ for rollout_attr in rollouts:
 
 if not args.disable_gen_hdrs:
     print("Generating experiments headers")
-    compiler.GenerateExperimentsHdr("src/core/lib/experiments/experiments.h")
+    compiler.GenerateExperimentsHdr(_EXPERIMENTS_HDR_FILE)
 
 if not args.disable_gen_srcs:
     print("Generating experiments srcs")
-    compiler.GenerateExperimentsSrc("src/core/lib/experiments/experiments.cc")
+    compiler.GenerateExperimentsSrc(
+        _EXPERIMENTS_SRC_FILE, _EXPERIMENTS_HDR_FILE)
 
-if not args.disable_gen_test:
+if args.gen_only_test:
     print("Generating experiments tests")
     compiler.GenTest('test/core/experiments/experiments_test.cc')
 
-if not args.disable_gen_bzl:
+if not args.gen_only_test and not args.disable_gen_bzl:
     print("Generating experiments.bzl")
     compiler.GenExperimentsBzl("bazel/experiments.bzl")

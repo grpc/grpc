@@ -16,111 +16,38 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/experiments/experiments.h"
-
 #include "gtest/gtest.h"
+
+#include "test/core/experiments/test_experiments.h"
 
 #ifndef GRPC_EXPERIMENTS_ARE_FINAL
 
-bool GetExperimentTcpFrameSizeTuningExpectedValue() { return false; }
+bool GetExperimentTestExperiment1ExpectedValue() { return false; }
 
-bool GetExperimentTcpRcvLowatExpectedValue() { return false; }
+bool GetExperimentTestExperiment2ExpectedValue() { return false; }
 
-bool GetExperimentPeerStateBasedFramingExpectedValue() { return false; }
-
-bool GetExperimentMemoryPressureControllerExpectedValue() { return false; }
-
-bool GetExperimentUnconstrainedMaxQuotaBufferSizeExpectedValue() {
+bool GetExperimentTestExperiment3ExpectedValue() {
+#ifdef NDEBUG
   return false;
+#else
+  return true;
+#endif
 }
 
-bool GetExperimentEventEngineClientExpectedValue() { return false; }
-
-bool GetExperimentMonitoringExperimentExpectedValue() { return true; }
-
-bool GetExperimentPromiseBasedClientCallExpectedValue() { return false; }
-
-bool GetExperimentFreeLargeAllocatorExpectedValue() { return false; }
-
-bool GetExperimentPromiseBasedServerCallExpectedValue() { return false; }
-
-bool GetExperimentTransportSuppliesClientLatencyExpectedValue() {
-  return false;
-}
-
-bool GetExperimentEventEngineListenerExpectedValue() { return false; }
-
-bool GetExperimentScheduleCancellationOverWriteExpectedValue() { return false; }
-
-bool GetExperimentTraceRecordCallopsExpectedValue() { return false; }
-
-bool GetExperimentEventEngineDnsExpectedValue() { return false; }
-
-bool GetExperimentWorkStealingExpectedValue() { return false; }
-
-bool GetExperimentClientPrivacyExpectedValue() { return false; }
-
-bool GetExperimentCanaryClientPrivacyExpectedValue() { return false; }
-
-bool GetExperimentServerPrivacyExpectedValue() { return false; }
+bool GetExperimentTestExperiment4ExpectedValue() { return true; }
 
 TEST(ExperimentsTest, CheckExperimentValuesTest) {
-  ASSERT_EQ(grpc_core::IsTcpFrameSizeTuningEnabled(),
-            GetExperimentTcpFrameSizeTuningExpectedValue());
+  ASSERT_EQ(grpc_core::IsTestExperiment1Enabled(),
+            GetExperimentTestExperiment1ExpectedValue());
 
-  ASSERT_EQ(grpc_core::IsTcpRcvLowatEnabled(),
-            GetExperimentTcpRcvLowatExpectedValue());
+  ASSERT_EQ(grpc_core::IsTestExperiment2Enabled(),
+            GetExperimentTestExperiment2ExpectedValue());
 
-  ASSERT_EQ(grpc_core::IsPeerStateBasedFramingEnabled(),
-            GetExperimentPeerStateBasedFramingExpectedValue());
+  ASSERT_EQ(grpc_core::IsTestExperiment3Enabled(),
+            GetExperimentTestExperiment3ExpectedValue());
 
-  ASSERT_EQ(grpc_core::IsMemoryPressureControllerEnabled(),
-            GetExperimentMemoryPressureControllerExpectedValue());
-
-  ASSERT_EQ(grpc_core::IsUnconstrainedMaxQuotaBufferSizeEnabled(),
-            GetExperimentUnconstrainedMaxQuotaBufferSizeExpectedValue());
-
-  ASSERT_EQ(grpc_core::IsEventEngineClientEnabled(),
-            GetExperimentEventEngineClientExpectedValue());
-
-  ASSERT_EQ(grpc_core::IsMonitoringExperimentEnabled(),
-            GetExperimentMonitoringExperimentExpectedValue());
-
-  ASSERT_EQ(grpc_core::IsPromiseBasedClientCallEnabled(),
-            GetExperimentPromiseBasedClientCallExpectedValue());
-
-  ASSERT_EQ(grpc_core::IsFreeLargeAllocatorEnabled(),
-            GetExperimentFreeLargeAllocatorExpectedValue());
-
-  ASSERT_EQ(grpc_core::IsPromiseBasedServerCallEnabled(),
-            GetExperimentPromiseBasedServerCallExpectedValue());
-
-  ASSERT_EQ(grpc_core::IsTransportSuppliesClientLatencyEnabled(),
-            GetExperimentTransportSuppliesClientLatencyExpectedValue());
-
-  ASSERT_EQ(grpc_core::IsEventEngineListenerEnabled(),
-            GetExperimentEventEngineListenerExpectedValue());
-
-  ASSERT_EQ(grpc_core::IsScheduleCancellationOverWriteEnabled(),
-            GetExperimentScheduleCancellationOverWriteExpectedValue());
-
-  ASSERT_EQ(grpc_core::IsTraceRecordCallopsEnabled(),
-            GetExperimentTraceRecordCallopsExpectedValue());
-
-  ASSERT_EQ(grpc_core::IsEventEngineDnsEnabled(),
-            GetExperimentEventEngineDnsExpectedValue());
-
-  ASSERT_EQ(grpc_core::IsWorkStealingEnabled(),
-            GetExperimentWorkStealingExpectedValue());
-
-  ASSERT_EQ(grpc_core::IsClientPrivacyEnabled(),
-            GetExperimentClientPrivacyExpectedValue());
-
-  ASSERT_EQ(grpc_core::IsCanaryClientPrivacyEnabled(),
-            GetExperimentCanaryClientPrivacyExpectedValue());
-
-  ASSERT_EQ(grpc_core::IsServerPrivacyEnabled(),
-            GetExperimentServerPrivacyExpectedValue());
+  ASSERT_EQ(grpc_core::IsTestExperiment4Enabled(),
+            GetExperimentTestExperiment4ExpectedValue());
 }
 
 #endif  // GRPC_EXPERIMENTS_ARE_FINAL

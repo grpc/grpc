@@ -68,7 +68,7 @@ def _EXPERIMENTS_TEST_SKELETON(defs, test_body):
     return f"""
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/experiments/experiments.h"
+#include "test/core/experiments/test_experiments.h"
 #include "gtest/gtest.h"
 
 #ifndef GRPC_EXPERIMENTS_ARE_FINAL
@@ -375,7 +375,7 @@ class ExperimentsCompiler(object):
                 "#endif  // GRPC_SRC_CORE_LIB_EXPERIMENTS_EXPERIMENTS_H", file=H
             )
 
-    def GenerateExperimentsSrc(self, output_file):
+    def GenerateExperimentsSrc(self, output_file, header_file_path):
         with open(output_file, "w") as C:
             PutCopyright(C, "//")
             PutBanner(
@@ -385,7 +385,7 @@ class ExperimentsCompiler(object):
             )
 
             print("#include <grpc/support/port_platform.h>", file=C)
-            print('#include "src/core/lib/experiments/experiments.h"', file=C)
+            print(f"#include \"{header_file_path}\"", file=C)
             print(file=C)
             print("#ifndef GRPC_EXPERIMENTS_ARE_FINAL", file=C)
             print("namespace {", file=C)
