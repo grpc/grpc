@@ -195,6 +195,7 @@ struct server_request_call_args {
 };
 
 static VALUE grpc_rb_server_request_call_try(VALUE value_args) {
+  grpc_rb_fork_unsafe_begin();
   struct server_request_call_args* args =
       (struct server_request_call_args*)value_args;
 
@@ -237,6 +238,7 @@ static VALUE grpc_rb_server_request_call_try(VALUE value_args) {
 }
 
 static VALUE grpc_rb_server_request_call_ensure(VALUE value_args) {
+  grpc_rb_fork_unsafe_end();
   struct server_request_call_args* args =
       (struct server_request_call_args*)value_args;
 

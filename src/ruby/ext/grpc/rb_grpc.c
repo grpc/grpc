@@ -294,7 +294,8 @@ VALUE sym_details = Qundef;
 VALUE sym_metadata = Qundef;
 
 static gpr_once g_once_init = GPR_ONCE_INIT;
-static int64_t g_grpc_rb_prefork_pending;  // synchronized by the GIL
+static int64_t g_grpc_rb_prefork_pending;          // synchronized by the GIL
+static int64_t g_grpc_rb_num_fork_unsafe_threads;  // synchronized by the GIL
 
 void grpc_ruby_fork_guard() {
   // Check if we're using gRPC between prefork and postfork
@@ -397,6 +398,15 @@ static VALUE grpc_rb_prefork(VALUE self) {
              "that GRPC was initialized on (GRPC lazy-initializes when when "
              "the first GRPC object is created");
   }
+  if (g_grpc_rb_num_fork_unsafe_threads > 0) {
+    rb_raise(
+        rb_eRuntimeError,
+        "Detected at least %ld threads actively using grpc, so it is not safe "
+        "call GRPC.prefork or fork. Note that grpc-ruby servers and "
+        "bidirectional "
+        "streams manage background threads and are not fork safe.",
+        g_grpc_rb_num_fork_unsafe_threads);
+  }
   g_grpc_rb_prefork_pending = true;
   rb_mutex_lock(g_bg_thread_init_rb_mu);
   if (g_bg_thread_init_done) {
@@ -448,6 +458,16 @@ static VALUE grpc_rb_postfork_parent(VALUE self) {
   return Qnil;
 }
 
+// APIs to mark fork-unsafe sections from C-extension code
+void grpc_rb_fork_unsafe_begin() { g_grpc_rb_num_fork_unsafe_threads++; }
+
+void grpc_rb_fork_unsafe_end() { g_grpc_rb_num_fork_unsafe_threads--; }
+
+// APIs to mark fork-unsafe sections from ruby code
+static VALUE grpc_rb_fork_unsafe_begin_api() { grpc_rb_fork_unsafe_begin(); }
+
+static VALUE grpc_rb_fork_unsafe_end_api() { grpc_rb_fork_unsafe_end(); }
+
 // One-time initialization
 void Init_grpc_c() {
   if (!grpc_rb_load_core()) {
@@ -483,4 +503,8 @@ void Init_grpc_c() {
                             grpc_rb_postfork_child, 0);
   rb_define_module_function(grpc_rb_mGRPC, "postfork_parent",
                             grpc_rb_postfork_parent, 0);
+  rb_define_module_function(grpc_rb_mGrpcCore, "fork_unsafe_begin",
+                            grpc_rb_fork_unsafe_begin_api, 0);
+  rb_define_module_function(grpc_rb_mGrpcCore, "fork_unsafe_end",
+                            grpc_rb_fork_unsafe_end_api, 0);
 }
