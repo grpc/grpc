@@ -315,8 +315,16 @@ class ExperimentsCompiler(object):
                 "//",
             )
 
-            print("#ifndef GRPC_SRC_CORE_LIB_EXPERIMENTS_EXPERIMENTS_H", file=H)
-            print("#define GRPC_SRC_CORE_LIB_EXPERIMENTS_EXPERIMENTS_H", file=H)
+            file_path_list = output_file.split("/")[0:-1]
+            file_name = output_file.split("/")[-1].split(".")[0]
+
+            include_guard = (
+                f"GRPC_{'_'.join(path.upper() for path in file_path_list)}_{file_name.upper()}_H"
+            )
+
+
+            print(f"#ifndef {include_guard}", file=H)
+            print(f"#define {include_guard}", file=H)
             print(file=H)
             print("#include <grpc/support/port_platform.h>", file=H)
             print(file=H)
@@ -371,9 +379,7 @@ class ExperimentsCompiler(object):
             print("#endif", file=H)
             print("}  // namespace grpc_core", file=H)
             print(file=H)
-            print(
-                "#endif  // GRPC_SRC_CORE_LIB_EXPERIMENTS_EXPERIMENTS_H", file=H
-            )
+            print(f"#endif  // {include_guard}", file=H)
 
     def GenerateExperimentsSrc(self, output_file, header_file_path):
         with open(output_file, "w") as C:

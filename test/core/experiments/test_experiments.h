@@ -45,8 +45,8 @@
 // If you are using the Bazel build system, that macro can be configured with
 // --define=grpc_experiments_are_final=true
 
-#ifndef GRPC_SRC_CORE_LIB_EXPERIMENTS_EXPERIMENTS_H
-#define GRPC_SRC_CORE_LIB_EXPERIMENTS_EXPERIMENTS_H
+#ifndef GRPC_TEST_CORE_EXPERIMENTS_TEST_EXPERIMENTS_H
+#define GRPC_TEST_CORE_EXPERIMENTS_TEST_EXPERIMENTS_H
 
 #include <grpc/support/port_platform.h>
 
@@ -87,4 +87,4 @@ extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];
 #endif
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_EXPERIMENTS_EXPERIMENTS_H
+#endif  // GRPC_TEST_CORE_EXPERIMENTS_TEST_EXPERIMENTS_H

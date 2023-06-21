@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_cc_library")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test")
 
 grpc_cc_library(
     name = "test_experiments_lib",
@@ -27,7 +27,7 @@ grpc_cc_library(
     defines = select({
         "//:grpc_experiments_are_final": [
             "GRPC_EXPERIMENTS_ARE_FINAL",
-            "GRPC_EXPERIMENTS_TEST_FIXTURE"
+            "GRPC_EXPERIMENTS_TEST_FIXTURE",
         ],
         "//conditions:default": ["GRPC_EXPERIMENTS_TEST_FIXTURE"],
     }),
@@ -37,9 +37,9 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "//src/core:no_destruct",
         "//:config_vars",
         "//:gpr",
+        "//src/core:no_destruct",
     ],
 )
 
