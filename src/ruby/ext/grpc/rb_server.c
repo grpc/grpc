@@ -257,14 +257,12 @@ static VALUE grpc_rb_server_request_call_ensure(VALUE value_args) {
    Requests notification of a new call on a server. */
 static VALUE grpc_rb_server_request_call(VALUE self) {
   grpc_rb_server* s;
-
   TypedData_Get_Struct(self, grpc_rb_server, &grpc_rb_server_data_type, s);
+  grpc_rb_fork_guard();
   if (s->wrapped == NULL) {
     rb_raise(rb_eRuntimeError, "destroyed!");
   }
-
   struct server_request_call_args args = {.server = s, .call_queue = NULL};
-
   return rb_ensure(grpc_rb_server_request_call_try, (VALUE)&args,
                    grpc_rb_server_request_call_ensure, (VALUE)&args);
 }
@@ -272,7 +270,6 @@ static VALUE grpc_rb_server_request_call(VALUE self) {
 static VALUE grpc_rb_server_start(VALUE self) {
   grpc_rb_server* s = NULL;
   TypedData_Get_Struct(self, grpc_rb_server, &grpc_rb_server_data_type, s);
-
   grpc_ruby_fork_guard();
   if (s->wrapped == NULL) {
     rb_raise(rb_eRuntimeError, "destroyed!");
