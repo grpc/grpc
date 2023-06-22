@@ -249,6 +249,7 @@
       'target_name': 'grpc',
       'type': 'static_library',
       'dependencies': [
+        'absl/algorithm:container',
         'absl/cleanup:cleanup',
         'absl/container:flat_hash_map',
         'absl/container:flat_hash_set',
@@ -1078,6 +1079,7 @@
       'target_name': 'grpc_unsecure',
       'type': 'static_library',
       'dependencies': [
+        'absl/algorithm:container',
         'absl/cleanup:cleanup',
         'absl/container:flat_hash_map',
         'absl/container:flat_hash_set',

@@ -17,11 +17,14 @@
 //
 
 #include <atomic>
+#include <map>
 #include <regex>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
 
@@ -69,8 +72,21 @@ class Verifier {
   static void DispatchLog(gpr_log_func_args* args) { g_log_func_.load()(args); }
 
   static void NoLog(gpr_log_func_args* args) {
-    static const auto* const re = new std::regex("^Verify .* for [0-9]+ms");
-    if (std::regex_match(args->message, *re)) {
+    static const auto* const allowed_logs_by_module =
+        new std::map<absl::string_view, std::regex>(
+            {{"cq_verifier.cc", std::regex("^Verify .* for [0-9]+ms")}});
+    absl::string_view filename = args->file;
+    auto slash = filename.rfind('/');
+    if (slash != absl::string_view::npos) {
+      filename = filename.substr(slash + 1);
+    }
+    slash = filename.rfind('\\');
+    if (slash != absl::string_view::npos) {
+      filename = filename.substr(slash + 1);
+    }
+    auto it = allowed_logs_by_module->find(filename);
+    if (it != allowed_logs_by_module->end() &&
+        std::regex_match(args->message, it->second)) {
       gpr_default_log(args);
       return;
     }

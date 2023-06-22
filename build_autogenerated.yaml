@@ -1779,6 +1779,7 @@ libs:
   - src/core/tsi/transport_security.cc
   - src/core/tsi/transport_security_grpc.cc
   deps:
+  - absl/algorithm:container
   - absl/cleanup:cleanup
   - absl/container:flat_hash_map
   - absl/container:flat_hash_set
@@ -2713,6 +2714,7 @@ libs:
   - src/core/tsi/transport_security.cc
   - src/core/tsi/transport_security_grpc.cc
   deps:
+  - absl/algorithm:container
   - absl/cleanup:cleanup
   - absl/container:flat_hash_map
   - absl/container:flat_hash_set
@@ -11215,6 +11217,7 @@ targets:
   headers:
   - test/core/client_channel/lb_policy/lb_policy_test_lib.h
   - test/core/event_engine/mock_event_engine.h
+  - test/core/util/scoped_env_var.h
   src:
   - test/core/client_channel/lb_policy/pick_first_test.cc
   deps:
@@ -12034,6 +12037,19 @@ targets:
   deps:
   - grpc_test_util
   - grpc++_test_config
+- name: resource_quota_end2end_stress_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - test/cpp/end2end/resource_quota_end2end_stress_test.cc
+  deps:
+  - grpc++_test_util
 - name: resource_quota_server_test
   gtest: true
   build: test
@@ -16584,6 +16600,7 @@ targets:
   headers:
   - src/cpp/server/csds/csds.h
   - test/cpp/end2end/test_health_check_service_impl.h
+  - test/cpp/interop/xds_interop_server_lib.h
   src:
   - src/proto/grpc/health/v1/health.proto
   - src/proto/grpc/testing/empty.proto
@@ -16597,6 +16614,35 @@ targets:
   - src/cpp/server/csds/csds.cc
   - test/cpp/end2end/test_health_check_service_impl.cc
   - test/cpp/interop/xds_interop_server.cc
+  - test/cpp/interop/xds_interop_server_lib.cc
+  deps:
+  - grpc++_reflection
+  - grpcpp_channelz
+  - grpc_test_util
+  - grpc++_test_config
+- name: xds_interop_server_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/cpp/server/csds/csds.h
+  - test/cpp/end2end/test_health_check_service_impl.h
+  - test/cpp/interop/xds_interop_server_lib.h
+  src:
+  - src/proto/grpc/health/v1/health.proto
+  - src/proto/grpc/testing/empty.proto
+  - src/proto/grpc/testing/istio_echo.proto
+  - src/proto/grpc/testing/messages.proto
+  - src/proto/grpc/testing/test.proto
+  - src/proto/grpc/testing/xds/v3/base.proto
+  - src/proto/grpc/testing/xds/v3/config_dump.proto
+  - src/proto/grpc/testing/xds/v3/csds.proto
+  - src/proto/grpc/testing/xds/v3/percent.proto
+  - src/cpp/server/admin/admin_services.cc
+  - src/cpp/server/csds/csds.cc
+  - test/cpp/end2end/test_health_check_service_impl.cc
+  - test/cpp/interop/xds_interop_server_lib.cc
+  - test/cpp/interop/xds_interop_server_test.cc
   deps:
   - grpc++_reflection
   - grpcpp_channelz

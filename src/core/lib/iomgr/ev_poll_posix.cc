@@ -1404,10 +1404,11 @@ const grpc_event_engine_vtable grpc_ev_poll_posix = {
         return false;
       }
       if (grpc_core::Fork::Enabled()) {
-        track_fds_for_fork = true;
-        gpr_mu_init(&fork_fd_list_mu);
-        grpc_core::Fork::SetResetChildPollingEngineFunc(
-            reset_event_manager_on_fork);
+        if (grpc_core::Fork::RegisterResetChildPollingEngineFunc(
+                reset_event_manager_on_fork)) {
+          track_fds_for_fork = true;
+          gpr_mu_init(&fork_fd_list_mu);
+        }
       }
       return true;
     },

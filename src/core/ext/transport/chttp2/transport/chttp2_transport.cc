@@ -1861,8 +1861,9 @@ static void send_goaway(grpc_chttp2_transport* t, grpc_error_handle error,
   } else if (t->sent_goaway_state == GRPC_CHTTP2_NO_GOAWAY_SEND ||
              t->sent_goaway_state == GRPC_CHTTP2_GRACEFUL_GOAWAY) {
     // We want to log this irrespective of whether http tracing is enabled
-    gpr_log(GPR_DEBUG, "%s: Sending goaway err=%s",
+    gpr_log(GPR_DEBUG, "%s %s: Sending goaway last_new_stream_id=%d err=%s",
             std::string(t->peer_string.as_string_view()).c_str(),
+            t->is_client ? "CLIENT" : "SERVER", t->last_new_stream_id,
             grpc_core::StatusToString(error).c_str());
     t->sent_goaway_state = GRPC_CHTTP2_FINAL_GOAWAY_SEND_SCHEDULED;
     grpc_chttp2_goaway_append(

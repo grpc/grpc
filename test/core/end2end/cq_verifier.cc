@@ -344,8 +344,10 @@ grpc_event CqVerifier::Step(gpr_timespec deadline) {
 
 void CqVerifier::Verify(Duration timeout, SourceLocation location) {
   if (expectations_.empty()) return;
-  gpr_log(GPR_ERROR, "Verify %s for %s", ToShortString().c_str(),
-          timeout.ToString().c_str());
+  if (log_verifications_) {
+    gpr_log(GPR_ERROR, "Verify %s for %s", ToShortString().c_str(),
+            timeout.ToString().c_str());
+  }
   const gpr_timespec deadline =
       grpc_timeout_milliseconds_to_deadline(timeout.millis());
   while (!expectations_.empty()) {
@@ -402,8 +404,10 @@ bool CqVerifier::AllMaybes() const {
 }
 
 void CqVerifier::VerifyEmpty(Duration timeout, SourceLocation location) {
-  gpr_log(GPR_ERROR, "Verify empty completion queue for %s",
-          timeout.ToString().c_str());
+  if (log_verifications_) {
+    gpr_log(GPR_ERROR, "Verify empty completion queue for %s",
+            timeout.ToString().c_str());
+  }
   const gpr_timespec deadline =
       gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC), timeout.as_timespec());
   GPR_ASSERT(expectations_.empty());
