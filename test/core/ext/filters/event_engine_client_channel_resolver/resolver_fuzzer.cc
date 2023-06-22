@@ -13,8 +13,6 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
-#include <stdint.h>
-
 #include <algorithm>
 #include <memory>
 #include <string>
@@ -23,9 +21,7 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/container/flat_hash_set.h"
 #include "absl/functional/any_invocable.h"
-#include "absl/hash/hash.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -141,6 +137,12 @@ class FuzzingResolverEventEngine
     return std::make_unique<FuzzingDNSResolver>(this);
   }
 
+  TaskHandle RunAfter(Duration /* when */,
+                      absl::AnyInvocable<void()> /* closure */) override {
+    return TaskHandle::kInvalid;
+  }
+  bool Cancel(TaskHandle /* handle */) override { return true; }
+
   void Tick() { runner_.Tick(); }
 
  private:
@@ -149,74 +151,39 @@ class FuzzingResolverEventEngine
     explicit FuzzingDNSResolver(FuzzingResolverEventEngine* engine)
         : engine_(engine) {}
 
-    ~FuzzingDNSResolver() override { GPR_ASSERT(known_handles_.empty()); }
-    LookupTaskHandle LookupHostname(LookupHostnameCallback on_resolve,
-                                    absl::string_view /* name */,
-                                    absl::string_view /* default_port */,
-                                    Duration /* timeout */) override {
-      int handle = NextHandle();
+    void LookupHostname(LookupHostnameCallback on_resolve,
+                        absl::string_view /* name */,
+                        absl::string_view /* default_port */) override {
       CheckAndSetOrphan(ExecutionStep::DURING_LOOKUP_HOSTNAME);
       if (!engine_->has_been_orphaned_) {
-        engine_->runner_.Run(
-            [this, cb = std::move(on_resolve), handle]() mutable {
-              if (!HandleExists(handle)) return;
-              DeleteHandle(handle);
-              cb(engine_->hostname_responses_);
-              CheckAndSetOrphan(ExecutionStep::AFTER_LOOKUP_HOSTNAME_CALLBACK);
-            });
+        engine_->runner_.Run([this, cb = std::move(on_resolve)]() mutable {
+          CheckAndSetOrphan(ExecutionStep::AFTER_LOOKUP_HOSTNAME_CALLBACK);
+          cb(engine_->hostname_responses_);
+        });
       }
-      return {handle, 0};
     }
-    LookupTaskHandle LookupSRV(LookupSRVCallback on_resolve,
-                               absl::string_view /* name */,
-                               Duration /* timeout */) override {
-      int handle = NextHandle();
+    void LookupSRV(LookupSRVCallback on_resolve,
+                   absl::string_view /* name */) override {
       CheckAndSetOrphan(ExecutionStep::DURING_LOOKUP_SRV);
       if (!engine_->has_been_orphaned_) {
-        engine_->runner_.Run(
-            [this, cb = std::move(on_resolve), handle]() mutable {
-              if (!HandleExists(handle)) return;
-              DeleteHandle(handle);
-              cb(engine_->srv_responses_);
-              CheckAndSetOrphan(ExecutionStep::AFTER_LOOKUP_SRV_CALLBACK);
-            });
+        engine_->runner_.Run([this, cb = std::move(on_resolve)]() mutable {
+          CheckAndSetOrphan(ExecutionStep::AFTER_LOOKUP_SRV_CALLBACK);
+          cb(engine_->srv_responses_);
+        });
       }
-      return {handle, 0};
     }
-    LookupTaskHandle LookupTXT(LookupTXTCallback on_resolve,
-                               absl::string_view /* name */,
-                               Duration /* timeout */) override {
-      int handle = NextHandle();
+    void LookupTXT(LookupTXTCallback on_resolve,
+                   absl::string_view /* name */) override {
       CheckAndSetOrphan(ExecutionStep::DURING_LOOKUP_TXT);
       if (!engine_->has_been_orphaned_) {
-        engine_->runner_.Run(
-            [this, cb = std::move(on_resolve), handle]() mutable {
-              if (!HandleExists(handle)) return;
-              DeleteHandle(handle);
-              cb(engine_->txt_responses_);
-              CheckAndSetOrphan(ExecutionStep::AFTER_LOOKUP_TXT_CALLBACK);
-            });
+        engine_->runner_.Run([this, cb = std::move(on_resolve)]() mutable {
+          CheckAndSetOrphan(ExecutionStep::AFTER_LOOKUP_TXT_CALLBACK);
+          cb(engine_->txt_responses_);
+        });
       }
-      return {handle, 0};
-    }
-    bool CancelLookup(LookupTaskHandle handle) override {
-      int bit_handle = handle.keys[0];
-      if (!HandleExists(bit_handle)) return false;
-      DeleteHandle(bit_handle);
-      return true;
     }
 
    private:
-    int NextHandle() {
-      static uint64_t next_handle = 0;
-      known_handles_.insert(++next_handle);
-      return next_handle;
-    }
-
-    bool HandleExists(int handle) { return known_handles_.contains(handle); }
-
-    void DeleteHandle(int handle) { known_handles_.erase(handle); }
-
     void CheckAndSetOrphan(ExecutionStep current_execution_step) {
       if (engine_->should_orphan_at_step_ == current_execution_step) {
         *engine_->done_resolving_ = true;
@@ -225,8 +192,6 @@ class FuzzingResolverEventEngine
     }
 
     FuzzingResolverEventEngine* engine_;
-    // The set of outstanding LookupTaskHandles.
-    absl::flat_hash_set<uint64_t> known_handles_;
   };
 
   // members

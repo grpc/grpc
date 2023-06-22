@@ -321,17 +321,14 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   /// called.
   virtual bool CancelConnect(ConnectionHandle handle) = 0;
   /// Provides asynchronous resolution.
+  ///
+  /// This object has a destruction-is-cancellation semantic.
+  /// Implementations should make sure that all pending requests are cancelled
+  /// when the object is destroyed and all pending callbacks will be called
+  /// shortly. If cancellation races with request completion, implementations
+  /// may choose to either cancel or satisfy the request.
   class DNSResolver {
    public:
-    /// Task handle for DNS Resolution requests.
-    struct LookupTaskHandle {
-      intptr_t keys[2];
-      static const LookupTaskHandle kInvalid;
-      friend bool operator==(const LookupTaskHandle& lhs,
-                             const LookupTaskHandle& rhs);
-      friend bool operator!=(const LookupTaskHandle& lhs,
-                             const LookupTaskHandle& rhs);
-    };
     /// Optional configuration for DNSResolvers.
     struct ResolverOptions {
       /// If empty, default DNS servers will be used.
@@ -363,13 +360,11 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
     /// \a default_port may be a non-numeric named service port, and will only
     /// be used if \a address does not already contain a port component.
     ///
-    /// When the lookup is complete, the \a on_resolve callback will be invoked
-    /// with a status indicating the success or failure of the lookup.
-    /// Implementations should pass the appropriate statuses to the callback.
-    /// For example, callbacks might expect to receive DEADLINE_EXCEEDED or
+    /// When the lookup is complete or cancelled, the \a on_resolve callback
+    /// will be invoked with a status indicating the success or failure of the
+    /// lookup. Implementations should pass the appropriate statuses to the
+    /// callback. For example, callbacks might expect to receive CANCELLED or
     /// NOT_FOUND.
-    ///
-    /// If cancelled, \a on_resolve will not be executed.
     virtual void LookupHostname(LookupHostnameCallback on_resolve,
                                 absl::string_view name,
                                 absl::string_view default_port) = 0;

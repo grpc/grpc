@@ -27,7 +27,6 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/cleanup/cleanup.h"
-#include "absl/container/flat_hash_set.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/match.h"
@@ -45,9 +44,7 @@
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/event_engine/handle_containers.h"
 #include "src/core/lib/event_engine/resolved_address_internal.h"
-#include "src/core/lib/event_engine/utils.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -73,7 +70,6 @@ namespace {
 #define GRPC_DNS_DEFAULT_QUERY_TIMEOUT_MS 120000
 
 using grpc_event_engine::experimental::EventEngine;
-using grpc_event_engine::experimental::LookupTaskHandleSet;
 
 // TODO(hork): Investigate adding a resolver test scenario where the first
 // balancer hostname lookup result is an error, and the second contains valid
@@ -164,7 +160,6 @@ class EventEngineClientChannelDNSResolver : public PollingResolver {
     size_t number_of_balancer_hostnames_resolved_
         ABSL_GUARDED_BY(on_resolved_mu_) = 0;
     bool orphaned_ ABSL_GUARDED_BY(on_resolved_mu_) = false;
-    bool timed_out_ ABSL_GUARDED_BY(on_resolved_mu_) = false;
     absl::optional<EventEngine::TaskHandle> timeout_handle_
         ABSL_GUARDED_BY(on_resolved_mu_);
     std::unique_ptr<EventEngine::DNSResolver> event_engine_resolver_;
@@ -242,12 +237,8 @@ EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     event_engine_resolver_->LookupSRV(
         [self = Ref(DEBUG_LOCATION, "OnSRVResolved")](
             absl::StatusOr<std::vector<EventEngine::DNSResolver::SRVRecord>>
-                srv_records) {
-          ApplicationCallbackExecCtx callback_exec_ctx;
-          ExecCtx exec_ctx;
-          self->OnSRVResolved(std::move(srv_records));
-        },
-        absl::StrCat("_grpclb._tcp.", resolver_->name_to_resolve()));
+                srv_records) { self->OnSRVResolved(std::move(srv_records)); },
+        resolver_->name_to_resolve());
   }
   if (resolver_->request_service_config_) {
     GRPC_EVENT_ENGINE_RESOLVER_TRACE(
@@ -300,7 +291,6 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
   MutexLock lock(&on_resolved_mu_);
   GRPC_EVENT_ENGINE_RESOLVER_TRACE("DNSResolver::%p OnTimeout",
                                    resolver_.get());
-  timed_out_ = true;
   timeout_handle_.reset();
   event_engine_resolver_.reset();
 }
@@ -355,7 +345,7 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     result = OnResolvedLocked();
     return;
   }
-  if (timed_out_) {
+  if (!timeout_handle_.has_value()) {
     // We could reach here if timeout happened while an SRV query was finishing.
     errors_.AddError(
         "timed out - not initiating subsequent balancer hostname requests");
@@ -367,8 +357,9 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     GRPC_EVENT_ENGINE_RESOLVER_TRACE(
         "DNSResolver::%p Starting balancer hostname resolution for %s:%d",
         resolver_.get(), srv_record.host.c_str(), srv_record.port);
+    ++number_of_balancer_hostnames_initiated_;
     event_engine_resolver_->LookupHostname(
-        [host = srv_record.host,
+        [host = std::move(srv_record.host),
          self = Ref(DEBUG_LOCATION, "OnBalancerHostnamesResolved")](
             absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>
                 new_balancer_addresses) mutable {
@@ -376,7 +367,6 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
                                             std::move(new_balancer_addresses));
         },
         srv_record.host, std::to_string(srv_record.port));
-    ++number_of_balancer_hostnames_initiated_;
   }
 }
 

@@ -1841,6 +1841,7 @@ grpc_cc_library(
         "time",
         "//:debug_location",
         "//:event_engine_base_hdrs",
+        "//:exec_ctx",
         "//:gpr",
         "//:grpc_public_hdrs",
         "//:ref_counted_ptr",
@@ -1942,6 +1943,7 @@ grpc_cc_library(
         "socket_mutator",
         "status_helper",
         "//:event_engine_base_hdrs",
+        "//:exec_ctx",
         "//:gpr",
     ],
 )
@@ -5220,7 +5222,6 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/cleanup",
-        "absl/container:flat_hash_set",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -5230,7 +5231,6 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "event_engine_common",
-        "event_engine_utils",
         "grpc_service_config",
         "polling_resolver",
         "service_config_helper",
