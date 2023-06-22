@@ -16,17 +16,16 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/debug/trace.h"
+
 #if GRPC_ARES == 1
 
 #include <list>
 #include <memory>
-#include <variant>
-#include <vector>
 
 #include <ares.h>
 
 #include "absl/container/flat_hash_map.h"
-#include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"

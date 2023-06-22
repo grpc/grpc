@@ -18,18 +18,13 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#include <algorithm>
-#include <chrono>
 #include <cstdlib>
 #include <cstring>
 #include <initializer_list>
 #include <memory>
 #include <string>
-#include <thread>
 #include <tuple>
 #include <vector>
-
-#include <address_sorting/address_sorting.h>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"

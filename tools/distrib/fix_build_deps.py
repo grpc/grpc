@@ -261,7 +261,7 @@ def grpc_cc_library(
     for hdr in hdrs + public_hdrs:
         vendors[_get_filename(hdr, parsing_path)].append(name)
     for src in srcs:
-        if src.endswith('.h'):
+        if src.endswith(".h"):
             # headers can come from srcs as well
             vendors[_get_filename(src, parsing_path)].append(name)
     inc = set()
