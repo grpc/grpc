@@ -507,56 +507,6 @@ TEST_F(EventEngineDNSTest, LocalhostResultHasIPv6First) {
   dns_resolver_signal_.WaitForNotification();
 }
 
-namespace {
-
-bool IPv6DisabledGetSourceAddr(address_sorting_source_addr_factory* /*factory*/,
-                               const address_sorting_address* dest_addr,
-                               address_sorting_address* source_addr) {
-  // Mock lack of IPv6. For IPv4, set the source addr to be the same
-  // as the destination; tests won't actually connect on the result anyways.
-  if (address_sorting_abstract_get_family(dest_addr) ==
-      ADDRESS_SORTING_AF_INET6) {
-    return false;
-  }
-  memcpy(source_addr->addr, &dest_addr->addr, dest_addr->len);
-  source_addr->len = dest_addr->len;
-  return true;
-}
-
-void DeleteSourceAddrFactory(address_sorting_source_addr_factory* factory) {
-  delete factory;
-}
-
-const address_sorting_source_addr_factory_vtable
-    kMockIpv6DisabledSourceAddrFactoryVtable = {
-        IPv6DisabledGetSourceAddr,
-        DeleteSourceAddrFactory,
-};
-
-}  // namespace
-
-/*
-TEST_F(EventEngineDNSTest, LocalhostResultHasIPv4FirstWhenIPv6IsntAvalailable) {
-  // Mock the kernel source address selection. Note that source addr factory
-  // is reset to its default value during grpc initialization for each test.
-  address_sorting_source_addr_factory* mock =
-      new address_sorting_source_addr_factory();
-  mock->vtable = &kMockIpv6DisabledSourceAddrFactoryVtable;
-  address_sorting_override_source_addr_factory_for_testing(mock);
-  // run the test
-  auto dns_resolver = CreateDNSResolverWithoutSpecifyingServer();
-  dns_resolver->LookupHostname(
-      [this](auto result) {
-        EXPECT_TRUE(result.ok());
-        EXPECT_TRUE(!result->empty() &&
-                    (*result)[0].address()->sa_family == AF_INET);
-        dns_resolver_signal_.Notify();
-      },
-      "localhost:1", "");
-  dns_resolver_signal_.WaitForNotification();
-}
-*/
-
 TEST_F(EventEngineDNSTest, NonNumericDefaultPort) {
   auto dns_resolver = CreateDNSResolverWithoutSpecifyingServer();
   dns_resolver->LookupHostname(

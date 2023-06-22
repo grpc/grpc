@@ -144,7 +144,6 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
     PosixDNSResolver(const ResolverOptions& options, PosixEventPoller* poller,
                      std::shared_ptr<EventEngine> event_engine);
 #endif  // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_TCP)
-    ~PosixDNSResolver() override;
     void LookupHostname(LookupHostnameCallback on_resolve,
                         absl::string_view name,
                         absl::string_view default_port) override;

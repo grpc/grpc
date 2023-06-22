@@ -501,19 +501,6 @@ PosixEventEngine::PosixDNSResolver::PosixDNSResolver(
       event_engine_(std::move(event_engine)),
       poller_(poller) {}
 
-PosixEventEngine::PosixDNSResolver::~PosixDNSResolver() {
-  // The DNSResolver is held alive by its caller (e.g.
-  // event_engine_client_channel_resolver). The caller should be alive until
-  // its passed-in on_resolve closure gets destroyed (usually through a
-  // RefCountedPtr embedded in the closure). Until that happened, the
-  // DNSResolver is alive as well as the EventEngine (since DNSResolver holds a
-  // shared_ptr to the engine). Therefore, when the DNSResolver is destroyed,
-  // all on_resolves should have been destroyed (they may not be called when the
-  // request was cancelled) and all inflight handles should have been cleared
-  // regardless of the actual sequence of events.
-  ares_resolver_.reset();
-}
-
 void PosixEventEngine::PosixDNSResolver::LookupHostname(
     LookupHostnameCallback on_resolve, absl::string_view name,
     absl::string_view default_port) {

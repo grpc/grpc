@@ -450,9 +450,9 @@ void AresResolver::OnReadable(FdNode* fd_node, absl::Status status) {
   GRPC_ARES_RESOLVER_TRACE_LOG("OnReadable: fd: %d; request: %p; status: %s",
                                fd_node->as, this, status.ToString().c_str());
   if (status.ok() && !shutting_down_) {
-    // do {
-    ares_process_fd(channel_, fd_node->as, ARES_SOCKET_BAD);
-    // } while (fd_node->polled_fd->IsFdStillReadableLocked());
+    do {
+      ares_process_fd(channel_, fd_node->as, ARES_SOCKET_BAD);
+    } while (fd_node->polled_fd->IsFdStillReadableLocked());
   } else {
     // If error is not absl::OkStatus() or the resolution was cancelled, it
     // means the fd has been shutdown or timed out. The pending lookups made
