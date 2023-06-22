@@ -238,7 +238,7 @@ EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
         [self = Ref(DEBUG_LOCATION, "OnSRVResolved")](
             absl::StatusOr<std::vector<EventEngine::DNSResolver::SRVRecord>>
                 srv_records) { self->OnSRVResolved(std::move(srv_records)); },
-        resolver_->name_to_resolve());
+        absl::StrCat("_grpclb._tcp.", resolver_->name_to_resolve()));
   }
   if (resolver_->request_service_config_) {
     GRPC_EVENT_ENGINE_RESOLVER_TRACE(
@@ -359,7 +359,7 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
         resolver_.get(), srv_record.host.c_str(), srv_record.port);
     ++number_of_balancer_hostnames_initiated_;
     event_engine_resolver_->LookupHostname(
-        [host = std::move(srv_record.host),
+        [host = srv_record.host,
          self = Ref(DEBUG_LOCATION, "OnBalancerHostnamesResolved")](
             absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>
                 new_balancer_addresses) mutable {

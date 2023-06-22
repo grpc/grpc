@@ -80,8 +80,6 @@ namespace experimental {
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 
-using LookupTaskHandle = PosixEventEngine::PosixDNSResolver::LookupTaskHandle;
-
 void AsyncConnect::Start(EventEngine::Duration timeout) {
   on_writable_ = PosixEngineClosure::ToPermanentClosure(
       [this](absl::Status status) { OnWritable(std::move(status)); });
