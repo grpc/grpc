@@ -93,7 +93,7 @@ class RpcBehaviorLbPolicy : public LoadBalancingPolicy {
                 {{std::string(delegate_->name()),
                   grpc_core::Json::FromObject({})}})}));
     GPR_ASSERT(delegate_config.ok());
-    args.config = *delegate_config;
+    args.config = std::move(*delegate_config);
     return delegate_->UpdateLocked(std::move(args));
   }
 
