@@ -2974,6 +2974,13 @@ void ClientPromiseBasedCall::StartRecvInitialMetadata(
           NextResult<ServerMetadataHandle> next_metadata) mutable {
         server_initial_metadata_.sender.Close();
         ServerMetadataHandle metadata;
+        if (grpc_call_trace.enabled()) {
+          gpr_log(GPR_INFO, "%s[call] RecvTrailingMetadata: %s",
+                  DebugTag().c_str(),
+                  next_metadata.has_value()
+                      ? next_metadata.value()->DebugString().c_str()
+                      : "null");
+        }
         if (next_metadata.has_value()) {
           is_trailers_only_ = false;
           metadata = std::move(next_metadata.value());
@@ -2993,6 +3000,8 @@ void ClientPromiseBasedCall::Finish(ServerMetadataHandle trailing_metadata) {
     gpr_log(GPR_INFO, "%s[call] Finish: %s", DebugTag().c_str(),
             trailing_metadata->DebugString().c_str());
   }
+  is_trailers_only_ =
+      trailing_metadata->get(GrpcTrailersOnly()).value_or(is_trailers_only_);
   ResetDeadline();
   set_completed();
   client_to_server_messages_.sender.CloseWithError();
