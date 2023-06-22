@@ -22,6 +22,7 @@
 
 #if GRPC_ARES == 1
 
+#include <ares_nameser.h>
 #include <string.h>
 
 #include <algorithm>
@@ -46,7 +47,6 @@
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/event_engine/grpc_polled_fd.h"
-#include "src/core/lib/event_engine/nameser.h"  // IWYU pragma: keep
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/time_util.h"
 #include "src/core/lib/gprpp/debug_location.h"
