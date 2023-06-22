@@ -2289,51 +2289,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_ares_wrapper",
-    srcs = [
-        "lib/event_engine/grpc_ares_wrapper.cc",
-    ],
-    hdrs = [
-        "lib/event_engine/grpc_ares_wrapper.h",
-        "lib/event_engine/grpc_polled_fd.h",
-        "lib/event_engine/nameser.h",
-        "lib/event_engine/posix_engine/grpc_polled_fd_posix.h",
-    ],
-    external_deps = [
-        "absl/base:core_headers",
-        "absl/functional:any_invocable",
-        "absl/status",
-        "absl/status:statusor",
-        "absl/strings",
-        "absl/strings:str_format",
-        "absl/types:optional",
-        "address_sorting",
-        "cares",
-    ],
-    deps = [
-        "error",
-        "event_engine_tcp_socket_utils",
-        "event_engine_time_util",
-        "examine_stack",
-        "grpc_sockaddr",
-        "iomgr_port",
-        "posix_event_engine_closure",
-        "posix_event_engine_event_poller",
-        "posix_event_engine_tcp_socket_utils",
-        "resolved_address",
-        "status_helper",
-        "//:debug_location",
-        "//:event_engine_base_hdrs",
-        "//:gpr",
-        "//:grpc_trace",
-        "//:orphanable",
-        "//:parse_address",
-        "//:ref_counted_ptr",
-        "//:sockaddr_utils",
-    ],
-)
-
-grpc_cc_library(
     name = "ares_resolver",
     srcs = [
         "lib/event_engine/ares_resolver.cc",
