@@ -276,7 +276,7 @@ void AresResolver::LookupHostname(
                        &AresResolver::OnHostbynameDoneLocked,
                        static_cast<void*>(resolver_arg));
   }
-  WorkLocked();
+  CheckSocketsLocked();
   MaybeStartTimerLocked();
 }
 
@@ -309,7 +309,7 @@ void AresResolver::LookupSRV(
   ares_query(channel_, std::string(host).c_str(), ns_c_in, ns_t_srv,
              &AresResolver::OnSRVQueryDoneLocked,
              static_cast<void*>(resolver_arg));
-  WorkLocked();
+  CheckSocketsLocked();
   MaybeStartTimerLocked();
 }
 
@@ -341,7 +341,7 @@ void AresResolver::LookupTXT(
   auto* resolver_arg = new QueryArg(this, id_, host);
   ares_search(channel_, std::string(host).c_str(), ns_c_in, ns_t_txt,
               &AresResolver::OnTXTDoneLocked, static_cast<void*>(resolver_arg));
-  WorkLocked();
+  CheckSocketsLocked();
   MaybeStartTimerLocked();
 }
 
@@ -355,7 +355,7 @@ AresResolver::AresResolver(
       polled_fd_factory_(std::move(polled_fd_factory)),
       event_engine_(std::move(event_engine)) {}
 
-void AresResolver::WorkLocked() {
+void AresResolver::CheckSocketsLocked() {
   FdNodeList new_list;
   if (!shutting_down_) {
     ares_socket_t socks[ARES_GETSOCK_MAXNUM];
@@ -367,7 +367,7 @@ void AresResolver::WorkLocked() {
             fd_node_list_.begin(), fd_node_list_.end(),
             [sock = socks[i]](const auto& node) { return node->as == sock; });
         if (iter == fd_node_list_.end()) {
-          new_list.emplace_back(new FdNode(
+          new_list.emplace_back(std::make_unique<FdNode>(
               socks[i], polled_fd_factory_->NewGrpcPolledFdLocked(socks[i])));
           GRPC_ARES_RESOLVER_TRACE_LOG("request:%p new fd: %d", this, socks[i]);
         } else {
@@ -450,9 +450,9 @@ void AresResolver::OnReadable(FdNode* fd_node, absl::Status status) {
   GRPC_ARES_RESOLVER_TRACE_LOG("OnReadable: fd: %d; request: %p; status: %s",
                                fd_node->as, this, status.ToString().c_str());
   if (status.ok() && !shutting_down_) {
-    do {
-      ares_process_fd(channel_, fd_node->as, ARES_SOCKET_BAD);
-    } while (fd_node->polled_fd->IsFdStillReadableLocked());
+    // do {
+    ares_process_fd(channel_, fd_node->as, ARES_SOCKET_BAD);
+    // } while (fd_node->polled_fd->IsFdStillReadableLocked());
   } else {
     // If error is not absl::OkStatus() or the resolution was cancelled, it
     // means the fd has been shutdown or timed out. The pending lookups made
@@ -461,7 +461,7 @@ void AresResolver::OnReadable(FdNode* fd_node, absl::Status status) {
     // following Work() method.
     ares_cancel(channel_);
   }
-  WorkLocked();
+  CheckSocketsLocked();
 }
 
 void AresResolver::OnWritable(FdNode* fd_node, absl::Status status) {
@@ -480,7 +480,7 @@ void AresResolver::OnWritable(FdNode* fd_node, absl::Status status) {
     // following Work() method.
     ares_cancel(channel_);
   }
-  WorkLocked();
+  CheckSocketsLocked();
 }
 
 // In case of non-responsive DNS servers, dropped packets, etc., c-ares has
@@ -513,7 +513,7 @@ void AresResolver::OnAresBackupPollAlarm() {
         [self = Ref(DEBUG_LOCATION, "OnAresBackupPollAlarm")]() {
           self->OnAresBackupPollAlarm();
         });
-    WorkLocked();
+    CheckSocketsLocked();
   }
 }
 

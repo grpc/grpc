@@ -102,7 +102,7 @@ class AresResolver : public grpc_core::InternallyRefCounted<AresResolver> {
   AresResolver(std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
                std::shared_ptr<EventEngine> event_engine, ares_channel channel);
 
-  void WorkLocked();
+  void CheckSocketsLocked();
   void MaybeStartTimerLocked();
   void OnReadable(FdNode* fd_node, absl::Status status);
   void OnWritable(FdNode* fd_node, absl::Status status);
