@@ -476,7 +476,7 @@ RingHash::RingHashSubchannelList::Ring::Ring(
         grpc_sockaddr_to_string(&sd->address().address(), false).value();
     // Weight should never be zero, but ignore it just in case, since
     // that value would screw up the ring-building algorithm.
-    if (weight_arg.has_value() && *weight_arg > 0) {
+    if (weight_arg.value_or(0) > 0) {
       address_weight.weight = *weight_arg;
     }
     sum += address_weight.weight;
