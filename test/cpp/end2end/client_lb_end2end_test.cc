@@ -212,14 +212,13 @@ class FakeResolverResponseGeneratorWrapper {
     response_generator_ = std::move(other.response_generator_);
   }
 
-  void SetNextResolution(
-      const std::vector<int>& ports, const char* service_config_json = nullptr,
-      const grpc_core::ChannelArgs& per_address_args =
-          grpc_core::ChannelArgs()) {
+  void SetNextResolution(const std::vector<int>& ports,
+                         const char* service_config_json = nullptr,
+                         const grpc_core::ChannelArgs& per_address_args =
+                             grpc_core::ChannelArgs()) {
     grpc_core::ExecCtx exec_ctx;
-    response_generator_->SetResponse(
-        BuildFakeResults(ipv6_only_, ports, service_config_json,
-                         per_address_args));
+    response_generator_->SetResponse(BuildFakeResults(
+        ipv6_only_, ports, service_config_json, per_address_args));
   }
 
   void SetNextResolutionUponError(const std::vector<int>& ports) {

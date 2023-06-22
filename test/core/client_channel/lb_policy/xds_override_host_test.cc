@@ -16,7 +16,6 @@
 
 #include <algorithm>
 #include <array>
-#include <map>
 #include <memory>
 #include <string>
 #include <utility>
@@ -33,6 +32,7 @@
 
 #include "src/core/ext/filters/stateful_session/stateful_session_filter.h"
 #include "src/core/ext/xds/xds_health_status.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/json/json.h"

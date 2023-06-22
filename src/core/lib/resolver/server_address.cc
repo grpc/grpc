@@ -23,8 +23,6 @@
 #include <string.h>
 
 #include <algorithm>
-#include <initializer_list>
-#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
@@ -32,11 +30,11 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gpr/useful.h"
 
 // IWYU pragma: no_include <sys/socket.h>
 

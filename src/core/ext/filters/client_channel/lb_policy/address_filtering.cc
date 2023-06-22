@@ -23,8 +23,8 @@
 #include <algorithm>
 #include <utility>
 
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_join.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 
 namespace grpc_core {
 

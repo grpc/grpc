@@ -27,6 +27,7 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/json.h>
@@ -171,15 +172,16 @@ absl::Status XdsWrrLocalityLb::UpdateLocked(UpdateArgs args) {
   if (args.addresses.ok()) {
     for (const auto& address : *args.addresses) {
       auto* locality_name = address.args().GetObject<XdsLocalityName>();
-      auto weight = address.args().GetInt(GRPC_ARG_XDS_LOCALITY_WEIGHT);
-      if (locality_name != nullptr && weight.has_value()) {
+      uint32_t weight =
+          address.args().GetInt(GRPC_ARG_XDS_LOCALITY_WEIGHT).value_or(0);
+      if (locality_name != nullptr && weight > 0) {
         auto p = locality_weights.emplace(
-            locality_name->AsHumanReadableString(), *weight);
-        if (!p.second && p.first->second != *weight) {
+            locality_name->AsHumanReadableString(), weight);
+        if (!p.second && p.first->second != weight) {
           gpr_log(GPR_ERROR,
                   "INTERNAL ERROR: xds_wrr_locality found different weights "
-                  "for locality %s (%d vs %d); using first value",
-                  p.first->first.c_str(), p.first->second, *weight);
+                  "for locality %s (%u vs %u); using first value",
+                  p.first->first.c_str(), p.first->second, weight);
         }
       }
     }

@@ -18,10 +18,7 @@
 
 #include "src/core/ext/xds/xds_health_status.h"
 
-#include "absl/strings/str_cat.h"
 #include "envoy/config/core/v3/health_check.upb.h"
-
-#include "src/core/lib/gpr/useful.h"
 
 namespace grpc_core {
 

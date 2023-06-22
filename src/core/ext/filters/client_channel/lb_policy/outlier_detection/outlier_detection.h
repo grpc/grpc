@@ -21,9 +21,6 @@
 
 #include <stdint.h>  // for uint32_t
 
-#include <memory>
-#include <string>
-
 #include "absl/types/optional.h"
 
 #include "src/core/lib/gprpp/time.h"

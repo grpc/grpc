@@ -20,11 +20,12 @@
 #include <grpc/support/port_platform.h>
 
 #include <map>
-#include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/resolver/server_address.h"

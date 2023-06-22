@@ -2891,7 +2891,6 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
-        "absl/strings:str_format",
     ],
     language = "c++",
     visibility = ["@grpc:client_channel"],

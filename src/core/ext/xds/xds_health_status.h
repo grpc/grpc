@@ -21,9 +21,6 @@
 
 #include <stdint.h>
 
-#include <memory>
-#include <string>
-
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/span.h"

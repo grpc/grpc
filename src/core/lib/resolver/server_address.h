@@ -21,15 +21,10 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <stdint.h>
-
-#include <map>
-#include <memory>
 #include <string>
 #include <vector>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 
 // A channel arg key prefix used for args that are intended to be used

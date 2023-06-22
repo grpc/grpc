@@ -17,6 +17,8 @@
 #ifndef GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_XDS_XDS_CHANNEL_ARGS_H
 #define GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_XDS_XDS_CHANNEL_ARGS_H
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/resolver/server_address.h"
 
 // Channel arg indicating the xDS cluster name.

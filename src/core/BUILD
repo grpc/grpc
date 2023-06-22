@@ -4339,7 +4339,10 @@ grpc_cc_library(
         "ext/filters/client_channel/lb_policy/xds/xds_channel_args.h",
     ],
     language = "c++",
-    deps = ["//:server_address"],
+    deps = [
+        "//:gpr_platform",
+        "//:server_address",
+    ],
 )
 
 grpc_cc_library(
@@ -4477,6 +4480,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/types:optional",
     ],
     language = "c++",
     deps = [
@@ -4518,8 +4522,10 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "channel_args",
         "ref_counted",
         "//:gpr_platform",
+        "//:ref_counted_ptr",
         "//:server_address",
     ],
 )
