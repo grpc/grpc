@@ -16,7 +16,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "test/core/experiments/experiments.h"
+#include "test/core/experiments/fixtures/experiments.h"
 
 #ifndef GRPC_EXPERIMENTS_ARE_FINAL
 namespace {
@@ -37,7 +37,7 @@ const bool kDefaultForDebugOnly = true;
 
 namespace grpc_core {
 
-const ExperimentMetadata g_experiment_metadata[] = {
+const ExperimentMetadata g_test_experiment_metadata[] = {
     {"test_experiment_1", description_test_experiment_1,
      additional_constraints_test_experiment_1, false, true},
     {"test_experiment_2", description_test_experiment_2,

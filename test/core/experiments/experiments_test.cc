@@ -16,7 +16,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "test/core/experiments/experiments.h"
+#include "test/core/experiments/fixtures/experiments.h"
 
 #include "gtest/gtest.h"
 
@@ -54,5 +54,7 @@ TEST(ExperimentsTest, CheckExperimentValuesTest) {
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
+  grpc_core::LoadTestOnlyExperimentsFromMetadata(
+      grpc_core::g_test_experiment_metadata, grpc_core::kNumTestExperiments);
   return RUN_ALL_TESTS();
 }

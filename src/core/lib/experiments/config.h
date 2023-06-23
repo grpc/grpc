@@ -26,10 +26,19 @@
 
 namespace grpc_core {
 
+struct ExperimentMetadata {
+  const char* name;
+  const char* description;
+  const char* additional_constaints;
+  bool default_value;
+  bool allow_in_fuzzing_config;
+};
+
 #ifndef GRPC_EXPERIMENTS_ARE_FINAL
 // Return true if experiment \a experiment_id is enabled.
 // Experiments are numbered by their order in the g_experiment_metadata array
 // declared in experiments.h.
+template <bool is_test = false>
 bool IsExperimentEnabled(size_t experiment_id);
 
 // Reload experiment state from config variables.
@@ -37,6 +46,13 @@ bool IsExperimentEnabled(size_t experiment_id);
 // Expects the caller to handle global thread safety - so really only
 // appropriate for carefully written tests.
 void TestOnlyReloadExperimentsFromConfigVariables();
+
+// Reload experiment state from passed metadata.
+// Does not change ForceEnableExperiment state.
+// Expects the caller to handle global thread safety - so really only
+// appropriate for carefully written tests.
+void LoadTestOnlyExperimentsFromMetadata(
+    const ExperimentMetadata* experiment_metadata, size_t num_experiments);
 #endif
 
 // Print out a list of all experiments that are built into this binary.
@@ -49,20 +65,18 @@ void PrintExperimentsList();
 // If this is called twice for the same experiment, both calls must agree.
 void ForceEnableExperiment(absl::string_view experiment_name, bool enable);
 
-struct ExperimentMetadata {
-  const char* name;
-  const char* description;
-  const char* additional_constaints;
-  bool default_value;
-  bool allow_in_fuzzing_config;
-};
-
 // Register a function to be called to validate the value an experiment can
 // take subject to additional constraints.
 // The function will take the ExperimentMetadata as its argument. It will return
 // a bool value indicating the actual value the experiment should take.
 void RegisterExperimentConstraintsValidator(
     absl::AnyInvocable<bool(struct ExperimentMetadata)> check_constraints_cb);
+
+// Only these following specializations are instantiated:
+template <>
+bool IsExperimentEnabled<true>(size_t experiment_id);
+template <>
+bool IsExperimentEnabled<false>(size_t experiment_id);
 
 }  // namespace grpc_core
 

@@ -31,11 +31,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/config/config_vars.h"
-#ifndef GRPC_EXPERIMENTS_TEST_FIXTURE
 #include "src/core/lib/experiments/experiments.h"
-#else
-#include "test/core/experiments/experiments.h"
-#endif
 #include "src/core/lib/gprpp/crash.h"  // IWYU pragma: keep
 #include "src/core/lib/gprpp/no_destruct.h"
 
@@ -57,6 +53,31 @@ std::atomic<bool> g_loaded(false);
 
 absl::AnyInvocable<bool(struct ExperimentMetadata)>* g_check_constraints_cb =
     nullptr;
+
+class TestExperiments {
+ public:
+  TestExperiments(const ExperimentMetadata* experiment_metadata,
+                  size_t num_experiments) {
+    enabled_ = new int[num_experiments];
+    for (int i = 0; i < num_experiments; i++) {
+      if (g_check_constraints_cb != nullptr) {
+        enabled_[i] = (*g_check_constraints_cb)(experiment_metadata[i]);
+      } else {
+        enabled_[i] = experiment_metadata[i].default_value;
+      }
+    }
+  }
+
+  // Overloading [] operator to access elements in array style
+  bool operator[](int index) { return enabled_[index]; }
+
+  ~TestExperiments() { delete enabled_; }
+
+ private:
+  int* enabled_;
+};
+
+TestExperiments* g_test_experiments = nullptr;
 
 GPR_ATTRIBUTE_NOINLINE Experiments LoadExperimentsFromConfigVariable() {
   g_loaded.store(true, std::memory_order_relaxed);
@@ -115,9 +136,20 @@ void TestOnlyReloadExperimentsFromConfigVariables() {
   PrintExperimentsList();
 }
 
-bool IsExperimentEnabled(size_t experiment_id) {
-  // Normal path: just return the value;
+void LoadTestOnlyExperimentsFromMetadata(
+    const ExperimentMetadata* experiment_metadata, size_t num_experiments) {
+  g_test_experiments =
+      new TestExperiments(experiment_metadata, num_experiments);
+}
+
+template <>
+bool IsExperimentEnabled<false>(size_t experiment_id) {
   return ExperimentsSingleton().enabled[experiment_id];
+}
+
+template <>
+bool IsExperimentEnabled<true>(size_t experiment_id) {
+  return (*g_test_experiments)[experiment_id];
 }
 
 void PrintExperimentsList() {

@@ -7408,12 +7408,10 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/experiments/config.h
-  - test/core/experiments/experiments.h
+  - test/core/experiments/fixtures/experiments.h
   src:
-  - src/core/lib/experiments/config.cc
-  - test/core/experiments/experiments.cc
   - test/core/experiments/experiments_test.cc
+  - test/core/experiments/fixtures/experiments.cc
   deps:
   - grpc_test_util
   uses_polling: false

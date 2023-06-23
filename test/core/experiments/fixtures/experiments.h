@@ -45,8 +45,8 @@
 // If you are using the Bazel build system, that macro can be configured with
 // --define=grpc_experiments_are_final=true
 
-#ifndef GRPC_TEST_CORE_EXPERIMENTS_EXPERIMENTS_H
-#define GRPC_TEST_CORE_EXPERIMENTS_EXPERIMENTS_H
+#ifndef GRPC_TEST_CORE_EXPERIMENTS_FIXTURES_EXPERIMENTS_H
+#define GRPC_TEST_CORE_EXPERIMENTS_FIXTURES_EXPERIMENTS_H
 
 #include <grpc/support/port_platform.h>
 
@@ -73,18 +73,18 @@ inline bool IsTestExperiment3Enabled() {
 inline bool IsTestExperiment4Enabled() { return true; }
 #else
 #define GRPC_EXPERIMENT_IS_INCLUDED_TEST_EXPERIMENT_1
-inline bool IsTestExperiment1Enabled() { return IsExperimentEnabled(0); }
+inline bool IsTestExperiment1Enabled() { return IsExperimentEnabled<true>(0); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_TEST_EXPERIMENT_2
-inline bool IsTestExperiment2Enabled() { return IsExperimentEnabled(1); }
+inline bool IsTestExperiment2Enabled() { return IsExperimentEnabled<true>(1); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_TEST_EXPERIMENT_3
-inline bool IsTestExperiment3Enabled() { return IsExperimentEnabled(2); }
+inline bool IsTestExperiment3Enabled() { return IsExperimentEnabled<true>(2); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_TEST_EXPERIMENT_4
-inline bool IsTestExperiment4Enabled() { return IsExperimentEnabled(3); }
+inline bool IsTestExperiment4Enabled() { return IsExperimentEnabled<true>(3); }
 
-constexpr const size_t kNumExperiments = 4;
-extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];
+constexpr const size_t kNumTestExperiments = 4;
+extern const ExperimentMetadata g_test_experiment_metadata[kNumTestExperiments];
 
 #endif
 }  // namespace grpc_core
 
-#endif  // GRPC_TEST_CORE_EXPERIMENTS_EXPERIMENTS_H
+#endif  // GRPC_TEST_CORE_EXPERIMENTS_FIXTURES_EXPERIMENTS_H

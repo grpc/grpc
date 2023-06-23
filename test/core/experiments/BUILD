@@ -17,25 +17,14 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test")
 grpc_cc_library(
     name = "experiments_lib",
     srcs = [
-        "experiments.cc",
-        "//src/core:lib/experiments/config.cc",
+        "fixtures/experiments.cc",
     ],
     hdrs = [
-        "experiments.h",
-        "//src/core:lib/experiments/config.h",
-    ],
-    defines = ["GRPC_EXPERIMENTS_TEST_FIXTURE"] + select({
-        "//:grpc_experiments_are_final": [
-            "GRPC_EXPERIMENTS_ARE_FINAL",
-        ],
-        "//conditions:default": [],
-    }),
-    external_deps = [
-        "absl/functional:any_invocable",
-        "absl/strings",
+        "fixtures/experiments.h",
     ],
     language = "c++",
     deps = [
+        "//src/core:experiments",
         "//:config_vars",
         "//:gpr",
         "//src/core:no_destruct",

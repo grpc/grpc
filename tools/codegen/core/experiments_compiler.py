@@ -68,7 +68,7 @@ def _EXPERIMENTS_TEST_SKELETON(defs, test_body):
     return f"""
 #include <grpc/support/port_platform.h>
 
-#include "test/core/experiments/experiments.h"
+#include "test/core/experiments/fixtures/experiments.h"
 #include "gtest/gtest.h"
 
 #ifndef GRPC_EXPERIMENTS_ARE_FINAL
@@ -81,6 +81,8 @@ TEST(ExperimentsTest, CheckExperimentValuesTest) {{
 
 int main(int argc, char** argv) {{
   testing::InitGoogleTest(&argc, argv);
+  grpc_core::LoadTestOnlyExperimentsFromMetadata(
+    grpc_core::g_test_experiment_metadata, grpc_core::kNumTestExperiments);
   return RUN_ALL_TESTS();
 }}
 """
@@ -305,7 +307,7 @@ class ExperimentsCompiler(object):
             rollout_attributes["name"]
         ].AddRolloutSpecification(self._defaults, rollout_attributes)
 
-    def GenerateExperimentsHdr(self, output_file):
+    def GenerateExperimentsHdr(self, output_file, mode):
         with open(output_file, "w") as H:
             PutCopyright(H, "//")
             PutBanner(
@@ -358,20 +360,27 @@ class ExperimentsCompiler(object):
                 )
                 print(
                     "inline bool Is%sEnabled() { return"
-                    " IsExperimentEnabled(%d); }"
-                    % (SnakeToPascal(exp.name), i),
+                    " IsExperimentEnabled%s(%d); }"
+                    % (SnakeToPascal(exp.name), "<true>" if mode == "test" else "", i),
                     file=H,
                 )
             print(file=H)
+
+            if mode == "test":
+                num_experiments_var_name = "kNumTestExperiments"
+                experiments_metadata_var_name = "g_test_experiment_metadata"
+            else:
+                num_experiments_var_name = "kNumExperiments"
+                experiments_metadata_var_name = "g_experiment_metadata"
             print(
-                "constexpr const size_t kNumExperiments = %d;"
-                % len(self._experiment_definitions.keys()),
+                f"constexpr const size_t {num_experiments_var_name} = "
+                f"{len(self._experiment_definitions.keys())};",
                 file=H,
             )
             print(
                 (
                     "extern const ExperimentMetadata"
-                    " g_experiment_metadata[kNumExperiments];"
+                    f" {experiments_metadata_var_name}[{num_experiments_var_name}];"
                 ),
                 file=H,
             )
@@ -381,7 +390,7 @@ class ExperimentsCompiler(object):
             print(file=H)
             print(f"#endif  // {include_guard}", file=H)
 
-    def GenerateExperimentsSrc(self, output_file, header_file_path):
+    def GenerateExperimentsSrc(self, output_file, header_file_path, mode):
         with open(output_file, "w") as C:
             PutCopyright(C, "//")
             PutBanner(
@@ -423,8 +432,12 @@ class ExperimentsCompiler(object):
             print(file=C)
             print("namespace grpc_core {", file=C)
             print(file=C)
+            if mode == "test":
+                experiments_metadata_var_name = "g_test_experiment_metadata"
+            else:
+                experiments_metadata_var_name = "g_experiment_metadata"
             print(
-                "const ExperimentMetadata g_experiment_metadata[] = {", file=C
+                f"const ExperimentMetadata {experiments_metadata_var_name}[] = {{", file=C
             )
             for _, exp in self._experiment_definitions.items():
                 print(

@@ -86,8 +86,8 @@ def _GenerateExperimentFiles(args, mode):
         _EXPERIMENTS_ROLLOUTS = (
             "test/core/experiments/fixtures/test_experiments_rollout.yaml"
         )
-        _EXPERIMENTS_HDR_FILE = "test/core/experiments/experiments.h"
-        _EXPERIMENTS_SRC_FILE = "test/core/experiments/experiments.cc"
+        _EXPERIMENTS_HDR_FILE = "test/core/experiments/fixtures/experiments.h"
+        _EXPERIMENTS_SRC_FILE = "test/core/experiments/fixtures/experiments.cc"
     else:
         _EXPERIMENTS_DEFS = "src/core/lib/experiments/experiments.yaml"
         _EXPERIMENTS_ROLLOUTS = "src/core/lib/experiments/rollouts.yaml"
@@ -124,11 +124,11 @@ def _GenerateExperimentFiles(args, mode):
             sys.exit(1)
 
     print(f"Mode = {mode} Generating experiments headers")
-    compiler.GenerateExperimentsHdr(_EXPERIMENTS_HDR_FILE)
+    compiler.GenerateExperimentsHdr(_EXPERIMENTS_HDR_FILE, mode)
   
     print(f"Mode = {mode} Generating experiments srcs")
     compiler.GenerateExperimentsSrc(
-        _EXPERIMENTS_SRC_FILE, _EXPERIMENTS_HDR_FILE)
+        _EXPERIMENTS_SRC_FILE, _EXPERIMENTS_HDR_FILE, mode)
 
     if mode == "test":
         print("Generating experiments tests")
