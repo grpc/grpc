@@ -2300,6 +2300,7 @@ grpc_cc_library(
         "lib/event_engine/posix_engine/grpc_polled_fd_posix.h",
     ],
     external_deps = [
+        "absl/base:core_headers",
         "absl/container:flat_hash_map",
         "absl/functional:any_invocable",
         "absl/hash",

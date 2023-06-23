@@ -89,12 +89,6 @@ absl::Status AresStatusToAbslStatus(int status, absl::string_view error_msg) {
   }
 }
 
-template <typename T>
-bool IsDefaultStatusOr(const absl::StatusOr<T>& status_or) {
-  return !status_or.ok() && absl::IsUnknown(status_or.status()) &&
-         status_or.status().message().empty();
-}
-
 EventEngine::Duration calculate_next_ares_backup_poll_alarm_duration() {
   // An alternative here could be to use ares_timeout to try to be more
   // accurate, but that would require using "struct timeval"'s, which just
