@@ -57,6 +57,8 @@
 namespace grpc_core {
 
 #ifdef GRPC_EXPERIMENTS_ARE_FINAL
+
+#if defined(GRPC_CFSTREAM)
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
 inline bool IsPeerStateBasedFramingEnabled() { return false; }
@@ -77,6 +79,52 @@ inline bool IsWorkStealingEnabled() { return false; }
 inline bool IsClientPrivacyEnabled() { return false; }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
 inline bool IsServerPrivacyEnabled() { return false; }
+
+#elif defined(GPR_WINDOWS)
+inline bool IsTcpFrameSizeTuningEnabled() { return false; }
+inline bool IsTcpRcvLowatEnabled() { return false; }
+inline bool IsPeerStateBasedFramingEnabled() { return false; }
+inline bool IsMemoryPressureControllerEnabled() { return false; }
+inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
+inline bool IsEventEngineClientEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
+inline bool IsMonitoringExperimentEnabled() { return true; }
+inline bool IsPromiseBasedClientCallEnabled() { return false; }
+inline bool IsFreeLargeAllocatorEnabled() { return false; }
+inline bool IsPromiseBasedServerCallEnabled() { return false; }
+inline bool IsTransportSuppliesClientLatencyEnabled() { return false; }
+inline bool IsEventEngineListenerEnabled() { return false; }
+inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
+inline bool IsTraceRecordCallopsEnabled() { return false; }
+inline bool IsEventEngineDnsEnabled() { return false; }
+inline bool IsWorkStealingEnabled() { return false; }
+inline bool IsClientPrivacyEnabled() { return false; }
+inline bool IsCanaryClientPrivacyEnabled() { return false; }
+inline bool IsServerPrivacyEnabled() { return false; }
+
+#else
+inline bool IsTcpFrameSizeTuningEnabled() { return false; }
+inline bool IsTcpRcvLowatEnabled() { return false; }
+inline bool IsPeerStateBasedFramingEnabled() { return false; }
+inline bool IsMemoryPressureControllerEnabled() { return false; }
+inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
+inline bool IsEventEngineClientEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
+inline bool IsMonitoringExperimentEnabled() { return true; }
+inline bool IsPromiseBasedClientCallEnabled() { return false; }
+inline bool IsFreeLargeAllocatorEnabled() { return false; }
+inline bool IsPromiseBasedServerCallEnabled() { return false; }
+inline bool IsTransportSuppliesClientLatencyEnabled() { return false; }
+inline bool IsEventEngineListenerEnabled() { return false; }
+inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
+inline bool IsTraceRecordCallopsEnabled() { return false; }
+inline bool IsEventEngineDnsEnabled() { return false; }
+inline bool IsWorkStealingEnabled() { return false; }
+inline bool IsClientPrivacyEnabled() { return false; }
+inline bool IsCanaryClientPrivacyEnabled() { return false; }
+inline bool IsServerPrivacyEnabled() { return false; }
+#endif
+
 #else
 #define GRPC_EXPERIMENT_IS_INCLUDED_TCP_FRAME_SIZE_TUNING
 inline bool IsTcpFrameSizeTuningEnabled() { return IsExperimentEnabled(0); }

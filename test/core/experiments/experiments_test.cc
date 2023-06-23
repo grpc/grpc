@@ -24,9 +24,10 @@
 
 #ifndef GRPC_EXPERIMENTS_ARE_FINAL
 
+#if defined(GRPC_CFSTREAM)
 bool GetExperimentTestExperiment1ExpectedValue() { return false; }
 
-bool GetExperimentTestExperiment2ExpectedValue() { return false; }
+bool GetExperimentTestExperiment2ExpectedValue() { return true; }
 
 bool GetExperimentTestExperiment3ExpectedValue() {
 #ifdef NDEBUG
@@ -37,6 +38,46 @@ bool GetExperimentTestExperiment3ExpectedValue() {
 }
 
 bool GetExperimentTestExperiment4ExpectedValue() { return true; }
+
+#elif defined(GPR_WINDOWS)
+bool GetExperimentTestExperiment1ExpectedValue() { return true; }
+
+bool GetExperimentTestExperiment2ExpectedValue() { return false; }
+
+bool GetExperimentTestExperiment3ExpectedValue() {
+
+#ifdef NDEBUG
+  return false;
+#else
+  return true;
+#endif
+}
+
+bool GetExperimentTestExperiment4ExpectedValue() { return true; }
+
+#else
+bool GetExperimentTestExperiment1ExpectedValue() { return true; }
+
+bool GetExperimentTestExperiment2ExpectedValue() {
+
+#ifdef NDEBUG
+  return false;
+#else
+  return true;
+#endif
+}
+
+bool GetExperimentTestExperiment3ExpectedValue() {
+
+#ifdef NDEBUG
+  return false;
+#else
+  return true;
+#endif
+}
+
+bool GetExperimentTestExperiment4ExpectedValue() { return false; }
+#endif
 
 TEST(ExperimentsTest, CheckExperimentValuesTest) {
   ASSERT_EQ(grpc_core::IsTestExperiment1Enabled(),
