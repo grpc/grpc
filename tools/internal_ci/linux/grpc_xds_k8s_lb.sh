@@ -108,8 +108,8 @@ run_test() {
     --flagfile="${TEST_DRIVER_FLAGFILE}" \
     --kube_context="${KUBE_CONTEXT}" \
     --secondary_kube_context="${SECONDARY_KUBE_CONTEXT}" \
-    --server_image="${SERVER_IMAGE_NAME}:${GIT_COMMIT}" \
-    --client_image="${CLIENT_IMAGE_NAME}:${GIT_COMMIT}" \
+    --server_image="${SERVER_IMAGE_NAME}:v1.56.x" \
+    --client_image="${CLIENT_IMAGE_NAME}:v1.56.x" \
     --testing_version="${TESTING_VERSION}" \
     --force_cleanup \
     --collect_app_logs \
@@ -157,13 +157,13 @@ main() {
   activate_gke_cluster GKE_CLUSTER_PSM_LB
   activate_secondary_gke_cluster GKE_CLUSTER_PSM_LB
 
-  set -x
+#  set -x
   if [[ -n "${KOKORO_ARTIFACTS_DIR}" ]]; then
     kokoro_setup_test_driver "${GITHUB_REPOSITORY_NAME}"
   else
     local_setup_test_driver "${script_dir}"
   fi
-  build_docker_images_if_needed
+  # build_docker_images_if_needed
 
   # Run tests
   cd "${TEST_DRIVER_FULL_DIR}"
