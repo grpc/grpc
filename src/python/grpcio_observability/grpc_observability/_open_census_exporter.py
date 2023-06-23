@@ -23,7 +23,6 @@ from opencensus.common.transports import async_
 from opencensus.ext.stackdriver import stats_exporter
 from opencensus.ext.stackdriver import trace_exporter
 from opencensus.stats import stats as stats_module
-from opencensus.stats.measurement_map import MeasurementMap
 from opencensus.stats.stats_recorder import StatsRecorder
 from opencensus.stats.view_manager import ViewManager
 from opencensus.tags.tag_key import TagKey

@@ -215,8 +215,7 @@ void PythonOpenCensusServerCallTracer::RecordEnd(
                        static_cast<double>(request_size), context_.Labels());
     RecordDoubleMetric(kRpcServerServerLatencyMeasureName, elapsed_time_ms,
                        context_.Labels());
-    RecordIntMetric(kRpcServerCompletedRpcMeasureName,
-                    1, context_.Labels());
+    RecordIntMetric(kRpcServerCompletedRpcMeasureName, 1, context_.Labels());
     RecordIntMetric(kRpcServerSentMessagesPerRpcMeasureName,
                     sent_message_count_, context_.Labels());
     RecordIntMetric(kRpcServerReceivedMessagesPerRpcMeasureName,
