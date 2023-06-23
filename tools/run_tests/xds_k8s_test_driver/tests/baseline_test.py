@@ -29,44 +29,34 @@ _XdsTestClient = xds_k8s_testcase.XdsTestClient
 class BaselineTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
     def test_traffic_director_grpc_setup(self):
         with self.subTest("0_create_health_check"):
-            # self.td.create_health_check()
-            pass
+            self.td.create_health_check()
 
         with self.subTest("1_create_backend_service"):
-            # self.td.create_backend_service()
-            pass
+            self.td.create_backend_service()
 
         with self.subTest("2_create_url_map"):
-            # self.td.create_url_map(self.server_xds_host, self.server_xds_port)
-            pass
+            self.td.create_url_map(self.server_xds_host, self.server_xds_port)
 
         with self.subTest("3_create_target_proxy"):
-            # self.td.create_target_proxy()
-            pass
+            self.td.create_target_proxy()
 
         with self.subTest("4_create_forwarding_rule"):
-            # self.td.create_forwarding_rule(self.server_xds_port)
-            pass
+            self.td.create_forwarding_rule(self.server_xds_port)
 
         with self.subTest("5_start_test_server"):
-            # test_server: _XdsTestServer = self.startTestServers()[0]
-            pass
+            test_server: _XdsTestServer = self.startTestServers()[0]
 
         with self.subTest("6_add_server_backends_to_backend_service"):
-            # self.setupServerBackends()
-            pass
+            self.setupServerBackends()
 
         with self.subTest("7_start_test_client"):
-            # test_client: _XdsTestClient = self.startTestClient(test_server)
-            pass
+            test_client: _XdsTestClient = self.startTestClient(test_server)
 
         with self.subTest("8_test_client_xds_config_exists"):
-            # self.assertXdsConfigExists(test_client)
-            pass
+            self.assertXdsConfigExists(test_client)
 
         with self.subTest("9_test_server_received_rpcs_from_test_client"):
-            # self.assertSuccessfulRpcs(test_client)
-            pass
+            self.assertSuccessfulRpcs(test_client)
 
 
 if __name__ == "__main__":
