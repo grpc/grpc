@@ -13,6 +13,7 @@
 #include "envoy/config/core/v3/health_check.upb.h"
 #include "envoy/config/core/v3/base.upb.h"
 #include "envoy/config/core/v3/event_service_config.upb.h"
+#include "envoy/config/core/v3/extension.upb.h"
 #include "envoy/type/matcher/v3/string.upb.h"
 #include "envoy/type/v3/http.upb.h"
 #include "envoy/type/v3/range.upb.h"
@@ -20,6 +21,7 @@
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/struct.upb.h"
 #include "google/protobuf/wrappers.upb.h"
+#include "envoy/annotations/deprecation.upb.h"
 #include "udpa/annotations/status.upb.h"
 #include "udpa/annotations/versioning.upb.h"
 #include "validate/validate.upb.h"
@@ -41,7 +43,7 @@ const upb_MiniTable envoy_config_core_v3_HealthStatusSet_msg_init = {
   })
 };
 
-static const upb_MiniTableSub envoy_config_core_v3_HealthCheck_submsgs[20] = {
+static const upb_MiniTableSub envoy_config_core_v3_HealthCheck_submsgs[21] = {
   {.submsg = &google_protobuf_Duration_msg_init},
   {.submsg = &google_protobuf_Duration_msg_init},
   {.submsg = &google_protobuf_Duration_msg_init},
@@ -62,9 +64,10 @@ static const upb_MiniTableSub envoy_config_core_v3_HealthCheck_submsgs[20] = {
   {.submsg = &envoy_config_core_v3_EventServiceConfig_msg_init},
   {.submsg = &google_protobuf_Struct_msg_init},
   {.submsg = &google_protobuf_Duration_msg_init},
+  {.submsg = &envoy_config_core_v3_TypedExtensionConfig_msg_init},
 };
 
-static const upb_MiniTableField envoy_config_core_v3_HealthCheck__fields[23] = {
+static const upb_MiniTableField envoy_config_core_v3_HealthCheck__fields[24] = {
   {1, UPB_SIZE(4, 16), 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(8, 24), 2, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {3, UPB_SIZE(12, 32), 3, 2, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
@@ -72,15 +75,15 @@ static const upb_MiniTableField envoy_config_core_v3_HealthCheck__fields[23] = {
   {5, UPB_SIZE(20, 48), 5, 4, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {6, UPB_SIZE(24, 56), 6, 5, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {7, UPB_SIZE(28, 64), 7, 6, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {8, UPB_SIZE(80, 160), UPB_SIZE(-37, -5), 7, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {9, UPB_SIZE(80, 160), UPB_SIZE(-37, -5), 8, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {11, UPB_SIZE(80, 160), UPB_SIZE(-37, -5), 9, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {8, UPB_SIZE(84, 168), UPB_SIZE(-37, -5), 7, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {9, UPB_SIZE(84, 168), UPB_SIZE(-37, -5), 8, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {11, UPB_SIZE(84, 168), UPB_SIZE(-37, -5), 9, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {12, UPB_SIZE(32, 72), 8, 10, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {13, UPB_SIZE(80, 160), UPB_SIZE(-37, -5), 11, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {13, UPB_SIZE(84, 168), UPB_SIZE(-37, -5), 11, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {14, UPB_SIZE(40, 80), 9, 12, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {15, UPB_SIZE(44, 88), 10, 13, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {16, UPB_SIZE(48, 96), 11, 14, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {17, UPB_SIZE(84, 104), 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {17, UPB_SIZE(88, 104), 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {18, UPB_SIZE(52, 8), 0, kUpb_NoSub, 13, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
   {19, UPB_SIZE(56, 12), 0, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
   {20, UPB_SIZE(60, 120), 12, 15, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
@@ -88,12 +91,13 @@ static const upb_MiniTableField envoy_config_core_v3_HealthCheck__fields[23] = {
   {22, UPB_SIZE(68, 136), 14, 17, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {23, UPB_SIZE(72, 144), 15, 18, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {24, UPB_SIZE(76, 152), 16, 19, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {25, UPB_SIZE(80, 160), 0, 20, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy_config_core_v3_HealthCheck_msg_init = {
   &envoy_config_core_v3_HealthCheck_submsgs[0],
   &envoy_config_core_v3_HealthCheck__fields[0],
-  UPB_SIZE(96, 168), 23, kUpb_ExtMode_NonExtendable, 9, UPB_FASTTABLE_MASK(248), 0,
+  UPB_SIZE(96, 176), 24, kUpb_ExtMode_NonExtendable, 9, UPB_FASTTABLE_MASK(248), 0,
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000000100000a, &upb_psm_1bt_maxmaxb},
@@ -103,12 +107,12 @@ const upb_MiniTable envoy_config_core_v3_HealthCheck_msg_init = {
     {0x003000000504002a, &upb_psm_1bt_maxmaxb},
     {0x0038000006050032, &upb_psm_1bt_maxmaxb},
     {0x004000000706003a, &upb_psm_1bt_maxmaxb},
-    {0x00a0000408070042, &upb_pom_1bt_max128b},
-    {0x00a000040908004a, &upb_pom_1bt_max64b},
+    {0x00a8000408070042, &upb_pom_1bt_max128b},
+    {0x00a800040908004a, &upb_pom_1bt_max64b},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x00a000040b09005a, &upb_pom_1bt_max64b},
+    {0x00a800040b09005a, &upb_pom_1bt_max64b},
     {0x00480000080a0062, &upb_psm_1bt_maxmaxb},
-    {0x00a000040d0b006a, &upb_pom_1bt_max64b},
+    {0x00a800040d0b006a, &upb_pom_1bt_max64b},
     {0x00500000090c0072, &upb_psm_1bt_maxmaxb},
     {0x005800000a0d007a, &upb_psm_1bt_maxmaxb},
     {0x006000000b0e0182, &upb_psm_2bt_maxmaxb},
@@ -120,7 +124,7 @@ const upb_MiniTable envoy_config_core_v3_HealthCheck_msg_init = {
     {0x008800000e1101b2, &upb_psm_2bt_maxmaxb},
     {0x009000000f1201ba, &upb_psm_2bt_maxmaxb},
     {0x00980000101301c2, &upb_psm_2bt_maxmaxb},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x00a000003f1401ca, &upb_prm_2bt_maxmaxb},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
