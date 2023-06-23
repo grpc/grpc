@@ -28,8 +28,7 @@ require 'grpc'
 require 'end2end_common'
 
 def do_rpc(stub)
-  # TODO(apolcyn): set timeout back to 300
-  stub.echo(Echo::EchoRequest.new(request: 'hello'), deadline: Time.now + 3)
+  stub.echo(Echo::EchoRequest.new(request: 'hello'), deadline: Time.now + 300)
 end
 
 def run_client(stub)
