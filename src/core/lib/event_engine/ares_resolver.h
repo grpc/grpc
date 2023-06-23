@@ -134,4 +134,3 @@ extern void (*event_engine_grpc_ares_test_only_inject_config)(
 
 #endif  // GRPC_ARES == 1
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_ARES_RESOLVER_H
-

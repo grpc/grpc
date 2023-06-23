@@ -378,6 +378,22 @@ void AresResolver::CheckSocketsLocked() {
           new_list.splice(new_list.end(), fd_node_list_, iter);
         }
         FdNode* fd_node = new_list.back().get();
+        // If c-ares is interested to read and the socket already has data
+        // available for read, schedules OnReadable directly here. This is to
+        // cope with the edge-triggered poller not getting an event if no new
+        // data arrives and c-ares hasn't read all the data in the previous
+        // ares_process_fd.
+        if (ARES_GETSOCK_READABLE(socks_bitmask, i) &&
+            !fd_node->readable_registered &&
+            fd_node->polled_fd->IsFdStillReadableLocked()) {
+          GRPC_ARES_RESOLVER_TRACE_LOG(
+              "request:%p schedule read directly on: %d", this, fd_node->as);
+          fd_node->readable_registered = true;
+          event_engine_->Run([self = Ref(DEBUG_LOCATION, "CheckSocketsLocked"),
+                              fd_node]() mutable {
+            self->OnReadable(fd_node, absl::OkStatus());
+          });
+        }
         // Register read_closure if the socket is readable and read_closure
         // has not been registered with this socket.
         if (ARES_GETSOCK_READABLE(socks_bitmask, i) &&
@@ -386,7 +402,7 @@ void AresResolver::CheckSocketsLocked() {
                                        fd_node->as);
           fd_node->readable_registered = true;
           fd_node->polled_fd->RegisterForOnReadableLocked(
-              [self = Ref(DEBUG_LOCATION, "Work"),
+              [self = Ref(DEBUG_LOCATION, "CheckSocketsLocked"),
                fd_node](absl::Status status) mutable {
                 self->OnReadable(fd_node, status);
               });
@@ -399,7 +415,7 @@ void AresResolver::CheckSocketsLocked() {
                                        fd_node->as);
           fd_node->writable_registered = true;
           fd_node->polled_fd->RegisterForOnWriteableLocked(
-              [self = Ref(DEBUG_LOCATION, "Work"),
+              [self = Ref(DEBUG_LOCATION, "CheckSocketsLocked"),
                fd_node](absl::Status status) mutable {
                 self->OnWritable(fd_node, status);
               });
@@ -454,9 +470,7 @@ void AresResolver::OnReadable(FdNode* fd_node, absl::Status status) {
   GRPC_ARES_RESOLVER_TRACE_LOG("OnReadable: fd: %d; request: %p; status: %s",
                                fd_node->as, this, status.ToString().c_str());
   if (status.ok() && !shutting_down_) {
-    do {
-      ares_process_fd(channel_, fd_node->as, ARES_SOCKET_BAD);
-    } while (fd_node->polled_fd->IsFdStillReadableLocked());
+    ares_process_fd(channel_, fd_node->as, ARES_SOCKET_BAD);
   } else {
     // If error is not absl::OkStatus() or the resolution was cancelled, it
     // means the fd has been shutdown or timed out. The pending lookups made
