@@ -372,34 +372,32 @@ void AresResolver::CheckSocketsLocked() {
           new_list.splice(new_list.end(), fd_node_list_, iter);
         }
         FdNode* fd_node = new_list.back().get();
-        // If c-ares is interested to read and the socket already has data
-        // available for read, schedules OnReadable directly here. This is to
-        // cope with the edge-triggered poller not getting an event if no new
-        // data arrives and c-ares hasn't read all the data in the previous
-        // ares_process_fd.
-        if (ARES_GETSOCK_READABLE(socks_bitmask, i) &&
-            !fd_node->readable_registered &&
-            fd_node->polled_fd->IsFdStillReadableLocked()) {
-          GRPC_ARES_RESOLVER_TRACE_LOG(
-              "request:%p schedule read directly on: %d", this, fd_node->as);
-          fd_node->readable_registered = true;
-          event_engine_->Run([self = Ref(DEBUG_LOCATION, "CheckSocketsLocked"),
-                              fd_node]() mutable {
-            self->OnReadable(fd_node, absl::OkStatus());
-          });
-        }
-        // Register read_closure if the socket is readable and read_closure
-        // has not been registered with this socket.
         if (ARES_GETSOCK_READABLE(socks_bitmask, i) &&
             !fd_node->readable_registered) {
-          GRPC_ARES_RESOLVER_TRACE_LOG("request:%p notify read on: %d", this,
-                                       fd_node->as);
           fd_node->readable_registered = true;
-          fd_node->polled_fd->RegisterForOnReadableLocked(
-              [self = Ref(DEBUG_LOCATION, "CheckSocketsLocked"),
-               fd_node](absl::Status status) mutable {
-                self->OnReadable(fd_node, status);
-              });
+          if (fd_node->polled_fd->IsFdStillReadableLocked()) {
+            // If c-ares is interested to read and the socket already has data
+            // available for read, schedules OnReadable directly here. This is
+            // to cope with the edge-triggered poller not getting an event if no
+            // new data arrives and c-ares hasn't read all the data in the
+            // previous ares_process_fd.
+            GRPC_ARES_RESOLVER_TRACE_LOG(
+                "request:%p schedule read directly on: %d", this, fd_node->as);
+            event_engine_->Run(
+                [self = Ref(DEBUG_LOCATION, "CheckSocketsLocked"),
+                 fd_node]() mutable {
+                  self->OnReadable(fd_node, absl::OkStatus());
+                });
+          } else {
+            // Otherwise register with the poller for readable event.
+            GRPC_ARES_RESOLVER_TRACE_LOG("request:%p notify read on: %d", this,
+                                         fd_node->as);
+            fd_node->polled_fd->RegisterForOnReadableLocked(
+                [self = Ref(DEBUG_LOCATION, "CheckSocketsLocked"),
+                 fd_node](absl::Status status) mutable {
+                  self->OnReadable(fd_node, status);
+                });
+          }
         }
         // Register write_closure if the socket is writable and write_closure
         // has not been registered with this socket.
