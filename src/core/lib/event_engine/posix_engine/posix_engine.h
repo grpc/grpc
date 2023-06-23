@@ -154,7 +154,6 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
 
 #if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_TCP)
    private:
-    grpc_core::Mutex mu_;
     const ResolverOptions options_;
     std::shared_ptr<EventEngine> event_engine_;
     grpc_core::OrphanablePtr<AresResolver> ares_resolver_;
