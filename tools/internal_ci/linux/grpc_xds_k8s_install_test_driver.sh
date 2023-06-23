@@ -419,6 +419,8 @@ kokoro_get_testing_version() {
 #   Writes the output to stdout, stderr, files
 #######################################
 kokoro_setup_test_driver() {
+  # Unset noisy verbose mode often set in the parent script.
+  set +x
   local src_repository_name="${1:?Usage kokoro_setup_test_driver GITHUB_REPOSITORY_NAME}"
   # Capture Kokoro VM version info in the log.
   kokoro_print_version
