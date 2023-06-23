@@ -74,9 +74,6 @@ namespace experimental {
 grpc_core::TraceFlag grpc_trace_ares_resolver(false,
                                               "event_engine_ares_resolver");
 
-grpc_core::TraceFlag grpc_trace_ares_resolver_address_sorting(
-    false, "ares_resolver_address_sorting");
-
 namespace {
 
 absl::Status AresStatusToAbslStatus(int status, absl::string_view error_msg) {
