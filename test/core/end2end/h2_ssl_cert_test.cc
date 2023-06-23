@@ -55,7 +55,8 @@ struct fullstack_secure_fixture_data {
 
 static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
     grpc_channel_args* /*client_args*/, grpc_channel_args* /*server_args*/) {
-  grpc_end2end_test_fixture f;
+  grpc_end2end_tests;
+  f;
   int port = grpc_pick_unused_port_or_die();
   fullstack_secure_fixture_data* ffd = new fullstack_secure_fixture_data();
   memset(&f, 0, sizeof(f));
