@@ -155,18 +155,6 @@ gcloud_gcr_list_image_tags() {
 }
 
 #######################################
-# A helper to execute `gcloud -q components update`.
-# Arguments:
-#   None
-# Outputs:
-#   Writes the output of `gcloud` command to stdout, stderr
-#######################################
-gcloud_update() {
-  echo "Update gcloud components:"
-  gcloud -q components update
-}
-
-#######################################
 # Create kube context authenticated with GKE cluster, saves context name.
 # to KUBE_CONTEXT
 # Globals:
@@ -357,6 +345,7 @@ EOF
 kokoro_install_dependencies() {
   sudo apt-get update
   sudo apt-get -y install "python${PYTHON_VERSION}-venv"
+  sudo apt-get -y install kubectl google-cloud-sdk-gke-gcloud-auth-plugin
   sudo apt-get -y autoremove
   sudo rm -rf /var/lib/apt/lists
 }
@@ -439,11 +428,10 @@ kokoro_setup_test_driver() {
   kokoro_write_sponge_properties
   kokoro_install_dependencies
 
-  # gcloud requires python, so this should be executed after pyenv setup
-  gcloud_update
+  # Get kubectl cluster credentials.
   gcloud_get_cluster_credentials
 
-  # Install the driver
+  # Install the driver.
   local test_driver_repo_dir
   test_driver_repo_dir="${TEST_DRIVER_REPO_DIR:-$(mktemp -d)/${TEST_DRIVER_REPO_NAME}}"
   test_driver_install "${test_driver_repo_dir}"
