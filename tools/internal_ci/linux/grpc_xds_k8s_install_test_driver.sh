@@ -343,9 +343,14 @@ EOF
 #   Writes the output of `apt` commands to stdout
 #######################################
 kokoro_install_dependencies() {
+  # needrestart checks which daemons need to be restarted after library
+  # upgrades. It's useless to us in non-interactive mode.
+  sudo apt-get -y remove needrestart
   sudo apt-get update
-  sudo apt-get -y install "python${PYTHON_VERSION}-venv"
-  sudo apt-get -y install kubectl google-cloud-sdk-gke-gcloud-auth-plugin
+  sudo apt-get -y install \
+    "python${PYTHON_VERSION}-venv" \
+    google-cloud-sdk-gke-gcloud-auth-plugin \
+    kubectl
   sudo apt-get -y autoremove
   sudo rm -rf /var/lib/apt/lists
 }
