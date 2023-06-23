@@ -58,8 +58,8 @@ class TestExperiments {
  public:
   TestExperiments(const ExperimentMetadata* experiment_metadata,
                   size_t num_experiments) {
-    enabled_ = new int[num_experiments];
-    for (int i = 0; i < num_experiments; i++) {
+    enabled_ = new bool[num_experiments];
+    for (size_t i = 0; i < num_experiments; i++) {
       if (g_check_constraints_cb != nullptr) {
         enabled_[i] = (*g_check_constraints_cb)(experiment_metadata[i]);
       } else {
@@ -74,7 +74,7 @@ class TestExperiments {
   ~TestExperiments() { delete enabled_; }
 
  private:
-  int* enabled_;
+  bool* enabled_;
 };
 
 TestExperiments* g_test_experiments = nullptr;

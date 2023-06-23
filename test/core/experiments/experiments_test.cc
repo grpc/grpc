@@ -20,6 +20,8 @@
 
 #include "gtest/gtest.h"
 
+#include "src/core/lib/experiments/config.h"
+
 #ifndef GRPC_EXPERIMENTS_ARE_FINAL
 
 bool GetExperimentTestExperiment1ExpectedValue() { return false; }

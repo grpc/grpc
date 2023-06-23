@@ -24,9 +24,9 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "//src/core:experiments",
         "//:config_vars",
         "//:gpr",
+        "//src/core:experiments",
         "//src/core:no_destruct",
     ],
 )

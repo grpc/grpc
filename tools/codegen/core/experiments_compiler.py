@@ -71,6 +71,8 @@ def _EXPERIMENTS_TEST_SKELETON(defs, test_body):
 #include "test/core/experiments/fixtures/experiments.h"
 #include "gtest/gtest.h"
 
+#include "src/core/lib/experiments/config.h"
+
 #ifndef GRPC_EXPERIMENTS_ARE_FINAL
 {defs}
 TEST(ExperimentsTest, CheckExperimentValuesTest) {{
