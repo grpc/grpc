@@ -22,8 +22,6 @@
 #include "src/compiler/config.h"
 #include "src/compiler/generator_helpers.h"
 
-using google::protobuf::compiler::csharp::GetOutputFile;
-
 namespace grpc_csharp_generator {
 
 inline bool ServicesFilename(const grpc::protobuf::FileDescriptor* file,
@@ -41,7 +39,8 @@ inline bool ServicesFilename(const grpc::protobuf::FileDescriptor* file,
   if (base_namespace.empty()) {
     out_file = grpc_generator::FileNameInUpperCamel(file, false) + file_suffix;
   } else {
-    out_file = GetOutputFile(file, file_suffix, true, base_namespace, error);
+    out_file = GRPC_CUSTOM_CSHARP_GETOUTPUTFILE(file, file_suffix, true,
+                                                base_namespace, error);
     if (out_file.empty()) {
       return false;
     }
