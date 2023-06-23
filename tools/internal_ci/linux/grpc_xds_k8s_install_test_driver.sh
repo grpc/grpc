@@ -97,9 +97,11 @@ activate_secondary_gke_cluster() {
 #   Writes the output of given command to stdout, stderr
 #######################################
 run_ignore_exit_code() {
-  local exit_code=-1
+  local exit_code=0
   "$@" || exit_code=$?
-  echo "Exit code: ${exit_code}"
+  if [[ $exit_code != 0 ]]; then
+    echo "Cmd: '$*', exit code: ${exit_code}"
+  fi
 }
 
 #######################################
@@ -345,13 +347,12 @@ EOF
 kokoro_install_dependencies() {
   # needrestart checks which daemons need to be restarted after library
   # upgrades. It's useless to us in non-interactive mode.
-  sudo apt-get -y remove needrestart
-  sudo apt-get update
-  sudo apt-get -y install \
+  sudo DEBIAN_FRONTEND=noninteractive apt-get -qq remove needrestart
+  sudo DEBIAN_FRONTEND=noninteractive apt-get -qq update
+  sudo DEBIAN_FRONTEND=noninteractive apt-get -qq install --auto-remove \
     "python${PYTHON_VERSION}-venv" \
     google-cloud-sdk-gke-gcloud-auth-plugin \
     kubectl
-  sudo apt-get -y autoremove
   sudo rm -rf /var/lib/apt/lists
 }
 
