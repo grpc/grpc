@@ -17,6 +17,7 @@
 # name:        name of the experiment
 # default:     one of:
 #              - broken  - the experiment defaults to off and is not tested
+#                          in all platforms.
 #              - false   - the experiment defaults to off in all platforms.
 #              - debug   - the experiment defaults to on in debug builds,
 #                          off in release builds in all platforms.
@@ -25,7 +26,7 @@
 # [OR] the default can be platform specific:
 #  -----------------------------------------
 #  e.g the following would mark the experiment as broken on ios, false on
-#  windows and debug on posix. If a platform is un-sepcified, the default for
+#  windows and debug on posix. If a platform is un-specified, the default for
 #  that platform will be set to false.
 #  - name: experiment_1
 #    default:
