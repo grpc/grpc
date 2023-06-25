@@ -471,6 +471,7 @@ def targets():
             RubyArtifact("linux", "x64-mingw-ucrt", presubmit=True),
             RubyArtifact("linux", "x86_64-linux", presubmit=True),
             RubyArtifact("linux", "x86-linux", presubmit=True),
+            RubyArtifact('linux', 'aarch64-linux', presubmit=True),
             RubyArtifact("linux", "x86_64-darwin", presubmit=True),
             RubyArtifact("linux", "arm64-darwin", presubmit=True),
             PHPArtifact("linux", "x64", presubmit=True),
