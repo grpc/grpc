@@ -177,6 +177,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\upb-generated\\envoy\\config\\trace\\v3\\trace.upb.c " +
     "src\\core\\ext\\upb-generated\\envoy\\config\\trace\\v3\\xray.upb.c " +
     "src\\core\\ext\\upb-generated\\envoy\\config\\trace\\v3\\zipkin.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\data\\accesslog\\v3\\accesslog.upb.c " +
     "src\\core\\ext\\upb-generated\\envoy\\extensions\\clusters\\aggregate\\v3\\cluster.upb.c " +
     "src\\core\\ext\\upb-generated\\envoy\\extensions\\filters\\common\\fault\\v3\\fault.upb.c " +
     "src\\core\\ext\\upb-generated\\envoy\\extensions\\filters\\http\\fault\\v3\\fault.upb.c " +
@@ -338,6 +339,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\upbdefs-generated\\envoy\\config\\trace\\v3\\trace.upbdefs.c " +
     "src\\core\\ext\\upbdefs-generated\\envoy\\config\\trace\\v3\\xray.upbdefs.c " +
     "src\\core\\ext\\upbdefs-generated\\envoy\\config\\trace\\v3\\zipkin.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\envoy\\data\\accesslog\\v3\\accesslog.upbdefs.c " +
     "src\\core\\ext\\upbdefs-generated\\envoy\\extensions\\clusters\\aggregate\\v3\\cluster.upbdefs.c " +
     "src\\core\\ext\\upbdefs-generated\\envoy\\extensions\\filters\\common\\fault\\v3\\fault.upbdefs.c " +
     "src\\core\\ext\\upbdefs-generated\\envoy\\extensions\\filters\\http\\fault\\v3\\fault.upbdefs.c " +
@@ -1395,6 +1397,9 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\config\\tap\\v3");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\config\\trace");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\config\\trace\\v3");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\data");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\data\\accesslog");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\data\\accesslog\\v3");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\extensions");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\extensions\\clusters");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\extensions\\clusters\\aggregate");
@@ -1519,6 +1524,9 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\config\\tap\\v3");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\config\\trace");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\config\\trace\\v3");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\data");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\data\\accesslog");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\data\\accesslog\\v3");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\extensions");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\extensions\\clusters");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\extensions\\clusters\\aggregate");

@@ -183,6 +183,7 @@ Pod::Spec.new do |s|
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
     ss.dependency 'BoringSSL-GRPC', '0.0.29'
+    ss.dependency 'abseil/algorithm/container', abseil_version
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/core_headers', abseil_version
     ss.dependency 'abseil/cleanup/cleanup', abseil_version
@@ -541,6 +542,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/upb-generated/envoy/config/trace/v3/xray.upb.h',
                       'src/core/ext/upb-generated/envoy/config/trace/v3/zipkin.upb.c',
                       'src/core/ext/upb-generated/envoy/config/trace/v3/zipkin.upb.h',
+                      'src/core/ext/upb-generated/envoy/data/accesslog/v3/accesslog.upb.c',
+                      'src/core/ext/upb-generated/envoy/data/accesslog/v3/accesslog.upb.h',
                       'src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.c',
                       'src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.h',
                       'src/core/ext/upb-generated/envoy/extensions/filters/common/fault/v3/fault.upb.c',
@@ -863,6 +866,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/upbdefs-generated/envoy/config/trace/v3/xray.upbdefs.h',
                       'src/core/ext/upbdefs-generated/envoy/config/trace/v3/zipkin.upbdefs.c',
                       'src/core/ext/upbdefs-generated/envoy/config/trace/v3/zipkin.upbdefs.h',
+                      'src/core/ext/upbdefs-generated/envoy/data/accesslog/v3/accesslog.upbdefs.c',
+                      'src/core/ext/upbdefs-generated/envoy/data/accesslog/v3/accesslog.upbdefs.h',
                       'src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.c',
                       'src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.h',
                       'src/core/ext/upbdefs-generated/envoy/extensions/filters/common/fault/v3/fault.upbdefs.c',
@@ -1512,6 +1517,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/json/json_util.h',
                       'src/core/lib/json/json_writer.cc',
                       'src/core/lib/json/json_writer.h',
+                      'src/core/lib/load_balancing/delegating_helper.h',
                       'src/core/lib/load_balancing/lb_policy.cc',
                       'src/core/lib/load_balancing/lb_policy.h',
                       'src/core/lib/load_balancing/lb_policy_factory.h',
@@ -2209,6 +2215,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/upb-generated/envoy/config/trace/v3/trace.upb.h',
                               'src/core/ext/upb-generated/envoy/config/trace/v3/xray.upb.h',
                               'src/core/ext/upb-generated/envoy/config/trace/v3/zipkin.upb.h',
+                              'src/core/ext/upb-generated/envoy/data/accesslog/v3/accesslog.upb.h',
                               'src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.h',
                               'src/core/ext/upb-generated/envoy/extensions/filters/common/fault/v3/fault.upb.h',
                               'src/core/ext/upb-generated/envoy/extensions/filters/http/fault/v3/fault.upb.h',
@@ -2370,6 +2377,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/upbdefs-generated/envoy/config/trace/v3/trace.upbdefs.h',
                               'src/core/ext/upbdefs-generated/envoy/config/trace/v3/xray.upbdefs.h',
                               'src/core/ext/upbdefs-generated/envoy/config/trace/v3/zipkin.upbdefs.h',
+                              'src/core/ext/upbdefs-generated/envoy/data/accesslog/v3/accesslog.upbdefs.h',
                               'src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.h',
                               'src/core/ext/upbdefs-generated/envoy/extensions/filters/common/fault/v3/fault.upbdefs.h',
                               'src/core/ext/upbdefs-generated/envoy/extensions/filters/http/fault/v3/fault.upbdefs.h',
@@ -2696,6 +2704,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/json/json_reader.h',
                               'src/core/lib/json/json_util.h',
                               'src/core/lib/json/json_writer.h',
+                              'src/core/lib/load_balancing/delegating_helper.h',
                               'src/core/lib/load_balancing/lb_policy.h',
                               'src/core/lib/load_balancing/lb_policy_factory.h',
                               'src/core/lib/load_balancing/lb_policy_registry.h',

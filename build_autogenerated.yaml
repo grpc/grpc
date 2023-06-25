@@ -371,6 +371,7 @@ libs:
   - src/core/ext/upb-generated/envoy/config/trace/v3/trace.upb.h
   - src/core/ext/upb-generated/envoy/config/trace/v3/xray.upb.h
   - src/core/ext/upb-generated/envoy/config/trace/v3/zipkin.upb.h
+  - src/core/ext/upb-generated/envoy/data/accesslog/v3/accesslog.upb.h
   - src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.h
   - src/core/ext/upb-generated/envoy/extensions/filters/common/fault/v3/fault.upb.h
   - src/core/ext/upb-generated/envoy/extensions/filters/http/fault/v3/fault.upb.h
@@ -532,6 +533,7 @@ libs:
   - src/core/ext/upbdefs-generated/envoy/config/trace/v3/trace.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/config/trace/v3/xray.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/config/trace/v3/zipkin.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/data/accesslog/v3/accesslog.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/extensions/filters/common/fault/v3/fault.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/extensions/filters/http/fault/v3/fault.upbdefs.h
@@ -833,6 +835,7 @@ libs:
   - src/core/lib/json/json_reader.h
   - src/core/lib/json/json_util.h
   - src/core/lib/json/json_writer.h
+  - src/core/lib/load_balancing/delegating_helper.h
   - src/core/lib/load_balancing/lb_policy.h
   - src/core/lib/load_balancing/lb_policy_factory.h
   - src/core/lib/load_balancing/lb_policy_registry.h
@@ -1185,6 +1188,7 @@ libs:
   - src/core/ext/upb-generated/envoy/config/trace/v3/trace.upb.c
   - src/core/ext/upb-generated/envoy/config/trace/v3/xray.upb.c
   - src/core/ext/upb-generated/envoy/config/trace/v3/zipkin.upb.c
+  - src/core/ext/upb-generated/envoy/data/accesslog/v3/accesslog.upb.c
   - src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.c
   - src/core/ext/upb-generated/envoy/extensions/filters/common/fault/v3/fault.upb.c
   - src/core/ext/upb-generated/envoy/extensions/filters/http/fault/v3/fault.upb.c
@@ -1346,6 +1350,7 @@ libs:
   - src/core/ext/upbdefs-generated/envoy/config/trace/v3/trace.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/config/trace/v3/xray.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/config/trace/v3/zipkin.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/data/accesslog/v3/accesslog.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/extensions/filters/common/fault/v3/fault.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/extensions/filters/http/fault/v3/fault.upbdefs.c
@@ -1780,6 +1785,7 @@ libs:
   - src/core/tsi/transport_security.cc
   - src/core/tsi/transport_security_grpc.cc
   deps:
+  - absl/algorithm:container
   - absl/cleanup:cleanup
   - absl/container:flat_hash_map
   - absl/container:flat_hash_set
@@ -2214,6 +2220,7 @@ libs:
   - src/core/lib/json/json_object_loader.h
   - src/core/lib/json/json_reader.h
   - src/core/lib/json/json_writer.h
+  - src/core/lib/load_balancing/delegating_helper.h
   - src/core/lib/load_balancing/lb_policy.h
   - src/core/lib/load_balancing/lb_policy_factory.h
   - src/core/lib/load_balancing/lb_policy_registry.h
@@ -2713,6 +2720,7 @@ libs:
   - src/core/tsi/transport_security.cc
   - src/core/tsi/transport_security_grpc.cc
   deps:
+  - absl/algorithm:container
   - absl/cleanup:cleanup
   - absl/container:flat_hash_map
   - absl/container:flat_hash_set
@@ -11215,6 +11223,7 @@ targets:
   headers:
   - test/core/client_channel/lb_policy/lb_policy_test_lib.h
   - test/core/event_engine/mock_event_engine.h
+  - test/core/util/scoped_env_var.h
   src:
   - test/core/client_channel/lb_policy/pick_first_test.cc
   deps:
@@ -12034,6 +12043,19 @@ targets:
   deps:
   - grpc_test_util
   - grpc++_test_config
+- name: resource_quota_end2end_stress_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - test/cpp/end2end/resource_quota_end2end_stress_test.cc
+  deps:
+  - grpc++_test_util
 - name: resource_quota_server_test
   gtest: true
   build: test
@@ -16584,6 +16606,7 @@ targets:
   headers:
   - src/cpp/server/csds/csds.h
   - test/cpp/end2end/test_health_check_service_impl.h
+  - test/cpp/interop/xds_interop_server_lib.h
   src:
   - src/proto/grpc/health/v1/health.proto
   - src/proto/grpc/testing/empty.proto
@@ -16597,6 +16620,35 @@ targets:
   - src/cpp/server/csds/csds.cc
   - test/cpp/end2end/test_health_check_service_impl.cc
   - test/cpp/interop/xds_interop_server.cc
+  - test/cpp/interop/xds_interop_server_lib.cc
+  deps:
+  - grpc++_reflection
+  - grpcpp_channelz
+  - grpc_test_util
+  - grpc++_test_config
+- name: xds_interop_server_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/cpp/server/csds/csds.h
+  - test/cpp/end2end/test_health_check_service_impl.h
+  - test/cpp/interop/xds_interop_server_lib.h
+  src:
+  - src/proto/grpc/health/v1/health.proto
+  - src/proto/grpc/testing/empty.proto
+  - src/proto/grpc/testing/istio_echo.proto
+  - src/proto/grpc/testing/messages.proto
+  - src/proto/grpc/testing/test.proto
+  - src/proto/grpc/testing/xds/v3/base.proto
+  - src/proto/grpc/testing/xds/v3/config_dump.proto
+  - src/proto/grpc/testing/xds/v3/csds.proto
+  - src/proto/grpc/testing/xds/v3/percent.proto
+  - src/cpp/server/admin/admin_services.cc
+  - src/cpp/server/csds/csds.cc
+  - test/cpp/end2end/test_health_check_service_impl.cc
+  - test/cpp/interop/xds_interop_server_lib.cc
+  - test/cpp/interop/xds_interop_server_test.cc
   deps:
   - grpc++_reflection
   - grpcpp_channelz
@@ -16759,6 +16811,7 @@ targets:
   - src/proto/grpc/testing/simple_messages.proto
   - src/proto/grpc/testing/xds/v3/address.proto
   - src/proto/grpc/testing/xds/v3/ads.proto
+  - src/proto/grpc/testing/xds/v3/aggregate_cluster.proto
   - src/proto/grpc/testing/xds/v3/base.proto
   - src/proto/grpc/testing/xds/v3/cluster.proto
   - src/proto/grpc/testing/xds/v3/config_source.proto
@@ -17090,12 +17143,12 @@ targets:
   - mac
 external_proto_libraries:
 - destination: third_party/envoy-api
-  hash: 3c7372b5cb33e5e5cc3afd82573fc6275f9a2cac8b1530e1af14f52f34047328
+  hash: 6fd3496c82919a433219733819a93b56699519a193126959e9c4fedc25e70663
   proto_prefix: third_party/envoy-api/
-  strip_prefix: data-plane-api-68d4315167352ffac71f149a43b8088397d3f33d
+  strip_prefix: data-plane-api-e53e7bbd012f81965f2e79848ad9a58ceb67201f
   urls:
-  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/68d4315167352ffac71f149a43b8088397d3f33d.tar.gz
-  - https://github.com/envoyproxy/data-plane-api/archive/68d4315167352ffac71f149a43b8088397d3f33d.tar.gz
+  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/e53e7bbd012f81965f2e79848ad9a58ceb67201f.tar.gz
+  - https://github.com/envoyproxy/data-plane-api/archive/e53e7bbd012f81965f2e79848ad9a58ceb67201f.tar.gz
 - destination: third_party/googleapis
   hash: 5bb6b0253ccf64b53d6c7249625a7e3f6c3bc6402abd52d3778bfa48258703a0
   proto_prefix: third_party/googleapis/

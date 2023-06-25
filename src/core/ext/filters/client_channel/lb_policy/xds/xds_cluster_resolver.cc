@@ -35,7 +35,6 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
-#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/json.h>
@@ -65,14 +64,13 @@
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
 #include "src/core/lib/json/json_writer.h"
+#include "src/core/lib/load_balancing/delegating_helper.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
-#include "src/core/lib/load_balancing/subchannel_interface.h"
 #include "src/core/lib/resolver/resolver.h"
 #include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/resolver/server_address.h"
-#include "src/core/lib/transport/connectivity_state.h"
 
 #define GRPC_EDS_DEFAULT_FALLBACK_TIMEOUT 10000
 
@@ -360,31 +358,18 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
     std::string GetChildPolicyName(size_t priority) const;
   };
 
-  class Helper : public ChannelControlHelper {
+  class Helper : public ParentOwningDelegatingChannelControlHelper<
+                     XdsClusterResolverLb> {
    public:
     explicit Helper(
         RefCountedPtr<XdsClusterResolverLb> xds_cluster_resolver_policy)
-        : xds_cluster_resolver_policy_(std::move(xds_cluster_resolver_policy)) {
-    }
+        : ParentOwningDelegatingChannelControlHelper(
+              std::move(xds_cluster_resolver_policy)) {}
 
-    ~Helper() override {
-      xds_cluster_resolver_policy_.reset(DEBUG_LOCATION, "Helper");
-    }
-
-    RefCountedPtr<SubchannelInterface> CreateSubchannel(
-        ServerAddress address, const ChannelArgs& args) override;
-    void UpdateState(grpc_connectivity_state state, const absl::Status& status,
-                     RefCountedPtr<SubchannelPicker> picker) override;
     // This is a no-op, because we get the addresses from the xds
     // client, which is a watch-based API.
+    // TODO(roth): Don't we need to propagate this for LOGICAL_DNS clusters?
     void RequestReresolution() override {}
-    absl::string_view GetAuthority() override;
-    grpc_event_engine::experimental::EventEngine* GetEventEngine() override;
-    void AddTraceEvent(TraceSeverity severity,
-                       absl::string_view message) override;
-
-   private:
-    RefCountedPtr<XdsClusterResolverLb> xds_cluster_resolver_policy_;
   };
 
   ~XdsClusterResolverLb() override;
@@ -421,53 +406,6 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
 
   OrphanablePtr<LoadBalancingPolicy> child_policy_;
 };
-
-//
-// XdsClusterResolverLb::Helper
-//
-
-RefCountedPtr<SubchannelInterface>
-XdsClusterResolverLb::Helper::CreateSubchannel(ServerAddress address,
-                                               const ChannelArgs& args) {
-  if (xds_cluster_resolver_policy_->shutting_down_) return nullptr;
-  return xds_cluster_resolver_policy_->channel_control_helper()
-      ->CreateSubchannel(std::move(address), args);
-}
-
-void XdsClusterResolverLb::Helper::UpdateState(
-    grpc_connectivity_state state, const absl::Status& status,
-    RefCountedPtr<SubchannelPicker> picker) {
-  if (xds_cluster_resolver_policy_->shutting_down_ ||
-      xds_cluster_resolver_policy_->child_policy_ == nullptr) {
-    return;
-  }
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_cluster_resolver_trace)) {
-    gpr_log(GPR_INFO,
-            "[xds_cluster_resolver_lb %p] child policy updated state=%s (%s) "
-            "picker=%p",
-            xds_cluster_resolver_policy_.get(), ConnectivityStateName(state),
-            status.ToString().c_str(), picker.get());
-  }
-  xds_cluster_resolver_policy_->channel_control_helper()->UpdateState(
-      state, status, std::move(picker));
-}
-
-absl::string_view XdsClusterResolverLb::Helper::GetAuthority() {
-  return xds_cluster_resolver_policy_->channel_control_helper()->GetAuthority();
-}
-
-grpc_event_engine::experimental::EventEngine*
-XdsClusterResolverLb::Helper::GetEventEngine() {
-  return xds_cluster_resolver_policy_->channel_control_helper()
-      ->GetEventEngine();
-}
-
-void XdsClusterResolverLb::Helper::AddTraceEvent(TraceSeverity severity,
-                                                 absl::string_view message) {
-  if (xds_cluster_resolver_policy_->shutting_down_) return;
-  xds_cluster_resolver_policy_->channel_control_helper()->AddTraceEvent(
-      severity, message);
-}
 
 //
 // XdsClusterResolverLb::EdsDiscoveryMechanism

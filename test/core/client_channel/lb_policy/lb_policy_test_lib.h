@@ -80,6 +80,7 @@
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
 #include "src/core/lib/load_balancing/subchannel_interface.h"
 #include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/uri/uri_parser.h"
@@ -173,6 +174,13 @@ class LoadBalancingPolicyTest : public ::testing::Test {
         GPR_ASSERT(orca_watcher_ == nullptr);
         orca_watcher_.reset(static_cast<OrcaWatcher*>(watcher.release()));
         state_->watchers_.insert(orca_watcher_.get());
+      }
+
+      void CancelDataWatcher(DataWatcherInterface* watcher) override {
+        MutexLock lock(&state_->backend_metric_watcher_mu_);
+        if (orca_watcher_.get() != static_cast<OrcaWatcher*>(watcher)) return;
+        state_->watchers_.erase(orca_watcher_.get());
+        orca_watcher_.reset();
       }
 
       // Don't need this method, so it's a no-op.
@@ -432,6 +440,15 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
     absl::string_view GetAuthority() override { return "server.example.com"; }
 
+    RefCountedPtr<grpc_channel_credentials> GetChannelCredentials() override {
+      return nullptr;
+    }
+
+    RefCountedPtr<grpc_channel_credentials> GetUnsafeChannelCredentials()
+        override {
+      return nullptr;
+    }
+
     grpc_event_engine::experimental::EventEngine* GetEventEngine() override {
       return event_engine_.get();
     }
@@ -581,7 +598,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   // Constructs an update containing a list of addresses.
   LoadBalancingPolicy::UpdateArgs BuildUpdate(
       absl::Span<const absl::string_view> addresses,
-      RefCountedPtr<LoadBalancingPolicy::Config> config = nullptr) {
+      RefCountedPtr<LoadBalancingPolicy::Config> config) {
     LoadBalancingPolicy::UpdateArgs update;
     update.addresses.emplace();
     for (const absl::string_view& address : addresses) {

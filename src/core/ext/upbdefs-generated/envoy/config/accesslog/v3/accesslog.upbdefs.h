@@ -92,6 +92,11 @@ UPB_INLINE const upb_MessageDef *envoy_config_accesslog_v3_MetadataFilter_getmsg
   return upb_DefPool_FindMessageByName(s, "envoy.config.accesslog.v3.MetadataFilter");
 }
 
+UPB_INLINE const upb_MessageDef *envoy_config_accesslog_v3_LogTypeFilter_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_accesslog_v3_accesslog_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.accesslog.v3.LogTypeFilter");
+}
+
 UPB_INLINE const upb_MessageDef *envoy_config_accesslog_v3_ExtensionFilter_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &envoy_config_accesslog_v3_accesslog_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "envoy.config.accesslog.v3.ExtensionFilter");

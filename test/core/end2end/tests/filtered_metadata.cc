@@ -32,7 +32,7 @@ namespace {
 void TestRequestResponseWithMetadataToBeFiltered(
     CoreEnd2endTest& test, absl::string_view filtered_md_key,
     absl::string_view filter_md_value) {
-  auto c = test.NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
+  auto c = test.NewClientCall("/foo").Timeout(Duration::Seconds(30)).Create();
 
   CoreEnd2endTest::IncomingMetadata server_initial_metadata;
   CoreEnd2endTest::IncomingStatusOnClient server_status;

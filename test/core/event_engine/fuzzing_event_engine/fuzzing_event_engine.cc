@@ -70,7 +70,7 @@ gpr_timespec (*g_orig_gpr_now_impl)(gpr_clock_type clock_type);
 
 FuzzingEventEngine::FuzzingEventEngine(
     Options options, const fuzzing_event_engine::Actions& actions)
-    : max_delay_run_after_(options.max_delay_run_after) {
+    : max_delay_{options.max_delay_write, options.max_delay_run_after} {
   tasks_by_id_.clear();
   tasks_by_time_.clear();
   next_task_id_ = 1;
@@ -107,8 +107,7 @@ FuzzingEventEngine::FuzzingEventEngine(
 
   for (const auto& delay_ns : actions.run_delay()) {
     Duration delay = std::chrono::nanoseconds(delay_ns);
-    task_delays_.push(
-        grpc_core::Clamp(delay, Duration(0), max_delay_run_after_));
+    task_delays_.push(delay);
   }
 
   previous_pick_port_functions_ = grpc_set_pick_port_functions(
@@ -295,6 +294,7 @@ bool FuzzingEventEngine::EndpointMiddle::Write(SliceBuffer* data, int index) {
         Slice::FromCopiedBuffer(pending[index]));
     pending[index].clear();
     g_fuzzing_event_engine->RunLocked(
+        RunType::kWrite,
         [cb = std::move(pending_read[peer_index]->on_read)]() mutable {
           cb(absl::OkStatus());
         });
@@ -307,16 +307,11 @@ bool FuzzingEventEngine::FuzzingEndpoint::Write(
     absl::AnyInvocable<void(absl::Status)> on_writable, SliceBuffer* data,
     const WriteArgs*) {
   grpc_core::MutexLock lock(&*mu_);
-  // If the endpoint is closed, then we fail the write.
-  if (middle_->closed[my_index()]) {
-    g_fuzzing_event_engine->RunLocked(
-        [on_writable = std::move(on_writable)]() mutable {
-          on_writable(absl::InternalError("Endpoint closed"));
-        });
-    return false;
-  }
+  GPR_ASSERT(!middle_->closed[my_index()]);
+  GPR_ASSERT(!middle_->writing[my_index()]);
   // If the write succeeds immediately, then we return true.
   if (middle_->Write(data, my_index())) return true;
+  middle_->writing[my_index()] = true;
   ScheduleDelayedWrite(middle_, my_index(), std::move(on_writable), data);
   return false;
 }
@@ -325,17 +320,21 @@ void FuzzingEventEngine::FuzzingEndpoint::ScheduleDelayedWrite(
     std::shared_ptr<EndpointMiddle> middle, int index,
     absl::AnyInvocable<void(absl::Status)> on_writable, SliceBuffer* data) {
   g_fuzzing_event_engine->RunLocked(
-      [middle = std::move(middle), index, data,
-       on_writable = std::move(on_writable)]() mutable {
-        grpc_core::MutexLock lock(&*mu_);
+      RunType::kWrite, [middle = std::move(middle), index, data,
+                        on_writable = std::move(on_writable)]() mutable {
+        grpc_core::ReleasableMutexLock lock(&*mu_);
+        GPR_ASSERT(middle->writing[index]);
         if (middle->closed[index]) {
           g_fuzzing_event_engine->RunLocked(
+              RunType::kRunAfter,
               [on_writable = std::move(on_writable)]() mutable {
                 on_writable(absl::InternalError("Endpoint closed"));
               });
           return;
         }
         if (middle->Write(data, index)) {
+          middle->writing[index] = false;
+          lock.Release();
           on_writable(absl::OkStatus());
           return;
         }
@@ -349,10 +348,21 @@ FuzzingEventEngine::FuzzingEndpoint::~FuzzingEndpoint() {
   middle_->closed[my_index()] = true;
   if (middle_->pending_read[my_index()].has_value()) {
     g_fuzzing_event_engine->RunLocked(
+        RunType::kRunAfter,
         [cb = std::move(middle_->pending_read[my_index()]->on_read)]() mutable {
           cb(absl::InternalError("Endpoint closed"));
         });
     middle_->pending_read[my_index()].reset();
+  }
+  if (!middle_->writing[peer_index()] &&
+      middle_->pending_read[peer_index()].has_value()) {
+    g_fuzzing_event_engine->RunLocked(
+        RunType::kRunAfter,
+        [cb = std::move(
+             middle_->pending_read[peer_index()]->on_read)]() mutable {
+          cb(absl::InternalError("Endpoint closed"));
+        });
+    middle_->pending_read[peer_index()].reset();
   }
 }
 
@@ -366,7 +376,7 @@ bool FuzzingEventEngine::FuzzingEndpoint::Read(
     // If the endpoint is closed, fail asynchronously.
     if (middle_->closed[peer_index()]) {
       g_fuzzing_event_engine->RunLocked(
-          [on_read = std::move(on_read)]() mutable {
+          RunType::kRunAfter, [on_read = std::move(on_read)]() mutable {
             on_read(absl::InternalError("Endpoint closed"));
           });
       return false;
@@ -420,14 +430,15 @@ EventEngine::ConnectionHandle FuzzingEventEngine::Connect(
                   listener_port, g_fuzzing_event_engine->AllocatePort());
               auto ep1 = std::make_unique<FuzzingEndpoint>(middle, 0);
               auto ep2 = std::make_unique<FuzzingEndpoint>(middle, 1);
-              RunLocked([listener, ep1 = std::move(ep1)]() mutable {
+              RunLocked(RunType::kRunAfter, [listener,
+                                             ep1 = std::move(ep1)]() mutable {
                 listener->on_accept(
                     std::move(ep1),
                     listener->memory_allocator_factory->CreateMemoryAllocator(
                         "fuzzing"));
               });
-              RunLocked([on_connect = std::move(on_connect),
-                         ep2 = std::move(ep2)]() mutable {
+              RunLocked(RunType::kRunAfter, [on_connect = std::move(on_connect),
+                                             ep2 = std::move(ep2)]() mutable {
                 on_connect(std::move(ep2));
               });
               return;
@@ -435,9 +446,10 @@ EventEngine::ConnectionHandle FuzzingEventEngine::Connect(
           }
         }
         // Fail: no such listener.
-        RunLocked([on_connect = std::move(on_connect)]() mutable {
-          on_connect(absl::InvalidArgumentError("No listener found"));
-        });
+        RunLocked(RunType::kRunAfter,
+                  [on_connect = std::move(on_connect)]() mutable {
+                    on_connect(absl::InvalidArgumentError("No listener found"));
+                  });
       });
   return ConnectionHandle{{task_handle.keys[0], task_handle.keys[1]}};
 }
@@ -471,15 +483,17 @@ EventEngine::TaskHandle FuzzingEventEngine::RunAfter(
     Duration when, absl::AnyInvocable<void()> closure) {
   grpc_core::MutexLock lock(&*mu_);
   // (b/258949216): Cap it to one year to avoid integer overflow errors.
-  return RunAfterLocked(std::min(when, kOneYear), std::move(closure));
+  return RunAfterLocked(RunType::kRunAfter, std::min(when, kOneYear),
+                        std::move(closure));
 }
 
 EventEngine::TaskHandle FuzzingEventEngine::RunAfterLocked(
-    Duration when, absl::AnyInvocable<void()> closure) {
+    RunType run_type, Duration when, absl::AnyInvocable<void()> closure) {
   const intptr_t id = next_task_id_;
   ++next_task_id_;
   if (!task_delays_.empty()) {
-    when += task_delays_.front();
+    when += grpc_core::Clamp(task_delays_.front(), Duration::zero(),
+                             max_delay_[static_cast<int>(run_type)]);
     task_delays_.pop();
   }
   auto task = std::make_shared<Task>(id, std::move(closure));

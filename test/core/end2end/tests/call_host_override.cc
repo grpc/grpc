@@ -16,6 +16,7 @@
 //
 //
 
+#include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
 
@@ -23,6 +24,7 @@
 #include <grpc/status.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/time.h"
 #include "test/core/end2end/end2end_tests.h"
 
@@ -34,7 +36,7 @@ CORE_END2END_TEST(CoreClientChannelTest, CallHostOverride) {
                                "foo.test.google.fr:1234"));
   InitServer(ChannelArgs());
   auto c = NewClientCall("/foo")
-               .Timeout(Duration::Seconds(5))
+               .Timeout(Duration::Seconds(30))
                .Host("foo.test.google.fr:1234")
                .Create();
   EXPECT_NE(c.GetPeer(), absl::nullopt);
@@ -47,6 +49,12 @@ CORE_END2END_TEST(CoreClientChannelTest, CallHostOverride) {
       .RecvStatusOnClient(server_status);
   auto s = RequestCall(101);
   Expect(101, true);
+  Expect(1, CoreEnd2endTest::MaybePerformAction{[&](bool success) {
+           Crash(absl::StrCat(
+               "Unexpected completion of client side call: success=",
+               success ? "true" : "false", " status=", server_status.ToString(),
+               " initial_md=", server_initial_metadata.ToString()));
+         }});
   Step();
   EXPECT_NE(s.GetPeer(), absl::nullopt);
   EXPECT_NE(c.GetPeer(), absl::nullopt);

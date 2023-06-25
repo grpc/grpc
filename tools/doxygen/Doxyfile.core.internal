@@ -1219,6 +1219,8 @@ src/core/ext/upb-generated/envoy/config/trace/v3/xray.upb.c \
 src/core/ext/upb-generated/envoy/config/trace/v3/xray.upb.h \
 src/core/ext/upb-generated/envoy/config/trace/v3/zipkin.upb.c \
 src/core/ext/upb-generated/envoy/config/trace/v3/zipkin.upb.h \
+src/core/ext/upb-generated/envoy/data/accesslog/v3/accesslog.upb.c \
+src/core/ext/upb-generated/envoy/data/accesslog/v3/accesslog.upb.h \
 src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.c \
 src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.h \
 src/core/ext/upb-generated/envoy/extensions/filters/common/fault/v3/fault.upb.c \
@@ -1541,6 +1543,8 @@ src/core/ext/upbdefs-generated/envoy/config/trace/v3/xray.upbdefs.c \
 src/core/ext/upbdefs-generated/envoy/config/trace/v3/xray.upbdefs.h \
 src/core/ext/upbdefs-generated/envoy/config/trace/v3/zipkin.upbdefs.c \
 src/core/ext/upbdefs-generated/envoy/config/trace/v3/zipkin.upbdefs.h \
+src/core/ext/upbdefs-generated/envoy/data/accesslog/v3/accesslog.upbdefs.c \
+src/core/ext/upbdefs-generated/envoy/data/accesslog/v3/accesslog.upbdefs.h \
 src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.c \
 src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.h \
 src/core/ext/upbdefs-generated/envoy/extensions/filters/common/fault/v3/fault.upbdefs.c \
@@ -2195,6 +2199,7 @@ src/core/lib/json/json_util.cc \
 src/core/lib/json/json_util.h \
 src/core/lib/json/json_writer.cc \
 src/core/lib/json/json_writer.h \
+src/core/lib/load_balancing/delegating_helper.h \
 src/core/lib/load_balancing/lb_policy.cc \
 src/core/lib/load_balancing/lb_policy.h \
 src/core/lib/load_balancing/lb_policy_factory.h \
