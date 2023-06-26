@@ -283,7 +283,7 @@ absl::Status RoundRobin::UpdateLocked(UpdateArgs args) {
   }
   // Otherwise, if this is the initial update, immediately promote it to
   // endpoint_list_.
-  if (endpoint_list_.get() == nullptr) {
+  if (endpoint_list_ == nullptr) {
     endpoint_list_ = std::move(latest_pending_endpoint_list_);
   }
   return absl::OkStatus();
