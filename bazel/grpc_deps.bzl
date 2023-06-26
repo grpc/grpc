@@ -510,6 +510,16 @@ def grpc_deps():
             ],
         )
 
+    if "io_opentelemetry_cpp" not in native.existing_rules():
+        http_archive(
+            name = "io_opentelemetry_cpp",
+            sha256 = "",
+            strip_prefix = "opentelemetry-cpp-1.9.1",
+            urls = [
+                "https://github.com/open-telemetry/opentelemetry-cpp/archive/refs/tags/v1.9.1.tar.gz"
+            ],
+        )
+
     grpc_python_deps()
 
 # TODO: move some dependencies from "grpc_deps" here?
