@@ -161,8 +161,6 @@ namespace grpc_core {
 
 TraceFlag grpc_lb_glb_trace(false, "glb");
 
-const char kGrpcLbAddressAttributeKey[] = "grpclb";
-
 namespace {
 
 using ::grpc_event_engine::experimental::EventEngine;
@@ -336,30 +334,22 @@ class GrpcLb : public LoadBalancingPolicy {
     RefCountedPtr<GrpcLbClientStats> client_stats_;
   };
 
-  class TokenAndClientStatsAttribute
-      : public ServerAddress::AttributeInterface {
+  class TokenAndClientStatsArg : public RefCounted<TokenAndClientStatsArg> {
    public:
-    TokenAndClientStatsAttribute(std::string lb_token,
-                                 RefCountedPtr<GrpcLbClientStats> client_stats)
+    TokenAndClientStatsArg(std::string lb_token,
+                           RefCountedPtr<GrpcLbClientStats> client_stats)
         : lb_token_(std::move(lb_token)),
           client_stats_(std::move(client_stats)) {}
 
-    std::unique_ptr<AttributeInterface> Copy() const override {
-      return std::make_unique<TokenAndClientStatsAttribute>(lb_token_,
-                                                            client_stats_);
+    static absl::string_view ChannelArgName() {
+      return GRPC_ARG_NO_SUBCHANNEL_PREFIX "grpclb_token_and_client_stats";
     }
 
-    int Cmp(const AttributeInterface* other_base) const override {
-      const TokenAndClientStatsAttribute* other =
-          static_cast<const TokenAndClientStatsAttribute*>(other_base);
-      int r = lb_token_.compare(other->lb_token_);
+    static int ChannelArgsCompare(const TokenAndClientStatsArg* a,
+                                  const TokenAndClientStatsArg* b) {
+      int r = a->lb_token_.compare(b->lb_token_);
       if (r != 0) return r;
-      return QsortCompare(client_stats_.get(), other->client_stats_.get());
-    }
-
-    std::string ToString() const override {
-      return absl::StrFormat("lb_token=\"%s\" client_stats=%p", lb_token_,
-                             client_stats_.get());
+      return QsortCompare(a->client_stats_.get(), b->client_stats_.get());
     }
 
     const std::string& lb_token() const { return lb_token_; }
@@ -691,14 +681,10 @@ ServerAddressList GrpcLb::Serverlist::GetServerAddressList(
               addr_uri.ok() ? addr_uri->c_str()
                             : addr_uri.status().ToString().c_str());
     }
-    // Attach attribute to address containing LB token and stats object.
-    std::map<const char*, std::unique_ptr<ServerAddress::AttributeInterface>>
-        attributes;
-    attributes[kGrpcLbAddressAttributeKey] =
-        std::make_unique<TokenAndClientStatsAttribute>(std::move(lb_token),
-                                                       stats);
-    // Add address.
-    addresses.emplace_back(addr, ChannelArgs(), std::move(attributes));
+    // Add address with a channel arg containing LB token and stats object.
+    addresses.emplace_back(
+        addr, ChannelArgs().SetObject(MakeRefCounted<TokenAndClientStatsArg>(
+                  std::move(lb_token), stats)));
   }
   return addresses;
 }
@@ -785,16 +771,14 @@ GrpcLb::PickResult GrpcLb::Picker::Pick(PickArgs args) {
 RefCountedPtr<SubchannelInterface> GrpcLb::Helper::CreateSubchannel(
     ServerAddress address, const ChannelArgs& args) {
   if (parent()->shutting_down_) return nullptr;
-  const TokenAndClientStatsAttribute* attribute =
-      static_cast<const TokenAndClientStatsAttribute*>(
-          address.GetAttribute(kGrpcLbAddressAttributeKey));
-  if (attribute == nullptr) {
-    Crash(absl::StrFormat(
-        "[grpclb %p] no TokenAndClientStatsAttribute for address %p", parent(),
-        address.ToString().c_str()));
+  const auto* arg = address.args().GetObject<TokenAndClientStatsArg>();
+  if (arg == nullptr) {
+    Crash(
+        absl::StrFormat("[grpclb %p] no TokenAndClientStatsArg for address %p",
+                        parent(), address.ToString().c_str()));
   }
-  std::string lb_token = attribute->lb_token();
-  RefCountedPtr<GrpcLbClientStats> client_stats = attribute->client_stats();
+  std::string lb_token = arg->lb_token();
+  RefCountedPtr<GrpcLbClientStats> client_stats = arg->client_stats();
   return MakeRefCounted<SubchannelWrapper>(
       parent()->channel_control_helper()->CreateSubchannel(std::move(address),
                                                            args),
@@ -1534,9 +1518,10 @@ absl::Status GrpcLb::UpdateLocked(UpdateArgs args) {
   if (fallback_backend_addresses_.ok()) {
     // Add null LB token attributes.
     for (ServerAddress& address : *fallback_backend_addresses_) {
-      address = address.WithAttribute(
-          kGrpcLbAddressAttributeKey,
-          std::make_unique<TokenAndClientStatsAttribute>("", nullptr));
+      address = ServerAddress(
+          address.address(),
+          address.args().SetObject(
+              MakeRefCounted<TokenAndClientStatsArg>("", nullptr)));
     }
   }
   resolution_note_ = std::move(args.resolution_note);

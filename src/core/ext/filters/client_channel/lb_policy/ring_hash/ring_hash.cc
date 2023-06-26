@@ -470,16 +470,14 @@ RingHash::RingHashSubchannelList::Ring::Ring(
   address_weights.reserve(subchannel_list->num_subchannels());
   for (size_t i = 0; i < subchannel_list->num_subchannels(); ++i) {
     RingHashSubchannelData* sd = subchannel_list->subchannel(i);
-    const ServerAddressWeightAttribute* weight_attribute = static_cast<
-        const ServerAddressWeightAttribute*>(sd->address().GetAttribute(
-        ServerAddressWeightAttribute::kServerAddressWeightAttributeKey));
+    auto weight_arg = sd->address().args().GetInt(GRPC_ARG_ADDRESS_WEIGHT);
     AddressWeight address_weight;
     address_weight.address =
         grpc_sockaddr_to_string(&sd->address().address(), false).value();
     // Weight should never be zero, but ignore it just in case, since
     // that value would screw up the ring-building algorithm.
-    if (weight_attribute != nullptr && weight_attribute->weight() > 0) {
-      address_weight.weight = weight_attribute->weight();
+    if (weight_arg.value_or(0) > 0) {
+      address_weight.weight = *weight_arg;
     }
     sum += address_weight.weight;
     address_weights.push_back(std::move(address_weight));

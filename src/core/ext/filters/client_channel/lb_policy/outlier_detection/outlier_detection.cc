@@ -69,9 +69,6 @@ namespace grpc_core {
 
 TraceFlag grpc_outlier_detection_lb_trace(false, "outlier_detection_lb");
 
-const char* DisableOutlierDetectionAttribute::kName =
-    "disable_outlier_detection";
-
 namespace {
 
 using ::grpc_event_engine::experimental::EventEngine;
@@ -542,14 +539,12 @@ OutlierDetectionLb::~OutlierDetectionLb() {
 
 std::string OutlierDetectionLb::MakeKeyForAddress(
     const ServerAddress& address) {
-  // If the address has the DisableOutlierDetectionAttribute attribute,
-  // ignore it.
+  // If the address has outlier detection disabled, ignore it.
   // TODO(roth): This is a hack to prevent outlier_detection from
   // working with pick_first, as per discussion in
   // https://github.com/grpc/grpc/issues/32967.  Remove this as part of
   // implementing dualstack backend support.
-  if (address.GetAttribute(DisableOutlierDetectionAttribute::kName) !=
-      nullptr) {
+  if (address.args().GetInt(GRPC_ARG_OUTLIER_DETECTION_DISABLE) == 1) {
     return "";
   }
   // Use only the address, not the attributes.

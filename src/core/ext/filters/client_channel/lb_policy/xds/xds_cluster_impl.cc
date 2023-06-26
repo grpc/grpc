@@ -39,7 +39,6 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
-#include "src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
@@ -600,13 +599,7 @@ RefCountedPtr<SubchannelInterface> XdsClusterImplLb::Helper::CreateSubchannel(
   // If load reporting is enabled, wrap the subchannel such that it
   // includes the locality stats object, which will be used by the Picker.
   if (parent()->config_->lrs_load_reporting_server().has_value()) {
-    RefCountedPtr<XdsLocalityName> locality_name;
-    auto* attribute = address.GetAttribute(kXdsLocalityNameAttributeKey);
-    if (attribute != nullptr) {
-      const auto* locality_attr =
-          static_cast<const XdsLocalityAttribute*>(attribute);
-      locality_name = locality_attr->locality_name();
-    }
+    auto locality_name = address.args().GetObjectRef<XdsLocalityName>();
     RefCountedPtr<XdsClusterLocalityStats> locality_stats =
         parent()->xds_client_->AddClusterLocalityStats(
             parent()->config_->lrs_load_reporting_server().value(),

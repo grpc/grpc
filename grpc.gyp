@@ -301,7 +301,6 @@
         'src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/weighted_round_robin.cc',
         'src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc',
         'src/core/ext/filters/client_channel/lb_policy/xds/cds.cc',
-        'src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.cc',
         'src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc',
         'src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc',
         'src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc',
