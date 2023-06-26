@@ -4622,7 +4622,6 @@ grpc_cc_library(
         "absl/functional:any_invocable",
         "absl/status",
         "absl/status:statusor",
-        "absl/strings",
         "absl/types:optional",
     ],
     language = "c++",
