@@ -202,3 +202,10 @@ ruby_gem:
   - boringssl
   - re2
   - z
+swift_package:
+  deps:
+  - grpc
+  - grpc_authorization_provider
+  - gpr
+  - upb
+  - re2

@@ -23,8 +23,7 @@ template <typename T>
 class TaskHandleTest : public testing::Test {};
 
 using HandleTypes =
-    ::testing::Types<EventEngine::TaskHandle, EventEngine::ConnectionHandle,
-                     EventEngine::DNSResolver::LookupTaskHandle>;
+    ::testing::Types<EventEngine::TaskHandle, EventEngine::ConnectionHandle>;
 TYPED_TEST_SUITE(TaskHandleTest, HandleTypes);
 
 TYPED_TEST(TaskHandleTest, Identity) {

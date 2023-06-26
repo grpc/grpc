@@ -29,10 +29,13 @@
 #include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/transport.h"
 
@@ -40,6 +43,31 @@
   "grpc.fake_security.expected_targets"
 
 // -- Fake transport security credentials. --
+
+class grpc_fake_channel_credentials final : public grpc_channel_credentials {
+ public:
+  grpc_core::RefCountedPtr<grpc_channel_security_connector>
+  create_security_connector(
+      grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
+      const char* target, grpc_core::ChannelArgs* args) override;
+
+  static grpc_core::UniqueTypeName Type();
+
+  grpc_core::UniqueTypeName type() const override { return Type(); }
+
+ private:
+  int cmp_impl(const grpc_channel_credentials* other) const override;
+};
+
+class grpc_fake_server_credentials final : public grpc_server_credentials {
+ public:
+  grpc_core::RefCountedPtr<grpc_server_security_connector>
+  create_security_connector(const grpc_core::ChannelArgs& /*args*/) override;
+
+  static grpc_core::UniqueTypeName Type();
+
+  grpc_core::UniqueTypeName type() const override { return Type(); }
+};
 
 // Creates a fake transport security credentials object for testing.
 grpc_channel_credentials* grpc_fake_transport_security_credentials_create(void);

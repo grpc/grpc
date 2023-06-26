@@ -23,8 +23,6 @@ namespace experimental {
 const EventEngine::TaskHandle EventEngine::TaskHandle::kInvalid = {-1, -1};
 const EventEngine::ConnectionHandle EventEngine::ConnectionHandle::kInvalid = {
     -1, -1};
-const EventEngine::DNSResolver::LookupTaskHandle
-    EventEngine::DNSResolver::LookupTaskHandle::kInvalid = {-1, -1};
 
 bool operator==(const EventEngine::TaskHandle& lhs,
                 const EventEngine::TaskHandle& rhs) {
@@ -43,16 +41,6 @@ bool operator==(const EventEngine::ConnectionHandle& lhs,
 
 bool operator!=(const EventEngine::ConnectionHandle& lhs,
                 const EventEngine::ConnectionHandle& rhs) {
-  return !(lhs == rhs);
-}
-
-bool operator==(const EventEngine::DNSResolver::LookupTaskHandle& lhs,
-                const EventEngine::DNSResolver::LookupTaskHandle& rhs) {
-  return lhs.keys[0] == rhs.keys[0] && lhs.keys[1] == rhs.keys[1];
-}
-
-bool operator!=(const EventEngine::DNSResolver::LookupTaskHandle& lhs,
-                const EventEngine::DNSResolver::LookupTaskHandle& rhs) {
   return !(lhs == rhs);
 }
 

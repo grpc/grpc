@@ -136,6 +136,15 @@ grpc_op CoreEnd2endTest::IncomingMetadata::MakeOp() {
   return op;
 }
 
+std::string CoreEnd2endTest::IncomingMetadata::ToString() {
+  std::string out = "{";
+  for (size_t i = 0; i < metadata_->count; i++) {
+    absl::StrAppend(&out, StringViewFromSlice(metadata_->metadata[i].key), ":",
+                    StringViewFromSlice(metadata_->metadata[i].value), ",");
+  }
+  return out + "}";
+}
+
 std::string CoreEnd2endTest::IncomingMessage::payload() const {
   Slice out;
   if (payload_->data.raw.compression > GRPC_COMPRESS_NONE) {
@@ -173,6 +182,19 @@ absl::optional<std::string>
 CoreEnd2endTest::IncomingStatusOnClient::GetTrailingMetadata(
     absl::string_view key) const {
   return FindInMetadataArray(data_->trailing_metadata, key);
+}
+
+std::string CoreEnd2endTest::IncomingStatusOnClient::ToString() {
+  std::string out =
+      absl::StrCat("{status:", data_->status,
+                   " msg:", data_->status_details.as_string_view(), " ");
+  for (size_t i = 0; i < data_->trailing_metadata.count; i++) {
+    absl::StrAppend(
+        &out, StringViewFromSlice(data_->trailing_metadata.metadata[i].key),
+        ": ", StringViewFromSlice(data_->trailing_metadata.metadata[i].value),
+        ",");
+  }
+  return out + "}";
 }
 
 grpc_op CoreEnd2endTest::IncomingStatusOnClient::MakeOp() {

@@ -40,7 +40,7 @@ class RoundRobinTest : public LoadBalancingPolicyTest {
   RoundRobinTest() : lb_policy_(MakeLbPolicy("round_robin")) {}
 
   void ExpectStartup(absl::Span<const absl::string_view> addresses) {
-    EXPECT_EQ(ApplyUpdate(BuildUpdate(addresses), lb_policy_.get()),
+    EXPECT_EQ(ApplyUpdate(BuildUpdate(addresses, nullptr), lb_policy_.get()),
               absl::OkStatus());
     // RR should have created a subchannel for each address.
     for (size_t i = 0; i < addresses.size(); ++i) {
@@ -90,14 +90,16 @@ TEST_F(RoundRobinTest, AddressUpdates) {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
   ExpectStartup(kAddresses);
   // Send update to remove address 2.
-  EXPECT_EQ(ApplyUpdate(BuildUpdate(absl::MakeSpan(kAddresses).first(2)),
-                        lb_policy_.get()),
-            absl::OkStatus());
+  EXPECT_EQ(
+      ApplyUpdate(BuildUpdate(absl::MakeSpan(kAddresses).first(2), nullptr),
+                  lb_policy_.get()),
+      absl::OkStatus());
   WaitForRoundRobinListChange(kAddresses, absl::MakeSpan(kAddresses).first(2));
   // Send update to remove address 0 and re-add address 2.
-  EXPECT_EQ(ApplyUpdate(BuildUpdate(absl::MakeSpan(kAddresses).last(2)),
-                        lb_policy_.get()),
-            absl::OkStatus());
+  EXPECT_EQ(
+      ApplyUpdate(BuildUpdate(absl::MakeSpan(kAddresses).last(2), nullptr),
+                  lb_policy_.get()),
+      absl::OkStatus());
   WaitForRoundRobinListChange(absl::MakeSpan(kAddresses).first(2),
                               absl::MakeSpan(kAddresses).last(2));
 }

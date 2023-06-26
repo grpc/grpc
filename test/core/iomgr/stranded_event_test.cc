@@ -102,6 +102,7 @@ void StartCall(TestCall* test_call) {
       test_call->call, ops, static_cast<size_t>(op - ops), tag, nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
   grpc_core::CqVerifier cqv(test_call->cq);
+  cqv.SetLogVerifications(false);
   cqv.Expect(tag, true);
   cqv.Verify();
 }
@@ -123,6 +124,7 @@ void SendMessage(grpc_call* call, grpc_completion_queue* cq) {
       call, ops, static_cast<size_t>(op - ops), tag, nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
   grpc_core::CqVerifier cqv(cq);
+  cqv.SetLogVerifications(false);
   cqv.Expect(tag, true);
   cqv.Verify();
   grpc_byte_buffer_destroy(request_payload);
@@ -143,6 +145,7 @@ void ReceiveMessage(grpc_call* call, grpc_completion_queue* cq) {
       call, ops, static_cast<size_t>(op - ops), tag, nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
   grpc_core::CqVerifier cqv(cq);
+  cqv.SetLogVerifications(false);
   cqv.Expect(tag, true);
   cqv.Verify();
   grpc_byte_buffer_destroy(request_payload);

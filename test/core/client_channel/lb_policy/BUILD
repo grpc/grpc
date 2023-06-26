@@ -50,6 +50,7 @@ grpc_cc_test(
         "//src/core:channel_args",
         "//src/core:grpc_lb_policy_pick_first",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:scoped_env_var",
     ],
 )
 
