@@ -74,7 +74,7 @@ py_library(
     ],
     srcs_version = "PY3ONLY",
     visibility = [
-        "//:__subpackages__"
+        "//:__subpackages__",
     ],
     deps = [
         ":cyobservability",
