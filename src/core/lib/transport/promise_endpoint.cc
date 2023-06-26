@@ -88,6 +88,11 @@ void PromiseEndpoint::ReadCallback(
     GPR_DEBUG_ASSERT(pending_read_buffer_.Count() == 0u);
     if (read_buffer_.Length() < num_bytes_requested) {
       // A further read is needed.
+      // Set read args with missed bytes.
+      if (requested_read_args.has_value()) {
+        requested_read_args.value().read_hint_bytes =
+            num_bytes_requested - read_buffer_.Length();
+      }
       // If `Read()` returns true immediately, the callback will not be
       // called. We still need to call our callback to pick up the result and
       // maybe do further reads.

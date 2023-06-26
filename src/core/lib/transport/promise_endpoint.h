@@ -61,7 +61,7 @@ class PromiseEndpoint {
   auto Write(SliceBuffer data) {
     {
       MutexLock lock(&write_mutex_);
-      // Previous write result has not been polled.
+      // Assert previous write finishes.
       GPR_ASSERT(!write_result_.has_value());
       // TODO(ladynana): Replace this with `SliceBufferCast<>` when it is
       // available.
@@ -78,6 +78,8 @@ class PromiseEndpoint {
     }
     return [this]() -> Poll<absl::Status> {
       MutexLock lock(&write_mutex_);
+      // If current write isn't finished return `Pending()`, else return write
+      // result.
       if (!write_result_.has_value()) {
         write_waker_ = Activity::current()->MakeNonOwningWaker();
         return Pending();
@@ -97,21 +99,24 @@ class PromiseEndpoint {
   // undefined behavior.
   auto Read(size_t num_bytes) {
     ReleasableMutexLock lock(&read_mutex_);
-    // Previous read result has not been polled.
+    // Assert previous read finishes.
     GPR_ASSERT(!read_result_.has_value());
     // Should not have pending reads.
     GPR_ASSERT(pending_read_buffer_.Count() == 0u);
     if (read_buffer_.Length() < num_bytes) {
       lock.Release();
+      // Set read args with hinted bytes.
+      grpc_event_engine::experimental::EventEngine::Endpoint::ReadArgs
+          read_args;
+      read_args.read_hint_bytes = num_bytes;
       // If `Read()` returns true immediately, the callback will not be
       // called. We still need to call our callback to pick up the result and
       // maybe do further reads.
       if (endpoint_->Read(std::bind(&PromiseEndpoint::ReadCallback, this,
                                     std::placeholders::_1, num_bytes,
                                     absl::nullopt /* uses default arguments */),
-                          &pending_read_buffer_,
-                          nullptr /* uses default arguments */)) {
-        ReadCallback(absl::OkStatus(), num_bytes, absl::nullopt);
+                          &pending_read_buffer_, &read_args)) {
+        ReadCallback(absl::OkStatus(), num_bytes, read_args);
       }
     } else {
       read_result_ = absl::OkStatus();
@@ -119,13 +124,16 @@ class PromiseEndpoint {
     return [this, num_bytes]() -> Poll<absl::StatusOr<SliceBuffer>> {
       MutexLock lock(&read_mutex_);
       if (!read_result_.has_value()) {
+        // If current read isn't finished, return `Pending()`.
         read_waker_ = Activity::current()->MakeNonOwningWaker();
         return Pending();
       } else if (!read_result_->ok()) {
+        // If read fails, return error.
         const absl::Status ret = *read_result_;
         read_result_.reset();
         return ret;
       } else {
+        // If read succeeds, return `SliceBuffer` with `num_bytes` bytes.
         SliceBuffer ret;
         grpc_slice_buffer_move_first(read_buffer_.c_slice_buffer(), num_bytes,
                                      ret.c_slice_buffer());
@@ -143,7 +151,7 @@ class PromiseEndpoint {
   // undefined behavior.
   auto ReadSlice(size_t num_bytes) {
     ReleasableMutexLock lock(&read_mutex_);
-    // Previous read result has not been polled.
+    // Assert previous read finishes.
     GPR_ASSERT(!read_result_.has_value());
     // Should not have pending reads.
     GPR_ASSERT(pending_read_buffer_.Count() == 0u);
@@ -167,19 +175,22 @@ class PromiseEndpoint {
     return [this, num_bytes]() -> Poll<absl::StatusOr<Slice>> {
       MutexLock lock(&read_mutex_);
       if (!read_result_.has_value()) {
+        // If current read isn't finished, return `Pending()`.
         read_waker_ = Activity::current()->MakeNonOwningWaker();
         return Pending();
       } else if (!read_result_->ok()) {
+        // If read fails, return error.
         const auto ret = *read_result_;
         read_result_.reset();
         return ret;
-      } else if (read_buffer_.RefSlice(0).size() == num_bytes) {
+      }
+      // If read succeeds, return `Slice` with `num_bytes` bytes.
+      else if (read_buffer_.RefSlice(0).size() == num_bytes) {
         read_result_.reset();
         return Slice(read_buffer_.TakeFirst().TakeCSlice());
       } else {
         MutableSlice ret = MutableSlice::CreateUninitialized(num_bytes);
         read_buffer_.MoveFirstNBytesIntoBuffer(num_bytes, ret.data());
-
         read_result_.reset();
         return Slice(std::move(ret));
       }
@@ -189,7 +200,7 @@ class PromiseEndpoint {
   // Returns a promise that resolves to a byte with type `uint8_t`.
   auto ReadByte() {
     ReleasableMutexLock lock(&read_mutex_);
-    // Previous read result has not been polled.
+    // Assert previous read finishes.
     GPR_ASSERT(!read_result_.has_value());
     // Should not have pending reads.
     GPR_ASSERT(pending_read_buffer_.Count() == 0u);
@@ -209,16 +220,18 @@ class PromiseEndpoint {
     return [this]() -> Poll<absl::StatusOr<uint8_t>> {
       MutexLock lock(&read_mutex_);
       if (!read_result_.has_value()) {
+        // If current read isn't finished, return `Pending()`.
         read_waker_ = Activity::current()->MakeNonOwningWaker();
         return Pending();
       } else if (!read_result_->ok()) {
+        // If read fails, return error.
         const auto ret = *read_result_;
         read_result_.reset();
         return ret;
       } else {
+        // If read succeeds, return a byte with type `uint8_t`.
         uint8_t ret = 0u;
         read_buffer_.MoveFirstNBytesIntoBuffer(1, &ret);
-
         read_result_.reset();
         return ret;
       }
