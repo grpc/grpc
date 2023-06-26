@@ -46,3 +46,4 @@
 - script: tools/run_tests/sanity/build_banned_constructs.sh
 - script: tools/distrib/check_redundant_namespace_qualifiers.py
 - script: tools/distrib/check_namespace_qualification.py
+- script: tools/distrib/check_path_length.py

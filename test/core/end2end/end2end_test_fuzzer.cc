@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <stdio.h>
+
 #include <algorithm>
 #include <chrono>
 #include <memory>
@@ -122,11 +124,15 @@ DEFINE_PROTO_FUZZER(const core_end2end_test_fuzzer::Msg& msg) {
       [actions = msg.event_engine_actions()]() {
         FuzzingEventEngine::Options options;
         options.max_delay_run_after = std::chrono::milliseconds(500);
+        options.max_delay_write = std::chrono::milliseconds(50);
         return std::make_unique<FuzzingEventEngine>(options, actions);
       });
   auto engine =
       std::dynamic_pointer_cast<FuzzingEventEngine>(GetDefaultEventEngine());
 
+  if (!squelch) {
+    fprintf(stderr, "RUN TEST: %s\n", tests[test_id].name.c_str());
+  }
   auto test = tests[test_id].factory();
   test->SetQuiesceEventEngine(
       [](std::shared_ptr<grpc_event_engine::experimental::EventEngine>&& ee) {

@@ -16,7 +16,6 @@
 
 #include <algorithm>
 #include <array>
-#include <map>
 #include <memory>
 #include <string>
 #include <utility>
@@ -33,6 +32,7 @@
 
 #include "src/core/ext/filters/stateful_session/stateful_session_filter.h"
 #include "src/core/ext/xds/xds_health_status.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/json/json.h"
@@ -78,12 +78,8 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
 
   ServerAddress MakeAddressWithHealthStatus(
       absl::string_view address, XdsHealthStatus::HealthStatus status) {
-    std::map<const char*, std::unique_ptr<ServerAddress::AttributeInterface>>
-        attrs;
-    attrs.emplace(XdsEndpointHealthStatusAttribute::kKey,
-                  std::make_unique<XdsEndpointHealthStatusAttribute>(
-                      XdsHealthStatus(status)));
-    return {MakeAddress(address), {}, std::move(attrs)};
+    return ServerAddress(MakeAddress(address),
+                         ChannelArgs().Set(GRPC_ARG_XDS_HEALTH_STATUS, status));
   }
 
   void ApplyUpdateWithHealthStatuses(
@@ -119,8 +115,9 @@ TEST_F(XdsOverrideHostTest, DelegatesToChild) {
 
 TEST_F(XdsOverrideHostTest, NoConfigReportsError) {
   EXPECT_EQ(
-      ApplyUpdate(BuildUpdate({"ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442"}),
-                  policy_.get()),
+      ApplyUpdate(
+          BuildUpdate({"ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442"}, nullptr),
+          policy_.get()),
       absl::InvalidArgumentError("Missing policy config"));
 }
 
