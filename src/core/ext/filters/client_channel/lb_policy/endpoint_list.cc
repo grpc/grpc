@@ -103,10 +103,17 @@ void EndpointList::Endpoint::Init(
   grpc_pollset_set_add_pollset_set(
       child_policy_->interested_parties(),
       endpoint_list_->policy_->interested_parties());
+  // Construct pick_first config.
+  auto config =
+      CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
+          Json::FromArray(
+              {Json::FromObject({{"pick_first", Json::FromObject({})}})}));
+  GPR_ASSERT(config.ok());
   // Update child policy.
   LoadBalancingPolicy::UpdateArgs update_args;
   update_args.addresses.emplace().emplace_back(address);
   update_args.args = child_args;
+  update_args.config = std::move(*config);
   // TODO(roth): If the child reports a non-OK status with the update,
   // we need to propagate that back to the resolver somehow.
   (void)child_policy_->UpdateLocked(std::move(update_args));
