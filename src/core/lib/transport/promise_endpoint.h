@@ -184,11 +184,13 @@ class PromiseEndpoint {
         read_result_.reset();
         return ret;
       }
-      // If read succeeds, return `Slice` with `num_bytes` bytes.
+      // If read succeeds, return `Slice` with `num_bytes`.
       else if (read_buffer_.RefSlice(0).size() == num_bytes) {
         read_result_.reset();
         return Slice(read_buffer_.TakeFirst().TakeCSlice());
       } else {
+        // TODO(ladynana): avoid memcpy when read_buffer_.RefSlice(0).size() is
+        // different from `num_bytes`.
         MutableSlice ret = MutableSlice::CreateUninitialized(num_bytes);
         read_buffer_.MoveFirstNBytesIntoBuffer(num_bytes, ret.data());
         read_result_.reset();
