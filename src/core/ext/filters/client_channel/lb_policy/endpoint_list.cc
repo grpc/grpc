@@ -60,6 +60,11 @@ class EndpointList::Endpoint::Helper
 
   ~Helper() override { endpoint_.reset(DEBUG_LOCATION, "Helper"); }
 
+  RefCountedPtr<SubchannelInterface> CreateSubchannel(
+      ServerAddress address, const ChannelArgs& args) override {
+    return endpoint_->CreateSubchannel(std::move(address), args);
+  }
+
   void UpdateState(
       grpc_connectivity_state state, const absl::Status& status,
       RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker) override {
