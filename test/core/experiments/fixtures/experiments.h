@@ -73,13 +73,13 @@ inline bool IsTestExperiment3Enabled() {
 inline bool IsTestExperiment4Enabled() { return true; }
 #else
 #define GRPC_EXPERIMENT_IS_INCLUDED_TEST_EXPERIMENT_1
-inline bool IsTestExperiment1Enabled() { return IsExperimentEnabled<true>(0); }
+inline bool IsTestExperiment1Enabled() { return IsTestExperimentEnabled(0); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_TEST_EXPERIMENT_2
-inline bool IsTestExperiment2Enabled() { return IsExperimentEnabled<true>(1); }
+inline bool IsTestExperiment2Enabled() { return IsTestExperimentEnabled(1); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_TEST_EXPERIMENT_3
-inline bool IsTestExperiment3Enabled() { return IsExperimentEnabled<true>(2); }
+inline bool IsTestExperiment3Enabled() { return IsTestExperimentEnabled(2); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_TEST_EXPERIMENT_4
-inline bool IsTestExperiment4Enabled() { return IsExperimentEnabled<true>(3); }
+inline bool IsTestExperiment4Enabled() { return IsTestExperimentEnabled(3); }
 
 constexpr const size_t kNumTestExperiments = 4;
 extern const ExperimentMetadata g_test_experiment_metadata[kNumTestExperiments];

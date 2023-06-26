@@ -38,8 +38,12 @@ struct ExperimentMetadata {
 // Return true if experiment \a experiment_id is enabled.
 // Experiments are numbered by their order in the g_experiment_metadata array
 // declared in experiments.h.
-template <bool is_test = false>
 bool IsExperimentEnabled(size_t experiment_id);
+
+// Given a test experiment id, returns true if the test experiment is enabled.
+// Test experiments can be loaded using the LoadTestOnlyExperimentsFromMetadata
+// method.
+bool IsTestExperimentEnabled(size_t experiment_id);
 
 // Reload experiment state from config variables.
 // Does not change ForceEnableExperiment state.
@@ -71,12 +75,6 @@ void ForceEnableExperiment(absl::string_view experiment_name, bool enable);
 // a bool value indicating the actual value the experiment should take.
 void RegisterExperimentConstraintsValidator(
     absl::AnyInvocable<bool(struct ExperimentMetadata)> check_constraints_cb);
-
-// Only these following specializations are instantiated:
-template <>
-bool IsExperimentEnabled<true>(size_t experiment_id);
-template <>
-bool IsExperimentEnabled<false>(size_t experiment_id);
 
 }  // namespace grpc_core
 

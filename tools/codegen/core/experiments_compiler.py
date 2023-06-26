@@ -362,8 +362,8 @@ class ExperimentsCompiler(object):
                 )
                 print(
                     "inline bool Is%sEnabled() { return"
-                    " IsExperimentEnabled%s(%d); }"
-                    % (SnakeToPascal(exp.name), "<true>" if mode == "test" else "", i),
+                    " Is%sExperimentEnabled(%d); }"
+                    % (SnakeToPascal(exp.name), "Test" if mode == "test" else "", i),
                     file=H,
                 )
             print(file=H)
