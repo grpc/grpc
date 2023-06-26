@@ -77,7 +77,6 @@ void PromiseEndpoint::ReadCallback(
     // Invalidates all previous reads.
     pending_read_buffer_.Clear();
     read_buffer_.Clear();
-
     MutexLock lock(&read_mutex_);
     read_result_ = status;
     read_waker_.Wakeup();
@@ -88,11 +87,9 @@ void PromiseEndpoint::ReadCallback(
     GPR_DEBUG_ASSERT(pending_read_buffer_.Count() == 0u);
     if (read_buffer_.Length() < num_bytes_requested) {
       // A further read is needed.
-      // Set read args with missed bytes.
-      if (requested_read_args.has_value()) {
-        requested_read_args.value().read_hint_bytes =
-            num_bytes_requested - read_buffer_.Length();
-      }
+      // Set read args with number of bytes needed as hint.
+      requested_read_args = {
+          static_cast<int64_t>(num_bytes_requested - read_buffer_.Length())};
       // If `Read()` returns true immediately, the callback will not be
       // called. We still need to call our callback to pick up the result and
       // maybe do further reads.
@@ -100,9 +97,7 @@ void PromiseEndpoint::ReadCallback(
                                     std::placeholders::_1, num_bytes_requested,
                                     requested_read_args),
                           &pending_read_buffer_,
-                          requested_read_args.has_value()
-                              ? (&(requested_read_args.value()))
-                              : nullptr /* uses default arguments */)) {
+                          &(requested_read_args.value()))) {
         ReadCallback(absl::OkStatus(), num_bytes_requested,
                      requested_read_args);
       }

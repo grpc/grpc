@@ -157,9 +157,9 @@ class PromiseEndpoint {
     GPR_ASSERT(pending_read_buffer_.Count() == 0u);
     if (read_buffer_.Length() < num_bytes) {
       lock.Release();
+      // Set read args with num_bytes as hint.
       const struct grpc_event_engine::experimental::EventEngine::Endpoint::
           ReadArgs read_args = {static_cast<int64_t>(num_bytes)};
-
       // If `Read()` returns true immediately, the callback will not be
       // called. We still need to call our callback to pick up the result
       // and maybe do further reads.
