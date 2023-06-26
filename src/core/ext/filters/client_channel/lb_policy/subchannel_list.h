@@ -158,7 +158,7 @@ class SubchannelData {
   // Starts watching the connectivity state of the subchannel.
   // ProcessConnectivityChangeLocked() will be called whenever the
   // connectivity state changes.
-  void StartConnectivityWatchLocked();
+  void StartConnectivityWatchLocked(const ChannelArgs& args);
 
   // Cancels watching the connectivity state of the subchannel.
   void CancelConnectivityWatchLocked(const char* reason);
@@ -185,7 +185,7 @@ class SubchannelList : public DualRefCounted<SubchannelListType> {
  public:
   // Starts watching the connectivity state of all subchannels.
   // Must be called immediately after instantiation.
-  void StartWatchingLocked();
+  void StartWatchingLocked(const ChannelArgs& args);
 
   // The number of subchannels in the list.
   size_t num_subchannels() const { return subchannels_.size(); }
@@ -325,8 +325,8 @@ void SubchannelData<SubchannelListType,
 }
 
 template <typename SubchannelListType, typename SubchannelDataType>
-void SubchannelData<SubchannelListType,
-                    SubchannelDataType>::StartConnectivityWatchLocked() {
+void SubchannelData<SubchannelListType, SubchannelDataType>::
+    StartConnectivityWatchLocked(const ChannelArgs& args) {
   if (GPR_UNLIKELY(subchannel_list_->tracer() != nullptr)) {
     gpr_log(
         GPR_INFO,
@@ -344,8 +344,7 @@ void SubchannelData<SubchannelListType,
       this, subchannel_list()->WeakRef(DEBUG_LOCATION, "Watcher"));
   if (subchannel_list()->health_check_service_name_.has_value()) {
     auto health_watcher = MakeHealthCheckWatcher(
-        subchannel_list_->work_serializer(),
-        *subchannel_list()->health_check_service_name_, std::move(watcher));
+        subchannel_list_->work_serializer(), args, std::move(watcher));
     health_watcher_ = health_watcher.get();
     subchannel_->AddDataWatcher(std::move(health_watcher));
   } else {
@@ -447,10 +446,10 @@ SubchannelList<SubchannelListType, SubchannelDataType>::~SubchannelList() {
 }
 
 template <typename SubchannelListType, typename SubchannelDataType>
-void SubchannelList<SubchannelListType,
-                    SubchannelDataType>::StartWatchingLocked() {
+void SubchannelList<SubchannelListType, SubchannelDataType>::
+    StartWatchingLocked(const ChannelArgs& args) {
   for (auto& sd : subchannels_) {
-    sd->StartConnectivityWatchLocked();
+    sd->StartConnectivityWatchLocked(args);
   }
 }
 
