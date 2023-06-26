@@ -41,9 +41,7 @@ std::condition_variable g_census_data_buffer_cv;
 // Assume buffer will store 100 CensusData and start export when buffer is 70%
 // full.
 constexpr float kExportThreshold = 0.7;
-// Please note that the maximun batch size of metrics stackDriver can upload is
-// 200.
-constexpr int kMaxExportBufferSize = 100;
+constexpr int kMaxExportBufferSize = 10000;
 
 namespace {
 

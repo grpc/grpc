@@ -56,6 +56,8 @@ pyx_library(
     ],
 )
 
+# Since `opencensus` and `opencensus-ext-stackdriver` are non-hermetic,
+# pyobservability is for internal use only.
 py_library(
     name = "pyobservability",
     srcs = [
@@ -71,6 +73,8 @@ py_library(
         "../",
     ],
     srcs_version = "PY3ONLY",
+    visibility = [
+        "//:__subpackages__"],
     deps = [
         ":cyobservability",
         "//src/python/grpcio/grpc:grpcio",

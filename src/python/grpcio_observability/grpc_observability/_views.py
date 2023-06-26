@@ -16,7 +16,7 @@ from typing import Mapping
 
 from grpc_observability import _measures
 from grpc_observability._cyobservability import MetricsName
-from opencensus.stats import aggregation as aggregation_module
+from opencensus.stats import aggregation
 from opencensus.stats import view as view_module
 from opencensus.tags.tag_key import TagKey
 
@@ -54,17 +54,13 @@ def server_status_tag_key():
     return TagKey("server_status_tag_key")
 
 
-def count_distribution_aggregation() -> (
-    aggregation_module.DistributionAggregation
-):
+def count_distribution_aggregation() -> aggregation.DistributionAggregation:
     exponential_boundaries = _get_exponential_boundaries(17, 1.0, 2.0)
-    return aggregation_module.DistributionAggregation(exponential_boundaries)
+    return aggregation.DistributionAggregation(exponential_boundaries)
 
 
-def bytes_distribution_aggregation() -> (
-    aggregation_module.DistributionAggregation
-):
-    return aggregation_module.DistributionAggregation(
+def bytes_distribution_aggregation() -> aggregation.DistributionAggregation:
+    return aggregation.DistributionAggregation(
         [
             1024,
             2048,
@@ -83,10 +79,8 @@ def bytes_distribution_aggregation() -> (
     )
 
 
-def millis_distribution_aggregation() -> (
-    aggregation_module.DistributionAggregation
-):
-    return aggregation_module.DistributionAggregation(
+def millis_distribution_aggregation() -> aggregation.DistributionAggregation:
+    return aggregation.DistributionAggregation(
         [
             0.01,
             0.05,
@@ -140,7 +134,7 @@ def client_started_rpcs(labels: Mapping[str, str]) -> view_module.View:
         + " that have not completed.",
         [TagKey(key) for key in labels.keys()] + [client_method_tag_key()],
         _measures.CLIENT_STARTED_RPCS_MEASURE,
-        aggregation_module.CountAggregation(),
+        aggregation.CountAggregation(),
     )
     return view
 
@@ -153,7 +147,7 @@ def client_completed_rpcs(labels: Mapping[str, str]) -> view_module.View:
         [TagKey(key) for key in labels.keys()]
         + [client_method_tag_key(), client_status_tag_key()],
         _measures.CLIENT_COMPLETED_RPCS_MEASURE,
-        aggregation_module.CountAggregation(),
+        aggregation.CountAggregation(),
     )
     return view
 
@@ -221,7 +215,7 @@ def server_started_rpcs(labels: Mapping[str, str]) -> view_module.View:
         + " that have not completed.",
         [TagKey(key) for key in labels.keys()] + [server_method_tag_key()],
         _measures.SERVER_STARTED_RPCS_MEASURE,
-        aggregation_module.CountAggregation(),
+        aggregation.CountAggregation(),
     )
     return view
 
@@ -234,7 +228,7 @@ def server_completed_rpcs(labels: Mapping[str, str]) -> view_module.View:
         [TagKey(key) for key in labels.keys()]
         + [server_method_tag_key(), server_status_tag_key()],
         _measures.SERVER_COMPLETED_RPCS_MEASURE,
-        aggregation_module.CountAggregation(),
+        aggregation.CountAggregation(),
     )
     return view
 

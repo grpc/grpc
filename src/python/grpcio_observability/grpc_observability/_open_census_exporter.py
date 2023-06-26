@@ -35,7 +35,7 @@ from opencensus.trace import span_context as span_context_module
 from opencensus.trace import span_data as span_data_module
 from opencensus.trace import status
 from opencensus.trace import time_event
-from opencensus.trace import trace_options as trace_options_module
+from opencensus.trace import trace_options
 from opencensus.trace import tracer
 
 _gcp_observability = Any  # grpc_observability.py imports this module.
@@ -151,9 +151,9 @@ class OpenCensusExporter(_observability.Exporter):
             span_context = span_context_module.SpanContext(
                 trace_id=span_data.trace_id,
                 span_id=span_data.span_id,
-                trace_options=trace_options_module.TraceOptions(1),
+                trace_options=trace_options.TraceOptions(1),
             )
-            span_datas = _get_span_datas(
+            span_datas = _get_span_data(
                 span_data, span_context, self.default_labels
             )
             self.trace_exporter.export(span_datas)
@@ -258,7 +258,7 @@ def _status_to_span_status(span_status: str) -> Optional[status.Status]:
         return None
 
 
-def _get_span_datas(
+def _get_span_data(
     span_data: _observability.TracingData,
     span_context: span_context_module.SpanContext,
     labels: Mapping[str, str],
