@@ -154,45 +154,49 @@ class FuzzingResolverEventEngine
     void LookupHostname(LookupHostnameCallback on_resolve,
                         absl::string_view /* name */,
                         absl::string_view /* default_port */) override {
-      CheckAndSetOrphan(ExecutionStep::DURING_LOOKUP_HOSTNAME);
+      engine_->CheckAndSetOrphan(ExecutionStep::DURING_LOOKUP_HOSTNAME);
       if (!engine_->has_been_orphaned_) {
-        engine_->runner_.Run([this, cb = std::move(on_resolve)]() mutable {
-          CheckAndSetOrphan(ExecutionStep::AFTER_LOOKUP_HOSTNAME_CALLBACK);
-          cb(engine_->hostname_responses_);
-        });
+        engine_->runner_.Run(
+            [engine = engine_, cb = std::move(on_resolve)]() mutable {
+              engine->CheckAndSetOrphan(
+                  ExecutionStep::AFTER_LOOKUP_HOSTNAME_CALLBACK);
+              cb(engine->hostname_responses_);
+            });
       }
     }
     void LookupSRV(LookupSRVCallback on_resolve,
                    absl::string_view /* name */) override {
-      CheckAndSetOrphan(ExecutionStep::DURING_LOOKUP_SRV);
+      engine_->CheckAndSetOrphan(ExecutionStep::DURING_LOOKUP_SRV);
       if (!engine_->has_been_orphaned_) {
-        engine_->runner_.Run([this, cb = std::move(on_resolve)]() mutable {
-          CheckAndSetOrphan(ExecutionStep::AFTER_LOOKUP_SRV_CALLBACK);
-          cb(engine_->srv_responses_);
+        engine_->runner_.Run([engine = engine_,
+                              cb = std::move(on_resolve)]() mutable {
+          engine->CheckAndSetOrphan(ExecutionStep::AFTER_LOOKUP_SRV_CALLBACK);
+          cb(engine->srv_responses_);
         });
       }
     }
     void LookupTXT(LookupTXTCallback on_resolve,
                    absl::string_view /* name */) override {
-      CheckAndSetOrphan(ExecutionStep::DURING_LOOKUP_TXT);
+      engine_->CheckAndSetOrphan(ExecutionStep::DURING_LOOKUP_TXT);
       if (!engine_->has_been_orphaned_) {
-        engine_->runner_.Run([this, cb = std::move(on_resolve)]() mutable {
-          CheckAndSetOrphan(ExecutionStep::AFTER_LOOKUP_TXT_CALLBACK);
-          cb(engine_->txt_responses_);
+        engine_->runner_.Run([engine = engine_,
+                              cb = std::move(on_resolve)]() mutable {
+          engine->CheckAndSetOrphan(ExecutionStep::AFTER_LOOKUP_TXT_CALLBACK);
+          cb(engine->txt_responses_);
         });
       }
     }
 
    private:
-    void CheckAndSetOrphan(ExecutionStep current_execution_step) {
-      if (engine_->should_orphan_at_step_ == current_execution_step) {
-        *engine_->done_resolving_ = true;
-        engine_->has_been_orphaned_ = true;
-      }
-    }
-
     FuzzingResolverEventEngine* engine_;
   };
+
+  void CheckAndSetOrphan(ExecutionStep current_execution_step) {
+    if (should_orphan_at_step_ == current_execution_step) {
+      *done_resolving_ = true;
+      has_been_orphaned_ = true;
+    }
+  }
 
   // members
   FuzzingEventEngine runner_;
