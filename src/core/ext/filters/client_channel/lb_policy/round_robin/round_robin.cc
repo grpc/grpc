@@ -265,6 +265,9 @@ absl::Status RoundRobin::UpdateLocked(UpdateArgs args) {
       args.args);
   // If the new list is empty, immediately promote it to
   // endpoint_list_ and report TRANSIENT_FAILURE.
+  // TODO(roth): As part of adding dualstack backend support, we need to
+  // also handle the case where the list of addresses for a given
+  // endpoint is empty.
   if (latest_pending_endpoint_list_->size() == 0) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace) &&
         endpoint_list_ != nullptr) {
