@@ -27,13 +27,13 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 
-#include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/json.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.h"
+#include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
 #include "src/core/ext/xds/xds_client_stats.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
@@ -47,12 +47,11 @@
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
 #include "src/core/lib/json/json_writer.h"
+#include "src/core/lib/load_balancing/delegating_helper.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
-#include "src/core/lib/load_balancing/subchannel_interface.h"
 #include "src/core/lib/resolver/server_address.h"
-#include "src/core/lib/transport/connectivity_state.h"
 
 namespace grpc_core {
 
@@ -119,26 +118,7 @@ class XdsWrrLocalityLb : public LoadBalancingPolicy {
   void ResetBackoffLocked() override;
 
  private:
-  class Helper : public ChannelControlHelper {
-   public:
-    explicit Helper(RefCountedPtr<XdsWrrLocalityLb> xds_wrr_locality)
-        : xds_wrr_locality_(std::move(xds_wrr_locality)) {}
-
-    ~Helper() override { xds_wrr_locality_.reset(DEBUG_LOCATION, "Helper"); }
-
-    RefCountedPtr<SubchannelInterface> CreateSubchannel(
-        ServerAddress address, const ChannelArgs& args) override;
-    void UpdateState(grpc_connectivity_state state, const absl::Status& status,
-                     RefCountedPtr<SubchannelPicker> picker) override;
-    void RequestReresolution() override;
-    absl::string_view GetAuthority() override;
-    grpc_event_engine::experimental::EventEngine* GetEventEngine() override;
-    void AddTraceEvent(TraceSeverity severity,
-                       absl::string_view message) override;
-
-   private:
-    RefCountedPtr<XdsWrrLocalityLb> xds_wrr_locality_;
-  };
+  using Helper = ParentOwningDelegatingChannelControlHelper<XdsWrrLocalityLb>;
 
   ~XdsWrrLocalityLb() override;
 
@@ -191,17 +171,17 @@ absl::Status XdsWrrLocalityLb::UpdateLocked(UpdateArgs args) {
   std::map<std::string, uint32_t> locality_weights;
   if (args.addresses.ok()) {
     for (const auto& address : *args.addresses) {
-      auto* attribute = static_cast<const XdsLocalityAttribute*>(
-          address.GetAttribute(kXdsLocalityNameAttributeKey));
-      if (attribute != nullptr) {
+      auto* locality_name = address.args().GetObject<XdsLocalityName>();
+      uint32_t weight =
+          address.args().GetInt(GRPC_ARG_XDS_LOCALITY_WEIGHT).value_or(0);
+      if (locality_name != nullptr && weight > 0) {
         auto p = locality_weights.emplace(
-            attribute->locality_name()->AsHumanReadableString(),
-            attribute->weight());
-        if (!p.second && p.first->second != attribute->weight()) {
+            locality_name->AsHumanReadableString(), weight);
+        if (!p.second && p.first->second != weight) {
           gpr_log(GPR_ERROR,
                   "INTERNAL ERROR: xds_wrr_locality found different weights "
-                  "for locality %s (%d vs %d); using first value",
-                  p.first->first.c_str(), p.first->second, attribute->weight());
+                  "for locality %s (%u vs %u); using first value",
+                  p.first->first.c_str(), p.first->second, weight);
         }
       }
     }
@@ -288,48 +268,6 @@ OrphanablePtr<LoadBalancingPolicy> XdsWrrLocalityLb::CreateChildPolicyLocked(
   grpc_pollset_set_add_pollset_set(lb_policy->interested_parties(),
                                    interested_parties());
   return lb_policy;
-}
-
-//
-// XdsWrrLocalityLb::Helper
-//
-
-RefCountedPtr<SubchannelInterface> XdsWrrLocalityLb::Helper::CreateSubchannel(
-    ServerAddress address, const ChannelArgs& args) {
-  return xds_wrr_locality_->channel_control_helper()->CreateSubchannel(
-      std::move(address), args);
-}
-
-void XdsWrrLocalityLb::Helper::UpdateState(
-    grpc_connectivity_state state, const absl::Status& status,
-    RefCountedPtr<SubchannelPicker> picker) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_wrr_locality_lb_trace)) {
-    gpr_log(
-        GPR_INFO,
-        "[xds_wrr_locality_lb %p] update from child: state=%s (%s) picker=%p",
-        xds_wrr_locality_.get(), ConnectivityStateName(state),
-        status.ToString().c_str(), picker.get());
-  }
-  xds_wrr_locality_->channel_control_helper()->UpdateState(state, status,
-                                                           std::move(picker));
-}
-
-void XdsWrrLocalityLb::Helper::RequestReresolution() {
-  xds_wrr_locality_->channel_control_helper()->RequestReresolution();
-}
-
-absl::string_view XdsWrrLocalityLb::Helper::GetAuthority() {
-  return xds_wrr_locality_->channel_control_helper()->GetAuthority();
-}
-
-grpc_event_engine::experimental::EventEngine*
-XdsWrrLocalityLb::Helper::GetEventEngine() {
-  return xds_wrr_locality_->channel_control_helper()->GetEventEngine();
-}
-
-void XdsWrrLocalityLb::Helper::AddTraceEvent(TraceSeverity severity,
-                                             absl::string_view message) {
-  xds_wrr_locality_->channel_control_helper()->AddTraceEvent(severity, message);
 }
 
 //

@@ -22,6 +22,7 @@ readonly VENV_NAME
 python3 -m virtualenv "${VENV_NAME}"
 
 "${VENV_NAME}"/bin/pip install -r requirements.txt
-"${VENV_NAME}"/bin/pip freeze > requirements.lock
+"${VENV_NAME}"/bin/pip freeze --require-virtualenv --local -r requirements.txt \
+  > requirements.lock
 
 rm -rf "${VENV_NAME}"

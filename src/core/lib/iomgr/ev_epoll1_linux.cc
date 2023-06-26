@@ -1236,10 +1236,6 @@ static void shutdown_engine(void) {
   fd_global_shutdown();
   pollset_global_shutdown();
   epoll_set_shutdown();
-  if (grpc_core::Fork::Enabled()) {
-    gpr_mu_destroy(&fork_fd_list_mu);
-    grpc_core::Fork::SetResetChildPollingEngineFunc(nullptr);
-  }
   g_is_shutdown = true;
 }
 
@@ -1296,6 +1292,7 @@ const grpc_event_engine_vtable grpc_ev_epoll1_posix = {
 // the global epoll fd. This allows gRPC to shutdown in the child process
 // without interfering with connections or RPCs ongoing in the parent.
 static void reset_event_manager_on_fork() {
+  if (g_is_shutdown) return;
   gpr_mu_lock(&fork_fd_list_mu);
   while (fork_fd_list_head != nullptr) {
     close(fork_fd_list_head->fd);
@@ -1330,9 +1327,10 @@ static bool init_epoll1_linux() {
   }
 
   if (grpc_core::Fork::Enabled()) {
-    gpr_mu_init(&fork_fd_list_mu);
-    grpc_core::Fork::SetResetChildPollingEngineFunc(
-        reset_event_manager_on_fork);
+    if (grpc_core::Fork::RegisterResetChildPollingEngineFunc(
+            reset_event_manager_on_fork)) {
+      gpr_mu_init(&fork_fd_list_mu);
+    }
   }
   g_is_shutdown = false;
   return true;

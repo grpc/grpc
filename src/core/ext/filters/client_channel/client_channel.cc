@@ -83,6 +83,7 @@
 #include "src/core/lib/load_balancing/subchannel_interface.h"
 #include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
 #include "src/core/lib/service_config/service_config_impl.h"
 #include "src/core/lib/slice/slice.h"
@@ -966,6 +967,16 @@ class ClientChannel::ClientChannelControlHelper
     return chand_->default_authority_;
   }
 
+  RefCountedPtr<grpc_channel_credentials> GetChannelCredentials() override {
+    return chand_->channel_args_.GetObject<grpc_channel_credentials>()
+        ->duplicate_without_call_credentials();
+  }
+
+  RefCountedPtr<grpc_channel_credentials> GetUnsafeChannelCredentials()
+      override {
+    return chand_->channel_args_.GetObject<grpc_channel_credentials>()->Ref();
+  }
+
   grpc_event_engine::experimental::EventEngine* GetEventEngine() override {
     return chand_->owning_stack_->EventEngine();
   }
@@ -1152,7 +1163,9 @@ ChannelArgs ClientChannel::MakeSubchannelArgs(
       // uniqueness.
       .Remove(GRPC_ARG_HEALTH_CHECK_SERVICE_NAME)
       .Remove(GRPC_ARG_INHIBIT_HEALTH_CHECKING)
-      .Remove(GRPC_ARG_CHANNELZ_CHANNEL_NODE);
+      .Remove(GRPC_ARG_CHANNELZ_CHANNEL_NODE)
+      // Remove all keys with the no-subchannel prefix.
+      .RemoveAllKeysWithPrefix(GRPC_ARG_NO_SUBCHANNEL_PREFIX);
 }
 
 void ClientChannel::ReprocessQueuedResolverCalls() {

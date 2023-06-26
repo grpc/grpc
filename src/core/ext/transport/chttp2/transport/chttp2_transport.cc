@@ -1648,6 +1648,8 @@ static void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
 }
 
 static void cancel_pings(grpc_chttp2_transport* t, grpc_error_handle error) {
+  GRPC_CHTTP2_IF_TRACING(gpr_log(GPR_INFO, "%p CANCEL PINGS: %s", t,
+                                 grpc_core::StatusToString(error).c_str()));
   // callback remaining pings: they're not allowed to call into the transport,
   //   and maybe they hold resources that need to be freed
   grpc_chttp2_ping_queue* pq = &t->ping_queue;
@@ -1859,8 +1861,9 @@ static void send_goaway(grpc_chttp2_transport* t, grpc_error_handle error,
   } else if (t->sent_goaway_state == GRPC_CHTTP2_NO_GOAWAY_SEND ||
              t->sent_goaway_state == GRPC_CHTTP2_GRACEFUL_GOAWAY) {
     // We want to log this irrespective of whether http tracing is enabled
-    gpr_log(GPR_DEBUG, "%s: Sending goaway err=%s",
+    gpr_log(GPR_DEBUG, "%s %s: Sending goaway last_new_stream_id=%d err=%s",
             std::string(t->peer_string.as_string_view()).c_str(),
+            t->is_client ? "CLIENT" : "SERVER", t->last_new_stream_id,
             grpc_core::StatusToString(error).c_str());
     t->sent_goaway_state = GRPC_CHTTP2_FINAL_GOAWAY_SEND_SCHEDULED;
     grpc_chttp2_goaway_append(
@@ -2239,7 +2242,7 @@ void grpc_chttp2_mark_stream_closed(grpc_chttp2_transport* t,
         (close_reads && close_writes)
             ? "read+write"
             : (close_reads ? "read" : (close_writes ? "write" : "nothing??")),
-        error.ToString().c_str());
+        grpc_core::StatusToString(error).c_str());
   }
   if (s->read_closed && s->write_closed) {
     // already closed, but we should still fake the status if needed.
@@ -2976,8 +2979,9 @@ static void connectivity_state_set(grpc_chttp2_transport* t,
                                    grpc_connectivity_state state,
                                    const absl::Status& status,
                                    const char* reason) {
-  GRPC_CHTTP2_IF_TRACING(
-      gpr_log(GPR_INFO, "transport %p set connectivity_state=%d", t, state));
+  GRPC_CHTTP2_IF_TRACING(gpr_log(
+      GPR_INFO, "transport %p set connectivity_state=%d; status=%s; reason=%s",
+      t, state, status.ToString().c_str(), reason));
   t->state_tracker.SetState(state, status, reason);
 }
 

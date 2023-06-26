@@ -22,7 +22,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <atomic>
-#include <vector>
+#include <set>
 
 //
 // NOTE: FORKING IS NOT GENERALLY SUPPORTED, THIS IS ONLY INTENDED TO WORK
@@ -57,10 +57,11 @@ class Fork {
 
   // Provide a function that will be invoked in the child's postfork handler to
   // reset the polling engine's internal state.
-  static void SetResetChildPollingEngineFunc(
+  // Returns true if reset_child_polling_engine was not previously registered,
+  // otherwise returns false and does nothing.
+  static bool RegisterResetChildPollingEngineFunc(
       child_postfork_func reset_child_polling_engine);
-  static const std::vector<child_postfork_func>&
-  GetResetChildPollingEngineFunc();
+  static const std::set<child_postfork_func>& GetResetChildPollingEngineFunc();
 
   // Check if there is a single active ExecCtx
   // (the one used to invoke this function).  If there are more,
@@ -89,7 +90,7 @@ class Fork {
 
   static std::atomic<bool> support_enabled_;
   static bool override_enabled_;
-  static std::vector<child_postfork_func>* reset_child_polling_engine_;
+  static std::set<child_postfork_func>* reset_child_polling_engine_;
 };
 
 }  // namespace grpc_core
