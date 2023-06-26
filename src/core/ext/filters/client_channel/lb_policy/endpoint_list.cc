@@ -30,6 +30,7 @@
 #include "absl/types/optional.h"
 
 #include <grpc/impl/connectivity_state.h>
+#include <grpc/support/json.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.h"
@@ -39,6 +40,7 @@
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/json/json.h"
 #include "src/core/lib/load_balancing/delegating_helper.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
