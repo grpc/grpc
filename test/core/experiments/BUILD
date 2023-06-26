@@ -40,6 +40,8 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         ":experiments_lib",
+        "//:gpr",
+        "//src/core:experiments",
         "//test/core/util:grpc_test_util",
     ],
 )
