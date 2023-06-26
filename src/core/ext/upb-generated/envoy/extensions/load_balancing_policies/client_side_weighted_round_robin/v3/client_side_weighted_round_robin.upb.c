@@ -14,6 +14,7 @@
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/wrappers.upb.h"
 #include "udpa/annotations/status.upb.h"
+#include "validate/validate.upb.h"
 
 // Must be last.
 #include "upb/port/def.inc"

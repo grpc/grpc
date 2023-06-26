@@ -71,7 +71,7 @@ class Handler(BaseHTTPRequestHandler):
 
 httpd = HTTPServer(("localhost", args.port), Handler)
 if args.ssl:
-    httpd.socket = ssl.wrap_socket(
-        httpd.socket, certfile=_PEM, keyfile=_KEY, server_side=True
-    )
+    ctx = ssl.SSLContext()
+    ctx.load_cert_chain(certfile=_PEM, keyfile=_KEY)
+    httpd.socket = ctx.wrap_socket(httpd.socket, server_side=True)
 httpd.serve_forever()

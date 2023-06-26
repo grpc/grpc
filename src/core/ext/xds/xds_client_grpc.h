@@ -35,6 +35,7 @@
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
+#include "src/core/lib/resolver/server_address.h"
 
 namespace grpc_core {
 
@@ -63,7 +64,7 @@ class GrpcXdsClient : public XdsClient {
 
   // Helpers for encoding the XdsClient object in channel args.
   static absl::string_view ChannelArgName() {
-    return "grpc.internal.xds_client";
+    return GRPC_ARG_NO_SUBCHANNEL_PREFIX "xds_client";
   }
   static int ChannelArgsCompare(const XdsClient* a, const XdsClient* b) {
     return QsortCompare(a, b);

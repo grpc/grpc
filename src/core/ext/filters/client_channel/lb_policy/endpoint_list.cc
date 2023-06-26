@@ -41,6 +41,7 @@
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/load_balancing/delegating_helper.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
 #include "src/core/lib/resolver/server_address.h"
@@ -52,17 +53,13 @@ namespace grpc_core {
 //
 
 class EndpointList::Endpoint::Helper
-    : public LoadBalancingPolicy::ChannelControlHelper {
+    : public LoadBalancingPolicy::DelegatingChannelControlHelper {
  public:
   explicit Helper(RefCountedPtr<Endpoint> endpoint)
       : endpoint_(std::move(endpoint)) {}
 
   ~Helper() override { endpoint_.reset(DEBUG_LOCATION, "Helper"); }
 
-  RefCountedPtr<SubchannelInterface> CreateSubchannel(
-      ServerAddress address, const ChannelArgs& args) override {
-    return endpoint_->CreateSubchannel(std::move(address), args);
-  }
   void UpdateState(
       grpc_connectivity_state state, const absl::Status& status,
       RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker) override {
@@ -70,22 +67,9 @@ class EndpointList::Endpoint::Helper
     endpoint_->picker_ = std::move(picker);
     endpoint_->OnStateUpdate(old_state, state, status);
   }
-  void RequestReresolution() override {
-    parent_helper()->RequestReresolution();
-  }
-  absl::string_view GetAuthority() override {
-    return parent_helper()->GetAuthority();
-  }
-  grpc_event_engine::experimental::EventEngine* GetEventEngine() override {
-    return parent_helper()->GetEventEngine();
-  }
-  void AddTraceEvent(TraceSeverity severity,
-                     absl::string_view message) override {
-    parent_helper()->AddTraceEvent(severity, message);
-  }
 
  private:
-  LoadBalancingPolicy::ChannelControlHelper* parent_helper() const {
+  LoadBalancingPolicy::ChannelControlHelper* parent_helper() const override {
     return endpoint_->endpoint_list_->channel_control_helper();
   }
 

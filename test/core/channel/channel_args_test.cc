@@ -73,6 +73,19 @@ TEST(ChannelArgsTest, SetGetRemove) {
   gpr_free(ptr);
 }
 
+TEST(ChannelArgsTest, RemoveAllKeysWithPrefix) {
+  ChannelArgs args;
+  args = args.Set("foo", 1);
+  args = args.Set("foo.bar", 2);
+  args = args.Set("foo.baz", 3);
+  args = args.Set("bar", 4);
+  ChannelArgs modified = args.RemoveAllKeysWithPrefix("foo.");
+  EXPECT_EQ(modified.GetInt("foo"), 1);
+  EXPECT_EQ(modified.GetInt("foo.bar"), absl::nullopt);
+  EXPECT_EQ(modified.GetInt("foo.baz"), absl::nullopt);
+  EXPECT_EQ(modified.GetInt("bar"), 4);
+}
+
 TEST(ChannelArgsTest, StoreRefCountedPtr) {
   struct Test : public RefCounted<Test> {
     explicit Test(int n) : n(n) {}
