@@ -39,7 +39,7 @@
 // grpc_composite_channel_credentials
 //
 
-grpc_core::UniqueTypeName grpc_composite_channel_credentials::type() const {
+grpc_core::UniqueTypeName grpc_composite_channel_credentials::Type() {
   static grpc_core::UniqueTypeName::Factory kFactory("Composite");
   return kFactory.Create();
 }

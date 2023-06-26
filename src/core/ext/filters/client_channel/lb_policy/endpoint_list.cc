@@ -27,10 +27,8 @@
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
-#include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/log.h>
 
@@ -41,6 +39,7 @@
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/load_balancing/delegating_helper.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
 #include "src/core/lib/resolver/server_address.h"
@@ -52,17 +51,13 @@ namespace grpc_core {
 //
 
 class EndpointList::Endpoint::Helper
-    : public LoadBalancingPolicy::ChannelControlHelper {
+    : public LoadBalancingPolicy::DelegatingChannelControlHelper {
  public:
   explicit Helper(RefCountedPtr<Endpoint> endpoint)
       : endpoint_(std::move(endpoint)) {}
 
   ~Helper() override { endpoint_.reset(DEBUG_LOCATION, "Helper"); }
 
-  RefCountedPtr<SubchannelInterface> CreateSubchannel(
-      ServerAddress address, const ChannelArgs& args) override {
-    return endpoint_->CreateSubchannel(std::move(address), args);
-  }
   void UpdateState(
       grpc_connectivity_state state, const absl::Status& status,
       RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker) override {
@@ -70,22 +65,9 @@ class EndpointList::Endpoint::Helper
     endpoint_->picker_ = std::move(picker);
     endpoint_->OnStateUpdate(old_state, state, status);
   }
-  void RequestReresolution() override {
-    parent_helper()->RequestReresolution();
-  }
-  absl::string_view GetAuthority() override {
-    return parent_helper()->GetAuthority();
-  }
-  grpc_event_engine::experimental::EventEngine* GetEventEngine() override {
-    return parent_helper()->GetEventEngine();
-  }
-  void AddTraceEvent(TraceSeverity severity,
-                     absl::string_view message) override {
-    parent_helper()->AddTraceEvent(severity, message);
-  }
 
  private:
-  LoadBalancingPolicy::ChannelControlHelper* parent_helper() const {
+  LoadBalancingPolicy::ChannelControlHelper* parent_helper() const override {
     return endpoint_->endpoint_list_->channel_control_helper();
   }
 
@@ -121,10 +103,17 @@ void EndpointList::Endpoint::Init(
   grpc_pollset_set_add_pollset_set(
       child_policy_->interested_parties(),
       endpoint_list_->policy_->interested_parties());
+  // Construct pick_first config.
+  auto config =
+      CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
+          Json::FromArray(
+              {Json::FromObject({{"pick_first", Json::FromObject({})}})}));
+  GPR_ASSERT(config.ok());
   // Update child policy.
   LoadBalancingPolicy::UpdateArgs update_args;
   update_args.addresses.emplace().emplace_back(address);
   update_args.args = child_args;
+  update_args.config = std::move(*config);
   // TODO(roth): If the child reports a non-OK status with the update,
   // we need to propagate that back to the resolver somehow.
   (void)child_policy_->UpdateLocked(std::move(update_args));

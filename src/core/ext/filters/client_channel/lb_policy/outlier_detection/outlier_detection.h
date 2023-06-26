@@ -21,9 +21,6 @@
 
 #include <stdint.h>  // for uint32_t
 
-#include <memory>
-#include <string>
-
 #include "absl/types/optional.h"
 
 #include "src/core/lib/gprpp/time.h"
@@ -31,7 +28,6 @@
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
-#include "src/core/lib/resolver/server_address.h"
 
 namespace grpc_core {
 

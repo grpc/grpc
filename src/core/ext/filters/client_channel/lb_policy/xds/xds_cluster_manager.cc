@@ -55,10 +55,10 @@
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
+#include "src/core/lib/load_balancing/delegating_helper.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
-#include "src/core/lib/load_balancing/subchannel_interface.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
@@ -161,7 +161,7 @@ class XdsClusterManagerLb : public LoadBalancingPolicy {
     RefCountedPtr<SubchannelPicker> picker() const { return picker_; }
 
    private:
-    class Helper : public ChannelControlHelper {
+    class Helper : public DelegatingChannelControlHelper {
      public:
       explicit Helper(RefCountedPtr<ClusterChild> xds_cluster_manager_child)
           : xds_cluster_manager_child_(std::move(xds_cluster_manager_child)) {}
@@ -170,18 +170,16 @@ class XdsClusterManagerLb : public LoadBalancingPolicy {
         xds_cluster_manager_child_.reset(DEBUG_LOCATION, "Helper");
       }
 
-      RefCountedPtr<SubchannelInterface> CreateSubchannel(
-          ServerAddress address, const ChannelArgs& args) override;
       void UpdateState(grpc_connectivity_state state,
                        const absl::Status& status,
                        RefCountedPtr<SubchannelPicker> picker) override;
-      void RequestReresolution() override;
-      absl::string_view GetAuthority() override;
-      EventEngine* GetEventEngine() override;
-      void AddTraceEvent(TraceSeverity severity,
-                         absl::string_view message) override;
 
      private:
+      ChannelControlHelper* parent_helper() const override {
+        return xds_cluster_manager_child_->xds_cluster_manager_policy_
+            ->channel_control_helper();
+      }
+
       RefCountedPtr<ClusterChild> xds_cluster_manager_child_;
     };
 
@@ -556,17 +554,6 @@ void XdsClusterManagerLb::ClusterChild::OnDelayedRemovalTimerLocked() {
 // XdsClusterManagerLb::ClusterChild::Helper
 //
 
-RefCountedPtr<SubchannelInterface>
-XdsClusterManagerLb::ClusterChild::Helper::CreateSubchannel(
-    ServerAddress address, const ChannelArgs& args) {
-  if (xds_cluster_manager_child_->xds_cluster_manager_policy_->shutting_down_) {
-    return nullptr;
-  }
-  return xds_cluster_manager_child_->xds_cluster_manager_policy_
-      ->channel_control_helper()
-      ->CreateSubchannel(std::move(address), args);
-}
-
 void XdsClusterManagerLb::ClusterChild::Helper::UpdateState(
     grpc_connectivity_state state, const absl::Status& status,
     RefCountedPtr<SubchannelPicker> picker) {
@@ -594,37 +581,6 @@ void XdsClusterManagerLb::ClusterChild::Helper::UpdateState(
   }
   // Notify the LB policy.
   xds_cluster_manager_child_->xds_cluster_manager_policy_->UpdateStateLocked();
-}
-
-void XdsClusterManagerLb::ClusterChild::Helper::RequestReresolution() {
-  if (xds_cluster_manager_child_->xds_cluster_manager_policy_->shutting_down_) {
-    return;
-  }
-  xds_cluster_manager_child_->xds_cluster_manager_policy_
-      ->channel_control_helper()
-      ->RequestReresolution();
-}
-
-absl::string_view XdsClusterManagerLb::ClusterChild::Helper::GetAuthority() {
-  return xds_cluster_manager_child_->xds_cluster_manager_policy_
-      ->channel_control_helper()
-      ->GetAuthority();
-}
-
-EventEngine* XdsClusterManagerLb::ClusterChild::Helper::GetEventEngine() {
-  return xds_cluster_manager_child_->xds_cluster_manager_policy_
-      ->channel_control_helper()
-      ->GetEventEngine();
-}
-
-void XdsClusterManagerLb::ClusterChild::Helper::AddTraceEvent(
-    TraceSeverity severity, absl::string_view message) {
-  if (xds_cluster_manager_child_->xds_cluster_manager_policy_->shutting_down_) {
-    return;
-  }
-  xds_cluster_manager_child_->xds_cluster_manager_policy_
-      ->channel_control_helper()
-      ->AddTraceEvent(severity, message);
 }
 
 //

@@ -141,7 +141,10 @@ end
 
 ext_export_file = File.join(grpc_root, 'src', 'ruby', 'ext', 'grpc', ext_export_filename())
 $LDFLAGS << ' -Wl,--version-script="' + ext_export_file + '.gcc"' if linux
-$LDFLAGS << ' -Wl,-exported_symbols_list,"' + ext_export_file + '.clang"' if apple_toolchain
+if apple_toolchain
+  $LDFLAGS << ' -weak_framework CoreFoundation' if RUBY_PLATFORM =~ /arm64/
+  $LDFLAGS << ' -Wl,-exported_symbols_list,"' + ext_export_file + '.clang"'
+end
 
 $LDFLAGS << ' ' + File.join(grpc_lib_dir, 'libgrpc.a') unless windows
 if grpc_config == 'gcov'

@@ -212,17 +212,13 @@ class FakeResolverResponseGeneratorWrapper {
     response_generator_ = std::move(other.response_generator_);
   }
 
-  void SetNextResolution(
-      const std::vector<int>& ports, const char* service_config_json = nullptr,
-      const char* attribute_key = nullptr,
-      std::unique_ptr<grpc_core::ServerAddress::AttributeInterface> attribute =
-          nullptr,
-      const grpc_core::ChannelArgs& per_address_args =
-          grpc_core::ChannelArgs()) {
+  void SetNextResolution(const std::vector<int>& ports,
+                         const char* service_config_json = nullptr,
+                         const grpc_core::ChannelArgs& per_address_args =
+                             grpc_core::ChannelArgs()) {
     grpc_core::ExecCtx exec_ctx;
-    response_generator_->SetResponse(
-        BuildFakeResults(ipv6_only_, ports, service_config_json, attribute_key,
-                         std::move(attribute), per_address_args));
+    response_generator_->SetResponse(BuildFakeResults(
+        ipv6_only_, ports, service_config_json, per_address_args));
   }
 
   void SetNextResolutionUponError(const std::vector<int>& ports) {
@@ -249,9 +245,6 @@ class FakeResolverResponseGeneratorWrapper {
   static grpc_core::Resolver::Result BuildFakeResults(
       bool ipv6_only, const std::vector<int>& ports,
       const char* service_config_json = nullptr,
-      const char* attribute_key = nullptr,
-      std::unique_ptr<grpc_core::ServerAddress::AttributeInterface> attribute =
-          nullptr,
       const grpc_core::ChannelArgs& per_address_args =
           grpc_core::ChannelArgs()) {
     grpc_core::Resolver::Result result;
@@ -262,14 +255,7 @@ class FakeResolverResponseGeneratorWrapper {
       GPR_ASSERT(lb_uri.ok());
       grpc_resolved_address address;
       GPR_ASSERT(grpc_parse_uri(*lb_uri, &address));
-      std::map<const char*,
-               std::unique_ptr<grpc_core::ServerAddress::AttributeInterface>>
-          attributes;
-      if (attribute != nullptr) {
-        attributes[attribute_key] = attribute->Copy();
-      }
-      result.addresses->emplace_back(address, per_address_args,
-                                     std::move(attributes));
+      result.addresses->emplace_back(address, per_address_args);
     }
     if (result.addresses->empty()) {
       result.resolution_note = "fake resolver empty address list";
@@ -717,7 +703,6 @@ TEST_F(ClientLbEnd2endTest, AuthorityOverrideFromResolver) {
   // different value.
   response_generator.SetNextResolution(
       GetServersPorts(), /*service_config_json=*/nullptr,
-      /*attribute_key=*/nullptr, /*attribute=*/nullptr,
       grpc_core::ChannelArgs().Set(GRPC_ARG_DEFAULT_AUTHORITY,
                                    "foo.example.com"));
   // Send an RPC.
@@ -744,7 +729,6 @@ TEST_F(ClientLbEnd2endTest, AuthorityOverridePrecedence) {
   // different value.
   response_generator.SetNextResolution(
       GetServersPorts(), /*service_config_json=*/nullptr,
-      /*attribute_key=*/nullptr, /*attribute=*/nullptr,
       grpc_core::ChannelArgs().Set(GRPC_ARG_DEFAULT_AUTHORITY,
                                    "bar.example.com"));
   // Send an RPC.
@@ -2850,31 +2834,11 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, BackendMetricDataMerge) {
 }
 
 //
-// tests that address attributes from the resolver are visible to the LB policy
+// tests that address args from the resolver are visible to the LB policy
 //
 
 class ClientLbAddressTest : public ClientLbEnd2endTest {
  protected:
-  static const char* kAttributeKey;
-
-  class Attribute : public grpc_core::ServerAddress::AttributeInterface {
-   public:
-    explicit Attribute(const std::string& str) : str_(str) {}
-
-    std::unique_ptr<AttributeInterface> Copy() const override {
-      return std::make_unique<Attribute>(str_);
-    }
-
-    int Cmp(const AttributeInterface* other) const override {
-      return str_.compare(static_cast<const Attribute*>(other)->str_);
-    }
-
-    std::string ToString() const override { return str_; }
-
-   private:
-    std::string str_;
-  };
-
   void SetUp() override {
     ClientLbEnd2endTest::SetUp();
     current_test_instance_ = this;
@@ -2912,8 +2876,6 @@ class ClientLbAddressTest : public ClientLbEnd2endTest {
   std::vector<std::string> addresses_seen_;
 };
 
-const char* ClientLbAddressTest::kAttributeKey = "attribute_key";
-
 ClientLbAddressTest* ClientLbAddressTest::current_test_instance_ = nullptr;
 
 TEST_F(ClientLbAddressTest, Basic) {
@@ -2922,19 +2884,18 @@ TEST_F(ClientLbAddressTest, Basic) {
   auto response_generator = BuildResolverResponseGenerator();
   auto channel = BuildChannel("address_test_lb", response_generator);
   auto stub = BuildStub(channel);
-  // Addresses returned by the resolver will have attached attributes.
-  response_generator.SetNextResolution(GetServersPorts(), nullptr,
-                                       kAttributeKey,
-                                       std::make_unique<Attribute>("foo"));
+  // Addresses returned by the resolver will have attached args.
+  response_generator.SetNextResolution(
+      GetServersPorts(), nullptr,
+      grpc_core::ChannelArgs().Set("test_key", "test_value"));
   CheckRpcSendOk(DEBUG_LOCATION, stub);
   // Check LB policy name for the channel.
   EXPECT_EQ("address_test_lb", channel->GetLoadBalancingPolicyName());
   // Make sure that the attributes wind up on the subchannels.
   std::vector<std::string> expected;
   for (const int port : GetServersPorts()) {
-    expected.emplace_back(absl::StrCat(
-        ipv6_only_ ? "[::1]:" : "127.0.0.1:", port, " attributes={",
-        kAttributeKey, "=foo}"));
+    expected.emplace_back(absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:",
+                                       port, " args={test_key=test_value}"));
   }
   EXPECT_EQ(addresses_seen(), expected);
 }

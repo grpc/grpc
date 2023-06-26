@@ -64,6 +64,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/load_balancing/delegating_helper.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
@@ -383,16 +384,14 @@ RingHash::Ring::Ring(RingHash* ring_hash, RingHashLbConfig* config) {
   const ServerAddressList& addresses = ring_hash->addresses_;
   address_weights.reserve(addresses.size());
   for (const auto& address : addresses) {
-    const auto* weight_attribute =
-        static_cast<const ServerAddressWeightAttribute*>(address.GetAttribute(
-            ServerAddressWeightAttribute::kServerAddressWeightAttributeKey));
     AddressWeight address_weight;
     address_weight.address =
         grpc_sockaddr_to_string(&address.address(), false).value();
     // Weight should never be zero, but ignore it just in case, since
     // that value would screw up the ring-building algorithm.
-    if (weight_attribute != nullptr && weight_attribute->weight() > 0) {
-      address_weight.weight = weight_attribute->weight();
+    auto weight_arg = address.args().GetInt(GRPC_ARG_ADDRESS_WEIGHT);
+    if (weight_arg.value_or(0) > 0) {
+      address_weight.weight = *weight_arg;
     }
     sum += address_weight.weight;
     address_weights.push_back(std::move(address_weight));
@@ -469,38 +468,21 @@ RingHash::Ring::Ring(RingHash* ring_hash, RingHashLbConfig* config) {
 //
 
 class RingHash::RingHashEndpoint::Helper
-    : public LoadBalancingPolicy::ChannelControlHelper {
+    : public LoadBalancingPolicy::DelegatingChannelControlHelper {
  public:
   explicit Helper(RefCountedPtr<RingHashEndpoint> endpoint)
       : endpoint_(std::move(endpoint)) {}
 
   ~Helper() override { endpoint_.reset(DEBUG_LOCATION, "Helper"); }
 
-  RefCountedPtr<SubchannelInterface> CreateSubchannel(
-      ServerAddress address, const ChannelArgs& args) override {
-    return parent_helper()->CreateSubchannel(std::move(address), args);
-  }
   void UpdateState(
       grpc_connectivity_state state, const absl::Status& status,
       RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker) override {
     endpoint_->OnStateUpdate(state, status, std::move(picker));
   }
-  void RequestReresolution() override {
-    parent_helper()->RequestReresolution();
-  }
-  absl::string_view GetAuthority() override {
-    return parent_helper()->GetAuthority();
-  }
-  grpc_event_engine::experimental::EventEngine* GetEventEngine() override {
-    return parent_helper()->GetEventEngine();
-  }
-  void AddTraceEvent(TraceSeverity severity,
-                     absl::string_view message) override {
-    parent_helper()->AddTraceEvent(severity, message);
-  }
 
  private:
-  LoadBalancingPolicy::ChannelControlHelper* parent_helper() const {
+  LoadBalancingPolicy::ChannelControlHelper* parent_helper() const override {
     return endpoint_->ring_hash_->channel_control_helper();
   }
 
@@ -561,10 +543,17 @@ void RingHash::RingHashEndpoint::CreateChildPolicy() {
   // this policy, which in turn is tied to the application's call.
   grpc_pollset_set_add_pollset_set(child_policy_->interested_parties(),
                                    ring_hash_->interested_parties());
+  // Construct pick_first config.
+  auto config =
+      CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
+          Json::FromArray(
+              {Json::FromObject({{"pick_first", Json::FromObject({})}})}));
+  GPR_ASSERT(config.ok());
   // Update child policy.
   LoadBalancingPolicy::UpdateArgs update_args;
   update_args.addresses.emplace().emplace_back(address);
   update_args.args = std::move(child_args);
+  update_args.config = std::move(*config);
   // TODO(roth): If the child reports a non-OK status with the update,
   // we need to propagate that back to the resolver somehow.
   (void)child_policy_->UpdateLocked(std::move(update_args));

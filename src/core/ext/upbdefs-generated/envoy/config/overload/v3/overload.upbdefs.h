@@ -57,6 +57,11 @@ UPB_INLINE const upb_MessageDef *envoy_config_overload_v3_OverloadAction_getmsgd
   return upb_DefPool_FindMessageByName(s, "envoy.config.overload.v3.OverloadAction");
 }
 
+UPB_INLINE const upb_MessageDef *envoy_config_overload_v3_LoadShedPoint_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_overload_v3_overload_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.overload.v3.LoadShedPoint");
+}
+
 UPB_INLINE const upb_MessageDef *envoy_config_overload_v3_BufferFactoryConfig_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &envoy_config_overload_v3_overload_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "envoy.config.overload.v3.BufferFactoryConfig");
