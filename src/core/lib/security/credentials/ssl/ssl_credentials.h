@@ -100,7 +100,7 @@ class grpc_ssl_server_credentials final : public grpc_server_credentials {
     return certificate_config_fetcher_.cb != nullptr;
   }
 
-  void should_set_client_ca_list(bool set_client_ca_list) {
+  void set_client_ca_list(bool set_client_ca_list) {
     set_client_ca_list_ = set_client_ca_list;
     config_.set_client_ca_list = set_client_ca_list;
   }

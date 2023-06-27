@@ -59,6 +59,19 @@ struct SslServerCredentialsOptions {
   /// \a REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY
   /// will be enforced.
   grpc_ssl_client_certificate_request_type client_certificate_request;
+
+  // If true, the SSL server sends a list of CA names to the client in the
+  // ServerHello. This list of CA names is extracted from the server's trust
+  // bundle, and the client may use this lint as a hint to decide which
+  // certificate it should send to the server.
+  //
+  // By default, it is set to true.
+  //
+  // WARNING: This is an extremely dangerous option and users are encouraged to
+  // explicitly set it to false. If the server's trust bundle is sufficiently large, then setting this bit to true will result in
+  // the server being unable to generate a ServerHello, and hence the server
+  // will be unusable. 
+  bool set_client_ca_list;
 };
 
 /// Builds Xds ServerCredentials given fallback credentials

@@ -217,6 +217,7 @@ void grpc_ssl_server_credentials::build_config(
   config_.pem_key_cert_pairs = grpc_convert_grpc_to_tsi_cert_pairs(
       pem_key_cert_pairs, num_key_cert_pairs);
   config_.num_key_cert_pairs = num_key_cert_pairs;
+  config_.set_client_ca_list = set_client_ca_list_;
 }
 
 void grpc_ssl_server_credentials::set_min_tls_version(
@@ -251,6 +252,7 @@ grpc_ssl_server_certificate_config* grpc_ssl_server_certificate_config_create(
     config->pem_key_cert_pairs[i].private_key =
         gpr_strdup(pem_key_cert_pairs[i].private_key);
   }
+  config->set_client_ca_list = set_client_ca_list_;
   return config;
 }
 
