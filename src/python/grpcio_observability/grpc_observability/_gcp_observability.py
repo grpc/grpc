@@ -22,6 +22,7 @@ from typing import Any, Mapping, Optional
 
 import grpc
 from grpc_observability import _cyobservability  # pytype: disable=pyi-error
+from grpc_observability._open_census_exporter import CENSUS_UPLOAD_INTERVAL_SECS
 from grpc_observability._open_census_exporter import OpenCensusExporter
 from opencensus.trace import execution_context
 from opencensus.trace import span_context as span_context_module
@@ -107,19 +108,23 @@ class GCPOpenCensusObservability(grpc._observability.ObservabilityPlugin):
 
     config: GcpObservabilityPythonConfig
     exporter: "grpc_observability.Exporter"
+    use_open_census_exporter: bool
 
     def __init__(self, exporter: "grpc_observability.Exporter" = None):
         self.exporter = None
         self.config = GcpObservabilityPythonConfig.get()
-        if exporter:
-            self.exporter = exporter
-        else:
-            self.exporter = OpenCensusExporter(self.config.get().labels)
+        self.use_open_census_exporter = False
         config_valid = _cyobservability.set_gcp_observability_config(
             self.config
         )
         if not config_valid:
             raise ValueError("Invalid configuration")
+
+        if exporter:
+            self.exporter = exporter
+        else:
+            self.exporter = OpenCensusExporter(self.config)
+            self.use_open_census_exporter = True
 
         if self.config.tracing_enabled:
             self.set_tracing(True)
@@ -144,10 +149,14 @@ class GCPOpenCensusObservability(grpc._observability.ObservabilityPlugin):
         # immediately after exit, it's possible that core didn't call RecordEnd
         # in callTracer, and all data recorded by calling RecordEnd will be
         # lost.
-        # The time equals to the time in AwaitNextBatchLocked.
+        # CENSUS_EXPORT_BATCH_INTERVAL_SECS: The time equals to the time in
+        # AwaitNextBatchLocked.
         # TODO(xuanwn): explicit synchronization
         # https://github.com/grpc/grpc/issues/33262
         time.sleep(_cyobservability.CENSUS_EXPORT_BATCH_INTERVAL_SECS)
+        if self.use_open_census_exporter:
+            # Sleep so StackDriver can upload data to GCP.
+            time.sleep(CENSUS_UPLOAD_INTERVAL_SECS)
         self.set_tracing(False)
         self.set_stats(False)
         _cyobservability.observability_deinit()

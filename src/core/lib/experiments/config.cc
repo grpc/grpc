@@ -123,20 +123,29 @@ void PrintExperimentsList() {
         std::max(max_experiment_length, strlen(g_experiment_metadata[i].name));
   }
   for (size_t i = 0; i < kNumExperiments; i++) {
-    gpr_log(GPR_DEBUG, "%s",
-            absl::StrCat(
-                "gRPC EXPERIMENT ", g_experiment_metadata[i].name,
-                std::string(max_experiment_length -
-                                strlen(g_experiment_metadata[i].name) + 1,
-                            ' '),
-                IsExperimentEnabled(i) ? "ON " : "OFF", " (default:",
-                g_experiment_metadata[i].default_value ? "ON" : "OFF",
-                g_forced_experiments[i].forced
-                    ? absl::StrCat(" force:",
-                                   g_forced_experiments[i].value ? "ON" : "OFF")
-                    : std::string(),
-                ")")
-                .c_str());
+    gpr_log(
+        GPR_DEBUG, "%s",
+        absl::StrCat(
+            "gRPC EXPERIMENT ", g_experiment_metadata[i].name,
+            std::string(max_experiment_length -
+                            strlen(g_experiment_metadata[i].name) + 1,
+                        ' '),
+            IsExperimentEnabled(i) ? "ON " : "OFF",
+            " (default:", g_experiment_metadata[i].default_value ? "ON" : "OFF",
+            (g_check_constraints_cb != nullptr
+                 ? absl::StrCat(
+                       " + ", g_experiment_metadata[i].additional_constaints,
+                       " => ",
+                       (*g_check_constraints_cb)(g_experiment_metadata[i])
+                           ? "ON "
+                           : "OFF")
+                 : std::string()),
+            g_forced_experiments[i].forced
+                ? absl::StrCat(" force:",
+                               g_forced_experiments[i].value ? "ON" : "OFF")
+                : std::string(),
+            ")")
+            .c_str());
   }
 }
 

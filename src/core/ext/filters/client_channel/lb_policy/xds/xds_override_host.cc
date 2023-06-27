@@ -18,6 +18,7 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.h"
 
+#include <inttypes.h>
 #include <stddef.h>
 
 #include <algorithm>
@@ -39,7 +40,6 @@
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 
-#include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/log.h>
 
@@ -66,6 +66,7 @@
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
+#include "src/core/lib/load_balancing/delegating_helper.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
@@ -95,12 +96,10 @@ struct PtrLessThan {
 };
 
 XdsHealthStatus GetAddressHealthStatus(const ServerAddress& address) {
-  auto attribute = address.GetAttribute(XdsEndpointHealthStatusAttribute::kKey);
-  if (attribute == nullptr) {
-    return XdsHealthStatus(XdsHealthStatus::HealthStatus::kUnknown);
-  }
-  return static_cast<const XdsEndpointHealthStatusAttribute*>(attribute)
-      ->status();
+  return XdsHealthStatus(static_cast<XdsHealthStatus::HealthStatus>(
+      address.args()
+          .GetInt(GRPC_ARG_XDS_HEALTH_STATUS)
+          .value_or(XdsHealthStatus::HealthStatus::kUnknown)));
 }
 
 //
@@ -215,27 +214,17 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
     XdsHealthStatusSet override_host_health_status_set_;
   };
 
-  class Helper : public ChannelControlHelper {
+  class Helper
+      : public ParentOwningDelegatingChannelControlHelper<XdsOverrideHostLb> {
    public:
     explicit Helper(RefCountedPtr<XdsOverrideHostLb> xds_override_host_policy)
-        : xds_override_host_policy_(std::move(xds_override_host_policy)) {}
-
-    ~Helper() override {
-      xds_override_host_policy_.reset(DEBUG_LOCATION, "Helper");
-    }
+        : ParentOwningDelegatingChannelControlHelper(
+              std::move(xds_override_host_policy)) {}
 
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
         ServerAddress address, const ChannelArgs& args) override;
     void UpdateState(grpc_connectivity_state state, const absl::Status& status,
                      RefCountedPtr<SubchannelPicker> picker) override;
-    void RequestReresolution() override;
-    absl::string_view GetAuthority() override;
-    grpc_event_engine::experimental::EventEngine* GetEventEngine() override;
-    void AddTraceEvent(TraceSeverity severity,
-                       absl::string_view message) override;
-
-   private:
-    RefCountedPtr<XdsOverrideHostLb> xds_override_host_policy_;
   };
 
   class SubchannelEntry {
@@ -442,7 +431,10 @@ void XdsOverrideHostLb::ResetBackoffLocked() {
 
 absl::Status XdsOverrideHostLb::UpdateLocked(UpdateArgs args) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
-    gpr_log(GPR_INFO, "[xds_override_host_lb %p] Received update", this);
+    gpr_log(GPR_INFO,
+            "[xds_override_host_lb %p] Received update with %" PRIuPTR
+            " addresses",
+            this, args.addresses.ok() ? args.addresses->size() : 0);
   }
   auto old_config = std::move(config_);
   // Update config.
@@ -510,6 +502,10 @@ OrphanablePtr<LoadBalancingPolicy> XdsOverrideHostLb::CreateChildPolicyLocked(
 absl::StatusOr<ServerAddressList> XdsOverrideHostLb::UpdateAddressMap(
     absl::StatusOr<ServerAddressList> addresses) {
   if (!addresses.ok()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
+      gpr_log(GPR_INFO, "[xds_override_host_lb %p] address error: %s", this,
+              addresses.status().ToString().c_str());
+    }
     return addresses;
   }
   ServerAddressList return_value;
@@ -517,13 +513,30 @@ absl::StatusOr<ServerAddressList> XdsOverrideHostLb::UpdateAddressMap(
   for (const auto& address : *addresses) {
     XdsHealthStatus status = GetAddressHealthStatus(address);
     if (status.status() != XdsHealthStatus::kDraining) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
+        gpr_log(GPR_INFO,
+                "[xds_override_host_lb %p] address %s: not draining, "
+                "passing to child",
+                this, address.ToString().c_str());
+      }
       return_value.push_back(address);
     } else if (!config_->override_host_status_set().Contains(status)) {
       // Skip draining hosts if not in the override status set.
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
+        gpr_log(GPR_INFO,
+                "[xds_override_host_lb %p] address %s: draining but not in "
+                "override_host_status set -- ignoring",
+                this, address.ToString().c_str());
+      }
       continue;
     }
     auto key = grpc_sockaddr_to_uri(&address.address());
     if (key.ok()) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
+        gpr_log(GPR_INFO,
+                "[xds_override_host_lb %p] address %s: adding map key %s", this,
+                address.ToString().c_str(), key->c_str());
+      }
       addresses_for_map.emplace(std::move(*key), status);
     }
   }
@@ -531,6 +544,10 @@ absl::StatusOr<ServerAddressList> XdsOverrideHostLb::UpdateAddressMap(
     MutexLock lock(&subchannel_map_mu_);
     for (auto it = subchannel_map_.begin(); it != subchannel_map_.end();) {
       if (addresses_for_map.find(it->first) == addresses_for_map.end()) {
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
+          gpr_log(GPR_INFO, "[xds_override_host_lb %p] removing map key %s",
+                  this, it->first.c_str());
+        }
         it = subchannel_map_.erase(it);
       } else {
         ++it;
@@ -539,10 +556,20 @@ absl::StatusOr<ServerAddressList> XdsOverrideHostLb::UpdateAddressMap(
     for (const auto& key_status : addresses_for_map) {
       auto it = subchannel_map_.find(key_status.first);
       if (it == subchannel_map_.end()) {
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
+          gpr_log(GPR_INFO, "[xds_override_host_lb %p] adding map key %s", this,
+                  key_status.first.c_str());
+        }
         subchannel_map_.emplace(std::piecewise_construct,
                                 std::forward_as_tuple(key_status.first),
                                 std::forward_as_tuple(key_status.second));
       } else {
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
+          gpr_log(GPR_INFO,
+                  "[xds_override_host_lb %p] setting EDS health status for "
+                  "%s to %s",
+                  this, key_status.first.c_str(), key_status.second.ToString());
+        }
         it->second.SetEdsHealthStatus(key_status.second);
       }
     }
@@ -619,42 +646,20 @@ void XdsOverrideHostLb::OnSubchannelConnectivityStateChange(
 RefCountedPtr<SubchannelInterface> XdsOverrideHostLb::Helper::CreateSubchannel(
     ServerAddress address, const ChannelArgs& args) {
   auto subchannel =
-      xds_override_host_policy_->channel_control_helper()->CreateSubchannel(
-          address, args);
-  return xds_override_host_policy_->AdoptSubchannel(address, subchannel);
+      parent()->channel_control_helper()->CreateSubchannel(address, args);
+  return parent()->AdoptSubchannel(address, subchannel);
 }
 
 void XdsOverrideHostLb::Helper::UpdateState(
     grpc_connectivity_state state, const absl::Status& status,
     RefCountedPtr<SubchannelPicker> picker) {
-  if (xds_override_host_policy_->shutting_down_) return;
+  if (parent()->shutting_down_) return;
   // Save the state and picker.
-  xds_override_host_policy_->state_ = state;
-  xds_override_host_policy_->status_ = status;
-  xds_override_host_policy_->picker_ = std::move(picker);
+  parent()->state_ = state;
+  parent()->status_ = status;
+  parent()->picker_ = std::move(picker);
   // Wrap the picker and return it to the channel.
-  xds_override_host_policy_->MaybeUpdatePickerLocked();
-}
-
-void XdsOverrideHostLb::Helper::RequestReresolution() {
-  if (xds_override_host_policy_->shutting_down_) return;
-  xds_override_host_policy_->channel_control_helper()->RequestReresolution();
-}
-
-absl::string_view XdsOverrideHostLb::Helper::GetAuthority() {
-  return xds_override_host_policy_->channel_control_helper()->GetAuthority();
-}
-
-grpc_event_engine::experimental::EventEngine*
-XdsOverrideHostLb::Helper::GetEventEngine() {
-  return xds_override_host_policy_->channel_control_helper()->GetEventEngine();
-}
-
-void XdsOverrideHostLb::Helper::AddTraceEvent(TraceSeverity severity,
-                                              absl::string_view message) {
-  if (xds_override_host_policy_->shutting_down_) return;
-  xds_override_host_policy_->channel_control_helper()->AddTraceEvent(severity,
-                                                                     message);
+  parent()->MaybeUpdatePickerLocked();
 }
 
 //

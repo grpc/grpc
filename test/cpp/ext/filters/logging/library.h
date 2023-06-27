@@ -44,16 +44,6 @@
 namespace grpc {
 namespace testing {
 
-class MyTestServiceImpl : public TestServiceImpl {
- public:
-  Status Echo(ServerContext* context, const EchoRequest* request,
-              EchoResponse* response) override {
-    context->AddInitialMetadata("server-header-key", "server-header-value");
-    context->AddTrailingMetadata("server-trailer-key", "server-trailer-value");
-    return TestServiceImpl::Echo(context, request, response);
-  }
-};
-
 class TestLoggingSink : public grpc_core::LoggingSink {
  public:
   Config FindMatch(bool /* is_client */, absl::string_view /* service */,
@@ -149,7 +139,7 @@ class LoggingTest : public ::testing::Test {
   void RunServerLoop() { server_->Wait(); }
 
   std::string server_address_;
-  MyTestServiceImpl service_;
+  CallbackTestServiceImpl service_;
   std::unique_ptr<grpc::Server> server_;
   std::thread server_thread_;
 
