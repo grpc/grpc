@@ -899,6 +899,20 @@ GRPCAPI void grpc_tls_credentials_options_set_verify_server_cert(
 /**
  * EXPERIMENTAL API - Subject to change
  *
+ * Sets whether or not a TLS server should send a list of CA names in the
+ * ServerHello. This list of CA names is read from the server's trust bundle, so
+ * that the client can use this list as a hint to know which certificate it
+ * should send to the server.
+ *
+ * WARNING: This API is extremely dangerous and should not be used. If the
+ * server's trust bundle is too large, then the TLS server will be unable to
+ * form a ServerHello, and hence will be unusable.
+ */
+GRPCAPI void grpc_tls_credentials_options_set_client_ca_list(grpc_tls_credentials_options* options, bool set_client_ca_list);
+
+/**
+ * EXPERIMENTAL API - Subject to change
+ *
  * The read-only request information exposed in a verification call.
  * Callers should not directly manage the ownership of it. We will make sure it
  * is always available inside verify() or cancel() call, and will destroy the

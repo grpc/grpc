@@ -100,6 +100,11 @@ class grpc_ssl_server_credentials final : public grpc_server_credentials {
     return certificate_config_fetcher_.cb != nullptr;
   }
 
+  void should_set_client_ca_list(bool set_client_ca_list) {
+    set_client_ca_list_ = set_client_ca_list;
+    config_.set_client_ca_list = set_client_ca_list;
+  }
+
   grpc_ssl_certificate_config_reload_status FetchCertConfig(
       grpc_ssl_server_certificate_config** config) {
     GPR_DEBUG_ASSERT(has_cert_config_fetcher());
@@ -120,6 +125,7 @@ class grpc_ssl_server_credentials final : public grpc_server_credentials {
       grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs, size_t num_key_cert_pairs,
       grpc_ssl_client_certificate_request_type client_certificate_request);
 
+  bool set_client_ca_list_ = true;
   grpc_ssl_server_config config_;
   grpc_ssl_server_certificate_config_fetcher certificate_config_fetcher_;
 };

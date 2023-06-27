@@ -148,6 +148,8 @@ class TlsServerCredentialsOptions final : public TlsCredentialsOptions {
   void set_cert_request_type(
       grpc_ssl_client_certificate_request_type cert_request_type);
 
+
+   void set_client_ca_list(bool set_client_ca_list);
  private:
 };
 

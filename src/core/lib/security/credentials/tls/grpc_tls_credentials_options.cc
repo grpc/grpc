@@ -120,3 +120,11 @@ void grpc_tls_credentials_options_set_tls_session_key_log_file_path(
   }
   options->set_tls_session_key_log_file_path(path != nullptr ? path : "");
 }
+
+void grpc_tls_credentials_options_set_client_ca_list(grpc_tls_credentials_options* options, bool set_client_ca_list) {
+  if (options == nullptr) {
+    return
+  }
+  options->set_client_ca_list(set_client_ca_list);
+}
+
