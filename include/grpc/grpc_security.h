@@ -21,6 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdbool.h>
+
 #include <grpc/grpc.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpc/status.h>
@@ -526,7 +528,7 @@ GRPCAPI grpc_server_credentials* grpc_ssl_server_credentials_create(
    authenticate client certificates.*/
 GRPCAPI grpc_server_credentials* grpc_ssl_server_credentials_create_ex(
     const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs,
-    size_t num_key_cert_pairs,
+    size_t num_key_cert_pair,
     grpc_ssl_client_certificate_request_type client_certificate_request,
     void* reserved);
 
@@ -563,6 +565,9 @@ GRPCAPI void grpc_ssl_server_credentials_options_destroy(
 GRPCAPI grpc_server_credentials*
 grpc_ssl_server_credentials_create_with_options(
     grpc_ssl_server_credentials_options* options);
+
+GRPCAPI void grpc_ssl_server_credentials_set_send_client_ca_list(
+    grpc_server_credentials* server_credentials, bool send_client_ca_list);
 
 /** --- Call specific credentials. --- */
 

@@ -379,3 +379,13 @@ void grpc_ssl_server_credentials_options_destroy(
   grpc_ssl_server_certificate_config_destroy(o->certificate_config);
   gpr_free(o);
 }
+
+void grpc_ssl_server_credentials_set_send_client_ca_list(
+    grpc_server_credentials* server_credentials, bool send_client_ca_list) {
+  if (server_credentials == nullptr) {
+    return;
+  }
+  grpc_ssl_server_credentials* ssl_credentials =
+      static_cast<grpc_ssl_server_credentials*>(server_credentials);
+  ssl_credentials->set_send_client_ca_list(send_client_ca_list);
+}
