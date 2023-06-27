@@ -647,8 +647,7 @@ absl::Status RingHash::UpdateLocked(UpdateArgs args) {
       it->second->set_index(i);
       endpoint_map.emplace(address, std::move(it->second));
     } else {
-      endpoint_map.emplace(address,
-                           MakeOrphanable<RingHashEndpoint>(Ref(), i));
+      endpoint_map.emplace(address, MakeOrphanable<RingHashEndpoint>(Ref(), i));
     }
   }
   endpoint_map_ = std::move(endpoint_map);
