@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.55.0</span>
+   &#160;<span id="projectnumber">1.56.0</span>
    </div>
   </td>
  </tr>
@@ -111,24 +111,27 @@ $(function() {
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160; </div>
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;  <span class="keyword">virtual</span> <a class="code" href="classgrpc_1_1experimental_1_1_call_metric_recorder.html">CallMetricRecorder</a>&amp; <a class="code" href="classgrpc_1_1experimental_1_1_call_metric_recorder.html#ab44ce00d314371a165abd4a94a1f6373">RecordMemoryUtilizationMetric</a>(<span class="keywordtype">double</span> value) = 0;</div>
 <div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160; </div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;  <span class="keyword">virtual</span> <a class="code" href="classgrpc_1_1experimental_1_1_call_metric_recorder.html">CallMetricRecorder</a>&amp; <a class="code" href="classgrpc_1_1experimental_1_1_call_metric_recorder.html#a5b0e2a53ec6a5d53d6509934a5ffb6b1">RecordQpsMetric</a>(<span class="keywordtype">double</span> value) = 0;</div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160; </div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;  <span class="keyword">virtual</span> <a class="code" href="classgrpc_1_1experimental_1_1_call_metric_recorder.html">CallMetricRecorder</a>&amp; <a class="code" href="classgrpc_1_1experimental_1_1_call_metric_recorder.html#aed474b5d664467420f4fc1753fa623bf">RecordEpsMetric</a>(<span class="keywordtype">double</span> value) = 0;</div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160; </div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;  <span class="keyword">virtual</span> <a class="code" href="classgrpc_1_1experimental_1_1_call_metric_recorder.html">CallMetricRecorder</a>&amp; <a class="code" href="classgrpc_1_1experimental_1_1_call_metric_recorder.html#abe009bb7213eebc43cd02fbff5c5d033">RecordUtilizationMetric</a>(<a class="code" href="classgrpc_1_1string__ref.html">string_ref</a> name,</div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;                                                      <span class="keywordtype">double</span> value) = 0;</div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160; </div>
-<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;  <span class="keyword">virtual</span> <a class="code" href="classgrpc_1_1experimental_1_1_call_metric_recorder.html">CallMetricRecorder</a>&amp; <a class="code" href="classgrpc_1_1experimental_1_1_call_metric_recorder.html#ab7c49b6bbc8f76c134d8fe951604f7ad">RecordRequestCostMetric</a>(<a class="code" href="classgrpc_1_1string__ref.html">string_ref</a> name,</div>
-<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;                                                      <span class="keywordtype">double</span> value) = 0;</div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160; </div>
-<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;  <span class="keyword">virtual</span> <a class="code" href="classgrpc_1_1experimental_1_1_call_metric_recorder.html">CallMetricRecorder</a>&amp; <a class="code" href="classgrpc_1_1experimental_1_1_call_metric_recorder.html#a510b46e0f9ed3300edb4517d8a779193">RecordNamedMetric</a>(<a class="code" href="classgrpc_1_1string__ref.html">string_ref</a> name,</div>
-<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;                                                <span class="keywordtype">double</span> value) = 0;</div>
-<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;};</div>
-<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160; </div>
-<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;}  <span class="comment">// namespace experimental</span></div>
-<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;}  <span class="comment">// namespace grpc</span></div>
-<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160; </div>
-<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;<span class="preprocessor">#endif  // GRPCPP_EXT_CALL_METRIC_RECORDER_H</span></div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;  <span class="keyword">virtual</span> <a class="code" href="classgrpc_1_1experimental_1_1_call_metric_recorder.html">CallMetricRecorder</a>&amp; <a class="code" href="classgrpc_1_1experimental_1_1_call_metric_recorder.html#a07e0572a0bd9eb0256a5049f99059629">RecordApplicationUtilizationMetric</a>(</div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;      <span class="keywordtype">double</span> value) = 0;</div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160; </div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;  <span class="keyword">virtual</span> <a class="code" href="classgrpc_1_1experimental_1_1_call_metric_recorder.html">CallMetricRecorder</a>&amp; <a class="code" href="classgrpc_1_1experimental_1_1_call_metric_recorder.html#a5b0e2a53ec6a5d53d6509934a5ffb6b1">RecordQpsMetric</a>(<span class="keywordtype">double</span> value) = 0;</div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160; </div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;  <span class="keyword">virtual</span> <a class="code" href="classgrpc_1_1experimental_1_1_call_metric_recorder.html">CallMetricRecorder</a>&amp; <a class="code" href="classgrpc_1_1experimental_1_1_call_metric_recorder.html#aed474b5d664467420f4fc1753fa623bf">RecordEpsMetric</a>(<span class="keywordtype">double</span> value) = 0;</div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160; </div>
+<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;  <span class="keyword">virtual</span> <a class="code" href="classgrpc_1_1experimental_1_1_call_metric_recorder.html">CallMetricRecorder</a>&amp; <a class="code" href="classgrpc_1_1experimental_1_1_call_metric_recorder.html#abe009bb7213eebc43cd02fbff5c5d033">RecordUtilizationMetric</a>(<a class="code" href="classgrpc_1_1string__ref.html">string_ref</a> name,</div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;                                                      <span class="keywordtype">double</span> value) = 0;</div>
+<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160; </div>
+<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;  <span class="keyword">virtual</span> <a class="code" href="classgrpc_1_1experimental_1_1_call_metric_recorder.html">CallMetricRecorder</a>&amp; <a class="code" href="classgrpc_1_1experimental_1_1_call_metric_recorder.html#ab7c49b6bbc8f76c134d8fe951604f7ad">RecordRequestCostMetric</a>(<a class="code" href="classgrpc_1_1string__ref.html">string_ref</a> name,</div>
+<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;                                                      <span class="keywordtype">double</span> value) = 0;</div>
+<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160; </div>
+<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;  <span class="keyword">virtual</span> <a class="code" href="classgrpc_1_1experimental_1_1_call_metric_recorder.html">CallMetricRecorder</a>&amp; <a class="code" href="classgrpc_1_1experimental_1_1_call_metric_recorder.html#a510b46e0f9ed3300edb4517d8a779193">RecordNamedMetric</a>(<a class="code" href="classgrpc_1_1string__ref.html">string_ref</a> name,</div>
+<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;                                                <span class="keywordtype">double</span> value) = 0;</div>
+<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;};</div>
+<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160; </div>
+<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;}  <span class="comment">// namespace experimental</span></div>
+<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;}  <span class="comment">// namespace grpc</span></div>
+<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160; </div>
+<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;<span class="preprocessor">#endif  // GRPCPP_EXT_CALL_METRIC_RECORDER_H</span></div>
 </div><!-- fragment --></div><!-- contents -->
 <div class="ttc" id="aclassgrpc_1_1string__ref_html"><div class="ttname"><a href="classgrpc_1_1string__ref.html">grpc::string_ref</a></div><div class="ttdoc">This class is a non owning reference to a string.</div><div class="ttdef"><b>Definition:</b> string_ref.h:41</div></div>
 <div class="ttc" id="anamespacegrpc_html"><div class="ttname"><a href="namespacegrpc.html">grpc</a></div><div class="ttdoc">An Alarm posts the user-provided tag to its associated completion queue or invokes the user-provided ...</div><div class="ttdef"><b>Definition:</b> alarm.h:32</div></div>
@@ -143,9 +146,10 @@ $(function() {
 <div class="ttc" id="aclassgrpc_1_1experimental_1_1_call_metric_recorder_html_ab7c49b6bbc8f76c134d8fe951604f7ad"><div class="ttname"><a href="classgrpc_1_1experimental_1_1_call_metric_recorder.html#ab7c49b6bbc8f76c134d8fe951604f7ad">grpc::experimental::CallMetricRecorder::RecordRequestCostMetric</a></div><div class="ttdeci">virtual CallMetricRecorder &amp; RecordRequestCostMetric(string_ref name, double value)=0</div><div class="ttdoc">Records a call metric measurement for request cost.</div></div>
 <div class="ttc" id="agrpcpp_2support_2slice_8h_html"><div class="ttname"><a href="grpcpp_2support_2slice_8h.html">slice.h</a></div></div>
 <div class="ttc" id="ap_2impl_2sync_8h_html"><div class="ttname"><a href="p_2impl_2sync_8h.html">sync.h</a></div></div>
+<div class="ttc" id="aclassgrpc_1_1experimental_1_1_call_metric_recorder_html_a07e0572a0bd9eb0256a5049f99059629"><div class="ttname"><a href="classgrpc_1_1experimental_1_1_call_metric_recorder.html#a07e0572a0bd9eb0256a5049f99059629">grpc::experimental::CallMetricRecorder::RecordApplicationUtilizationMetric</a></div><div class="ttdeci">virtual CallMetricRecorder &amp; RecordApplicationUtilizationMetric(double value)=0</div><div class="ttdoc">Records a call metric measurement for application specific utilization.</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 19 2023 06:26:57 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Jun 27 2023 17:50:38 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

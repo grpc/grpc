@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">32.0.0</span>
+   &#160;<span id="projectnumber">33.0.0</span>
    </div>
   </td>
  </tr>
@@ -100,9 +100,9 @@ Public Types</h2></td></tr>
 <tr class="memitem:a9ef5cdd1a8c31ee078a7aa775a8d73b2"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#a9ef5cdd1a8c31ee078a7aa775a8d73b2">LookupSRVCallback</a> = absl::AnyInvocable&lt; void(absl::StatusOr&lt; std::vector&lt; <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver_1_1_s_r_v_record.html">SRVRecord</a> &gt; &gt;)&gt;</td></tr>
 <tr class="memdesc:a9ef5cdd1a8c31ee078a7aa775a8d73b2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Called with a collection of SRV records.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#a9ef5cdd1a8c31ee078a7aa775a8d73b2">More...</a><br /></td></tr>
 <tr class="separator:a9ef5cdd1a8c31ee078a7aa775a8d73b2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7e5d83913f3c6e9e67ecb23f585b9a8c"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#a7e5d83913f3c6e9e67ecb23f585b9a8c">LookupTXTCallback</a> = absl::AnyInvocable&lt; void(absl::StatusOr&lt; std::string &gt;)&gt;</td></tr>
-<tr class="memdesc:a7e5d83913f3c6e9e67ecb23f585b9a8c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Called with the result of a TXT record lookup.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#a7e5d83913f3c6e9e67ecb23f585b9a8c">More...</a><br /></td></tr>
-<tr class="separator:a7e5d83913f3c6e9e67ecb23f585b9a8c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a10f0463006effedc249bb06c810d5ffc"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#a10f0463006effedc249bb06c810d5ffc">LookupTXTCallback</a> = absl::AnyInvocable&lt; void(absl::StatusOr&lt; std::vector&lt; std::string &gt; &gt;)&gt;</td></tr>
+<tr class="memdesc:a10f0463006effedc249bb06c810d5ffc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Called with the result of a TXT record lookup.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#a10f0463006effedc249bb06c810d5ffc">More...</a><br /></td></tr>
+<tr class="separator:a10f0463006effedc249bb06c810d5ffc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
@@ -114,7 +114,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:ad2d7f668ee781c66c981b6444251013b"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver_1_1_lookup_task_handle.html">LookupTaskHandle</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#ad2d7f668ee781c66c981b6444251013b">LookupSRV</a> (<a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#a9ef5cdd1a8c31ee078a7aa775a8d73b2">LookupSRVCallback</a> on_resolve, absl::string_view name, <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a3380997754430d27e6b9832174184327">Duration</a> timeout)=0</td></tr>
 <tr class="memdesc:ad2d7f668ee781c66c981b6444251013b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Asynchronously perform an SRV record lookup.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#ad2d7f668ee781c66c981b6444251013b">More...</a><br /></td></tr>
 <tr class="separator:ad2d7f668ee781c66c981b6444251013b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af0205e1ee52aa10594b986574375ad30"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver_1_1_lookup_task_handle.html">LookupTaskHandle</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#af0205e1ee52aa10594b986574375ad30">LookupTXT</a> (<a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#a7e5d83913f3c6e9e67ecb23f585b9a8c">LookupTXTCallback</a> on_resolve, absl::string_view name, <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a3380997754430d27e6b9832174184327">Duration</a> timeout)=0</td></tr>
+<tr class="memitem:af0205e1ee52aa10594b986574375ad30"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver_1_1_lookup_task_handle.html">LookupTaskHandle</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#af0205e1ee52aa10594b986574375ad30">LookupTXT</a> (<a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#a10f0463006effedc249bb06c810d5ffc">LookupTXTCallback</a> on_resolve, absl::string_view name, <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a3380997754430d27e6b9832174184327">Duration</a> timeout)=0</td></tr>
 <tr class="memdesc:af0205e1ee52aa10594b986574375ad30"><td class="mdescLeft">&#160;</td><td class="mdescRight">Asynchronously perform a TXT record lookup.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#af0205e1ee52aa10594b986574375ad30">More...</a><br /></td></tr>
 <tr class="separator:af0205e1ee52aa10594b986574375ad30"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af52da243fc5151eb2e3ad0d1dc36e7db"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#af52da243fc5151eb2e3ad0d1dc36e7db">CancelLookup</a> (<a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver_1_1_lookup_task_handle.html">LookupTaskHandle</a> handle)=0</td></tr>
@@ -156,14 +156,14 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="a7e5d83913f3c6e9e67ecb23f585b9a8c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7e5d83913f3c6e9e67ecb23f585b9a8c">&#9670;&nbsp;</a></span>LookupTXTCallback</h2>
+<a id="a10f0463006effedc249bb06c810d5ffc"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a10f0463006effedc249bb06c810d5ffc">&#9670;&nbsp;</a></span>LookupTXTCallback</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">using <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#a7e5d83913f3c6e9e67ecb23f585b9a8c">grpc_event_engine::experimental::EventEngine::DNSResolver::LookupTXTCallback</a> =  absl::AnyInvocable&lt;void(absl::StatusOr&lt;std::string&gt;)&gt;</td>
+          <td class="memname">using <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#a10f0463006effedc249bb06c810d5ffc">grpc_event_engine::experimental::EventEngine::DNSResolver::LookupTXTCallback</a> =  absl::AnyInvocable&lt;void(absl::StatusOr&lt;std::vector&lt;std::string&gt; &gt;)&gt;</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -338,7 +338,7 @@ Public Member Functions</h2></td></tr>
         <tr>
           <td class="memname">virtual <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver_1_1_lookup_task_handle.html">LookupTaskHandle</a> grpc_event_engine::experimental::EventEngine::DNSResolver::LookupTXT </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#a7e5d83913f3c6e9e67ecb23f585b9a8c">LookupTXTCallback</a>&#160;</td>
+          <td class="paramtype"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#a10f0463006effedc249bb06c810d5ffc">LookupTXTCallback</a>&#160;</td>
           <td class="paramname"><em>on_resolve</em>, </td>
         </tr>
         <tr>
@@ -377,7 +377,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 19 2023 06:26:57 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Jun 27 2023 17:50:37 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>
