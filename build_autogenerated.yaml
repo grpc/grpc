@@ -231,6 +231,7 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/address_filtering.h
   - src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h
   - src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h
+  - src/core/ext/filters/client_channel/lb_policy/endpoint_list.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h
@@ -241,10 +242,10 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h
   - src/core/ext/filters/client_channel/lb_policy/oob_backend_metric_internal.h
   - src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h
+  - src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.h
   - src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h
   - src/core/ext/filters/client_channel/lb_policy/subchannel_list.h
   - src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.h
-  - src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.h
   - src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h
   - src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.h
   - src/core/ext/filters/client_channel/local_subchannel_pool.h
@@ -371,6 +372,7 @@ libs:
   - src/core/ext/upb-generated/envoy/config/trace/v3/trace.upb.h
   - src/core/ext/upb-generated/envoy/config/trace/v3/xray.upb.h
   - src/core/ext/upb-generated/envoy/config/trace/v3/zipkin.upb.h
+  - src/core/ext/upb-generated/envoy/data/accesslog/v3/accesslog.upb.h
   - src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.h
   - src/core/ext/upb-generated/envoy/extensions/filters/common/fault/v3/fault.upb.h
   - src/core/ext/upb-generated/envoy/extensions/filters/http/fault/v3/fault.upb.h
@@ -532,6 +534,7 @@ libs:
   - src/core/ext/upbdefs-generated/envoy/config/trace/v3/trace.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/config/trace/v3/xray.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/config/trace/v3/zipkin.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/data/accesslog/v3/accesslog.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/extensions/filters/common/fault/v3/fault.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/extensions/filters/http/fault/v3/fault.upbdefs.h
@@ -1036,6 +1039,7 @@ libs:
   - src/core/ext/filters/client_channel/http_proxy.cc
   - src/core/ext/filters/client_channel/lb_policy/address_filtering.cc
   - src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc
+  - src/core/ext/filters/client_channel/lb_policy/endpoint_list.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc
@@ -1053,7 +1057,6 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/weighted_round_robin.cc
   - src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc
   - src/core/ext/filters/client_channel/lb_policy/xds/cds.cc
-  - src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.cc
   - src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc
   - src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc
   - src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc
@@ -1189,6 +1192,7 @@ libs:
   - src/core/ext/upb-generated/envoy/config/trace/v3/trace.upb.c
   - src/core/ext/upb-generated/envoy/config/trace/v3/xray.upb.c
   - src/core/ext/upb-generated/envoy/config/trace/v3/zipkin.upb.c
+  - src/core/ext/upb-generated/envoy/data/accesslog/v3/accesslog.upb.c
   - src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.c
   - src/core/ext/upb-generated/envoy/extensions/filters/common/fault/v3/fault.upb.c
   - src/core/ext/upb-generated/envoy/extensions/filters/http/fault/v3/fault.upb.c
@@ -1350,6 +1354,7 @@ libs:
   - src/core/ext/upbdefs-generated/envoy/config/trace/v3/trace.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/config/trace/v3/xray.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/config/trace/v3/zipkin.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/data/accesslog/v3/accesslog.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/extensions/filters/common/fault/v3/fault.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/extensions/filters/http/fault/v3/fault.upbdefs.c
@@ -1954,6 +1959,7 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/address_filtering.h
   - src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h
   - src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h
+  - src/core/ext/filters/client_channel/lb_policy/endpoint_list.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h
@@ -1964,6 +1970,7 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h
   - src/core/ext/filters/client_channel/lb_policy/oob_backend_metric_internal.h
   - src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h
+  - src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.h
   - src/core/ext/filters/client_channel/lb_policy/subchannel_list.h
   - src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.h
   - src/core/ext/filters/client_channel/local_subchannel_pool.h
@@ -2368,6 +2375,7 @@ libs:
   - src/core/ext/filters/client_channel/http_proxy.cc
   - src/core/ext/filters/client_channel/lb_policy/address_filtering.cc
   - src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc
+  - src/core/ext/filters/client_channel/lb_policy/endpoint_list.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc
@@ -17159,12 +17167,12 @@ targets:
   - mac
 external_proto_libraries:
 - destination: third_party/envoy-api
-  hash: 3c7372b5cb33e5e5cc3afd82573fc6275f9a2cac8b1530e1af14f52f34047328
+  hash: 6fd3496c82919a433219733819a93b56699519a193126959e9c4fedc25e70663
   proto_prefix: third_party/envoy-api/
-  strip_prefix: data-plane-api-68d4315167352ffac71f149a43b8088397d3f33d
+  strip_prefix: data-plane-api-e53e7bbd012f81965f2e79848ad9a58ceb67201f
   urls:
-  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/68d4315167352ffac71f149a43b8088397d3f33d.tar.gz
-  - https://github.com/envoyproxy/data-plane-api/archive/68d4315167352ffac71f149a43b8088397d3f33d.tar.gz
+  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/e53e7bbd012f81965f2e79848ad9a58ceb67201f.tar.gz
+  - https://github.com/envoyproxy/data-plane-api/archive/e53e7bbd012f81965f2e79848ad9a58ceb67201f.tar.gz
 - destination: third_party/googleapis
   hash: 5bb6b0253ccf64b53d6c7249625a7e3f6c3bc6402abd52d3778bfa48258703a0
   proto_prefix: third_party/googleapis/

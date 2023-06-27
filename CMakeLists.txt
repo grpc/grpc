@@ -337,18 +337,18 @@ if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api)
   # Download the archive via HTTP, validate the checksum, and extract to third_party/envoy-api.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api
-    https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/68d4315167352ffac71f149a43b8088397d3f33d.tar.gz
-    3c7372b5cb33e5e5cc3afd82573fc6275f9a2cac8b1530e1af14f52f34047328
-    data-plane-api-68d4315167352ffac71f149a43b8088397d3f33d
+    https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/e53e7bbd012f81965f2e79848ad9a58ceb67201f.tar.gz
+    6fd3496c82919a433219733819a93b56699519a193126959e9c4fedc25e70663
+    data-plane-api-e53e7bbd012f81965f2e79848ad9a58ceb67201f
   )
 endif()
 if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api)
   # Download the archive via HTTP, validate the checksum, and extract to third_party/envoy-api.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api
-    https://github.com/envoyproxy/data-plane-api/archive/68d4315167352ffac71f149a43b8088397d3f33d.tar.gz
-    3c7372b5cb33e5e5cc3afd82573fc6275f9a2cac8b1530e1af14f52f34047328
-    data-plane-api-68d4315167352ffac71f149a43b8088397d3f33d
+    https://github.com/envoyproxy/data-plane-api/archive/e53e7bbd012f81965f2e79848ad9a58ceb67201f.tar.gz
+    6fd3496c82919a433219733819a93b56699519a193126959e9c4fedc25e70663
+    data-plane-api-e53e7bbd012f81965f2e79848ad9a58ceb67201f
   )
 endif()
 # Setup external proto library at third_party/googleapis with 2 download URLs
@@ -1690,6 +1690,7 @@ add_library(grpc
   src/core/ext/filters/client_channel/http_proxy.cc
   src/core/ext/filters/client_channel/lb_policy/address_filtering.cc
   src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc
+  src/core/ext/filters/client_channel/lb_policy/endpoint_list.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc
@@ -1707,7 +1708,6 @@ add_library(grpc
   src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/weighted_round_robin.cc
   src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc
   src/core/ext/filters/client_channel/lb_policy/xds/cds.cc
-  src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.cc
   src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc
   src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc
   src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc
@@ -1843,6 +1843,7 @@ add_library(grpc
   src/core/ext/upb-generated/envoy/config/trace/v3/trace.upb.c
   src/core/ext/upb-generated/envoy/config/trace/v3/xray.upb.c
   src/core/ext/upb-generated/envoy/config/trace/v3/zipkin.upb.c
+  src/core/ext/upb-generated/envoy/data/accesslog/v3/accesslog.upb.c
   src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.c
   src/core/ext/upb-generated/envoy/extensions/filters/common/fault/v3/fault.upb.c
   src/core/ext/upb-generated/envoy/extensions/filters/http/fault/v3/fault.upb.c
@@ -2004,6 +2005,7 @@ add_library(grpc
   src/core/ext/upbdefs-generated/envoy/config/trace/v3/trace.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/config/trace/v3/xray.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/config/trace/v3/zipkin.upbdefs.c
+  src/core/ext/upbdefs-generated/envoy/data/accesslog/v3/accesslog.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/extensions/filters/common/fault/v3/fault.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/extensions/filters/http/fault/v3/fault.upbdefs.c
@@ -2729,6 +2731,7 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/http_proxy.cc
   src/core/ext/filters/client_channel/lb_policy/address_filtering.cc
   src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc
+  src/core/ext/filters/client_channel/lb_policy/endpoint_list.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc

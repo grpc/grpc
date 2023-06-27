@@ -223,6 +223,11 @@ Span Span::StartSpan(absl::string_view name,
   std::string parent_span_id = parent_context.SpanId();
   std::string span_id = GenerateSpanId();
   bool should_sample = parent_context.IsSampled();
+  if (!should_sample) {
+    // Resampling here so that it's possible to collect trace on server side
+    // if client tracing is not enabled.
+    should_sample = ShouldSample(std::string(trace_id));
+  }
   auto start_time = absl::Now();
   SpanContext context(trace_id, span_id, should_sample);
   return Span(std::string(name), parent_span_id, start_time, context);

@@ -703,7 +703,7 @@ absl::Status WeightedRoundRobin::UpdateLocked(UpdateArgs args) {
   latest_pending_subchannel_list_ =
       MakeRefCounted<WeightedRoundRobinSubchannelList>(
           this, std::move(addresses), args.args);
-  latest_pending_subchannel_list_->StartWatchingLocked();
+  latest_pending_subchannel_list_->StartWatchingLocked(args.args);
   // If the new list is empty, immediately promote it to
   // subchannel_list_ and report TRANSIENT_FAILURE.
   if (latest_pending_subchannel_list_->num_subchannels() == 0) {

@@ -86,6 +86,14 @@ class RpcBehaviorLbPolicy : public LoadBalancingPolicy {
   absl::Status UpdateLocked(UpdateArgs args) override {
     RefCountedPtr<RpcBehaviorLbPolicyConfig> config = std::move(args.config);
     rpc_behavior_ = std::string(config->rpc_behavior());
+    // Use correct config for the delegate load balancing policy
+    auto delegate_config =
+        CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
+            grpc_core::Json::FromArray({grpc_core::Json::FromObject(
+                {{std::string(delegate_->name()),
+                  grpc_core::Json::FromObject({})}})}));
+    GPR_ASSERT(delegate_config.ok());
+    args.config = std::move(*delegate_config);
     return delegate_->UpdateLocked(std::move(args));
   }
 
