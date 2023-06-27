@@ -52,11 +52,12 @@ class ChildPolicyHandler::Helper
       : ParentOwningDelegatingChannelControlHelper(std::move(parent)) {}
 
   RefCountedPtr<SubchannelInterface> CreateSubchannel(
-      ServerAddress address, const ChannelArgs& args) override {
+      const grpc_resolved_address& address,
+      const ChannelArgs& per_address_args, const ChannelArgs& args) override {
     if (parent()->shutting_down_) return nullptr;
     if (!CalledByCurrentChild() && !CalledByPendingChild()) return nullptr;
     return parent()->channel_control_helper()->CreateSubchannel(
-        std::move(address), args);
+        address, per_address_args, args);
   }
 
   void UpdateState(grpc_connectivity_state state, const absl::Status& status,

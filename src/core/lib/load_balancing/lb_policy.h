@@ -50,7 +50,7 @@
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/load_balancing/subchannel_interface.h"
-#include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 
 namespace grpc_core {
 
@@ -283,8 +283,10 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     virtual ~ChannelControlHelper() = default;
 
     /// Creates a new subchannel with the specified channel args.
+    /// The args and per_address_args will be merged by the channel.
     virtual RefCountedPtr<SubchannelInterface> CreateSubchannel(
-        ServerAddress address, const ChannelArgs& args) = 0;
+        const grpc_resolved_address& address,
+        const ChannelArgs& per_address_args, const ChannelArgs& args) = 0;
 
     /// Sets the connectivity state and returns a new picker to be used
     /// by the client channel.
@@ -340,9 +342,9 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   /// Data passed to the UpdateLocked() method when new addresses and
   /// config are available.
   struct UpdateArgs {
-    /// A list of addresses, or an error indicating a failure to obtain the
-    /// list of addresses.
-    absl::StatusOr<ServerAddressList> addresses;
+    /// A list of endpoints, each with one or more address, or an error
+    /// indicating a failure to obtain the list of addresses.
+    absl::StatusOr<EndpointAddressesList> addresses;
     /// The LB policy config.
     RefCountedPtr<Config> config;
     /// A human-readable note providing context about the name resolution that

@@ -807,7 +807,8 @@ PickFirst::SubchannelList::SubchannelList(RefCountedPtr<PickFirst> policy,
   // Create a subchannel for each address.
   for (const ServerAddress& address : addresses) {
     RefCountedPtr<SubchannelInterface> subchannel =
-        policy_->channel_control_helper()->CreateSubchannel(address, args_);
+        policy_->channel_control_helper()->CreateSubchannel(
+            address.address(), address.args(), args_);
     if (subchannel == nullptr) {
       // Subchannel could not be created.
       if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {

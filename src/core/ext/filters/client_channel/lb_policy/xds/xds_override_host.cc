@@ -222,7 +222,8 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
               std::move(xds_override_host_policy)) {}
 
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
-        ServerAddress address, const ChannelArgs& args) override;
+        const grpc_resolved_address& address,
+        const ChannelArgs& per_address_args, const ChannelArgs& args) override;
     void UpdateState(grpc_connectivity_state state, const absl::Status& status,
                      RefCountedPtr<SubchannelPicker> picker) override;
   };
@@ -287,7 +288,8 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
       absl::StatusOr<ServerAddressList> addresses);
 
   RefCountedPtr<SubchannelWrapper> AdoptSubchannel(
-      ServerAddress address, RefCountedPtr<SubchannelInterface> subchannel);
+      const grpc_resolved_address& address,
+      RefCountedPtr<SubchannelInterface> subchannel);
 
   void UnsetSubchannel(absl::string_view key, SubchannelWrapper* subchannel);
 
@@ -579,8 +581,9 @@ absl::StatusOr<ServerAddressList> XdsOverrideHostLb::UpdateAddressMap(
 
 RefCountedPtr<XdsOverrideHostLb::SubchannelWrapper>
 XdsOverrideHostLb::AdoptSubchannel(
-    ServerAddress address, RefCountedPtr<SubchannelInterface> subchannel) {
-  auto key = grpc_sockaddr_to_uri(&address.address());
+    const grpc_resolved_address& address,
+    RefCountedPtr<SubchannelInterface> subchannel) {
+  auto key = grpc_sockaddr_to_uri(&address);
   if (!key.ok()) {
     return subchannel;
   }
@@ -644,9 +647,10 @@ void XdsOverrideHostLb::OnSubchannelConnectivityStateChange(
 //
 
 RefCountedPtr<SubchannelInterface> XdsOverrideHostLb::Helper::CreateSubchannel(
-    ServerAddress address, const ChannelArgs& args) {
-  auto subchannel =
-      parent()->channel_control_helper()->CreateSubchannel(address, args);
+    const grpc_resolved_address& address,
+    const ChannelArgs& per_address_args, const ChannelArgs& args) {
+  auto subchannel = parent()->channel_control_helper()->CreateSubchannel(
+      address, per_address_args, args);
   return parent()->AdoptSubchannel(address, subchannel);
 }
 

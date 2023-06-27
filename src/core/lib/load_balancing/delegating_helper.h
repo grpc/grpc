@@ -33,7 +33,7 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/subchannel_interface.h"
-#include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/lib/security/credentials/credentials.h"
 
 namespace grpc_core {
@@ -44,8 +44,9 @@ class LoadBalancingPolicy::DelegatingChannelControlHelper
     : public LoadBalancingPolicy::ChannelControlHelper {
  public:
   RefCountedPtr<SubchannelInterface> CreateSubchannel(
-      ServerAddress address, const ChannelArgs& args) override {
-    return parent_helper()->CreateSubchannel(std::move(address), args);
+      const grpc_resolved_address& address, const ChannelArgs& per_address_args,
+      const ChannelArgs& args) override {
+    return parent_helper()->CreateSubchannel(address, per_address_args, args);
   }
 
   void UpdateState(grpc_connectivity_state state, const absl::Status& status,

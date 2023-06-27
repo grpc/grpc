@@ -209,7 +209,9 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
       };
 
       RefCountedPtr<SubchannelInterface> CreateSubchannel(
-          ServerAddress address, const ChannelArgs& args) override;
+          const grpc_resolved_address& address,
+          const ChannelArgs& per_address_args,
+          const ChannelArgs& args) override;
 
       // Called when the child policy reports a connectivity state update.
       void OnStateUpdate(absl::optional<grpc_connectivity_state> old_state,
@@ -756,10 +758,11 @@ void WeightedRoundRobin::WrrEndpointList::WrrEndpoint::OobWatcher::
 
 RefCountedPtr<SubchannelInterface>
 WeightedRoundRobin::WrrEndpointList::WrrEndpoint::CreateSubchannel(
-    ServerAddress address, const ChannelArgs& args) {
+    const grpc_resolved_address& address,
+    const ChannelArgs& per_address_args, const ChannelArgs& args) {
   auto* wrr = policy<WeightedRoundRobin>();
-  auto subchannel =
-      wrr->channel_control_helper()->CreateSubchannel(std::move(address), args);
+  auto subchannel = wrr->channel_control_helper()->CreateSubchannel(
+      address, per_address_args, args);
   // Start OOB watch if configured.
   if (wrr->config_->enable_oob_load_report()) {
     subchannel->AddDataWatcher(MakeOobBackendMetricWatcher(

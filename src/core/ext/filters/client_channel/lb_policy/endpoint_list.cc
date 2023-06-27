@@ -61,8 +61,9 @@ class EndpointList::Endpoint::Helper
   ~Helper() override { endpoint_.reset(DEBUG_LOCATION, "Helper"); }
 
   RefCountedPtr<SubchannelInterface> CreateSubchannel(
-      ServerAddress address, const ChannelArgs& args) override {
-    return endpoint_->CreateSubchannel(std::move(address), args);
+      const grpc_resolved_address& address,
+      const ChannelArgs& per_address_args, const ChannelArgs& args) override {
+    return endpoint_->CreateSubchannel(address, per_address_args, args);
   }
 
   void UpdateState(
@@ -152,9 +153,10 @@ size_t EndpointList::Endpoint::Index() const {
 }
 
 RefCountedPtr<SubchannelInterface> EndpointList::Endpoint::CreateSubchannel(
-    ServerAddress address, const ChannelArgs& args) {
+    const grpc_resolved_address& address,
+    const ChannelArgs& per_address_args, const ChannelArgs& args) {
   return endpoint_list_->channel_control_helper()->CreateSubchannel(
-      std::move(address), args);
+      address, per_address_args, args);
 }
 
 //

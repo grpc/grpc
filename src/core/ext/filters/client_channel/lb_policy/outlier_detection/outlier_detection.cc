@@ -370,7 +370,8 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
               std::move(outlier_detection_policy)) {}
 
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
-        ServerAddress address, const ChannelArgs& args) override;
+        const grpc_resolved_address& address,
+        const ChannelArgs& per_address_args, const ChannelArgs& args) override;
     void UpdateState(grpc_connectivity_state state, const absl::Status& status,
                      RefCountedPtr<SubchannelPicker> picker) override;
   };
@@ -397,7 +398,7 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
 
   // Returns the address map key for an address, or the empty string if
   // the address should be ignored.
-  static std::string MakeKeyForAddress(const ServerAddress& address);
+  static std::string MakeKeyForAddress(const grpc_resolved_address& address);
 
   void ShutdownLocked() override;
 
@@ -597,9 +598,9 @@ OutlierDetectionLb::~OutlierDetectionLb() {
 }
 
 std::string OutlierDetectionLb::MakeKeyForAddress(
-    const ServerAddress& address) {
+    const grpc_resolved_address& address) {
   // Use only the address, not the attributes.
-  auto addr_str = grpc_sockaddr_to_string(&address.address(), false);
+  auto addr_str = grpc_sockaddr_to_string(&address, false);
   // If address couldn't be stringified, ignore it.
   if (!addr_str.ok()) return "";
   return std::move(*addr_str);
@@ -674,7 +675,7 @@ absl::Status OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
   if (args.addresses.ok()) {
     std::set<std::string> current_addresses;
     for (const ServerAddress& address : *args.addresses) {
-      std::string address_key = MakeKeyForAddress(address);
+      std::string address_key = MakeKeyForAddress(address.address());
       if (address_key.empty()) continue;
       auto& subchannel_state = subchannel_state_map_[address_key];
       if (subchannel_state == nullptr) {
@@ -775,7 +776,8 @@ OrphanablePtr<LoadBalancingPolicy> OutlierDetectionLb::CreateChildPolicyLocked(
 //
 
 RefCountedPtr<SubchannelInterface> OutlierDetectionLb::Helper::CreateSubchannel(
-    ServerAddress address, const ChannelArgs& args) {
+    const grpc_resolved_address& address,
+    const ChannelArgs& per_address_args, const ChannelArgs& args) {
   if (parent()->shutting_down_) return nullptr;
   // If the address has the DisableOutlierDetectionAttribute attribute,
   // ignore it for raw connectivity state updates.
@@ -784,15 +786,14 @@ RefCountedPtr<SubchannelInterface> OutlierDetectionLb::Helper::CreateSubchannel(
   // https://github.com/grpc/grpc/issues/32967.  Remove this as part of
   // implementing dualstack backend support.
   const bool disable_via_raw_connectivity_watch =
-      address.args().GetInt(GRPC_ARG_OUTLIER_DETECTION_DISABLE) == 1;
+      per_address_args.GetInt(GRPC_ARG_OUTLIER_DETECTION_DISABLE) == 1;
   RefCountedPtr<SubchannelState> subchannel_state;
   std::string key = MakeKeyForAddress(address);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
     gpr_log(GPR_INFO,
-            "[outlier_detection_lb %p] using key %s for subchannel "
-            "address %s, disable_via_raw_connectivity_watch=%d",
-            parent(), key.c_str(), address.ToString().c_str(),
-            disable_via_raw_connectivity_watch);
+            "[outlier_detection_lb %p] using key %s for subchannel, "
+            "disable_via_raw_connectivity_watch=%d",
+            parent(), key.c_str(), disable_via_raw_connectivity_watch);
   }
   if (!key.empty()) {
     auto it = parent()->subchannel_state_map_.find(key);
@@ -802,8 +803,8 @@ RefCountedPtr<SubchannelInterface> OutlierDetectionLb::Helper::CreateSubchannel(
   }
   auto subchannel = MakeRefCounted<SubchannelWrapper>(
       subchannel_state,
-      parent()->channel_control_helper()->CreateSubchannel(std::move(address),
-                                                           args),
+      parent()->channel_control_helper()->CreateSubchannel(
+          address, per_address_args, args),
       disable_via_raw_connectivity_watch);
   if (subchannel_state != nullptr) {
     subchannel_state->AddSubchannel(subchannel.get());

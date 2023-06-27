@@ -455,7 +455,8 @@ class GrpcLb : public LoadBalancingPolicy {
         : ParentOwningDelegatingChannelControlHelper(std::move(parent)) {}
 
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
-        ServerAddress address, const ChannelArgs& args) override;
+        const grpc_resolved_address& address,
+        const ChannelArgs& per_address_args, const ChannelArgs& args) override;
     void UpdateState(grpc_connectivity_state state, const absl::Status& status,
                      RefCountedPtr<SubchannelPicker> picker) override;
     void RequestReresolution() override;
@@ -769,19 +770,21 @@ GrpcLb::PickResult GrpcLb::Picker::Pick(PickArgs args) {
 //
 
 RefCountedPtr<SubchannelInterface> GrpcLb::Helper::CreateSubchannel(
-    ServerAddress address, const ChannelArgs& args) {
+    const grpc_resolved_address& address,
+    const ChannelArgs& per_address_args, const ChannelArgs& args) {
   if (parent()->shutting_down_) return nullptr;
-  const auto* arg = address.args().GetObject<TokenAndClientStatsArg>();
+  const auto* arg = per_address_args.GetObject<TokenAndClientStatsArg>();
   if (arg == nullptr) {
+    auto addr_str = grpc_sockaddr_to_string(&address, false);
     Crash(
-        absl::StrFormat("[grpclb %p] no TokenAndClientStatsArg for address %p",
-                        parent(), address.ToString().c_str()));
+        absl::StrFormat("[grpclb %p] no TokenAndClientStatsArg for address %s",
+                        parent(), addr_str.value_or("N/A").c_str()));
   }
   std::string lb_token = arg->lb_token();
   RefCountedPtr<GrpcLbClientStats> client_stats = arg->client_stats();
   return MakeRefCounted<SubchannelWrapper>(
-      parent()->channel_control_helper()->CreateSubchannel(std::move(address),
-                                                           args),
+      parent()->channel_control_helper()->CreateSubchannel(
+          address, per_address_args, args),
       parent()->Ref(DEBUG_LOCATION, "SubchannelWrapper"), std::move(lb_token),
       std::move(client_stats));
 }
