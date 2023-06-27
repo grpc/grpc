@@ -319,13 +319,15 @@ class ExperimentsCompiler(object):
                 "//",
             )
 
-            file_path_list = output_file.split("/")[0:-1]
-            file_name = output_file.split("/")[-1].split(".")[0]
+            if mode != "test":
+                include_guard = "GRPC_SRC_CORE_LIB_EXPERIMENTS_EXPERIMENTS_H"
+            else:
+                file_path_list = output_file.split("/")[0:-1]
+                file_name = output_file.split("/")[-1].split(".")[0]
 
-            include_guard = (
-                f"GRPC_{'_'.join(path.upper() for path in file_path_list)}_{file_name.upper()}_H"
-            )
-
+                include_guard = (
+                    f"GRPC_{'_'.join(path.upper() for path in file_path_list)}_{file_name.upper()}_H"
+                )
 
             print(f"#ifndef {include_guard}", file=H)
             print(f"#define {include_guard}", file=H)
