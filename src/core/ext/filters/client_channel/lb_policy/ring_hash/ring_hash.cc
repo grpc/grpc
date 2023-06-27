@@ -641,14 +641,13 @@ absl::Status RingHash::UpdateLocked(UpdateArgs args) {
   std::map<ServerAddress, OrphanablePtr<RingHashEndpoint>> endpoint_map;
   for (size_t i = 0; i < addresses_.size(); ++i) {
     const ServerAddress& address = addresses_[i];
-    auto addr_key = address.WithoutAttributes();
     // If present in old map, retain it; otherwise, create a new one.
-    auto it = endpoint_map_.find(addr_key);
+    auto it = endpoint_map_.find(address);
     if (it != endpoint_map_.end()) {
       it->second->set_index(i);
-      endpoint_map.emplace(addr_key, std::move(it->second));
+      endpoint_map.emplace(address, std::move(it->second));
     } else {
-      endpoint_map.emplace(addr_key,
+      endpoint_map.emplace(address,
                            MakeOrphanable<RingHashEndpoint>(Ref(), i));
     }
   }
@@ -786,7 +785,7 @@ void RingHash::UpdateAggregatedConnectivityStateLocked(
   if (start_connection_attempt && entered_transient_failure) {
     size_t first_idle_index = addresses_.size();
     for (size_t i = 0; i < addresses_.size(); ++i) {
-      auto it = endpoint_map_.find(addresses_[i].WithoutAttributes());
+      auto it = endpoint_map_.find(addresses_[i]);
       GPR_ASSERT(it != endpoint_map_.end());
       if (it->second->connectivity_state() == GRPC_CHANNEL_CONNECTING) {
         first_idle_index = addresses_.size();
@@ -798,8 +797,7 @@ void RingHash::UpdateAggregatedConnectivityStateLocked(
       }
     }
     if (first_idle_index != addresses_.size()) {
-      auto it =
-          endpoint_map_.find(addresses_[first_idle_index].WithoutAttributes());
+      auto it = endpoint_map_.find(addresses_[first_idle_index]);
       GPR_ASSERT(it != endpoint_map_.end());
       if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
         gpr_log(GPR_INFO,

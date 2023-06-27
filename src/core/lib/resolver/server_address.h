@@ -57,12 +57,6 @@ class ServerAddress {
   ServerAddress(ServerAddress&& other) noexcept;
   ServerAddress& operator=(ServerAddress&& other) noexcept;
 
-  // Returns a copy of this address without any attributes.
-  // This is suitable for determining subchannel uniqueness.
-  ServerAddress WithoutAttributes() const {
-    return ServerAddress(address_, args_);
-  }
-
   bool operator==(const ServerAddress& other) const { return Cmp(other) == 0; }
   bool operator<(const ServerAddress& other) const { return Cmp(other) < 0; }
 
