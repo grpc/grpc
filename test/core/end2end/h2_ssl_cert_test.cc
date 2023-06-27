@@ -66,14 +66,17 @@ typedef enum { NONE, SELF_SIGNED, SIGNED, BAD_CERT_PAIR } certtype;
 class TestFixture : public SecureFixture {
  public:
   TestFixture(grpc_ssl_client_certificate_request_type request_type,
-              certtype cert_type)
-      : request_type_(request_type), cert_type_(cert_type) {}
+              certtype cert_type, bool send_client_ca_list)
+      : request_type_(request_type),
+        cert_type_(cert_type),
+        send_client_ca_list_(send_client_ca_list) {}
 
   static auto MakeFactory(grpc_ssl_client_certificate_request_type request_type,
-                          certtype cert_type) {
-    return [request_type, cert_type](const grpc_core::ChannelArgs&,
-                                     const grpc_core::ChannelArgs&) {
-      return std::make_unique<TestFixture>(request_type, cert_type);
+                          certtype cert_type, bool send_client_ca_list) {
+    return [request_type, cert_type, send_client_ca_list](
+               const grpc_core::ChannelArgs&, const grpc_core::ChannelArgs&) {
+      return std::make_unique<TestFixture>(request_type, cert_type,
+                                           send_client_ca_list);
     };
   }
 
@@ -95,6 +98,8 @@ class TestFixture : public SecureFixture {
     }
     grpc_server_credentials* ssl_creds = grpc_ssl_server_credentials_create_ex(
         test_root_cert, &pem_cert_key_pair, 1, request_type_, nullptr);
+    grpc_ssl_server_credentials_set_send_client_ca_list(ssl_creds,
+                                                        send_client_ca_list_);
     if (args.Contains(FAIL_AUTH_CHECK_SERVER_ARG_NAME)) {
       grpc_auth_metadata_processor processor = {process_auth_failure, nullptr,
                                                 nullptr};
@@ -131,20 +136,23 @@ class TestFixture : public SecureFixture {
 
   grpc_ssl_client_certificate_request_type request_type_;
   certtype cert_type_;
+  bool send_client_ca_list_;
 };
 
-#define TEST_NAME(enum_name, cert_type, result) \
-  "chttp2/ssl_" #enum_name "_" #cert_type "_" #result "_"
+#define TEST_NAME(enum_name, cert_type, send_client_ca_list, result)           \
+  "chttp2/ssl_" #enum_name "_" #cert_type "_" #send_client_ca_list "_" #result \
+  "_"
 
 typedef enum { SUCCESS, FAIL } test_result;
 
-#define SSL_TEST(request_type, cert_type, result)                              \
-  {                                                                            \
-    {TEST_NAME(request_type, cert_type, result),                               \
-     FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |                              \
-         FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL,                                 \
-     "foo.test.google.fr", TestFixture::MakeFactory(request_type, cert_type)}, \
-        result                                                                 \
+#define SSL_TEST(request_type, cert_type, send_client_ca_list, result)        \
+  {                                                                           \
+    {TEST_NAME(request_type, cert_type, send_client_ca_list, result),         \
+     FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |                             \
+         FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL,                                \
+     "foo.test.google.fr",                                                    \
+     TestFixture::MakeFactory(request_type, cert_type, send_client_ca_list)}, \
+        result                                                                \
   }
 
 // All test configurations
@@ -154,43 +162,86 @@ struct CoreTestConfigWrapper {
 };
 
 static CoreTestConfigWrapper configs[] = {
-    SSL_TEST(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, NONE, SUCCESS),
-    SSL_TEST(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, SELF_SIGNED, SUCCESS),
-    SSL_TEST(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, SIGNED, SUCCESS),
-    SSL_TEST(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, BAD_CERT_PAIR, FAIL),
+    SSL_TEST(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, NONE, true, SUCCESS),
+    SSL_TEST(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, NONE, false, SUCCESS),
+    SSL_TEST(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, SELF_SIGNED, true,
+             SUCCESS),
+    SSL_TEST(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, SELF_SIGNED, false,
+             SUCCESS),
+    SSL_TEST(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, SIGNED, true, SUCCESS),
+    SSL_TEST(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, SIGNED, false, SUCCESS),
+    SSL_TEST(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, BAD_CERT_PAIR, true,
+             FAIL),
+    SSL_TEST(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, BAD_CERT_PAIR, false,
+             FAIL),
 
-    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY, NONE,
+    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY, NONE, true,
+             SUCCESS),
+    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY, NONE, false,
              SUCCESS),
     SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY, SELF_SIGNED,
+             true, SUCCESS),
+    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY, SELF_SIGNED,
+             false, SUCCESS),
+    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY, SIGNED, true,
              SUCCESS),
-    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY, SIGNED,
+    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY, SIGNED, false,
              SUCCESS),
     SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY, BAD_CERT_PAIR,
-             FAIL),
+             true, FAIL),
+    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY, BAD_CERT_PAIR,
+             false, FAIL),
 
-    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY, NONE, SUCCESS),
-    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY, SELF_SIGNED, FAIL),
-    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY, SIGNED, SUCCESS),
+    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY, NONE, true,
+             SUCCESS),
+    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY, NONE, false,
+             SUCCESS),
+    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY, SELF_SIGNED, true,
+             FAIL),
+    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY, SELF_SIGNED, false,
+             FAIL),
+    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY, SIGNED, true,
+             SUCCESS),
+    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY, SIGNED, false,
+             SUCCESS),
     SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY, BAD_CERT_PAIR,
-             FAIL),
+             true, FAIL),
+    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY, BAD_CERT_PAIR,
+             false, FAIL),
 
     SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY,
-             NONE, FAIL),
+             NONE, true, FAIL),
     SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY,
-             SELF_SIGNED, SUCCESS),
+             NONE, false, FAIL),
     SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY,
-             SIGNED, SUCCESS),
+             SELF_SIGNED, true, SUCCESS),
     SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY,
-             BAD_CERT_PAIR, FAIL),
+             SELF_SIGNED, false, SUCCESS),
+    SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY,
+             SIGNED, true, SUCCESS),
+    SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY,
+             SIGNED, false, SUCCESS),
+    SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY,
+             BAD_CERT_PAIR, true, FAIL),
+    SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY,
+             BAD_CERT_PAIR, false, FAIL),
 
     SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY, NONE,
-             FAIL),
+             true, FAIL),
+    SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY, NONE,
+             false, FAIL),
     SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY,
-             SELF_SIGNED, FAIL),
+             SELF_SIGNED, true, FAIL),
+    SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY,
+             SELF_SIGNED, false, FAIL),
     SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY, SIGNED,
-             SUCCESS),
+             true, SUCCESS),
+    SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY, SIGNED,
+             false, SUCCESS),
     SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY,
-             BAD_CERT_PAIR, FAIL),
+             BAD_CERT_PAIR, true, FAIL),
+    SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY,
+             BAD_CERT_PAIR, false, FAIL),
 };
 
 static void simple_request_body(grpc_core::CoreTestFixture* f,
