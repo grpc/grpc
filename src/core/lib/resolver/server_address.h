@@ -59,13 +59,6 @@ class EndpointAddresses {
   EndpointAddresses(EndpointAddresses&& other) noexcept;
   EndpointAddresses& operator=(EndpointAddresses&& other) noexcept;
 
-// FIXME: remove in separate PR
-  // Returns a copy of this address without any attributes.
-  // This is suitable for determining subchannel uniqueness.
-  EndpointAddresses WithoutAttributes() const {
-    return EndpointAddresses(addresses_, args_);
-  }
-
   bool operator==(const EndpointAddresses& other) const {
     return Cmp(other) == 0;
   }
