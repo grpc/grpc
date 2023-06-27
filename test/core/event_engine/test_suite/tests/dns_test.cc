@@ -27,7 +27,6 @@
 #include <vector>
 
 #include "absl/status/status.h"
-#include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
@@ -42,7 +41,6 @@
 
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/notification.h"
-#include "src/core/lib/iomgr/sockaddr.h"
 #include "test/core/event_engine/test_suite/event_engine_test_framework.h"
 #include "test/core/util/fake_udp_and_tcp_server.h"
 #include "test/core/util/port.h"
@@ -142,9 +140,9 @@ class EventEngineDNSTest : public EventEngineTest {
     std::string kDNSServerPath = "test/cpp/naming/utils/dns_server";
     std::string kDNSResolverPath = "test/cpp/naming/utils/dns_resolver";
     std::string kTCPConnectPath = "test/cpp/naming/utils/tcp_connect";
-    // HACK: Hyrum's law.
     if (!grpc_core::GetEnv("TEST_SRCDIR").has_value()) {
-      // Invoke the .sh and .py scripts directly where they are in source code.
+      // Invoke the .sh and .py scripts directly where they are in source code
+      // if we are not running with bazel.
       kPythonWrapper += ".sh";
       kDNSServerPath += ".py";
       kDNSResolverPath += ".py";
