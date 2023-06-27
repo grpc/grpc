@@ -252,7 +252,6 @@ grpc_ssl_server_certificate_config* grpc_ssl_server_certificate_config_create(
     config->pem_key_cert_pairs[i].private_key =
         gpr_strdup(pem_key_cert_pairs[i].private_key);
   }
-  config->send_client_ca_list = send_client_ca_list_;
   return config;
 }
 

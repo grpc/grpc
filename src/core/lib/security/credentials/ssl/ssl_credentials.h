@@ -100,9 +100,9 @@ class grpc_ssl_server_credentials final : public grpc_server_credentials {
     return certificate_config_fetcher_.cb != nullptr;
   }
 
-  void set_send_client_ca_list(bool set_client_ca_list) {
-    set_client_ca_list_ = set_client_ca_list;
-    config_.set_client_ca_list = set_client_ca_list;
+  void set_send_client_ca_list(bool send_client_ca_list) {
+    send_client_ca_list_ = send_client_ca_list;
+    config_.send_client_ca_list = send_client_ca_list;
   }
 
   grpc_ssl_certificate_config_reload_status FetchCertConfig(
@@ -116,6 +116,8 @@ class grpc_ssl_server_credentials final : public grpc_server_credentials {
   // version should be done for testing purposes only.
   void set_min_tls_version(grpc_tls_version min_tls_version);
   void set_max_tls_version(grpc_tls_version max_tls_version);
+
+  const grpc_ssl_server_config& config() const { return config_; }
 
  private:
   void build_config(
