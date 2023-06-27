@@ -151,7 +151,7 @@ class RingHash : public LoadBalancingPolicy {
    public:
     struct RingEntry {
       uint64_t hash;
-      size_t endpoint_index;  // Index into RingHash::addresses_.
+      size_t endpoint_index;  // Index into RingHash::endpoints_.
     };
 
     Ring(RingHash* ring_hash, RingHashLbConfig* config);
@@ -165,7 +165,7 @@ class RingHash : public LoadBalancingPolicy {
   // State for a particular endpoint.  Delegates to a pick_first child policy.
   class RingHashEndpoint : public InternallyRefCounted<RingHashEndpoint> {
    public:
-    // index is the index into RingHash::addresses_ of this endpoint.
+    // index is the index into RingHash::endpoints_ of this endpoint.
     RingHashEndpoint(RefCountedPtr<RingHash> ring_hash, size_t index)
         : ring_hash_(std::move(ring_hash)), index_(index) {}
 
@@ -207,7 +207,7 @@ class RingHash : public LoadBalancingPolicy {
 
     // Ref to our parent.
     RefCountedPtr<RingHash> ring_hash_;
-    size_t index_;  // Index into RingHash::addresses_ of this endpoint.
+    size_t index_;  // Index into RingHash::endpoints_ of this endpoint.
 
     // The pick_first child policy.
     OrphanablePtr<LoadBalancingPolicy> child_policy_;
@@ -222,7 +222,7 @@ class RingHash : public LoadBalancingPolicy {
     explicit Picker(RefCountedPtr<RingHash> ring_hash)
         : ring_hash_(std::move(ring_hash)),
           ring_(ring_hash_->ring_),
-          endpoints_(ring_hash_->addresses_.size()) {
+          endpoints_(ring_hash_->endpoints_.size()) {
       for (const auto& p : ring_hash_->endpoint_map_) {
         endpoints_[p.second->index()] = p.second->GetInfoForPicker();
       }
@@ -280,12 +280,12 @@ class RingHash : public LoadBalancingPolicy {
   void UpdateAggregatedConnectivityStateLocked(bool entered_transient_failure,
                                                absl::Status status);
 
-  // Current address list, channel args, and ring.
-  ServerAddressList addresses_;
+  // Current endpoint list, channel args, and ring.
+  EndpointAddressesList endpoints_;
   ChannelArgs args_;
   RefCountedPtr<Ring> ring_;
 
-  std::map<ServerAddress, OrphanablePtr<RingHashEndpoint>> endpoint_map_;
+  std::map<EndpointAddressSet, OrphanablePtr<RingHashEndpoint>> endpoint_map_;
 
   // TODO(roth): If we ever change the helper UpdateState() API to not
   // need the status reported for TRANSIENT_FAILURE state (because
@@ -372,39 +372,40 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
 
 RingHash::Ring::Ring(RingHash* ring_hash, RingHashLbConfig* config) {
   // Store the weights while finding the sum.
-  struct AddressWeight {
-    std::string address;
+  struct EndpointWeight {
+    std::string address;  // Key by endpoint's first address.
     // Default weight is 1 for the cases where a weight is not provided,
     // each occurrence of the address will be counted a weight value of 1.
     uint32_t weight = 1;
     double normalized_weight;
   };
-  std::vector<AddressWeight> address_weights;
+  std::vector<EndpointWeight> endpoint_weights;
   size_t sum = 0;
-  const ServerAddressList& addresses = ring_hash->addresses_;
-  address_weights.reserve(addresses.size());
-  for (const auto& address : addresses) {
-    AddressWeight address_weight;
-    address_weight.address =
-        grpc_sockaddr_to_string(&address.address(), false).value();
+  const EndpointAddressesList& endpoints = ring_hash->endpoints_;
+  endpoint_weights.reserve(endpoints.size());
+  for (const auto& endpoint : endpoints) {
+    EndpointWeight endpoint_weight;
+    endpoint_weight.address =
+        grpc_sockaddr_to_string(&endpoint.addresses().front(), false).value();
     // Weight should never be zero, but ignore it just in case, since
     // that value would screw up the ring-building algorithm.
-    auto weight_arg = address.args().GetInt(GRPC_ARG_ADDRESS_WEIGHT);
+    auto weight_arg = endpoint.args().GetInt(GRPC_ARG_ADDRESS_WEIGHT);
     if (weight_arg.value_or(0) > 0) {
-      address_weight.weight = *weight_arg;
+      endpoint_weight.weight = *weight_arg;
     }
-    sum += address_weight.weight;
-    address_weights.push_back(std::move(address_weight));
+    sum += endpoint_weight.weight;
+    endpoint_weights.push_back(std::move(endpoint_weight));
   }
   // Calculating normalized weights and find min and max.
   double min_normalized_weight = 1.0;
   double max_normalized_weight = 0.0;
-  for (auto& address : address_weights) {
-    address.normalized_weight = static_cast<double>(address.weight) / sum;
+  for (auto& endpoint_weight : endpoint_weights) {
+    endpoint_weight.normalized_weight =
+        static_cast<double>(endpoint_weight.weight) / sum;
     min_normalized_weight =
-        std::min(address.normalized_weight, min_normalized_weight);
+        std::min(endpoint_weight.normalized_weight, min_normalized_weight);
     max_normalized_weight =
-        std::max(address.normalized_weight, max_normalized_weight);
+        std::max(endpoint_weight.normalized_weight, max_normalized_weight);
   }
   // Scale up the number of hashes per host such that the least-weighted host
   // gets a whole number of hashes on the ring. Other hosts might not end up
@@ -434,12 +435,12 @@ RingHash::Ring::Ring(RingHash* ring_hash, RingHashLbConfig* config) {
   double target_hashes = 0.0;
   uint64_t min_hashes_per_host = ring_size;
   uint64_t max_hashes_per_host = 0;
-  for (size_t i = 0; i < addresses.size(); ++i) {
-    const std::string& address_string = address_weights[i].address;
+  for (size_t i = 0; i < endpoints.size(); ++i) {
+    const std::string& address_string = endpoint_weights[i].address;
     hash_key_buffer.assign(address_string.begin(), address_string.end());
     hash_key_buffer.emplace_back('_');
     auto offset_start = hash_key_buffer.end();
-    target_hashes += scale * address_weights[i].normalized_weight;
+    target_hashes += scale * endpoint_weights[i].normalized_weight;
     size_t count = 0;
     while (current_hashes < target_hashes) {
       const std::string count_str = absl::StrCat(count);
@@ -518,7 +519,7 @@ void RingHash::RingHashEndpoint::RequestConnectionLocked() {
 
 void RingHash::RingHashEndpoint::CreateChildPolicy() {
   GPR_ASSERT(child_policy_ == nullptr);
-  const ServerAddress& address = ring_hash_->addresses_[index_];
+  const EndpointAddresses& addresses = ring_hash_->endpoints_[index_];
   LoadBalancingPolicy::Args lb_policy_args;
   auto child_args =
       ring_hash_->args_
@@ -535,8 +536,8 @@ void RingHash::RingHashEndpoint::CreateChildPolicy() {
     gpr_log(GPR_INFO,
             "[RH %p] endpoint %p (index %" PRIuPTR " of %" PRIuPTR
             ", %s): created child policy %p",
-            ring_hash_.get(), this, index_, ring_hash_->addresses_.size(),
-            address.ToString().c_str(), child_policy_.get());
+            ring_hash_.get(), this, index_, ring_hash_->endpoints_.size(),
+            addresses.ToString().c_str(), child_policy_.get());
   }
   // Add our interested_parties pollset_set to that of the newly created
   // child policy. This will make the child policy progress upon activity on
@@ -551,7 +552,7 @@ void RingHash::RingHashEndpoint::CreateChildPolicy() {
   GPR_ASSERT(config.ok());
   // Update child policy.
   LoadBalancingPolicy::UpdateArgs update_args;
-  update_args.addresses.emplace().emplace_back(address);
+  update_args.addresses.emplace().emplace_back(addresses);
   update_args.args = std::move(child_args);
   update_args.config = std::move(*config);
   // TODO(roth): If the child reports a non-OK status with the update,
@@ -568,7 +569,7 @@ void RingHash::RingHashEndpoint::OnStateUpdate(
         "[RH %p] connectivity changed for endpoint %p (%s, child_policy=%p): "
         "prev_state=%s new_state=%s (%s)",
         ring_hash_.get(), this,
-        ring_hash_->addresses_[index_].ToString().c_str(), child_policy_.get(),
+        ring_hash_->endpoints_[index_].ToString().c_str(), child_policy_.get(),
         ConnectivityStateName(connectivity_state_),
         ConnectivityStateName(new_state), status.ToString().c_str());
   }
@@ -622,7 +623,7 @@ absl::Status RingHash::UpdateLocked(UpdateArgs args) {
       gpr_log(GPR_INFO, "[RH %p] received update with %" PRIuPTR " addresses",
               this, args.addresses->size());
     }
-    addresses_ = *std::move(args.addresses);
+    endpoints_ = *std::move(args.addresses);
   } else {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
       gpr_log(GPR_INFO, "[RH %p] received update with addresses error: %s",
@@ -630,7 +631,7 @@ absl::Status RingHash::UpdateLocked(UpdateArgs args) {
     }
     // If we already have an endpoint list, then keep using the existing
     // list, but still report back that the update was not accepted.
-    if (!addresses_.empty()) return args.addresses.status();
+    if (!endpoints_.empty()) return args.addresses.status();
   }
   // Save channel args.
   args_ = std::move(args.args);
@@ -638,25 +639,27 @@ absl::Status RingHash::UpdateLocked(UpdateArgs args) {
   ring_ = MakeRefCounted<Ring>(
       this, static_cast<RingHashLbConfig*>(args.config.get()));
   // Update endpoint map.
-  std::map<ServerAddress, OrphanablePtr<RingHashEndpoint>> endpoint_map;
-  for (size_t i = 0; i < addresses_.size(); ++i) {
-    const ServerAddress& address = addresses_[i];
+  std::map<EndpointAddressSet, OrphanablePtr<RingHashEndpoint>> endpoint_map;
+  for (size_t i = 0; i < endpoints_.size(); ++i) {
+    const EndpointAddresses& addresses = endpoints_[i];
+    const EndpointAddressSet address_set(addresses.addresses());
     // If present in old map, retain it; otherwise, create a new one.
-    auto it = endpoint_map_.find(address);
+    auto it = endpoint_map_.find(address_set);
     if (it != endpoint_map_.end()) {
       it->second->set_index(i);
-      endpoint_map.emplace(address, std::move(it->second));
+      endpoint_map.emplace(address_set, std::move(it->second));
     } else {
-      endpoint_map.emplace(address,
+      endpoint_map.emplace(address_set,
                            MakeOrphanable<RingHashEndpoint>(Ref(), i));
     }
   }
   endpoint_map_ = std::move(endpoint_map);
   // If the address list is empty, report TRANSIENT_FAILURE.
+// FIXME
   // TODO(roth): As part of adding dualstack backend support, we need to
   // also handle the case where the list of addresses for a given
   // endpoint is empty.
-  if (addresses_.empty()) {
+  if (endpoints_.empty()) {
     absl::Status status =
         args.addresses.ok() ? absl::UnavailableError(absl::StrCat(
                                   "empty address list: ", args.resolution_note))
@@ -718,7 +721,7 @@ void RingHash::UpdateAggregatedConnectivityStateLocked(
     start_connection_attempt = true;
   } else if (num_connecting > 0) {
     state = GRPC_CHANNEL_CONNECTING;
-  } else if (num_transient_failure == 1 && addresses_.size() > 1) {
+  } else if (num_transient_failure == 1 && endpoints_.size() > 1) {
     state = GRPC_CHANNEL_CONNECTING;
     start_connection_attempt = true;
   } else if (num_idle > 0) {
@@ -734,7 +737,7 @@ void RingHash::UpdateAggregatedConnectivityStateLocked(
             ", num_transient_failure=%" PRIuPTR ", size=%" PRIuPTR
             ") -- start_connection_attempt=%d",
             this, ConnectivityStateName(state), num_idle, num_connecting,
-            num_ready, num_transient_failure, addresses_.size(),
+            num_ready, num_transient_failure, endpoints_.size(),
             start_connection_attempt);
   }
   // In TRANSIENT_FAILURE, report the last reported failure.
@@ -786,29 +789,31 @@ void RingHash::UpdateAggregatedConnectivityStateLocked(
   // CONNECTING, just to ensure that we don't remain in CONNECTING state
   // indefinitely if there are no new picks coming in.
   if (start_connection_attempt && entered_transient_failure) {
-    size_t first_idle_index = addresses_.size();
-    for (size_t i = 0; i < addresses_.size(); ++i) {
-      auto it = endpoint_map_.find(addresses_[i]);
+    size_t first_idle_index = endpoints_.size();
+    for (size_t i = 0; i < endpoints_.size(); ++i) {
+      auto it =
+          endpoint_map_.find(EndpointAddressSet(endpoints_[i].addresses()));
       GPR_ASSERT(it != endpoint_map_.end());
       if (it->second->connectivity_state() == GRPC_CHANNEL_CONNECTING) {
-        first_idle_index = addresses_.size();
+        first_idle_index = endpoints_.size();
         break;
       }
-      if (first_idle_index == addresses_.size() &&
+      if (first_idle_index == endpoints_.size() &&
           it->second->connectivity_state() == GRPC_CHANNEL_IDLE) {
         first_idle_index = i;
       }
     }
-    if (first_idle_index != addresses_.size()) {
-      auto it = endpoint_map_.find(addresses_[first_idle_index]);
+    if (first_idle_index != endpoints_.size()) {
+      auto it = endpoint_map_.find(
+          EndpointAddressSet(endpoints_[first_idle_index].addresses()));
       GPR_ASSERT(it != endpoint_map_.end());
       if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
         gpr_log(GPR_INFO,
                 "[RH %p] triggering internal connection attempt for endpoint "
                 "%p (%s) (index %" PRIuPTR " of %" PRIuPTR ")",
                 this, it->second.get(),
-                addresses_[first_idle_index].ToString().c_str(),
-                first_idle_index, addresses_.size());
+                endpoints_[first_idle_index].ToString().c_str(),
+                first_idle_index, endpoints_.size());
       }
       it->second->RequestConnectionLocked();
     }

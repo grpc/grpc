@@ -100,31 +100,27 @@ std::string EndpointAddresses::ToString() const {
 
 bool EndpointAddressSet::operator==(const EndpointAddressSet& other) const {
   if (addresses_.size() != other.addresses_.size()) return false;
-// FIXME
-#if 0
-  for (size_t i = 0; i < addresses_.size(); ++i) {
-    if (addresses_[i].len != other.addresses_[i].len ||
-        memcmp(addresses_[i].addr, other.addresses_[i].addr,
-               addresses_[i].len) != 0) {
+  auto other_it = other.addresses_.begin();
+  for (auto it = addresses_.begin(); it != addresses_.end(); ++it) {
+    GPR_ASSERT(other_it != other.addresses_.end());
+    if (it->len != other_it->len ||
+        memcmp(it->addr, other_it->addr, it->len) != 0) {
       return false;
     }
+    ++other_it;
   }
-#endif
   return true;
 }
 
 bool EndpointAddressSet::operator<(const EndpointAddressSet& other) const {
-// FIXME
-#if 0
-  for (size_t i = 0; i < addresses_.size(); ++i) {
-    if (other.addresses_.size() == i) return true;
-    if (addresses_[i].len < other.addresses_[i].len) return true;
-    if (addresses_[i].len > other.addresses_[i].len) return false;
-    int r = memcmp(addresses_[i].addr, other.addresses_[i].addr,
-                   addresses_[i].len);
+  auto other_it = other.addresses_.begin();
+  for (auto it = addresses_.begin(); it != addresses_.end(); ++it) {
+    if (other_it == other.addresses_.end()) return true;
+    if (it->len < other_it->len) return true;
+    if (it->len > other_it->len) return false;
+    int r = memcmp(it->addr, other_it->addr, it->len);
     if (r != 0) return r < 0;
   }
-#endif
   return false;
 }
 
