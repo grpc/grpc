@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>gRPC AsyncIO API &#8212; gRPC Python 1.55.0 documentation</title>
+    <title>gRPC AsyncIO API &#8212; gRPC Python 1.56.0 documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="_static/alabaster.css" />
     <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
@@ -30,7 +30,7 @@
 
 
 
-<p class="blurb">1.55.0</p>
+<p class="blurb">1.56.0</p>
 
 
 
@@ -110,7 +110,7 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="#shared-context">Shared Context</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#rpc-context">RPC Context</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#grpc.aio.RpcContext"><code class="docutils literal notranslate"><span class="pre">RpcContext</span></code></a><ul>
 <li class="toctree-l5"><a class="reference internal" href="#grpc.aio.RpcContext.add_done_callback"><code class="docutils literal notranslate"><span class="pre">RpcContext.add_done_callback()</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="#grpc.aio.RpcContext.cancel"><code class="docutils literal notranslate"><span class="pre">RpcContext.cancel()</span></code></a></li>
@@ -970,8 +970,8 @@ this would return all items under the desired &lt;key&gt;.</p>
 </dd></dl>
 
 </section>
-<section id="shared-context">
-<h3>Shared Context<a class="headerlink" href="#shared-context" title="Permalink to this heading">¶</a></h3>
+<section id="rpc-context">
+<h3>RPC Context<a class="headerlink" href="#rpc-context" title="Permalink to this heading">¶</a></h3>
 <dl class="py class">
 <dt class="sig sig-object py" id="grpc.aio.RpcContext">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grpc.aio.</span></span><span class="sig-name descname"><span class="pre">RpcContext</span></span><a class="reference internal" href="_modules/grpc/aio/_base_call.html#RpcContext"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.RpcContext" title="Permalink to this definition">¶</a></dt>
@@ -1150,7 +1150,7 @@ failure.</p>
 <dd class="field-odd"><p>The response message of the RPC.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><em>Awaitable</em>[<em>ResponseType</em>]</p>
+<dd class="field-even"><p><em>Generator</em>[<em>Any</em>, None, <em>ResponseType</em>]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1206,7 +1206,7 @@ stream.</p>
 <dd class="field-odd"><p>The response message of the stream.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><em>Awaitable</em>[<em>ResponseType</em>]</p>
+<dd class="field-even"><p><em>Generator</em>[<em>Any</em>, None, <em>ResponseType</em>]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1924,7 +1924,7 @@ interceptor chooses to service this RPC, or None otherwise.</p>
 <h3>Multi-Callable Interfaces<a class="headerlink" href="#multi-callable-interfaces" title="Permalink to this heading">¶</a></h3>
 <dl class="py class">
 <dt class="sig sig-object py" id="grpc.aio.UnaryUnaryMultiCallable">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grpc.aio.</span></span><span class="sig-name descname"><span class="pre">UnaryUnaryMultiCallable</span></span><a class="reference internal" href="_modules/grpc/aio/_base_channel.html#UnaryUnaryMultiCallable"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.UnaryUnaryMultiCallable" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grpc.aio.</span></span><span class="sig-name descname"><span class="pre">UnaryUnaryMultiCallable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwds</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_base_channel.html#UnaryUnaryMultiCallable"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.UnaryUnaryMultiCallable" title="Permalink to this definition">¶</a></dt>
 <dd><p>Enables asynchronous invocation of a unary-call RPC.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="grpc.aio.UnaryUnaryMultiCallable.__call__">
@@ -1933,7 +1933,7 @@ interceptor chooses to service this RPC, or None otherwise.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>request</strong> (<em>Any</em>) – The request value for the RPC.</p></li>
+<li><p><strong>request</strong> (<em>RequestType</em>) – The request value for the RPC.</p></li>
 <li><p><strong>timeout</strong> (<em>float</em><em> | </em><em>None</em>) – An optional duration of time in seconds to allow
 for the RPC.</p></li>
 <li><p><strong>metadata</strong> (<a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio._metadata.Metadata"><em>Metadata</em></a><em> | </em><em>Sequence</em><em>[</em><em>Tuple</em><em>[</em><em>str</em><em>, </em><em>str</em><em> | </em><em>bytes</em><em>]</em><em>] </em><em>| </em><em>None</em>) – Optional <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a> to be transmitted to the
@@ -1954,7 +1954,7 @@ grpc.compression.Gzip.</p></li>
     metadata, status code, and details.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference internal" href="#grpc.aio.UnaryUnaryCall" title="grpc.aio._base_call.UnaryUnaryCall"><em>UnaryUnaryCall</em></a></p>
+<dd class="field-even"><p><a class="reference internal" href="#grpc.aio.UnaryUnaryCall" title="grpc.aio._base_call.UnaryUnaryCall"><em>UnaryUnaryCall</em></a>[<em>RequestType</em>, <em>ResponseType</em>]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1972,7 +1972,7 @@ grpc.compression.Gzip.</p></li>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>request</strong> (<em>Any</em>) – The request value for the RPC.</p></li>
+<li><p><strong>request</strong> (<em>RequestType</em>) – The request value for the RPC.</p></li>
 <li><p><strong>timeout</strong> (<em>float</em><em> | </em><em>None</em>) – An optional duration of time in seconds to allow
 for the RPC.</p></li>
 <li><p><strong>metadata</strong> (<a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio._metadata.Metadata"><em>Metadata</em></a><em> | </em><em>Sequence</em><em>[</em><em>Tuple</em><em>[</em><em>str</em><em>, </em><em>str</em><em> | </em><em>bytes</em><em>]</em><em>] </em><em>| </em><em>None</em>) – Optional <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a> to be transmitted to the
@@ -1993,7 +1993,7 @@ grpc.compression.Gzip.</p></li>
     metadata, status code, and details.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference internal" href="#grpc.aio.UnaryStreamCall" title="grpc.aio._base_call.UnaryStreamCall"><em>UnaryStreamCall</em></a></p>
+<dd class="field-even"><p><a class="reference internal" href="#grpc.aio.UnaryStreamCall" title="grpc.aio._base_call.UnaryStreamCall"><em>UnaryStreamCall</em></a>[<em>RequestType</em>, <em>ResponseType</em>]</p>
 </dd>
 </dl>
 </dd></dl>

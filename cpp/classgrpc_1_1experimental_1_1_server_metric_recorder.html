@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.55.0</span>
+   &#160;<span id="projectnumber">1.56.0</span>
    </div>
   </td>
  </tr>
@@ -88,6 +88,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a3bad96ffa07bbf67f93a498b20efb5a0"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_metric_recorder.html#a3bad96ffa07bbf67f93a498b20efb5a0">SetMemoryUtilization</a> (double value)</td></tr>
 <tr class="memdesc:a3bad96ffa07bbf67f93a498b20efb5a0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Records the server memory utilization in the range [0, 1].  <a href="classgrpc_1_1experimental_1_1_server_metric_recorder.html#a3bad96ffa07bbf67f93a498b20efb5a0">More...</a><br /></td></tr>
 <tr class="separator:a3bad96ffa07bbf67f93a498b20efb5a0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa17b48f87d60df4cb2f125dcf65d296d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_metric_recorder.html#aa17b48f87d60df4cb2f125dcf65d296d">SetApplicationUtilization</a> (double value)</td></tr>
+<tr class="memdesc:aa17b48f87d60df4cb2f125dcf65d296d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Records the application specific utilization in the range [0, infy].  <a href="classgrpc_1_1experimental_1_1_server_metric_recorder.html#aa17b48f87d60df4cb2f125dcf65d296d">More...</a><br /></td></tr>
+<tr class="separator:aa17b48f87d60df4cb2f125dcf65d296d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a855494014bb54b17599b2f08d5684cd1"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_metric_recorder.html#a855494014bb54b17599b2f08d5684cd1">SetQps</a> (double value)</td></tr>
 <tr class="memdesc:a855494014bb54b17599b2f08d5684cd1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Records number of queries per second to the server in the range [0, infy).  <a href="classgrpc_1_1experimental_1_1_server_metric_recorder.html#a855494014bb54b17599b2f08d5684cd1">More...</a><br /></td></tr>
 <tr class="separator:a855494014bb54b17599b2f08d5684cd1"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -106,6 +109,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a1b82bcd3c4ea8d61f33babb9ebc142bf"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_metric_recorder.html#a1b82bcd3c4ea8d61f33babb9ebc142bf">ClearMemoryUtilization</a> ()</td></tr>
 <tr class="memdesc:a1b82bcd3c4ea8d61f33babb9ebc142bf"><td class="mdescLeft">&#160;</td><td class="mdescRight">Clears the server memory utilization if recorded.  <a href="classgrpc_1_1experimental_1_1_server_metric_recorder.html#a1b82bcd3c4ea8d61f33babb9ebc142bf">More...</a><br /></td></tr>
 <tr class="separator:a1b82bcd3c4ea8d61f33babb9ebc142bf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a087db3678fbdc7f2ad89e9998f0694a7"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_metric_recorder.html#a087db3678fbdc7f2ad89e9998f0694a7">ClearApplicationUtilization</a> ()</td></tr>
+<tr class="memdesc:a087db3678fbdc7f2ad89e9998f0694a7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Clears the application specific utilization if recorded.  <a href="classgrpc_1_1experimental_1_1_server_metric_recorder.html#a087db3678fbdc7f2ad89e9998f0694a7">More...</a><br /></td></tr>
+<tr class="separator:a087db3678fbdc7f2ad89e9998f0694a7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab2ec6b5b456d52ba00194b3f5c2d1195"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_metric_recorder.html#ab2ec6b5b456d52ba00194b3f5c2d1195">ClearQps</a> ()</td></tr>
 <tr class="memdesc:ab2ec6b5b456d52ba00194b3f5c2d1195"><td class="mdescLeft">&#160;</td><td class="mdescRight">Clears number of queries per second to the server if recorded.  <a href="classgrpc_1_1experimental_1_1_server_metric_recorder.html#ab2ec6b5b456d52ba00194b3f5c2d1195">More...</a><br /></td></tr>
 <tr class="separator:ab2ec6b5b456d52ba00194b3f5c2d1195"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -132,6 +138,25 @@ Friends</h2></td></tr>
 <div class="textblock"><p>Records server wide metrics to be reported to the client. </p>
 <p><a class="el" href="classgrpc_1_1_server.html" title="Represents a gRPC server.">Server</a> implementation creates an instance and reports server metrics to it, and then passes it to <a class="el" href="classgrpc_1_1_server_builder_1_1experimental__type.html#ab6add2c48bfbc2d95898cb91c02929c6" title="Enables per-call load reporting.">ServerBuilder::experimental_type::EnableCallMetricRecording</a> or experimental::OrcaService that read metrics to include in the report. </p>
 </div><h2 class="groupheader">Member Function Documentation</h2>
+<a id="a087db3678fbdc7f2ad89e9998f0694a7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a087db3678fbdc7f2ad89e9998f0694a7">&#9670;&nbsp;</a></span>ClearApplicationUtilization()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void grpc::experimental::ServerMetricRecorder::ClearApplicationUtilization </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Clears the application specific utilization if recorded. </p>
+
+</div>
+</div>
 <a id="a42ba31217bfbb0b3b7915afa9c443325"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a42ba31217bfbb0b3b7915afa9c443325">&#9670;&nbsp;</a></span>ClearCpuUtilization()</h2>
 
@@ -271,6 +296,27 @@ Friends</h2></td></tr>
 
 <p>Replaces all named resource utilization values. </p>
 <p>No range validation. The name strings should remain valid while utilization values remain in this recorder. It is assumed that strings are common names that are global constants. </p>
+
+</div>
+</div>
+<a id="aa17b48f87d60df4cb2f125dcf65d296d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa17b48f87d60df4cb2f125dcf65d296d">&#9670;&nbsp;</a></span>SetApplicationUtilization()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void grpc::experimental::ServerMetricRecorder::SetApplicationUtilization </td>
+          <td>(</td>
+          <td class="paramtype">double&#160;</td>
+          <td class="paramname"><em>value</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Records the application specific utilization in the range [0, infy]. </p>
+<p>Values outside of the valid range are rejected. Overrides the stored value when called again with a valid value. </p>
 
 </div>
 </div>
@@ -440,7 +486,7 @@ Friends</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 19 2023 06:26:58 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Jun 27 2023 17:50:39 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

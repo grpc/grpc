@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.55.0</span>
+   &#160;<span id="projectnumber">1.56.0</span>
    </div>
   </td>
  </tr>
@@ -357,6 +357,9 @@ $(function() {
 <li>SetAllNamedUtilization()
 : <a class="el" href="classgrpc_1_1experimental_1_1_server_metric_recorder.html#a0184a585e6c8bfd2faff0c18329c5d6d">grpc::experimental::ServerMetricRecorder</a>
 </li>
+<li>SetApplicationUtilization()
+: <a class="el" href="classgrpc_1_1experimental_1_1_server_metric_recorder.html#aa17b48f87d60df4cb2f125dcf65d296d">grpc::experimental::ServerMetricRecorder</a>
+</li>
 <li>SetAuthMetadataProcessor()
 : <a class="el" href="classgrpc_1_1_server_credentials.html#aac2d5861ec4c0534c3eaa7b36f5cc6fa">grpc::ServerCredentials</a>
 </li>
@@ -555,12 +558,14 @@ $(function() {
 <li>severity
 : <a class="el" href="structgpr__log__func__args.html#af0b4b9d8beace1cae0d1a24783d70ccc">gpr_log_func_args</a>
 </li>
+<li>Shutdown()
+: <a class="el" href="classgrpc_1_1_completion_queue.html#a40efddadd9073386fbcb4f46e8325670">grpc::CompletionQueue</a>
+</li>
 <li>SHUTDOWN
 : <a class="el" href="classgrpc_1_1_completion_queue.html#a6227657fb2f29291f80cd092f9baf572a5d05c1c970154dad10e5f648890c215b">grpc::CompletionQueue</a>
 </li>
 <li>Shutdown()
-: <a class="el" href="classgrpc_1_1_completion_queue.html#a40efddadd9073386fbcb4f46e8325670">grpc::CompletionQueue</a>
-, <a class="el" href="classgrpc_1_1_health_check_service_interface.html#a520a6c15acec341dc65a638e55b0798b">grpc::HealthCheckServiceInterface</a>
+: <a class="el" href="classgrpc_1_1_health_check_service_interface.html#a520a6c15acec341dc65a638e55b0798b">grpc::HealthCheckServiceInterface</a>
 , <a class="el" href="classgrpc_1_1_server_interface.html#a644772d11101318f1424e595dee73ccf">grpc::ServerInterface</a>
 , <a class="el" href="classgrpc__event__engine_1_1experimental_1_1internal_1_1_memory_allocator_impl.html#abeee43fc002c4f3cc8cdb976424ec9c6">grpc_event_engine::experimental::internal::MemoryAllocatorImpl</a>
 </li>
@@ -587,7 +592,7 @@ $(function() {
 </li>
 <li>Slice()
 : <a class="el" href="classgrpc_1_1_slice.html#abb151a6538ee47812bbe0e98330c799e">grpc::Slice</a>
-, <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice.html#a98ac64e5f279f9d4803e816c9b0936d9">grpc_event_engine::experimental::Slice</a>
+, <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice.html#a278d471f8eb65d850d80b118c25b1425">grpc_event_engine::experimental::Slice</a>
 </li>
 <li>slice_buffer()
 : <a class="el" href="classgrpc_1_1_proto_buffer_writer.html#a2735ca72a039d465dd538c6f3fa06e20">grpc::ProtoBufferWriter</a>
@@ -606,7 +611,7 @@ $(function() {
 : <a class="el" href="classgrpc_1_1internal_1_1_split_server_streaming_handler.html#aae1ae9f8d89807beb6dfd0faf9c1e811">grpc::internal::SplitServerStreamingHandler&lt; RequestType, ResponseType &gt;</a>
 </li>
 <li>SslServerCredentialsOptions()
-: <a class="el" href="structgrpc_1_1_ssl_server_credentials_options.html#ae85661f17b0dd9f4fc27275203e5f105">grpc::SslServerCredentialsOptions</a>
+: <a class="el" href="structgrpc_1_1_ssl_server_credentials_options.html#a00650afd8a132f271b068d17da446679">grpc::SslServerCredentialsOptions</a>
 </li>
 <li>Start()
 : <a class="el" href="classgrpc_1_1_server.html#affff5d179b3a71617cbb02062f49eea4">grpc::Server</a>
@@ -720,12 +725,13 @@ $(function() {
 </li>
 <li>string
 : <a class="el" href="uniongrpc__arg_1_1grpc__arg__value.html#afd7cc41a1d8dd36aba15faa4a6c426e2">grpc_arg::grpc_arg_value</a>
+, <a class="el" href="classgrpc__core_1_1experimental_1_1_json.html#a411f280e030186228c9ea18dce58219a">grpc_core::experimental::Json</a>
 </li>
 <li>string_ref()
-: <a class="el" href="classgrpc_1_1string__ref.html#a3b6c90d10321a5636a134be68f2f6f18">grpc::string_ref</a>
+: <a class="el" href="classgrpc_1_1string__ref.html#af77d94ce992f8355a411a231b995664d">grpc::string_ref</a>
 </li>
 <li>StubOptions()
-: <a class="el" href="classgrpc_1_1_stub_options.html#a7af8c4b4f608a7cf6c7b12b9ed8817d7">grpc::StubOptions</a>
+: <a class="el" href="classgrpc_1_1_stub_options.html#aefbc4ac4c7a050a6317c1beb5f3bacfd">grpc::StubOptions</a>
 </li>
 <li>sub()
 : <a class="el" href="classgrpc_1_1_slice.html#a48b3aee091958392cdfe5a8cff7f850a">grpc::Slice</a>
@@ -762,7 +768,7 @@ $(function() {
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 19 2023 06:26:58 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Jun 27 2023 17:50:39 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

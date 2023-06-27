@@ -1,9 +1,6 @@
 var searchData=
 [
-  ['uds_4294',['UDS',['../grpc__security__constants_8h.html#a31d00ce5c064e1fff4261a6d6298dc11a94e03cdcc2f95916c9eaf6ab486ed768',1,'grpc_security_constants.h']]],
-  ['unary_4295',['UNARY',['../classgrpc_1_1experimental_1_1_client_rpc_info.html#afe1e51b91fd4805bf77fdb85d007ca2ca8ca44f46ef1f04b2113678603c3800b4',1,'grpc::experimental::ClientRpcInfo::UNARY()'],['../classgrpc_1_1experimental_1_1_server_rpc_info.html#a4df831c9dd3e41b6a028dd08a145e57ba8ca44f46ef1f04b2113678603c3800b4',1,'grpc::experimental::ServerRpcInfo::UNARY()']]],
-  ['unauthenticated_4296',['UNAUTHENTICATED',['../namespacegrpc.html#aff1730578c90160528f6a8d67ef5c43ba4290323b58d11554a249a870532c908e',1,'grpc']]],
-  ['unavailable_4297',['UNAVAILABLE',['../namespacegrpc.html#aff1730578c90160528f6a8d67ef5c43ba87779003bbcfd441fd0ef335c13cb2c3',1,'grpc']]],
-  ['unimplemented_4298',['UNIMPLEMENTED',['../namespacegrpc.html#aff1730578c90160528f6a8d67ef5c43ba31d8b2f1f3307ed261328cb3eece163b',1,'grpc']]],
-  ['unknown_4299',['UNKNOWN',['../classgrpc_1_1experimental_1_1_client_rpc_info.html#afe1e51b91fd4805bf77fdb85d007ca2ca696b031073e74bf2cb98e5ef201d4aa3',1,'grpc::experimental::ClientRpcInfo::UNKNOWN()'],['../namespacegrpc.html#aff1730578c90160528f6a8d67ef5c43bab32b226dd4ccbe5b70fbceb3a915b256',1,'grpc::UNKNOWN()']]]
+  ['timeout_4372',['TIMEOUT',['../classgrpc_1_1_completion_queue.html#a6227657fb2f29291f80cd092f9baf572ae88eecb45f91413b425511ee973e2e04',1,'grpc::CompletionQueue']]],
+  ['tls1_5f2_4373',['TLS1_2',['../grpc__security__constants_8h.html#ab7f46c1753e3601b1de9aa31958748dda05ba9c03f48f1d2ab9774e456d24522f',1,'grpc_security_constants.h']]],
+  ['tls1_5f3_4374',['TLS1_3',['../grpc__security__constants_8h.html#ab7f46c1753e3601b1de9aa31958748dda900414265a7f4babe6386ce7356b5ebb',1,'grpc_security_constants.h']]]
 ];

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">32.0.0</span>
+   &#160;<span id="projectnumber">33.0.0</span>
    </div>
   </td>
  </tr>
@@ -399,7 +399,7 @@ Blocking EventEngine Callbacks</h2>
 
 <p>Factory method to create a network listener / server. </p>
 <p>Once a <em><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_listener.html" title="Listens for incoming connection requests from gRPC clients and initiates request processing once conn...">Listener</a></em> is created and started, the <em>on_accept</em> callback will be called once asynchronously for each established connection. This method may return a non-OK status immediately if an error was encountered in any synchronous steps required to create the <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_listener.html" title="Listens for incoming connection requests from gRPC clients and initiates request processing once conn...">Listener</a>. In this case, <em>on_shutdown</em> will never be called.</p>
-<p>If this method returns a <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_listener.html" title="Listens for incoming connection requests from gRPC clients and initiates request processing once conn...">Listener</a>, then <em>on_shutdown</em> will be invoked exactly once, when the <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_listener.html" title="Listens for incoming connection requests from gRPC clients and initiates request processing once conn...">Listener</a> is shut down. The status passed to it will indicate if there was a problem during shutdown.</p>
+<p>If this method returns a <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_listener.html" title="Listens for incoming connection requests from gRPC clients and initiates request processing once conn...">Listener</a>, then <em>on_shutdown</em> will be invoked exactly once when the <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_listener.html" title="Listens for incoming connection requests from gRPC clients and initiates request processing once conn...">Listener</a> is shut down, and only after all <em>on_accept</em> callbacks have finished executing. The status passed to it will indicate if there was a problem during shutdown.</p>
 <p>The provided <em><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator_factory.html">MemoryAllocatorFactory</a></em> is used to create <em>MemoryAllocators</em> for <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html" title="One end of a connection between a gRPC client and server.">Endpoint</a> construction. </p>
 
 </div>
@@ -605,7 +605,7 @@ Blocking EventEngine Callbacks</h2>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 19 2023 06:26:57 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Jun 27 2023 17:50:37 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

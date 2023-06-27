@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.55.0</span>
+   &#160;<span id="projectnumber">1.56.0</span>
    </div>
   </td>
  </tr>
@@ -110,6 +110,9 @@ $(function() {
 , <a class="el" href="classgrpc_1_1_client_async_writer.html#a02f613eaaed4177f1682da3f5eebbdeb">grpc::ClientAsyncWriter&lt; W &gt;</a>
 , <a class="el" href="classgrpc_1_1internal_1_1_client_async_streaming_interface.html#ab5a35e289028ac2aaf062572ba6d567d">grpc::internal::ClientAsyncStreamingInterface</a>
 </li>
+<li>RecordApplicationUtilizationMetric()
+: <a class="el" href="classgrpc_1_1experimental_1_1_call_metric_recorder.html#a07e0572a0bd9eb0256a5049f99059629">grpc::experimental::CallMetricRecorder</a>
+</li>
 <li>RecordCpuUtilizationMetric()
 : <a class="el" href="classgrpc_1_1experimental_1_1_call_metric_recorder.html#af1335d372092f22af1da654d276b4d80">grpc::experimental::CallMetricRecorder</a>
 </li>
@@ -170,7 +173,7 @@ $(function() {
 </li>
 <li>Release()
 : <a class="el" href="classgrpc_1_1_byte_buffer.html#ae03627c8b3297965fa0cdd4f03a9af0f">grpc::ByteBuffer</a>
-, <a class="el" href="classgrpc_1_1_context_allocator.html#a16e26cacfb66757078482406fac6ef45">grpc::ContextAllocator</a>
+, <a class="el" href="classgrpc_1_1_context_allocator.html#a72842a9cbc4cf0ad58c86f24cddd2919">grpc::ContextAllocator</a>
 , <a class="el" href="classgrpc_1_1internal_1_1_default_message_holder.html#a9760eb34327ea06132af6727dbaacaeb">grpc::internal::DefaultMessageHolder&lt; Request, Response &gt;</a>
 , <a class="el" href="classgrpc_1_1internal_1_1_releasable_mutex_lock.html#ab83f8ce3b17744474963dd4031c53128">grpc::internal::ReleasableMutexLock</a>
 , <a class="el" href="classgrpc_1_1_message_holder.html#a018b414120f0e4b358448ce98971f87e">grpc::MessageHolder&lt; RequestT, ResponseT &gt;</a>
@@ -219,7 +222,7 @@ $(function() {
 : <a class="el" href="classgrpc_1_1_async_generic_service.html#ab0cc86616c5abb3c99b1ec9d7d7fc5e7">grpc::AsyncGenericService</a>
 </li>
 <li>Reservation()
-: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator_1_1_reservation.html#acb92b5ebfa208aeff00b132e4a4415a3">grpc_event_engine::experimental::MemoryAllocator::Reservation</a>
+: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator_1_1_reservation.html#a5d6b300e395c8da01f69fec1e10b67c9">grpc_event_engine::experimental::MemoryAllocator::Reservation</a>
 </li>
 <li>Reserve()
 : <a class="el" href="classgrpc__event__engine_1_1experimental_1_1internal_1_1_memory_allocator_impl.html#a668908d336cf3c21ad6f7dfe7f06739a">grpc_event_engine::experimental::internal::MemoryAllocatorImpl</a>
@@ -233,16 +236,19 @@ $(function() {
 : <a class="el" href="classgrpc_1_1_resource_quota.html#a3e9034af4f310baa9bcc11ccfe46170f">grpc::ResourceQuota</a>
 </li>
 <li>ResolvedAddress()
-: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_resolved_address.html#ad0c0417018fa8ddfe1822893e023e4c8">grpc_event_engine::experimental::EventEngine::ResolvedAddress</a>
+: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_resolved_address.html#ac8b476c2acd9c77dd881d29f2a379d5c">grpc_event_engine::experimental::EventEngine::ResolvedAddress</a>
 </li>
 <li>ResourceQuota()
-: <a class="el" href="classgrpc_1_1_resource_quota.html#a452006a82860143a83aefaf42ba2fb48">grpc::ResourceQuota</a>
+: <a class="el" href="classgrpc_1_1_resource_quota.html#a59884378c08c839b340063953925fdf7">grpc::ResourceQuota</a>
 </li>
 <li>response()
 : <a class="el" href="classgrpc_1_1_message_holder.html#a960bd63c4c3da73af97bf446d6f8eccc">grpc::MessageHolder&lt; RequestT, ResponseT &gt;</a>
 </li>
+<li>rpc_method()
+: <a class="el" href="classgrpc__core_1_1experimental_1_1_audit_context.html#afd40760bccd5088f6357760d82857267">grpc_core::experimental::AuditContext</a>
+</li>
 <li>RpcMethod()
-: <a class="el" href="classgrpc_1_1internal_1_1_rpc_method.html#a211ad4fe19d6276d1553a01ecef9617b">grpc::internal::RpcMethod</a>
+: <a class="el" href="classgrpc_1_1internal_1_1_rpc_method.html#a254b308ceaa38d17c99afb71f4fc1d73">grpc::internal::RpcMethod</a>
 </li>
 <li>RpcMethodHandler()
 : <a class="el" href="classgrpc_1_1internal_1_1_rpc_method_handler.html#a6ce0dff99ffa706780798eed5315c859">grpc::internal::RpcMethodHandler&lt; ServiceType, RequestType, ResponseType, BaseRequestType, BaseResponseType &gt;</a>
@@ -270,13 +276,13 @@ $(function() {
 , <a class="el" href="classgrpc_1_1internal_1_1_templated_bidi_streaming_handler.html#a5170e31524b287b4d1dda277ff45ab85">grpc::internal::TemplatedBidiStreamingHandler&lt; Streamer, WriteNeeded &gt;</a>
 </li>
 <li>RunInterceptors()
-: <a class="el" href="classgrpc_1_1internal_1_1_interceptor_batch_methods_impl.html#a048a5b38f372dcfce0e29836a87e22ca">grpc::internal::InterceptorBatchMethodsImpl</a>
+: <a class="el" href="classgrpc_1_1internal_1_1_interceptor_batch_methods_impl.html#a2912a6895dfec6974291bd46bc6d5778">grpc::internal::InterceptorBatchMethodsImpl</a>
 </li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 19 2023 06:26:58 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Jun 27 2023 17:50:39 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

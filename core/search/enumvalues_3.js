@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['uds_2042',['UDS',['../grpc__security__constants_8h.html#a31d00ce5c064e1fff4261a6d6298dc11a94e03cdcc2f95916c9eaf6ab486ed768',1,'grpc_security_constants.h']]]
+  ['tls1_5f2_2118',['TLS1_2',['../grpc__security__constants_8h.html#ab7f46c1753e3601b1de9aa31958748dda05ba9c03f48f1d2ab9774e456d24522f',1,'grpc_security_constants.h']]],
+  ['tls1_5f3_2119',['TLS1_3',['../grpc__security__constants_8h.html#ab7f46c1753e3601b1de9aa31958748dda900414265a7f4babe6386ce7356b5ebb',1,'grpc_security_constants.h']]]
 ];

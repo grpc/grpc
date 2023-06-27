@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Objective-C
-   &#160;<span id="projectnumber">1.55.0</span>
+   &#160;<span id="projectnumber">1.56.0</span>
    </div>
   </td>
  </tr>
@@ -109,6 +109,21 @@ Client</h1>
 </li>
 <li>&ndash;service_config_json=SERVICE_CONFIG_JSON<ul>
 <li>Disables service config lookups and sets the provided string as the default service config.</li>
+</ul>
+</li>
+<li>&ndash;additional_metadata=ADDITIONAL_METADATA<ul>
+<li><p class="startli">Additional metadata to send in each request, as a semicolon-separated list of key:value pairs. The first key/value pair is separated by the first colon. The second key/value pair is separated by the next colon <em>following</em> the next semi-colon thereafter, and so on. For example:</p><ul>
+<li><code>abc-key:abc-value;foo-key:foo-value</code><ul>
+<li>Key/value pairs: <code>abc-key</code>/<code>abc-value</code>, <code>foo-key</code>/<code>foo-value</code>.</li>
+</ul>
+</li>
+<li><code>abc-key:abc:value;foo-key:foo:value</code><ul>
+<li>Key/value pairs: <code>abc-key</code>/<code>abc:value</code>, <code>foo-key</code>/<code>foo:value</code>.</li>
+</ul>
+</li>
+</ul>
+<p class="startli">Keys must be ASCII only (no <code>-bin</code> headers allowed). Values may contain any character except semi-colons.</p>
+</li>
 </ul>
 </li>
 </ul>
@@ -657,9 +672,9 @@ orca_oob</h2>
 </ul>
 <p>Procedures:</p><ol type="1">
 <li>Client starts a full duplex call and sends: ``` { orca_oob_report:{ cpu_utilization: 0.8210 memory_utilization: 0.5847 utilization: { util: 0.30499 } } response_parameters:{ size: 1 } } ```</li>
-<li>After getting a response, client waits up to 5 seconds to receive a OOB load report that matches the requested load report in step 1. To wait for load report, client may inject a callback to the custom LB policy, or poll the result by doing empty unary call that carries a reference, e.g. using CallOptions, that will be filled in by the custom LB policy as part of the <code>OrcaOobReportListener</code> API.</li>
+<li>After getting a response, client waits up to 10 seconds (or a total of 30s for the entire test case) to receive an OOB load report that matches the requested load report in step 1. To wait for load report, client may inject a callback to the custom LB policy, or poll the result by doing empty unary call that carries a reference, e.g. using CallOptions, that will be filled in by the custom LB policy as part of the <code>OrcaOobReportListener</code> API.</li>
 <li>Then client sends: ``` { orca_oob_report:{ cpu_utilization: 0.29309 memory_utilization: 0.2 utilization: { util: 0.2039 } } response_parameters:{ size: 1 } } ```</li>
-<li>After getting a response, client waits up to 5 seconds to receive a OOB load report that matches the requested load report in step 3. Similar to step 2.</li>
+<li>After getting a response, client waits up to 10 seconds (or a total of 30s for the entire test case) to receive an OOB load report that matches the requested load report in step 3. Similar to step 2.</li>
 <li>Client half closes the stream, and asserts the streaming call is successful.</li>
 </ol>
 <h2><a class="anchor" id="autotoc_md140"></a>
@@ -781,7 +796,7 @@ Backend metrics report</h2>
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 19 2023 06:27:27 for GRPC Objective-C by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Jun 27 2023 17:51:08 for GRPC Objective-C by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

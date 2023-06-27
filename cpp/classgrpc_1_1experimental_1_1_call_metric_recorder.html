@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.55.0</span>
+   &#160;<span id="projectnumber">1.56.0</span>
    </div>
   </td>
  </tr>
@@ -88,6 +88,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:ab44ce00d314371a165abd4a94a1f6373"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classgrpc_1_1experimental_1_1_call_metric_recorder.html">CallMetricRecorder</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_call_metric_recorder.html#ab44ce00d314371a165abd4a94a1f6373">RecordMemoryUtilizationMetric</a> (double value)=0</td></tr>
 <tr class="memdesc:ab44ce00d314371a165abd4a94a1f6373"><td class="mdescLeft">&#160;</td><td class="mdescRight">Records a call metric measurement for memory utilization.  <a href="classgrpc_1_1experimental_1_1_call_metric_recorder.html#ab44ce00d314371a165abd4a94a1f6373">More...</a><br /></td></tr>
 <tr class="separator:ab44ce00d314371a165abd4a94a1f6373"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a07e0572a0bd9eb0256a5049f99059629"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classgrpc_1_1experimental_1_1_call_metric_recorder.html">CallMetricRecorder</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_call_metric_recorder.html#a07e0572a0bd9eb0256a5049f99059629">RecordApplicationUtilizationMetric</a> (double value)=0</td></tr>
+<tr class="memdesc:a07e0572a0bd9eb0256a5049f99059629"><td class="mdescLeft">&#160;</td><td class="mdescRight">Records a call metric measurement for application specific utilization.  <a href="classgrpc_1_1experimental_1_1_call_metric_recorder.html#a07e0572a0bd9eb0256a5049f99059629">More...</a><br /></td></tr>
+<tr class="separator:a07e0572a0bd9eb0256a5049f99059629"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5b0e2a53ec6a5d53d6509934a5ffb6b1"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classgrpc_1_1experimental_1_1_call_metric_recorder.html">CallMetricRecorder</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_call_metric_recorder.html#a5b0e2a53ec6a5d53d6509934a5ffb6b1">RecordQpsMetric</a> (double value)=0</td></tr>
 <tr class="memdesc:a5b0e2a53ec6a5d53d6509934a5ffb6b1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Records a call metric measurement for queries per second.  <a href="classgrpc_1_1experimental_1_1_call_metric_recorder.html#a5b0e2a53ec6a5d53d6509934a5ffb6b1">More...</a><br /></td></tr>
 <tr class="separator:a5b0e2a53ec6a5d53d6509934a5ffb6b1"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -134,6 +137,35 @@ Public Member Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
+<a id="a07e0572a0bd9eb0256a5049f99059629"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a07e0572a0bd9eb0256a5049f99059629">&#9670;&nbsp;</a></span>RecordApplicationUtilizationMetric()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual <a class="el" href="classgrpc_1_1experimental_1_1_call_metric_recorder.html">CallMetricRecorder</a>&amp; grpc::experimental::CallMetricRecorder::RecordApplicationUtilizationMetric </td>
+          <td>(</td>
+          <td class="paramtype">double&#160;</td>
+          <td class="paramname"><em>value</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Records a call metric measurement for application specific utilization. </p>
+<p>Multiple calls to this method will override the stored value. Values may be larger than 1.0 when the usage exceeds the reporter dependent notion of soft limits. Values outside of the valid range [0, infy] are ignored. </p>
+
+</div>
+</div>
 <a id="af1335d372092f22af1da654d276b4d80"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#af1335d372092f22af1da654d276b4d80">&#9670;&nbsp;</a></span>RecordCpuUtilizationMetric()</h2>
 
@@ -373,7 +405,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 19 2023 06:26:58 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Jun 27 2023 17:50:39 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

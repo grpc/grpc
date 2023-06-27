@@ -4,7 +4,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>grpc.aio._call &#8212; gRPC Python 1.55.0 documentation</title>
+    <title>grpc.aio._call &#8212; gRPC Python 1.56.0 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css" />
     <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
@@ -27,7 +27,7 @@
 
 
 
-<p class="blurb">1.55.0</p>
+<p class="blurb">1.56.0</p>
 
 
 
@@ -108,7 +108,7 @@
 <span class="kn">import</span> <span class="nn">inspect</span>
 <span class="kn">import</span> <span class="nn">logging</span>
 <span class="kn">import</span> <span class="nn">traceback</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">AsyncIterator</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">AsyncIterator</span><span class="p">,</span> <span class="n">Generator</span><span class="p">,</span> <span class="n">Generic</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
 
 <span class="kn">import</span> <span class="nn">grpc</span>
 <span class="kn">from</span> <span class="nn">grpc</span> <span class="kn">import</span> <span class="n">_common</span>
@@ -341,7 +341,7 @@
     <span class="n">READER_WRITER</span> <span class="o">=</span> <span class="mi">2</span>
 
 
-<span class="k">class</span> <span class="nc">_UnaryResponseMixin</span><span class="p">(</span><span class="n">Call</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">_UnaryResponseMixin</span><span class="p">(</span><span class="n">Call</span><span class="p">,</span> <span class="n">Generic</span><span class="p">[</span><span class="n">ResponseType</span><span class="p">]):</span>
     <span class="n">_call_response</span><span class="p">:</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">Task</span>
 
     <span class="k">def</span> <span class="nf">_init_unary_response_mixin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response_task</span><span class="p">:</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">Task</span><span class="p">):</span>
@@ -354,7 +354,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">False</span>
 
-    <span class="k">def</span> <span class="fm">__await__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ResponseType</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__await__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">ResponseType</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Wait till the ongoing RPC request finishes.&quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">response</span> <span class="o">=</span> <span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call_response</span>
@@ -662,6 +662,7 @@
             <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_raise_for_status</span><span class="p">()</span>
 
 
+<span class="c1"># pylint: disable=too-many-ancestors</span>
 <span class="k">class</span> <span class="nc">StreamUnaryCall</span><span class="p">(</span><span class="n">_StreamRequestMixin</span><span class="p">,</span> <span class="n">_UnaryResponseMixin</span><span class="p">,</span> <span class="n">Call</span><span class="p">,</span>
                       <span class="n">_base_call</span><span class="o">.</span><span class="n">StreamUnaryCall</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Object for managing stream-unary RPC calls.</span>

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.55.0</span>
+   &#160;<span id="projectnumber">1.56.0</span>
    </div>
   </td>
  </tr>
@@ -444,7 +444,7 @@ Friends</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Async only. </p>
-<p>Has to be called before the rpc starts. Returns the tag in completion queue when the rpc finishes. <a class="el" href="classgrpc_1_1_server_context_base.html#af2d0f087805b4b475d01b12d73508f09" title="Return whether this RPC failed before the server could provide its status back to the client.">IsCancelled()</a> can then be called to check whether the rpc was cancelled. TODO(vjpai): Fix this so that the tag is returned even if the call never starts (<a href="https://github.com/grpc/grpc/issues/10136">https://github.com/grpc/grpc/issues/10136</a>). </p>
+<p>Has to be called before the rpc starts. Returns the tag in completion queue when the rpc finishes. <a class="el" href="classgrpc_1_1_server_context_base.html#af2d0f087805b4b475d01b12d73508f09" title="Return whether this RPC failed before the server could provide its status back to the client.">IsCancelled()</a> can then be called to check whether the rpc was cancelled. Note: the tag will only be returned if call starts. If the call never starts, this tag will not be returned. </p>
 
 </div>
 </div>
@@ -982,7 +982,7 @@ Friends</h2></td></tr>
 
 <p>Cancel the Call from the server. </p>
 <p>This is a best-effort API and depending on when it is called, the RPC may still appear successful to the client. For example, if <a class="el" href="classgrpc_1_1_server_context_base.html#a88d3a0c3d53e39f38654ce8fba968301" title="Cancel the Call from the server.">TryCancel()</a> is called on a separate thread, it might race with the server handler which might return success to the client before <a class="el" href="classgrpc_1_1_server_context_base.html#a88d3a0c3d53e39f38654ce8fba968301" title="Cancel the Call from the server.">TryCancel()</a> was even started by the thread.</p>
-<p>It is the caller's responsibility to prevent such races and ensure that if <a class="el" href="classgrpc_1_1_server_context_base.html#a88d3a0c3d53e39f38654ce8fba968301" title="Cancel the Call from the server.">TryCancel()</a> is called, the serverhandler must return <a class="el" href="classgrpc_1_1_status.html#a9994ffe95a0495915d82481c2ec594ab" title="A CANCELLED pre-defined instance.">Status::CANCELLED</a>. The only exception is that if the serverhandler is already returning an error status code, it is ok to not return <a class="el" href="classgrpc_1_1_status.html#a9994ffe95a0495915d82481c2ec594ab" title="A CANCELLED pre-defined instance.">Status::CANCELLED</a> even if <a class="el" href="classgrpc_1_1_server_context_base.html#a88d3a0c3d53e39f38654ce8fba968301" title="Cancel the Call from the server.">TryCancel()</a> was called.</p>
+<p>It is the caller's responsibility to prevent such races and ensure that if <a class="el" href="classgrpc_1_1_server_context_base.html#a88d3a0c3d53e39f38654ce8fba968301" title="Cancel the Call from the server.">TryCancel()</a> is called, the serverhandler must return <a class="el" href="classgrpc_1_1_status.html#a9994ffe95a0495915d82481c2ec594ab" title="A CANCELLED pre-defined instance.">Status::CANCELLED</a>. The only exception is that if the serverhandler is already returning an error status code, it is ok to not return <a class="el" href="classgrpc_1_1_status.html#a9994ffe95a0495915d82481c2ec594ab" title="A CANCELLED pre-defined instance.">Status::CANCELLED</a> even if <a class="el" href="classgrpc_1_1_server_context_base.html#a88d3a0c3d53e39f38654ce8fba968301" title="Cancel the Call from the server.">TryCancel()</a> was called. Additionally, it is illegal to invoke <a class="el" href="classgrpc_1_1_server_context_base.html#a88d3a0c3d53e39f38654ce8fba968301" title="Cancel the Call from the server.">TryCancel()</a> before the call has actually begun, i.e., before metadata has been received from the client.</p>
 <p>For reasons such as the above, it is generally preferred to explicitly finish an RPC by returning <a class="el" href="classgrpc_1_1_status.html#a9994ffe95a0495915d82481c2ec594ab" title="A CANCELLED pre-defined instance.">Status::CANCELLED</a> rather than using TryCancel.</p>
 <p>Note that <a class="el" href="classgrpc_1_1_server_context_base.html#a88d3a0c3d53e39f38654ce8fba968301" title="Cancel the Call from the server.">TryCancel()</a> does not change any of the tags that are pending on the completion queue. All pending tags will still be delivered (though their ok result may reflect the effect of cancellation). </p>
 
@@ -1623,7 +1623,7 @@ template&lt;class W &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 19 2023 06:26:58 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Jun 27 2023 17:50:39 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>
