@@ -56,6 +56,8 @@ GRPC_STATUS_CODE_TO_STRING = {
     grpc.StatusCode.DATA_LOSS: "DATA_LOSS",
 }
 
+GRPC_SPAN_CONTEXT = "grpc_span_context"
+
 
 @dataclass
 class GcpObservabilityPythonConfig:
@@ -165,11 +167,12 @@ class GCPOpenCensusObservability(grpc._observability.ObservabilityPlugin):
     def create_client_call_tracer(
         self, method_name: bytes
     ) -> ClientCallTracerCapsule:
-        current_span = execution_context.get_current_span()
-        if current_span:
-            # Propagate existing OC context
-            trace_id = current_span.context_tracer.trace_id.encode("utf8")
-            parent_span_id = current_span.span_id.encode("utf8")
+        grpc_span_context = execution_context.get_opencensus_attr(
+            GRPC_SPAN_CONTEXT
+        )
+        if grpc_span_context:
+            trace_id = grpc_span_context.trace_id.encode("utf8")
+            parent_span_id = grpc_span_context.span_id.encode("utf8")
             capsule = _cyobservability.create_client_call_tracer(
                 method_name, trace_id, parent_span_id
             )
@@ -197,10 +200,12 @@ class GCPOpenCensusObservability(grpc._observability.ObservabilityPlugin):
         trace_options = trace_options_module.TraceOptions(0)
         trace_options.set_enabled(is_sampled)
         span_context = span_context_module.SpanContext(
-            trace_id=trace_id, span_id=span_id, trace_options=trace_options
+            trace_id=trace_id,
+            span_id=span_id,
+            trace_options=trace_options,
+            from_header=True,
         )
-        current_tracer = execution_context.get_opencensus_tracer()
-        current_tracer.span_context = span_context
+        execution_context.set_opencensus_attr(GRPC_SPAN_CONTEXT, span_context)
 
     def record_rpc_latency(
         self, method: str, rpc_latency: float, status_code: grpc.StatusCode

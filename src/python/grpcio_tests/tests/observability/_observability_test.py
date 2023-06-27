@@ -35,6 +35,9 @@ _UNARY_STREAM = "/test/UnaryStream"
 _STREAM_UNARY = "/test/StreamUnary"
 _STREAM_STREAM = "/test/StreamStream"
 STREAM_LENGTH = 5
+PORT = 50051
+TRIGGER_RPC_METADATA = ("control", "triger_rpc")
+TRIGGER_RPC_METADATA_TUPLE = (TRIGGER_RPC_METADATA,)
 
 CONFIG_ENV_VAR_NAME = "GRPC_GCP_OBSERVABILITY_CONFIG"
 CONFIG_FILE_ENV_VAR_NAME = "GRPC_GCP_OBSERVABILITY_CONFIG_FILE"
@@ -86,6 +89,8 @@ class TestExporter(_observability.Exporter):
 
 
 def handle_unary_unary(request, servicer_context):
+    if TRIGGER_RPC_METADATA in servicer_context.invocation_metadata():
+        unary_unary_call(port=PORT)
     return _RESPONSE
 
 
@@ -157,12 +162,28 @@ class ObservabilityTest(unittest.TestCase):
             exporter=self.test_exporter
         ):
             self._start_server()
-            self.unary_unary_call()
+            unary_unary_call(port=self._port)
 
         self.assertGreater(len(self.all_metric), 0)
         self.assertGreater(len(self.all_span), 0)
         self._validate_metrics(self.all_metric)
         self._validate_spans(self.all_span)
+
+    def testContextPropagation(self):
+        # Sends two RPCs, one from gRPC client and the other from gRPC server.
+        # Verify that the trace_id was propagated to the 2nd RPC.
+        self._set_config_file(_VALID_CONFIG_TRACING_ONLY)
+        with grpc_observability.GCPOpenCensusObservability(
+            exporter=self.test_exporter
+        ):
+            self._start_server(port=PORT)
+            unary_unary_call(port=PORT, metadata=TRIGGER_RPC_METADATA_TUPLE)
+
+        # 2 of each for ["Recv", "Sent", "Attempt"]
+        self.assertEqual(len(self.all_span), 6)
+        trace_id = self.all_span[0].trace_id
+        for span in self.all_span:
+            self.assertEqual(span.trace_id, trace_id)
 
     def testThrowErrorWithoutConfig(self):
         with self.assertRaises(ValueError):
@@ -189,7 +210,7 @@ class ObservabilityTest(unittest.TestCase):
             exporter=self.test_exporter
         ):
             self._start_server()
-            self.unary_unary_call()
+            unary_unary_call(port=self._port)
 
         self.assertEqual(len(self.all_metric), 0)
         self.assertEqual(len(self.all_span), 0)
@@ -208,7 +229,7 @@ class ObservabilityTest(unittest.TestCase):
             exporter=self.test_exporter
         ):
             self._start_server()
-            self.unary_unary_call()
+            unary_unary_call(port=self._port)
 
         self.assertEqual(len(self.all_span), 0)
         self.assertGreater(len(self.all_metric), 0)
@@ -220,7 +241,7 @@ class ObservabilityTest(unittest.TestCase):
             exporter=self.test_exporter
         ):
             self._start_server()
-            self.unary_unary_call()
+            unary_unary_call(port=self._port)
 
         self.assertEqual(len(self.all_metric), 0)
         self.assertGreater(len(self.all_span), 0)
@@ -232,7 +253,7 @@ class ObservabilityTest(unittest.TestCase):
             exporter=self.test_exporter
         ):
             self._start_server()
-            self.unary_stream_call()
+            unary_stream_call(port=self._port)
 
         self.assertGreater(len(self.all_metric), 0)
         self.assertGreater(len(self.all_span), 0)
@@ -245,7 +266,7 @@ class ObservabilityTest(unittest.TestCase):
             exporter=self.test_exporter
         ):
             self._start_server()
-            self.stream_unary_call()
+            stream_unary_call(port=self._port)
 
         self.assertTrue(len(self.all_metric) > 0)
         self.assertTrue(len(self.all_span) > 0)
@@ -258,7 +279,7 @@ class ObservabilityTest(unittest.TestCase):
             exporter=self.test_exporter
         ):
             self._start_server()
-            self.stream_stream_call()
+            stream_stream_call(port=self._port)
 
         self.assertGreater(len(self.all_metric), 0)
         self.assertGreater(len(self.all_span), 0)
@@ -268,7 +289,7 @@ class ObservabilityTest(unittest.TestCase):
     def testNoRecordBeforeInit(self):
         self._set_config_file(_VALID_CONFIG_TRACING_STATS)
         self._start_server()
-        self.unary_unary_call()
+        unary_unary_call(port=self._port)
         self.assertEqual(len(self.all_metric), 0)
         self.assertEqual(len(self.all_span), 0)
         self._server.stop(0)
@@ -277,7 +298,7 @@ class ObservabilityTest(unittest.TestCase):
             exporter=self.test_exporter
         ):
             self._start_server()
-            self.unary_unary_call()
+            unary_unary_call(port=self._port)
 
         self.assertGreater(len(self.all_metric), 0)
         self.assertGreater(len(self.all_span), 0)
@@ -290,7 +311,7 @@ class ObservabilityTest(unittest.TestCase):
             exporter=self.test_exporter
         ):
             self._start_server()
-            self.unary_unary_call()
+            unary_unary_call(port=self._port)
 
         self.assertGreater(len(self.all_metric), 0)
         self.assertGreater(len(self.all_span), 0)
@@ -299,7 +320,7 @@ class ObservabilityTest(unittest.TestCase):
         self._validate_metrics(self.all_metric)
         self._validate_spans(self.all_span)
 
-        self.unary_unary_call()
+        unary_unary_call(port=self._port)
         self.assertEqual(len(self.all_metric), current_metric_len)
         self.assertEqual(len(self.all_span), current_spans_len)
 
@@ -320,8 +341,7 @@ class ObservabilityTest(unittest.TestCase):
         ):
             self._start_server()
             for _ in range(_CALLS):
-                self.unary_unary_call()
-
+                unary_unary_call(port=self._port)
         self.assertEqual(len(self.all_metric), 0)
         self.assertGreaterEqual(len(self.all_span), _LOWER_BOUND)
         self.assertLessEqual(len(self.all_span), _HIGHER_BOUND)
@@ -337,7 +357,7 @@ class ObservabilityTest(unittest.TestCase):
             exporter=self.test_exporter
         ):
             self._start_server()
-            self.unary_unary_call()
+            unary_unary_call(port=self._port)
 
         self.assertEqual(len(self.all_metric), 0)
         self.assertGreater(len(self.all_span), 0)
@@ -350,37 +370,13 @@ class ObservabilityTest(unittest.TestCase):
             f.write(json.dumps(config))
         os.environ[CONFIG_FILE_ENV_VAR_NAME] = config_file_path
 
-    def unary_unary_call(self):
-        with grpc.insecure_channel(f"localhost:{self._port}") as channel:
-            multi_callable = channel.unary_unary(_UNARY_UNARY)
-            unused_response, call = multi_callable.with_call(_REQUEST)
-
-    def unary_stream_call(self):
-        with grpc.insecure_channel(f"localhost:{self._port}") as channel:
-            multi_callable = channel.unary_stream(_UNARY_STREAM)
-            call = multi_callable(_REQUEST)
-            for _ in call:
-                pass
-
-    def stream_unary_call(self):
-        with grpc.insecure_channel(f"localhost:{self._port}") as channel:
-            multi_callable = channel.stream_unary(_STREAM_UNARY)
-            unused_response, call = multi_callable.with_call(
-                iter([_REQUEST] * STREAM_LENGTH)
-            )
-
-    def stream_stream_call(self):
-        with grpc.insecure_channel(f"localhost:{self._port}") as channel:
-            multi_callable = channel.stream_stream(_STREAM_STREAM)
-            call = multi_callable(iter([_REQUEST] * STREAM_LENGTH))
-            for _ in call:
-                pass
-
-    def _start_server(self) -> None:
+    def _start_server(self, port=None) -> None:
         self._server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
         self._server.add_generic_rpc_handlers((_GenericHandler(),))
-        self._port = self._server.add_insecure_port("[::]:0")
-
+        if port:
+            self._port = self._server.add_insecure_port(f"[::]:{PORT}")
+        else:
+            self._port = self._server.add_insecure_port("[::]:0")
         self._server.start()
 
     def _validate_metrics(
@@ -411,6 +407,41 @@ class ObservabilityTest(unittest.TestCase):
                     span_names,
                 )
             self.assertTrue(prefix_exist)
+
+
+def unary_unary_call(port, metadata=None):
+    with grpc.insecure_channel(f"localhost:{port}") as channel:
+        multi_callable = channel.unary_unary(_UNARY_UNARY)
+        if metadata:
+            unused_response, call = multi_callable.with_call(
+                _REQUEST, metadata=metadata
+            )
+        else:
+            unused_response, call = multi_callable.with_call(_REQUEST)
+
+
+def unary_stream_call(port):
+    with grpc.insecure_channel(f"localhost:{port}") as channel:
+        multi_callable = channel.unary_stream(_UNARY_STREAM)
+        call = multi_callable(_REQUEST)
+        for _ in call:
+            pass
+
+
+def stream_unary_call(port):
+    with grpc.insecure_channel(f"localhost:{port}") as channel:
+        multi_callable = channel.stream_unary(_STREAM_UNARY)
+        unused_response, call = multi_callable.with_call(
+            iter([_REQUEST] * STREAM_LENGTH)
+        )
+
+
+def stream_stream_call(port):
+    with grpc.insecure_channel(f"localhost:{port}") as channel:
+        multi_callable = channel.stream_stream(_STREAM_STREAM)
+        call = multi_callable(iter([_REQUEST] * STREAM_LENGTH))
+        for _ in call:
+            pass
 
 
 if __name__ == "__main__":
