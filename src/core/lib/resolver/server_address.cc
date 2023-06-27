@@ -40,45 +40,57 @@
 
 namespace grpc_core {
 
-//
-// ServerAddress
-//
+EndpointAddresses::EndpointAddresses(const grpc_resolved_address& address,
+                                     const ChannelArgs& args)
+    : addresses_(1, address), args_(args) {}
 
-ServerAddress::ServerAddress(const grpc_resolved_address& address,
-                             const ChannelArgs& args)
-    : address_(address), args_(args) {}
+EndpointAddresses::EndpointAddresses(
+    std::vector<grpc_resolved_address> addresses, const ChannelArgs& args)
+    : addresses_(std::move(addresses)), args_(args) {}
 
-ServerAddress::ServerAddress(const ServerAddress& other)
-    : address_(other.address_), args_(other.args_) {}
+EndpointAddresses::EndpointAddresses(const EndpointAddresses& other)
+    : addresses_(other.addresses_), args_(other.args_) {}
 
-ServerAddress& ServerAddress::operator=(const ServerAddress& other) {
+EndpointAddresses& EndpointAddresses::operator=(
+    const EndpointAddresses& other) {
   if (&other == this) return *this;
-  address_ = other.address_;
+  addresses_ = other.addresses_;
   args_ = other.args_;
   return *this;
 }
 
-ServerAddress::ServerAddress(ServerAddress&& other) noexcept
-    : address_(other.address_), args_(std::move(other.args_)) {}
+EndpointAddresses::EndpointAddresses(EndpointAddresses&& other) noexcept
+    : addresses_(std::move(other.addresses_)), args_(std::move(other.args_)) {}
 
-ServerAddress& ServerAddress::operator=(ServerAddress&& other) noexcept {
-  address_ = other.address_;
+EndpointAddresses& EndpointAddresses::operator=(
+    EndpointAddresses&& other) noexcept {
+  addresses_ = std::move(other.addresses_);
   args_ = std::move(other.args_);
   return *this;
 }
 
-int ServerAddress::Cmp(const ServerAddress& other) const {
-  if (address_.len > other.address_.len) return 1;
-  if (address_.len < other.address_.len) return -1;
-  int retval = memcmp(address_.addr, other.address_.addr, address_.len);
-  if (retval != 0) return retval;
+int EndpointAddresses::Cmp(const EndpointAddresses& other) const {
+  for (size_t i = 0; i < addresses_.size(); ++i) {
+    if (other.addresses_.size() == i) return 1;
+    if (addresses_[i].len > other.addresses_[i].len) return 1;
+    if (addresses_[i].len < other.addresses_[i].len) return -1;
+    int retval =
+        memcmp(addresses_[i].addr, other.addresses_[i].addr, addresses_[i].len);
+    if (retval != 0) return retval;
+  }
+  if (other.addresses_.size() > addresses_.size()) return -1;
   return QsortCompare(args_, other.args_);
 }
 
-std::string ServerAddress::ToString() const {
-  auto addr_str = grpc_sockaddr_to_string(&address_, false);
+std::string EndpointAddresses::ToString() const {
+  std::vector<std::string> addr_strings;
+  for (const auto& address : addresses_) {
+    auto addr_str = grpc_sockaddr_to_string(&address, false);
+    addr_strings.push_back(
+        addr_str.ok() ? std::move(*addr_str) : addr_str.status().ToString());
+  }
   std::vector<std::string> parts = {
-      addr_str.ok() ? addr_str.value() : addr_str.status().ToString(),
+      absl::StrCat("addrs=[", absl::StrJoin(addr_strings, ", "), "]")
   };
   if (args_ != ChannelArgs()) {
     parts.emplace_back(absl::StrCat("args=", args_.ToString()));

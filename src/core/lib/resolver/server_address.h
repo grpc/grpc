@@ -38,37 +38,50 @@
 
 namespace grpc_core {
 
-//
-// ServerAddress
-//
-
-// A server address is a grpc_resolved_address with an associated set of
-// channel args.  Any args present here will be merged into the channel
-// args when a subchannel is created for this address.
-class ServerAddress {
+// A list of addresses for a given endpoint with an associated set of channel
+// args.  Any args present here will be merged into the channel args when a
+// subchannel is created for each address.
+class EndpointAddresses {
  public:
-  ServerAddress(const grpc_resolved_address& address, const ChannelArgs& args);
+  // For backward compatibility.
+  // TODO(roth): Remove when callers have been updated.
+  EndpointAddresses(const grpc_resolved_address& address,
+                    const ChannelArgs& args);
+
+  EndpointAddresses(std::vector<grpc_resolved_address> addresses,
+                    const ChannelArgs& args);
 
   // Copyable.
-  ServerAddress(const ServerAddress& other);
-  ServerAddress& operator=(const ServerAddress& other);
+  EndpointAddresses(const EndpointAddresses& other);
+  EndpointAddresses& operator=(const EndpointAddresses& other);
 
   // Movable.
-  ServerAddress(ServerAddress&& other) noexcept;
-  ServerAddress& operator=(ServerAddress&& other) noexcept;
+  EndpointAddresses(EndpointAddresses&& other) noexcept;
+  EndpointAddresses& operator=(EndpointAddresses&& other) noexcept;
 
+// FIXME: remove in separate PR
   // Returns a copy of this address without any attributes.
   // This is suitable for determining subchannel uniqueness.
-  ServerAddress WithoutAttributes() const {
-    return ServerAddress(address_, args_);
+  EndpointAddresses WithoutAttributes() const {
+    return EndpointAddresses(addresses_, args_);
   }
 
-  bool operator==(const ServerAddress& other) const { return Cmp(other) == 0; }
-  bool operator<(const ServerAddress& other) const { return Cmp(other) < 0; }
+  bool operator==(const EndpointAddresses& other) const {
+    return Cmp(other) == 0;
+  }
+  bool operator<(const EndpointAddresses& other) const {
+    return Cmp(other) < 0;
+  }
 
-  int Cmp(const ServerAddress& other) const;
+  int Cmp(const EndpointAddresses& other) const;
 
-  const grpc_resolved_address& address() const { return address_; }
+  // For backward compatibility only.
+  // TODO(roth): Remove when all callers have been updated.
+  const grpc_resolved_address& address() const { return addresses_[0]; }
+
+  const std::vector<grpc_resolved_address>& addresses() const {
+    return addresses_;
+  }
   const ChannelArgs& args() const { return args_; }
 
   // TODO(ctiller): Prior to making this a public API we should ensure that the
@@ -77,15 +90,16 @@ class ServerAddress {
   std::string ToString() const;
 
  private:
-  grpc_resolved_address address_;
+  std::vector<grpc_resolved_address> addresses_;
   ChannelArgs args_;
 };
 
-//
-// ServerAddressList
-//
+using EndpointAddressesList = std::vector<EndpointAddresses>;
 
-using ServerAddressList = std::vector<ServerAddress>;
+// For backward compatibility only.
+// TODO(roth): Remove these when all callers have been updated.
+using ServerAddress = EndpointAddresses;
+using ServerAddressList = EndpointAddressesList;
 
 }  // namespace grpc_core
 
