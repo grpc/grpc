@@ -2459,12 +2459,13 @@ src/core/lib/promise/trace.cc \
 src/core/lib/promise/trace.h \
 src/core/lib/promise/try_join.h \
 src/core/lib/promise/try_seq.h \
+src/core/lib/resolver/endpoint_addresses.cc \
+src/core/lib/resolver/endpoint_addresses.h \
 src/core/lib/resolver/resolver.cc \
 src/core/lib/resolver/resolver.h \
 src/core/lib/resolver/resolver_factory.h \
 src/core/lib/resolver/resolver_registry.cc \
 src/core/lib/resolver/resolver_registry.h \
-src/core/lib/resolver/server_address.cc \
 src/core/lib/resolver/server_address.h \
 src/core/lib/resource_quota/api.cc \
 src/core/lib/resource_quota/api.h \
