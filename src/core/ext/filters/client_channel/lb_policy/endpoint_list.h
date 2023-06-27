@@ -72,8 +72,9 @@ class MyEndpointList : public EndpointList {
     MyEndpoint(RefCountedPtr<MyEndpointList> endpoint_list,
                const ServerAddress& address, const ChannelArgs& args,
                std::shared_ptr<WorkSerializer> work_serializer)
-        : Endpoint(std::move(endpoint_list), address, args,
-                   std::move(work_serializer)) {}
+        : Endpoint(std::move(endpoint_list)) {
+      Init(address, args, std::move(work_serializer));
+    }
 
    private:
     void OnStateUpdate(
