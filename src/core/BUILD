@@ -4601,6 +4601,7 @@ grpc_cc_library(
         "channel_args",
         "delegating_helper",
         "grpc_lb_policy_pick_first",
+        "json",
         "lb_policy",
         "lb_policy_registry",
         "pollset_set",
