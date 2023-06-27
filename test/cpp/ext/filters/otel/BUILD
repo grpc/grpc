@@ -32,7 +32,6 @@ grpc_cc_test(
         "otel/sdk/src/metrics",
     ],
     language = "C++",
-    linkstatic = True,
     tags = [
     ],
     deps = ["//test/core/util:grpc_test_util"],
