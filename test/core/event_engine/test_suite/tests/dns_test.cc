@@ -171,9 +171,10 @@ class EventEngineDNSTest : public EventEngineTest {
         // 2.2 make an A-record query to dns_server
         // <path to python wrapper> <path to dns_resolver.py> -s <hostname> -p
         // <port> -n <domain name to query>
-        std::string command = absl::StrJoin<absl::string_view>(
-            {kPythonWrapper, kDNSResolverPath, "-s", "127.0.0.1", "-p",
-             std::to_string(port), "-n", kHealthCheckRecordName},
+        std::string command = absl::StrJoin(
+            std::make_tuple(kPythonWrapper, kDNSResolverPath, "-s", "127.0.0.1",
+                            "-p", std::to_string(port), "-n",
+                            kHealthCheckRecordName),
             " ");
         // TODO(yijiem): make this portable for Windows
         FILE* f = popen(command.c_str(), "r");
