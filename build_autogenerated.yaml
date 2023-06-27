@@ -231,6 +231,7 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/address_filtering.h
   - src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h
   - src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h
+  - src/core/ext/filters/client_channel/lb_policy/endpoint_list.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h
@@ -241,6 +242,7 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h
   - src/core/ext/filters/client_channel/lb_policy/oob_backend_metric_internal.h
   - src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h
+  - src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.h
   - src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h
   - src/core/ext/filters/client_channel/lb_policy/subchannel_list.h
   - src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.h
@@ -1034,6 +1036,7 @@ libs:
   - src/core/ext/filters/client_channel/http_proxy.cc
   - src/core/ext/filters/client_channel/lb_policy/address_filtering.cc
   - src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc
+  - src/core/ext/filters/client_channel/lb_policy/endpoint_list.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc
@@ -1952,6 +1955,7 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/address_filtering.h
   - src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h
   - src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h
+  - src/core/ext/filters/client_channel/lb_policy/endpoint_list.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h
@@ -1962,6 +1966,7 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h
   - src/core/ext/filters/client_channel/lb_policy/oob_backend_metric_internal.h
   - src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h
+  - src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.h
   - src/core/ext/filters/client_channel/lb_policy/subchannel_list.h
   - src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.h
   - src/core/ext/filters/client_channel/local_subchannel_pool.h
@@ -2363,6 +2368,7 @@ libs:
   - src/core/ext/filters/client_channel/http_proxy.cc
   - src/core/ext/filters/client_channel/lb_policy/address_filtering.cc
   - src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc
+  - src/core/ext/filters/client_channel/lb_policy/endpoint_list.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc

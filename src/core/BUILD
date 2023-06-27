@@ -4577,6 +4577,7 @@ grpc_cc_library(
         "//:grpc_trace",
         "//:orphanable",
         "//:ref_counted_ptr",
+        "//:sockaddr_utils",
         "//:work_serializer",
     ],
 )
@@ -4610,9 +4611,47 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "lb_endpoint_list",
+    srcs = [
+        "ext/filters/client_channel/lb_policy/endpoint_list.cc",
+    ],
+    hdrs = [
+        "ext/filters/client_channel/lb_policy/endpoint_list.h",
+    ],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/types:optional",
+    ],
+    language = "c++",
+    deps = [
+        "channel_args",
+        "delegating_helper",
+        "grpc_lb_policy_pick_first",
+        "json",
+        "lb_policy",
+        "lb_policy_registry",
+        "pollset_set",
+        "subchannel_interface",
+        "//:config",
+        "//:debug_location",
+        "//:gpr",
+        "//:grpc_base",
+        "//:orphanable",
+        "//:ref_counted_ptr",
+        "//:server_address",
+        "//:work_serializer",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_lb_policy_pick_first",
     srcs = [
         "ext/filters/client_channel/lb_policy/pick_first/pick_first.cc",
+    ],
+    hdrs = [
+        "ext/filters/client_channel/lb_policy/pick_first/pick_first.h",
     ],
     external_deps = [
         "absl/algorithm:container",
@@ -4626,8 +4665,9 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "env",
-        "grpc_lb_subchannel_list",
         "grpc_outlier_detection_header",
+        "health_check_client",
+        "iomgr_fwd",
         "json",
         "json_args",
         "json_object_loader",
@@ -4643,7 +4683,6 @@ grpc_cc_library(
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:server_address",
-        "//:work_serializer",
     ],
 )
 
@@ -4710,11 +4749,10 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
-        "grpc_lb_subchannel_list",
         "json",
+        "lb_endpoint_list",
         "lb_policy",
         "lb_policy_factory",
-        "subchannel_interface",
         "//:config",
         "//:debug_location",
         "//:gpr",
