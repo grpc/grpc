@@ -40,7 +40,7 @@ void ParseJson(const std::string& json, const std::string& type,
   if (!status.ok()) {
     std::string errmsg(status.message());
     gpr_log(GPR_ERROR, "Failed to convert json to binary: errcode=%d msg=%s",
-            status.code(), errmsg.c_str());
+            static_cast<int>(status.code()), errmsg.c_str());
     grpc_core::Crash(absl::StrFormat("JSON: %s", json.c_str()));
   }
   GPR_ASSERT(msg->ParseFromString(binary));
