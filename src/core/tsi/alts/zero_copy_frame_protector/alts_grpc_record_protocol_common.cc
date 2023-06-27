@@ -124,9 +124,8 @@ tsi_result alts_grpc_record_protocol_init(alts_grpc_record_protocol* rp,
 tsi_result alts_grpc_record_protocol_protect(
     alts_grpc_record_protocol* self, grpc_slice_buffer* unprotected_slices,
     grpc_slice_buffer* protected_slices) {
-  if (grpc_core::ExecCtx::Get() == nullptr || self == nullptr ||
-      self->vtable == nullptr || unprotected_slices == nullptr ||
-      protected_slices == nullptr) {
+  if (self == nullptr || self->vtable == nullptr ||
+      unprotected_slices == nullptr || protected_slices == nullptr) {
     return TSI_INVALID_ARGUMENT;
   }
   if (self->vtable->protect == nullptr) {
@@ -138,9 +137,8 @@ tsi_result alts_grpc_record_protocol_protect(
 tsi_result alts_grpc_record_protocol_unprotect(
     alts_grpc_record_protocol* self, grpc_slice_buffer* protected_slices,
     grpc_slice_buffer* unprotected_slices) {
-  if (grpc_core::ExecCtx::Get() == nullptr || self == nullptr ||
-      self->vtable == nullptr || protected_slices == nullptr ||
-      unprotected_slices == nullptr) {
+  if (self == nullptr || self->vtable == nullptr ||
+      protected_slices == nullptr || unprotected_slices == nullptr) {
     return TSI_INVALID_ARGUMENT;
   }
   if (self->vtable->unprotect == nullptr) {

@@ -18,7 +18,7 @@ import abc
 import contextlib
 import logging
 import threading
-from typing import Any, Generator, Generic, Optional, TypeVar
+from typing import Any, Generator, Generic, List, Optional, TypeVar
 
 from grpc._cython import cygrpc as _cygrpc
 
@@ -30,6 +30,10 @@ ServerCallTracerFactoryCapsule = TypeVar("ServerCallTracerFactoryCapsule")
 
 _plugin_lock: threading.RLock = threading.RLock()
 _OBSERVABILITY_PLUGIN: Optional["ObservabilityPlugin"] = None
+_SERVICES_TO_EXCLUDE: List[bytes] = [
+    b"google.monitoring.v3.MetricService",
+    b"google.devtools.cloudtrace.v2.TraceService",
+]
 
 
 class ObservabilityPlugin(
@@ -267,6 +271,10 @@ def maybe_record_rpc_latency(state: "_channel._RPCState") -> None:
     state: a grpc._channel._RPCState object which contains the stats related to the
     RPC.
     """
+    # TODO(xuanwn): use channel args to exclude those metrics.
+    for exclude_prefix in _SERVICES_TO_EXCLUDE:
+        if exclude_prefix in state.method.encode("utf8"):
+            return
     with get_plugin() as plugin:
         if not (plugin and plugin.stats_enabled):
             return
