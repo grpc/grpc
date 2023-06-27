@@ -2202,12 +2202,13 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
         STACK_OF(X509_NAME)* root_names = nullptr;
         result = ssl_ctx_load_verification_certs(
             impl->ssl_contexts[i], options->pem_client_root_certs,
-            strlen(options->pem_client_root_certs), options->set_client_ca_list ? &root_names : nullptr);
+            strlen(options->pem_client_root_certs),
+            options->send_client_ca_list ? &root_names : nullptr);
         if (result != TSI_OK) {
           gpr_log(GPR_ERROR, "Invalid verification certs.");
           break;
         }
-        if (options->set_client_ca_list) {
+        if (options->send_client_ca_list) {
           SSL_CTX_set_client_CA_list(impl->ssl_contexts[i], root_names);
         }
       }

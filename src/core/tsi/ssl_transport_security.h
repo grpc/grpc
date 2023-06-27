@@ -334,7 +334,7 @@ struct tsi_ssl_server_handshaker_options {
   // bundle is sufficiently large, then setting this bit to true will result in
   // the server being unable to generate a ServerHello, and hence the server
   // will be unusable.
-  bool set_client_ca_list;
+  bool send_client_ca_list;
 
   tsi_ssl_server_handshaker_options()
       : pem_key_cert_pairs(nullptr),
@@ -349,7 +349,8 @@ struct tsi_ssl_server_handshaker_options {
         min_tls_version(tsi_tls_version::TSI_TLS1_2),
         max_tls_version(tsi_tls_version::TSI_TLS1_3),
         key_logger(nullptr),
-        crl_directory(nullptr), set_client_ca_list(true) {}
+        crl_directory(nullptr),
+        send_client_ca_list(true) {}
 };
 
 // Creates a server handshaker factory.

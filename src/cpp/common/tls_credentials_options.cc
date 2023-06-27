@@ -106,10 +106,12 @@ void TlsServerCredentialsOptions::set_cert_request_type(
                                                      cert_request_type);
 }
 
-void TlsServerCredentialsOptions::set_client_ca_list(bool set_client_ca_list) {
+void TlsServerCredentialsOptions::set_send_client_ca_list(
+    bool send_client_ca_list) {
   grpc_tls_credentials_options* options = c_credentials_options();
   GPR_ASSERT(options != nullptr);
-  grpc_tls_credentials_options_set_client_ca_list(options, set_client_ca_list);
+  grpc_tls_credentials_options_set_send_client_ca_list(options,
+                                                       send_client_ca_list);
 }
 
 }  // namespace experimental
