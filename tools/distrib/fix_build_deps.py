@@ -93,6 +93,8 @@ EXTERNAL_DEPS = {
     "absl/types/variant.h": "absl/types:variant",
     "absl/utility/utility.h": "absl/utility",
     "address_sorting/address_sorting.h": "address_sorting",
+    "api/include/opentelemetry/metrics/provider.h": "otel/api",
+    "sdk/include/opentelemetry/sdk/metrics/meter_provider.h": "otel/sdk/src/metrics",
     "ares.h": "cares",
     "fuzztest/fuzztest.h": ["fuzztest", "fuzztest_main"],
     "google/api/monitored_resource.pb.h": (
@@ -379,6 +381,7 @@ for dirname in [
     "test/core/promise",
     "test/core/resource_quota",
     "test/core/transport/chaotic_good",
+    "test/cpp/ext/filters/otel",
     "fuzztest",
     "fuzztest/core/channel",
 ]:
