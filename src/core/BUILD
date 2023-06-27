@@ -4654,7 +4654,7 @@ grpc_cc_library(
         "//:grpc_trace",
         "//:orphanable",
         "//:ref_counted_ptr",
-        "//:server_address",
+        "//:endpoint_addresses",
     ],
 )
 

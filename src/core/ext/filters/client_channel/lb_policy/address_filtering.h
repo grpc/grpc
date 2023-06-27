@@ -104,11 +104,11 @@ class HierarchicalPathArg : public RefCounted<HierarchicalPathArg> {
 
 // A map from the next path element to the endpoint addresses that fall
 // under that path element.
-using HierarchicalAddressMap = std::map<std::string, EndpointAddressList>;
+using HierarchicalAddressMap = std::map<std::string, EndpointAddressesList>;
 
 // Splits up the addresses into a separate list for each child.
 absl::StatusOr<HierarchicalAddressMap> MakeHierarchicalAddressMap(
-    const absl::StatusOr<EndpointAddressList>& addresses);
+    const absl::StatusOr<EndpointAddressesList>& addresses);
 
 }  // namespace grpc_core
 

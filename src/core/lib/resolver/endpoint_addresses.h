@@ -21,6 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <set>
 #include <string>
 #include <vector>
 
@@ -88,6 +89,24 @@ class EndpointAddresses {
 };
 
 using EndpointAddressesList = std::vector<EndpointAddresses>;
+
+class EndpointAddressSet {
+ public:
+  explicit EndpointAddressSet(
+      const std::vector<grpc_resolved_address>& addresses)
+      : addresses_(addresses.begin(), addresses.end()) {}
+
+  bool operator==(const EndpointAddressSet& other) const;
+  bool operator<(const EndpointAddressSet& other) const;
+
+ private:
+  struct ResolvedAddressLessThan {
+    bool operator()(const grpc_resolved_address& addr1,
+                    const grpc_resolved_address& addr2) const;
+  };
+
+  std::set<grpc_resolved_address, ResolvedAddressLessThan> addresses_;
+};
 
 }  // namespace grpc_core
 

@@ -98,4 +98,41 @@ std::string EndpointAddresses::ToString() const {
   return absl::StrJoin(parts, " ");
 }
 
+bool EndpointAddressSet::operator==(const EndpointAddressSet& other) const {
+  if (addresses_.size() != other.addresses_.size()) return false;
+// FIXME
+#if 0
+  for (size_t i = 0; i < addresses_.size(); ++i) {
+    if (addresses_[i].len != other.addresses_[i].len ||
+        memcmp(addresses_[i].addr, other.addresses_[i].addr,
+               addresses_[i].len) != 0) {
+      return false;
+    }
+  }
+#endif
+  return true;
+}
+
+bool EndpointAddressSet::operator<(const EndpointAddressSet& other) const {
+// FIXME
+#if 0
+  for (size_t i = 0; i < addresses_.size(); ++i) {
+    if (other.addresses_.size() == i) return true;
+    if (addresses_[i].len < other.addresses_[i].len) return true;
+    if (addresses_[i].len > other.addresses_[i].len) return false;
+    int r = memcmp(addresses_[i].addr, other.addresses_[i].addr,
+                   addresses_[i].len);
+    if (r != 0) return r < 0;
+  }
+#endif
+  return false;
+}
+
+bool EndpointAddressSet::ResolvedAddressLessThan::operator()(
+    const grpc_resolved_address& addr1,
+    const grpc_resolved_address& addr2) const {
+  if (addr1.len < addr2.len) return true;
+  return memcmp(addr1.addr, addr2.addr, addr1.len) < 0;
+}
+
 }  // namespace grpc_core

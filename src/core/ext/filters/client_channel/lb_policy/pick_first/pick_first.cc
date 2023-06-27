@@ -435,7 +435,7 @@ absl::Status PickFirst::UpdateLocked(UpdateArgs args) {
     EndpointAddressesList addresses;
     for (const auto& address : *args.addresses) {
       addresses.emplace_back(
-          address.address(),
+          address.addresses(),
           address.args().Set(GRPC_ARG_OUTLIER_DETECTION_DISABLE, 1));
     }
     args.addresses = std::move(addresses);

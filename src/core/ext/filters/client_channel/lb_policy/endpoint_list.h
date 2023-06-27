@@ -71,11 +71,10 @@ class MyEndpointList : public EndpointList {
   class MyEndpoint : public Endpoint {
    public:
     MyEndpoint(RefCountedPtr<MyEndpointList> endpoint_list,
-               const grpc_resolved_address& address,
-               const ChannelArgs& per_address_args, const ChannelArgs& args,
+               const EndpointAddresses& address, const ChannelArgs& args,
                std::shared_ptr<WorkSerializer> work_serializer)
         : Endpoint(std::move(endpoint_list)) {
-      Init(address, per_address_args, args, std::move(work_serializer));
+      Init(addresses, args, std::move(work_serializer));
     }
 
    private:
@@ -121,8 +120,7 @@ class EndpointList : public InternallyRefCounted<EndpointList> {
     explicit Endpoint(RefCountedPtr<EndpointList> endpoint_list)
         : endpoint_list_(std::move(endpoint_list)) {}
 
-    void Init(const grpc_resolved_address& address,
-              const ChannelArgs& per_address_args, const ChannelArgs& args,
+    void Init(const EndpointAddresses& addresses, const ChannelArgs& args,
               std::shared_ptr<WorkSerializer> work_serializer);
 
     // Templated for convenience, to provide a short-hand for

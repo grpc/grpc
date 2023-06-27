@@ -182,12 +182,13 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
     class WrrEndpoint : public Endpoint {
      public:
       WrrEndpoint(RefCountedPtr<WrrEndpointList> endpoint_list,
-                  const ServerAddress& address, const ChannelArgs& args,
+                  const EndpointAddresses& addresses, const ChannelArgs& args,
                   std::shared_ptr<WorkSerializer> work_serializer)
           : Endpoint(std::move(endpoint_list)),
             weight_(policy<WeightedRoundRobin>()->GetOrCreateWeight(
-                address.address())) {
-        Init(address, args, std::move(work_serializer));
+                // FIXME
+                addresses.address())) {
+        Init(addresses, args, std::move(work_serializer));
       }
 
       RefCountedPtr<EndpointWeight> weight() const { return weight_; }
@@ -229,9 +230,9 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
                            : nullptr) {
       Init(addresses, args,
            [&](RefCountedPtr<WrrEndpointList> endpoint_list,
-               const ServerAddress& address, const ChannelArgs& args) {
+               const EndpointAddresses& addresses, const ChannelArgs& args) {
              return MakeOrphanable<WrrEndpoint>(
-                 std::move(endpoint_list), address, args,
+                 std::move(endpoint_list), addresses, args,
                  policy<WeightedRoundRobin>()->work_serializer());
            });
     }

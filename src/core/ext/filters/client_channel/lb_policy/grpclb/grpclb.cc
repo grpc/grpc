@@ -684,7 +684,7 @@ EndpointAddressesList GrpcLb::Serverlist::GetServerAddressList(
     }
     // Add address with a channel arg containing LB token and stats object.
     endpoints.emplace_back(
-        {addr},
+        addr,
         ChannelArgs().SetObject(MakeRefCounted<TokenAndClientStatsArg>(
             std::move(lb_token), stats)));
   }
