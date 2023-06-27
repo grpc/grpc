@@ -97,7 +97,8 @@ struct grpc_tls_credentials_options
       watch_identity_pair_ == other.watch_identity_pair_ &&
       identity_cert_name_ == other.identity_cert_name_ &&
       tls_session_key_log_file_path_ == other.tls_session_key_log_file_path_ &&
-      crl_directory_ == other.crl_directory_;
+      crl_directory_ == other.crl_directory_ &&
+      send_client_ca_list_ == other.send_client_ca_list_;
   }
 
  private:
