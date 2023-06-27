@@ -54,7 +54,7 @@ class TestEncoder {
  public:
   std::string result() { return out_; }
 
-  void Encode(const grpc_core::Slice& key, const grpc_core::Slice& value) {
+  void Encode(const Slice& key, const Slice& value) {
     out_.append(
         absl::StrCat(key.as_string_view(), ": ", value.as_string_view(), "\n"));
   }
@@ -70,18 +70,15 @@ class TestEncoder {
 
 bool IsStreamError(const absl::Status& status) {
   intptr_t stream_id;
-  return grpc_error_get_int(status, grpc_core::StatusIntProperty::kStreamId,
-                            &stream_id);
+  return grpc_error_get_int(status, StatusIntProperty::kStreamId, &stream_id);
 }
 
 absl::StatusOr<std::string> TestVector(grpc_slice_split_mode mode,
                                        Slice input) {
-  grpc_core::MemoryAllocator memory_allocator =
-      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
-                                     ->memory_quota()
-                                     ->CreateMemoryAllocator("test"));
-  auto arena = grpc_core::MakeScopedArena(1024, &memory_allocator);
-  grpc_core::ExecCtx exec_ctx;
+  MemoryAllocator memory_allocator = MemoryAllocator(
+      ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
+  auto arena = MakeScopedArena(1024, &memory_allocator);
+  ExecCtx exec_ctx;
   grpc_slice* slices;
   size_t nslices;
   size_t i;
@@ -89,10 +86,9 @@ absl::StatusOr<std::string> TestVector(grpc_slice_split_mode mode,
   grpc_metadata_batch b(arena.get());
 
   HPackParser parser;
-  parser.BeginFrame(&b, 1024, 1024, grpc_core::HPackParser::Boundary::None,
-                    grpc_core::HPackParser::Priority::None,
-                    grpc_core::HPackParser::LogInfo{
-                        1, grpc_core::HPackParser::LogInfo::kHeaders, false});
+  parser.BeginFrame(
+      &b, 1024, 1024, HPackParser::Boundary::None, HPackParser::Priority::None,
+      HPackParser::LogInfo{1, HPackParser::LogInfo::kHeaders, false});
 
   grpc_split_slices(mode, const_cast<grpc_slice*>(&input.c_slice()), 1, &slices,
                     &nslices);
@@ -105,7 +101,7 @@ absl::StatusOr<std::string> TestVector(grpc_slice_split_mode mode,
 
   absl::Status found_err;
   for (i = 0; i < nslices; i++) {
-    grpc_core::ExecCtx exec_ctx;
+    ExecCtx exec_ctx;
     auto err = parser.Parse(slices[i], i == nslices - 1);
     if (!err.ok()) {
       if (!IsStreamError(err)) return err;
@@ -125,7 +121,7 @@ std::string Stringify(absl::StatusOr<std::string> result) {
   } else {
     intptr_t stream_id;
     bool has_stream = grpc_error_get_int(
-        result.status(), grpc_core::StatusIntProperty::kStreamId, &stream_id);
+        result.status(), StatusIntProperty::kStreamId, &stream_id);
     return absl::StrCat(
         has_stream ? "STREAM" : "CONNECTION", " ERROR: ",
         result.status().ToString(absl::StatusToStringMode::kWithNoExtraData));

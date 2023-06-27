@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/ext/transport/chttp2/transport/hpack_parse_result.h"
 
 #include <stddef.h>
@@ -115,8 +117,8 @@ absl::Status HpackParseResult::BuildMaterialized() const {
     }
     case HpackParseStatus::kMetadataParseError:
       if (!key_.empty()) {
-      return MakeStreamError(absl::InternalError(
-          absl::StrCat("Error parsing '", key_, "' metadata")));
+        return MakeStreamError(absl::InternalError(
+            absl::StrCat("Error parsing '", key_, "' metadata")));
       } else {
         return MakeStreamError(absl::InternalError("Error parsing metadata"));
       }

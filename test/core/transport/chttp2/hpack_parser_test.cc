@@ -89,7 +89,7 @@ class ParseTest : public ::testing::TestWithParam<Test> {
   }
 
   void SetUp() override {
-    parser_ = std::make_unique<grpc_core::HPackParser>();
+    parser_ = std::make_unique<HPackParser>();
     if (GetParam().table_size.has_value()) {
       parser_->hpack_table()->SetMaxBytes(GetParam().table_size.value());
       EXPECT_TRUE(parser_->hpack_table()->SetCurrentTableSize(
@@ -99,20 +99,18 @@ class ParseTest : public ::testing::TestWithParam<Test> {
 
   static bool IsStreamError(const absl::Status& status) {
     intptr_t stream_id;
-    return grpc_error_get_int(status, grpc_core::StatusIntProperty::kStreamId,
-                              &stream_id);
+    return grpc_error_get_int(status, StatusIntProperty::kStreamId, &stream_id);
   }
 
   void TestVector(grpc_slice_split_mode mode,
                   absl::optional<size_t> max_metadata_size,
                   std::string hexstring, absl::StatusOr<std::string> expect,
                   uint32_t flags) {
-    grpc_core::MemoryAllocator memory_allocator =
-        grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
-                                       ->memory_quota()
-                                       ->CreateMemoryAllocator("test"));
-    auto arena = grpc_core::MakeScopedArena(1024, &memory_allocator);
-    grpc_core::ExecCtx exec_ctx;
+    MemoryAllocator memory_allocator = MemoryAllocator(
+        ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
+            "test"));
+    auto arena = MakeScopedArena(1024, &memory_allocator);
+    ExecCtx exec_ctx;
     auto input = ParseHexstring(hexstring);
     grpc_slice* slices;
     size_t nslices;
@@ -123,14 +121,12 @@ class ParseTest : public ::testing::TestWithParam<Test> {
     parser_->BeginFrame(
         &b, max_metadata_size.value_or(4096), max_metadata_size.value_or(4096),
         (flags & kEndOfStream)
-            ? grpc_core::HPackParser::Boundary::EndOfStream
-            : ((flags & kEndOfHeaders)
-                   ? grpc_core::HPackParser::Boundary::EndOfHeaders
-                   : grpc_core::HPackParser::Boundary::None),
-        flags & kWithPriority ? grpc_core::HPackParser::Priority::Included
-                              : grpc_core::HPackParser::Priority::None,
-        grpc_core::HPackParser::LogInfo{
-            1, grpc_core::HPackParser::LogInfo::kHeaders, false});
+            ? HPackParser::Boundary::EndOfStream
+            : ((flags & kEndOfHeaders) ? HPackParser::Boundary::EndOfHeaders
+                                       : HPackParser::Boundary::None),
+        flags & kWithPriority ? HPackParser::Priority::Included
+                              : HPackParser::Priority::None,
+        HPackParser::LogInfo{1, HPackParser::LogInfo::kHeaders, false});
 
     grpc_split_slices(mode, const_cast<grpc_slice*>(&input.c_slice()), 1,
                       &slices, &nslices);

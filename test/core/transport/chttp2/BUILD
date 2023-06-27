@@ -67,18 +67,18 @@ grpc_fuzzer(
     name = "hpack_parser_input_size_fuzzer",
     srcs = ["hpack_parser_input_size_fuzzer.cc"],
     corpus = "hpack_parser_input_size_corpus",
-    tags = ["no_windows"],
-    uses_polling = False,
     external_deps = [
         "absl/cleanup",
         "absl/status:statusor",
         "absl/status",
     ],
+    tags = ["no_windows"],
+    uses_polling = False,
     deps = [
         "//:grpc",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
-    ]
+    ],
 )
 
 grpc_fuzzer(

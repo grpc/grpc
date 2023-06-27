@@ -56,8 +56,7 @@ namespace {
 
 bool IsStreamError(const absl::Status& status) {
   intptr_t stream_id;
-  return grpc_error_get_int(status, grpc_core::StatusIntProperty::kStreamId,
-                            &stream_id);
+  return grpc_error_get_int(status, StatusIntProperty::kStreamId, &stream_id);
 }
 
 void FuzzOneInput(const hpack_sync_fuzzer::Msg& msg) {
@@ -113,17 +112,16 @@ void FuzzOneInput(const hpack_sync_fuzzer::Msg& msg) {
 
   // STAGE 2: Decode the buffer (encode_output) into a list of headers
   HPackParser parser;
-  auto memory_allocator = grpc_core::ResourceQuota::Default()
-                              ->memory_quota()
-                              ->CreateMemoryAllocator("test-allocator");
-  auto arena = grpc_core::MakeScopedArena(1024, &memory_allocator);
-  grpc_core::ExecCtx exec_ctx;
+  auto memory_allocator =
+      ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
+          "test-allocator");
+  auto arena = MakeScopedArena(1024, &memory_allocator);
+  ExecCtx exec_ctx;
   grpc_metadata_batch read_metadata(arena.get());
-  parser.BeginFrame(&read_metadata, 1024, 1024,
-                    HPackParser::Boundary::EndOfHeaders,
-                    HPackParser::Priority::None,
-                    HPackParser::LogInfo{
-                        1, grpc_core::HPackParser::LogInfo::kHeaders, false});
+  parser.BeginFrame(
+      &read_metadata, 1024, 1024, HPackParser::Boundary::EndOfHeaders,
+      HPackParser::Priority::None,
+      HPackParser::LogInfo{1, HPackParser::LogInfo::kHeaders, false});
   std::vector<std::pair<size_t, absl::Status>> seen_errors;
   for (size_t i = 0; i < encode_output.Count(); i++) {
     auto err = parser.Parse(encode_output.c_slice_at(i),

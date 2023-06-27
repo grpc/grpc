@@ -15,6 +15,8 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_PARSE_RESULT_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_PARSE_RESULT_H
 
+#include <grpc/support/port_platform.h>
+
 #include <stdint.h>
 
 #include <string>
@@ -320,4 +322,4 @@ class HpackParseResult {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_PARSE_RESULT_H

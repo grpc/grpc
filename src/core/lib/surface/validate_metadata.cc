@@ -45,7 +45,7 @@ class LegalHeaderKeyBits : public BitSet<256> {
 constexpr LegalHeaderKeyBits g_legal_header_key_bits;
 
 ValidateMetadataResult ConformsTo(absl::string_view x,
-                                  const grpc_core::BitSet<256>& legal_bits,
+                                  const BitSet<256>& legal_bits,
                                   ValidateMetadataResult error) {
   for (uint8_t c : x) {
     if (!legal_bits.is_set(c)) {
