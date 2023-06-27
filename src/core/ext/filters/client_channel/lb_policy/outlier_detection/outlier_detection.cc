@@ -674,8 +674,9 @@ absl::Status OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
   // Update subchannel state map.
   if (args.addresses.ok()) {
     std::set<std::string> current_addresses;
-    for (const ServerAddress& address : *args.addresses) {
-      std::string address_key = MakeKeyForAddress(address.address());
+    for (const EndpointAddresses& addresses : *args.addresses) {
+// FIXME: support multiple addresses
+      std::string address_key = MakeKeyForAddress(addresses.address());
       if (address_key.empty()) continue;
       auto& subchannel_state = subchannel_state_map_[address_key];
       if (subchannel_state == nullptr) {

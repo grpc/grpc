@@ -34,25 +34,25 @@ namespace grpc_core {
 namespace {
 
 void* BalancerAddressesArgCopy(void* p) {
-  ServerAddressList* address_list = static_cast<ServerAddressList*>(p);
-  return new ServerAddressList(*address_list);
+  EndpointAddressesList* endpoint_list = static_cast<EndpointAddressesList*>(p);
+  return new EndpointAddressesList(*endpoint_list);
 }
 
 void BalancerAddressesArgDestroy(void* p) {
-  ServerAddressList* address_list = static_cast<ServerAddressList*>(p);
-  delete address_list;
+  EndpointAddressesList* endpoint_list = static_cast<EndpointAddressesList*>(p);
+  delete endpoint_list;
 }
 
 int BalancerAddressesArgCmp(void* p, void* q) {
-  ServerAddressList* address_list1 = static_cast<ServerAddressList*>(p);
-  ServerAddressList* address_list2 = static_cast<ServerAddressList*>(q);
-  if (address_list1 == nullptr || address_list2 == nullptr) {
-    return QsortCompare(address_list1, address_list2);
+  auto* endpoint_list1 = static_cast<EndpointAddressesList*>(p);
+  auto* endpoint_list2 = static_cast<EndpointAddressesList*>(q);
+  if (endpoint_list1 == nullptr || endpoint_list2 == nullptr) {
+    return QsortCompare(endpoint_list1, endpoint_list2);
   }
-  if (address_list1->size() > address_list2->size()) return 1;
-  if (address_list1->size() < address_list2->size()) return -1;
-  for (size_t i = 0; i < address_list1->size(); ++i) {
-    int retval = (*address_list1)[i].Cmp((*address_list2)[i]);
+  if (endpoint_list1->size() > endpoint_list2->size()) return 1;
+  if (endpoint_list1->size() < endpoint_list2->size()) return -1;
+  for (size_t i = 0; i < endpoint_list1->size(); ++i) {
+    int retval = (*endpoint_list1)[i].Cmp((*endpoint_list2)[i]);
     if (retval != 0) return retval;
   }
   return 0;
@@ -65,24 +65,24 @@ const grpc_arg_pointer_vtable kBalancerAddressesArgVtable = {
 }  // namespace
 
 grpc_arg CreateGrpclbBalancerAddressesArg(
-    const ServerAddressList* address_list) {
+    const EndpointAddressesList* address_list) {
   return grpc_channel_arg_pointer_create(
       const_cast<char*>(GRPC_ARG_GRPCLB_BALANCER_ADDRESSES),
-      const_cast<ServerAddressList*>(address_list),
+      const_cast<EndpointAddressesList*>(address_list),
       &kBalancerAddressesArgVtable);
 }
 
-const ServerAddressList* FindGrpclbBalancerAddressesInChannelArgs(
+const EndpointAddressesList* FindGrpclbBalancerAddressesInChannelArgs(
     const ChannelArgs& args) {
-  return args.GetPointer<const ServerAddressList>(
+  return args.GetPointer<const EndpointAddressesList>(
       GRPC_ARG_GRPCLB_BALANCER_ADDRESSES);
 }
 
 ChannelArgs SetGrpcLbBalancerAddresses(const ChannelArgs& args,
-                                       ServerAddressList address_list) {
+                                       EndpointAddressesList endpoint_list) {
   return args.Set(
       GRPC_ARG_GRPCLB_BALANCER_ADDRESSES,
-      ChannelArgs::Pointer(new ServerAddressList(std::move(address_list)),
+      ChannelArgs::Pointer(new EndpointAddressesList(std::move(endpoint_list)),
                            &kBalancerAddressesArgVtable));
 }
 

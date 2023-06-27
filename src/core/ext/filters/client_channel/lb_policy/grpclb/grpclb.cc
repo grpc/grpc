@@ -375,8 +375,8 @@ class GrpcLb : public LoadBalancingPolicy {
     // Returns a text representation suitable for logging.
     std::string AsText() const;
 
-    // Extracts all non-drop entries into a ServerAddressList.
-    ServerAddressList GetServerAddressList(
+    // Extracts all non-drop entries into an EndpointAddressesList.
+    EndpointAddressesList GetServerAddressList(
         GrpcLbClientStats* client_stats) const;
 
     // Returns true if the serverlist contains at least one drop entry and
@@ -562,7 +562,7 @@ class GrpcLb : public LoadBalancingPolicy {
   // Whether we're in fallback mode.
   bool fallback_mode_ = false;
   // The backend addresses from the resolver.
-  absl::StatusOr<ServerAddressList> fallback_backend_addresses_;
+  absl::StatusOr<EndpointAddressesList> fallback_backend_addresses_;
   // The last resolution note from our parent.
   // To be passed to child policy when fallback_backend_addresses_ is empty.
   std::string resolution_note_;
@@ -659,11 +659,11 @@ bool IsServerValid(const GrpcLbServer& server, size_t idx, bool log) {
 }
 
 // Returns addresses extracted from the serverlist.
-ServerAddressList GrpcLb::Serverlist::GetServerAddressList(
+EndpointAddressesList GrpcLb::Serverlist::GetServerAddressList(
     GrpcLbClientStats* client_stats) const {
   RefCountedPtr<GrpcLbClientStats> stats;
   if (client_stats != nullptr) stats = client_stats->Ref();
-  ServerAddressList addresses;
+  EndpointAddressesList endpoints;
   for (size_t i = 0; i < serverlist_.size(); ++i) {
     const GrpcLbServer& server = serverlist_[i];
     if (!IsServerValid(server, i, false)) continue;
@@ -683,11 +683,12 @@ ServerAddressList GrpcLb::Serverlist::GetServerAddressList(
                             : addr_uri.status().ToString().c_str());
     }
     // Add address with a channel arg containing LB token and stats object.
-    addresses.emplace_back(
-        addr, ChannelArgs().SetObject(MakeRefCounted<TokenAndClientStatsArg>(
-                  std::move(lb_token), stats)));
+    endpoints.emplace_back(
+        {addr},
+        ChannelArgs().SetObject(MakeRefCounted<TokenAndClientStatsArg>(
+            std::move(lb_token), stats)));
   }
-  return addresses;
+  return endpoints;
 }
 
 bool GrpcLb::Serverlist::ContainsAllDropEntries() const {
@@ -1342,11 +1343,11 @@ void GrpcLb::BalancerCallState::OnBalancerStatusReceivedLocked(
 // helper code for creating balancer channel
 //
 
-ServerAddressList ExtractBalancerAddresses(const ChannelArgs& args) {
-  const ServerAddressList* addresses =
+EndpointAddressesList ExtractBalancerAddresses(const ChannelArgs& args) {
+  const EndpointAddressesList* endpoints =
       FindGrpclbBalancerAddressesInChannelArgs(args);
-  if (addresses != nullptr) return *addresses;
-  return ServerAddressList();
+  if (endpoints != nullptr) return *endpoints;
+  return EndpointAddressesList();
 }
 
 // Returns the channel args for the LB channel, used to create a bidirectional
@@ -1520,10 +1521,10 @@ absl::Status GrpcLb::UpdateLocked(UpdateArgs args) {
   fallback_backend_addresses_ = std::move(args.addresses);
   if (fallback_backend_addresses_.ok()) {
     // Add null LB token attributes.
-    for (ServerAddress& address : *fallback_backend_addresses_) {
-      address = ServerAddress(
-          address.address(),
-          address.args().SetObject(
+    for (EndpointAddresses& addresses : *fallback_backend_addresses_) {
+      addresses = EndpointAddresses(
+          addresses.addresses(),
+          addresses.args().SetObject(
               MakeRefCounted<TokenAndClientStatsArg>("", nullptr)));
     }
   }
@@ -1572,7 +1573,7 @@ absl::Status GrpcLb::UpdateLocked(UpdateArgs args) {
 
 absl::Status GrpcLb::UpdateBalancerChannelLocked() {
   // Get balancer addresses.
-  ServerAddressList balancer_addresses = ExtractBalancerAddresses(args_);
+  EndpointAddressesList balancer_addresses = ExtractBalancerAddresses(args_);
   absl::Status status;
   if (balancer_addresses.empty()) {
     status = absl::UnavailableError("balancer address list must be non-empty");

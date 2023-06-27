@@ -28,7 +28,7 @@
 #include "absl/strings/string_view.h"
 
 #include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 
 // The resolver returns a flat list of addresses.  When a hierarchy of
 // LB policies is in use, each leaf of the hierarchy will need a
@@ -102,13 +102,13 @@ class HierarchicalPathArg : public RefCounted<HierarchicalPathArg> {
   std::vector<std::string> path_;
 };
 
-// A map from the next path element to the addresses that fall under
-// that path element.
-using HierarchicalAddressMap = std::map<std::string, ServerAddressList>;
+// A map from the next path element to the endpoint addresses that fall
+// under that path element.
+using HierarchicalAddressMap = std::map<std::string, EndpointAddressList>;
 
 // Splits up the addresses into a separate list for each child.
 absl::StatusOr<HierarchicalAddressMap> MakeHierarchicalAddressMap(
-    const absl::StatusOr<ServerAddressList>& addresses);
+    const absl::StatusOr<EndpointAddressList>& addresses);
 
 }  // namespace grpc_core
 

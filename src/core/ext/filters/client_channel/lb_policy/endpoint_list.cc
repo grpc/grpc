@@ -87,7 +87,7 @@ class EndpointList::Endpoint::Helper
 //
 
 void EndpointList::Endpoint::Init(
-    const ServerAddress& address, const ChannelArgs& args,
+    const EndpointAddresses& addresses, const ChannelArgs& args,
     std::shared_ptr<WorkSerializer> work_serializer) {
   ChannelArgs child_args =
       args.Set(GRPC_ARG_INTERNAL_PICK_FIRST_ENABLE_HEALTH_CHECKING, true)
@@ -119,7 +119,7 @@ void EndpointList::Endpoint::Init(
   GPR_ASSERT(config.ok());
   // Update child policy.
   LoadBalancingPolicy::UpdateArgs update_args;
-  update_args.addresses.emplace().emplace_back(address);
+  update_args.addresses.emplace().emplace_back(addresses);
   update_args.args = child_args;
   update_args.config = std::move(*config);
   // TODO(roth): If the child reports a non-OK status with the update,
@@ -164,13 +164,14 @@ RefCountedPtr<SubchannelInterface> EndpointList::Endpoint::CreateSubchannel(
 //
 
 void EndpointList::Init(
-    const ServerAddressList& addresses, const ChannelArgs& args,
+    const EndpointAddressesList& endpoints, const ChannelArgs& args,
     absl::AnyInvocable<OrphanablePtr<Endpoint>(
-        RefCountedPtr<EndpointList>, const ServerAddress&, const ChannelArgs&)>
+        RefCountedPtr<EndpointList>, const EndpointAddresses&,
+        const ChannelArgs&)>
         create_endpoint) {
-  for (const ServerAddress& address : addresses) {
+  for (const EndpointAddresses& addresses : endpoints) {
     endpoints_.push_back(
-        create_endpoint(Ref(DEBUG_LOCATION, "Endpoint"), address, args));
+        create_endpoint(Ref(DEBUG_LOCATION, "Endpoint"), addresses, args));
   }
 }
 
