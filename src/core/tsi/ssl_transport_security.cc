@@ -2207,7 +2207,6 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
           gpr_log(GPR_ERROR, "Invalid verification certs.");
           break;
         }
-        SSL_CTX_set_client_CA_list(impl->ssl_contexts[i], root_names);
       }
       switch (options->client_certificate_request) {
         case TSI_DONT_REQUEST_CLIENT_CERTIFICATE:
