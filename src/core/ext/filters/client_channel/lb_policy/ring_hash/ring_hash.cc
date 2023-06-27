@@ -38,10 +38,11 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
+#include <grpc/support/json.h>
+
 #define XXH_INLINE_ALL
 #include "xxhash.h"
 
-#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/log.h>
@@ -68,7 +69,6 @@
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
-#include "src/core/lib/load_balancing/subchannel_interface.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
@@ -653,6 +653,9 @@ absl::Status RingHash::UpdateLocked(UpdateArgs args) {
   }
   endpoint_map_ = std::move(endpoint_map);
   // If the address list is empty, report TRANSIENT_FAILURE.
+  // TODO(roth): As part of adding dualstack backend support, we need to
+  // also handle the case where the list of addresses for a given
+  // endpoint is empty.
   if (addresses_.empty()) {
     absl::Status status =
         args.addresses.ok() ? absl::UnavailableError(absl::StrCat(

@@ -4691,7 +4691,6 @@ grpc_cc_library(
         "lb_policy_registry",
         "pollset_set",
         "ref_counted",
-        "subchannel_interface",
         "unique_type_name",
         "validation_errors",
         "//:config",
