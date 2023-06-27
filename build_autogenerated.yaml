@@ -1967,7 +1967,6 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/oob_backend_metric_internal.h
   - src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h
   - src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.h
-  - src/core/ext/filters/client_channel/lb_policy/subchannel_list.h
   - src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.h
   - src/core/ext/filters/client_channel/local_subchannel_pool.h
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.h
