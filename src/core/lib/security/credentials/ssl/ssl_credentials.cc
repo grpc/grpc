@@ -338,6 +338,7 @@ grpc_server_credentials* grpc_ssl_server_credentials_create_ex(
   grpc_ssl_server_credentials_options* options =
       grpc_ssl_server_credentials_create_options_using_config(
           client_certificate_request, cert_config);
+
   return grpc_ssl_server_credentials_create_with_options(options);
 }
 
