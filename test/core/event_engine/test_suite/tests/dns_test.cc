@@ -74,14 +74,13 @@ using testing::UnorderedPointwise;
 // TODO(yijiem): make this portable for Windows
 constexpr char kDNSTestRecordGroupsYamlPath[] =
     "test/core/event_engine/test_suite/tests/dns_test_record_groups.yaml";
-constexpr char kHealthCheckRecordName[] =
-    "health-check-local-dns-server-is-alive.resolver-tests.grpctestingexp";
 // Invoke bazel's executeable links to the .sh and .py scripts (don't use
 // the .sh and .py suffixes) to make sure that we're using bazel's test
 // environment.
 constexpr char kDNSServerRelPath[] = "test/cpp/naming/utils/dns_server";
 constexpr char kDNSResolverRelPath[] = "test/cpp/naming/utils/dns_resolver";
 constexpr char kTCPConnectRelPath[] = "test/cpp/naming/utils/tcp_connect";
+constexpr char kHealthCheckRelPath[] = "test/cpp/naming/utils/health_check";
 
 MATCHER(ResolvedAddressEq, "") {
   const auto& addr0 = std::get<0>(arg);
@@ -145,6 +144,7 @@ class EventEngineDNSTest : public EventEngineTest {
     std::string dns_server_path = kDNSServerRelPath;
     std::string dns_resolver_path = kDNSResolverRelPath;
     std::string tcp_connect_path = kTCPConnectRelPath;
+    std::string health_check_path = kHealthCheckRelPath;
     absl::optional<std::string> runfile_dir = grpc::GetGrpcTestRunFileDir();
     if (runfile_dir.has_value()) {
       // We sure need a portable filesystem lib for this to work on Windows.
@@ -152,60 +152,33 @@ class EventEngineDNSTest : public EventEngineTest {
       dns_server_path = absl::StrJoin({*runfile_dir, dns_server_path}, "/");
       dns_resolver_path = absl::StrJoin({*runfile_dir, dns_resolver_path}, "/");
       tcp_connect_path = absl::StrJoin({*runfile_dir, tcp_connect_path}, "/");
+      health_check_path = absl::StrJoin({*runfile_dir, health_check_path}, "/");
     } else {
       // Invoke the .sh and .py scripts directly where they are in source code
       // if we are not running with bazel.
       dns_server_path += ".py";
-      dns_resolver_path += ".py";
-      tcp_connect_path += ".py";
+      health_check_path += ".py";
     }
     // 1. launch dns_server
     int port = grpc_pick_unused_port_or_die();
-    // <path to python wrapper> <path to dns_server.py> -p <port> -r <path to
-    // records config>
+    // <path to dns_server.py> -p <port> -r <path to records config>
     _dns_server.server_process = new grpc::SubProcess(
         {dns_server_path, "-p", std::to_string(port), "-r", test_records_path});
     _dns_server.port = port;
 
     // 2. wait until dns_server is up (health check)
-    bool health_check_succeed = false;
-    for (int i = 0; i < 10; i++) {
-      // 2.1 tcp connect succeeds
-      // <path to python wrapper> <path to tcp_connect.py> -s <hostname> -p
-      // <port>
-      grpc::SubProcess tcp_connect(
-          {tcp_connect_path, "-s", "localhost", "-p", std::to_string(port)});
-      int status = tcp_connect.Join();
-      // TODO(yijiem): make this portable for Windows
-      if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
-        // 2.2 make an A-record query to dns_server
-        // <path to python wrapper> <path to dns_resolver.py> -s <hostname> -p
-        // <port> -n <domain name to query>
-        std::string command = absl::StrJoin(
-            std::make_tuple(dns_resolver_path, "-s", "127.0.0.1", "-p",
-                            std::to_string(port), "-n", kHealthCheckRecordName),
-            " ");
-        // TODO(yijiem): make this portable for Windows
-        FILE* f = popen(command.c_str(), "r");
-        GPR_ASSERT(f != nullptr);
-        char buf[128] = {};
-        size_t res =
-            fread(buf, sizeof(buf[0]), sizeof(buf) / sizeof(buf[0]) - 1, f);
-        if (pclose(f) == 0 && res > 0) {
-          absl::string_view sv(buf);
-          if (sv.find("123.123.123.123") != sv.npos) {
-            // finally
-            gpr_log(
-                GPR_INFO,
-                "DNS server is up! Successfully reached it over UDP and TCP.");
-            health_check_succeed = true;
-            break;
-          }
-        }
-      }
-      absl::SleepFor(absl::Seconds(1));
-    }
-    ASSERT_TRUE(health_check_succeed);
+    grpc::SubProcess health_check({
+        health_check_path,
+        "-p",
+        std::to_string(port),
+        "--dns_resolver_bin_path",
+        dns_resolver_path,
+        "--tcp_connect_bin_path",
+        tcp_connect_path,
+    });
+    int status = health_check.Join();
+    // TODO(yijiem): make this portable for Windows
+    ASSERT_TRUE(WIFEXITED(status) && WEXITSTATUS(status) == 0);
   }
 
   static void TearDownTestSuite() {
