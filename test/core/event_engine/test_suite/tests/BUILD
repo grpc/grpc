@@ -59,7 +59,6 @@ grpc_cc_library(
         "//test/cpp/naming/utils:dns_resolver",
         "//test/cpp/naming/utils:dns_server",
         "//test/cpp/naming/utils:tcp_connect",
-        "//tools/distrib:python_wrapper",
     ],
     external_deps = [
         "absl/status:statusor",
