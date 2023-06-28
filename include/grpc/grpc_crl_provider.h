@@ -24,14 +24,32 @@
 #include <memory>
 #include <string>
 
+#include "absl/strings/string_view.h"
+
 namespace grpc_core {
 namespace experimental {
 
 // Representation of a CRL
-class Crl {};
+class Crl {
+ public:
+  explicit Crl(const char* crl) : crl_(crl){};
+
+ private:
+  absl::string_view crl_;
+  // best way to accomplish this? Where to have OpenSSL import?
+  // X509_CRL openssl_cert_;
+};
 
 // Representation of a Certificate
-class Cert {};
+class Cert {
+ public:
+  explicit Cert(const char* cert) : cert_(cert){};
+
+ private:
+  absl::string_view cert_;
+  // best way to accomplish this? Where to have OpenSSL import?
+  // X509 openssl_cert_;
+};
 
 // The base class for CRL Provider implementations.
 class CrlProvider {
