@@ -4637,7 +4637,6 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "env",
-        "grpc_outlier_detection_header",
         "health_check_client",
         "iomgr_fwd",
         "json",
@@ -4815,7 +4814,6 @@ grpc_cc_library(
         "time",
         "validation_errors",
         "//:gpr_platform",
-        "//:server_address",
     ],
 )
 
@@ -4842,7 +4840,6 @@ grpc_cc_library(
         "lb_policy",
         "lb_policy_factory",
         "lb_policy_registry",
-        "match",
         "pollset_set",
         "ref_counted",
         "subchannel_interface",
