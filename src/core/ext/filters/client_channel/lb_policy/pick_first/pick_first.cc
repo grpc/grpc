@@ -230,7 +230,6 @@ class PickFirst : public LoadBalancingPolicy {
     // Backpointer to owning policy.
     RefCountedPtr<PickFirst> policy_;
 
-    const bool enable_health_watch_;
     ChannelArgs args_;
 
     // The list of subchannels.
@@ -285,6 +284,8 @@ class PickFirst : public LoadBalancingPolicy {
 
   void UnsetSelectedSubchannel();
 
+  // Whether we should enable health watching.
+  const bool enable_health_watch_;
   // Whether we should omit our status message prefix.
   const bool omit_status_message_prefix_;
   // Lateset update args.
@@ -309,6 +310,10 @@ class PickFirst : public LoadBalancingPolicy {
 
 PickFirst::PickFirst(Args args)
     : LoadBalancingPolicy(std::move(args)),
+      enable_health_watch_(
+          channel_args()
+              .GetBool(GRPC_ARG_INTERNAL_PICK_FIRST_ENABLE_HEALTH_CHECKING)
+              .value_or(false)),
       omit_status_message_prefix_(
           channel_args()
               .GetBool(GRPC_ARG_INTERNAL_PICK_FIRST_OMIT_STATUS_MESSAGE_PREFIX)
@@ -750,7 +755,7 @@ void PickFirst::SubchannelList::SubchannelData::ProcessUnselectedReadyLocked() {
   // report a new picker -- we want to stay in CONNECTING while we wait
   // for the health status notification.
   // If health checking is NOT enabled, report READY.
-  if (subchannel_list_->enable_health_watch_) {
+  if (p->enable_health_watch_) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
       gpr_log(GPR_INFO, "[PF %p] starting health watch", p);
     }
@@ -785,9 +790,6 @@ PickFirst::SubchannelList::SubchannelList(RefCountedPtr<PickFirst> policy,
           GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace) ? "SubchannelList"
                                                             : nullptr),
       policy_(std::move(policy)),
-      enable_health_watch_(
-          args.GetBool(GRPC_ARG_INTERNAL_PICK_FIRST_ENABLE_HEALTH_CHECKING)
-              .value_or(false)),
       args_(args.Remove(GRPC_ARG_INTERNAL_PICK_FIRST_ENABLE_HEALTH_CHECKING)
                 .Remove(
                     GRPC_ARG_INTERNAL_PICK_FIRST_OMIT_STATUS_MESSAGE_PREFIX)) {
