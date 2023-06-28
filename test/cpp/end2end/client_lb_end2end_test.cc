@@ -2896,8 +2896,7 @@ TEST_F(ClientLbAddressTest, Basic) {
   for (const int port : GetServersPorts()) {
     expected.emplace_back(absl::StrCat(
         "addrs=[", ipv6_only_ ? "[::1]:" : "127.0.0.1:", port,
-        "] args={grpc.internal.no_subchannel.outlier_detection_disable=1, "
-        "test_key=test_value}"));
+        "] args={test_key=test_value}"));
   }
   EXPECT_EQ(addresses_seen(), expected);
 }
