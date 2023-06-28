@@ -1464,7 +1464,6 @@ let package = Package(
         "src/core/lib/resolver/resolver_factory.h",
         "src/core/lib/resolver/resolver_registry.cc",
         "src/core/lib/resolver/resolver_registry.h",
-        "src/core/lib/resolver/server_address.h",
         "src/core/lib/resource_quota/api.cc",
         "src/core/lib/resource_quota/api.h",
         "src/core/lib/resource_quota/arena.cc",

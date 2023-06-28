@@ -62,7 +62,7 @@ namespace grpc_core {
 
 std::string XdsEndpointResource::Priority::Locality::ToString() const {
   std::vector<std::string> endpoint_strings;
-  for (const ServerAddress& endpoint : endpoints) {
+  for (const EndpointAddresses& endpoint : endpoints) {
     endpoint_strings.emplace_back(endpoint.ToString());
   }
   return absl::StrCat("{name=", name->AsHumanReadableString(),
@@ -151,7 +151,7 @@ void MaybeLogClusterLoadAssignment(
   }
 }
 
-absl::optional<ServerAddress> ServerAddressParse(
+absl::optional<EndpointAddresses> EndpointAddressesParse(
     const envoy_config_endpoint_v3_LbEndpoint* lb_endpoint,
     ValidationErrors* errors) {
   // health_status
@@ -178,6 +178,7 @@ absl::optional<ServerAddress> ServerAddressParse(
     }
   }
   // endpoint
+  // TODO(roth): add support for multiple addresses per endpoint
   grpc_resolved_address grpc_address;
   {
     ValidationErrors::ScopedField field(errors, ".endpoint");
@@ -219,11 +220,12 @@ absl::optional<ServerAddress> ServerAddressParse(
       grpc_address = *addr;
     }
   }
-  // Convert to ServerAddress.
-  return ServerAddress(grpc_address,
-                       ChannelArgs()
-                           .Set(GRPC_ARG_ADDRESS_WEIGHT, weight)
-                           .Set(GRPC_ARG_XDS_HEALTH_STATUS, status->status()));
+  // Convert to EndpointAddresses.
+  return EndpointAddresses(
+      grpc_address,
+      ChannelArgs()
+          .Set(GRPC_ARG_ADDRESS_WEIGHT, weight)
+          .Set(GRPC_ARG_XDS_HEALTH_STATUS, status->status()));
 }
 
 struct ParsedLocality {
@@ -283,16 +285,18 @@ absl::optional<ParsedLocality> LocalityParse(
   for (size_t i = 0; i < size; ++i) {
     ValidationErrors::ScopedField field(errors,
                                         absl::StrCat(".lb_endpoints[", i, "]"));
-    auto address = ServerAddressParse(lb_endpoints[i], errors);
-    if (address.has_value()) {
-      bool inserted = address_set->insert(address->address()).second;
-      if (!inserted) {
-        errors->AddError(absl::StrCat(
-            "duplicate endpoint address \"",
-            grpc_sockaddr_to_uri(&address->address()).value_or("<unknown>"),
-            "\""));
+    auto endpoint = EndpointAddressesParse(lb_endpoints[i], errors);
+    if (endpoint.has_value()) {
+      for (const auto& address : endpoint->addresses()) {
+        bool inserted = address_set->insert(address).second;
+        if (!inserted) {
+          errors->AddError(absl::StrCat(
+              "duplicate endpoint address \"",
+              grpc_sockaddr_to_uri(&address).value_or("<unknown>"),
+              "\""));
+        }
       }
-      parsed_locality.locality.endpoints.push_back(std::move(*address));
+      parsed_locality.locality.endpoints.push_back(std::move(*endpoint));
     }
   }
   // priority

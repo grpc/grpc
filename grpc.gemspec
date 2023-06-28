@@ -1470,7 +1470,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/resolver/resolver_factory.h )
   s.files += %w( src/core/lib/resolver/resolver_registry.cc )
   s.files += %w( src/core/lib/resolver/resolver_registry.h )
-  s.files += %w( src/core/lib/resolver/server_address.h )
   s.files += %w( src/core/lib/resource_quota/api.cc )
   s.files += %w( src/core/lib/resource_quota/api.h )
   s.files += %w( src/core/lib/resource_quota/arena.cc )

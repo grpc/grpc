@@ -62,7 +62,7 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/tcp_client.h"
-#include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/service_config/service_config.h"
 #include "src/core/lib/service_config/service_config_impl.h"
@@ -248,7 +248,7 @@ class FakeResolverResponseGeneratorWrapper {
       const grpc_core::ChannelArgs& per_address_args =
           grpc_core::ChannelArgs()) {
     grpc_core::Resolver::Result result;
-    result.addresses = grpc_core::ServerAddressList();
+    result.addresses = grpc_core::EndpointAddressesList();
     for (const int& port : ports) {
       absl::StatusOr<grpc_core::URI> lb_uri = grpc_core::URI::Parse(
           absl::StrCat(ipv6_only ? "ipv6:[::1]:" : "ipv4:127.0.0.1:", port));
@@ -2865,7 +2865,7 @@ class ClientLbAddressTest : public ClientLbEnd2endTest {
   }
 
  private:
-  static void SaveAddress(const grpc_core::ServerAddress& address) {
+  static void SaveAddress(const grpc_core::EndpointAddresses& address) {
     ClientLbAddressTest* self = current_test_instance_;
     grpc_core::MutexLock lock(&self->mu_);
     self->addresses_seen_.emplace_back(address.ToString());
@@ -2939,7 +2939,7 @@ class OobBackendMetricTest : public ClientLbEnd2endTest {
 
  private:
   static void BackendMetricCallback(
-      const grpc_core::ServerAddress& address,
+      const grpc_core::EndpointAddresses& address,
       const grpc_core::BackendMetricData& backend_metric_data) {
     auto load_report = BackendMetricDataToOrcaLoadReport(backend_metric_data);
     int port = grpc_sockaddr_get_port(&address.address());

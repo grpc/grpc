@@ -52,8 +52,8 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/lib/resolver/resolver.h"
-#include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/uri/uri_parser.h"
 #include "test/core/end2end/cq_verifier.h"
@@ -433,7 +433,7 @@ TEST_F(KeepaliveThrottlingTest, KeepaliveThrottlingMultipleChannels) {
 grpc_core::Resolver::Result BuildResolverResult(
     const std::vector<std::string>& addresses) {
   grpc_core::Resolver::Result result;
-  result.addresses = grpc_core::ServerAddressList();
+  result.addresses = grpc_core::EndpointAddressesList();
   for (const auto& address_str : addresses) {
     absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(address_str);
     if (!uri.ok()) {

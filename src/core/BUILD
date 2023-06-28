@@ -4184,6 +4184,7 @@ grpc_cc_library(
         "xds_type_upbdefs",
         "//:config",
         "//:debug_location",
+        "//:endpoint_addresses",
         "//:exec_ctx",
         "//:gpr",
         "//:grpc_base",
@@ -4196,7 +4197,6 @@ grpc_cc_library(
         "//:orphanable",
         "//:parse_address",
         "//:ref_counted_ptr",
-        "//:server_address",
         "//:sockaddr_utils",
         "//:tsi_ssl_credentials",
         "//:uri_parser",
@@ -4813,7 +4813,6 @@ grpc_cc_library(
         "json_object_loader",
         "time",
         "validation_errors",
-        "//:endpoint_addresses",
         "//:gpr_platform",
     ],
 )

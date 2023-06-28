@@ -55,7 +55,7 @@
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
-#include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -66,7 +66,7 @@ static int g_resolve_port = -1;
 static grpc_ares_request* (*iomgr_dns_lookup_ares)(
     const char* dns_server, const char* addr, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
-    std::unique_ptr<grpc_core::ServerAddressList>* addresses,
+    std::unique_ptr<grpc_core::EndpointAddressesList>* addresses,
     int query_timeout_ms);
 
 static void (*iomgr_cancel_ares_request)(grpc_ares_request* request);
@@ -169,7 +169,7 @@ class TestDNSResolver : public grpc_core::DNSResolver {
 static grpc_ares_request* my_dns_lookup_ares(
     const char* dns_server, const char* addr, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
-    std::unique_ptr<grpc_core::ServerAddressList>* addresses,
+    std::unique_ptr<grpc_core::EndpointAddressesList>* addresses,
     int query_timeout_ms) {
   if (0 != strcmp(addr, "test")) {
     // A records should suffice
@@ -184,7 +184,7 @@ static grpc_ares_request* my_dns_lookup_ares(
     gpr_mu_unlock(&g_mu);
     error = GRPC_ERROR_CREATE("Forced Failure");
   } else {
-    *addresses = std::make_unique<grpc_core::ServerAddressList>();
+    *addresses = std::make_unique<grpc_core::EndpointAddressesList>();
     grpc_resolved_address address;
     memset(&address, 0, sizeof(address));
     auto* sa = reinterpret_cast<grpc_sockaddr_in*>(&address.addr);

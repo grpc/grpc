@@ -62,9 +62,9 @@ class RingHashTest : public XdsEnd2endTest {
     ResetStub(/*failover_timeout_ms=*/0, args);
   }
 
-  grpc_core::ServerAddressList CreateAddressListFromPortList(
+  grpc_core::EndpointAddressesList CreateAddressListFromPortList(
       const std::vector<int>& ports) {
-    grpc_core::ServerAddressList addresses;
+    grpc_core::EndpointAddressesList addresses;
     for (int port : ports) {
       absl::StatusOr<grpc_core::URI> lb_uri = grpc_core::URI::Parse(
           absl::StrCat(ipv6_only_ ? "ipv6:[::1]:" : "ipv4:127.0.0.1:", port));

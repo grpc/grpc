@@ -61,7 +61,7 @@
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/timer_manager.h"
-#include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -91,12 +91,12 @@ static void dont_log(gpr_log_func_args* /*args*/) {}
 typedef struct addr_req {
   char* addr;
   grpc_closure* on_done;
-  std::unique_ptr<grpc_core::ServerAddressList>* addresses;
+  std::unique_ptr<grpc_core::EndpointAddressesList>* addresses;
 } addr_req;
 
 static void finish_resolve(addr_req r) {
   if (0 == strcmp(r.addr, "server")) {
-    *r.addresses = std::make_unique<grpc_core::ServerAddressList>();
+    *r.addresses = std::make_unique<grpc_core::EndpointAddressesList>();
     grpc_resolved_address fake_resolved_address;
     GPR_ASSERT(
         grpc_parse_ipv4_hostport("1.2.3.4:5", &fake_resolved_address, false));
@@ -213,7 +213,7 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
 grpc_ares_request* my_dns_lookup_ares(
     const char* /*dns_server*/, const char* addr, const char* /*default_port*/,
     grpc_pollset_set* /*interested_parties*/, grpc_closure* on_done,
-    std::unique_ptr<grpc_core::ServerAddressList>* addresses,
+    std::unique_ptr<grpc_core::EndpointAddressesList>* addresses,
     int /*query_timeout*/) {
   addr_req r;
   r.addr = gpr_strdup(addr);

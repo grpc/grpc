@@ -46,7 +46,7 @@
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/sockaddr.h"
-#include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/lib/service_config/service_config_impl.h"
 #include "src/proto/grpc/lb/v1/load_balancer.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -221,9 +221,9 @@ class ClientChannelStressTest {
     std::string balancer_name;
   };
 
-  static grpc_core::ServerAddressList CreateAddressListFromAddressDataList(
+  static grpc_core::EndpointAddressesList CreateAddressListFromAddressDataList(
       const std::vector<AddressData>& address_data) {
-    grpc_core::ServerAddressList addresses;
+    grpc_core::EndpointAddressesList addresses;
     for (const auto& addr : address_data) {
       std::string lb_uri_str = absl::StrCat("ipv4:127.0.0.1:", addr.port);
       absl::StatusOr<grpc_core::URI> lb_uri = grpc_core::URI::Parse(lb_uri_str);
@@ -244,7 +244,7 @@ class ClientChannelStressTest {
         grpc_core::ChannelArgs(),
         "{\"loadBalancingConfig\":[{\"grpclb\":{}}]}");
     GPR_ASSERT(result.service_config.ok());
-    grpc_core::ServerAddressList balancer_addresses =
+    grpc_core::EndpointAddressesList balancer_addresses =
         CreateAddressListFromAddressDataList(balancer_address_data);
     result.args = grpc_core::SetGrpcLbBalancerAddresses(
         grpc_core::ChannelArgs(), std::move(balancer_addresses));

@@ -38,7 +38,7 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
-#include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 #include "test/core/client_channel/lb_policy/lb_policy_test_lib.h"
 #include "test/core/util/test_config.h"
 
@@ -77,10 +77,11 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
     return ExpectRoundRobinStartup(addresses);
   }
 
-  ServerAddress MakeAddressWithHealthStatus(
+  EndpointAddresses MakeAddressWithHealthStatus(
       absl::string_view address, XdsHealthStatus::HealthStatus status) {
-    return ServerAddress(MakeAddress(address),
-                         ChannelArgs().Set(GRPC_ARG_XDS_HEALTH_STATUS, status));
+    return EndpointAddresses(
+        MakeAddress(address),
+        ChannelArgs().Set(GRPC_ARG_XDS_HEALTH_STATUS, status));
   }
 
   void ApplyUpdateWithHealthStatuses(

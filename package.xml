@@ -1452,7 +1452,6 @@
     <file baseinstalldir="/" name="src/core/lib/resolver/resolver_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resolver/resolver_registry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resolver/resolver_registry.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/resolver/server_address.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/api.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/api.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/arena.cc" role="src" />

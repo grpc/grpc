@@ -514,12 +514,12 @@ grpc_cc_test(
     deps = [
         "cq_verifier",
         "//:debug_location",
+        "//:endpoint_addresses",
         "//:exec_ctx",
         "//:gpr",
         "//:grpc",
         "//:grpc_public_hdrs",
         "//:grpc_resolver_dns_ares",
-        "//:server_address",
         "//src/core:channel_args",
         "//src/core:closure",
         "//src/core:default_event_engine",

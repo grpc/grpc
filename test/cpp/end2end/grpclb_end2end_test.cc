@@ -51,7 +51,7 @@
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/sockaddr.h"
-#include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/service_config/service_config_impl.h"
 #include "src/cpp/client/secure_credentials.h"
@@ -555,9 +555,9 @@ class GrpclbEnd2endTest : public ::testing::Test {
     std::string balancer_name;
   };
 
-  grpc_core::ServerAddressList CreateLbAddressesFromAddressDataList(
+  grpc_core::EndpointAddressesList CreateLbAddressesFromAddressDataList(
       const std::vector<AddressData>& address_data) {
-    grpc_core::ServerAddressList addresses;
+    grpc_core::EndpointAddressesList addresses;
     for (const auto& addr : address_data) {
       absl::StatusOr<grpc_core::URI> lb_uri =
           grpc_core::URI::Parse(absl::StrCat(
@@ -582,7 +582,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
     result.service_config = grpc_core::ServiceConfigImpl::Create(
         grpc_core::ChannelArgs(), service_config_json);
     GPR_ASSERT(result.service_config.ok());
-    grpc_core::ServerAddressList balancer_addresses =
+    grpc_core::EndpointAddressesList balancer_addresses =
         CreateLbAddressesFromAddressDataList(balancer_address_data);
     result.args = grpc_core::SetGrpcLbBalancerAddresses(
         grpc_core::ChannelArgs(), std::move(balancer_addresses));

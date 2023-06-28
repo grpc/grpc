@@ -45,9 +45,9 @@
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/lib/resolver/resolver_factory.h"
 #include "src/core/lib/resolver/resolver_registry.h"
-#include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/uri/uri_parser.h"
 #include "test/core/util/test_config.h"
 
@@ -104,7 +104,7 @@ static grpc_core::Resolver::Result create_new_resolver_result() {
   static size_t test_counter = 0;
   const size_t num_addresses = 2;
   // Create address list.
-  grpc_core::ServerAddressList addresses;
+  grpc_core::EndpointAddressesList addresses;
   for (size_t i = 0; i < num_addresses; ++i) {
     std::string uri_string = absl::StrFormat("ipv4:127.0.0.1:100%" PRIuPTR,
                                              test_counter * num_addresses + i);

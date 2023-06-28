@@ -25,7 +25,7 @@
 #include "absl/types/optional.h"
 #include "absl/types/span.h"
 
-#include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 
 // Channel arg key for xDS health status.
 // Value is an XdsHealthStatus::HealthStatus enum.
