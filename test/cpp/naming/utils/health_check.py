@@ -51,7 +51,7 @@ def wait_until_dns_server_is_up(args):
           test_runner_log(('DNS server is up! '
                            'Successfully reached it over UDP and TCP.'))
         return
-    time.sleep(0.1)
+    time.sleep(1)
   test_runner_log(('Failed to reach DNS server over TCP and/or UDP. '
                    'Exitting without running tests.'))
   sys.exit(1)

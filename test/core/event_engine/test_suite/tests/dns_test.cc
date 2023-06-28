@@ -74,7 +74,7 @@ using testing::UnorderedPointwise;
 // TODO(yijiem): make this portable for Windows
 constexpr char kDNSTestRecordGroupsYamlPath[] =
     "test/core/event_engine/test_suite/tests/dns_test_record_groups.yaml";
-// Invoke bazel's executeable links to the .sh and .py scripts (don't use
+// Invoke bazel's executable links to the .sh and .py scripts (don't use
 // the .sh and .py suffixes) to make sure that we're using bazel's test
 // environment.
 constexpr char kDNSServerRelPath[] = "test/cpp/naming/utils/dns_server";
