@@ -259,10 +259,10 @@ class PickFirstLbPolicyConfigFactory
     : public XdsLbPolicyRegistry::ConfigFactory {
  public:
   Json::Object ConvertXdsLbPolicyConfig(
-      const XdsLbPolicyRegistry* registry,
+      const XdsLbPolicyRegistry* /*registry*/,
       const XdsResourceType::DecodeContext& context,
       absl::string_view configuration, ValidationErrors* errors,
-      int recursion_depth) override {
+      int /*recursion_depth*/) override {
     const auto* resource =
         envoy_extensions_load_balancing_policies_pick_first_v3_PickFirst_parse(
             configuration.data(), configuration.size(), context.arena);
