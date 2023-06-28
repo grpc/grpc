@@ -154,9 +154,11 @@ class EventEngineDNSTest : public EventEngineTest {
       tcp_connect_path = absl::StrJoin({*runfile_dir, tcp_connect_path}, "/");
       health_check_path = absl::StrJoin({*runfile_dir, health_check_path}, "/");
     } else {
-      // Invoke the .sh and .py scripts directly where they are in source code
-      // if we are not running with bazel.
+      // Invoke the .py scripts directly where they are in source code if we are
+      // not running with bazel.
       dns_server_path += ".py";
+      dns_resolver_path += ".py";
+      tcp_connect_path += ".py";
       health_check_path += ".py";
     }
     // 1. launch dns_server
