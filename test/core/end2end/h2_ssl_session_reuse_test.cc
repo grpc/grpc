@@ -73,7 +73,8 @@ grpc_server* server_create(grpc_completion_queue* cq, const char* server_addr) {
   grpc_ssl_pem_key_cert_pair pem_cert_key_pair = {server_key, server_cert};
   grpc_server_credentials* server_creds = grpc_ssl_server_credentials_create_ex(
       ca_cert, &pem_cert_key_pair, 1,
-      GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY, nullptr);
+      GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY,
+      /*send_client_ca_list=*/true, nullptr);
 
   grpc_server* server = grpc_server_create(nullptr, nullptr);
   grpc_server_register_completion_queue(server, cq, nullptr);

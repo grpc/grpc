@@ -97,9 +97,8 @@ class TestFixture : public SecureFixture {
       pem_cert_key_pair.cert_chain = test_server1_cert;
     }
     grpc_server_credentials* ssl_creds = grpc_ssl_server_credentials_create_ex(
-        test_root_cert, &pem_cert_key_pair, 1, request_type_, nullptr);
-    grpc_ssl_server_credentials_set_send_client_ca_list(ssl_creds,
-                                                        send_client_ca_list_);
+        test_root_cert, &pem_cert_key_pair, 1, request_type_,
+        send_client_ca_list_, nullptr);
     if (args.Contains(FAIL_AUTH_CHECK_SERVER_ARG_NAME)) {
       grpc_auth_metadata_processor processor = {process_auth_failure, nullptr,
                                                 nullptr};

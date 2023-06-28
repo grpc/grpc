@@ -528,9 +528,9 @@ GRPCAPI grpc_server_credentials* grpc_ssl_server_credentials_create(
    authenticate client certificates.*/
 GRPCAPI grpc_server_credentials* grpc_ssl_server_credentials_create_ex(
     const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs,
-    size_t num_key_cert_pair,
+    size_t num_key_cert_pairs,
     grpc_ssl_client_certificate_request_type client_certificate_request,
-    void* reserved);
+    bool send_client_ca_list, void* reserved);
 
 typedef struct grpc_ssl_server_credentials_options
     grpc_ssl_server_credentials_options;
@@ -566,8 +566,8 @@ GRPCAPI grpc_server_credentials*
 grpc_ssl_server_credentials_create_with_options(
     grpc_ssl_server_credentials_options* options);
 
-GRPCAPI void grpc_ssl_server_credentials_set_send_client_ca_list(
-    grpc_server_credentials* server_credentials, bool send_client_ca_list);
+GRPCAPI void grpc_ssl_server_credentials_options_set_send_client_ca_list(
+    grpc_ssl_server_credentials_options* options, bool send_client_ca_list);
 
 /** --- Call specific credentials. --- */
 
