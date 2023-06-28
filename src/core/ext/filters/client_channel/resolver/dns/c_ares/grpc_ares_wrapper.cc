@@ -576,7 +576,7 @@ void grpc_cares_wrapper_address_sorting_sort(const grpc_ares_request* r,
   sorted.reserve(addresses->size());
   for (size_t i = 0; i < addresses->size(); ++i) {
     sorted.emplace_back(
-        *static_cast<EndpointAddressesList*>(sortables[i].user_data));
+        *static_cast<EndpointAddresses*>(sortables[i].user_data));
   }
   gpr_free(sortables);
   *addresses = std::move(sorted);
