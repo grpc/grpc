@@ -103,36 +103,19 @@ TraceFlag grpc_xds_resolver_trace(false, "xds_resolver");
 
 namespace {
 
-std::string GetDefaultAuthorityInternal(const URI& uri) {
-  // Obtain the authority to use for the data plane connections, which is
-  // also used to select the right VirtualHost from the RouteConfiguration.
-  // We need to take the part of the URI path following the last
-  // "/" character or the entire path if the path contains no "/" character.
-  size_t pos = uri.path().find_last_of('/');
-  if (pos == uri.path().npos) return uri.path();
-  return uri.path().substr(pos + 1);
-}
-
-std::string GetDataPlaneAuthority(const ChannelArgs& args, const URI& uri) {
-  absl::optional<std::string> authority =
-      args.GetOwnedString(GRPC_ARG_DEFAULT_AUTHORITY);
-  if (authority.has_value()) return std::move(*authority);
-  return GetDefaultAuthorityInternal(uri);
-}
-
 //
 // XdsResolver
 //
 
 class XdsResolver : public Resolver {
  public:
-  explicit XdsResolver(ResolverArgs args)
+  XdsResolver(ResolverArgs args, std::string data_plane_authority)
       : work_serializer_(std::move(args.work_serializer)),
         result_handler_(std::move(args.result_handler)),
         args_(std::move(args.args)),
         interested_parties_(args.pollset_set),
         uri_(std::move(args.uri)),
-        data_plane_authority_(GetDataPlaneAuthority(args_, uri_)),
+        data_plane_authority_(std::move(data_plane_authority)),
         channel_id_(absl::Uniform<uint64_t>(absl::BitGen())) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
       gpr_log(
@@ -1268,15 +1251,22 @@ class XdsResolverFactory : public ResolverFactory {
     return true;
   }
 
-  std::string GetDefaultAuthority(const URI& uri) const override {
-    return GetDefaultAuthorityInternal(uri);
-  }
-
   OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
     if (!IsValidUri(args.uri)) return nullptr;
-    return MakeOrphanable<XdsResolver>(std::move(args));
+    std::string authority = GetDataPlaneAuthority(args.args, args.uri);
+    return MakeOrphanable<XdsResolver>(std::move(args), std::move(authority));
+  }
+
+ private:
+  std::string GetDataPlaneAuthority(const ChannelArgs& args, const URI& uri)
+      const {
+    absl::optional<absl::string_view> authority =
+        args.GetString(GRPC_ARG_DEFAULT_AUTHORITY);
+    if (authority.has_value()) return URI::PercentEncodeAuthority(*authority);
+    return GetDefaultAuthority(uri);
   }
 };
+
 }  // namespace
 
 void RegisterXdsResolver(CoreConfiguration::Builder* builder) {

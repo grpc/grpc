@@ -68,7 +68,7 @@ class ResolverFactory {
   /// Returns a string representing the default authority to use for this
   /// scheme.
   virtual std::string GetDefaultAuthority(const URI& uri) const {
-    return std::string(absl::StripPrefix(uri.path(), "/"));
+    return URI::PercentEncodeAuthority(absl::StripPrefix(uri.path(), "/"));
   }
 };
 
