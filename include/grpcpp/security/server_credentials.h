@@ -71,7 +71,7 @@ struct SslServerCredentialsOptions {
   // explicitly set it to false. If the server's trust bundle is sufficiently
   // large, then setting this bit to true will result in the server being unable
   // to generate a ServerHello, and hence the server will be unusable.
-  bool send_client_ca_list;
+  bool send_client_ca_list = true;
 };
 
 /// Builds Xds ServerCredentials given fallback credentials
