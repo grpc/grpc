@@ -35,7 +35,6 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gprpp/env.h"
-#include "src/proto/grpc/testing/xds/v3/aggregate_cluster.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/pick_first.pb.h"
 #include "test/core/util/scoped_env_var.h"
@@ -47,9 +46,6 @@ namespace grpc {
 namespace testing {
 namespace {
 
-using ::envoy::config::cluster::v3::CustomClusterType;
-using ::envoy::config::core::v3::HealthStatus;
-using ::envoy::extensions::clusters::aggregate::v3::ClusterConfig;
 using ::envoy::extensions::load_balancing_policies::pick_first::v3::PickFirst;
 
 class PickFirstTest : public XdsEnd2endTest {
@@ -59,7 +55,7 @@ class PickFirstTest : public XdsEnd2endTest {
     size_t index = 3;
     SendRpcsUntil(DEBUG_LOCATION, [&](const RpcResult& result) -> bool {
       if (!result.status.ok()) {
-        status = std::move(result.status);
+        status = result.status;
         return false;
       }
       for (size_t i = start; i < end; ++i) {
