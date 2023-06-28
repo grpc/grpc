@@ -44,6 +44,7 @@
 #include "test/core/event_engine/test_suite/event_engine_test_framework.h"
 #include "test/core/util/fake_udp_and_tcp_server.h"
 #include "test/core/util/port.h"
+#include "test/cpp/util/get_grpc_test_runfile_dir.h"
 #include "test/cpp/util/subprocess.h"
 
 namespace grpc_event_engine {
@@ -74,6 +75,13 @@ constexpr char kDNSTestRecordGroupsYamlPath[] =
     "test/core/event_engine/test_suite/tests/dns_test_record_groups.yaml";
 constexpr char kHealthCheckRecordName[] =
     "health-check-local-dns-server-is-alive.resolver-tests.grpctestingexp";
+// Invoke bazel's executeable links to the .sh and .py scripts (don't use
+// the .sh and .py suffixes) to make sure that we're using bazel's test
+// environment.
+constexpr char kPythonWrapperRelPath[] = "tools/distrib/python_wrapper";
+constexpr char kDNSServerRelPath[] = "test/cpp/naming/utils/dns_server";
+constexpr char kDNSResolverRelPath[] = "test/cpp/naming/utils/dns_resolver";
+constexpr char kTCPConnectRelPath[] = "test/cpp/naming/utils/tcp_connect";
 
 MATCHER(ResolvedAddressEq, "") {
   const auto& addr0 = std::get<0>(arg);
@@ -133,27 +141,32 @@ EventEngine::ResolvedAddress MakeAddr6(const uint8_t* data, size_t data_len,
 class EventEngineDNSTest : public EventEngineTest {
  protected:
   static void SetUpTestSuite() {
-    // Invoke bazel's executeable links to the .sh and .py scripts (don't use
-    // the .sh and .py suffixes) to make sure that we're using bazel's test
-    // environment.
-    std::string kPythonWrapper = "tools/distrib/python_wrapper";
-    std::string kDNSServerPath = "test/cpp/naming/utils/dns_server";
-    std::string kDNSResolverPath = "test/cpp/naming/utils/dns_resolver";
-    std::string kTCPConnectPath = "test/cpp/naming/utils/tcp_connect";
-    if (!grpc_core::GetEnv("TEST_SRCDIR").has_value()) {
+    std::string python_wrapper_path = kPythonWrapperRelPath;
+    std::string dns_server_path = kDNSServerRelPath;
+    std::string dns_resolver_path = kDNSResolverRelPath;
+    std::string tcp_connect_path = kTCPConnectRelPath;
+    absl::optional<std::string> runfile_dir = grpc::GetGrpcTestRunFileDir();
+    if (runfile_dir.has_value()) {
+      // We sure need a portable filesystem lib for this to work on Windows.
+      python_wrapper_path =
+          absl::StrJoin({*runfile_dir, python_wrapper_path}, "/");
+      dns_server_path = absl::StrJoin({*runfile_dir, dns_server_path}, "/");
+      dns_resolver_path = absl::StrJoin({*runfile_dir, dns_resolver_path}, "/");
+      tcp_connect_path = absl::StrJoin({*runfile_dir, tcp_connect_path}, "/");
+    } else {
       // Invoke the .sh and .py scripts directly where they are in source code
       // if we are not running with bazel.
-      kPythonWrapper += ".sh";
-      kDNSServerPath += ".py";
-      kDNSResolverPath += ".py";
-      kTCPConnectPath += ".py";
+      python_wrapper_path += ".sh";
+      dns_server_path += ".py";
+      dns_resolver_path += ".py";
+      tcp_connect_path += ".py";
     }
     // 1. launch dns_server
     int port = grpc_pick_unused_port_or_die();
     // <path to python wrapper> <path to dns_server.py> -p <port> -r <path to
     // records config>
     _dns_server.server_process = new grpc::SubProcess(
-        {kPythonWrapper, kDNSServerPath, "-p", std::to_string(port), "-r",
+        {python_wrapper_path, dns_server_path, "-p", std::to_string(port), "-r",
          kDNSTestRecordGroupsYamlPath});
     _dns_server.port = port;
 
@@ -163,7 +176,7 @@ class EventEngineDNSTest : public EventEngineTest {
       // 2.1 tcp connect succeeds
       // <path to python wrapper> <path to tcp_connect.py> -s <hostname> -p
       // <port>
-      grpc::SubProcess tcp_connect({kPythonWrapper, kTCPConnectPath, "-s",
+      grpc::SubProcess tcp_connect({python_wrapper_path, tcp_connect_path, "-s",
                                     "localhost", "-p", std::to_string(port)});
       int status = tcp_connect.Join();
       // TODO(yijiem): make this portable for Windows
@@ -172,8 +185,8 @@ class EventEngineDNSTest : public EventEngineTest {
         // <path to python wrapper> <path to dns_resolver.py> -s <hostname> -p
         // <port> -n <domain name to query>
         std::string command = absl::StrJoin(
-            std::make_tuple(kPythonWrapper, kDNSResolverPath, "-s", "127.0.0.1",
-                            "-p", std::to_string(port), "-n",
+            std::make_tuple(python_wrapper_path, dns_resolver_path, "-s",
+                            "127.0.0.1", "-p", std::to_string(port), "-n",
                             kHealthCheckRecordName),
             " ");
         // TODO(yijiem): make this portable for Windows

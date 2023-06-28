@@ -73,6 +73,7 @@ grpc_cc_library(
         "//test/core/event_engine/test_suite:event_engine_test_framework",
         "//test/core/util:fake_udp_and_tcp_server",
         "//test/core/util:grpc_test_util_base",
+        "//test/cpp/util:get_grpc_test_runfile_dir",
         "//test/cpp/util:test_util",
     ],
     alwayslink = 1,
