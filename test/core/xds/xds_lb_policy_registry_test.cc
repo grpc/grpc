@@ -48,6 +48,7 @@
 #include "src/proto/grpc/testing/xds/v3/client_side_weighted_round_robin.pb.h"
 #include "src/proto/grpc/testing/xds/v3/cluster.pb.h"
 #include "src/proto/grpc/testing/xds/v3/extension.pb.h"
+#include "src/proto/grpc/testing/xds/v3/pick_first.pb.h"
 #include "src/proto/grpc/testing/xds/v3/ring_hash.pb.h"
 #include "src/proto/grpc/testing/xds/v3/round_robin.pb.h"
 #include "src/proto/grpc/testing/xds/v3/typed_struct.pb.h"
@@ -62,6 +63,7 @@ using LoadBalancingPolicyProto =
     ::envoy::config::cluster::v3::LoadBalancingPolicy;
 using ::envoy::extensions::load_balancing_policies::
     client_side_weighted_round_robin::v3::ClientSideWeightedRoundRobin;
+using ::envoy::extensions::load_balancing_policies::pick_first::v3::PickFirst;
 using ::envoy::extensions::load_balancing_policies::ring_hash::v3::RingHash;
 using ::envoy::extensions::load_balancing_policies::round_robin::v3::RoundRobin;
 using ::envoy::extensions::load_balancing_policies::wrr_locality::v3::
@@ -589,6 +591,44 @@ TEST(XdsLbPolicyRegistryTest, MaxRecursion) {
   EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(std::string(result.status().message()),
               ::testing::EndsWith("error:exceeded max recursion depth of 16]"));
+}
+
+//
+// PickFirst
+//
+
+TEST(PickFirst, NoShuffle) {
+  LoadBalancingPolicyProto policy;
+  auto* lb_policy = policy.add_policies();
+  PickFirst pick_first;
+  pick_first.set_shuffle_address_list(false);
+  lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
+      pick_first);
+  auto result = ConvertXdsPolicy(policy);
+  ASSERT_TRUE(result.ok()) << result.status();
+  EXPECT_EQ(*result, "{\"pick_first\":{\"shuffleAddressList\":false}}");
+}
+
+TEST(PickFirst, Shuffle) {
+  LoadBalancingPolicyProto policy;
+  auto* lb_policy = policy.add_policies();
+  PickFirst pick_first;
+  pick_first.set_shuffle_address_list(true);
+  lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
+      pick_first);
+  auto result = ConvertXdsPolicy(policy);
+  ASSERT_TRUE(result.ok()) << result.status();
+  EXPECT_EQ(*result, "{\"pick_first\":{\"shuffleAddressList\":true}}");
+}
+
+TEST(PickFirst, ShuffleOmitted) {
+  LoadBalancingPolicyProto policy;
+  auto* lb_policy = policy.add_policies();
+  lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
+      PickFirst());
+  auto result = ConvertXdsPolicy(policy);
+  ASSERT_TRUE(result.ok()) << result.status();
+  EXPECT_EQ(*result, "{\"pick_first\":{\"shuffleAddressList\":false}}");
 }
 
 }  // namespace

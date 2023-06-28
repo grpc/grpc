@@ -29,6 +29,7 @@
 #include "absl/types/variant.h"
 #include "envoy/config/core/v3/extension.upb.h"
 #include "envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.upb.h"
+#include "envoy/extensions/load_balancing_policies/pick_first/v3/pick_first.upb.h"
 #include "envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb.h"
 #include "envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb.h"
 #include "google/protobuf/wrappers.upb.h"
@@ -254,6 +255,38 @@ class WrrLocalityLbPolicyConfigFactory
   }
 };
 
+class PickFirstLbPolicyConfigFactory
+    : public XdsLbPolicyRegistry::ConfigFactory {
+ public:
+  Json::Object ConvertXdsLbPolicyConfig(
+      const XdsLbPolicyRegistry* registry,
+      const XdsResourceType::DecodeContext& context,
+      absl::string_view configuration, ValidationErrors* errors,
+      int recursion_depth) override {
+    const auto* resource =
+        envoy_extensions_load_balancing_policies_pick_first_v3_PickFirst_parse(
+            configuration.data(), configuration.size(), context.arena);
+    if (resource == nullptr) {
+      errors->AddError("can't decode WrrLocality LB policy config");
+      return {};
+    }
+    bool shuffle_address_list =
+        envoy_extensions_load_balancing_policies_pick_first_v3_PickFirst_shuffle_address_list(
+            resource);
+    return Json::Object{
+        {"pick_first",
+         Json::FromObject({
+             {"shuffleAddressList", Json::FromBool(shuffle_address_list)},
+         })}};
+  }
+
+  absl::string_view type() override { return Type(); }
+
+  static absl::string_view Type() {
+    return "envoy.extensions.load_balancing_policies.pick_first.v3.PickFirst";
+  }
+};
+
 }  // namespace
 
 //
@@ -273,6 +306,9 @@ XdsLbPolicyRegistry::XdsLbPolicyRegistry() {
   policy_config_factories_.emplace(
       WrrLocalityLbPolicyConfigFactory::Type(),
       std::make_unique<WrrLocalityLbPolicyConfigFactory>());
+  policy_config_factories_.emplace(
+      PickFirstLbPolicyConfigFactory::Type(),
+      std::make_unique<PickFirstLbPolicyConfigFactory>());
 }
 
 Json::Array XdsLbPolicyRegistry::ConvertXdsLbPolicyConfig(
