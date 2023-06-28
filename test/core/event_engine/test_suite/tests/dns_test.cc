@@ -27,6 +27,7 @@
 #include <vector>
 
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
@@ -39,8 +40,8 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/notification.h"
+#include "src/core/lib/iomgr/sockaddr.h"
 #include "test/core/event_engine/test_suite/event_engine_test_framework.h"
 #include "test/core/util/fake_udp_and_tcp_server.h"
 #include "test/core/util/port.h"

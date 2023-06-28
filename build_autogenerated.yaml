@@ -11456,6 +11456,7 @@ targets:
   - test/core/event_engine/test_suite/tests/server_test.h
   - test/core/event_engine/test_suite/tests/timer_test.h
   - test/core/util/fake_udp_and_tcp_server.h
+  - test/cpp/util/get_grpc_test_runfile_dir.h
   src:
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/test_suite/event_engine_test_framework.cc
@@ -11466,6 +11467,7 @@ targets:
   - test/core/event_engine/test_suite/tests/server_test.cc
   - test/core/event_engine/test_suite/tests/timer_test.cc
   - test/core/util/fake_udp_and_tcp_server.cc
+  - test/cpp/util/get_grpc_test_runfile_dir.cc
   deps:
   - grpc_unsecure
   - grpc++_test_util
