@@ -469,6 +469,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.upb.h )
   s.files += %w( src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/common/v3/common.upb.c )
   s.files += %w( src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/common/v3/common.upb.h )
+  s.files += %w( src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/pick_first/v3/pick_first.upb.c )
+  s.files += %w( src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/pick_first/v3/pick_first.upb.h )
   s.files += %w( src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb.c )
   s.files += %w( src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb.h )
   s.files += %w( src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb.c )

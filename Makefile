@@ -1144,6 +1144,7 @@ LIBGRPC_SRC = \
     src/core/ext/upb-generated/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb.c \
     src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.upb.c \
     src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/common/v3/common.upb.c \
+    src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/pick_first/v3/pick_first.upb.c \
     src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb.c \
     src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb.c \
     src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.c \
@@ -3139,6 +3140,7 @@ src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_mana
 src/core/ext/upb-generated/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/common/v3/common.upb.c: $(OPENSSL_DEP)
+src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/pick_first/v3/pick_first.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.c: $(OPENSSL_DEP)
