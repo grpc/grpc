@@ -133,8 +133,8 @@
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
 #include "src/core/lib/load_balancing/subchannel_interface.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/lib/resolver/resolver.h"
-#include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
@@ -684,9 +684,8 @@ EndpointAddressesList GrpcLb::Serverlist::GetServerAddressList(
     }
     // Add address with a channel arg containing LB token and stats object.
     endpoints.emplace_back(
-        addr,
-        ChannelArgs().SetObject(MakeRefCounted<TokenAndClientStatsArg>(
-            std::move(lb_token), stats)));
+        addr, ChannelArgs().SetObject(MakeRefCounted<TokenAndClientStatsArg>(
+                  std::move(lb_token), stats)));
   }
   return endpoints;
 }
@@ -771,8 +770,8 @@ GrpcLb::PickResult GrpcLb::Picker::Pick(PickArgs args) {
 //
 
 RefCountedPtr<SubchannelInterface> GrpcLb::Helper::CreateSubchannel(
-    const grpc_resolved_address& address,
-    const ChannelArgs& per_address_args, const ChannelArgs& args) {
+    const grpc_resolved_address& address, const ChannelArgs& per_address_args,
+    const ChannelArgs& args) {
   if (parent()->shutting_down_) return nullptr;
   const auto* arg = per_address_args.GetObject<TokenAndClientStatsArg>();
   if (arg == nullptr) {

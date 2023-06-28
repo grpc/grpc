@@ -69,7 +69,7 @@
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
-#include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
 namespace grpc_core {
@@ -655,7 +655,7 @@ absl::Status RingHash::UpdateLocked(UpdateArgs args) {
   }
   endpoint_map_ = std::move(endpoint_map);
   // If the address list is empty, report TRANSIENT_FAILURE.
-// FIXME
+// FIXME: do this
   // TODO(roth): As part of adding dualstack backend support, we need to
   // also handle the case where the list of addresses for a given
   // endpoint is empty.

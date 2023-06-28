@@ -86,12 +86,11 @@ std::string EndpointAddresses::ToString() const {
   std::vector<std::string> addr_strings;
   for (const auto& address : addresses_) {
     auto addr_str = grpc_sockaddr_to_string(&address, false);
-    addr_strings.push_back(
-        addr_str.ok() ? std::move(*addr_str) : addr_str.status().ToString());
+    addr_strings.push_back(addr_str.ok() ? std::move(*addr_str)
+                                         : addr_str.status().ToString());
   }
   std::vector<std::string> parts = {
-      absl::StrCat("addrs=[", absl::StrJoin(addr_strings, ", "), "]")
-  };
+      absl::StrCat("addrs=[", absl::StrJoin(addr_strings, ", "), "]")};
   if (args_ != ChannelArgs()) {
     parts.emplace_back(absl::StrCat("args=", args_.ToString()));
   }

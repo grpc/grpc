@@ -648,8 +648,8 @@ void XdsOverrideHostLb::OnSubchannelConnectivityStateChange(
 //
 
 RefCountedPtr<SubchannelInterface> XdsOverrideHostLb::Helper::CreateSubchannel(
-    const grpc_resolved_address& address,
-    const ChannelArgs& per_address_args, const ChannelArgs& args) {
+    const grpc_resolved_address& address, const ChannelArgs& per_address_args,
+    const ChannelArgs& args) {
   auto subchannel = parent()->channel_control_helper()->CreateSubchannel(
       address, per_address_args, args);
   return parent()->AdoptSubchannel(address, subchannel);

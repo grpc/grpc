@@ -44,7 +44,7 @@
 #include "src/core/lib/load_balancing/delegating_helper.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
-#include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 
 namespace grpc_core {
 
@@ -61,8 +61,8 @@ class EndpointList::Endpoint::Helper
   ~Helper() override { endpoint_.reset(DEBUG_LOCATION, "Helper"); }
 
   RefCountedPtr<SubchannelInterface> CreateSubchannel(
-      const grpc_resolved_address& address,
-      const ChannelArgs& per_address_args, const ChannelArgs& args) override {
+      const grpc_resolved_address& address, const ChannelArgs& per_address_args,
+      const ChannelArgs& args) override {
     return endpoint_->CreateSubchannel(address, per_address_args, args);
   }
 
@@ -153,8 +153,8 @@ size_t EndpointList::Endpoint::Index() const {
 }
 
 RefCountedPtr<SubchannelInterface> EndpointList::Endpoint::CreateSubchannel(
-    const grpc_resolved_address& address,
-    const ChannelArgs& per_address_args, const ChannelArgs& args) {
+    const grpc_resolved_address& address, const ChannelArgs& per_address_args,
+    const ChannelArgs& args) {
   return endpoint_list_->channel_control_helper()->CreateSubchannel(
       address, per_address_args, args);
 }
@@ -165,9 +165,9 @@ RefCountedPtr<SubchannelInterface> EndpointList::Endpoint::CreateSubchannel(
 
 void EndpointList::Init(
     const EndpointAddressesList& endpoints, const ChannelArgs& args,
-    absl::AnyInvocable<OrphanablePtr<Endpoint>(
-        RefCountedPtr<EndpointList>, const EndpointAddresses&,
-        const ChannelArgs&)>
+    absl::AnyInvocable<OrphanablePtr<Endpoint>(RefCountedPtr<EndpointList>,
+                                               const EndpointAddresses&,
+                                               const ChannelArgs&)>
         create_endpoint) {
   for (const EndpointAddresses& addresses : endpoints) {
     endpoints_.push_back(

@@ -266,7 +266,7 @@ absl::Status RoundRobin::UpdateLocked(UpdateArgs args) {
       args.args);
   // If the new list is empty, immediately promote it to
   // endpoint_list_ and report TRANSIENT_FAILURE.
-// FIXME
+// FIXME: do this
   // TODO(roth): As part of adding dualstack backend support, we need to
   // also handle the case where the list of addresses for a given
   // endpoint is empty.

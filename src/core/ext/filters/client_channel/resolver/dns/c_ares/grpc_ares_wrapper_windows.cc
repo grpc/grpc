@@ -28,7 +28,7 @@
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/socket_windows.h"
-#include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 
 bool grpc_ares_query_ipv6() { return grpc_ipv6_loopback_available(); }
 

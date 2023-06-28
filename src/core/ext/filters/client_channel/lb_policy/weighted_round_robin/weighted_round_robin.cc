@@ -186,7 +186,7 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
                   std::shared_ptr<WorkSerializer> work_serializer)
           : Endpoint(std::move(endpoint_list)),
             weight_(policy<WeightedRoundRobin>()->GetOrCreateWeight(
-                // FIXME
+// FIXME: support multiple addresses
                 addresses.address())) {
         Init(addresses, args, std::move(work_serializer));
       }
@@ -761,8 +761,8 @@ void WeightedRoundRobin::WrrEndpointList::WrrEndpoint::OobWatcher::
 
 RefCountedPtr<SubchannelInterface>
 WeightedRoundRobin::WrrEndpointList::WrrEndpoint::CreateSubchannel(
-    const grpc_resolved_address& address,
-    const ChannelArgs& per_address_args, const ChannelArgs& args) {
+    const grpc_resolved_address& address, const ChannelArgs& per_address_args,
+    const ChannelArgs& args) {
   auto* wrr = policy<WeightedRoundRobin>();
   auto subchannel = wrr->channel_control_helper()->CreateSubchannel(
       address, per_address_args, args);
