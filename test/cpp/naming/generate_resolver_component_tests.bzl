@@ -62,6 +62,7 @@ def generate_resolver_component_tests():
                 "//:grpc++%s" % unsecure_build_config_suffix,
                 "//:grpc%s" % unsecure_build_config_suffix,
                 "//:gpr",
+                "//src/core:ares_resolver",
                 "//test/cpp/util:test_config",
             ],
             tags = ["no_windows"],
