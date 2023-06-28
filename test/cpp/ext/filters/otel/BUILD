@@ -11,17 +11,28 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-package(default_visibility = ["//visibility:public"])
 
-py_test(
-    name = "_observability_test",
-    size = "small",
-    srcs = glob(["*.py"]),
-    imports = ["../../"],
-    main = "_observability_test.py",
-    deps = [
-        "//src/python/grpcio/grpc:grpcio",
-        "//src/python/grpcio_observability/grpc_observability:pyobservability",
-        "//src/python/grpcio_tests/tests/testing",
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
+
+licenses(["notice"])
+
+grpc_package(
+    name = "test/cpp/ext/filters/otel",
+    visibility = "tests",
+)
+
+grpc_cc_test(
+    name = "otel_plugin_test",
+    srcs = [
+        "otel_plugin_test.cc",
     ],
+    external_deps = [
+        "gtest",
+        "otel/api",
+        "otel/sdk/src/metrics",
+    ],
+    language = "C++",
+    tags = [
+    ],
+    deps = ["//test/core/util:grpc_test_util"],
 )
