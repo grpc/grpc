@@ -657,7 +657,6 @@ absl::Status WeightedRoundRobin::UpdateLocked(UpdateArgs args) {
       gpr_log(GPR_INFO, "[WRR %p] received update with %" PRIuPTR " addresses",
               this, args.addresses->size());
     }
-// FIXME: this needs to deal with multiple addresses per endpoint
     // Weed out duplicate addresses.  Also sort the addresses so that if
     // the set of the addresses don't change, their indexes in the
     // subchannel list don't change, since this avoids unnecessary churn
@@ -669,10 +668,10 @@ absl::Status WeightedRoundRobin::UpdateLocked(UpdateArgs args) {
     struct AddressLessThan {
       bool operator()(const EndpointAddresses& endpoint1,
                       const EndpointAddresses& endpoint2) const {
-        const grpc_resolved_address& addr1 = endpoint1.address();
-        const grpc_resolved_address& addr2 = endpoint2.address();
-        if (addr1.len != addr2.len) return addr1.len < addr2.len;
-        return memcmp(addr1.addr, addr2.addr, addr1.len) < 0;
+        // Compare unordered addresses only, not channel args.
+        EndpointAddressSet e1(endpoint1.addresses());
+        EndpointAddressSet e2(endpoint2.addresses());
+        return e1 < e2;
       }
     };
     std::set<EndpointAddresses, AddressLessThan> ordered_addresses(
