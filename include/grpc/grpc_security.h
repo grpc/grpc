@@ -911,7 +911,9 @@ GRPCAPI void grpc_tls_credentials_options_set_verify_server_cert(
  *
  * WARNING: This API is extremely dangerous and should not be used. If the
  * server's trust bundle is too large, then the TLS server will be unable to
- * form a ServerHello, and hence will be unusable.
+ * form a ServerHello, and hence will be unusable. The definition of "too large"
+ * depends on the underlying SSL library being used and on the size of the CN
+ * fields of the certificates in the trust bundle.
  */
 GRPCAPI void grpc_tls_credentials_options_set_send_client_ca_list(
     grpc_tls_credentials_options* options, bool send_client_ca_list);
