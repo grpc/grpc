@@ -140,7 +140,7 @@ EXPORTS
     grpc_ssl_server_credentials_create_options_using_config_fetcher
     grpc_ssl_server_credentials_options_destroy
     grpc_ssl_server_credentials_create_with_options
-    grpc_ssl_server_credentials_set_send_client_ca_list
+    grpc_ssl_server_credentials_options_set_send_client_ca_list
     grpc_call_set_credentials
     grpc_server_credentials_set_auth_metadata_processor
     grpc_alts_credentials_client_options_create
