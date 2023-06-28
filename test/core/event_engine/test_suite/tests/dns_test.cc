@@ -16,7 +16,6 @@
 // IWYU pragma: no_include <arpa/inet.h>
 
 #include <stdint.h>
-#include <stdio.h>
 
 #include <cstdlib>
 #include <cstring>
@@ -31,8 +30,6 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
-#include "absl/time/clock.h"
-#include "absl/time/time.h"
 #include "absl/types/optional.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
