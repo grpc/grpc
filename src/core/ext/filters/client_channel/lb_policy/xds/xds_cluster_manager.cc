@@ -59,7 +59,7 @@
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
-#include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
 namespace grpc_core {
@@ -149,7 +149,7 @@ class XdsClusterManagerLb : public LoadBalancingPolicy {
 
     absl::Status UpdateLocked(
         RefCountedPtr<LoadBalancingPolicy::Config> config,
-        const absl::StatusOr<ServerAddressList>& addresses,
+        const absl::StatusOr<EndpointAddressesList>& addresses,
         const ChannelArgs& args);
     void ExitIdleLocked();
     void ResetBackoffLocked();
@@ -482,7 +482,7 @@ XdsClusterManagerLb::ClusterChild::CreateChildPolicyLocked(
 
 absl::Status XdsClusterManagerLb::ClusterChild::UpdateLocked(
     RefCountedPtr<LoadBalancingPolicy::Config> config,
-    const absl::StatusOr<ServerAddressList>& addresses,
+    const absl::StatusOr<EndpointAddressesList>& addresses,
     const ChannelArgs& args) {
   if (xds_cluster_manager_policy_->shutting_down_) return absl::OkStatus();
   // Update child weight.

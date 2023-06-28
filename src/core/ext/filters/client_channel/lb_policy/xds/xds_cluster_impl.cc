@@ -64,7 +64,7 @@
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
 #include "src/core/lib/load_balancing/subchannel_interface.h"
-#include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
 namespace grpc_core {
@@ -249,8 +249,8 @@ class XdsClusterImplLb : public LoadBalancingPolicy {
   OrphanablePtr<LoadBalancingPolicy> CreateChildPolicyLocked(
       const ChannelArgs& args);
   absl::Status UpdateChildPolicyLocked(
-      absl::StatusOr<ServerAddressList> addresses, std::string resolution_note,
-      const ChannelArgs& args);
+      absl::StatusOr<EndpointAddressesList> addresses,
+      std::string resolution_note, const ChannelArgs& args);
 
   void MaybeUpdatePickerLocked();
 
@@ -568,8 +568,8 @@ OrphanablePtr<LoadBalancingPolicy> XdsClusterImplLb::CreateChildPolicyLocked(
 }
 
 absl::Status XdsClusterImplLb::UpdateChildPolicyLocked(
-    absl::StatusOr<ServerAddressList> addresses, std::string resolution_note,
-    const ChannelArgs& args) {
+    absl::StatusOr<EndpointAddressesList> addresses,
+    std::string resolution_note, const ChannelArgs& args) {
   // Create policy if needed.
   if (child_policy_ == nullptr) {
     child_policy_ = CreateChildPolicyLocked(args);

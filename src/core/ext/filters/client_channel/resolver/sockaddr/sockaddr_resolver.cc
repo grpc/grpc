@@ -33,9 +33,9 @@
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/lib/resolver/resolver.h"
 #include "src/core/lib/resolver/resolver_factory.h"
-#include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_core {
@@ -44,7 +44,7 @@ namespace {
 
 class SockaddrResolver : public Resolver {
  public:
-  SockaddrResolver(ServerAddressList addresses, ResolverArgs args);
+  SockaddrResolver(EndpointAddressesList addresses, ResolverArgs args);
 
   void StartLocked() override;
 
@@ -52,11 +52,11 @@ class SockaddrResolver : public Resolver {
 
  private:
   std::unique_ptr<ResultHandler> result_handler_;
-  ServerAddressList addresses_;
+  EndpointAddressesList addresses_;
   ChannelArgs channel_args_;
 };
 
-SockaddrResolver::SockaddrResolver(ServerAddressList addresses,
+SockaddrResolver::SockaddrResolver(EndpointAddressesList addresses,
                                    ResolverArgs args)
     : result_handler_(std::move(args.result_handler)),
       addresses_(std::move(addresses)),
@@ -75,7 +75,7 @@ void SockaddrResolver::StartLocked() {
 
 bool ParseUri(const URI& uri,
               bool parse(const URI& uri, grpc_resolved_address* dst),
-              ServerAddressList* addresses) {
+              EndpointAddressesList* addresses) {
   if (!uri.authority().empty()) {
     gpr_log(GPR_ERROR, "authority-based URIs not supported by the %s scheme",
             uri.scheme().c_str());
@@ -103,7 +103,7 @@ bool ParseUri(const URI& uri,
 
 OrphanablePtr<Resolver> CreateSockaddrResolver(
     ResolverArgs args, bool parse(const URI& uri, grpc_resolved_address* dst)) {
-  ServerAddressList addresses;
+  EndpointAddressesList addresses;
   if (!ParseUri(args.uri, parse, &addresses)) return nullptr;
   // Instantiate resolver.
   return MakeOrphanable<SockaddrResolver>(std::move(addresses),

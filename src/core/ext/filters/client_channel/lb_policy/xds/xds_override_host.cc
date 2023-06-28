@@ -71,7 +71,7 @@
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
 #include "src/core/lib/load_balancing/subchannel_interface.h"
-#include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
 namespace grpc_core {
@@ -95,9 +95,9 @@ struct PtrLessThan {
   }
 };
 
-XdsHealthStatus GetAddressHealthStatus(const ServerAddress& address) {
+XdsHealthStatus GetEndpointHealthStatus(const EndpointAddresses& endpoint) {
   return XdsHealthStatus(static_cast<XdsHealthStatus::HealthStatus>(
-      address.args()
+      endpoint.args()
           .GetInt(GRPC_ARG_XDS_HEALTH_STATUS)
           .value_or(XdsHealthStatus::HealthStatus::kUnknown)));
 }
@@ -284,8 +284,8 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
 
   void MaybeUpdatePickerLocked();
 
-  absl::StatusOr<ServerAddressList> UpdateAddressMap(
-      absl::StatusOr<ServerAddressList> addresses);
+  absl::StatusOr<EndpointAddressesList> UpdateAddressMap(
+      absl::StatusOr<EndpointAddressesList> endpoints);
 
   RefCountedPtr<SubchannelWrapper> AdoptSubchannel(
       const grpc_resolved_address& address,
@@ -501,43 +501,44 @@ OrphanablePtr<LoadBalancingPolicy> XdsOverrideHostLb::CreateChildPolicyLocked(
   return lb_policy;
 }
 
-absl::StatusOr<ServerAddressList> XdsOverrideHostLb::UpdateAddressMap(
-    absl::StatusOr<ServerAddressList> addresses) {
-  if (!addresses.ok()) {
+absl::StatusOr<EndpointAddressesList> XdsOverrideHostLb::UpdateAddressMap(
+    absl::StatusOr<EndpointAddressesList> endpoints) {
+  if (!endpoints.ok()) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
       gpr_log(GPR_INFO, "[xds_override_host_lb %p] address error: %s", this,
-              addresses.status().ToString().c_str());
+              endpoints.status().ToString().c_str());
     }
-    return addresses;
+    return endpoints;
   }
-  ServerAddressList return_value;
+// FIXME: need to handle multiple addresses per endpoint
+  EndpointAddressesList return_value;
   std::map<const std::string, XdsHealthStatus> addresses_for_map;
-  for (const auto& address : *addresses) {
-    XdsHealthStatus status = GetAddressHealthStatus(address);
+  for (const auto& endpoint : *endpoints) {
+    XdsHealthStatus status = GetEndpointHealthStatus(endpoint);
     if (status.status() != XdsHealthStatus::kDraining) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
         gpr_log(GPR_INFO,
-                "[xds_override_host_lb %p] address %s: not draining, "
+                "[xds_override_host_lb %p] endpoint %s: not draining, "
                 "passing to child",
-                this, address.ToString().c_str());
+                this, endpoint.ToString().c_str());
       }
-      return_value.push_back(address);
+      return_value.push_back(endpoint);
     } else if (!config_->override_host_status_set().Contains(status)) {
       // Skip draining hosts if not in the override status set.
       if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
         gpr_log(GPR_INFO,
-                "[xds_override_host_lb %p] address %s: draining but not in "
+                "[xds_override_host_lb %p] endpoint %s: draining but not in "
                 "override_host_status set -- ignoring",
-                this, address.ToString().c_str());
+                this, endpoint.ToString().c_str());
       }
       continue;
     }
-    auto key = grpc_sockaddr_to_uri(&address.address());
+    auto key = grpc_sockaddr_to_uri(&endpoint.address());
     if (key.ok()) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
         gpr_log(GPR_INFO,
-                "[xds_override_host_lb %p] address %s: adding map key %s", this,
-                address.ToString().c_str(), key->c_str());
+                "[xds_override_host_lb %p] endpoint %s: adding map key %s",
+                this, endpoint.ToString().c_str(), key->c_str());
       }
       addresses_for_map.emplace(std::move(*key), status);
     }

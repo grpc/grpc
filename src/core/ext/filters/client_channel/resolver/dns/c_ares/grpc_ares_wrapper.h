@@ -36,7 +36,7 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
-#include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 
 #define GRPC_DNS_ARES_DEFAULT_QUERY_TIMEOUT_MS 120000
 
@@ -63,10 +63,10 @@ struct grpc_ares_request {
   /// closure to call when the request completes
   grpc_closure* on_done ABSL_GUARDED_BY(mu) = nullptr;
   /// the pointer to receive the resolved addresses
-  std::unique_ptr<grpc_core::ServerAddressList>* addresses_out
+  std::unique_ptr<grpc_core::EndpointAddressesList>* addresses_out
       ABSL_GUARDED_BY(mu);
   /// the pointer to receive the resolved balancer addresses
-  std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses_out
+  std::unique_ptr<grpc_core::EndpointAddressesList>* balancer_addresses_out
       ABSL_GUARDED_BY(mu);
   /// the pointer to receive the service config in JSON
   char** service_config_json_out ABSL_GUARDED_BY(mu) = nullptr;
@@ -92,7 +92,7 @@ struct grpc_ares_request {
 extern grpc_ares_request* (*grpc_dns_lookup_hostname_ares)(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
-    std::unique_ptr<grpc_core::ServerAddressList>* addresses,
+    std::unique_ptr<grpc_core::EndpointAddressesList>* addresses,
     int query_timeout_ms);
 
 // Asynchronously resolve a SRV record.
@@ -100,7 +100,7 @@ extern grpc_ares_request* (*grpc_dns_lookup_hostname_ares)(
 extern grpc_ares_request* (*grpc_dns_lookup_srv_ares)(
     const char* dns_server, const char* name,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
-    std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses,
+    std::unique_ptr<grpc_core::EndpointAddressesList>* balancer_addresses,
     int query_timeout_ms);
 
 // Asynchronously resolve a TXT record.
@@ -128,7 +128,8 @@ bool grpc_ares_query_ipv6();
 
 // Sorts destinations in lb_addrs according to RFC 6724.
 void grpc_cares_wrapper_address_sorting_sort(
-    const grpc_ares_request* request, grpc_core::ServerAddressList* addresses);
+    const grpc_ares_request* request,
+    grpc_core::EndpointAddressesList* addresses);
 
 // Exposed in this header for C-core tests only
 extern void (*grpc_ares_test_only_inject_config)(ares_channel channel);

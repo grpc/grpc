@@ -92,8 +92,8 @@
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/lib/resolver/resolver_registry.h"
-#include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/service_config/service_config_impl.h"
@@ -713,7 +713,7 @@ class RlsLb : public LoadBalancingPolicy {
   OrphanablePtr<RlsChannel> rls_channel_ ABSL_GUARDED_BY(mu_);
 
   // Accessed only from within WorkSerializer.
-  absl::StatusOr<ServerAddressList> addresses_;
+  absl::StatusOr<EndpointAddressesList> addresses_;
   ChannelArgs channel_args_;
   RefCountedPtr<RlsLbConfig> config_;
   RefCountedPtr<ChildPolicyWrapper> default_child_policy_;
@@ -1891,7 +1891,7 @@ absl::Status RlsLb::UpdateLocked(UpdateArgs args) {
   // Swap out addresses.
   // If the new address list is an error and we have an existing address list,
   // stick with the existing addresses.
-  absl::StatusOr<ServerAddressList> old_addresses;
+  absl::StatusOr<EndpointAddressesList> old_addresses;
   if (args.addresses.ok()) {
     old_addresses = std::move(addresses_);
     addresses_ = std::move(args.addresses);

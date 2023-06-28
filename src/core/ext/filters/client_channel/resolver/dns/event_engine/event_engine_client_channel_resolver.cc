@@ -52,9 +52,9 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/lib/resolver/resolver.h"
 #include "src/core/lib/resolver/resolver_factory.h"
-#include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/service_config/service_config.h"
 #include "src/core/lib/service_config/service_config_impl.h"
 
@@ -149,8 +149,8 @@ class EventEngineClientChannelDNSResolver : public PollingResolver {
     bool is_srv_inflight_ ABSL_GUARDED_BY(on_resolved_mu_) = false;
     bool is_txt_inflight_ ABSL_GUARDED_BY(on_resolved_mu_) = false;
     // Output fields from requests.
-    ServerAddressList addresses_ ABSL_GUARDED_BY(on_resolved_mu_);
-    ServerAddressList balancer_addresses_ ABSL_GUARDED_BY(on_resolved_mu_);
+    EndpointAddressesList addresses_ ABSL_GUARDED_BY(on_resolved_mu_);
+    EndpointAddressesList balancer_addresses_ ABSL_GUARDED_BY(on_resolved_mu_);
     ValidationErrors errors_ ABSL_GUARDED_BY(on_resolved_mu_);
     absl::StatusOr<std::string> service_config_json_
         ABSL_GUARDED_BY(on_resolved_mu_);

@@ -48,7 +48,7 @@
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
-#include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
 namespace grpc_core {
@@ -239,7 +239,7 @@ void RoundRobin::ResetBackoffLocked() {
 }
 
 absl::Status RoundRobin::UpdateLocked(UpdateArgs args) {
-  ServerAddressList addresses;
+  EndpointAddressesList addresses;
   if (args.addresses.ok()) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
       gpr_log(GPR_INFO, "[RR %p] received update with %" PRIuPTR " addresses",
@@ -266,6 +266,7 @@ absl::Status RoundRobin::UpdateLocked(UpdateArgs args) {
       args.args);
   // If the new list is empty, immediately promote it to
   // endpoint_list_ and report TRANSIENT_FAILURE.
+// FIXME
   // TODO(roth): As part of adding dualstack backend support, we need to
   // also handle the case where the list of addresses for a given
   // endpoint is empty.

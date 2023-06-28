@@ -69,7 +69,7 @@
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
 #include "src/core/lib/load_balancing/subchannel_interface.h"
-#include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
 namespace grpc_core {
@@ -223,12 +223,13 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
     };
 
     WrrEndpointList(RefCountedPtr<WeightedRoundRobin> wrr,
-                    const ServerAddressList& addresses, const ChannelArgs& args)
+                    const EndpointAddressesList& endpoints,
+                    const ChannelArgs& args)
         : EndpointList(std::move(wrr),
                        GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)
                            ? "WrrEndpointList"
                            : nullptr) {
-      Init(addresses, args,
+      Init(endpoints, args,
            [&](RefCountedPtr<WrrEndpointList> endpoint_list,
                const EndpointAddresses& addresses, const ChannelArgs& args) {
              return MakeOrphanable<WrrEndpoint>(
@@ -650,12 +651,13 @@ void WeightedRoundRobin::ResetBackoffLocked() {
 
 absl::Status WeightedRoundRobin::UpdateLocked(UpdateArgs args) {
   config_ = std::move(args.config);
-  ServerAddressList addresses;
+  EndpointAddressesList addresses;
   if (args.addresses.ok()) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
       gpr_log(GPR_INFO, "[WRR %p] received update with %" PRIuPTR " addresses",
               this, args.addresses->size());
     }
+// FIXME: this needs to deal with multiple addresses per endpoint
     // Weed out duplicate addresses.  Also sort the addresses so that if
     // the set of the addresses don't change, their indexes in the
     // subchannel list don't change, since this avoids unnecessary churn
@@ -665,18 +667,18 @@ absl::Status WeightedRoundRobin::UpdateLocked(UpdateArgs args) {
     // that sorts much earlier in the list, then all of the addresses in
     // between those two positions will have changed indexes.
     struct AddressLessThan {
-      bool operator()(const ServerAddress& address1,
-                      const ServerAddress& address2) const {
-        const grpc_resolved_address& addr1 = address1.address();
-        const grpc_resolved_address& addr2 = address2.address();
+      bool operator()(const EndpointAddresses& endpoint1,
+                      const EndpointAddresses& endpoint2) const {
+        const grpc_resolved_address& addr1 = endpoint1.address();
+        const grpc_resolved_address& addr2 = endpoint2.address();
         if (addr1.len != addr2.len) return addr1.len < addr2.len;
         return memcmp(addr1.addr, addr2.addr, addr1.len) < 0;
       }
     };
-    std::set<ServerAddress, AddressLessThan> ordered_addresses(
+    std::set<EndpointAddresses, AddressLessThan> ordered_addresses(
         args.addresses->begin(), args.addresses->end());
-    addresses =
-        ServerAddressList(ordered_addresses.begin(), ordered_addresses.end());
+    addresses = EndpointAddressesList(ordered_addresses.begin(),
+                                      ordered_addresses.end());
   } else {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
       gpr_log(GPR_INFO, "[WRR %p] received update with address error: %s", this,
