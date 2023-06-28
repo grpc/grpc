@@ -92,8 +92,8 @@ class MyEndpointList : public EndpointList {
   }
 };
 */
-// FIXME: Consider wrapping this in an LB policy subclass for petiole
-// policies to inherit from
+// TODO(roth): Consider wrapping this in an LB policy subclass for petiole
+// policies to inherit from.
 class EndpointList : public InternallyRefCounted<EndpointList> {
  public:
   // An individual endpoint.
