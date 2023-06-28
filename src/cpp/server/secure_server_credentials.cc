@@ -126,7 +126,7 @@ std::shared_ptr<ServerCredentials> SslServerCredentials(
       options.force_client_auth
           ? GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY
           : options.client_certificate_request,
-      options.send_client_ca_list, nullptr);
+      nullptr);
   return std::shared_ptr<ServerCredentials>(
       new SecureServerCredentials(c_creds));
 }

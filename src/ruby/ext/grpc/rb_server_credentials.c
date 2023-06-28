@@ -200,12 +200,11 @@ static VALUE grpc_rb_server_credentials_init(VALUE self, VALUE pem_root_certs,
 
   if (pem_root_certs == Qnil) {
     creds = grpc_ssl_server_credentials_create_ex(
-        NULL, key_cert_pairs, num_key_certs, auth_client,
-        /*send_client_ca_list=*/true, NULL);
+        NULL, key_cert_pairs, num_key_certs, auth_client, NULL);
   } else {
-    creds = grpc_ssl_server_credentials_create_ex(
-        RSTRING_PTR(pem_root_certs), key_cert_pairs, num_key_certs, auth_client,
-        /*send_client_ca_list=*/true, NULL);
+    creds = grpc_ssl_server_credentials_create_ex(RSTRING_PTR(pem_root_certs),
+                                                  key_cert_pairs, num_key_certs,
+                                                  auth_client, NULL);
   }
   xfree(key_cert_pairs);
   if (creds == NULL) {

@@ -118,8 +118,7 @@ class grpc_ssl_server_credentials final : public grpc_server_credentials {
   void build_config(
       const char* pem_root_certs,
       grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs, size_t num_key_cert_pairs,
-      grpc_ssl_client_certificate_request_type client_certificate_request,
-      bool send_client_ca_list);
+      grpc_ssl_client_certificate_request_type client_certificate_request);
 
   grpc_ssl_server_config config_;
   grpc_ssl_server_certificate_config_fetcher certificate_config_fetcher_;

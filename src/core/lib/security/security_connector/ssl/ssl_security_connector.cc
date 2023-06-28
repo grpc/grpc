@@ -263,8 +263,6 @@ class grpc_ssl_server_security_connector
           server_credentials->config().min_tls_version);
       options.max_tls_version = grpc_get_tsi_tls_version(
           server_credentials->config().max_tls_version);
-      options.send_client_ca_list =
-          server_credentials->config().send_client_ca_list;
       const tsi_result result =
           tsi_create_ssl_server_handshaker_factory_with_options(
               &options, &server_handshaker_factory_);
@@ -378,7 +376,6 @@ class grpc_ssl_server_security_connector
     options.cipher_suites = grpc_get_ssl_cipher_suites();
     options.alpn_protocols = alpn_protocol_strings;
     options.num_alpn_protocols = static_cast<uint16_t>(num_alpn_protocols);
-    options.send_client_ca_list = server_creds->config().send_client_ca_list;
     tsi_result result = tsi_create_ssl_server_handshaker_factory_with_options(
         &options, &new_handshaker_factory);
     grpc_tsi_ssl_pem_key_cert_pairs_destroy(

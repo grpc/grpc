@@ -68,7 +68,6 @@ struct grpc_ssl_server_config {
       GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE;
   grpc_tls_version min_tls_version = grpc_tls_version::TLS1_2;
   grpc_tls_version max_tls_version = grpc_tls_version::TLS1_3;
-  bool send_client_ca_list = true;
 };
 // Creates an SSL server_security_connector.
 // - config is the SSL config to be used for the SSL channel establishment.

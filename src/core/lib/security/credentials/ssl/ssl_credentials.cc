@@ -159,21 +159,18 @@ struct grpc_ssl_server_credentials_options {
   grpc_ssl_client_certificate_request_type client_certificate_request;
   grpc_ssl_server_certificate_config* certificate_config;
   grpc_ssl_server_certificate_config_fetcher* certificate_config_fetcher;
-  bool send_client_ca_list = true;
 };
 
 grpc_ssl_server_credentials::grpc_ssl_server_credentials(
     const grpc_ssl_server_credentials_options& options) {
   if (options.certificate_config_fetcher != nullptr) {
     config_.client_certificate_request = options.client_certificate_request;
-    config_.send_client_ca_list = options.send_client_ca_list;
     certificate_config_fetcher_ = *options.certificate_config_fetcher;
   } else {
     build_config(options.certificate_config->pem_root_certs,
                  options.certificate_config->pem_key_cert_pairs,
                  options.certificate_config->num_key_cert_pairs,
-                 options.client_certificate_request,
-                 options.send_client_ca_list);
+                 options.client_certificate_request);
   }
 }
 
@@ -214,14 +211,12 @@ tsi_ssl_pem_key_cert_pair* grpc_convert_grpc_to_tsi_cert_pairs(
 void grpc_ssl_server_credentials::build_config(
     const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs,
     size_t num_key_cert_pairs,
-    grpc_ssl_client_certificate_request_type client_certificate_request,
-    bool send_client_ca_list) {
+    grpc_ssl_client_certificate_request_type client_certificate_request) {
   config_.client_certificate_request = client_certificate_request;
   config_.pem_root_certs = gpr_strdup(pem_root_certs);
   config_.pem_key_cert_pairs = grpc_convert_grpc_to_tsi_cert_pairs(
       pem_key_cert_pairs, num_key_cert_pairs);
   config_.num_key_cert_pairs = num_key_cert_pairs;
-  config_.send_client_ca_list = send_client_ca_list;
 }
 
 void grpc_ssl_server_credentials::set_min_tls_version(
@@ -320,21 +315,21 @@ grpc_server_credentials* grpc_ssl_server_credentials_create(
       force_client_auth
           ? GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY
           : GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE,
-      /*send_client_ca_list=*/true, reserved);
+      reserved);
 }
 
 grpc_server_credentials* grpc_ssl_server_credentials_create_ex(
     const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs,
     size_t num_key_cert_pairs,
     grpc_ssl_client_certificate_request_type client_certificate_request,
-    bool send_client_ca_list, void* reserved) {
+    void* reserved) {
   GRPC_API_TRACE(
       "grpc_ssl_server_credentials_create_ex("
       "pem_root_certs=%s, pem_key_cert_pairs=%p, num_key_cert_pairs=%lu, "
-      "client_certificate_request=%d, send_client_ca_list=%d, reserved=%p)",
-      6,
+      "client_certificate_request=%d, reserved=%p)",
+      5,
       (pem_root_certs, pem_key_cert_pairs, (unsigned long)num_key_cert_pairs,
-       client_certificate_request, send_client_ca_list, reserved));
+       client_certificate_request, reserved));
   GPR_ASSERT(reserved == nullptr);
 
   grpc_ssl_server_certificate_config* cert_config =
@@ -343,8 +338,6 @@ grpc_server_credentials* grpc_ssl_server_credentials_create_ex(
   grpc_ssl_server_credentials_options* options =
       grpc_ssl_server_credentials_create_options_using_config(
           client_certificate_request, cert_config);
-  grpc_ssl_server_credentials_options_set_send_client_ca_list(
-      options, send_client_ca_list);
   return grpc_ssl_server_credentials_create_with_options(options);
 }
 
@@ -383,12 +376,4 @@ void grpc_ssl_server_credentials_options_destroy(
   gpr_free(o->certificate_config_fetcher);
   grpc_ssl_server_certificate_config_destroy(o->certificate_config);
   gpr_free(o);
-}
-
-void grpc_ssl_server_credentials_options_set_send_client_ca_list(
-    grpc_ssl_server_credentials_options* options, bool send_client_ca_list) {
-  if (options == nullptr) {
-    return;
-  }
-  options->send_client_ca_list = send_client_ca_list;
 }
