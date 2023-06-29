@@ -17,7 +17,6 @@
 #include <grpc/support/port_platform.h>
 
 #include <stdint.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include <algorithm>
@@ -1258,8 +1257,8 @@ class XdsResolverFactory : public ResolverFactory {
   }
 
  private:
-  std::string GetDataPlaneAuthority(const ChannelArgs& args, const URI& uri)
-      const {
+  std::string GetDataPlaneAuthority(const ChannelArgs& args,
+                                    const URI& uri) const {
     absl::optional<absl::string_view> authority =
         args.GetString(GRPC_ARG_DEFAULT_AUTHORITY);
     if (authority.has_value()) return URI::PercentEncodeAuthority(*authority);
