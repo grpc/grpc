@@ -26,17 +26,37 @@
 
 namespace grpc_core {
 
+struct ExperimentMetadata {
+  const char* name;
+  const char* description;
+  const char* additional_constaints;
+  bool default_value;
+  bool allow_in_fuzzing_config;
+};
+
 #ifndef GRPC_EXPERIMENTS_ARE_FINAL
 // Return true if experiment \a experiment_id is enabled.
 // Experiments are numbered by their order in the g_experiment_metadata array
 // declared in experiments.h.
 bool IsExperimentEnabled(size_t experiment_id);
 
+// Given a test experiment id, returns true if the test experiment is enabled.
+// Test experiments can be loaded using the LoadTestOnlyExperimentsFromMetadata
+// method.
+bool IsTestExperimentEnabled(size_t experiment_id);
+
 // Reload experiment state from config variables.
 // Does not change ForceEnableExperiment state.
 // Expects the caller to handle global thread safety - so really only
 // appropriate for carefully written tests.
 void TestOnlyReloadExperimentsFromConfigVariables();
+
+// Reload experiment state from passed metadata.
+// Does not change ForceEnableExperiment state.
+// Expects the caller to handle global thread safety - so really only
+// appropriate for carefully written tests.
+void LoadTestOnlyExperimentsFromMetadata(
+    const ExperimentMetadata* experiment_metadata, size_t num_experiments);
 #endif
 
 // Print out a list of all experiments that are built into this binary.
@@ -48,14 +68,6 @@ void PrintExperimentsList();
 // If the experiment does not exist, emits a warning but continues execution.
 // If this is called twice for the same experiment, both calls must agree.
 void ForceEnableExperiment(absl::string_view experiment_name, bool enable);
-
-struct ExperimentMetadata {
-  const char* name;
-  const char* description;
-  const char* additional_constaints;
-  bool default_value;
-  bool allow_in_fuzzing_config;
-};
 
 // Register a function to be called to validate the value an experiment can
 // take subject to additional constraints.
