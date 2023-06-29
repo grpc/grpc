@@ -4583,34 +4583,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_lb_subchannel_list",
-    hdrs = [
-        "ext/filters/client_channel/lb_policy/subchannel_list.h",
-    ],
-    external_deps = [
-        "absl/status",
-        "absl/types:optional",
-    ],
-    language = "c++",
-    deps = [
-        "channel_args",
-        "dual_ref_counted",
-        "gpr_manual_constructor",
-        "health_check_client",
-        "iomgr_fwd",
-        "lb_policy",
-        "subchannel_interface",
-        "//:debug_location",
-        "//:gpr",
-        "//:grpc_base",
-        "//:grpc_client_channel",
-        "//:ref_counted_ptr",
-        "//:server_address",
-        "//:work_serializer",
-    ],
-)
-
-grpc_cc_library(
     name = "lb_endpoint_list",
     srcs = [
         "ext/filters/client_channel/lb_policy/endpoint_list.cc",
@@ -4665,7 +4637,6 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "env",
-        "grpc_outlier_detection_header",
         "health_check_client",
         "iomgr_fwd",
         "json",
@@ -4707,16 +4678,18 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "closure",
+        "delegating_helper",
         "error",
-        "grpc_lb_subchannel_list",
+        "grpc_lb_policy_pick_first",
         "grpc_service_config",
         "json",
         "json_args",
         "json_object_loader",
         "lb_policy",
         "lb_policy_factory",
+        "lb_policy_registry",
+        "pollset_set",
         "ref_counted",
-        "subchannel_interface",
         "unique_type_name",
         "validation_errors",
         "//:config",
@@ -4841,7 +4814,6 @@ grpc_cc_library(
         "time",
         "validation_errors",
         "//:gpr_platform",
-        "//:server_address",
     ],
 )
 
@@ -4868,7 +4840,6 @@ grpc_cc_library(
         "lb_policy",
         "lb_policy_factory",
         "lb_policy_registry",
-        "match",
         "pollset_set",
         "ref_counted",
         "subchannel_interface",

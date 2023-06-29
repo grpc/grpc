@@ -39,7 +39,6 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/health_check_client.h"
-#include "src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
@@ -231,7 +230,6 @@ class PickFirst : public LoadBalancingPolicy {
     // Backpointer to owning policy.
     RefCountedPtr<PickFirst> policy_;
 
-    const bool enable_health_watch_;
     ChannelArgs args_;
 
     // The list of subchannels.
@@ -286,6 +284,8 @@ class PickFirst : public LoadBalancingPolicy {
 
   void UnsetSelectedSubchannel();
 
+  // Whether we should enable health watching.
+  const bool enable_health_watch_;
   // Whether we should omit our status message prefix.
   const bool omit_status_message_prefix_;
   // Lateset update args.
@@ -310,6 +310,10 @@ class PickFirst : public LoadBalancingPolicy {
 
 PickFirst::PickFirst(Args args)
     : LoadBalancingPolicy(std::move(args)),
+      enable_health_watch_(
+          channel_args()
+              .GetBool(GRPC_ARG_INTERNAL_PICK_FIRST_ENABLE_HEALTH_CHECKING)
+              .value_or(false)),
       omit_status_message_prefix_(
           channel_args()
               .GetBool(GRPC_ARG_INTERNAL_PICK_FIRST_OMIT_STATUS_MESSAGE_PREFIX)
@@ -418,19 +422,6 @@ absl::Status PickFirst::UpdateLocked(UpdateArgs args) {
     if (config->shuffle_addresses()) {
       absl::c_shuffle(*args.addresses, bit_gen_);
     }
-  }
-  // TODO(roth): This is a hack to disable outlier_detection when used
-  // with pick_first, for the reasons described in
-  // https://github.com/grpc/grpc/issues/32967.  Remove this when
-  // implementing the dualstack design.
-  if (args.addresses.ok()) {
-    ServerAddressList addresses;
-    for (const auto& address : *args.addresses) {
-      addresses.emplace_back(
-          address.address(),
-          address.args().Set(GRPC_ARG_OUTLIER_DETECTION_DISABLE, 1));
-    }
-    args.addresses = std::move(addresses);
   }
   // If the update contains a resolver error and we have a previous update
   // that was not a resolver error, keep using the previous addresses.
@@ -756,7 +747,7 @@ void PickFirst::SubchannelList::SubchannelData::ProcessUnselectedReadyLocked() {
   // report a new picker -- we want to stay in CONNECTING while we wait
   // for the health status notification.
   // If health checking is NOT enabled, report READY.
-  if (subchannel_list_->enable_health_watch_) {
+  if (p->enable_health_watch_) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
       gpr_log(GPR_INFO, "[PF %p] starting health watch", p);
     }
@@ -791,9 +782,6 @@ PickFirst::SubchannelList::SubchannelList(RefCountedPtr<PickFirst> policy,
           GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace) ? "SubchannelList"
                                                             : nullptr),
       policy_(std::move(policy)),
-      enable_health_watch_(
-          args.GetBool(GRPC_ARG_INTERNAL_PICK_FIRST_ENABLE_HEALTH_CHECKING)
-              .value_or(false)),
       args_(args.Remove(GRPC_ARG_INTERNAL_PICK_FIRST_ENABLE_HEALTH_CHECKING)
                 .Remove(
                     GRPC_ARG_INTERNAL_PICK_FIRST_OMIT_STATUS_MESSAGE_PREFIX)) {
