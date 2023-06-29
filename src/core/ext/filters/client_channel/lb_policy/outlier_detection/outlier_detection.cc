@@ -323,6 +323,25 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
     bool counting_enabled_;
   };
 
+  class EndpointAddressesArg : public RefCounted<EndpointAddressesArg> {
+   public:
+    explicit EndpointAddressesArg(EndpointAddressSet addresses)
+        : addresses_(std::move(addresses)) {}
+
+    const EndpointAddressSet& addresses() const { return addresses_; }
+
+    static absl::string_view ChannelArgName() {
+      return GRPC_ARG_NO_SUBCHANNEL_PREFIX "endpoint_addresses";
+    }
+    static int ChannelArgsCompare(const EndpointAddressesArg* a,
+                                  const EndpointAddressesArg* b) {
+      return QsortCompare(a->addresses_, b->addresses_);
+    }
+
+   private:
+    EndpointAddressSet addresses_;
+  };
+
   class Helper
       : public ParentOwningDelegatingChannelControlHelper<OutlierDetectionLb> {
    public:
@@ -357,10 +376,6 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
 
   ~OutlierDetectionLb() override;
 
-  // Returns the address map key for an address, or the empty string if
-  // the address should be ignored.
-  static std::string MakeKeyForAddress(const grpc_resolved_address& address);
-
   void ShutdownLocked() override;
 
   OrphanablePtr<LoadBalancingPolicy> CreateChildPolicyLocked(
@@ -380,7 +395,8 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
   grpc_connectivity_state state_ = GRPC_CHANNEL_IDLE;
   absl::Status status_;
   RefCountedPtr<SubchannelPicker> picker_;
-  std::map<std::string, RefCountedPtr<SubchannelState>> subchannel_state_map_;
+  std::map<EndpointAddressSet, RefCountedPtr<SubchannelState>>
+      subchannel_state_map_;
   OrphanablePtr<EjectionTimer> ejection_timer_;
 };
 
@@ -522,15 +538,6 @@ OutlierDetectionLb::~OutlierDetectionLb() {
   }
 }
 
-std::string OutlierDetectionLb::MakeKeyForAddress(
-    const grpc_resolved_address& address) {
-  // Use only the address, not the attributes.
-  auto addr_str = grpc_sockaddr_to_string(&address, false);
-  // If address couldn't be stringified, ignore it.
-  if (!addr_str.ok()) return "";
-  return std::move(*addr_str);
-}
-
 void OutlierDetectionLb::ShutdownLocked() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
     gpr_log(GPR_INFO, "[outlier_detection_lb %p] shutting down", this);
@@ -598,18 +605,16 @@ absl::Status OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
   }
   // Update subchannel state map.
   if (args.addresses.ok()) {
-    std::set<std::string> current_addresses;
-    for (const EndpointAddresses& addresses : *args.addresses) {
-// FIXME: support multiple addresses
-      std::string address_key = MakeKeyForAddress(addresses.address());
-      if (address_key.empty()) continue;
-      auto& subchannel_state = subchannel_state_map_[address_key];
+    std::set<EndpointAddressSet> current_addresses;
+    for (EndpointAddresses& endpoint : *args.addresses) {
+      EndpointAddressSet key(endpoint.addresses());
+      auto& subchannel_state = subchannel_state_map_[key];
       if (subchannel_state == nullptr) {
         subchannel_state = MakeRefCounted<SubchannelState>();
         if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
           gpr_log(GPR_INFO,
                   "[outlier_detection_lb %p] adding map entry for %s (%p)",
-                  this, address_key.c_str(), subchannel_state.get());
+                  this, key.ToString().c_str(), subchannel_state.get());
         }
       } else if (!config_->CountingEnabled()) {
         // If counting is not enabled, reset state.
@@ -617,11 +622,15 @@ absl::Status OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
           gpr_log(GPR_INFO,
                   "[outlier_detection_lb %p] counting disabled; disabling "
                   "ejection for %s (%p)",
-                  this, address_key.c_str(), subchannel_state.get());
+                  this, key.ToString().c_str(), subchannel_state.get());
         }
         subchannel_state->DisableEjection();
       }
-      current_addresses.emplace(address_key);
+      current_addresses.emplace(key);
+      // Add channel arg containing the key, for use in CreateSubchannel().
+      endpoint = EndpointAddresses(
+          endpoint.addresses(),
+          endpoint.args().SetObject(MakeRefCounted<EndpointAddressesArg>(key)));
     }
     for (auto it = subchannel_state_map_.begin();
          it != subchannel_state_map_.end();) {
@@ -631,7 +640,7 @@ absl::Status OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
         if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
           gpr_log(GPR_INFO,
                   "[outlier_detection_lb %p] removing map entry for %s (%p)",
-                  this, it->first.c_str(), it->second.get());
+                  this, it->first.ToString().c_str(), it->second.get());
         }
         it = subchannel_state_map_.erase(it);
       } else {
@@ -706,12 +715,16 @@ RefCountedPtr<SubchannelInterface> OutlierDetectionLb::Helper::CreateSubchannel(
     const ChannelArgs& args) {
   if (parent()->shutting_down_) return nullptr;
   RefCountedPtr<SubchannelState> subchannel_state;
-  std::string key = MakeKeyForAddress(address);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
-    gpr_log(GPR_INFO, "[outlier_detection_lb %p] using key %s for subchannel",
-            parent(), key.c_str());
-  }
-  if (!key.empty()) {
+  auto* key_attr = per_address_args.GetObject<EndpointAddressesArg>();
+  if (key_attr != nullptr) {
+    const EndpointAddressSet& key = key_attr->addresses();
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
+      std::string address_str =
+          grpc_sockaddr_to_string(&address, false).value_or("<unknown>");
+      gpr_log(GPR_INFO,
+              "[outlier_detection_lb %p] creating subchannel for %s, key %s",
+              parent(), address_str.c_str(), key.ToString().c_str());
+    }
     auto it = parent()->subchannel_state_map_.find(key);
     if (it != parent()->subchannel_state_map_.end()) {
       subchannel_state = it->second->Ref();
@@ -951,8 +964,8 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
     const bool unejected = subchannel_state->MaybeUneject(
         config.base_ejection_time.millis(), config.max_ejection_time.millis());
     if (unejected && GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
-      gpr_log(GPR_INFO, "[outlier_detection_lb %p] unejected address %s (%p)",
-              parent_.get(), state.first.c_str(), subchannel_state);
+      gpr_log(GPR_INFO, "[outlier_detection_lb %p] unejected endpoint %s (%p)",
+              parent_.get(), state.first.ToString().c_str(), subchannel_state);
     }
   }
   parent_->ejection_timer_ =
