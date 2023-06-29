@@ -46,7 +46,9 @@ EndpointAddresses::EndpointAddresses(const grpc_resolved_address& address,
 
 EndpointAddresses::EndpointAddresses(
     std::vector<grpc_resolved_address> addresses, const ChannelArgs& args)
-    : addresses_(std::move(addresses)), args_(args) {}
+    : addresses_(std::move(addresses)), args_(args) {
+  GPR_ASSERT(!addresses_.empty());
+}
 
 EndpointAddresses::EndpointAddresses(const EndpointAddresses& other)
     : addresses_(other.addresses_), args_(other.args_) {}

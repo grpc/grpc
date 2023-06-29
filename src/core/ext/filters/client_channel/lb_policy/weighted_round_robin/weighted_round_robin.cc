@@ -657,15 +657,15 @@ absl::Status WeightedRoundRobin::UpdateLocked(UpdateArgs args) {
       gpr_log(GPR_INFO, "[WRR %p] received update with %" PRIuPTR " addresses",
               this, args.addresses->size());
     }
-    // Weed out duplicate addresses.  Also sort the addresses so that if
-    // the set of the addresses don't change, their indexes in the
-    // subchannel list don't change, since this avoids unnecessary churn
-    // in the picker.  Note that this does not ensure that if a given
-    // address remains present that it will have the same index; if,
-    // for example, an address at the end of the list is replaced with one
-    // that sorts much earlier in the list, then all of the addresses in
-    // between those two positions will have changed indexes.
-    struct AddressLessThan {
+    // Weed out duplicate endpoints.  Also sort the endpoints so that if
+    // the set of endpoints doesn't change, their indexes in the endpoint
+    // list don't change, since this avoids unnecessary churn in the
+    // picker.  Note that this does not ensure that if a given endpoint
+    // remains present that it will have the same index; if, for example,
+    // an endpoint at the end of the list is replaced with one that sorts
+    // much earlier in the list, then all of the endpoints in between those
+    // two positions will have changed indexes.
+    struct EndpointAddressesLessThan {
       bool operator()(const EndpointAddresses& endpoint1,
                       const EndpointAddresses& endpoint2) const {
         // Compare unordered addresses only, not channel args.
@@ -674,7 +674,7 @@ absl::Status WeightedRoundRobin::UpdateLocked(UpdateArgs args) {
         return e1 < e2;
       }
     };
-    std::set<EndpointAddresses, AddressLessThan> ordered_addresses(
+    std::set<EndpointAddresses, EndpointAddressesLessThan> ordered_addresses(
         args.addresses->begin(), args.addresses->end());
     addresses = EndpointAddressesList(ordered_addresses.begin(),
                                       ordered_addresses.end());
@@ -697,9 +697,6 @@ absl::Status WeightedRoundRobin::UpdateLocked(UpdateArgs args) {
       MakeOrphanable<WrrEndpointList>(Ref(), std::move(addresses), args.args);
   // If the new list is empty, immediately promote it to
   // endpoint_list_ and report TRANSIENT_FAILURE.
-  // TODO(roth): As part of adding dualstack backend support, we need to
-  // also handle the case where the list of addresses for a given
-  // endpoint is empty.
   if (latest_pending_endpoint_list_->size() == 0) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace) &&
         endpoint_list_ != nullptr) {

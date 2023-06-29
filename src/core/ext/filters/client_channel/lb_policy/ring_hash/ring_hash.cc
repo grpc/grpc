@@ -627,7 +627,6 @@ void RingHash::ResetBackoffLocked() {
 }
 
 absl::Status RingHash::UpdateLocked(UpdateArgs args) {
-  absl::Status status;
   // Check address list.
   if (args.addresses.ok()) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
@@ -635,19 +634,6 @@ absl::Status RingHash::UpdateLocked(UpdateArgs args) {
               this, args.addresses->size());
     }
     endpoints_ = *std::move(args.addresses);
-    // Weed out empty endpoints.
-    // If any one endpoint has no addresses, return a non-OK status.
-    for (auto it = endpoints_.begin(); it != endpoints_.end();) {
-      if (it->addresses().empty()) {
-        it = endpoints_.erase(it);
-        if (status.ok()) {
-          status = absl::InvalidArgumentError(
-              "endpoints must have one or more address");
-        }
-      } else {
-        ++it;
-      }
-    }
   } else {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
       gpr_log(GPR_INFO, "[RH %p] received update with addresses error: %s",
@@ -680,19 +666,19 @@ absl::Status RingHash::UpdateLocked(UpdateArgs args) {
   endpoint_map_ = std::move(endpoint_map);
   // If the address list is empty, report TRANSIENT_FAILURE.
   if (endpoints_.empty()) {
-    status =
+    absl::Status status =
         args.addresses.ok() ? absl::UnavailableError(absl::StrCat(
                                   "empty address list: ", args.resolution_note))
                             : args.addresses.status();
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE, status,
         MakeRefCounted<TransientFailurePicker>(status));
-  } else {
-    // Return a new picker.
-    UpdateAggregatedConnectivityStateLocked(/*entered_transient_failure=*/false,
-                                            absl::OkStatus());
+    return status;
   }
-  return status;
+  // Return a new picker.
+  UpdateAggregatedConnectivityStateLocked(/*entered_transient_failure=*/false,
+                                          absl::OkStatus());
+  return absl::OkStatus();
 }
 
 void RingHash::UpdateAggregatedConnectivityStateLocked(

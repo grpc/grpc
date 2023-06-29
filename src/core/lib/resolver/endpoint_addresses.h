@@ -49,6 +49,7 @@ class EndpointAddresses {
   EndpointAddresses(const grpc_resolved_address& address,
                     const ChannelArgs& args);
 
+  // addresses must not be empty.
   EndpointAddresses(std::vector<grpc_resolved_address> addresses,
                     const ChannelArgs& args);
 
