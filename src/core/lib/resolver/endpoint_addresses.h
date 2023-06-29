@@ -100,6 +100,8 @@ class EndpointAddressSet {
   bool operator==(const EndpointAddressSet& other) const;
   bool operator<(const EndpointAddressSet& other) const;
 
+  std::string ToString() const;
+
  private:
   struct ResolvedAddressLessThan {
     bool operator()(const grpc_resolved_address& addr1,

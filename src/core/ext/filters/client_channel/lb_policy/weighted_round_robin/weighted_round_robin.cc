@@ -155,7 +155,8 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
   // Represents the weight for a given address.
   class EndpointWeight : public RefCounted<EndpointWeight> {
    public:
-    EndpointWeight(RefCountedPtr<WeightedRoundRobin> wrr, std::string key)
+    EndpointWeight(RefCountedPtr<WeightedRoundRobin> wrr,
+                   EndpointAddressSet key)
         : wrr_(std::move(wrr)), key_(std::move(key)) {}
     ~EndpointWeight() override;
 
@@ -169,7 +170,7 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
 
    private:
     RefCountedPtr<WeightedRoundRobin> wrr_;
-    const std::string key_;
+    const EndpointAddressSet key_;
 
     Mutex mu_;
     float weight_ ABSL_GUARDED_BY(&mu_) = 0;
@@ -186,8 +187,7 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
                   std::shared_ptr<WorkSerializer> work_serializer)
           : Endpoint(std::move(endpoint_list)),
             weight_(policy<WeightedRoundRobin>()->GetOrCreateWeight(
-// FIXME: support multiple addresses
-                addresses.address())) {
+                addresses.addresses())) {
         Init(addresses, args, std::move(work_serializer));
       }
 
@@ -342,7 +342,7 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
   void ShutdownLocked() override;
 
   RefCountedPtr<EndpointWeight> GetOrCreateWeight(
-      const grpc_resolved_address& address);
+      const std::vector<grpc_resolved_address>& addresses);
 
   RefCountedPtr<WeightedRoundRobinConfig> config_;
 
@@ -355,7 +355,7 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
   OrphanablePtr<WrrEndpointList> latest_pending_endpoint_list_;
 
   Mutex endpoint_weight_map_mu_;
-  std::map<std::string, EndpointWeight*, std::less<>> endpoint_weight_map_
+  std::map<EndpointAddressSet, EndpointWeight*> endpoint_weight_map_
       ABSL_GUARDED_BY(&endpoint_weight_map_mu_);
 
   bool shutdown_ = false;
@@ -395,7 +395,7 @@ void WeightedRoundRobin::EndpointWeight::MaybeUpdateWeight(
       gpr_log(GPR_INFO,
               "[WRR %p] subchannel %s: qps=%f, eps=%f, utilization=%f: "
               "error_util_penalty=%f, weight=%f (not updating)",
-              wrr_.get(), key_.c_str(), qps, eps, utilization,
+              wrr_.get(), key_.ToString().c_str(), qps, eps, utilization,
               error_utilization_penalty, weight);
     }
     return;
@@ -408,7 +408,7 @@ void WeightedRoundRobin::EndpointWeight::MaybeUpdateWeight(
             "[WRR %p] subchannel %s: qps=%f, eps=%f, utilization=%f "
             "error_util_penalty=%f : setting weight=%f weight_=%f now=%s "
             "last_update_time_=%s non_empty_since_=%s",
-            wrr_.get(), key_.c_str(), qps, eps, utilization,
+            wrr_.get(), key_.ToString().c_str(), qps, eps, utilization,
             error_utilization_penalty, weight, weight_, now.ToString().c_str(),
             last_update_time_.ToString().c_str(),
             non_empty_since_.ToString().c_str());
@@ -427,7 +427,7 @@ float WeightedRoundRobin::EndpointWeight::GetWeight(
             "[WRR %p] subchannel %s: getting weight: now=%s "
             "weight_expiration_period=%s blackout_period=%s "
             "last_update_time_=%s non_empty_since_=%s weight_=%f",
-            wrr_.get(), key_.c_str(), now.ToString().c_str(),
+            wrr_.get(), key_.ToString().c_str(), now.ToString().c_str(),
             weight_expiration_period.ToString().c_str(),
             blackout_period.ToString().c_str(),
             last_update_time_.ToString().c_str(),
@@ -722,18 +722,18 @@ absl::Status WeightedRoundRobin::UpdateLocked(UpdateArgs args) {
 }
 
 RefCountedPtr<WeightedRoundRobin::EndpointWeight>
-WeightedRoundRobin::GetOrCreateWeight(const grpc_resolved_address& address) {
-  auto key = grpc_sockaddr_to_uri(&address);
-  if (!key.ok()) return nullptr;
+WeightedRoundRobin::GetOrCreateWeight(
+    const std::vector<grpc_resolved_address>& addresses) {
+  EndpointAddressSet key(addresses);
   MutexLock lock(&endpoint_weight_map_mu_);
-  auto it = endpoint_weight_map_.find(*key);
+  auto it = endpoint_weight_map_.find(key);
   if (it != endpoint_weight_map_.end()) {
     auto weight = it->second->RefIfNonZero();
     if (weight != nullptr) return weight;
   }
   auto weight = MakeRefCounted<EndpointWeight>(
-      Ref(DEBUG_LOCATION, "EndpointWeight"), *key);
-  endpoint_weight_map_.emplace(*key, weight.get());
+      Ref(DEBUG_LOCATION, "EndpointWeight"), key);
+  endpoint_weight_map_.emplace(key, weight.get());
   return weight;
 }
 

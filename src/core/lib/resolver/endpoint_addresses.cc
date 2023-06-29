@@ -132,4 +132,13 @@ bool EndpointAddressSet::ResolvedAddressLessThan::operator()(
   return memcmp(addr1.addr, addr2.addr, addr1.len) < 0;
 }
 
+std::string EndpointAddressSet::ToString() const {
+  std::vector<std::string> parts;
+  for (const auto& address : addresses_) {
+    parts.push_back(
+        grpc_sockaddr_to_string(&address, false).value_or("<unknown>"));
+  }
+  return absl::StrCat("{", absl::StrJoin(parts, ", "), "}");
+}
+
 }  // namespace grpc_core
