@@ -65,10 +65,10 @@ const grpc_arg_pointer_vtable kBalancerAddressesArgVtable = {
 }  // namespace
 
 grpc_arg CreateGrpclbBalancerAddressesArg(
-    const EndpointAddressesList* address_list) {
+    const EndpointAddressesList* endpoint_list) {
   return grpc_channel_arg_pointer_create(
       const_cast<char*>(GRPC_ARG_GRPCLB_BALANCER_ADDRESSES),
-      const_cast<EndpointAddressesList*>(address_list),
+      const_cast<EndpointAddressesList*>(endpoint_list),
       &kBalancerAddressesArgVtable);
 }
 

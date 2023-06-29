@@ -134,6 +134,7 @@ bool EndpointAddressSet::ResolvedAddressLessThan::operator()(
 
 std::string EndpointAddressSet::ToString() const {
   std::vector<std::string> parts;
+  parts.reserve(addresses_.size());
   for (const auto& address : addresses_) {
     parts.push_back(
         grpc_sockaddr_to_string(&address, false).value_or("<unknown>"));
