@@ -63,7 +63,6 @@ namespace {
 using grpc_event_engine::experimental::EventEngine;
 using grpc_event_engine::experimental::URIToResolvedAddress;
 using SRVRecord = EventEngine::DNSResolver::SRVRecord;
-using testing::ElementsAre;
 using testing::Pointwise;
 using testing::UnorderedPointwise;
 
@@ -289,14 +288,9 @@ TEST_F(EventEngineDNSTest, TestAddressSorting) {
 
 TEST_F(EventEngineDNSTest, QuerySRVRecord) {
   const SRVRecord kExpectedRecords[] = {
-      {.host = "ipv4-only-multi-target.dns-test.event-engine",
-       .port = 1234,
-       .priority = 0,
-       .weight = 0},
-      {.host = "ipv6-only-multi-target.dns-test.event-engine",
-       .port = 1234,
-       .priority = 0,
-       .weight = 0},
+      {/*host=*/"ipv4-only-multi-target.dns-test.event-engine", /*port=*/1234,
+       /*priority=*/0, /*weight=*/0},
+      {"ipv6-only-multi-target.dns-test.event-engine", 1234, 0, 0},
   };
 
   auto dns_resolver = CreateDefaultDNSResolver();
