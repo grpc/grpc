@@ -35,9 +35,7 @@ _UNARY_STREAM = "/test/UnaryStream"
 _STREAM_UNARY = "/test/StreamUnary"
 _STREAM_STREAM = "/test/StreamStream"
 STREAM_LENGTH = 5
-PORT = 50051
-TRIGGER_RPC_METADATA = ("control", "triger_rpc")
-TRIGGER_RPC_METADATA_TUPLE = (TRIGGER_RPC_METADATA,)
+TRIGGER_RPC_METADATA = ("control", "trigger_rpc")
 
 CONFIG_ENV_VAR_NAME = "GRPC_GCP_OBSERVABILITY_CONFIG"
 CONFIG_FILE_ENV_VAR_NAME = "GRPC_GCP_OBSERVABILITY_CONFIG_FILE"
@@ -90,7 +88,9 @@ class TestExporter(_observability.Exporter):
 
 def handle_unary_unary(request, servicer_context):
     if TRIGGER_RPC_METADATA in servicer_context.invocation_metadata():
-        unary_unary_call(port=PORT)
+        for k, v in servicer_context.invocation_metadata():
+            if "port" in k:
+                unary_unary_call(port=int(v))
     return _RESPONSE
 
 
@@ -176,8 +176,9 @@ class ObservabilityTest(unittest.TestCase):
         with grpc_observability.GCPOpenCensusObservability(
             exporter=self.test_exporter
         ):
-            self._start_server(port=PORT)
-            unary_unary_call(port=PORT, metadata=TRIGGER_RPC_METADATA_TUPLE)
+            port = self._start_server()
+            metadata = (TRIGGER_RPC_METADATA, ("port", str(port)),)
+            unary_unary_call(port=port, metadata=metadata)
 
         # 2 of each for ["Recv", "Sent", "Attempt"]
         self.assertEqual(len(self.all_span), 6)
@@ -370,14 +371,12 @@ class ObservabilityTest(unittest.TestCase):
             f.write(json.dumps(config))
         os.environ[CONFIG_FILE_ENV_VAR_NAME] = config_file_path
 
-    def _start_server(self, port=None) -> None:
+    def _start_server(self) -> None:
         self._server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
         self._server.add_generic_rpc_handlers((_GenericHandler(),))
-        if port:
-            self._port = self._server.add_insecure_port(f"[::]:{PORT}")
-        else:
-            self._port = self._server.add_insecure_port("[::]:0")
+        self._port = self._server.add_insecure_port("[::]:0")
         self._server.start()
+        return self._port
 
     def _validate_metrics(
         self, metrics: List[_observability.StatsData]
