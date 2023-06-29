@@ -50,8 +50,7 @@ using ::envoy::extensions::load_balancing_policies::pick_first::v3::PickFirst;
 
 class PickFirstTest : public XdsEnd2endTest {
  protected:
-  absl::variant<Status, size_t> WaitForAnyBackendHit(
-      size_t start, size_t end, size_t timeout_ms = 15000) {
+  absl::variant<Status, size_t> WaitForAnyBackendHit(size_t start, size_t end) {
     Status status;
     size_t index = 3;
     SendRpcsUntil(DEBUG_LOCATION, [&](const RpcResult& result) -> bool {
