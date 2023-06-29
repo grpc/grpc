@@ -15,8 +15,6 @@
 // IWYU pragma: no_include <ratio>
 // IWYU pragma: no_include <arpa/inet.h>
 
-#include <stdint.h>
-
 #include <cstdlib>
 #include <cstring>
 #include <initializer_list>
@@ -35,8 +33,8 @@
 #include "gtest/gtest.h"
 
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/support/log.h>
 
+#include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "test/core/event_engine/test_suite/event_engine_test_framework.h"
@@ -63,6 +61,7 @@ TEST_F(EventEngineDNSTest, TODO) {}
 namespace {
 
 using grpc_event_engine::experimental::EventEngine;
+using grpc_event_engine::experimental::URIToResolvedAddress;
 using SRVRecord = EventEngine::DNSResolver::SRVRecord;
 using testing::ElementsAre;
 using testing::Pointwise;
@@ -97,38 +96,6 @@ MATCHER(StatusCodeEq, "") {
   return std::get<0>(arg).code() == std::get<1>(arg);
 }
 
-// Copied from tcp_socket_utils_test.cc
-// TODO(yijiem): maybe move those into common test util
-EventEngine::ResolvedAddress MakeAddr4(const uint8_t* data, size_t data_len,
-                                       int port) {
-  EventEngine::ResolvedAddress resolved_addr4;
-  sockaddr_in* addr4 = reinterpret_cast<sockaddr_in*>(
-      const_cast<sockaddr*>(resolved_addr4.address()));
-  memset(&resolved_addr4, 0, sizeof(resolved_addr4));
-  addr4->sin_family = AF_INET;
-  GPR_ASSERT(data_len == sizeof(addr4->sin_addr.s_addr));
-  memcpy(&addr4->sin_addr.s_addr, data, data_len);
-  addr4->sin_port = htons(port);
-  return EventEngine::ResolvedAddress(
-      reinterpret_cast<sockaddr*>(addr4),
-      static_cast<socklen_t>(sizeof(sockaddr_in)));
-}
-
-EventEngine::ResolvedAddress MakeAddr6(const uint8_t* data, size_t data_len,
-                                       int port) {
-  EventEngine::ResolvedAddress resolved_addr6;
-  sockaddr_in6* addr6 = reinterpret_cast<sockaddr_in6*>(
-      const_cast<sockaddr*>(resolved_addr6.address()));
-  memset(&resolved_addr6, 0, sizeof(resolved_addr6));
-  addr6->sin6_family = AF_INET6;
-  GPR_ASSERT(data_len == sizeof(addr6->sin6_addr.s6_addr));
-  memcpy(&addr6->sin6_addr.s6_addr, data, data_len);
-  addr6->sin6_port = htons(port);
-  return EventEngine::ResolvedAddress(
-      reinterpret_cast<sockaddr*>(addr6),
-      static_cast<socklen_t>(sizeof(sockaddr_in6)));
-}
-
 #define EXPECT_STATUS(result, status_code) \
   EXPECT_EQ((result).status().code(), absl::StatusCode::status_code)
 
@@ -161,9 +128,9 @@ class EventEngineDNSTest : public EventEngineTest {
     // 1. launch dns_server
     int port = grpc_pick_unused_port_or_die();
     // <path to dns_server.py> -p <port> -r <path to records config>
-    _dns_server.server_process = new grpc::SubProcess(
+    dns_server_.server_process = new grpc::SubProcess(
         {dns_server_path, "-p", std::to_string(port), "-r", test_records_path});
-    _dns_server.port = port;
+    dns_server_.port = port;
 
     // 2. wait until dns_server is up (health check)
     grpc::SubProcess health_check({
@@ -181,9 +148,9 @@ class EventEngineDNSTest : public EventEngineTest {
   }
 
   static void TearDownTestSuite() {
-    _dns_server.server_process->Interrupt();
-    _dns_server.server_process->Join();
-    delete _dns_server.server_process;
+    dns_server_.server_process->Interrupt();
+    dns_server_.server_process->Join();
+    delete dns_server_.server_process;
   }
 
   class NotifyOnDestroy {
@@ -199,7 +166,7 @@ class EventEngineDNSTest : public EventEngineTest {
   std::unique_ptr<EventEngine::DNSResolver> CreateDefaultDNSResolver() {
     std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
     EventEngine::DNSResolver::ResolverOptions options;
-    options.dns_server = _dns_server.address();
+    options.dns_server = dns_server_.address();
     return test_ee->GetDNSResolver(options);
   }
 
@@ -233,11 +200,11 @@ class EventEngineDNSTest : public EventEngineTest {
   grpc_core::Notification dns_resolver_signal_;
 
  private:
-  static DNSServer _dns_server;
+  static DNSServer dns_server_;
   std::unique_ptr<grpc_core::testing::FakeUdpAndTcpServer> fake_dns_server_;
 };
 
-EventEngineDNSTest::DNSServer EventEngineDNSTest::_dns_server;
+EventEngineDNSTest::DNSServer EventEngineDNSTest::dns_server_;
 
 TEST_F(EventEngineDNSTest, QueryNXHostname) {
   auto dns_resolver = CreateDefaultDNSResolver();
@@ -252,16 +219,13 @@ TEST_F(EventEngineDNSTest, QueryNXHostname) {
 }
 
 TEST_F(EventEngineDNSTest, QueryWithIPLiteral) {
-  constexpr uint8_t kExpectedAddresses[] = {4, 3, 2, 1};
-
   auto dns_resolver = CreateDefaultDNSResolver();
   dns_resolver->LookupHostname(
-      [&kExpectedAddresses, this](auto result) {
+      [this](auto result) {
         ASSERT_TRUE(result.ok());
         EXPECT_THAT(*result,
                     Pointwise(ResolvedAddressEq(),
-                              {MakeAddr4(kExpectedAddresses,
-                                         sizeof(kExpectedAddresses), 1234)}));
+                              {*URIToResolvedAddress("ipv4:4.3.2.1:1234")}));
         dns_resolver_signal_.Notify();
       },
       "4.3.2.1:1234",
@@ -270,22 +234,15 @@ TEST_F(EventEngineDNSTest, QueryWithIPLiteral) {
 }
 
 TEST_F(EventEngineDNSTest, QueryARecord) {
-  constexpr uint8_t kExpectedAddresses[][4] = {
-      {1, 2, 3, 4}, {1, 2, 3, 5}, {1, 2, 3, 6}};
-
   auto dns_resolver = CreateDefaultDNSResolver();
   dns_resolver->LookupHostname(
-      [&kExpectedAddresses, this](auto result) {
+      [this](auto result) {
         ASSERT_TRUE(result.ok());
-        EXPECT_THAT(*result,
-                    UnorderedPointwise(
-                        ResolvedAddressEq(),
-                        {MakeAddr4(kExpectedAddresses[0],
-                                   sizeof(kExpectedAddresses[0]), 443),
-                         MakeAddr4(kExpectedAddresses[1],
-                                   sizeof(kExpectedAddresses[1]), 443),
-                         MakeAddr4(kExpectedAddresses[2],
-                                   sizeof(kExpectedAddresses[2]), 443)}));
+        EXPECT_THAT(*result, UnorderedPointwise(
+                                 ResolvedAddressEq(),
+                                 {*URIToResolvedAddress("ipv4:1.2.3.4:443"),
+                                  *URIToResolvedAddress("ipv4:1.2.3.5:443"),
+                                  *URIToResolvedAddress("ipv4:1.2.3.6:443")}));
         dns_resolver_signal_.Notify();
       },
       "ipv4-only-multi-target.dns-test.event-engine.",
@@ -294,27 +251,18 @@ TEST_F(EventEngineDNSTest, QueryARecord) {
 }
 
 TEST_F(EventEngineDNSTest, QueryAAAARecord) {
-  constexpr uint8_t kExpectedAddresses[][16] = {
-      {0x26, 0x07, 0xf8, 0xb0, 0x40, 0x0a, 0x08, 0x01, 0, 0, 0, 0, 0, 0, 0x10,
-       0x02},
-      {0x26, 0x07, 0xf8, 0xb0, 0x40, 0x0a, 0x08, 0x01, 0, 0, 0, 0, 0, 0, 0x10,
-       0x03},
-      {0x26, 0x07, 0xf8, 0xb0, 0x40, 0x0a, 0x08, 0x01, 0, 0, 0, 0, 0, 0, 0x10,
-       0x04}};
-
   auto dns_resolver = CreateDefaultDNSResolver();
   dns_resolver->LookupHostname(
-      [&kExpectedAddresses, this](auto result) {
+      [this](auto result) {
         ASSERT_TRUE(result.ok());
-        EXPECT_THAT(*result,
-                    UnorderedPointwise(
-                        ResolvedAddressEq(),
-                        {MakeAddr6(kExpectedAddresses[0],
-                                   sizeof(kExpectedAddresses[0]), 443),
-                         MakeAddr6(kExpectedAddresses[1],
-                                   sizeof(kExpectedAddresses[1]), 443),
-                         MakeAddr6(kExpectedAddresses[2],
-                                   sizeof(kExpectedAddresses[2]), 443)}));
+        EXPECT_THAT(
+            *result,
+            UnorderedPointwise(
+                ResolvedAddressEq(),
+                {*URIToResolvedAddress("ipv6:[2607:f8b0:400a:801::1002]:443"),
+                 *URIToResolvedAddress("ipv6:[2607:f8b0:400a:801::1003]:443"),
+                 *URIToResolvedAddress(
+                     "ipv6:[2607:f8b0:400a:801::1004]:443")}));
         dns_resolver_signal_.Notify();
       },
       "ipv6-only-multi-target.dns-test.event-engine.:443",
@@ -323,21 +271,15 @@ TEST_F(EventEngineDNSTest, QueryAAAARecord) {
 }
 
 TEST_F(EventEngineDNSTest, TestAddressSorting) {
-  constexpr uint8_t kExpectedAddresses[][16] = {
-      {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-      {0x20, 0x02, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x11, 0x11}};
-
   auto dns_resolver = CreateDefaultDNSResolver();
   dns_resolver->LookupHostname(
-      [&kExpectedAddresses, this](auto result) {
+      [this](auto result) {
         ASSERT_TRUE(result.ok());
         EXPECT_THAT(
             *result,
             Pointwise(ResolvedAddressEq(),
-                      {MakeAddr6(kExpectedAddresses[0],
-                                 sizeof(kExpectedAddresses[0]), 1234),
-                       MakeAddr6(kExpectedAddresses[1],
-                                 sizeof(kExpectedAddresses[1]), 1234)}));
+                      {*URIToResolvedAddress("ipv6:[::1]:1234"),
+                       *URIToResolvedAddress("ipv6:[2002::1111]:1234")}));
         dns_resolver_signal_.Notify();
       },
       "ipv6-loopback-preferred-target.dns-test.event-engine.:1234",
