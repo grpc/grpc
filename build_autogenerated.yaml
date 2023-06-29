@@ -16663,6 +16663,7 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/util/scoped_env_var.h
   - test/cpp/util/cli_call.h
   - test/cpp/util/cli_credentials.h
   - test/cpp/util/config_grpc_cli.h
