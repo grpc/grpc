@@ -680,17 +680,40 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     return address;
   }
 
-  // Constructs an update containing a list of addresses.
+  std::vector<grpc_resolved_address> MakeAddressList(
+      absl::Span<const absl::string_view> addresses) {
+    std::vector<grpc_resolved_address> addrs;
+    for (const absl::string_view& address : addresses) {
+      addrs.emplace_back(MakeAddress(address));
+    }
+    return addrs;
+  }
+
+  EndpointAddresses MakeEndpointAddresses(
+      absl::Span<const absl::string_view> addresses,
+      const ChannelArgs& args = ChannelArgs()) {
+    return EndpointAddresses(MakeAddressList(addresses), args);
+  }
+
+  // Constructs an update containing a list of endpoints.
+  LoadBalancingPolicy::UpdateArgs BuildUpdate(
+      absl::Span<const EndpointAddresses> endpoints,
+      RefCountedPtr<LoadBalancingPolicy::Config> config) {
+    LoadBalancingPolicy::UpdateArgs update;
+    update.addresses.emplace(endpoints.begin(), endpoints.end());
+    update.config = std::move(config);
+    return update;
+  }
+
+  // Convenient overload that takes a flat address list.
   LoadBalancingPolicy::UpdateArgs BuildUpdate(
       absl::Span<const absl::string_view> addresses,
       RefCountedPtr<LoadBalancingPolicy::Config> config) {
-    LoadBalancingPolicy::UpdateArgs update;
-    update.addresses.emplace();
-    for (const absl::string_view& address : addresses) {
-      update.addresses->emplace_back(MakeAddress(address), ChannelArgs());
+    std::vector<EndpointAddresses> endpoints;
+    for (const absl::string_view address : addresses) {
+      endpoints.emplace_back(MakeAddress(address), ChannelArgs());
     }
-    update.config = std::move(config);
-    return update;
+    return BuildUpdate(endpoints, std::move(config));
   }
 
   // Applies the update on the LB policy.

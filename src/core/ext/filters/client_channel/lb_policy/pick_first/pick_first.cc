@@ -430,6 +430,7 @@ absl::Status PickFirst::UpdateLocked(UpdateArgs args) {
         endpoints.emplace_back(address, endpoint.args());
       }
     }
+    args.addresses = std::move(endpoints);
   }
   // If the update contains a resolver error and we have a previous update
   // that was not a resolver error, keep using the previous addresses.
