@@ -349,13 +349,15 @@ class ExperimentsCompiler(object):
                 "//",
             )
 
-            file_path_list = output_file.split("/")[0:-1]
-            file_name = output_file.split("/")[-1].split(".")[0]
+            if mode != "test":
+                include_guard = "GRPC_SRC_CORE_LIB_EXPERIMENTS_EXPERIMENTS_H"
+            else:
+                file_path_list = output_file.split("/")[0:-1]
+                file_name = output_file.split("/")[-1].split(".")[0]
 
-            include_guard = (
-                f"GRPC_{'_'.join(path.upper() for path in file_path_list)}_"
-                f"{file_name.upper()}_H"
-            )
+                include_guard = (
+                    f"GRPC_{'_'.join(path.upper() for path in file_path_list)}_{file_name.upper()}_H"
+                )
 
             print(f"#ifndef {include_guard}", file=H)
             print(f"#define {include_guard}", file=H)
@@ -387,9 +389,8 @@ class ExperimentsCompiler(object):
                 )
                 print(
                     "inline bool Is%sEnabled() { return"
-                    " IsExperimentEnabled%s(%d); }"
-                    % (SnakeToPascal(exp.name),
-                       "<true>" if mode == "test" else "", i),
+                    " Is%sExperimentEnabled(%d); }"
+                    % (SnakeToPascal(exp.name), "Test" if mode == "test" else "", i),
                     file=H,
                 )
             print(file=H)
@@ -408,8 +409,7 @@ class ExperimentsCompiler(object):
             print(
                 (
                     "extern const ExperimentMetadata"
-                    f" {experiments_metadata_var_name}"
-                    f"[{num_experiments_var_name}];"
+                    f" {experiments_metadata_var_name}[{num_experiments_var_name}];"
                 ),
                 file=H,
             )

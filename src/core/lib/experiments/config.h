@@ -41,6 +41,11 @@ struct ExperimentMetadata {
 template <bool is_test = false>
 bool IsExperimentEnabled(size_t experiment_id);
 
+// Given a test experiment id, returns true if the test experiment is enabled.
+// Test experiments can be loaded using the LoadTestOnlyExperimentsFromMetadata
+// method.
+bool IsTestExperimentEnabled(size_t experiment_id);
+
 // Reload experiment state from config variables.
 // Does not change ForceEnableExperiment state.
 // Expects the caller to handle global thread safety - so really only

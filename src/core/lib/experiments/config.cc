@@ -142,13 +142,11 @@ void LoadTestOnlyExperimentsFromMetadata(
       new TestExperiments(experiment_metadata, num_experiments);
 }
 
-template <>
-bool IsExperimentEnabled<false>(size_t experiment_id) {
+bool IsExperimentEnabled(size_t experiment_id) {
   return ExperimentsSingleton().enabled[experiment_id];
 }
 
-template <>
-bool IsExperimentEnabled<true>(size_t experiment_id) {
+bool IsTestExperimentEnabled(size_t experiment_id) {
   return (*g_test_experiments)[experiment_id];
 }
 

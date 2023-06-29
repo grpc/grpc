@@ -349,6 +349,10 @@ XdsRouteConfigResource::ClusterSpecifierPluginMap ClusterSpecifierPluginParse(
     const envoy_config_core_v3_TypedExtensionConfig* typed_extension_config =
         envoy_config_route_v3_ClusterSpecifierPlugin_extension(
             cluster_specifier_plugin[i]);
+    if (typed_extension_config == nullptr) {
+      errors->AddError("field not present");
+      continue;
+    }
     std::string name = UpbStringToStdString(
         envoy_config_core_v3_TypedExtensionConfig_name(typed_extension_config));
     if (cluster_specifier_plugin_map.find(name) !=

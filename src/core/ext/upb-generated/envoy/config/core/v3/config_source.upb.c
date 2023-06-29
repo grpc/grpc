@@ -205,13 +205,7 @@ const upb_MiniTable envoy_config_core_v3_ExtensionConfigSource_msg_init = {
   })
 };
 
-const upb_MiniTable envoy_config_core_v3_RestSubscription_msg_init = {
-  NULL,
-  NULL,
-  0, 0, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
-};
-
-static const upb_MiniTable *messages_layout[8] = {
+static const upb_MiniTable *messages_layout[7] = {
   &envoy_config_core_v3_ApiConfigSource_msg_init,
   &envoy_config_core_v3_AggregatedConfigSource_msg_init,
   &envoy_config_core_v3_SelfConfigSource_msg_init,
@@ -219,14 +213,13 @@ static const upb_MiniTable *messages_layout[8] = {
   &envoy_config_core_v3_PathConfigSource_msg_init,
   &envoy_config_core_v3_ConfigSource_msg_init,
   &envoy_config_core_v3_ExtensionConfigSource_msg_init,
-  &envoy_config_core_v3_RestSubscription_msg_init,
 };
 
 const upb_MiniTableFile envoy_config_core_v3_config_source_proto_upb_file_layout = {
   messages_layout,
   NULL,
   NULL,
-  8,
+  7,
   0,
   0,
 };
