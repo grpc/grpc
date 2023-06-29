@@ -288,16 +288,16 @@ TEST_F(EventEngineDNSTest, TestAddressSorting) {
 }
 
 TEST_F(EventEngineDNSTest, QuerySRVRecord) {
-  SRVRecord kExpectedRecords[2];
-  kExpectedRecords[0].host = "ipv4-only-multi-target.dns-test.event-engine";
-  kExpectedRecords[0].port = 1234;
-  kExpectedRecords[0].priority = 0;
-  kExpectedRecords[0].weight = 0;
-
-  kExpectedRecords[1].host = "ipv6-only-multi-target.dns-test.event-engine";
-  kExpectedRecords[1].port = 1234;
-  kExpectedRecords[1].priority = 0;
-  kExpectedRecords[1].weight = 0;
+  const SRVRecord kExpectedRecords[] = {
+      {.host = "ipv4-only-multi-target.dns-test.event-engine",
+       .port = 1234,
+       .priority = 0,
+       .weight = 0},
+      {.host = "ipv6-only-multi-target.dns-test.event-engine",
+       .port = 1234,
+       .priority = 0,
+       .weight = 0},
+  };
 
   auto dns_resolver = CreateDefaultDNSResolver();
   dns_resolver->LookupSRV(
@@ -343,7 +343,8 @@ TEST_F(EventEngineDNSTest, QueryTXTRecord) {
   dns_resolver->LookupTXT(
       [&kExpectedRecord, this](auto result) {
         ASSERT_TRUE(result.ok());
-        EXPECT_THAT(*result, ElementsAre(kExpectedRecord));
+        EXPECT_EQ(result->size(), 2);
+        EXPECT_EQ((*result)[0], kExpectedRecord);
         dns_resolver_signal_.Notify();
       },
       "_grpc_config.simple-service.dns-test.event-engine.");

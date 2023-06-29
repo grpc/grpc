@@ -18,3 +18,4 @@ resolver_component_tests:
     _grpc_config.simple-service:
     - {TTL: '2100', data: 'grpc_config=[{"serviceConfig":{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"SimpleService"}],"waitForReady":true}]}}]',
       type: TXT}
+    - {TTL: '2100', data: 'other_config=other config', type: TXT}
