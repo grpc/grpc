@@ -36,6 +36,7 @@ _STREAM_UNARY = "/test/StreamUnary"
 _STREAM_STREAM = "/test/StreamStream"
 STREAM_LENGTH = 5
 TRIGGER_RPC_METADATA = ("control", "trigger_rpc")
+TRIGGER_RPC_TO_NEW_SERVER_METADATA = ("to_new_server", "")
 
 CONFIG_ENV_VAR_NAME = "GRPC_GCP_OBSERVABILITY_CONFIG"
 CONFIG_FILE_ENV_VAR_NAME = "GRPC_GCP_OBSERVABILITY_CONFIG_FILE"
@@ -91,6 +92,13 @@ def handle_unary_unary(request, servicer_context):
         for k, v in servicer_context.invocation_metadata():
             if "port" in k:
                 unary_unary_call(port=int(v))
+            if "to_new_server" in k:
+                second_server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+                second_server.add_generic_rpc_handlers((_GenericHandler(),))
+                second_server_port = second_server.add_insecure_port("[::]:0")
+                second_server.start()
+                unary_unary_call(port=second_server_port)
+                second_server.stop(0)
     return _RESPONSE
 
 
@@ -169,8 +177,9 @@ class ObservabilityTest(unittest.TestCase):
         self._validate_metrics(self.all_metric)
         self._validate_spans(self.all_span)
 
-    def testContextPropagation(self):
-        # Sends two RPCs, one from gRPC client and the other from gRPC server.
+    def testContextPropagationToSameServer(self):
+        # Sends two RPCs, one from gRPC client and the other from gRPC server:
+        #   gRPC Client -> gRPC Server 1 -> gRPC Server 1
         # Verify that the trace_id was propagated to the 2nd RPC.
         self._set_config_file(_VALID_CONFIG_TRACING_ONLY)
         with grpc_observability.GCPOpenCensusObservability(
@@ -178,6 +187,27 @@ class ObservabilityTest(unittest.TestCase):
         ):
             port = self._start_server()
             metadata = (TRIGGER_RPC_METADATA, ("port", str(port)),)
+            unary_unary_call(port=port, metadata=metadata)
+
+        # 2 of each for ["Recv", "Sent", "Attempt"]
+        self.assertEqual(len(self.all_span), 6)
+        trace_id = self.all_span[0].trace_id
+        for span in self.all_span:
+            self.assertEqual(span.trace_id, trace_id)
+
+    def testContextPropagationToNewServer(self):
+        # Sends two RPCs, one from gRPC client and the other from gRPC server:
+        #   gRPC Client -> gRPC Server 1 -> gRPC Server 2
+        # Verify that the trace_id was propagated to the 2nd RPC.
+        # This test case is to make sure that the context from one thread can
+        # be propagated to different thread.
+        self._set_config_file(_VALID_CONFIG_TRACING_ONLY)
+        with grpc_observability.GCPOpenCensusObservability(
+            exporter=self.test_exporter
+        ):
+            port = self._start_server()
+            metadata = (TRIGGER_RPC_METADATA,
+                        TRIGGER_RPC_TO_NEW_SERVER_METADATA,)
             unary_unary_call(port=port, metadata=metadata)
 
         # 2 of each for ["Recv", "Sent", "Attempt"]
