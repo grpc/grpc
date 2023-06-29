@@ -446,6 +446,56 @@ TEST(WrrLocality, UnsupportedChildPolicyTypeSkipped) {
 }
 
 //
+// PickFirst
+//
+
+TEST(PickFirst, NoShuffle) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_PICKFIRST_LB_CONFIG");
+  LoadBalancingPolicyProto policy;
+  auto* lb_policy = policy.add_policies();
+  PickFirst pick_first;
+  pick_first.set_shuffle_address_list(false);
+  lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
+      pick_first);
+  auto result = ConvertXdsPolicy(policy);
+  ASSERT_TRUE(result.ok()) << result.status();
+  EXPECT_EQ(*result, "{\"pick_first\":{\"shuffleAddressList\":false}}");
+}
+
+TEST(PickFirst, Shuffle) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_PICKFIRST_LB_CONFIG");
+  LoadBalancingPolicyProto policy;
+  auto* lb_policy = policy.add_policies();
+  PickFirst pick_first;
+  pick_first.set_shuffle_address_list(true);
+  lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
+      pick_first);
+  auto result = ConvertXdsPolicy(policy);
+  ASSERT_TRUE(result.ok()) << result.status();
+  EXPECT_EQ(*result, "{\"pick_first\":{\"shuffleAddressList\":true}}");
+}
+
+TEST(PickFirst, ShuffleOmitted) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_PICKFIRST_LB_CONFIG");
+  LoadBalancingPolicyProto policy;
+  auto* lb_policy = policy.add_policies();
+  lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
+      PickFirst());
+  auto result = ConvertXdsPolicy(policy);
+  ASSERT_TRUE(result.ok()) << result.status();
+  EXPECT_EQ(*result, "{\"pick_first\":{\"shuffleAddressList\":false}}");
+}
+
+TEST(PickFirst, EnvVarDisabled) {
+  LoadBalancingPolicyProto policy;
+  auto* lb_policy = policy.add_policies();
+  lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
+      PickFirst());
+  auto result = ConvertXdsPolicy(policy);
+  ASSERT_FALSE(result.ok());
+}
+
+//
 // CustomPolicy
 //
 
@@ -592,56 +642,6 @@ TEST(XdsLbPolicyRegistryTest, MaxRecursion) {
   EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(std::string(result.status().message()),
               ::testing::EndsWith("error:exceeded max recursion depth of 16]"));
-}
-
-//
-// PickFirst
-//
-
-TEST(PickFirst, NoShuffle) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_PICKFIRST_LB_CONFIG");
-  LoadBalancingPolicyProto policy;
-  auto* lb_policy = policy.add_policies();
-  PickFirst pick_first;
-  pick_first.set_shuffle_address_list(false);
-  lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
-      pick_first);
-  auto result = ConvertXdsPolicy(policy);
-  ASSERT_TRUE(result.ok()) << result.status();
-  EXPECT_EQ(*result, "{\"pick_first\":{\"shuffleAddressList\":false}}");
-}
-
-TEST(PickFirst, Shuffle) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_PICKFIRST_LB_CONFIG");
-  LoadBalancingPolicyProto policy;
-  auto* lb_policy = policy.add_policies();
-  PickFirst pick_first;
-  pick_first.set_shuffle_address_list(true);
-  lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
-      pick_first);
-  auto result = ConvertXdsPolicy(policy);
-  ASSERT_TRUE(result.ok()) << result.status();
-  EXPECT_EQ(*result, "{\"pick_first\":{\"shuffleAddressList\":true}}");
-}
-
-TEST(PickFirst, ShuffleOmitted) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_PICKFIRST_LB_CONFIG");
-  LoadBalancingPolicyProto policy;
-  auto* lb_policy = policy.add_policies();
-  lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
-      PickFirst());
-  auto result = ConvertXdsPolicy(policy);
-  ASSERT_TRUE(result.ok()) << result.status();
-  EXPECT_EQ(*result, "{\"pick_first\":{\"shuffleAddressList\":false}}");
-}
-
-TEST(PickFirst, EnvVarDisabled) {
-  LoadBalancingPolicyProto policy;
-  auto* lb_policy = policy.add_policies();
-  lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
-      PickFirst());
-  auto result = ConvertXdsPolicy(policy);
-  ASSERT_FALSE(result.ok());
 }
 
 }  // namespace
