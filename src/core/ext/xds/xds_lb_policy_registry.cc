@@ -267,7 +267,7 @@ class PickFirstLbPolicyConfigFactory
         envoy_extensions_load_balancing_policies_pick_first_v3_PickFirst_parse(
             configuration.data(), configuration.size(), context.arena);
     if (resource == nullptr) {
-      errors->AddError("can't decode WrrLocality LB policy config");
+      errors->AddError("can't decode PickFirst LB policy config");
       return {};
     }
     bool shuffle_address_list =
@@ -289,6 +289,8 @@ class PickFirstLbPolicyConfigFactory
 
 }  // namespace
 
+extern bool ShufflePickFirstEnabled();
+
 //
 // XdsLbPolicyRegistry
 //
@@ -306,9 +308,11 @@ XdsLbPolicyRegistry::XdsLbPolicyRegistry() {
   policy_config_factories_.emplace(
       WrrLocalityLbPolicyConfigFactory::Type(),
       std::make_unique<WrrLocalityLbPolicyConfigFactory>());
-  policy_config_factories_.emplace(
-      PickFirstLbPolicyConfigFactory::Type(),
-      std::make_unique<PickFirstLbPolicyConfigFactory>());
+  if (ShufflePickFirstEnabled()) {
+    policy_config_factories_.emplace(
+        PickFirstLbPolicyConfigFactory::Type(),
+        std::make_unique<PickFirstLbPolicyConfigFactory>());
+  }
 }
 
 Json::Array XdsLbPolicyRegistry::ConvertXdsLbPolicyConfig(
