@@ -66,9 +66,10 @@ class ResolverFactory {
   virtual OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const = 0;
 
   /// Returns a string representing the default authority to use for this
-  /// scheme.
+  /// scheme.  By default, we %-encode the path part of the target URI,
+  /// excluding the initial '/' character.
   virtual std::string GetDefaultAuthority(const URI& uri) const {
-    return std::string(absl::StripPrefix(uri.path(), "/"));
+    return URI::PercentEncodeAuthority(absl::StripPrefix(uri.path(), "/"));
   }
 };
 
