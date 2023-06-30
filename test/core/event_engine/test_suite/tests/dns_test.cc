@@ -153,16 +153,6 @@ class EventEngineDNSTest : public EventEngineTest {
     delete dns_server_.server_process;
   }
 
-  class NotifyOnDestroy {
-   public:
-    explicit NotifyOnDestroy(grpc_core::Notification& dns_resolver_signal)
-        : dns_resolver_signal_(dns_resolver_signal) {}
-    ~NotifyOnDestroy() { dns_resolver_signal_.Notify(); }
-
-   private:
-    grpc_core::Notification& dns_resolver_signal_;
-  };
-
   std::unique_ptr<EventEngine::DNSResolver> CreateDefaultDNSResolver() {
     std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
     EventEngine::DNSResolver::ResolverOptions options;
