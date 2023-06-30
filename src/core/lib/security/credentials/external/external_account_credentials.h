@@ -19,6 +19,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdint.h>
+
 #include <functional>
 #include <string>
 #include <vector>
