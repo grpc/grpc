@@ -16,10 +16,12 @@
 
 #include "src/core/lib/event_engine/forkable.h"
 
+#ifdef GPR_POSIX_SUBPROCESS
 #include <errno.h>
 #include <stdlib.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#endif  // GPR_POSIX_SUBPROCESS
 
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
@@ -36,6 +38,9 @@ using ::grpc_event_engine::experimental::RegisterForkHandlers;
 class ForkableTest : public testing::Test {};
 
 TEST_F(ForkableTest, BasicPthreadAtForkOperations) {
+#ifndef GPR_POSIX_SUBPROCESS
+  GTEST_SKIP("fork() and waitpid() are not supported on this platform.");
+#endif
   class SomeForkable : public Forkable {
    public:
     void PrepareFork() override { prepare_called_ = true; }
@@ -102,7 +107,7 @@ TEST_F(ForkableTest, NonPthreadManualForkOperations) {
   // Manually simulates a fork event for non-pthread-enabled environments
 #ifdef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
   // This platform does not need to exercise fork support manually.
-  GTEST_SKIP();
+  GTEST_SKIP("Unnecessary test, this platform supports pthreads.");
 #endif
 
   class SomeForkable : public Forkable {
