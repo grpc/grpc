@@ -211,8 +211,8 @@ void AresResolver::LookupHostname(
     absl::string_view name, absl::string_view default_port,
     EventEngine::DNSResolver::LookupHostnameCallback callback) {
   absl::string_view host;
-  absl::string_view port_s;
-  if (!grpc_core::SplitHostPort(name, &host, &port_s)) {
+  absl::string_view port_string;
+  if (!grpc_core::SplitHostPort(name, &host, &port_string)) {
     event_engine_->Run(
         [callback = std::move(callback),
          status = absl::InvalidArgumentError(absl::StrCat(
@@ -220,7 +220,7 @@ void AresResolver::LookupHostname(
     return;
   }
   GPR_ASSERT(!host.empty());
-  if (port_s.empty()) {
+  if (port_string.empty()) {
     if (default_port.empty()) {
       event_engine_->Run([callback = std::move(callback),
                           status = absl::InvalidArgumentError(absl::StrFormat(
@@ -228,14 +228,14 @@ void AresResolver::LookupHostname(
                               name))]() mutable { callback(status); });
       return;
     }
-    port_s = default_port;
+    port_string = default_port;
   }
   int port = 0;
-  if (port_s == "http") {
+  if (port_string == "http") {
     port = 80;
-  } else if (port_s == "https") {
+  } else if (port_string == "https") {
     port = 443;
-  } else if (!absl::SimpleAtoi(port_s, &port)) {
+  } else if (!absl::SimpleAtoi(port_string, &port)) {
     event_engine_->Run([callback = std::move(callback),
                         status = absl::InvalidArgumentError(absl::StrCat(
                             "Failed to parse port in name: ",
