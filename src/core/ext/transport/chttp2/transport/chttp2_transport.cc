@@ -378,11 +378,19 @@ static void read_channel_args(grpc_chttp2_transport* t,
       channel_args.GetDurationFromIntMillis(GRPC_ARG_KEEPALIVE_TIMEOUT_MS)
           .value_or(t->is_client ? g_default_client_keepalive_timeout
                                  : g_default_server_keepalive_timeout));
-  t->keepalive_permit_without_calls =
-      channel_args.GetBool(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS)
-          .value_or(t->is_client
-                        ? g_default_client_keepalive_permit_without_calls
-                        : g_default_server_keepalive_permit_without_calls);
+  if (grpc_core::
+          IsChttp2AllowConfigOverrideKeepalivePermitWithoutCallsEnabled()) {
+    t->keepalive_permit_without_calls =
+        channel_args.GetBool(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS)
+            .value_or(t->is_client
+                          ? g_default_client_keepalive_permit_without_calls
+                          : g_default_server_keepalive_permit_without_calls);
+  } else {
+    t->keepalive_permit_without_calls =
+        channel_args.GetBool(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS)
+            .value_or(false);
+  }
+
   // Only send the prefered rx frame size http2 setting if we are instructed
   // to auto size the buffers allocated at tcp level and we also can adjust
   // sending frame size.

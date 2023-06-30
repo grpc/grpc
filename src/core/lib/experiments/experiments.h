@@ -77,6 +77,9 @@ inline bool IsWorkStealingEnabled() { return false; }
 inline bool IsClientPrivacyEnabled() { return false; }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
 inline bool IsServerPrivacyEnabled() { return false; }
+inline bool IsChttp2AllowConfigOverrideKeepalivePermitWithoutCallsEnabled() {
+  return false;
+}
 #else
 #define GRPC_EXPERIMENT_IS_INCLUDED_TCP_FRAME_SIZE_TUNING
 inline bool IsTcpFrameSizeTuningEnabled() { return IsExperimentEnabled(0); }
@@ -124,8 +127,12 @@ inline bool IsClientPrivacyEnabled() { return IsExperimentEnabled(16); }
 inline bool IsCanaryClientPrivacyEnabled() { return IsExperimentEnabled(17); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_PRIVACY
 inline bool IsServerPrivacyEnabled() { return IsExperimentEnabled(18); }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_ALLOW_CONFIG_OVERRIDE_KEEPALIVE_PERMIT_WITHOUT_CALLS
+inline bool IsChttp2AllowConfigOverrideKeepalivePermitWithoutCallsEnabled() {
+  return IsExperimentEnabled(19);
+}
 
-constexpr const size_t kNumExperiments = 19;
+constexpr const size_t kNumExperiments = 20;
 extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];
 
 #endif

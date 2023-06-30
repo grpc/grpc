@@ -149,3 +149,11 @@
   owner: alishananda@google.com
   test_tags: []
   allow_in_fuzzing_config: false
+- name: chttp2_allow_config_override_keepalive_permit_without_calls
+  description:
+    Allows overriding keepalive_permit_without_calls.
+    Refer https://github.com/grpc/grpc/pull/33428 for more information.
+  expiry: 2023/07/07
+  owner: yashkt@google.com
+  test_tags: []
+  allow_in_fuzzing_config: false
