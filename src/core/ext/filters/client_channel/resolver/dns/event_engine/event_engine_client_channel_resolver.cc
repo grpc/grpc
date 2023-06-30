@@ -223,10 +223,12 @@ EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
   is_hostname_inflight_ = true;
   event_engine_resolver_->LookupHostname(
       [self = Ref(DEBUG_LOCATION, "OnHostnameResolved")](
-          absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> addresses) {
+          absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>
+              addresses) mutable {
         ApplicationCallbackExecCtx callback_exec_ctx;
         ExecCtx exec_ctx;
         self->OnHostnameResolved(std::move(addresses));
+        self.reset();
       },
       resolver_->name_to_resolve(), kDefaultSecurePort);
   if (resolver_->enable_srv_queries_) {
@@ -237,10 +239,11 @@ EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     event_engine_resolver_->LookupSRV(
         [self = Ref(DEBUG_LOCATION, "OnSRVResolved")](
             absl::StatusOr<std::vector<EventEngine::DNSResolver::SRVRecord>>
-                srv_records) {
+                srv_records) mutable {
           ApplicationCallbackExecCtx callback_exec_ctx;
           ExecCtx exec_ctx;
           self->OnSRVResolved(std::move(srv_records));
+          self.reset();
         },
         absl::StrCat("_grpclb._tcp.", resolver_->name_to_resolve()));
   }
@@ -251,10 +254,11 @@ EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     is_txt_inflight_ = true;
     event_engine_resolver_->LookupTXT(
         [self = Ref(DEBUG_LOCATION, "OnTXTResolved")](
-            absl::StatusOr<std::vector<std::string>> service_config) {
+            absl::StatusOr<std::vector<std::string>> service_config) mutable {
           ApplicationCallbackExecCtx callback_exec_ctx;
           ExecCtx exec_ctx;
           self->OnTXTResolved(std::move(service_config));
+          self.reset();
         },
         absl::StrCat("_grpc_config.", resolver_->name_to_resolve()));
   }
@@ -269,8 +273,6 @@ EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
 
 EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     ~EventEngineDNSRequestWrapper() {
-  ApplicationCallbackExecCtx callback_exec_ctx;
-  ExecCtx exec_ctx;
   resolver_.reset(DEBUG_LOCATION, "dns-resolving");
 }
 
