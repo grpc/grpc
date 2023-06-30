@@ -2563,9 +2563,9 @@ TEST(
       "\"client_id\":\"client_id\",\"client_secret\":\"client_secret\"}";
   grpc_error_handle error1, error2;
   auto json = JsonParse(options_string1);
-  std::vector<std::string> scopes = {"scope1", "scope2"};
+  std::vector<std::string> scopes1 = {"scope1", "scope2"};
   auto creds =
-      ExternalAccountCredentials::Create(*json, std::move(scopes), &error1);
+      ExternalAccountCredentials::Create(*json, std::move(scopes1), &error1);
   std::string actual_error;
   std::string expected_error = "token_lifetime_seconds must be more than 600s";
   grpc_error_get_str(error1, StatusStrProperty::kDescription, &actual_error);
@@ -2586,7 +2586,9 @@ TEST(
       "token\"}},\"quota_project_id\":\"quota_project_id\","
       "\"client_id\":\"client_id\",\"client_secret\":\"client_secret\"}";
   json = JsonParse(options_string2);
-  creds = ExternalAccountCredentials::Create(*json, std::move(scopes), &error2);
+  std::vector<std::string> scopes2 = {"scope1", "scope2"};
+  creds =
+      ExternalAccountCredentials::Create(*json, std::move(scopes2), &error2);
   actual_error = "";
   expected_error = "token_lifetime_seconds must be less than 43200s";
   grpc_error_get_str(error2, StatusStrProperty::kDescription, &actual_error);
