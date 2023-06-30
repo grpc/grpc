@@ -126,6 +126,7 @@ cdef extern from "constants.h" namespace "grpc_observability":
     kRpcClientReceivedMessagesPerRpcMeasureName
     kRpcClientReceivedBytesPerRpcMeasureName
     kRpcClientRoundtripLatencyMeasureName
+    kRpcClientCompletedRpcMeasureName
     kRpcClientServerLatencyMeasureName
     kRpcClientStartedRpcsMeasureName
     kRpcClientRetriesPerCallMeasureName
@@ -139,6 +140,7 @@ cdef extern from "constants.h" namespace "grpc_observability":
     kRpcServerReceivedMessagesPerRpcMeasureName
     kRpcServerReceivedBytesPerRpcMeasureName
     kRpcServerServerLatencyMeasureName
+    kRpcServerCompletedRpcMeasureName
     kRpcServerStartedRpcsMeasureName
 
   string kClientMethod

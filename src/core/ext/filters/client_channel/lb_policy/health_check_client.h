@@ -21,8 +21,7 @@
 
 #include <memory>
 
-#include "absl/strings/string_view.h"
-
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/load_balancing/subchannel_interface.h"
 
@@ -39,13 +38,12 @@ namespace grpc_core {
 // like this:
 //   subchannel->AddDataWatcher(
 //       MakeHealthCheckWatcher(
-//           work_serializer(), health_check_service_name,
+//           work_serializer(), channel_args,
 //           std::make_unique<MyConnectivityStateWatcherSubclass>(...)));
 
 std::unique_ptr<SubchannelInterface::DataWatcherInterface>
 MakeHealthCheckWatcher(
-    std::shared_ptr<WorkSerializer> work_serializer,
-    absl::string_view health_check_service_name,
+    std::shared_ptr<WorkSerializer> work_serializer, const ChannelArgs& args,
     std::unique_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>
         watcher);
 

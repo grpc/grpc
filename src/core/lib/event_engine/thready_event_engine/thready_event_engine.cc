@@ -111,10 +111,9 @@ bool ThreadyEventEngine::Cancel(TaskHandle handle) {
   return impl_->Cancel(handle);
 }
 
-EventEngine::DNSResolver::LookupTaskHandle
-ThreadyEventEngine::ThreadyDNSResolver::LookupHostname(
+void ThreadyEventEngine::ThreadyDNSResolver::LookupHostname(
     LookupHostnameCallback on_resolve, absl::string_view name,
-    absl::string_view default_port, Duration timeout) {
+    absl::string_view default_port) {
   return impl_->LookupHostname(
       [this, on_resolve = std::move(on_resolve)](
           absl::StatusOr<std::vector<ResolvedAddress>> addresses) mutable {
@@ -123,13 +122,11 @@ ThreadyEventEngine::ThreadyDNSResolver::LookupHostname(
           on_resolve(std::move(addresses));
         });
       },
-      name, default_port, timeout);
+      name, default_port);
 }
 
-EventEngine::DNSResolver::LookupTaskHandle
-ThreadyEventEngine::ThreadyDNSResolver::LookupSRV(LookupSRVCallback on_resolve,
-                                                  absl::string_view name,
-                                                  Duration timeout) {
+void ThreadyEventEngine::ThreadyDNSResolver::LookupSRV(
+    LookupSRVCallback on_resolve, absl::string_view name) {
   return impl_->LookupSRV(
       [this, on_resolve = std::move(on_resolve)](
           absl::StatusOr<std::vector<SRVRecord>> records) mutable {
@@ -139,13 +136,11 @@ ThreadyEventEngine::ThreadyDNSResolver::LookupSRV(LookupSRVCallback on_resolve,
               on_resolve(std::move(records));
             });
       },
-      name, timeout);
+      name);
 }
 
-EventEngine::DNSResolver::LookupTaskHandle
-ThreadyEventEngine::ThreadyDNSResolver::LookupTXT(LookupTXTCallback on_resolve,
-                                                  absl::string_view name,
-                                                  Duration timeout) {
+void ThreadyEventEngine::ThreadyDNSResolver::LookupTXT(
+    LookupTXTCallback on_resolve, absl::string_view name) {
   return impl_->LookupTXT(
       [this, on_resolve = std::move(on_resolve)](
           absl::StatusOr<std::vector<std::string>> record) mutable {
@@ -154,12 +149,7 @@ ThreadyEventEngine::ThreadyDNSResolver::LookupTXT(LookupTXTCallback on_resolve,
           on_resolve(std::move(record));
         });
       },
-      name, timeout);
-}
-
-bool ThreadyEventEngine::ThreadyDNSResolver::CancelLookup(
-    LookupTaskHandle handle) {
-  return impl_->CancelLookup(handle);
+      name);
 }
 
 }  // namespace experimental

@@ -64,6 +64,47 @@ If you are using the Bazel build system, that macro can be configured with
 """
 
 
+def _EXPERIMENTS_TEST_SKELETON(defs, test_body):
+    return f"""
+#include <grpc/support/port_platform.h>
+
+#include "test/core/experiments/fixtures/experiments.h"
+#include "gtest/gtest.h"
+
+#include "src/core/lib/experiments/config.h"
+
+#ifndef GRPC_EXPERIMENTS_ARE_FINAL
+{defs}
+TEST(ExperimentsTest, CheckExperimentValuesTest) {{
+{test_body}
+}}
+
+#endif // GRPC_EXPERIMENTS_ARE_FINAL
+
+int main(int argc, char** argv) {{
+  testing::InitGoogleTest(&argc, argv);
+  grpc_core::LoadTestOnlyExperimentsFromMetadata(
+    grpc_core::g_test_experiment_metadata, grpc_core::kNumTestExperiments);
+  return RUN_ALL_TESTS();
+}}
+"""
+
+
+def _EXPERIMENTS_EXPECTED_VALUE(name, expected_value):
+    return f"""
+bool GetExperiment{name}ExpectedValue() {{
+{expected_value}
+}}
+"""
+
+
+def _EXPERIMENT_CHECK_TEXT(name):
+    return f"""
+  ASSERT_EQ(grpc_core::Is{name}Enabled(),
+            GetExperiment{name}ExpectedValue());
+"""
+
+
 def ToCStr(s, encoding="ascii"):
     if isinstance(s, str):
         s = s.encode(encoding)
@@ -268,7 +309,7 @@ class ExperimentsCompiler(object):
             rollout_attributes["name"]
         ].AddRolloutSpecification(self._defaults, rollout_attributes)
 
-    def GenerateExperimentsHdr(self, output_file):
+    def GenerateExperimentsHdr(self, output_file, mode):
         with open(output_file, "w") as H:
             PutCopyright(H, "//")
             PutBanner(
@@ -278,8 +319,16 @@ class ExperimentsCompiler(object):
                 "//",
             )
 
-            print("#ifndef GRPC_SRC_CORE_LIB_EXPERIMENTS_EXPERIMENTS_H", file=H)
-            print("#define GRPC_SRC_CORE_LIB_EXPERIMENTS_EXPERIMENTS_H", file=H)
+            if mode != "test":
+                include_guard = "GRPC_SRC_CORE_LIB_EXPERIMENTS_EXPERIMENTS_H"
+            else:
+                file_path_list = output_file.split("/")[0:-1]
+                file_name = output_file.split("/")[-1].split(".")[0]
+
+                include_guard = f"GRPC_{'_'.join(path.upper() for path in file_path_list)}_{file_name.upper()}_H"
+
+            print(f"#ifndef {include_guard}", file=H)
+            print(f"#define {include_guard}", file=H)
             print(file=H)
             print("#include <grpc/support/port_platform.h>", file=H)
             print(file=H)
@@ -313,20 +362,31 @@ class ExperimentsCompiler(object):
                 )
                 print(
                     "inline bool Is%sEnabled() { return"
-                    " IsExperimentEnabled(%d); }"
-                    % (SnakeToPascal(exp.name), i),
+                    " Is%sExperimentEnabled(%d); }"
+                    % (
+                        SnakeToPascal(exp.name),
+                        "Test" if mode == "test" else "",
+                        i,
+                    ),
                     file=H,
                 )
             print(file=H)
+
+            if mode == "test":
+                num_experiments_var_name = "kNumTestExperiments"
+                experiments_metadata_var_name = "g_test_experiment_metadata"
+            else:
+                num_experiments_var_name = "kNumExperiments"
+                experiments_metadata_var_name = "g_experiment_metadata"
             print(
-                "constexpr const size_t kNumExperiments = %d;"
-                % len(self._experiment_definitions.keys()),
+                f"constexpr const size_t {num_experiments_var_name} = "
+                f"{len(self._experiment_definitions.keys())};",
                 file=H,
             )
             print(
                 (
                     "extern const ExperimentMetadata"
-                    " g_experiment_metadata[kNumExperiments];"
+                    f" {experiments_metadata_var_name}[{num_experiments_var_name}];"
                 ),
                 file=H,
             )
@@ -334,11 +394,9 @@ class ExperimentsCompiler(object):
             print("#endif", file=H)
             print("}  // namespace grpc_core", file=H)
             print(file=H)
-            print(
-                "#endif  // GRPC_SRC_CORE_LIB_EXPERIMENTS_EXPERIMENTS_H", file=H
-            )
+            print(f"#endif  // {include_guard}", file=H)
 
-    def GenerateExperimentsSrc(self, output_file):
+    def GenerateExperimentsSrc(self, output_file, header_file_path, mode):
         with open(output_file, "w") as C:
             PutCopyright(C, "//")
             PutBanner(
@@ -348,7 +406,7 @@ class ExperimentsCompiler(object):
             )
 
             print("#include <grpc/support/port_platform.h>", file=C)
-            print('#include "src/core/lib/experiments/experiments.h"', file=C)
+            print(f'#include "{header_file_path}"', file=C)
             print(file=C)
             print("#ifndef GRPC_EXPERIMENTS_ARE_FINAL", file=C)
             print("namespace {", file=C)
@@ -380,8 +438,13 @@ class ExperimentsCompiler(object):
             print(file=C)
             print("namespace grpc_core {", file=C)
             print(file=C)
+            if mode == "test":
+                experiments_metadata_var_name = "g_test_experiment_metadata"
+            else:
+                experiments_metadata_var_name = "g_experiment_metadata"
             print(
-                "const ExperimentMetadata g_experiment_metadata[] = {", file=C
+                f"const ExperimentMetadata {experiments_metadata_var_name}[] = {{",
+                file=C,
             )
             for _, exp in self._experiment_definitions.items():
                 print(
@@ -399,6 +462,23 @@ class ExperimentsCompiler(object):
             print(file=C)
             print("}  // namespace grpc_core", file=C)
             print("#endif", file=C)
+
+    def GenTest(self, output_file):
+        with open(output_file, "w") as C:
+            PutCopyright(C, "//")
+            PutBanner(
+                [C],
+                ["Auto generated by tools/codegen/core/gen_experiments.py"],
+                "//",
+            )
+            defs = ""
+            test_body = ""
+            for _, exp in self._experiment_definitions.items():
+                defs += _EXPERIMENTS_EXPECTED_VALUE(
+                    SnakeToPascal(exp.name), self._final_return[exp.default]
+                )
+                test_body += _EXPERIMENT_CHECK_TEXT(SnakeToPascal(exp.name))
+            print(_EXPERIMENTS_TEST_SKELETON(defs, test_body), file=C)
 
     def GenExperimentsBzl(self, output_file):
         if self._bzl_list_for_defaults is None:

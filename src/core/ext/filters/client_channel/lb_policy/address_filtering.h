@@ -20,12 +20,14 @@
 #include <grpc/support/port_platform.h>
 
 #include <map>
-#include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
+#include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/resolver/server_address.h"
 
 // The resolver returns a flat list of addresses.  When a hierarchy of
@@ -82,13 +84,23 @@
 
 namespace grpc_core {
 
-// The attribute key to be used for hierarchical paths in ServerAddress.
-extern const char* kHierarchicalPathAttributeKey;
-
-// Constructs an address attribute containing the hierarchical path
+// An address channel arg containing the hierarchical path
 // to be associated with the address.
-std::unique_ptr<ServerAddress::AttributeInterface>
-MakeHierarchicalPathAttribute(std::vector<std::string> path);
+class HierarchicalPathArg : public RefCounted<HierarchicalPathArg> {
+ public:
+  explicit HierarchicalPathArg(std::vector<std::string> path)
+      : path_(std::move(path)) {}
+
+  // Channel arg traits methods.
+  static absl::string_view ChannelArgName();
+  static int ChannelArgsCompare(const HierarchicalPathArg* a,
+                                const HierarchicalPathArg* b);
+
+  const std::vector<std::string>& path() const { return path_; }
+
+ private:
+  std::vector<std::string> path_;
+};
 
 // A map from the next path element to the addresses that fall under
 // that path element.

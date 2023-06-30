@@ -27,7 +27,10 @@ grpc_cc_library(
         "cpu:10",
         "no_windows",
     ],
-    visibility = ["//test:__subpackages__"],
+    visibility = [
+        "//src/objective-c/tests:__subpackages__",
+        "//test:__subpackages__",
+    ],
     deps = [
         "//:grpc",
         "//test/core/event_engine:event_engine_test_utils",
