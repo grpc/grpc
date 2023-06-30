@@ -2547,7 +2547,7 @@ TEST(
 TEST(
     CredentialsTest,
     TestExternalAccountCredsFailureWithServiceAccountImpersonationAndInvalidCustomTokenLifetime) {
-  char* options_string =
+  const char* options_string1 =
       "{\"type\":\"external_account\",\"audience\":\"audience\","
       "\"subject_token_type\":\"subject_token_type\","
       "\"service_account_impersonation_url\":\"service_account_impersonation_"
@@ -2562,7 +2562,7 @@ TEST(
       "token\"}},\"quota_project_id\":\"quota_project_id\","
       "\"client_id\":\"client_id\",\"client_secret\":\"client_secret\"}";
   grpc_error_handle error1, error2;
-  auto json = JsonParse(options_string);
+  auto json = JsonParse(options_string1);
   std::vector<std::string> scopes = {"scope1", "scope2"};
   auto creds =
       ExternalAccountCredentials::Create(*json, std::move(scopes), &error1);
@@ -2571,7 +2571,7 @@ TEST(
   grpc_error_get_str(error1, StatusStrProperty::kDescription, &actual_error);
   GPR_ASSERT(strcmp(actual_error.c_str(), expected_error.c_str()) == 0);
 
-  options_string =
+  const char* options_string2 =
       "{\"type\":\"external_account\",\"audience\":\"audience\","
       "\"subject_token_type\":\"subject_token_type\","
       "\"service_account_impersonation_url\":\"service_account_impersonation_"
@@ -2585,7 +2585,7 @@ TEST(
       "\"format\":{\"type\":\"json\",\"subject_token_field_name\":\"access_"
       "token\"}},\"quota_project_id\":\"quota_project_id\","
       "\"client_id\":\"client_id\",\"client_secret\":\"client_secret\"}";
-  json = JsonParse(options_string);
+  json = JsonParse(options_string2);
   creds = ExternalAccountCredentials::Create(*json, std::move(scopes), &error2);
   actual_error = "";
   expected_error = "token_lifetime_seconds must be less than 43200s";
@@ -3559,7 +3559,6 @@ TEST(CredentialsTest, TestExternalAccountCredentialsCreateSuccess) {
       "{\"type\":\"external_account\",\"audience\":\"audience\",\"subject_"
       "token_type\":\"subject_token_type\",\"service_account_impersonation_"
       "url\":\"service_account_impersonation_url\","
-      "\"service_account_impersonation\":{\"token_lifetime_seconds\":3600},"
       "\"token_url\":\"https://foo.com:5555/"
       "token\",\"token_info_url\":\"https://foo.com:5555/"
       "token_info\",\"credential_source\":{\"url\":\"https://foo.com:5555/"
@@ -3578,7 +3577,6 @@ TEST(CredentialsTest, TestExternalAccountCredentialsCreateSuccess) {
       "{\"type\":\"external_account\",\"audience\":\"audience\",\"subject_"
       "token_type\":\"subject_token_type\",\"service_account_impersonation_"
       "url\":\"service_account_impersonation_url\","
-      "\"service_account_impersonation\":{\"token_lifetime_seconds\":3600},"
       "\"token_url\":\"https://foo.com:5555/"
       "token\",\"token_info_url\":\"https://foo.com:5555/"
       "token_info\",\"credential_source\":{\"file\":\"credentials_file_path\"},"
@@ -3595,7 +3593,6 @@ TEST(CredentialsTest, TestExternalAccountCredentialsCreateSuccess) {
       "{\"type\":\"external_account\",\"audience\":\"audience\",\"subject_"
       "token_type\":\"subject_token_type\",\"service_account_impersonation_"
       "url\":\"service_account_impersonation_url\","
-      "\"service_account_impersonation\":{\"token_lifetime_seconds\":3600},"
       "\"token_url\":\"https://"
       "foo.com:5555/token\",\"token_info_url\":\"https://foo.com:5555/"
       "token_info\",\"credential_source\":{\"environment_id\":\"aws1\","
@@ -3749,7 +3746,6 @@ TEST(
       "{\"type\":\"external_account\",\"audience\":\"audience\",\"subject_"
       "token_type\":\"subject_token_type\",\"service_account_impersonation_"
       "url\":\"service_account_impersonation_url\","
-      "\"service_account_impersonation\":{\"token_lifetime_seconds\":3600},"
       "\"token_url\":\"https://foo.com:5555/"
       "token\",\"token_info_url\":\"https://foo.com:5555/"
       "token_info\",\"credential_source\":{\"random_key\":\"random_value\"},"
@@ -3768,7 +3764,6 @@ TEST(CredentialsTest,
       "locations/location/workforcePools/pool/providers/provider\",\"subject_"
       "token_type\":\"subject_token_type\",\"service_account_impersonation_"
       "url\":\"service_account_impersonation_url\","
-      "\"service_account_impersonation\":{\"token_lifetime_seconds\":3600},"
       "\"token_url\":\"https://foo.com:5555/"
       "token\",\"token_info_url\":\"https://foo.com:5555/"
       "token_info\",\"credential_source\":{\"url\":\"https://foo.com:5555/"
@@ -3792,7 +3787,6 @@ TEST(CredentialsTest,
       "audience\",\"subject_"
       "token_type\":\"subject_token_type\",\"service_account_impersonation_"
       "url\":\"service_account_impersonation_url\","
-      "\"service_account_impersonation\":{\"token_lifetime_seconds\":3600},"
       "\"token_url\":\"https://foo.com:5555/"
       "token\",\"token_info_url\":\"https://foo.com:5555/"
       "token_info\",\"credential_source\":{\"url\":\"https://foo.com:5555/"
