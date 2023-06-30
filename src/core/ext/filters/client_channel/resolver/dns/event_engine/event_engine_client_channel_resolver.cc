@@ -237,7 +237,11 @@ EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     event_engine_resolver_->LookupSRV(
         [self = Ref(DEBUG_LOCATION, "OnSRVResolved")](
             absl::StatusOr<std::vector<EventEngine::DNSResolver::SRVRecord>>
-                srv_records) { self->OnSRVResolved(std::move(srv_records)); },
+                srv_records) {
+          ApplicationCallbackExecCtx callback_exec_ctx;
+          ExecCtx exec_ctx;
+          self->OnSRVResolved(std::move(srv_records));
+        },
         absl::StrCat("_grpclb._tcp.", resolver_->name_to_resolve()));
   }
   if (resolver_->request_service_config_) {
