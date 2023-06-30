@@ -14,12 +14,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifndef GRPC_ENABLE_FORK_SUPPORT
-
-// Test nothing, everything is fine
-int main(int /* argc */, char** /* argv */) { return 0; }
-
-#else  // GRPC_ENABLE_FORK_SUPPORT
+#include "src/core/lib/event_engine/forkable.h"
 
 #include <sys/wait.h>
 #include <unistd.h>
@@ -29,7 +24,7 @@ int main(int /* argc */, char** /* argv */) { return 0; }
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/event_engine/forkable.h"
+#include "src/core/lib/config/config_vars.h"
 
 namespace {
 using ::grpc_event_engine::experimental::Forkable;
@@ -104,7 +99,8 @@ TEST_F(ForkableTest, BasicPthreadAtForkOperations) {
 TEST_F(ForkableTest, NonPthreadManualForkOperations) {
   // Manually simulates a fork event for non-pthread-enabled environments
 #ifdef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
-  return;
+  // This platform does not need to exercise fork support manually.
+  GTEST_SKIP();
 #endif
 
   class SomeForkable : public Forkable {
@@ -112,10 +108,6 @@ TEST_F(ForkableTest, NonPthreadManualForkOperations) {
     void PrepareFork() override { prepare_called_ = true; }
     void PostforkParent() override { parent_called_ = true; }
     void PostforkChild() override { child_called_ = true; }
-
-    // bool prepare_called() { return prepare_called_; }
-    // bool parent_called() { return parent_called_; }
-    // bool child_called() { return child_called_; }
 
     void AssertStates(bool prepare, bool parent, bool child) {
       EXPECT_EQ(prepare_called_, prepare);
@@ -141,9 +133,11 @@ TEST_F(ForkableTest, NonPthreadManualForkOperations) {
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
+  // Force enable fork support to allow testing the fork handler registry.
+  grpc_core::ConfigVars::Overrides config_overrides;
+  config_overrides.enable_fork_support = true;
+  grpc_core::ConfigVars::SetOverrides(config_overrides);
   RegisterForkHandlers();
   auto result = RUN_ALL_TESTS();
   return result;
 }
-
-#endif  // GRPC_ENABLE_FORK_SUPPORT
