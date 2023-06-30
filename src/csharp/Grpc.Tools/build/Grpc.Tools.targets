@@ -4,8 +4,9 @@
     <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
   </PropertyGroup>
 
-  <!-- Name of this file must match package ID. -->
-  <!-- Packages will be split later. -->
+  <!-- Name of this file (Grpc.Tools.targets) must match package ID (Grpc.Tools). -->
+
+  <!-- TODO(tonydnewell) This could be simplified by combining these files. -->
   <Import Project="_grpc/_Grpc.Tools.targets"/>
   <Import Project="_protobuf/Google.Protobuf.Tools.targets"/>
 </Project>
