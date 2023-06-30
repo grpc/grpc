@@ -240,17 +240,17 @@ class ExperimentDefinition(object):
                 value = rollout_attributes["default"].get(platform, False)
             else:
                 value = rollout_attributes["default"]
-            if value not in allowed_defaults:
-                if not isinstance(value, dict):
-                    print(
-                        "ERROR: no default for experiment %s on platform %s "
-                        "is of incorrect format"
-                        % (rollout_attributes["name"], platform)
-                    )
-                    self._error = True
-                    return False
+            if isinstance(value, dict):
                 self._default[platform] = "debug"
                 self._additional_constraints[platform] = value
+            elif value not in allowed_defaults:
+                print(
+                    "ERROR: default for experiment %s on platform %s "
+                    "is of incorrect format"
+                    % (rollout_attributes["name"], platform)
+                )
+                self._error = True
+                return False
             else:
                 self._default[platform] = value
                 self._additional_constraints[platform] = {}
