@@ -86,6 +86,13 @@ const char* const description_canary_client_privacy =
 const char* const additional_constraints_canary_client_privacy = "{}";
 const char* const description_server_privacy = "If set, server privacy";
 const char* const additional_constraints_server_privacy = "{}";
+const char* const
+    description_chttp2_allow_config_override_keepalive_permit_without_calls =
+        "Allows overriding keepalive_permit_without_calls. Refer "
+        "https://github.com/grpc/grpc/pull/33428 for more information.";
+const char* const
+    additional_constraints_chttp2_allow_config_override_keepalive_permit_without_calls =
+        "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -132,6 +139,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_canary_client_privacy, false, false},
     {"server_privacy", description_server_privacy,
      additional_constraints_server_privacy, false, false},
+    {"chttp2_allow_config_override_keepalive_permit_without_calls",
+     description_chttp2_allow_config_override_keepalive_permit_without_calls,
+     additional_constraints_chttp2_allow_config_override_keepalive_permit_without_calls,
+     false, false},
 };
 
 }  // namespace grpc_core
