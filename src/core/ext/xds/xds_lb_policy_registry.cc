@@ -36,6 +36,7 @@
 
 #include <grpc/support/json.h>
 
+#include "src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.h"
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/time.h"
@@ -288,8 +289,6 @@ class PickFirstLbPolicyConfigFactory
 };
 
 }  // namespace
-
-extern bool ShufflePickFirstEnabled();
 
 //
 // XdsLbPolicyRegistry

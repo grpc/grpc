@@ -33,4 +33,9 @@
 #define GRPC_ARG_INTERNAL_PICK_FIRST_OMIT_STATUS_MESSAGE_PREFIX \
   GRPC_ARG_NO_SUBCHANNEL_PREFIX "pick_first_omit_status_message_prefix"
 
+namespace grpc_core {
+// TODO(eostroukhov): Remove once this feature is no longer experimental.
+bool ShufflePickFirstEnabled();
+}  // namespace grpc_core
+
 #endif  // GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_PICK_FIRST_PICK_FIRST_H

@@ -4144,6 +4144,7 @@ grpc_cc_library(
         "grpc_audit_logging",
         "grpc_fake_credentials",
         "grpc_fault_injection_filter",
+        "grpc_lb_policy_pick_first",
         "grpc_lb_xds_channel_args",
         "grpc_matchers",
         "grpc_outlier_detection_header",

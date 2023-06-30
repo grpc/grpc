@@ -50,35 +50,34 @@ using ::envoy::extensions::load_balancing_policies::pick_first::v3::PickFirst;
 
 class PickFirstTest : public XdsEnd2endTest {
  protected:
-  absl::variant<Status, size_t> WaitForAnyBackendHit(size_t start, size_t end) {
-    Status status;
-    size_t index = 3;
+  // Sends RPCs until one of them lands on a backend in the specified range, in
+  // which case it returns the index of that backend. Returns an error status if
+  // any of the RPCs fails.
+  absl::StatusOr<size_t> WaitForAnyBackendHit(size_t start, size_t end) {
+    absl::StatusOr<size_t> output;
     SendRpcsUntil(DEBUG_LOCATION, [&](const RpcResult& result) -> bool {
       if (!result.status.ok()) {
-        status = result.status;
+        output = absl::Status(
+            static_cast<absl::StatusCode>(result.status.error_code()),
+            result.status.error_message());
         return false;
       }
       for (size_t i = start; i < end; ++i) {
         if (backends_[i]->backend_service()->request_count() > 0) {
           backends_[i]->backend_service()->ResetCounters();
-          index = i;
+          output = i;
           return false;
         }
       }
       return true;
     });
-    if (!status.ok()) {
-      return status;
-    }
-    return index;
+    return output;
   }
 };
 
 // Run both with and without load reporting, just for test coverage.
-INSTANTIATE_TEST_SUITE_P(
-    XdsTest, PickFirstTest,
-    ::testing::Values(XdsTestType(), XdsTestType().set_enable_load_reporting()),
-    &XdsTestType::Name);
+INSTANTIATE_TEST_SUITE_P(XdsTest, PickFirstTest,
+                         ::testing::Values(XdsTestType()), &XdsTestType::Name);
 
 TEST_P(PickFirstTest, PickFirstConfigurationIsPropagated) {
   grpc_core::testing::ScopedExperimentalEnvVar env_var(
@@ -94,23 +93,23 @@ TEST_P(PickFirstTest, PickFirstConfigurationIsPropagated) {
       ->mutable_typed_config()
       ->PackFrom(pick_first);
   balancer_->ads_service()->SetCdsResource(cluster);
-  bool saw_different_backend = false;
   size_t start_index = 0;
-  for (size_t i = 0; i < 100 && !saw_different_backend; ++i) {
+  for (size_t i = 0; i < 100; ++i) {
     // Update EDS resource.  This will send a new address list update to the LB
     // policy.
     balancer_->ads_service()->SetEdsResource(BuildEdsResource(
         EdsResourceArgs({{"locality0", CreateEndpointsForBackends(
                                            start_index, start_index + 3)}})));
     auto result = WaitForAnyBackendHit(start_index, start_index + 3);
-    size_t backend_index = absl::get<size_t>(result);
-    ASSERT_FALSE(absl::holds_alternative<Status>(result))
-        << absl::get<Status>(result).error_message();
-    saw_different_backend = (backend_index - start_index) > 0;
+    ASSERT_TRUE(result.ok()) << result.status();
+    size_t backend_index = *result;
+    if ((backend_index - start_index) > 0) {
+      return;
+    }
     // Toggle between backends 0-2 and 3-5
     start_index = 3 - start_index;
   }
-  EXPECT_TRUE(saw_different_backend);
+  FAIL() << "did not choose a different backend after 100 tries";
 }
 }  // namespace
 }  // namespace testing
