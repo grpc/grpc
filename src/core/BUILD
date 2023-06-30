@@ -4126,6 +4126,7 @@ grpc_cc_library(
         "envoy_extensions_http_stateful_session_cookie_upb",
         "envoy_extensions_http_stateful_session_cookie_upbdefs",
         "envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_upb",
+        "envoy_extensions_load_balancing_policies_pick_first_upb",
         "envoy_extensions_load_balancing_policies_ring_hash_upb",
         "envoy_extensions_load_balancing_policies_wrr_locality_upb",
         "envoy_extensions_transport_sockets_tls_upb",
@@ -4144,6 +4145,7 @@ grpc_cc_library(
         "grpc_audit_logging",
         "grpc_fake_credentials",
         "grpc_fault_injection_filter",
+        "grpc_lb_policy_pick_first",
         "grpc_lb_xds_channel_args",
         "grpc_matchers",
         "grpc_outlier_detection_header",
@@ -5905,6 +5907,11 @@ grpc_upb_proto_library(
 grpc_upb_proto_library(
     name = "envoy_extensions_load_balancing_policies_wrr_locality_upb",
     deps = ["@envoy_api//envoy/extensions/load_balancing_policies/wrr_locality/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "envoy_extensions_load_balancing_policies_pick_first_upb",
+    deps = ["@envoy_api//envoy/extensions/load_balancing_policies/pick_first/v3:pkg"],
 )
 
 grpc_upb_proto_library(
