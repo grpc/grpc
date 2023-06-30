@@ -89,13 +89,12 @@ absl::Status AresStatusToAbslStatus(int status, absl::string_view error_msg) {
   }
 }
 
-EventEngine::Duration calculate_next_ares_backup_poll_alarm_duration() {
-  // An alternative here could be to use ares_timeout to try to be more
-  // accurate, but that would require using "struct timeval"'s, which just
-  // makes things a bit more complicated. So just poll every second, as
-  // suggested by the c-ares code comments.
-  return std::chrono::seconds(1);
-}
+// An alternative here could be to use ares_timeout to try to be more
+// accurate, but that would require using "struct timeval"'s, which just
+// makes things a bit more complicated. So just poll every second, as
+// suggested by the c-ares code comments.
+constexpr EventEngine::Duration kAresBackupPollAlarmDuration =
+    std::chrono::seconds(1);
 
 bool IsIpv6LoopbackAvailable() {
 #ifdef GRPC_POSIX_SOCKET_ARES_EV_DRIVER
@@ -109,7 +108,7 @@ bool IsIpv6LoopbackAvailable() {
 }
 
 absl::Status SetRequestDNSServer(absl::string_view dns_server,
-                                 ares_channel channel) {
+                                 ares_channel* channel) {
   GRPC_ARES_RESOLVER_TRACE_LOG("Using DNS server %s", dns_server.data());
   grpc_resolved_address addr;
   struct ares_addr_port_node dns_server_addr = {};
@@ -132,21 +131,19 @@ absl::Status SetRequestDNSServer(absl::string_view dns_server,
     return absl::InvalidArgumentError(
         absl::StrCat("Cannot parse authority: ", dns_server));
   }
-  int status = ares_set_servers_ports(channel, &dns_server_addr);
+  int status = ares_set_servers_ports(*channel, &dns_server_addr);
   if (status != ARES_SUCCESS) {
-    return AresStatusToAbslStatus(
-        status, absl::StrCat("c-ares status is not ARES_SUCCESS: ",
-                             ares_strerror(status)));
+    return AresStatusToAbslStatus(status, ares_strerror(status));
   }
   return absl::OkStatus();
 }
 
 struct QueryArg {
   QueryArg(AresResolver* ar, int id, absl::string_view name)
-      : ares_resolver(ar), callback_map_id(id), qname(name) {}
+      : ares_resolver(ar), callback_map_id(id), query_name(name) {}
   AresResolver* ares_resolver;
   int callback_map_id;
-  std::string qname;
+  std::string query_name;
 };
 
 struct HostnameQueryArg : public QueryArg {
@@ -169,18 +166,18 @@ AresResolver::CreateAresResolver(
   if (status != ARES_SUCCESS) {
     gpr_log(GPR_ERROR, "ares_init_options failed, status: %d", status);
     return AresStatusToAbslStatus(
-        status, absl::StrCat("Failed to init ares channel. c-ares error: ",
-                             ares_strerror(status)));
+        status,
+        absl::StrCat("Failed to init c-ares channel: ", ares_strerror(status)));
   }
-  event_engine_grpc_ares_test_only_inject_config(channel);
+  event_engine_grpc_ares_test_only_inject_config(&channel);
   if (!dns_server.empty()) {
-    absl::Status status = SetRequestDNSServer(dns_server, channel);
+    absl::Status status = SetRequestDNSServer(dns_server, &channel);
     if (!status.ok()) {
       return status;
     }
   }
-  return grpc_core::OrphanablePtr<AresResolver>(new AresResolver(
-      std::move(polled_fd_factory), std::move(event_engine), channel));
+  return grpc_core::MakeOrphanable<AresResolver>(
+      std::move(polled_fd_factory), std::move(event_engine), channel);
 }
 
 AresResolver::~AresResolver() {
@@ -228,7 +225,7 @@ void AresResolver::LookupHostname(
       event_engine_->Run([callback = std::move(callback),
                           status = absl::InvalidArgumentError(absl::StrFormat(
                               "No port in name %s or default_port argument",
-                              name.data()))]() mutable { callback(status); });
+                              name))]() mutable { callback(status); });
       return;
     }
     port_s = default_port;
@@ -267,12 +264,10 @@ void AresResolver::LookupHostname(
   auto* resolver_arg = new HostnameQueryArg(this, id_, name, port);
   if (IsIpv6LoopbackAvailable()) {
     ares_gethostbyname(channel_, std::string(host).c_str(), AF_UNSPEC,
-                       &AresResolver::OnHostbynameDoneLocked,
-                       static_cast<void*>(resolver_arg));
+                       &AresResolver::OnHostbynameDoneLocked, resolver_arg);
   } else {
     ares_gethostbyname(channel_, std::string(host).c_str(), AF_INET,
-                       &AresResolver::OnHostbynameDoneLocked,
-                       static_cast<void*>(resolver_arg));
+                       &AresResolver::OnHostbynameDoneLocked, resolver_arg);
   }
   CheckSocketsLocked();
   MaybeStartTimerLocked();
@@ -293,20 +288,16 @@ void AresResolver::LookupSRV(
   GPR_ASSERT(!host.empty());
   // Don't query for SRV records if the target is "localhost"
   if (absl::EqualsIgnoreCase(host, "localhost")) {
-    event_engine_->Run(
-        [callback = std::move(callback),
-         status = absl::UnknownError(
-             "Skip querying for SRV records for localhost target")]() mutable {
-          callback(status);
-        });
+    event_engine_->Run([callback = std::move(callback)]() mutable {
+      callback(std::vector<EventEngine::DNSResolver::SRVRecord>());
+    });
     return;
   }
   grpc_core::MutexLock lock(&mutex_);
   callback_map_.emplace(++id_, std::move(callback));
   auto* resolver_arg = new QueryArg(this, id_, host);
   ares_query(channel_, std::string(host).c_str(), ns_c_in, ns_t_srv,
-             &AresResolver::OnSRVQueryDoneLocked,
-             static_cast<void*>(resolver_arg));
+             &AresResolver::OnSRVQueryDoneLocked, resolver_arg);
   CheckSocketsLocked();
   MaybeStartTimerLocked();
 }
@@ -326,19 +317,16 @@ void AresResolver::LookupTXT(
   GPR_ASSERT(!host.empty());
   // Don't query for TXT records if the target is "localhost"
   if (absl::EqualsIgnoreCase(host, "localhost")) {
-    event_engine_->Run(
-        [callback = std::move(callback),
-         status = absl::UnknownError(
-             "Skip querying for TXT records for localhost target")]() mutable {
-          callback(status);
-        });
+    event_engine_->Run([callback = std::move(callback)]() mutable {
+      callback(std::vector<std::string>());
+    });
     return;
   }
   grpc_core::MutexLock lock(&mutex_);
   callback_map_.emplace(++id_, std::move(callback));
   auto* resolver_arg = new QueryArg(this, id_, host);
   ares_search(channel_, std::string(host).c_str(), ns_c_in, ns_t_txt,
-              &AresResolver::OnTXTDoneLocked, static_cast<void*>(resolver_arg));
+              &AresResolver::OnTXTDoneLocked, resolver_arg);
   CheckSocketsLocked();
   MaybeStartTimerLocked();
 }
@@ -442,14 +430,11 @@ void AresResolver::MaybeStartTimerLocked() {
     return;
   }
   // Initialize the backup poll alarm
-  EventEngine::Duration next_ares_backup_poll_alarm_duration =
-      calculate_next_ares_backup_poll_alarm_duration();
   GRPC_ARES_RESOLVER_TRACE_LOG(
-      "request:%p StartTimers next ares process poll time in %zu ms", this,
-      Milliseconds(next_ares_backup_poll_alarm_duration));
-
+      "request:%p MaybeStartTimerLocked next ares process poll time in %zu ms",
+      this, Milliseconds(kAresBackupPollAlarmDuration));
   ares_backup_poll_alarm_handle_ = event_engine_->RunAfter(
-      next_ares_backup_poll_alarm_duration,
+      kAresBackupPollAlarmDuration,
       [self = Ref(DEBUG_LOCATION, "MaybeStartTimerLocked")]() {
         self->OnAresBackupPollAlarm();
       });
@@ -503,6 +488,7 @@ void AresResolver::OnWritable(FdNode* fd_node, absl::Status status) {
 // https://github.com/grpc/grpc/pull/17688 description for more details.
 void AresResolver::OnAresBackupPollAlarm() {
   grpc_core::MutexLock lock(&mutex_);
+  ares_backup_poll_alarm_handle_.reset();
   GRPC_ARES_RESOLVER_TRACE_LOG(
       "request:%p OnAresBackupPollAlarm shutting_down=%d.", this,
       shutting_down_);
@@ -516,13 +502,7 @@ void AresResolver::OnAresBackupPollAlarm() {
         ares_process_fd(channel_, as, as);
       }
     }
-    EventEngine::Duration next_ares_backup_poll_alarm_duration =
-        calculate_next_ares_backup_poll_alarm_duration();
-    ares_backup_poll_alarm_handle_ = event_engine_->RunAfter(
-        next_ares_backup_poll_alarm_duration,
-        [self = Ref(DEBUG_LOCATION, "OnAresBackupPollAlarm")]() {
-          self->OnAresBackupPollAlarm();
-        });
+    MaybeStartTimerLocked();
     CheckSocketsLocked();
   }
 }
@@ -542,8 +522,8 @@ void AresResolver::OnHostbynameDoneLocked(void* arg, int status,
       std::move(nh.mapped()));
   if (status != ARES_SUCCESS) {
     std::string error_msg =
-        absl::StrFormat("c-ares status is not ARES_SUCCESS name=%s: %s",
-                        hostname_qa->qname.c_str(), ares_strerror(status));
+        absl::StrFormat("address lookup failed for %s: %s",
+                        hostname_qa->query_name, ares_strerror(status));
     GRPC_ARES_RESOLVER_TRACE_LOG("request:%p on_hostbyname_done_locked: %s",
                                  ares_resolver, error_msg.c_str());
     ares_resolver->event_engine_->Run(
@@ -610,8 +590,7 @@ void AresResolver::OnSRVQueryDoneLocked(void* arg, int status, int /*timeouts*/,
       std::move(nh.mapped()));
   if (status != ARES_SUCCESS) {
     std::string error_msg = absl::StrFormat(
-        "c-ares status is not ARES_SUCCESS qtype=SRV name=%s: %s",
-        qa->qname.c_str(), ares_strerror(status));
+        "SRV lookup failed for %s: %s", qa->query_name, ares_strerror(status));
     GRPC_ARES_RESOLVER_TRACE_LOG("request:%p on_srv_done_locked: %s",
                                  ares_resolver, error_msg.c_str());
     ares_resolver->event_engine_->Run(
@@ -625,8 +604,9 @@ void AresResolver::OnSRVQueryDoneLocked(void* arg, int status, int /*timeouts*/,
   const int parse_status = ares_parse_srv_reply(abuf, alen, &reply);
   GRPC_ARES_RESOLVER_TRACE_LOG("request:%p ares_parse_srv_reply: %d",
                                ares_resolver, parse_status);
-  std::vector<EventEngine::DNSResolver::SRVRecord> result;
+  absl::StatusOr<std::vector<EventEngine::DNSResolver::SRVRecord>> result;
   if (parse_status == ARES_SUCCESS) {
+    result.emplace();
     for (struct ares_srv_reply* srv_it = reply; srv_it != nullptr;
          srv_it = srv_it->next) {
       EventEngine::DNSResolver::SRVRecord record;
@@ -634,8 +614,12 @@ void AresResolver::OnSRVQueryDoneLocked(void* arg, int status, int /*timeouts*/,
       record.port = srv_it->port;
       record.priority = srv_it->priority;
       record.weight = srv_it->weight;
-      result.push_back(std::move(record));
+      result->push_back(std::move(record));
     }
+  } else {
+    result = AresStatusToAbslStatus(
+        parse_status, absl::StrFormat("Failed to parse srv reply: %s",
+                                      ares_strerror(parse_status)));
   }
   if (reply != nullptr) {
     ares_free_data(reply);
@@ -657,25 +641,28 @@ void AresResolver::OnTXTDoneLocked(void* arg, int status, int /*timeouts*/,
           nh.mapped()));
   auto callback = absl::get<EventEngine::DNSResolver::LookupTXTCallback>(
       std::move(nh.mapped()));
-  struct ares_txt_ext* reply = nullptr;
-  int parse_status = ARES_SUCCESS;
-  if (status == ARES_SUCCESS) {
-    GRPC_ARES_RESOLVER_TRACE_LOG(
-        "request:%p on_txt_done_locked name=%s ARES_SUCCESS", ares_resolver,
-        qa->qname.c_str());
-    parse_status = ares_parse_txt_reply_ext(buf, len, &reply);
-  }
-  if (status != ARES_SUCCESS || parse_status != ARES_SUCCESS) {
-    std::string error_msg = absl::StrFormat(
-        "c-ares status is not ARES_SUCCESS qtype=TXT name=%s: %s",
-        qa->qname.c_str(), ares_strerror(status));
+  auto fail = [&](absl::string_view prefix) {
+    std::string error_message = absl::StrFormat(
+        "%s for %s: %s", prefix, qa->query_name, ares_strerror(status));
     GRPC_ARES_RESOLVER_TRACE_LOG("request:%p on_txt_done_locked: %s",
-                                 ares_resolver, error_msg.c_str());
+                                 ares_resolver, error_message.c_str());
     ares_resolver->event_engine_->Run(
         [callback = std::move(callback),
-         status = AresStatusToAbslStatus(status, error_msg)]() mutable {
+         status = AresStatusToAbslStatus(status, error_message)]() mutable {
           callback(status);
         });
+  };
+  if (status != ARES_SUCCESS) {
+    fail("TXT lookup failed");
+    return;
+  }
+  struct ares_txt_ext* reply = nullptr;
+  GRPC_ARES_RESOLVER_TRACE_LOG(
+      "request:%p on_txt_done_locked name=%s ARES_SUCCESS", ares_resolver,
+      qa->query_name.c_str());
+  status = ares_parse_txt_reply_ext(buf, len, &reply);
+  if (status != ARES_SUCCESS) {
+    fail("parsing TXT result failed");
     return;
   }
   std::vector<std::string> result;
@@ -706,9 +693,9 @@ void AresResolver::OnTXTDoneLocked(void* arg, int status, int /*timeouts*/,
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-void noop_inject_channel_config(ares_channel /*channel*/) {}
+void noop_inject_channel_config(ares_channel* /*channel*/) {}
 
-void (*event_engine_grpc_ares_test_only_inject_config)(ares_channel channel) =
+void (*event_engine_grpc_ares_test_only_inject_config)(ares_channel* channel) =
     noop_inject_channel_config;
 
 #endif  // GRPC_ARES == 1

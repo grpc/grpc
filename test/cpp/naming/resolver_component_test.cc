@@ -540,7 +540,7 @@ int g_fake_non_responsive_dns_server_port = -1;
 // resolver. This is useful to effectively mock /etc/resolv.conf settings
 // (and equivalent on Windows), which unit tests don't have write permissions.
 //
-void InjectBrokenNameServerList(ares_channel channel) {
+void InjectBrokenNameServerList(ares_channel* channel) {
   struct ares_addr_port_node dns_server_addrs[2];
   memset(dns_server_addrs, 0, sizeof(dns_server_addrs));
   std::string unused_host;
@@ -569,7 +569,8 @@ void InjectBrokenNameServerList(ares_channel channel) {
   dns_server_addrs[1].tcp_port = atoi(local_dns_server_port.c_str());
   dns_server_addrs[1].udp_port = atoi(local_dns_server_port.c_str());
   dns_server_addrs[1].next = nullptr;
-  GPR_ASSERT(ares_set_servers_ports(channel, dns_server_addrs) == ARES_SUCCESS);
+  GPR_ASSERT(ares_set_servers_ports(*channel, dns_server_addrs) ==
+             ARES_SUCCESS);
 }
 
 void StartResolvingLocked(grpc_core::Resolver* r) { r->StartLocked(); }

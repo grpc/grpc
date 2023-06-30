@@ -64,6 +64,7 @@ using grpc_event_engine::experimental::EventEngine;
 using grpc_event_engine::experimental::URIToResolvedAddress;
 using SRVRecord = EventEngine::DNSResolver::SRVRecord;
 using testing::Pointwise;
+using testing::SizeIs;
 using testing::UnorderedPointwise;
 
 // TODO(yijiem): make this portable for Windows
@@ -308,8 +309,8 @@ TEST_F(EventEngineDNSTest, QuerySRVRecordWithLocalhost) {
   auto dns_resolver = CreateDefaultDNSResolver();
   dns_resolver->LookupSRV(
       [this](auto result) {
-        ASSERT_FALSE(result.ok());
-        EXPECT_STATUS(result, kUnknown);
+        ASSERT_TRUE(result.ok());
+        EXPECT_THAT(*result, SizeIs(0));
         dns_resolver_signal_.Notify();
       },
       "localhost:1000");
@@ -337,7 +338,7 @@ TEST_F(EventEngineDNSTest, QueryTXTRecord) {
   dns_resolver->LookupTXT(
       [&kExpectedRecord, this](auto result) {
         ASSERT_TRUE(result.ok());
-        EXPECT_EQ(result->size(), 2);
+        EXPECT_THAT(*result, SizeIs(2));
         EXPECT_EQ((*result)[0], kExpectedRecord);
         dns_resolver_signal_.Notify();
       },
@@ -349,8 +350,8 @@ TEST_F(EventEngineDNSTest, QueryTXTRecordWithLocalhost) {
   auto dns_resolver = CreateDefaultDNSResolver();
   dns_resolver->LookupTXT(
       [this](auto result) {
-        ASSERT_FALSE(result.ok());
-        EXPECT_STATUS(result, kUnknown);
+        ASSERT_TRUE(result.ok());
+        EXPECT_THAT(*result, SizeIs(0));
         dns_resolver_signal_.Notify();
       },
       "localhost:1000");

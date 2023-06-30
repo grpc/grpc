@@ -59,6 +59,9 @@ class AresResolver : public grpc_core::InternallyRefCounted<AresResolver> {
                      std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
                      std::shared_ptr<EventEngine> event_engine);
 
+  // Made public so that we can use grpc_core::MakeOrphanable.
+  AresResolver(std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
+               std::shared_ptr<EventEngine> event_engine, ares_channel channel);
   ~AresResolver() override;
   void Orphan() override ABSL_LOCKS_EXCLUDED(mutex_);
 
@@ -101,9 +104,6 @@ class AresResolver : public grpc_core::InternallyRefCounted<AresResolver> {
                     EventEngine::DNSResolver::LookupSRVCallback,
                     EventEngine::DNSResolver::LookupTXTCallback>;
 
-  AresResolver(std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
-               std::shared_ptr<EventEngine> event_engine, ares_channel channel);
-
   void CheckSocketsLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
   void MaybeStartTimerLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
   void OnReadable(FdNode* fd_node, absl::Status status)
@@ -141,7 +141,7 @@ class AresResolver : public grpc_core::InternallyRefCounted<AresResolver> {
 
 // Exposed in this header for C-core tests only
 extern void (*event_engine_grpc_ares_test_only_inject_config)(
-    ares_channel channel);
+    ares_channel* channel);
 
 #endif  // GRPC_ARES == 1
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_ARES_RESOLVER_H
