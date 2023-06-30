@@ -38,7 +38,7 @@ bool g_registered ABSL_GUARDED_BY(g_mu){false};
 grpc_core::NoDestruct<std::vector<Forkable*>> g_forkables ABSL_GUARDED_BY(g_mu);
 
 bool IsForkEnabled() {
-  static bool enabled = ConfigVars::Get().EnableForkSupport();
+  static bool enabled = grpc_core::ConfigVars::Get().EnableForkSupport();
   return enabled;
 }
 }  // namespace
