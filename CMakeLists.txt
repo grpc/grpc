@@ -12305,8 +12305,6 @@ target_link_libraries(forkable_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::flat_hash_set
-  absl::statusor
   gpr
 )
 
