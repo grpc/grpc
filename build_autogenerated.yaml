@@ -8007,8 +8007,6 @@ targets:
   - src/core/lib/event_engine/forkable.cc
   - test/core/event_engine/forkable_test.cc
   deps:
-  - absl/container:flat_hash_set
-  - absl/status:statusor
   - gpr
 - name: format_request_test
   gtest: true

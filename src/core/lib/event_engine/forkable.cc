@@ -16,11 +16,17 @@
 
 #include "src/core/lib/event_engine/forkable.h"
 
+#include <grpc/support/log.h>
+
 #ifdef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
 #include <pthread.h>
 #endif
 
+#include <algorithm>
+#include <utility>
 #include <vector>
+
+#include "absl/base/thread_annotations.h"
 
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gprpp/no_destruct.h"
