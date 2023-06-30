@@ -22,6 +22,7 @@
 
 #include "absl/container/flat_hash_set.h"
 
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/sync.h"
 
@@ -35,6 +36,11 @@ bool g_registered ABSL_GUARDED_BY(g_mu){false};
 // This must be ordered because there are ordering dependencies between
 // certain fork handlers.
 grpc_core::NoDestruct<std::vector<Forkable*>> g_forkables ABSL_GUARDED_BY(g_mu);
+
+bool IsForkEnabled() {
+  static bool enabled = ConfigVars::Get().EnableForkSupport();
+  return enabled;
+}
 }  // namespace
 
 Forkable::Forkable() { ManageForkable(this); }
@@ -42,43 +48,55 @@ Forkable::Forkable() { ManageForkable(this); }
 Forkable::~Forkable() { StopManagingForkable(this); }
 
 void RegisterForkHandlers() {
-  grpc_core::MutexLock lock(g_mu.get());
-  if (!std::exchange(g_registered, true)) {
-    pthread_atfork(PrepareFork, PostforkParent, PostforkChild);
+  if (IsForkEnabled()) {
+    grpc_core::MutexLock lock(g_mu.get());
+    if (!std::exchange(g_registered, true)) {
+      pthread_atfork(PrepareFork, PostforkParent, PostforkChild);
+    }
   }
 };
 
 void PrepareFork() {
-  grpc_core::MutexLock lock(g_mu.get());
-  for (auto forkable_iter = g_forkables->rbegin();
-       forkable_iter != g_forkables->rend(); ++forkable_iter) {
-    (*forkable_iter)->PrepareFork();
+  if (IsForkEnabled()) {
+    grpc_core::MutexLock lock(g_mu.get());
+    for (auto forkable_iter = g_forkables->rbegin();
+         forkable_iter != g_forkables->rend(); ++forkable_iter) {
+      (*forkable_iter)->PrepareFork();
+    }
   }
 }
 void PostforkParent() {
-  grpc_core::MutexLock lock(g_mu.get());
-  for (auto* forkable : *g_forkables) {
-    forkable->PostforkParent();
+  if (IsForkEnabled()) {
+    grpc_core::MutexLock lock(g_mu.get());
+    for (auto* forkable : *g_forkables) {
+      forkable->PostforkParent();
+    }
   }
 }
 
 void PostforkChild() {
-  grpc_core::MutexLock lock(g_mu.get());
-  for (auto* forkable : *g_forkables) {
-    forkable->PostforkChild();
+  if (IsForkEnabled()) {
+    grpc_core::MutexLock lock(g_mu.get());
+    for (auto* forkable : *g_forkables) {
+      forkable->PostforkChild();
+    }
   }
 }
 
 void ManageForkable(Forkable* forkable) {
-  grpc_core::MutexLock lock(g_mu.get());
-  g_forkables->push_back(forkable);
+  if (IsForkEnabled()) {
+    grpc_core::MutexLock lock(g_mu.get());
+    g_forkables->push_back(forkable);
+  }
 }
 
 void StopManagingForkable(Forkable* forkable) {
-  grpc_core::MutexLock lock(g_mu.get());
-  auto iter = std::find(g_forkables->begin(), g_forkables->end(), forkable);
-  GPR_ASSERT(iter != g_forkables->end());
-  g_forkables->erase(iter);
+  if (IsForkEnabled()) {
+    grpc_core::MutexLock lock(g_mu.get());
+    auto iter = std::find(g_forkables->begin(), g_forkables->end(), forkable);
+    GPR_ASSERT(iter != g_forkables->end());
+    g_forkables->erase(iter);
+  }
 }
 
 }  // namespace experimental
