@@ -17,10 +17,10 @@
 #include "src/core/lib/event_engine/forkable.h"
 
 #ifdef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
-
 #include <pthread.h>
+#endif
 
-#include "absl/container/flat_hash_set.h"
+#include <vector>
 
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gprpp/no_destruct.h"
@@ -51,7 +51,9 @@ void RegisterForkHandlers() {
   if (IsForkEnabled()) {
     grpc_core::MutexLock lock(g_mu.get());
     if (!std::exchange(g_registered, true)) {
+#ifdef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
       pthread_atfork(PrepareFork, PostforkParent, PostforkChild);
+#endif
     }
   }
 };
@@ -101,24 +103,3 @@ void StopManagingForkable(Forkable* forkable) {
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
-
-#else  // GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
-
-namespace grpc_event_engine {
-namespace experimental {
-
-Forkable::Forkable() {}
-Forkable::~Forkable() {}
-
-void RegisterForkHandlers() {}
-void PrepareFork() {}
-void PostforkParent() {}
-void PostforkChild() {}
-
-void ManageForkable(Forkable* /* forkable */) {}
-void StopManagingForkable(Forkable* /* forkable */) {}
-
-}  // namespace experimental
-}  // namespace grpc_event_engine
-
-#endif  // GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK

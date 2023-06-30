@@ -26,13 +26,10 @@ int main(int /* argc */, char** /* argv */) { return 0; }
 
 #include <gtest/gtest.h>
 
-#include "absl/time/clock.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/event_engine/forkable.h"
-#include "src/core/lib/gprpp/crash.h"
 
 namespace {
 using ::grpc_event_engine::experimental::Forkable;
@@ -41,7 +38,6 @@ using ::grpc_event_engine::experimental::RegisterForkHandlers;
 
 class ForkableTest : public testing::Test {};
 
-#ifdef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
 TEST_F(ForkableTest, BasicPthreadAtForkOperations) {
   class SomeForkable : public Forkable {
    public:
@@ -50,15 +46,27 @@ TEST_F(ForkableTest, BasicPthreadAtForkOperations) {
     void PostforkChild() override { child_called_ = true; }
 
     void CheckParent() {
+#ifdef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
       EXPECT_TRUE(prepare_called_);
       EXPECT_TRUE(parent_called_);
       EXPECT_FALSE(child_called_);
+#else
+      EXPECT_FALSE(prepare_called_);
+      EXPECT_FALSE(parent_called_);
+      EXPECT_FALSE(child_called_);
+#endif
     }
 
     void CheckChild() {
+#ifdef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
       EXPECT_TRUE(prepare_called_);
       EXPECT_FALSE(parent_called_);
       EXPECT_TRUE(child_called_);
+#else
+      EXPECT_FALSE(prepare_called_);
+      EXPECT_FALSE(parent_called_);
+      EXPECT_FALSE(child_called_);
+#endif
     }
 
    private:
@@ -92,7 +100,44 @@ TEST_F(ForkableTest, BasicPthreadAtForkOperations) {
     }
   }
 }
-#endif  // GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
+
+TEST_F(ForkableTest, NonPthreadManualForkOperations) {
+  // Manually simulates a fork event for non-pthread-enabled environments
+#ifdef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
+  return;
+#endif
+
+  class SomeForkable : public Forkable {
+   public:
+    void PrepareFork() override { prepare_called_ = true; }
+    void PostforkParent() override { parent_called_ = true; }
+    void PostforkChild() override { child_called_ = true; }
+
+    // bool prepare_called() { return prepare_called_; }
+    // bool parent_called() { return parent_called_; }
+    // bool child_called() { return child_called_; }
+
+    void AssertStates(bool prepare, bool parent, bool child) {
+      EXPECT_EQ(prepare_called_, prepare);
+      EXPECT_EQ(parent_called_, parent);
+      EXPECT_EQ(child_called_, child);
+    }
+
+   private:
+    bool prepare_called_ = false;
+    bool parent_called_ = false;
+    bool child_called_ = false;
+  };
+
+  SomeForkable forkable;
+  forkable.AssertStates(/*prepare=*/false, /*parent=*/false, /*child=*/false);
+  grpc_event_engine::experimental::PrepareFork();
+  forkable.AssertStates(/*prepare=*/true, /*parent=*/false, /*child=*/false);
+  grpc_event_engine::experimental::PostforkParent();
+  forkable.AssertStates(/*prepare=*/true, /*parent=*/true, /*child=*/false);
+  grpc_event_engine::experimental::PostforkChild();
+  forkable.AssertStates(/*prepare=*/true, /*parent=*/true, /*child=*/true);
+}
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
