@@ -16,6 +16,13 @@ reference types in the generated code.
 
 ## Background
 
+A note on the terminology used in this document for the various *.NET* versions:
+- *.NET Framework* - the implementation of *.NET* that runs only on Windows, such 
+  as *.NET Framework 4.8.1*
+- *.NET Core* - within this document, references to *.NET Core* are intended to include
+ *.NET Core 3.1*, *.NET 5*, and later. Strictly Microsoft refers to all versions
+ from *.NET 5* and later as just *.NET*. 
+
 *Nullable reference types* refers to a group of optional features introduced 
 in C# 8.0 to enable the compiler to do static flow analysis to determine if a
 variable might be null before it is dereferenced. They are compile time features
@@ -42,6 +49,7 @@ The reasons for currently maintaining the status quo are summarised here:
 2. *.NET Framework* projects default to using C# 7.3
 3. Building gRPC projects with nullable enabled works today
 4. Breaking backwards compatibility with gRPC service classes
+5. Keeping the generated code simple and consistent
 
 There are very few disadvantages to not supporting nullable reference types in
 the generated code. These are given later.
@@ -98,6 +106,20 @@ questionable as the only caller of these methods is the server hosting the
 services, not user code. Therefore this may not be an issue if it is not needed 
 to be done.
 
+### 5. Keeping the generated code simple and consistent
+
+It would be possible to generate different code for nullable and non-nullable contexts
+depending on some configuration, or to generate conditional code containing `#if` 
+everywhere.
+
+Generating different code depending on configuration could lead to confusion or errors
+if code generated in one project with nullable enabled was consumed in another project 
+that did not have nullable enabled. It would also have an impact on the level of 
+testing that would need to be done.
+
+Generating conditional code would produce messy and potentially convoluted code, again
+having an impact on testing.
+
 ## Disadvantages of this propsal
 
 There are a few places where adding annotations or attributes to the generated
@@ -117,6 +139,9 @@ time checks cannot be done.
 
 Changes to `Google.Protobuf` library and other libraries 
 (such as `Google.Api.CommonProtos`) are outside the scope of this proposal.
+
+There is a separate long-standing effort to enable null reference types for 
+`Google.Protobuf`.
 
 ### Exposing protocol buffers optional fields as nullable properties
 
@@ -151,7 +176,9 @@ Options for enabling this feature:
   - Like those in https://github.com/grpc/grpc-dotnet/blob/master/src/Shared/NullableAttributes.cs
   - Where would these definitions of nullable attributes be defined?
   Don’t want to define them in every generated C# file. Is there a single 
-  library where they could live?
+  library where they could live? Putting the annotations in any shared library would mean
+  they would have to be public rather than internal, which then may cause issues with
+  potential collisions.
 
 - Add command line options to `protoc` and `grpc_csharp_plugin` 
   - Option would have to be passed to both `protoc` and `grpc_csharp_plugin`
