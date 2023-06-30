@@ -102,14 +102,11 @@ TEST_P(PickFirstTest, PickFirstConfigurationIsPropagated) {
                                            start_index, start_index + 3)}})));
     auto result = WaitForAnyBackendHit(start_index, start_index + 3);
     ASSERT_TRUE(result.ok()) << result.status();
-    size_t backend_index = *result;
-    if ((backend_index - start_index) > 0) {
-      return;
-    }
+    if (*result != start_index) return;
     // Toggle between backends 0-2 and 3-5
     start_index = 3 - start_index;
   }
-  FAIL() << "did not choose a different backend after 100 tries";
+  FAIL() << "did not choose a different backend";
 }
 }  // namespace
 }  // namespace testing
