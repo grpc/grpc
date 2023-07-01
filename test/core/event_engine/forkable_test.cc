@@ -37,10 +37,8 @@ using ::grpc_event_engine::experimental::RegisterForkHandlers;
 
 class ForkableTest : public testing::Test {};
 
+#ifdef GPR_POSIX_SUBPROCESS
 TEST_F(ForkableTest, BasicPthreadAtForkOperations) {
-#ifndef GPR_POSIX_SUBPROCESS
-  GTEST_SKIP("fork() and waitpid() are not supported on this platform.");
-#endif
   class SomeForkable : public Forkable {
    public:
     void PrepareFork() override { prepare_called_ = true; }
@@ -102,6 +100,7 @@ TEST_F(ForkableTest, BasicPthreadAtForkOperations) {
     }
   }
 }
+#endif  // GPR_POSIX_SUBPROCESS
 
 TEST_F(ForkableTest, NonPthreadManualForkOperations) {
   // Manually simulates a fork event for non-pthread-enabled environments
