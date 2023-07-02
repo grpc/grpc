@@ -56,6 +56,7 @@ TEST(CFEventEngineTest, TestConnectionTimeout) {
       *resolved_addr, config, memory_quota.CreateMemoryAllocator("conn1"), 1ms);
 
   client_signal.WaitForNotification();
+  GPR_ASSERT(false);
 }
 
 TEST(CFEventEngineTest, TestConnectionCancelled) {

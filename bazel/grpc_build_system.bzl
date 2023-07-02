@@ -243,6 +243,7 @@ def ios_cc_test(
       tags: The tags to apply to the test.
       **kwargs: All other arguments to apply.
     """
+    test_lib_cc = name + "_test_lib_cc"
     test_lib_ios = name + "_test_lib_ios"
     ios_tags = tags + ["manual", "ios_cc_test"]
     test_runner = "ios_x86_64_sim_runner_" + name
@@ -251,13 +252,19 @@ def ios_cc_test(
         device_type = "iPhone X",
     )
     if not any([t for t in tags if t.startswith("no_test_ios")]):
-        native.objc_library(
-            name = test_lib_ios,
+        native.cc_library(
+            name = test_lib_cc,
             srcs = kwargs.get("srcs"),
             deps = kwargs.get("deps"),
             copts = kwargs.get("copts"),
             data = kwargs.get("data"),
             tags = ios_tags,
+            alwayslink = 1,
+            testonly = 1,
+        )
+        native.objc_library(
+            name = test_lib_ios,
+            deps = [":" + test_lib_cc],
             alwayslink = 1,
             testonly = 1,
         )
@@ -267,7 +274,7 @@ def ios_cc_test(
             size = kwargs.get("size"),
             data = kwargs.get("data"),
             tags = ios_tags,
-            minimum_os_version = "9.0",
+            minimum_os_version = "11.0",
             runner = test_runner,
             deps = ios_test_deps,
         )
