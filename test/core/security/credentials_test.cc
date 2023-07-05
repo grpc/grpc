@@ -2561,13 +2561,10 @@ TEST(
   grpc_error_handle error1, error2;
   auto json1 = JsonParse(options_string1);
   std::vector<std::string> scopes1 = {"scope1", "scope2"};
-  gpr_log(GPR_INFO, "Create Credentials!\n");
   ExternalAccountCredentials::Create(*json1, std::move(scopes1), &error1);
   std::string actual_error1,
       expected_error1 = "token_lifetime_seconds must be more than 600s";
   grpc_error_get_str(error1, StatusStrProperty::kDescription, &actual_error1);
-  gpr_log(GPR_INFO, "expected_error: %s", expected_error1.c_str());
-  gpr_log(GPR_INFO, "actual_error: %s", actual_error1.c_str());
   GPR_ASSERT(strcmp(actual_error1.c_str(), expected_error1.c_str()) == 0);
 
   const char* options_string2 =

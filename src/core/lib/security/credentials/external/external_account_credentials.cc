@@ -209,12 +209,12 @@ RefCountedPtr<ExternalAccountCredentials> ExternalAccountCredentials::Create(
     auto service_acc_imp_obj_it =
         service_acc_imp_json.object().find("token_lifetime_seconds");
     if (service_acc_imp_obj_it != it->second.object().end()) {
-      if (service_acc_imp_obj_it->second.type() != Json::Type::kNumber) {
+      if (!absl::SimpleAtoi(
+              service_acc_imp_obj_it->second.string().c_str(),
+              &options.service_account_impersonation.token_lifetime_seconds)) {
         *error = GRPC_ERROR_CREATE("token_lifetime_seconds must be a number");
         return nullptr;
       }
-      options.service_account_impersonation.token_lifetime_seconds =
-          strtol(service_acc_imp_obj_it->second.string().c_str(), nullptr, 10);
       if (options.service_account_impersonation.token_lifetime_seconds >
           IMPERSONATED_CRED_MAX_LIFETIME_IN_SECONDS) {
         *error = GRPC_ERROR_CREATE(
