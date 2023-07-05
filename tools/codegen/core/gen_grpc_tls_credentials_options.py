@@ -160,7 +160,15 @@ _DATA_MEMBERS = [
         setter_move_semantics=True,
         test_name="DifferentCrlDirectory",
         test_value_1="\"crl_directory_1\"",
-        test_value_2="\"crl_directory_2\"")
+        test_value_2="\"crl_directory_2\""),
+    DataMember(
+        name="send_client_ca_list",
+        type="bool",
+        default_initializer="false",
+        test_name="DifferentSendClientCaListValues",
+        test_value_1="false",
+        test_value_2="true",
+    ),
 ]
 
 
