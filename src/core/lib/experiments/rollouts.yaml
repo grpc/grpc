@@ -60,5 +60,5 @@
   default: false
 - name: server_privacy
   default: false
-- name: chttp2_allow_config_override_keepalive_permit_without_calls
+- name: keepalive_fix
   default: false

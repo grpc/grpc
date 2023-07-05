@@ -378,8 +378,7 @@ static void read_channel_args(grpc_chttp2_transport* t,
       channel_args.GetDurationFromIntMillis(GRPC_ARG_KEEPALIVE_TIMEOUT_MS)
           .value_or(t->is_client ? g_default_client_keepalive_timeout
                                  : g_default_server_keepalive_timeout));
-  if (grpc_core::
-          IsChttp2AllowConfigOverrideKeepalivePermitWithoutCallsEnabled()) {
+  if (grpc_core::IsKeepaliveFixEnabled()) {
     t->keepalive_permit_without_calls =
         channel_args.GetBool(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS)
             .value_or(t->is_client

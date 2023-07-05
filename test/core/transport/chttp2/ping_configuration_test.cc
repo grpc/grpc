@@ -168,8 +168,7 @@ TEST_F(ConfigurationTest, ModifyServerDefaults) {
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(&argc, argv);
-  grpc_core::ForceEnableExperiment(
-      "chttp2_allow_config_override_keepalive_permit_without_calls", true);
+  grpc_core::ForceEnableExperiment("keepalive_fix", true);
   grpc_init();
   auto ret = RUN_ALL_TESTS();
   grpc_shutdown();
