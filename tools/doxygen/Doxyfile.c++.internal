@@ -1292,6 +1292,8 @@ src/core/ext/transport/chttp2/transport/hpack_encoder.cc \
 src/core/ext/transport/chttp2/transport/hpack_encoder.h \
 src/core/ext/transport/chttp2/transport/hpack_encoder_table.cc \
 src/core/ext/transport/chttp2/transport/hpack_encoder_table.h \
+src/core/ext/transport/chttp2/transport/hpack_parse_result.cc \
+src/core/ext/transport/chttp2/transport/hpack_parse_result.h \
 src/core/ext/transport/chttp2/transport/hpack_parser.cc \
 src/core/ext/transport/chttp2/transport/hpack_parser.h \
 src/core/ext/transport/chttp2/transport/hpack_parser_table.cc \
