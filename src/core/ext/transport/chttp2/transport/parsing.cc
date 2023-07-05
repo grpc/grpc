@@ -55,7 +55,6 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/combiner.h"
-#include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/bdp_estimator.h"
@@ -65,8 +64,6 @@
 #include "src/core/lib/transport/transport.h"
 
 using grpc_core::HPackParser;
-
-grpc_core::TraceFlag grpc_trace_chttp2_new_stream(false, "chttp2_new_stream");
 
 static grpc_error_handle init_frame_parser(grpc_chttp2_transport* t);
 static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
@@ -646,12 +643,6 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
       GRPC_CHTTP2_IF_TRACING(
           gpr_log(GPR_ERROR, "grpc_chttp2_stream not accepted"));
       return init_header_skip_frame_parser(t, priority_type);
-    }
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
-        GRPC_TRACE_FLAG_ENABLED(grpc_trace_chttp2_new_stream)) {
-      gpr_log(GPR_INFO, "[t:%p fd:%d peer:%s] Accepting new stream", t,
-              grpc_endpoint_get_fd(t->ep),
-              std::string(t->peer_string.as_string_view()).c_str());
     }
     if (t->channelz_socket != nullptr) {
       t->channelz_socket->RecordStreamStartedFromRemote();
