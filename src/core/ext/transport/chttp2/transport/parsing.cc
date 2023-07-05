@@ -23,7 +23,6 @@
 
 #include <initializer_list>
 #include <string>
-#include <utility>
 
 #include "absl/base/attributes.h"
 #include "absl/status/status.h"
@@ -469,8 +468,8 @@ static HPackParser::LogInfo hpack_parser_log_info(
 }
 
 static grpc_error_handle init_header_skip_frame_parser(
-    grpc_chttp2_transport* t, HPackParser::Priority priority_type) {
-  bool is_eoh = t->expect_continuation_stream_id != 0;
+    grpc_chttp2_transport* t, HPackParser::Priority priority_type,
+    bool is_eoh) {
   t->parser = grpc_chttp2_transport::Parser{
       "header", grpc_chttp2_header_parser_parse, &t->hpack_parser};
   t->hpack_parser.BeginFrame(
@@ -594,7 +593,7 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
       GRPC_CHTTP2_IF_TRACING(
           gpr_log(GPR_ERROR,
                   "grpc_chttp2_stream disbanded before CONTINUATION received"));
-      return init_header_skip_frame_parser(t, priority_type);
+      return init_header_skip_frame_parser(t, priority_type, is_eoh);
     }
     if (t->is_client) {
       if (GPR_LIKELY((t->incoming_stream_id & 1) &&
@@ -604,7 +603,7 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
         GRPC_CHTTP2_IF_TRACING(gpr_log(
             GPR_ERROR, "ignoring new grpc_chttp2_stream creation on client"));
       }
-      return init_header_skip_frame_parser(t, priority_type);
+      return init_header_skip_frame_parser(t, priority_type, is_eoh);
     } else if (GPR_UNLIKELY(t->last_new_stream_id >= t->incoming_stream_id)) {
       GRPC_CHTTP2_IF_TRACING(gpr_log(
           GPR_ERROR,
@@ -612,13 +611,13 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
           "last grpc_chttp2_stream "
           "id=%d, new grpc_chttp2_stream id=%d",
           t->last_new_stream_id, t->incoming_stream_id));
-      return init_header_skip_frame_parser(t, priority_type);
+      return init_header_skip_frame_parser(t, priority_type, is_eoh);
     } else if (GPR_UNLIKELY((t->incoming_stream_id & 1) == 0)) {
       GRPC_CHTTP2_IF_TRACING(gpr_log(
           GPR_ERROR,
           "ignoring grpc_chttp2_stream with non-client generated index %d",
           t->incoming_stream_id));
-      return init_header_skip_frame_parser(t, priority_type);
+      return init_header_skip_frame_parser(t, priority_type, is_eoh);
     } else if (GPR_UNLIKELY(
                    grpc_chttp2_stream_map_size(&t->stream_map) >=
                    t->settings[GRPC_ACKED_SETTINGS]
@@ -631,7 +630,7 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
           "grpc_chttp2_stream request id=%d, last grpc_chttp2_stream id=%d",
           t, t->peer_string.c_str(), t->incoming_stream_id,
           t->last_new_stream_id));
-      return init_header_skip_frame_parser(t, priority_type);
+      return init_header_skip_frame_parser(t, priority_type, is_eoh);
     }
     t->last_new_stream_id = t->incoming_stream_id;
     s = t->incoming_stream =
@@ -639,7 +638,7 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
     if (GPR_UNLIKELY(s == nullptr)) {
       GRPC_CHTTP2_IF_TRACING(
           gpr_log(GPR_ERROR, "grpc_chttp2_stream not accepted"));
-      return init_header_skip_frame_parser(t, priority_type);
+      return init_header_skip_frame_parser(t, priority_type, is_eoh);
     }
     if (t->channelz_socket != nullptr) {
       t->channelz_socket->RecordStreamStartedFromRemote();
@@ -653,7 +652,7 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
     GRPC_CHTTP2_IF_TRACING(gpr_log(
         GPR_ERROR, "skipping already closed grpc_chttp2_stream header"));
     t->incoming_stream = nullptr;
-    return init_header_skip_frame_parser(t, priority_type);
+    return init_header_skip_frame_parser(t, priority_type, is_eoh);
   }
   t->parser = grpc_chttp2_transport::Parser{
       "header", grpc_chttp2_header_parser_parse, &t->hpack_parser};
@@ -686,7 +685,7 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
       break;
     case 2:
       gpr_log(GPR_ERROR, "too many header frames received");
-      return init_header_skip_frame_parser(t, priority_type);
+      return init_header_skip_frame_parser(t, priority_type, is_eoh);
   }
   if (frame_type == HPackParser::LogInfo::kTrailers && !t->header_eof) {
     return GRPC_ERROR_CREATE(
@@ -814,8 +813,9 @@ static grpc_error_handle parse_frame_slice(grpc_chttp2_transport* t,
                          &unused)) {
     grpc_chttp2_parsing_become_skip_parser(t);
     if (s) {
-      grpc_chttp2_cancel_stream(t, s, std::exchange(err, absl::OkStatus()));
+      grpc_chttp2_cancel_stream(t, s, err);
     }
+    return absl::OkStatus();
   }
   return err;
 }
