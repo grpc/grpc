@@ -26,6 +26,7 @@ grpc_proto_fuzzer(
     corpus = "hpack_parser_corpus",
     proto = "hpack_parser_fuzzer.proto",
     tags = ["no_windows"],
+    uses_polling = False,
     deps = [
         "//:grpc",
         "//test/core/util:grpc_test_util",
@@ -38,6 +39,7 @@ grpc_proto_fuzzer(
     corpus = "hpack_sync_corpus",
     proto = "hpack_sync_fuzzer.proto",
     tags = ["no_windows"],
+    uses_polling = False,
     deps = [
         "//:grpc",
         "//test/core/util:grpc_test_util",
@@ -71,6 +73,7 @@ grpc_fuzzer(
         "absl/status",
     ],
     tags = ["no_windows"],
+    uses_polling = False,
     deps = [
         "//:grpc",
         "//test/core/util:grpc_test_util",
@@ -150,20 +153,6 @@ grpc_cc_test(
         "//:grpc",
         "//src/core:slice",
         "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "ping_configuration_test",
-    srcs = ["ping_configuration_test.cc"],
-    external_deps = ["gtest"],
-    language = "C++",
-    uses_polling = False,
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
-        "//test/core/util:grpc_test_util_base",
     ],
 )
 

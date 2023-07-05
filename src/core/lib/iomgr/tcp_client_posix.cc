@@ -117,6 +117,8 @@ static grpc_error_handle prepare_socket(
     if (!err.ok()) goto error;
     err = grpc_set_socket_reuse_addr(fd, 1);
     if (!err.ok()) goto error;
+    err = grpc_set_socket_dscp(fd, options.dscp);
+    if (!err.ok()) goto error;
     err = grpc_set_socket_tcp_user_timeout(fd, options, true /* is_client */);
     if (!err.ok()) goto error;
   }

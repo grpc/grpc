@@ -93,6 +93,8 @@ EXTERNAL_DEPS = {
     "absl/types/variant.h": "absl/types:variant",
     "absl/utility/utility.h": "absl/utility",
     "address_sorting/address_sorting.h": "address_sorting",
+    "api/include/opentelemetry/metrics/provider.h": "otel/api",
+    "sdk/include/opentelemetry/sdk/metrics/meter_provider.h": "otel/sdk/src/metrics",
     "ares.h": "cares",
     "fuzztest/fuzztest.h": ["fuzztest", "fuzztest_main"],
     "google/api/monitored_resource.pb.h": (
@@ -158,6 +160,7 @@ INTERNAL_DEPS = {
         "//test/core/event_engine/fuzzing_event_engine"
     ),
     "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h": "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto",
+    "test/core/experiments/test_experiments.h": "//test/core/experiments:test_experiments_lib",
     "google/api/expr/v1alpha1/syntax.upb.h": "google_type_expr_upb",
     "google/rpc/status.upb.h": "google_rpc_status_upb",
     "google/protobuf/any.upb.h": "protobuf_any_upb",
@@ -379,6 +382,7 @@ for dirname in [
     "test/core/promise",
     "test/core/resource_quota",
     "test/core/transport/chaotic_good",
+    "test/cpp/ext/filters/otel",
     "fuzztest",
     "fuzztest/core/channel",
 ]:
