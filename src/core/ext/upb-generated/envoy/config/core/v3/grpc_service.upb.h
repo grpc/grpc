@@ -55,6 +55,7 @@ extern const upb_MiniTable envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelAr
 extern const upb_MiniTable envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_ArgsEntry_msg_init;
 struct envoy_config_core_v3_DataSource;
 struct envoy_config_core_v3_HeaderValue;
+struct envoy_config_core_v3_RetryPolicy;
 struct google_protobuf_Any;
 struct google_protobuf_Duration;
 struct google_protobuf_Empty;
@@ -62,6 +63,7 @@ struct google_protobuf_Struct;
 struct google_protobuf_UInt32Value;
 extern const upb_MiniTable envoy_config_core_v3_DataSource_msg_init;
 extern const upb_MiniTable envoy_config_core_v3_HeaderValue_msg_init;
+extern const upb_MiniTable envoy_config_core_v3_RetryPolicy_msg_init;
 extern const upb_MiniTable google_protobuf_Any_msg_init;
 extern const upb_MiniTable google_protobuf_Duration_msg_init;
 extern const upb_MiniTable google_protobuf_Empty_msg_init;
@@ -296,35 +298,62 @@ UPB_INLINE char* envoy_config_core_v3_GrpcService_EnvoyGrpc_serialize_ex(const e
   return ptr;
 }
 UPB_INLINE void envoy_config_core_v3_GrpcService_EnvoyGrpc_clear_cluster_name(envoy_config_core_v3_GrpcService_EnvoyGrpc* msg) {
-  const upb_MiniTableField field = {1, 0, 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE upb_StringView envoy_config_core_v3_GrpcService_EnvoyGrpc_cluster_name(const envoy_config_core_v3_GrpcService_EnvoyGrpc* msg) {
   upb_StringView default_val = upb_StringView_FromString("");
   upb_StringView ret;
-  const upb_MiniTableField field = {1, 0, 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
 UPB_INLINE void envoy_config_core_v3_GrpcService_EnvoyGrpc_clear_authority(envoy_config_core_v3_GrpcService_EnvoyGrpc* msg) {
-  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE upb_StringView envoy_config_core_v3_GrpcService_EnvoyGrpc_authority(const envoy_config_core_v3_GrpcService_EnvoyGrpc* msg) {
   upb_StringView default_val = upb_StringView_FromString("");
   upb_StringView ret;
-  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
+UPB_INLINE void envoy_config_core_v3_GrpcService_EnvoyGrpc_clear_retry_policy(envoy_config_core_v3_GrpcService_EnvoyGrpc* msg) {
+  const upb_MiniTableField field = {3, UPB_SIZE(4, 40), 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
+}
+UPB_INLINE const struct envoy_config_core_v3_RetryPolicy* envoy_config_core_v3_GrpcService_EnvoyGrpc_retry_policy(const envoy_config_core_v3_GrpcService_EnvoyGrpc* msg) {
+  const struct envoy_config_core_v3_RetryPolicy* default_val = NULL;
+  const struct envoy_config_core_v3_RetryPolicy* ret;
+  const upb_MiniTableField field = {3, UPB_SIZE(4, 40), 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
+}
+UPB_INLINE bool envoy_config_core_v3_GrpcService_EnvoyGrpc_has_retry_policy(const envoy_config_core_v3_GrpcService_EnvoyGrpc* msg) {
+  const upb_MiniTableField field = {3, UPB_SIZE(4, 40), 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
+}
 
 UPB_INLINE void envoy_config_core_v3_GrpcService_EnvoyGrpc_set_cluster_name(envoy_config_core_v3_GrpcService_EnvoyGrpc *msg, upb_StringView value) {
-  const upb_MiniTableField field = {1, 0, 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void envoy_config_core_v3_GrpcService_EnvoyGrpc_set_authority(envoy_config_core_v3_GrpcService_EnvoyGrpc *msg, upb_StringView value) {
-  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   _upb_Message_SetNonExtensionField(msg, &field, &value);
+}
+UPB_INLINE void envoy_config_core_v3_GrpcService_EnvoyGrpc_set_retry_policy(envoy_config_core_v3_GrpcService_EnvoyGrpc *msg, struct envoy_config_core_v3_RetryPolicy* value) {
+  const upb_MiniTableField field = {3, UPB_SIZE(4, 40), 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
+}
+UPB_INLINE struct envoy_config_core_v3_RetryPolicy* envoy_config_core_v3_GrpcService_EnvoyGrpc_mutable_retry_policy(envoy_config_core_v3_GrpcService_EnvoyGrpc* msg, upb_Arena* arena) {
+  struct envoy_config_core_v3_RetryPolicy* sub = (struct envoy_config_core_v3_RetryPolicy*)envoy_config_core_v3_GrpcService_EnvoyGrpc_retry_policy(msg);
+  if (sub == NULL) {
+    sub = (struct envoy_config_core_v3_RetryPolicy*)_upb_Message_New(&envoy_config_core_v3_RetryPolicy_msg_init, arena);
+    if (sub) envoy_config_core_v3_GrpcService_EnvoyGrpc_set_retry_policy(msg, sub);
+  }
+  return sub;
 }
 
 /* envoy.config.core.v3.GrpcService.GoogleGrpc */

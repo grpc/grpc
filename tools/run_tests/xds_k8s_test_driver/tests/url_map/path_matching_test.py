@@ -39,77 +39,82 @@ _NUM_RPCS = 150
 
 def _is_supported(config: skips.TestConfig) -> bool:
     if config.client_lang == _Lang.NODE:
-        return config.version_gte('v1.3.x')
+        return config.version_gte("v1.3.x")
     return True
 
 
 class TestFullPathMatchEmptyCall(xds_url_map_testcase.XdsUrlMapTestCase):
-
     @staticmethod
     def is_supported(config: skips.TestConfig) -> bool:
         return _is_supported(config)
 
     @staticmethod
     def url_map_change(
-            host_rule: HostRule,
-            path_matcher: PathMatcher) -> Tuple[HostRule, PathMatcher]:
-        path_matcher["routeRules"] = [{
-            'priority': 0,
-            # FullPath EmptyCall -> alternate_backend_service.
-            'matchRules': [{
-                'fullPathMatch': '/grpc.testing.TestService/EmptyCall'
-            }],
-            'service': GcpResourceManager().alternative_backend_service()
-        }]
+        host_rule: HostRule, path_matcher: PathMatcher
+    ) -> Tuple[HostRule, PathMatcher]:
+        path_matcher["routeRules"] = [
+            {
+                "priority": 0,
+                # FullPath EmptyCall -> alternate_backend_service.
+                "matchRules": [
+                    {"fullPathMatch": "/grpc.testing.TestService/EmptyCall"}
+                ],
+                "service": GcpResourceManager().alternative_backend_service(),
+            }
+        ]
         return host_rule, path_matcher
 
     def xds_config_validate(self, xds_config: DumpedXdsConfig):
         self.assertNumEndpoints(xds_config, 2)
         self.assertEqual(
-            xds_config.rds['virtualHosts'][0]['routes'][0]['match']['path'],
-            "/grpc.testing.TestService/EmptyCall")
-
-    def rpc_distribution_validate(self, test_client: XdsTestClient):
-        rpc_distribution = self.configure_and_send(test_client,
-                                                   rpc_types=[RpcTypeEmptyCall],
-                                                   num_rpcs=_NUM_RPCS)
-        self.assertEqual(
-            _NUM_RPCS,
-            rpc_distribution.empty_call_alternative_service_rpc_count)
-
-
-class TestFullPathMatchUnaryCall(xds_url_map_testcase.XdsUrlMapTestCase):
-
-    @staticmethod
-    def is_supported(config: skips.TestConfig) -> bool:
-        return _is_supported(config)
-
-    @staticmethod
-    def url_map_change(
-            host_rule: HostRule,
-            path_matcher: PathMatcher) -> Tuple[HostRule, PathMatcher]:
-        path_matcher["routeRules"] = [{
-            'priority': 0,
-            # FullPath EmptyCall -> alternate_backend_service.
-            'matchRules': [{
-                'fullPathMatch': '/grpc.testing.TestService/UnaryCall'
-            }],
-            'service': GcpResourceManager().alternative_backend_service()
-        }]
-        return host_rule, path_matcher
-
-    def xds_config_validate(self, xds_config: DumpedXdsConfig):
-        self.assertNumEndpoints(xds_config, 2)
-        self.assertEqual(
-            xds_config.rds['virtualHosts'][0]['routes'][0]['match']['path'],
-            "/grpc.testing.TestService/UnaryCall")
+            xds_config.rds["virtualHosts"][0]["routes"][0]["match"]["path"],
+            "/grpc.testing.TestService/EmptyCall",
+        )
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
         rpc_distribution = self.configure_and_send(
-            test_client, rpc_types=(RpcTypeUnaryCall,), num_rpcs=_NUM_RPCS)
+            test_client, rpc_types=[RpcTypeEmptyCall], num_rpcs=_NUM_RPCS
+        )
         self.assertEqual(
-            _NUM_RPCS,
-            rpc_distribution.unary_call_alternative_service_rpc_count)
+            _NUM_RPCS, rpc_distribution.empty_call_alternative_service_rpc_count
+        )
+
+
+class TestFullPathMatchUnaryCall(xds_url_map_testcase.XdsUrlMapTestCase):
+    @staticmethod
+    def is_supported(config: skips.TestConfig) -> bool:
+        return _is_supported(config)
+
+    @staticmethod
+    def url_map_change(
+        host_rule: HostRule, path_matcher: PathMatcher
+    ) -> Tuple[HostRule, PathMatcher]:
+        path_matcher["routeRules"] = [
+            {
+                "priority": 0,
+                # FullPath EmptyCall -> alternate_backend_service.
+                "matchRules": [
+                    {"fullPathMatch": "/grpc.testing.TestService/UnaryCall"}
+                ],
+                "service": GcpResourceManager().alternative_backend_service(),
+            }
+        ]
+        return host_rule, path_matcher
+
+    def xds_config_validate(self, xds_config: DumpedXdsConfig):
+        self.assertNumEndpoints(xds_config, 2)
+        self.assertEqual(
+            xds_config.rds["virtualHosts"][0]["routes"][0]["match"]["path"],
+            "/grpc.testing.TestService/UnaryCall",
+        )
+
+    def rpc_distribution_validate(self, test_client: XdsTestClient):
+        rpc_distribution = self.configure_and_send(
+            test_client, rpc_types=(RpcTypeUnaryCall,), num_rpcs=_NUM_RPCS
+        )
+        self.assertEqual(
+            _NUM_RPCS, rpc_distribution.unary_call_alternative_service_rpc_count
+        )
 
 
 class TestTwoRoutesAndPrefixMatch(xds_url_map_testcase.XdsUrlMapTestCase):
@@ -124,24 +129,75 @@ class TestTwoRoutesAndPrefixMatch(xds_url_map_testcase.XdsUrlMapTestCase):
 
     @staticmethod
     def url_map_change(
-            host_rule: HostRule,
-            path_matcher: PathMatcher) -> Tuple[HostRule, PathMatcher]:
+        host_rule: HostRule, path_matcher: PathMatcher
+    ) -> Tuple[HostRule, PathMatcher]:
         path_matcher["routeRules"] = [
             {
-                'priority': 0,
+                "priority": 0,
                 # Prefix UnaryCall -> default_backend_service.
-                'matchRules': [{
-                    'prefixMatch': '/grpc.testing.TestService/Unary'
-                }],
-                'service': GcpResourceManager().default_backend_service()
+                "matchRules": [
+                    {"prefixMatch": "/grpc.testing.TestService/Unary"}
+                ],
+                "service": GcpResourceManager().default_backend_service(),
             },
             {
-                'priority': 1,
+                "priority": 1,
                 # FullPath EmptyCall -> alternate_backend_service.
-                'matchRules': [{
-                    'fullPathMatch': '/grpc.testing.TestService/EmptyCall'
-                }],
-                'service': GcpResourceManager().alternative_backend_service()
+                "matchRules": [
+                    {"fullPathMatch": "/grpc.testing.TestService/EmptyCall"}
+                ],
+                "service": GcpResourceManager().alternative_backend_service(),
+            },
+        ]
+        return host_rule, path_matcher
+
+    def xds_config_validate(self, xds_config: DumpedXdsConfig):
+        self.assertNumEndpoints(xds_config, 2)
+        self.assertEqual(
+            xds_config.rds["virtualHosts"][0]["routes"][0]["match"]["prefix"],
+            "/grpc.testing.TestService/Unary",
+        )
+        self.assertEqual(
+            xds_config.rds["virtualHosts"][0]["routes"][1]["match"]["path"],
+            "/grpc.testing.TestService/EmptyCall",
+        )
+
+    def rpc_distribution_validate(self, test_client: XdsTestClient):
+        rpc_distribution = self.configure_and_send(
+            test_client,
+            rpc_types=[RpcTypeUnaryCall, RpcTypeEmptyCall],
+            num_rpcs=_NUM_RPCS,
+        )
+        self.assertEqual(0, rpc_distribution.num_failures)
+        self.assertEqual(
+            0, rpc_distribution.unary_call_alternative_service_rpc_count
+        )
+        self.assertEqual(
+            0, rpc_distribution.empty_call_default_service_rpc_count
+        )
+
+
+class TestRegexMatch(xds_url_map_testcase.XdsUrlMapTestCase):
+    @staticmethod
+    def is_supported(config: skips.TestConfig) -> bool:
+        return _is_supported(config)
+
+    @staticmethod
+    def url_map_change(
+        host_rule: HostRule, path_matcher: PathMatcher
+    ) -> Tuple[HostRule, PathMatcher]:
+        path_matcher["routeRules"] = [
+            {
+                "priority": 0,
+                # Regex UnaryCall -> alternate_backend_service.
+                "matchRules": [
+                    {
+                        "regexMatch": (  # Unary methods with any services.
+                            r"^\/.*\/UnaryCall$"
+                        )
+                    }
+                ],
+                "service": GcpResourceManager().alternative_backend_service(),
             }
         ]
         return host_rule, path_matcher
@@ -149,98 +205,67 @@ class TestTwoRoutesAndPrefixMatch(xds_url_map_testcase.XdsUrlMapTestCase):
     def xds_config_validate(self, xds_config: DumpedXdsConfig):
         self.assertNumEndpoints(xds_config, 2)
         self.assertEqual(
-            xds_config.rds['virtualHosts'][0]['routes'][0]['match']['prefix'],
-            "/grpc.testing.TestService/Unary")
-        self.assertEqual(
-            xds_config.rds['virtualHosts'][0]['routes'][1]['match']['path'],
-            "/grpc.testing.TestService/EmptyCall")
+            xds_config.rds["virtualHosts"][0]["routes"][0]["match"][
+                "safeRegex"
+            ]["regex"],
+            r"^\/.*\/UnaryCall$",
+        )
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
         rpc_distribution = self.configure_and_send(
-            test_client,
-            rpc_types=[RpcTypeUnaryCall, RpcTypeEmptyCall],
-            num_rpcs=_NUM_RPCS)
-        self.assertEqual(0, rpc_distribution.num_failures)
+            test_client, rpc_types=(RpcTypeUnaryCall,), num_rpcs=_NUM_RPCS
+        )
         self.assertEqual(
-            0, rpc_distribution.unary_call_alternative_service_rpc_count)
-        self.assertEqual(0,
-                         rpc_distribution.empty_call_default_service_rpc_count)
-
-
-class TestRegexMatch(xds_url_map_testcase.XdsUrlMapTestCase):
-
-    @staticmethod
-    def is_supported(config: skips.TestConfig) -> bool:
-        return _is_supported(config)
-
-    @staticmethod
-    def url_map_change(
-            host_rule: HostRule,
-            path_matcher: PathMatcher) -> Tuple[HostRule, PathMatcher]:
-        path_matcher["routeRules"] = [{
-            'priority': 0,
-            # Regex UnaryCall -> alternate_backend_service.
-            'matchRules': [{
-                'regexMatch':
-                    r'^\/.*\/UnaryCall$'  # Unary methods with any services.
-            }],
-            'service': GcpResourceManager().alternative_backend_service()
-        }]
-        return host_rule, path_matcher
-
-    def xds_config_validate(self, xds_config: DumpedXdsConfig):
-        self.assertNumEndpoints(xds_config, 2)
-        self.assertEqual(
-            xds_config.rds['virtualHosts'][0]['routes'][0]['match']['safeRegex']
-            ['regex'], r'^\/.*\/UnaryCall$')
-
-    def rpc_distribution_validate(self, test_client: XdsTestClient):
-        rpc_distribution = self.configure_and_send(
-            test_client, rpc_types=(RpcTypeUnaryCall,), num_rpcs=_NUM_RPCS)
-        self.assertEqual(
-            _NUM_RPCS,
-            rpc_distribution.unary_call_alternative_service_rpc_count)
+            _NUM_RPCS, rpc_distribution.unary_call_alternative_service_rpc_count
+        )
 
 
 class TestCaseInsensitiveMatch(xds_url_map_testcase.XdsUrlMapTestCase):
-
     @staticmethod
     def is_supported(config: skips.TestConfig) -> bool:
         return _is_supported(config)
 
     @staticmethod
     def url_map_change(
-            host_rule: HostRule,
-            path_matcher: PathMatcher) -> Tuple[HostRule, PathMatcher]:
-        path_matcher["routeRules"] = [{
-            'priority': 0,
-            # ignoreCase EmptyCall -> alternate_backend_service.
-            'matchRules': [{
-                # Case insensitive matching.
-                'fullPathMatch': '/gRpC.tEsTinG.tEstseRvice/empTycaLl',
-                'ignoreCase': True,
-            }],
-            'service': GcpResourceManager().alternative_backend_service()
-        }]
+        host_rule: HostRule, path_matcher: PathMatcher
+    ) -> Tuple[HostRule, PathMatcher]:
+        path_matcher["routeRules"] = [
+            {
+                "priority": 0,
+                # ignoreCase EmptyCall -> alternate_backend_service.
+                "matchRules": [
+                    {
+                        # Case insensitive matching.
+                        "fullPathMatch": "/gRpC.tEsTinG.tEstseRvice/empTycaLl",
+                        "ignoreCase": True,
+                    }
+                ],
+                "service": GcpResourceManager().alternative_backend_service(),
+            }
+        ]
         return host_rule, path_matcher
 
     def xds_config_validate(self, xds_config: DumpedXdsConfig):
         self.assertNumEndpoints(xds_config, 2)
         self.assertEqual(
-            xds_config.rds['virtualHosts'][0]['routes'][0]['match']['path'],
-            '/gRpC.tEsTinG.tEstseRvice/empTycaLl')
+            xds_config.rds["virtualHosts"][0]["routes"][0]["match"]["path"],
+            "/gRpC.tEsTinG.tEstseRvice/empTycaLl",
+        )
         self.assertEqual(
-            xds_config.rds['virtualHosts'][0]['routes'][0]['match']
-            ['caseSensitive'], False)
+            xds_config.rds["virtualHosts"][0]["routes"][0]["match"][
+                "caseSensitive"
+            ],
+            False,
+        )
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
-        rpc_distribution = self.configure_and_send(test_client,
-                                                   rpc_types=[RpcTypeEmptyCall],
-                                                   num_rpcs=_NUM_RPCS)
+        rpc_distribution = self.configure_and_send(
+            test_client, rpc_types=[RpcTypeEmptyCall], num_rpcs=_NUM_RPCS
+        )
         self.assertEqual(
-            _NUM_RPCS,
-            rpc_distribution.empty_call_alternative_service_rpc_count)
+            _NUM_RPCS, rpc_distribution.empty_call_alternative_service_rpc_count
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     absltest.main()

@@ -41,8 +41,10 @@
 
 #include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/gprpp/chunked_vector.h"
+#include "src/core/lib/gprpp/if_list.h"
 #include "src/core/lib/gprpp/packed_table.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/gprpp/type_list.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/custom_metadata.h"
@@ -532,43 +534,52 @@ struct IsEncodableTrait<Trait, absl::void_t<decltype(Trait::key())>> {
   static const bool value = true;
 };
 
-// Helper type - maps a string name to a trait.
 template <typename MustBeVoid, typename... Traits>
-struct NameLookup;
+struct EncodableTraits;
 
 template <typename Trait, typename... Traits>
-struct NameLookup<absl::enable_if_t<IsEncodableTrait<Trait>::value, void>,
-                  Trait, Traits...> {
-  // Call op->Found(Trait()) if op->name == Trait::key() for some Trait in
-  // Traits. If not found, call op->NotFound().
-  template <typename Op>
-  static auto Lookup(absl::string_view key, Op* op)
-      -> decltype(op->Found(Trait())) {
-    if (key == Trait::key()) {
-      return op->Found(Trait());
-    }
-    return NameLookup<void, Traits...>::Lookup(key, op);
-  }
+struct EncodableTraits<absl::enable_if_t<IsEncodableTrait<Trait>::value, void>,
+                       Trait, Traits...> {
+  using List =
+      typename EncodableTraits<void,
+                               Traits...>::List::template PushFront<Trait>;
 };
 
 template <typename Trait, typename... Traits>
-struct NameLookup<absl::enable_if_t<!IsEncodableTrait<Trait>::value, void>,
-                  Trait, Traits...> {
-  template <typename Op>
-  static auto Lookup(absl::string_view key, Op* op)
-      -> decltype(NameLookup<void, Traits...>::Lookup(key, op)) {
-    return NameLookup<void, Traits...>::Lookup(key, op);
-  }
+struct EncodableTraits<absl::enable_if_t<!IsEncodableTrait<Trait>::value, void>,
+                       Trait, Traits...> {
+  using List = typename EncodableTraits<void, Traits...>::List;
 };
 
 template <>
-struct NameLookup<void> {
+struct EncodableTraits<void> {
+  using List = Typelist<>;
+};
+
+template <typename Trait>
+struct EncodableNameLookupKeyComparison {
+  bool operator()(absl::string_view key) { return key == Trait::key(); }
+};
+
+template <typename Trait, typename Op>
+struct EncodableNameLookupOnFound {
+  auto operator()(Op* op) { return op->Found(Trait()); }
+};
+
+template <typename... Traits>
+struct EncodableNameLookup {
   template <typename Op>
-  static auto Lookup(absl::string_view key, Op* op)
-      -> decltype(op->NotFound(key)) {
-    return op->NotFound(key);
+  static auto Lookup(absl::string_view key, Op* op) {
+    return IfList(
+        key, op, [key](Op* op) { return op->NotFound(key); },
+        EncodableNameLookupKeyComparison<Traits>()...,
+        EncodableNameLookupOnFound<Traits, Op>()...);
   }
 };
+
+template <typename... Traits>
+using NameLookup = typename EncodableTraits<
+    void, Traits...>::List::template Instantiate<EncodableNameLookup>;
 
 // Helper to take a slice to a memento to a value.
 // By splitting this part out we can scale code size as the number of
@@ -1302,7 +1313,7 @@ class MetadataMap {
   // Remove some metadata by name
   void Remove(absl::string_view key) {
     metadata_detail::RemoveHelper<Derived> helper(static_cast<Derived*>(this));
-    metadata_detail::NameLookup<void, Traits...>::Lookup(key, &helper);
+    metadata_detail::NameLookup<Traits...>::Lookup(key, &helper);
   }
 
   void Remove(const char* key) { Remove(absl::string_view(key)); }
@@ -1312,7 +1323,7 @@ class MetadataMap {
                                                    std::string* buffer) const {
     metadata_detail::GetStringValueHelper<Derived> helper(
         static_cast<const Derived*>(this), buffer);
-    return metadata_detail::NameLookup<void, Traits...>::Lookup(name, &helper);
+    return metadata_detail::NameLookup<Traits...>::Lookup(name, &helper);
   }
 
   // Extract a piece of known metadata.
@@ -1355,7 +1366,7 @@ class MetadataMap {
     metadata_detail::ParseHelper<Derived> helper(
         value.TakeOwned(), will_keep_past_request_lifetime, on_error,
         transport_size);
-    return metadata_detail::NameLookup<void, Traits...>::Lookup(key, &helper);
+    return metadata_detail::NameLookup<Traits...>::Lookup(key, &helper);
   }
 
   // Set a value from a parsed metadata object.
@@ -1368,7 +1379,7 @@ class MetadataMap {
               MetadataParseErrorFn on_error) {
     metadata_detail::AppendHelper<Derived> helper(static_cast<Derived*>(this),
                                                   value.TakeOwned(), on_error);
-    metadata_detail::NameLookup<void, Traits...>::Lookup(key, &helper);
+    metadata_detail::NameLookup<Traits...>::Lookup(key, &helper);
   }
 
   void Clear();

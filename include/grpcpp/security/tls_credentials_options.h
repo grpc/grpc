@@ -148,6 +148,18 @@ class TlsServerCredentialsOptions final : public TlsCredentialsOptions {
   void set_cert_request_type(
       grpc_ssl_client_certificate_request_type cert_request_type);
 
+  // Sets whether or not a TLS server should send a list of CA names in the
+  // ServerHello. This list of CA names is read from the server's trust bundle,
+  // so that the client can use this list as a hint to know which certificate it
+  // should send to the server.
+  //
+  // By default, this option is turned off.
+  //
+  // WARNING: This API is extremely dangerous and should not be used. If the
+  // server's trust bundle is too large, then the TLS server will be unable to
+  // form a ServerHello, and hence will be unusable.
+  void set_send_client_ca_list(bool send_client_ca_list);
+
  private:
 };
 

@@ -32,18 +32,21 @@ import pygments.lexers.data
 import pygments.styles
 
 # The style for terminals supporting 8/16 colors.
-STYLE_ANSI_16 = 'ansi16'
+STYLE_ANSI_16 = "ansi16"
 # Join with pygments styles for terminals supporting 88/256 colors.
 ALL_COLOR_STYLES = [STYLE_ANSI_16] + list(pygments.styles.get_all_styles())
 
 # Flags.
-COLOR = flags.DEFINE_bool("color", default=True, help='Colorize the output')
+COLOR = flags.DEFINE_bool("color", default=True, help="Colorize the output")
 COLOR_STYLE = flags.DEFINE_enum(
     "color_style",
-    default='material',
+    default="material",
     enum_values=ALL_COLOR_STYLES,
-    help=('Color styles for terminals supporting 256 colors. '
-          f'Use {STYLE_ANSI_16} style for terminals supporting 8/16 colors'))
+    help=(
+        "Color styles for terminals supporting 256 colors. "
+        f"Use {STYLE_ANSI_16} style for terminals supporting 8/16 colors"
+    ),
+)
 
 logger = logging.getLogger(__name__)
 
@@ -62,19 +65,23 @@ class Highlighter:
     color: bool
     color_style: Optional[str] = None
 
-    def __init__(self,
-                 *,
-                 lexer: Lexer,
-                 color: Optional[bool] = None,
-                 color_style: Optional[str] = None):
+    def __init__(
+        self,
+        *,
+        lexer: Lexer,
+        color: Optional[bool] = None,
+        color_style: Optional[str] = None,
+    ):
         self.lexer = lexer
         self.color = color if color is not None else COLOR.value
 
         if self.color:
             color_style = color_style if color_style else COLOR_STYLE.value
             if color_style not in ALL_COLOR_STYLES:
-                raise ValueError(f'Unrecognized color style {color_style}, '
-                                 f'valid styles: {ALL_COLOR_STYLES}')
+                raise ValueError(
+                    f"Unrecognized color style {color_style}, "
+                    f"valid styles: {ALL_COLOR_STYLES}"
+                )
             if color_style == STYLE_ANSI_16:
                 # 8/16 colors support only.
                 self.formatter = TerminalFormatter()
@@ -89,11 +96,11 @@ class Highlighter:
 
 
 class HighlighterYaml(Highlighter):
-
-    def __init__(self,
-                 *,
-                 color: Optional[bool] = None,
-                 color_style: Optional[str] = None):
-        super().__init__(lexer=YamlLexer(encoding='utf-8'),
-                         color=color,
-                         color_style=color_style)
+    def __init__(
+        self, *, color: Optional[bool] = None, color_style: Optional[str] = None
+    ):
+        super().__init__(
+            lexer=YamlLexer(encoding="utf-8"),
+            color=color,
+            color_style=color_style,
+        )

@@ -38,6 +38,7 @@
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/resolver/server_address.h"
 
 namespace grpc_core {
 
@@ -93,6 +94,15 @@ class XdsLocalityName : public RefCounted<XdsLocalityName> {
                           region_, zone_, sub_zone_);
     }
     return human_readable_string_;
+  }
+
+  // Channel args traits.
+  static absl::string_view ChannelArgName() {
+    return GRPC_ARG_NO_SUBCHANNEL_PREFIX "xds_locality_name";
+  }
+  static int ChannelArgsCompare(const XdsLocalityName* a,
+                                const XdsLocalityName* b) {
+    return a->Compare(*b);
   }
 
  private:
@@ -239,7 +249,7 @@ class XdsClusterLocalityStats : public RefCounted<XdsClusterLocalityStats> {
   absl::string_view cluster_name_;
   absl::string_view eds_service_name_;
   RefCountedPtr<XdsLocalityName> name_;
-  PerCpu<Stats> stats_{32};
+  PerCpu<Stats> stats_{PerCpuOptions().SetMaxShards(32).SetCpusPerShard(4)};
 };
 
 }  // namespace grpc_core

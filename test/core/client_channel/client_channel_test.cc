@@ -18,12 +18,14 @@
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
 
+#include "absl/types/optional.h"
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
 
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/resolver/server_address.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
@@ -58,6 +60,22 @@ TEST(MakeSubchannelArgs,
       ChannelArgs().Set(GRPC_ARG_DEFAULT_AUTHORITY, "baz.example.com"), nullptr,
       "foo.example.com");
   EXPECT_EQ(args.GetString(GRPC_ARG_DEFAULT_AUTHORITY), "bar.example.com");
+}
+
+TEST(MakeSubchannelArgs, ArgsFromChannelTrumpPerAddressArgs) {
+  ChannelArgs args = ClientChannel::MakeSubchannelArgs(
+      ChannelArgs().Set("foo", 1), ChannelArgs().Set("foo", 2), nullptr,
+      "foo.example.com");
+  EXPECT_EQ(args.GetInt("foo"), 1);
+}
+
+TEST(MakeSubchannelArgs, StripsOutNoSubchannelArgs) {
+  ChannelArgs args = ClientChannel::MakeSubchannelArgs(
+      ChannelArgs().Set(GRPC_ARG_NO_SUBCHANNEL_PREFIX "foo", 1),
+      ChannelArgs().Set(GRPC_ARG_NO_SUBCHANNEL_PREFIX "bar", 1), nullptr,
+      "foo.example.com");
+  EXPECT_EQ(args.GetString(GRPC_ARG_NO_SUBCHANNEL_PREFIX "foo"), absl::nullopt);
+  EXPECT_EQ(args.GetString(GRPC_ARG_NO_SUBCHANNEL_PREFIX "bar"), absl::nullopt);
 }
 
 }  // namespace

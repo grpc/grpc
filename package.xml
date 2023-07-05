@@ -13,8 +13,8 @@
  <date>2019-09-24</date>
  <time>16:06:07</time>
  <version>
-  <release>1.56.0dev</release>
-  <api>1.56.0dev</api>
+  <release>1.57.0dev</release>
+  <api>1.57.0dev</api>
  </version>
  <stability>
   <release>beta</release>
@@ -22,7 +22,7 @@
  </stability>
  <license>Apache 2.0</license>
  <notes>
-- gRPC Core 1.56.0 update
+- gRPC Core 1.57.0 update
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -136,6 +136,8 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/endpoint_list.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/endpoint_list.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc" role="src" />
@@ -155,19 +157,17 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/priority/priority.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/rls/rls.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/subchannel_list.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/weighted_round_robin.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/cds.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc" role="src" />
@@ -282,6 +282,8 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/hpack_encoder.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/hpack_encoder_table.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/hpack_encoder_table.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/hpack_parse_result.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/hpack_parse_result.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/hpack_parser.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/hpack_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/hpack_parser_table.cc" role="src" />
@@ -295,8 +297,6 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/parsing.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/stream_lists.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/stream_map.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/stream_map.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/varint.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/varint.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/writing.cc" role="src" />
@@ -429,6 +429,8 @@
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/trace/v3/xray.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/trace/v3/zipkin.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/trace/v3/zipkin.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/data/accesslog/v3/accesslog.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/data/accesslog/v3/accesslog.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/extensions/filters/common/fault/v3/fault.upb.c" role="src" />
@@ -449,6 +451,8 @@
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/common/v3/common.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/common/v3/common.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/pick_first/v3/pick_first.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/pick_first/v3/pick_first.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb.c" role="src" />
@@ -751,6 +755,8 @@
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/config/trace/v3/xray.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/config/trace/v3/zipkin.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/config/trace/v3/zipkin.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/data/accesslog/v3/accesslog.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/data/accesslog/v3/accesslog.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/extensions/filters/common/fault/v3/fault.upbdefs.c" role="src" />
@@ -1186,6 +1192,7 @@
     <file baseinstalldir="/" name="src/core/lib/gprpp/fork.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/host_port.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/host_port.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/if_list.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/linux/env.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/load_file.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/load_file.h" role="src" />
@@ -1199,6 +1206,7 @@
     <file baseinstalldir="/" name="src/core/lib/gprpp/orphanable.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/overload.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/packed_table.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/per_cpu.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/per_cpu.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/posix/env.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/posix/stat.cc" role="src" />
@@ -1223,6 +1231,7 @@
     <file baseinstalldir="/" name="src/core/lib/gprpp/time_averaged_stats.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/time_util.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/time_util.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/type_list.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/unique_type_name.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/validation_errors.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/validation_errors.h" role="src" />
@@ -1378,6 +1387,8 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/unix_sockets_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/unix_sockets_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/unix_sockets_posix_noop.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/vsock.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/vsock.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_eventfd.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_nospecial.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_pipe.cc" role="src" />
@@ -1395,6 +1406,7 @@
     <file baseinstalldir="/" name="src/core/lib/json/json_util.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_writer.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_writer.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/load_balancing/delegating_helper.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/load_balancing/lb_policy.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/load_balancing/lb_policy.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/load_balancing/lb_policy_factory.h" role="src" />

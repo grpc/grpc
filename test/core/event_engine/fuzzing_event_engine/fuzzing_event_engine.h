@@ -53,6 +53,7 @@ class FuzzingEventEngine : public EventEngine {
  public:
   struct Options {
     Duration max_delay_run_after = std::chrono::seconds(30);
+    Duration max_delay_write = std::chrono::seconds(30);
   };
   explicit FuzzingEventEngine(Options options,
                               const fuzzing_event_engine::Actions& actions);
@@ -106,6 +107,11 @@ class FuzzingEventEngine : public EventEngine {
   void UnsetGlobalHooks() ABSL_LOCKS_EXCLUDED(mu_);
 
  private:
+  enum class RunType {
+    kWrite,
+    kRunAfter,
+  };
+
   // One pending task to be run.
   struct Task {
     Task(intptr_t id, absl::AnyInvocable<void()> closure)
@@ -172,7 +178,9 @@ class FuzzingEventEngine : public EventEngine {
     // Address of each side of the endpoint.
     const ResolvedAddress addrs[2];
     // Is the endpoint closed?
-    bool closed ABSL_GUARDED_BY(mu_) = false;
+    bool closed[2] ABSL_GUARDED_BY(mu_) = {false, false};
+    // Is the endpoint writing?
+    bool writing[2] ABSL_GUARDED_BY(mu_) = {false, false};
     // Bytes written into each endpoint and awaiting a read.
     std::vector<uint8_t> pending[2] ABSL_GUARDED_BY(mu_);
     // The sizes of each accepted write, as determined by the fuzzer actions.
@@ -223,12 +231,13 @@ class FuzzingEventEngine : public EventEngine {
     const int index_;
   };
 
-  void RunLocked(absl::AnyInvocable<void()> closure)
+  void RunLocked(RunType run_type, absl::AnyInvocable<void()> closure)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-    RunAfterLocked(Duration::zero(), std::move(closure));
+    RunAfterLocked(run_type, Duration::zero(), std::move(closure));
   }
 
-  TaskHandle RunAfterLocked(Duration when, absl::AnyInvocable<void()> closure)
+  TaskHandle RunAfterLocked(RunType run_type, Duration when,
+                            absl::AnyInvocable<void()> closure)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   // Allocate a port. Considered fuzzer selected port orderings first, and then
@@ -252,7 +261,7 @@ class FuzzingEventEngine : public EventEngine {
 
   Duration exponential_gate_time_increment_ ABSL_GUARDED_BY(mu_) =
       std::chrono::milliseconds(1);
-  const Duration max_delay_run_after_;
+  const Duration max_delay_[2];
   intptr_t next_task_id_ ABSL_GUARDED_BY(mu_);
   intptr_t current_tick_ ABSL_GUARDED_BY(now_mu_);
   Time now_ ABSL_GUARDED_BY(now_mu_);

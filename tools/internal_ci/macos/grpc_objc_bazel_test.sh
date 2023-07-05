@@ -61,6 +61,7 @@ TEST_TARGETS=(
   #//src/objective-c/tests:CronetTests
   #//src/objective-c/tests:PerfTests
   //src/objective-c/tests:CFStreamTests
+  //src/objective-c/tests:EventEngineTests
   //src/objective-c/tests:tvtests_build_test
   # codegen plugin tests
   //src/objective-c/tests:objc_codegen_plugin_test

@@ -25,35 +25,42 @@ def build_package_protos(package_root, strict_mode=False):
     inclusion_root = os.path.abspath(package_root)
     for root, _, files in os.walk(inclusion_root):
         for filename in files:
-            if filename.endswith('.proto'):
-                proto_files.append(os.path.abspath(os.path.join(root,
-                                                                filename)))
+            if filename.endswith(".proto"):
+                proto_files.append(
+                    os.path.abspath(os.path.join(root, filename))
+                )
 
     well_known_protos_include = pkg_resources.resource_filename(
-        'grpc_tools', '_proto')
+        "grpc_tools", "_proto"
+    )
 
     for proto_file in proto_files:
         command = [
-            'grpc_tools.protoc',
-            '--proto_path={}'.format(inclusion_root),
-            '--proto_path={}'.format(well_known_protos_include),
-            '--python_out={}'.format(inclusion_root),
-            '--pyi_out={}'.format(inclusion_root),
-            '--grpc_python_out={}'.format(inclusion_root),
+            "grpc_tools.protoc",
+            "--proto_path={}".format(inclusion_root),
+            "--proto_path={}".format(well_known_protos_include),
+            "--python_out={}".format(inclusion_root),
+            "--pyi_out={}".format(inclusion_root),
+            "--grpc_python_out={}".format(inclusion_root),
         ] + [proto_file]
         if protoc.main(command) != 0:
             if strict_mode:
-                raise Exception('error: {} failed'.format(command))
+                raise Exception("error: {} failed".format(command))
             else:
-                sys.stderr.write('warning: {} failed'.format(command))
+                sys.stderr.write("warning: {} failed".format(command))
 
 
 class BuildPackageProtos(setuptools.Command):
     """Command to generate project *_pb2.py modules from proto files."""
 
-    description = 'build grpc protobuf modules'
-    user_options = [('strict-mode', 's',
-                     'exit with non-zero value if the proto compiling fails.')]
+    description = "build grpc protobuf modules"
+    user_options = [
+        (
+            "strict-mode",
+            "s",
+            "exit with non-zero value if the proto compiling fails.",
+        )
+    ]
 
     def initialize_options(self):
         self.strict_mode = False
@@ -66,5 +73,6 @@ class BuildPackageProtos(setuptools.Command):
         # directory is provided as an 'include' directory. We assume it's the '' key
         # to `self.distribution.package_dir` (and get a key error if it's not
         # there).
-        build_package_protos(self.distribution.package_dir[''],
-                             self.strict_mode)
+        build_package_protos(
+            self.distribution.package_dir[""], self.strict_mode
+        )

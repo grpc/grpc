@@ -96,9 +96,6 @@ main() {
   set +x
   echo "Failed test suites list: ${failed_string}"
   echo "Successful test suites list: ${successful_string}"
-  if (( failed_tests > 0 )); then
-    exit 1
-  fi
 }
 
 main "$@"

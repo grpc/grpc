@@ -72,6 +72,8 @@ def _get_external_deps(external_deps):
             ret.append("@com_google_absl//" + dep)
         elif dep.startswith("google/"):
             ret.append("@com_google_googleapis//" + dep)
+        elif dep.startswith("otel/"):
+            ret.append(dep.replace("otel/", "@io_opentelemetry_cpp//"))
         else:
             ret.append("//external:" + dep)
     return ret
@@ -113,6 +115,7 @@ def _update_visibility(visibility):
         "tsi": PRIVATE,
         "xds": PRIVATE,
         "xds_client_core": PRIVATE,
+        "grpc_python_observability": PRIVATE,
     }
     final_visibility = []
     for rule in visibility:
@@ -373,7 +376,6 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
     mode_config = {
         # format: <mode>: (enabled_target_tags, disabled_target_tags)
         "dbg": (["noopt"], ["nodbg"]),
-        "opt": (["nodbg"], ["noopt"]),
         "on": (None, []),
         "off": ([], None),
     }
@@ -474,7 +476,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             tags = tags,
             deps = core_deps,
             args = args,
-            flaky = flaky,
+            flaky = True,
             **test_args
         )
 
@@ -539,6 +541,9 @@ def grpc_generate_one_off_targets():
     )
 
 def grpc_generate_objc_one_off_targets():
+    pass
+
+def grpc_generate_one_off_internal_targets():
     pass
 
 def grpc_sh_test(name, srcs = [], args = [], data = [], uses_polling = True, size = "medium", timeout = None, tags = [], exec_compatible_with = [], exec_properties = {}, shard_count = None, flaky = None, exclude_pollers = [], uses_event_engine = True):

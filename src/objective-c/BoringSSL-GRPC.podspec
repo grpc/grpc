@@ -79,10 +79,10 @@ Pod::Spec.new do |s|
     :commit => "e46383fc18d08def901b2ed5a194295693e905c7",
   }
 
-  s.ios.deployment_target = '9.0'
-  s.osx.deployment_target = '10.10'
-  s.tvos.deployment_target = '10.0'
-  s.watchos.deployment_target = '4.0'
+  s.ios.deployment_target = '10.0'
+  s.osx.deployment_target = '10.12'
+  s.tvos.deployment_target = '12.0'
+  s.watchos.deployment_target = '6.0'
 
   name = 'openssl_grpc'
 

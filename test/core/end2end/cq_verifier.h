@@ -71,6 +71,7 @@ class CqVerifier {
   };
 
   static void FailUsingGprCrash(const Failure& failure);
+  static void FailUsingGprCrashWithStdio(const Failure& failure);
   static void FailUsingGtestFail(const Failure& failure);
 
   // Allow customizing the failure handler
@@ -106,6 +107,15 @@ class CqVerifier {
 
   std::string ToString() const;
   std::vector<std::string> ToStrings() const;
+  std::string ToShortString() const;
+  std::vector<std::string> ToShortStrings() const;
+
+  // Logging verifications helps debug CI problems a lot.
+  // Only disable if the logging prevents a stress test like scenario from
+  // passing.
+  void SetLogVerifications(bool log_verifications) {
+    log_verifications_ = log_verifications;
+  }
 
   static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
@@ -116,6 +126,7 @@ class CqVerifier {
     ExpectedResult result;
 
     std::string ToString() const;
+    std::string ToShortString() const;
   };
 
   void FailNoEventReceived(const SourceLocation& location) const;
@@ -130,6 +141,7 @@ class CqVerifier {
   absl::AnyInvocable<void(
       grpc_event_engine::experimental::EventEngine::Duration) const>
       step_fn_;
+  bool log_verifications_ = true;
 };
 
 }  // namespace grpc_core

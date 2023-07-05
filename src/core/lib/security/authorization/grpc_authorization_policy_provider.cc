@@ -121,7 +121,8 @@ FileWatcherAuthorizationPolicyProvider::FileWatcherAuthorizationPolicyProvider(
       if (GRPC_TRACE_FLAG_ENABLED(grpc_authz_trace) && !status.ok()) {
         gpr_log(GPR_ERROR,
                 "authorization policy reload status. code=%d error_details=%s",
-                status.code(), std::string(status.message()).c_str());
+                static_cast<int>(status.code()),
+                std::string(status.message()).c_str());
       }
     }
   };
