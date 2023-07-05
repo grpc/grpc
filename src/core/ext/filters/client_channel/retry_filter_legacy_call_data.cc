@@ -55,8 +55,6 @@
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 
-using grpc_core::internal::RetryMethodConfig;
-
 namespace grpc_core {
 
 //
