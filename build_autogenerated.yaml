@@ -417,6 +417,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/hpack_constants.h
   - src/core/ext/transport/chttp2/transport/hpack_encoder.h
   - src/core/ext/transport/chttp2/transport/hpack_encoder_table.h
+  - src/core/ext/transport/chttp2/transport/hpack_parse_result.h
   - src/core/ext/transport/chttp2/transport/hpack_parser.h
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.h
   - src/core/ext/transport/chttp2/transport/http2_settings.h
@@ -1208,6 +1209,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/frame_window_update.cc
   - src/core/ext/transport/chttp2/transport/hpack_encoder.cc
   - src/core/ext/transport/chttp2/transport/hpack_encoder_table.cc
+  - src/core/ext/transport/chttp2/transport/hpack_parse_result.cc
   - src/core/ext/transport/chttp2/transport/hpack_parser.cc
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.cc
   - src/core/ext/transport/chttp2/transport/http2_settings.cc
@@ -2083,6 +2085,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/hpack_constants.h
   - src/core/ext/transport/chttp2/transport/hpack_encoder.h
   - src/core/ext/transport/chttp2/transport/hpack_encoder_table.h
+  - src/core/ext/transport/chttp2/transport/hpack_parse_result.h
   - src/core/ext/transport/chttp2/transport/hpack_parser.h
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.h
   - src/core/ext/transport/chttp2/transport/http2_settings.h
@@ -2484,6 +2487,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/frame_window_update.cc
   - src/core/ext/transport/chttp2/transport/hpack_encoder.cc
   - src/core/ext/transport/chttp2/transport/hpack_encoder_table.cc
+  - src/core/ext/transport/chttp2/transport/hpack_parse_result.cc
   - src/core/ext/transport/chttp2/transport/hpack_parser.cc
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.cc
   - src/core/ext/transport/chttp2/transport/http2_settings.cc
@@ -7388,6 +7392,7 @@ targets:
   - src/core/ext/transport/chttp2/transport/hpack_constants.h
   - src/core/ext/transport/chttp2/transport/hpack_encoder.h
   - src/core/ext/transport/chttp2/transport/hpack_encoder_table.h
+  - src/core/ext/transport/chttp2/transport/hpack_parse_result.h
   - src/core/ext/transport/chttp2/transport/hpack_parser.h
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.h
   - src/core/ext/transport/chttp2/transport/http_trace.h
@@ -7656,6 +7661,7 @@ targets:
   - src/core/ext/transport/chttp2/transport/decode_huff.cc
   - src/core/ext/transport/chttp2/transport/hpack_encoder.cc
   - src/core/ext/transport/chttp2/transport/hpack_encoder_table.cc
+  - src/core/ext/transport/chttp2/transport/hpack_parse_result.cc
   - src/core/ext/transport/chttp2/transport/hpack_parser.cc
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.cc
   - src/core/ext/transport/chttp2/transport/http_trace.cc

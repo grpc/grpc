@@ -272,6 +272,8 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/hpack_encoder.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/hpack_encoder_table.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/hpack_encoder_table.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/hpack_parse_result.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/hpack_parse_result.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/hpack_parser.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/hpack_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/hpack_parser_table.cc" role="src" />
