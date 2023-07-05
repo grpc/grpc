@@ -106,12 +106,12 @@
   test_tags: ["core_end2end_test", "event_engine_listener_test"]
 - name: schedule_cancellation_over_write
   description: Allow cancellation op to be scheduled over a write
-  expiry: 2023/07/01
+  expiry: 2023/10/01
   owner: vigneshbabu@google.com
   test_tags: []
 - name: trace_record_callops
   description: Enables tracing of call batch initiation and completion.
-  expiry: 2023/07/01
+  expiry: 2023/10/01
   owner: vigneshbabu@google.com
   test_tags: []
 - name: event_engine_dns

@@ -224,6 +224,7 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
   RecordDoubleMetric(kRpcClientRoundtripLatencyMeasureName,
                      absl::ToDoubleMilliseconds(absl::Now() - start_time_),
                      context_.Labels());
+  RecordIntMetric(kRpcClientCompletedRpcMeasureName, 1, context_.Labels());
   if (grpc_core::IsTransportSuppliesClientLatencyEnabled()) {
     if (transport_stream_stats != nullptr &&
         gpr_time_cmp(transport_stream_stats->latency,

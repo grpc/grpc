@@ -25,7 +25,6 @@
 
 #include <cstring>
 
-#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/slice.h>
@@ -35,9 +34,20 @@
 
 namespace grpc_core {
 
-absl::Status ValidateHeaderKeyIsLegal(absl::string_view key);
+enum class ValidateMetadataResult : uint8_t {
+  kOk,
+  kCannotBeZeroLength,
+  kTooLong,
+  kIllegalHeaderKey,
+  kIllegalHeaderValue
+};
 
-}
+const char* ValidateMetadataResultToString(ValidateMetadataResult result);
+
+// Returns nullopt if the key is legal, otherwise returns an error message.
+ValidateMetadataResult ValidateHeaderKeyIsLegal(absl::string_view key);
+
+}  // namespace grpc_core
 
 grpc_error_handle grpc_validate_header_key_is_legal(const grpc_slice& slice);
 grpc_error_handle grpc_validate_header_nonbin_value_is_legal(

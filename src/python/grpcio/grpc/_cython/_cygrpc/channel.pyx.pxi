@@ -78,6 +78,10 @@ cdef class _CallState:
     _observability.delete_call_tracer(self.call_tracer_capsule)
 
   cdef void maybe_set_client_call_tracer_on_call(self, bytes method_name) except *:
+    # TODO(xuanwn): use channel args to exclude those metrics.
+    for exclude_prefix in _observability._SERVICES_TO_EXCLUDE:
+      if exclude_prefix in method_name:
+        return
     with _observability.get_plugin() as plugin:
       if not (plugin and plugin.observability_enabled):
         return
