@@ -29,7 +29,7 @@ namespace grpc_core {
 namespace {
 
 void SimpleRequest(CoreEnd2endTest& test) {
-  auto c = test.NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
+  auto c = test.NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
   CoreEnd2endTest::IncomingMetadata server_initial_metadata;
   CoreEnd2endTest::IncomingStatusOnClient server_status;
   c.NewBatch(1)
@@ -39,6 +39,13 @@ void SimpleRequest(CoreEnd2endTest& test) {
       .RecvStatusOnClient(server_status);
   auto s = test.RequestCall(101);
   test.Expect(101, true);
+  test.Expect(
+      1, CoreEnd2endTest::MaybePerformAction{[&](bool success) {
+        Crash(absl::StrCat(
+            "Unexpected completion of client side call: success=",
+            success ? "true" : "false", " status=", server_status.ToString(),
+            " initial_md=", server_initial_metadata.ToString()));
+      }});
   test.Step();
   CoreEnd2endTest::IncomingCloseOnServer client_close;
   s.NewBatch(102)
