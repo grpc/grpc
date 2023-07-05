@@ -106,29 +106,34 @@
 #define DEFAULT_MAX_HEADER_LIST_SIZE (16 * 1024)
 #define DEFAULT_MAX_HEADER_LIST_SIZE_SOFT_LIMIT (8 * 1024)
 
+#define DEFAULT_CLIENT_KEEPALIVE_TIME_MS INT_MAX
+#define DEFAULT_CLIENT_KEEPALIVE_TIMEOUT_MS 20000  // 20 seconds
+#define DEFAULT_SERVER_KEEPALIVE_TIME_MS 7200000   // 2 hours
+#define DEFAULT_SERVER_KEEPALIVE_TIMEOUT_MS 20000  // 20 seconds
 #define DEFAULT_KEEPALIVE_PERMIT_WITHOUT_CALLS false
 #define KEEPALIVE_TIME_BACKOFF_MULTIPLIER 2
 
+#define DEFAULT_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS 300000  // 5 minutes
 #define DEFAULT_MAX_PINGS_BETWEEN_DATA 2
 #define DEFAULT_MAX_PING_STRIKES 2
 
 #define DEFAULT_MAX_PENDING_INDUCED_FRAMES 10000
 
-static grpc_core::Duration g_default_client_keepalive_time =
-    grpc_core::Duration::Infinity();
-static grpc_core::Duration g_default_client_keepalive_timeout =
-    grpc_core::Duration::Seconds(20);
-static grpc_core::Duration g_default_server_keepalive_time =
-    grpc_core::Duration::Hours(2);
-static grpc_core::Duration g_default_server_keepalive_timeout =
-    grpc_core::Duration::Seconds(20);
+static int g_default_client_keepalive_time_ms =
+    DEFAULT_CLIENT_KEEPALIVE_TIME_MS;
+static int g_default_client_keepalive_timeout_ms =
+    DEFAULT_CLIENT_KEEPALIVE_TIMEOUT_MS;
+static int g_default_server_keepalive_time_ms =
+    DEFAULT_SERVER_KEEPALIVE_TIME_MS;
+static int g_default_server_keepalive_timeout_ms =
+    DEFAULT_SERVER_KEEPALIVE_TIMEOUT_MS;
 static bool g_default_client_keepalive_permit_without_calls =
     DEFAULT_KEEPALIVE_PERMIT_WITHOUT_CALLS;
 static bool g_default_server_keepalive_permit_without_calls =
     DEFAULT_KEEPALIVE_PERMIT_WITHOUT_CALLS;
 
-static grpc_core::Duration g_default_min_recv_ping_interval_without_data =
-    grpc_core::Duration::Minutes(5);
+static int g_default_min_recv_ping_interval_without_data_ms =
+    DEFAULT_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS;
 static int g_default_max_pings_without_data = DEFAULT_MAX_PINGS_BETWEEN_DATA;
 static int g_default_max_ping_strikes = DEFAULT_MAX_PING_STRIKES;
 
@@ -364,33 +369,26 @@ static void read_channel_args(grpc_chttp2_transport* t,
                channel_args
                    .GetDurationFromIntMillis(
                        GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS)
-                   .value_or(g_default_min_recv_ping_interval_without_data));
+                   .value_or(grpc_core::Duration::Milliseconds(
+                       g_default_min_recv_ping_interval_without_data_ms)));
   t->write_buffer_size =
       std::max(0, channel_args.GetInt(GRPC_ARG_HTTP2_WRITE_BUFFER_SIZE)
                       .value_or(grpc_core::chttp2::kDefaultWindow));
   t->keepalive_time =
       std::max(grpc_core::Duration::Milliseconds(1),
                channel_args.GetDurationFromIntMillis(GRPC_ARG_KEEPALIVE_TIME_MS)
-                   .value_or(t->is_client ? g_default_client_keepalive_time
-                                          : g_default_server_keepalive_time));
+                   .value_or(grpc_core::Duration::Milliseconds(
+                       t->is_client ? g_default_client_keepalive_time_ms
+                                    : g_default_server_keepalive_time_ms)));
   t->keepalive_timeout = std::max(
       grpc_core::Duration::Zero(),
       channel_args.GetDurationFromIntMillis(GRPC_ARG_KEEPALIVE_TIMEOUT_MS)
-          .value_or(t->is_client ? g_default_client_keepalive_timeout
-                                 : g_default_server_keepalive_timeout));
-  if (grpc_core::
-          IsChttp2AllowConfigOverrideKeepalivePermitWithoutCallsEnabled()) {
-    t->keepalive_permit_without_calls =
-        channel_args.GetBool(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS)
-            .value_or(t->is_client
-                          ? g_default_client_keepalive_permit_without_calls
-                          : g_default_server_keepalive_permit_without_calls);
-  } else {
-    t->keepalive_permit_without_calls =
-        channel_args.GetBool(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS)
-            .value_or(false);
-  }
-
+          .value_or(grpc_core::Duration::Milliseconds(
+              t->is_client ? g_default_client_keepalive_timeout_ms
+                           : g_default_server_keepalive_timeout_ms)));
+  t->keepalive_permit_without_calls =
+      channel_args.GetBool(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS)
+          .value_or(false);
   // Only send the prefered rx frame size http2 setting if we are instructed
   // to auto size the buffers allocated at tcp level and we also can adjust
   // sending frame size.
@@ -514,6 +512,40 @@ static void read_channel_args(grpc_chttp2_transport* t,
   }
 }
 
+static void init_transport_keepalive_settings(grpc_chttp2_transport* t) {
+  if (t->is_client) {
+    t->keepalive_time = g_default_client_keepalive_time_ms == INT_MAX
+                            ? grpc_core::Duration::Infinity()
+                            : grpc_core::Duration::Milliseconds(
+                                  g_default_client_keepalive_time_ms);
+    t->keepalive_timeout = g_default_client_keepalive_timeout_ms == INT_MAX
+                               ? grpc_core::Duration::Infinity()
+                               : grpc_core::Duration::Milliseconds(
+                                     g_default_client_keepalive_timeout_ms);
+    t->keepalive_permit_without_calls =
+        g_default_client_keepalive_permit_without_calls;
+  } else {
+    t->keepalive_time = g_default_server_keepalive_time_ms == INT_MAX
+                            ? grpc_core::Duration::Infinity()
+                            : grpc_core::Duration::Milliseconds(
+                                  g_default_server_keepalive_time_ms);
+    t->keepalive_timeout = g_default_server_keepalive_timeout_ms == INT_MAX
+                               ? grpc_core::Duration::Infinity()
+                               : grpc_core::Duration::Milliseconds(
+                                     g_default_server_keepalive_timeout_ms);
+    t->keepalive_permit_without_calls =
+        g_default_server_keepalive_permit_without_calls;
+  }
+}
+
+static void configure_transport_ping_policy(grpc_chttp2_transport* t) {
+  t->ping_policy.max_pings_without_data = g_default_max_pings_without_data;
+  t->ping_policy.max_ping_strikes = g_default_max_ping_strikes;
+  t->ping_policy.min_recv_ping_interval_without_data =
+      grpc_core::Duration::Milliseconds(
+          g_default_min_recv_ping_interval_without_data_ms);
+}
+
 static void init_keepalive_pings_if_enabled_locked(
     void* arg, GRPC_UNUSED grpc_error_handle error) {
   GPR_DEBUG_ASSERT(error.ok());
@@ -599,6 +631,9 @@ grpc_chttp2_transport::grpc_chttp2_transport(
                        DEFAULT_MAX_HEADER_LIST_SIZE);
   queue_setting_update(this,
                        GRPC_CHTTP2_SETTINGS_GRPC_ALLOW_TRUE_BINARY_METADATA, 1);
+
+  configure_transport_ping_policy(this);
+  init_transport_keepalive_settings(this);
 
   read_channel_args(this, channel_args, is_client);
 
@@ -2717,61 +2752,61 @@ static void next_bdp_ping_timer_expired_locked(
 
 void grpc_chttp2_config_default_keepalive_args(grpc_channel_args* args,
                                                bool is_client) {
-  grpc_chttp2_config_default_keepalive_args(grpc_core::ChannelArgs::FromC(args),
-                                            is_client);
-}
-
-void grpc_chttp2_config_default_keepalive_args(
-    const grpc_core::ChannelArgs& channel_args, bool is_client) {
-  const auto keepalive_time =
-      std::max(grpc_core::Duration::Milliseconds(1),
-               channel_args.GetDurationFromIntMillis(GRPC_ARG_KEEPALIVE_TIME_MS)
-                   .value_or(is_client ? g_default_client_keepalive_time
-                                       : g_default_server_keepalive_time));
-  if (is_client) {
-    g_default_client_keepalive_time = keepalive_time;
-  } else {
-    g_default_server_keepalive_time = keepalive_time;
+  size_t i;
+  if (args) {
+    for (i = 0; i < args->num_args; i++) {
+      if (0 == strcmp(args->args[i].key, GRPC_ARG_KEEPALIVE_TIME_MS)) {
+        const int value = grpc_channel_arg_get_integer(
+            &args->args[i], {is_client ? g_default_client_keepalive_time_ms
+                                       : g_default_server_keepalive_time_ms,
+                             1, INT_MAX});
+        if (is_client) {
+          g_default_client_keepalive_time_ms = value;
+        } else {
+          g_default_server_keepalive_time_ms = value;
+        }
+      } else if (0 ==
+                 strcmp(args->args[i].key, GRPC_ARG_KEEPALIVE_TIMEOUT_MS)) {
+        const int value = grpc_channel_arg_get_integer(
+            &args->args[i], {is_client ? g_default_client_keepalive_timeout_ms
+                                       : g_default_server_keepalive_timeout_ms,
+                             0, INT_MAX});
+        if (is_client) {
+          g_default_client_keepalive_timeout_ms = value;
+        } else {
+          g_default_server_keepalive_timeout_ms = value;
+        }
+      } else if (0 == strcmp(args->args[i].key,
+                             GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS)) {
+        const bool value = static_cast<uint32_t>(grpc_channel_arg_get_integer(
+            &args->args[i],
+            {is_client ? g_default_client_keepalive_permit_without_calls
+                       : g_default_server_keepalive_timeout_ms,
+             0, 1}));
+        if (is_client) {
+          g_default_client_keepalive_permit_without_calls = value;
+        } else {
+          g_default_server_keepalive_permit_without_calls = value;
+        }
+      } else if (0 ==
+                 strcmp(args->args[i].key, GRPC_ARG_HTTP2_MAX_PING_STRIKES)) {
+        g_default_max_ping_strikes = grpc_channel_arg_get_integer(
+            &args->args[i], {g_default_max_ping_strikes, 0, INT_MAX});
+      } else if (0 == strcmp(args->args[i].key,
+                             GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA)) {
+        g_default_max_pings_without_data = grpc_channel_arg_get_integer(
+            &args->args[i], {g_default_max_pings_without_data, 0, INT_MAX});
+      } else if (0 ==
+                 strcmp(
+                     args->args[i].key,
+                     GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS)) {
+        g_default_min_recv_ping_interval_without_data_ms =
+            grpc_channel_arg_get_integer(
+                &args->args[i],
+                {g_default_min_recv_ping_interval_without_data_ms, 0, INT_MAX});
+      }
+    }
   }
-
-  const auto keepalive_timeout = std::max(
-      grpc_core::Duration::Zero(),
-      channel_args.GetDurationFromIntMillis(GRPC_ARG_KEEPALIVE_TIMEOUT_MS)
-          .value_or(is_client ? g_default_client_keepalive_timeout
-                              : g_default_server_keepalive_timeout));
-  if (is_client) {
-    g_default_client_keepalive_timeout = keepalive_timeout;
-  } else {
-    g_default_server_keepalive_timeout = keepalive_timeout;
-  }
-
-  const bool keepalive_permit_without_calls =
-      channel_args.GetBool(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS)
-          .value_or(is_client
-                        ? g_default_client_keepalive_permit_without_calls
-                        : g_default_server_keepalive_permit_without_calls);
-  if (is_client) {
-    g_default_client_keepalive_permit_without_calls =
-        keepalive_permit_without_calls;
-  } else {
-    g_default_server_keepalive_permit_without_calls =
-        keepalive_permit_without_calls;
-  }
-
-  g_default_max_ping_strikes =
-      std::max(0, channel_args.GetInt(GRPC_ARG_HTTP2_MAX_PING_STRIKES)
-                      .value_or(g_default_max_ping_strikes));
-
-  g_default_max_pings_without_data =
-      std::max(0, channel_args.GetInt(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA)
-                      .value_or(g_default_max_pings_without_data));
-
-  g_default_min_recv_ping_interval_without_data =
-      std::max(grpc_core::Duration::Zero(),
-               channel_args
-                   .GetDurationFromIntMillis(
-                       GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS)
-                   .value_or(g_default_min_recv_ping_interval_without_data));
 }
 
 static void init_keepalive_ping(grpc_chttp2_transport* t) {
