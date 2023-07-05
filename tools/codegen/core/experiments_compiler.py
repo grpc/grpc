@@ -217,8 +217,9 @@ class ExperimentDefinition(object):
             print("expiry should be no more than two quarters from now")
         return not self._error
 
-    def AddRolloutSpecification(self, allowed_defaults,
-                                allowed_platforms, rollout_attributes):
+    def AddRolloutSpecification(
+        self, allowed_defaults, allowed_platforms, rollout_attributes
+    ):
         if self._error:
             return False
         if rollout_attributes["name"] != self._name:
@@ -281,8 +282,12 @@ class ExperimentDefinition(object):
 
 class ExperimentsCompiler(object):
     def __init__(
-        self, defaults, final_return, final_define, platforms_define,
-        bzl_list_for_defaults=None
+        self,
+        defaults,
+        final_return,
+        final_define,
+        platforms_define,
+        bzl_list_for_defaults=None,
     ):
         self._defaults = defaults
         self._final_return = final_return
@@ -318,8 +323,9 @@ class ExperimentsCompiler(object):
             )
         return self._experiment_definitions[
             rollout_attributes["name"]
-        ].AddRolloutSpecification(self._defaults, self._platforms_define,
-                                  rollout_attributes)
+        ].AddRolloutSpecification(
+            self._defaults, self._platforms_define, rollout_attributes
+        )
 
     def _GenerateExperimentsHdrForPlatform(self, platform, file_desc):
         for _, exp in self._experiment_definitions.items():
@@ -372,8 +378,11 @@ class ExperimentsCompiler(object):
             for platform in sorted(self._platforms_define.keys()):
                 if platform == "posix":
                     continue
-                print(f"\n#{'if' if idx ==0 else 'elif'} "
-                      f"defined({self._platforms_define[platform]})", file=H)
+                print(
+                    f"\n#{'if' if idx ==0 else 'elif'} "
+                    f"defined({self._platforms_define[platform]})",
+                    file=H,
+                )
                 self._GenerateExperimentsHdrForPlatform(platform, H)
                 idx += 1
             print("\n#else", file=H)
@@ -442,12 +451,12 @@ class ExperimentsCompiler(object):
         if "kDefaultForDebugOnly" in have_defaults:
             print("#ifdef NDEBUG", file=file_desc)
             if "kDefaultForDebugOnly" in have_defaults:
-                print("const bool kDefaultForDebugOnly = false;",
-                      file=file_desc)
+                print(
+                    "const bool kDefaultForDebugOnly = false;", file=file_desc
+                )
             print("#else", file=file_desc)
             if "kDefaultForDebugOnly" in have_defaults:
-                print("const bool kDefaultForDebugOnly = true;",
-                      file=file_desc)
+                print("const bool kDefaultForDebugOnly = true;", file=file_desc)
             print("#endif", file=file_desc)
         print("}", file=file_desc)
         print(file=file_desc)
@@ -459,7 +468,7 @@ class ExperimentsCompiler(object):
             experiments_metadata_var_name = "g_experiment_metadata"
         print(
             f"const ExperimentMetadata {experiments_metadata_var_name}[] = {{",
-            file=file_desc
+            file=file_desc,
         )
         for _, exp in self._experiment_definitions.items():
             print(
@@ -494,8 +503,11 @@ class ExperimentsCompiler(object):
             for platform in sorted(self._platforms_define.keys()):
                 if platform == "posix":
                     continue
-                print(f"\n#{'if' if idx ==0 else 'elif'} "
-                      f"defined({self._platforms_define[platform]})", file=C)
+                print(
+                    f"\n#{'if' if idx ==0 else 'elif'} "
+                    f"defined({self._platforms_define[platform]})",
+                    file=C,
+                )
                 self._GenerateExperimentsSrcForPlatform(platform, mode, C)
                 idx += 1
             print("\n#else", file=C)
@@ -507,7 +519,9 @@ class ExperimentsCompiler(object):
         defs = ""
         for _, exp in self._experiment_definitions.items():
             defs += _EXPERIMENTS_EXPECTED_VALUE(
-                SnakeToPascal(exp.name), self._final_return[exp.default(platform)])
+                SnakeToPascal(exp.name),
+                self._final_return[exp.default(platform)],
+            )
         return defs
 
     def GenTest(self, output_file):
@@ -524,8 +538,10 @@ class ExperimentsCompiler(object):
             for platform in sorted(self._platforms_define.keys()):
                 if platform == "posix":
                     continue
-                defs += (f"\n#{'if' if idx ==0 else 'elif'} "
-                         f"defined({self._platforms_define[platform]})")
+                defs += (
+                    f"\n#{'if' if idx ==0 else 'elif'} "
+                    f"defined({self._platforms_define[platform]})"
+                )
                 defs += self._GenTestExperimentsExpectedValues(platform)
                 idx += 1
             defs += "\n#else"
