@@ -106,11 +106,7 @@
 #define DEFAULT_MAX_HEADER_LIST_SIZE (16 * 1024)
 #define DEFAULT_MAX_HEADER_LIST_SIZE_SOFT_LIMIT (8 * 1024)
 
-#define DEFAULT_KEEPALIVE_PERMIT_WITHOUT_CALLS false
 #define KEEPALIVE_TIME_BACKOFF_MULTIPLIER 2
-
-#define DEFAULT_MAX_PINGS_BETWEEN_DATA 2
-#define DEFAULT_MAX_PING_STRIKES 2
 
 #define DEFAULT_MAX_PENDING_INDUCED_FRAMES 10000
 
@@ -122,15 +118,13 @@ static grpc_core::Duration g_default_server_keepalive_time =
     grpc_core::Duration::Hours(2);
 static grpc_core::Duration g_default_server_keepalive_timeout =
     grpc_core::Duration::Seconds(20);
-static bool g_default_client_keepalive_permit_without_calls =
-    DEFAULT_KEEPALIVE_PERMIT_WITHOUT_CALLS;
-static bool g_default_server_keepalive_permit_without_calls =
-    DEFAULT_KEEPALIVE_PERMIT_WITHOUT_CALLS;
+static bool g_default_client_keepalive_permit_without_calls = false;
+static bool g_default_server_keepalive_permit_without_calls = false;
 
 static grpc_core::Duration g_default_min_recv_ping_interval_without_data =
     grpc_core::Duration::Minutes(5);
-static int g_default_max_pings_without_data = DEFAULT_MAX_PINGS_BETWEEN_DATA;
-static int g_default_max_ping_strikes = DEFAULT_MAX_PING_STRIKES;
+static int g_default_max_pings_without_data = 2;
+static int g_default_max_ping_strikes = 2;
 
 #define MAX_CLIENT_STREAM_ID 0x7fffffffu
 grpc_core::TraceFlag grpc_keepalive_trace(false, "http_keepalive");
