@@ -241,19 +241,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "stream_map_test",
-    srcs = ["stream_map_test.cc"],
-    external_deps = ["gtest"],
-    language = "C++",
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
-        "//test/core/util:grpc_test_util_base",
-    ],
-)
-
-grpc_cc_test(
     name = "streams_not_seen_test",
     srcs = ["streams_not_seen_test.cc"],
     external_deps = ["gtest"],
