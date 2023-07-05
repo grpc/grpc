@@ -60,7 +60,7 @@
     <_Asset PackagePath="tools/linux_arm64/" Include="$(Assets_ProtoCompiler)linux_aarch64/protoc" />
     <_Asset PackagePath="tools/macosx_x64/" Include="$(Assets_ProtoCompiler)macos_x64/protoc" /> 
 
-    <!-- gRPC protocol buffers plugin -->
+    <!-- gRPC protocol buffer compiler plugins -->
     <_Asset PackagePath="tools/windows_x86/" Include="$(Assets_GrpcPlugins)protoc_windows_x86/grpc_csharp_plugin.exe" />
     <_Asset PackagePath="tools/windows_x64/" Include="$(Assets_GrpcPlugins)protoc_windows_x64/grpc_csharp_plugin.exe" />
     <_Asset PackagePath="tools/linux_x86/" Include="$(Assets_GrpcPlugins)protoc_linux_x86/grpc_csharp_plugin" />

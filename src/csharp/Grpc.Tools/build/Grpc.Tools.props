@@ -6,7 +6,9 @@
 
   <!-- Name of this file (Grpc.Tools.props) must match package ID (Grpc.Tools). -->
 
-  <!-- TODO(tonydnewell) This could be simplified by combining these files -->
+  <!-- TODO(tonydnewell) The files below were originally separate to allow
+     Grpc.Tools and Google.Protobuf.Tools split, but since we abandoned that plan,
+     the logic could now be simplified by combining these files together -->
   <Import Project="_grpc/_Grpc.Tools.props"/>
   <Import Project="_protobuf/Google.Protobuf.Tools.props"/>
 </Project>
