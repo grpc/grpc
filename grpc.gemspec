@@ -300,6 +300,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/transport/chttp2/transport/hpack_encoder.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/hpack_encoder_table.cc )
   s.files += %w( src/core/ext/transport/chttp2/transport/hpack_encoder_table.h )
+  s.files += %w( src/core/ext/transport/chttp2/transport/hpack_parse_result.cc )
+  s.files += %w( src/core/ext/transport/chttp2/transport/hpack_parse_result.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/hpack_parser.cc )
   s.files += %w( src/core/ext/transport/chttp2/transport/hpack_parser.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/hpack_parser_table.cc )
