@@ -55,6 +55,8 @@ namespace grpc_core {
 
 namespace {
 
+const std::size_t kBioBufferSize = 30000;
+
 char* CopyCoreString(char* src, size_t length) {
   char* target = static_cast<char*>(gpr_malloc(length + 1));
   memcpy(target, src, length);
@@ -347,13 +349,15 @@ void TlsChannelSecurityConnector::add_handshakers(
   MutexLock lock(&mu_);
   tsi_handshaker* tsi_hs = nullptr;
   if (client_handshaker_factory_ != nullptr) {
+    // TODO(matthewstevenson88): Remove the hardcoded large BIO buffer size when
+    // BIO I/O is fixed.
     // Instantiate TSI handshaker.
     tsi_result result = tsi_ssl_client_handshaker_factory_create_handshaker(
         client_handshaker_factory_,
         overridden_target_name_.empty() ? target_name_.c_str()
                                         : overridden_target_name_.c_str(),
-        /*network_bio_buf_size=*/0,
-        /*ssl_bio_buf_size=*/0, &tsi_hs);
+        /*network_bio_buf_size=*/kBioBufferSize,
+        /*ssl_bio_buf_size=*/kBioBufferSize, &tsi_hs);
     if (result != TSI_OK) {
       gpr_log(GPR_ERROR, "Handshaker creation failed with error %s.",
               tsi_result_to_string(result));
@@ -634,10 +638,12 @@ void TlsServerSecurityConnector::add_handshakers(
   MutexLock lock(&mu_);
   tsi_handshaker* tsi_hs = nullptr;
   if (server_handshaker_factory_ != nullptr) {
+    // TODO(matthewstevenson88): Remove the hardcoded large BIO buffer size when
+    // BIO I/O is fixed.
     // Instantiate TSI handshaker.
     tsi_result result = tsi_ssl_server_handshaker_factory_create_handshaker(
-        server_handshaker_factory_, /*network_bio_buf_size=*/0,
-        /*ssl_bio_buf_size=*/0, &tsi_hs);
+        server_handshaker_factory_, /*network_bio_buf_size=*/kBioBufferSize,
+        /*ssl_bio_buf_size=*/kBioBufferSize, &tsi_hs);
     if (result != TSI_OK) {
       gpr_log(GPR_ERROR, "Handshaker creation failed with error %s.",
               tsi_result_to_string(result));
