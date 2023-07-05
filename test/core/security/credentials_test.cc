@@ -2559,14 +2559,16 @@ TEST(
       "token\"}},\"quota_project_id\":\"quota_project_id\","
       "\"client_id\":\"client_id\",\"client_secret\":\"client_secret\"}";
   grpc_error_handle error1, error2;
-  auto json = JsonParse(options_string1);
+  auto json1 = JsonParse(options_string1);
   std::vector<std::string> scopes1 = {"scope1", "scope2"};
-  auto creds =
-      ExternalAccountCredentials::Create(*json, std::move(scopes1), &error1);
-  std::string actual_error;
-  std::string expected_error = "token_lifetime_seconds must be more than 600s";
-  grpc_error_get_str(error1, StatusStrProperty::kDescription, &actual_error);
-  GPR_ASSERT(strcmp(actual_error.c_str(), expected_error.c_str()) == 0);
+  gpr_log(GPR_INFO, "Create Credentials!\n");
+  ExternalAccountCredentials::Create(*json1, std::move(scopes1), &error1);
+  std::string actual_error1,
+      expected_error1 = "token_lifetime_seconds must be more than 600s";
+  grpc_error_get_str(error1, StatusStrProperty::kDescription, &actual_error1);
+  gpr_log(GPR_INFO, "expected_error: %s", expected_error1.c_str());
+  gpr_log(GPR_INFO, "actual_error: %s", actual_error1.c_str());
+  GPR_ASSERT(strcmp(actual_error1.c_str(), expected_error1.c_str()) == 0);
 
   const char* options_string2 =
       "{\"type\":\"external_account\",\"audience\":\"audience\","
@@ -2582,14 +2584,13 @@ TEST(
       "\"format\":{\"type\":\"json\",\"subject_token_field_name\":\"access_"
       "token\"}},\"quota_project_id\":\"quota_project_id\","
       "\"client_id\":\"client_id\",\"client_secret\":\"client_secret\"}";
-  json = JsonParse(options_string2);
+  auto json2 = JsonParse(options_string2);
   std::vector<std::string> scopes2 = {"scope1", "scope2"};
-  creds =
-      ExternalAccountCredentials::Create(*json, std::move(scopes2), &error2);
-  actual_error = "";
-  expected_error = "token_lifetime_seconds must be less than 43200s";
-  grpc_error_get_str(error2, StatusStrProperty::kDescription, &actual_error);
-  GPR_ASSERT(strcmp(actual_error.c_str(), expected_error.c_str()) == 0);
+  ExternalAccountCredentials::Create(*json2, std::move(scopes2), &error2);
+  std::string actual_error2,
+      expected_error2 = "token_lifetime_seconds must be less than 43200s";
+  grpc_error_get_str(error2, StatusStrProperty::kDescription, &actual_error2);
+  GPR_ASSERT(strcmp(actual_error2.c_str(), expected_error2.c_str()) == 0);
 }
 
 TEST(CredentialsTest, TestExternalAccountCredsFailureInvalidTokenUrl) {
