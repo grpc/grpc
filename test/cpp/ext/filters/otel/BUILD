@@ -34,5 +34,10 @@ grpc_cc_test(
     language = "C++",
     tags = [
     ],
-    deps = ["//test/core/util:grpc_test_util"],
+    deps = [
+        "//:grpc++",
+        "//src/cpp/ext/filters/otel:otel_plugin",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/end2end:test_service_impl",
+    ],
 )
