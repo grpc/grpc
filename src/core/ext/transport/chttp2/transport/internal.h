@@ -26,6 +26,8 @@
 
 #include <memory>
 
+#include "absl/container/flat_hash_map.h"
+#include "absl/meta/type_traits.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
@@ -46,7 +48,6 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
-#include "src/core/ext/transport/chttp2/transport/stream_map.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/debug/trace.h"
@@ -278,7 +279,7 @@ struct grpc_chttp2_transport : public grpc_core::KeepsGrpcInitialized {
   grpc_chttp2_stream_list lists[STREAM_LIST_COUNT] = {};
 
   /// maps stream id to grpc_chttp2_stream objects
-  grpc_chttp2_stream_map stream_map;
+  absl::flat_hash_map<uint32_t, grpc_chttp2_stream*> stream_map;
 
   grpc_closure write_action_begin_locked;
   grpc_closure write_action;
@@ -679,8 +680,9 @@ void grpc_chttp2_act_on_flowctl_action(
 
 inline grpc_chttp2_stream* grpc_chttp2_parsing_lookup_stream(
     grpc_chttp2_transport* t, uint32_t id) {
-  return static_cast<grpc_chttp2_stream*>(
-      grpc_chttp2_stream_map_find(&t->stream_map, id));
+  auto it = t->stream_map.find(id);
+  if (it == t->stream_map.end()) return nullptr;
+  return it->second;
 }
 grpc_chttp2_stream* grpc_chttp2_parsing_accept_stream(grpc_chttp2_transport* t,
                                                       uint32_t id);

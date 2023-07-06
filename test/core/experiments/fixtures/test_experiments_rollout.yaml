@@ -13,10 +13,19 @@
 # limitations under the License.
 
 - name: test_experiment_1
-  default: broken
+  default: 
+    ios: broken
+    windows: true
+    posix: true
 - name: test_experiment_2
-  default: false
+  default:
+    ios: true
+    windows: false
+    posix: debug
 - name: test_experiment_3
   default: debug
 - name: test_experiment_4
-  default: true
+  default:
+    ios: true
+    windows: true
+    posix: false

@@ -983,7 +983,7 @@ class HPackParser::Parser {
     const auto transport_size =
         key_string.size() + value.wire_size + hpack_constants::kEntryOverhead;
     auto md = grpc_metadata_batch::Parse(
-        key_string, std::move(value_slice), transport_size,
+        key_string, std::move(value_slice), state_.add_to_table, transport_size,
         [key_string, &status, this](absl::string_view message, const Slice&) {
           if (!status.ok()) return;
           input_->SetErrorAndContinueParsing(

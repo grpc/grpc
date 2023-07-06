@@ -35,6 +35,12 @@ DEFAULTS = {
     "debug": "kDefaultForDebugOnly",
 }
 
+PLATFORMS_DEFINE = {
+    "windows": "GPR_WINDOWS",
+    "ios": "GRPC_CFSTREAM",
+    "posix": "",
+}
+
 FINAL_RETURN = {
     "broken": "return false;",
     False: "return false;",
@@ -103,7 +109,11 @@ def _GenerateExperimentFiles(args, mode):
         rollouts = yaml.safe_load(f.read())
 
     compiler = exp.ExperimentsCompiler(
-        DEFAULTS, FINAL_RETURN, FINAL_DEFINE, BZL_LIST_FOR_DEFAULTS
+        DEFAULTS,
+        FINAL_RETURN,
+        FINAL_DEFINE,
+        PLATFORMS_DEFINE,
+        BZL_LIST_FOR_DEFAULTS,
     )
 
     experiment_annotation = "gRPC Experiments: "

@@ -17,10 +17,24 @@
 # name:        name of the experiment
 # default:     one of:
 #              - broken  - the experiment defaults to off and is not tested
-#              - false   - the experiment defaults to off.
+#                          in all platforms.
+#              - false   - the experiment defaults to off in all platforms.
 #              - debug   - the experiment defaults to on in debug builds,
-#                          off in release builds.
-#              - true    - the experiment defaults to on.
+#                          off in release builds in all platforms.
+#              - true    - the experiment defaults to on in all platforms.
+#
+# [OR] the default can be platform specific:
+#  -----------------------------------------
+#  e.g the following would mark the experiment as broken on ios, false on
+#  windows and debug on posix. If a platform is un-specified, the default for
+#  that platform will be set to false.
+#  - name: experiment_1
+#    default:
+#       ios: broken
+#       windows: false
+#       posix: debug
+#    
+# Supported platforms: ios, windows, posix
 
 - name: tcp_frame_size_tuning
   default: false
@@ -59,6 +73,8 @@
 - name: canary_client_privacy
   default: false
 - name: server_privacy
+  default: false
+- name: unique_metadata_strings
   default: false
 - name: keepalive_fix
   default: false
