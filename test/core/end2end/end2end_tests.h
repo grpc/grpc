@@ -544,7 +544,7 @@ class CoreEnd2endTest : public ::testing::Test {
 
    private:
     struct Impl {
-      Impl(CoreEnd2endTest* test) : call(nullptr, test) {
+      explicit Impl(CoreEnd2endTest* test) : call(nullptr, test) {
         grpc_call_details_init(&call_details);
         grpc_metadata_array_init(&request_metadata);
       }
