@@ -78,6 +78,9 @@ class CqVerifier {
   class SuccessfulStateString {
    public:
     virtual std::string GetSuccessfulStateString() = 0;
+
+   protected:
+    ~SuccessfulStateString() = default;
   };
 
   static void FailUsingGprCrash(const Failure& failure);

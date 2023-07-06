@@ -279,7 +279,7 @@ void CqVerifier::FailUnexpectedEvent(grpc_event* ev,
     auto successful_state_strings = successful_state_strings_.find(ev->tag);
     if (successful_state_strings != successful_state_strings_.end()) {
       for (SuccessfulStateString* sss : successful_state_strings->second) {
-        message_details.emplace_back(sss->GetSuccessfulStateString());
+        message_details.push_back(sss->GetSuccessfulStateString());
       }
     }
   }
