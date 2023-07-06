@@ -158,3 +158,11 @@
   owner: ctiller@google.com
   test_tags: ["core_end2end_test"]
   allow_in_fuzzing_config: true
+- name: keepalive_fix
+  description:
+    Allows overriding keepalive_permit_without_calls.
+    Refer https://github.com/grpc/grpc/pull/33428 for more information.
+  expiry: 2023/09/07
+  owner: yashkt@google.com
+  test_tags: []
+  allow_in_fuzzing_config: false
