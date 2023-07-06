@@ -34,6 +34,7 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
+#include "cq_verifier.h"
 #include "gtest/gtest.h"
 
 #include <grpc/byte_buffer.h>
@@ -269,21 +270,36 @@ std::string CqVerifier::ToShortString() const {
 }
 
 void CqVerifier::FailNoEventReceived(const SourceLocation& location) const {
-  fail_(Failure{location, "No event received", ToStrings()});
+  fail_(Failure{location, "No event received", ToStrings(), {}});
 }
 
 void CqVerifier::FailUnexpectedEvent(grpc_event* ev,
                                      const SourceLocation& location) const {
+  std::vector<std::string> message_details;
+  if (ev->type == GRPC_OP_COMPLETE && ev->success) {
+    auto successful_state_strings = successful_state_strings_.find(ev->tag);
+    if (successful_state_strings != successful_state_strings_.end()) {
+      for (SuccessfulStateString* sss : successful_state_strings->second) {
+        message_details.emplace_back(sss->GetSuccessfulStateString());
+      }
+    }
+  }
   fail_(Failure{location,
                 absl::StrCat("Unexpected event: ", grpc_event_string(ev)),
-                ToStrings()});
+                ToStrings(), std::move(message_details)});
 }
 
 namespace {
 std::string CrashMessage(const CqVerifier::Failure& failure) {
-  std::string message =
-      absl::StrCat(failure.message, "\nexpectation checked @ ",
-                   failure.location.file(), ":", failure.location.line());
+  std::string message = failure.message;
+  if (!failure.message_details.empty()) {
+    absl::StrAppend(&message, "\nwith:");
+    for (const auto& detail : failure.message_details) {
+      absl::StrAppend(&message, "\n  ", detail);
+    }
+  }
+  absl::StrAppend(&message, "\nchecked @ ", failure.location.file(), ":",
+                  failure.location.line());
   if (!failure.expected.empty()) {
     absl::StrAppend(&message, "\nexpected:\n");
     for (const auto& line : failure.expected) {
@@ -420,6 +436,15 @@ void CqVerifier::VerifyEmpty(Duration timeout, SourceLocation location) {
 void CqVerifier::Expect(void* tag, ExpectedResult result,
                         SourceLocation location) {
   expectations_.push_back(Expectation{location, tag, std::move(result)});
+}
+
+void CqVerifier::AddSuccessfulStateString(
+    void* tag, SuccessfulStateString* successful_state_string) {
+  successful_state_strings_[tag].push_back(successful_state_string);
+}
+
+void CqVerifier::ClearSuccessfulStateStrings(void* tag) {
+  successful_state_strings_.erase(tag);
 }
 
 }  // namespace grpc_core
