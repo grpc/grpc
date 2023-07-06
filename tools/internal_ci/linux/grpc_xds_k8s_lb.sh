@@ -170,6 +170,7 @@ main() {
   local failed_tests=0
   run_alpha_test subsetting_test || (( ++failed_tests ))
   test_suites=(
+    "app_net_test"
     "affinity_test"
     "api_listener_test"
     "change_backend_service_test"

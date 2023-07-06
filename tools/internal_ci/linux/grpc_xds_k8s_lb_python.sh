@@ -175,6 +175,7 @@ main() {
   cd "${TEST_DRIVER_FULL_DIR}"
   local failed_tests=0
   test_suites=(
+    "app_net_test"
     "api_listener_test"
     "change_backend_service_test"
     "failover_test"
