@@ -38,7 +38,6 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "test/core/promise/test_wakeup_schedulers.h"
 
-using testing::_;
 using testing::MockFunction;
 using testing::Return;
 using testing::ReturnRef;
