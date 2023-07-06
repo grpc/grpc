@@ -245,7 +245,7 @@ HPackTable::Memento MakeMemento(size_t i) {
   auto sm = kStaticTable[i];
   return HPackTable::Memento{
       grpc_metadata_batch::Parse(
-          sm.key, Slice::FromStaticString(sm.value),
+          sm.key, Slice::FromStaticString(sm.value), true,
           strlen(sm.key) + strlen(sm.value) + hpack_constants::kEntryOverhead,
           [](absl::string_view, const Slice&) {
             abort();  // not expecting to see this
