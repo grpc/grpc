@@ -256,7 +256,6 @@ def grpc_deps():
             sha256 = "5dbd06933d3bfac8b2c3f4b6618ef69add16cad643e9a297b608eabfdc827353",
             strip_prefix = "protobuf-4dd15db6eb3955745f379d28fb4a2fcfb6753de3",
             urls = [
-                # https://github.com/protocolbuffers/protobuf/commits/v23.1
                 "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/4dd15db6eb3955745f379d28fb4a2fcfb6753de3.tar.gz",
                 "https://github.com/protocolbuffers/protobuf/archive/4dd15db6eb3955745f379d28fb4a2fcfb6753de3.tar.gz",
             ],
