@@ -208,7 +208,7 @@ RefCountedPtr<ExternalAccountCredentials> ExternalAccountCredentials::Create(
     auto service_acc_imp_json = it->second;
     auto service_acc_imp_obj_it =
         service_acc_imp_json.object().find("token_lifetime_seconds");
-    if (service_acc_imp_obj_it != it->second.object().end()) {
+    if (service_acc_imp_obj_it != service_acc_imp_json.object().end()) {
       if (!absl::SimpleAtoi(
               service_acc_imp_obj_it->second.string(),
               &options.service_account_impersonation.token_lifetime_seconds)) {
