@@ -321,6 +321,7 @@ class ExperimentsCompiler(object):
                 "WARNING: rollout for an undefined experiment: %s ignored"
                 % rollout_attributes["name"]
             )
+            return True
         return self._experiment_definitions[
             rollout_attributes["name"]
         ].AddRolloutSpecification(
