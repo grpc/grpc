@@ -18,7 +18,6 @@
 #include "src/core/lib/security/credentials/external/external_account_credentials.h"
 
 #include <stdint.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include <algorithm>
@@ -30,6 +29,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/match.h"
+#include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
@@ -210,7 +210,7 @@ RefCountedPtr<ExternalAccountCredentials> ExternalAccountCredentials::Create(
         service_acc_imp_json.object().find("token_lifetime_seconds");
     if (service_acc_imp_obj_it != it->second.object().end()) {
       if (!absl::SimpleAtoi(
-              service_acc_imp_obj_it->second.string().c_str(),
+              service_acc_imp_obj_it->second.string(),
               &options.service_account_impersonation.token_lifetime_seconds)) {
         *error = GRPC_ERROR_CREATE("token_lifetime_seconds must be a number");
         return nullptr;
