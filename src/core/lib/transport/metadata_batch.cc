@@ -63,7 +63,7 @@ absl::optional<absl::string_view> UnknownMap::GetStringValue(
 }  // namespace metadata_detail
 
 ContentTypeMetadata::MementoType ContentTypeMetadata::ParseMemento(
-    Slice value, MetadataParseErrorFn on_error) {
+    Slice value, bool, MetadataParseErrorFn on_error) {
   auto out = kInvalid;
   auto value_string = value.as_string_view();
   if (value_string == "application/grpc") {
@@ -105,7 +105,7 @@ const char* ContentTypeMetadata::DisplayValue(ValueType content_type) {
 }
 
 GrpcTimeoutMetadata::MementoType GrpcTimeoutMetadata::ParseMemento(
-    Slice value, MetadataParseErrorFn on_error) {
+    Slice value, bool, MetadataParseErrorFn on_error) {
   auto timeout = ParseTimeout(value);
   if (!timeout.has_value()) {
     on_error("invalid value", value);
@@ -127,7 +127,7 @@ Slice GrpcTimeoutMetadata::Encode(ValueType x) {
 }
 
 TeMetadata::MementoType TeMetadata::ParseMemento(
-    Slice value, MetadataParseErrorFn on_error) {
+    Slice value, bool, MetadataParseErrorFn on_error) {
   auto out = kInvalid;
   if (value == "trailers") {
     out = kTrailers;
@@ -191,7 +191,7 @@ const char* HttpSchemeMetadata::DisplayValue(ValueType content_type) {
 }
 
 HttpMethodMetadata::MementoType HttpMethodMetadata::ParseMemento(
-    Slice value, MetadataParseErrorFn on_error) {
+    Slice value, bool, MetadataParseErrorFn on_error) {
   auto out = kInvalid;
   auto value_string = value.as_string_view();
   if (value_string == "POST") {
@@ -236,7 +236,7 @@ const char* HttpMethodMetadata::DisplayValue(ValueType content_type) {
 }
 
 CompressionAlgorithmBasedMetadata::MementoType
-CompressionAlgorithmBasedMetadata::ParseMemento(Slice value,
+CompressionAlgorithmBasedMetadata::ParseMemento(Slice value, bool,
                                                 MetadataParseErrorFn on_error) {
   auto algorithm = ParseCompressionAlgorithm(value.as_string_view());
   if (!algorithm.has_value()) {
@@ -247,7 +247,7 @@ CompressionAlgorithmBasedMetadata::ParseMemento(Slice value,
 }
 
 Duration GrpcRetryPushbackMsMetadata::ParseMemento(
-    Slice value, MetadataParseErrorFn on_error) {
+    Slice value, bool, MetadataParseErrorFn on_error) {
   int64_t out;
   if (!absl::SimpleAtoi(value.as_string_view(), &out)) {
     on_error("not an integer", value);
@@ -269,7 +269,7 @@ std::string LbCostBinMetadata::DisplayValue(ValueType x) {
 }
 
 LbCostBinMetadata::MementoType LbCostBinMetadata::ParseMemento(
-    Slice value, MetadataParseErrorFn on_error) {
+    Slice value, bool, MetadataParseErrorFn on_error) {
   if (value.length() < sizeof(double)) {
     on_error("too short", value);
     return {0, ""};

@@ -342,6 +342,22 @@ class GPR_MSVC_EMPTY_BASE_CLASS_WORKAROUND Slice
     return Slice(TakeCSlice());
   }
 
+  // As per TakeOwned, but if the slice is refcounted and there are other refs
+  // then it will copy instead of ref-counting, to ensure the returned slice is
+  // not shared.
+  Slice TakeUniquelyOwned() {
+    if (c_slice().refcount == nullptr) {
+      return Slice(c_slice());
+    }
+    if (c_slice().refcount == grpc_slice_refcount::NoopRefcount()) {
+      return Slice(grpc_slice_copy(c_slice()));
+    }
+    if (c_slice().refcount->IsUnique()) {
+      return Slice(TakeCSlice());
+    }
+    return Slice(grpc_slice_copy(c_slice()));
+  }
+
   // AsOwned returns an owned slice but does not mutate the current slice,
   // meaning that it may add a reference to the underlying slice.
   Slice AsOwned() const {

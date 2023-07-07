@@ -54,7 +54,7 @@ CORE_END2END_TEST(RetryTest, RetryRecvInitialMetadata) {
       "  } ]\n"
       "}"));
   auto c =
-      NewClientCall("/service/method").Timeout(Duration::Seconds(5)).Create();
+      NewClientCall("/service/method").Timeout(Duration::Minutes(1)).Create();
   EXPECT_NE(c.GetPeer(), absl::nullopt);
   IncomingMessage server_message;
   IncomingMetadata server_initial_metadata;

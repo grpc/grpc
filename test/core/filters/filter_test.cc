@@ -339,7 +339,7 @@ ClientMetadataHandle FilterTestBase::Call::NewClientMetadata(
   auto md = impl_->arena()->MakePooled<ClientMetadata>(impl_->arena());
   for (auto& p : init) {
     auto parsed = ClientMetadata::Parse(
-        p.first, Slice::FromCopiedString(p.second),
+        p.first, Slice::FromCopiedString(p.second), false,
         p.first.length() + p.second.length() + 32,
         [p](absl::string_view, const Slice&) {
           Crash(absl::StrCat("Illegal metadata value: ", p.first, ": ",
@@ -356,7 +356,7 @@ ServerMetadataHandle FilterTestBase::Call::NewServerMetadata(
   auto md = impl_->arena()->MakePooled<ClientMetadata>(impl_->arena());
   for (auto& p : init) {
     auto parsed = ServerMetadata::Parse(
-        p.first, Slice::FromCopiedString(p.second),
+        p.first, Slice::FromCopiedString(p.second), false,
         p.first.length() + p.second.length() + 32,
         [p](absl::string_view, const Slice&) {
           Crash(absl::StrCat("Illegal metadata value: ", p.first, ": ",
