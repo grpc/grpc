@@ -27,8 +27,10 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/strings/string_view.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -37,6 +39,7 @@
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
+#include "src/core/lib/promise/trace.h"
 #include "src/core/lib/resource_quota/arena.h"
 
 // Two implementations of party synchronization are provided: one using a single
@@ -453,12 +456,14 @@ class Party : public Activity, private Wakeable {
 
   // Wakeable implementation
   void Wakeup(WakeupMask wakeup_mask) final;
+  void WakeupAsync(WakeupMask wakeup_mask) final;
   void Drop(WakeupMask wakeup_mask) final;
 
-  // Organize to wake up some participants.
-  void ScheduleWakeup(WakeupMask mask);
   // Add a participant (backs Spawn, after type erasure to ParticipantFactory).
   void AddParticipants(Participant** participant, size_t count);
+
+  virtual grpc_event_engine::experimental::EventEngine* event_engine()
+      const = 0;
 
   // Sentinal value for currently_polling_ when no participant is being polled.
   static constexpr uint8_t kNotPolling = 255;
@@ -482,6 +487,10 @@ class Party : public Activity, private Wakeable {
 template <typename Factory, typename OnComplete>
 void Party::BulkSpawner::Spawn(absl::string_view name, Factory promise_factory,
                                OnComplete on_complete) {
+  if (grpc_trace_promise_primitives.enabled()) {
+    gpr_log(GPR_DEBUG, "%s[bulk_spawn] On %p queue %s",
+            party_->DebugTag().c_str(), this, std::string(name).c_str());
+  }
   participants_[num_participants_++] =
       party_->arena_->NewPooled<ParticipantImpl<Factory, OnComplete>>(
           name, std::move(promise_factory), std::move(on_complete));

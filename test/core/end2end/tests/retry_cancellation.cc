@@ -94,11 +94,11 @@ void TestRetryCancellation(CoreEnd2endTest& test,
   EXPECT_FALSE(client_close.was_cancelled());
 }
 
-TEST_P(RetryTest, RetryCancellation) {
+CORE_END2END_TEST(RetryTest, RetryCancellation) {
   TestRetryCancellation(*this, std::make_unique<CancelCancellationMode>());
 }
 
-TEST_P(RetryTest, RetryDeadline) {
+CORE_END2END_TEST(RetryTest, RetryDeadline) {
   TestRetryCancellation(*this, std::make_unique<DeadlineCancellationMode>());
 }
 

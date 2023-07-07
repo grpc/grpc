@@ -32,6 +32,9 @@ spec:
           tcpSocket:
             port: ${maintenance_port}
           periodSeconds: 3
+          ## Extend the number of probes well beyond the duration of the test
+          ## driver waiting for the container to start.
+          failureThreshold: 1000
         args:
           - "--port=${test_port}"
           - "--maintenance_port=${maintenance_port}"
@@ -46,7 +49,7 @@ spec:
             value: "true"
           - name: GRPC_XDS_EXPERIMENTAL_V3_SUPPORT
             value: "true"
-          # TODO(sergiitk): this should be conditional for if version < v1.37.x
+          ## TODO(sergiitk): this should be conditional for if version < v1.37.x
           - name: GRPC_XDS_EXPERIMENTAL_NEW_SERVER_API
             value: "true"
           - name: GRPC_XDS_EXPERIMENTAL_RBAC

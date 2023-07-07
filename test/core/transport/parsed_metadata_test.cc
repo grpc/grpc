@@ -37,7 +37,7 @@ struct CharTrait {
   static char test_value() { return 'a'; }
   static size_t test_memento_transport_size() { return 34; }
   static char MementoToValue(char memento) { return memento; }
-  static char ParseMemento(Slice slice, MetadataParseErrorFn) {
+  static char ParseMemento(Slice slice, bool, MetadataParseErrorFn) {
     return slice[0];
   }
   static std::string DisplayValue(char value) { return std::string(1, value); }
@@ -53,7 +53,7 @@ struct Int32Trait {
   static int32_t test_value() { return -1; }
   static size_t test_memento_transport_size() { return 478; }
   static int32_t MementoToValue(int32_t memento) { return memento; }
-  static int32_t ParseMemento(Slice slice, MetadataParseErrorFn) {
+  static int32_t ParseMemento(Slice slice, bool, MetadataParseErrorFn) {
     int32_t out;
     GPR_ASSERT(absl::SimpleAtoi(slice.as_string_view(), &out));
     return out;
@@ -73,7 +73,7 @@ struct Int64Trait {
   static int64_t test_value() { return -83481847284179298; }
   static size_t test_memento_transport_size() { return 87; }
   static int64_t MementoToValue(int64_t memento) { return -memento; }
-  static int64_t ParseMemento(Slice slice, MetadataParseErrorFn) {
+  static int64_t ParseMemento(Slice slice, bool, MetadataParseErrorFn) {
     int64_t out;
     GPR_ASSERT(absl::SimpleAtoi(slice.as_string_view(), &out));
     return out;
@@ -93,7 +93,7 @@ struct IntptrTrait {
   static intptr_t test_value() { return test_memento() / 2; }
   static size_t test_memento_transport_size() { return 800; }
   static intptr_t MementoToValue(intptr_t memento) { return memento / 2; }
-  static intptr_t ParseMemento(Slice slice, MetadataParseErrorFn) {
+  static intptr_t ParseMemento(Slice slice, bool, MetadataParseErrorFn) {
     intptr_t out;
     GPR_ASSERT(absl::SimpleAtoi(slice.as_string_view(), &out));
     return out;
@@ -115,7 +115,7 @@ struct StringTrait {
   static std::string MementoToValue(std::string memento) {
     return "hi " + memento;
   }
-  static std::string ParseMemento(Slice slice, MetadataParseErrorFn) {
+  static std::string ParseMemento(Slice slice, bool, MetadataParseErrorFn) {
     auto view = slice.as_string_view();
     return std::string(view.begin(), view.end());
   }
@@ -223,11 +223,13 @@ INSTANTIATE_TYPED_TEST_SUITE_P(My, TraitSpecializedTest, InterestingTraits);
 TEST(KeyValueTest, Simple) {
   using PM = ParsedMetadata<grpc_metadata_batch>;
   using PMPtr = std::unique_ptr<PM>;
-  PMPtr p = std::make_unique<PM>(Slice::FromCopiedString("key"),
-                                 Slice::FromCopiedString("value"));
+  PMPtr p =
+      std::make_unique<PM>(PM::FromSlicePair{}, Slice::FromCopiedString("key"),
+                           Slice::FromCopiedString("value"), 40);
   EXPECT_EQ(p->DebugString(), "key: value");
   EXPECT_EQ(p->transport_size(), 40);
-  PM p2 = p->WithNewValue(Slice::FromCopiedString("some_other_value"),
+  PM p2 = p->WithNewValue(Slice::FromCopiedString("some_other_value"), true,
+                          strlen("some_other_value"),
                           [](absl::string_view msg, const Slice& value) {
                             ASSERT_TRUE(false)
                                 << "Should not be called: msg=" << msg
@@ -247,13 +249,15 @@ TEST(KeyValueTest, Simple) {
 TEST(KeyValueTest, LongKey) {
   using PM = ParsedMetadata<grpc_metadata_batch>;
   using PMPtr = std::unique_ptr<PM>;
-  PMPtr p = std::make_unique<PM>(Slice::FromCopiedString(std::string(60, 'a')),
-                                 Slice::FromCopiedString("value"));
+  PMPtr p = std::make_unique<PM>(PM::FromSlicePair{},
+                                 Slice::FromCopiedString(std::string(60, 'a')),
+                                 Slice::FromCopiedString("value"), 60 + 5 + 32);
   EXPECT_EQ(
       p->DebugString(),
       "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: value");
   EXPECT_EQ(p->transport_size(), 97);
-  PM p2 = p->WithNewValue(Slice::FromCopiedString("some_other_value"),
+  PM p2 = p->WithNewValue(Slice::FromCopiedString("some_other_value"), true,
+                          strlen("some_other_value"),
                           [](absl::string_view msg, const Slice& value) {
                             ASSERT_TRUE(false)
                                 << "Should not be called: msg=" << msg

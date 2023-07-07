@@ -121,7 +121,8 @@ RefCountedPtr<ServiceConfig> ServiceConfigImpl::Create(
     service_config->parsed_method_config_vectors_storage_.reserve(
         method_configs->size());
     for (size_t i = 0; i < method_configs->size(); ++i) {
-      const Json::Object& method_config_json = (*method_configs)[i];
+      const Json method_config_json =
+          Json::FromObject(std::move((*method_configs)[i]));
       ValidationErrors::ScopedField field(
           errors, absl::StrCat(".methodConfig[", i, "]"));
       // Have each parser read this method config.

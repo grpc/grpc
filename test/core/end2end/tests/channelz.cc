@@ -64,7 +64,7 @@ void RunOneRequest(CoreEnd2endTest& test, bool request_is_success) {
   EXPECT_EQ(s.method(), "/foo");
 }
 
-TEST_P(CoreEnd2endTest, Channelz) {
+CORE_END2END_TEST(CoreEnd2endTest, Channelz) {
   auto args = ChannelArgs()
                   .Set(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE, 0)
                   .Set(GRPC_ARG_ENABLE_CHANNELZ, true);
@@ -117,7 +117,7 @@ TEST_P(CoreEnd2endTest, Channelz) {
   EXPECT_THAT(json, HasSubstr("\"end\":true"));
 }
 
-TEST_P(CoreEnd2endTest, ChannelzWithChannelTrace) {
+CORE_END2END_TEST(CoreEnd2endTest, ChannelzWithChannelTrace) {
   auto args =
       ChannelArgs()
           .Set(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE, 1024 * 1024)
@@ -146,7 +146,7 @@ TEST_P(CoreEnd2endTest, ChannelzWithChannelTrace) {
   EXPECT_THAT(json, HasSubstr("\"severity\":\"CT_INFO\""));
 }
 
-TEST_P(CoreEnd2endTest, ChannelzDisabled) {
+CORE_END2END_TEST(CoreEnd2endTest, ChannelzDisabled) {
   auto args = ChannelArgs()
                   .Set(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE, 0)
                   .Set(GRPC_ARG_ENABLE_CHANNELZ, false);

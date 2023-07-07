@@ -30,15 +30,15 @@ _LOGGER.setLevel(logging.INFO)
 _FAILURE_RATE = 0.5
 _NUMBER_OF_MESSAGES = 100
 
-_ADDR_TEMPLATE = 'localhost:%d'
+_ADDR_TEMPLATE = "localhost:%d"
 
 
 class DebugExampleTest(unittest.TestCase):
-
     def test_channelz_example(self):
-        server = debug_server.create_server(addr='[::]:0',
-                                            failure_rate=_FAILURE_RATE)
-        port = server.add_insecure_port('[::]:0')
+        server = debug_server.create_server(
+            addr="[::]:0", failure_rate=_FAILURE_RATE
+        )
+        port = server.add_insecure_port("[::]:0")
         server.start()
         address = _ADDR_TEMPLATE % port
 
@@ -48,11 +48,11 @@ class DebugExampleTest(unittest.TestCase):
         # No unhandled exception raised, test passed!
 
     def test_asyncio_channelz_example(self):
-
         async def body():
             server = asyncio_debug_server.create_server(
-                addr='[::]:0', failure_rate=_FAILURE_RATE)
-            port = server.add_insecure_port('[::]:0')
+                addr="[::]:0", failure_rate=_FAILURE_RATE
+            )
+            port = server.add_insecure_port("[::]:0")
             await server.start()
             address = _ADDR_TEMPLATE % port
 
@@ -64,6 +64,6 @@ class DebugExampleTest(unittest.TestCase):
         asyncio.get_event_loop().run_until_complete(body())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     unittest.main(verbosity=2)

@@ -27,7 +27,7 @@
 
 #include <string.h>
 
-#include "google/ads/googleads/v11/services/google_ads_service.upbdefs.h"
+#include "google/ads/googleads/v13/services/google_ads_service.upbdefs.h"
 #include "google/protobuf/descriptor.pb.h"
 #include "absl/container/flat_hash_set.h"
 #include "google/protobuf/dynamic_message.h"
@@ -35,6 +35,8 @@
 #include "benchmarks/descriptor.upb.h"
 #include "benchmarks/descriptor.upbdefs.h"
 #include "benchmarks/descriptor_sv.pb.h"
+#include "upb/base/log2.h"
+#include "upb/mem/arena.h"
 #include "upb/reflection/def.hpp"
 
 upb_StringView descriptor = benchmarks_descriptor_proto_upbdefinit.descriptor;
@@ -72,6 +74,52 @@ static void BM_ArenaInitialBlockOneAlloc(benchmark::State& state) {
   }
 }
 BENCHMARK(BM_ArenaInitialBlockOneAlloc);
+
+static void BM_ArenaFuseUnbalanced(benchmark::State& state) {
+  std::vector<upb_Arena*> arenas(state.range(0));
+  size_t n = 0;
+  for (auto _ : state) {
+    for (auto& arena : arenas) {
+      arena = upb_Arena_New();
+    }
+    for (auto& arena : arenas) {
+      upb_Arena_Fuse(arenas[0], arena);
+    }
+    for (auto& arena : arenas) {
+      upb_Arena_Free(arena);
+    }
+    n += arenas.size();
+  }
+  state.SetItemsProcessed(n);
+}
+BENCHMARK(BM_ArenaFuseUnbalanced)->Range(2, 128);
+
+static void BM_ArenaFuseBalanced(benchmark::State& state) {
+  std::vector<upb_Arena*> arenas(state.range(0));
+  size_t n = 0;
+
+  for (auto _ : state) {
+    for (auto& arena : arenas) {
+      arena = upb_Arena_New();
+    }
+
+    // Perform a series of fuses that keeps the halves balanced.
+    size_t max = upb_Log2Ceiling(arenas.size());
+    for (size_t n = 0; n <= max; n++) {
+      size_t step = 1 << n;
+      for (size_t i = 0; i + step < arenas.size(); i += (step * 2)) {
+        upb_Arena_Fuse(arenas[i], arenas[i + step]);
+      }
+    }
+
+    for (auto& arena : arenas) {
+      upb_Arena_Free(arena);
+    }
+    n += arenas.size();
+  }
+  state.SetItemsProcessed(n);
+}
+BENCHMARK(BM_ArenaFuseBalanced)->Range(2, 128);
 
 enum LoadDescriptorMode {
   NoLayout,
@@ -139,14 +187,14 @@ static void BM_LoadAdsDescriptor_Upb(benchmark::State& state) {
   for (auto _ : state) {
     upb::DefPool defpool;
     if (Mode == NoLayout) {
-      google_ads_googleads_v11_services_SearchGoogleAdsRequest_getmsgdef(
+      google_ads_googleads_v13_services_SearchGoogleAdsRequest_getmsgdef(
           defpool.ptr());
       bytes_per_iter = _upb_DefPool_BytesLoaded(defpool.ptr());
     } else {
       bytes_per_iter = 0;
       LoadDefInit_BuildLayout(
           defpool.ptr(),
-          &google_ads_googleads_v11_services_google_ads_service_proto_upbdefinit,
+          &google_ads_googleads_v13_services_google_ads_service_proto_upbdefinit,
           &bytes_per_iter);
     }
   }
@@ -158,11 +206,11 @@ BENCHMARK_TEMPLATE(BM_LoadAdsDescriptor_Upb, WithLayout);
 template <LoadDescriptorMode Mode>
 static void BM_LoadAdsDescriptor_Proto2(benchmark::State& state) {
   extern _upb_DefPool_Init
-      google_ads_googleads_v11_services_google_ads_service_proto_upbdefinit;
+      google_ads_googleads_v13_services_google_ads_service_proto_upbdefinit;
   std::vector<upb_StringView> serialized_files;
   absl::flat_hash_set<const _upb_DefPool_Init*> seen_files;
   CollectFileDescriptors(
-      &google_ads_googleads_v11_services_google_ads_service_proto_upbdefinit,
+      &google_ads_googleads_v13_services_google_ads_service_proto_upbdefinit,
       serialized_files, seen_files);
   size_t bytes_per_iter = 0;
   for (auto _ : state) {
@@ -185,7 +233,7 @@ static void BM_LoadAdsDescriptor_Proto2(benchmark::State& state) {
     if (Mode == WithLayout) {
       protobuf::DynamicMessageFactory factory;
       const protobuf::Descriptor* d = pool.FindMessageTypeByName(
-          "google.ads.googleads.v11.services.SearchGoogleAdsResponse");
+          "google.ads.googleads.v13.services.SearchGoogleAdsResponse");
       if (!d) {
         printf("Failed to find descriptor.\n");
         exit(1);

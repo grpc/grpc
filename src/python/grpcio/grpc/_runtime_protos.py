@@ -19,8 +19,12 @@ from typing import Tuple, Union
 _REQUIRED_SYMBOLS = ("_protos", "_services", "_protos_and_services")
 _MINIMUM_VERSION = (3, 5, 0)
 
-_UNINSTALLED_TEMPLATE = "Install the grpcio-tools package (1.32.0+) to use the {} function."
-_VERSION_ERROR_TEMPLATE = "The {} function is only on available on Python 3.X interpreters."
+_UNINSTALLED_TEMPLATE = (
+    "Install the grpcio-tools package (1.32.0+) to use the {} function."
+)
+_VERSION_ERROR_TEMPLATE = (
+    "The {} function is only on available on Python 3.X interpreters."
+)
 
 
 def _has_runtime_proto_symbols(mod: types.ModuleType) -> bool:
@@ -30,6 +34,7 @@ def _has_runtime_proto_symbols(mod: types.ModuleType) -> bool:
 def _is_grpc_tools_importable() -> bool:
     try:
         import grpc_tools  # pylint: disable=unused-import # pytype: disable=import-error
+
         return True
     except ImportError as e:
         # NOTE: It's possible that we're encountering a transitive ImportError, so
@@ -57,8 +62,9 @@ def _call_with_lazy_import(
         if not _is_grpc_tools_importable():
             raise NotImplementedError(_UNINSTALLED_TEMPLATE.format(fn_name))
         import grpc_tools.protoc  # pytype: disable=import-error
+
         if _has_runtime_proto_symbols(grpc_tools.protoc):
-            fn = getattr(grpc_tools.protoc, '_' + fn_name)
+            fn = getattr(grpc_tools.protoc, "_" + fn_name)
             return fn(protobuf_path)
         else:
             raise NotImplementedError(_UNINSTALLED_TEMPLATE.format(fn_name))

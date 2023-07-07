@@ -20,26 +20,28 @@ import helloworld_pb2
 import helloworld_pb2_grpc
 
 
-def unary_call(stub: helloworld_pb2_grpc.GreeterStub, request_id: int,
-               message: str):
+def unary_call(
+    stub: helloworld_pb2_grpc.GreeterStub, request_id: int, message: str
+):
     print("call:", request_id)
     try:
-        response = stub.SayHello(helloworld_pb2.HelloRequest(name=message),
-                                 timeout=3)
+        response = stub.SayHello(
+            helloworld_pb2.HelloRequest(name=message), timeout=3
+        )
         print(f"Greeter client received: {response.message}")
     except grpc.RpcError as rpc_error:
         print(f"Call failed with code: {rpc_error.code()}")
 
 
 def run():
-    with grpc.insecure_channel('localhost:50051') as channel:
+    with grpc.insecure_channel("localhost:50051") as channel:
         stub = helloworld_pb2_grpc.GreeterStub(channel)
         # Should success
-        unary_call(stub, 1, 'you')
+        unary_call(stub, 1, "you")
         # Should fail with DEADLINE_EXCEEDED
-        unary_call(stub, 2, '[delay] you')
+        unary_call(stub, 2, "[delay] you")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig()
     run()

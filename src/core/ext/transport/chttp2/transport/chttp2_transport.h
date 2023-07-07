@@ -27,8 +27,10 @@
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/iomgr/buffer_list.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/transport/transport_fwd.h"
 
 extern grpc_core::TraceFlag grpc_keepalive_trace;
@@ -71,6 +73,25 @@ void TestOnlySetGlobalHttp2TransportDestructCallback(
 // same time that a GOAWAY is received.
 void TestOnlyGlobalHttp2TransportDisableTransientFailureStateNotification(
     bool disable);
+
+typedef void (*WriteTimestampsCallback)(void*, Timestamps*,
+                                        grpc_error_handle error);
+typedef void* (*CopyContextFn)(void*);
+
+void GrpcHttp2SetWriteTimestampsCallback(WriteTimestampsCallback fn);
+void GrpcHttp2SetCopyContextFn(CopyContextFn fn);
+
+WriteTimestampsCallback GrpcHttp2GetWriteTimestampsCallback();
+CopyContextFn GrpcHttp2GetCopyContextFn();
+
+// Interprets the passed arg as a ContextList type and for each entry in the
+// passed ContextList, it executes the function set using
+// GrpcHttp2SetWriteTimestampsCallback method with each context in the list
+// and \a ts. It also deletes/frees up the passed ContextList after this
+// operation.
+void ForEachContextListEntryExecute(void* arg, Timestamps* ts,
+                                    grpc_error_handle error);
+
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_CHTTP2_TRANSPORT_H

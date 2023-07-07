@@ -40,6 +40,7 @@
 #include "upb/reflection/def.h"
 
 #include <grpc/grpc.h>
+#include <grpc/support/json.h>
 #include <grpc/support/log.h>
 #include <grpcpp/impl/codegen/config_protobuf.h>
 
@@ -47,7 +48,6 @@
 #include "src/core/ext/xds/xds_resource_type_impl.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
@@ -56,6 +56,7 @@
 #include "src/core/lib/json/json_writer.h"
 #include "src/proto/grpc/testing/xds/v3/base.pb.h"
 #include "src/proto/grpc/testing/xds/v3/discovery.pb.h"
+#include "test/core/util/scoped_env_var.h"
 #include "test/core/util/test_config.h"
 #include "test/core/xds/xds_transport_fake.h"
 
@@ -81,6 +82,7 @@ class XdsClientTest : public ::testing::Test {
    public:
     class FakeNode : public Node {
      public:
+      FakeNode() = default;
       const std::string& id() const override { return id_; }
       const std::string& cluster() const override { return cluster_; }
       const std::string& locality_region() const override {
@@ -557,18 +559,6 @@ class XdsClientTest : public ::testing::Test {
     DiscoveryResponse response_;
   };
 
-  class ScopedExperimentalEnvVar {
-   public:
-    explicit ScopedExperimentalEnvVar(const char* env_var) : env_var_(env_var) {
-      SetEnv(env_var_, "true");
-    }
-
-    ~ScopedExperimentalEnvVar() { UnsetEnv(env_var_); }
-
-   private:
-    const char* env_var_;
-  };
-
   // Sets transport_factory_ and initializes xds_client_ with the
   // specified bootstrap config.
   void InitXdsClient(
@@ -725,9 +715,11 @@ class XdsClientTest : public ::testing::Test {
       ASSERT_TRUE(metadata_json.ok())
           << metadata_json.status() << " on " << location.file() << ":"
           << location.line();
-      EXPECT_EQ(*metadata_json, xds_client_->bootstrap().node()->metadata())
-          << location.file() << ":" << location.line() << ":\nexpected: "
-          << JsonDump(Json{xds_client_->bootstrap().node()->metadata()})
+      Json expected =
+          Json::FromObject(xds_client_->bootstrap().node()->metadata());
+      EXPECT_EQ(*metadata_json, expected)
+          << location.file() << ":" << location.line()
+          << ":\nexpected: " << JsonDump(expected)
           << "\nactual: " << JsonDump(*metadata_json);
     }
     EXPECT_EQ(request.node().user_agent_name(), "foo agent")
@@ -2328,7 +2320,6 @@ TEST_F(XdsClientTest, MultipleResourceTypes) {
 }
 
 TEST_F(XdsClientTest, Federation) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_FEDERATION");
   constexpr char kAuthority[] = "xds.example.com";
   const std::string kXdstpResourceName = absl::StrCat(
       "xdstp://", kAuthority, "/", XdsFooResource::TypeUrl(), "/foo2");
@@ -2417,7 +2408,6 @@ TEST_F(XdsClientTest, Federation) {
 }
 
 TEST_F(XdsClientTest, FederationAuthorityDefaultsToTopLevelXdsServer) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_FEDERATION");
   constexpr char kAuthority[] = "xds.example.com";
   const std::string kXdstpResourceName = absl::StrCat(
       "xdstp://", kAuthority, "/", XdsFooResource::TypeUrl(), "/foo2");
@@ -2506,7 +2496,6 @@ TEST_F(XdsClientTest, FederationAuthorityDefaultsToTopLevelXdsServer) {
 }
 
 TEST_F(XdsClientTest, FederationWithUnknownAuthority) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_FEDERATION");
   constexpr char kAuthority[] = "xds.example.com";
   const std::string kXdstpResourceName = absl::StrCat(
       "xdstp://", kAuthority, "/", XdsFooResource::TypeUrl(), "/foo2");
@@ -2524,7 +2513,6 @@ TEST_F(XdsClientTest, FederationWithUnknownAuthority) {
 }
 
 TEST_F(XdsClientTest, FederationWithUnparseableXdstpResourceName) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_FEDERATION");
   // Note: Not adding authority to bootstrap config.
   InitXdsClient();
   // Start a watch for the xdstp resource name.
@@ -2537,7 +2525,10 @@ TEST_F(XdsClientTest, FederationWithUnparseableXdstpResourceName) {
       << *error;
 }
 
+// TODO(roth,apolcyn): remove this test when the
+// GRPC_EXPERIMENTAL_XDS_FEDERATION env var is removed.
 TEST_F(XdsClientTest, FederationDisabledWithNewStyleName) {
+  testing::ScopedEnvVar env_var("GRPC_EXPERIMENTAL_XDS_FEDERATION", "false");
   // We will use this xdstp name, whose authority is not present in
   // the bootstrap config.  But since federation is not enabled, we
   // will treat this as an opaque old-style name, so we'll send it to
@@ -2585,7 +2576,6 @@ TEST_F(XdsClientTest, FederationDisabledWithNewStyleName) {
 }
 
 TEST_F(XdsClientTest, FederationChannelFailureReportedToWatchers) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_FEDERATION");
   constexpr char kAuthority[] = "xds.example.com";
   const std::string kXdstpResourceName = absl::StrCat(
       "xdstp://", kAuthority, "/", XdsFooResource::TypeUrl(), "/foo2");

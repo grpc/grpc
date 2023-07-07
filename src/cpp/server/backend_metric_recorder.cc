@@ -34,7 +34,10 @@
 using grpc_core::BackendMetricData;
 
 namespace {
-// All utilization values must be in [0, 1].
+// Utilization values with soft limits must be in [0, infy).
+bool IsUtilizationWithSoftLimitsValid(double util) { return util >= 0.0; }
+
+// Other utilization values must be in [0, 1].
 bool IsUtilizationValid(double utilization) {
   return utilization >= 0.0 && utilization <= 1.0;
 }
@@ -65,7 +68,7 @@ void ServerMetricRecorder::UpdateBackendMetricDataState(
 }
 
 void ServerMetricRecorder::SetCpuUtilization(double value) {
-  if (!IsUtilizationValid(value)) {
+  if (!IsUtilizationWithSoftLimitsValid(value)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_trace)) {
       gpr_log(GPR_INFO, "[%p] CPU utilization rejected: %f", this, value);
     }
@@ -89,6 +92,22 @@ void ServerMetricRecorder::SetMemoryUtilization(double value) {
       [value](BackendMetricData* data) { data->mem_utilization = value; });
   if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_trace)) {
     gpr_log(GPR_INFO, "[%p] Mem utilization set: %f", this, value);
+  }
+}
+
+void ServerMetricRecorder::SetApplicationUtilization(double value) {
+  if (!IsUtilizationWithSoftLimitsValid(value)) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_trace)) {
+      gpr_log(GPR_INFO, "[%p] Application utilization rejected: %f", this,
+              value);
+    }
+    return;
+  }
+  UpdateBackendMetricDataState([value](BackendMetricData* data) {
+    data->application_utilization = value;
+  });
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_trace)) {
+    gpr_log(GPR_INFO, "[%p] Application utilization set: %f", this, value);
   }
 }
 
@@ -169,6 +188,14 @@ void ServerMetricRecorder::ClearMemoryUtilization() {
   }
 }
 
+void ServerMetricRecorder::ClearApplicationUtilization() {
+  UpdateBackendMetricDataState(
+      [](BackendMetricData* data) { data->application_utilization = -1; });
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_trace)) {
+    gpr_log(GPR_INFO, "[%p] Application utilization cleared.", this);
+  }
+}
+
 void ServerMetricRecorder::ClearQps() {
   UpdateBackendMetricDataState([](BackendMetricData* data) { data->qps = -1; });
   if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_trace)) {
@@ -209,9 +236,10 @@ ServerMetricRecorder::GetMetricsIfChanged() const {
     const auto& data = result->data;
     gpr_log(GPR_INFO,
             "[%p] GetMetrics() returned: seq:%" PRIu64
-            " cpu:%f mem:%f qps:%f eps:%f utilization size: %" PRIuPTR,
+            " cpu:%f mem:%f app:%f qps:%f eps:%f utilization size: %" PRIuPTR,
             this, result->sequence_number, data.cpu_utilization,
-            data.mem_utilization, data.qps, data.eps, data.utilization.size());
+            data.mem_utilization, data.application_utilization, data.qps,
+            data.eps, data.utilization.size());
   }
   return result;
 }
@@ -220,7 +248,7 @@ ServerMetricRecorder::GetMetricsIfChanged() const {
 
 experimental::CallMetricRecorder&
 BackendMetricState::RecordCpuUtilizationMetric(double value) {
-  if (!IsUtilizationValid(value)) {
+  if (!IsUtilizationWithSoftLimitsValid(value)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_trace)) {
       gpr_log(GPR_INFO, "[%p] CPU utilization value rejected: %f", this, value);
     }
@@ -244,6 +272,22 @@ BackendMetricState::RecordMemoryUtilizationMetric(double value) {
   mem_utilization_.store(value, std::memory_order_relaxed);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_trace)) {
     gpr_log(GPR_INFO, "[%p] Mem utilization recorded: %f", this, value);
+  }
+  return *this;
+}
+
+experimental::CallMetricRecorder&
+BackendMetricState::RecordApplicationUtilizationMetric(double value) {
+  if (!IsUtilizationWithSoftLimitsValid(value)) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_trace)) {
+      gpr_log(GPR_INFO, "[%p] Application utilization value rejected: %f", this,
+              value);
+    }
+    return *this;
+  }
+  application_utilization_.store(value, std::memory_order_relaxed);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_trace)) {
+    gpr_log(GPR_INFO, "[%p] Application utilization recorded: %f", this, value);
   }
   return *this;
 }
@@ -330,12 +374,17 @@ BackendMetricData BackendMetricState::GetBackendMetricData() {
   }
   // Only overwrite if the value is set i.e. in the valid range.
   const double cpu = cpu_utilization_.load(std::memory_order_relaxed);
-  if (IsUtilizationValid(cpu)) {
+  if (IsUtilizationWithSoftLimitsValid(cpu)) {
     data.cpu_utilization = cpu;
   }
   const double mem = mem_utilization_.load(std::memory_order_relaxed);
   if (IsUtilizationValid(mem)) {
     data.mem_utilization = mem;
+  }
+  const double app_util =
+      application_utilization_.load(std::memory_order_relaxed);
+  if (IsUtilizationWithSoftLimitsValid(app_util)) {
+    data.application_utilization = app_util;
   }
   const double qps = qps_.load(std::memory_order_relaxed);
   if (IsRateValid(qps)) {

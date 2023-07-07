@@ -14,4 +14,4 @@
 
 # AUTO-GENERATED FROM `$REPO_ROOT/templates/src/python/grpcio_health_checking/grpc_version.py.template`!!!
 
-VERSION = '1.55.0.dev0'
+VERSION = '1.57.0.dev0'

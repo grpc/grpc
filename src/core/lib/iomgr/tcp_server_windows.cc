@@ -634,7 +634,7 @@ static grpc_error_handle event_engine_create(grpc_closure* shutdown_complete,
       engine_ptr->poller(), std::move(accept_cb), std::move(on_shutdown),
       std::make_unique<MemoryQuotaBasedMemoryAllocatorFactory>(
           resource_quota->memory_quota()),
-      engine_ptr->shared_from_this(), engine_ptr->executor(), config);
+      engine_ptr->shared_from_this(), engine_ptr->thread_pool(), config);
   s->active_ports = -1;
   s->on_accept_cb = [](void* /* arg */, grpc_endpoint* /* ep */,
                        grpc_pollset* /* accepting_pollset */,

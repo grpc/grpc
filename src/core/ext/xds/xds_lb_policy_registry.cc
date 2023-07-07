@@ -29,14 +29,16 @@
 #include "absl/types/variant.h"
 #include "envoy/config/core/v3/extension.upb.h"
 #include "envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.upb.h"
+#include "envoy/extensions/load_balancing_policies/pick_first/v3/pick_first.upb.h"
 #include "envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb.h"
 #include "envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb.h"
 #include "google/protobuf/wrappers.upb.h"
 
+#include <grpc/support/json.h>
+
+#include "src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.h"
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
@@ -53,7 +55,7 @@ class RoundRobinLbPolicyConfigFactory
       const XdsResourceType::DecodeContext& /*context*/,
       absl::string_view /*configuration*/, ValidationErrors* /*errors*/,
       int /*recursion_depth*/) override {
-    return Json::Object{{"round_robin", Json::Object()}};
+    return Json::Object{{"round_robin", Json::FromObject({})}};
   }
 
   absl::string_view type() override { return Type(); }
@@ -86,7 +88,7 @@ class ClientSideWeightedRoundRobinLbPolicyConfigFactory
             resource);
     if (enable_oob_load_report != nullptr &&
         google_protobuf_BoolValue_value(enable_oob_load_report)) {
-      config["enableOobLoadReport"] = true;
+      config["enableOobLoadReport"] = Json::FromBool(true);
     }
     // oob_reporting_period
     auto* duration_proto =
@@ -95,7 +97,7 @@ class ClientSideWeightedRoundRobinLbPolicyConfigFactory
     if (duration_proto != nullptr) {
       ValidationErrors::ScopedField field(errors, ".oob_reporting_period");
       Duration duration = ParseDuration(duration_proto, errors);
-      config["oobReportingPeriod"] = duration.ToJsonString();
+      config["oobReportingPeriod"] = Json::FromString(duration.ToJsonString());
     }
     // blackout_period
     duration_proto =
@@ -104,7 +106,7 @@ class ClientSideWeightedRoundRobinLbPolicyConfigFactory
     if (duration_proto != nullptr) {
       ValidationErrors::ScopedField field(errors, ".blackout_period");
       Duration duration = ParseDuration(duration_proto, errors);
-      config["blackoutPeriod"] = duration.ToJsonString();
+      config["blackoutPeriod"] = Json::FromString(duration.ToJsonString());
     }
     // weight_update_period
     duration_proto =
@@ -113,7 +115,7 @@ class ClientSideWeightedRoundRobinLbPolicyConfigFactory
     if (duration_proto != nullptr) {
       ValidationErrors::ScopedField field(errors, ".weight_update_period");
       Duration duration = ParseDuration(duration_proto, errors);
-      config["weightUpdatePeriod"] = duration.ToJsonString();
+      config["weightUpdatePeriod"] = Json::FromString(duration.ToJsonString());
     }
     // weight_expiration_period
     duration_proto =
@@ -122,7 +124,8 @@ class ClientSideWeightedRoundRobinLbPolicyConfigFactory
     if (duration_proto != nullptr) {
       ValidationErrors::ScopedField field(errors, ".weight_expiration_period");
       Duration duration = ParseDuration(duration_proto, errors);
-      config["weightExpirationPeriod"] = duration.ToJsonString();
+      config["weightExpirationPeriod"] =
+          Json::FromString(duration.ToJsonString());
     }
     // error_utilization_penalty
     auto* error_utilization_penalty =
@@ -135,10 +138,10 @@ class ClientSideWeightedRoundRobinLbPolicyConfigFactory
       if (value < 0.0) {
         errors->AddError("value must be non-negative");
       }
-      config["errorUtilizationPenalty"] = value;
+      config["errorUtilizationPenalty"] = Json::FromNumber(value);
     }
     return Json::Object{
-        {"weighted_round_robin_experimental", std::move(config)}};
+        {"weighted_round_robin", Json::FromObject(std::move(config))}};
   }
 
   absl::string_view type() override { return Type(); }
@@ -200,10 +203,10 @@ class RingHashLbPolicyConfigFactory
     }
     return Json::Object{
         {"ring_hash_experimental",
-         Json::Object{
-             {"minRingSize", min_ring_size},
-             {"maxRingSize", max_ring_size},
-         }},
+         Json::FromObject({
+             {"minRingSize", Json::FromNumber(min_ring_size)},
+             {"maxRingSize", Json::FromNumber(max_ring_size)},
+         })},
     };
   }
 
@@ -241,7 +244,8 @@ class WrrLocalityLbPolicyConfigFactory
         context, endpoint_picking_policy, errors, recursion_depth + 1);
     return Json::Object{
         {"xds_wrr_locality_experimental",
-         Json::Object{{"childPolicy", std::move(child_policy)}}}};
+         Json::FromObject(
+             {{"childPolicy", Json::FromArray(std::move(child_policy))}})}};
   }
 
   absl::string_view type() override { return Type(); }
@@ -252,24 +256,43 @@ class WrrLocalityLbPolicyConfigFactory
   }
 };
 
+class PickFirstLbPolicyConfigFactory
+    : public XdsLbPolicyRegistry::ConfigFactory {
+ public:
+  Json::Object ConvertXdsLbPolicyConfig(
+      const XdsLbPolicyRegistry* /*registry*/,
+      const XdsResourceType::DecodeContext& context,
+      absl::string_view configuration, ValidationErrors* errors,
+      int /*recursion_depth*/) override {
+    const auto* resource =
+        envoy_extensions_load_balancing_policies_pick_first_v3_PickFirst_parse(
+            configuration.data(), configuration.size(), context.arena);
+    if (resource == nullptr) {
+      errors->AddError("can't decode PickFirst LB policy config");
+      return {};
+    }
+    bool shuffle_address_list =
+        envoy_extensions_load_balancing_policies_pick_first_v3_PickFirst_shuffle_address_list(
+            resource);
+    return Json::Object{
+        {"pick_first",
+         Json::FromObject({
+             {"shuffleAddressList", Json::FromBool(shuffle_address_list)},
+         })}};
+  }
+
+  absl::string_view type() override { return Type(); }
+
+  static absl::string_view Type() {
+    return "envoy.extensions.load_balancing_policies.pick_first.v3.PickFirst";
+  }
+};
+
 }  // namespace
 
 //
 // XdsLbPolicyRegistry
 //
-
-namespace {
-
-// TODO(roth): Remove this when interop tests pass.
-bool XdsWrrLbEnabled() {
-  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_WRR_LB");
-  if (!value.has_value()) return false;
-  bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
-  return parse_succeeded && parsed_value;
-}
-
-}  // namespace
 
 XdsLbPolicyRegistry::XdsLbPolicyRegistry() {
   policy_config_factories_.emplace(
@@ -278,14 +301,17 @@ XdsLbPolicyRegistry::XdsLbPolicyRegistry() {
   policy_config_factories_.emplace(
       RoundRobinLbPolicyConfigFactory::Type(),
       std::make_unique<RoundRobinLbPolicyConfigFactory>());
-  if (XdsWrrLbEnabled()) {
-    policy_config_factories_.emplace(
-        ClientSideWeightedRoundRobinLbPolicyConfigFactory::Type(),
-        std::make_unique<ClientSideWeightedRoundRobinLbPolicyConfigFactory>());
-  }
+  policy_config_factories_.emplace(
+      ClientSideWeightedRoundRobinLbPolicyConfigFactory::Type(),
+      std::make_unique<ClientSideWeightedRoundRobinLbPolicyConfigFactory>());
   policy_config_factories_.emplace(
       WrrLocalityLbPolicyConfigFactory::Type(),
       std::make_unique<WrrLocalityLbPolicyConfigFactory>());
+  if (ShufflePickFirstEnabled()) {
+    policy_config_factories_.emplace(
+        PickFirstLbPolicyConfigFactory::Type(),
+        std::make_unique<PickFirstLbPolicyConfigFactory>());
+  }
 }
 
 Json::Array XdsLbPolicyRegistry::ConvertXdsLbPolicyConfig(
@@ -324,8 +350,9 @@ Json::Array XdsLbPolicyRegistry::ConvertXdsLbPolicyConfig(
     if (serialized_value != nullptr) {
       auto config_factory_it = policy_config_factories_.find(extension->type);
       if (config_factory_it != policy_config_factories_.end()) {
-        return Json::Array{config_factory_it->second->ConvertXdsLbPolicyConfig(
-            this, context, *serialized_value, errors, recursion_depth)};
+        return Json::Array{Json::FromObject(
+            config_factory_it->second->ConvertXdsLbPolicyConfig(
+                this, context, *serialized_value, errors, recursion_depth))};
       }
     }
     // Check for custom LB policy type.
@@ -334,7 +361,7 @@ Json::Array XdsLbPolicyRegistry::ConvertXdsLbPolicyConfig(
         CoreConfiguration::Get().lb_policy_registry().LoadBalancingPolicyExists(
             extension->type, nullptr)) {
       return Json::Array{
-          Json::Object{{std::string(extension->type), std::move(*json)}}};
+          Json::FromObject({{std::string(extension->type), std::move(*json)}})};
     }
     // Unsupported type.  Continue to next entry.
   }

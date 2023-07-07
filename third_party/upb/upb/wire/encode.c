@@ -35,6 +35,7 @@
 #include "upb/collections/map_sorter_internal.h"
 #include "upb/message/extension_internal.h"
 #include "upb/mini_table/sub_internal.h"
+#include "upb/wire/common.h"
 #include "upb/wire/common_internal.h"
 #include "upb/wire/swap_internal.h"
 #include "upb/wire/types.h"
@@ -226,7 +227,7 @@ static void encode_scalar(upb_encstate* e, const void* _field_mem,
     break;                                  \
   }
 
-  switch (f->descriptortype) {
+  switch (f->UPB_PRIVATE(descriptortype)) {
     case kUpb_FieldType_Double:
       CASE(double, double, kUpb_WireType_64Bit, val);
     case kUpb_FieldType_Float:
@@ -262,7 +263,7 @@ static void encode_scalar(upb_encstate* e, const void* _field_mem,
     case kUpb_FieldType_Group: {
       size_t size;
       void* submsg = *(void**)field_mem;
-      const upb_MiniTable* subm = subs[f->submsg_index].submsg;
+      const upb_MiniTable* subm = subs[f->UPB_PRIVATE(submsg_index)].submsg;
       if (submsg == NULL) {
         return;
       }
@@ -276,7 +277,7 @@ static void encode_scalar(upb_encstate* e, const void* _field_mem,
     case kUpb_FieldType_Message: {
       size_t size;
       void* submsg = *(void**)field_mem;
-      const upb_MiniTable* subm = subs[f->submsg_index].submsg;
+      const upb_MiniTable* subm = subs[f->UPB_PRIVATE(submsg_index)].submsg;
       if (submsg == NULL) {
         return;
       }
@@ -321,7 +322,7 @@ static void encode_array(upb_encstate* e, const upb_Message* msg,
 
 #define TAG(wire_type) (packed ? 0 : (f->number << 3 | wire_type))
 
-  switch (f->descriptortype) {
+  switch (f->UPB_PRIVATE(descriptortype)) {
     case kUpb_FieldType_Double:
       encode_fixedarray(e, arr, sizeof(double), TAG(kUpb_WireType_64Bit));
       break;
@@ -365,7 +366,7 @@ static void encode_array(upb_encstate* e, const upb_Message* msg,
     case kUpb_FieldType_Group: {
       const void* const* start = _upb_array_constptr(arr);
       const void* const* ptr = start + arr->size;
-      const upb_MiniTable* subm = subs[f->submsg_index].submsg;
+      const upb_MiniTable* subm = subs[f->UPB_PRIVATE(submsg_index)].submsg;
       if (--e->depth == 0) encode_err(e, kUpb_EncodeStatus_MaxDepthExceeded);
       do {
         size_t size;
@@ -380,7 +381,7 @@ static void encode_array(upb_encstate* e, const upb_Message* msg,
     case kUpb_FieldType_Message: {
       const void* const* start = _upb_array_constptr(arr);
       const void* const* ptr = start + arr->size;
-      const upb_MiniTable* subm = subs[f->submsg_index].submsg;
+      const upb_MiniTable* subm = subs[f->UPB_PRIVATE(submsg_index)].submsg;
       if (--e->depth == 0) encode_err(e, kUpb_EncodeStatus_MaxDepthExceeded);
       do {
         size_t size;
@@ -419,14 +420,15 @@ static void encode_map(upb_encstate* e, const upb_Message* msg,
                        const upb_MiniTableSub* subs,
                        const upb_MiniTableField* f) {
   const upb_Map* map = *UPB_PTR_AT(msg, f->offset, const upb_Map*);
-  const upb_MiniTable* layout = subs[f->submsg_index].submsg;
+  const upb_MiniTable* layout = subs[f->UPB_PRIVATE(submsg_index)].submsg;
   UPB_ASSERT(layout->field_count == 2);
 
   if (map == NULL) return;
 
   if (e->options & kUpb_EncodeOption_Deterministic) {
     _upb_sortedmap sorted;
-    _upb_mapsorter_pushmap(&e->sorter, layout->fields[0].descriptortype, map,
+    _upb_mapsorter_pushmap(&e->sorter,
+                           layout->fields[0].UPB_PRIVATE(descriptortype), map,
                            &sorted);
     upb_MapEntry ent;
     while (_upb_sortedmap_next(&e->sorter, map, &sorted, &ent)) {
@@ -622,7 +624,7 @@ upb_EncodeStatus upb_Encode(const void* msg, const upb_MiniTable* l,
   e.buf = NULL;
   e.limit = NULL;
   e.ptr = NULL;
-  e.depth = depth ? depth : 64;
+  e.depth = depth ? depth : kUpb_WireFormat_DefaultDepthLimit;
   e.options = options;
   _upb_mapsorter_init(&e.sorter);
 

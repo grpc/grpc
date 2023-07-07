@@ -81,7 +81,6 @@ cmake \
   -DgRPC_BUILD_TESTS=OFF \
   -DgRPC_ABSL_PROVIDER=package \
   -DgRPC_CARES_PROVIDER=package \
-  -DgRPC_PROTOBUF_PACKAGE_TYPE=CONFIG \
   -DgRPC_PROTOBUF_PROVIDER=package \
   -Dutf8_range_DIR=/usr/local/lib/cmake/utf8_range \
   -DgRPC_RE2_PROVIDER=package \

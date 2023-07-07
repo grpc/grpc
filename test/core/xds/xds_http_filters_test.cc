@@ -19,6 +19,7 @@
 #include <stdint.h>
 
 #include <algorithm>
+#include <initializer_list>
 #include <string>
 #include <utility>
 #include <vector>
@@ -28,6 +29,7 @@
 #include <google/protobuf/wrappers.pb.h>
 
 #include "absl/status/status.h"
+#include "absl/strings/str_format.h"
 #include "absl/strings/strip.h"
 #include "absl/types/variant.h"
 #include "gtest/gtest.h"
@@ -36,6 +38,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/status.h>
+#include <grpc/support/json.h>
 #include <grpc/support/log.h>
 #include <grpcpp/impl/codegen/config_protobuf.h>
 
@@ -46,7 +49,11 @@
 #include "src/core/ext/filters/stateful_session/stateful_session_filter.h"
 #include "src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
+#include "src/core/ext/xds/xds_client.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/env.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json_writer.h"
 #include "src/proto/grpc/testing/xds/v3/address.pb.h"
 #include "src/proto/grpc/testing/xds/v3/cookie.pb.h"
@@ -66,6 +73,7 @@
 #include "src/proto/grpc/testing/xds/v3/stateful_session_cookie.pb.h"
 #include "src/proto/grpc/testing/xds/v3/string.pb.h"
 #include "src/proto/grpc/testing/xds/v3/typed_struct.pb.h"
+#include "test/core/util/scoped_env_var.h"
 #include "test/core/util/test_config.h"
 
 // IWYU pragma: no_include <google/protobuf/message.h>
@@ -91,8 +99,32 @@ using ::envoy::extensions::http::stateful_session::cookie::v3 ::
 class XdsHttpFilterTest : public ::testing::Test {
  protected:
   XdsHttpFilterTest()
-      : decode_context_{nullptr, xds_server_, nullptr, upb_def_pool_.ptr(),
-                        upb_arena_.ptr()} {}
+      : xds_client_(MakeXdsClient()),
+        decode_context_{xds_client_.get(), xds_server_, nullptr,
+                        upb_def_pool_.ptr(), upb_arena_.ptr()} {}
+
+  static RefCountedPtr<XdsClient> MakeXdsClient() {
+    grpc_error_handle error;
+    auto bootstrap = GrpcXdsBootstrap::Create(
+        "{\n"
+        "  \"xds_servers\": [\n"
+        "    {\n"
+        "      \"server_uri\": \"xds.example.com\",\n"
+        "      \"channel_creds\": [\n"
+        "        {\"type\": \"google_default\"}\n"
+        "      ]\n"
+        "    }\n"
+        "  ]\n"
+        "}");
+    if (!bootstrap.ok()) {
+      Crash(absl::StrFormat("Error parsing bootstrap: %s",
+                            bootstrap.status().ToString().c_str()));
+    }
+    return MakeRefCounted<XdsClient>(std::move(*bootstrap),
+                                     /*transport_factory=*/nullptr,
+                                     /*event_engine=*/nullptr, "foo agent",
+                                     "foo version");
+  }
 
   XdsExtension MakeXdsExtension(const grpc::protobuf::Message& message) {
     google::protobuf::Any any;
@@ -115,6 +147,7 @@ class XdsHttpFilterTest : public ::testing::Test {
   }
 
   GrpcXdsBootstrap::GrpcXdsServer xds_server_;
+  RefCountedPtr<XdsClient> xds_client_;
   upb::DefPool upb_def_pool_;
   upb::Arena upb_arena_;
   XdsResourceType::DecodeContext decode_context_;
@@ -271,8 +304,9 @@ TEST_F(XdsFaultInjectionFilterTest, ModifyChannelArgs) {
 
 TEST_F(XdsFaultInjectionFilterTest, GenerateServiceConfigTopLevelConfig) {
   XdsHttpFilterImpl::FilterConfig config;
-  config.config = Json::Object{{"foo", "bar"}};
-  auto service_config = filter_->GenerateServiceConfig(config, nullptr);
+  config.config = Json::FromObject({{"foo", Json::FromString("bar")}});
+  auto service_config =
+      filter_->GenerateServiceConfig(config, nullptr, /*filter_name=*/"");
   ASSERT_TRUE(service_config.ok()) << service_config.status();
   EXPECT_EQ(service_config->service_config_field_name, "faultInjectionPolicy");
   EXPECT_EQ(service_config->element, "{\"foo\":\"bar\"}");
@@ -280,11 +314,12 @@ TEST_F(XdsFaultInjectionFilterTest, GenerateServiceConfigTopLevelConfig) {
 
 TEST_F(XdsFaultInjectionFilterTest, GenerateServiceConfigOverrideConfig) {
   XdsHttpFilterImpl::FilterConfig top_config;
-  top_config.config = Json::Object{{"foo", "bar"}};
+  top_config.config = Json::FromObject({{"foo", Json::FromString("bar")}});
   XdsHttpFilterImpl::FilterConfig override_config;
-  override_config.config = Json::Object{{"baz", "quux"}};
-  auto service_config =
-      filter_->GenerateServiceConfig(top_config, &override_config);
+  override_config.config =
+      Json::FromObject({{"baz", Json::FromString("quux")}});
+  auto service_config = filter_->GenerateServiceConfig(
+      top_config, &override_config, /*filter_name=*/"");
   ASSERT_TRUE(service_config.ok()) << service_config.status();
   EXPECT_EQ(service_config->service_config_field_name, "faultInjectionPolicy");
   EXPECT_EQ(service_config->element, "{\"baz\":\"quux\"}");
@@ -318,7 +353,7 @@ TEST_P(XdsFaultInjectionFilterConfigTest, EmptyConfig) {
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_TRUE(config.has_value());
   EXPECT_EQ(config->config_proto_type_name, filter_->ConfigProtoName());
-  EXPECT_EQ(config->config, Json(Json::Object())) << JsonDump(config->config);
+  EXPECT_EQ(config->config, Json::FromObject({})) << JsonDump(config->config);
 }
 
 TEST_P(XdsFaultInjectionFilterConfigTest, BasicConfig) {
@@ -482,7 +517,7 @@ TEST_F(XdsRbacFilterTest, GenerateFilterConfig) {
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_TRUE(config.has_value());
   EXPECT_EQ(config->config_proto_type_name, filter_->ConfigProtoName());
-  EXPECT_EQ(config->config, Json(Json::Object())) << JsonDump(config->config);
+  EXPECT_EQ(config->config, Json::FromObject({})) << JsonDump(config->config);
 }
 
 TEST_F(XdsRbacFilterTest, GenerateFilterConfigTypedStruct) {
@@ -526,7 +561,7 @@ TEST_F(XdsRbacFilterTest, GenerateFilterConfigOverride) {
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_TRUE(config.has_value());
   EXPECT_EQ(config->config_proto_type_name, filter_->OverrideConfigProtoName());
-  EXPECT_EQ(config->config, Json(Json::Object())) << JsonDump(config->config);
+  EXPECT_EQ(config->config, Json::FromObject({})) << JsonDump(config->config);
 }
 
 TEST_F(XdsRbacFilterTest, GenerateFilterConfigOverrideTypedStruct) {
@@ -558,6 +593,19 @@ TEST_F(XdsRbacFilterTest, GenerateFilterConfigOverrideUnparseable) {
             "field:http_filter.value[envoy.extensions.filters.http.rbac.v3"
             ".RBACPerRoute] error:could not parse RBACPerRoute]")
       << status;
+}
+
+TEST_F(XdsRbacFilterTest, GenerateServiceConfig) {
+  XdsHttpFilterImpl::FilterConfig hcm_config = {
+      filter_->ConfigProtoName(),
+      Json::FromObject({{"name", Json::FromString("foo")}})};
+  auto config = filter_->GenerateServiceConfig(hcm_config, nullptr, "rbac");
+  ASSERT_TRUE(config.ok()) << config.status();
+  EXPECT_EQ(config->service_config_field_name, "rbacPolicy");
+  EXPECT_EQ(
+      config->element,
+      JsonDump(Json::FromObject({{"name", Json::FromString("foo")},
+                                 {"filter_name", Json::FromString("rbac")}})));
 }
 
 // For the RBAC filter, the override config is a superset of the
@@ -598,7 +646,7 @@ TEST_P(XdsRbacFilterConfigTest, EmptyConfig) {
   EXPECT_EQ(config->config_proto_type_name,
             GetParam() ? filter_->OverrideConfigProtoName()
                        : filter_->ConfigProtoName());
-  EXPECT_EQ(config->config, Json(Json::Object())) << JsonDump(config->config);
+  EXPECT_EQ(config->config, Json::FromObject({})) << JsonDump(config->config);
 }
 
 TEST_P(XdsRbacFilterConfigTest, AllPermissionTypes) {
@@ -849,6 +897,105 @@ TEST_P(XdsRbacFilterConfigTest, AllPrincipalTypes) {
             "}}}}");
 }
 
+TEST_P(XdsRbacFilterConfigTest, AuditLoggingOptionsIgnoredWithFeatureDisabled) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(rules->ALLOW);
+  auto* logging_options = rules->mutable_audit_logging_options();
+  logging_options->set_audit_condition(
+      envoy::config::rbac::v3::RBAC_AuditLoggingOptions_AuditCondition_ON_DENY);
+  envoy::config::rbac::v3::RBAC_AuditLoggingOptions::AuditLoggerConfig
+      logger_config;
+  auto* audit_logger = logger_config.mutable_audit_logger();
+  audit_logger->mutable_typed_config()->set_type_url(
+      "/envoy.extensions.rbac.audit_loggers.stream.v3.StdoutAuditLog");
+  *logging_options->add_logger_configs() = logger_config;
+  auto config = GenerateConfig(rbac);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  ASSERT_TRUE(config.has_value());
+  EXPECT_EQ(config->config_proto_type_name,
+            GetParam() ? filter_->OverrideConfigProtoName()
+                       : filter_->ConfigProtoName());
+  EXPECT_EQ(JsonDump(config->config), "{\"rules\":{\"action\":0}}");
+}
+
+TEST_P(XdsRbacFilterConfigTest, AuditLoggingOptions) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RBAC_AUDIT_LOGGING");
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(rules->ALLOW);
+  auto* logging_options = rules->mutable_audit_logging_options();
+  logging_options->set_audit_condition(
+      envoy::config::rbac::v3::RBAC_AuditLoggingOptions_AuditCondition_ON_DENY);
+  envoy::config::rbac::v3::RBAC_AuditLoggingOptions::AuditLoggerConfig
+      logger_config;
+  auto* audit_logger = logger_config.mutable_audit_logger();
+  audit_logger->mutable_typed_config()->set_type_url(
+      "/envoy.extensions.rbac.audit_loggers.stream.v3.StdoutAuditLog");
+  *logging_options->add_logger_configs() = logger_config;
+  auto config = GenerateConfig(rbac);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  ASSERT_TRUE(config.has_value());
+  EXPECT_EQ(config->config_proto_type_name,
+            GetParam() ? filter_->OverrideConfigProtoName()
+                       : filter_->ConfigProtoName());
+  EXPECT_EQ(JsonDump(config->config),
+            "{\"rules\":{\"action\":0,"
+            "\"audit_condition\":1,"
+            "\"audit_loggers\":[{\"stdout_logger\":{}}]"
+            "}}");
+}
+
+TEST_P(XdsRbacFilterConfigTest, InvalidAuditCondition) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RBAC_AUDIT_LOGGING");
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(rules->ALLOW);
+  auto* logging_options = rules->mutable_audit_logging_options();
+  logging_options->set_audit_condition(
+      static_cast<
+          envoy::config::rbac::v3::RBAC_AuditLoggingOptions_AuditCondition>(
+          100));
+  auto config = GenerateConfig(rbac);
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(),
+            absl::StrCat("errors validating filter config: ["
+                         "field:",
+                         FieldPrefix(),
+                         ".rules.audit_logging_options.audit_condition "
+                         "error:invalid audit condition]"))
+      << status;
+}
+
+TEST_P(XdsRbacFilterConfigTest, InvalidAuditLoggerConfig) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RBAC_AUDIT_LOGGING");
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(rules->ALLOW);
+  auto* logging_options = rules->mutable_audit_logging_options();
+  envoy::config::rbac::v3::RBAC_AuditLoggingOptions::AuditLoggerConfig
+      logger_config;
+  auto* audit_logger = logger_config.mutable_audit_logger();
+  audit_logger->mutable_typed_config()->set_type_url("/foo_logger");
+  *logging_options->add_logger_configs() = logger_config;
+  auto config = GenerateConfig(rbac);
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(),
+            absl::StrCat("errors validating filter config: ["
+                         "field:",
+                         FieldPrefix(),
+                         ".rules.audit_logging_options.logger_configs[0].audit_"
+                         "logger.typed_config.value[foo_logger] "
+                         "error:unsupported audit logger type]"))
+      << status;
+}
+
 TEST_P(XdsRbacFilterConfigTest, InvalidFieldsInPolicy) {
   RBAC rbac;
   auto* rules = rbac.mutable_rules();
@@ -1015,27 +1162,34 @@ TEST_F(XdsStatefulSessionFilterTest, OverrideConfigDisabled) {
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_TRUE(config.has_value());
   EXPECT_EQ(config->config_proto_type_name, filter_->OverrideConfigProtoName());
-  EXPECT_EQ(config->config, Json(Json::Object{})) << JsonDump(config->config);
+  EXPECT_EQ(config->config, Json::FromObject({})) << JsonDump(config->config);
 }
 
 TEST_F(XdsStatefulSessionFilterTest, GenerateServiceConfigNoOverride) {
-  XdsHttpFilterImpl::FilterConfig hcm_config = {filter_->ConfigProtoName(),
-                                                Json::Object{{"name", "foo"}}};
-  auto config = filter_->GenerateServiceConfig(hcm_config, nullptr);
+  XdsHttpFilterImpl::FilterConfig hcm_config = {
+      filter_->ConfigProtoName(),
+      Json::FromObject({{"name", Json::FromString("foo")}})};
+  auto config =
+      filter_->GenerateServiceConfig(hcm_config, nullptr, /*filter_name=*/"");
   ASSERT_TRUE(config.ok()) << config.status();
   EXPECT_EQ(config->service_config_field_name, "stateful_session");
-  EXPECT_EQ(config->element, JsonDump(Json(Json::Object{{"name", "foo"}})));
+  EXPECT_EQ(config->element,
+            JsonDump(Json::FromObject({{"name", Json::FromString("foo")}})));
 }
 
 TEST_F(XdsStatefulSessionFilterTest, GenerateServiceConfigWithOverride) {
-  XdsHttpFilterImpl::FilterConfig hcm_config = {filter_->ConfigProtoName(),
-                                                Json::Object{{"name", "foo"}}};
+  XdsHttpFilterImpl::FilterConfig hcm_config = {
+      filter_->ConfigProtoName(),
+      Json::FromObject({{"name", Json::FromString("foo")}})};
   XdsHttpFilterImpl::FilterConfig override_config = {
-      filter_->OverrideConfigProtoName(), Json::Object{{"name", "bar"}}};
-  auto config = filter_->GenerateServiceConfig(hcm_config, &override_config);
+      filter_->OverrideConfigProtoName(),
+      Json::FromObject({{"name", Json::FromString("bar")}})};
+  auto config = filter_->GenerateServiceConfig(hcm_config, &override_config,
+                                               /*filter_name=*/"");
   ASSERT_TRUE(config.ok()) << config.status();
   EXPECT_EQ(config->service_config_field_name, "stateful_session");
-  EXPECT_EQ(config->element, JsonDump(Json(Json::Object{{"name", "bar"}})));
+  EXPECT_EQ(config->element,
+            JsonDump(Json::FromObject({{"name", Json::FromString("bar")}})));
 }
 
 TEST_F(XdsStatefulSessionFilterTest, GenerateFilterConfigTypedStruct) {
@@ -1153,7 +1307,8 @@ TEST_P(XdsStatefulSessionFilterConfigTest, MinimalConfig) {
   EXPECT_EQ(config->config_proto_type_name,
             GetParam() ? filter_->OverrideConfigProtoName()
                        : filter_->ConfigProtoName());
-  EXPECT_EQ(config->config, Json(Json::Object{{"name", "foo"}}))
+  EXPECT_EQ(config->config,
+            Json::FromObject({{"name", Json::FromString("foo")}}))
       << JsonDump(config->config);
 }
 
@@ -1173,10 +1328,10 @@ TEST_P(XdsStatefulSessionFilterConfigTest, PathAndTtl) {
   EXPECT_EQ(config->config_proto_type_name,
             GetParam() ? filter_->OverrideConfigProtoName()
                        : filter_->ConfigProtoName());
-  EXPECT_EQ(config->config, Json(Json::Object{
-                                {"name", "foo"},
-                                {"path", "/service/method"},
-                                {"ttl", "3.000000000s"},
+  EXPECT_EQ(config->config, Json::FromObject({
+                                {"name", Json::FromString("foo")},
+                                {"path", Json::FromString("/service/method")},
+                                {"ttl", Json::FromString("3.000000000s")},
                             }))
       << JsonDump(config->config);
 }

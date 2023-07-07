@@ -631,7 +631,7 @@ XdsEnd2endTest::CreateEndpointsForBackends(size_t start_index,
 }
 
 ClusterLoadAssignment XdsEnd2endTest::BuildEdsResource(
-    const EdsResourceArgs& args, const char* eds_service_name) {
+    const EdsResourceArgs& args, absl::string_view eds_service_name) {
   ClusterLoadAssignment assignment;
   assignment.set_cluster_name(eds_service_name);
   for (const auto& locality : args.locality_list) {
@@ -749,7 +749,8 @@ void XdsEnd2endTest::InitClient(BootstrapBuilder builder,
   xds_channel_args_.num_args = xds_channel_args_to_add_.size();
   xds_channel_args_.args = xds_channel_args_to_add_.data();
   // Initialize XdsClient state.
-  builder.SetDefaultServer(absl::StrCat("localhost:", balancer_->port()));
+  builder.SetDefaultServer(absl::StrCat("localhost:", balancer_->port()),
+                           /*ignore_if_set=*/true);
   bootstrap_ = builder.Build();
   if (GetParam().bootstrap_source() == XdsTestType::kBootstrapFromEnvVar) {
     grpc_core::SetEnv("GRPC_XDS_BOOTSTRAP_CONFIG", bootstrap_.c_str());

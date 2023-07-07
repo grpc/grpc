@@ -26,88 +26,71 @@ namespace chaotic_good {
 namespace {
 
 std::vector<uint8_t> Serialize(FrameHeader h) {
-  uint8_t buffer[64];
+  uint8_t buffer[24];
   h.Serialize(buffer);
-  return std::vector<uint8_t>(buffer, buffer + 64);
+  return std::vector<uint8_t>(buffer, buffer + 24);
 }
 
 absl::StatusOr<FrameHeader> Deserialize(std::vector<uint8_t> data) {
-  if (data.size() != 64) return absl::InvalidArgumentError("bad length");
+  if (data.size() != 24) return absl::InvalidArgumentError("bad length");
   return FrameHeader::Parse(data.data());
 }
 
 TEST(FrameHeaderTest, SimpleSerialize) {
-  EXPECT_EQ(
-      Serialize(FrameHeader{FrameType::kCancel, BitSet<3>::FromInt(0),
-                            0x01020304, 0x05060708, 0x090a0b0c, 0x0d0e0f10}),
-      std::vector<uint8_t>({0x81, 0, 0, 0,           // type, flags
-                            0x04, 0x03, 0x02, 0x01,  // stream_id
-                            0x08, 0x07, 0x06, 0x05,  // header_length
-                            0x0c, 0x0b, 0x0a, 0x09,  // message_length
-                            0x10, 0x0f, 0x0e, 0x0d,  // trailer_length
-                                                     // padding
-                            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                            0, 0, 0, 0, 0, 0, 0, 0, 0, 0}));
+  EXPECT_EQ(Serialize(FrameHeader{FrameType::kCancel, BitSet<2>::FromInt(0),
+                                  0x01020304, 0x05060708, 0x090a0b0c,
+                                  0x00000034, 0x0d0e0f10}),
+            std::vector<uint8_t>({
+                0x81, 0,    0,    0,     // type, flags
+                0x04, 0x03, 0x02, 0x01,  // stream_id
+                0x08, 0x07, 0x06, 0x05,  // header_length
+                0x0c, 0x0b, 0x0a, 0x09,  // message_length
+                0x34, 0x00, 0x00, 0x00,  // mesage_padding
+                0x10, 0x0f, 0x0e, 0x0d   // trailer_length
+            }));
 }
 
 TEST(FrameHeaderTest, SimpleDeserialize) {
-  EXPECT_EQ(
-      Deserialize(std::vector<uint8_t>(
-          {0x81, 0, 0, 0,           // type, flags
-           0x04, 0x03, 0x02, 0x01,  // stream_id
-           0x08, 0x07, 0x06, 0x05,  // header_length
-           0x0c, 0x0b, 0x0a, 0x09,  // message_length
-           0x10, 0x0f, 0x0e, 0x0d,  // trailer_length
-                                    // padding
-           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})),
-      absl::StatusOr<FrameHeader>(
-          FrameHeader{FrameType::kCancel, BitSet<3>::FromInt(0), 0x01020304,
-                      0x05060708, 0x090a0b0c, 0x0d0e0f10}));
-  EXPECT_EQ(Deserialize(std::vector<uint8_t>(
-                            {0x81, 88, 88, 88,        // type, flags
-                             0x04, 0x03, 0x02, 0x01,  // stream_id
-                             0x08, 0x07, 0x06, 0x05,  // header_length
-                             0x0c, 0x0b, 0x0a, 0x09,  // message_length
-                             0x10, 0x0f, 0x0e, 0x0d,  // trailer_length
-                                                      // garbage padding
-                             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                             0, 0, 0, 0, 0, 0, 0, 0, 0, 0}))
+  EXPECT_EQ(Deserialize(std::vector<uint8_t>({
+                0x81, 0,    0,    0,     // type, flags
+                0x04, 0x03, 0x02, 0x01,  // stream_id
+                0x08, 0x07, 0x06, 0x05,  // header_length
+                0x0c, 0x0b, 0x0a, 0x09,  // message_length
+                0x34, 0x00, 0x00, 0x00,  // mesage_padding
+                0x10, 0x0f, 0x0e, 0x0d   // trailer_length
+            })),
+            absl::StatusOr<FrameHeader>(FrameHeader{
+                FrameType::kCancel, BitSet<2>::FromInt(0), 0x01020304,
+                0x05060708, 0x090a0b0c, 0x00000034, 0x0d0e0f10}));
+  EXPECT_EQ(Deserialize(std::vector<uint8_t>({
+                            0x81, 88,   88,   88,    // type, flags
+                            0x04, 0x03, 0x02, 0x01,  // stream_id
+                            0x08, 0x07, 0x06, 0x05,  // header_length
+                            0x0c, 0x0b, 0x0a, 0x09,  // message_length
+                            0x34, 0x00, 0x00, 0x00,  // mesage_padding
+                            0x10, 0x0f, 0x0e, 0x0d   // trailer_length
+                        }))
                 .status(),
             absl::InvalidArgumentError("Invalid flags"));
-  EXPECT_EQ(Deserialize(std::vector<uint8_t>(
-                            {0x81, 0, 0, 0,           // type, flags
-                             0x04, 0x03, 0x02, 0x01,  // stream_id
-                             0x08, 0x07, 0x06, 0x05,  // header_length
-                             0x0c, 0x0b, 0x0a, 0x09,  // message_length
-                             0x10, 0x0f, 0x0e, 0x0d,  // trailer_length
-                                                      // garbage padding
-                             0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                             0, 0, 0, 0, 0, 0, 0, 0, 0, 0}))
-                .status(),
-            absl::InvalidArgumentError("Invalid padding"));
 }
 
-TEST(FrameHeaderTest, ComputeFrameSizes) {
+TEST(FrameHeaderTest, GetFrameLength) {
   EXPECT_EQ(
-      (FrameHeader{FrameType::kFragment, BitSet<3>::FromInt(7), 1, 0, 0, 0})
-          .ComputeFrameSizes(),
-      (FrameSizes{0, 0, 0}));
+      (FrameHeader{FrameType::kFragment, BitSet<2>::FromInt(3), 1, 0, 0, 0, 0})
+          .GetFrameLength(),
+      0);
   EXPECT_EQ(
-      (FrameHeader{FrameType::kFragment, BitSet<3>::FromInt(7), 1, 14, 0, 0})
-          .ComputeFrameSizes(),
-      (FrameSizes{64, 64, 64}));
+      (FrameHeader{FrameType::kFragment, BitSet<2>::FromInt(3), 1, 14, 0, 0, 0})
+          .GetFrameLength(),
+      14);
+  EXPECT_EQ((FrameHeader{FrameType::kFragment, BitSet<2>::FromInt(3), 1, 0, 14,
+                         50, 0})
+                .GetFrameLength(),
+            0);
   EXPECT_EQ(
-      (FrameHeader{FrameType::kFragment, BitSet<3>::FromInt(7), 1, 0, 14, 0})
-          .ComputeFrameSizes(),
-      (FrameSizes{0, 64, 64}));
-  EXPECT_EQ(
-      (FrameHeader{FrameType::kFragment, BitSet<3>::FromInt(7), 1, 0, 0, 14})
-          .ComputeFrameSizes(),
-      (FrameSizes{0, 0, 64}));
+      (FrameHeader{FrameType::kFragment, BitSet<2>::FromInt(3), 1, 0, 0, 0, 14})
+          .GetFrameLength(),
+      14);
 }
 
 }  // namespace

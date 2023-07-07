@@ -169,7 +169,7 @@ absl::enable_if_t<IsVoidCallable<ResultOf<F()>>::value,
                   PromiseLike<decltype(std::declval<F>()())>>
 PromiseFactoryImpl(F&& f) {
   return f();
-};
+}
 
 template <typename A, typename F>
 class OncePromiseFactory {

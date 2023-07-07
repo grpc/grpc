@@ -27,7 +27,7 @@ namespace grpc_core {
 namespace {
 // Tests that we can unref a call whose status is cached but not yet
 // requested by the application.  This should not cause a memory leak.
-TEST_P(RetryTest, RetryUnrefBeforeFinish) {
+CORE_END2END_TEST(RetryTest, RetryUnrefBeforeFinish) {
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,

@@ -21,6 +21,8 @@
 
 #include <type_traits>
 
+#include "absl/strings/cord.h"
+
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/impl/grpc_types.h>
@@ -120,6 +122,52 @@ class ProtoBufferReader : public grpc::protobuf::io::ZeroCopyInputStream {
   /// Returns the total number of bytes read since this object was created.
   int64_t ByteCount() const override { return byte_count_ - backup_count_; }
 
+#ifdef GRPC_PROTOBUF_CORD_SUPPORT_ENABLED
+  /// Read the next `count` bytes and append it to the given Cord.
+  // (override is intentionally omitted here to support old Protobuf which
+  //  doesn't have ReadCord method)
+  // NOLINTNEXTLINE(modernize-use-override)
+  virtual bool ReadCord(absl::Cord* cord, int count) {
+    if (!status().ok()) {
+      return false;
+    }
+    // check for backed up data
+    if (backup_count() > 0) {
+      if (backup_count() <= count) {
+        cord->Append(MakeCordFromSlice(grpc_slice_split_tail(
+            slice(), GRPC_SLICE_LENGTH(*slice()) - backup_count())));
+      } else {
+        cord->Append(MakeCordFromSlice(grpc_slice_sub(
+            *slice(), GRPC_SLICE_LENGTH(*slice()) - backup_count(),
+            GRPC_SLICE_LENGTH(*slice()) - backup_count() + count)));
+      }
+      int64_t take = std::min(backup_count(), static_cast<int64_t>(count));
+      set_backup_count(backup_count() - take);
+      count -= take;
+      if (count == 0) {
+        return true;
+      }
+    }
+    while (count > 0) {
+      if (!grpc_byte_buffer_reader_peek(reader(), mutable_slice_ptr())) {
+        return false;
+      }
+      uint64_t slice_length = GRPC_SLICE_LENGTH(*slice());
+      set_byte_count(ByteCount() + slice_length);
+      if (slice_length <= count) {
+        cord->Append(MakeCordFromSlice(grpc_slice_ref(*slice())));
+        count -= slice_length;
+      } else {
+        cord->Append(MakeCordFromSlice(grpc_slice_split_head(slice(), count)));
+        set_backup_count(slice_length - count);
+        return true;
+      }
+    }
+    GPR_ASSERT(count == 0);
+    return true;
+  }
+#endif  // GRPC_PROTOBUF_CORD_SUPPORT_ENABLED
+
   // These protected members are needed to support internal optimizations.
   // they expose internal bits of grpc core that are NOT stable. If you have
   // a use case needs to use one of these functions, please send an email to
@@ -133,6 +181,17 @@ class ProtoBufferReader : public grpc::protobuf::io::ZeroCopyInputStream {
   grpc_slice** mutable_slice_ptr() { return &slice_; }
 
  private:
+#ifdef GRPC_PROTOBUF_CORD_SUPPORT_ENABLED
+  // This function takes ownership of slice and return a newly created Cord off
+  // of it.
+  static absl::Cord MakeCordFromSlice(grpc_slice slice) {
+    return absl::MakeCordFromExternal(
+        absl::string_view(reinterpret_cast<char*>(GRPC_SLICE_START_PTR(slice)),
+                          GRPC_SLICE_LENGTH(slice)),
+        [slice](absl::string_view view) { grpc_slice_unref(slice); });
+  }
+#endif  // GRPC_PROTOBUF_CORD_SUPPORT_ENABLED
+
   int64_t byte_count_;              ///< total bytes read since object creation
   int64_t backup_count_;            ///< how far backed up in the stream we are
   grpc_byte_buffer_reader reader_;  ///< internal object to read \a grpc_slice

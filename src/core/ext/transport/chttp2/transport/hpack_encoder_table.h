@@ -50,6 +50,8 @@ class HPackEncoderTable {
   uint32_t max_size() const { return max_table_size_; }
   // Get the current table size
   uint32_t test_only_table_size() const { return table_size_; }
+  // Get the number of entries in the table
+  uint32_t test_only_table_elems() const { return table_elems_; }
 
   // Convert an element index into a dynamic index
   uint32_t DynamicIndex(uint32_t index) const {

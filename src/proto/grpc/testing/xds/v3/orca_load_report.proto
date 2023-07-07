@@ -23,7 +23,9 @@ package xds.data.orca.v3;
 
 message OrcaLoadReport {
   // CPU utilization expressed as a fraction of available CPU resources. This
-  // should be derived from the latest sample or measurement.
+  // should be derived from the latest sample or measurement. The value may be
+  // larger than 1.0 when the usage exceeds the reporter dependent notion of
+  // soft limits.
   double cpu_utilization = 1;
 
   // Memory utilization expressed as a fraction of available memory
@@ -50,5 +52,13 @@ message OrcaLoadReport {
 
   // Application specific opaque metrics.
   map<string, double> named_metrics = 8;
+
+  // Application specific utilization expressed as a fraction of available
+  // resources. For example, an application may report the max of CPU and memory
+  // utilization for better load balancing if it is both CPU and memory bound.
+  // This should be derived from the latest sample or measurement.
+  // The value may be larger than 1.0 when the usage exceeds the reporter
+  // dependent notion of soft limits.
+  double application_utilization = 9;
 }
 

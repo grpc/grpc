@@ -57,11 +57,6 @@ UPB_INLINE const upb_MessageDef *envoy_config_core_v3_ExtensionConfigSource_getm
   return upb_DefPool_FindMessageByName(s, "envoy.config.core.v3.ExtensionConfigSource");
 }
 
-UPB_INLINE const upb_MessageDef *envoy_config_core_v3_RestSubscription_getmsgdef(upb_DefPool *s) {
-  _upb_DefPool_LoadDefInit(s, &envoy_config_core_v3_config_source_proto_upbdefinit);
-  return upb_DefPool_FindMessageByName(s, "envoy.config.core.v3.RestSubscription");
-}
-
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

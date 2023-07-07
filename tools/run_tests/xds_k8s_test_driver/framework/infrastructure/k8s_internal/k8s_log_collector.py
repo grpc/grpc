@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 
 class PodLogCollector(threading.Thread):
     """A thread that streams logs from the remote pod to a local file."""
+
     pod_name: str
     namespace_name: str
     stop_event: threading.Event
@@ -37,16 +38,18 @@ class PodLogCollector(threading.Thread):
     _watcher: Optional[watch.Watch]
     _read_pod_log_fn: Callable[..., Any]
 
-    def __init__(self,
-                 *,
-                 pod_name: str,
-                 namespace_name: str,
-                 read_pod_log_fn: Callable[..., Any],
-                 stop_event: threading.Event,
-                 log_path: pathlib.Path,
-                 log_to_stdout: bool = False,
-                 log_timestamps: bool = False,
-                 error_backoff_sec: int = 1):
+    def __init__(
+        self,
+        *,
+        pod_name: str,
+        namespace_name: str,
+        read_pod_log_fn: Callable[..., Any],
+        stop_event: threading.Event,
+        log_path: pathlib.Path,
+        log_to_stdout: bool = False,
+        log_timestamps: bool = False,
+        error_backoff_sec: int = 5,
+    ):
         self.pod_name = pod_name
         self.namespace_name = namespace_name
         self.stop_event = stop_event
@@ -61,16 +64,18 @@ class PodLogCollector(threading.Thread):
         self._read_pod_log_fn = read_pod_log_fn
         self._out_stream = None
         self._watcher = None
-        super().__init__(name=f'pod-log-{pod_name}', daemon=True)
+        super().__init__(name=f"pod-log-{pod_name}", daemon=True)
 
     def run(self):
-        logger.info('Starting log collection thread %i for %s', self.ident,
-                    self.pod_name)
+        logger.info(
+            "Starting log collection thread %i for %s",
+            self.ident,
+            self.pod_name,
+        )
         try:
-            self._out_stream = open(self.log_path,
-                                    'w',
-                                    errors='ignore',
-                                    encoding="utf-8")
+            self._out_stream = open(
+                self.log_path, "w", errors="ignore", encoding="utf-8"
+            )
             while not self.stop_event.is_set():
                 self._stream_log()
         finally:
@@ -87,8 +92,10 @@ class PodLogCollector(threading.Thread):
             self._watcher.stop()
             self._watcher = None
         if self._out_stream is not None:
-            self._write(f'Finished log collection for pod {self.pod_name}',
-                        force_flush=True)
+            self._write(
+                f"Finished log collection for pod {self.pod_name}",
+                force_flush=True,
+            )
             self._out_stream.close()
             self._out_stream = None
         self.drain_event.set()
@@ -99,21 +106,27 @@ class PodLogCollector(threading.Thread):
         except client.ApiException as e:
             self._write(f"Exception fetching logs: {e}")
             self._write(
-                f'Restarting log fetching in {self.error_backoff_sec} sec. '
-                f'Will attempt to read from the beginning, but log '
-                f'truncation may occur.',
-                force_flush=True)
+                (
+                    f"Restarting log fetching in {self.error_backoff_sec} sec. "
+                    "Will attempt to read from the beginning, but log "
+                    "truncation may occur."
+                ),
+                force_flush=True,
+            )
+        finally:
             # Instead of time.sleep(), we're waiting on the stop event
             # in case it gets set earlier.
             self.stop_event.wait(timeout=self.error_backoff_sec)
 
     def _restart_stream(self):
         self._watcher = watch.Watch()
-        for msg in self._watcher.stream(self._read_pod_log_fn,
-                                        name=self.pod_name,
-                                        namespace=self.namespace_name,
-                                        timestamps=self.log_timestamps,
-                                        follow=True):
+        for msg in self._watcher.stream(
+            self._read_pod_log_fn,
+            name=self.pod_name,
+            namespace=self.namespace_name,
+            timestamps=self.log_timestamps,
+            follow=True,
+        ):
             self._write(msg)
             # Every message check if a stop is requested.
             if self.stop_event.is_set():

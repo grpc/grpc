@@ -40,6 +40,7 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/json.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
@@ -328,9 +329,10 @@ void ExternalAccountCredentials::ExchangeToken(
   Json::Object addtional_options_json_object;
   if (options_.client_id.empty() && options_.client_secret.empty()) {
     addtional_options_json_object["userProject"] =
-        options_.workforce_pool_user_project;
+        Json::FromString(options_.workforce_pool_user_project);
   }
-  Json addtional_options_json(std::move(addtional_options_json_object));
+  Json addtional_options_json =
+      Json::FromObject(std::move(addtional_options_json_object));
   body_parts.push_back(absl::StrFormat(
       "options=%s", UrlEncode(JsonDump(addtional_options_json)).c_str()));
   std::string body = absl::StrJoin(body_parts, "&");

@@ -25,7 +25,7 @@ def add_admin_servicers(server):
     a separate library, and the documentation of the predefined admin services
     is usually scattered. It can be time consuming to get the dependency
     management, module initialization, and library import right for each one of
-    them. 
+    them.
 
     This API provides a convenient way to create a gRPC server to expose admin
     services. With this, any new admin services that you may add in the future
@@ -39,4 +39,4 @@ def add_admin_servicers(server):
     grpc_csds.add_csds_servicer(server)
 
 
-__all__ = ['add_admin_servicers']
+__all__ = ["add_admin_servicers"]

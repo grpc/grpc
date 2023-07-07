@@ -117,18 +117,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "public_headers_must_be_c89",
-    srcs = ["public_headers_must_be_c89.c"],
-    language = "C",
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//:grpc_authorization_provider",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "secure_channel_create_test",
     srcs = ["secure_channel_create_test.cc"],
     external_deps = ["gtest"],

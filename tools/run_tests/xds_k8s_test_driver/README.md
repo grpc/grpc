@@ -44,6 +44,8 @@ sudo apt-get install python3-venv
    gcloud services enable \
      compute.googleapis.com \
      container.googleapis.com \
+     logging.googleapis.com \
+     monitoring.googleapis.com \
      networksecurity.googleapis.com \
      networkservices.googleapis.com \
      secretmanager.googleapis.com \
@@ -168,6 +170,10 @@ END
 # Unless you're using GCP VM with preconfigured Application Default Credentials, acquire them for your user
 gcloud auth application-default login
 
+# Install authentication plugin for kubectl.
+# Details: https://cloud.google.com/blog/products/containers-kubernetes/kubectl-auth-changes-in-gke
+gcloud components install gke-gcloud-auth-plugin
+
 # Configuring GKE cluster access for kubectl
 gcloud container clusters get-credentials "${CLUSTER_NAME}" --zone "${ZONE}"
 
@@ -210,7 +216,7 @@ from your dev environment. You need:
 
 ### Making changes to the driver
 1. Install additional dev packages: `pip install -r requirements-dev.txt`
-2. Use `./bin/yapf.sh` and `./bin/isort.sh` helpers to auto-format code.
+2. Use `./bin/black.sh` and `./bin/isort.sh` helpers to auto-format code.
 
 ### Updating Python Dependencies
 

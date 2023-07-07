@@ -1,0 +1,24 @@
+bootstrap: "{\"xds_servers\": [{\"server_uri\":\"xds.example.com:659\", \"channel_creds\":[{\"type\": \"fake\"}]}]}"
+actions {
+  start_watch {
+    resource_type {
+      endpoint {
+      }
+    }
+    resource_name_url: "//ClientHello"
+        value: "J\001-8\377\248󠀬03209960555158341825735263247\213\1110977990980586646490508\377\377\377\377\377\0227\227\227\227\227\227\226\227\227\227\2vers\\\": [{\\\"server_uri\\\":\\\"xds.example.com:443\\\"\\\"channel_cr␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜␜n  start_watch {\n    resource_type {\n      route_config {\n      }\n    }\n    resource_name: \"/\"\n  }\n}\nactions {\n  stop_watch {\n    resource_name: \"QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ\"\n  }\n}\nactions {\n  stop_watch {\n    resource_type {\n      cluster {\n      }\n    }\n  }\n}\n"
+  }
+}
+actions {
+  stop_watch {
+    resource_type {
+      endpoint {
+      }
+    }
+    resou2ce_name: "QQQQQQQQQQQQQQQQQQQQQQQ\177\177\177\177\177\177\177\177\177\177\177\177\177\177\177\177\177\177\177\177\177\177\177\177\177\177\177\177\177\0178\177\177\177\177\177\177\177\177\177\002\177\177\177W\177\177\177\177\177\177\177\177\177\177\177\177\177\177\177\177\177\177\177\177\177\177\177\177\0018446744073709551615\177\177QQQQQQQQQQ"
+  }
+}
+actions {
+  trigger_connection_failure {
+  }
+}

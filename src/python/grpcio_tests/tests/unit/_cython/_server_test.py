@@ -21,29 +21,31 @@ from grpc._cython import cygrpc
 
 
 class Test(unittest.TestCase):
-
     def test_lonely_server(self):
         server_call_completion_queue = cygrpc.CompletionQueue()
         server_shutdown_completion_queue = cygrpc.CompletionQueue()
         server = cygrpc.Server(None, False)
         server.register_completion_queue(server_call_completion_queue)
         server.register_completion_queue(server_shutdown_completion_queue)
-        port = server.add_http2_port(b'[::]:0')
+        port = server.add_http2_port(b"[::]:0")
         server.start()
 
-        server_request_call_tag = 'server_request_call_tag'
+        server_request_call_tag = "server_request_call_tag"
         server_request_call_start_batch_result = server.request_call(
-            server_call_completion_queue, server_call_completion_queue,
-            server_request_call_tag)
+            server_call_completion_queue,
+            server_call_completion_queue,
+            server_request_call_tag,
+        )
 
         time.sleep(4)
 
-        server_shutdown_tag = 'server_shutdown_tag'
+        server_shutdown_tag = "server_shutdown_tag"
         server_shutdown_result = server.shutdown(
-            server_shutdown_completion_queue, server_shutdown_tag)
+            server_shutdown_completion_queue, server_shutdown_tag
+        )
         server_request_call_event = server_call_completion_queue.poll()
         server_shutdown_event = server_shutdown_completion_queue.poll()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main(verbosity=2)

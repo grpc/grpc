@@ -34,6 +34,7 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/json.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
@@ -487,19 +488,25 @@ void AwsExternalAccountCredentials::BuildSubjectToken() {
   }
   // Construct subject token
   Json::Array headers;
-  headers.push_back(Json(
-      {{"key", "Authorization"}, {"value", signed_headers["Authorization"]}}));
-  headers.push_back(Json({{"key", "host"}, {"value", signed_headers["host"]}}));
+  headers.push_back(Json::FromObject(
+      {{"key", Json::FromString("Authorization")},
+       {"value", Json::FromString(signed_headers["Authorization"])}}));
   headers.push_back(
-      Json({{"key", "x-amz-date"}, {"value", signed_headers["x-amz-date"]}}));
-  headers.push_back(Json({{"key", "x-amz-security-token"},
-                          {"value", signed_headers["x-amz-security-token"]}}));
-  headers.push_back(
-      Json({{"key", "x-goog-cloud-target-resource"}, {"value", audience_}}));
-  Json::Object object{{"url", Json(cred_verification_url_)},
-                      {"method", Json("POST")},
-                      {"headers", Json(headers)}};
-  Json subject_token_json(object);
+      Json::FromObject({{"key", Json::FromString("host")},
+                        {"value", Json::FromString(signed_headers["host"])}}));
+  headers.push_back(Json::FromObject(
+      {{"key", Json::FromString("x-amz-date")},
+       {"value", Json::FromString(signed_headers["x-amz-date"])}}));
+  headers.push_back(Json::FromObject(
+      {{"key", Json::FromString("x-amz-security-token")},
+       {"value", Json::FromString(signed_headers["x-amz-security-token"])}}));
+  headers.push_back(Json::FromObject(
+      {{"key", Json::FromString("x-goog-cloud-target-resource")},
+       {"value", Json::FromString(audience_)}}));
+  Json subject_token_json =
+      Json::FromObject({{"url", Json::FromString(cred_verification_url_)},
+                        {"method", Json::FromString("POST")},
+                        {"headers", Json::FromArray(headers)}});
   std::string subject_token = UrlEncode(JsonDump(subject_token_json));
   FinishRetrieveSubjectToken(subject_token, absl::OkStatus());
 }

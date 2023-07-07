@@ -22,15 +22,14 @@
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
-#include "absl/strings/string_view.h"
+
+#include <grpc/support/log.h>
 
 #include "src/core/lib/channel/context.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
-#include "src/core/lib/service_config/service_config.h"
+#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
-#include "src/core/lib/service_config/service_config_parser.h"
 
 //
 // This file contains internal interfaces used to allow various plugins
@@ -38,29 +37,30 @@
 // ClientChannel that is not normally accessible via external APIs.
 //
 
+// Channel arg key for health check service name.
+#define GRPC_ARG_HEALTH_CHECK_SERVICE_NAME \
+  "grpc.internal.health_check_service_name"
+
 namespace grpc_core {
 
 // Internal type for LB call state interface.  Provides an interface for
 // LB policies to access internal call attributes.
 class ClientChannelLbCallState : public LoadBalancingPolicy::CallState {
  public:
-  virtual absl::string_view GetCallAttribute(UniqueTypeName type) = 0;
+  virtual ServiceConfigCallData::CallAttributeInterface* GetCallAttribute(
+      UniqueTypeName type) const = 0;
 };
 
 // Internal type for ServiceConfigCallData.  Handles call commits.
 class ClientChannelServiceConfigCallData : public ServiceConfigCallData {
  public:
-  ClientChannelServiceConfigCallData(
-      RefCountedPtr<ServiceConfig> service_config,
-      const ServiceConfigParser::ParsedConfigVector* method_configs,
-      ServiceConfigCallData::CallAttributes call_attributes,
-      absl::AnyInvocable<void()> on_commit,
-      grpc_call_context_element* call_context)
-      : ServiceConfigCallData(std::move(service_config), method_configs,
-                              std::move(call_attributes)),
-        on_commit_(std::move(on_commit)) {
-    call_context[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value = this;
-    call_context[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].destroy = Destroy;
+  ClientChannelServiceConfigCallData(Arena* arena,
+                                     grpc_call_context_element* call_context)
+      : ServiceConfigCallData(arena, call_context) {}
+
+  void SetOnCommit(absl::AnyInvocable<void()> on_commit) {
+    GPR_ASSERT(on_commit_ == nullptr);
+    on_commit_ = std::move(on_commit);
   }
 
   void Commit() {
@@ -69,11 +69,6 @@ class ClientChannelServiceConfigCallData : public ServiceConfigCallData {
   }
 
  private:
-  static void Destroy(void* ptr) {
-    auto* self = static_cast<ClientChannelServiceConfigCallData*>(ptr);
-    self->~ClientChannelServiceConfigCallData();
-  }
-
   absl::AnyInvocable<void()> on_commit_;
 };
 

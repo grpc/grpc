@@ -37,6 +37,7 @@
 #include "envoy/config/listener/v3/listener.upb.h"
 #include "envoy/config/listener/v3/listener.upbdefs.h"
 #include "envoy/config/listener/v3/listener_components.upb.h"
+#include "envoy/config/rbac/v3/rbac.upb.h"
 #include "envoy/config/route/v3/route.upb.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.h"

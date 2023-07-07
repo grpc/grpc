@@ -49,7 +49,9 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/strerror.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
 
@@ -549,28 +551,40 @@ void PosixEndpointImpl::MaybeMakeReadSlices() {
   }
 }
 
-void PosixEndpointImpl::HandleRead(absl::Status status) {
-  read_mu_.Lock();
+bool PosixEndpointImpl::HandleReadLocked(absl::Status& status) {
   if (status.ok() && memory_owner_.is_valid()) {
     MaybeMakeReadSlices();
     if (!TcpDoRead(status)) {
       UpdateRcvLowat();
       // We've consumed the edge, request a new one.
-      read_mu_.Unlock();
-      handle_->NotifyOnRead(on_read_);
-      return;
+      return false;
     }
   } else {
-    if (!memory_owner_.is_valid()) {
-      status = absl::UnknownError("Shutting down endpoint");
+    if (!memory_owner_.is_valid() && status.ok()) {
+      status = TcpAnnotateError(absl::UnknownError("Shutting down endpoint"));
     }
     incoming_buffer_->Clear();
     last_read_buffer_.Clear();
   }
-  absl::AnyInvocable<void(absl::Status)> cb = std::move(read_cb_);
-  read_cb_ = nullptr;
-  incoming_buffer_ = nullptr;
-  read_mu_.Unlock();
+  return true;
+}
+
+void PosixEndpointImpl::HandleRead(absl::Status status) {
+  bool ret = false;
+  absl::AnyInvocable<void(absl::Status)> cb = nullptr;
+  grpc_core::EnsureRunInExecCtx([&, this]() mutable {
+    grpc_core::MutexLock lock(&read_mu_);
+    ret = HandleReadLocked(status);
+    if (ret) {
+      cb = std::move(read_cb_);
+      read_cb_ = nullptr;
+      incoming_buffer_ = nullptr;
+    }
+  });
+  if (!ret) {
+    handle_->NotifyOnRead(on_read_);
+    return;
+  }
   cb(status);
   Unref();
 }

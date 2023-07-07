@@ -35,14 +35,13 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
-#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/connectivity_state.h>
+#include <grpc/support/json.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/address_filtering.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
-#include "src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
@@ -64,14 +63,13 @@
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
 #include "src/core/lib/json/json_writer.h"
+#include "src/core/lib/load_balancing/delegating_helper.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
-#include "src/core/lib/load_balancing/subchannel_interface.h"
 #include "src/core/lib/resolver/resolver.h"
 #include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/resolver/server_address.h"
-#include "src/core/lib/transport/connectivity_state.h"
 
 #define GRPC_EDS_DEFAULT_FALLBACK_TIMEOUT 10000
 
@@ -308,10 +306,10 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
     void Start() override;
     void Orphan() override;
     Json::Array override_child_policy() override {
-      return Json::Array{
-          Json::Object{
-              {"pick_first", Json::Object()},
-          },
+      return {
+          Json::FromObject({
+              {"pick_first", Json::FromObject({})},
+          }),
       };
     }
     bool disable_reresolution() override { return false; };
@@ -359,31 +357,18 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
     std::string GetChildPolicyName(size_t priority) const;
   };
 
-  class Helper : public ChannelControlHelper {
+  class Helper : public ParentOwningDelegatingChannelControlHelper<
+                     XdsClusterResolverLb> {
    public:
     explicit Helper(
         RefCountedPtr<XdsClusterResolverLb> xds_cluster_resolver_policy)
-        : xds_cluster_resolver_policy_(std::move(xds_cluster_resolver_policy)) {
-    }
+        : ParentOwningDelegatingChannelControlHelper(
+              std::move(xds_cluster_resolver_policy)) {}
 
-    ~Helper() override {
-      xds_cluster_resolver_policy_.reset(DEBUG_LOCATION, "Helper");
-    }
-
-    RefCountedPtr<SubchannelInterface> CreateSubchannel(
-        ServerAddress address, const ChannelArgs& args) override;
-    void UpdateState(grpc_connectivity_state state, const absl::Status& status,
-                     RefCountedPtr<SubchannelPicker> picker) override;
     // This is a no-op, because we get the addresses from the xds
     // client, which is a watch-based API.
+    // TODO(roth): Don't we need to propagate this for LOGICAL_DNS clusters?
     void RequestReresolution() override {}
-    absl::string_view GetAuthority() override;
-    grpc_event_engine::experimental::EventEngine* GetEventEngine() override;
-    void AddTraceEvent(TraceSeverity severity,
-                       absl::string_view message) override;
-
-   private:
-    RefCountedPtr<XdsClusterResolverLb> xds_cluster_resolver_policy_;
   };
 
   ~XdsClusterResolverLb() override;
@@ -420,53 +405,6 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
 
   OrphanablePtr<LoadBalancingPolicy> child_policy_;
 };
-
-//
-// XdsClusterResolverLb::Helper
-//
-
-RefCountedPtr<SubchannelInterface>
-XdsClusterResolverLb::Helper::CreateSubchannel(ServerAddress address,
-                                               const ChannelArgs& args) {
-  if (xds_cluster_resolver_policy_->shutting_down_) return nullptr;
-  return xds_cluster_resolver_policy_->channel_control_helper()
-      ->CreateSubchannel(std::move(address), args);
-}
-
-void XdsClusterResolverLb::Helper::UpdateState(
-    grpc_connectivity_state state, const absl::Status& status,
-    RefCountedPtr<SubchannelPicker> picker) {
-  if (xds_cluster_resolver_policy_->shutting_down_ ||
-      xds_cluster_resolver_policy_->child_policy_ == nullptr) {
-    return;
-  }
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_cluster_resolver_trace)) {
-    gpr_log(GPR_INFO,
-            "[xds_cluster_resolver_lb %p] child policy updated state=%s (%s) "
-            "picker=%p",
-            xds_cluster_resolver_policy_.get(), ConnectivityStateName(state),
-            status.ToString().c_str(), picker.get());
-  }
-  xds_cluster_resolver_policy_->channel_control_helper()->UpdateState(
-      state, status, std::move(picker));
-}
-
-absl::string_view XdsClusterResolverLb::Helper::GetAuthority() {
-  return xds_cluster_resolver_policy_->channel_control_helper()->GetAuthority();
-}
-
-grpc_event_engine::experimental::EventEngine*
-XdsClusterResolverLb::Helper::GetEventEngine() {
-  return xds_cluster_resolver_policy_->channel_control_helper()
-      ->GetEventEngine();
-}
-
-void XdsClusterResolverLb::Helper::AddTraceEvent(TraceSeverity severity,
-                                                 absl::string_view message) {
-  if (xds_cluster_resolver_policy_->shutting_down_) return;
-  xds_cluster_resolver_policy_->channel_control_helper()->AddTraceEvent(
-      severity, message);
-}
 
 //
 // XdsClusterResolverLb::EdsDiscoveryMechanism
@@ -829,25 +767,17 @@ ServerAddressList XdsClusterResolverLb::CreateChildPolicyAddressesLocked() {
         std::vector<std::string> hierarchical_path = {
             priority_child_name, locality_name->AsHumanReadableString()};
         for (const auto& endpoint : locality.endpoints) {
-          const ServerAddressWeightAttribute* weight_attribute = static_cast<
-              const ServerAddressWeightAttribute*>(endpoint.GetAttribute(
-              ServerAddressWeightAttribute::kServerAddressWeightAttributeKey));
-          uint32_t weight = locality.lb_weight;
-          if (weight_attribute != nullptr) {
-            weight = locality.lb_weight * weight_attribute->weight();
-          }
+          uint32_t endpoint_weight =
+              locality.lb_weight *
+              endpoint.args().GetInt(GRPC_ARG_ADDRESS_WEIGHT).value_or(1);
           addresses.emplace_back(
-              endpoint
-                  .WithAttribute(
-                      kHierarchicalPathAttributeKey,
-                      MakeHierarchicalPathAttribute(hierarchical_path))
-                  .WithAttribute(kXdsLocalityNameAttributeKey,
-                                 std::make_unique<XdsLocalityAttribute>(
-                                     locality_name->Ref(), locality.lb_weight))
-                  .WithAttribute(
-                      ServerAddressWeightAttribute::
-                          kServerAddressWeightAttributeKey,
-                      std::make_unique<ServerAddressWeightAttribute>(weight)));
+              endpoint.address(),
+              endpoint.args()
+                  .SetObject(
+                      MakeRefCounted<HierarchicalPathArg>(hierarchical_path))
+                  .Set(GRPC_ARG_ADDRESS_WEIGHT, endpoint_weight)
+                  .SetObject(locality_name->Ref())
+                  .Set(GRPC_ARG_XDS_LOCALITY_WEIGHT, locality.lb_weight));
         }
       }
     }
@@ -878,8 +808,8 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
       Json child_policy;
       if (!discovery_entry.discovery_mechanism->override_child_policy()
                .empty()) {
-        child_policy =
-            discovery_entry.discovery_mechanism->override_child_policy();
+        child_policy = Json::FromArray(
+            discovery_entry.discovery_mechanism->override_child_policy());
       } else {
         child_policy = config_->xds_lb_policy();
       }
@@ -889,32 +819,34 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
       };
       if (!discovery_config.override_host_statuses.empty()) {
         xds_override_host_lb_config["overrideHostStatus"] =
-            discovery_config.override_host_statuses;
+            Json::FromArray(discovery_config.override_host_statuses);
       }
-      Json::Array xds_override_host_config = {Json::Object{
+      Json::Array xds_override_host_config = {Json::FromObject({
           {"xds_override_host_experimental",
-           std::move(xds_override_host_lb_config)},
-      }};
+           Json::FromObject(std::move(xds_override_host_lb_config))},
+      })};
       // Wrap it in the xds_cluster_impl policy.
       Json::Array drop_categories;
       if (discovery_entry.latest_update->drop_config != nullptr) {
         for (const auto& category :
              discovery_entry.latest_update->drop_config->drop_category_list()) {
-          drop_categories.push_back(Json::Object{
-              {"category", category.name},
-              {"requests_per_million", category.parts_per_million},
-          });
+          drop_categories.push_back(Json::FromObject({
+              {"category", Json::FromString(category.name)},
+              {"requests_per_million",
+               Json::FromNumber(category.parts_per_million)},
+          }));
         }
       }
       Json::Object xds_cluster_impl_config = {
-          {"clusterName", discovery_config.cluster_name},
-          {"childPolicy", std::move(xds_override_host_config)},
-          {"dropCategories", std::move(drop_categories)},
-          {"maxConcurrentRequests", discovery_config.max_concurrent_requests},
+          {"clusterName", Json::FromString(discovery_config.cluster_name)},
+          {"childPolicy", Json::FromArray(std::move(xds_override_host_config))},
+          {"dropCategories", Json::FromArray(std::move(drop_categories))},
+          {"maxConcurrentRequests",
+           Json::FromNumber(discovery_config.max_concurrent_requests)},
       };
       if (!discovery_config.eds_service_name.empty()) {
         xds_cluster_impl_config["edsServiceName"] =
-            discovery_config.eds_service_name;
+            Json::FromString(discovery_config.eds_service_name);
       }
       if (discovery_config.lrs_load_reporting_server.has_value()) {
         xds_cluster_impl_config["lrsLoadReportingServer"] =
@@ -926,32 +858,34 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
         outlier_detection_config =
             discovery_entry.config().outlier_detection_lb_config.value();
       }
-      outlier_detection_config["childPolicy"] = Json::Array{Json::Object{
-          {"xds_cluster_impl_experimental", std::move(xds_cluster_impl_config)},
-      }};
-      Json locality_picking_policy = Json::Array{Json::Object{
+      outlier_detection_config["childPolicy"] =
+          Json::FromArray({Json::FromObject({
+              {"xds_cluster_impl_experimental",
+               Json::FromObject(std::move(xds_cluster_impl_config))},
+          })});
+      Json locality_picking_policy = Json::FromArray({Json::FromObject({
           {"outlier_detection_experimental",
-           std::move(outlier_detection_config)},
-      }};
+           Json::FromObject(std::move(outlier_detection_config))},
+      })});
       // Add priority entry, with the appropriate child name.
       std::string child_name = discovery_entry.GetChildPolicyName(priority);
-      priority_priorities.emplace_back(child_name);
+      priority_priorities.emplace_back(Json::FromString(child_name));
       Json::Object child_config = {
           {"config", std::move(locality_picking_policy)},
       };
       if (discovery_entry.discovery_mechanism->disable_reresolution()) {
-        child_config["ignore_reresolution_requests"] = true;
+        child_config["ignore_reresolution_requests"] = Json::FromBool(true);
       }
-      priority_children[child_name] = std::move(child_config);
+      priority_children[child_name] = Json::FromObject(std::move(child_config));
     }
   }
-  Json json = Json::Array{Json::Object{
+  Json json = Json::FromArray({Json::FromObject({
       {"priority_experimental",
-       Json::Object{
-           {"children", std::move(priority_children)},
-           {"priorities", std::move(priority_priorities)},
-       }},
-  }};
+       Json::FromObject({
+           {"children", Json::FromObject(std::move(priority_children))},
+           {"priorities", Json::FromArray(std::move(priority_priorities))},
+       })},
+  })});
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_cluster_resolver_trace)) {
     gpr_log(
         GPR_INFO,
@@ -1145,15 +1079,7 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
 
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
-    if (json.type() == Json::Type::kNull) {
-      // xds_cluster_resolver was mentioned as a policy in the deprecated
-      // loadBalancingPolicy field or in the client API.
-      return absl::InvalidArgumentError(
-          "field:loadBalancingPolicy error:xds_cluster_resolver policy "
-          "requires configuration. "
-          "Please use loadBalancingConfig field of service config instead.");
-    }
-    return LoadRefCountedFromJson<XdsClusterResolverLbConfig>(
+    return LoadFromJson<RefCountedPtr<XdsClusterResolverLbConfig>>(
         json, JsonArgs(),
         "errors validating xds_cluster_resolver LB policy config");
   }

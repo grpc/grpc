@@ -17,15 +17,26 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <algorithm>
+#include <array>
+#include <chrono>
+#include <memory>
+#include <ratio>
+#include <string>
 #include <utility>
+#include <vector>
 
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
+#include <grpc/support/json.h>
+#include <grpc/support/log.h>
 
+#include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
@@ -38,79 +49,82 @@ namespace grpc_core {
 namespace testing {
 namespace {
 
-class OutlierDetectionTest : public LoadBalancingPolicyTest {
+class OutlierDetectionTest : public TimeAwareLoadBalancingPolicyTest {
  protected:
   class ConfigBuilder {
    public:
     ConfigBuilder() {
-      SetChildPolicy(Json::Object{{"round_robin", Json::Object()}});
+      SetChildPolicy(Json::Object{{"round_robin", Json::FromObject({})}});
     }
 
     ConfigBuilder& SetInterval(Duration duration) {
-      json_["interval"] = duration.ToJsonString();
+      json_["interval"] = Json::FromString(duration.ToJsonString());
       return *this;
     }
     ConfigBuilder& SetBaseEjectionTime(Duration duration) {
-      json_["baseEjectionTime"] = duration.ToJsonString();
+      json_["baseEjectionTime"] = Json::FromString(duration.ToJsonString());
       return *this;
     }
     ConfigBuilder& SetMaxEjectionTime(Duration duration) {
-      json_["maxEjectionTime"] = duration.ToJsonString();
+      json_["maxEjectionTime"] = Json::FromString(duration.ToJsonString());
       return *this;
     }
     ConfigBuilder& SetMaxEjectionPercent(uint32_t value) {
-      json_["maxEjectionPercent"] = value;
+      json_["maxEjectionPercent"] = Json::FromNumber(value);
       return *this;
     }
     ConfigBuilder& SetChildPolicy(Json::Object child_policy) {
-      json_["childPolicy"] = Json::Array{std::move(child_policy)};
+      json_["childPolicy"] =
+          Json::FromArray({Json::FromObject(std::move(child_policy))});
       return *this;
     }
 
     ConfigBuilder& SetSuccessRateStdevFactor(uint32_t value) {
-      GetSuccessRate()["stdevFactor"] = value;
+      GetSuccessRate()["stdevFactor"] = Json::FromNumber(value);
       return *this;
     }
     ConfigBuilder& SetSuccessRateEnforcementPercentage(uint32_t value) {
-      GetSuccessRate()["enforcementPercentage"] = value;
+      GetSuccessRate()["enforcementPercentage"] = Json::FromNumber(value);
       return *this;
     }
     ConfigBuilder& SetSuccessRateMinHosts(uint32_t value) {
-      GetSuccessRate()["minimumHosts"] = value;
+      GetSuccessRate()["minimumHosts"] = Json::FromNumber(value);
       return *this;
     }
     ConfigBuilder& SetSuccessRateRequestVolume(uint32_t value) {
-      GetSuccessRate()["requestVolume"] = value;
+      GetSuccessRate()["requestVolume"] = Json::FromNumber(value);
       return *this;
     }
 
     ConfigBuilder& SetFailurePercentageThreshold(uint32_t value) {
-      GetFailurePercentage()["threshold"] = value;
+      GetFailurePercentage()["threshold"] = Json::FromNumber(value);
       return *this;
     }
     ConfigBuilder& SetFailurePercentageEnforcementPercentage(uint32_t value) {
-      GetFailurePercentage()["enforcementPercentage"] = value;
+      GetFailurePercentage()["enforcementPercentage"] = Json::FromNumber(value);
       return *this;
     }
     ConfigBuilder& SetFailurePercentageMinimumHosts(uint32_t value) {
-      GetFailurePercentage()["minimumHosts"] = value;
+      GetFailurePercentage()["minimumHosts"] = Json::FromNumber(value);
       return *this;
     }
     ConfigBuilder& SetFailurePercentageRequestVolume(uint32_t value) {
-      GetFailurePercentage()["requestVolume"] = value;
+      GetFailurePercentage()["requestVolume"] = Json::FromNumber(value);
       return *this;
     }
 
     RefCountedPtr<LoadBalancingPolicy::Config> Build() {
       Json::Object fields = json_;
       if (success_rate_.has_value()) {
-        fields["successRateEjection"] = *success_rate_;
+        fields["successRateEjection"] = Json::FromObject(*success_rate_);
       }
       if (failure_percentage_.has_value()) {
-        fields["failurePercentageEjection"] = *failure_percentage_;
+        fields["failurePercentageEjection"] =
+            Json::FromObject(*failure_percentage_);
       }
-      Json config = Json::Array{
-          Json::Object{{"outlier_detection_experimental", std::move(fields)}}};
+      Json config = Json::FromArray(
+          {Json::FromObject({{"outlier_detection_experimental",
+                              Json::FromObject(std::move(fields))}})});
       return MakeConfig(config);
     }
 
@@ -133,7 +147,34 @@ class OutlierDetectionTest : public LoadBalancingPolicyTest {
   OutlierDetectionTest()
       : lb_policy_(MakeLbPolicy("outlier_detection_experimental")) {}
 
+  absl::optional<std::string> DoPickWithFailedCall(
+      LoadBalancingPolicy::SubchannelPicker* picker) {
+    std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>
+        subchannel_call_tracker;
+    auto address = ExpectPickComplete(picker, {}, &subchannel_call_tracker);
+    if (address.has_value()) {
+      subchannel_call_tracker->Start();
+      FakeMetadata metadata({});
+      FakeBackendMetricAccessor backend_metric_accessor({});
+      LoadBalancingPolicy::SubchannelCallTrackerInterface::FinishArgs args = {
+          *address, absl::UnavailableError("uh oh"), &metadata,
+          &backend_metric_accessor};
+      subchannel_call_tracker->Finish(args);
+    }
+    return address;
+  }
+
+  void CheckExpectedTimerDuration(
+      grpc_event_engine::experimental::EventEngine::Duration duration)
+      override {
+    EXPECT_EQ(duration, expected_internal_)
+        << "Expected: " << expected_internal_.count() << "ns"
+        << "\n  Actual: " << duration.count() << "ns";
+  }
+
   OrphanablePtr<LoadBalancingPolicy> lb_policy_;
+  grpc_event_engine::experimental::EventEngine::Duration expected_internal_ =
+      std::chrono::seconds(10);
 };
 
 TEST_F(OutlierDetectionTest, Basic) {
@@ -142,8 +183,6 @@ TEST_F(OutlierDetectionTest, Basic) {
   absl::Status status = ApplyUpdate(
       BuildUpdate({kAddressUri}, ConfigBuilder().Build()), lb_policy_.get());
   EXPECT_TRUE(status.ok()) << status;
-  // LB policy should have reported CONNECTING state.
-  ExpectConnectingUpdate();
   // LB policy should have created a subchannel for the address.
   auto* subchannel = FindSubchannel(kAddressUri);
   ASSERT_NE(subchannel, nullptr);
@@ -152,6 +191,8 @@ TEST_F(OutlierDetectionTest, Basic) {
   EXPECT_TRUE(subchannel->ConnectionRequested());
   // This causes the subchannel to start to connect, so it reports CONNECTING.
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  // LB policy should have reported CONNECTING state.
+  ExpectConnectingUpdate();
   // When the subchannel becomes connected, it reports READY.
   subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
   // The LB policy will report CONNECTING some number of times (doesn't
@@ -162,6 +203,87 @@ TEST_F(OutlierDetectionTest, Basic) {
   for (size_t i = 0; i < 3; ++i) {
     EXPECT_EQ(ExpectPickComplete(picker.get()), kAddressUri);
   }
+}
+
+TEST_F(OutlierDetectionTest, FailurePercentage) {
+  constexpr std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:440", "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442"};
+  // Send initial update.
+  absl::Status status = ApplyUpdate(
+      BuildUpdate(kAddresses, ConfigBuilder()
+                                  .SetFailurePercentageThreshold(1)
+                                  .SetFailurePercentageMinimumHosts(1)
+                                  .SetFailurePercentageRequestVolume(1)
+                                  .Build()),
+      lb_policy_.get());
+  EXPECT_TRUE(status.ok()) << status;
+  // Expect normal startup.
+  auto picker = ExpectRoundRobinStartup(kAddresses);
+  ASSERT_NE(picker, nullptr);
+  gpr_log(GPR_INFO, "### RR startup complete");
+  // Do a pick and report a failed call.
+  auto address = DoPickWithFailedCall(picker.get());
+  ASSERT_TRUE(address.has_value());
+  gpr_log(GPR_INFO, "### failed RPC on %s", address->c_str());
+  // Advance time and run the timer callback to trigger ejection.
+  time_cache_.IncrementBy(Duration::Seconds(10));
+  RunTimerCallback();
+  gpr_log(GPR_INFO, "### ejection complete");
+  // Expect a picker update.
+  std::vector<absl::string_view> remaining_addresses;
+  for (const auto& addr : kAddresses) {
+    if (addr != *address) remaining_addresses.push_back(addr);
+  }
+  picker = WaitForRoundRobinListChange(kAddresses, remaining_addresses);
+}
+
+TEST_F(OutlierDetectionTest, DoesNotWorkWithPickFirst) {
+  constexpr std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:440", "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442"};
+  // Send initial update.
+  absl::Status status = ApplyUpdate(
+      BuildUpdate(kAddresses,
+                  ConfigBuilder()
+                      .SetFailurePercentageThreshold(1)
+                      .SetFailurePercentageMinimumHosts(1)
+                      .SetFailurePercentageRequestVolume(1)
+                      .SetChildPolicy({{"pick_first", Json::FromObject({})}})
+                      .Build()),
+      lb_policy_.get());
+  EXPECT_TRUE(status.ok()) << status;
+  // LB policy should have created a subchannel for the first address.
+  auto* subchannel = FindSubchannel(kAddresses[0]);
+  ASSERT_NE(subchannel, nullptr);
+  // When the LB policy receives the subchannel's initial connectivity
+  // state notification (IDLE), it will request a connection.
+  EXPECT_TRUE(subchannel->ConnectionRequested());
+  // This causes the subchannel to start to connect, so it reports CONNECTING.
+  subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  // LB policy should have reported CONNECTING state.
+  ExpectConnectingUpdate();
+  // When the subchannel becomes connected, it reports READY.
+  subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
+  // The LB policy will report CONNECTING some number of times (doesn't
+  // matter how many) and then report READY.
+  auto picker = WaitForConnected();
+  ASSERT_NE(picker, nullptr);
+  // Picker should return the same subchannel repeatedly.
+  for (size_t i = 0; i < 3; ++i) {
+    EXPECT_EQ(ExpectPickComplete(picker.get()), kAddresses[0]);
+  }
+  gpr_log(GPR_INFO, "### PF startup complete");
+  // Now have an RPC to that subchannel fail.
+  auto address = DoPickWithFailedCall(picker.get());
+  ASSERT_TRUE(address.has_value());
+  gpr_log(GPR_INFO, "### failed RPC on %s", address->c_str());
+  // Advance time and run the timer callback to trigger ejection.
+  time_cache_.IncrementBy(Duration::Seconds(10));
+  RunTimerCallback();
+  gpr_log(GPR_INFO, "### ejection timer pass complete");
+  // Subchannel should not be ejected.
+  ExpectQueueEmpty();
+  // Subchannel should not see a reconnection request.
+  EXPECT_FALSE(subchannel->ConnectionRequested());
 }
 
 }  // namespace

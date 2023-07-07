@@ -52,6 +52,11 @@ UPB_INLINE const upb_MessageDef *google_protobuf_ExtensionRangeOptions_getmsgdef
   return upb_DefPool_FindMessageByName(s, "google.protobuf.ExtensionRangeOptions");
 }
 
+UPB_INLINE const upb_MessageDef *google_protobuf_ExtensionRangeOptions_Declaration_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &google_protobuf_descriptor_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "google.protobuf.ExtensionRangeOptions.Declaration");
+}
+
 UPB_INLINE const upb_MessageDef *google_protobuf_FieldDescriptorProto_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &google_protobuf_descriptor_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "google.protobuf.FieldDescriptorProto");

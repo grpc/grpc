@@ -1,7 +1,7 @@
 name: PR Title Check & Tag
 on:
   pull_request_target:
-    types: [opened, reopened, synchronized, edited]
+    types: [opened, reopened, synchronize, edited]
 permissions:
   contents: read # to determine modified files (actions/labeler)
 

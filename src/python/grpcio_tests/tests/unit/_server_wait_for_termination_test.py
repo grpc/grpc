@@ -34,16 +34,17 @@ def _block_on_waiting(server, termination_event, timeout=None):
 
 
 class ServerWaitForTerminationTest(unittest.TestCase):
-
     def test_unblock_by_invoking_stop(self):
         termination_event = threading.Event()
         server = grpc.server(futures.ThreadPoolExecutor())
 
-        wait_thread = threading.Thread(target=_block_on_waiting,
-                                       args=(
-                                           server,
-                                           termination_event,
-                                       ))
+        wait_thread = threading.Thread(
+            target=_block_on_waiting,
+            args=(
+                server,
+                termination_event,
+            ),
+        )
         wait_thread.daemon = True
         wait_thread.start()
         time.sleep(_WAIT_FOR_BLOCKING.total_seconds())
@@ -56,11 +57,13 @@ class ServerWaitForTerminationTest(unittest.TestCase):
         termination_event = threading.Event()
         server = grpc.server(futures.ThreadPoolExecutor())
 
-        wait_thread = threading.Thread(target=_block_on_waiting,
-                                       args=(
-                                           server,
-                                           termination_event,
-                                       ))
+        wait_thread = threading.Thread(
+            target=_block_on_waiting,
+            args=(
+                server,
+                termination_event,
+            ),
+        )
         wait_thread.daemon = True
         wait_thread.start()
         time.sleep(_WAIT_FOR_BLOCKING.total_seconds())
@@ -74,12 +77,14 @@ class ServerWaitForTerminationTest(unittest.TestCase):
         termination_event = threading.Event()
         server = grpc.server(futures.ThreadPoolExecutor())
 
-        wait_thread = threading.Thread(target=_block_on_waiting,
-                                       args=(
-                                           server,
-                                           termination_event,
-                                           test_constants.SHORT_TIMEOUT / 2,
-                                       ))
+        wait_thread = threading.Thread(
+            target=_block_on_waiting,
+            args=(
+                server,
+                termination_event,
+                test_constants.SHORT_TIMEOUT / 2,
+            ),
+        )
         wait_thread.daemon = True
         wait_thread.start()
 
@@ -87,5 +92,5 @@ class ServerWaitForTerminationTest(unittest.TestCase):
         self.assertTrue(termination_event.is_set())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main(verbosity=2)
