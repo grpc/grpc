@@ -65,7 +65,7 @@ bootstrap_upb_proto_library(
     name = "plugin_upb_proto",
     base_dir = "",
     google3_src_files = [
-        "src/google/protobuf/compiler/plugin.proto",
+        "net/proto2/compiler/proto/plugin.proto",
         "net/proto2/compiler/proto/profile.proto",
     ],
     google3_src_rules = [
@@ -198,6 +198,7 @@ bootstrap_cc_library(
     copts = UPB_DEFAULT_CPPOPTS,
     visibility = ["//protos_generator:__pkg__"],
     deps = [
+        "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/strings",
         "@com_google_protobuf//:protobuf",
@@ -225,6 +226,7 @@ cc_library(
         "//:base",
         "//:json",
         "//:mem",
+        "//:mini_table",
         "//:port",
         "//:reflection",
     ],
@@ -289,7 +291,7 @@ cc_binary(
     ],
     copts = UPB_DEFAULT_CPPOPTS,
     target_compatible_with = select({
-        "@platforms//os:windows": ["//third_party/bazel_platforms:incompatible"],
+        "@platforms//os:windows": ["@platforms//:incompatible"],
         "//conditions:default": [],
     }),
     visibility = ["//visibility:public"],

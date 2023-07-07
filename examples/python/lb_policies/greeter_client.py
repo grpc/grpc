@@ -25,12 +25,12 @@ def run():
     options = (("grpc.lb_policy_name", "round_robin"),)
     # Load balancing takes effect when the DNS server returns multiple IPs for the DNS hostname.
     # Replace "localhost" with such hostname to see the round robin LB policy take effect.
-    with grpc.insecure_channel('localhost:50051', options=options) as channel:
+    with grpc.insecure_channel("localhost:50051", options=options) as channel:
         stub = helloworld_pb2_grpc.GreeterStub(channel)
-        response = stub.SayHello(helloworld_pb2.HelloRequest(name='you'))
+        response = stub.SayHello(helloworld_pb2.HelloRequest(name="you"))
     print("Greeter client received: " + response.message)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig()
     run()

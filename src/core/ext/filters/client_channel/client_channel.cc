@@ -24,6 +24,7 @@
 #include <algorithm>
 #include <functional>
 #include <new>
+#include <set>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -42,6 +43,7 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
+#include <grpc/support/json.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
@@ -81,6 +83,7 @@
 #include "src/core/lib/load_balancing/subchannel_interface.h"
 #include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
 #include "src/core/lib/service_config/service_config_impl.h"
 #include "src/core/lib/slice/slice.h"
@@ -565,11 +568,15 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
 
   void AddDataWatcher(std::unique_ptr<DataWatcherInterface> watcher) override
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_) {
-    std::unique_ptr<InternalSubchannelDataWatcherInterface> internal_watcher(
-        static_cast<InternalSubchannelDataWatcherInterface*>(
-            watcher.release()));
-    internal_watcher->SetSubchannel(subchannel_.get());
-    data_watchers_.push_back(std::move(internal_watcher));
+    static_cast<InternalSubchannelDataWatcherInterface*>(watcher.get())
+        ->SetSubchannel(subchannel_.get());
+    GPR_ASSERT(data_watchers_.insert(std::move(watcher)).second);
+  }
+
+  void CancelDataWatcher(DataWatcherInterface* watcher) override
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_) {
+    auto it = data_watchers_.find(watcher);
+    if (it != data_watchers_.end()) data_watchers_.erase(it);
   }
 
   void ThrottleKeepaliveTime(int new_keepalive_time) {
@@ -682,6 +689,24 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
     RefCountedPtr<SubchannelWrapper> parent_;
   };
 
+  // A heterogenous lookup comparator for data watchers that allows
+  // unique_ptr keys to be looked up as raw pointers.
+  struct DataWatcherLessThan {
+    using is_transparent = void;
+    bool operator()(const std::unique_ptr<DataWatcherInterface>& p1,
+                    const std::unique_ptr<DataWatcherInterface>& p2) const {
+      return p1 < p2;
+    }
+    bool operator()(const std::unique_ptr<DataWatcherInterface>& p1,
+                    const DataWatcherInterface* p2) const {
+      return p1.get() < p2;
+    }
+    bool operator()(const DataWatcherInterface* p1,
+                    const std::unique_ptr<DataWatcherInterface>& p2) const {
+      return p1 < p2.get();
+    }
+  };
+
   ClientChannel* chand_;
   RefCountedPtr<Subchannel> subchannel_;
   // Maps from the address of the watcher passed to us by the LB policy
@@ -691,7 +716,7 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
   // corresponding WrapperWatcher to cancel on the underlying subchannel.
   std::map<ConnectivityStateWatcherInterface*, WatcherWrapper*> watcher_map_
       ABSL_GUARDED_BY(*chand_->work_serializer_);
-  std::vector<std::unique_ptr<InternalSubchannelDataWatcherInterface>>
+  std::set<std::unique_ptr<DataWatcherInterface>, DataWatcherLessThan>
       data_watchers_ ABSL_GUARDED_BY(*chand_->work_serializer_);
 };
 
@@ -942,6 +967,16 @@ class ClientChannel::ClientChannelControlHelper
     return chand_->default_authority_;
   }
 
+  RefCountedPtr<grpc_channel_credentials> GetChannelCredentials() override {
+    return chand_->channel_args_.GetObject<grpc_channel_credentials>()
+        ->duplicate_without_call_credentials();
+  }
+
+  RefCountedPtr<grpc_channel_credentials> GetUnsafeChannelCredentials()
+      override {
+    return chand_->channel_args_.GetObject<grpc_channel_credentials>()->Ref();
+  }
+
   grpc_event_engine::experimental::EventEngine* GetEventEngine() override {
     return chand_->owning_stack_->EventEngine();
   }
@@ -1128,7 +1163,9 @@ ChannelArgs ClientChannel::MakeSubchannelArgs(
       // uniqueness.
       .Remove(GRPC_ARG_HEALTH_CHECK_SERVICE_NAME)
       .Remove(GRPC_ARG_INHIBIT_HEALTH_CHECKING)
-      .Remove(GRPC_ARG_CHANNELZ_CHANNEL_NODE);
+      .Remove(GRPC_ARG_CHANNELZ_CHANNEL_NODE)
+      // Remove all keys with the no-subchannel prefix.
+      .RemoveAllKeysWithPrefix(GRPC_ARG_NO_SUBCHANNEL_PREFIX);
 }
 
 void ClientChannel::ReprocessQueuedResolverCalls() {
@@ -1346,11 +1383,8 @@ void ClientChannel::OnResolverErrorLocked(absl::Status status) {
   // Otherwise, we go into TRANSIENT_FAILURE.
   if (lb_policy_ == nullptr) {
     // Update connectivity state.
-    // TODO(roth): We should be updating the connectivity state here but
-    // not the picker.
-    UpdateStateAndPickerLocked(
-        GRPC_CHANNEL_TRANSIENT_FAILURE, status, "resolver failure",
-        MakeRefCounted<LoadBalancingPolicy::TransientFailurePicker>(status));
+    UpdateStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE, status,
+                      "resolver failure");
     {
       MutexLock lock(&resolution_mu_);
       // Update resolver transient failure.
@@ -1394,6 +1428,14 @@ absl::Status ClientChannel::CreateOrUpdateLbPolicyLocked(
 // Creates a new LB policy.
 OrphanablePtr<LoadBalancingPolicy> ClientChannel::CreateLbPolicyLocked(
     const ChannelArgs& args) {
+  // The LB policy will start in state CONNECTING but will not
+  // necessarily send us an update synchronously, so set state to
+  // CONNECTING (in case the resolver had previously failed and put the
+  // channel into TRANSIENT_FAILURE) and make sure we have a queueing picker.
+  UpdateStateAndPickerLocked(
+      GRPC_CHANNEL_CONNECTING, absl::Status(), "started resolving",
+      MakeRefCounted<LoadBalancingPolicy::QueuePicker>(nullptr));
+  // Now create the LB policy.
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.work_serializer = work_serializer_;
   lb_policy_args.channel_control_helper =
@@ -1486,21 +1528,17 @@ void ClientChannel::UpdateServiceConfigInDataPlaneLocked() {
 
 void ClientChannel::CreateResolverLocked() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_trace)) {
-    gpr_log(GPR_INFO, "chand=%p: starting name resolution", this);
+    gpr_log(GPR_INFO, "chand=%p: starting name resolution for %s", this,
+            uri_to_resolve_.c_str());
   }
   resolver_ = CoreConfiguration::Get().resolver_registry().CreateResolver(
-      uri_to_resolve_.c_str(), channel_args_, interested_parties_,
-      work_serializer_, std::make_unique<ResolverResultHandler>(this));
+      uri_to_resolve_, channel_args_, interested_parties_, work_serializer_,
+      std::make_unique<ResolverResultHandler>(this));
   // Since the validity of the args was checked when the channel was created,
   // CreateResolver() must return a non-null result.
   GPR_ASSERT(resolver_ != nullptr);
-  // TODO(roth): We should be updating the connectivity state here but
-  // not the picker.  But we need to make sure that we are initializing
-  // the picker to a queueing picker somewhere, in case the LB policy
-  // does not immediately return a new picker.
-  UpdateStateAndPickerLocked(
-      GRPC_CHANNEL_CONNECTING, absl::Status(), "started resolving",
-      MakeRefCounted<LoadBalancingPolicy::QueuePicker>(nullptr));
+  UpdateStateLocked(GRPC_CHANNEL_CONNECTING, absl::Status(),
+                    "started resolving");
   resolver_->StartLocked();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_trace)) {
     gpr_log(GPR_INFO, "chand=%p: created resolver=%p", this, resolver_.get());
@@ -1514,24 +1552,7 @@ void ClientChannel::DestroyResolverAndLbPolicyLocked() {
               resolver_.get());
     }
     resolver_.reset();
-    if (lb_policy_ != nullptr) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_trace)) {
-        gpr_log(GPR_INFO, "chand=%p: shutting down lb_policy=%p", this,
-                lb_policy_.get());
-      }
-      grpc_pollset_set_del_pollset_set(lb_policy_->interested_parties(),
-                                       interested_parties_);
-      lb_policy_.reset();
-    }
-  }
-}
-
-void ClientChannel::UpdateStateAndPickerLocked(
-    grpc_connectivity_state state, const absl::Status& status,
-    const char* reason,
-    RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker) {
-  // Special case for IDLE and SHUTDOWN states.
-  if (picker == nullptr || state == GRPC_CHANNEL_SHUTDOWN) {
+    // Clear resolution state.
     saved_service_config_.reset();
     saved_config_selector_.reset();
     // Acquire resolution lock to update config selector and associated state.
@@ -1547,8 +1568,22 @@ void ClientChannel::UpdateStateAndPickerLocked(
       config_selector_to_unref = std::move(config_selector_);
       dynamic_filters_to_unref = std::move(dynamic_filters_);
     }
+    // Clear LB policy if set.
+    if (lb_policy_ != nullptr) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_trace)) {
+        gpr_log(GPR_INFO, "chand=%p: shutting down lb_policy=%p", this,
+                lb_policy_.get());
+      }
+      grpc_pollset_set_del_pollset_set(lb_policy_->interested_parties(),
+                                       interested_parties_);
+      lb_policy_.reset();
+    }
   }
-  // Update connectivity state.
+}
+
+void ClientChannel::UpdateStateLocked(grpc_connectivity_state state,
+                                      const absl::Status& status,
+                                      const char* reason) {
   state_tracker_.SetState(state, status, reason);
   if (channelz_node_ != nullptr) {
     channelz_node_->SetConnectivityState(state);
@@ -1558,19 +1593,24 @@ void ClientChannel::UpdateStateAndPickerLocked(
             channelz::ChannelNode::GetChannelConnectivityStateChangeString(
                 state)));
   }
+}
+
+void ClientChannel::UpdateStateAndPickerLocked(
+    grpc_connectivity_state state, const absl::Status& status,
+    const char* reason,
+    RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker) {
+  UpdateStateLocked(state, status, reason);
   // Grab the LB lock to update the picker and trigger reprocessing of the
   // queued picks.
   // Old picker will be unreffed after releasing the lock.
-  {
-    MutexLock lock(&lb_mu_);
-    picker_.swap(picker);
-    // Reprocess queued picks.
-    for (LoadBalancedCall* call : lb_queued_calls_) {
-      call->RemoveCallFromLbQueuedCallsLocked();
-      call->RetryPickLocked();
-    }
-    lb_queued_calls_.clear();
+  MutexLock lock(&lb_mu_);
+  picker_.swap(picker);
+  // Reprocess queued picks.
+  for (LoadBalancedCall* call : lb_queued_calls_) {
+    call->RemoveCallFromLbQueuedCallsLocked();
+    call->RetryPickLocked();
   }
+  lb_queued_calls_.clear();
 }
 
 namespace {
@@ -1684,10 +1724,13 @@ void ClientChannel::StartTransportOpLocked(grpc_transport_op* op) {
                            StatusIntProperty::ChannelConnectivityState,
                            &value) &&
         static_cast<grpc_connectivity_state>(value) == GRPC_CHANNEL_IDLE) {
-      if (disconnect_error_.ok()) {
+      if (disconnect_error_.ok()) {  // Ignore if we're shutting down.
         // Enter IDLE state.
         UpdateStateAndPickerLocked(GRPC_CHANNEL_IDLE, absl::Status(),
                                    "channel entering IDLE", nullptr);
+        // TODO(roth): Do we need to check for any queued picks here, in
+        // case there's a race condition in the client_idle filter?
+        // And maybe also check for calls in the resolver queue?
       }
     } else {
       // Disconnect.
@@ -3010,6 +3053,8 @@ void ClientChannel::FilterBasedLoadBalancedCall::RecvInitialMetadataReady(
     // recv_initial_metadata_flags is not populated for clients
     self->call_attempt_tracer()->RecordReceivedInitialMetadata(
         self->recv_initial_metadata_);
+    auto* peer_string = self->recv_initial_metadata_->get_pointer(PeerString());
+    if (peer_string != nullptr) self->peer_string_ = peer_string->Ref();
   }
   Closure::Run(DEBUG_LOCATION, self->original_recv_initial_metadata_ready_,
                error);
@@ -3053,12 +3098,8 @@ void ClientChannel::FilterBasedLoadBalancedCall::RecvTrailingMetadataReady(
       }
     }
     absl::string_view peer_string;
-    if (self->recv_initial_metadata_ != nullptr) {
-      Slice* peer_string_slice =
-          self->recv_initial_metadata_->get_pointer(PeerString());
-      if (peer_string_slice != nullptr) {
-        peer_string = peer_string_slice->as_string_view();
-      }
+    if (self->peer_string_.has_value()) {
+      peer_string = self->peer_string_->as_string_view();
     }
     self->RecordCallCompletion(status, self->recv_trailing_metadata_,
                                self->transport_stream_stats_, peer_string);

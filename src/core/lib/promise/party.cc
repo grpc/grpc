@@ -26,12 +26,11 @@
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/trace.h"
 
-// #define GRPC_PARTY_MAXIMIZE_THREADS
-
-#ifdef GRPC_PARTY_MAXIMIZE_THREADS
+#ifdef GRPC_MAXIMIZE_THREADYNESS
 #include "src/core/lib/gprpp/thd.h"       // IWYU pragma: keep
 #include "src/core/lib/iomgr/exec_ctx.h"  // IWYU pragma: keep
 #endif
@@ -100,9 +99,9 @@ class Party::Handle final : public Wakeable {
     Unref();
   }
 
-  // Activity needs to wake up (if it still exists!) - wake it up, and drop the
-  // ref that was kept for this handle.
-  void Wakeup(WakeupMask wakeup_mask) override ABSL_LOCKS_EXCLUDED(mu_) {
+  void WakeupGeneric(WakeupMask wakeup_mask,
+                     void (Party::*wakeup_method)(WakeupMask))
+      ABSL_LOCKS_EXCLUDED(mu_) {
     mu_.Lock();
     // Note that activity refcount can drop to zero, but we could win the lock
     // against DropActivity, so we need to only increase activities refcount if
@@ -112,7 +111,7 @@ class Party::Handle final : public Wakeable {
       mu_.Unlock();
       // Activity still exists and we have a reference: wake it up, which will
       // drop the ref.
-      party->Wakeup(wakeup_mask);
+      (party->*wakeup_method)(wakeup_mask);
     } else {
       // Could not get the activity - it's either gone or going. No need to wake
       // it up!
@@ -120,6 +119,16 @@ class Party::Handle final : public Wakeable {
     }
     // Drop the ref to the handle (we have one ref = one wakeup semantics).
     Unref();
+  }
+
+  // Activity needs to wake up (if it still exists!) - wake it up, and drop the
+  // ref that was kept for this handle.
+  void Wakeup(WakeupMask wakeup_mask) override ABSL_LOCKS_EXCLUDED(mu_) {
+    WakeupGeneric(wakeup_mask, &Party::Wakeup);
+  }
+
+  void WakeupAsync(WakeupMask wakeup_mask) override ABSL_LOCKS_EXCLUDED(mu_) {
+    WakeupGeneric(wakeup_mask, &Party::WakeupAsync);
   }
 
   void Drop(WakeupMask) override { Unref(); }
@@ -202,7 +211,7 @@ void Party::RunLocked() {
       PartyOver();
     }
   };
-#ifdef GRPC_PARTY_MAXIMIZE_THREADS
+#ifdef GRPC_MAXIMIZE_THREADYNESS
   Thread thd(
       "RunParty",
       [body]() {
@@ -267,13 +276,22 @@ void Party::AddParticipants(Participant** participants, size_t count) {
   Unref();
 }
 
-void Party::ScheduleWakeup(WakeupMask mask) {
-  if (sync_.ScheduleWakeup(mask)) RunLocked();
+void Party::Wakeup(WakeupMask wakeup_mask) {
+  if (sync_.ScheduleWakeup(wakeup_mask)) RunLocked();
+  Unref();
 }
 
-void Party::Wakeup(WakeupMask wakeup_mask) {
-  ScheduleWakeup(wakeup_mask);
-  Unref();
+void Party::WakeupAsync(WakeupMask wakeup_mask) {
+  if (sync_.ScheduleWakeup(wakeup_mask)) {
+    event_engine()->Run([this]() {
+      ApplicationCallbackExecCtx app_exec_ctx;
+      ExecCtx exec_ctx;
+      RunLocked();
+      Unref();
+    });
+  } else {
+    Unref();
+  }
 }
 
 void Party::Drop(WakeupMask) { Unref(); }

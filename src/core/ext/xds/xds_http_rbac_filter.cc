@@ -42,6 +42,8 @@
 #include "google/protobuf/wrappers.upb.h"
 #include "upb/collections/map.h"
 
+#include <grpc/support/json.h>
+
 #include "src/core/ext/filters/rbac/rbac_filter.h"
 #include "src/core/ext/filters/rbac/rbac_service_config_parser.h"
 #include "src/core/ext/xds/upb_utils.h"

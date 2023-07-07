@@ -129,6 +129,10 @@ class MyTestServiceImpl : public TestServiceImpl {
       auto* recorder = context->ExperimentalGetCallMetricRecorder();
       EXPECT_NE(recorder, nullptr);
       // Do not record when zero since it indicates no test per-call report.
+      if (request_metrics.application_utilization() > 0) {
+        recorder->RecordApplicationUtilizationMetric(
+            request_metrics.application_utilization());
+      }
       if (request_metrics.cpu_utilization() > 0) {
         recorder->RecordCpuUtilizationMetric(request_metrics.cpu_utilization());
       }
@@ -208,17 +212,13 @@ class FakeResolverResponseGeneratorWrapper {
     response_generator_ = std::move(other.response_generator_);
   }
 
-  void SetNextResolution(
-      const std::vector<int>& ports, const char* service_config_json = nullptr,
-      const char* attribute_key = nullptr,
-      std::unique_ptr<grpc_core::ServerAddress::AttributeInterface> attribute =
-          nullptr,
-      const grpc_core::ChannelArgs& per_address_args =
-          grpc_core::ChannelArgs()) {
+  void SetNextResolution(const std::vector<int>& ports,
+                         const char* service_config_json = nullptr,
+                         const grpc_core::ChannelArgs& per_address_args =
+                             grpc_core::ChannelArgs()) {
     grpc_core::ExecCtx exec_ctx;
-    response_generator_->SetResponse(
-        BuildFakeResults(ipv6_only_, ports, service_config_json, attribute_key,
-                         std::move(attribute), per_address_args));
+    response_generator_->SetResponse(BuildFakeResults(
+        ipv6_only_, ports, service_config_json, per_address_args));
   }
 
   void SetNextResolutionUponError(const std::vector<int>& ports) {
@@ -245,9 +245,6 @@ class FakeResolverResponseGeneratorWrapper {
   static grpc_core::Resolver::Result BuildFakeResults(
       bool ipv6_only, const std::vector<int>& ports,
       const char* service_config_json = nullptr,
-      const char* attribute_key = nullptr,
-      std::unique_ptr<grpc_core::ServerAddress::AttributeInterface> attribute =
-          nullptr,
       const grpc_core::ChannelArgs& per_address_args =
           grpc_core::ChannelArgs()) {
     grpc_core::Resolver::Result result;
@@ -258,14 +255,7 @@ class FakeResolverResponseGeneratorWrapper {
       GPR_ASSERT(lb_uri.ok());
       grpc_resolved_address address;
       GPR_ASSERT(grpc_parse_uri(*lb_uri, &address));
-      std::map<const char*,
-               std::unique_ptr<grpc_core::ServerAddress::AttributeInterface>>
-          attributes;
-      if (attribute != nullptr) {
-        attributes[attribute_key] = attribute->Copy();
-      }
-      result.addresses->emplace_back(address.addr, address.len,
-                                     per_address_args, std::move(attributes));
+      result.addresses->emplace_back(address, per_address_args);
     }
     if (result.addresses->empty()) {
       result.resolution_note = "fake resolver empty address list";
@@ -713,7 +703,6 @@ TEST_F(ClientLbEnd2endTest, AuthorityOverrideFromResolver) {
   // different value.
   response_generator.SetNextResolution(
       GetServersPorts(), /*service_config_json=*/nullptr,
-      /*attribute_key=*/nullptr, /*attribute=*/nullptr,
       grpc_core::ChannelArgs().Set(GRPC_ARG_DEFAULT_AUTHORITY,
                                    "foo.example.com"));
   // Send an RPC.
@@ -740,7 +729,6 @@ TEST_F(ClientLbEnd2endTest, AuthorityOverridePrecedence) {
   // different value.
   response_generator.SetNextResolution(
       GetServersPorts(), /*service_config_json=*/nullptr,
-      /*attribute_key=*/nullptr, /*attribute=*/nullptr,
       grpc_core::ChannelArgs().Set(GRPC_ARG_DEFAULT_AUTHORITY,
                                    "bar.example.com"));
   // Send an RPC.
@@ -2092,7 +2080,8 @@ TEST_F(RoundRobinTest, HealthChecking) {
   EXPECT_TRUE(WaitForChannelNotReady(channel.get()));
   CheckRpcSendFailure(DEBUG_LOCATION, stub, StatusCode::UNAVAILABLE,
                       "connections to all backends failing; last error: "
-                      "UNAVAILABLE: backend unhealthy");
+                      "(ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+                      "backend unhealthy");
   // Clean up.
   EnableDefaultHealthCheckService(false);
 }
@@ -2150,7 +2139,8 @@ TEST_F(RoundRobinTest, WithHealthCheckingInhibitPerChannel) {
   EXPECT_FALSE(WaitForChannelReady(channel1.get(), 1));
   CheckRpcSendFailure(DEBUG_LOCATION, stub1, StatusCode::UNAVAILABLE,
                       "connections to all backends failing; last error: "
-                      "UNAVAILABLE: backend unhealthy");
+                      "(ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+                      "backend unhealthy");
   // Second channel should be READY.
   EXPECT_TRUE(WaitForChannelReady(channel2.get(), 1));
   CheckRpcSendOk(DEBUG_LOCATION, stub2);
@@ -2195,7 +2185,8 @@ TEST_F(RoundRobinTest, HealthCheckingServiceNamePerChannel) {
   EXPECT_FALSE(WaitForChannelReady(channel1.get(), 1));
   CheckRpcSendFailure(DEBUG_LOCATION, stub1, StatusCode::UNAVAILABLE,
                       "connections to all backends failing; last error: "
-                      "UNAVAILABLE: backend unhealthy");
+                      "(ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+                      "backend unhealthy");
   // Second channel should be READY.
   EXPECT_TRUE(WaitForChannelReady(channel2.get(), 1));
   CheckRpcSendOk(DEBUG_LOCATION, stub2);
@@ -2350,6 +2341,10 @@ class OrcaLoadReportBuilder {
   OrcaLoadReportBuilder() = default;
   explicit OrcaLoadReportBuilder(const OrcaLoadReport& report)
       : report_(report) {}
+  OrcaLoadReportBuilder& SetApplicationUtilization(double v) {
+    report_.set_application_utilization(v);
+    return *this;
+  }
   OrcaLoadReportBuilder& SetCpuUtilization(double v) {
     report_.set_cpu_utilization(v);
     return *this;
@@ -2391,6 +2386,8 @@ class OrcaLoadReportBuilder {
 OrcaLoadReport BackendMetricDataToOrcaLoadReport(
     const grpc_core::BackendMetricData& backend_metric_data) {
   auto builder = OrcaLoadReportBuilder()
+                     .SetApplicationUtilization(
+                         backend_metric_data.application_utilization)
                      .SetCpuUtilization(backend_metric_data.cpu_utilization)
                      .SetMemUtilization(backend_metric_data.mem_utilization)
                      .SetQps(backend_metric_data.qps)
@@ -2411,6 +2408,8 @@ OrcaLoadReport BackendMetricDataToOrcaLoadReport(
 // OSS.
 void CheckLoadReportAsExpected(const OrcaLoadReport& actual,
                                const OrcaLoadReport& expected) {
+  EXPECT_EQ(actual.application_utilization(),
+            expected.application_utilization());
   EXPECT_EQ(actual.cpu_utilization(), expected.cpu_utilization());
   EXPECT_EQ(actual.mem_utilization(), expected.mem_utilization());
   EXPECT_EQ(actual.rps_fractional(), expected.rps_fractional());
@@ -2671,6 +2670,7 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, InterceptsRetriesEnabled) {
 
 TEST_F(ClientLbInterceptTrailingMetadataTest, Valid) {
   RunPerRpcMetricReportingTest(OrcaLoadReportBuilder()
+                                   .SetApplicationUtilization(0.25)
                                    .SetCpuUtilization(0.5)
                                    .SetMemUtilization(0.75)
                                    .SetQps(0.25)
@@ -2683,6 +2683,7 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, Valid) {
                                    .SetNamedMetrics("metric1", -1.0)
                                    .Build(),
                                OrcaLoadReportBuilder()
+                                   .SetApplicationUtilization(0.25)
                                    .SetCpuUtilization(0.5)
                                    .SetMemUtilization(0.75)
                                    .SetQps(0.25)
@@ -2698,6 +2699,7 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, Valid) {
 
 TEST_F(ClientLbInterceptTrailingMetadataTest, NegativeValues) {
   RunPerRpcMetricReportingTest(OrcaLoadReportBuilder()
+                                   .SetApplicationUtilization(-0.3)
                                    .SetCpuUtilization(-0.1)
                                    .SetMemUtilization(-0.2)
                                    .SetQps(-3)
@@ -2714,6 +2716,7 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, NegativeValues) {
 
 TEST_F(ClientLbInterceptTrailingMetadataTest, AboveOneUtilization) {
   RunPerRpcMetricReportingTest(OrcaLoadReportBuilder()
+                                   .SetApplicationUtilization(1.9)
                                    .SetCpuUtilization(1.1)
                                    .SetMemUtilization(2)
                                    .SetQps(3)
@@ -2721,6 +2724,7 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, AboveOneUtilization) {
                                    .SetUtilization("foo", 5)
                                    .Build(),
                                OrcaLoadReportBuilder()
+                                   .SetApplicationUtilization(1.9)
                                    .SetCpuUtilization(1.1)
                                    .SetQps(3)
                                    .SetEps(4)
@@ -2731,6 +2735,7 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, BackendMetricDataMerge) {
   const int kNumServers = 1;
   const int kNumRpcs = 10;
   StartServers(kNumServers);
+  servers_[0]->server_metric_recorder_->SetApplicationUtilization(0.99);
   servers_[0]->server_metric_recorder_->SetCpuUtilization(0.99);
   servers_[0]->server_metric_recorder_->SetMemoryUtilization(0.99);
   servers_[0]->server_metric_recorder_->SetQps(0.99);
@@ -2738,6 +2743,7 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, BackendMetricDataMerge) {
   servers_[0]->server_metric_recorder_->SetNamedUtilization("foo", 0.99);
   servers_[0]->server_metric_recorder_->SetNamedUtilization("bar", 0.1);
   OrcaLoadReport per_server_load = OrcaLoadReportBuilder()
+                                       .SetApplicationUtilization(0.99)
                                        .SetCpuUtilization(0.99)
                                        .SetMemUtilization(0.99)
                                        .SetQps(0.99)
@@ -2753,9 +2759,10 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, BackendMetricDataMerge) {
   size_t total_num_rpcs = 0;
   {
     OrcaLoadReport load_report =
-        OrcaLoadReportBuilder().SetCpuUtilization(0.5).Build();
-    OrcaLoadReport expected =
-        OrcaLoadReportBuilder(per_server_load).SetCpuUtilization(0.5).Build();
+        OrcaLoadReportBuilder().SetApplicationUtilization(0.5).Build();
+    OrcaLoadReport expected = OrcaLoadReportBuilder(per_server_load)
+                                  .SetApplicationUtilization(0.5)
+                                  .Build();
     for (size_t i = 0; i < kNumRpcs; ++i) {
       CheckRpcSendOk(DEBUG_LOCATION, stub, false, &load_report);
       auto actual = backend_load_report();
@@ -2827,31 +2834,11 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, BackendMetricDataMerge) {
 }
 
 //
-// tests that address attributes from the resolver are visible to the LB policy
+// tests that address args from the resolver are visible to the LB policy
 //
 
 class ClientLbAddressTest : public ClientLbEnd2endTest {
  protected:
-  static const char* kAttributeKey;
-
-  class Attribute : public grpc_core::ServerAddress::AttributeInterface {
-   public:
-    explicit Attribute(const std::string& str) : str_(str) {}
-
-    std::unique_ptr<AttributeInterface> Copy() const override {
-      return std::make_unique<Attribute>(str_);
-    }
-
-    int Cmp(const AttributeInterface* other) const override {
-      return str_.compare(static_cast<const Attribute*>(other)->str_);
-    }
-
-    std::string ToString() const override { return str_; }
-
-   private:
-    std::string str_;
-  };
-
   void SetUp() override {
     ClientLbEnd2endTest::SetUp();
     current_test_instance_ = this;
@@ -2889,8 +2876,6 @@ class ClientLbAddressTest : public ClientLbEnd2endTest {
   std::vector<std::string> addresses_seen_;
 };
 
-const char* ClientLbAddressTest::kAttributeKey = "attribute_key";
-
 ClientLbAddressTest* ClientLbAddressTest::current_test_instance_ = nullptr;
 
 TEST_F(ClientLbAddressTest, Basic) {
@@ -2899,19 +2884,18 @@ TEST_F(ClientLbAddressTest, Basic) {
   auto response_generator = BuildResolverResponseGenerator();
   auto channel = BuildChannel("address_test_lb", response_generator);
   auto stub = BuildStub(channel);
-  // Addresses returned by the resolver will have attached attributes.
-  response_generator.SetNextResolution(GetServersPorts(), nullptr,
-                                       kAttributeKey,
-                                       std::make_unique<Attribute>("foo"));
+  // Addresses returned by the resolver will have attached args.
+  response_generator.SetNextResolution(
+      GetServersPorts(), nullptr,
+      grpc_core::ChannelArgs().Set("test_key", "test_value"));
   CheckRpcSendOk(DEBUG_LOCATION, stub);
   // Check LB policy name for the channel.
   EXPECT_EQ("address_test_lb", channel->GetLoadBalancingPolicyName());
   // Make sure that the attributes wind up on the subchannels.
   std::vector<std::string> expected;
   for (const int port : GetServersPorts()) {
-    expected.emplace_back(
-        absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", port,
-                     " attributes={", kAttributeKey, "=foo}"));
+    expected.emplace_back(absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:",
+                                       port, " args={test_key=test_value}"));
   }
   EXPECT_EQ(addresses_seen(), expected);
 }
@@ -2974,6 +2958,7 @@ TEST_F(OobBackendMetricTest, Basic) {
   StartServers(1);
   // Set initial backend metric data on server.
   constexpr char kMetricName[] = "foo";
+  servers_[0]->server_metric_recorder_->SetApplicationUtilization(0.5);
   servers_[0]->server_metric_recorder_->SetCpuUtilization(0.1);
   servers_[0]->server_metric_recorder_->SetMemoryUtilization(0.2);
   servers_[0]->server_metric_recorder_->SetEps(0.3);
@@ -2995,6 +2980,7 @@ TEST_F(OobBackendMetricTest, Basic) {
     auto report = GetBackendMetricReport();
     if (report.has_value()) {
       EXPECT_EQ(report->first, servers_[0]->port_);
+      EXPECT_EQ(report->second.application_utilization(), 0.5);
       EXPECT_EQ(report->second.cpu_utilization(), 0.1);
       EXPECT_EQ(report->second.mem_utilization(), 0.2);
       EXPECT_EQ(report->second.eps(), 0.3);
@@ -3011,19 +2997,21 @@ TEST_F(OobBackendMetricTest, Basic) {
   // Now update the utilization data on the server.
   // Note that the server may send a new report while we're updating these,
   // so we set them in reverse order, so that we know we'll get all new
-  // data once we see a report with the new CPU utilization value.
+  // data once we see a report with the new app utilization value.
   servers_[0]->server_metric_recorder_->SetNamedUtilization(kMetricName, 0.7);
-  servers_[0]->server_metric_recorder_->SetEps(0.6);
   servers_[0]->server_metric_recorder_->SetQps(0.8);
+  servers_[0]->server_metric_recorder_->SetEps(0.6);
   servers_[0]->server_metric_recorder_->SetMemoryUtilization(0.5);
   servers_[0]->server_metric_recorder_->SetCpuUtilization(2.4);
+  servers_[0]->server_metric_recorder_->SetApplicationUtilization(1.2);
   // Wait for client to see new report.
   report_seen = false;
   for (size_t i = 0; i < 5; ++i) {
     auto report = GetBackendMetricReport();
     if (report.has_value()) {
       EXPECT_EQ(report->first, servers_[0]->port_);
-      if (report->second.cpu_utilization() != 0.1) {
+      if (report->second.application_utilization() != 0.5) {
+        EXPECT_EQ(report->second.application_utilization(), 1.2);
         EXPECT_EQ(report->second.cpu_utilization(), 2.4);
         EXPECT_EQ(report->second.mem_utilization(), 0.5);
         EXPECT_EQ(report->second.eps(), 0.6);
@@ -3194,15 +3182,16 @@ TEST_F(WeightedRoundRobinTest, CallAndServerMetric) {
   const int kNumServers = 3;
   StartServers(kNumServers);
   // Report server metrics that should give 6:4:3 WRR picks.
-  // weights = qps / (cpu_util + (eps/qps)) =
+  // weights = qps / (util + (eps/qps)) =
   //   1/(0.2+0.2) : 1/(0.3+0.3) : 2/(1.5+0.1) = 6:4:3
-  servers_[0]->server_metric_recorder_->SetCpuUtilization(0.2);
+  // where util is app_util if set, or cpu_util.
+  servers_[0]->server_metric_recorder_->SetApplicationUtilization(0.2);
   servers_[0]->server_metric_recorder_->SetEps(20);
   servers_[0]->server_metric_recorder_->SetQps(100);
-  servers_[1]->server_metric_recorder_->SetCpuUtilization(0.3);
+  servers_[1]->server_metric_recorder_->SetApplicationUtilization(0.3);
   servers_[1]->server_metric_recorder_->SetEps(30);
   servers_[1]->server_metric_recorder_->SetQps(100);
-  servers_[2]->server_metric_recorder_->SetCpuUtilization(1.5);
+  servers_[2]->server_metric_recorder_->SetApplicationUtilization(1.5);
   servers_[2]->server_metric_recorder_->SetEps(20);
   servers_[2]->server_metric_recorder_->SetQps(200);
   // Create channel.
@@ -3241,15 +3230,16 @@ TEST_P(WeightedRoundRobinParamTest, Basic) {
   const int kNumServers = 3;
   StartServers(kNumServers);
   // Report server metrics that should give 1:2:4 WRR picks.
-  // weights = qps / (cpu_util + (eps/qps)) =
+  // weights = qps / (util + (eps/qps)) =
   //   1/(0.4+0.4) : 1/(0.2+0.2) : 2/(0.3+0.1) = 1:2:4
-  servers_[0]->server_metric_recorder_->SetCpuUtilization(0.4);
+  // where util is app_util if set, or cpu_util.
+  servers_[0]->server_metric_recorder_->SetApplicationUtilization(0.4);
   servers_[0]->server_metric_recorder_->SetEps(40);
   servers_[0]->server_metric_recorder_->SetQps(100);
-  servers_[1]->server_metric_recorder_->SetCpuUtilization(0.2);
+  servers_[1]->server_metric_recorder_->SetApplicationUtilization(0.2);
   servers_[1]->server_metric_recorder_->SetEps(20);
   servers_[1]->server_metric_recorder_->SetQps(100);
-  servers_[2]->server_metric_recorder_->SetCpuUtilization(0.3);
+  servers_[2]->server_metric_recorder_->SetApplicationUtilization(0.3);
   servers_[2]->server_metric_recorder_->SetEps(5);
   servers_[2]->server_metric_recorder_->SetQps(200);
   // Create channel.

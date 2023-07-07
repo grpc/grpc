@@ -30,6 +30,7 @@
 #include "upb/json/encode.h"
 #include "upb/upb.hpp"
 
+#include <grpc/support/json.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/json/json.h"

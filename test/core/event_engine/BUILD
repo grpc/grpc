@@ -39,11 +39,11 @@ grpc_cc_test(
     name = "forkable_test",
     srcs = ["forkable_test.cc"],
     external_deps = [
-        "absl/time",
+        "absl/types:optional",
         "gtest",
     ],
     deps = [
-        "//:event_engine_base_hdrs",
+        "//:config_vars",
         "//:gpr",
         "//:gpr_platform",
         "//src/core:forkable",

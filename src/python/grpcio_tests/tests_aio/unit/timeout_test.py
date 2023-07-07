@@ -28,13 +28,13 @@ from tests_aio.unit._test_base import AioTestBase
 
 _SLEEP_TIME_UNIT_S = datetime.timedelta(seconds=1).total_seconds()
 
-_TEST_SLEEPY_UNARY_UNARY = '/test/Test/SleepyUnaryUnary'
-_TEST_SLEEPY_UNARY_STREAM = '/test/Test/SleepyUnaryStream'
-_TEST_SLEEPY_STREAM_UNARY = '/test/Test/SleepyStreamUnary'
-_TEST_SLEEPY_STREAM_STREAM = '/test/Test/SleepyStreamStream'
+_TEST_SLEEPY_UNARY_UNARY = "/test/Test/SleepyUnaryUnary"
+_TEST_SLEEPY_UNARY_STREAM = "/test/Test/SleepyUnaryStream"
+_TEST_SLEEPY_STREAM_UNARY = "/test/Test/SleepyStreamUnary"
+_TEST_SLEEPY_STREAM_STREAM = "/test/Test/SleepyStreamStream"
 
-_REQUEST = b'\x00\x00\x00'
-_RESPONSE = b'\x01\x01\x01'
+_REQUEST = b"\x00\x00\x00"
+_RESPONSE = b"\x01\x01\x01"
 
 
 async def _test_sleepy_unary_unary(unused_request, unused_context):
@@ -62,40 +62,44 @@ async def _test_sleepy_stream_stream(unused_request_iterator, context):
 
 
 _ROUTING_TABLE = {
-    _TEST_SLEEPY_UNARY_UNARY:
-        grpc.unary_unary_rpc_method_handler(_test_sleepy_unary_unary),
-    _TEST_SLEEPY_UNARY_STREAM:
-        grpc.unary_stream_rpc_method_handler(_test_sleepy_unary_stream),
-    _TEST_SLEEPY_STREAM_UNARY:
-        grpc.stream_unary_rpc_method_handler(_test_sleepy_stream_unary),
-    _TEST_SLEEPY_STREAM_STREAM:
-        grpc.stream_stream_rpc_method_handler(_test_sleepy_stream_stream)
+    _TEST_SLEEPY_UNARY_UNARY: grpc.unary_unary_rpc_method_handler(
+        _test_sleepy_unary_unary
+    ),
+    _TEST_SLEEPY_UNARY_STREAM: grpc.unary_stream_rpc_method_handler(
+        _test_sleepy_unary_stream
+    ),
+    _TEST_SLEEPY_STREAM_UNARY: grpc.stream_unary_rpc_method_handler(
+        _test_sleepy_stream_unary
+    ),
+    _TEST_SLEEPY_STREAM_STREAM: grpc.stream_stream_rpc_method_handler(
+        _test_sleepy_stream_stream
+    ),
 }
 
 
 class _GenericHandler(grpc.GenericRpcHandler):
-
     def service(self, handler_call_details):
         return _ROUTING_TABLE.get(handler_call_details.method)
 
 
 async def _start_test_server():
     server = aio.server()
-    port = server.add_insecure_port('[::]:0')
+    port = server.add_insecure_port("[::]:0")
     server.add_generic_rpc_handlers((_GenericHandler(),))
     await server.start()
-    return f'localhost:{port}', server
+    return f"localhost:{port}", server
 
 
 class TestTimeout(AioTestBase):
-
     async def setUp(self):
         address, self._server = await _start_test_server()
         self._client = aio.insecure_channel(address)
-        self.assertEqual(grpc.ChannelConnectivity.IDLE,
-                         self._client.get_state(True))
-        await _common.block_until_certain_state(self._client,
-                                                grpc.ChannelConnectivity.READY)
+        self.assertEqual(
+            grpc.ChannelConnectivity.IDLE, self._client.get_state(True)
+        )
+        await _common.block_until_certain_state(
+            self._client, grpc.ChannelConnectivity.READY
+        )
 
     async def tearDown(self):
         await self._client.close()
@@ -173,6 +177,6 @@ class TestTimeout(AioTestBase):
         self.assertEqual(grpc.StatusCode.DEADLINE_EXCEEDED, rpc_error.code())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     unittest.main(verbosity=2)

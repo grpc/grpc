@@ -35,6 +35,8 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
+#include <grpc/support/json.h>
+
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/json/json.h"
@@ -77,20 +79,6 @@ const JsonLoaderInterface* GrpcXdsBootstrap::GrpcNode::JsonLoader(
 }
 
 //
-// GrpcXdsBootstrap::GrpcXdsServer::ChannelCreds
-//
-
-const JsonLoaderInterface*
-GrpcXdsBootstrap::GrpcXdsServer::ChannelCreds::JsonLoader(const JsonArgs&) {
-  static const auto* loader =
-      JsonObjectLoader<ChannelCreds>()
-          .Field("type", &ChannelCreds::type)
-          .OptionalField("config", &ChannelCreds::config)
-          .Finish();
-  return loader;
-}
-
-//
 // GrpcXdsBootstrap::GrpcXdsServer
 //
 
@@ -109,8 +97,8 @@ bool GrpcXdsBootstrap::GrpcXdsServer::IgnoreResourceDeletion() const {
 bool GrpcXdsBootstrap::GrpcXdsServer::Equals(const XdsServer& other) const {
   const auto& o = static_cast<const GrpcXdsServer&>(other);
   return (server_uri_ == o.server_uri_ &&
-          channel_creds_.type == o.channel_creds_.type &&
-          channel_creds_.config == o.channel_creds_.config &&
+          channel_creds_config_->type() == o.channel_creds_config_->type() &&
+          channel_creds_config_->Equals(*o.channel_creds_config_) &&
           server_features_ == o.server_features_);
 }
 
@@ -123,6 +111,24 @@ const JsonLoaderInterface* GrpcXdsBootstrap::GrpcXdsServer::JsonLoader(
   return loader;
 }
 
+namespace {
+
+struct ChannelCreds {
+  std::string type;
+  Json::Object config;
+
+  static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
+    static const auto* loader =
+        JsonObjectLoader<ChannelCreds>()
+            .Field("type", &ChannelCreds::type)
+            .OptionalField("config", &ChannelCreds::config)
+            .Finish();
+    return loader;
+  }
+};
+
+}  // namespace
+
 void GrpcXdsBootstrap::GrpcXdsServer::JsonPostLoad(const Json& json,
                                                    const JsonArgs& args,
                                                    ValidationErrors* errors) {
@@ -134,21 +140,20 @@ void GrpcXdsBootstrap::GrpcXdsServer::JsonPostLoad(const Json& json,
     for (size_t i = 0; i < channel_creds_list->size(); ++i) {
       ValidationErrors::ScopedField field(errors, absl::StrCat("[", i, "]"));
       auto& creds = (*channel_creds_list)[i];
-      // Select the first channel creds type that we support.
-      if (channel_creds_.type.empty() &&
-          CoreConfiguration::Get().channel_creds_registry().IsSupported(
+      // Select the first channel creds type that we support, but
+      // validate all entries.
+      if (CoreConfiguration::Get().channel_creds_registry().IsSupported(
               creds.type)) {
-        if (!CoreConfiguration::Get().channel_creds_registry().IsValidConfig(
-                creds.type, Json::FromObject(creds.config))) {
-          errors->AddError(absl::StrCat(
-              "invalid config for channel creds type \"", creds.type, "\""));
-          continue;
+        ValidationErrors::ScopedField field(errors, ".config");
+        auto config =
+            CoreConfiguration::Get().channel_creds_registry().ParseConfig(
+                creds.type, Json::FromObject(creds.config), args, errors);
+        if (channel_creds_config_ == nullptr) {
+          channel_creds_config_ = std::move(config);
         }
-        channel_creds_.type = std::move(creds.type);
-        channel_creds_.config = std::move(creds.config);
       }
     }
-    if (channel_creds_.type.empty()) {
+    if (channel_creds_config_ == nullptr) {
       errors->AddError("no known creds type found");
     }
   }
@@ -174,10 +179,10 @@ void GrpcXdsBootstrap::GrpcXdsServer::JsonPostLoad(const Json& json,
 
 Json GrpcXdsBootstrap::GrpcXdsServer::ToJson() const {
   Json::Object channel_creds_json{
-      {"type", Json::FromString(channel_creds_.type)},
+      {"type", Json::FromString(std::string(channel_creds_config_->type()))},
   };
-  if (!channel_creds_.config.empty()) {
-    channel_creds_json["config"] = Json::FromObject(channel_creds_.config);
+  if (channel_creds_config_ != nullptr) {
+    channel_creds_json["config"] = channel_creds_config_->ToJson();
   }
   Json::Object json{
       {"server_uri", Json::FromString(server_uri_)},
@@ -257,6 +262,13 @@ const JsonLoaderInterface* GrpcXdsBootstrap::JsonLoader(const JsonArgs&) {
 void GrpcXdsBootstrap::JsonPostLoad(const Json& /*json*/,
                                     const JsonArgs& /*args*/,
                                     ValidationErrors* errors) {
+  // Verify that there is at least one server present.
+  {
+    ValidationErrors::ScopedField field(errors, ".xds_servers");
+    if (servers_.empty() && !errors->FieldHasErrors()) {
+      errors->AddError("must be non-empty");
+    }
+  }
   // Verify that each authority has the right prefix in the
   // client_listener_resource_name_template field.
   {

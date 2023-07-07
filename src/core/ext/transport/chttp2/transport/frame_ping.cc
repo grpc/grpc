@@ -25,6 +25,7 @@
 #include <algorithm>
 #include <initializer_list>
 
+#include "absl/container/flat_hash_map.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 
@@ -32,7 +33,6 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chttp2/transport/internal.h"
-#include "src/core/ext/transport/chttp2/transport/stream_map.h"
 #include "src/core/lib/gprpp/time.h"
 
 grpc_slice grpc_chttp2_ping_create(uint8_t ack, uint64_t opaque_8bytes) {
@@ -99,8 +99,7 @@ grpc_error_handle grpc_chttp2_ping_parser_parse(void* parser,
             t->ping_recv_state.last_ping_recv_time +
             t->ping_policy.min_recv_ping_interval_without_data;
 
-        if (t->keepalive_permit_without_calls == 0 &&
-            grpc_chttp2_stream_map_size(&t->stream_map) == 0) {
+        if (t->keepalive_permit_without_calls == 0 && t->stream_map.empty()) {
           // According to RFC1122, the interval of TCP Keep-Alive is default to
           // no less than two hours. When there is no outstanding streams, we
           // restrict the number of PINGS equivalent to TCP Keep-Alive.

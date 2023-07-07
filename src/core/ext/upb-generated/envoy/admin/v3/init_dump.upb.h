@@ -82,6 +82,23 @@ UPB_INLINE const envoy_admin_v3_UnreadyTargetsDumps_UnreadyTargetsDump* const* e
     return NULL;
   }
 }
+UPB_INLINE const upb_Array* _envoy_admin_v3_UnreadyTargetsDumps_unready_targets_dumps_upb_array(const envoy_admin_v3_UnreadyTargetsDumps* msg, size_t* size) {
+  const upb_MiniTableField field = {1, 0, 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _envoy_admin_v3_UnreadyTargetsDumps_unready_targets_dumps_mutable_upb_array(const envoy_admin_v3_UnreadyTargetsDumps* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {1, 0, 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
 UPB_INLINE bool envoy_admin_v3_UnreadyTargetsDumps_has_unready_targets_dumps(const envoy_admin_v3_UnreadyTargetsDumps* msg) {
   size_t size;
   envoy_admin_v3_UnreadyTargetsDumps_unready_targets_dumps(msg, &size);
@@ -175,6 +192,23 @@ UPB_INLINE upb_StringView const* envoy_admin_v3_UnreadyTargetsDumps_UnreadyTarge
     if (size) *size = 0;
     return NULL;
   }
+}
+UPB_INLINE const upb_Array* _envoy_admin_v3_UnreadyTargetsDumps_UnreadyTargetsDump_target_names_upb_array(const envoy_admin_v3_UnreadyTargetsDumps_UnreadyTargetsDump* msg, size_t* size) {
+  const upb_MiniTableField field = {2, UPB_SIZE(0, 16), 0, kUpb_NoSub, 9, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _envoy_admin_v3_UnreadyTargetsDumps_UnreadyTargetsDump_target_names_mutable_upb_array(const envoy_admin_v3_UnreadyTargetsDumps_UnreadyTargetsDump* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {2, UPB_SIZE(0, 16), 0, kUpb_NoSub, 9, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
 }
 UPB_INLINE bool envoy_admin_v3_UnreadyTargetsDumps_UnreadyTargetsDump_has_target_names(const envoy_admin_v3_UnreadyTargetsDumps_UnreadyTargetsDump* msg) {
   size_t size;

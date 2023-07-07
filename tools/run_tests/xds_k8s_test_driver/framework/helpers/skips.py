@@ -52,40 +52,55 @@ class TestConfig:
 
     TODO(sergiitk): rename to LangSpec and rename skips.py to lang.py.
     """
+
     client_lang: Lang
     server_lang: Lang
     version: Optional[str]
 
     def version_gte(self, another: str) -> bool:
-        """Returns a bool for whether the version is >= another one.
+        """Returns a bool for whether this VERSION is >= then ANOTHER version.
 
-        A version is greater than or equal to another version means its version
-        number is greater than or equal to another version's number. Version
-        "master" is always considered latest.
-        E.g., master >= v1.41.x >= v1.40.x >= v1.9.x.
+        Special cases:
 
-        Unspecified version is treated as 'master', but isn't explicitly set.
+        1) Versions "master" or "dev" are always greater than ANOTHER:
+        - master > v1.999.x > v1.55.x
+        - dev > v1.999.x > v1.55.x
+        - dev == master
+
+        2) Versions "dev-VERSION" behave the same as the VERSION:
+        - dev-master > v1.999.x > v1.55.x
+        - dev-master == dev == master
+        - v1.55.x > dev-v1.54.x > v1.53.x
+        - dev-v1.54.x == v1.54.x
+
+        3) Unspecified version (self.version is None) is treated as "master".
         """
-        if self.version == 'master' or self.version is None:
+        if self.version in ("master", "dev", "dev-master", None):
             return True
-        if another == 'master':
+        if another == "master":
             return False
         return self._parse_version(self.version) >= self._parse_version(another)
 
     def __str__(self):
-        return (f"TestConfig(client_lang='{self.client_lang}', "
-                f"server_lang='{self.server_lang}', version={self.version!r})")
+        return (
+            f"TestConfig(client_lang='{self.client_lang}', "
+            f"server_lang='{self.server_lang}', version={self.version!r})"
+        )
 
     @staticmethod
-    def _parse_version(s: str) -> pkg_version.Version:
-        if s.endswith(".x"):
-            s = s[:-2]
-        return pkg_version.Version(s)
+    def _parse_version(version: str) -> pkg_version.Version:
+        if version.startswith("dev-"):
+            # Treat "dev-VERSION" as "VERSION".
+            version = version[4:]
+        if version.endswith(".x"):
+            version = version[:-2]
+        return pkg_version.Version(version)
 
 
 def _get_lang(image_name: str) -> Lang:
     return Lang.from_string(
-        re.search(r'/(\w+)-(client|server):', image_name).group(1))
+        re.search(r"/(\w+)-(client|server):", image_name).group(1)
+    )
 
 
 def evaluate_test_config(check: Callable[[TestConfig], bool]) -> TestConfig:
@@ -100,10 +115,11 @@ def evaluate_test_config(check: Callable[[TestConfig], bool]) -> TestConfig:
     test_config = TestConfig(
         client_lang=_get_lang(xds_k8s_flags.CLIENT_IMAGE.value),
         server_lang=_get_lang(xds_k8s_flags.SERVER_IMAGE.value),
-        version=xds_flags.TESTING_VERSION.value)
+        version=xds_flags.TESTING_VERSION.value,
+    )
     if not check(test_config):
-        logger.info('Skipping %s', test_config)
-        raise unittest.SkipTest(f'Unsupported test config: {test_config}')
+        logger.info("Skipping %s", test_config)
+        raise unittest.SkipTest(f"Unsupported test config: {test_config}")
 
-    logger.info('Detected language and version: %s', test_config)
+    logger.info("Detected language and version: %s", test_config)
     return test_config

@@ -25,16 +25,16 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstring>
-#include <initializer_list>
 #include <utility>
 
 #include "absl/status/status.h"
-#include "absl/strings/str_format.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_parse_result.h"
 #include "src/core/ext/transport/chttp2/transport/http_trace.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/slice/slice.h"
@@ -80,6 +80,14 @@ void HPackTable::MementoRingBuffer::Rebuild(uint32_t max_entries) {
   entries_.swap(entries);
 }
 
+void HPackTable::MementoRingBuffer::ForEach(
+    absl::FunctionRef<void(uint32_t, const Memento&)> f) const {
+  uint32_t index = 0;
+  while (auto* m = Lookup(index++)) {
+    f(index, *m);
+  }
+}
+
 // Evict one element from the table
 void HPackTable::EvictOne() {
   auto first_entry = entries_.PopOne();
@@ -100,15 +108,9 @@ void HPackTable::SetMaxBytes(uint32_t max_bytes) {
   max_bytes_ = max_bytes;
 }
 
-grpc_error_handle HPackTable::SetCurrentTableSize(uint32_t bytes) {
-  if (current_table_bytes_ == bytes) {
-    return absl::OkStatus();
-  }
-  if (bytes > max_bytes_) {
-    return absl::InternalError(absl::StrFormat(
-        "Attempt to make hpack table %d bytes when max is %d bytes", bytes,
-        max_bytes_));
-  }
+bool HPackTable::SetCurrentTableSize(uint32_t bytes) {
+  if (current_table_bytes_ == bytes) return true;
+  if (bytes > max_bytes_) return false;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
     gpr_log(GPR_INFO, "Update hpack parser table size to %d", bytes);
   }
@@ -119,30 +121,16 @@ grpc_error_handle HPackTable::SetCurrentTableSize(uint32_t bytes) {
   uint32_t new_cap = std::max(hpack_constants::EntriesForBytes(bytes),
                               hpack_constants::kInitialTableEntries);
   entries_.Rebuild(new_cap);
-  return absl::OkStatus();
+  return true;
 }
 
-grpc_error_handle HPackTable::Add(Memento md) {
-  if (current_table_bytes_ > max_bytes_) {
-    return GRPC_ERROR_CREATE(absl::StrFormat(
-        "HPACK max table size reduced to %d but not reflected by hpack "
-        "stream (still at %d)",
-        max_bytes_, current_table_bytes_));
-  }
+bool HPackTable::Add(Memento md) {
+  if (current_table_bytes_ > max_bytes_) return false;
 
   // we can't add elements bigger than the max table size
   if (md.md.transport_size() > current_table_bytes_) {
-    // HPACK draft 10 section 4.4 states:
-    // If the size of the new entry is less than or equal to the maximum
-    // size, that entry is added to the table.  It is not an error to
-    // attempt to add an entry that is larger than the maximum size; an
-    // attempt to add an entry larger than the entire table causes
-    // the table to be emptied of all existing entries, and results in an
-    // empty table.
-    while (entries_.num_entries()) {
-      EvictOne();
-    }
-    return absl::OkStatus();
+    AddLargerThanCurrentTableSize();
+    return true;
   }
 
   // evict entries to ensure no overflow
@@ -154,7 +142,33 @@ grpc_error_handle HPackTable::Add(Memento md) {
   // copy the finalized entry in
   mem_used_ += md.md.transport_size();
   entries_.Put(std::move(md));
-  return absl::OkStatus();
+  return true;
+}
+
+void HPackTable::AddLargerThanCurrentTableSize() {
+  // HPACK draft 10 section 4.4 states:
+  // If the size of the new entry is less than or equal to the maximum
+  // size, that entry is added to the table.  It is not an error to
+  // attempt to add an entry that is larger than the maximum size; an
+  // attempt to add an entry larger than the entire table causes
+  // the table to be emptied of all existing entries, and results in an
+  // empty table.
+  while (entries_.num_entries()) {
+    EvictOne();
+  }
+}
+
+std::string HPackTable::TestOnlyDynamicTableAsString() const {
+  std::string out;
+  entries_.ForEach([&out](uint32_t i, const Memento& m) {
+    if (m.parse_status.ok()) {
+      absl::StrAppend(&out, i, ": ", m.md.DebugString(), "\n");
+    } else {
+      absl::StrAppend(&out, i, ": ", m.parse_status.Materialize().ToString(),
+                      "\n");
+    }
+  });
+  return out;
 }
 
 namespace {
@@ -231,12 +245,12 @@ HPackTable::Memento MakeMemento(size_t i) {
   auto sm = kStaticTable[i];
   return HPackTable::Memento{
       grpc_metadata_batch::Parse(
-          sm.key, Slice::FromStaticString(sm.value),
+          sm.key, Slice::FromStaticString(sm.value), true,
           strlen(sm.key) + strlen(sm.value) + hpack_constants::kEntryOverhead,
           [](absl::string_view, const Slice&) {
             abort();  // not expecting to see this
           }),
-      absl::OkStatus()};
+      HpackParseResult()};
 }
 
 }  // namespace

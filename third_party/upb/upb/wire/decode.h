@@ -66,14 +66,28 @@ enum {
   kUpb_DecodeOption_CheckRequired = 2,
 };
 
-#define UPB_DECODE_MAXDEPTH(depth) ((depth) << 16)
+UPB_INLINE uint32_t upb_DecodeOptions_MaxDepth(uint16_t depth) {
+  return (uint32_t)depth << 16;
+}
+
+UPB_INLINE uint16_t upb_DecodeOptions_GetMaxDepth(uint32_t options) {
+  return options >> 16;
+}
+
+// Enforce an upper bound on recursion depth.
+UPB_INLINE int upb_Decode_LimitDepth(uint32_t decode_options, uint32_t limit) {
+  uint32_t max_depth = upb_DecodeOptions_GetMaxDepth(decode_options);
+  if (max_depth > limit) max_depth = limit;
+  return upb_DecodeOptions_MaxDepth(max_depth) | (decode_options & 0xffff);
+}
 
 typedef enum {
   kUpb_DecodeStatus_Ok = 0,
-  kUpb_DecodeStatus_Malformed = 1,         // Wire format was corrupt
-  kUpb_DecodeStatus_OutOfMemory = 2,       // Arena alloc failed
-  kUpb_DecodeStatus_BadUtf8 = 3,           // String field had bad UTF-8
-  kUpb_DecodeStatus_MaxDepthExceeded = 4,  // Exceeded UPB_DECODE_MAXDEPTH
+  kUpb_DecodeStatus_Malformed = 1,    // Wire format was corrupt
+  kUpb_DecodeStatus_OutOfMemory = 2,  // Arena alloc failed
+  kUpb_DecodeStatus_BadUtf8 = 3,      // String field had bad UTF-8
+  kUpb_DecodeStatus_MaxDepthExceeded =
+      4,  // Exceeded upb_DecodeOptions_MaxDepth
 
   // kUpb_DecodeOption_CheckRequired failed (see above), but the parse otherwise
   // succeeded.

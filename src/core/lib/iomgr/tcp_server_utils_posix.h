@@ -107,7 +107,7 @@ struct grpc_tcp_server {
   /* used when event engine based servers are enabled */
   int n_bind_ports = 0;
   absl::flat_hash_map<int, std::tuple<int, int>> listen_fd_to_index_map;
-  std::unique_ptr<grpc_event_engine::experimental::PosixListenerWithFdSupport>
+  std::unique_ptr<grpc_event_engine::experimental::EventEngine::Listener>
       ee_listener = nullptr;
   /* used to store a pre-allocated FD assigned to a socket */
   int pre_allocated_fd;

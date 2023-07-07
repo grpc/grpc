@@ -162,6 +162,23 @@ UPB_INLINE int32_t const* envoy_config_trace_v3_OpenCensusConfig_incoming_trace_
     return NULL;
   }
 }
+UPB_INLINE const upb_Array* _envoy_config_trace_v3_OpenCensusConfig_incoming_trace_context_upb_array(const envoy_config_trace_v3_OpenCensusConfig* msg, size_t* size) {
+  const upb_MiniTableField field = {8, UPB_SIZE(12, 48), 0, kUpb_NoSub, 5, kUpb_FieldMode_Array | kUpb_LabelFlags_IsPacked | kUpb_LabelFlags_IsAlternate | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _envoy_config_trace_v3_OpenCensusConfig_incoming_trace_context_mutable_upb_array(const envoy_config_trace_v3_OpenCensusConfig* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {8, UPB_SIZE(12, 48), 0, kUpb_NoSub, 5, kUpb_FieldMode_Array | kUpb_LabelFlags_IsPacked | kUpb_LabelFlags_IsAlternate | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
 UPB_INLINE bool envoy_config_trace_v3_OpenCensusConfig_has_incoming_trace_context(const envoy_config_trace_v3_OpenCensusConfig* msg) {
   size_t size;
   envoy_config_trace_v3_OpenCensusConfig_incoming_trace_context(msg, &size);
@@ -181,6 +198,23 @@ UPB_INLINE int32_t const* envoy_config_trace_v3_OpenCensusConfig_outgoing_trace_
     if (size) *size = 0;
     return NULL;
   }
+}
+UPB_INLINE const upb_Array* _envoy_config_trace_v3_OpenCensusConfig_outgoing_trace_context_upb_array(const envoy_config_trace_v3_OpenCensusConfig* msg, size_t* size) {
+  const upb_MiniTableField field = {9, UPB_SIZE(16, 56), 0, kUpb_NoSub, 5, kUpb_FieldMode_Array | kUpb_LabelFlags_IsPacked | kUpb_LabelFlags_IsAlternate | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _envoy_config_trace_v3_OpenCensusConfig_outgoing_trace_context_mutable_upb_array(const envoy_config_trace_v3_OpenCensusConfig* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {9, UPB_SIZE(16, 56), 0, kUpb_NoSub, 5, kUpb_FieldMode_Array | kUpb_LabelFlags_IsPacked | kUpb_LabelFlags_IsAlternate | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
 }
 UPB_INLINE bool envoy_config_trace_v3_OpenCensusConfig_has_outgoing_trace_context(const envoy_config_trace_v3_OpenCensusConfig* msg) {
   size_t size;

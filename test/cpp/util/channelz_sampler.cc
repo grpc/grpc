@@ -535,7 +535,9 @@ class ChannelzSampler final {
   }
 
   // Dump data in json
-  std::string DumpJson() { return JsonDump(grpc_core::Json::FromArray(json_)); }
+  std::string DumpJson() {
+    return grpc_core::JsonDump(grpc_core::Json::FromArray(json_));
+  }
 
   // Check if one entity has been recorded
   bool CheckID(int64_t id) {

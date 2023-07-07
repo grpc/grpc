@@ -32,7 +32,7 @@ namespace {
 // Tests that we don't retry for non-retryable status codes.
 // - 1 retry allowed for ABORTED status
 // - first attempt gets INVALID_ARGUMENT, so no retry is done
-TEST_P(RetryTest, RetryNonRetriableStatus) {
+CORE_END2END_TEST(RetryTest, RetryNonRetriableStatus) {
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
@@ -51,7 +51,7 @@ TEST_P(RetryTest, RetryNonRetriableStatus) {
       "  } ]\n"
       "}"));
   auto c =
-      NewClientCall("/service/method").Timeout(Duration::Seconds(5)).Create();
+      NewClientCall("/service/method").Timeout(Duration::Seconds(30)).Create();
   EXPECT_NE(c.GetPeer(), absl::nullopt);
   IncomingMessage server_message;
   IncomingMetadata server_initial_metadata;

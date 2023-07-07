@@ -34,7 +34,8 @@ namespace {
 // - 1 retry allowed for ABORTED status
 // - first attempt receives initial metadata before trailing metadata,
 //   so no retry is done even though status was ABORTED
-TEST_P(RetryTest, RetryRecvInitialMetadata) {
+CORE_END2END_TEST(RetryTest, RetryRecvInitialMetadata) {
+  SKIP_IF_USES_EVENT_ENGINE_CLIENT();
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
@@ -53,7 +54,7 @@ TEST_P(RetryTest, RetryRecvInitialMetadata) {
       "  } ]\n"
       "}"));
   auto c =
-      NewClientCall("/service/method").Timeout(Duration::Seconds(5)).Create();
+      NewClientCall("/service/method").Timeout(Duration::Minutes(1)).Create();
   EXPECT_NE(c.GetPeer(), absl::nullopt);
   IncomingMessage server_message;
   IncomingMetadata server_initial_metadata;

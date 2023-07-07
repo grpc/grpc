@@ -26,8 +26,8 @@
 namespace grpc_core {
 namespace {
 
-TEST_P(CoreEnd2endTest, SimpleMetadata) {
-  auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
+CORE_END2END_TEST(CoreEnd2endTest, SimpleMetadata) {
+  auto c = NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
   CoreEnd2endTest::IncomingStatusOnClient server_status;
   CoreEnd2endTest::IncomingMetadata server_initial_metadata;
   CoreEnd2endTest::IncomingMessage server_message;

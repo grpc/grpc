@@ -28,13 +28,13 @@ import tests.unit.framework.common
 from tests.unit.framework.common import get_socket
 from tests.unit.framework.common import test_constants
 
-_UNARY_UNARY = '/test/UnaryUnary'
-_UNARY_STREAM = '/test/UnaryStream'
-_STREAM_UNARY = '/test/StreamUnary'
-_STREAM_STREAM = '/test/StreamStream'
+_UNARY_UNARY = "/test/UnaryUnary"
+_UNARY_STREAM = "/test/UnaryStream"
+_STREAM_UNARY = "/test/StreamUnary"
+_STREAM_STREAM = "/test/StreamStream"
 
-_REQUEST = b'\x00\x00\x00'
-_RESPONSE = b'\x00\x00\x00'
+_REQUEST = b"\x00\x00\x00"
+_RESPONSE = b"\x00\x00\x00"
 
 
 def handle_unary_unary(test, request, servicer_context):
@@ -58,7 +58,6 @@ def handle_stream_stream(test, request_iterator, servicer_context):
 
 
 class _MethodHandler(grpc.RpcMethodHandler):
-
     def __init__(self, test, request_streaming, response_streaming):
         self.request_streaming = request_streaming
         self.response_streaming = response_streaming
@@ -70,20 +69,23 @@ class _MethodHandler(grpc.RpcMethodHandler):
         self.stream_stream = None
         if self.request_streaming and self.response_streaming:
             self.stream_stream = lambda req, ctx: handle_stream_stream(
-                test, req, ctx)
+                test, req, ctx
+            )
         elif self.request_streaming:
             self.stream_unary = lambda req, ctx: handle_stream_unary(
-                test, req, ctx)
+                test, req, ctx
+            )
         elif self.response_streaming:
             self.unary_stream = lambda req, ctx: handle_unary_stream(
-                test, req, ctx)
+                test, req, ctx
+            )
         else:
             self.unary_unary = lambda req, ctx: handle_unary_unary(
-                test, req, ctx)
+                test, req, ctx
+            )
 
 
 class _GenericHandler(grpc.GenericRpcHandler):
-
     def __init__(self, test):
         self._test = test
 
@@ -104,36 +106,39 @@ def create_phony_channel():
     """Creating phony channels is a workaround for retries"""
     host, port, sock = get_socket(sock_options=(socket.SO_REUSEADDR,))
     sock.close()
-    return grpc.insecure_channel('{}:{}'.format(host, port))
+    return grpc.insecure_channel("{}:{}".format(host, port))
 
 
 def perform_unary_unary_call(channel, wait_for_ready=None):
     channel.unary_unary(_UNARY_UNARY).__call__(
         _REQUEST,
         timeout=test_constants.LONG_TIMEOUT,
-        wait_for_ready=wait_for_ready)
+        wait_for_ready=wait_for_ready,
+    )
 
 
 def perform_unary_unary_with_call(channel, wait_for_ready=None):
     channel.unary_unary(_UNARY_UNARY).with_call(
         _REQUEST,
         timeout=test_constants.LONG_TIMEOUT,
-        wait_for_ready=wait_for_ready)
+        wait_for_ready=wait_for_ready,
+    )
 
 
 def perform_unary_unary_future(channel, wait_for_ready=None):
     channel.unary_unary(_UNARY_UNARY).future(
         _REQUEST,
         timeout=test_constants.LONG_TIMEOUT,
-        wait_for_ready=wait_for_ready).result(
-            timeout=test_constants.LONG_TIMEOUT)
+        wait_for_ready=wait_for_ready,
+    ).result(timeout=test_constants.LONG_TIMEOUT)
 
 
 def perform_unary_stream_call(channel, wait_for_ready=None):
     response_iterator = channel.unary_stream(_UNARY_STREAM).__call__(
         _REQUEST,
         timeout=test_constants.LONG_TIMEOUT,
-        wait_for_ready=wait_for_ready)
+        wait_for_ready=wait_for_ready,
+    )
     for _ in response_iterator:
         pass
 
@@ -142,43 +147,49 @@ def perform_stream_unary_call(channel, wait_for_ready=None):
     channel.stream_unary(_STREAM_UNARY).__call__(
         iter([_REQUEST] * test_constants.STREAM_LENGTH),
         timeout=test_constants.LONG_TIMEOUT,
-        wait_for_ready=wait_for_ready)
+        wait_for_ready=wait_for_ready,
+    )
 
 
 def perform_stream_unary_with_call(channel, wait_for_ready=None):
     channel.stream_unary(_STREAM_UNARY).with_call(
         iter([_REQUEST] * test_constants.STREAM_LENGTH),
         timeout=test_constants.LONG_TIMEOUT,
-        wait_for_ready=wait_for_ready)
+        wait_for_ready=wait_for_ready,
+    )
 
 
 def perform_stream_unary_future(channel, wait_for_ready=None):
     channel.stream_unary(_STREAM_UNARY).future(
         iter([_REQUEST] * test_constants.STREAM_LENGTH),
         timeout=test_constants.LONG_TIMEOUT,
-        wait_for_ready=wait_for_ready).result(
-            timeout=test_constants.LONG_TIMEOUT)
+        wait_for_ready=wait_for_ready,
+    ).result(timeout=test_constants.LONG_TIMEOUT)
 
 
 def perform_stream_stream_call(channel, wait_for_ready=None):
     response_iterator = channel.stream_stream(_STREAM_STREAM).__call__(
         iter([_REQUEST] * test_constants.STREAM_LENGTH),
         timeout=test_constants.LONG_TIMEOUT,
-        wait_for_ready=wait_for_ready)
+        wait_for_ready=wait_for_ready,
+    )
     for _ in response_iterator:
         pass
 
 
 _ALL_CALL_CASES = [
-    perform_unary_unary_call, perform_unary_unary_with_call,
-    perform_unary_unary_future, perform_unary_stream_call,
-    perform_stream_unary_call, perform_stream_unary_with_call,
-    perform_stream_unary_future, perform_stream_stream_call
+    perform_unary_unary_call,
+    perform_unary_unary_with_call,
+    perform_unary_unary_future,
+    perform_unary_stream_call,
+    perform_stream_unary_call,
+    perform_stream_unary_with_call,
+    perform_stream_unary_future,
+    perform_stream_stream_call,
 ]
 
 
 class MetadataFlagsTest(unittest.TestCase):
-
     def check_connection_does_failfast(self, fn, channel, wait_for_ready=None):
         try:
             fn(channel, wait_for_ready)
@@ -194,9 +205,9 @@ class MetadataFlagsTest(unittest.TestCase):
     def test_call_wait_for_ready_disabled(self):
         for perform_call in _ALL_CALL_CASES:
             with create_phony_channel() as channel:
-                self.check_connection_does_failfast(perform_call,
-                                                    channel,
-                                                    wait_for_ready=False)
+                self.check_connection_does_failfast(
+                    perform_call, channel, wait_for_ready=False
+                )
 
     def test_call_wait_for_ready_enabled(self):
         # To test the wait mechanism, Python thread is required to make
@@ -210,11 +221,14 @@ class MetadataFlagsTest(unittest.TestCase):
         host, port, sock = get_socket(sock_options=(socket.SO_REUSEADDR,))
         sock.close()
 
-        addr = '{}:{}'.format(host, port)
+        addr = "{}:{}".format(host, port)
         wg = test_common.WaitGroup(len(_ALL_CALL_CASES))
 
         def wait_for_transient_failure(channel_connectivity):
-            if channel_connectivity == grpc.ChannelConnectivity.TRANSIENT_FAILURE:
+            if (
+                channel_connectivity
+                == grpc.ChannelConnectivity.TRANSIENT_FAILURE
+            ):
                 wg.done()
 
         def test_call(perform_call):
@@ -231,8 +245,9 @@ class MetadataFlagsTest(unittest.TestCase):
 
         test_threads = []
         for perform_call in _ALL_CALL_CASES:
-            test_thread = threading.Thread(target=test_call,
-                                           args=(perform_call,))
+            test_thread = threading.Thread(
+                target=test_call, args=(perform_call,)
+            )
             test_thread.daemon = True
             test_thread.exception = None
             test_thread.start()
@@ -255,6 +270,6 @@ class MetadataFlagsTest(unittest.TestCase):
             raise unhandled_exceptions.get(True)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     unittest.main(verbosity=2)

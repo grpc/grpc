@@ -34,6 +34,7 @@ grpc_cc_library(
     deps = [
         "//src/core:lb_policy",
         "//src/core:subchannel_interface",
+        "//test/core/event_engine:mock_event_engine",
     ],
 )
 
@@ -49,6 +50,7 @@ grpc_cc_test(
         "//src/core:channel_args",
         "//src/core:grpc_lb_policy_pick_first",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:scoped_env_var",
     ],
 )
 
@@ -205,7 +207,6 @@ grpc_cc_test(
     deps = [
         ":lb_policy_test_lib",
         "//src/core:grpc_lb_policy_weighted_round_robin",
-        "//test/core/event_engine:mock_event_engine",
         "//test/core/util:grpc_test_util",
     ],
 )

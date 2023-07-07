@@ -84,6 +84,23 @@ UPB_INLINE const envoy_admin_v3_ListenerStatus* const* envoy_admin_v3_Listeners_
     return NULL;
   }
 }
+UPB_INLINE const upb_Array* _envoy_admin_v3_Listeners_listener_statuses_upb_array(const envoy_admin_v3_Listeners* msg, size_t* size) {
+  const upb_MiniTableField field = {1, 0, 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _envoy_admin_v3_Listeners_listener_statuses_mutable_upb_array(const envoy_admin_v3_Listeners* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {1, 0, 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
 UPB_INLINE bool envoy_admin_v3_Listeners_has_listener_statuses(const envoy_admin_v3_Listeners* msg) {
   size_t size;
   envoy_admin_v3_Listeners_listener_statuses(msg, &size);
@@ -192,6 +209,23 @@ UPB_INLINE const struct envoy_config_core_v3_Address* const* envoy_admin_v3_List
     if (size) *size = 0;
     return NULL;
   }
+}
+UPB_INLINE const upb_Array* _envoy_admin_v3_ListenerStatus_additional_local_addresses_upb_array(const envoy_admin_v3_ListenerStatus* msg, size_t* size) {
+  const upb_MiniTableField field = {3, UPB_SIZE(8, 32), 0, 1, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _envoy_admin_v3_ListenerStatus_additional_local_addresses_mutable_upb_array(const envoy_admin_v3_ListenerStatus* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {3, UPB_SIZE(8, 32), 0, 1, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
 }
 UPB_INLINE bool envoy_admin_v3_ListenerStatus_has_additional_local_addresses(const envoy_admin_v3_ListenerStatus* msg) {
   size_t size;

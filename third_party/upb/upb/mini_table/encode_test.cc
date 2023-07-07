@@ -25,6 +25,9 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <string_view>
+#include <vector>
+
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/container/flat_hash_set.h"
@@ -127,7 +130,7 @@ TEST_P(MiniTableTest, Skips) {
   for (size_t i = 0; i < field_numbers.size(); i++) {
     const upb_MiniTableField* f = &table->fields[i];
     EXPECT_EQ(field_numbers[i], f->number);
-    EXPECT_EQ(kUpb_FieldType_Float, f->descriptortype);
+    EXPECT_EQ(kUpb_FieldType_Float, upb_MiniTableField_Type(f));
     EXPECT_EQ(kUpb_FieldMode_Scalar, f->mode & kUpb_FieldMode_Mask);
     EXPECT_TRUE(offsets.insert(f->offset).second);
     EXPECT_TRUE(f->offset < table->size);
@@ -208,7 +211,7 @@ TEST(MiniTablePlatformIndependentTest, Base92Roundtrip) {
 
 TEST(MiniTablePlatformIndependentTest, IsTypePackable) {
   for (int i = 1; i <= protobuf::FieldDescriptor::MAX_TYPE; i++) {
-    EXPECT_EQ(_upb_FieldType_IsPackable(static_cast<upb_FieldType>(i)),
+    EXPECT_EQ(upb_FieldType_IsPackable(static_cast<upb_FieldType>(i)),
               protobuf::FieldDescriptor::IsTypePackable(
                   static_cast<protobuf::FieldDescriptor::Type>(i)));
   }

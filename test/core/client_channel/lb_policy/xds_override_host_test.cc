@@ -14,11 +14,8 @@
 // limitations under the License.
 //
 
-#include <stddef.h>
-
 #include <algorithm>
 #include <array>
-#include <map>
 #include <memory>
 #include <string>
 #include <utility>
@@ -31,9 +28,12 @@
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
+#include <grpc/support/json.h>
+#include <grpc/support/log.h>
 
 #include "src/core/ext/filters/stateful_session/stateful_session_filter.h"
 #include "src/core/ext/xds/xds_health_status.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/json/json.h"
@@ -70,40 +70,17 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
   }
 
   RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>
-  ExpectStartupWithRoundRobin(absl::Span<const absl::string_view> addresses,
-                              RefCountedPtr<LoadBalancingPolicy::Config>
-                                  config = MakeXdsOverrideHostConfig()) {
-    RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker;
-    EXPECT_EQ(ApplyUpdate(BuildUpdate(addresses, config), policy_.get()),
+  ExpectStartupWithRoundRobin(absl::Span<const absl::string_view> addresses) {
+    EXPECT_EQ(ApplyUpdate(BuildUpdate(addresses, MakeXdsOverrideHostConfig()),
+                          policy_.get()),
               absl::OkStatus());
-    ExpectConnectingUpdate();
-    for (size_t i = 0; i < addresses.size(); ++i) {
-      auto* subchannel = FindSubchannel(addresses[i]);
-      EXPECT_NE(subchannel, nullptr);
-      if (subchannel == nullptr) return nullptr;
-      EXPECT_TRUE(subchannel->ConnectionRequested());
-      subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
-      subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
-      if (i == 0) {
-        picker = WaitForConnected();
-        ExpectRoundRobinPicks(picker.get(), {addresses[0]});
-      } else {
-        picker = WaitForRoundRobinListChange(
-            absl::MakeSpan(addresses).subspan(0, i),
-            absl::MakeSpan(addresses).subspan(0, i + 1));
-      }
-    }
-    return picker;
+    return ExpectRoundRobinStartup(addresses);
   }
 
   ServerAddress MakeAddressWithHealthStatus(
       absl::string_view address, XdsHealthStatus::HealthStatus status) {
-    std::map<const char*, std::unique_ptr<ServerAddress::AttributeInterface>>
-        attrs;
-    attrs.emplace(XdsEndpointHealthStatusAttribute::kKey,
-                  std::make_unique<XdsEndpointHealthStatusAttribute>(
-                      XdsHealthStatus(status)));
-    return {MakeAddress(address), {}, std::move(attrs)};
+    return ServerAddress(MakeAddress(address),
+                         ChannelArgs().Set(GRPC_ARG_XDS_HEALTH_STATUS, status));
   }
 
   void ApplyUpdateWithHealthStatuses(
@@ -139,8 +116,9 @@ TEST_F(XdsOverrideHostTest, DelegatesToChild) {
 
 TEST_F(XdsOverrideHostTest, NoConfigReportsError) {
   EXPECT_EQ(
-      ApplyUpdate(BuildUpdate({"ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442"}),
-                  policy_.get()),
+      ApplyUpdate(
+          BuildUpdate({"ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442"}, nullptr),
+          policy_.get()),
       absl::InvalidArgumentError("Missing policy config"));
 }
 
@@ -232,18 +210,31 @@ TEST_F(XdsOverrideHostTest, FailedSubchannelIsNotPicked) {
   EXPECT_EQ(ExpectPickComplete(picker.get(),
                                MakeOverrideHostAttribute(kAddresses[1])),
             kAddresses[1]);
+  // Subchannel for address 1 becomes disconnected.
+  gpr_log(GPR_INFO, "### subchannel 1 reporting IDLE");
   auto subchannel = FindSubchannel(kAddresses[1]);
   ASSERT_NE(subchannel, nullptr);
   subchannel->SetConnectivityState(GRPC_CHANNEL_IDLE);
+  gpr_log(GPR_INFO, "### expecting re-resolution request");
   ExpectReresolutionRequest();
+  gpr_log(GPR_INFO,
+          "### expecting RR picks to exclude the disconnected subchannel");
   ExpectRoundRobinPicks(ExpectState(GRPC_CHANNEL_READY).get(),
                         {kAddresses[0], kAddresses[2]});
+  // It starts trying to reconnect...
+  gpr_log(GPR_INFO, "### subchannel 1 reporting CONNECTING");
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  gpr_log(GPR_INFO, "### expecting RR picks again");
   ExpectRoundRobinPicks(ExpectState(GRPC_CHANNEL_READY).get(),
                         {kAddresses[0], kAddresses[2]});
+  // ...but the connection attempt fails.
+  gpr_log(GPR_INFO, "### subchannel 1 reporting TRANSIENT_FAILURE");
   subchannel->SetConnectivityState(GRPC_CHANNEL_TRANSIENT_FAILURE,
                                    absl::ResourceExhaustedError("Hmmmm"));
+  gpr_log(GPR_INFO, "### expecting re-resolution request");
   ExpectReresolutionRequest();
+  // The host override is not used.
+  gpr_log(GPR_INFO, "### checking that host override is not used");
   picker = ExpectState(GRPC_CHANNEL_READY);
   ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[2]},
                         MakeOverrideHostAttribute(kAddresses[1]));
@@ -315,6 +306,12 @@ TEST_F(XdsOverrideHostTest, DrainingSubchannelIsConnecting) {
   EXPECT_EQ(ExpectPickComplete(picker.get(),
                                MakeOverrideHostAttribute(kAddresses[1])),
             kAddresses[1]);
+  // Send an update that marks the endpoints with different EDS health
+  // states, but those states are present in override_host_status.
+  // The picker should use the DRAINING host when a call's override
+  // points to that hose, but the host should not be used if there is no
+  // override pointing to it.
+  gpr_log(GPR_INFO, "### sending update with DRAINING host");
   ApplyUpdateWithHealthStatuses(
       {{kAddresses[0], XdsHealthStatus::HealthStatus::kUnknown},
        {kAddresses[1], XdsHealthStatus::HealthStatus::kDraining},
@@ -322,23 +319,35 @@ TEST_F(XdsOverrideHostTest, DrainingSubchannelIsConnecting) {
       {"UNKNOWN", "HEALTHY", "DRAINING"});
   auto subchannel = FindSubchannel(kAddresses[1]);
   ASSERT_NE(subchannel, nullptr);
-  // There are two notifications - one from child policy and one from the parent
-  // policy due to draining channel update
   picker = ExpectState(GRPC_CHANNEL_READY);
   EXPECT_EQ(ExpectPickComplete(picker.get(),
                                MakeOverrideHostAttribute(kAddresses[1])),
             kAddresses[1]);
   ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[2]});
+  // Now the connection to the draining host gets dropped.
+  // The picker should queue picks where the override host is IDLE.
+  // All picks without an override host should not use this host.
+  gpr_log(GPR_INFO, "### closing connection to DRAINING host");
   subchannel->SetConnectivityState(GRPC_CHANNEL_IDLE);
   picker = ExpectState(GRPC_CHANNEL_READY);
   ExpectPickQueued(picker.get(), MakeOverrideHostAttribute(kAddresses[1]));
   ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[2]});
+  // The subchannel should have been asked to reconnect as a result of the
+  // queued pick above.  It will therefore transition into state CONNECTING.
+  // The pick behavior is the same as above: The picker should queue
+  // picks where the override host is CONNECTING.  All picks without an
+  // override host should not use this host.
+  gpr_log(GPR_INFO, "### subchannel starts reconnecting");
   EXPECT_TRUE(subchannel->ConnectionRequested());
   ExpectQueueEmpty();
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   picker = ExpectState(GRPC_CHANNEL_READY);
   ExpectPickQueued(picker.get(), MakeOverrideHostAttribute(kAddresses[1]));
   ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[2]});
+  // The subchannel now becomes connected again.
+  // Now picks with this override host can be completed again.
+  // Picks without an override host still don't use the draining host.
+  gpr_log(GPR_INFO, "### subchannel becomes reconnected");
   subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
   picker = ExpectState(GRPC_CHANNEL_READY);
   EXPECT_EQ(ExpectPickComplete(picker.get(),

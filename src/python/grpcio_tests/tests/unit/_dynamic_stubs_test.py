@@ -45,7 +45,6 @@ def _grpc_tools_unimportable():
 
 
 def _collect_errors(fn):
-
     @functools.wraps(fn)
     def _wrapped(error_queue):
         try:
@@ -58,7 +57,6 @@ def _collect_errors(fn):
 
 
 def _python3_check(fn):
-
     @functools.wraps(fn)
     def _wrapped():
         if sys.version_info[0] == 3:
@@ -71,7 +69,8 @@ def _python3_check(fn):
 
 def _run_in_subprocess(test_case):
     sys.path.insert(
-        0, os.path.join(os.path.realpath(os.path.dirname(__file__)), ".."))
+        0, os.path.join(os.path.realpath(os.path.dirname(__file__)), "..")
+    )
     error_queue = multiprocessing.Queue()
     proc = multiprocessing.Process(target=test_case, args=(error_queue,))
     proc.start()
@@ -80,17 +79,21 @@ def _run_in_subprocess(test_case):
     if not error_queue.empty():
         raise error_queue.get()
     assert proc.exitcode == 0, "Process exited with code {}".format(
-        proc.exitcode)
+        proc.exitcode
+    )
 
 
 def _assert_unimplemented(msg_substr):
     import grpc
+
     try:
         protos, services = grpc.protos_and_services(
-            "tests/unit/data/foo/bar.proto")
+            "tests/unit/data/foo/bar.proto"
+        )
     except NotImplementedError as e:
         assert msg_substr in str(e), "{} was not in '{}'".format(
-            msg_substr, str(e))
+            msg_substr, str(e)
+        )
     else:
         assert False, "Did not raise NotImplementedError"
 
@@ -99,8 +102,10 @@ def _assert_unimplemented(msg_substr):
 @_python3_check
 def _test_sunny_day():
     import grpc
+
     protos, services = grpc.protos_and_services(
-        os.path.join(_DATA_DIR, "foo", "bar.proto"))
+        os.path.join(_DATA_DIR, "foo", "bar.proto")
+    )
     assert protos.BarMessage is not None
     assert services.BarStub is not None
 
@@ -109,8 +114,10 @@ def _test_sunny_day():
 @_python3_check
 def _test_well_known_types():
     import grpc
+
     protos, services = grpc.protos_and_services(
-        os.path.join(_DATA_DIR, "foo", "bar_with_wkt.proto"))
+        os.path.join(_DATA_DIR, "foo", "bar_with_wkt.proto")
+    )
     assert protos.BarMessage is not None
     assert services.BarStub is not None
 
@@ -127,7 +134,6 @@ def _test_grpc_tools_unimportable():
 # if run directly on Windows, but not if started by the test runner.
 @unittest.skipIf(os.name == "nt", "Windows multiprocessing unsupported")
 class DynamicStubTest(unittest.TestCase):
-
     def test_sunny_day(self):
         _run_in_subprocess(_test_sunny_day)
 

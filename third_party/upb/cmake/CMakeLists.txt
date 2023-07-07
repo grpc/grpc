@@ -149,6 +149,7 @@ target_link_libraries(message_internal
   port)
 add_library(message_accessors
   ../upb/message/accessors.c
+  ../upb/message/accessors_internal.h
   ../upb/message/accessors.h)
 target_link_libraries(message_accessors
   collections_internal
@@ -160,6 +161,30 @@ target_link_libraries(message_accessors
   upb
   wire
   wire_reader)
+add_library(message_promote
+  ../upb/message/promote.c
+  ../upb/message/promote.h)
+target_link_libraries(message_promote
+  collections_internal
+  eps_copy_input_stream
+  hash
+  message_accessors
+  message_internal
+  mini_table_internal
+  port
+  upb
+  wire
+  wire_reader)
+add_library(message_copy
+  ../upb/message/copy.c
+  ../upb/message/copy.h)
+target_link_libraries(message_copy
+  collections_internal
+  message_accessors
+  message_internal
+  mini_table_internal
+  port
+  upb)
 add_library(fastdecode INTERFACE)
 target_link_libraries(fastdecode INTERFACE
   base
@@ -181,6 +206,7 @@ target_link_libraries(generated_cpp_support__only_for_generated_code_do_not_use_
   base
   collections_internal
   hash
+  message_copy
   mini_table
   upb)
 add_library(generated_reflection_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me INTERFACE)
@@ -263,6 +289,7 @@ add_library(wire_internal
   ../upb/wire/decode.c
   ../upb/wire/decode_fast.c
   ../upb/wire/encode.c
+  ../upb/wire/common.h
   ../upb/wire/common_internal.h
   ../upb/wire/decode.h
   ../upb/wire/decode_fast.h

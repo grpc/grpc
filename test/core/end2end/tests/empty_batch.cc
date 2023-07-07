@@ -16,13 +16,11 @@
 //
 //
 
-#include "gtest/gtest.h"
-
 #include "test/core/end2end/end2end_tests.h"
 
 namespace grpc_core {
 
-TEST_P(CoreEnd2endTest, EmptyBatch) {
+CORE_END2END_TEST(CoreEnd2endTest, EmptyBatch) {
   auto c = NewClientCall("/service/method").Create();
   c.NewBatch(1);
   Expect(1, true);

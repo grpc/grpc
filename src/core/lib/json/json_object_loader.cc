@@ -22,6 +22,8 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/strip.h"
 
+#include <grpc/support/json.h>
+
 namespace grpc_core {
 namespace json_detail {
 
@@ -166,9 +168,8 @@ void LoadMap::LoadInto(const Json& json, const JsonArgs& args, void* dst,
   }
 }
 
-void LoadOptional::LoadInto(const Json& json, const JsonArgs& args, void* dst,
-                            ValidationErrors* errors) const {
-  if (json.type() == Json::Type::kNull) return;
+void LoadWrapped::LoadInto(const Json& json, const JsonArgs& args, void* dst,
+                           ValidationErrors* errors) const {
   void* element = Emplace(dst);
   size_t starting_error_size = errors->size();
   ElementLoader()->LoadInto(json, args, element, errors);
@@ -189,7 +190,7 @@ bool LoadObject(const Json& json, const JsonArgs& args, const Element* elements,
     ValidationErrors::ScopedField field(errors,
                                         absl::StrCat(".", element.name));
     const auto& it = json.object().find(element.name);
-    if (it == json.object().end()) {
+    if (it == json.object().end() || it->second.type() == Json::Type::kNull) {
       if (element.optional) continue;
       errors->AddError("field not present");
       continue;

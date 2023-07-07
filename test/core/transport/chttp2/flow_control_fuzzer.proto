@@ -16,6 +16,8 @@ syntax = "proto3";
 
 package flow_control_fuzzer;
 
+import "test/core/util/fuzz_config_vars.proto";
+
 message Empty {};
 
 message StreamWrite {
@@ -44,4 +46,5 @@ message Action {
 message Msg {
     bool enable_bdp = 1;
     repeated Action actions = 2;
+    grpc.testing.FuzzConfigVars config_vars = 3;
 }

@@ -22,7 +22,7 @@ static const upb_MiniTableSub xds_data_orca_v3_OrcaLoadReport_submsgs[3] = {
   {.submsg = &xds_data_orca_v3_OrcaLoadReport_NamedMetricsEntry_msg_init},
 };
 
-static const upb_MiniTableField xds_data_orca_v3_OrcaLoadReport__fields[8] = {
+static const upb_MiniTableField xds_data_orca_v3_OrcaLoadReport__fields[9] = {
   {1, UPB_SIZE(16, 0), 0, kUpb_NoSub, 1, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(24, 8), 0, kUpb_NoSub, 1, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
   {3, UPB_SIZE(32, 16), 0, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
@@ -31,12 +31,13 @@ static const upb_MiniTableField xds_data_orca_v3_OrcaLoadReport__fields[8] = {
   {6, 40, 0, kUpb_NoSub, 1, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
   {7, 48, 0, kUpb_NoSub, 1, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
   {8, UPB_SIZE(8, 56), 0, 2, 11, kUpb_FieldMode_Map | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {9, UPB_SIZE(56, 64), 0, kUpb_NoSub, 1, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable xds_data_orca_v3_OrcaLoadReport_msg_init = {
   &xds_data_orca_v3_OrcaLoadReport_submsgs[0],
   &xds_data_orca_v3_OrcaLoadReport__fields[0],
-  UPB_SIZE(56, 64), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(56), 0,
+  UPB_SIZE(64, 72), 9, kUpb_ExtMode_NonExtendable, 9, UPB_FASTTABLE_MASK(120), 0,
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000000003f000009, &upb_psf8_1bt},
@@ -46,6 +47,14 @@ const upb_MiniTable xds_data_orca_v3_OrcaLoadReport_msg_init = {
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x002800003f000031, &upb_psf8_1bt},
     {0x003000003f000039, &upb_psf8_1bt},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x004000003f000049, &upb_psf8_1bt},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };
 
@@ -60,7 +69,7 @@ const upb_MiniTable xds_data_orca_v3_OrcaLoadReport_RequestCostEntry_msg_init = 
   UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_psb_1bt},
+    {0x000800003f00000a, &upb_pss_1bt},
     {0x001800003f000011, &upb_psf8_1bt},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
@@ -77,7 +86,7 @@ const upb_MiniTable xds_data_orca_v3_OrcaLoadReport_UtilizationEntry_msg_init = 
   UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_psb_1bt},
+    {0x000800003f00000a, &upb_pss_1bt},
     {0x001800003f000011, &upb_psf8_1bt},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
@@ -94,7 +103,7 @@ const upb_MiniTable xds_data_orca_v3_OrcaLoadReport_NamedMetricsEntry_msg_init =
   UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_psb_1bt},
+    {0x000800003f00000a, &upb_pss_1bt},
     {0x001800003f000011, &upb_psf8_1bt},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })

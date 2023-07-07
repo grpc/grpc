@@ -16,10 +16,8 @@
 //
 //
 
-#include "gtest/gtest.h"
-
 #include "test/core/end2end/end2end_tests.h"
 
 namespace grpc_core {
-TEST_P(CoreEnd2endTest, NoOp) {}
+CORE_END2END_TEST(CoreEnd2endTest, NoOp) {}
 }  // namespace grpc_core

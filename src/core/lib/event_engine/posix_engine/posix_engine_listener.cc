@@ -15,6 +15,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/event_engine/posix.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
@@ -24,6 +25,7 @@
 #include <unistd.h>      // IWYU pragma: keep
 
 #include <string>
+#include <type_traits>
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
@@ -64,7 +66,7 @@ PosixEngineListenerImpl::PosixEngineListenerImpl(
 absl::StatusOr<int> PosixEngineListenerImpl::Bind(
     const EventEngine::ResolvedAddress& addr,
     PosixListenerWithFdSupport::OnPosixBindNewFdCallback on_bind_new_fd) {
-  absl::MutexLock lock(&this->mu_);
+  grpc_core::MutexLock lock(&this->mu_);
   if (this->started_) {
     return absl::FailedPreconditionError(
         "Listener is already started, ports can no longer be bound");
@@ -197,15 +199,20 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
         listener_->memory_allocator_factory_->CreateMemoryAllocator(
             absl::StrCat("endpoint-tcp-server-connection: ", *peer_name)),
         /*options=*/listener_->options_);
-    // Call on_accept_ and then resume accepting new connections by continuing
-    // the parent for-loop.
-    listener_->on_accept_(
-        /*listener_fd=*/handle_->WrappedFd(), /*endpoint=*/std::move(endpoint),
-        /*is_external=*/false,
-        /*memory_allocator=*/
-        listener_->memory_allocator_factory_->CreateMemoryAllocator(
-            absl::StrCat("on-accept-tcp-server-connection: ", *peer_name)),
-        /*pending_data=*/nullptr);
+
+    grpc_core::EnsureRunInExecCtx([this, peer_name = std::move(*peer_name),
+                                   endpoint = std::move(endpoint)]() mutable {
+      // Call on_accept_ and then resume accepting new connections
+      // by continuing the parent for-loop.
+      listener_->on_accept_(
+          /*listener_fd=*/handle_->WrappedFd(),
+          /*endpoint=*/std::move(endpoint),
+          /*is_external=*/false,
+          /*memory_allocator=*/
+          listener_->memory_allocator_factory_->CreateMemoryAllocator(
+              absl::StrCat("on-accept-tcp-server-connection: ", peer_name)),
+          /*pending_data=*/nullptr);
+    });
   }
   GPR_UNREACHABLE_CODE(return);
 }
@@ -228,21 +235,24 @@ absl::Status PosixEngineListenerImpl::HandleExternalConnection(
         absl::StrCat("HandleExternalConnection: peer not connected: ",
                      peer_name.status().ToString()));
   }
-  auto endpoint = CreatePosixEndpoint(
-      /*handle=*/poller_->CreateHandle(fd, *peer_name,
-                                       poller_->CanTrackErrors()),
-      /*on_shutdown=*/nullptr, /*engine=*/engine_,
-      /*allocator=*/
-      memory_allocator_factory_->CreateMemoryAllocator(absl::StrCat(
-          "external:endpoint-tcp-server-connection: ", *peer_name)),
-      /*options=*/options_);
-  on_accept_(
-      /*listener_fd=*/listener_fd, /*endpoint=*/std::move(endpoint),
-      /*is_external=*/true,
-      /*memory_allocator=*/
-      memory_allocator_factory_->CreateMemoryAllocator(absl::StrCat(
-          "external:on-accept-tcp-server-connection: ", *peer_name)),
-      /*pending_data=*/pending_data);
+  grpc_core::EnsureRunInExecCtx([this, peer_name = std::move(*peer_name),
+                                 pending_data, listener_fd, fd]() mutable {
+    auto endpoint = CreatePosixEndpoint(
+        /*handle=*/poller_->CreateHandle(fd, peer_name,
+                                         poller_->CanTrackErrors()),
+        /*on_shutdown=*/nullptr, /*engine=*/engine_,
+        /*allocator=*/
+        memory_allocator_factory_->CreateMemoryAllocator(absl::StrCat(
+            "external:endpoint-tcp-server-connection: ", peer_name)),
+        /*options=*/options_);
+    on_accept_(
+        /*listener_fd=*/listener_fd, /*endpoint=*/std::move(endpoint),
+        /*is_external=*/true,
+        /*memory_allocator=*/
+        memory_allocator_factory_->CreateMemoryAllocator(absl::StrCat(
+            "external:on-accept-tcp-server-connection: ", peer_name)),
+        /*pending_data=*/pending_data);
+  });
   return absl::OkStatus();
 }
 
@@ -254,7 +264,7 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::Shutdown() {
 }
 
 absl::Status PosixEngineListenerImpl::Start() {
-  absl::MutexLock lock(&this->mu_);
+  grpc_core::MutexLock lock(&this->mu_);
   // Start each asynchronous acceptor.
   GPR_ASSERT(!this->started_);
   this->started_ = true;
@@ -267,7 +277,7 @@ absl::Status PosixEngineListenerImpl::Start() {
 void PosixEngineListenerImpl::TriggerShutdown() {
   // This would get invoked from the destructor of the parent
   // PosixEngineListener object.
-  absl::MutexLock lock(&this->mu_);
+  grpc_core::MutexLock lock(&this->mu_);
   for (auto it = acceptors_.begin(); it != acceptors_.end(); it++) {
     // Trigger shutdown of each asynchronous acceptor. This in-turn calls
     // ShutdownHandle on the associated poller event handle. It may also

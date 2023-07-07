@@ -29,16 +29,32 @@ namespace grpc_core {
 class XdsClusterAttribute
     : public ServiceConfigCallData::CallAttributeInterface {
  public:
-  static UniqueTypeName TypeName();
+  static UniqueTypeName TypeName() {
+    static UniqueTypeName::Factory kFactory("xds_cluster_name");
+    return kFactory.Create();
+  }
 
   explicit XdsClusterAttribute(absl::string_view cluster) : cluster_(cluster) {}
 
   absl::string_view cluster() const { return cluster_; }
+  void set_cluster(absl::string_view cluster) { cluster_ = cluster; }
 
  private:
   UniqueTypeName type() const override { return TypeName(); }
 
   absl::string_view cluster_;
+};
+
+class XdsRouteStateAttribute
+    : public ServiceConfigCallData::CallAttributeInterface {
+ public:
+  static UniqueTypeName TypeName() {
+    static UniqueTypeName::Factory factory("xds_cluster_lb_data");
+    return factory.Create();
+  }
+
+  virtual bool HasClusterForRoute(absl::string_view cluster_name) const = 0;
+  UniqueTypeName type() const override { return TypeName(); }
 };
 }  // namespace grpc_core
 

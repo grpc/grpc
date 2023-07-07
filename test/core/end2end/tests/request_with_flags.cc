@@ -118,49 +118,50 @@ void InvokeRequestWithFlags(CoreEnd2endTest& test,
   grpc_byte_buffer_destroy(request_payload);
 }
 
-TEST_P(CoreEnd2endTest, BadFlagsOnSendInitialMetadata) {
+CORE_END2END_TEST(CoreEnd2endTest, BadFlagsOnSendInitialMetadata) {
   InvokeRequestWithFlags(*this, {{GRPC_OP_SEND_INITIAL_METADATA, 0xdeadbeef}},
                          GRPC_CALL_ERROR_INVALID_FLAGS);
 }
 
-TEST_P(CoreEnd2endTest, BadFlagsOnSendMessage) {
+CORE_END2END_TEST(CoreEnd2endTest, BadFlagsOnSendMessage) {
   InvokeRequestWithFlags(*this, {{GRPC_OP_SEND_MESSAGE, 0xdeadbeef}},
                          GRPC_CALL_ERROR_INVALID_FLAGS);
 }
 
-TEST_P(CoreEnd2endTest, BadFlagsOnSendCloseFromClient) {
+CORE_END2END_TEST(CoreEnd2endTest, BadFlagsOnSendCloseFromClient) {
   InvokeRequestWithFlags(*this, {{GRPC_OP_SEND_CLOSE_FROM_CLIENT, 0xdeadbeef}},
                          GRPC_CALL_ERROR_INVALID_FLAGS);
 }
 
-TEST_P(CoreEnd2endTest, BadFlagsOnRecvInitialMetadata) {
+CORE_END2END_TEST(CoreEnd2endTest, BadFlagsOnRecvInitialMetadata) {
   InvokeRequestWithFlags(*this, {{GRPC_OP_RECV_INITIAL_METADATA, 0xdeadbeef}},
                          GRPC_CALL_ERROR_INVALID_FLAGS);
 }
 
-TEST_P(CoreEnd2endTest, BadFlagsOnRecvStatusOnClient) {
+CORE_END2END_TEST(CoreEnd2endTest, BadFlagsOnRecvStatusOnClient) {
   InvokeRequestWithFlags(*this, {{GRPC_OP_RECV_STATUS_ON_CLIENT, 0xdeadbeef}},
                          GRPC_CALL_ERROR_INVALID_FLAGS);
 }
 
-TEST_P(CoreEnd2endTest, WriteBufferIntAcceptedOnSendMessage) {
+CORE_END2END_TEST(CoreEnd2endTest, WriteBufferIntAcceptedOnSendMessage) {
   InvokeRequestWithFlags(
       *this, {{GRPC_OP_SEND_MESSAGE, GRPC_WRITE_BUFFER_HINT}}, GRPC_CALL_OK);
 }
 
-TEST_P(CoreEnd2endTest, WriteNoCompressAcceptedOnSendMessage) {
+CORE_END2END_TEST(CoreEnd2endTest, WriteNoCompressAcceptedOnSendMessage) {
   InvokeRequestWithFlags(
       *this, {{GRPC_OP_SEND_MESSAGE, GRPC_WRITE_NO_COMPRESS}}, GRPC_CALL_OK);
 }
 
-TEST_P(CoreEnd2endTest, WriteBufferHintAndNoCompressAcceptedOnSendMessage) {
+CORE_END2END_TEST(CoreEnd2endTest,
+                  WriteBufferHintAndNoCompressAcceptedOnSendMessage) {
   InvokeRequestWithFlags(
       *this,
       {{GRPC_OP_SEND_MESSAGE, GRPC_WRITE_BUFFER_HINT | GRPC_WRITE_NO_COMPRESS}},
       GRPC_CALL_OK);
 }
 
-TEST_P(CoreEnd2endTest, WriteInternalCompressAcceptedOnSendMessage) {
+CORE_END2END_TEST(CoreEnd2endTest, WriteInternalCompressAcceptedOnSendMessage) {
   InvokeRequestWithFlags(*this,
                          {{GRPC_OP_SEND_MESSAGE, GRPC_WRITE_INTERNAL_COMPRESS}},
                          GRPC_CALL_OK);
