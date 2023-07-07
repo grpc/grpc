@@ -19,6 +19,7 @@
 
 #include <stdint.h>
 
+#include <memory>
 #include <string>
 #include <utility>
 
@@ -132,9 +133,9 @@ class HpackParseResult {
   bool connection_error() const { return IsConnectionError(status_.get()); }
   bool ephemeral() const { return IsEphemeralError(status_.get()); }
 
-  HpackParseResult PersistentStreamErrorOrOk() const {
-    if (connection_error() || ephemeral()) return HpackParseResult();
-    return *this;
+  std::unique_ptr<HpackParseResult> PersistentStreamErrorOrNullptr() const {
+    if (connection_error() || ephemeral()) return nullptr;
+    return std::make_unique<HpackParseResult>(*this);
   }
 
   static HpackParseResult FromStatus(HpackParseStatus status) {

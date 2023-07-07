@@ -51,7 +51,7 @@ class HPackTable {
 
   struct Memento {
     ParsedMetadata<grpc_metadata_batch> md;
-    HpackParseResult parse_status;
+    std::unique_ptr<HpackParseResult> parse_status;
   };
 
   // Lookup, but don't ref.
