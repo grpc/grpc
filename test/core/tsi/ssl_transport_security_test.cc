@@ -518,7 +518,7 @@ static std::string GenerateTrustBundle() {
   // certs have subject DNs that are sufficiently big and complex that they
   // substantially increase the server handshake message size.
   std::string trust_bundle;
-  std::size_t trust_bundle_size = is_slow_build() ? 20 : 200;
+  int trust_bundle_size = is_slow_build() ? 20 : 200;
   for (int i = 0; i < trust_bundle_size; ++i) {
     SelfSignedCertificateOptions options;
     options.common_name =
