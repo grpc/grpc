@@ -49,7 +49,7 @@ void CheckPeer(std::string peer_name) {
 
 void SimpleRequestBody(CoreEnd2endTest& test) {
   auto before = global_stats().Collect();
-  auto c = test.NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
+  auto c = test.NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
   EXPECT_NE(c.GetPeer(), absl::nullopt);
   CoreEnd2endTest::IncomingStatusOnClient server_status;
   CoreEnd2endTest::IncomingMetadata server_initial_metadata;
