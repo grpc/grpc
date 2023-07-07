@@ -134,7 +134,7 @@ class HpackParseResult {
   bool ephemeral() const { return IsEphemeralError(status_.get()); }
 
   std::unique_ptr<HpackParseResult> PersistentStreamErrorOrNullptr() const {
-    if (connection_error() || ephemeral()) return nullptr;
+    if (ok() || connection_error() || ephemeral()) return nullptr;
     return std::make_unique<HpackParseResult>(*this);
   }
 
