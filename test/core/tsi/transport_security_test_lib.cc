@@ -413,6 +413,11 @@ void tsi_test_do_handshake(tsi_test_fixture* fixture) {
     if (!server_args->error.ok()) {
       break;
     }
+    // If this assertion is hit, this is likely an indication that the client
+    // and server handshakers are hanging, each thinking that the other is
+    // responsible for sending the next chunk of bytes to the other. This can
+    // happen e.g. when a bug in the handshaker code results in some bytes being
+    // dropped instead of passed to the BIO or SSL objects.
     GPR_ASSERT(client_args->transferred_data || server_args->transferred_data);
   } while (fixture->client_result == nullptr ||
            fixture->server_result == nullptr);
@@ -703,7 +708,7 @@ std::string GenerateSelfSignedCertificate(
   GPR_ASSERT(X509_set1_notAfter(x509, infinite_future));
   ASN1_GENERALIZEDTIME_free(infinite_future);
 
-  // Set the common name.
+  // Set the subject DN.
   X509_NAME* subject_name = X509_NAME_new();
   GPR_ASSERT(X509_NAME_add_entry_by_txt(
       subject_name, "CN", MBSTRING_ASC,

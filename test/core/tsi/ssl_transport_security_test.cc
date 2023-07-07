@@ -505,11 +505,20 @@ static char* load_file(const char* dir_path, const char* file_name) {
   return data;
 }
 
+static bool is_slow_build() {
+#if defined(GPR_ARCH_32) || defined(__APPLE__)
+  return true;
+#else
+  return BuiltUnderMsan() || BuiltUnderTsan();
+#endif
+}
+
 static std::string GenerateTrustBundle() {
   // Create a trust bundle, consisting of 200 self-signed certs. The self-signed
   // certs have subject DNs that are sufficiently big and complex that they
   // substantially increase the server handshake message size.
   std::string trust_bundle;
+  std::size_t trust_bundle_size = is_slow_build() ? 20 : 200;
   for (int i = 0; i < 200; ++i) {
     SelfSignedCertificateOptions options;
     options.common_name =
@@ -833,14 +842,6 @@ void ssl_tsi_test_do_round_trip_with_error_on_stack() {
   tsi_test_fixture* fixture = ssl_tsi_test_fixture_create();
   tsi_test_do_round_trip(fixture);
   tsi_test_fixture_destroy(fixture);
-}
-
-static bool is_slow_build() {
-#if defined(GPR_ARCH_32) || defined(__APPLE__)
-  return true;
-#else
-  return BuiltUnderMsan() || BuiltUnderTsan();
-#endif
 }
 
 void ssl_tsi_test_do_round_trip_odd_buffer_size() {
