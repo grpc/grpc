@@ -519,7 +519,7 @@ static std::string GenerateTrustBundle() {
   // substantially increase the server handshake message size.
   std::string trust_bundle;
   std::size_t trust_bundle_size = is_slow_build() ? 20 : 200;
-  for (int i = 0; i < 200; ++i) {
+  for (int i = 0; i < trust_bundle_size; ++i) {
     SelfSignedCertificateOptions options;
     options.common_name =
         absl::StrCat("{46f0eaed-6e05-43f5-9289-379104612fc", i, "}");
