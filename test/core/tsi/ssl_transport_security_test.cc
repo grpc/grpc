@@ -661,7 +661,7 @@ void ssl_tsi_test_do_handshake_with_large_server_handshake_messages(
   // Create a new root store, consisting of the root cert that is actually
   // needed and 200 self-signed certs.
   std::string effective_trust_bundle = absl::StrCat(root_cert, trust_bundle);
-  gpr_free(ssl_fixture->key_cert_lib->root_store);
+  tsi_ssl_root_certs_store_destroy(ssl_fixture->key_cert_lib->root_store);
   ssl_fixture->key_cert_lib->root_cert =
       const_cast<char*>(effective_trust_bundle.c_str());
   ssl_fixture->key_cert_lib->root_store =
