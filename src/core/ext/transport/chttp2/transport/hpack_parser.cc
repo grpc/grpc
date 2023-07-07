@@ -24,6 +24,7 @@
 #include <stdlib.h>
 
 #include <algorithm>
+#include <memory>
 #include <string>
 #include <utility>
 
