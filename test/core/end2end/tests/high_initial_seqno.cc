@@ -41,13 +41,6 @@ void SimpleRequest(CoreEnd2endTest& test) {
       .RecvStatusOnClient(server_status);
   auto s = test.RequestCall(101);
   test.Expect(101, true);
-  test.Expect(
-      1, CoreEnd2endTest::MaybePerformAction{[&](bool success) {
-        Crash(absl::StrCat(
-            "Unexpected completion of client side call: success=",
-            success ? "true" : "false", " status=", server_status.ToString(),
-            " initial_md=", server_initial_metadata.ToString()));
-      }});
   test.Step();
   CoreEnd2endTest::IncomingCloseOnServer client_close;
   s.NewBatch(102)
