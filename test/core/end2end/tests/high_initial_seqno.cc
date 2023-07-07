@@ -16,14 +16,12 @@
 //
 //
 
-#include "absl/strings/str_cat.h"
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
 #include <grpc/status.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/time.h"
 #include "test/core/end2end/end2end_tests.h"
 
@@ -41,13 +39,6 @@ void SimpleRequest(CoreEnd2endTest& test) {
       .RecvStatusOnClient(server_status);
   auto s = test.RequestCall(101);
   test.Expect(101, true);
-  test.Expect(
-      1, CoreEnd2endTest::MaybePerformAction{[&](bool success) {
-        Crash(absl::StrCat(
-            "Unexpected completion of client side call: success=",
-            success ? "true" : "false", " status=", server_status.ToString(),
-            " initial_md=", server_initial_metadata.ToString()));
-      }});
   test.Step();
   CoreEnd2endTest::IncomingCloseOnServer client_close;
   s.NewBatch(102)
