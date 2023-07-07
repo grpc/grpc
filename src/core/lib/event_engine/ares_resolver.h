@@ -45,11 +45,11 @@ namespace experimental {
 
 extern grpc_core::TraceFlag grpc_trace_ares_resolver;
 
-#define GRPC_ARES_RESOLVER_TRACE_LOG(format, ...)                            \
-  do {                                                                       \
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_ares_resolver)) {                 \
-      gpr_log(GPR_INFO, "(EventEngine ares_resolver) " format, __VA_ARGS__); \
-    }                                                                        \
+#define GRPC_ARES_RESOLVER_TRACE_LOG(format, ...)                              \
+  do {                                                                         \
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_ares_resolver)) {                   \
+      gpr_log(GPR_INFO, "(EventEngine c-ares resolver) " format, __VA_ARGS__); \
+    }                                                                          \
   } while (0)
 
 class AresResolver : public grpc_core::InternallyRefCounted<AresResolver> {
@@ -59,7 +59,7 @@ class AresResolver : public grpc_core::InternallyRefCounted<AresResolver> {
                      std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
                      std::shared_ptr<EventEngine> event_engine);
 
-  // Made public so that we can use grpc_core::MakeOrphanable.
+  // Do not instantiate directly -- use CreateAresResolver() instead.
   AresResolver(std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
                std::shared_ptr<EventEngine> event_engine, ares_channel channel);
   ~AresResolver() override;

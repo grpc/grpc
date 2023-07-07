@@ -543,6 +543,8 @@ std::unique_ptr<EventEngine::DNSResolver> PosixEventEngine::GetDNSResolver(
   return std::make_unique<PosixEventEngine::PosixDNSResolver>(
       options, poller_manager_->Poller(), shared_from_this());
 #else   // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_TCP)
+  // TODO(yijiem): Implement a basic A/AAAA-only native resolver in
+  // PosixEventEngine.
   (void)options;
   grpc_core::Crash("unimplemented");
 #endif  // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_TCP)

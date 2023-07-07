@@ -63,6 +63,7 @@ namespace {
 using grpc_event_engine::experimental::EventEngine;
 using grpc_event_engine::experimental::URIToResolvedAddress;
 using SRVRecord = EventEngine::DNSResolver::SRVRecord;
+using testing::ElementsAre;
 using testing::Pointwise;
 using testing::SizeIs;
 using testing::UnorderedPointwise;
@@ -95,9 +96,6 @@ MATCHER(SRVRecordEq, "") {
 MATCHER(StatusCodeEq, "") {
   return std::get<0>(arg).code() == std::get<1>(arg);
 }
-
-#define EXPECT_STATUS(result, status_code) \
-  EXPECT_EQ((result).status().code(), absl::StatusCode::status_code)
 
 }  // namespace
 
@@ -201,7 +199,10 @@ TEST_F(EventEngineDNSTest, QueryNXHostname) {
   dns_resolver->LookupHostname(
       [this](auto result) {
         ASSERT_FALSE(result.ok());
-        EXPECT_STATUS(result, kNotFound);
+        EXPECT_EQ(result.status(),
+                  absl::NotFoundError("address lookup failed for "
+                                      "nonexisting-target.dns-test.event-"
+                                      "engine.: Domain name not found"));
         dns_resolver_signal_.Notify();
       },
       "nonexisting-target.dns-test.event-engine.", /*default_port=*/"443");
@@ -328,8 +329,8 @@ TEST_F(EventEngineDNSTest, QueryTXTRecord) {
   dns_resolver->LookupTXT(
       [&kExpectedRecord, this](auto result) {
         ASSERT_TRUE(result.ok());
-        EXPECT_THAT(*result, SizeIs(2));
-        EXPECT_EQ((*result)[0], kExpectedRecord);
+        EXPECT_THAT(*result,
+                    ElementsAre(kExpectedRecord, "other_config=other config"));
         dns_resolver_signal_.Notify();
       },
       "_grpc_config.simple-service.dns-test.event-engine.");
@@ -354,7 +355,10 @@ TEST_F(EventEngineDNSTest, TestCancelActiveDNSQuery) {
   dns_resolver->LookupHostname(
       [this](auto result) {
         ASSERT_FALSE(result.ok());
-        EXPECT_STATUS(result, kCancelled);
+        EXPECT_EQ(result.status(),
+                  absl::CancelledError("address lookup failed for "
+                                       "dont-care-since-wont-be-resolved.test."
+                                       "com:1234: DNS query cancelled"));
         dns_resolver_signal_.Notify();
       },
       name, "1234");

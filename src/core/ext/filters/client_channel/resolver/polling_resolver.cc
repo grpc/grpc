@@ -159,7 +159,7 @@ void PollingResolver::OnRequestCompleteLocked(Result result) {
     if (GPR_UNLIKELY(tracer_ != nullptr && tracer_->enabled())) {
       gpr_log(GPR_INFO,
               "[polling resolver %p] returning result: "
-              "addresses=%s, service_config=%s",
+              "addresses=%s, service_config=%s, resolution_note=%s",
               this,
               result.addresses.ok()
                   ? absl::StrCat("<", result.addresses->size(), " addresses>")
@@ -170,7 +170,8 @@ void PollingResolver::OnRequestCompleteLocked(Result result) {
                          ? "<null>"
                          : std::string((*result.service_config)->json_string())
                                .c_str())
-                  : result.service_config.status().ToString().c_str());
+                  : result.service_config.status().ToString().c_str(),
+              result.resolution_note.c_str());
     }
     GPR_ASSERT(result.result_health_callback == nullptr);
     RefCountedPtr<PollingResolver> self =

@@ -140,6 +140,7 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
  public:
   class PosixDNSResolver : public EventEngine::DNSResolver {
    public:
+    PosixDNSResolver() = delete;
 #if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_TCP)
     PosixDNSResolver(const ResolverOptions& options, PosixEventPoller* poller,
                      std::shared_ptr<EventEngine> event_engine);
