@@ -25,9 +25,9 @@ from typing import Any, Callable, List, Optional, Tuple
 from kubernetes import client
 from kubernetes import dynamic
 from kubernetes import utils
+import kubernetes.config
 from kubernetes.dynamic import exceptions as dynamic_exc
 from kubernetes.dynamic import resource as dynamic_res
-import kubernetes.config
 import urllib3.exceptions
 import yaml
 
