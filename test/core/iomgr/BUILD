@@ -264,6 +264,7 @@ grpc_cc_test(
     name = "tcp_posix_test",
     srcs = ["tcp_posix_test.cc"],
     language = "C++",
+    external_deps = ["gtest"],
     tags = [
         "endpoint_test",
         "event_engine_listener_test",

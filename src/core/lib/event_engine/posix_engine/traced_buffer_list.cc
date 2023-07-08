@@ -216,7 +216,6 @@ void TracedBufferList::AddNewEntry(int32_t seq_no, int fd, void* arg) {
                                &(new_elem->ts_.info));
   }
   new_elem->last_timestamp_ = new_elem->ts_.sendmsg_time.time;
-  grpc_core::MutexLock lock(&mu_);
   if (!head_) {
     head_ = tail_ = new_elem;
   } else {

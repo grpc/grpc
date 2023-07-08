@@ -1262,7 +1262,9 @@ static bool tcp_write_with_timestamps(grpc_tcp* tcp, struct msghdr* msg,
       grpc_core::kTimestampingRecordingOptions;
   msg->msg_control = u.cmsg_buf;
   msg->msg_controllen = CMSG_SPACE(sizeof(uint32_t));
-
+  // Acquire tb Mutex before send to ensure that any subsequent generated
+  // timestamps will be processed only after the new entry is added into tb_list
+  grpc_core::MutexLock lock(&tcp->tb_list.Mu());
   // If there was an error on sendmsg the logic in tcp_flush will handle it.
   ssize_t length = tcp_send(tcp->fd, msg, saved_errno, additional_flags);
   *sent_length = length;

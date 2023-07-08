@@ -34,6 +34,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <gtest/gtest.h>
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -57,6 +59,8 @@
 
 static gpr_mu* g_mu;
 static grpc_pollset* g_pollset;
+
+static constexpr int64_t kDeadlineMillis = 20000;
 
 //
 // General test notes:
@@ -225,7 +229,7 @@ static void read_test(size_t num_bytes, size_t slice_size,
   struct read_socket_state state;
   size_t written_bytes;
   grpc_core::Timestamp deadline = grpc_core::Timestamp::FromTimespecRoundUp(
-      grpc_timeout_seconds_to_deadline(20));
+      grpc_timeout_milliseconds_to_deadline(kDeadlineMillis));
   grpc_core::ExecCtx exec_ctx;
 
   gpr_log(GPR_INFO, "Read test of size %" PRIuPTR ", slice size %" PRIuPTR,
@@ -263,14 +267,14 @@ static void read_test(size_t num_bytes, size_t slice_size,
 
   grpc_endpoint_read(ep, &state.incoming, &state.read_cb, /*urgent=*/false,
                      /*min_progress_size=*/state.min_progress_size);
-
+  grpc_core::ExecCtx::Get()->Flush();
   gpr_mu_lock(g_mu);
   while (state.read_bytes < state.target_read_bytes) {
     grpc_pollset_worker* worker = nullptr;
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "pollset_work", grpc_pollset_work(g_pollset, &worker, deadline)));
     gpr_mu_unlock(g_mu);
-
+    grpc_core::ExecCtx::Get()->Flush();
     gpr_mu_lock(g_mu);
   }
   GPR_ASSERT(state.read_bytes == state.target_read_bytes);
@@ -290,7 +294,7 @@ static void large_read_test(size_t slice_size, int min_progress_size) {
   struct read_socket_state state;
   ssize_t written_bytes;
   grpc_core::Timestamp deadline = grpc_core::Timestamp::FromTimespecRoundUp(
-      grpc_timeout_seconds_to_deadline(20));
+      grpc_timeout_milliseconds_to_deadline(kDeadlineMillis));
   grpc_core::ExecCtx exec_ctx;
 
   gpr_log(GPR_INFO, "Start large read test, slice size %" PRIuPTR, slice_size);
@@ -327,14 +331,14 @@ static void large_read_test(size_t slice_size, int min_progress_size) {
 
   grpc_endpoint_read(ep, &state.incoming, &state.read_cb, /*urgent=*/false,
                      /*min_progress_size=*/state.min_progress_size);
-
+  grpc_core::ExecCtx::Get()->Flush();
   gpr_mu_lock(g_mu);
   while (state.read_bytes < state.target_read_bytes) {
     grpc_pollset_worker* worker = nullptr;
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "pollset_work", grpc_pollset_work(g_pollset, &worker, deadline)));
     gpr_mu_unlock(g_mu);
-
+    grpc_core::ExecCtx::Get()->Flush();
     gpr_mu_lock(g_mu);
   }
   GPR_ASSERT(state.read_bytes == state.target_read_bytes);
@@ -437,6 +441,10 @@ void timestamps_verifier(void* arg, grpc_core::Timestamps* ts,
   GPR_ASSERT(ts->acked_time.time.clock_type == GPR_CLOCK_REALTIME);
   gpr_atm* done_timestamps = static_cast<gpr_atm*>(arg);
   gpr_atm_rel_store(done_timestamps, gpr_atm{1});
+  gpr_mu_lock(g_mu);
+  GPR_ASSERT(
+      GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, nullptr)));
+  gpr_mu_unlock(g_mu);
 }
 
 // Write to a socket using the grpc_tcp API, then drain it directly.
@@ -454,7 +462,7 @@ static void write_test(size_t num_bytes, size_t slice_size,
   grpc_slice_buffer outgoing;
   grpc_closure write_done_closure;
   grpc_core::Timestamp deadline = grpc_core::Timestamp::FromTimespecRoundUp(
-      grpc_timeout_seconds_to_deadline(20));
+      grpc_timeout_milliseconds_to_deadline(kDeadlineMillis));
   grpc_core::ExecCtx exec_ctx;
 
   if (collect_timestamps && !grpc_event_engine_can_track_errors()) {
@@ -550,7 +558,7 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
   size_t written_bytes;
   int fd;
   grpc_core::Timestamp deadline = grpc_core::Timestamp::FromTimespecRoundUp(
-      grpc_timeout_seconds_to_deadline(20));
+      grpc_timeout_milliseconds_to_deadline(kDeadlineMillis));
   grpc_core::ExecCtx exec_ctx;
   grpc_closure fd_released_cb;
   release_fd_arg rel_fd;
@@ -609,7 +617,7 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
 
   grpc_endpoint_read(ep, &state.incoming, &state.read_cb, /*urgent=*/false,
                      /*min_progress_size=*/state.min_progress_size);
-
+  grpc_core::ExecCtx::Get()->Flush();
   gpr_mu_lock(g_mu);
   while (state.read_bytes < state.target_read_bytes) {
     grpc_pollset_worker* worker = nullptr;
@@ -717,6 +725,7 @@ static void destroy_pollset(void* p, grpc_error_handle /*error*/) {
 
 int main(int argc, char** argv) {
   grpc_closure destroyed;
+  ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   grpc_core::grpc_tcp_set_write_timestamps_callback(timestamps_verifier);
