@@ -241,6 +241,16 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
             # just return None.
             return None
 
+    def _get_dyn_resource(
+        self, api: dynamic_res.Resource, name, *args, **kwargs
+    ) -> Optional[dynamic_res.ResourceInstance]:
+        try:
+            return api.get(name=name, namespace=self.name, *args, **kwargs)
+        except dynamic_exc.NotFoundError:
+            # Instead of trowing an error when a resource doesn't exist,
+            # just return None.
+            return None
+
     def _execute(self, method: Callable[[Any], object], *args, **kwargs):
         # Note: Intentionally leaving return type as unspecified to not confuse
         # pytype for methods that delegate calls to this wrapper.
@@ -310,6 +320,7 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
             err.headers,
         )
 
+        # TODO(sergiitk): let dynamic/exception parse this instead?
         code: int = err.status
         body = err.body.lower() if err.body else ""
 
@@ -385,6 +396,9 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
             self._api.core.read_namespaced_service, name, self.name
         )
 
+    def get_gamma_mesh(self, name) -> Optional[dynamic_res.ResourceInstance]:
+        return self._get_dyn_resource(self.api_gke_mesh, name)
+
     def get_service_account(self, name) -> V1Service:
         return self._get_resource(
             self._api.core.read_namespaced_service_account, name, self.name
@@ -419,16 +433,12 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
     def delete_gamma_mesh(
         self, name, grace_period_seconds=DELETE_GRACE_PERIOD_SEC
     ):
-        self.api_gke_mesh.delete(name="name", namespace=self.name)
-        # self._execute(
-        #     self._api.core.delete_namespaced_service_account,
-        #     name=name,
-        #     namespace=self.name,
-        #     body=client.V1DeleteOptions(
-        #         propagation_policy="Foreground",
-        #         grace_period_seconds=grace_period_seconds,
-        #     ),
-        # )
+        self.api_gke_mesh.delete(
+            name=name,
+            namespace=self.name,
+            propagation_policy="Foreground",
+            grace_period_seconds=grace_period_seconds,
+        )
 
     def get(self) -> V1Namespace:
         return self._get_resource(self._api.core.read_namespace, self.name)
@@ -455,6 +465,19 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
             check_result=lambda service: service is None,
         )
         retryer(self.get_service, name)
+
+    def wait_for_get_gamma_mesh_deleted(
+        self,
+        name: str,
+        timeout_sec: int = WAIT_SHORT_TIMEOUT_SEC,
+        wait_sec: int = WAIT_SHORT_SLEEP_SEC,
+    ) -> None:
+        retryer = retryers.constant_retryer(
+            wait_fixed=_timedelta(seconds=wait_sec),
+            timeout=_timedelta(seconds=timeout_sec),
+            check_result=lambda mesh: mesh is None,
+        )
+        retryer(self.get_gamma_mesh, name)
 
     def wait_for_service_account_deleted(
         self,

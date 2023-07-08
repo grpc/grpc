@@ -118,7 +118,7 @@ class GammaServerRunner(KubernetesServerRunner):
 
         # Create gamma mesh.
         self.mesh = self._create_gamma_mesh(
-            template="tdmesh.yaml",
+            template="gamma/tdmesh.yaml",
             mesh_name=self.mesh_name,
             namespace_name=self.k8s_namespace.name,
         )
@@ -185,7 +185,7 @@ class GammaServerRunner(KubernetesServerRunner):
     def cleanup(self, *, force=False, force_namespace=False):
         # TODO(sergiitk): rename to stop().
         try:
-            if self.mesh or force:
+            if True or self.mesh or force:
                 self._delete_gamma_mesh(self.mesh_name)
             if self.deployment or force:
                 self._delete_deployment(self.deployment_name)
