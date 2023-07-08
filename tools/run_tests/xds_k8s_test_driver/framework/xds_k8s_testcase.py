@@ -816,6 +816,7 @@ class GammaXdsKubernetesTestCase(RegularXdsKubernetesTestCase):
             debug_use_port_forwarding=self.debug_use_port_forwarding,
             enable_workload_identity=self.enable_workload_identity,
             reuse_namespace=True,
+            reuse_service=True,
         )
 
     def initTrafficDirectorManager(self) -> TrafficDirectorGammaManager:

@@ -461,6 +461,18 @@ class KubernetesBaseRunner(base_runner.BaseRunner, metaclass=ABCMeta):
         # )
         return gamma_mesh
 
+    def _delete_gamma_mesh(self, name, wait_for_deletion=True):
+        logger.info("Deleting GAMMA mesh %s", name)
+        try:
+            self.k8s_namespace.delete_gamma_mesh(name)
+        except (retryers.RetryError, k8s.NotFound) as e:
+            logger.info("Service account %s deletion failed: %s", name, e)
+            return
+
+        # if wait_for_deletion:
+        #     self.k8s_namespace.wait_for_service_account_deleted(name)
+        logger.debug("GAMMA mesh %s deleted", name)
+
     def _create_service(self, template, **kwargs) -> k8s.V1Service:
         service = self._create_from_template(template, **kwargs)
         if not isinstance(service, k8s.V1Service):

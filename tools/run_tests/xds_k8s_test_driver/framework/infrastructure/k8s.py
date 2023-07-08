@@ -100,9 +100,9 @@ class KubernetesApiManager:
     context: str
     apps: client.AppsV1Api
     core: client.CoreV1Api
-    _apis: set
-    # "net.gke.io" => API
-    _dynamic_apis: dict[str, object]
+    _apis: set[object]
+    # "net.gke.io"
+    _dynamic_apis: set[str]
 
     def __init__(self, context: str):
         self.context = context
@@ -181,7 +181,6 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
     _highlighter: framework.helpers.highlighter.Highlighter
     _api: KubernetesApiManager
     _name: str
-    _api_gke_mesh = None
 
     NEG_STATUS_META = "cloud.google.com/neg-status"
     DELETE_GRACE_PERIOD_SEC: int = 5
@@ -201,6 +200,10 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
     @property
     def name(self):
         return self._name
+
+    @functools.cached_property  # pylint: disable=no-member
+    def api_gke_mesh(self) -> dynamic_res.Resource:
+        return self._get_dynamic_api("net.gke.io/v1alpha1", "TDMesh")
 
     def _refresh_auth(self):
         logger.info("Reloading k8s api client to refresh the auth.")
@@ -224,11 +227,10 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
         return api.create(manifest)
 
     @functools.cache
-    def _get_dynamic_api(self, api_version, kind):
+    def _get_dynamic_api(self, api_version, kind) -> dynamic_res.Resource:
         group, _, version = api_version.partition("/")
         if group == "net.gke.io" and kind == "TDMesh":
-            self._api_gke_mesh = self._api.gke_tdmesh(version)
-            return self._api_gke_mesh
+            return self._api.gke_tdmesh(version)
         raise NotImplementedError(f"{kind} {api_version} not implemented.")
 
     def _get_resource(self, method: Callable[[Any], object], *args, **kwargs):
@@ -413,6 +415,20 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
                 grace_period_seconds=grace_period_seconds,
             ),
         )
+
+    def delete_gamma_mesh(
+        self, name, grace_period_seconds=DELETE_GRACE_PERIOD_SEC
+    ):
+        self.api_gke_mesh.delete(name="name", namespace=self.name)
+        # self._execute(
+        #     self._api.core.delete_namespaced_service_account,
+        #     name=name,
+        #     namespace=self.name,
+        #     body=client.V1DeleteOptions(
+        #         propagation_policy="Foreground",
+        #         grace_period_seconds=grace_period_seconds,
+        #     ),
+        # )
 
     def get(self) -> V1Namespace:
         return self._get_resource(self._api.core.read_namespace, self.name)

@@ -206,6 +206,23 @@ class KubernetesServerRunner(k8s_base_runner.KubernetesBaseRunner):
             secure_mode=secure_mode,
         )
 
+        return self._make_servers_for_deployment(
+            replica_count,
+            test_port=test_port,
+            maintenance_port=maintenance_port,
+            log_to_stdout=log_to_stdout,
+            secure_mode=secure_mode,
+        )
+
+    def _make_servers_for_deployment(
+        self,
+        replica_count,
+        *,
+        test_port: int,
+        maintenance_port: int,
+        log_to_stdout: bool,
+        secure_mode: bool = False,
+    ) -> List[XdsTestServer]:
         pod_names = self._wait_deployment_pod_count(
             self.deployment, replica_count
         )
@@ -307,9 +324,10 @@ class KubernetesServerRunner(k8s_base_runner.KubernetesBaseRunner):
         return cls._make_namespace_name(resource_prefix, resource_suffix, name)
 
 
-class KubernetesGammaServerRunner(k8s_base_runner.KubernetesServerRunner):
+class KubernetesGammaServerRunner(KubernetesServerRunner):
     # Mutable state.
     # mesh: Optional[k8s.V1Service] = None
+    mesh = None
 
     def __init__(
         self,
@@ -329,7 +347,7 @@ class KubernetesGammaServerRunner(k8s_base_runner.KubernetesServerRunner):
         neg_name: Optional[str] = None,
         deployment_template: str = "server.deployment.yaml",
         service_account_template: str = "service-account.yaml",
-        service_template: str = "gamma/server.service.yaml",
+        service_template: str = "gamma/service.yaml",
         reuse_service: bool = False,
         reuse_namespace: bool = False,
         namespace_template: Optional[str] = None,
@@ -372,27 +390,9 @@ class KubernetesGammaServerRunner(k8s_base_runner.KubernetesServerRunner):
         if not maintenance_port:
             maintenance_port = self._get_default_maintenance_port(secure_mode)
 
-        # Implementation detail: in secure mode, maintenance ("backchannel")
-        # port must be different from the test port so communication with
-        # maintenance services can be reached independently of the security
-        # configuration under test.
-        if secure_mode and maintenance_port == test_port:
-            raise ValueError(
-                "port and maintenance_port must be different "
-                "when running test server in secure mode"
-            )
-        # To avoid bugs with comparing wrong types.
-        if not (
-            isinstance(test_port, int) and isinstance(maintenance_port, int)
-        ):
-            raise TypeError("Port numbers must be integer")
-
-        if secure_mode and not self.enable_workload_identity:
-            raise ValueError("Secure mode requires Workload Identity enabled.")
-
         logger.info(
             (
-                'Deploying xDS test server "%s" to k8s namespace %s:'
+                'Deploying GAMMA xDS test server "%s" to k8s namespace %s:'
                 " test_port=%s maintenance_port=%s secure_mode=%s"
                 " replica_count=%s"
             ),
@@ -400,7 +400,7 @@ class KubernetesGammaServerRunner(k8s_base_runner.KubernetesServerRunner):
             self.k8s_namespace.name,
             test_port,
             maintenance_port,
-            secure_mode,
+            False,
             replica_count,
         )
         # super(k8s_base_runner.KubernetesBaseRunner, self).run()
@@ -413,7 +413,7 @@ class KubernetesGammaServerRunner(k8s_base_runner.KubernetesServerRunner):
             )
 
         # Create gamma mesh.
-        self._create_gamma_mesh(
+        self.mesh = self._create_gamma_mesh(
             template="tdmesh.yaml",
             mesh_name=self.mesh_name,
             namespace_name=self.k8s_namespace.name,
@@ -432,7 +432,9 @@ class KubernetesGammaServerRunner(k8s_base_runner.KubernetesServerRunner):
                 neg_name=self.gcp_neg_name,
                 test_port=test_port,
             )
-        self._wait_service_neg(self.service_name, test_port)
+
+        # Todo: wait for mesh?
+        # self._wait_service_neg(self.service_name, test_port)
 
         if self.enable_workload_identity:
             # Allow Kubernetes service account to use the GCP service account
@@ -467,30 +469,38 @@ class KubernetesGammaServerRunner(k8s_base_runner.KubernetesServerRunner):
             secure_mode=secure_mode,
         )
 
-        pod_names = self._wait_deployment_pod_count(
-            self.deployment, replica_count
+        return self._make_servers_for_deployment(
+            replica_count,
+            test_port=test_port,
+            maintenance_port=maintenance_port,
+            log_to_stdout=log_to_stdout,
+            secure_mode=secure_mode,
         )
-        pods = []
-        for pod_name in pod_names:
-            pod = self._wait_pod_started(pod_name)
-            pods.append(pod)
-            if self.should_collect_logs:
-                self._start_logging_pod(pod, log_to_stdout=log_to_stdout)
 
-        # Verify the deployment reports all pods started as well.
-        self._wait_deployment_with_available_replicas(
-            self.deployment_name, replica_count
-        )
-        self._start_completed()
-
-        servers: List[XdsTestServer] = []
-        for pod in pods:
-            servers.append(
-                self._xds_test_server_for_pod(
-                    pod,
-                    test_port=test_port,
-                    maintenance_port=maintenance_port,
-                    secure_mode=secure_mode,
+    # pylint: disable=arguments-differ
+    def cleanup(self, *, force=False, force_namespace=False):
+        # TODO(sergiitk): rename to stop().
+        try:
+            if self.mesh or force:
+                self._delete_gamma_mesh(self.mesh_name)
+            if self.deployment or force:
+                self._delete_deployment(self.deployment_name)
+                self.deployment = None
+            if (self.service and not self.reuse_service) or force:
+                self._delete_service(self.service_name)
+                self.service = None
+            if self.enable_workload_identity and (
+                self.service_account or force
+            ):
+                self._revoke_workload_identity_user(
+                    gcp_iam=self.gcp_iam,
+                    gcp_service_account=self.gcp_service_account,
+                    service_account_name=self.service_account_name,
                 )
-            )
-        return servers
+                self._delete_service_account(self.service_account_name)
+                self.service_account = None
+            self._cleanup_namespace(force=(force_namespace and force))
+        finally:
+            self._stop()
+
+    # pylint: enable=arguments-differ
