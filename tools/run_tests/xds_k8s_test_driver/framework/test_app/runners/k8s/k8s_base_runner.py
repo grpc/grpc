@@ -492,8 +492,8 @@ class KubernetesBaseRunner(base_runner.BaseRunner, metaclass=ABCMeta):
         return service
 
     def _delete_deployment(self, name, wait_for_deletion=True):
-        self.stop_pod_dependencies()
         logger.info("Deleting deployment %s", name)
+        self.stop_pod_dependencies()
         try:
             self.k8s_namespace.delete_deployment(name)
         except (retryers.RetryError, k8s.NotFound) as e:

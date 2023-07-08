@@ -183,9 +183,8 @@ class GammaServerRunner(KubernetesServerRunner):
 
     # pylint: disable=arguments-differ
     def cleanup(self, *, force=False, force_namespace=False):
-        # TODO(sergiitk): rename to stop().
         try:
-            if True or self.mesh or force:
+            if self.mesh or force:
                 self._delete_gamma_mesh(self.mesh_name)
             if self.deployment or force:
                 self._delete_deployment(self.deployment_name)
