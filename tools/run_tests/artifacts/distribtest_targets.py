@@ -468,6 +468,7 @@ def targets():
         RubyDistribTest("linux", "x64", "centos7"),
         RubyDistribTest("linux", "x64", "ubuntu1604"),
         RubyDistribTest("linux", "x64", "ubuntu1804", presubmit=True),
+        RubyDistribTest("linux", "aarch64", "ubuntu1804", presubmit=True),
         # PHP7
         PHP7DistribTest("linux", "x64", "debian10", presubmit=True),
         PHP7DistribTest("macos", "x64", presubmit=True),
