@@ -942,6 +942,10 @@ class RubyLanguage(object):
         # b/266212253.
         #   - src/ruby/end2end/grpc_class_init_test.rb
         for test in [
+            "src/ruby/end2end/fork_test.rb",
+            "src/ruby/end2end/simple_fork_test.rb",
+            "src/ruby/end2end/secure_fork_test.rb",
+            "src/ruby/end2end/bad_usage_fork_test.rb",
             "src/ruby/end2end/sig_handling_test.rb",
             "src/ruby/end2end/channel_closing_test.rb",
             "src/ruby/end2end/killed_client_thread_test.rb",
@@ -958,6 +962,14 @@ class RubyLanguage(object):
             "src/ruby/end2end/call_credentials_timeout_test.rb",
             "src/ruby/end2end/call_credentials_returning_bad_metadata_doesnt_kill_background_thread_test.rb",
         ]:
+            if platform_string() == "mac" and test in [
+                # skip fork tests on mac, it's only supported on linux
+                "src/ruby/end2end/fork_test.rb",
+                "src/ruby/end2end/simple_fork_test.rb",
+                "src/ruby/end2end/secure_fork_test.rb",
+                "src/ruby/end2end/bad_usage_fork_test.rb",
+            ]:
+                continue
             tests.append(
                 self.config.job_spec(
                     ["ruby", test],
