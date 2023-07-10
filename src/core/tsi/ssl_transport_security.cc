@@ -1572,9 +1572,7 @@ static tsi_result ssl_handshaker_next(tsi_handshaker* self,
       // BIO.
       remaining_bytes_to_write_to_network_io_size -=
           bytes_written_to_network_io;
-      if (remaining_bytes_to_write_to_network_io_size > 0) {
-        remaining_bytes_to_write_to_network_io += bytes_written_to_network_io;
-      }
+      remaining_bytes_to_write_to_network_io += bytes_written_to_network_io;
     }
   }
   if (status != TSI_OK) return status;
