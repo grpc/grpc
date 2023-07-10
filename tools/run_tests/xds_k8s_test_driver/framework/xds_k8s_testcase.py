@@ -44,10 +44,8 @@ from framework.rpc import grpc_csds
 from framework.rpc import grpc_testing
 from framework.test_app import client_app
 from framework.test_app import server_app
-from framework.test_app.runners.k8s import gamma_server_runner
 from framework.test_app.runners.k8s import k8s_xds_client_runner
 from framework.test_app.runners.k8s import k8s_xds_server_runner
-import framework.test_app.runners.k8s.gamma_server_runner
 
 logger = logging.getLogger(__name__)
 # TODO(yashkt): We will no longer need this flag once Core exposes local certs
@@ -64,11 +62,9 @@ flags.adopt_module_key_flags(xds_k8s_flags)
 TrafficDirectorManager = traffic_director.TrafficDirectorManager
 TrafficDirectorAppNetManager = traffic_director.TrafficDirectorAppNetManager
 TrafficDirectorSecureManager = traffic_director.TrafficDirectorSecureManager
-TrafficDirectorGammaManager = traffic_director.TrafficDirectorGammaManager
 XdsTestServer = server_app.XdsTestServer
 XdsTestClient = client_app.XdsTestClient
 KubernetesServerRunner = k8s_xds_server_runner.KubernetesServerRunner
-GammaServerRunner = gamma_server_runner.GammaServerRunner
 KubernetesClientRunner = k8s_xds_client_runner.KubernetesClientRunner
 _LoadBalancerStatsResponse = grpc_testing.LoadBalancerStatsResponse
 _LoadBalancerAccumulatedStatsResponse = (
@@ -789,40 +785,6 @@ class AppNetXdsKubernetesTestCase(RegularXdsKubernetesTestCase):
 
     def initTrafficDirectorManager(self) -> TrafficDirectorAppNetManager:
         return TrafficDirectorAppNetManager(
-            self.gcp_api_manager,
-            project=self.project,
-            resource_prefix=self.resource_prefix,
-            resource_suffix=self.resource_suffix,
-            network=self.network,
-            compute_api_version=self.compute_api_version,
-        )
-
-
-class GammaXdsKubernetesTestCase(RegularXdsKubernetesTestCase):
-    td: TrafficDirectorGammaManager
-    server_runner: GammaServerRunner
-
-    def initKubernetesServerRunner(self) -> GammaServerRunner:
-        return GammaServerRunner(
-            k8s.KubernetesNamespace(
-                self.k8s_api_manager, self.server_namespace
-            ),
-            deployment_name=self.server_name,
-            image_name=self.server_image,
-            td_bootstrap_image=self.td_bootstrap_image,
-            gcp_project=self.project,
-            gcp_api_manager=self.gcp_api_manager,
-            gcp_service_account=self.gcp_service_account,
-            xds_server_uri=self.xds_server_uri,
-            network=self.network,
-            debug_use_port_forwarding=self.debug_use_port_forwarding,
-            enable_workload_identity=self.enable_workload_identity,
-            reuse_namespace=True,
-            reuse_service=True,
-        )
-
-    def initTrafficDirectorManager(self) -> TrafficDirectorGammaManager:
-        return TrafficDirectorGammaManager(
             self.gcp_api_manager,
             project=self.project,
             resource_prefix=self.resource_prefix,

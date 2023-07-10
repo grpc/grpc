@@ -16,6 +16,7 @@ import logging
 from absl import flags
 from absl.testing import absltest
 
+from framework import xds_gamma_testcase
 from framework import xds_k8s_testcase
 
 logger = logging.getLogger(__name__)
@@ -25,7 +26,7 @@ _XdsTestServer = xds_k8s_testcase.XdsTestServer
 _XdsTestClient = xds_k8s_testcase.XdsTestClient
 
 
-class GammaBaselineTest(xds_k8s_testcase.GammaXdsKubernetesTestCase):
+class GammaBaselineTest(xds_gamma_testcase.GammaXdsKubernetesTestCase):
     def test_ping_pong(self):
         with self.subTest("1_run_test_server"):
             self.startTestServers()
