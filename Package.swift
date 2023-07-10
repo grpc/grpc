@@ -311,8 +311,6 @@ let package = Package(
         "src/core/ext/transport/chttp2/transport/internal.h",
         "src/core/ext/transport/chttp2/transport/parsing.cc",
         "src/core/ext/transport/chttp2/transport/stream_lists.cc",
-        "src/core/ext/transport/chttp2/transport/stream_map.cc",
-        "src/core/ext/transport/chttp2/transport/stream_map.h",
         "src/core/ext/transport/chttp2/transport/varint.cc",
         "src/core/ext/transport/chttp2/transport/varint.h",
         "src/core/ext/transport/chttp2/transport/writing.cc",

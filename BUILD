@@ -3885,7 +3885,6 @@ grpc_cc_library(
         "//src/core:ext/transport/chttp2/transport/frame_window_update.cc",
         "//src/core:ext/transport/chttp2/transport/parsing.cc",
         "//src/core:ext/transport/chttp2/transport/stream_lists.cc",
-        "//src/core:ext/transport/chttp2/transport/stream_map.cc",
         "//src/core:ext/transport/chttp2/transport/writing.cc",
     ],
     hdrs = [
@@ -3898,10 +3897,12 @@ grpc_cc_library(
         "//src/core:ext/transport/chttp2/transport/frame_settings.h",
         "//src/core:ext/transport/chttp2/transport/frame_window_update.h",
         "//src/core:ext/transport/chttp2/transport/internal.h",
-        "//src/core:ext/transport/chttp2/transport/stream_map.h",
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/container:flat_hash_map",
+        "absl/hash",
+        "absl/meta:type_traits",
         "absl/status",
         "absl/strings",
         "absl/strings:cord",

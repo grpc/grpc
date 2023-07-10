@@ -88,6 +88,15 @@ const char* const description_canary_client_privacy =
 const char* const additional_constraints_canary_client_privacy = "{}";
 const char* const description_server_privacy = "If set, server privacy";
 const char* const additional_constraints_server_privacy = "{}";
+const char* const description_unique_metadata_strings =
+    "Ensure a unique copy of strings from parsed metadata are taken. The "
+    "hypothesis here is that ref counting these are causing read buffer "
+    "lifetimes to be extended leading to memory bloat.";
+const char* const additional_constraints_unique_metadata_strings = "{}";
+const char* const description_keepalive_fix =
+    "Allows overriding keepalive_permit_without_calls. Refer "
+    "https://github.com/grpc/grpc/pull/33428 for more information.";
+const char* const additional_constraints_keepalive_fix = "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -134,6 +143,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_canary_client_privacy, false, false},
     {"server_privacy", description_server_privacy,
      additional_constraints_server_privacy, false, false},
+    {"unique_metadata_strings", description_unique_metadata_strings,
+     additional_constraints_unique_metadata_strings, false, true},
+    {"keepalive_fix", description_keepalive_fix,
+     additional_constraints_keepalive_fix, false, false},
 };
 
 }  // namespace grpc_core
@@ -206,6 +219,15 @@ const char* const description_canary_client_privacy =
 const char* const additional_constraints_canary_client_privacy = "{}";
 const char* const description_server_privacy = "If set, server privacy";
 const char* const additional_constraints_server_privacy = "{}";
+const char* const description_unique_metadata_strings =
+    "Ensure a unique copy of strings from parsed metadata are taken. The "
+    "hypothesis here is that ref counting these are causing read buffer "
+    "lifetimes to be extended leading to memory bloat.";
+const char* const additional_constraints_unique_metadata_strings = "{}";
+const char* const description_keepalive_fix =
+    "Allows overriding keepalive_permit_without_calls. Refer "
+    "https://github.com/grpc/grpc/pull/33428 for more information.";
+const char* const additional_constraints_keepalive_fix = "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -252,6 +274,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_canary_client_privacy, false, false},
     {"server_privacy", description_server_privacy,
      additional_constraints_server_privacy, false, false},
+    {"unique_metadata_strings", description_unique_metadata_strings,
+     additional_constraints_unique_metadata_strings, false, true},
+    {"keepalive_fix", description_keepalive_fix,
+     additional_constraints_keepalive_fix, false, false},
 };
 
 }  // namespace grpc_core
@@ -324,6 +350,15 @@ const char* const description_canary_client_privacy =
 const char* const additional_constraints_canary_client_privacy = "{}";
 const char* const description_server_privacy = "If set, server privacy";
 const char* const additional_constraints_server_privacy = "{}";
+const char* const description_unique_metadata_strings =
+    "Ensure a unique copy of strings from parsed metadata are taken. The "
+    "hypothesis here is that ref counting these are causing read buffer "
+    "lifetimes to be extended leading to memory bloat.";
+const char* const additional_constraints_unique_metadata_strings = "{}";
+const char* const description_keepalive_fix =
+    "Allows overriding keepalive_permit_without_calls. Refer "
+    "https://github.com/grpc/grpc/pull/33428 for more information.";
+const char* const additional_constraints_keepalive_fix = "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -370,6 +405,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_canary_client_privacy, false, false},
     {"server_privacy", description_server_privacy,
      additional_constraints_server_privacy, false, false},
+    {"unique_metadata_strings", description_unique_metadata_strings,
+     additional_constraints_unique_metadata_strings, false, true},
+    {"keepalive_fix", description_keepalive_fix,
+     additional_constraints_keepalive_fix, false, false},
 };
 
 }  // namespace grpc_core

@@ -1141,6 +1141,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx periodic_update_test)
   add_dependencies(buildtests_cxx pick_first_test)
   add_dependencies(buildtests_cxx pid_controller_test)
+  add_dependencies(buildtests_cxx ping_configuration_test)
   add_dependencies(buildtests_cxx ping_pong_streaming_test)
   add_dependencies(buildtests_cxx ping_test)
   add_dependencies(buildtests_cxx pipe_test)
@@ -1159,6 +1160,7 @@ if(gRPC_BUILD_TESTS)
     add_dependencies(buildtests_cxx posix_event_engine_test)
   endif()
   add_dependencies(buildtests_cxx prioritized_race_test)
+  add_dependencies(buildtests_cxx promise_endpoint_test)
   add_dependencies(buildtests_cxx promise_factory_test)
   add_dependencies(buildtests_cxx promise_map_test)
   add_dependencies(buildtests_cxx promise_test)
@@ -1302,7 +1304,6 @@ if(gRPC_BUILD_TESTS)
     add_dependencies(buildtests_cxx stranded_event_test)
   endif()
   add_dependencies(buildtests_cxx stream_leak_with_queued_flow_control_update_test)
-  add_dependencies(buildtests_cxx stream_map_test)
   add_dependencies(buildtests_cxx streaming_error_response_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx streaming_throughput_test)
@@ -1784,7 +1785,6 @@ add_library(grpc
   src/core/ext/transport/chttp2/transport/huffsyms.cc
   src/core/ext/transport/chttp2/transport/parsing.cc
   src/core/ext/transport/chttp2/transport/stream_lists.cc
-  src/core/ext/transport/chttp2/transport/stream_map.cc
   src/core/ext/transport/chttp2/transport/varint.cc
   src/core/ext/transport/chttp2/transport/writing.cc
   src/core/ext/transport/inproc/inproc_plugin.cc
@@ -2811,7 +2811,6 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/transport/huffsyms.cc
   src/core/ext/transport/chttp2/transport/parsing.cc
   src/core/ext/transport/chttp2/transport/stream_lists.cc
-  src/core/ext/transport/chttp2/transport/stream_map.cc
   src/core/ext/transport/chttp2/transport/varint.cc
   src/core/ext/transport/chttp2/transport/writing.cc
   src/core/ext/transport/inproc/inproc_plugin.cc
@@ -18291,6 +18290,55 @@ target_link_libraries(pid_controller_test
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(ping_configuration_test
+  test/core/transport/chttp2/ping_configuration_test.cc
+  test/core/util/cmdline.cc
+  test/core/util/fuzzer_util.cc
+  test/core/util/grpc_profiler.cc
+  test/core/util/histogram.cc
+  test/core/util/mock_endpoint.cc
+  test/core/util/parse_hexstring.cc
+  test/core/util/passthru_endpoint.cc
+  test/core/util/resolve_localhost_ip46.cc
+  test/core/util/slice_splitter.cc
+  test/core/util/subprocess_posix.cc
+  test/core/util/subprocess_windows.cc
+  test/core/util/tracer_util.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+target_compile_features(ping_configuration_test PUBLIC cxx_std_14)
+target_include_directories(ping_configuration_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(ping_configuration_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(ping_pong_streaming_test
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
@@ -18718,6 +18766,44 @@ target_link_libraries(prioritized_race_test
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(promise_endpoint_test
+  src/core/lib/transport/promise_endpoint.cc
+  test/core/transport/promise_endpoint_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+target_compile_features(promise_endpoint_test PUBLIC cxx_std_14)
+target_include_directories(promise_endpoint_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(promise_endpoint_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc
 )
 
 
@@ -24168,55 +24254,6 @@ target_include_directories(stream_leak_with_queued_flow_control_update_test
 )
 
 target_link_libraries(stream_leak_with_queued_flow_control_update_test
-  ${_gRPC_BASELIB_LIBRARIES}
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  ${_gRPC_ZLIB_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(stream_map_test
-  test/core/transport/chttp2/stream_map_test.cc
-  test/core/util/cmdline.cc
-  test/core/util/fuzzer_util.cc
-  test/core/util/grpc_profiler.cc
-  test/core/util/histogram.cc
-  test/core/util/mock_endpoint.cc
-  test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
-  test/core/util/resolve_localhost_ip46.cc
-  test/core/util/slice_splitter.cc
-  test/core/util/subprocess_posix.cc
-  test/core/util/subprocess_windows.cc
-  test/core/util/tracer_util.cc
-  third_party/googletest/googletest/src/gtest-all.cc
-  third_party/googletest/googlemock/src/gmock-all.cc
-)
-target_compile_features(stream_map_test PUBLIC cxx_std_14)
-target_include_directories(stream_map_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(stream_map_test
   ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}

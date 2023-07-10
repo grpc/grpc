@@ -266,7 +266,7 @@ class ExperimentDefinition(object):
         return self._description
 
     def default(self, platform):
-        return self._default[platform]
+        return self._default.get(platform, False)
 
     @property
     def test_tags(self):
@@ -277,7 +277,7 @@ class ExperimentDefinition(object):
         return self._allow_in_fuzzing_config
 
     def additional_constraints(self, platform):
-        return self._additional_constraints[platform]
+        return self._additional_constraints.get(platform, {})
 
 
 class ExperimentsCompiler(object):
@@ -321,6 +321,7 @@ class ExperimentsCompiler(object):
                 "WARNING: rollout for an undefined experiment: %s ignored"
                 % rollout_attributes["name"]
             )
+            return True
         return self._experiment_definitions[
             rollout_attributes["name"]
         ].AddRolloutSpecification(

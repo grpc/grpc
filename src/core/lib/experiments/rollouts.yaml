@@ -74,3 +74,7 @@
   default: false
 - name: server_privacy
   default: false
+- name: unique_metadata_strings
+  default: false
+- name: keepalive_fix
+  default: false
