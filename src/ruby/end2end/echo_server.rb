@@ -14,8 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ENV['GRPC_ENABLE_FORK_SUPPORT'] = "1"
-
 this_dir = File.expand_path(File.dirname(__FILE__))
 protos_lib_dir = File.join(this_dir, 'lib')
 grpc_lib_dir = File.join(File.dirname(this_dir), 'lib')
