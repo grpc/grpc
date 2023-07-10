@@ -16,7 +16,7 @@ settings:
   csharp_major_version: 2
   g_stands_for: galvanized
   protobuf_version: 3.23.1
-  version: 1.56.1-pre1
+  version: 1.56.1
 configs:
   asan:
     CC: clang

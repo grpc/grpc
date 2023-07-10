@@ -42,7 +42,7 @@ Pod::Spec.new do |s|
   # exclamation mark ensures that other "regular" pods will be able to find it as it'll be installed
   # before them.
   s.name     = '!ProtoCompiler-gRPCCppPlugin'
-  v = '1.56.1-pre1'
+  v = '1.56.1'
   s.version  = v
   s.summary  = 'The gRPC ProtoC plugin generates C++ files from .proto services.'
   s.description = <<-DESC
