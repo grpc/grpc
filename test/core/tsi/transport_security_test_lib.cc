@@ -711,17 +711,17 @@ std::string GenerateSelfSignedCertificate(
   // Set the subject DN.
   X509_NAME* subject_name = X509_NAME_new();
   GPR_ASSERT(X509_NAME_add_entry_by_txt(
-      subject_name, "CN", MBSTRING_ASC,
+      subject_name, /*field=*/"CN", MBSTRING_ASC,
       reinterpret_cast<const unsigned char*>(options.common_name.c_str()),
       /*len=*/-1, /*loc=*/-1,
       /*set=*/0));
   GPR_ASSERT(X509_NAME_add_entry_by_txt(
-      subject_name, "O", MBSTRING_ASC,
+      subject_name, /*field=*/"O", MBSTRING_ASC,
       reinterpret_cast<const unsigned char*>(options.organization.c_str()),
       /*len=*/-1, /*loc=*/-1,
       /*set=*/0));
   GPR_ASSERT(
-      X509_NAME_add_entry_by_txt(subject_name, "OU", MBSTRING_ASC,
+      X509_NAME_add_entry_by_txt(subject_name, /*field=*/"OU", MBSTRING_ASC,
                                  reinterpret_cast<const unsigned char*>(
                                      options.organizational_unit.c_str()),
                                  /*len=*/-1, /*loc=*/-1,
