@@ -111,17 +111,6 @@ class PosixEngineListenerImpl
     ListenerSocketsContainer::ListenerSocket& Socket() { return socket_; }
     ~AsyncConnectionAcceptor() {
       // Ensure the retry timer is not waiting.
-      retry_timer_mu_.Lock();
-      if (retry_timer_handle_ != EventEngine::TaskHandle::kInvalid &&
-          !engine_->Cancel(retry_timer_handle_)) {
-        // Could not cancel the retry timer, so wait for it to run.
-        do {
-          retry_timer_mu_.Unlock();
-          absl::SleepFor(absl::Milliseconds(100));
-          retry_timer_mu_.Lock();
-        } while (retry_timer_handle_ != EventEngine::TaskHandle::kInvalid);
-      }
-      retry_timer_mu_.Unlock();
       handle_->OrphanHandle(nullptr, nullptr, "");
       delete notify_on_accept_;
     }

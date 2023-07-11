@@ -156,6 +156,9 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
             if (retry_timer_handle_ == EventEngine::TaskHandle::kInvalid) {
               return;
             }
+            // Hold a ref while the retry timer is waiting, to prevent listener
+            // destruction and the races that would ensue.
+            Ref();
             retry_timer_handle_ =
                 engine_->RunAfter(grpc_core::Duration::Seconds(1), [this]() {
                   {
@@ -163,6 +166,7 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
                     retry_timer_handle_ = EventEngine::TaskHandle::kInvalid;
                   }
                   handle_->SetReadable();
+                  Unref();
                 });
           }
           return;
