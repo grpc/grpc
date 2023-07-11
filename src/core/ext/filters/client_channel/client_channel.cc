@@ -3445,11 +3445,7 @@ ClientChannel::PromiseBasedLoadBalancedCall::MakeCallPromise(
                           result.has_value() ? result->ToString().c_str()
                                              : "Pending");
                 }
-                if (!result.has_value()) {
-                  waker_ = Activity::current()->MakeNonOwningWaker();
-                  was_queued_ = true;
-                  return Pending{};
-                }
+                if (!result.has_value()) return Pending{};
                 if (!result->ok()) return *result;
                 call_args.client_initial_metadata =
                     std::move(client_initial_metadata_);
@@ -3533,6 +3529,11 @@ ClientChannel::PromiseBasedLoadBalancedCall::call_context() const {
 grpc_metadata_batch*
 ClientChannel::PromiseBasedLoadBalancedCall::send_initial_metadata() const {
   return client_initial_metadata_.get();
+}
+
+void ClientChannel::PromiseBasedLoadBalancedCall::OnAddToQueueLocked() {
+  waker_ = Activity::current()->MakeNonOwningWaker();
+  was_queued_ = true;
 }
 
 void ClientChannel::PromiseBasedLoadBalancedCall::RetryPickLocked() {

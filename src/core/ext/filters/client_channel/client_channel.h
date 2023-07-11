@@ -461,7 +461,7 @@ class ClientChannel::LoadBalancedCall
 
   // Called when adding the call to the LB queue.
   virtual void OnAddToQueueLocked()
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::lb_mu_) {}
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::lb_mu_) = 0;
 
   ClientChannel* chand_;
 
@@ -623,6 +623,9 @@ class ClientChannel::PromiseBasedLoadBalancedCall
   grpc_metadata_batch* send_initial_metadata() const override;
 
   void RetryPickLocked() override;
+
+  void OnAddToQueueLocked() override
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::lb_mu_);
 
   grpc_polling_entity pollent_;
   ClientMetadataHandle client_initial_metadata_;
