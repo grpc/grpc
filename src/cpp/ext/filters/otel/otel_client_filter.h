@@ -37,7 +37,8 @@ class OpenTelemetryClientFilter : public grpc_core::ChannelFilter {
   static const grpc_channel_filter kFilter;
 
   static absl::StatusOr<OpenTelemetryClientFilter> Create(
-      const grpc_core::ChannelArgs& args, ChannelFilter::Args /*filter_args*/);
+      const grpc_core::ChannelArgs& /*args*/,
+      ChannelFilter::Args /*filter_args*/);
 
   grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle> MakeCallPromise(
       grpc_core::CallArgs call_args,

@@ -63,7 +63,8 @@ const grpc_channel_filter OpenTelemetryClientFilter::kFilter =
         "otel_client");
 
 absl::StatusOr<OpenTelemetryClientFilter> OpenTelemetryClientFilter::Create(
-    const grpc_core::ChannelArgs& args, ChannelFilter::Args /*filter_args*/) {
+    const grpc_core::ChannelArgs& /*args*/,
+    ChannelFilter::Args /*filter_args*/) {
   return OpenTelemetryClientFilter();
 }
 
@@ -129,7 +130,7 @@ void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
 
 void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
     RecordReceivedTrailingMetadata(
-        absl::Status status, grpc_metadata_batch* recv_trailing_metadata,
+        absl::Status status, grpc_metadata_batch* /*recv_trailing_metadata*/,
         const grpc_transport_stream_stats* transport_stream_stats) {
   absl::InlinedVector<std::pair<std::string, std::string>, 2> attributes = {
       {std::string(OTelMethodKey()), std::string(parent_->method_)},
@@ -202,7 +203,8 @@ OpenTelemetryCallTracer::StartNewAttempt(bool is_transparent_retry) {
   return new OpenTelemetryCallAttemptTracer(this, /*arena_allocated=*/false);
 }
 
-void OpenTelemetryCallTracer::RecordAnnotation(absl::string_view annotation) {
+void OpenTelemetryCallTracer::RecordAnnotation(
+    absl::string_view /*annotation*/) {
   // Not implemented
 }
 

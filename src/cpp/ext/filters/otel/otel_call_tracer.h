@@ -80,7 +80,7 @@ class OpenTelemetryCallTracer : public grpc_core::ClientCallTracer {
     void RecordReceivedDecompressedMessage(
         const grpc_core::SliceBuffer& recv_decompressed_message) override;
     void RecordReceivedTrailingMetadata(
-        absl::Status status, grpc_metadata_batch* recv_trailing_metadata,
+        absl::Status status, grpc_metadata_batch* /*recv_trailing_metadata*/,
         const grpc_transport_stream_stats* transport_stream_stats) override;
     void RecordCancel(grpc_error_handle cancel_error) override;
     void RecordEnd(const gpr_timespec& /*latency*/) override;
@@ -114,7 +114,7 @@ class OpenTelemetryCallTracer : public grpc_core::ClientCallTracer {
 
   OpenTelemetryCallAttemptTracer* StartNewAttempt(
       bool is_transparent_retry) override;
-  void RecordAnnotation(absl::string_view annotation) override;
+  void RecordAnnotation(absl::string_view /*annotation*/) override;
 
  private:
   // Client method.
