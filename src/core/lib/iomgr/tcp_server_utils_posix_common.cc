@@ -18,6 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <grpc/support/atm.h>
+
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP_SERVER_UTILS_COMMON
@@ -82,10 +84,14 @@ static int get_max_accept_queue_size(void) {
   return s_max_accept_queue_size;
 }
 
-static void listener_retry_timer_cb(void* arg, grpc_error_handle /* err */) {
+static void listener_retry_timer_cb(void* arg, grpc_error_handle err) {
+  // Do nothing if cancelled.
+  if (!err.ok()) return;
   grpc_tcp_listener* sp = static_cast<grpc_tcp_listener*>(arg);
-  sp->retry_timer_armed = false;
-  grpc_fd_set_readable(sp->emfd);
+  gpr_atm_no_barrier_store(&sp->retry_timer_armed, false);
+  if (!grpc_fd_is_shutdown(sp->emfd)) {
+    grpc_fd_set_readable(sp->emfd);
+  }
 }
 
 static grpc_error_handle add_socket_to_server(grpc_tcp_server* s, int fd,
@@ -119,7 +125,8 @@ static grpc_error_handle add_socket_to_server(grpc_tcp_server* s, int fd,
   sp->server = s;
   sp->fd = fd;
   sp->emfd = grpc_fd_create(fd, name.c_str(), true);
-  sp->retry_timer_armed = false;
+  gpr_atm_no_barrier_store(&sp->retry_timer_armed, false);
+  grpc_timer_init_unset(&sp->retry_timer);
   GRPC_CLOSURE_INIT(&sp->retry_closure, listener_retry_timer_cb, sp,
                     grpc_schedule_on_exec_ctx);
 

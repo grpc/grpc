@@ -55,9 +55,9 @@ typedef struct grpc_tcp_listener {
   int is_sibling;
   // If an accept4() call fails, a timer is started to drain the accept queue in
   // case no further connection attempts reach the gRPC server.
-  grpc_timer retry_timer;
   grpc_closure retry_closure;
-  bool retry_timer_armed;
+  grpc_timer retry_timer;
+  gpr_atm retry_timer_armed;
 } grpc_tcp_listener;
 
 // the overall server

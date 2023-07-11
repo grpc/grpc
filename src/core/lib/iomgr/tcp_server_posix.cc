@@ -378,7 +378,7 @@ static void on_read(void* arg, grpc_error_handle err) {
         GRPC_LOG_EVERY_N_SEC(1, GPR_ERROR, "%s",
                              "File descriptor limit reached. Retrying.");
         grpc_fd_notify_on_read(sp->emfd, &sp->read_closure);
-        if (std::exchange(sp->retry_timer_armed, true)) return;
+        if (gpr_atm_full_xchg(&sp->retry_timer_armed, true)) return;
         grpc_timer_init(&sp->retry_timer,
                         grpc_core::Timestamp::Now() + kRetryAcceptWaitTime,
                         &sp->retry_closure);
@@ -838,6 +838,7 @@ static void tcp_server_shutdown_listeners(grpc_tcp_server* s) {
   if (s->active_ports) {
     grpc_tcp_listener* sp;
     for (sp = s->head; sp; sp = sp->next) {
+      grpc_timer_cancel(&sp->retry_timer);
       grpc_fd_shutdown(sp->emfd, GRPC_ERROR_CREATE("Server shutdown"));
     }
   }
