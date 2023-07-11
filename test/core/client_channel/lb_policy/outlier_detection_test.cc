@@ -214,6 +214,8 @@ TEST_F(OutlierDetectionTest, FailurePercentage) {
                                   .SetFailurePercentageThreshold(1)
                                   .SetFailurePercentageMinimumHosts(1)
                                   .SetFailurePercentageRequestVolume(1)
+                                  .SetMaxEjectionTime(Duration::Seconds(1))
+                                  .SetBaseEjectionTime(Duration::Seconds(1))
                                   .Build()),
       lb_policy_.get());
   EXPECT_TRUE(status.ok()) << status;
@@ -234,7 +236,102 @@ TEST_F(OutlierDetectionTest, FailurePercentage) {
   for (const auto& addr : kAddresses) {
     if (addr != *address) remaining_addresses.push_back(addr);
   }
-  picker = WaitForRoundRobinListChange(kAddresses, remaining_addresses);
+  WaitForRoundRobinListChange(kAddresses, remaining_addresses);
+  // Advance time and run the timer callback to trigger un-ejection.
+  time_cache_.IncrementBy(Duration::Seconds(10));
+  RunTimerCallback();
+  gpr_log(GPR_INFO, "### un-ejection complete");
+  // Expect a picker update.
+  WaitForRoundRobinListChange(remaining_addresses, kAddresses);
+}
+
+TEST_F(OutlierDetectionTest, MultipleAddressesPerEndpoint) {
+  constexpr std::array<absl::string_view, 2> kEndpoint1Addresses = {
+      "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444"};
+  constexpr std::array<absl::string_view, 2> kEndpoint2Addresses = {
+      "ipv4:127.0.0.1:445", "ipv4:127.0.0.1:446"};
+  constexpr std::array<absl::string_view, 2> kEndpoint3Addresses = {
+      "ipv4:127.0.0.1:447", "ipv4:127.0.0.1:448"};
+  const std::array<EndpointAddresses, 3> kEndpoints = {
+      MakeEndpointAddresses(kEndpoint1Addresses),
+      MakeEndpointAddresses(kEndpoint2Addresses),
+      MakeEndpointAddresses(kEndpoint3Addresses)};
+  // Send initial update.
+  absl::Status status = ApplyUpdate(
+      BuildUpdate(kEndpoints, ConfigBuilder()
+                                  .SetFailurePercentageThreshold(1)
+                                  .SetFailurePercentageMinimumHosts(1)
+                                  .SetFailurePercentageRequestVolume(1)
+                                  .SetMaxEjectionTime(Duration::Seconds(1))
+                                  .SetBaseEjectionTime(Duration::Seconds(1))
+                                  .Build()),
+      lb_policy_.get());
+  EXPECT_TRUE(status.ok()) << status;
+  // Expect normal startup.
+  auto picker = ExpectRoundRobinStartup(kEndpoints);
+  ASSERT_NE(picker, nullptr);
+  gpr_log(GPR_INFO, "### RR startup complete");
+  // Do a pick and report a failed call.
+  auto address = DoPickWithFailedCall(picker.get());
+  ASSERT_TRUE(address.has_value());
+  gpr_log(GPR_INFO, "### failed RPC on %s", address->c_str());
+  // Based on the address that the failed call went to, we determine
+  // which addresses to use in the subsequent steps.
+  absl::Span<const absl::string_view> ejected_endpoint_addresses;
+  absl::Span<const absl::string_view> sentinel_endpoint_addresses;
+  absl::string_view unmodified_endpoint_address;
+  std::vector<absl::string_view> final_addresses;
+  if (kEndpoint1Addresses[0] == *address) {
+    ejected_endpoint_addresses = kEndpoint1Addresses;
+    sentinel_endpoint_addresses = kEndpoint2Addresses;
+    unmodified_endpoint_address = kEndpoint3Addresses[0];
+    final_addresses = {kEndpoint1Addresses[1], kEndpoint2Addresses[1],
+                       kEndpoint3Addresses[0]};
+  } else if (kEndpoint2Addresses[0] == *address) {
+    ejected_endpoint_addresses = kEndpoint2Addresses;
+    sentinel_endpoint_addresses = kEndpoint1Addresses;
+    unmodified_endpoint_address = kEndpoint3Addresses[0];
+    final_addresses = {kEndpoint1Addresses[1], kEndpoint2Addresses[1],
+                       kEndpoint3Addresses[0]};
+  } else {
+    ejected_endpoint_addresses = kEndpoint3Addresses;
+    sentinel_endpoint_addresses = kEndpoint1Addresses;
+    unmodified_endpoint_address = kEndpoint2Addresses[0];
+    final_addresses = {kEndpoint1Addresses[1], kEndpoint2Addresses[0],
+                       kEndpoint3Addresses[1]};
+  }
+  // Advance time and run the timer callback to trigger ejection.
+  time_cache_.IncrementBy(Duration::Seconds(10));
+  RunTimerCallback();
+  gpr_log(GPR_INFO, "### ejection complete");
+  // Expect a picker that removes the ejected address.
+  WaitForRoundRobinListChange(
+      {kEndpoint1Addresses[0], kEndpoint2Addresses[0], kEndpoint3Addresses[0]},
+      {sentinel_endpoint_addresses[0], unmodified_endpoint_address});
+  // Cause the connection to the ejected endpoint to fail, and then
+  // have it reconnect to a different address.  The endpoint is still
+  // ejected, so the new address should not be used.
+  ExpectEndpointAddressChange(ejected_endpoint_addresses, 0, 1);
+  DrainRoundRobinPickerUpdates(
+      {sentinel_endpoint_addresses[0], unmodified_endpoint_address});
+  // Do the same thing for the sentinel endpoint, so that we
+  // know that the LB policy has seen the address change for the ejected
+  // endpoint.
+  ExpectEndpointAddressChange(sentinel_endpoint_addresses, 0, 1);
+  WaitForRoundRobinListChange(
+      {sentinel_endpoint_addresses[0], unmodified_endpoint_address},
+      {unmodified_endpoint_address});
+  WaitForRoundRobinListChange(
+      {unmodified_endpoint_address},
+      {sentinel_endpoint_addresses[1], unmodified_endpoint_address});
+  // Advance time and run the timer callback to trigger un-ejection.
+  time_cache_.IncrementBy(Duration::Seconds(10));
+  RunTimerCallback();
+  gpr_log(GPR_INFO, "### un-ejection complete");
+  // The ejected endpoint should come back using the new address.
+  WaitForRoundRobinListChange(
+      {sentinel_endpoint_addresses[1], unmodified_endpoint_address},
+      final_addresses);
 }
 
 TEST_F(OutlierDetectionTest, DoesNotWorkWithPickFirst) {
@@ -285,63 +382,6 @@ TEST_F(OutlierDetectionTest, DoesNotWorkWithPickFirst) {
   // Subchannel should not see a reconnection request.
   EXPECT_FALSE(subchannel->ConnectionRequested());
 }
-
-TEST_F(OutlierDetectionTest, MultipleAddressesPerEndpoint) {
-  constexpr std::array<absl::string_view, 2> kEndpoint1Addresses = {
-      "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444"};
-  constexpr std::array<absl::string_view, 2> kEndpoint2Addresses = {
-      "ipv4:127.0.0.1:445", "ipv4:127.0.0.1:446"};
-  const std::array<EndpointAddresses, 2> kEndpoints = {
-      MakeEndpointAddresses(kEndpoint1Addresses),
-      MakeEndpointAddresses(kEndpoint2Addresses)};
-  // Send initial update.
-  absl::Status status = ApplyUpdate(
-      BuildUpdate(kEndpoints, ConfigBuilder()
-                                  .SetFailurePercentageThreshold(1)
-                                  .SetFailurePercentageMinimumHosts(1)
-                                  .SetFailurePercentageRequestVolume(1)
-                                  .Build()),
-      lb_policy_.get());
-  EXPECT_TRUE(status.ok()) << status;
-  // Expect normal startup.
-  auto picker = ExpectRoundRobinStartup(kEndpoints);
-  ASSERT_NE(picker, nullptr);
-  gpr_log(GPR_INFO, "### RR startup complete");
-  // Do a pick and report a failed call.
-  auto address = DoPickWithFailedCall(picker.get());
-  ASSERT_TRUE(address.has_value());
-  gpr_log(GPR_INFO, "### failed RPC on %s", address->c_str());
-  // Advance time and run the timer callback to trigger ejection.
-  time_cache_.IncrementBy(Duration::Seconds(10));
-  RunTimerCallback();
-  gpr_log(GPR_INFO, "### ejection complete");
-  // Expect a picker that removes the ejected address.
-  // Then cause the connection to the ejected endpoint to fail, and then
-  // have it reconnect to a different address.
-  // Then do the same thing for the non-ejected endpoint, so that we
-  // know when the picker has seen the update.
-  const std::array<absl::string_view, 2> kAddresses = {
-    kEndpoint1Addresses[0], kEndpoint2Addresses[0]};
-  if (kEndpoint1Addresses[0] == *address) {
-    picker = WaitForRoundRobinListChange(kAddresses, {kEndpoint2Addresses[0]});
-    ExpectEndpointAddressChange(kEndpoint1Addresses, kEndpoint1Addresses[0],
-                                kEndpoint1Addresses[1]);
-    ExpectEndpointAddressChange(kEndpoint2Addresses, kEndpoint2Addresses[0],
-                                kEndpoint2Addresses[1]);
-    picker = WaitForRoundRobinListChange(
-        {kEndpoint2Addresses[0]}, {kEndpoint2Addresses[1]});
-  } else {
-    picker = WaitForRoundRobinListChange(kAddresses, {kEndpoint1Addresses[0]});
-    ExpectEndpointAddressChange(kEndpoint2Addresses, kEndpoint2Addresses[0],
-                                kEndpoint2Addresses[1]);
-    ExpectEndpointAddressChange(kEndpoint1Addresses, kEndpoint1Addresses[0],
-                                kEndpoint1Addresses[1]);
-    picker = WaitForRoundRobinListChange(
-        {kEndpoint1Addresses[0]}, {kEndpoint1Addresses[1]});
-  }
-}
-
-// FIXME: add test for multiple addresses per endpoint
 
 }  // namespace
 }  // namespace testing

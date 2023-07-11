@@ -1096,34 +1096,54 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     return picker;
   }
 
+  // A convenient override that takes a flat list of addresses, one per
+  // endpoint.
   RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> ExpectRoundRobinStartup(
       absl::Span<const absl::string_view> addresses) {
     return ExpectRoundRobinStartup(
         MakeEndpointAddressesListFromAddressList(addresses));
   }
 
-  void ExpectEndpointAddressChange(
+  // Expects zero or more picker updates, each of which returns
+  // round-robin picks for the specified set of addresses.
+  void DrainRoundRobinPickerUpdates(
       absl::Span<const absl::string_view> addresses,
-      absl::string_view current_address, absl::string_view new_address,
       SourceLocation location = SourceLocation()) {
+    while (!helper_->QueueEmpty()) {
+      auto update = helper_->GetNextStateUpdate(location);
+      ASSERT_TRUE(update.has_value());
+      ASSERT_EQ(update->state, GRPC_CHANNEL_READY);
+      ExpectRoundRobinPicks(update->picker.get(), addresses);
+    }
+  }
+
+  // Triggers a connection failure for the current address for an
+  // endpoint and expects a reconnection to the specified new address.
+  void ExpectEndpointAddressChange(
+      absl::Span<const absl::string_view> addresses, size_t current_index,
+      size_t new_index, SourceLocation location = SourceLocation()) {
+    ASSERT_LT(current_index, addresses.size());
+    ASSERT_LT(new_index, addresses.size());
     // Cause current_address to become disconnected.
-    auto* subchannel = FindSubchannel(current_address);
+    auto* subchannel = FindSubchannel(addresses[current_index]);
     ASSERT_NE(subchannel, nullptr) << location.file() << ":" << location.line();
     subchannel->SetConnectivityState(GRPC_CHANNEL_IDLE);
     ExpectReresolutionRequest(location);
     // Attempt each address in the list until we hit the desired new address.
-    for (const absl::string_view address : addresses) {
+    for (size_t i = 0; i < addresses.size(); ++i) {
+      const absl::string_view address = addresses[i];
       subchannel = FindSubchannel(address);
       EXPECT_TRUE(subchannel->ConnectionRequested())
           << location.file() << ":" << location.line();
       subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
-      if (address == new_address) {
+      if (i == new_index) {
         subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
         break;
       }
       subchannel->SetConnectivityState(
           GRPC_CHANNEL_TRANSIENT_FAILURE,
           absl::UnavailableError("connection failed"));
+      subchannel->SetConnectivityState(GRPC_CHANNEL_IDLE);
     }
   }
 
