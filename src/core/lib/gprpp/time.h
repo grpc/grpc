@@ -37,8 +37,8 @@
     uint64_t now = grpc_core::Timestamp::FromTimespecRoundDown( \
                        gpr_now(GPR_CLOCK_MONOTONIC))            \
                        .milliseconds_after_process_epoch();     \
-    if (prev == 0 || now - prev > (n)*1000) {                   \
-      prev = now;                                               \
+    uint64_t prev_tsamp = prev.exchange(now);                   \
+    if (prev_tsamp == 0 || now - prev_tsamp > (n)*1000) {       \
       gpr_log(severity, format, __VA_ARGS__);                   \
     }                                                           \
   } while (0)
