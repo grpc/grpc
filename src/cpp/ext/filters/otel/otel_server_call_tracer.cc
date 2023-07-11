@@ -75,7 +75,7 @@ class OpenTelemetryServerCallTracer : public grpc_core::ServerCallTracer {
       grpc_metadata_batch* /*send_initial_metadata*/) override {}
 
   void RecordSendTrailingMetadata(
-      grpc_metadata_batch* send_trailing_metadata) override;
+      grpc_metadata_batch* /*send_trailing_metadata*/) override;
 
   void RecordSendMessage(const grpc_core::SliceBuffer& send_message) override {
     RecordAnnotation(
@@ -110,7 +110,7 @@ class OpenTelemetryServerCallTracer : public grpc_core::ServerCallTracer {
 
   void RecordEnd(const grpc_call_final_info* final_info) override;
 
-  void RecordAnnotation(absl::string_view annotation) override {
+  void RecordAnnotation(absl::string_view /*annotation*/) override {
     // Not implemented
   }
 
@@ -135,7 +135,7 @@ void OpenTelemetryServerCallTracer::RecordReceivedInitialMetadata(
 }
 
 void OpenTelemetryServerCallTracer::RecordSendTrailingMetadata(
-    grpc_metadata_batch* send_trailing_metadata) {
+    grpc_metadata_batch* /*send_trailing_metadata*/) {
   // We need to record the time when the trailing metadata was sent to
   // mark the completeness of the request.
   elapsed_time_ = absl::Now() - start_time_;

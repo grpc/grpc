@@ -67,7 +67,7 @@ class OpenTelemetryCallTracer : public grpc_core::ClientCallTracer {
     }
 
     void RecordSendInitialMetadata(
-        grpc_metadata_batch* send_initial_metadata) override;
+        grpc_metadata_batch* /*send_initial_metadata*/) override {}
     void RecordSendTrailingMetadata(
         grpc_metadata_batch* /*send_trailing_metadata*/) override {}
     void RecordSendMessage(const grpc_core::SliceBuffer& send_message) override;
@@ -84,7 +84,7 @@ class OpenTelemetryCallTracer : public grpc_core::ClientCallTracer {
         const grpc_transport_stream_stats* transport_stream_stats) override;
     void RecordCancel(grpc_error_handle cancel_error) override;
     void RecordEnd(const gpr_timespec& /*latency*/) override;
-    void RecordAnnotation(absl::string_view annotation) override;
+    void RecordAnnotation(absl::string_view /*annotation*/) override;
 
    private:
     const OpenTelemetryCallTracer* parent_;

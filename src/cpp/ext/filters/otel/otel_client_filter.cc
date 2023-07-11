@@ -101,9 +101,6 @@ OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
       1, {{std::string(OTelMethodKey()), std::string(parent_->method_)}});
 }
 
-void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
-    RecordSendInitialMetadata(grpc_metadata_batch* send_initial_metadata) {}
-
 void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::RecordSendMessage(
     const grpc_core::SliceBuffer& send_message) {
   RecordAnnotation(
@@ -165,7 +162,7 @@ void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::RecordEnd(
 }
 
 void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::RecordAnnotation(
-    absl::string_view annotation) {
+    absl::string_view /*annotation*/) {
   // Not implemented
 }
 
