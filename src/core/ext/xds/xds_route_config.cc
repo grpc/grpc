@@ -80,10 +80,10 @@
 
 namespace grpc_core {
 
-// TODO(donnadionne): Remove once RLS is no longer experimental
+// TODO(apolcyn): remove this flag by the 1.58 release
 bool XdsRlsEnabled() {
   auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_RLS_LB");
-  if (!value.has_value()) return false;
+  if (!value.has_value()) return true;
   bool parsed_value;
   bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
   return parse_succeeded && parsed_value;
@@ -349,6 +349,10 @@ XdsRouteConfigResource::ClusterSpecifierPluginMap ClusterSpecifierPluginParse(
     const envoy_config_core_v3_TypedExtensionConfig* typed_extension_config =
         envoy_config_route_v3_ClusterSpecifierPlugin_extension(
             cluster_specifier_plugin[i]);
+    if (typed_extension_config == nullptr) {
+      errors->AddError("field not present");
+      continue;
+    }
     std::string name = UpbStringToStdString(
         envoy_config_core_v3_TypedExtensionConfig_name(typed_extension_config));
     if (cluster_specifier_plugin_map.find(name) !=

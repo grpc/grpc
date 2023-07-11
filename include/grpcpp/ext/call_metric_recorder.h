@@ -50,6 +50,14 @@ class CallMetricRecorder {
   /// Values outside of the valid range [0, 1] are ignored.
   virtual CallMetricRecorder& RecordMemoryUtilizationMetric(double value) = 0;
 
+  /// Records a call metric measurement for application specific utilization.
+  /// Multiple calls to this method will override the stored value.
+  /// Values may be larger than 1.0 when the usage exceeds the reporter
+  /// dependent notion of soft limits.
+  /// Values outside of the valid range [0, infy] are ignored.
+  virtual CallMetricRecorder& RecordApplicationUtilizationMetric(
+      double value) = 0;
+
   /// Records a call metric measurement for queries per second.
   /// Multiple calls to this method will override the stored value.
   /// Values outside of the valid range [0, infy) are ignored.

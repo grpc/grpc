@@ -34,6 +34,7 @@
 #include "absl/functional/any_invocable.h"
 #include "absl/memory/memory.h"
 #include "absl/meta/type_traits.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
@@ -85,6 +86,9 @@
 #define FAIL_AUTH_CHECK_SERVER_ARG_NAME "fail_auth_check"
 
 namespace grpc_core {
+
+extern bool g_is_fuzzing_core_e2e_tests;
+
 class CoreTestFixture {
  public:
   virtual ~CoreTestFixture() = default;
@@ -160,7 +164,6 @@ class CoreEnd2endTest : public ::testing::Test {
           step_fn) {
     step_fn_ = std::move(step_fn);
   }
-  void SetCrashOnStepFailure() { crash_on_step_failure_ = true; }
   void SetQuiesceEventEngine(
       absl::AnyInvocable<
           void(std::shared_ptr<grpc_event_engine::experimental::EventEngine>&&)>
@@ -215,7 +218,7 @@ class CoreEnd2endTest : public ::testing::Test {
   };
 
   // Receiving container for incoming metadata.
-  class IncomingMetadata {
+  class IncomingMetadata final : public CqVerifier::SuccessfulStateString {
    public:
     IncomingMetadata() = default;
     ~IncomingMetadata() {
@@ -229,6 +232,8 @@ class CoreEnd2endTest : public ::testing::Test {
     // for tests.
     grpc_op MakeOp();
 
+    std::string GetSuccessfulStateString() override;
+
    private:
     std::unique_ptr<grpc_metadata_array> metadata_ =
         std::make_unique<grpc_metadata_array>(
@@ -236,7 +241,7 @@ class CoreEnd2endTest : public ::testing::Test {
   };
 
   // Receiving container for one incoming message.
-  class IncomingMessage {
+  class IncomingMessage final : public CqVerifier::SuccessfulStateString {
    public:
     IncomingMessage() = default;
     IncomingMessage(const IncomingMessage&) = delete;
@@ -256,6 +261,7 @@ class CoreEnd2endTest : public ::testing::Test {
     grpc_compression_algorithm compression() const {
       return payload_->data.raw.compression;
     }
+    std::string GetSuccessfulStateString() override;
 
     // Make a GRPC_OP_RECV_MESSAGE op - intended for the framework, not for
     // tests.
@@ -266,7 +272,8 @@ class CoreEnd2endTest : public ::testing::Test {
   };
 
   // Receiving container for incoming status on the client from the server.
-  class IncomingStatusOnClient {
+  class IncomingStatusOnClient final
+      : public CqVerifier::SuccessfulStateString {
    public:
     IncomingStatusOnClient() = default;
     IncomingStatusOnClient(const IncomingStatusOnClient&) = delete;
@@ -295,6 +302,8 @@ class CoreEnd2endTest : public ::testing::Test {
     absl::optional<std::string> GetTrailingMetadata(
         absl::string_view key) const;
 
+    std::string GetSuccessfulStateString() override;
+
     // Make a GRPC_OP_RECV_STATUS_ON_CLIENT op - intended for the framework, not
     // for tests.
     grpc_op MakeOp();
@@ -310,7 +319,7 @@ class CoreEnd2endTest : public ::testing::Test {
   };
 
   // Receiving container for incoming status on the server from the client.
-  class IncomingCloseOnServer {
+  class IncomingCloseOnServer final : public CqVerifier::SuccessfulStateString {
    public:
     IncomingCloseOnServer() = default;
     IncomingCloseOnServer(const IncomingCloseOnServer&) = delete;
@@ -323,6 +332,10 @@ class CoreEnd2endTest : public ::testing::Test {
     // for tests.
     grpc_op MakeOp();
 
+    std::string GetSuccessfulStateString() override {
+      return absl::StrCat("close_on_server: cancelled=", cancelled_);
+    }
+
    private:
     int cancelled_;
   };
@@ -332,7 +345,10 @@ class CoreEnd2endTest : public ::testing::Test {
   // added batches.
   class BatchBuilder {
    public:
-    BatchBuilder(grpc_call* call, int tag) : call_(call), tag_(tag) {}
+    BatchBuilder(grpc_call* call, CoreEnd2endTest* test, int tag)
+        : call_(call), tag_(tag), cq_verifier_(&test->cq_verifier()) {
+      cq_verifier_->ClearSuccessfulStateStrings(CqVerifier::tag(tag_));
+    }
     ~BatchBuilder();
 
     BatchBuilder(const BatchBuilder&) = delete;
@@ -365,24 +381,28 @@ class CoreEnd2endTest : public ::testing::Test {
 
     // Add a GRPC_OP_RECV_INITIAL_METADATA op.
     BatchBuilder& RecvInitialMetadata(IncomingMetadata& md) {
+      cq_verifier_->AddSuccessfulStateString(CqVerifier::tag(tag_), &md);
       ops_.emplace_back(md.MakeOp());
       return *this;
     }
 
     // Add a GRPC_OP_RECV_MESSAGE op.
     BatchBuilder& RecvMessage(IncomingMessage& msg) {
+      cq_verifier_->AddSuccessfulStateString(CqVerifier::tag(tag_), &msg);
       ops_.emplace_back(msg.MakeOp());
       return *this;
     }
 
     // Add a GRPC_OP_RECV_STATUS_ON_CLIENT op.
     BatchBuilder& RecvStatusOnClient(IncomingStatusOnClient& status) {
+      cq_verifier_->AddSuccessfulStateString(CqVerifier::tag(tag_), &status);
       ops_.emplace_back(status.MakeOp());
       return *this;
     }
 
     // Add a GRPC_OP_RECV_CLOSE_ON_SERVER op.
     BatchBuilder& RecvCloseOnServer(IncomingCloseOnServer& close) {
+      cq_verifier_->AddSuccessfulStateString(CqVerifier::tag(tag_), &close);
       ops_.emplace_back(close.MakeOp());
       return *this;
     }
@@ -421,6 +441,7 @@ class CoreEnd2endTest : public ::testing::Test {
     const int tag_;
     std::vector<grpc_op> ops_;
     std::vector<std::unique_ptr<Thing>> things_;
+    CqVerifier* const cq_verifier_;
   };
 
   // Wrapper around a grpc_call.
@@ -428,16 +449,18 @@ class CoreEnd2endTest : public ::testing::Test {
   // Wrapped by IncomingCall for server calls.
   class Call {
    public:
-    explicit Call(grpc_call* call) : call_(call) {}
+    Call(grpc_call* call, CoreEnd2endTest* test) : call_(call), test_(test) {}
     Call(const Call&) = delete;
     Call& operator=(const Call&) = delete;
-    Call(Call&& other) noexcept : call_(std::exchange(other.call_, nullptr)) {}
+    Call(Call&& other) noexcept
+        : call_(std::exchange(other.call_, nullptr)),
+          test_(std::exchange(other.test_, nullptr)) {}
     ~Call() {
       if (call_ != nullptr) grpc_call_unref(call_);
     }
     // Construct a batch with a tag - upon destruction of the BatchBuilder the
     // operation will occur.
-    BatchBuilder NewBatch(int tag) { return BatchBuilder(call_, tag); }
+    BatchBuilder NewBatch(int tag) { return BatchBuilder(call_, test_, tag); }
     // Cancel the call
     void Cancel() { grpc_call_cancel(call_, nullptr); }
     void CancelWithStatus(grpc_status_code status, const char* message) {
@@ -472,6 +495,7 @@ class CoreEnd2endTest : public ::testing::Test {
 
    private:
     grpc_call* call_ = nullptr;
+    CoreEnd2endTest* test_;
   };
 
   // Wrapper around a server call.
@@ -520,7 +544,7 @@ class CoreEnd2endTest : public ::testing::Test {
 
    private:
     struct Impl {
-      Impl() {
+      explicit Impl(CoreEnd2endTest* test) : call(nullptr, test) {
         grpc_call_details_init(&call_details);
         grpc_metadata_array_init(&request_metadata);
       }
@@ -528,7 +552,7 @@ class CoreEnd2endTest : public ::testing::Test {
         grpc_call_details_destroy(&call_details);
         grpc_metadata_array_destroy(&request_metadata);
       }
-      Call call{nullptr};
+      Call call;
       grpc_call_details call_details;
       grpc_metadata_array request_metadata;
     };
@@ -555,7 +579,7 @@ class CoreEnd2endTest : public ::testing::Test {
   // Expect a tag with some result.
   void Expect(int tag, ExpectedResult result, SourceLocation whence = {}) {
     expectations_++;
-    cq_verifier().Expect(CqVerifier::tag(tag), result, whence);
+    cq_verifier().Expect(CqVerifier::tag(tag), std::move(result), whence);
   }
   // Step the system until expectations are met or until timeout is reached.
   // If there are no expectations logged, then step for 1 second and verify that
@@ -567,7 +591,10 @@ class CoreEnd2endTest : public ::testing::Test {
       return;
     }
     expectations_ = 0;
-    cq_verifier().Verify(timeout.value_or(Duration::Seconds(10)), whence);
+    cq_verifier().Verify(
+        timeout.value_or(g_is_fuzzing_core_e2e_tests ? Duration::Minutes(10)
+                                                     : Duration::Seconds(10)),
+        whence);
   }
 
   // Initialize the client.
@@ -688,8 +715,8 @@ class CoreEnd2endTest : public ::testing::Test {
       fixture();  // ensure cq_ present
       cq_verifier_ = absl::make_unique<CqVerifier>(
           cq_,
-          crash_on_step_failure_ ? CqVerifier::FailUsingGprCrash
-                                 : CqVerifier::FailUsingGtestFail,
+          g_is_fuzzing_core_e2e_tests ? CqVerifier::FailUsingGprCrashWithStdio
+                                      : CqVerifier::FailUsingGprCrash,
           std::move(step_fn_));
     }
     return *cq_verifier_;
@@ -703,7 +730,6 @@ class CoreEnd2endTest : public ::testing::Test {
   std::unique_ptr<CqVerifier> cq_verifier_;
   int expectations_ = 0;
   bool initialized_ = false;
-  bool crash_on_step_failure_ = false;
   absl::AnyInvocable<void()> post_grpc_init_func_ = []() {};
   absl::AnyInvocable<void(
       grpc_event_engine::experimental::EventEngine::Duration) const>
@@ -796,8 +822,6 @@ class CoreEnd2endTestRegistry {
   std::map<absl::string_view, std::map<absl::string_view, MakeTestFn>>
       tests_by_suite_;
 };
-
-extern bool g_is_fuzzing_core_e2e_tests;
 
 }  // namespace grpc_core
 

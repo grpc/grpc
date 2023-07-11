@@ -32,6 +32,7 @@ import grpc
 
 from framework import xds_k8s_testcase
 from framework import xds_url_map_test_resources
+from framework.helpers import grpc as helpers_grpc
 from framework.helpers import retryers
 from framework.helpers import skips
 from framework.infrastructure import k8s
@@ -43,14 +44,14 @@ flags.adopt_module_key_flags(xds_k8s_testcase)
 flags.adopt_module_key_flags(xds_url_map_test_resources)
 
 # Define urlMap specific flags
-QPS = flags.DEFINE_integer('qps', default=25, help='The QPS client is sending')
+QPS = flags.DEFINE_integer("qps", default=25, help="The QPS client is sending")
 
 # Test configs
 _URL_MAP_PROPAGATE_TIMEOUT_SEC = 600
 # With the per-run IAM change, the first xDS response has a several minutes
 # delay. We want to increase the interval, reduce the log spam.
 _URL_MAP_PROPAGATE_CHECK_INTERVAL_SEC = 15
-URL_MAP_TESTCASE_FILE_SUFFIX = '_test.py'
+URL_MAP_TESTCASE_FILE_SUFFIX = "_test.py"
 _CLIENT_CONFIGURE_WAIT_SEC = 2
 
 # Type aliases
@@ -63,14 +64,15 @@ JsonType = Any
 _timedelta = datetime.timedelta
 
 # ProtoBuf translatable RpcType enums
-RpcTypeUnaryCall = 'UNARY_CALL'
-RpcTypeEmptyCall = 'EMPTY_CALL'
+RpcTypeUnaryCall = "UNARY_CALL"
+RpcTypeEmptyCall = "EMPTY_CALL"
 
 
-def _split_camel(s: str, delimiter: str = '-') -> str:
+def _split_camel(s: str, delimiter: str = "-") -> str:
     """Turn camel case name to snake-case-like name."""
-    return ''.join(delimiter + c.lower() if c.isupper() else c
-                   for c in s).lstrip(delimiter)
+    return "".join(
+        delimiter + c.lower() if c.isupper() else c for c in s
+    ).lstrip(delimiter)
 
 
 class DumpedXdsConfig(dict):
@@ -88,59 +90,75 @@ class DumpedXdsConfig(dict):
         self.cds = []
         self.eds = []
         self.endpoints = []
-        for xds_config in self.get('xdsConfig', []):
+        for xds_config in self.get("xdsConfig", []):
             try:
-                if 'listenerConfig' in xds_config:
-                    self.lds = xds_config['listenerConfig']['dynamicListeners'][
-                        0]['activeState']['listener']
-                elif 'routeConfig' in xds_config:
-                    self.rds = xds_config['routeConfig']['dynamicRouteConfigs'][
-                        0]['routeConfig']
-                    self.rds_version = xds_config['routeConfig'][
-                        'dynamicRouteConfigs'][0]['versionInfo']
-                elif 'clusterConfig' in xds_config:
-                    for cluster in xds_config['clusterConfig'][
-                            'dynamicActiveClusters']:
-                        self.cds.append(cluster['cluster'])
-                elif 'endpointConfig' in xds_config:
-                    for endpoint in xds_config['endpointConfig'][
-                            'dynamicEndpointConfigs']:
-                        self.eds.append(endpoint['endpointConfig'])
+                if "listenerConfig" in xds_config:
+                    self.lds = xds_config["listenerConfig"]["dynamicListeners"][
+                        0
+                    ]["activeState"]["listener"]
+                elif "routeConfig" in xds_config:
+                    self.rds = xds_config["routeConfig"]["dynamicRouteConfigs"][
+                        0
+                    ]["routeConfig"]
+                    self.rds_version = xds_config["routeConfig"][
+                        "dynamicRouteConfigs"
+                    ][0]["versionInfo"]
+                elif "clusterConfig" in xds_config:
+                    for cluster in xds_config["clusterConfig"][
+                        "dynamicActiveClusters"
+                    ]:
+                        self.cds.append(cluster["cluster"])
+                elif "endpointConfig" in xds_config:
+                    for endpoint in xds_config["endpointConfig"][
+                        "dynamicEndpointConfigs"
+                    ]:
+                        self.eds.append(endpoint["endpointConfig"])
             # TODO(lidiz) reduce the catch to LookupError
             except Exception as e:  # pylint: disable=broad-except
-                logging.debug('Parsing dumped xDS config failed with %s: %s',
-                              type(e), e)
-        for generic_xds_config in self.get('genericXdsConfigs', []):
+                logging.debug(
+                    "Parsing dumped xDS config failed with %s: %s", type(e), e
+                )
+        for generic_xds_config in self.get("genericXdsConfigs", []):
             try:
-                if re.search(r'\.Listener$', generic_xds_config['typeUrl']):
+                if re.search(r"\.Listener$", generic_xds_config["typeUrl"]):
                     self.lds = generic_xds_config["xdsConfig"]
-                elif re.search(r'\.RouteConfiguration$',
-                               generic_xds_config['typeUrl']):
+                elif re.search(
+                    r"\.RouteConfiguration$", generic_xds_config["typeUrl"]
+                ):
                     self.rds = generic_xds_config["xdsConfig"]
                     self.rds_version = generic_xds_config["versionInfo"]
-                elif re.search(r'\.Cluster$', generic_xds_config['typeUrl']):
+                elif re.search(r"\.Cluster$", generic_xds_config["typeUrl"]):
                     self.cds.append(generic_xds_config["xdsConfig"])
-                elif re.search(r'\.ClusterLoadAssignment$',
-                               generic_xds_config['typeUrl']):
+                elif re.search(
+                    r"\.ClusterLoadAssignment$", generic_xds_config["typeUrl"]
+                ):
                     self.eds.append(generic_xds_config["xdsConfig"])
             # TODO(lidiz) reduce the catch to LookupError
             except Exception as e:  # pylint: disable=broad-except
-                logging.debug('Parsing dumped xDS config failed with %s: %s',
-                              type(e), e)
+                logging.debug(
+                    "Parsing dumped xDS config failed with %s: %s", type(e), e
+                )
         for endpoint_config in self.eds:
-            for endpoint in endpoint_config.get('endpoints', {}):
-                for lb_endpoint in endpoint.get('lbEndpoints', {}):
+            for endpoint in endpoint_config.get("endpoints", {}):
+                for lb_endpoint in endpoint.get("lbEndpoints", {}):
                     try:
-                        if lb_endpoint['healthStatus'] == 'HEALTHY':
+                        if lb_endpoint["healthStatus"] == "HEALTHY":
                             self.endpoints.append(
-                                '%s:%s' % (lb_endpoint['endpoint']['address']
-                                           ['socketAddress']['address'],
-                                           lb_endpoint['endpoint']['address']
-                                           ['socketAddress']['portValue']))
+                                "%s:%s"
+                                % (
+                                    lb_endpoint["endpoint"]["address"][
+                                        "socketAddress"
+                                    ]["address"],
+                                    lb_endpoint["endpoint"]["address"][
+                                        "socketAddress"
+                                    ]["portValue"],
+                                )
+                            )
                     # TODO(lidiz) reduce the catch to LookupError
                     except Exception as e:  # pylint: disable=broad-except
-                        logging.debug('Parse endpoint failed with %s: %s',
-                                      type(e), e)
+                        logging.debug(
+                            "Parse endpoint failed with %s: %s", type(e), e
+                        )
 
     def __str__(self) -> str:
         return json.dumps(self, indent=2)
@@ -151,6 +169,7 @@ class RpcDistributionStats:
 
     Feel free to add more pre-compute fields.
     """
+
     num_failures: int
     num_oks: int
     default_service_rpc_count: int
@@ -161,7 +180,7 @@ class RpcDistributionStats:
     empty_call_alternative_service_rpc_count: int
 
     def __init__(self, json_lb_stats: JsonType):
-        self.num_failures = json_lb_stats.get('numFailures', 0)
+        self.num_failures = json_lb_stats.get("numFailures", 0)
 
         self.num_peers = 0
         self.num_oks = 0
@@ -173,25 +192,31 @@ class RpcDistributionStats:
         self.empty_call_alternative_service_rpc_count = 0
         self.raw = json_lb_stats
 
-        if 'rpcsByPeer' in json_lb_stats:
-            self.num_peers = len(json_lb_stats['rpcsByPeer'])
-        if 'rpcsByMethod' in json_lb_stats:
-            for rpc_type in json_lb_stats['rpcsByMethod']:
-                for peer in json_lb_stats['rpcsByMethod'][rpc_type][
-                        'rpcsByPeer']:
-                    count = json_lb_stats['rpcsByMethod'][rpc_type][
-                        'rpcsByPeer'][peer]
+        if "rpcsByPeer" in json_lb_stats:
+            self.num_peers = len(json_lb_stats["rpcsByPeer"])
+        if "rpcsByMethod" in json_lb_stats:
+            for rpc_type in json_lb_stats["rpcsByMethod"]:
+                for peer in json_lb_stats["rpcsByMethod"][rpc_type][
+                    "rpcsByPeer"
+                ]:
+                    count = json_lb_stats["rpcsByMethod"][rpc_type][
+                        "rpcsByPeer"
+                    ][peer]
                     self.num_oks += count
-                    if rpc_type == 'UnaryCall':
-                        if 'alternative' in peer:
-                            self.unary_call_alternative_service_rpc_count = count
+                    if rpc_type == "UnaryCall":
+                        if "alternative" in peer:
+                            self.unary_call_alternative_service_rpc_count = (
+                                count
+                            )
                             self.alternative_service_rpc_count += count
                         else:
                             self.unary_call_default_service_rpc_count = count
                             self.default_service_rpc_count += count
                     else:
-                        if 'alternative' in peer:
-                            self.empty_call_alternative_service_rpc_count = count
+                        if "alternative" in peer:
+                            self.empty_call_alternative_service_rpc_count = (
+                                count
+                            )
                             self.alternative_service_rpc_count += count
                         else:
                             self.empty_call_default_service_rpc_count = count
@@ -201,6 +226,7 @@ class RpcDistributionStats:
 @dataclass
 class ExpectedResult:
     """Describes the expected result of assertRpcStatusCode method below."""
+
     rpc_type: str = RpcTypeUnaryCall
     status_code: grpc.StatusCode = grpc.StatusCode.OK
     ratio: float = 1
@@ -217,26 +243,28 @@ class _MetaXdsUrlMapTestCase(type):
     _started_test_cases = set()
     _finished_test_cases = set()
 
-    def __new__(cls, name: str, bases: Iterable[Any],
-                attrs: Mapping[str, Any]) -> Any:
+    def __new__(
+        cls, name: str, bases: Iterable[Any], attrs: Mapping[str, Any]
+    ) -> Any:
         # Hand over the tracking objects
-        attrs['test_case_classes'] = cls._test_case_classes
-        attrs['test_case_names'] = cls._test_case_names
-        attrs['started_test_cases'] = cls._started_test_cases
-        attrs['finished_test_cases'] = cls._finished_test_cases
+        attrs["test_case_classes"] = cls._test_case_classes
+        attrs["test_case_names"] = cls._test_case_names
+        attrs["started_test_cases"] = cls._started_test_cases
+        attrs["finished_test_cases"] = cls._finished_test_cases
         # Handle the test name reflection
-        module_name = os.path.split(
-            sys.modules[attrs['__module__']].__file__)[-1]
+        module_name = os.path.split(sys.modules[attrs["__module__"]].__file__)[
+            -1
+        ]
         if module_name.endswith(URL_MAP_TESTCASE_FILE_SUFFIX):
-            module_name = module_name.replace(URL_MAP_TESTCASE_FILE_SUFFIX, '')
-        attrs['short_module_name'] = module_name.replace('_', '-')
+            module_name = module_name.replace(URL_MAP_TESTCASE_FILE_SUFFIX, "")
+        attrs["short_module_name"] = module_name.replace("_", "-")
         # Create the class and track
         new_class = type.__new__(cls, name, bases, attrs)
-        if name.startswith('Test'):
+        if name.startswith("Test"):
             cls._test_case_names.add(name)
             cls._test_case_classes.append(new_class)
         else:
-            logging.debug('Skipping test case class: %s', name)
+            logging.debug("Skipping test case class: %s", name)
         return new_class
 
 
@@ -287,8 +315,8 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
     @staticmethod
     @abc.abstractmethod
     def url_map_change(
-            host_rule: HostRule,
-            path_matcher: PathMatcher) -> Tuple[HostRule, PathMatcher]:
+        host_rule: HostRule, path_matcher: PathMatcher
+    ) -> Tuple[HostRule, PathMatcher]:
         """Updates the dedicated urlMap components for this test case.
 
         Each test case will have a dedicated HostRule, where the hostname is
@@ -326,8 +354,11 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
 
     @classmethod
     def hostname(cls):
-        return "%s.%s:%s" % (cls.short_module_name, _split_camel(
-            cls.__name__), GcpResourceManager().server_xds_port)
+        return "%s.%s:%s" % (
+            cls.short_module_name,
+            _split_camel(cls.__name__),
+            GcpResourceManager().server_xds_port,
+        )
 
     @classmethod
     def path_matcher_name(cls):
@@ -336,8 +367,8 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
 
     @classmethod
     def setUpClass(cls):
-        logging.info('----- Testing %s -----', cls.__name__)
-        logging.info('Logs timezone: %s', time.localtime().tm_zone)
+        logging.info("----- Testing %s -----", cls.__name__)
+        logging.info("Logs timezone: %s", time.localtime().tm_zone)
 
         # Raises unittest.SkipTest if given client/server/version does not
         # support current test case.
@@ -354,27 +385,31 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
 
         # Create the test case's own client runner with it's own namespace,
         # enables concurrent running with other test cases.
-        cls.test_client_runner = GcpResourceManager().create_test_client_runner(
+        cls.test_client_runner = (
+            GcpResourceManager().create_test_client_runner()
         )
         # Start the client, and allow the test to override the initial RPC config.
-        rpc, metadata = cls.client_init_config(rpc="UnaryCall,EmptyCall",
-                                               metadata="")
+        rpc, metadata = cls.client_init_config(
+            rpc="UnaryCall,EmptyCall", metadata=""
+        )
         cls.test_client = cls.test_client_runner.run(
-            server_target=f'xds:///{cls.hostname()}',
+            server_target=f"xds:///{cls.hostname()}",
             rpc=rpc,
             metadata=metadata,
             qps=QPS.value,
-            print_response=True)
+            print_response=True,
+        )
 
     @classmethod
     def cleanupAfterTests(cls):
-        logging.info('----- TestCase %s teardown -----', cls.__name__)
+        logging.info("----- TestCase %s teardown -----", cls.__name__)
         client_restarts: int = 0
         if cls.test_client_runner:
             try:
-                logging.debug('Getting pods restart times')
+                logging.debug("Getting pods restart times")
                 client_restarts = cls.test_client_runner.get_pod_restarts(
-                    cls.test_client_runner.deployment)
+                    cls.test_client_runner.deployment
+                )
             except (retryers.RetryError, k8s.NotFound) as e:
                 logging.exception(e)
 
@@ -385,23 +420,26 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
 
         # Graceful cleanup: try three times, and don't fail the test on
         # a cleanup failure.
-        retryer = retryers.constant_retryer(wait_fixed=_timedelta(seconds=10),
-                                            attempts=3,
-                                            log_level=logging.INFO)
+        retryer = retryers.constant_retryer(
+            wait_fixed=_timedelta(seconds=10),
+            attempts=3,
+            log_level=logging.INFO,
+        )
         try:
             retryer(cls._cleanup, cleanup_all)
         except retryers.RetryError:
-            logging.exception('Got error during teardown')
+            logging.exception("Got error during teardown")
         finally:
-            if hasattr(cls, 'test_client_runner') and cls.test_client_runner:
-                logging.info('----- Test client logs -----')
-                cls.test_client_runner.logs_explorer_link()
+            if hasattr(cls, "test_client_runner") and cls.test_client_runner:
+                logging.info("----- Test client logs -----")
+                cls.test_client_runner.logs_explorer_run_history_links()
 
             # Fail if any of the pods restarted.
             error_msg = (
-                'Client pods unexpectedly restarted'
-                f' {client_restarts} times during test.'
-                ' In most cases, this is caused by the test client app crash.')
+                "Client pods unexpectedly restarted"
+                f" {client_restarts} times during test."
+                " In most cases, this is caused by the test client app crash."
+            )
             assert client_restarts == 0, error_msg
 
     @classmethod
@@ -414,13 +452,16 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
     def _fetch_and_check_xds_config(self):
         # TODO(lidiz) find another way to store last seen xDS config
         # Cleanup state for this attempt
-        self._xds_json_config = None  # pylint: disable=attribute-defined-outside-init
+        # pylint: disable=attribute-defined-outside-init
+        self._xds_json_config = None
         # Fetch client config
         config = self.test_client.csds.fetch_client_status(
-            log_level=logging.INFO)
+            log_level=logging.INFO
+        )
         self.assertIsNotNone(config)
         # Found client config, test it.
-        self._xds_json_config = json_format.MessageToDict(config)  # pylint: disable=attribute-defined-outside-init
+        self._xds_json_config = json_format.MessageToDict(config)
+        # pylint: enable=attribute-defined-outside-init
         # Execute the child class provided validation logic
         self.xds_config_validate(DumpedXdsConfig(self._xds_json_config))
 
@@ -431,69 +472,94 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
         and yields clearer signal.
         """
         if result.failures or result.errors:
-            logging.info('Aborting %s', self.__class__.__name__)
+            logging.info("Aborting %s", self.__class__.__name__)
         else:
             super().run(result)
 
     def test_client_config(self):
         retryer = retryers.constant_retryer(
             wait_fixed=datetime.timedelta(
-                seconds=_URL_MAP_PROPAGATE_CHECK_INTERVAL_SEC),
+                seconds=_URL_MAP_PROPAGATE_CHECK_INTERVAL_SEC
+            ),
             timeout=datetime.timedelta(seconds=_URL_MAP_PROPAGATE_TIMEOUT_SEC),
             logger=logging,
-            log_level=logging.INFO)
+            log_level=logging.INFO,
+        )
         try:
             retryer(self._fetch_and_check_xds_config)
         finally:
             logging.info(
-                'latest xDS config:\n%s',
+                "latest xDS config:\n%s",
                 GcpResourceManager().td.compute.resource_pretty_format(
-                    self._xds_json_config))
+                    self._xds_json_config
+                ),
+            )
 
     def test_rpc_distribution(self):
         self.rpc_distribution_validate(self.test_client)
 
-    @staticmethod
-    def configure_and_send(test_client: XdsTestClient,
-                           *,
-                           rpc_types: Iterable[str],
-                           metadata: Optional[Iterable[Tuple[str, str,
-                                                             str]]] = None,
-                           app_timeout: Optional[int] = None,
-                           num_rpcs: int) -> RpcDistributionStats:
-        test_client.update_config.configure(rpc_types=rpc_types,
-                                            metadata=metadata,
-                                            app_timeout=app_timeout)
+    @classmethod
+    def configure_and_send(
+        cls,
+        test_client: XdsTestClient,
+        *,
+        rpc_types: Iterable[str],
+        metadata: Optional[Iterable[Tuple[str, str, str]]] = None,
+        app_timeout: Optional[int] = None,
+        num_rpcs: int,
+    ) -> RpcDistributionStats:
+        test_client.update_config.configure(
+            rpc_types=rpc_types, metadata=metadata, app_timeout=app_timeout
+        )
         # Configure RPC might race with get stats RPC on slower machines.
         time.sleep(_CLIENT_CONFIGURE_WAIT_SEC)
-        json_lb_stats = json_format.MessageToDict(
-            test_client.get_load_balancer_stats(num_rpcs=num_rpcs))
+        lb_stats = test_client.get_load_balancer_stats(num_rpcs=num_rpcs)
         logging.info(
-            'Received LoadBalancerStatsResponse from test client %s:\n%s',
-            test_client.hostname, json.dumps(json_lb_stats, indent=2))
-        return RpcDistributionStats(json_lb_stats)
+            "[%s] << Received LoadBalancerStatsResponse:\n%s",
+            test_client.hostname,
+            helpers_grpc.lb_stats_pretty(lb_stats),
+        )
+        return RpcDistributionStats(json_format.MessageToDict(lb_stats))
 
     def assertNumEndpoints(self, xds_config: DumpedXdsConfig, k: int) -> None:
         self.assertLen(
-            xds_config.endpoints, k,
-            f'insufficient endpoints in EDS: want={k} seen={xds_config.endpoints}'
+            xds_config.endpoints,
+            k,
+            (
+                "insufficient endpoints in EDS:"
+                f" want={k} seen={xds_config.endpoints}"
+            ),
         )
 
     def assertRpcStatusCode(  # pylint: disable=too-many-locals
-            self, test_client: XdsTestClient, *,
-            expected: Iterable[ExpectedResult], length: int,
-            tolerance: float) -> None:
+        self,
+        test_client: XdsTestClient,
+        *,
+        expected: Iterable[ExpectedResult],
+        length: int,
+        tolerance: float,
+    ) -> None:
         """Assert the distribution of RPC statuses over a period of time."""
         # Sending with pre-set QPS for a period of time
         before_stats = test_client.get_load_balancer_accumulated_stats()
         logging.info(
-            'Received LoadBalancerAccumulatedStatsResponse from test client %s: before:\n%s',
-            test_client.hostname, before_stats)
+            (
+                "Received LoadBalancerAccumulatedStatsResponse from test client"
+                " %s: before:\n%s"
+            ),
+            test_client.hostname,
+            helpers_grpc.accumulated_stats_pretty(before_stats),
+        )
         time.sleep(length)
         after_stats = test_client.get_load_balancer_accumulated_stats()
         logging.info(
-            'Received LoadBalancerAccumulatedStatsResponse from test client %s: after: \n%s',
-            test_client.hostname, after_stats)
+            (
+                "Received LoadBalancerAccumulatedStatsResponse from test client"
+                " %s: after: \n%s"
+            ),
+            test_client.hostname,
+            helpers_grpc.accumulated_stats_pretty(after_stats),
+        )
 
         # Validate the diff
         for expected_result in expected:
@@ -508,21 +574,29 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
             seen = seen_after - seen_before
             # Compute total number of RPC started
             stats_per_method_after = after_stats.stats_per_method.get(
-                rpc, {}).result.items()
+                rpc, {}
+            ).result.items()
             total_after = sum(
-                x[1] for x in stats_per_method_after)  # (status_code, count)
+                x[1] for x in stats_per_method_after
+            )  # (status_code, count)
             stats_per_method_before = before_stats.stats_per_method.get(
-                rpc, {}).result.items()
+                rpc, {}
+            ).result.items()
             total_before = sum(
-                x[1] for x in stats_per_method_before)  # (status_code, count)
+                x[1] for x in stats_per_method_before
+            )  # (status_code, count)
             total = total_after - total_before
             # Compute and validate the number
             want = total * expected_result.ratio
             diff_ratio = abs(seen - want) / total
             self.assertLessEqual(
-                diff_ratio, tolerance,
-                (f'Expect rpc [{rpc}] to return '
-                 f'[{expected_result.status_code}] at '
-                 f'{expected_result.ratio:.2f} ratio: '
-                 f'seen={seen} want={want} total={total} '
-                 f'diff_ratio={diff_ratio:.4f} > {tolerance:.2f}'))
+                diff_ratio,
+                tolerance,
+                (
+                    f"Expect rpc [{rpc}] to return "
+                    f"[{expected_result.status_code}] at "
+                    f"{expected_result.ratio:.2f} ratio: "
+                    f"seen={seen} want={want} total={total} "
+                    f"diff_ratio={diff_ratio:.4f} > {tolerance:.2f}"
+                ),
+            )

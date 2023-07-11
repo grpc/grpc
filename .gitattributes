@@ -16,6 +16,7 @@ grpc.gyp linguist-generated=true
 grpc.def linguist-generated=true
 package.xml linguist-generated=true
 binding.gyp linguist-generated=true
+Package.swift linguist-generated=true
 src/python/grpcio/grpc_core_dependencies.py linguist-generated=true
 src/ruby/ext/grpc/rb_grpc_imports.generated.h linguist-generated=true
 src/ruby/ext/grpc/rb_grpc_imports.generated.c linguist-generated=true

@@ -19,30 +19,30 @@ import sys
 import glob
 import yaml
 
-os.chdir(os.path.dirname(sys.argv[0]) + '/../..')
+os.chdir(os.path.dirname(sys.argv[0]) + "/../..")
 
 out = {}
 
-out['libs'] = [{
-    #TODO @donnadionne: extracting the list of source files from bazel build to reduce duplication
-    'name':
-        're2',
-    'build':
-        'private',
-    'language':
-        'c',
-    'secure':
-        False,
-    'src':
-        sorted(
-            glob.glob('third_party/re2/re2/*.cc') + [
-                "third_party/re2/util/pcre.cc", "third_party/re2/util/rune.cc",
-                "third_party/re2/util/strutil.cc"
-            ]),
-    'headers':
-        sorted(
-            glob.glob('third_party/re2/re2/*.h') +
-            glob.glob('third_party/re2/util/*.h')),
-}]
+out["libs"] = [
+    {
+        # TODO @donnadionne: extracting the list of source files from bazel build to reduce duplication
+        "name": "re2",
+        "build": "private",
+        "language": "c",
+        "secure": False,
+        "src": sorted(
+            glob.glob("third_party/re2/re2/*.cc")
+            + [
+                "third_party/re2/util/pcre.cc",
+                "third_party/re2/util/rune.cc",
+                "third_party/re2/util/strutil.cc",
+            ]
+        ),
+        "headers": sorted(
+            glob.glob("third_party/re2/re2/*.h")
+            + glob.glob("third_party/re2/util/*.h")
+        ),
+    }
+]
 
 print(yaml.dump(out))

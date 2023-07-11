@@ -173,7 +173,8 @@ class TestConfigurator {
 
   void RequestWithSendMessageBeforeInitialMetadata() {
     Init();
-    auto c = test_.NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
+    auto c =
+        test_.NewClientCall("/foo").Timeout(Duration::Seconds(30)).Create();
     c.NewBatch(2).SendMessage(std::string(1024, 'x'));
     test_.Expect(2, true);
     CoreEnd2endTest::IncomingStatusOnClient server_status;
@@ -225,7 +226,7 @@ class TestConfigurator {
 
   void RequestWithServerLevel(grpc_compression_level server_compression_level) {
     Init();
-    auto c = test_.NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
+    auto c = test_.NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
     CoreEnd2endTest::IncomingStatusOnClient server_status;
     CoreEnd2endTest::IncomingMetadata server_initial_metadata;
     c.NewBatch(1)

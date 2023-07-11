@@ -14,7 +14,6 @@
 """
 Run xDS Test Client on Kubernetes.
 """
-import datetime
 import logging
 from typing import List, Optional
 
@@ -52,36 +51,39 @@ class KubernetesServerRunner(k8s_base_runner.KubernetesBaseRunner):
     service: Optional[k8s.V1Service] = None
 
     def __init__(  # pylint: disable=too-many-locals
-            self,
-            k8s_namespace: k8s.KubernetesNamespace,
-            *,
-            deployment_name: str,
-            image_name: str,
-            td_bootstrap_image: str,
-            network: str = 'default',
-            xds_server_uri: Optional[str] = None,
-            gcp_api_manager: gcp.api.GcpApiManager,
-            gcp_project: str,
-            gcp_service_account: str,
-            service_account_name: Optional[str] = None,
-            service_name: Optional[str] = None,
-            neg_name: Optional[str] = None,
-            deployment_template: str = 'server.deployment.yaml',
-            service_account_template: str = 'service-account.yaml',
-            service_template: str = 'server.service.yaml',
-            reuse_service: bool = False,
-            reuse_namespace: bool = False,
-            namespace_template: Optional[str] = None,
-            debug_use_port_forwarding: bool = False,
-            enable_workload_identity: bool = True):
-        super().__init__(k8s_namespace,
-                         deployment_name=deployment_name,
-                         image_name=image_name,
-                         gcp_project=gcp_project,
-                         gcp_service_account=gcp_service_account,
-                         gcp_ui_url=gcp_api_manager.gcp_ui_url,
-                         namespace_template=namespace_template,
-                         reuse_namespace=reuse_namespace)
+        self,
+        k8s_namespace: k8s.KubernetesNamespace,
+        *,
+        deployment_name: str,
+        image_name: str,
+        td_bootstrap_image: str,
+        network: str = "default",
+        xds_server_uri: Optional[str] = None,
+        gcp_api_manager: gcp.api.GcpApiManager,
+        gcp_project: str,
+        gcp_service_account: str,
+        service_account_name: Optional[str] = None,
+        service_name: Optional[str] = None,
+        neg_name: Optional[str] = None,
+        deployment_template: str = "server.deployment.yaml",
+        service_account_template: str = "service-account.yaml",
+        service_template: str = "server.service.yaml",
+        reuse_service: bool = False,
+        reuse_namespace: bool = False,
+        namespace_template: Optional[str] = None,
+        debug_use_port_forwarding: bool = False,
+        enable_workload_identity: bool = True,
+    ):
+        super().__init__(
+            k8s_namespace,
+            deployment_name=deployment_name,
+            image_name=image_name,
+            gcp_project=gcp_project,
+            gcp_service_account=gcp_service_account,
+            gcp_ui_url=gcp_api_manager.gcp_ui_url,
+            namespace_template=namespace_template,
+            reuse_namespace=reuse_namespace,
+        )
 
         # Settings
         self.deployment_template = deployment_template
@@ -91,8 +93,9 @@ class KubernetesServerRunner(k8s_base_runner.KubernetesBaseRunner):
         self.enable_workload_identity = enable_workload_identity
         self.debug_use_port_forwarding = debug_use_port_forwarding
         # GCP Network Endpoint Group.
-        self.gcp_neg_name = neg_name or (f'{self.k8s_namespace.name}-'
-                                         f'{self.service_name}')
+        self.gcp_neg_name = neg_name or (
+            f"{self.k8s_namespace.name}-{self.service_name}"
+        )
 
         # Used by the TD bootstrap generator.
         self.td_bootstrap_image = td_bootstrap_image
@@ -109,13 +112,14 @@ class KubernetesServerRunner(k8s_base_runner.KubernetesBaseRunner):
             self.gcp_iam = gcp.iam.IamV1(gcp_api_manager, gcp_project)
 
     def run(  # pylint: disable=arguments-differ,too-many-branches
-            self,
-            *,
-            test_port: int = DEFAULT_TEST_PORT,
-            maintenance_port: Optional[int] = None,
-            secure_mode: bool = False,
-            replica_count: int = 1,
-            log_to_stdout: bool = False) -> List[XdsTestServer]:
+        self,
+        *,
+        test_port: int = DEFAULT_TEST_PORT,
+        maintenance_port: Optional[int] = None,
+        secure_mode: bool = False,
+        replica_count: int = 1,
+        log_to_stdout: bool = False,
+    ) -> List[XdsTestServer]:
         if not maintenance_port:
             maintenance_port = self._get_default_maintenance_port(secure_mode)
 
@@ -124,21 +128,32 @@ class KubernetesServerRunner(k8s_base_runner.KubernetesBaseRunner):
         # maintenance services can be reached independently of the security
         # configuration under test.
         if secure_mode and maintenance_port == test_port:
-            raise ValueError('port and maintenance_port must be different '
-                             'when running test server in secure mode')
+            raise ValueError(
+                "port and maintenance_port must be different "
+                "when running test server in secure mode"
+            )
         # To avoid bugs with comparing wrong types.
-        if not (isinstance(test_port, int) and
-                isinstance(maintenance_port, int)):
-            raise TypeError('Port numbers must be integer')
+        if not (
+            isinstance(test_port, int) and isinstance(maintenance_port, int)
+        ):
+            raise TypeError("Port numbers must be integer")
 
         if secure_mode and not self.enable_workload_identity:
-            raise ValueError('Secure mode requires Workload Identity enabled.')
+            raise ValueError("Secure mode requires Workload Identity enabled.")
 
         logger.info(
-            'Deploying xDS test server "%s" to k8s namespace %s: test_port=%s '
-            'maintenance_port=%s secure_mode=%s replica_count=%s',
-            self.deployment_name, self.k8s_namespace.name, test_port,
-            maintenance_port, secure_mode, replica_count)
+            (
+                'Deploying xDS test server "%s" to k8s namespace %s:'
+                " test_port=%s maintenance_port=%s secure_mode=%s"
+                " replica_count=%s"
+            ),
+            self.deployment_name,
+            self.k8s_namespace.name,
+            test_port,
+            maintenance_port,
+            secure_mode,
+            replica_count,
+        )
         super().run()
 
         # Reuse existing if requested, create a new deployment when missing.
@@ -152,7 +167,8 @@ class KubernetesServerRunner(k8s_base_runner.KubernetesBaseRunner):
                 namespace_name=self.k8s_namespace.name,
                 deployment_name=self.deployment_name,
                 neg_name=self.gcp_neg_name,
-                test_port=test_port)
+                test_port=test_port,
+            )
         self._wait_service_neg(self.service_name, test_port)
 
         if self.enable_workload_identity:
@@ -161,14 +177,16 @@ class KubernetesServerRunner(k8s_base_runner.KubernetesBaseRunner):
             self._grant_workload_identity_user(
                 gcp_iam=self.gcp_iam,
                 gcp_service_account=self.gcp_service_account,
-                service_account_name=self.service_account_name)
+                service_account_name=self.service_account_name,
+            )
 
             # Create service account
             self.service_account = self._create_service_account(
                 self.service_account_template,
                 service_account_name=self.service_account_name,
                 namespace_name=self.k8s_namespace.name,
-                gcp_service_account=self.gcp_service_account)
+                gcp_service_account=self.gcp_service_account,
+            )
 
         # Always create a new deployment
         self.deployment = self._create_deployment(
@@ -183,10 +201,12 @@ class KubernetesServerRunner(k8s_base_runner.KubernetesBaseRunner):
             replica_count=replica_count,
             test_port=test_port,
             maintenance_port=maintenance_port,
-            secure_mode=secure_mode)
+            secure_mode=secure_mode,
+        )
 
-        pod_names = self._wait_deployment_pod_count(self.deployment,
-                                                    replica_count)
+        pod_names = self._wait_deployment_pod_count(
+            self.deployment, replica_count
+        )
         pods = []
         for pod_name in pod_names:
             pod = self._wait_pod_started(pod_name)
@@ -195,17 +215,21 @@ class KubernetesServerRunner(k8s_base_runner.KubernetesBaseRunner):
                 self._start_logging_pod(pod, log_to_stdout=log_to_stdout)
 
         # Verify the deployment reports all pods started as well.
-        self._wait_deployment_with_available_replicas(self.deployment_name,
-                                                      replica_count)
-        self.time_start_completed = datetime.datetime.now()
+        self._wait_deployment_with_available_replicas(
+            self.deployment_name, replica_count
+        )
+        self._start_completed()
 
         servers: List[XdsTestServer] = []
         for pod in pods:
             servers.append(
-                self._xds_test_server_for_pod(pod,
-                                              test_port=test_port,
-                                              maintenance_port=maintenance_port,
-                                              secure_mode=secure_mode))
+                self._xds_test_server_for_pod(
+                    pod,
+                    test_port=test_port,
+                    maintenance_port=maintenance_port,
+                    secure_mode=secure_mode,
+                )
+            )
         return servers
 
     def _get_default_maintenance_port(self, secure_mode: bool) -> int:
@@ -215,12 +239,14 @@ class KubernetesServerRunner(k8s_base_runner.KubernetesBaseRunner):
             maintenance_port = self.DEFAULT_SECURE_MODE_MAINTENANCE_PORT
         return maintenance_port
 
-    def _xds_test_server_for_pod(self,
-                                 pod: k8s.V1Pod,
-                                 *,
-                                 test_port: int = DEFAULT_TEST_PORT,
-                                 maintenance_port: Optional[int] = None,
-                                 secure_mode: bool = False) -> XdsTestServer:
+    def _xds_test_server_for_pod(
+        self,
+        pod: k8s.V1Pod,
+        *,
+        test_port: int = DEFAULT_TEST_PORT,
+        maintenance_port: Optional[int] = None,
+        secure_mode: bool = False,
+    ) -> XdsTestServer:
         if maintenance_port is None:
             maintenance_port = self._get_default_maintenance_port(secure_mode)
 
@@ -230,15 +256,18 @@ class KubernetesServerRunner(k8s_base_runner.KubernetesBaseRunner):
         else:
             rpc_port, rpc_host = maintenance_port, None
 
-        return XdsTestServer(ip=pod.status.pod_ip,
-                             rpc_port=test_port,
-                             hostname=pod.metadata.name,
-                             maintenance_port=rpc_port,
-                             secure_mode=secure_mode,
-                             rpc_host=rpc_host)
+        return XdsTestServer(
+            ip=pod.status.pod_ip,
+            rpc_port=test_port,
+            hostname=pod.metadata.name,
+            maintenance_port=rpc_port,
+            secure_mode=secure_mode,
+            rpc_host=rpc_host,
+        )
 
     # pylint: disable=arguments-differ
     def cleanup(self, *, force=False, force_namespace=False):
+        # TODO(sergiitk): rename to stop().
         try:
             if self.deployment or force:
                 self._delete_deployment(self.deployment_name)
@@ -246,25 +275,26 @@ class KubernetesServerRunner(k8s_base_runner.KubernetesBaseRunner):
             if (self.service and not self.reuse_service) or force:
                 self._delete_service(self.service_name)
                 self.service = None
-            if (self.enable_workload_identity and
-                (self.service_account or force)):
+            if self.enable_workload_identity and (
+                self.service_account or force
+            ):
                 self._revoke_workload_identity_user(
                     gcp_iam=self.gcp_iam,
                     gcp_service_account=self.gcp_service_account,
-                    service_account_name=self.service_account_name)
+                    service_account_name=self.service_account_name,
+                )
                 self._delete_service_account(self.service_account_name)
                 self.service_account = None
             self._cleanup_namespace(force=(force_namespace and force))
         finally:
-            self.time_stopped = datetime.datetime.now()
+            self._stop()
 
     # pylint: enable=arguments-differ
 
     @classmethod
-    def make_namespace_name(cls,
-                            resource_prefix: str,
-                            resource_suffix: str,
-                            name: str = 'server') -> str:
+    def make_namespace_name(
+        cls, resource_prefix: str, resource_suffix: str, name: str = "server"
+    ) -> str:
         """A helper to make consistent XdsTestServer kubernetes namespace name
         for given resource prefix and suffix.
 

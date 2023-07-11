@@ -30,38 +30,38 @@ from tests_aio.unit._test_base import AioTestBase
 from tests_aio.unit._test_server import TestServiceServicer
 from tests_aio.unit._test_server import start_test_server
 
-_REQUEST = b'\x03\x07'
-_TEST_METHOD = '/test/UnaryUnary'
+_REQUEST = b"\x03\x07"
+_TEST_METHOD = "/test/UnaryUnary"
 
 
 class TestContextPeer(AioTestBase):
-
     async def test_peer(self):
-
         @grpc.unary_unary_rpc_method_handler
-        async def check_peer_unary_unary(request: bytes,
-                                         context: aio.ServicerContext):
+        async def check_peer_unary_unary(
+            request: bytes, context: aio.ServicerContext
+        ):
             self.assertEqual(_REQUEST, request)
             # The peer address could be ipv4 or ipv6
-            self.assertIn('ip', context.peer())
+            self.assertIn("ip", context.peer())
             return request
 
         # Creates a server
         server = aio.server()
         handlers = grpc.method_handlers_generic_handler(
-            'test', {'UnaryUnary': check_peer_unary_unary})
+            "test", {"UnaryUnary": check_peer_unary_unary}
+        )
         server.add_generic_rpc_handlers((handlers,))
-        port = server.add_insecure_port('[::]:0')
+        port = server.add_insecure_port("[::]:0")
         await server.start()
 
         # Creates a channel
-        async with aio.insecure_channel('localhost:%d' % port) as channel:
+        async with aio.insecure_channel("localhost:%d" % port) as channel:
             response = await channel.unary_unary(_TEST_METHOD)(_REQUEST)
             self.assertEqual(_REQUEST, response)
 
         await server.stop(None)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     unittest.main(verbosity=2)

@@ -654,7 +654,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   // Constructs an EDS resource.
   ClusterLoadAssignment BuildEdsResource(
       const EdsResourceArgs& args,
-      const char* eds_service_name = kDefaultEdsServiceName);
+      absl::string_view eds_service_name = kDefaultEdsServiceName);
 
   //
   // Backend management
@@ -1073,6 +1073,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
     GPR_ASSERT(p >= 0 && p <= 1);
     size_t num_rpcs =
         ceil(p * (1 - p) * 5.00 * 5.00 / error_tolerance / error_tolerance);
+    num_rpcs += 1000;  // Add 1K as a buffer to avoid flakiness.
     gpr_log(GPR_INFO,
             "Sending %" PRIuPTR
             " RPCs for percentage=%.3f error_tolerance=%.3f",

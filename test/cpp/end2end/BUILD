@@ -1008,3 +1008,21 @@ grpc_cc_test(
         "//test/cpp/util:test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "resource_quota_end2end_stress_test",
+    srcs = ["resource_quota_end2end_stress_test.cc"],
+    external_deps = [
+        "gtest",
+        "absl/strings",
+        "absl/time",
+    ],
+    deps = [
+        "//:grpc++",
+        "//src/core:experiments",
+        "//src/proto/grpc/testing:echo_messages_proto",
+        "//src/proto/grpc/testing:echo_proto",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_util",
+    ],
+)

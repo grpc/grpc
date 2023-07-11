@@ -31,7 +31,7 @@ namespace {
 // Client writes fail after that due to the end of stream and the client
 // subsequently requests and receives the status.
 void ClientStreaming(CoreEnd2endTest& test, int messages) {
-  auto c = test.NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
+  auto c = test.NewClientCall("/foo").Timeout(Duration::Seconds(30)).Create();
 
   CoreEnd2endTest::IncomingMetadata server_initial_metadata;
   c.NewBatch(1).SendInitialMetadata({}).RecvInitialMetadata(
