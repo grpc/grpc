@@ -2798,7 +2798,7 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
   Latch<grpc_polling_entity> polling_entity_;
   Pipe<MessageHandle> client_to_server_messages_{arena()};
   Pipe<MessageHandle> server_to_client_messages_{arena()};
-  bool is_trailers_only_;
+  bool is_trailers_only_ = false;
   // True once the promise for the call is started.
   // This corresponds to sending initial metadata, or cancelling before doing
   // so.
@@ -2990,8 +2990,8 @@ void ClientPromiseBasedCall::StartRecvInitialMetadata(
                       : "null");
         }
         if (next_metadata.has_value()) {
-          is_trailers_only_ = false;
           metadata = std::move(next_metadata.value());
+          is_trailers_only_ = metadata->get(GrpcTrailersOnly()).value_or(false);
         } else {
           is_trailers_only_ = true;
           metadata = arena()->MakePooled<ServerMetadata>(arena());
