@@ -78,4 +78,4 @@ def serve(args):
 if __name__ == "__main__":
     app.run(
         serve, flags_parser=parse_interop_server_arguments
-    )  # pytype: disable=missing-parameter
+    )
