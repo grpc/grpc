@@ -46,33 +46,43 @@ std::vector<uint8_t> MakeBase64() {
   return std::vector<uint8_t>(s.begin(), s.end());
 }
 
-static const grpc_core::NoDestruct<std::vector<uint8_t>> kAllChars{
-    MakeInput(0, 255)};
-static const grpc_core::NoDestruct<std::vector<uint8_t>> kAsciiChars{
-    MakeInput(32, 126)};
-static const grpc_core::NoDestruct<std::vector<uint8_t>> kAlphaChars{
-    MakeInput('a', 'z')};
-static const grpc_core::NoDestruct<std::vector<uint8_t>> kBase64Chars{
-    MakeBase64()};
+const std::vector<uint8_t>& AllChars() {
+  static const auto* const data = new std::vector<uint8_t>(MakeInput(0, 255));
+  return *data;
+};
+const std::vector<uint8_t>& AsciiChars() {
+  static const auto* const data = new std::vector<uint8_t>(MakeInput(32, 126));
+  return *data;
+};
+const std::vector<uint8_t>& AlphaChars() {
+  static const auto* const data = new std::vector<uint8_t>(MakeInput('a', 'z'));
+  return *data;
+};
+const std::vector<uint8_t>& Base64Chars() {
+  static const auto* const data = new std::vector<uint8_t>(MakeBase64());
+  return *data;
+};
+
+using CharSet = const std::vector<uint8_t>& (*)();
 
 template <template <typename Sink> class Decoder>
-static void BM_Decode(benchmark::State& state,
-                      const std::vector<uint8_t>* chars) {
+static void BM_Decode(benchmark::State& state, CharSet chars_gen) {
+  const std::vector<uint8_t>& chars = chars_gen();
   std::vector<uint8_t> output;
   auto add = [&output](uint8_t c) { output.push_back(c); };
   for (auto _ : state) {
     output.clear();
-    Decoder<decltype(add)>(add, chars->data(), chars->data() + chars->size())
+    Decoder<decltype(add)>(add, chars.data(), chars.data() + chars.size())
         .Run();
   }
 }
 
-#define DECL_BENCHMARK(cls, name)                        \
-  static auto name = BM_Decode<cls>;                     \
-  BENCHMARK_CAPTURE(name, all_chars, &*kAllChars);       \
-  BENCHMARK_CAPTURE(name, base64_chars, &*kBase64Chars); \
-  BENCHMARK_CAPTURE(name, ascii_chars, &*kAsciiChars);   \
-  BENCHMARK_CAPTURE(name, alpha_chars, &*kAlphaChars)
+#define DECL_BENCHMARK(cls, name)                     \
+  static auto name = BM_Decode<cls>;                  \
+  BENCHMARK_CAPTURE(name, all_chars, AllChars);       \
+  BENCHMARK_CAPTURE(name, base64_chars, Base64Chars); \
+  BENCHMARK_CAPTURE(name, ascii_chars, AsciiChars);   \
+  BENCHMARK_CAPTURE(name, alpha_chars, AlphaChars)
 
 DECL_HUFFMAN_VARIANTS();
 
