@@ -24,6 +24,7 @@
 #include <sys/socket.h>  // IWYU pragma: keep
 #include <unistd.h>      // IWYU pragma: keep
 
+#include <atomic>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -150,9 +151,20 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
           GRPC_LOG_EVERY_N_SEC(1, GPR_ERROR, "%s",
                                "File descriptor limit reached. Retrying.");
           handle_->NotifyOnRead(notify_on_accept_);
-          if (retry_timer_armed_.exchange(false)) return;
-          std::ignore = engine_->RunAfter(grpc_core::Duration::Seconds(1),
-                                          retry_closure_);
+          {
+            grpc_core::MutexLock lock(&retry_timer_mu_);
+            if (retry_timer_handle_ == EventEngine::TaskHandle::kInvalid) {
+              return;
+            }
+            retry_timer_handle_ =
+                engine_->RunAfter(grpc_core::Duration::Seconds(1), [this]() {
+                  {
+                    grpc_core::MutexLock lock(&retry_timer_mu_);
+                    retry_timer_handle_ = EventEngine::TaskHandle::kInvalid;
+                  }
+                  handle_->SetReadable();
+                });
+          }
           return;
         case EAGAIN:
         case ECONNABORTED:

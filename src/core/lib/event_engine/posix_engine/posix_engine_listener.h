@@ -94,12 +94,7 @@ class PosixEngineListenerImpl
                   ResolvedAddressToNormalizedString(socket_.addr),
               listener_->poller_->CanTrackErrors())),
           notify_on_accept_(PosixEngineClosure::ToPermanentClosure(
-              [this](absl::Status status) { NotifyOnAccept(status); })),
-          retry_closure_(
-              PosixEngineClosure::ToPermanentClosure([this](absl::Status) {
-                retry_timer_armed_.store(false);
-                handle_->SetReadable();
-              })){};
+              [this](absl::Status status) { NotifyOnAccept(status); })){};
     // Start listening for incoming connections on the socket.
     void Start();
     // Internal callback invoked when the socket has incoming connections to
@@ -115,6 +110,18 @@ class PosixEngineListenerImpl
     }
     ListenerSocketsContainer::ListenerSocket& Socket() { return socket_; }
     ~AsyncConnectionAcceptor() {
+      // Ensure the retry timer is not waiting.
+      retry_timer_mu_.Lock();
+      if (retry_timer_handle_ != EventEngine::TaskHandle::kInvalid &&
+          !engine_->Cancel(retry_timer_handle_)) {
+        // Could not cancel the retry timer, so wait for it to run.
+        do {
+          retry_timer_mu_.Unlock();
+          absl::SleepFor(absl::Milliseconds(100));
+          retry_timer_mu_.Lock();
+        } while (retry_timer_handle_ != EventEngine::TaskHandle::kInvalid);
+      }
+      retry_timer_mu_.Unlock();
       handle_->OrphanHandle(nullptr, nullptr, "");
       delete notify_on_accept_;
     }
@@ -126,8 +133,12 @@ class PosixEngineListenerImpl
     ListenerSocketsContainer::ListenerSocket socket_;
     EventHandle* handle_;
     PosixEngineClosure* notify_on_accept_;
-    PosixEngineClosure* retry_closure_;
-    std::atomic<bool> retry_timer_armed_{false};
+    // A backup timer to retry accept calls after file descriptor exhaustion.
+    // Note that a mutex is required here, since check and set cannot be an
+    // atomic operation when scheduling a timer.
+    grpc_core::Mutex retry_timer_mu_;
+    EventEngine::TaskHandle retry_timer_handle_
+        ABSL_GUARDED_BY(retry_timer_mu_) = EventEngine::TaskHandle::kInvalid;
   };
   class ListenerAsyncAcceptors : public ListenerSocketsContainer {
    public:
