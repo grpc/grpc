@@ -1122,6 +1122,8 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
         if state is None:
             raise rendezvous  # pylint: disable-msg=raising-bad-type
         else:
+            state.rpc_start_time = datetime.utcnow()
+            state.method = _common.decode(self._method)
             call = self._channel.segregated_call(
                 cygrpc.PropagationConstants.GRPC_PROPAGATE_DEFAULTS,
                 self._method,
@@ -1137,8 +1139,6 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
                 ),
                 self._context,
             )
-            state.rpc_start_time = datetime.utcnow()
-            state.method = _common.decode(self._method)
             event = call.next_event()
             _handle_event(event, state, self._response_deserializer)
             return state, call
@@ -1193,6 +1193,8 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
             raise rendezvous  # pylint: disable-msg=raising-bad-type
         else:
             event_handler = _event_handler(state, self._response_deserializer)
+            state.rpc_start_time = datetime.utcnow()
+            state.method = _common.decode(self._method)
             call = self._managed_call(
                 cygrpc.PropagationConstants.GRPC_PROPAGATE_DEFAULTS,
                 self._method,
@@ -1204,8 +1206,6 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
                 event_handler,
                 self._context,
             )
-            state.rpc_start_time = datetime.utcnow()
-            state.method = _common.decode(self._method)
             return _MultiThreadedRendezvous(
                 state, call, self._response_deserializer, deadline
             )
@@ -1277,6 +1277,8 @@ class _SingleThreadedUnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
             (cygrpc.ReceiveInitialMetadataOperation(_EMPTY_FLAGS),),
         )
         operations_and_tags = tuple((ops, None) for ops in operations)
+        state.rpc_start_time = datetime.utcnow()
+        state.method = _common.decode(self._method)
         call = self._channel.segregated_call(
             cygrpc.PropagationConstants.GRPC_PROPAGATE_DEFAULTS,
             self._method,
@@ -1287,8 +1289,6 @@ class _SingleThreadedUnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
             operations_and_tags,
             self._context,
         )
-        state.rpc_start_time = datetime.utcnow()
-        state.method = _common.decode(self._method)
         return _SingleThreadedRendezvous(
             state, call, self._response_deserializer, deadline
         )
@@ -1353,6 +1353,8 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
                 ),
                 (cygrpc.ReceiveInitialMetadataOperation(_EMPTY_FLAGS),),
             )
+            state.rpc_start_time = datetime.utcnow()
+            state.method = _common.decode(self._method)
             call = self._managed_call(
                 cygrpc.PropagationConstants.GRPC_PROPAGATE_DEFAULTS,
                 self._method,
@@ -1364,8 +1366,6 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
                 _event_handler(state, self._response_deserializer),
                 self._context,
             )
-            state.rpc_start_time = datetime.utcnow()
-            state.method = _common.decode(self._method)
             return _MultiThreadedRendezvous(
                 state, call, self._response_deserializer, deadline
             )
@@ -1412,6 +1412,8 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
         augmented_metadata = _compression.augment_metadata(
             metadata, compression
         )
+        state.rpc_start_time = datetime.utcnow()
+        state.method = _common.decode(self._method)
         call = self._channel.segregated_call(
             cygrpc.PropagationConstants.GRPC_PROPAGATE_DEFAULTS,
             self._method,
@@ -1424,8 +1426,6 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
             ),
             self._context,
         )
-        state.rpc_start_time = datetime.utcnow()
-        state.method = _common.decode(self._method)
         _consume_request_iterator(
             request_iterator, state, call, self._request_serializer, None
         )
@@ -1500,6 +1500,8 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
         augmented_metadata = _compression.augment_metadata(
             metadata, compression
         )
+        state.rpc_start_time = datetime.utcnow()
+        state.method = _common.decode(self._method)
         call = self._managed_call(
             cygrpc.PropagationConstants.GRPC_PROPAGATE_DEFAULTS,
             self._method,
@@ -1513,8 +1515,6 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
             event_handler,
             self._context,
         )
-        state.rpc_start_time = datetime.utcnow()
-        state.method = _common.decode(self._method)
         _consume_request_iterator(
             request_iterator,
             state,
@@ -1578,6 +1578,8 @@ class _StreamStreamMultiCallable(grpc.StreamStreamMultiCallable):
             (cygrpc.ReceiveInitialMetadataOperation(_EMPTY_FLAGS),),
         )
         event_handler = _event_handler(state, self._response_deserializer)
+        state.rpc_start_time = datetime.utcnow()
+        state.method = _common.decode(self._method)
         call = self._managed_call(
             cygrpc.PropagationConstants.GRPC_PROPAGATE_DEFAULTS,
             self._method,
@@ -1589,8 +1591,6 @@ class _StreamStreamMultiCallable(grpc.StreamStreamMultiCallable):
             event_handler,
             self._context,
         )
-        state.rpc_start_time = datetime.utcnow()
-        state.method = _common.decode(self._method)
         _consume_request_iterator(
             request_iterator,
             state,

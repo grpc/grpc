@@ -35,6 +35,7 @@ cdef object GLOBAL_EXPORT_THREAD
 
 _LOGGER = logging.getLogger(__name__)
 
+
 class _CyMetricsName:
   CY_CLIENT_API_LATENCY = kRpcClientApiLatencyMeasureName
   CY_CLIENT_SNET_MESSSAGES_PER_RPC = kRpcClientSentMessagesPerRpcMeasureName
@@ -42,6 +43,7 @@ class _CyMetricsName:
   CY_CLIENT_RECEIVED_MESSAGES_PER_RPC = kRpcClientReceivedMessagesPerRpcMeasureName
   CY_CLIENT_RECEIVED_BYTES_PER_RPC = kRpcClientReceivedBytesPerRpcMeasureName
   CY_CLIENT_ROUNDTRIP_LATENCY = kRpcClientRoundtripLatencyMeasureName
+  CY_CLIENT_COMPLETED_RPC = kRpcClientCompletedRpcMeasureName
   CY_CLIENT_SERVER_LATENCY = kRpcClientServerLatencyMeasureName
   CY_CLIENT_STARTED_RPCS = kRpcClientStartedRpcsMeasureName
   CY_CLIENT_RETRIES_PER_CALL = kRpcClientRetriesPerCallMeasureName
@@ -53,6 +55,7 @@ class _CyMetricsName:
   CY_SERVER_RECEIVED_MESSAGES_PER_RPC = kRpcServerReceivedMessagesPerRpcMeasureName
   CY_SERVER_RECEIVED_BYTES_PER_RPC = kRpcServerReceivedBytesPerRpcMeasureName
   CY_SERVER_SERVER_LATENCY = kRpcServerServerLatencyMeasureName
+  CY_SERVER_COMPLETED_RPC = kRpcServerCompletedRpcMeasureName
   CY_SERVER_STARTED_RPCS = kRpcServerStartedRpcsMeasureName
 
 @enum.unique
@@ -64,6 +67,7 @@ class MetricsName(enum.Enum):
   CLIENT_RECEIVED_MESSAGES_PER_RPC = _CyMetricsName.CY_CLIENT_RECEIVED_MESSAGES_PER_RPC
   CLIENT_RECEIVED_BYTES_PER_RPC = _CyMetricsName.CY_CLIENT_RECEIVED_BYTES_PER_RPC
   CLIENT_ROUNDTRIP_LATENCY = _CyMetricsName.CY_CLIENT_ROUNDTRIP_LATENCY
+  CLIENT_COMPLETED_RPC = _CyMetricsName.CY_CLIENT_COMPLETED_RPC
   CLIENT_SERVER_LATENCY = _CyMetricsName.CY_CLIENT_SERVER_LATENCY
   CLIENT_RETRIES_PER_CALL = _CyMetricsName.CY_CLIENT_RETRIES_PER_CALL
   CLIENT_TRANSPARENT_RETRIES_PER_CALL = _CyMetricsName.CY_CLIENT_TRANSPARENT_RETRIES_PER_CALL
@@ -74,6 +78,7 @@ class MetricsName(enum.Enum):
   SERVER_RECEIVED_MESSAGES_PER_RPC = _CyMetricsName.CY_SERVER_RECEIVED_MESSAGES_PER_RPC
   SERVER_RECEIVED_BYTES_PER_RPC = _CyMetricsName.CY_SERVER_RECEIVED_BYTES_PER_RPC
   SERVER_SERVER_LATENCY = _CyMetricsName.CY_SERVER_SERVER_LATENCY
+  SERVER_COMPLETED_RPC = _CyMetricsName.CY_SERVER_COMPLETED_RPC
   SERVER_STARTED_RPCS = _CyMetricsName.CY_SERVER_STARTED_RPCS
 
 # Delay map creation due to circular dependencies

@@ -42,7 +42,6 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/address_filtering.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
-#include "src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
@@ -768,25 +767,17 @@ ServerAddressList XdsClusterResolverLb::CreateChildPolicyAddressesLocked() {
         std::vector<std::string> hierarchical_path = {
             priority_child_name, locality_name->AsHumanReadableString()};
         for (const auto& endpoint : locality.endpoints) {
-          const ServerAddressWeightAttribute* weight_attribute = static_cast<
-              const ServerAddressWeightAttribute*>(endpoint.GetAttribute(
-              ServerAddressWeightAttribute::kServerAddressWeightAttributeKey));
-          uint32_t weight = locality.lb_weight;
-          if (weight_attribute != nullptr) {
-            weight = locality.lb_weight * weight_attribute->weight();
-          }
+          uint32_t endpoint_weight =
+              locality.lb_weight *
+              endpoint.args().GetInt(GRPC_ARG_ADDRESS_WEIGHT).value_or(1);
           addresses.emplace_back(
-              endpoint
-                  .WithAttribute(
-                      kHierarchicalPathAttributeKey,
-                      MakeHierarchicalPathAttribute(hierarchical_path))
-                  .WithAttribute(kXdsLocalityNameAttributeKey,
-                                 std::make_unique<XdsLocalityAttribute>(
-                                     locality_name->Ref(), locality.lb_weight))
-                  .WithAttribute(
-                      ServerAddressWeightAttribute::
-                          kServerAddressWeightAttributeKey,
-                      std::make_unique<ServerAddressWeightAttribute>(weight)));
+              endpoint.address(),
+              endpoint.args()
+                  .SetObject(
+                      MakeRefCounted<HierarchicalPathArg>(hierarchical_path))
+                  .Set(GRPC_ARG_ADDRESS_WEIGHT, endpoint_weight)
+                  .SetObject(locality_name->Ref())
+                  .Set(GRPC_ARG_XDS_LOCALITY_WEIGHT, locality.lb_weight));
         }
       }
     }

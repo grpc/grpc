@@ -2493,9 +2493,13 @@ void PromiseBasedCall::FinishOpOnCompletion(Completion* completion,
     ExecCtx::Run(DEBUG_LOCATION, static_cast<grpc_closure*>(pending.tag),
                  error);
   } else {
+    InternalRef("cq_end_op");
     grpc_cq_end_op(
-        cq(), pending.tag, error, [](void*, grpc_cq_completion*) {}, nullptr,
-        &completion_info_[i].completion);
+        cq(), pending.tag, error,
+        [](void* p, grpc_cq_completion*) {
+          static_cast<PromiseBasedCall*>(p)->InternalUnref("cq_end_op");
+        },
+        this, &completion_info_[i].completion);
   }
 }
 

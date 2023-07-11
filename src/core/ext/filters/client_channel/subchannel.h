@@ -215,6 +215,8 @@ class Subchannel : public DualRefCounted<Subchannel> {
 
   channelz::SubchannelNode* channelz_node();
 
+  const grpc_resolved_address& address() const { return key_.address(); }
+
   // Starts watching the subchannel's connectivity state.
   // The first callback to the watcher will be delivered ~immediately.
   // Subsequent callbacks will be delivered as the subchannel's state

@@ -110,6 +110,23 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "promise_endpoint_test",
+    srcs = ["promise_endpoint_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//:grpc",
+        "//src/core:activity",
+        "//src/core:grpc_promise_endpoint",
+        "//src/core:join",
+        "//src/core:seq",
+        "//test/core/promise:test_wakeup_schedulers",
+    ],
+)
+
+grpc_cc_test(
     name = "status_conversion_test",
     srcs = ["status_conversion_test.cc"],
     external_deps = ["gtest"],

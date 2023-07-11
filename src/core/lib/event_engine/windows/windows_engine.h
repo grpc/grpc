@@ -48,17 +48,13 @@ class WindowsEventEngine : public EventEngine,
   class WindowsDNSResolver : public EventEngine::DNSResolver {
    public:
     ~WindowsDNSResolver() override;
-    LookupTaskHandle LookupHostname(LookupHostnameCallback on_resolve,
-                                    absl::string_view name,
-                                    absl::string_view default_port,
-                                    Duration timeout) override;
-    LookupTaskHandle LookupSRV(LookupSRVCallback on_resolve,
-                               absl::string_view name,
-                               Duration timeout) override;
-    LookupTaskHandle LookupTXT(LookupTXTCallback on_resolve,
-                               absl::string_view name,
-                               Duration timeout) override;
-    bool CancelLookup(LookupTaskHandle handle) override;
+    void LookupHostname(LookupHostnameCallback on_resolve,
+                        absl::string_view name,
+                        absl::string_view default_port) override;
+    void LookupSRV(LookupSRVCallback on_resolve,
+                   absl::string_view name) override;
+    void LookupTXT(LookupTXTCallback on_resolve,
+                   absl::string_view name) override;
   };
 
   WindowsEventEngine();

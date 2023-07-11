@@ -980,6 +980,7 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/http_proxy.cc \
     src/core/ext/filters/client_channel/lb_policy/address_filtering.cc \
     src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc \
+    src/core/ext/filters/client_channel/lb_policy/endpoint_list.cc \
     src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc \
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc \
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc \
@@ -997,7 +998,6 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/weighted_round_robin.cc \
     src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/cds.cc \
-    src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc \
@@ -1058,6 +1058,7 @@ LIBGRPC_SRC = \
     src/core/ext/transport/chttp2/transport/frame_window_update.cc \
     src/core/ext/transport/chttp2/transport/hpack_encoder.cc \
     src/core/ext/transport/chttp2/transport/hpack_encoder_table.cc \
+    src/core/ext/transport/chttp2/transport/hpack_parse_result.cc \
     src/core/ext/transport/chttp2/transport/hpack_parser.cc \
     src/core/ext/transport/chttp2/transport/hpack_parser_table.cc \
     src/core/ext/transport/chttp2/transport/http2_settings.cc \
@@ -1065,7 +1066,6 @@ LIBGRPC_SRC = \
     src/core/ext/transport/chttp2/transport/huffsyms.cc \
     src/core/ext/transport/chttp2/transport/parsing.cc \
     src/core/ext/transport/chttp2/transport/stream_lists.cc \
-    src/core/ext/transport/chttp2/transport/stream_map.cc \
     src/core/ext/transport/chttp2/transport/varint.cc \
     src/core/ext/transport/chttp2/transport/writing.cc \
     src/core/ext/transport/inproc/inproc_plugin.cc \
@@ -1133,6 +1133,7 @@ LIBGRPC_SRC = \
     src/core/ext/upb-generated/envoy/config/trace/v3/trace.upb.c \
     src/core/ext/upb-generated/envoy/config/trace/v3/xray.upb.c \
     src/core/ext/upb-generated/envoy/config/trace/v3/zipkin.upb.c \
+    src/core/ext/upb-generated/envoy/data/accesslog/v3/accesslog.upb.c \
     src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.c \
     src/core/ext/upb-generated/envoy/extensions/filters/common/fault/v3/fault.upb.c \
     src/core/ext/upb-generated/envoy/extensions/filters/http/fault/v3/fault.upb.c \
@@ -1143,6 +1144,7 @@ LIBGRPC_SRC = \
     src/core/ext/upb-generated/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb.c \
     src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.upb.c \
     src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/common/v3/common.upb.c \
+    src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/pick_first/v3/pick_first.upb.c \
     src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb.c \
     src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb.c \
     src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.c \
@@ -1294,6 +1296,7 @@ LIBGRPC_SRC = \
     src/core/ext/upbdefs-generated/envoy/config/trace/v3/trace.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/config/trace/v3/xray.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/config/trace/v3/zipkin.upbdefs.c \
+    src/core/ext/upbdefs-generated/envoy/data/accesslog/v3/accesslog.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/extensions/filters/common/fault/v3/fault.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/extensions/filters/http/fault/v3/fault.upbdefs.c \
@@ -1871,6 +1874,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/http_proxy.cc \
     src/core/ext/filters/client_channel/lb_policy/address_filtering.cc \
     src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc \
+    src/core/ext/filters/client_channel/lb_policy/endpoint_list.cc \
     src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc \
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc \
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc \
@@ -1932,6 +1936,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/transport/chttp2/transport/frame_window_update.cc \
     src/core/ext/transport/chttp2/transport/hpack_encoder.cc \
     src/core/ext/transport/chttp2/transport/hpack_encoder_table.cc \
+    src/core/ext/transport/chttp2/transport/hpack_parse_result.cc \
     src/core/ext/transport/chttp2/transport/hpack_parser.cc \
     src/core/ext/transport/chttp2/transport/hpack_parser_table.cc \
     src/core/ext/transport/chttp2/transport/http2_settings.cc \
@@ -1939,7 +1944,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/transport/chttp2/transport/huffsyms.cc \
     src/core/ext/transport/chttp2/transport/parsing.cc \
     src/core/ext/transport/chttp2/transport/stream_lists.cc \
-    src/core/ext/transport/chttp2/transport/stream_map.cc \
     src/core/ext/transport/chttp2/transport/varint.cc \
     src/core/ext/transport/chttp2/transport/writing.cc \
     src/core/ext/transport/inproc/inproc_plugin.cc \
@@ -3048,7 +3052,6 @@ ifneq ($(OPENSSL_DEP),)
 # otherwise parallel compilation will fail if a source is compiled first.
 src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc: $(OPENSSL_DEP)
 src/core/ext/filters/client_channel/lb_policy/xds/cds.cc: $(OPENSSL_DEP)
-src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.cc: $(OPENSSL_DEP)
 src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc: $(OPENSSL_DEP)
 src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc: $(OPENSSL_DEP)
 src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc: $(OPENSSL_DEP)
@@ -3126,6 +3129,7 @@ src/core/ext/upb-generated/envoy/config/trace/v3/skywalking.upb.c: $(OPENSSL_DEP
 src/core/ext/upb-generated/envoy/config/trace/v3/trace.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/config/trace/v3/xray.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/config/trace/v3/zipkin.upb.c: $(OPENSSL_DEP)
+src/core/ext/upb-generated/envoy/data/accesslog/v3/accesslog.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/extensions/filters/common/fault/v3/fault.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/extensions/filters/http/fault/v3/fault.upb.c: $(OPENSSL_DEP)
@@ -3136,6 +3140,7 @@ src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_mana
 src/core/ext/upb-generated/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/common/v3/common.upb.c: $(OPENSSL_DEP)
+src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/pick_first/v3/pick_first.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.c: $(OPENSSL_DEP)
@@ -3268,6 +3273,7 @@ src/core/ext/upbdefs-generated/envoy/config/trace/v3/skywalking.upbdefs.c: $(OPE
 src/core/ext/upbdefs-generated/envoy/config/trace/v3/trace.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/config/trace/v3/xray.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/config/trace/v3/zipkin.upbdefs.c: $(OPENSSL_DEP)
+src/core/ext/upbdefs-generated/envoy/data/accesslog/v3/accesslog.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/extensions/filters/common/fault/v3/fault.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/extensions/filters/http/fault/v3/fault.upbdefs.c: $(OPENSSL_DEP)

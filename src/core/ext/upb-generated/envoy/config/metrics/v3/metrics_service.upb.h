@@ -32,6 +32,12 @@ struct google_protobuf_BoolValue;
 extern const upb_MiniTable envoy_config_core_v3_GrpcService_msg_init;
 extern const upb_MiniTable google_protobuf_BoolValue_msg_init;
 
+typedef enum {
+  envoy_config_metrics_v3_SUMMARY_AND_HISTOGRAM = 0,
+  envoy_config_metrics_v3_SUMMARY = 1,
+  envoy_config_metrics_v3_HISTOGRAM = 2
+} envoy_config_metrics_v3_HistogramEmitMode;
+
 
 
 /* envoy.config.metrics.v3.MetricsServiceConfig */
@@ -121,6 +127,17 @@ UPB_INLINE bool envoy_config_metrics_v3_MetricsServiceConfig_emit_tags_as_labels
   _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
+UPB_INLINE void envoy_config_metrics_v3_MetricsServiceConfig_clear_histogram_emit_mode(envoy_config_metrics_v3_MetricsServiceConfig* msg) {
+  const upb_MiniTableField field = {5, UPB_SIZE(20, 12), 0, kUpb_NoSub, 5, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsAlternate | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
+}
+UPB_INLINE int32_t envoy_config_metrics_v3_MetricsServiceConfig_histogram_emit_mode(const envoy_config_metrics_v3_MetricsServiceConfig* msg) {
+  int32_t default_val = 0;
+  int32_t ret;
+  const upb_MiniTableField field = {5, UPB_SIZE(20, 12), 0, kUpb_NoSub, 5, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsAlternate | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
+}
 
 UPB_INLINE void envoy_config_metrics_v3_MetricsServiceConfig_set_grpc_service(envoy_config_metrics_v3_MetricsServiceConfig *msg, struct envoy_config_core_v3_GrpcService* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(4, 16), 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -152,6 +169,10 @@ UPB_INLINE void envoy_config_metrics_v3_MetricsServiceConfig_set_transport_api_v
 }
 UPB_INLINE void envoy_config_metrics_v3_MetricsServiceConfig_set_emit_tags_as_labels(envoy_config_metrics_v3_MetricsServiceConfig *msg, bool value) {
   const upb_MiniTableField field = {4, UPB_SIZE(16, 8), 0, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
+}
+UPB_INLINE void envoy_config_metrics_v3_MetricsServiceConfig_set_histogram_emit_mode(envoy_config_metrics_v3_MetricsServiceConfig *msg, int32_t value) {
+  const upb_MiniTableField field = {5, UPB_SIZE(20, 12), 0, kUpb_NoSub, 5, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsAlternate | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
   _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 
