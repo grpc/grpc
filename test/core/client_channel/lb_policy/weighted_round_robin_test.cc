@@ -822,6 +822,8 @@ TEST_F(WeightedRoundRobinTest, ZeroErrorUtilPenalty) {
       {{kAddresses[0], 1}, {kAddresses[1], 1}, {kAddresses[2], 1}});
 }
 
+// FIXME: add test for multiple addresses per endpoint
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc_core
