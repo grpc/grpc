@@ -144,6 +144,8 @@ class AffinityTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
                 ),
             )
 
+            # Any remaining subchannels may be in any state.
+
             # Remember the backend inuse, and turn it down later.
             first_backend_inuse = list(
                 rpc_distribution.raw["rpcsByPeer"].keys()
