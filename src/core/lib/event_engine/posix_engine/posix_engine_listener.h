@@ -110,7 +110,6 @@ class PosixEngineListenerImpl
     }
     ListenerSocketsContainer::ListenerSocket& Socket() { return socket_; }
     ~AsyncConnectionAcceptor() {
-      // Ensure the retry timer is not waiting.
       handle_->OrphanHandle(nullptr, nullptr, "");
       delete notify_on_accept_;
     }
