@@ -205,6 +205,8 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/retry_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/retry_filter.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/retry_filter_legacy_call_data.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/retry_filter_legacy_call_data.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/retry_service_config.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/retry_service_config.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/retry_throttle.cc" role="src" />
