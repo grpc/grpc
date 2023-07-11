@@ -165,7 +165,9 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
                     grpc_core::MutexLock lock(&retry_timer_mu_);
                     retry_timer_handle_ = EventEngine::TaskHandle::kInvalid;
                   }
-                  handle_->SetReadable();
+                  if (!handle_->IsHandleShutdown()) {
+                    handle_->SetReadable();
+                  }
                   Unref();
                 });
           }
