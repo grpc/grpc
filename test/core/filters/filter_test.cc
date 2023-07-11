@@ -24,6 +24,7 @@
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
 
+#include "src/core/lib/channel/call_finalization.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/timer_manager.h"
