@@ -36,4 +36,3 @@ src/core/debug/stats_data.cc linguist-generated=true
 src/core/experiments/experiments.h linguist-generated=true
 src/core/experiments/experiments.cc linguist-generated=true
 bazel/experiments.bzl linguist-generated=true
-test/cpp/microbenchmarks/huffman_geometries/** linguist-generated=true

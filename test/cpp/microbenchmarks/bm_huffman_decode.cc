@@ -17,64 +17,44 @@
 
 #include <benchmark/benchmark.h>
 
-#include "absl/strings/escaping.h"
-
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/decode_huff.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/slice/slice.h"
 #include "test/core/util/test_config.h"
-#include "test/cpp/microbenchmarks/huffman_geometries/index.h"
 
-std::vector<uint8_t> MakeInput(int min, int max) {
-  std::vector<uint8_t> v;
-  std::uniform_int_distribution<> distribution(min, max);
-  static std::mt19937 rd(0);
-  v.reserve(1024 * 1024);
-  for (int i = 0; i < 1024 * 1024; i++) {
-    v.push_back(distribution(rd));
-  }
-  grpc_core::Slice s = grpc_core::Slice::FromCopiedBuffer(v);
-  grpc_core::Slice c(grpc_chttp2_huffman_compress(s.c_slice()));
-  return std::vector<uint8_t>(c.begin(), c.end());
+const std::vector<uint8_t>* Input() {
+  static const grpc_core::NoDestruct<std::vector<uint8_t>> v([]() {
+    std::vector<uint8_t> v;
+    std::mt19937 rd(0);
+    std::uniform_int_distribution<> dist_ty(0, 100);
+    std::uniform_int_distribution<> dist_byte(0, 255);
+    std::uniform_int_distribution<> dist_normal(32, 126);
+    for (int i = 0; i < 1024 * 1024; i++) {
+      if (dist_ty(rd) == 1) {
+        v.push_back(dist_byte(rd));
+      } else {
+        v.push_back(dist_normal(rd));
+      }
+    }
+    grpc_core::Slice s = grpc_core::Slice::FromCopiedBuffer(v);
+    grpc_core::Slice c(grpc_chttp2_huffman_compress(s.c_slice()));
+    return std::vector<uint8_t>(c.begin(), c.end());
+  }());
+  return v.get();
 }
 
-std::vector<uint8_t> MakeBase64() {
-  auto src = MakeInput(0, 255);
-  auto s = absl::Base64Escape(
-      absl::string_view(reinterpret_cast<char*>(src.data()), src.size()));
-  return std::vector<uint8_t>(s.begin(), s.end());
-}
-
-static const grpc_core::NoDestruct<std::vector<uint8_t>> kAllChars{
-    MakeInput(0, 255)};
-static const grpc_core::NoDestruct<std::vector<uint8_t>> kAsciiChars{
-    MakeInput(32, 126)};
-static const grpc_core::NoDestruct<std::vector<uint8_t>> kAlphaChars{
-    MakeInput('a', 'z')};
-static const grpc_core::NoDestruct<std::vector<uint8_t>> kBase64Chars{
-    MakeBase64()};
-
-template <template <typename Sink> class Decoder>
-static void BM_Decode(benchmark::State& state,
-                      const std::vector<uint8_t>* chars) {
+static void BM_Decode(benchmark::State& state) {
   std::vector<uint8_t> output;
   auto add = [&output](uint8_t c) { output.push_back(c); };
   for (auto _ : state) {
     output.clear();
-    Decoder<decltype(add)>(add, chars->data(), chars->data() + chars->size())
+    grpc_core::HuffDecoder<decltype(add)>(add, Input()->data(),
+                                          Input()->data() + Input()->size())
         .Run();
   }
 }
-
-#define DECL_BENCHMARK(cls, name)                        \
-  static auto name = BM_Decode<cls>;                     \
-  BENCHMARK_CAPTURE(name, all_chars, &*kAllChars);       \
-  BENCHMARK_CAPTURE(name, base64_chars, &*kBase64Chars); \
-  BENCHMARK_CAPTURE(name, ascii_chars, &*kAsciiChars);   \
-  BENCHMARK_CAPTURE(name, alpha_chars, &*kAlphaChars)
-
-DECL_HUFFMAN_VARIANTS();
+BENCHMARK(BM_Decode);
 
 // Some distros have RunSpecifiedBenchmarks under the benchmark namespace,
 // and others do not. This allows us to support both modes.
@@ -85,6 +65,7 @@ void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   benchmark::Initialize(&argc, argv);
+  Input();  // Force initialization of input data.
   benchmark::RunTheBenchmarksNamespaced();
   return 0;
 }
