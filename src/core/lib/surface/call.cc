@@ -2746,7 +2746,9 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
           "cancel_with_error",
           [error = std::move(error), this]() {
             if (!cancel_error_.is_set()) {
-              cancel_error_.Set(ServerMetadataFromStatus(error));
+              auto md = ServerMetadataFromStatus(error);
+              md->Set(GrpcCallWasCancelled(), true);
+              cancel_error_.Set(std::move(md));
             }
             return Empty{};
           },
@@ -2874,7 +2876,9 @@ grpc_call_error ClientPromiseBasedCall::ValidateBatch(const grpc_op* ops,
       case GRPC_OP_SEND_STATUS_FROM_SERVER:
         return GRPC_CALL_ERROR_NOT_ON_CLIENT;
     }
-    if (got_ops.is_set(op.op)) return GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
+    if (got_ops.is_set(op.op)) {
+      return GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
+    }
     got_ops.set(op.op);
   }
   return GRPC_CALL_OK;
@@ -3010,7 +3014,9 @@ void ClientPromiseBasedCall::Finish(ServerMetadataHandle trailing_metadata) {
   set_completed();
   client_to_server_messages_.sender.CloseWithError();
   client_to_server_messages_.receiver.CloseWithError();
-  server_to_client_messages_.receiver.CloseWithError();
+  if (trailing_metadata->get(GrpcCallWasCancelled()).value_or(false)) {
+    server_to_client_messages_.receiver.CloseWithError();
+  }
   if (auto* channelz_channel = channel()->channelz_node()) {
     if (trailing_metadata->get(GrpcStatusMetadata())
             .value_or(GRPC_STATUS_UNKNOWN) == GRPC_STATUS_OK) {
