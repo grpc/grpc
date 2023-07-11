@@ -18,6 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <utility>
+
 #include <grpc/support/atm.h>
 
 // FIXME: "posix" files shouldn't be depending on _GNU_SOURCE
@@ -79,6 +81,8 @@
 #include "src/core/lib/transport/error_utils.h"
 
 static std::atomic<int64_t> num_dropped_connections{0};
+static constexpr grpc_core::Duration kRetryAcceptWaitTime{
+    grpc_core::Duration::Seconds(1)};
 
 using ::grpc_event_engine::experimental::EndpointConfig;
 using ::grpc_event_engine::experimental::EventEngine;
@@ -362,22 +366,38 @@ static void on_read(void* arg, grpc_error_handle err) {
     if (fd < 0) {
       if (errno == EINTR) {
         continue;
-      } else if (errno == EAGAIN || errno == ECONNABORTED ||
-                 errno == EWOULDBLOCK) {
+      }
+      // When the process runs out of fds, accept4() returns EMFILE. When this
+      // happens, the connection is left in the accept queue until either a
+      // read event triggers the on_read callback, or time has passed and the
+      // accept should be re-tried regardless. This callback is not cancelled,
+      // so a spurious wakeup may occur even when there's nothing to accept.
+      // This is not a performant code path, but if an fd limit has been
+      // reached, the system is likely in an unhappy state regardless.
+      if (errno == EMFILE) {
+        GRPC_LOG_EVERY_N_SEC(1, GPR_ERROR, "%s",
+                             "File descriptor limit reached. Retrying.");
+        grpc_fd_notify_on_read(sp->emfd, &sp->read_closure);
+        if (std::exchange(sp->retry_timer_armed, true)) return;
+        grpc_timer_init(&sp->retry_timer,
+                        grpc_core::Timestamp::Now() + kRetryAcceptWaitTime,
+                        &sp->retry_closure);
+        return;
+      }
+      if (errno == EAGAIN || errno == ECONNABORTED || errno == EWOULDBLOCK) {
         grpc_fd_notify_on_read(sp->emfd, &sp->read_closure);
         return;
-      } else {
-        gpr_mu_lock(&sp->server->mu);
-        if (!sp->server->shutdown_listeners) {
-          gpr_log(GPR_ERROR, "Failed accept4: %s",
-                  grpc_core::StrError(errno).c_str());
-        } else {
-          // if we have shutdown listeners, accept4 could fail, and we
-          // needn't notify users
-        }
-        gpr_mu_unlock(&sp->server->mu);
-        goto error;
       }
+      gpr_mu_lock(&sp->server->mu);
+      if (!sp->server->shutdown_listeners) {
+        gpr_log(GPR_ERROR, "Failed accept4: %s",
+                grpc_core::StrError(errno).c_str());
+      } else {
+        // if we have shutdown listeners, accept4 could fail, and we
+        // needn't notify users
+      }
+      gpr_mu_unlock(&sp->server->mu);
+      goto error;
     }
 
     if (sp->server->memory_quota->IsMemoryPressureHigh()) {

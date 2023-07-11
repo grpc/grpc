@@ -138,6 +138,22 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
       switch (errno) {
         case EINTR:
           continue;
+        case EMFILE:
+          // When the process runs out of fds, accept4() returns EMFILE. When
+          // this happens, the connection is left in the accept queue until
+          // either a read event triggers the on_read callback, or time has
+          // passed and the accept should be re-tried regardless. This callback
+          // is not cancelled, so a spurious wakeup may occur even when there's
+          // nothing to accept. This is not a performant code path, but if an fd
+          // limit has been reached, the system is likely in an unhappy state
+          // regardless.
+          GRPC_LOG_EVERY_N_SEC(1, GPR_ERROR, "%s",
+                               "File descriptor limit reached. Retrying.");
+          handle_->NotifyOnRead(notify_on_accept_);
+          if (retry_timer_armed_.exchange(false)) return;
+          std::ignore = engine_->RunAfter(grpc_core::Duration::Seconds(1),
+                                          retry_closure_);
+          return;
         case EAGAIN:
         case ECONNABORTED:
           handle_->NotifyOnRead(notify_on_accept_);

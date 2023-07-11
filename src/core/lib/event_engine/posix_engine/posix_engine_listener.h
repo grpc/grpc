@@ -94,7 +94,12 @@ class PosixEngineListenerImpl
                   ResolvedAddressToNormalizedString(socket_.addr),
               listener_->poller_->CanTrackErrors())),
           notify_on_accept_(PosixEngineClosure::ToPermanentClosure(
-              [this](absl::Status status) { NotifyOnAccept(status); })){};
+              [this](absl::Status status) { NotifyOnAccept(status); })),
+          retry_closure_(
+              PosixEngineClosure::ToPermanentClosure([this](absl::Status) {
+                retry_timer_armed_.store(false);
+                handle_->SetReadable();
+              })){};
     // Start listening for incoming connections on the socket.
     void Start();
     // Internal callback invoked when the socket has incoming connections to
@@ -121,6 +126,8 @@ class PosixEngineListenerImpl
     ListenerSocketsContainer::ListenerSocket socket_;
     EventHandle* handle_;
     PosixEngineClosure* notify_on_accept_;
+    PosixEngineClosure* retry_closure_;
+    std::atomic<bool> retry_timer_armed_{false};
   };
   class ListenerAsyncAcceptors : public ListenerSocketsContainer {
    public:

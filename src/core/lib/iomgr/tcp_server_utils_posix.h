@@ -30,6 +30,7 @@
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/iomgr/tcp_server.h"
+#include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 
 // one listening port
@@ -52,6 +53,11 @@ typedef struct grpc_tcp_listener {
   // identified while iterating through 'next'.
   struct grpc_tcp_listener* sibling;
   int is_sibling;
+  // If an accept4() call fails, a timer is started to drain the accept queue in
+  // case no further connection attempts reach the gRPC server.
+  grpc_timer retry_timer;
+  grpc_closure retry_closure;
+  bool retry_timer_armed;
 } grpc_tcp_listener;
 
 // the overall server

@@ -82,6 +82,12 @@ static int get_max_accept_queue_size(void) {
   return s_max_accept_queue_size;
 }
 
+static void listener_retry_timer_cb(void* arg, grpc_error_handle /* err */) {
+  grpc_tcp_listener* sp = static_cast<grpc_tcp_listener*>(arg);
+  sp->retry_timer_armed = false;
+  grpc_fd_set_readable(sp->emfd);
+}
+
 static grpc_error_handle add_socket_to_server(grpc_tcp_server* s, int fd,
                                               const grpc_resolved_address* addr,
                                               unsigned port_index,
@@ -113,6 +119,9 @@ static grpc_error_handle add_socket_to_server(grpc_tcp_server* s, int fd,
   sp->server = s;
   sp->fd = fd;
   sp->emfd = grpc_fd_create(fd, name.c_str(), true);
+  sp->retry_timer_armed = false;
+  GRPC_CLOSURE_INIT(&sp->retry_closure, listener_retry_timer_cb, sp,
+                    grpc_schedule_on_exec_ctx);
 
   // Check and set fd as prellocated
   if (grpc_tcp_server_pre_allocated_fd(s) == fd) {
