@@ -355,23 +355,6 @@ void grpc_ruby_init() {
           g_enable_fork_support, g_grpc_ruby_init_count++);
 }
 
-void grpc_ruby_shutdown() {
-  GPR_ASSERT(g_grpc_ruby_init_count > 0);
-  // Avoid calling grpc_shutdown if we've enabled forking, in order to
-  // avoid the hypothetical case where grpc_shutdown spawns a detached thread
-  // that remains alive at fork, potentially causing undefined behavior in
-  // the child process.
-  if (g_enable_fork_support) return;
-  // TODO(apolcyn): call, or don't call, grpc_shutdown() unconditionally
-  // at this point? So far we've been skipping when forking without fork
-  // support enabled.
-  if (grpc_ruby_initial_pid()) grpc_shutdown();
-  gpr_log(
-      GPR_DEBUG,
-      "GRPC_RUBY: grpc_ruby_shutdown - prev g_grpc_ruby_init_count:%" PRId64,
-      g_grpc_ruby_init_count--);
-}
-
 // fork APIs, useable on linux with env var: GRPC_ENABLE_FORK_SUPPORT=1
 //
 // Must be called once and only once before forking. Must be called on the
