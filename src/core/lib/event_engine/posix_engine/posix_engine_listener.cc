@@ -26,6 +26,7 @@
 
 #include <atomic>
 #include <string>
+#include <tuple>
 #include <type_traits>
 #include <utility>
 
@@ -44,6 +45,7 @@
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/gprpp/status_helper.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
 
 namespace grpc_event_engine {
