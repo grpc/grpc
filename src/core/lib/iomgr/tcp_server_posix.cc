@@ -590,6 +590,7 @@ static grpc_error_handle clone_port(grpc_tcp_listener* listener,
     sp->port_index = listener->port_index;
     sp->fd_index = listener->fd_index + count - i;
     GPR_ASSERT(sp->emfd);
+    grpc_tcp_server_listener_initialize_retry_timer(sp);
     while (listener->server->tail->next != nullptr) {
       listener->server->tail = listener->server->tail->next;
     }

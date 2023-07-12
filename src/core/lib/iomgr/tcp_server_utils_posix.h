@@ -145,4 +145,10 @@ grpc_error_handle grpc_tcp_server_prepare_socket(
 // Ruturn true if the platform supports ifaddrs
 bool grpc_tcp_server_have_ifaddrs(void);
 
+// Initialize (but don't start) the timer and callback to retry accept4() on a
+// listening socket after file descriptors have been exhausted. This must be
+// called when creating a new listener.
+void grpc_tcp_server_listener_initialize_retry_timer(
+    grpc_tcp_listener* listener);
+
 #endif  // GRPC_SRC_CORE_LIB_IOMGR_TCP_SERVER_UTILS_POSIX_H
