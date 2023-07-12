@@ -23,7 +23,9 @@
 #include <sys/socket.h>  // IWYU pragma: keep
 #include <unistd.h>      // IWYU pragma: keep
 
+#include <atomic>
 #include <string>
+#include <tuple>
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
@@ -41,6 +43,7 @@
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/gprpp/status_helper.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
 
 namespace grpc_event_engine {
@@ -133,6 +136,32 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
       switch (errno) {
         case EINTR:
           continue;
+        case EMFILE:
+          // When the process runs out of fds, accept4() returns EMFILE. When
+          // this happens, the connection is left in the accept queue until
+          // either a read event triggers the on_read callback, or time has
+          // passed and the accept should be re-tried regardless. This callback
+          // is not cancelled, so a spurious wakeup may occur even when there's
+          // nothing to accept. This is not a performant code path, but if an fd
+          // limit has been reached, the system is likely in an unhappy state
+          // regardless.
+          GRPC_LOG_EVERY_N_SEC(1, "%s",
+                               "File descriptor limit reached. Retrying.");
+          handle_->NotifyOnRead(notify_on_accept_);
+          // Do not schedule another timer if one is already armed.
+          if (retry_timer_armed_.exchange(true)) return;
+          // Hold a ref while the retry timer is waiting, to prevent listener
+          // destruction and the races that would ensue.
+          Ref();
+          std::ignore =
+              engine_->RunAfter(grpc_core::Duration::Seconds(1), [this]() {
+                retry_timer_armed_.store(false);
+                if (!handle_->IsHandleShutdown()) {
+                  handle_->SetReadable();
+                }
+                Unref();
+              });
+          return;
         case EAGAIN:
         case ECONNABORTED:
           handle_->NotifyOnRead(notify_on_accept_);
