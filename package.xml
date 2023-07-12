@@ -2234,6 +2234,7 @@
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/cpu_intel.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/crypto.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/curve25519/curve25519.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/curve25519/curve25519_64_adx.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/curve25519/curve25519_tables.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/curve25519/internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/curve25519/spake25519.c" role="src" />
@@ -2409,14 +2410,13 @@
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/pool/pool.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/rand_extra/deterministic.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/rand_extra/forkunsafe.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/rand_extra/fuchsia.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/rand_extra/getentropy.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/rand_extra/ios.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/rand_extra/passive.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/rand_extra/rand_extra.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/rand_extra/windows.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/rc4/rc4.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/refcount_c11.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/refcount_no_threads.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/refcount_win.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/refcount.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/rsa_extra/internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/rsa_extra/rsa_asn1.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/rsa_extra/rsa_crypt.c" role="src" />
@@ -2509,6 +2509,7 @@
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/aead.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/aes.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/arm_arch.h" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/asm_base.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/asn1.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/asn1_mac.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/asn1t.h" role="src" />
@@ -2582,6 +2583,7 @@
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/ssl.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/ssl3.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/stack.h" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/target.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/thread.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/time.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/tls1.h" role="src" />
@@ -2630,6 +2632,7 @@
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/ssl/tls_record.cc" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/third_party/fiat/curve25519_32.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/third_party/fiat/curve25519_64.h" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/third_party/fiat/curve25519_64_adx.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/third_party/fiat/curve25519_64_msvc.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/third_party/fiat/p256_32.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/third_party/fiat/p256_64.h" role="src" />
