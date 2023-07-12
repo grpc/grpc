@@ -1,0 +1,45 @@
+#@IgnoreInspection BashAddShebang
+# Copyright 2018 The gRPC Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# bazelrc file for running gRPC tests in a docker sandbox to help
+# with debugging issues with RBE.
+# TODO(jtattermusch): Settings in this file are currently EXPERIMENTAL. Use
+# at your own risk.
+
+# TODO(jtattermusch): Consider including some configuration settings from
+# tools/remote_build/include/rbe_remote_execution.bazelrc
+
+build --experimental_docker_verbose
+build --experimental_enable_docker_sandbox
+
+build --spawn_strategy=docker
+build --strategy=Javac=docker
+build --strategy=Closure=docker
+build --genrule_strategy=docker
+
+# Next section is linux-specific RBE configuration
+build --crosstool_top=//third_party/toolchains:rbe_linux_default_toolchain_suite
+build --extra_toolchains=//third_party/toolchains:rbe_linux_default_cc_toolchain
+# Use custom execution platforms defined in third_party/toolchains
+build --extra_execution_platforms=//third_party/toolchains:rbe_linux_default_platform
+build --host_platform=//third_party/toolchains:rbe_linux_default_platform
+build --platforms=//third_party/toolchains:rbe_linux_default_platform
+
+# we assume the default bazel RBE build is on linux,
+# so filter out stuff that should not be built or run there.
+build --test_tag_filters=-no_linux
+build --build_tag_filters=-no_linux
+
+import %workspace%/tools/remote_build/include/test_config_common.bazelrc
