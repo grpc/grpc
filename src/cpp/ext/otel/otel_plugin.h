@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_SRC_CPP_EXT_FILTERS_OTEL_OTEL_PLUGIN_H
-#define GRPC_SRC_CPP_EXT_FILTERS_OTEL_OTEL_PLUGIN_H
+#ifndef GRPC_SRC_CPP_EXT_OTEL_OTEL_PLUGIN_H
+#define GRPC_SRC_CPP_EXT_OTEL_OTEL_PLUGIN_H
 
 #include <grpc/support/port_platform.h>
 
@@ -64,4 +64,4 @@ absl::string_view OTelStatusKey();
 }  // namespace internal
 }  // namespace grpc
 
-#endif  // GRPC_SRC_CPP_EXT_FILTERS_OTEL_OTEL_PLUGIN_H
+#endif  // GRPC_SRC_CPP_EXT_OTEL_OTEL_PLUGIN_H

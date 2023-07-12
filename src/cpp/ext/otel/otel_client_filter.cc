@@ -18,7 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/cpp/ext/filters/otel/otel_client_filter.h"
+#include "src/cpp/ext/otel/otel_client_filter.h"
 
 #include <functional>
 #include <initializer_list>
@@ -47,8 +47,8 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/metadata_batch.h"
-#include "src/cpp/ext/filters/otel/otel_call_tracer.h"
-#include "src/cpp/ext/filters/otel/otel_plugin.h"
+#include "src/cpp/ext/otel/otel_call_tracer.h"
+#include "src/cpp/ext/otel/otel_plugin.h"
 
 namespace grpc {
 namespace internal {
@@ -59,7 +59,7 @@ namespace internal {
 
 const grpc_channel_filter OpenTelemetryClientFilter::kFilter =
     grpc_core::MakePromiseBasedFilter<OpenTelemetryClientFilter,
-                                      grpc_core::FilterEndpoint::kClient, 0>(
+                                      grpc_core::FilterEndpoint::kClient>(
         "otel_client");
 
 absl::StatusOr<OpenTelemetryClientFilter> OpenTelemetryClientFilter::Create(

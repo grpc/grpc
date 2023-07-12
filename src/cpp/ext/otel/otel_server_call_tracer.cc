@@ -18,7 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/cpp/ext/filters/otel/otel_server_call_tracer.h"
+#include "src/cpp/ext/otel/otel_server_call_tracer.h"
 
 #include <initializer_list>
 #include <memory>
@@ -41,7 +41,7 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
-#include "src/cpp/ext/filters/otel/otel_plugin.h"
+#include "src/cpp/ext/otel/otel_plugin.h"
 
 namespace grpc {
 namespace internal {

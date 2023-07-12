@@ -32,7 +32,7 @@ tools/distrib/gen_compilation_database.py \
   --dedup_targets \
   "//:*" \
   "//src/core/..." \
-  "//src/cpp/ext/filters/otel/..." \
+  "//src/cpp/ext/otel/..." \
   "//src/compiler/..." \
   "//test/core/..." \
   "//test/cpp/..." \

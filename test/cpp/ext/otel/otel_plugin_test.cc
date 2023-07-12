@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/cpp/ext/filters/otel/otel_plugin.h"
+#include "src/cpp/ext/otel/otel_plugin.h"
 
 #include "absl/functional/any_invocable.h"
 #include "api/include/opentelemetry/metrics/provider.h"
@@ -27,14 +27,13 @@
 
 #include <grpcpp/grpcpp.h>
 
+#include "src/core/lib/config/core_configuration.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 
 namespace grpc {
 namespace testing {
 namespace {
-
-std::shared_ptr<opentelemetry::sdk::metrics::MetricReader> g_reader_;
 
 TEST(OTelPluginBuildTest, ApiDependency) {
   opentelemetry::metrics::Provider::GetMeterProvider();
@@ -63,6 +62,18 @@ class MockMetricReader : public opentelemetry::sdk::metrics::MetricReader {
 class OTelPluginEnd2EndTest : public ::testing::Test {
  protected:
   void SetUp() override {
+    // We are resetting the MeterProvider and OpenTelemetry plugin at the start
+    // of each test to avoid test results from one test carrying over to another
+    // test. (Some measurements can get arbitrarily delayed.)
+    auto meter_provider = new opentelemetry::sdk::metrics::MeterProvider;
+    opentelemetry::metrics::Provider::SetMeterProvider(
+        opentelemetry::nostd::shared_ptr<opentelemetry::metrics::MeterProvider>(
+            meter_provider));
+    g_reader_.reset(new grpc::testing::MockMetricReader);
+    meter_provider->AddMetricReader(g_reader_);
+    grpc_core::CoreConfiguration::Reset();
+    grpc::internal::RegisterOpenTelemetryPlugin();
+    grpc_init();
     grpc::ServerBuilder builder;
     int port;
     // Use IPv4 here because it's less flaky than IPv6 ("[::]:0") on Travis.
@@ -78,6 +89,11 @@ class OTelPluginEnd2EndTest : public ::testing::Test {
         server_address_, grpc::InsecureChannelCredentials()));
   }
 
+  void TearDown() override {
+    server_->Shutdown();
+    grpc_shutdown_blocking();
+  }
+
   void ResetStub(std::shared_ptr<Channel> channel) {
     stub_ = EchoTestService::NewStub(channel);
   }
@@ -90,45 +106,42 @@ class OTelPluginEnd2EndTest : public ::testing::Test {
     grpc::Status status = stub_->Echo(&context, request, &response);
   }
 
-  void TearDown() override { server_->Shutdown(); }
+  absl::flat_hash_map<std::string,
+                      std::vector<opentelemetry::sdk::metrics::PointType>>
+  ReadCurrentMetricsData(
+      absl::AnyInvocable<
+          bool(const absl::flat_hash_map<
+               std::string,
+               std::vector<opentelemetry::sdk::metrics::PointType>>&)>
+          continue_predicate) {
+    absl::flat_hash_map<std::string,
+                        std::vector<opentelemetry::sdk::metrics::PointType>>
+        data;
+    auto deadline = absl::Now() + absl::Seconds(5);
+    do {
+      g_reader_->Collect([&](opentelemetry::sdk::metrics::ResourceMetrics& rm) {
+        for (const opentelemetry::sdk::metrics::ScopeMetrics& smd :
+             rm.scope_metric_data_) {
+          for (const opentelemetry::sdk::metrics::MetricData& md :
+               smd.metric_data_) {
+            for (const opentelemetry::sdk::metrics::PointDataAttributes& dp :
+                 md.point_data_attr_) {
+              data[md.instrument_descriptor.name_].push_back(dp.point_data);
+            }
+          }
+        }
+        return true;
+      });
+    } while (continue_predicate(data) && deadline > absl::Now());
+    return data;
+  }
 
-  const std::string client_method_name_ = "grpc.testing.EchoTestService/Echo";
-  const std::string server_method_name_ = "grpc.testing.EchoTestService/Echo";
-
+  std::shared_ptr<opentelemetry::sdk::metrics::MetricReader> g_reader_;
   std::string server_address_;
   CallbackTestServiceImpl service_;
   std::unique_ptr<grpc::Server> server_;
   std::unique_ptr<EchoTestService::Stub> stub_;
 };
-
-absl::flat_hash_map<std::string,
-                    std::vector<opentelemetry::sdk::metrics::PointType>>
-ReadCurrentMetricsData(
-    absl::AnyInvocable<bool(
-        const absl::flat_hash_map<
-            std::string, std::vector<opentelemetry::sdk::metrics::PointType>>&)>
-        continue_predicate) {
-  absl::flat_hash_map<std::string,
-                      std::vector<opentelemetry::sdk::metrics::PointType>>
-      data;
-  auto deadline = absl::Now() + absl::Seconds(5);
-  do {
-    g_reader_->Collect([&](opentelemetry::sdk::metrics::ResourceMetrics& rm) {
-      for (const opentelemetry::sdk::metrics::ScopeMetrics& smd :
-           rm.scope_metric_data_) {
-        for (const opentelemetry::sdk::metrics::MetricData& md :
-             smd.metric_data_) {
-          for (const opentelemetry::sdk::metrics::PointDataAttributes& dp :
-               md.point_data_attr_) {
-            data[md.instrument_descriptor.name_].push_back(dp.point_data);
-          }
-        }
-      }
-      return true;
-    });
-  } while (continue_predicate(data) && deadline > absl::Now());
-  return data;
-}
 
 TEST_F(OTelPluginEnd2EndTest, ClientAttemptStarted) {
   SendRPC();
@@ -237,7 +250,7 @@ TEST_F(OTelPluginEnd2EndTest, ServerCallSentTotalCompressedMessageSize) {
       absl::get_if<opentelemetry::sdk::metrics::HistogramPointData>(
           &data[kMetricName][0]);
   ASSERT_NE(point_data, nullptr);
-  ASSERT_EQ(point_data->count_, 1);
+  EXPECT_EQ(point_data->count_, 1);
 }
 
 TEST_F(OTelPluginEnd2EndTest, ServerCallRcvdTotalCompressedMessageSize) {
@@ -263,12 +276,5 @@ TEST_F(OTelPluginEnd2EndTest, ServerCallRcvdTotalCompressedMessageSize) {
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
-  auto meter_provider = new opentelemetry::sdk::metrics::MeterProvider;
-  opentelemetry::metrics::Provider::SetMeterProvider(
-      opentelemetry::nostd::shared_ptr<opentelemetry::metrics::MeterProvider>(
-          meter_provider));
-  grpc::testing::g_reader_.reset(new grpc::testing::MockMetricReader);
-  meter_provider->AddMetricReader(grpc::testing::g_reader_);
-  grpc::internal::RegisterOpenTelemetryPlugin();
   return RUN_ALL_TESTS();
 }

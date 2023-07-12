@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_SRC_CPP_EXT_FILTERS_OTEL_OTEL_CALL_TRACER_H
-#define GRPC_SRC_CPP_EXT_FILTERS_OTEL_OTEL_CALL_TRACER_H
+#ifndef GRPC_SRC_CPP_EXT_OTEL_OTEL_CALL_TRACER_H
+#define GRPC_SRC_CPP_EXT_OTEL_OTEL_CALL_TRACER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -131,4 +131,4 @@ class OpenTelemetryCallTracer : public grpc_core::ClientCallTracer {
 }  // namespace internal
 }  // namespace grpc
 
-#endif  // GRPC_SRC_CPP_EXT_FILTERS_OTEL_OTEL_CALL_TRACER_H
+#endif  // GRPC_SRC_CPP_EXT_OTEL_OTEL_CALL_TRACER_H

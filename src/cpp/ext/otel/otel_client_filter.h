@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_SRC_CPP_EXT_FILTERS_OTEL_OTEL_CLIENT_FILTER_H
-#define GRPC_SRC_CPP_EXT_FILTERS_OTEL_OTEL_CLIENT_FILTER_H
+#ifndef GRPC_SRC_CPP_EXT_OTEL_OTEL_CLIENT_FILTER_H
+#define GRPC_SRC_CPP_EXT_OTEL_OTEL_CLIENT_FILTER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -51,4 +51,4 @@ class OpenTelemetryClientFilter : public grpc_core::ChannelFilter {
 }  // namespace internal
 }  // namespace grpc
 
-#endif  // GRPC_SRC_CPP_EXT_FILTERS_OTEL_OTEL_CLIENT_FILTER_H
+#endif  // GRPC_SRC_CPP_EXT_OTEL_OTEL_CLIENT_FILTER_H

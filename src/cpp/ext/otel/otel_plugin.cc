@@ -18,7 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/cpp/ext/filters/otel/otel_plugin.h"
+#include "src/cpp/ext/otel/otel_plugin.h"
 
 #include <limits.h>
 
@@ -34,8 +34,8 @@
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/cpp/ext/filters/otel/otel_client_filter.h"
-#include "src/cpp/ext/filters/otel/otel_server_call_tracer.h"
+#include "src/cpp/ext/otel/otel_client_filter.h"
+#include "src/cpp/ext/otel/otel_server_call_tracer.h"
 
 namespace grpc {
 namespace internal {
