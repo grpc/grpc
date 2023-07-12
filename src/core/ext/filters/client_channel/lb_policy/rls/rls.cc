@@ -693,9 +693,6 @@ class RlsLb : public LoadBalancingPolicy {
   // Updates the picker in the work serializer.
   void UpdatePickerLocked() ABSL_LOCKS_EXCLUDED(&mu_);
 
-  // The name of the server for the channel.
-  std::string server_name_;
-
   // Mutex to guard LB policy state that is accessed by the picker.
   Mutex mu_;
   bool is_shutdown_ ABSL_GUARDED_BY(mu_) = false;
@@ -899,7 +896,7 @@ void RlsLb::ChildPolicyWrapper::ChildPolicyHelper::UpdateState(
 // Builds the key to be used for a request based on path and initial_metadata.
 std::map<std::string, std::string> BuildKeyMap(
     const RlsLbConfig::KeyBuilderMap& key_builder_map, absl::string_view path,
-    const std::string& host,
+    absl::string_view host,
     const LoadBalancingPolicy::MetadataInterface* initial_metadata) {
   size_t last_slash_pos = path.npos;  // May need this a few times, so cache it.
   // Find key builder for this path.
@@ -935,7 +932,7 @@ std::map<std::string, std::string> BuildKeyMap(
                  key_builder->constant_keys.end());
   // Add host key.
   if (!key_builder->host_key.empty()) {
-    key_map[key_builder->host_key] = host;
+    key_map[key_builder->host_key] = std::string(host);
   }
   // Add service key.
   if (!key_builder->service_key.empty()) {
@@ -970,9 +967,10 @@ RlsLb::Picker::Picker(RefCountedPtr<RlsLb> lb_policy)
 
 LoadBalancingPolicy::PickResult RlsLb::Picker::Pick(PickArgs args) {
   // Construct key for request.
-  RequestKey key = {BuildKeyMap(config_->key_builder_map(), args.path,
-                                lb_policy_->server_name_,
-                                args.initial_metadata)};
+  RequestKey key = {
+      BuildKeyMap(config_->key_builder_map(), args.path,
+                  lb_policy_->channel_control_helper()->GetAuthority(),
+                  args.initial_metadata)};
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_INFO, "[rlslb %p] picker=%p: request keys: %s",
             lb_policy_.get(), this, key.ToString().c_str());
@@ -1857,18 +1855,7 @@ RlsLb::ResponseInfo RlsLb::RlsRequest::ParseResponseProto() {
 // RlsLb
 //
 
-std::string GetServerUri(const ChannelArgs& args) {
-  auto server_uri_str = args.GetString(GRPC_ARG_SERVER_URI);
-  GPR_ASSERT(server_uri_str.has_value());
-  absl::StatusOr<URI> uri = URI::Parse(*server_uri_str);
-  GPR_ASSERT(uri.ok());
-  return std::string(absl::StripPrefix(uri->path(), "/"));
-}
-
-RlsLb::RlsLb(Args args)
-    : LoadBalancingPolicy(std::move(args)),
-      server_name_(GetServerUri(channel_args())),
-      cache_(this) {
+RlsLb::RlsLb(Args args) : LoadBalancingPolicy(std::move(args)), cache_(this) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_INFO, "[rlslb %p] policy created", this);
   }
