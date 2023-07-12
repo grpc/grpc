@@ -106,9 +106,7 @@ static void grpc_rb_server_free_internal(void* p) {
 }
 
 /* Destroys server instances. */
-static void grpc_rb_server_free(void* p) {
-  grpc_rb_server_free_internal(p);
-}
+static void grpc_rb_server_free(void* p) { grpc_rb_server_free_internal(p); }
 
 static const rb_data_type_t grpc_rb_server_data_type = {
     "grpc_server",

@@ -169,9 +169,7 @@ static void grpc_rb_channel_free_internal(void* p) {
 }
 
 /* Destroys Channel instances. */
-static void grpc_rb_channel_free(void* p) {
-  grpc_rb_channel_free_internal(p);
-}
+static void grpc_rb_channel_free(void* p) { grpc_rb_channel_free_internal(p); }
 
 /* Protects the mark object from GC */
 static void grpc_rb_channel_mark(void* p) {
