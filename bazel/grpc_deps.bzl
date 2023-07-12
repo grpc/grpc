@@ -230,11 +230,11 @@ def grpc_deps():
             name = "boringssl",
             # Use github mirror instead of https://boringssl.googlesource.com/boringssl
             # to obtain a boringssl archive with consistent sha256
-            sha256 = "f150aa2d73017fe8576a8a335f29030488d851c94368a79ac56142d107bf9e9a",
-            strip_prefix = "boringssl-e46383fc18d08def901b2ed5a194295693e905c7",
+            sha256 = "9c922ba2e1f8b53c87af7ad5777b0924d720d3f4ac65342f63663c26780d844e",
+            strip_prefix = "boringssl-14de8bccb14ebff8fb793bd6459ad55841af6866",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/boringssl/archive/e46383fc18d08def901b2ed5a194295693e905c7.tar.gz",
-                "https://github.com/google/boringssl/archive/e46383fc18d08def901b2ed5a194295693e905c7.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/boringssl/archive/14de8bccb14ebff8fb793bd6459ad55841af6866.tar.gz",
+                "https://github.com/google/boringssl/archive/14de8bccb14ebff8fb793bd6459ad55841af6866.tar.gz",
             ],
         )
 
