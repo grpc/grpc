@@ -56,7 +56,8 @@ struct GrpcLbResponse {
 };
 
 // Creates a serialized grpclb request.
-grpc_slice GrpcLbRequestCreate(const char* lb_service_name, upb_Arena* arena);
+grpc_slice GrpcLbRequestCreate(absl::string_view lb_service_name,
+                               upb_Arena* arena);
 
 // Creates a serialized grpclb load report request.
 grpc_slice GrpcLbLoadReportRequestCreate(
