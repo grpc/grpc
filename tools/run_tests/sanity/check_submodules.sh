@@ -28,7 +28,7 @@ cat <<EOF | sort >"$want_submodules"
 third_party/abseil-cpp c2435f8342c2d0ed8101cb43adfd605fdc52dca2
 third_party/benchmark 361e8d1cfe0c6c36d30b39f1b61302ece5507320
 third_party/bloaty 60209eb1ccc34d5deefb002d1b7f37545204f7f2
-third_party/boringssl-with-bazel e46383fc18d08def901b2ed5a194295693e905c7
+third_party/boringssl-with-bazel 529f1b459362fe89d581bb88d4b61d52b1d361d2
 third_party/cares/cares 6360e96b5cf8e5980c887ce58ef727e53d77243a
 third_party/envoy-api e53e7bbd012f81965f2e79848ad9a58ceb67201f
 third_party/googleapis 2f9af297c84c55c8b871ba4495e01ade42476c92
