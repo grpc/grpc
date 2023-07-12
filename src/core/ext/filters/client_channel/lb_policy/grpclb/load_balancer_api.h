@@ -24,6 +24,7 @@
 
 #include <vector>
 
+#include "absl/strings/string_view.h"
 #include "upb/mem/arena.h"
 
 #include <grpc/slice.h>
