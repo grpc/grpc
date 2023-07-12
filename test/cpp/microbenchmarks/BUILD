@@ -151,6 +151,8 @@ grpc_cc_test(
         "no_mac",
         "no_windows",
         "nomsan",
+        "notsan",
+        "noubsan",
     ],
     deps = [
         ":helpers",
