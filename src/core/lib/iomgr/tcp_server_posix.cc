@@ -25,7 +25,6 @@
 // FIXME: "posix" files shouldn't be depending on _GNU_SOURCE
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
-#include <grpc/event_engine/event_engine.h>
 #endif
 
 #include "src/core/lib/iomgr/port.h"
@@ -50,6 +49,7 @@
 
 #include <grpc/byte_buffer.h>
 #include <grpc/event_engine/endpoint_config.h>
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
