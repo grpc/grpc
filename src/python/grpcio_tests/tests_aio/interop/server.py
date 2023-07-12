@@ -16,7 +16,6 @@
 import argparse
 import asyncio
 import logging
-import sys
 
 import grpc
 
@@ -28,7 +27,9 @@ _LOGGER = logging.getLogger(__name__)
 _LOGGER.setLevel(logging.DEBUG)
 
 
-async def serve(args):
+async def serve():
+    args = interop_server_lib.parse_interop_server_arguments()
+
     if args.use_tls or args.use_alts:
         credentials = interop_server_lib.get_server_credentials(args.use_tls)
         address, server = await _test_server.start_test_server(
@@ -46,5 +47,4 @@ async def serve(args):
 
 
 if __name__ == "__main__":
-    args = interop_server_lib.parse_interop_server_arguments(sys.argv)
-    asyncio.get_event_loop().run_until_complete(serve(args))
+    asyncio.get_event_loop().run_until_complete(serve())
