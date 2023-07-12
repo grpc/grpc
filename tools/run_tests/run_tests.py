@@ -962,10 +962,8 @@ class RubyLanguage(object):
             "src/ruby/end2end/call_credentials_timeout_test.rb",
             "src/ruby/end2end/call_credentials_returning_bad_metadata_doesnt_kill_background_thread_test.rb",
         ]:
-            if test in [
-                # TODO(apolcyn): Unskip fork tests on linux. They are
-                # skipped everywhere for now because they're flaky since
-                # introduction.
+            if platform_string() == "mac" and test in [
+                # skip fork tests on mac, it's only supported on linux
                 "src/ruby/end2end/fork_test.rb",
                 "src/ruby/end2end/simple_fork_test.rb",
                 "src/ruby/end2end/secure_fork_test.rb",
