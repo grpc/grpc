@@ -18,6 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <grpc/support/atm.h>
+
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP_SERVER_UTILS_COMMON
@@ -81,6 +83,24 @@ static int get_max_accept_queue_size(void) {
   return s_max_accept_queue_size;
 }
 
+static void listener_retry_timer_cb(void* arg, grpc_error_handle err) {
+  // Do nothing if cancelled.
+  if (!err.ok()) return;
+  grpc_tcp_listener* listener = static_cast<grpc_tcp_listener*>(arg);
+  gpr_atm_no_barrier_store(&listener->retry_timer_armed, false);
+  if (!grpc_fd_is_shutdown(listener->emfd)) {
+    grpc_fd_set_readable(listener->emfd);
+  }
+}
+
+void grpc_tcp_server_listener_initialize_retry_timer(
+    grpc_tcp_listener* listener) {
+  gpr_atm_no_barrier_store(&listener->retry_timer_armed, false);
+  grpc_timer_init_unset(&listener->retry_timer);
+  GRPC_CLOSURE_INIT(&listener->retry_closure, listener_retry_timer_cb, listener,
+                    grpc_schedule_on_exec_ctx);
+}
+
 static grpc_error_handle add_socket_to_server(grpc_tcp_server* s, int fd,
                                               const grpc_resolved_address* addr,
                                               unsigned port_index,
@@ -112,6 +132,7 @@ static grpc_error_handle add_socket_to_server(grpc_tcp_server* s, int fd,
   sp->server = s;
   sp->fd = fd;
   sp->emfd = grpc_fd_create(fd, name.c_str(), true);
+  grpc_tcp_server_listener_initialize_retry_timer(sp);
 
   // Check and set fd as prellocated
   if (grpc_tcp_server_pre_allocated_fd(s) == fd) {
