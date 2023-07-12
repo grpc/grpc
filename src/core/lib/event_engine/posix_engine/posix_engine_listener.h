@@ -121,12 +121,9 @@ class PosixEngineListenerImpl
     ListenerSocketsContainer::ListenerSocket socket_;
     EventHandle* handle_;
     PosixEngineClosure* notify_on_accept_;
-    // A backup timer to retry accept calls after file descriptor exhaustion.
-    // Note that a mutex is required here, since check and set cannot be an
-    // atomic operation when scheduling a timer.
-    grpc_core::Mutex retry_timer_mu_;
-    EventEngine::TaskHandle retry_timer_handle_
-        ABSL_GUARDED_BY(retry_timer_mu_) = EventEngine::TaskHandle::kInvalid;
+    // Tracks the status of a backup timer to retry accept4 calls after file
+    // descriptor exhaustion.
+    std::atomic<bool> retry_timer_armed_{false};
   };
   class ListenerAsyncAcceptors : public ListenerSocketsContainer {
    public:

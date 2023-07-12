@@ -151,26 +151,19 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
           GRPC_LOG_EVERY_N_SEC(1, GPR_ERROR, "%s",
                                "File descriptor limit reached. Retrying.");
           handle_->NotifyOnRead(notify_on_accept_);
-          {
-            grpc_core::MutexLock lock(&retry_timer_mu_);
-            if (retry_timer_handle_ == EventEngine::TaskHandle::kInvalid) {
-              return;
-            }
-            // Hold a ref while the retry timer is waiting, to prevent listener
-            // destruction and the races that would ensue.
-            Ref();
-            retry_timer_handle_ =
-                engine_->RunAfter(grpc_core::Duration::Seconds(1), [this]() {
-                  {
-                    grpc_core::MutexLock lock(&retry_timer_mu_);
-                    retry_timer_handle_ = EventEngine::TaskHandle::kInvalid;
-                  }
-                  if (!handle_->IsHandleShutdown()) {
-                    handle_->SetReadable();
-                  }
-                  Unref();
-                });
-          }
+          // Do not schedule another timer if one is already armed.
+          if (retry_timer_armed_.exchange(true)) return;
+          // Hold a ref while the retry timer is waiting, to prevent listener
+          // destruction and the races that would ensue.
+          Ref();
+          std::ignore =
+              engine_->RunAfter(grpc_core::Duration::Seconds(1), [this]() {
+                retry_timer_armed_.store(false);
+                if (!handle_->IsHandleShutdown()) {
+                  handle_->SetReadable();
+                }
+                Unref();
+              });
           return;
         case EAGAIN:
         case ECONNABORTED:
