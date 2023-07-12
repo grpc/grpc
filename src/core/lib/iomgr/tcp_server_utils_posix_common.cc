@@ -18,6 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <grpc/support/atm.h>
+
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP_SERVER_UTILS_COMMON
@@ -80,44 +82,59 @@ static int get_max_accept_queue_size(void) {
   return s_max_accept_queue_size;
 }
 
+static void listener_retry_timer_cb(void* arg, grpc_error_handle err) {
+  // Do nothing if cancelled.
+  if (err != GRPC_ERROR_NONE) return;
+  grpc_tcp_listener* listener = static_cast<grpc_tcp_listener*>(arg);
+  gpr_atm_no_barrier_store(&listener->retry_timer_armed, false);
+  if (!grpc_fd_is_shutdown(listener->emfd)) {
+    grpc_fd_set_readable(listener->emfd);
+  }
+}
+
+void grpc_tcp_server_listener_initialize_retry_timer(
+    grpc_tcp_listener* listener) {
+  gpr_atm_no_barrier_store(&listener->retry_timer_armed, false);
+  grpc_timer_init_unset(&listener->retry_timer);
+  GRPC_CLOSURE_INIT(&listener->retry_closure, listener_retry_timer_cb, listener,
+                    grpc_schedule_on_exec_ctx);
+}
+
 static grpc_error_handle add_socket_to_server(grpc_tcp_server* s, int fd,
                                               const grpc_resolved_address* addr,
                                               unsigned port_index,
                                               unsigned fd_index,
                                               grpc_tcp_listener** listener) {
-  grpc_tcp_listener* sp = nullptr;
   int port = -1;
-
   grpc_error_handle err =
       grpc_tcp_server_prepare_socket(s, fd, addr, s->so_reuseport, &port);
-  if (err == GRPC_ERROR_NONE) {
-    GPR_ASSERT(port > 0);
-    std::string addr_str = grpc_sockaddr_to_string(addr, true);
-    std::string name = absl::StrCat("tcp-server-listener:", addr_str);
-    gpr_mu_lock(&s->mu);
-    s->nports++;
-    GPR_ASSERT(!s->on_accept_cb && "must add ports before starting server");
-    sp = static_cast<grpc_tcp_listener*>(gpr_malloc(sizeof(grpc_tcp_listener)));
-    sp->next = nullptr;
-    if (s->head == nullptr) {
-      s->head = sp;
-    } else {
-      s->tail->next = sp;
-    }
-    s->tail = sp;
-    sp->server = s;
-    sp->fd = fd;
-    sp->emfd = grpc_fd_create(fd, name.c_str(), true);
-    memcpy(&sp->addr, addr, sizeof(grpc_resolved_address));
-    sp->port = port;
-    sp->port_index = port_index;
-    sp->fd_index = fd_index;
-    sp->is_sibling = 0;
-    sp->sibling = nullptr;
-    GPR_ASSERT(sp->emfd);
-    gpr_mu_unlock(&s->mu);
+  if (err != GRPC_ERROR_NONE) return err;
+  GPR_ASSERT(port > 0);
+  std::string addr_str = grpc_sockaddr_to_string(addr, true);
+  std::string name = absl::StrCat("tcp-server-listener:", addr_str);
+  gpr_mu_lock(&s->mu);
+  s->nports++;
+  grpc_tcp_listener* sp =
+      static_cast<grpc_tcp_listener*>(gpr_malloc(sizeof(grpc_tcp_listener)));
+  sp->next = nullptr;
+  if (s->head == nullptr) {
+    s->head = sp;
+  } else {
+    s->tail->next = sp;
   }
-
+  s->tail = sp;
+  sp->server = s;
+  sp->fd = fd;
+  sp->emfd = grpc_fd_create(fd, name.c_str(), true);
+  grpc_tcp_server_listener_initialize_retry_timer(sp);
+  memcpy(&sp->addr, addr, sizeof(grpc_resolved_address));
+  sp->port = port;
+  sp->port_index = port_index;
+  sp->fd_index = fd_index;
+  sp->is_sibling = 0;
+  sp->sibling = nullptr;
+  GPR_ASSERT(sp->emfd);
+  gpr_mu_unlock(&s->mu);
   *listener = sp;
   return err;
 }

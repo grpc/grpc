@@ -29,6 +29,18 @@
 #include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gpr/useful.h"
 
+#define GRPC_LOG_EVERY_N_SEC(n, severity, format, ...)          \
+  do {                                                          \
+    static std::atomic<uint64_t> prev{0};                       \
+    uint64_t now = grpc_core::Timestamp::FromTimespecRoundDown( \
+                       gpr_now(GPR_CLOCK_MONOTONIC))            \
+                       .milliseconds_after_process_epoch();     \
+    if (prev == 0 || now - prev > (n)*1000) {                   \
+      prev = now;                                               \
+      gpr_log(severity, format, __VA_ARGS__);                   \
+    }                                                           \
+  } while (0)
+
 namespace grpc_core {
 
 namespace time_detail {
