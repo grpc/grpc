@@ -160,6 +160,13 @@ class OpenCensusServerCallTracer : public grpc_core::ServerCallTracer {
     context_.AddSpanAnnotation(annotation, {});
   }
 
+  void RecordAnnotation(const Annotation& annotation) override {
+    switch (annotation.type()) {
+      default:
+        context_.AddSpanAnnotation(annotation.ToString(), {});
+    }
+  }
+
  private:
   experimental::CensusContext context_;
   // server method
