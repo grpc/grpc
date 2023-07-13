@@ -26,7 +26,6 @@
 #include <atomic>
 #include <string>
 #include <tuple>
-#include <type_traits>
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
