@@ -90,6 +90,8 @@ COPY_FILES_SOURCE_TARGET_PAIRS = [
     ("third_party/utf8_range", "third_party/utf8_range"),
 ]
 
+DELETE_TARGETS_ON_CLEANUP = ["third_party"]
+
 # grpc repo root
 GRPC_ROOT = os.path.abspath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..")
@@ -228,6 +230,13 @@ def _copy_source_tree(source, target):
             shutil.copyfile(source_file, target_file)
 
 
+def _delete_source_tree(target):
+    """Deletes the copied target directory."""
+    target = GRPCIO_TOOLS_ROOT_PREFIX + target
+    target_abs = os.path.join(*target.split("/"))
+    print("Deleting copied folder %s" % (target_abs))
+    shutil.rmtree(target_abs, ignore_errors=True)
+
 def main():
     os.chdir(GRPC_ROOT)
 
@@ -269,6 +278,8 @@ def main():
     with open(GRPC_PYTHON_PROTOC_LIB_DEPS, "w") as deps_file:
         deps_file.write(protoc_lib_deps_content)
     print('File "%s" updated.' % GRPC_PYTHON_PROTOC_LIB_DEPS)
+    for target in DELETE_TARGETS_ON_CLEANUP:
+        _delete_source_tree(target)
     print("Done.")
 
 
