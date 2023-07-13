@@ -67,6 +67,7 @@ class SliceBuffer {
   /// Appends a SliceBuffer into the SliceBuffer and makes an attempt to merge
   /// this slice with the last slice in the SliceBuffer.
   void Append(const SliceBuffer& other);
+  void TakeAndAppend(SliceBuffer& other);
 
   /// Adds a new slice into the SliceBuffer at the next available index.
   /// Returns the index at which the new slice is added.

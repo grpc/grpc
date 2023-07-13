@@ -33,6 +33,7 @@
 #include "absl/types/optional.h"
 #include "absl/types/span.h"
 #include "absl/types/variant.h"
+#include "frame.h"
 
 #include <grpc/slice.h>
 
@@ -52,15 +53,7 @@ namespace grpc_core {
 // Top level interface for parsing a sequence of header, continuation frames.
 class HPackParser {
  public:
-  // What kind of stream boundary is provided by this frame?
-  enum class Boundary : uint8_t {
-    // More continuations are expected
-    None,
-    // This marks the end of headers, so data frames should follow
-    EndOfHeaders,
-    // This marks the end of headers *and* the end of the stream
-    EndOfStream
-  };
+  using Boundary = Http2HeaderFrame::Boundary;
   // What kind of priority is represented in the next frame
   enum class Priority : uint8_t {
     // No priority field

@@ -291,6 +291,10 @@ class GPR_MSVC_EMPTY_BASE_CLASS_WORKAROUND MutableSlice
     return MutableSlice(grpc_slice_sub_no_ref(TakeCSlice(), pos, pos + n));
   }
 
+  // Split this slice in two, returning the first n bytes and leaving the
+  // remainder.
+  MutableSlice TakeFirst(size_t n);
+
   // Iterator access to the underlying bytes
   uint8_t* begin() { return mutable_data(); }
   uint8_t* end() { return mutable_data() + size(); }
