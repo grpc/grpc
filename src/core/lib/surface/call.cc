@@ -3008,8 +3008,6 @@ void ClientPromiseBasedCall::Finish(ServerMetadataHandle trailing_metadata) {
     gpr_log(GPR_INFO, "%s[call] Finish: %s", DebugTag().c_str(),
             trailing_metadata->DebugString().c_str());
   }
-  is_trailers_only_ =
-      trailing_metadata->get(GrpcTrailersOnly()).value_or(is_trailers_only_);
   ResetDeadline();
   set_completed();
   client_to_server_messages_.sender.CloseWithError();
