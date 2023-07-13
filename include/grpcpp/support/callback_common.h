@@ -120,12 +120,14 @@ class CallbackWithStatusTag : public grpc_completion_queue_functor {
     }
     GPR_ASSERT(ignored == ops_);
 
-    // Last use of func_ or status_, so ok to move them out
-    auto func = std::move(func_);
-    auto status = std::move(status_);
-    func_ = nullptr;     // reset to clear this out for sure
-    status_ = Status();  // reset to clear this out for sure
-    CatchingCallback(std::move(func), std::move(status));
+    {
+      // Last use of func_ or status_, so ok to move them out
+      auto func = std::move(func_);
+      auto status = std::move(status_);
+      func_ = nullptr;     // reset to clear this out for sure
+      status_ = Status();  // reset to clear this out for sure
+      CatchingCallback(std::move(func), std::move(status));
+    }
     grpc_call_unref(call_);
   }
 };
