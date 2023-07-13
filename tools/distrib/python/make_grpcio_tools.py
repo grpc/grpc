@@ -241,7 +241,7 @@ def _delete_source_tree(target):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--keep-third-party", action=argparse.BooleanOptionalAction, default=False, help="Do not delete the temporary third_party folder"
+        "--keep-third-party", default=False, action="store_true", help="Do not delete the temporary third_party folder"
     )
     args = parser.parse_args()
     os.chdir(GRPC_ROOT)
