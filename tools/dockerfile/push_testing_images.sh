@@ -67,6 +67,22 @@ ALL_DOCKERFILE_DIRS=(
 
 CHECK_FAILED=""
 
+if [ "${CHECK_MODE}" != "" ]
+then
+  # Check that there are no stale .current_version files (for which the corresponding
+  # dockerfile_dir doesn't exist anymore).
+  for CURRENTVERSION_FILE in $(find tools/ third_party/rake-compiler-dock -name '*.current_version')
+  do
+    DOCKERFILE_DIR="$(echo ${CURRENTVERSION_FILE} | sed 's/.current_version$//')"
+    if [ ! -e "${DOCKERFILE_DIR}/Dockerfile" ]
+    then
+       echo "Found that ${DOCKERFILE_DIR} has '.current_version' file but there is no corresponding Dockerfile."
+       echo "Should the ${CURRENTVERSION_FILE} file be deleted?"
+       CHECK_FAILED=true
+    fi
+  done
+fi
+
 for DOCKERFILE_DIR in "${ALL_DOCKERFILE_DIRS[@]}"
 do
   # Generate image name based on Dockerfile checksum. That works well as long
@@ -165,6 +181,9 @@ do
   DOCKER_IMAGE_DIGEST_LOCAL=$(docker image inspect "${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}" | jq -e -r '.[0].Id')
 
   # update info on what we consider to be the current version of the docker image (which will be used to run tests)
+  # TODO(jtattermusch): If we just built the docker image locally,
+  # the local image digest will be different than the digest as reported by container registry.
+  # See b/278226801
   echo -n "${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}@${DOCKER_IMAGE_DIGEST_LOCAL}" >${DOCKERFILE_DIR}.current_version
 
   if [ "${SKIP_UPLOAD}" == "" ] && [ "${LOCAL_ONLY_MODE}" == "" ]
@@ -172,12 +191,6 @@ do
     docker push ${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}
   fi
 done
-
-if [ "${CHECK_MODE}" != "" ]
-then
-  # TODO(jtattermusch): check there are no extra current_version files (for which there isn't a corresponding Dockerfile)
-  true
-fi
 
 if [ "${CHECK_FAILED}" != "" ]
 then
