@@ -968,12 +968,14 @@ class RubyLanguage(object):
                 "src/ruby/end2end/secure_fork_test.rb",
                 "src/ruby/end2end/bad_usage_fork_test.rb",
             ]:
-                # Skip fork tests on mac, it's only supported on linux.
-                # Also, there's a known issue with dbg builds that breaks fork
-                # support: https://github.com/grpc/grpc/issues/31885.
-                # TODO(apolcyn): unskip these tests on dbg builds after we
-                # migrate to event engine and hence fix that issue.
-                if platform_string() == "mac" or self.config.build_config == "dbg":
+                if platform_string() == "mac":
+                    # Skip fork tests on mac, it's only supported on linux.
+                    continue
+                if self.config.build_config == "dbg":
+                    # There's a known issue with dbg builds that breaks fork
+                    # support: https://github.com/grpc/grpc/issues/31885.
+                    # TODO(apolcyn): unskip these tests on dbg builds after we
+                    # migrate to event engine and hence fix that issue.
                     continue
             tests.append(
                 self.config.job_spec(
