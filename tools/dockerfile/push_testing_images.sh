@@ -102,6 +102,7 @@ do
 
   if [ "${LOCAL_ONLY_MODE}" == "" ]
   then
+    # value obtained here corresponds to the "RepoDigests" from "docker image inspect", but without the need to actually pull the image
     DOCKER_IMAGE_DIGEST_REMOTE=$(gcloud artifacts docker images describe "${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}" --format=json | jq -r '.image_summary.digest')
 
     if [ "${DOCKER_IMAGE_DIGEST_REMOTE}" != "" ]
@@ -178,17 +179,20 @@ do
     docker tag ${DOCKERHUB_ORGANIZATION}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} ${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}
   fi
 
-  DOCKER_IMAGE_DIGEST_LOCAL=$(docker image inspect "${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}" | jq -e -r '.[0].Id')
-
-  # update info on what we consider to be the current version of the docker image (which will be used to run tests)
-  # TODO(jtattermusch): If we just built the docker image locally,
-  # the local image digest will be different than the digest as reported by container registry.
-  # See b/278226801
-  echo -n "${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}@${DOCKER_IMAGE_DIGEST_LOCAL}" >${DOCKERFILE_DIR}.current_version
+  # After building the docker image locally, we don't know the image's RepoDigest (which is distinct from image's "Id" digest) yet
+  # so we can only update the .current_version file with the image tag (which will be enough for running tests under docker locally).
+  # The .current_version file will be updated with both tag and SHA256 repo digest later, once we actually push it.
+  # See b/278226801 for context.
+  echo -n "${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}" >${DOCKERFILE_DIR}.current_version
 
   if [ "${SKIP_UPLOAD}" == "" ] && [ "${LOCAL_ONLY_MODE}" == "" ]
   then
     docker push ${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}
+
+    # After successful push, the image's RepoDigest info will become available in "docker image inspect",
+    # so we update the .current_version file with the repo digest.
+    DOCKER_IMAGE_DIGEST_REMOTE=$(docker image inspect "${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}" | jq -e -r ".[0].RepoDigests[] | select(contains(\"${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}@\"))" | sed 's/^.*@sha256:/sha256:/')
+    echo -n "${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}@${DOCKER_IMAGE_DIGEST_REMOTE}" >${DOCKERFILE_DIR}.current_version
   fi
 done
 
