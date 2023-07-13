@@ -169,10 +169,7 @@ static void grpc_rb_channel_free_internal(void* p) {
 }
 
 /* Destroys Channel instances. */
-static void grpc_rb_channel_free(void* p) {
-  grpc_rb_channel_free_internal(p);
-  grpc_ruby_shutdown();
-}
+static void grpc_rb_channel_free(void* p) { grpc_rb_channel_free_internal(p); }
 
 /* Protects the mark object from GC */
 static void grpc_rb_channel_mark(void* p) {
@@ -759,10 +756,8 @@ static VALUE run_poll_channels_loop(VALUE arg) {
   gpr_log(
       GPR_DEBUG,
       "GRPC_RUBY: run_poll_channels_loop - create connection polling thread");
-  grpc_ruby_init();
   rb_thread_call_without_gvl(run_poll_channels_loop_no_gil, NULL,
                              run_poll_channels_loop_unblocking_func, NULL);
-  grpc_ruby_shutdown();
   return Qnil;
 }
 

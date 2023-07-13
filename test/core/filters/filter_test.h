@@ -39,6 +39,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice_buffer.h"
@@ -52,6 +53,12 @@ MATCHER_P2(HasMetadataKeyValue, key, value, "") {
   std::string temp;
   auto r = arg.GetStringValue(key, &temp);
   return r == value;
+}
+
+// gmock matcher to ensure that metadata does not include a key/value pair.
+MATCHER_P(LacksMetadataKey, key, "") {
+  std::string temp;
+  return !arg.GetStringValue(key, &temp).has_value();
 }
 
 // gmock matcher to ensure that a message has a given set of flags.
@@ -109,13 +116,16 @@ class FilterTestBase : public ::testing::Test {
 
     Call MakeCall();
 
-   private:
-    friend class FilterTestBase;
-    friend class Call;
-
+   protected:
     explicit Channel(std::unique_ptr<ChannelFilter> filter,
                      FilterTestBase* test)
         : impl_(std::make_shared<Impl>(std::move(filter), test)) {}
+
+    ChannelFilter* filter_ptr() { return impl_->filter.get(); }
+
+   private:
+    friend class FilterTestBase;
+    friend class Call;
 
     std::shared_ptr<Impl> impl_;
   };
@@ -160,6 +170,8 @@ class FilterTestBase : public ::testing::Test {
     // metadata.
     void FinishNextFilter(ServerMetadataHandle md);
 
+    Arena* arena();
+
    private:
     friend class Channel;
     class ScopedContext;
@@ -192,9 +204,6 @@ class FilterTestBase : public ::testing::Test {
  protected:
   FilterTestBase();
   ~FilterTestBase() override;
-  absl::StatusOr<Channel> MakeChannel(std::unique_ptr<ChannelFilter> filter) {
-    return Channel(std::move(filter), this);
-  }
 
   grpc_event_engine::experimental::EventEngine* event_engine() {
     return &event_engine_;
@@ -209,11 +218,19 @@ class FilterTestBase : public ::testing::Test {
 template <typename Filter>
 class FilterTest : public FilterTestBase {
  public:
+  class Channel : public FilterTestBase::Channel {
+   public:
+    Filter* filter() { return static_cast<Filter*>(filter_ptr()); }
+
+   private:
+    friend class FilterTest<Filter>;
+    using FilterTestBase::Channel::Channel;
+  };
+
   absl::StatusOr<Channel> MakeChannel(const ChannelArgs& args) {
     auto filter = Filter::Create(args, ChannelFilter::Args());
     if (!filter.ok()) return filter.status();
-    return FilterTestBase::MakeChannel(
-        std::make_unique<Filter>(std::move(*filter)));
+    return Channel(std::make_unique<Filter>(std::move(*filter)), this);
   }
 };
 
