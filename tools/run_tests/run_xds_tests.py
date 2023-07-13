@@ -255,7 +255,7 @@ argp.add_argument(
     ),
 )
 argp.add_argument(
-    "--network", default="global/networks/default", help="GCP network to use"
+    "--network", default="global/networks/default-vpc", help="GCP network to use"
 )
 _DEFAULT_PORT_RANGE = "8080:8280"
 argp.add_argument(
