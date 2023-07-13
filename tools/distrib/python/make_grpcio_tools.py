@@ -16,6 +16,7 @@
 
 from __future__ import print_function
 
+import argparse
 import errno
 import filecmp
 import glob
@@ -238,6 +239,11 @@ def _delete_source_tree(target):
     shutil.rmtree(target_abs, ignore_errors=True)
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--keep-third-party", action=argparse.BooleanOptionalAction, default=False, help="Do not delete the temporary third_party folder"
+    )
+    args = parser.parse_args()
     os.chdir(GRPC_ROOT)
 
     # Step 1:
@@ -278,8 +284,9 @@ def main():
     with open(GRPC_PYTHON_PROTOC_LIB_DEPS, "w") as deps_file:
         deps_file.write(protoc_lib_deps_content)
     print('File "%s" updated.' % GRPC_PYTHON_PROTOC_LIB_DEPS)
-    for target in DELETE_TARGETS_ON_CLEANUP:
-        _delete_source_tree(target)
+    if not args.keep_third_party:
+        for target in DELETE_TARGETS_ON_CLEANUP:
+            _delete_source_tree(target)
     print("Done.")
 
 
