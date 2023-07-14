@@ -1,22 +1,21 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-#include <stdint.h>
 #include <string.h>
 
 #include <string>
@@ -35,8 +34,6 @@
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
-
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static void run_test(bool wait_for_ready, bool use_service_config) {
   grpc_channel* chan;
@@ -58,7 +55,7 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
   cq = grpc_completion_queue_create_for_next(nullptr);
   grpc_core::CqVerifier cqv(cq);
 
-  /* if using service config, create channel args */
+  // if using service config, create channel args
   grpc_channel_args* args = nullptr;
   if (use_service_config) {
     GPR_ASSERT(wait_for_ready);
@@ -77,7 +74,7 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
     args = grpc_channel_args_copy_and_add(args, &arg, 1);
   }
 
-  /* create a call, channel to a port which will refuse connection */
+  // create a call, channel to a port which will refuse connection
   int port = grpc_pick_unused_port_or_die();
   std::string addr = grpc_core::JoinHostPort("127.0.0.1", port);
   gpr_log(GPR_INFO, "server: %s", addr.c_str());
@@ -107,11 +104,11 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call, ops,
-                                                   (size_t)(op - ops), tag(1),
-                                                   nullptr));
-  /* verify that all tags get completed */
-  cqv.Expect(tag(1), true);
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_call_start_batch(call, ops, (size_t)(op - ops),
+                                   grpc_core::CqVerifier::tag(1), nullptr));
+  // verify that all tags get completed
+  cqv.Expect(grpc_core::CqVerifier::tag(1), true);
   cqv.Verify();
 
   if (wait_for_ready) {

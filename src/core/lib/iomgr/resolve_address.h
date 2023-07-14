@@ -1,32 +1,34 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-#ifndef GRPC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_H
-#define GRPC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_H
+#ifndef GRPC_SRC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_H
+#define GRPC_SRC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_H
 
 #include <grpc/support/port_platform.h>
 
 #include <stddef.h>
 
+#include "absl/container/flat_hash_set.h"
 #include "absl/status/statusor.h"
 
 #include <grpc/event_engine/event_engine.h>
 
+#include "src/core/lib/event_engine/handle_containers.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/pollset_set.h"
@@ -43,9 +45,21 @@ constexpr Duration kDefaultDNSRequestTimeout = Duration::Minutes(2);
 // A singleton class used for async and blocking DNS resolution
 class DNSResolver {
  public:
-  using TaskHandle = ::grpc_event_engine::experimental::EventEngine::
-      DNSResolver::LookupTaskHandle;
-  static constexpr TaskHandle kNullHandle{0, 0};
+  /// Task handle for DNS Resolution requests.
+  struct LookupTaskHandle {
+    intptr_t keys[2];
+    static const LookupTaskHandle kInvalid;
+    friend bool operator==(const LookupTaskHandle& lhs,
+                           const LookupTaskHandle& rhs);
+    friend bool operator!=(const LookupTaskHandle& lhs,
+                           const LookupTaskHandle& rhs);
+  };
+  using TaskHandle = LookupTaskHandle;
+  using TaskHandleSet = absl::flat_hash_set<
+      TaskHandle,
+      grpc_event_engine::experimental::TaskHandleComparator<TaskHandle>::Hash>;
+
+  static const TaskHandle kNullHandle;
 
   virtual ~DNSResolver() {}
 
@@ -113,4 +127,4 @@ std::shared_ptr<DNSResolver> GetDNSResolver();
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_H */
+#endif  // GRPC_SRC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_H

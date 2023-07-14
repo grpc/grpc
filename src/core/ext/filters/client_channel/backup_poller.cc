@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2017 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2017 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -28,7 +28,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
-#include "src/core/lib/gprpp/global_config.h"
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -61,19 +61,10 @@ static backup_poller* g_poller = nullptr;  // guarded by g_poller_mu
 static grpc_core::Duration g_poll_interval =
     grpc_core::Duration::Milliseconds(DEFAULT_POLL_INTERVAL_MS);
 
-GPR_GLOBAL_CONFIG_DEFINE_INT32(
-    grpc_client_channel_backup_poll_interval_ms, DEFAULT_POLL_INTERVAL_MS,
-    "Declares the interval in ms between two backup polls on client channels. "
-    "These polls are run in the timer thread so that gRPC can process "
-    "connection failures while there is no active polling thread. "
-    "They help reconnect disconnected client channels (mostly due to "
-    "idleness), so that the next RPC on this channel won't fail. Set to 0 to "
-    "turn off the backup polls.");
-
 void grpc_client_channel_global_init_backup_polling() {
   gpr_mu_init(&g_poller_mu);
   int32_t poll_interval_ms =
-      GPR_GLOBAL_CONFIG_GET(grpc_client_channel_backup_poll_interval_ms);
+      grpc_core::ConfigVars::Get().ClientChannelBackupPollIntervalMs();
   if (poll_interval_ms < 0) {
     gpr_log(GPR_ERROR,
             "Invalid GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS: %d, "
@@ -166,10 +157,10 @@ void grpc_client_channel_start_backup_polling(
   gpr_mu_lock(&g_poller_mu);
   g_poller_init_locked();
   gpr_ref(&g_poller->refs);
-  /* Get a reference to g_poller->pollset before releasing g_poller_mu to make
-   * TSAN happy. Otherwise, reading from g_poller (i.e g_poller->pollset) after
-   * releasing the lock and setting g_poller to NULL in g_poller_unref() is
-   * being flagged as a data-race by TSAN */
+  // Get a reference to g_poller->pollset before releasing g_poller_mu to make
+  // TSAN happy. Otherwise, reading from g_poller (i.e g_poller->pollset) after
+  // releasing the lock and setting g_poller to NULL in g_poller_unref() is
+  // being flagged as a data-race by TSAN
   grpc_pollset* pollset = g_poller->pollset;
   gpr_mu_unlock(&g_poller_mu);
 

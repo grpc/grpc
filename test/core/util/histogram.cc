@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -28,39 +28,39 @@
 
 #include "src/core/lib/gpr/useful.h"
 
-/* Histograms are stored with exponentially increasing bucket sizes.
-   The first bucket is [0, m) where m = 1 + resolution
-   Bucket n (n>=1) contains [m**n, m**(n+1))
-   There are sufficient buckets to reach max_bucket_start */
+// Histograms are stored with exponentially increasing bucket sizes.
+// The first bucket is [0, m) where m = 1 + resolution
+// Bucket n (n>=1) contains [m**n, m**(n+1))
+// There are sufficient buckets to reach max_bucket_start
 
 struct grpc_histogram {
-  /* Sum of all values seen so far */
+  // Sum of all values seen so far
   double sum;
-  /* Sum of squares of all values seen so far */
+  // Sum of squares of all values seen so far
   double sum_of_squares;
-  /* number of values seen so far */
+  // number of values seen so far
   double count;
-  /* m in the description */
+  // m in the description
   double multiplier;
   double one_on_log_multiplier;
-  /* minimum value seen */
+  // minimum value seen
   double min_seen;
-  /* maximum value seen */
+  // maximum value seen
   double max_seen;
-  /* maximum representable value */
+  // maximum representable value
   double max_possible;
-  /* number of buckets */
+  // number of buckets
   size_t num_buckets;
-  /* the buckets themselves */
+  // the buckets themselves
   uint32_t* buckets;
 };
 
-/* determine a bucket index given a value - does no bounds checking */
+// determine a bucket index given a value - does no bounds checking
 static size_t bucket_for_unchecked(grpc_histogram* h, double x) {
   return static_cast<size_t>(log(x) * h->one_on_log_multiplier);
 }
 
-/* bounds checked version of the above */
+// bounds checked version of the above
 static size_t bucket_for(grpc_histogram* h, double x) {
   size_t bucket =
       bucket_for_unchecked(h, grpc_core::Clamp(x, 1.0, h->max_possible));
@@ -68,7 +68,7 @@ static size_t bucket_for(grpc_histogram* h, double x) {
   return bucket;
 }
 
-/* at what value does a bucket start? */
+// at what value does a bucket start?
 static double bucket_start(grpc_histogram* h, double x) {
   return pow(h->multiplier, x);
 }
@@ -116,7 +116,7 @@ void grpc_histogram_add(grpc_histogram* h, double x) {
 int grpc_histogram_merge(grpc_histogram* dst, const grpc_histogram* src) {
   if ((dst->num_buckets != src->num_buckets) ||
       (dst->multiplier != src->multiplier)) {
-    /* Fail because these histograms don't match */
+    // Fail because these histograms don't match
     return 0;
   }
   grpc_histogram_merge_contents(dst, src->buckets, src->num_buckets,
@@ -163,7 +163,7 @@ static double threshold_for_count_below(grpc_histogram* h, double count_below) {
     return h->max_seen;
   }
 
-  /* find the lowest bucket that gets us above count_below */
+  // find the lowest bucket that gets us above count_below
   count_so_far = 0.0;
   for (lower_idx = 0; lower_idx < h->num_buckets; lower_idx++) {
     count_so_far += h->buckets[lower_idx];
@@ -172,8 +172,8 @@ static double threshold_for_count_below(grpc_histogram* h, double count_below) {
     }
   }
   if (count_so_far == count_below) {
-    /* this bucket hits the threshold exactly... we should be midway through
-       any run of zero values following the bucket */
+    // this bucket hits the threshold exactly... we should be midway through
+    // any run of zero values following the bucket
     for (upper_idx = lower_idx + 1; upper_idx < h->num_buckets; upper_idx++) {
       if (h->buckets[upper_idx]) {
         break;
@@ -183,8 +183,8 @@ static double threshold_for_count_below(grpc_histogram* h, double count_below) {
             bucket_start(h, static_cast<double>(upper_idx))) /
            2.0;
   } else {
-    /* treat values as uniform throughout the bucket, and find where this value
-       should lie */
+    // treat values as uniform throughout the bucket, and find where this value
+    // should lie
     lower_bound = bucket_start(h, static_cast<double>(lower_idx));
     upper_bound = bucket_start(h, static_cast<double>(lower_idx + 1));
     return grpc_core::Clamp(upper_bound - (upper_bound - lower_bound) *

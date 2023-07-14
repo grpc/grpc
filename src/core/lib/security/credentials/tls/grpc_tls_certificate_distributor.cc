@@ -319,7 +319,7 @@ void grpc_tls_certificate_distributor::CancelTlsCertificatesWatch(
   }
 };
 
-/** -- Wrapper APIs declared in grpc_security.h -- **/
+/// -- Wrapper APIs declared in grpc_security.h -- *
 
 grpc_tls_identity_pairs* grpc_tls_identity_pairs_create() {
   return new grpc_tls_identity_pairs();

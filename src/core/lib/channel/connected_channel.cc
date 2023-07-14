@@ -1,78 +1,87 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/connected_channel.h"
 
 #include <inttypes.h>
-#include <string.h>
 
-#include <algorithm>
+#include <functional>
+#include <initializer_list>
 #include <memory>
 #include <string>
+#include <type_traits>
 #include <utility>
-#include <vector>
 
-#include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_join.h"
+#include "absl/status/statusor.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 
 #include <grpc/grpc.h>
+#include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/context.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
+#include "src/core/lib/promise/detail/basic_seq.h"
+#include "src/core/lib/promise/detail/status.h"
+#include "src/core/lib/promise/for_each.h"
+#include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/latch.h"
+#include "src/core/lib/promise/loop.h"
+#include "src/core/lib/promise/map.h"
+#include "src/core/lib/promise/party.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/promise.h"
+#include "src/core/lib/promise/race.h"
+#include "src/core/lib/promise/seq.h"
+#include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/call_trace.h"
 #include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/lib/transport/batch_builder.h"
+#include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/transport/transport_fwd.h"
 #include "src/core/lib/transport/transport_impl.h"
-
-#define MAX_BUFFER_LENGTH 8192
 
 typedef struct connected_channel_channel_data {
   grpc_transport* transport;
@@ -127,9 +136,9 @@ static callback_state* get_state_for_batch(
   GPR_UNREACHABLE_CODE(return nullptr);
 }
 
-/* We perform a small hack to locate transport data alongside the connected
-   channel data in call allocations, to allow everything to be pulled in minimal
-   cache line requests */
+// We perform a small hack to locate transport data alongside the connected
+// channel data in call allocations, to allow everything to be pulled in minimal
+// cache line requests
 #define TRANSPORT_STREAM_FROM_CALL_DATA(calld) \
   ((grpc_stream*)(((char*)(calld)) +           \
                   GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(call_data))))
@@ -137,8 +146,8 @@ static callback_state* get_state_for_batch(
   ((call_data*)(((char*)(transport_stream)) -             \
                 GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(call_data))))
 
-/* Intercept a call operation and either push it directly up or translate it
-   into transport stream operations */
+// Intercept a call operation and either push it directly up or translate it
+// into transport stream operations
 static void connected_channel_start_transport_stream_op_batch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
@@ -185,7 +194,7 @@ static void connected_channel_start_transport_op(grpc_channel_element* elem,
   grpc_transport_perform_op(chand->transport, op);
 }
 
-/* Constructor for call_data */
+// Constructor for call_data
 static grpc_error_handle connected_channel_init_call_elem(
     grpc_call_element* elem, const grpc_call_element_args* args) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
@@ -206,7 +215,7 @@ static void set_pollset_or_pollset_set(grpc_call_element* elem,
                           TRANSPORT_STREAM_FROM_CALL_DATA(calld), pollent);
 }
 
-/* Destructor for call_data */
+// Destructor for call_data
 static void connected_channel_destroy_call_elem(
     grpc_call_element* elem, const grpc_call_final_info* /*final_info*/,
     grpc_closure* then_schedule_closure) {
@@ -217,17 +226,16 @@ static void connected_channel_destroy_call_elem(
                                 then_schedule_closure);
 }
 
-/* Constructor for channel_data */
+// Constructor for channel_data
 static grpc_error_handle connected_channel_init_channel_elem(
     grpc_channel_element* elem, grpc_channel_element_args* args) {
   channel_data* cd = static_cast<channel_data*>(elem->channel_data);
   GPR_ASSERT(args->is_last);
-  cd->transport = grpc_channel_args_find_pointer<grpc_transport>(
-      args->channel_args, GRPC_ARG_TRANSPORT);
+  cd->transport = args->channel_args.GetObject<grpc_transport>();
   return absl::OkStatus();
 }
 
-/* Destructor for channel_data */
+// Destructor for channel_data
 static void connected_channel_destroy_channel_elem(grpc_channel_element* elem) {
   channel_data* cd = static_cast<channel_data*>(elem->channel_data);
   if (cd->transport) {
@@ -235,7 +243,7 @@ static void connected_channel_destroy_channel_elem(grpc_channel_element* elem) {
   }
 }
 
-/* No-op. */
+// No-op.
 static void connected_channel_get_channel_info(
     grpc_channel_element* /*elem*/, const grpc_channel_info* /*channel_info*/) {
 }
@@ -243,58 +251,28 @@ static void connected_channel_get_channel_info(
 namespace grpc_core {
 namespace {
 
-class ClientStream : public Orphanable {
+#if defined(GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_CLIENT_CALL) || \
+    defined(GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_SERVER_CALL)
+class ConnectedChannelStream : public Orphanable {
  public:
-  ClientStream(grpc_transport* transport, CallArgs call_args)
-      : transport_(transport),
-        stream_(nullptr, StreamDeleter(this)),
-        server_initial_metadata_latch_(call_args.server_initial_metadata),
-        client_to_server_messages_(call_args.outgoing_messages),
-        server_to_client_messages_(call_args.incoming_messages),
-        client_initial_metadata_(std::move(call_args.client_initial_metadata)) {
-    call_context_->IncrementRefCount("client_stream");
+  explicit ConnectedChannelStream(grpc_transport* transport)
+      : transport_(transport), stream_(nullptr, StreamDeleter(this)) {
     GRPC_STREAM_REF_INIT(
         &stream_refcount_, 1,
         [](void* p, grpc_error_handle) {
-          static_cast<ClientStream*>(p)->BeginDestroy();
+          static_cast<ConnectedChannelStream*>(p)->BeginDestroy();
         },
-        this, "client_stream");
-    if (grpc_call_trace.enabled()) {
-      gpr_log(GPR_INFO, "%sInitImpl: intitial_metadata=%s",
-              Activity::current()->DebugTag().c_str(),
-              client_initial_metadata_->DebugString().c_str());
-    }
+        this, "ConnectedChannelStream");
   }
 
-  void Orphan() override {
-    bool finished;
-    {
-      MutexLock lock(&mu_);
-      if (grpc_call_trace.enabled()) {
-        gpr_log(GPR_INFO, "%sDropStream: %s",
-                Activity::current()->DebugTag().c_str(),
-                ActiveOpsString().c_str());
-      }
-      finished = finished_;
-    }
-    // If we hadn't already observed the stream to be finished, we need to
-    // cancel it at the transport.
-    if (!finished) {
-      IncrementRefCount("shutdown client stream");
-      auto* cancel_op =
-          GetContext<Arena>()->New<grpc_transport_stream_op_batch>();
-      cancel_op->cancel_stream = true;
-      cancel_op->payload = &batch_payload_;
-      auto* stream = stream_.get();
-      cancel_op->on_complete = NewClosure(
-          [this](grpc_error_handle) { Unref("shutdown client stream"); });
-      batch_payload_.cancel_stream.cancel_error = absl::CancelledError();
-      grpc_transport_perform_stream_op(transport_, stream, cancel_op);
-    }
-    Unref("orphan client stream");
+  grpc_transport* transport() { return transport_; }
+  grpc_closure* stream_destroyed_closure() { return &stream_destroyed_; }
+
+  BatchBuilder::Target batch_target() {
+    return BatchBuilder::Target{transport_, stream_.get(), &stream_refcount_};
   }
 
-  void IncrementRefCount(const char* reason) {
+  void IncrementRefCount(const char* reason = "smartptr") {
 #ifndef NDEBUG
     grpc_stream_ref(&stream_refcount_, reason);
 #else
@@ -303,13 +281,74 @@ class ClientStream : public Orphanable {
 #endif
   }
 
-  void Unref(const char* reason) {
+  void Unref(const char* reason = "smartptr") {
 #ifndef NDEBUG
     grpc_stream_unref(&stream_refcount_, reason);
 #else
     (void)reason;
     grpc_stream_unref(&stream_refcount_);
 #endif
+  }
+
+  RefCountedPtr<ConnectedChannelStream> InternalRef() {
+    IncrementRefCount("smartptr");
+    return RefCountedPtr<ConnectedChannelStream>(this);
+  }
+
+  void Orphan() final {
+    bool finished = finished_.IsSet();
+    if (grpc_call_trace.enabled()) {
+      gpr_log(GPR_DEBUG, "%s[connected] Orphan stream, finished: %d",
+              party_->DebugTag().c_str(), finished);
+    }
+    // If we hadn't already observed the stream to be finished, we need to
+    // cancel it at the transport.
+    if (!finished) {
+      party_->Spawn(
+          "finish",
+          [self = InternalRef()]() {
+            if (!self->finished_.IsSet()) {
+              self->finished_.Set();
+            }
+            return Empty{};
+          },
+          [](Empty) {});
+      GetContext<BatchBuilder>()->Cancel(batch_target(),
+                                         absl::CancelledError());
+    }
+    Unref("orphan connected stream");
+  }
+
+  // Returns a promise that implements the receive message loop.
+  auto RecvMessages(PipeSender<MessageHandle>* incoming_messages,
+                    bool cancel_on_error);
+  // Returns a promise that implements the send message loop.
+  auto SendMessages(PipeReceiver<MessageHandle>* outgoing_messages);
+
+  void SetStream(grpc_stream* stream) { stream_.reset(stream); }
+  grpc_stream* stream() { return stream_.get(); }
+  grpc_stream_refcount* stream_refcount() { return &stream_refcount_; }
+
+  void set_finished() { finished_.Set(); }
+  auto WaitFinished() { return finished_.Wait(); }
+
+ private:
+  class StreamDeleter {
+   public:
+    explicit StreamDeleter(ConnectedChannelStream* impl) : impl_(impl) {}
+    void operator()(grpc_stream* stream) const {
+      if (stream == nullptr) return;
+      grpc_transport_destroy_stream(impl_->transport(), stream,
+                                    impl_->stream_destroyed_closure());
+    }
+
+   private:
+    ConnectedChannelStream* impl_;
+  };
+  using StreamPtr = std::unique_ptr<grpc_stream, StreamDeleter>;
+
+  void StreamDestroyed() {
+    call_context_->RunInContext([this] { this->~ConnectedChannelStream(); });
   }
 
   void BeginDestroy() {
@@ -320,530 +359,509 @@ class ClientStream : public Orphanable {
     }
   }
 
-  Poll<ServerMetadataHandle> PollOnce() {
-    MutexLock lock(&mu_);
-    GPR_ASSERT(!finished_);
-
-    if (grpc_call_trace.enabled()) {
-      gpr_log(GPR_INFO, "%sPollConnectedChannel: %s",
-              Activity::current()->DebugTag().c_str(),
-              ActiveOpsString().c_str());
-    }
-
-    auto push_recv_message = [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-      recv_message_state_ = PendingReceiveMessage{};
-      auto& pending_recv_message =
-          absl::get<PendingReceiveMessage>(recv_message_state_);
-      memset(&recv_message_, 0, sizeof(recv_message_));
-      recv_message_.payload = &batch_payload_;
-      recv_message_.on_complete = nullptr;
-      recv_message_.recv_message = true;
-      batch_payload_.recv_message.recv_message = &pending_recv_message.payload;
-      batch_payload_.recv_message.flags = &pending_recv_message.flags;
-      batch_payload_.recv_message.call_failed_before_recv_message = nullptr;
-      batch_payload_.recv_message.recv_message_ready =
-          &recv_message_batch_done_;
-      IncrementRefCount("recv_message");
-      recv_message_waker_ = Activity::current()->MakeOwningWaker();
-      push_recv_message_ = true;
-      SchedulePush();
-    };
-
-    if (!std::exchange(requested_metadata_, true)) {
-      if (grpc_call_trace.enabled()) {
-        gpr_log(GPR_INFO, "%sPollConnectedChannel: requesting metadata",
-                Activity::current()->DebugTag().c_str());
-      }
-      stream_.reset(static_cast<grpc_stream*>(
-          GetContext<Arena>()->Alloc(transport_->vtable->sizeof_stream)));
-      grpc_transport_init_stream(transport_, stream_.get(), &stream_refcount_,
-                                 nullptr, GetContext<Arena>());
-      grpc_transport_set_pops(transport_, stream_.get(),
-                              GetContext<CallContext>()->polling_entity());
-      memset(&metadata_, 0, sizeof(metadata_));
-      metadata_.send_initial_metadata = true;
-      metadata_.recv_initial_metadata = true;
-      metadata_.recv_trailing_metadata = true;
-      metadata_.payload = &batch_payload_;
-      metadata_.on_complete = &metadata_batch_done_;
-      batch_payload_.send_initial_metadata.send_initial_metadata =
-          client_initial_metadata_.get();
-      batch_payload_.send_initial_metadata.peer_string =
-          GetContext<CallContext>()->peer_string_atm_ptr();
-      server_initial_metadata_ =
-          GetContext<Arena>()->MakePooled<ServerMetadata>(GetContext<Arena>());
-      batch_payload_.recv_initial_metadata.recv_initial_metadata =
-          server_initial_metadata_.get();
-      batch_payload_.recv_initial_metadata.recv_initial_metadata_ready =
-          &recv_initial_metadata_ready_;
-      batch_payload_.recv_initial_metadata.trailing_metadata_available =
-          nullptr;
-      batch_payload_.recv_initial_metadata.peer_string = nullptr;
-      server_trailing_metadata_ =
-          GetContext<Arena>()->MakePooled<ServerMetadata>(GetContext<Arena>());
-      batch_payload_.recv_trailing_metadata.recv_trailing_metadata =
-          server_trailing_metadata_.get();
-      batch_payload_.recv_trailing_metadata.collect_stats =
-          &GetContext<CallContext>()->call_stats()->transport_stream_stats;
-      batch_payload_.recv_trailing_metadata.recv_trailing_metadata_ready =
-          &recv_trailing_metadata_ready_;
-      push_metadata_ = true;
-      IncrementRefCount("metadata_batch_done");
-      IncrementRefCount("initial_metadata_ready");
-      IncrementRefCount("trailing_metadata_ready");
-      initial_metadata_waker_ = Activity::current()->MakeOwningWaker();
-      trailing_metadata_waker_ = Activity::current()->MakeOwningWaker();
-      SchedulePush();
-    }
-    if (absl::holds_alternative<Closed>(send_message_state_)) {
-      message_to_send_.reset();
-    }
-    if (absl::holds_alternative<Idle>(send_message_state_)) {
-      message_to_send_.reset();
-      send_message_state_ = client_to_server_messages_->Next();
-    }
-    if (auto* next = absl::get_if<PipeReceiver<MessageHandle>::NextType>(
-            &send_message_state_)) {
-      auto r = (*next)();
-      if (auto* p = absl::get_if<NextResult<MessageHandle>>(&r)) {
-        memset(&send_message_, 0, sizeof(send_message_));
-        send_message_.payload = &batch_payload_;
-        send_message_.on_complete = &send_message_batch_done_;
-        // No value => half close from above.
-        if (p->has_value()) {
-          message_to_send_ = std::move(**p);
-          send_message_state_ = SendMessageToTransport{};
-          send_message_.send_message = true;
-          batch_payload_.send_message.send_message =
-              message_to_send_->payload();
-          batch_payload_.send_message.flags = message_to_send_->flags();
-        } else {
-          if (grpc_call_trace.enabled()) {
-            gpr_log(GPR_INFO, "%sPollConnectedChannel: half close",
-                    Activity::current()->DebugTag().c_str());
-          }
-          GPR_ASSERT(!absl::holds_alternative<Closed>(send_message_state_));
-          client_trailing_metadata_ =
-              GetContext<Arena>()->MakePooled<ClientMetadata>(
-                  GetContext<Arena>());
-          send_message_state_ = Closed{};
-          send_message_.send_trailing_metadata = true;
-          batch_payload_.send_trailing_metadata.send_trailing_metadata =
-              client_trailing_metadata_.get();
-          batch_payload_.send_trailing_metadata.sent = nullptr;
-        }
-        IncrementRefCount("send_message");
-        send_message_waker_ = Activity::current()->MakeOwningWaker();
-        push_send_message_ = true;
-        SchedulePush();
-      }
-    }
-    if (auto* pending =
-            absl::get_if<PendingReceiveMessage>(&recv_message_state_)) {
-      if (pending->received) {
-        if (pending->payload.has_value()) {
-          if (grpc_call_trace.enabled()) {
-            gpr_log(GPR_INFO,
-                    "%sRecvMessageBatchDone: received payload of %" PRIdPTR
-                    " bytes",
-                    recv_message_waker_.ActivityDebugTag().c_str(),
-                    pending->payload->Length());
-          }
-          recv_message_state_ = server_to_client_messages_->Push(
-              GetContext<Arena>()->MakePooled<Message>(
-                  std::move(*pending->payload), pending->flags));
-        } else {
-          if (grpc_call_trace.enabled()) {
-            gpr_log(GPR_INFO, "%sRecvMessageBatchDone: received no payload",
-                    recv_message_waker_.ActivityDebugTag().c_str());
-          }
-          recv_message_state_ = Closed{};
-          std::exchange(server_to_client_messages_, nullptr)->Close();
-        }
-      }
-    }
-    if (server_initial_metadata_state_ ==
-        ServerInitialMetadataState::kReceivedButNotSet) {
-      server_initial_metadata_state_ = ServerInitialMetadataState::kSet;
-      server_initial_metadata_latch_->Set(server_initial_metadata_.get());
-    }
-    if (absl::holds_alternative<Idle>(recv_message_state_)) {
-      if (grpc_call_trace.enabled()) {
-        gpr_log(GPR_INFO, "%sPollConnectedChannel: requesting message",
-                Activity::current()->DebugTag().c_str());
-      }
-      push_recv_message();
-    }
-    if (server_initial_metadata_state_ == ServerInitialMetadataState::kSet &&
-        !absl::holds_alternative<PipeSender<MessageHandle>::PushType>(
-            recv_message_state_) &&
-        !absl::holds_alternative<PendingReceiveMessage>(recv_message_state_) &&
-        std::exchange(queued_trailing_metadata_, false)) {
-      if (grpc_call_trace.enabled()) {
-        gpr_log(GPR_INFO,
-                "%sPollConnectedChannel: finished request, returning: {%s}; "
-                "active_ops: %s",
-                Activity::current()->DebugTag().c_str(),
-                server_trailing_metadata_->DebugString().c_str(),
-                ActiveOpsString().c_str());
-      }
-      finished_ = true;
-      return ServerMetadataHandle(std::move(server_trailing_metadata_));
-    }
-    if (auto* push = absl::get_if<PipeSender<MessageHandle>::PushType>(
-            &recv_message_state_)) {
-      auto r = (*push)();
-      if (bool* result = absl::get_if<bool>(&r)) {
-        if (*result) {
-          if (!finished_) {
-            if (grpc_call_trace.enabled()) {
-              gpr_log(GPR_INFO,
-                      "%sPollConnectedChannel: pushed message; requesting next",
-                      Activity::current()->DebugTag().c_str());
-            }
-            push_recv_message();
-          } else {
-            if (grpc_call_trace.enabled()) {
-              gpr_log(GPR_INFO,
-                      "%sPollConnectedChannel: pushed message and finished; "
-                      "marking closed",
-                      Activity::current()->DebugTag().c_str());
-            }
-            recv_message_state_ = Closed{};
-          }
-        } else {
-          if (grpc_call_trace.enabled()) {
-            gpr_log(GPR_INFO,
-                    "%sPollConnectedChannel: failed to push message; marking "
-                    "closed",
-                    Activity::current()->DebugTag().c_str());
-          }
-          recv_message_state_ = Closed{};
-        }
-      }
-    }
-    return Pending{};
-  }
-
-  void RecvInitialMetadataReady(grpc_error_handle error) {
-    GPR_ASSERT(error == absl::OkStatus());
-    {
-      MutexLock lock(&mu_);
-      server_initial_metadata_state_ =
-          ServerInitialMetadataState::kReceivedButNotSet;
-      initial_metadata_waker_.Wakeup();
-    }
-    Unref("initial_metadata_ready");
-  }
-
-  void RecvTrailingMetadataReady(grpc_error_handle error) {
-    GPR_ASSERT(error == absl::OkStatus());
-    {
-      MutexLock lock(&mu_);
-      queued_trailing_metadata_ = true;
-      trailing_metadata_waker_.Wakeup();
-    }
-    Unref("trailing_metadata_ready");
-  }
-
-  void MetadataBatchDone(grpc_error_handle error) {
-    GPR_ASSERT(error == absl::OkStatus());
-    Unref("metadata_batch_done");
-  }
-
-  void SendMessageBatchDone(grpc_error_handle error) {
-    {
-      MutexLock lock(&mu_);
-      if (error != absl::OkStatus()) {
-        // Note that we're in error here, the call will be closed by the
-        // transport in a moment, and we'll return from the promise with an
-        // error - so we don't need to do any extra work to close out pipes or
-        // the like.
-        send_message_state_ = Closed{};
-      }
-      if (!absl::holds_alternative<Closed>(send_message_state_)) {
-        send_message_state_ = Idle{};
-      }
-      send_message_waker_.Wakeup();
-    }
-    Unref("send_message");
-  }
-
-  void RecvMessageBatchDone(grpc_error_handle error) {
-    {
-      MutexLock lock(&mu_);
-      if (error != absl::OkStatus()) {
-        if (grpc_call_trace.enabled()) {
-          gpr_log(GPR_INFO, "%sRecvMessageBatchDone: error=%s",
-                  recv_message_waker_.ActivityDebugTag().c_str(),
-                  StatusToString(error).c_str());
-        }
-      } else if (absl::holds_alternative<Closed>(recv_message_state_)) {
-        if (grpc_call_trace.enabled()) {
-          gpr_log(GPR_INFO, "%sRecvMessageBatchDone: already closed, ignoring",
-                  recv_message_waker_.ActivityDebugTag().c_str());
-        }
-      } else {
-        if (grpc_call_trace.enabled()) {
-          gpr_log(GPR_INFO, "%sRecvMessageBatchDone: received message",
-                  recv_message_waker_.ActivityDebugTag().c_str());
-        }
-        auto pending =
-            absl::get_if<PendingReceiveMessage>(&recv_message_state_);
-        GPR_ASSERT(pending != nullptr);
-        GPR_ASSERT(pending->received == false);
-        pending->received = true;
-      }
-      recv_message_waker_.Wakeup();
-    }
-    Unref("recv_message");
-  }
-
-  // Called from outside the activity to push work down to the transport.
-  void Push() {
-    auto do_push = [this](grpc_transport_stream_op_batch* batch) {
-      if (stream_ != nullptr) {
-        grpc_transport_perform_stream_op(transport_, stream_.get(), batch);
-      } else {
-        grpc_transport_stream_op_batch_finish_with_failure_from_transport(
-            batch, absl::CancelledError());
-      }
-    };
-    bool push_metadata;
-    bool push_send_message;
-    bool push_recv_message;
-    {
-      MutexLock lock(&mu_);
-      push_metadata = std::exchange(push_metadata_, false);
-      push_send_message = std::exchange(push_send_message_, false);
-      push_recv_message = std::exchange(push_recv_message_, false);
-      scheduled_push_ = false;
-    }
-    if (push_metadata) do_push(&metadata_);
-    if (push_send_message) do_push(&send_message_);
-    if (push_recv_message) do_push(&recv_message_);
-    Unref("push");
-  }
-
-  void StreamDestroyed() {
-    call_context_->RunInContext([this] {
-      auto* cc = call_context_;
-      this->~ClientStream();
-      cc->Unref("child_stream");
-    });
-  }
-
- private:
-  struct Idle {};
-  struct Closed {};
-  struct SendMessageToTransport {};
-
-  enum class ServerInitialMetadataState : uint8_t {
-    // Initial metadata has not been received from the server.
-    kNotReceived,
-    // Initial metadata has been received from the server via the transport, but
-    // has not yet been set on the latch to publish it up the call stack.
-    kReceivedButNotSet,
-    // Initial metadata has been received from the server via the transport and
-    // has been set on the latch to publish it up the call stack.
-    kSet,
-  };
-
-  class StreamDeleter {
-   public:
-    explicit StreamDeleter(ClientStream* impl) : impl_(impl) {}
-    void operator()(grpc_stream* stream) const {
-      if (stream == nullptr) return;
-      grpc_transport_destroy_stream(impl_->transport_, stream,
-                                    &impl_->stream_destroyed_);
-    }
-
-   private:
-    ClientStream* impl_;
-  };
-  using StreamPtr = std::unique_ptr<grpc_stream, StreamDeleter>;
-
-  void SchedulePush() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-    if (std::exchange(scheduled_push_, true)) return;
-    IncrementRefCount("push");
-    ExecCtx::Run(DEBUG_LOCATION, &push_, absl::OkStatus());
-  }
-
-  std::string ActiveOpsString() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-    std::vector<std::string> ops;
-    if (finished_) ops.push_back("FINISHED");
-    // Pushes
-    std::vector<std::string> pushes;
-    if (push_metadata_) pushes.push_back("metadata");
-    if (push_send_message_) pushes.push_back("send_message");
-    if (push_recv_message_) pushes.push_back("recv_message");
-    if (!pushes.empty()) {
-      ops.push_back(
-          absl::StrCat(scheduled_push_ ? "push:" : "unscheduled-push:",
-                       absl::StrJoin(pushes, ",")));
-    } else if (scheduled_push_) {
-      ops.push_back("push:nothing");
-    }
-    // Results from transport
-    std::vector<std::string> queued;
-    if (server_initial_metadata_state_ ==
-        ServerInitialMetadataState::kReceivedButNotSet) {
-      queued.push_back("initial_metadata");
-    }
-    if (queued_trailing_metadata_) queued.push_back("trailing_metadata");
-    if (!queued.empty()) {
-      ops.push_back(absl::StrCat("queued:", absl::StrJoin(queued, ",")));
-    }
-    // Send message
-    std::string send_message_state = SendMessageString();
-    if (send_message_state != "WAITING") {
-      ops.push_back(absl::StrCat("send_message:", send_message_state));
-    }
-    // Receive message
-    std::string recv_message_state = RecvMessageString();
-    if (recv_message_state != "IDLE") {
-      ops.push_back(absl::StrCat("recv_message:", recv_message_state));
-    }
-    return absl::StrJoin(ops, " ");
-  }
-
-  std::string SendMessageString() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-    return Match(
-        send_message_state_, [](Idle) -> std::string { return "IDLE"; },
-        [](Closed) -> std::string { return "CLOSED"; },
-        [](const PipeReceiver<MessageHandle>::NextType&) -> std::string {
-          return "WAITING";
-        },
-        [](SendMessageToTransport) -> std::string { return "SENDING"; });
-  }
-
-  std::string RecvMessageString() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-    return Match(
-        recv_message_state_, [](Idle) -> std::string { return "IDLE"; },
-        [](Closed) -> std::string { return "CLOSED"; },
-        [](const PendingReceiveMessage&) -> std::string { return "WAITING"; },
-        [](const absl::optional<MessageHandle>& message) -> std::string {
-          return absl::StrCat(
-              "READY:", message.has_value()
-                            ? absl::StrCat((*message)->payload()->Length(), "b")
-                            : "EOS");
-        },
-        [](const PipeSender<MessageHandle>::PushType&) -> std::string {
-          return "PUSHING";
-        });
-  }
-
-  Mutex mu_;
-  bool requested_metadata_ = false;
-  bool push_metadata_ ABSL_GUARDED_BY(mu_) = false;
-  bool push_send_message_ ABSL_GUARDED_BY(mu_) = false;
-  bool push_recv_message_ ABSL_GUARDED_BY(mu_) = false;
-  bool scheduled_push_ ABSL_GUARDED_BY(mu_) = false;
-  ServerInitialMetadataState server_initial_metadata_state_
-      ABSL_GUARDED_BY(mu_) = ServerInitialMetadataState::kNotReceived;
-  bool queued_trailing_metadata_ ABSL_GUARDED_BY(mu_) = false;
-  bool finished_ ABSL_GUARDED_BY(mu_) = false;
-  CallContext* const call_context_{GetContext<CallContext>()};
-  Waker initial_metadata_waker_ ABSL_GUARDED_BY(mu_);
-  Waker trailing_metadata_waker_ ABSL_GUARDED_BY(mu_);
-  Waker send_message_waker_ ABSL_GUARDED_BY(mu_);
-  Waker recv_message_waker_ ABSL_GUARDED_BY(mu_);
   grpc_transport* const transport_;
+  RefCountedPtr<CallContext> const call_context_{
+      GetContext<CallContext>()->Ref()};
+  grpc_closure stream_destroyed_ =
+      MakeMemberClosure<ConnectedChannelStream,
+                        &ConnectedChannelStream::StreamDestroyed>(
+          this, DEBUG_LOCATION);
   grpc_stream_refcount stream_refcount_;
   StreamPtr stream_;
-  Latch<ServerMetadata*>* server_initial_metadata_latch_;
-  PipeReceiver<MessageHandle>* client_to_server_messages_;
-  PipeSender<MessageHandle>* server_to_client_messages_;
-  MessageHandle message_to_send_ ABSL_GUARDED_BY(mu_);
-  absl::variant<Idle, Closed, PipeReceiver<MessageHandle>::NextType,
-                SendMessageToTransport>
-      send_message_state_ ABSL_GUARDED_BY(mu_);
-  struct PendingReceiveMessage {
-    absl::optional<SliceBuffer> payload;
-    uint32_t flags;
-    bool received = false;
+  Arena* arena_ = GetContext<Arena>();
+  Party* const party_ = static_cast<Party*>(Activity::current());
+  ExternallyObservableLatch<void> finished_;
+};
+
+auto ConnectedChannelStream::RecvMessages(
+    PipeSender<MessageHandle>* incoming_messages, bool cancel_on_error) {
+  return Loop([self = InternalRef(), cancel_on_error,
+               incoming_messages = std::move(*incoming_messages)]() mutable {
+    return Seq(
+        GetContext<BatchBuilder>()->ReceiveMessage(self->batch_target()),
+        [cancel_on_error, &incoming_messages](
+            absl::StatusOr<absl::optional<MessageHandle>> status) mutable {
+          bool has_message = status.ok() && status->has_value();
+          auto publish_message = [&incoming_messages, &status]() {
+            auto pending_message = std::move(**status);
+            if (grpc_call_trace.enabled()) {
+              gpr_log(GPR_INFO,
+                      "%s[connected] RecvMessage: received payload of %" PRIdPTR
+                      " bytes",
+                      Activity::current()->DebugTag().c_str(),
+                      pending_message->payload()->Length());
+            }
+            return Map(incoming_messages.Push(std::move(pending_message)),
+                       [](bool ok) -> LoopCtl<absl::Status> {
+                         if (!ok) {
+                           if (grpc_call_trace.enabled()) {
+                             gpr_log(GPR_INFO,
+                                     "%s[connected] RecvMessage: failed to "
+                                     "push message towards the application",
+                                     Activity::current()->DebugTag().c_str());
+                           }
+                           return absl::OkStatus();
+                         }
+                         return Continue{};
+                       });
+          };
+          auto publish_close = [cancel_on_error, &incoming_messages,
+                                &status]() mutable {
+            if (grpc_call_trace.enabled()) {
+              gpr_log(GPR_INFO,
+                      "%s[connected] RecvMessage: reached end of stream with "
+                      "status:%s",
+                      Activity::current()->DebugTag().c_str(),
+                      status.status().ToString().c_str());
+            }
+            if (cancel_on_error && !status.ok()) {
+              incoming_messages.CloseWithError();
+            }
+            return Immediate(LoopCtl<absl::Status>(status.status()));
+          };
+          return If(has_message, std::move(publish_message),
+                    std::move(publish_close));
+        });
+  });
+}
+
+auto ConnectedChannelStream::SendMessages(
+    PipeReceiver<MessageHandle>* outgoing_messages) {
+  return ForEach(std::move(*outgoing_messages),
+                 [self = InternalRef()](MessageHandle message) {
+                   return GetContext<BatchBuilder>()->SendMessage(
+                       self->batch_target(), std::move(message));
+                 });
+}
+#endif  // defined(GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_CLIENT_CALL) ||
+        // defined(GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_SERVER_CALL)
+
+#ifdef GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_CLIENT_CALL
+ArenaPromise<ServerMetadataHandle> MakeClientCallPromise(
+    grpc_transport* transport, CallArgs call_args, NextPromiseFactory) {
+  OrphanablePtr<ConnectedChannelStream> stream(
+      GetContext<Arena>()->New<ConnectedChannelStream>(transport));
+  stream->SetStream(static_cast<grpc_stream*>(
+      GetContext<Arena>()->Alloc(transport->vtable->sizeof_stream)));
+  grpc_transport_init_stream(transport, stream->stream(),
+                             stream->stream_refcount(), nullptr,
+                             GetContext<Arena>());
+  auto* party = static_cast<Party*>(Activity::current());
+  party->Spawn(
+      "set_polling_entity", call_args.polling_entity->Wait(),
+      [transport,
+       stream = stream->InternalRef()](grpc_polling_entity polling_entity) {
+        grpc_transport_set_pops(transport, stream->stream(), &polling_entity);
+      });
+  // Start a loop to send messages from client_to_server_messages to the
+  // transport. When the pipe closes and the loop completes, send a trailing
+  // metadata batch to close the stream.
+  party->Spawn(
+      "send_messages",
+      TrySeq(stream->SendMessages(call_args.client_to_server_messages),
+             [stream = stream->InternalRef()]() {
+               return GetContext<BatchBuilder>()->SendClientTrailingMetadata(
+                   stream->batch_target());
+             }),
+      [](absl::Status) {});
+  // Start a promise to receive server initial metadata and then forward it up
+  // through the receiving pipe.
+  auto server_initial_metadata =
+      GetContext<Arena>()->MakePooled<ServerMetadata>(GetContext<Arena>());
+  party->Spawn(
+      "recv_initial_metadata",
+      TrySeq(GetContext<BatchBuilder>()->ReceiveServerInitialMetadata(
+                 stream->batch_target()),
+             [pipe = call_args.server_initial_metadata](
+                 ServerMetadataHandle server_initial_metadata) {
+               if (grpc_call_trace.enabled()) {
+                 gpr_log(GPR_DEBUG,
+                         "%s[connected] Publish client initial metadata: %s",
+                         Activity::current()->DebugTag().c_str(),
+                         server_initial_metadata->DebugString().c_str());
+               }
+               return Map(pipe->Push(std::move(server_initial_metadata)),
+                          [](bool r) {
+                            if (r) return absl::OkStatus();
+                            return absl::CancelledError();
+                          });
+             }),
+      [](absl::Status) {});
+
+  // Build up the rest of the main call promise:
+
+  // Create a promise that will send initial metadata and then signal completion
+  // of that via the token.
+  auto send_initial_metadata = Seq(
+      GetContext<BatchBuilder>()->SendClientInitialMetadata(
+          stream->batch_target(), std::move(call_args.client_initial_metadata)),
+      [sent_initial_metadata_token =
+           std::move(call_args.client_initial_metadata_outstanding)](
+          absl::Status status) mutable {
+        sent_initial_metadata_token.Complete(status.ok());
+        return status;
+      });
+  // Create a promise that will receive server trailing metadata.
+  // If this fails, we massage the error into metadata that we can report
+  // upwards.
+  auto server_trailing_metadata =
+      GetContext<Arena>()->MakePooled<ServerMetadata>(GetContext<Arena>());
+  auto recv_trailing_metadata =
+      Map(GetContext<BatchBuilder>()->ReceiveServerTrailingMetadata(
+              stream->batch_target()),
+          [](absl::StatusOr<ServerMetadataHandle> status) mutable {
+            if (!status.ok()) {
+              auto server_trailing_metadata =
+                  GetContext<Arena>()->MakePooled<ServerMetadata>(
+                      GetContext<Arena>());
+              grpc_status_code status_code = GRPC_STATUS_UNKNOWN;
+              std::string message;
+              grpc_error_get_status(status.status(), Timestamp::InfFuture(),
+                                    &status_code, &message, nullptr, nullptr);
+              server_trailing_metadata->Set(GrpcStatusMetadata(), status_code);
+              server_trailing_metadata->Set(GrpcMessageMetadata(),
+                                            Slice::FromCopiedString(message));
+              return server_trailing_metadata;
+            } else {
+              return std::move(*status);
+            }
+          });
+  // Finally the main call promise.
+  // Concurrently: send initial metadata and receive messages, until BOTH
+  // complete (or one fails).
+  // Next: receive trailing metadata, and return that up the stack.
+  auto recv_messages =
+      stream->RecvMessages(call_args.server_to_client_messages, false);
+  return Map(
+      [send_initial_metadata = std::move(send_initial_metadata),
+       recv_messages = std::move(recv_messages),
+       recv_trailing_metadata = std::move(recv_trailing_metadata),
+       done_send_initial_metadata = false, done_recv_messages = false,
+       done_recv_trailing_metadata =
+           false]() mutable -> Poll<ServerMetadataHandle> {
+        if (!done_send_initial_metadata) {
+          auto p = send_initial_metadata();
+          if (auto* r = p.value_if_ready()) {
+            done_send_initial_metadata = true;
+            if (!r->ok()) return StatusCast<ServerMetadataHandle>(*r);
+          }
+        }
+        if (!done_recv_messages) {
+          auto p = recv_messages();
+          if (auto* r = p.value_if_ready()) {
+            // NOTE: ignore errors here, they'll be collected in the
+            // recv_trailing_metadata.
+            done_recv_messages = true;
+          } else {
+            return Pending{};
+          }
+        }
+        if (!done_recv_trailing_metadata) {
+          auto p = recv_trailing_metadata();
+          if (auto* r = p.value_if_ready()) {
+            done_recv_trailing_metadata = true;
+            return std::move(*r);
+          }
+        }
+        return Pending{};
+      },
+      [stream = std::move(stream)](ServerMetadataHandle result) {
+        stream->set_finished();
+        return result;
+      });
+}
+#endif
+
+#ifdef GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_SERVER_CALL
+ArenaPromise<ServerMetadataHandle> MakeServerCallPromise(
+    grpc_transport* transport, CallArgs,
+    NextPromiseFactory next_promise_factory) {
+  OrphanablePtr<ConnectedChannelStream> stream(
+      GetContext<Arena>()->New<ConnectedChannelStream>(transport));
+
+  stream->SetStream(static_cast<grpc_stream*>(
+      GetContext<Arena>()->Alloc(transport->vtable->sizeof_stream)));
+  grpc_transport_init_stream(
+      transport, stream->stream(), stream->stream_refcount(),
+      GetContext<CallContext>()->server_call_context()->server_stream_data(),
+      GetContext<Arena>());
+  auto* party = static_cast<Party*>(Activity::current());
+
+  // Arifacts we need for the lifetime of the call.
+  struct CallData {
+    Pipe<MessageHandle> server_to_client;
+    Pipe<MessageHandle> client_to_server;
+    Pipe<ServerMetadataHandle> server_initial_metadata;
+    Latch<ServerMetadataHandle> failure_latch;
+    Latch<grpc_polling_entity> polling_entity_latch;
+    bool sent_initial_metadata = false;
+    bool sent_trailing_metadata = false;
   };
-  absl::variant<Idle, PendingReceiveMessage, Closed,
-                PipeSender<MessageHandle>::PushType>
-      recv_message_state_ ABSL_GUARDED_BY(mu_);
-  grpc_closure recv_initial_metadata_ready_ =
-      MakeMemberClosure<ClientStream, &ClientStream::RecvInitialMetadataReady>(
-          this, DEBUG_LOCATION);
-  grpc_closure recv_trailing_metadata_ready_ =
-      MakeMemberClosure<ClientStream, &ClientStream::RecvTrailingMetadataReady>(
-          this, DEBUG_LOCATION);
-  grpc_closure push_ = MakeMemberClosure<ClientStream, &ClientStream::Push>(
-      this, DEBUG_LOCATION);
-  ClientMetadataHandle client_initial_metadata_;
-  ClientMetadataHandle client_trailing_metadata_;
-  ServerMetadataHandle server_initial_metadata_;
-  ServerMetadataHandle server_trailing_metadata_;
-  grpc_transport_stream_op_batch metadata_;
-  grpc_closure metadata_batch_done_ =
-      MakeMemberClosure<ClientStream, &ClientStream::MetadataBatchDone>(
-          this, DEBUG_LOCATION);
-  grpc_transport_stream_op_batch send_message_;
-  grpc_closure send_message_batch_done_ =
-      MakeMemberClosure<ClientStream, &ClientStream::SendMessageBatchDone>(
-          this, DEBUG_LOCATION);
-  grpc_closure recv_message_batch_done_ =
-      MakeMemberClosure<ClientStream, &ClientStream::RecvMessageBatchDone>(
-          this, DEBUG_LOCATION);
-  grpc_transport_stream_op_batch recv_message_;
-  grpc_transport_stream_op_batch_payload batch_payload_{
-      GetContext<grpc_call_context_element>()};
-  grpc_closure stream_destroyed_ =
-      MakeMemberClosure<ClientStream, &ClientStream::StreamDestroyed>(
-          this, DEBUG_LOCATION);
-};
+  auto* call_data = GetContext<Arena>()->ManagedNew<CallData>();
 
-class ClientConnectedCallPromise {
- public:
-  ClientConnectedCallPromise(grpc_transport* transport, CallArgs call_args)
-      : impl_(GetContext<Arena>()->New<ClientStream>(transport,
-                                                     std::move(call_args))) {}
+  party->Spawn(
+      "set_polling_entity", call_data->polling_entity_latch.Wait(),
+      [transport,
+       stream = stream->InternalRef()](grpc_polling_entity polling_entity) {
+        grpc_transport_set_pops(transport, stream->stream(), &polling_entity);
+      });
 
-  ClientConnectedCallPromise(const ClientConnectedCallPromise&) = delete;
-  ClientConnectedCallPromise& operator=(const ClientConnectedCallPromise&) =
-      delete;
-  ClientConnectedCallPromise(ClientConnectedCallPromise&& other) noexcept
-      : impl_(std::exchange(other.impl_, nullptr)) {}
-  ClientConnectedCallPromise& operator=(
-      ClientConnectedCallPromise&& other) noexcept {
-    impl_ = std::move(other.impl_);
-    return *this;
-  }
+  auto server_to_client_empty =
+      call_data->server_to_client.receiver.AwaitEmpty();
 
-  static ArenaPromise<ServerMetadataHandle> Make(grpc_transport* transport,
-                                                 CallArgs call_args) {
-    return ClientConnectedCallPromise(transport, std::move(call_args));
-  }
+  // Create a promise that will receive client initial metadata, and then run
+  // the main stem of the call (calling next_promise_factory up through the
+  // filters).
+  // Race the main call with failure_latch, allowing us to forcefully complete
+  // the call in the case of a failure.
+  auto recv_initial_metadata_then_run_promise =
+      TrySeq(GetContext<BatchBuilder>()->ReceiveClientInitialMetadata(
+                 stream->batch_target()),
+             [next_promise_factory = std::move(next_promise_factory),
+              server_to_client_empty = std::move(server_to_client_empty),
+              call_data](ClientMetadataHandle client_initial_metadata) {
+               auto call_promise = next_promise_factory(CallArgs{
+                   std::move(client_initial_metadata),
+                   ClientInitialMetadataOutstandingToken::Empty(),
+                   &call_data->polling_entity_latch,
+                   &call_data->server_initial_metadata.sender,
+                   &call_data->client_to_server.receiver,
+                   &call_data->server_to_client.sender,
+               });
+               return Race(call_data->failure_latch.Wait(),
+                           [call_promise = std::move(call_promise),
+                            server_to_client_empty =
+                                std::move(server_to_client_empty)]() mutable
+                           -> Poll<ServerMetadataHandle> {
+                             // TODO(ctiller): this is deeply weird and we need
+                             // to clean this up.
+                             //
+                             // The following few lines check to ensure that
+                             // there's no message currently pending in the
+                             // outgoing message queue, and if (and only if)
+                             // that's true decides to poll the main promise to
+                             // see if there's a result.
+                             //
+                             // This essentially introduces a polling priority
+                             // scheme that makes the current promise structure
+                             // work out the way we want when talking to
+                             // transports.
+                             //
+                             // The problem is that transports are going to need
+                             // to replicate this structure when they convert to
+                             // promises, and that becomes troubling as we'll be
+                             // replicating weird throughout the stack.
+                             //
+                             // Instead we likely need to change the way we're
+                             // composing promises through the stack.
+                             //
+                             // Proposed is to change filters from a promise
+                             // that takes ClientInitialMetadata and returns
+                             // ServerTrailingMetadata with three pipes for
+                             // ServerInitialMetadata and
+                             // ClientToServerMessages, ServerToClientMessages.
+                             // Instead we'll have five pipes, moving
+                             // ClientInitialMetadata and ServerTrailingMetadata
+                             // to pipes that can be intercepted.
+                             //
+                             // The effect of this change will be to cripple the
+                             // things that can be done in a filter (but cripple
+                             // in line with what most filters actually do).
+                             // We'll likely need to add a `CallContext::Cancel`
+                             // to allow filters to cancel a request, but this
+                             // would also have the advantage of centralizing
+                             // our cancellation machinery which seems like an
+                             // additional win - with the net effect that the
+                             // shape of the call gets made explicit at the top
+                             // & bottom of the stack.
+                             //
+                             // There's a small set of filters (retry, this one,
+                             // lame client, clinet channel) that terminate
+                             // stacks and need a richer set of semantics, but
+                             // that ends up being fine because we can spawn
+                             // tasks in parties to handle those edge cases, and
+                             // keep the majority of filters simple: they just
+                             // call InterceptAndMap on a handful of filters at
+                             // call initialization time and then proceed to
+                             // actually filter.
+                             //
+                             // So that's the plan, why isn't it enacted here?
+                             //
+                             // Well, the plan ends up being easy to implement
+                             // in the promise based world (I did a prototype on
+                             // a branch in an afternoon). It's heinous to
+                             // implement in promise_based_filter, and that code
+                             // is load bearing for us at the time of writing.
+                             // It's not worth delaying promises for a further N
+                             // months (N ~ 6) to make that change.
+                             //
+                             // Instead, we'll move forward with this, get
+                             // promise_based_filter out of the picture, and
+                             // then during the mop-up phase for promises tweak
+                             // the compute structure to move to the magical
+                             // five pipes (I'm reminded of an old Onion
+                             // article), and end up in a good happy place.
+                             if (server_to_client_empty().pending()) {
+                               return Pending{};
+                             }
+                             return call_promise();
+                           });
+             });
 
-  Poll<ServerMetadataHandle> operator()() { return impl_->PollOnce(); }
+  // Promise factory that accepts a ServerMetadataHandle, and sends it as the
+  // trailing metadata for this call.
+  auto send_trailing_metadata = [call_data, stream = stream->InternalRef()](
+                                    ServerMetadataHandle
+                                        server_trailing_metadata) {
+    bool is_cancellation =
+        server_trailing_metadata->get(GrpcCallWasCancelled()).value_or(false);
+    return GetContext<BatchBuilder>()->SendServerTrailingMetadata(
+        stream->batch_target(), std::move(server_trailing_metadata),
+        is_cancellation ||
+            !std::exchange(call_data->sent_initial_metadata, true));
+  };
 
- private:
-  OrphanablePtr<ClientStream> impl_;
-};
+  // Runs the receive message loop, either until all the messages
+  // are received or the server call is complete.
+  party->Spawn(
+      "recv_messages",
+      Race(
+          Map(stream->WaitFinished(), [](Empty) { return absl::OkStatus(); }),
+          Map(stream->RecvMessages(&call_data->client_to_server.sender, true),
+              [failure_latch = &call_data->failure_latch](absl::Status status) {
+                if (!status.ok() && !failure_latch->is_set()) {
+                  failure_latch->Set(ServerMetadataFromStatus(status));
+                }
+                return status;
+              })),
+      [](absl::Status) {});
+
+  // Run a promise that will send initial metadata (if that pipe sends some).
+  // And then run the send message loop until that completes.
+
+  auto send_initial_metadata = Seq(
+      Race(Map(stream->WaitFinished(),
+               [](Empty) { return NextResult<ServerMetadataHandle>(true); }),
+           call_data->server_initial_metadata.receiver.Next()),
+      [call_data, stream = stream->InternalRef()](
+          NextResult<ServerMetadataHandle> next_result) mutable {
+        auto md = !call_data->sent_initial_metadata && next_result.has_value()
+                      ? std::move(next_result.value())
+                      : nullptr;
+        if (md != nullptr) {
+          call_data->sent_initial_metadata = true;
+          auto* party = static_cast<Party*>(Activity::current());
+          party->Spawn("connected/send_initial_metadata",
+                       GetContext<BatchBuilder>()->SendServerInitialMetadata(
+                           stream->batch_target(), std::move(md)),
+                       [](absl::Status) {});
+          return Immediate(absl::OkStatus());
+        }
+        return Immediate(absl::CancelledError());
+      });
+  party->Spawn(
+      "send_initial_metadata_then_messages",
+      Race(Map(stream->WaitFinished(), [](Empty) { return absl::OkStatus(); }),
+           TrySeq(std::move(send_initial_metadata),
+                  stream->SendMessages(&call_data->server_to_client.receiver))),
+      [](absl::Status) {});
+
+  // Spawn a job to fetch the "client trailing metadata" - if this is OK then
+  // it's client done, otherwise it's a signal of cancellation from the client
+  // which we'll use failure_latch to signal.
+
+  party->Spawn(
+      "recv_trailing_metadata",
+      Seq(GetContext<BatchBuilder>()->ReceiveClientTrailingMetadata(
+              stream->batch_target()),
+          [failure_latch = &call_data->failure_latch](
+              absl::StatusOr<ClientMetadataHandle> status) mutable {
+            if (grpc_call_trace.enabled()) {
+              gpr_log(
+                  GPR_DEBUG,
+                  "%s[connected] Got trailing metadata; status=%s metadata=%s",
+                  Activity::current()->DebugTag().c_str(),
+                  status.status().ToString().c_str(),
+                  status.ok() ? (*status)->DebugString().c_str() : "<none>");
+            }
+            ClientMetadataHandle trailing_metadata;
+            if (status.ok()) {
+              trailing_metadata = std::move(*status);
+            } else {
+              trailing_metadata =
+                  GetContext<Arena>()->MakePooled<ClientMetadata>(
+                      GetContext<Arena>());
+              grpc_status_code status_code = GRPC_STATUS_UNKNOWN;
+              std::string message;
+              grpc_error_get_status(status.status(), Timestamp::InfFuture(),
+                                    &status_code, &message, nullptr, nullptr);
+              trailing_metadata->Set(GrpcStatusMetadata(), status_code);
+              trailing_metadata->Set(GrpcMessageMetadata(),
+                                     Slice::FromCopiedString(message));
+            }
+            if (trailing_metadata->get(GrpcStatusMetadata())
+                    .value_or(GRPC_STATUS_UNKNOWN) != GRPC_STATUS_OK) {
+              if (!failure_latch->is_set()) {
+                failure_latch->Set(std::move(trailing_metadata));
+              }
+            }
+            return Empty{};
+          }),
+      [](Empty) {});
+
+  // Finally assemble the main call promise:
+  // Receive initial metadata from the client and start the promise up the
+  // filter stack.
+  // Upon completion, send trailing metadata to the client and then return it
+  // (allowing the call code to decide on what signalling to give the
+  // application).
+
+  struct CleanupPollingEntityLatch {
+    void operator()(Latch<grpc_polling_entity>* latch) {
+      if (!latch->is_set()) latch->Set(grpc_polling_entity());
+    }
+  };
+  auto cleanup_polling_entity_latch =
+      std::unique_ptr<Latch<grpc_polling_entity>, CleanupPollingEntityLatch>(
+          &call_data->polling_entity_latch);
+  struct CleanupSendInitialMetadata {
+    void operator()(CallData* call_data) {
+      call_data->server_initial_metadata.receiver.CloseWithError();
+    }
+  };
+  auto cleanup_send_initial_metadata =
+      std::unique_ptr<CallData, CleanupSendInitialMetadata>(call_data);
+
+  return Map(
+      Seq(std::move(recv_initial_metadata_then_run_promise),
+          std::move(send_trailing_metadata)),
+      [cleanup_polling_entity_latch = std::move(cleanup_polling_entity_latch),
+       cleanup_send_initial_metadata = std::move(cleanup_send_initial_metadata),
+       stream = std::move(stream)](ServerMetadataHandle md) {
+        stream->set_finished();
+        return md;
+      });
+}
+#endif
 
 template <ArenaPromise<ServerMetadataHandle> (*make_call_promise)(
-    grpc_transport*, CallArgs)>
+    grpc_transport*, CallArgs, NextPromiseFactory)>
 grpc_channel_filter MakeConnectedFilter() {
   // Create a vtable that contains both the legacy call methods (for filter
-  // stack based calls) and the new promise based method for creating promise
-  // based calls (the latter iff make_call_promise != nullptr).
-  // In this way the filter can be inserted into either kind of channel stack,
-  // and only if all the filters in the stack are promise based will the call
-  // be promise based.
+  // stack based calls) and the new promise based method for creating
+  // promise based calls (the latter iff make_call_promise != nullptr). In
+  // this way the filter can be inserted into either kind of channel stack,
+  // and only if all the filters in the stack are promise based will the
+  // call be promise based.
+  auto make_call_wrapper = +[](grpc_channel_element* elem, CallArgs call_args,
+                               NextPromiseFactory next) {
+    grpc_transport* transport =
+        static_cast<channel_data*>(elem->channel_data)->transport;
+    return make_call_promise(transport, std::move(call_args), std::move(next));
+  };
   return {
-    connected_channel_start_transport_stream_op_batch,
-        make_call_promise == nullptr
-            ? nullptr
-            : +[](grpc_channel_element* elem, CallArgs call_args,
-                 NextPromiseFactory) {
-                grpc_transport* transport =
-                    static_cast<channel_data*>(elem->channel_data)->transport;
-                return make_call_promise(transport, std::move(call_args));
-              },
+      connected_channel_start_transport_stream_op_batch,
+      make_call_promise != nullptr ? make_call_wrapper : nullptr,
       connected_channel_start_transport_op,
       sizeof(call_data),
       connected_channel_init_call_elem,
@@ -852,12 +870,11 @@ grpc_channel_filter MakeConnectedFilter() {
       sizeof(channel_data),
       connected_channel_init_channel_elem,
       +[](grpc_channel_stack* channel_stack, grpc_channel_element* elem) {
-        /* HACK(ctiller): increase call stack size for the channel to make space
-           for channel data. We need a cleaner (but performant) way to do this,
-           and I'm not sure what that is yet.
-           This is only "safe" because call stacks place no additional data
-           after the last call element, and the last call element MUST be the
-           connected channel. */
+        // HACK(ctiller): increase call stack size for the channel to make
+        // space for channel data. We need a cleaner (but performant) way to
+        // do this, and I'm not sure what that is yet. This is only "safe"
+        // because call stacks place no additional data after the last call
+        // element, and the last call element MUST be the connected channel.
         channel_stack->call_stack_size += grpc_transport_stream_size(
             static_cast<channel_data*>(elem->channel_data)->transport);
       },
@@ -868,17 +885,28 @@ grpc_channel_filter MakeConnectedFilter() {
 }
 
 ArenaPromise<ServerMetadataHandle> MakeTransportCallPromise(
-    grpc_transport* transport, CallArgs call_args) {
+    grpc_transport* transport, CallArgs call_args, NextPromiseFactory) {
   return transport->vtable->make_call_promise(transport, std::move(call_args));
 }
 
 const grpc_channel_filter kPromiseBasedTransportFilter =
     MakeConnectedFilter<MakeTransportCallPromise>();
 
+#ifdef GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_CLIENT_CALL
 const grpc_channel_filter kClientEmulatedFilter =
-    MakeConnectedFilter<ClientConnectedCallPromise::Make>();
+    MakeConnectedFilter<MakeClientCallPromise>();
+#else
+const grpc_channel_filter kClientEmulatedFilter =
+    MakeConnectedFilter<nullptr>();
+#endif
 
-const grpc_channel_filter kNoPromiseFilter = MakeConnectedFilter<nullptr>();
+#ifdef GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_SERVER_CALL
+const grpc_channel_filter kServerEmulatedFilter =
+    MakeConnectedFilter<MakeServerCallPromise>();
+#else
+const grpc_channel_filter kServerEmulatedFilter =
+    MakeConnectedFilter<nullptr>();
+#endif
 
 }  // namespace
 }  // namespace grpc_core
@@ -890,21 +918,21 @@ bool grpc_add_connected_filter(grpc_core::ChannelStackBuilder* builder) {
   // We can't know promise based call or not here (that decision needs the
   // collaboration of all of the filters on the channel, and we don't want
   // ordering constraints on when we add filters).
-  // We can know if this results in a promise based call how we'll create our
-  // promise (if indeed we can), and so that is the choice made here.
+  // We can know if this results in a promise based call how we'll create
+  // our promise (if indeed we can), and so that is the choice made here.
   if (t->vtable->make_call_promise != nullptr) {
-    // Option 1, and our ideal: the transport supports promise based calls, and
-    // so we simply use the transport directly.
+    // Option 1, and our ideal: the transport supports promise based calls,
+    // and so we simply use the transport directly.
     builder->AppendFilter(&grpc_core::kPromiseBasedTransportFilter);
   } else if (grpc_channel_stack_type_is_client(builder->channel_stack_type())) {
-    // Option 2: the transport does not support promise based calls, but we're
-    // on the client and so we have an implementation that we can use to convert
-    // to batches.
+    // Option 2: the transport does not support promise based calls, but
+    // we're on the client and so we have an implementation that we can use
+    // to convert to batches.
     builder->AppendFilter(&grpc_core::kClientEmulatedFilter);
   } else {
-    // Option 3: the transport does not support promise based calls, and we're
-    // on the server so we can't construct promise based calls just yet.
-    builder->AppendFilter(&grpc_core::kNoPromiseFilter);
+    // Option 3: the transport does not support promise based calls, and
+    // we're on the server so we use the server filter.
+    builder->AppendFilter(&grpc_core::kServerEmulatedFilter);
   }
   return true;
 }

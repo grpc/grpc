@@ -1,22 +1,16 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
-
-#include <stdint.h>
+// Copyright 2023 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
@@ -87,8 +81,6 @@
   "\x10\x0cgrpc-timeout\x02"                                                \
   "5S"
 
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
-
 static void verifier(grpc_server* server, grpc_completion_queue* cq,
                      void* /*registered_method*/) {
   grpc_call_error error;
@@ -101,9 +93,10 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
   grpc_metadata_array_init(&request_metadata_recv);
 
   error = grpc_server_request_call(server, &s, &call_details,
-                                   &request_metadata_recv, cq, cq, tag(101));
+                                   &request_metadata_recv, cq, cq,
+                                   grpc_core::CqVerifier::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(tag(101), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(101), true);
   cqv.Verify();
 
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.host, "localhost"));

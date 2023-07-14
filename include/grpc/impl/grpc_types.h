@@ -141,6 +141,9 @@ typedef struct {
 #define GRPC_ARG_ENABLE_CENSUS "grpc.census"
 /** If non-zero, enable load reporting. */
 #define GRPC_ARG_ENABLE_LOAD_REPORTING "grpc.loadreporting"
+/** If non-zero, call metric recording is enabled. */
+#define GRPC_ARG_SERVER_CALL_METRIC_RECORDING \
+  "grpc.server_call_metric_recording"
 /** Request that optional features default to off (regardless of what they
     usually default to) - to enable tight control over what gets enabled */
 #define GRPC_ARG_MINIMAL_STACK "grpc.minimal_stack"
@@ -290,9 +293,18 @@ typedef struct {
  *  protector.
  */
 #define GRPC_ARG_TSI_MAX_FRAME_SIZE "grpc.tsi.max_frame_size"
-/** Maximum metadata size, in bytes. Note this limit applies to the max sum of
-    all metadata key-value entries in a batch of headers. */
+/** Maximum metadata size (soft limit), in bytes. Note this limit applies to the
+   max sum of all metadata key-value entries in a batch of headers. Some random
+   sample of requests between this limit and
+   `GRPC_ARG_ABSOLUTE_MAX_METADATA_SIZE` will be rejected. Defaults to maximum
+   of 8 KB and `GRPC_ARG_ABSOLUTE_MAX_METADATA_SIZE` * 0.8 (if set).
+ */
 #define GRPC_ARG_MAX_METADATA_SIZE "grpc.max_metadata_size"
+/** Maximum metadata size (hard limit), in bytes. Note this limit applies to the
+   max sum of all metadata key-value entries in a batch of headers. All requests
+   exceeding this limit will be rejected. Defaults to maximum of 16 KB and
+   `GRPC_ARG_MAX_METADATA_SIZE` * 1.25 (if set). */
+#define GRPC_ARG_ABSOLUTE_MAX_METADATA_SIZE "grpc.absolute_max_metadata_size"
 /** If non-zero, allow the use of SO_REUSEPORT if it's available (default 1) */
 #define GRPC_ARG_ALLOW_REUSEPORT "grpc.so_reuseport"
 /** If non-zero, a pointer to a buffer pool (a pointer of type
@@ -356,6 +368,8 @@ typedef struct {
    issued by the tcp_write(). By default, this is set to 4. */
 #define GRPC_ARG_TCP_TX_ZEROCOPY_MAX_SIMULT_SENDS \
   "grpc.experimental.tcp_tx_zerocopy_max_simultaneous_sends"
+/* Overrides the TCP socket recieve buffer size, SO_RCVBUF. */
+#define GRPC_ARG_TCP_RECEIVE_BUFFER_SIZE "grpc.tcp_receive_buffer_size"
 /* Timeout in milliseconds to use for calls to the grpclb load balancer.
    If 0 or unset, the balancer calls will have no deadline. */
 #define GRPC_ARG_GRPCLB_CALL_TIMEOUT_MS "grpc.grpclb_call_timeout_ms"
@@ -467,6 +481,9 @@ typedef struct {
  * channel arg. Int valued, milliseconds. Defaults to 10 minutes.*/
 #define GRPC_ARG_SERVER_CONFIG_CHANGE_DRAIN_GRACE_TIME_MS \
   "grpc.experimental.server_config_change_drain_grace_time_ms"
+/** Configure the Differentiated Services Code Point used on outgoing packets.
+ *  Integer value ranging from 0 to 63. */
+#define GRPC_ARG_DSCP "grpc.dscp"
 /** \} */
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a

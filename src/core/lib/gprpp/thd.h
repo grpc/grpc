@@ -1,29 +1,34 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-#ifndef GRPC_CORE_LIB_GPRPP_THD_H
-#define GRPC_CORE_LIB_GPRPP_THD_H
+#ifndef GRPC_SRC_CORE_LIB_GPRPP_THD_H
+#define GRPC_SRC_CORE_LIB_GPRPP_THD_H
 
-/** Internal thread interface. */
+/// Internal thread interface.
 
 #include <grpc/support/port_platform.h>
 
 #include <stddef.h>
+
+#include <memory>
+#include <utility>
+
+#include "absl/functional/any_invocable.h"
 
 #include <grpc/support/log.h>
 
@@ -85,6 +90,17 @@ class Thread {
   /// The optional \a options can be used to set the thread detachable.
   Thread(const char* thd_name, void (*thd_body)(void* arg), void* arg,
          bool* success = nullptr, const Options& options = Options());
+
+  Thread(const char* thd_name, absl::AnyInvocable<void()> fn,
+         bool* success = nullptr, const Options& options = Options())
+      : Thread(
+            thd_name,
+            [](void* p) {
+              std::unique_ptr<absl::AnyInvocable<void()>> fn_from_p(
+                  static_cast<absl::AnyInvocable<void()>*>(p));
+              (*fn_from_p)();
+            },
+            new absl::AnyInvocable<void()>(std::move(fn)), success, options) {}
 
   /// Move constructor for thread. After this is called, the other thread
   /// no longer represents a living thread object
@@ -168,4 +184,4 @@ class Thread {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_GPRPP_THD_H */
+#endif  // GRPC_SRC_CORE_LIB_GPRPP_THD_H

@@ -19,22 +19,24 @@
 #include <atomic>
 #include <chrono>
 #include <cstring>
+#include <initializer_list>
 #include <memory>
 #include <string>
 #include <vector>
 
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
 
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h"
-#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/port.h"
 
@@ -63,14 +65,12 @@
 #include "src/core/lib/event_engine/posix_engine/event_poller_posix_default.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
-#include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/strerror.h"
 #include "test/core/event_engine/posix/posix_engine_test_utils.h"
 #include "test/core/util/port.h"
-
-GPR_GLOBAL_CONFIG_DECLARE_STRING(grpc_poll_strategy);
 
 static gpr_mu g_mu;
 static grpc_event_engine::experimental::PosixEventPoller* g_event_poller =
@@ -134,9 +134,9 @@ void CreateTestSocket(int port, int* socket_fd, struct sockaddr_in6* sin) {
 
 // An upload server.
 typedef struct {
-  EventHandle* em_fd;       /* listening fd */
-  ssize_t read_bytes_total; /* total number of received bytes */
-  int done;                 /* set to 1 when a server finishes serving */
+  EventHandle* em_fd;        // listening fd
+  ssize_t read_bytes_total;  // total number of received bytes
+  int done;                  // set to 1 when a server finishes serving
   PosixEngineClosure* listen_closure;
 } server;
 
@@ -148,9 +148,9 @@ void ServerInit(server* sv) {
 // An upload session.
 // Created when a new upload request arrives in the server.
 typedef struct {
-  server* sv;              /* not owned by a single session */
-  EventHandle* em_fd;      /* fd to read upload bytes */
-  char read_buf[BUF_SIZE]; /* buffer to store upload bytes */
+  server* sv;               // not owned by a single session
+  EventHandle* em_fd;       // fd to read upload bytes
+  char read_buf[BUF_SIZE];  // buffer to store upload bytes
   PosixEngineClosure* session_read_closure;
 } session;
 
@@ -355,8 +355,8 @@ void ClientStart(client* cl, int port) {
         abort();
       }
     } else {
-      gpr_log(GPR_ERROR, "Failed to connect to the server (errno=%d)", errno);
-      abort();
+      grpc_core::Crash(
+          absl::StrFormat("Failed to connect to the server (errno=%d)", errno));
     }
   }
 
@@ -710,10 +710,8 @@ TEST_F(EventPollerTest, TestMultipleHandles) {
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   gpr_mu_init(&g_mu);
-  grpc_core::UniquePtr<char> poll_strategy =
-      GPR_GLOBAL_CONFIG_GET(grpc_poll_strategy);
-  GPR_GLOBAL_CONFIG_GET(grpc_poll_strategy);
-  auto strings = absl::StrSplit(poll_strategy.get(), ',');
+  auto poll_strategy = grpc_core::ConfigVars::Get().PollStrategy();
+  auto strings = absl::StrSplit(poll_strategy, ',');
   if (std::find(strings.begin(), strings.end(), "none") != strings.end()) {
     // Skip the test entirely if poll strategy is none.
     return 0;
@@ -726,8 +724,8 @@ int main(int argc, char** argv) {
   return r;
 }
 
-#else /* GRPC_POSIX_SOCKET_EV */
+#else  // GRPC_POSIX_SOCKET_EV
 
 int main(int argc, char** argv) { return 1; }
 
-#endif /* GRPC_POSIX_SOCKET_EV */
+#endif  // GRPC_POSIX_SOCKET_EV

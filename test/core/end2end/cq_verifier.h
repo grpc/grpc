@@ -1,31 +1,38 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #ifndef GRPC_TEST_CORE_END2END_CQ_VERIFIER_H
 #define GRPC_TEST_CORE_END2END_CQ_VERIFIER_H
 
+#include <stdint.h>
+
+#include <functional>
 #include <string>
 #include <vector>
 
+#include "absl/container/flat_hash_map.h"
+#include "absl/functional/any_invocable.h"
 #include "absl/types/variant.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/time.h"
@@ -46,10 +53,50 @@ class CqVerifier {
   struct AnyStatus {
     bool* result = nullptr;
   };
+  // PerformAction - expect the tag, and run a function based on the result
+  struct PerformAction {
+    std::function<void(bool success)> action;
+  };
+  // MaybePerformAction - run a function if a tag is seen
+  struct MaybePerformAction {
+    std::function<void(bool success)> action;
+  };
 
-  using ExpectedResult = absl::variant<bool, Maybe, AnyStatus>;
+  using ExpectedResult =
+      absl::variant<bool, Maybe, AnyStatus, PerformAction, MaybePerformAction>;
 
-  explicit CqVerifier(grpc_completion_queue* cq);
+  // Captures information about one failure
+  struct Failure {
+    SourceLocation location;
+    std::string message;
+    std::vector<std::string> expected;
+    std::vector<std::string> message_details;
+  };
+
+  // Produces a string upon the successful (but unexpected) completion of an
+  // expectation.
+  class SuccessfulStateString {
+   public:
+    virtual std::string GetSuccessfulStateString() = 0;
+
+   protected:
+    ~SuccessfulStateString() = default;
+  };
+
+  static void FailUsingGprCrash(const Failure& failure);
+  static void FailUsingGprCrashWithStdio(const Failure& failure);
+  static void FailUsingGtestFail(const Failure& failure);
+
+  // Allow customizing the failure handler
+  // For legacy tests we should use FailUsingGprCrash (the default)
+  // For gtest based tests we should start migrating to FailUsingGtestFail which
+  // will produce nicer failure messages.
+  explicit CqVerifier(
+      grpc_completion_queue* cq,
+      absl::AnyInvocable<void(Failure) const> fail = FailUsingGprCrash,
+      absl::AnyInvocable<
+          void(grpc_event_engine::experimental::EventEngine::Duration) const>
+          step_fn = nullptr);
   ~CqVerifier();
 
   CqVerifier(const CqVerifier&) = delete;
@@ -64,6 +111,10 @@ class CqVerifier {
   void VerifyEmpty(Duration timeout = Duration::Seconds(1),
                    SourceLocation location = SourceLocation());
 
+  void ClearSuccessfulStateStrings(void* tag);
+  void AddSuccessfulStateString(void* tag,
+                                SuccessfulStateString* successful_state_string);
+
   // Match an expectation about a status.
   // location must be DEBUG_LOCATION.
   // result can be any of the types in ExpectedResult - a plain bool means
@@ -72,6 +123,18 @@ class CqVerifier {
               SourceLocation location = SourceLocation());
 
   std::string ToString() const;
+  std::vector<std::string> ToStrings() const;
+  std::string ToShortString() const;
+  std::vector<std::string> ToShortStrings() const;
+
+  // Logging verifications helps debug CI problems a lot.
+  // Only disable if the logging prevents a stress test like scenario from
+  // passing.
+  void SetLogVerifications(bool log_verifications) {
+    log_verifications_ = log_verifications;
+  }
+
+  static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
  private:
   struct Expectation {
@@ -80,15 +143,24 @@ class CqVerifier {
     ExpectedResult result;
 
     std::string ToString() const;
+    std::string ToShortString() const;
   };
 
   void FailNoEventReceived(const SourceLocation& location) const;
   void FailUnexpectedEvent(grpc_event* ev,
                            const SourceLocation& location) const;
   bool AllMaybes() const;
+  grpc_event Step(gpr_timespec deadline);
 
   grpc_completion_queue* const cq_;
   std::vector<Expectation> expectations_;
+  absl::AnyInvocable<void(Failure) const> fail_;
+  absl::AnyInvocable<void(
+      grpc_event_engine::experimental::EventEngine::Duration) const>
+      step_fn_;
+  absl::flat_hash_map<void*, std::vector<SuccessfulStateString*>>
+      successful_state_strings_;
+  bool log_verifications_ = true;
 };
 
 }  // namespace grpc_core
@@ -100,4 +172,4 @@ int contains_metadata(grpc_metadata_array* array, const char* key,
 int contains_metadata_slices(grpc_metadata_array* array, grpc_slice key,
                              grpc_slice value);
 
-#endif /* GRPC_TEST_CORE_END2END_CQ_VERIFIER_H */
+#endif  // GRPC_TEST_CORE_END2END_CQ_VERIFIER_H

@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2020 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2020 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <atomic>
 #include <chrono>
@@ -45,6 +45,7 @@
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
 #include "test/core/util/test_config.h"
+#include "test/cpp/interop/rpc_behavior_lb_policy.h"
 #include "test/cpp/util/test_config.h"
 
 ABSL_FLAG(bool, fail_on_failed_rpc, false,
@@ -129,7 +130,7 @@ struct AsyncClientCall {
       simple_response_reader;
 };
 
-/** Records the remote peer distribution for a given range of RPCs. */
+/// Records the remote peer distribution for a given range of RPCs.
 class XdsStatsWatcher {
  public:
   XdsStatsWatcher(int start_id, int end_id)
@@ -580,6 +581,8 @@ void BuildRpcConfigsFromFlags(RpcConfigurationsQueue* rpc_configs_queue) {
 }
 
 int main(int argc, char** argv) {
+  grpc_core::CoreConfiguration::RegisterBuilder(
+      grpc::testing::RegisterRpcBehaviorLbPolicy);
   grpc::testing::TestEnvironment env(&argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
   // Validate the expect_status flag.

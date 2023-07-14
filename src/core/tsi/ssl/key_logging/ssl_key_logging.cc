@@ -20,6 +20,7 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -49,7 +50,7 @@ TlsSessionKeyLoggerCache::TlsSessionKeyLogger::TlsSessionKeyLogger(
       cache_(std::move(cache)) {
   GPR_ASSERT(!tls_session_key_log_file_path_.empty());
   GPR_ASSERT(cache_ != nullptr);
-  fd_ = fopen(tls_session_key_log_file_path_.c_str(), "w+");
+  fd_ = fopen(tls_session_key_log_file_path_.c_str(), "a");
   if (fd_ == nullptr) {
     grpc_error_handle error = GRPC_OS_ERROR(errno, "fopen");
     gpr_log(GPR_ERROR,

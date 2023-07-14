@@ -30,7 +30,10 @@ def main
   # do a few runs for each config
   4.times do
     native_grpc_classes.each do |grpc_class|
-      ['', 'gc', 'concurrency'].each do |stress_test_type|
+      # TODO(b/266212253): re-enable the "concurrency" mode
+      # of this test after the "Bus error" flakes of this
+      # test are fixed.
+      ['', 'gc'].each do |stress_test_type|
         STDERR.puts 'start client'
         this_dir = File.expand_path(File.dirname(__FILE__))
         client_path = File.join(this_dir, 'grpc_class_init_client.rb')

@@ -14,6 +14,7 @@
 // limitations under the License.
 //
 
+#include <initializer_list>
 #include <memory>
 #include <string>
 #include <utility>
@@ -24,15 +25,15 @@
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "upb/def.hpp"
+#include "upb/reflection/def.hpp"
 #include "upb/upb.hpp"
 
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
@@ -43,10 +44,12 @@
 #include "src/core/ext/xds/xds_health_status.h"
 #include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_writer.h"
 #include "src/proto/grpc/testing/xds/v3/address.pb.h"
 #include "src/proto/grpc/testing/xds/v3/aggregate_cluster.pb.h"
 #include "src/proto/grpc/testing/xds/v3/base.pb.h"
@@ -108,9 +111,8 @@ class XdsClusterTest : public ::testing::Test {
         "  }\n"
         "}");
     if (!bootstrap.ok()) {
-      gpr_log(GPR_ERROR, "Error parsing bootstrap: %s",
-              bootstrap.status().ToString().c_str());
-      GPR_ASSERT(false);
+      Crash(absl::StrFormat("Error parsing bootstrap: %s",
+                            bootstrap.status().ToString().c_str()));
     }
     return MakeRefCounted<XdsClient>(std::move(*bootstrap),
                                      /*transport_factory=*/nullptr,
@@ -161,7 +163,7 @@ TEST_F(XdsClusterTest, MinimumValidConfig) {
   ASSERT_NE(eds, nullptr);
   EXPECT_EQ(eds->eds_service_name, "");
   // Check defaults.
-  EXPECT_EQ(Json{resource.lb_policy_config}.Dump(),
+  EXPECT_EQ(JsonDump(Json::FromArray(resource.lb_policy_config)),
             "[{\"xds_wrr_locality_experimental\":{\"childPolicy\":"
             "[{\"round_robin\":{}}]}}]");
   EXPECT_FALSE(resource.lrs_load_reporting_server.has_value());
@@ -213,6 +215,28 @@ TEST_F(ClusterTypeTest, EdsServiceName) {
   auto* eds = absl::get_if<XdsClusterResource::Eds>(&resource.type);
   ASSERT_NE(eds, nullptr);
   EXPECT_EQ(eds->eds_service_name, "bar");
+}
+
+TEST_F(ClusterTypeTest, EdsServiceNameAbsentWithXdstpName) {
+  Cluster cluster;
+  cluster.set_name("xdstp:foo");
+  cluster.set_type(cluster.EDS);
+  auto* eds_cluster_config = cluster.mutable_eds_cluster_config();
+  eds_cluster_config->mutable_eds_config()->mutable_self();
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "xdstp:foo");
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating Cluster resource: ["
+            "field:eds_cluster_config.service_name "
+            "error:must be set if Cluster resource has an xdstp name]")
+      << decode_result.resource.status();
 }
 
 TEST_F(ClusterTypeTest, DiscoveryTypeNotPresent) {
@@ -580,6 +604,29 @@ TEST_F(ClusterTypeTest, AggregateClusterUnparseableProto) {
       << decode_result.resource.status();
 }
 
+TEST_F(ClusterTypeTest, AggregateClusterEmptyClusterList) {
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.mutable_cluster_type()->set_name("envoy.clusters.aggregate");
+  cluster.mutable_cluster_type()->mutable_typed_config()->PackFrom(
+      ClusterConfig());
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating Cluster resource: ["
+            "field:cluster_type.typed_config.value["
+            "envoy.extensions.clusters.aggregate.v3.ClusterConfig].clusters "
+            "error:must be non-empty]")
+      << decode_result.resource.status();
+}
+
 //
 // LB policy tests
 //
@@ -601,7 +648,7 @@ TEST_F(LbPolicyTest, EnumLbPolicyRingHash) {
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   auto& resource = static_cast<XdsClusterResource&>(**decode_result.resource);
-  EXPECT_EQ(Json{resource.lb_policy_config}.Dump(),
+  EXPECT_EQ(JsonDump(Json::FromArray(resource.lb_policy_config)),
             "[{\"ring_hash_experimental\":{"
             "\"maxRingSize\":8388608,\"minRingSize\":1024}}]");
 }
@@ -624,7 +671,7 @@ TEST_F(LbPolicyTest, EnumLbPolicyRingHashSetMinAndMaxRingSize) {
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   auto& resource = static_cast<XdsClusterResource&>(**decode_result.resource);
-  EXPECT_EQ(Json{resource.lb_policy_config}.Dump(),
+  EXPECT_EQ(JsonDump(Json::FromArray(resource.lb_policy_config)),
             "[{\"ring_hash_experimental\":{"
             "\"maxRingSize\":4096,\"minRingSize\":2048}}]");
 }
@@ -754,7 +801,6 @@ TEST_F(LbPolicyTest, EnumUnsupportedPolicy) {
 }
 
 TEST_F(LbPolicyTest, LoadBalancingPolicyField) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_CUSTOM_LB_CONFIG");
   Cluster cluster;
   cluster.set_name("foo");
   cluster.set_type(cluster.EDS);
@@ -780,43 +826,15 @@ TEST_F(LbPolicyTest, LoadBalancingPolicyField) {
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   auto& resource = static_cast<XdsClusterResource&>(**decode_result.resource);
-  EXPECT_EQ(Json{resource.lb_policy_config}.Dump(),
+  EXPECT_EQ(JsonDump(Json::FromArray(resource.lb_policy_config)),
             "[{\"xds_wrr_locality_experimental\":{"
             "\"childPolicy\":[{\"round_robin\":{}}]}}]");
-}
-
-TEST_F(LbPolicyTest, LoadBalancingPolicyFieldIgnoredUnlessEnabled) {
-  Cluster cluster;
-  cluster.set_name("foo");
-  cluster.set_type(cluster.EDS);
-  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
-  // New field says to use round_robin, but the old enum field says to use
-  // ring_hash.  The env var is not enabled, so we use the old enum field.
-  cluster.mutable_load_balancing_policy()
-      ->add_policies()
-      ->mutable_typed_extension_config()
-      ->mutable_typed_config()
-      ->PackFrom(RoundRobin());
-  cluster.set_lb_policy(cluster.RING_HASH);
-  std::string serialized_resource;
-  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
-  auto* resource_type = XdsClusterResourceType::Get();
-  auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
-  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
-  ASSERT_TRUE(decode_result.name.has_value());
-  EXPECT_EQ(*decode_result.name, "foo");
-  auto& resource = static_cast<XdsClusterResource&>(**decode_result.resource);
-  EXPECT_EQ(Json{resource.lb_policy_config}.Dump(),
-            "[{\"ring_hash_experimental\":{"
-            "\"maxRingSize\":8388608,\"minRingSize\":1024}}]");
 }
 
 // This tests that we're passing along errors from XdsLbPolicyRegistry.
 // A complete list of error cases for that class is in
 // xds_lb_policy_registry_test.
 TEST_F(LbPolicyTest, XdsLbPolicyRegistryConversionFails) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_CUSTOM_LB_CONFIG");
   Cluster cluster;
   cluster.set_name("foo");
   cluster.set_type(cluster.EDS);
@@ -845,7 +863,6 @@ TEST_F(LbPolicyTest, XdsLbPolicyRegistryConversionFails) {
 }
 
 TEST_F(LbPolicyTest, ConvertedCustomPolicyFailsValidation) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_CUSTOM_LB_CONFIG");
   Cluster cluster;
   cluster.set_name("foo");
   cluster.set_type(cluster.EDS);
@@ -1316,12 +1333,12 @@ TEST_F(HostOverrideStatusTest, IgnoredWhenNotEnabled) {
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   auto& resource = static_cast<XdsClusterResource&>(**decode_result.resource);
-  EXPECT_THAT(resource.host_override_statuses, ::testing::ElementsAre());
+  EXPECT_THAT(resource.override_host_statuses, ::testing::ElementsAre());
 }
 
 TEST_F(HostOverrideStatusTest, PassesOnRelevantHealthStatuses) {
   ScopedExperimentalEnvVar env_var(
-      "GRPC_EXPERIMENTAL_XDS_ENABLE_HOST_OVERRIDE");
+      "GRPC_EXPERIMENTAL_XDS_ENABLE_OVERRIDE_HOST");
   Cluster cluster;
   cluster.set_name("foo");
   cluster.set_type(cluster.EDS);
@@ -1341,7 +1358,7 @@ TEST_F(HostOverrideStatusTest, PassesOnRelevantHealthStatuses) {
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   auto& resource = static_cast<XdsClusterResource&>(**decode_result.resource);
-  EXPECT_THAT(resource.host_override_statuses,
+  EXPECT_THAT(resource.override_host_statuses,
               ::testing::UnorderedElementsAre(
                   XdsHealthStatus(XdsHealthStatus::kUnknown),
                   XdsHealthStatus(XdsHealthStatus::kHealthy),

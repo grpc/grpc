@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2017 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2017 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "src/core/lib/resource_quota/arena.h"
 
@@ -22,6 +22,8 @@
 #include <string.h>
 
 #include <algorithm>
+#include <iosfwd>
+#include <memory>
 #include <ostream>
 #include <string>
 #include <vector>
@@ -174,6 +176,21 @@ TEST_F(ArenaTest, ConcurrentManagedNew) {
   args.arena->Destroy();
 }
 
+template <typename Int>
+void Scribble(Int* ints, int n, int offset) {
+  for (int i = 0; i < n; i++) {
+    ints[i] = static_cast<Int>(i + offset);
+  }
+}
+
+template <typename Int>
+bool IsScribbled(Int* ints, int n, int offset) {
+  for (int i = 0; i < n; i++) {
+    if (ints[i] != static_cast<Int>(i + offset)) return false;
+  }
+  return true;
+}
+
 TEST_F(ArenaTest, PooledObjectsArePooled) {
   struct TestObj {
     char a[100];
@@ -181,10 +198,15 @@ TEST_F(ArenaTest, PooledObjectsArePooled) {
 
   auto arena = MakeScopedArena(1024, &memory_allocator_);
   auto obj = arena->MakePooled<TestObj>();
+  Scribble(obj->a, 100, 1);
+  EXPECT_TRUE(IsScribbled(obj->a, 100, 1));
   void* p = obj.get();
   obj.reset();
   obj = arena->MakePooled<TestObj>();
+  EXPECT_FALSE(IsScribbled(obj->a, 100, 1));
   EXPECT_EQ(p, obj.get());
+  Scribble(obj->a, 100, 2);
+  EXPECT_TRUE(IsScribbled(obj->a, 100, 2));
 }
 
 TEST_F(ArenaTest, CreateManyObjects) {
@@ -196,7 +218,93 @@ TEST_F(ArenaTest, CreateManyObjects) {
   objs.reserve(1000);
   for (int i = 0; i < 1000; i++) {
     objs.emplace_back(arena->MakePooled<TestObj>());
+    Scribble(objs.back()->a, 100, i);
   }
+  for (int i = 0; i < 1000; i++) {
+    EXPECT_TRUE(IsScribbled(objs[i]->a, 100, i));
+  }
+}
+
+TEST_F(ArenaTest, CreateManyObjectsWithDestructors) {
+  using TestObj = std::unique_ptr<int>;
+  auto arena = MakeScopedArena(1024, &memory_allocator_);
+  std::vector<Arena::PoolPtr<TestObj>> objs;
+  objs.reserve(1000);
+  for (int i = 0; i < 1000; i++) {
+    objs.emplace_back(arena->MakePooled<TestObj>(new int(i)));
+  }
+}
+
+TEST_F(ArenaTest, CreatePoolArray) {
+  auto arena = MakeScopedArena(1024, &memory_allocator_);
+  auto p = arena->MakePooledArray<int>(1024);
+  EXPECT_FALSE(p.get_deleter().has_freelist());
+  p = arena->MakePooledArray<int>(5);
+  EXPECT_TRUE(p.get_deleter().has_freelist());
+  Scribble(p.get(), 5, 1);
+  EXPECT_TRUE(IsScribbled(p.get(), 5, 1));
+}
+
+TEST_F(ArenaTest, ConcurrentMakePooled) {
+  concurrent_test_args args;
+  gpr_event_init(&args.ev_start);
+  args.arena = Arena::Create(1024, &memory_allocator_);
+
+  class BaseClass {
+   public:
+    virtual ~BaseClass() {}
+    virtual int Foo() = 0;
+  };
+
+  class Type1 : public BaseClass {
+   public:
+    int Foo() override { return 1; }
+  };
+
+  class Type2 : public BaseClass {
+   public:
+    int Foo() override { return 2; }
+  };
+
+  Thread thds1[CONCURRENT_TEST_THREADS / 2];
+  Thread thds2[CONCURRENT_TEST_THREADS / 2];
+
+  for (int i = 0; i < CONCURRENT_TEST_THREADS / 2; i++) {
+    thds1[i] = Thread(
+        "grpc_concurrent_test",
+        [](void* arg) {
+          concurrent_test_args* a = static_cast<concurrent_test_args*>(arg);
+          gpr_event_wait(&a->ev_start, gpr_inf_future(GPR_CLOCK_REALTIME));
+          for (size_t i = 0; i < concurrent_test_iterations(); i++) {
+            EXPECT_EQ(a->arena->MakePooled<Type1>()->Foo(), 1);
+          }
+        },
+        &args);
+    thds1[i].Start();
+
+    thds2[i] = Thread(
+        "grpc_concurrent_test",
+        [](void* arg) {
+          concurrent_test_args* a = static_cast<concurrent_test_args*>(arg);
+          gpr_event_wait(&a->ev_start, gpr_inf_future(GPR_CLOCK_REALTIME));
+          for (size_t i = 0; i < concurrent_test_iterations(); i++) {
+            EXPECT_EQ(a->arena->MakePooled<Type2>()->Foo(), 2);
+          }
+        },
+        &args);
+    thds2[i].Start();
+  }
+
+  gpr_event_set(&args.ev_start, reinterpret_cast<void*>(1));
+
+  for (auto& th : thds1) {
+    th.Join();
+  }
+  for (auto& th : thds2) {
+    th.Join();
+  }
+
+  args.arena->Destroy();
 }
 
 }  // namespace grpc_core

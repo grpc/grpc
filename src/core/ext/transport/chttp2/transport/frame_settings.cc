@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -22,11 +22,13 @@
 
 #include <string.h>
 
+#include <initializer_list>
 #include <string>
 
 #include "absl/base/attributes.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
 
 #include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
@@ -40,6 +42,7 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/slice/slice.h"
 
 static uint8_t* fill_header(uint8_t* out, uint32_t length, uint8_t flags) {
   *out++ = static_cast<uint8_t>(length >> 16);
@@ -228,7 +231,8 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
           parser->incoming_settings[id] = parser->value;
           if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
             gpr_log(GPR_INFO, "CHTTP2:%s:%s: got setting %s = %d",
-                    t->is_client ? "CLI" : "SVR", t->peer_string.c_str(),
+                    t->is_client ? "CLI" : "SVR",
+                    std::string(t->peer_string.as_string_view()).c_str(),
                     sp->name, parser->value);
           }
         } else if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {

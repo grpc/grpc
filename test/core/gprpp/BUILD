@@ -55,37 +55,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "global_config_test",
-    srcs = ["global_config_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    language = "C++",
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "//:gpr",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "global_config_env_test",
-    srcs = ["global_config_env_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    language = "C++",
-    tags = ["no_windows"],  # TODO(jtattermusch): fix the failure on windows
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "//:gpr",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "bitset_test",
     srcs = ["bitset_test.cc"],
     external_deps = ["gtest"],
@@ -94,6 +63,18 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//src/core:bitset",
+    ],
+)
+
+grpc_cc_test(
+    name = "if_list_test",
+    srcs = ["if_list_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:if_list",
     ],
 )
 
@@ -441,6 +422,21 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//src/core:load_file",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "uuid_v4_test",
+    srcs = ["uuid_v4_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:uuid_v4",
         "//test/core/util:grpc_test_util",
     ],
 )

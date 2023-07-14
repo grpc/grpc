@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2017 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2017 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "src/core/lib/channel/channel_trace.h"
 
@@ -31,6 +31,7 @@
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_writer.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/channel_trace_proto_helper.h"
 
@@ -54,25 +55,25 @@ namespace {
 
 void ValidateJsonArraySize(const Json& array, size_t expected) {
   if (expected == 0) {
-    ASSERT_EQ(array.type(), Json::Type::JSON_NULL);
+    ASSERT_EQ(array.type(), Json::Type::kNull);
   } else {
-    ASSERT_EQ(array.type(), Json::Type::ARRAY);
-    EXPECT_EQ(array.array_value().size(), expected);
+    ASSERT_EQ(array.type(), Json::Type::kArray);
+    EXPECT_EQ(array.array().size(), expected);
   }
 }
 
 void ValidateChannelTraceData(const Json& json,
                               size_t num_events_logged_expected,
                               size_t actual_num_events_expected) {
-  ASSERT_EQ(json.type(), Json::Type::OBJECT);
-  Json::Object object = json.object_value();
+  ASSERT_EQ(json.type(), Json::Type::kObject);
+  Json::Object object = json.object();
   Json& num_events_logged_json = object["numEventsLogged"];
-  ASSERT_EQ(num_events_logged_json.type(), Json::Type::STRING);
+  ASSERT_EQ(num_events_logged_json.type(), Json::Type::kString);
   size_t num_events_logged = static_cast<size_t>(
-      strtol(num_events_logged_json.string_value().c_str(), nullptr, 0));
+      strtol(num_events_logged_json.string().c_str(), nullptr, 0));
   ASSERT_EQ(num_events_logged, num_events_logged_expected);
   Json& start_time_json = object["creationTimestamp"];
-  ASSERT_EQ(start_time_json.type(), Json::Type::STRING);
+  ASSERT_EQ(start_time_json.type(), Json::Type::kString);
   ValidateJsonArraySize(object["events"], actual_num_events_expected);
 }
 
@@ -85,8 +86,8 @@ void AddSimpleTrace(ChannelTrace* tracer) {
 void ValidateChannelTraceCustom(ChannelTrace* tracer, size_t num_events_logged,
                                 size_t num_events_expected) {
   Json json = tracer->RenderJson();
-  ASSERT_EQ(json.type(), Json::Type::OBJECT);
-  std::string json_str = json.Dump();
+  ASSERT_EQ(json.type(), Json::Type::kObject);
+  std::string json_str = JsonDump(json);
   grpc::testing::ValidateChannelTraceProtoJsonTranslation(json_str.c_str());
   ValidateChannelTraceData(json, num_events_logged, num_events_expected);
 }

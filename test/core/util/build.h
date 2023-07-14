@@ -30,4 +30,4 @@ bool BuiltUnderMsan();
 // Returns whether this is built under UndefinedBehaviorSanitizer
 bool BuiltUnderUbsan();
 
-#endif
+#endif  // GRPC_TEST_CORE_UTIL_BUILD_H

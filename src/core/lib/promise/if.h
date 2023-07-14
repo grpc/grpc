@@ -12,16 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_PROMISE_IF_H
-#define GRPC_CORE_LIB_PROMISE_IF_H
+#ifndef GRPC_SRC_CORE_LIB_PROMISE_IF_H
+#define GRPC_SRC_CORE_LIB_PROMISE_IF_H
 
 #include <grpc/support/port_platform.h>
 
+#include <memory>
 #include <type_traits>
+#include <utility>
 
 #include "absl/status/statusor.h"
 #include "absl/types/variant.h"
 
+#include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/poll.h"
@@ -98,7 +101,7 @@ class If {
           !kSetState,
           "shouldn't need to set state coming through the initial branch");
       auto r = evaluating.condition();
-      if (auto* p = absl::get_if<kPollReadyIdx>(&r)) {
+      if (auto* p = r.value_if_ready()) {
         return ChooseIf(CallPoll<true>{self}, std::move(*p),
                         &evaluating.if_true, &evaluating.if_false);
       }
@@ -108,12 +111,79 @@ class If {
     template <class Promise>
     PollResult operator()(Promise& promise) const {
       auto r = promise();
-      if (kSetState && absl::holds_alternative<Pending>(r)) {
+      if (kSetState && r.pending()) {
         self->state_.template emplace<Promise>(std::move(promise));
       }
       return r;
     }
   };
+};
+
+template <typename T, typename F>
+class If<bool, T, F> {
+ private:
+  using TrueFactory = promise_detail::OncePromiseFactory<void, T>;
+  using FalseFactory = promise_detail::OncePromiseFactory<void, F>;
+  using TruePromise = typename TrueFactory::Promise;
+  using FalsePromise = typename FalseFactory::Promise;
+  using Result =
+      typename PollTraits<decltype(std::declval<TruePromise>()())>::Type;
+
+ public:
+  If(bool condition, T if_true, F if_false) : condition_(condition) {
+    TrueFactory true_factory(std::move(if_true));
+    FalseFactory false_factory(std::move(if_false));
+    if (condition_) {
+      Construct(&if_true_, true_factory.Make());
+    } else {
+      Construct(&if_false_, false_factory.Make());
+    }
+  }
+  ~If() {
+    if (condition_) {
+      Destruct(&if_true_);
+    } else {
+      Destruct(&if_false_);
+    }
+  }
+
+  If(const If&) = delete;
+  If& operator=(const If&) = delete;
+  If(If&& other) noexcept : condition_(other.condition_) {
+    if (condition_) {
+      Construct(&if_true_, std::move(other.if_true_));
+    } else {
+      Construct(&if_false_, std::move(other.if_false_));
+    }
+  }
+  If& operator=(If&& other) noexcept {
+    if (&other == this) return *this;
+    Destruct(this);
+    Construct(this, std::move(other));
+    return *this;
+  }
+
+  Poll<Result> operator()() {
+#ifndef NDEBUG
+    asan_canary_ = std::make_unique<int>(1 + *asan_canary_);
+#endif
+    if (condition_) {
+      return if_true_();
+    } else {
+      return if_false_();
+    }
+  }
+
+ private:
+  bool condition_;
+  union {
+    TruePromise if_true_;
+    FalsePromise if_false_;
+  };
+  // Make failure to destruct show up in ASAN builds.
+#ifndef NDEBUG
+  std::unique_ptr<int> asan_canary_ = std::make_unique<int>(0);
+#endif
 };
 
 }  // namespace promise_detail
@@ -131,4 +201,4 @@ promise_detail::If<C, T, F> If(C condition, T if_true, F if_false) {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_PROMISE_IF_H
+#endif  // GRPC_SRC_CORE_LIB_PROMISE_IF_H

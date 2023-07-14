@@ -7,49 +7,98 @@
  * regenerated. */
 
 #include <stddef.h>
-#include "upb/msg_internal.h"
+#include "upb/collections/array_internal.h"
+#include "upb/message/internal.h"
+#include "upb/mini_table/enum_internal.h"
 #include "envoy/extensions/filters/http/router/v3/router.upb.h"
 #include "envoy/config/accesslog/v3/accesslog.upb.h"
+#include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.h"
+#include "google/protobuf/duration.upb.h"
 #include "google/protobuf/wrappers.upb.h"
 #include "udpa/annotations/status.upb.h"
 #include "udpa/annotations/versioning.upb.h"
 #include "validate/validate.upb.h"
 
-#include "upb/port_def.inc"
+// Must be last.
+#include "upb/port/def.inc"
 
-static const upb_MiniTable_Sub envoy_extensions_filters_http_router_v3_Router_submsgs[2] = {
-  {.submsg = &google_protobuf_BoolValue_msginit},
-  {.submsg = &envoy_config_accesslog_v3_AccessLog_msginit},
+static const upb_MiniTableSub envoy_extensions_filters_http_router_v3_Router_submsgs[4] = {
+  {.submsg = &google_protobuf_BoolValue_msg_init},
+  {.submsg = &envoy_config_accesslog_v3_AccessLog_msg_init},
+  {.submsg = &envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_msg_init},
+  {.submsg = &envoy_extensions_filters_http_router_v3_Router_UpstreamAccessLogOptions_msg_init},
 };
 
-static const upb_MiniTable_Field envoy_extensions_filters_http_router_v3_Router__fields[7] = {
-  {1, UPB_SIZE(8, 8), UPB_SIZE(1, 1), 0, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
-  {2, UPB_SIZE(1, 1), UPB_SIZE(0, 0), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
-  {3, UPB_SIZE(12, 16), UPB_SIZE(0, 0), 1, 11, kUpb_FieldMode_Array | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
-  {4, UPB_SIZE(2, 2), UPB_SIZE(0, 0), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
-  {5, UPB_SIZE(16, 24), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Array | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
-  {6, UPB_SIZE(3, 3), UPB_SIZE(0, 0), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
-  {7, UPB_SIZE(4, 4), UPB_SIZE(0, 0), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+static const upb_MiniTableField envoy_extensions_filters_http_router_v3_Router__fields[9] = {
+  {1, UPB_SIZE(4, 8), 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(8, 1), 0, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(12, 16), 0, 1, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {4, UPB_SIZE(16, 2), 0, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+  {5, UPB_SIZE(20, 24), 0, kUpb_NoSub, 9, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {6, UPB_SIZE(24, 3), 0, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+  {7, UPB_SIZE(25, 4), 0, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+  {8, UPB_SIZE(28, 32), 0, 2, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {9, UPB_SIZE(32, 40), 2, 3, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
 };
 
-const upb_MiniTable envoy_extensions_filters_http_router_v3_Router_msginit = {
+const upb_MiniTable envoy_extensions_filters_http_router_v3_Router_msg_init = {
   &envoy_extensions_filters_http_router_v3_Router_submsgs[0],
   &envoy_extensions_filters_http_router_v3_Router__fields[0],
-  UPB_SIZE(24, 32), 7, kUpb_ExtMode_NonExtendable, 7, 255, 0,
+  UPB_SIZE(40, 48), 9, kUpb_ExtMode_NonExtendable, 9, UPB_FASTTABLE_MASK(120), 0,
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x000800000100000a, &upb_psm_1bt_maxmaxb},
+    {0x000100003f000010, &upb_psb1_1bt},
+    {0x001000003f01001a, &upb_prm_1bt_maxmaxb},
+    {0x000200003f000020, &upb_psb1_1bt},
+    {0x001800003f00002a, &upb_prs_1bt},
+    {0x000300003f000030, &upb_psb1_1bt},
+    {0x000400003f000038, &upb_psb1_1bt},
+    {0x002000003f020042, &upb_prm_1bt_maxmaxb},
+    {0x002800000203004a, &upb_psm_1bt_max64b},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+  })
 };
 
-static const upb_MiniTable *messages_layout[1] = {
-  &envoy_extensions_filters_http_router_v3_Router_msginit,
+static const upb_MiniTableSub envoy_extensions_filters_http_router_v3_Router_UpstreamAccessLogOptions_submsgs[1] = {
+  {.submsg = &google_protobuf_Duration_msg_init},
 };
 
-const upb_MiniTable_File envoy_extensions_filters_http_router_v3_router_proto_upb_file_layout = {
+static const upb_MiniTableField envoy_extensions_filters_http_router_v3_Router_UpstreamAccessLogOptions__fields[2] = {
+  {1, 1, 0, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(4, 8), 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+};
+
+const upb_MiniTable envoy_extensions_filters_http_router_v3_Router_UpstreamAccessLogOptions_msg_init = {
+  &envoy_extensions_filters_http_router_v3_Router_UpstreamAccessLogOptions_submsgs[0],
+  &envoy_extensions_filters_http_router_v3_Router_UpstreamAccessLogOptions__fields[0],
+  UPB_SIZE(8, 16), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x000100003f000008, &upb_psb1_1bt},
+    {0x0008000001000012, &upb_psm_1bt_maxmaxb},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+  })
+};
+
+static const upb_MiniTable *messages_layout[2] = {
+  &envoy_extensions_filters_http_router_v3_Router_msg_init,
+  &envoy_extensions_filters_http_router_v3_Router_UpstreamAccessLogOptions_msg_init,
+};
+
+const upb_MiniTableFile envoy_extensions_filters_http_router_v3_router_proto_upb_file_layout = {
   messages_layout,
   NULL,
   NULL,
-  1,
+  2,
   0,
   0,
 };
 
-#include "upb/port_undef.inc"
+#include "upb/port/undef.inc"
 

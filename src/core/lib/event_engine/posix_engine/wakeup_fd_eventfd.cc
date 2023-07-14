@@ -19,8 +19,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
-#include <grpc/support/log.h>  // IWYU pragma: keep
-
+#include "src/core/lib/gprpp/crash.h"  // IWYU pragma: keep
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_LINUX_EVENTFD
@@ -105,13 +104,15 @@ EventFdWakeupFd::CreateEventFdWakeupFd() {
 
 #else  //  GRPC_LINUX_EVENTFD
 
-absl::Status EventFdWakeupFd::Init() { GPR_ASSERT(false && "unimplemented"); }
+#include "src/core/lib/gprpp/crash.h"
+
+absl::Status EventFdWakeupFd::Init() { grpc_core::Crash("unimplemented"); }
 
 absl::Status EventFdWakeupFd::ConsumeWakeup() {
-  GPR_ASSERT(false && "unimplemented");
+  grpc_core::Crash("unimplemented");
 }
 
-absl::Status EventFdWakeupFd::Wakeup() { GPR_ASSERT(false && "unimplemented"); }
+absl::Status EventFdWakeupFd::Wakeup() { grpc_core::Crash("unimplemented"); }
 
 bool EventFdWakeupFd::IsSupported() { return false; }
 

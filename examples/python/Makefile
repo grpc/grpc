@@ -20,6 +20,18 @@ ARTIFACTS += helloworld/helloworld_pb2.py
 ARTIFACTS += helloworld/helloworld_pb2_grpc.py
 ARTIFACTS += helloworld/helloworld_pb2.pyi
 
+ARTIFACTS += timeout/helloworld_pb2.py
+ARTIFACTS += timeout/helloworld_pb2_grpc.py
+ARTIFACTS += timeout/helloworld_pb2.pyi
+
+ARTIFACTS += keep_alive/helloworld_pb2.py
+ARTIFACTS += keep_alive/helloworld_pb2_grpc.py
+ARTIFACTS += keep_alive/helloworld_pb2.pyi
+
+ARTIFACTS += health_checking/helloworld_pb2.py
+ARTIFACTS += health_checking/helloworld_pb2_grpc.py
+ARTIFACTS += health_checking/helloworld_pb2.pyi
+
 ARTIFACTS += async_streaming/phone_pb2.py
 ARTIFACTS += async_streaming/phone_pb2_grpc.py
 ARTIFACTS += async_streaming/phone_pb2.pyi
@@ -64,11 +76,24 @@ ARTIFACTS += data_transmission/demo_pb2.py
 ARTIFACTS += data_transmission/demo_pb2_grpc.py
 ARTIFACTS += data_transmission/demo_pb2.pyi
 
+ARTIFACTS += lb_policies/helloworld_pb2.py
+ARTIFACTS += lb_policies/helloworld_pb2_grpc.py
+ARTIFACTS += lb_policies/helloworld_pb2.pyi
+
 .PHONY: all
 all: ${ARTIFACTS}
 
 helloworld/helloworld_pb2.py helloworld/helloworld_pb2_grpc.py helloworld/helloworld_pb2.pyi: ../protos/helloworld.proto
 	python3 -m grpc_tools.protoc --python_out=helloworld --grpc_python_out=helloworld --pyi_out=helloworld -I ../protos ../protos/helloworld.proto
+
+timeout/helloworld_pb2.py timeout/helloworld_pb2_grpc.py timeout/helloworld_pb2.pyi: ../protos/helloworld.proto
+	python3 -m grpc_tools.protoc --python_out=timeout --grpc_python_out=timeout --pyi_out=timeout -I ../protos ../protos/helloworld.proto
+
+keep_alive/helloworld_pb2.py keep_alive/helloworld_pb2_grpc.py keep_alive/helloworld_pb2.pyi: ../protos/helloworld.proto
+	python3 -m grpc_tools.protoc --python_out=keep_alive --grpc_python_out=keep_alive --pyi_out=keep_alive -I ../protos ../protos/helloworld.proto
+
+health_checking/helloworld_pb2.py health_checking/helloworld_pb2_grpc.py health_checking/helloworld_pb2.pyi: ../protos/helloworld.proto
+	python3 -m grpc_tools.protoc --python_out=health_checking --grpc_python_out=health_checking --pyi_out=health_checking -I ../protos ../protos/helloworld.proto
 
 async_streaming/phone_pb2.py async_streaming/phone_pb2_grpc.py async_streaming/phone_pb2.pyi: async_streaming/phone.proto
 	python3 -m grpc_tools.protoc --python_out=async_streaming --grpc_python_out=async_streaming --pyi_out=async_streaming -I async_streaming async_streaming/phone.proto
@@ -103,6 +128,9 @@ metadata/helloworld_pb2.py metadata/helloworld_pb2_grpc.py metadata/helloworld_p
 
 data_transmission/demo_pb2.py data_transmission/demo_pb2_grpc.py data_transmission/demo_pb2.pyi: data_transmission/demo.proto
 	python3 -m grpc_tools.protoc --python_out=data_transmission --grpc_python_out=data_transmission --pyi_out=data_transmission -I data_transmission data_transmission/demo.proto
+
+lb_policies/helloworld_pb2.py lb_policies/helloworld_pb2_grpc.py lb_policies/helloworld_pb2.pyi: ../protos/helloworld.proto
+	python3 -m grpc_tools.protoc --python_out=lb_policies --grpc_python_out=lb_policies --pyi_out=lb_policies -I ../protos ../protos/helloworld.proto
 
 .PHONY: clean
 clean:

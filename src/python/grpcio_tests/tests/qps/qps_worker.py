@@ -28,28 +28,33 @@ def run_worker_server(driver_port, server_port):
     server = test_common.test_server()
     servicer = worker_server.WorkerServer(server_port)
     worker_service_pb2_grpc.add_WorkerServiceServicer_to_server(
-        servicer, server)
-    server.add_insecure_port('[::]:{}'.format(driver_port))
+        servicer, server
+    )
+    server.add_insecure_port("[::]:{}".format(driver_port))
     server.start()
     servicer.wait_for_quit()
     server.stop(0)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     parser = argparse.ArgumentParser(
-        description='gRPC Python performance testing worker')
+        description="gRPC Python performance testing worker"
+    )
     parser.add_argument(
-        '--driver_port',
+        "--driver_port",
         type=int,
-        dest='driver_port',
-        help='The port for the worker to expose for driver communication')
+        dest="driver_port",
+        help="The port for the worker to expose for driver communication",
+    )
     parser.add_argument(
-        '--server_port',
+        "--server_port",
         type=int,
         default=None,
-        dest='server_port',
-        help='The port for the server if not specified by server config message'
+        dest="server_port",
+        help=(
+            "The port for the server if not specified by server config message"
+        ),
     )
     args = parser.parse_args()
 

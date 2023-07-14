@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_RESOURCE_QUOTA_MEMORY_QUOTA_H
-#define GRPC_CORE_LIB_RESOURCE_QUOTA_MEMORY_QUOTA_H
+#ifndef GRPC_SRC_CORE_LIB_RESOURCE_QUOTA_MEMORY_QUOTA_H
+#define GRPC_SRC_CORE_LIB_RESOURCE_QUOTA_MEMORY_QUOTA_H
 
 #include <grpc/support/port_platform.h>
 
@@ -30,7 +30,6 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/container/flat_hash_set.h"
 #include "absl/strings/string_view.h"
-#include "absl/synchronization/mutex.h"
 #include "absl/types/optional.h"
 
 #include <grpc/event_engine/memory_allocator.h>
@@ -340,7 +339,7 @@ class BasicMemoryQuota final
     struct Shard {
       absl::flat_hash_set<GrpcMemoryAllocatorImpl*> allocators
           ABSL_GUARDED_BY(shard_mu);
-      absl::Mutex shard_mu;
+      Mutex shard_mu;
     };
 
     Shard& SelectShard(void* key) {
@@ -589,4 +588,4 @@ inline MemoryQuotaRefPtr MakeMemoryQuota(std::string name) {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_RESOURCE_QUOTA_MEMORY_QUOTA_H
+#endif  // GRPC_SRC_CORE_LIB_RESOURCE_QUOTA_MEMORY_QUOTA_H

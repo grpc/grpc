@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_DEBUG_EVENT_LOG_H
-#define GRPC_CORE_LIB_DEBUG_EVENT_LOG_H
+#ifndef GRPC_SRC_CORE_LIB_DEBUG_EVENT_LOG_H
+#define GRPC_SRC_CORE_LIB_DEBUG_EVENT_LOG_H
 
 #include <grpc/support/port_platform.h>
 
@@ -71,11 +71,11 @@ class EventLog {
   std::vector<Entry> EndCollection(
       absl::Span<const absl::string_view> wanted_events);
 
-  PerCpu<Fragment> fragments_;
+  PerCpu<Fragment> fragments_{PerCpuOptions().SetCpusPerShard(2)};
   gpr_cycle_counter collection_begin_;
   static std::atomic<EventLog*> g_instance_;
 };
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_DEBUG_EVENT_LOG_H
+#endif  // GRPC_SRC_CORE_LIB_DEBUG_EVENT_LOG_H

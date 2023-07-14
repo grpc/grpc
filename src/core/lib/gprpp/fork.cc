@@ -1,46 +1,39 @@
-/*
- *
- * Copyright 2017 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2017 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/fork.h"
 
+#include <utility>
+
 #include <grpc/support/atm.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gprpp/global_config_env.h"
+#include "src/core/lib/config/config_vars.h"
+#include "src/core/lib/event_engine/thread_local.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 
-/*
- * NOTE: FORKING IS NOT GENERALLY SUPPORTED, THIS IS ONLY INTENDED TO WORK
- *       AROUND VERY SPECIFIC USE CASES.
- */
-
-#ifdef GRPC_ENABLE_FORK_SUPPORT
-#define GRPC_ENABLE_FORK_SUPPORT_DEFAULT true
-#else
-#define GRPC_ENABLE_FORK_SUPPORT_DEFAULT false
-#endif  // GRPC_ENABLE_FORK_SUPPORT
-
-GPR_GLOBAL_CONFIG_DEFINE_BOOL(grpc_enable_fork_support,
-                              GRPC_ENABLE_FORK_SUPPORT_DEFAULT,
-                              "Enable fork support");
+//
+// NOTE: FORKING IS NOT GENERALLY SUPPORTED, THIS IS ONLY INTENDED TO WORK
+//       AROUND VERY SPECIFIC USE CASES.
+//
 
 namespace grpc_core {
 namespace {
@@ -63,6 +56,11 @@ class ExecCtxState {
   }
 
   void IncExecCtxCount() {
+    // EventEngine is expected to terminate all threads before fork, and so this
+    // extra work is unnecessary
+    if (grpc_event_engine::experimental::ThreadLocal::IsEventEngineThread()) {
+      return;
+    }
     gpr_atm count = gpr_atm_no_barrier_load(&count_);
     while (true) {
       if (count <= BLOCKED(1)) {
@@ -82,7 +80,12 @@ class ExecCtxState {
     }
   }
 
-  void DecExecCtxCount() { gpr_atm_no_barrier_fetch_add(&count_, -1); }
+  void DecExecCtxCount() {
+    if (grpc_event_engine::experimental::ThreadLocal::IsEventEngineThread()) {
+      return;
+    }
+    gpr_atm_no_barrier_fetch_add(&count_, -1);
+  }
 
   bool BlockExecCtx() {
     // Assumes there is an active ExecCtx when this function is called
@@ -165,7 +168,7 @@ class ThreadState {
 
 void Fork::GlobalInit() {
   if (!override_enabled_) {
-    support_enabled_.store(GPR_GLOBAL_CONFIG_GET(grpc_enable_fork_support),
+    support_enabled_.store(ConfigVars::Get().EnableForkSupport(),
                            std::memory_order_relaxed);
   }
 }
@@ -188,12 +191,18 @@ void Fork::DoDecExecCtxCount() {
   NoDestructSingleton<ExecCtxState>::Get()->DecExecCtxCount();
 }
 
-void Fork::SetResetChildPollingEngineFunc(
+bool Fork::RegisterResetChildPollingEngineFunc(
     Fork::child_postfork_func reset_child_polling_engine) {
-  reset_child_polling_engine_ = reset_child_polling_engine;
+  if (reset_child_polling_engine_ == nullptr) {
+    reset_child_polling_engine_ = new std::set<Fork::child_postfork_func>();
+  }
+  auto ret = reset_child_polling_engine_->insert(reset_child_polling_engine);
+  return ret.second;
 }
-Fork::child_postfork_func Fork::GetResetChildPollingEngineFunc() {
-  return reset_child_polling_engine_;
+
+const std::set<Fork::child_postfork_func>&
+Fork::GetResetChildPollingEngineFunc() {
+  return *reset_child_polling_engine_;
 }
 
 bool Fork::BlockExecCtx() {
@@ -228,5 +237,6 @@ void Fork::AwaitThreads() {
 
 std::atomic<bool> Fork::support_enabled_(false);
 bool Fork::override_enabled_ = false;
-Fork::child_postfork_func Fork::reset_child_polling_engine_ = nullptr;
+std::set<Fork::child_postfork_func>* Fork::reset_child_polling_engine_ =
+    nullptr;
 }  // namespace grpc_core

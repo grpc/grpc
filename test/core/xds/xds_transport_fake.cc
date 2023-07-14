@@ -22,6 +22,7 @@
 
 #include <functional>
 #include <memory>
+#include <type_traits>
 #include <utility>
 
 #include <grpc/event_engine/event_engine.h>
@@ -43,6 +44,13 @@ namespace grpc_core {
 //
 
 FakeXdsTransportFactory::FakeStreamingCall::~FakeStreamingCall() {
+  // Tests should not fail to read any messages from the client.
+  {
+    MutexLock lock(&mu_);
+    if (transport_->abort_on_undrained_messages()) {
+      GPR_ASSERT(from_client_messages_.empty());
+    }
+  }
   // Can't call event_handler_->OnStatusReceived() or unref event_handler_
   // synchronously, since those operations will trigger code in
   // XdsClient that acquires its mutex, but it was already holding its
@@ -56,6 +64,10 @@ FakeXdsTransportFactory::FakeStreamingCall::~FakeStreamingCall() {
 }
 
 void FakeXdsTransportFactory::FakeStreamingCall::Orphan() {
+  {
+    MutexLock lock(&mu_);
+    orphaned_ = true;
+  }
   transport_->RemoveStream(method_, this);
   Unref();
 }
@@ -63,6 +75,7 @@ void FakeXdsTransportFactory::FakeStreamingCall::Orphan() {
 void FakeXdsTransportFactory::FakeStreamingCall::SendMessage(
     std::string payload) {
   MutexLock lock(&mu_);
+  GPR_ASSERT(!orphaned_);
   from_client_messages_.push_back(std::move(payload));
   cv_.Signal();
   if (transport_->auto_complete_messages_from_client()) {
@@ -133,6 +146,11 @@ void FakeXdsTransportFactory::FakeStreamingCall::MaybeSendStatusToClient(
   event_handler->OnStatusReceived(std::move(status));
 }
 
+bool FakeXdsTransportFactory::FakeStreamingCall::Orphaned() {
+  MutexLock lock(&mu_);
+  return orphaned_;
+}
+
 //
 // FakeXdsTransportFactory::FakeXdsTransport
 //
@@ -142,7 +160,7 @@ void FakeXdsTransportFactory::FakeXdsTransport::TriggerConnectionFailure(
   RefCountedPtr<RefCountedOnConnectivityFailure> on_connectivity_failure;
   {
     MutexLock lock(&mu_);
-    on_connectivity_failure = on_connectivity_failure_->Ref();
+    on_connectivity_failure = on_connectivity_failure_;
   }
   ExecCtx exec_ctx;
   if (on_connectivity_failure != nullptr) {
@@ -151,6 +169,14 @@ void FakeXdsTransportFactory::FakeXdsTransport::TriggerConnectionFailure(
 }
 
 void FakeXdsTransportFactory::FakeXdsTransport::Orphan() {
+  {
+    MutexLock lock(&factory_->mu_);
+    auto it = factory_->transport_map_.find(&server_);
+    if (it != factory_->transport_map_.end() && it->second == this) {
+      factory_->transport_map_.erase(it);
+    }
+  }
+  factory_.reset();
   {
     MutexLock lock(&mu_);
     // Can't destroy on_connectivity_failure_ synchronously, since that
@@ -216,7 +242,8 @@ FakeXdsTransportFactory::Create(
   auto& entry = transport_map_[&server];
   GPR_ASSERT(entry == nullptr);
   auto transport = MakeOrphanable<FakeXdsTransport>(
-      std::move(on_connectivity_failure), auto_complete_messages_from_client_);
+      Ref(), server, std::move(on_connectivity_failure),
+      auto_complete_messages_from_client_, abort_on_undrained_messages_);
   entry = transport->Ref();
   return transport;
 }
@@ -231,6 +258,11 @@ void FakeXdsTransportFactory::TriggerConnectionFailure(
 void FakeXdsTransportFactory::SetAutoCompleteMessagesFromClient(bool value) {
   MutexLock lock(&mu_);
   auto_complete_messages_from_client_ = value;
+}
+
+void FakeXdsTransportFactory::SetAbortOnUndrainedMessages(bool value) {
+  MutexLock lock(&mu_);
+  abort_on_undrained_messages_ = value;
 }
 
 RefCountedPtr<FakeXdsTransportFactory::FakeStreamingCall>

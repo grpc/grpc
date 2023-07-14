@@ -12,14 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-cdef extern from "pthread.h" nogil:
-    int pthread_atfork(
-        void (*prepare)() nogil,
-        void (*parent)() nogil,
-        void (*child)() nogil)
-
-
 cdef void __prefork() nogil
 
 

@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <cinttypes>
 #include <memory>
@@ -22,6 +22,7 @@
 
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -36,6 +37,8 @@
 #include <grpcpp/server_context.h>
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
+#include "src/core/lib/config/config_vars.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/proto/grpc/health/v1/health.grpc.pb.h"
@@ -195,8 +198,7 @@ class Verifier {
         }
         maybe_expectations_.erase(it2);
       } else {
-        gpr_log(GPR_ERROR, "Unexpected tag: %p", got_tag);
-        abort();
+        grpc_core::Crash(absl::StrFormat("Unexpected tag: %p", got_tag));
       }
     }
   }
@@ -446,8 +448,7 @@ TEST_P(AsyncEnd2endTest, ReconnectChannel) {
 #ifdef GRPC_POSIX_SOCKET_EV
   // It needs 2 pollset_works to reconnect the channel with polling engine
   // "poll"
-  grpc_core::UniquePtr<char> poller = GPR_GLOBAL_CONFIG_GET(grpc_poll_strategy);
-  if (0 == strcmp(poller.get(), "poll")) {
+  if (grpc_core::ConfigVars::Get().PollStrategy() == "poll") {
     poller_slowdown_factor = 2;
   }
 #endif  // GRPC_POSIX_SOCKET_EV
@@ -1970,7 +1971,9 @@ INSTANTIATE_TEST_SUITE_P(AsyncEnd2endServerTryCancel,
 int main(int argc, char** argv) {
   // Change the backup poll interval from 5s to 100ms to speed up the
   // ReconnectChannel test
-  GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 100);
+  grpc_core::ConfigVars::Overrides overrides;
+  overrides.client_channel_backup_poll_interval_ms = 100;
+  grpc_core::ConfigVars::SetOverrides(overrides);
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();

@@ -14,27 +14,27 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_FILTERS_RBAC_RBAC_FILTER_H
-#define GRPC_CORE_EXT_FILTERS_RBAC_RBAC_FILTER_H
+#ifndef GRPC_SRC_CORE_EXT_FILTERS_RBAC_RBAC_FILTER_H
+#define GRPC_SRC_CORE_EXT_FILTERS_RBAC_RBAC_FILTER_H
 
 #include <grpc/support/port_platform.h>
 
 #include <stddef.h>
 
+#include "absl/status/statusor.h"
+
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
-#include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/context.h"
-#include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/channel/promise_based_filter.h"
+#include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/security/authorization/evaluate_args.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
 
 // Filter used when xDS server config fetcher provides a configuration with an
 // HTTP RBAC filter. Also serves as the type for channel data for the filter.
-class RbacFilter {
+class RbacFilter : public ChannelFilter {
  public:
   // This channel filter is intended to be used by connections on xDS enabled
   // servers configured with RBAC. The RBAC filter fetches the RBAC policy from
@@ -42,34 +42,16 @@ class RbacFilter {
   // and enforces the RBAC policy.
   static const grpc_channel_filter kFilterVtable;
 
+  static absl::StatusOr<RbacFilter> Create(const ChannelArgs& args,
+                                           ChannelFilter::Args filter_args);
+
+  // Construct a promise for one call.
+  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
+      CallArgs call_args, NextPromiseFactory next_promise_factory) override;
+
  private:
-  class CallData {
-   public:
-    static grpc_error_handle Init(grpc_call_element* elem,
-                                  const grpc_call_element_args* args);
-    static void Destroy(grpc_call_element* elem,
-                        const grpc_call_final_info* /* final_info */,
-                        grpc_closure* /* then_schedule_closure */);
-    static void StartTransportStreamOpBatch(grpc_call_element* elem,
-                                            grpc_transport_stream_op_batch* op);
-
-   private:
-    CallData(grpc_call_element* elem, const grpc_call_element_args& args);
-    static void RecvInitialMetadataReady(void* user_data,
-                                         grpc_error_handle error);
-
-    grpc_call_context_element* call_context_;
-    // State for keeping track of recv_initial_metadata
-    grpc_metadata_batch* recv_initial_metadata_ = nullptr;
-    grpc_closure* original_recv_initial_metadata_ready_ = nullptr;
-    grpc_closure recv_initial_metadata_ready_;
-  };
-
   RbacFilter(size_t index,
              EvaluateArgs::PerChannelArgs per_channel_evaluate_args);
-  static grpc_error_handle Init(grpc_channel_element* elem,
-                                grpc_channel_element_args* args);
-  static void Destroy(grpc_channel_element* elem);
 
   // The index of this filter instance among instances of the same filter.
   size_t index_;
@@ -81,4 +63,4 @@ class RbacFilter {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_FILTERS_RBAC_RBAC_FILTER_H
+#endif  // GRPC_SRC_CORE_EXT_FILTERS_RBAC_RBAC_FILTER_H

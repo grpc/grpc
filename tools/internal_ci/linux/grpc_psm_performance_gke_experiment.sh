@@ -47,9 +47,9 @@ GRPC_GITREF="$(git show --format="%H" --no-patch)"
 if [[ "${KOKORO_GITHUB_COMMIT_URL%/*}" == "https://github.com/grpc/grpc/commit" ]]; then
     GRPC_CORE_GITREF="${KOKORO_GIT_COMMIT}"
 else
-    GRPC_CORE_GITREF="$(git ls-remote https://github.com/grpc/grpc.git master | cut -f1)"
+    GRPC_CORE_GITREF="$(git ls-remote -h https://github.com/grpc/grpc.git master | cut -f1)"
 fi
-GRPC_JAVA_GITREF="$(git ls-remote https://github.com/grpc/grpc-java.git master | cut -f1)"
+GRPC_JAVA_GITREF="$(git ls-remote -h https://github.com/grpc/grpc-java.git master | cut -f1)"
 # Kokoro jobs run on dedicated pools.
 DRIVER_POOL=drivers-ci
 WORKER_POOL_8CORE=workers-c2-8core-ci

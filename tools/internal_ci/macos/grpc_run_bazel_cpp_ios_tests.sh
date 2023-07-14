@@ -42,7 +42,7 @@ BAZEL_REMOTE_CACHE_ARGS=(
 
 # only select ObjC test from the following subdirs
 # TODO(jtattermusch): start running selected tests from //test/core too.
-test_pattern="//test/cpp/end2end/... + //test/cpp/server/... + //test/cpp/client/... + //test/cpp/common/... + //test/cpp/codegen/... + //test/cpp/util/... + //test/cpp/grpclb/... + //test/cpp/test/..."
+test_pattern="//test/cpp/end2end/... + //test/cpp/server/... + //test/cpp/client/... + //test/cpp/common/... + //test/cpp/codegen/... + //test/cpp/util/... + //test/cpp/grpclb/... + //test/cpp/test/... + //test/core/event_engine/..."
 
 # iOS tests are marked as "manual" to prevent them from running by default. To run them, we need to use "bazel query" to list them first.
 ios_tests=$(tools/bazel query "kind(ios_unit_test, tests($test_pattern))" | grep '^//')

@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/port.h"  // IWYU pragma: keep
@@ -36,6 +36,7 @@
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/sockaddr_windows.h"
@@ -44,11 +45,11 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 
-/* TODO(apolcyn): remove this hack after fixing upstream.
- * Our grpc/c-ares code on Windows uses the ares_set_socket_functions API,
- * which uses "struct iovec" type, which on Windows is defined inside of
- * a c-ares header that is not public.
- * See https://github.com/c-ares/c-ares/issues/206. */
+// TODO(apolcyn): remove this hack after fixing upstream.
+// Our grpc/c-ares code on Windows uses the ares_set_socket_functions API,
+// which uses "struct iovec" type, which on Windows is defined inside of
+// a c-ares header that is not public.
+// See https://github.com/c-ares/c-ares/issues/206.
 struct iovec {
   void* iov_base;
   size_t iov_len;
@@ -56,12 +57,12 @@ struct iovec {
 
 namespace grpc_core {
 
-/* c-ares reads and takes action on the error codes of the
- * "virtual socket operations" in this file, via the WSAGetLastError
- * APIs. If code in this file wants to set a specific WSA error that
- * c-ares should read, it must do so by calling SetWSAError() on the
- * WSAErrorContext instance passed to it. A WSAErrorContext must only be
- * instantiated at the top of the virtual socket function callstack. */
+// c-ares reads and takes action on the error codes of the
+// "virtual socket operations" in this file, via the WSAGetLastError
+// APIs. If code in this file wants to set a specific WSA error that
+// c-ares should read, it must do so by calling SetWSAError() on the
+// WSAErrorContext instance passed to it. A WSAErrorContext must only be
+// instantiated at the top of the virtual socket function callstack.
 class WSAErrorContext {
  public:
   explicit WSAErrorContext(){};
@@ -72,7 +73,7 @@ class WSAErrorContext {
     }
   }
 
-  /* Disallow copy and assignment operators */
+  // Disallow copy and assignment operators
   WSAErrorContext(const WSAErrorContext&) = delete;
   WSAErrorContext& operator=(const WSAErrorContext&) = delete;
 
@@ -82,15 +83,15 @@ class WSAErrorContext {
   int error_ = 0;
 };
 
-/* c-ares creates its own sockets and is meant to read them when readable and
- * write them when writeable. To fit this socket usage model into the grpc
- * windows poller (which gives notifications when attempted reads and writes are
- * actually fulfilled rather than possible), this GrpcPolledFdWindows class
- * takes advantage of the ares_set_socket_functions API and acts as a virtual
- * socket. It holds its own read and write buffers which are written to and read
- * from c-ares and are used with the grpc windows poller, and it, e.g.,
- * manufactures virtual socket error codes when it e.g. needs to tell the c-ares
- * library to wait for an async read. */
+// c-ares creates its own sockets and is meant to read them when readable and
+// write them when writeable. To fit this socket usage model into the grpc
+// windows poller (which gives notifications when attempted reads and writes are
+// actually fulfilled rather than possible), this GrpcPolledFdWindows class
+// takes advantage of the ares_set_socket_functions API and acts as a virtual
+// socket. It holds its own read and write buffers which are written to and read
+// from c-ares and are used with the grpc windows poller, and it, e.g.,
+// manufactures virtual socket error codes when it e.g. needs to tell the c-ares
+// library to wait for an async read.
 class GrpcPolledFdWindows {
  public:
   enum WriteState {
@@ -251,7 +252,7 @@ class GrpcPolledFdWindows {
 
   bool IsFdStillReadableLocked() { return read_buf_has_data_; }
 
-  void ShutdownLocked(grpc_error_handle error) {
+  void ShutdownLocked(grpc_error_handle /* error */) {
     grpc_winsocket_shutdown(winsocket_);
   }
 
@@ -262,7 +263,7 @@ class GrpcPolledFdWindows {
   const char* GetName() const { return name_.c_str(); }
 
   ares_ssize_t RecvFrom(WSAErrorContext* wsa_error_ctx, void* data,
-                        ares_socket_t data_len, int flags,
+                        ares_socket_t data_len, int /* flags */,
                         struct sockaddr* from, ares_socklen_t* from_len) {
     GRPC_CARES_TRACE_LOG(
         "fd:|%s| RecvFrom called read_buf_has_data:%d Current read buf "
@@ -282,8 +283,8 @@ class GrpcPolledFdWindows {
     if (GRPC_SLICE_LENGTH(read_buf_) == 0) {
       read_buf_has_data_ = false;
     }
-    /* c-ares overloads this recv_from virtual socket function to receive
-     * data on both UDP and TCP sockets, and from is nullptr for TCP. */
+    // c-ares overloads this recv_from virtual socket function to receive
+    // data on both UDP and TCP sockets, and from is nullptr for TCP.
     if (from != nullptr) {
       GPR_ASSERT(*from_len <= recv_from_source_addr_len_);
       memcpy(from, &recv_from_source_addr_, recv_from_source_addr_len_);
@@ -300,7 +301,7 @@ class GrpcPolledFdWindows {
     grpc_slice out = GRPC_SLICE_MALLOC(total);
     size_t cur = 0;
     for (int i = 0; i < iov_count; i++) {
-      for (int k = 0; k < iov[i].iov_len; k++) {
+      for (size_t k = 0; k < iov[i].iov_len; k++) {
         GRPC_SLICE_START_PTR(out)[cur++] = ((char*)iov[i].iov_base)[k];
       }
     }
@@ -581,10 +582,10 @@ class GrpcPolledFdWindows {
   void OnIocpReadableLocked(grpc_error_handle error) {
     if (error.ok()) {
       if (winsocket_->read_info.wsa_error != 0) {
-        /* WSAEMSGSIZE would be due to receiving more data
-         * than our read buffer's fixed capacity. Assume that
-         * the connection is TCP and read the leftovers
-         * in subsequent c-ares reads. */
+        // WSAEMSGSIZE would be due to receiving more data
+        // than our read buffer's fixed capacity. Assume that
+        // the connection is TCP and read the leftovers
+        // in subsequent c-ares reads.
         if (winsocket_->read_info.wsa_error != WSAEMSGSIZE) {
           error = GRPC_WSA_ERROR(winsocket_->read_info.wsa_error,
                                  "OnIocpReadableInner");
@@ -683,11 +684,11 @@ struct SockToPolledFdEntry {
   SockToPolledFdEntry* next = nullptr;
 };
 
-/* A SockToPolledFdMap can make ares_socket_t types (SOCKET's on windows)
- * to GrpcPolledFdWindow's, and is used to find the appropriate
- * GrpcPolledFdWindows to handle a virtual socket call when c-ares makes that
- * socket call on the ares_socket_t type. Instances are owned by and one-to-one
- * with a GrpcPolledFdWindows factory and event driver */
+// A SockToPolledFdMap can make ares_socket_t types (SOCKET's on windows)
+// to GrpcPolledFdWindow's, and is used to find the appropriate
+// GrpcPolledFdWindows to handle a virtual socket call when c-ares makes that
+// socket call on the ares_socket_t type. Instances are owned by and one-to-one
+// with a GrpcPolledFdWindows factory and event driver
 class SockToPolledFdMap {
  public:
   explicit SockToPolledFdMap(Mutex* mu) : mu_(mu) {}
@@ -726,12 +727,12 @@ class SockToPolledFdMap {
     abort();
   }
 
-  /* These virtual socket functions are called from within the c-ares
-   * library. These methods generally dispatch those socket calls to the
-   * appropriate methods. The virtual "socket" and "close" methods are
-   * special and instead create/add and remove/destroy GrpcPolledFdWindows
-   * objects.
-   */
+  // These virtual socket functions are called from within the c-ares
+  // library. These methods generally dispatch those socket calls to the
+  // appropriate methods. The virtual "socket" and "close" methods are
+  // special and instead create/add and remove/destroy GrpcPolledFdWindows
+  // objects.
+  //
   static ares_socket_t Socket(int af, int type, int protocol, void* user_data) {
     if (type != SOCK_DGRAM && type != SOCK_STREAM) {
       GRPC_CARES_TRACE_LOG("Socket called with invalid socket type:%d", type);
@@ -746,7 +747,12 @@ class SockToPolledFdMap {
           protocol);
       return s;
     }
-    grpc_tcp_set_non_block(s);
+    grpc_error_handle error = grpc_tcp_set_non_block(s);
+    if (!error.ok()) {
+      GRPC_CARES_TRACE_LOG("WSAIoctl failed with error: %s",
+                           StatusToString(error).c_str());
+      return INVALID_SOCKET;
+    }
     GrpcPolledFdWindows* polled_fd =
         new GrpcPolledFdWindows(s, map->mu_, af, type);
     GRPC_CARES_TRACE_LOG(
@@ -815,9 +821,9 @@ const struct ares_socket_functions custom_ares_sock_funcs = {
     &SockToPolledFdMap::SendV /* sendv */,
 };
 
-/* A thin wrapper over a GrpcPolledFdWindows object but with a shorter
-   lifetime. This object releases it's GrpcPolledFdWindows upon destruction,
-   so that c-ares can close it via usual socket teardown. */
+// A thin wrapper over a GrpcPolledFdWindows object but with a shorter
+// lifetime. This object releases it's GrpcPolledFdWindows upon destruction,
+// so that c-ares can close it via usual socket teardown.
 class GrpcPolledFdWindowsWrapper : public GrpcPolledFd {
  public:
   explicit GrpcPolledFdWindowsWrapper(GrpcPolledFdWindows* wrapped)
@@ -856,7 +862,7 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
   explicit GrpcPolledFdFactoryWindows(Mutex* mu) : sock_to_polled_fd_map_(mu) {}
 
   GrpcPolledFd* NewGrpcPolledFdLocked(
-      ares_socket_t as, grpc_pollset_set* driver_pollset_set) override {
+      ares_socket_t as, grpc_pollset_set* /* driver_pollset_set */) override {
     GrpcPolledFdWindows* polled_fd = sock_to_polled_fd_map_.LookupPolledFd(as);
     // Set a flag so that the virtual socket "close" method knows it
     // doesn't need to call ShutdownLocked, since now the driver will.
@@ -879,4 +885,4 @@ std::unique_ptr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(Mutex* mu) {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_ARES == 1 && defined(GPR_WINDOWS) */
+#endif  // GRPC_ARES == 1 && defined(GPR_WINDOWS)

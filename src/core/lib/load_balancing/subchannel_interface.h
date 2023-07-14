@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_LIB_LOAD_BALANCING_SUBCHANNEL_INTERFACE_H
-#define GRPC_CORE_LIB_LOAD_BALANCING_SUBCHANNEL_INTERFACE_H
+#ifndef GRPC_SRC_CORE_LIB_LOAD_BALANCING_SUBCHANNEL_INTERFACE_H
+#define GRPC_SRC_CORE_LIB_LOAD_BALANCING_SUBCHANNEL_INTERFACE_H
 
 #include <grpc/support/port_platform.h>
 
@@ -26,14 +26,14 @@
 
 #include <grpc/impl/connectivity_state.h>
 
-#include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 
 namespace grpc_core {
 
 // The interface for subchannels that is exposed to LB policy implementations.
-class SubchannelInterface : public RefCounted<SubchannelInterface> {
+class SubchannelInterface : public DualRefCounted<SubchannelInterface> {
  public:
   class ConnectivityStateWatcherInterface {
    public:
@@ -59,9 +59,11 @@ class SubchannelInterface : public RefCounted<SubchannelInterface> {
   };
 
   explicit SubchannelInterface(const char* trace = nullptr)
-      : RefCounted<SubchannelInterface>(trace) {}
+      : DualRefCounted<SubchannelInterface>(trace) {}
 
   ~SubchannelInterface() override = default;
+
+  void Orphan() override {}
 
   // Starts watching the subchannel's connectivity state.
   // The first callback to the watcher will be delivered ~immediately.
@@ -95,6 +97,9 @@ class SubchannelInterface : public RefCounted<SubchannelInterface> {
   // Registers a new data watcher.
   virtual void AddDataWatcher(
       std::unique_ptr<DataWatcherInterface> watcher) = 0;
+
+  // Cancels a data watch.
+  virtual void CancelDataWatcher(DataWatcherInterface* watcher) = 0;
 };
 
 // A class that delegates to another subchannel, to be used in cases
@@ -123,6 +128,9 @@ class DelegatingSubchannel : public SubchannelInterface {
   void AddDataWatcher(std::unique_ptr<DataWatcherInterface> watcher) override {
     wrapped_subchannel_->AddDataWatcher(std::move(watcher));
   }
+  void CancelDataWatcher(DataWatcherInterface* watcher) override {
+    wrapped_subchannel_->CancelDataWatcher(watcher);
+  }
 
  private:
   RefCountedPtr<SubchannelInterface> wrapped_subchannel_;
@@ -130,4 +138,4 @@ class DelegatingSubchannel : public SubchannelInterface {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_LOAD_BALANCING_SUBCHANNEL_INTERFACE_H
+#endif  // GRPC_SRC_CORE_LIB_LOAD_BALANCING_SUBCHANNEL_INTERFACE_H

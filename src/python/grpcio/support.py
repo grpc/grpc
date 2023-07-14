@@ -37,22 +37,23 @@ Could not find <Python.h>. This could mean the following:
     (check your environment variables or try re-installing?)
 """
 if sys.version_info[0] == 2:
-    PYTHON_REPRESENTATION = 'python'
+    PYTHON_REPRESENTATION = "python"
 elif sys.version_info[0] == 3:
-    PYTHON_REPRESENTATION = 'python3'
+    PYTHON_REPRESENTATION = "python3"
 else:
-    raise NotImplementedError('Unsupported Python version: %s' % sys.version)
+    raise NotImplementedError("Unsupported Python version: %s" % sys.version)
 
 C_CHECKS = {
-    C_PYTHON_DEV:
-        C_PYTHON_DEV_ERROR_MESSAGE.replace('<PY_REPR>', PYTHON_REPRESENTATION),
+    C_PYTHON_DEV: C_PYTHON_DEV_ERROR_MESSAGE.replace(
+        "<PY_REPR>", PYTHON_REPRESENTATION
+    ),
 }
 
 
 def _compile(compiler, source_string):
     tempdir = tempfile.mkdtemp()
-    cpath = os.path.join(tempdir, 'a.c')
-    with open(cpath, 'w') as cfile:
+    cpath = os.path.join(tempdir, "a.c")
+    with open(cpath, "w") as cfile:
         cfile.write(source_string)
     try:
         compiler.compile([cpath])
@@ -67,7 +68,9 @@ def _expect_compile(compiler, source_string, error_message):
         sys.stderr.write(error_message)
         raise commands.CommandError(
             "Diagnostics found a compilation environment issue:\n{}".format(
-                error_message))
+                error_message
+            )
+        )
 
 
 def diagnose_compile_error(build_ext, error):
@@ -75,27 +78,32 @@ def diagnose_compile_error(build_ext, error):
     for c_check, message in C_CHECKS.items():
         _expect_compile(build_ext.compiler, c_check, message)
     python_sources = [
-        source for source in build_ext.get_source_files()
-        if source.startswith('./src/python') and source.endswith('c')
+        source
+        for source in build_ext.get_source_files()
+        if source.startswith("./src/python") and source.endswith("c")
     ]
     for source in python_sources:
         if not os.path.isfile(source):
-            raise commands.CommandError((
-                "Diagnostics found a missing Python extension source file:\n{}\n\n"
-                "This is usually because the Cython sources haven't been transpiled "
-                "into C yet and you're building from source.\n"
-                "Try setting the environment variable "
-                "`GRPC_PYTHON_BUILD_WITH_CYTHON=1` when invoking `setup.py` or "
-                "when using `pip`, e.g.:\n\n"
-                "pip install -rrequirements.txt\n"
-                "GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install .").format(source))
+            raise commands.CommandError(
+                (
+                    "Diagnostics found a missing Python extension source"
+                    " file:\n{}\n\nThis is usually because the Cython sources"
+                    " haven't been transpiled into C yet and you're building"
+                    " from source.\nTry setting the environment variable"
+                    " `GRPC_PYTHON_BUILD_WITH_CYTHON=1` when invoking"
+                    " `setup.py` or when using `pip`, e.g.:\n\npip install"
+                    " -rrequirements.txt\nGRPC_PYTHON_BUILD_WITH_CYTHON=1 pip"
+                    " install ."
+                ).format(source)
+            )
 
 
 def diagnose_attribute_error(build_ext, error):
-    if any('_needs_stub' in arg for arg in error.args):
+    if any("_needs_stub" in arg for arg in error.args):
         raise commands.CommandError(
-            "We expect a missing `_needs_stub` attribute from older versions of "
-            "setuptools. Consider upgrading setuptools.")
+            "We expect a missing `_needs_stub` attribute from older versions of"
+            " setuptools. Consider upgrading setuptools."
+        )
 
 
 _ERROR_DIAGNOSES = {
@@ -108,10 +116,11 @@ def diagnose_build_ext_error(build_ext, error, formatted):
     diagnostic = _ERROR_DIAGNOSES.get(type(error))
     if diagnostic is None:
         raise commands.CommandError(
-            "\n\nWe could not diagnose your build failure. If you are unable to "
-            "proceed, please file an issue at http://www.github.com/grpc/grpc "
-            "with `[Python install]` in the title; please attach the whole log "
-            "(including everything that may have appeared above the Python "
-            "backtrace).\n\n{}".format(formatted))
+            "\n\nWe could not diagnose your build failure. If you are unable to"
+            " proceed, please file an issue at http://www.github.com/grpc/grpc"
+            " with `[Python install]` in the title; please attach the whole log"
+            " (including everything that may have appeared above the Python"
+            " backtrace).\n\n{}".format(formatted)
+        )
     else:
         diagnostic(build_ext, error)

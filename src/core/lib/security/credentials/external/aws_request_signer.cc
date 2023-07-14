@@ -18,6 +18,7 @@
 #include "src/core/lib/security/credentials/external/aws_request_signer.h"
 
 #include <algorithm>
+#include <initializer_list>
 #include <utility>
 #include <vector>
 

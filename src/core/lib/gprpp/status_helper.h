@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_GPRPP_STATUS_HELPER_H
-#define GRPC_CORE_LIB_GPRPP_STATUS_HELPER_H
+#ifndef GRPC_SRC_CORE_LIB_GPRPP_STATUS_HELPER_H
+#define GRPC_SRC_CORE_LIB_GPRPP_STATUS_HELPER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -186,4 +186,4 @@ absl::Status StatusMoveFromHeapPtr(uintptr_t ptr);
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_GPRPP_STATUS_HELPER_H
+#endif  // GRPC_SRC_CORE_LIB_GPRPP_STATUS_HELPER_H

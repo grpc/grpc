@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -23,6 +23,7 @@
 #include <stdint.h>
 #include <string.h>
 
+#include <initializer_list>
 #include <string>
 #include <utility>
 
@@ -64,7 +65,7 @@ grpc_error_handle ssl_check_peer(
   if (!error.ok()) {
     return error;
   }
-  /* Check the peer name if specified. */
+  // Check the peer name if specified.
   if (peer_name != nullptr && !grpc_ssl_host_matches_name(peer, peer_name)) {
     return GRPC_ERROR_CREATE(
         absl::StrCat("Peer name ", peer_name, " is not in peer certificate"));
@@ -311,9 +312,9 @@ class grpc_ssl_server_security_connector
   }
 
  private:
-  /* Attempts to fetch the server certificate config if a callback is available.
-   * Current certificate config will continue to be used if the callback returns
-   * an error. Returns true if new credentials were successfully loaded. */
+  // Attempts to fetch the server certificate config if a callback is available.
+  // Current certificate config will continue to be used if the callback returns
+  // an error. Returns true if new credentials were successfully loaded.
   bool try_fetch_ssl_server_credentials() {
     grpc_ssl_server_certificate_config* certificate_config = nullptr;
     bool status;
@@ -343,10 +344,10 @@ class grpc_ssl_server_security_connector
     return status;
   }
 
-  /* Attempts to replace the server_handshaker_factory with a new factory using
-   * the provided grpc_ssl_server_certificate_config. Should new factory
-   * creation fail, the existing factory will not be replaced. Returns true on
-   * success (new factory created). */
+  // Attempts to replace the server_handshaker_factory with a new factory using
+  // the provided grpc_ssl_server_certificate_config. Should new factory
+  // creation fail, the existing factory will not be replaced. Returns true on
+  // success (new factory created).
   bool try_replace_server_handshaker_factory(
       const grpc_ssl_server_certificate_config* config) {
     if (config == nullptr) {

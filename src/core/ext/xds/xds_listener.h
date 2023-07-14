@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_XDS_XDS_LISTENER_H
-#define GRPC_CORE_EXT_XDS_XDS_LISTENER_H
+#ifndef GRPC_SRC_CORE_EXT_XDS_XDS_LISTENER_H
+#define GRPC_SRC_CORE_EXT_XDS_XDS_LISTENER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -34,7 +34,7 @@
 #include "absl/types/variant.h"
 #include "envoy/config/listener/v3/listener.upbdefs.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.h"
-#include "upb/def.h"
+#include "upb/reflection/def.h"
 
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_client.h"
@@ -223,4 +223,4 @@ class XdsListenerResourceType
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_XDS_XDS_LISTENER_H
+#endif  // GRPC_SRC_CORE_EXT_XDS_XDS_LISTENER_H

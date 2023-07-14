@@ -18,122 +18,59 @@
 
 #include "src/core/ext/filters/rbac/rbac_filter.h"
 
-#include <new>
+#include <functional>
+#include <memory>
 #include <utility>
 
 #include "absl/status/status.h"
 
-#include <grpc/status.h>
-#include <grpc/support/log.h>
+#include <grpc/grpc_security.h>
 
 #include "src/core/ext/filters/rbac/rbac_service_config_parser.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/context.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/status_helper.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/promise/context.h"
+#include "src/core/lib/promise/promise.h"
 #include "src/core/lib/security/authorization/authorization_engine.h"
 #include "src/core/lib/security/authorization/grpc_authorization_engine.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
 #include "src/core/lib/transport/transport_fwd.h"
+#include "src/core/lib/transport/transport_impl.h"
 
 namespace grpc_core {
 
-//
-// RbacFilter::CallData
-//
-
-// CallData
-
-grpc_error_handle RbacFilter::CallData::Init(
-    grpc_call_element* elem, const grpc_call_element_args* args) {
-  new (elem->call_data) CallData(elem, *args);
-  return absl::OkStatus();
-}
-
-void RbacFilter::CallData::Destroy(grpc_call_element* elem,
-                                   const grpc_call_final_info* /*final_info*/,
-                                   grpc_closure* /*then_schedule_closure*/) {
-  auto* calld = static_cast<CallData*>(elem->call_data);
-  calld->~CallData();
-}
-
-void RbacFilter::CallData::StartTransportStreamOpBatch(
-    grpc_call_element* elem, grpc_transport_stream_op_batch* op) {
-  CallData* calld = static_cast<CallData*>(elem->call_data);
-  if (op->recv_initial_metadata) {
-    calld->recv_initial_metadata_ =
-        op->payload->recv_initial_metadata.recv_initial_metadata;
-    calld->original_recv_initial_metadata_ready_ =
-        op->payload->recv_initial_metadata.recv_initial_metadata_ready;
-    op->payload->recv_initial_metadata.recv_initial_metadata_ready =
-        &calld->recv_initial_metadata_ready_;
-  }
-  // Chain to the next filter.
-  grpc_call_next_op(elem, op);
-}
-
-RbacFilter::CallData::CallData(grpc_call_element* elem,
-                               const grpc_call_element_args& args)
-    : call_context_(args.context) {
-  GRPC_CLOSURE_INIT(&recv_initial_metadata_ready_, RecvInitialMetadataReady,
-                    elem, grpc_schedule_on_exec_ctx);
-}
-
-void RbacFilter::CallData::RecvInitialMetadataReady(void* user_data,
-                                                    grpc_error_handle error) {
-  grpc_call_element* elem = static_cast<grpc_call_element*>(user_data);
-  CallData* calld = static_cast<CallData*>(elem->call_data);
-  RbacFilter* filter = static_cast<RbacFilter*>(elem->channel_data);
-  if (error.ok()) {
-    // Fetch and apply the rbac policy from the service config.
-    auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
-        calld->call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
-    auto* method_params = static_cast<RbacMethodParsedConfig*>(
-        service_config_call_data->GetMethodParsedConfig(
-            filter->service_config_parser_index_));
-    if (method_params == nullptr) {
-      error = GRPC_ERROR_CREATE("No RBAC policy found.");
-    } else {
-      RbacFilter* chand = static_cast<RbacFilter*>(elem->channel_data);
-      auto* authorization_engine =
-          method_params->authorization_engine(chand->index_);
-      if (authorization_engine
-              ->Evaluate(EvaluateArgs(calld->recv_initial_metadata_,
-                                      &chand->per_channel_evaluate_args_))
-              .type == AuthorizationEngine::Decision::Type::kDeny) {
-        error = GRPC_ERROR_CREATE("Unauthorized RPC rejected");
-      }
-    }
-    if (!error.ok()) {
-      error = grpc_error_set_int(error, StatusIntProperty::kRpcStatus,
-                                 GRPC_STATUS_PERMISSION_DENIED);
+ArenaPromise<ServerMetadataHandle> RbacFilter::MakeCallPromise(
+    CallArgs call_args, NextPromiseFactory next_promise_factory) {
+  // Fetch and apply the rbac policy from the service config.
+  auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
+      GetContext<
+          grpc_call_context_element>()[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA]
+          .value);
+  auto* method_params = static_cast<RbacMethodParsedConfig*>(
+      service_config_call_data->GetMethodParsedConfig(
+          service_config_parser_index_));
+  if (method_params == nullptr) {
+    return Immediate(ServerMetadataFromStatus(
+        absl::PermissionDeniedError("No RBAC policy found.")));
+  } else {
+    auto* authorization_engine = method_params->authorization_engine(index_);
+    if (authorization_engine
+            ->Evaluate(EvaluateArgs(call_args.client_initial_metadata.get(),
+                                    &per_channel_evaluate_args_))
+            .type == AuthorizationEngine::Decision::Type::kDeny) {
+      return Immediate(ServerMetadataFromStatus(
+          absl::PermissionDeniedError("Unauthorized RPC rejected")));
     }
   }
-  grpc_closure* closure = calld->original_recv_initial_metadata_ready_;
-  calld->original_recv_initial_metadata_ready_ = nullptr;
-  Closure::Run(DEBUG_LOCATION, closure, error);
+  return next_promise_factory(std::move(call_args));
 }
 
-//
-// RbacFilter
-//
-
-const grpc_channel_filter RbacFilter::kFilterVtable = {
-    RbacFilter::CallData::StartTransportStreamOpBatch,
-    nullptr,
-    grpc_channel_next_op,
-    sizeof(RbacFilter::CallData),
-    RbacFilter::CallData::Init,
-    grpc_call_stack_ignore_set_pollset_or_pollset_set,
-    RbacFilter::CallData::Destroy,
-    sizeof(RbacFilter),
-    RbacFilter::Init,
-    grpc_channel_stack_no_post_init,
-    RbacFilter::Destroy,
-    grpc_channel_next_get_info,
-    "rbac_filter",
-};
+const grpc_channel_filter RbacFilter::kFilterVtable =
+    MakePromiseBasedFilter<RbacFilter, FilterEndpoint::kServer>("rbac_filter");
 
 RbacFilter::RbacFilter(size_t index,
                        EvaluateArgs::PerChannelArgs per_channel_evaluate_args)
@@ -141,30 +78,23 @@ RbacFilter::RbacFilter(size_t index,
       service_config_parser_index_(RbacServiceConfigParser::ParserIndex()),
       per_channel_evaluate_args_(std::move(per_channel_evaluate_args)) {}
 
-grpc_error_handle RbacFilter::Init(grpc_channel_element* elem,
-                                   grpc_channel_element_args* args) {
-  GPR_ASSERT(elem->filter == &kFilterVtable);
-  auto* auth_context = grpc_find_auth_context_in_args(args->channel_args);
+absl::StatusOr<RbacFilter> RbacFilter::Create(const ChannelArgs& args,
+                                              ChannelFilter::Args filter_args) {
+  auto* auth_context = args.GetObject<grpc_auth_context>();
   if (auth_context == nullptr) {
     return GRPC_ERROR_CREATE("No auth context found");
   }
-  auto* transport = grpc_channel_args_find_pointer<grpc_transport>(
-      args->channel_args, GRPC_ARG_TRANSPORT);
+  auto* transport = args.GetObject<grpc_transport>();
   if (transport == nullptr) {
     // This should never happen since the transport is always set on the server
     // side.
     return GRPC_ERROR_CREATE("No transport configured");
   }
-  new (elem->channel_data) RbacFilter(
-      grpc_channel_stack_filter_instance_number(args->channel_stack, elem),
-      EvaluateArgs::PerChannelArgs(auth_context,
-                                   grpc_transport_get_endpoint(transport)));
-  return absl::OkStatus();
-}
-
-void RbacFilter::Destroy(grpc_channel_element* elem) {
-  auto* chand = static_cast<RbacFilter*>(elem->channel_data);
-  chand->~RbacFilter();
+  return RbacFilter(grpc_channel_stack_filter_instance_number(
+                        filter_args.channel_stack(),
+                        filter_args.uninitialized_channel_element()),
+                    EvaluateArgs::PerChannelArgs(
+                        auth_context, grpc_transport_get_endpoint(transport)));
 }
 
 void RbacFilterRegister(CoreConfiguration::Builder* builder) {

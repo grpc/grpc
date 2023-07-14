@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -23,6 +23,8 @@
 #include "opencensus/stats/stats.h"
 
 #include <grpcpp/opencensus.h>
+
+#include "src/cpp/ext/filters/census/grpc_plugin.h"
 
 namespace grpc {
 
@@ -98,6 +100,15 @@ MeasureInt64 RpcClientStartedRpcs() {
   return measure;
 }
 
+MeasureDouble RpcClientTransportLatency() {
+  static const auto measure = MeasureDouble::Register(
+      experimental::kRpcClientTransportLatencyMeasureName,
+      "Time between first byte of request sent to last byte of response "
+      "received on the transport",
+      kUnitMilliseconds);
+  return measure;
+}
+
 // Client per-overall-client-call measures
 MeasureInt64 RpcClientRetriesPerCall() {
   static const auto measure =
@@ -170,5 +181,16 @@ MeasureInt64 RpcServerReceivedMessagesPerRpc() {
       "Number of messages received per RPC", kCount);
   return measure;
 }
+
+namespace internal {
+
+MeasureDouble RpcClientApiLatency() {
+  static const auto measure = MeasureDouble::Register(
+      kRpcClientApiLatencyMeasureName,
+      "End-to-end time taken to complete an RPC", kUnitMilliseconds);
+  return measure;
+}
+
+}  // namespace internal
 
 }  // namespace grpc

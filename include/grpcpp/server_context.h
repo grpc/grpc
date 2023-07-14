@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #ifndef GRPCPP_SERVER_CONTEXT_H
 #define GRPCPP_SERVER_CONTEXT_H
@@ -116,8 +116,8 @@ class DefaultReactorTestPeer;
 }  // namespace testing
 
 namespace experimental {
-class OrcaServerInterceptor;
 class CallMetricRecorder;
+class ServerMetricRecorder;
 }  // namespace experimental
 
 /// Base class of ServerContext.
@@ -147,15 +147,15 @@ class ServerContextBase {
   /// must end in "-bin".
   ///
   /// Metadata must conform to the following format:
-  /**
-  \verbatim
-  Custom-Metadata -> Binary-Header / ASCII-Header
-  Binary-Header -> {Header-Name "-bin" } {binary value}
-  ASCII-Header -> Header-Name ASCII-Value
-  Header-Name -> 1*( %x30-39 / %x61-7A / "_" / "-" / ".") ; 0-9 a-z _ - .
-  ASCII-Value -> 1*( %x20-%x7E ) ; space and printable ASCII
-  \endverbatim
-  **/
+  ///
+  ///\verbatim
+  /// Custom-Metadata -> Binary-Header / ASCII-Header
+  /// Binary-Header -> {Header-Name "-bin" } {binary value}
+  /// ASCII-Header -> Header-Name ASCII-Value
+  /// Header-Name -> 1*( %x30-39 / %x61-7A / "_" / "-" / ".") ; 0-9 a-z _ - .
+  /// ASCII-Value -> 1*( %x20-%x7E ) ; space and printable ASCII
+  ///\endverbatim
+  ///
   void AddInitialMetadata(const std::string& key, const std::string& value);
 
   /// Add the (\a key, \a value) pair to the initial metadata
@@ -172,15 +172,15 @@ class ServerContextBase {
   /// must end in "-bin".
   ///
   /// Metadata must conform to the following format:
-  /**
-  \verbatim
-  Custom-Metadata -> Binary-Header / ASCII-Header
-  Binary-Header -> {Header-Name "-bin" } {binary value}
-  ASCII-Header -> Header-Name ASCII-Value
-  Header-Name -> 1*( %x30-39 / %x61-7A / "_" / "-" / ".") ; 0-9 a-z _ - .
-  ASCII-Value -> 1*( %x20-%x7E ) ; space and printable ASCII
-  \endverbatim
-  **/
+  ///
+  ///\verbatim
+  /// Custom-Metadata -> Binary-Header / ASCII-Header
+  /// Binary-Header -> {Header-Name "-bin" } {binary value}
+  /// ASCII-Header -> Header-Name ASCII-Value
+  /// Header-Name -> 1*( %x30-39 / %x61-7A / "_" / "-" / ".") ; 0-9 a-z _ - .
+  /// ASCII-Value -> 1*( %x20-%x7E ) ; space and printable ASCII
+  ///\endverbatim
+  ///
   void AddTrailingMetadata(const std::string& key, const std::string& value);
 
   /// Return whether this RPC failed before the server could provide its status
@@ -206,7 +206,9 @@ class ServerContextBase {
   /// TryCancel() is called, the serverhandler must return Status::CANCELLED.
   /// The only exception is that if the serverhandler is already returning an
   /// error status code, it is ok to not return Status::CANCELLED even if
-  /// TryCancel() was called.
+  /// TryCancel() was called. Additionally, it is illegal to invoke TryCancel()
+  /// before the call has actually begun, i.e., before metadata has been
+  /// received from the client.
   ///
   /// For reasons such as the above, it is generally preferred to explicitly
   /// finish an RPC by returning Status::CANCELLED rather than using TryCancel.
@@ -303,8 +305,8 @@ class ServerContextBase {
   /// Async only. Has to be called before the rpc starts.
   /// Returns the tag in completion queue when the rpc finishes.
   /// IsCancelled() can then be called to check whether the rpc was cancelled.
-  /// TODO(vjpai): Fix this so that the tag is returned even if the call never
-  /// starts (https://github.com/grpc/grpc/issues/10136).
+  /// Note: the tag will only be returned if call starts.
+  /// If the call never starts, this tag will not be returned.
   void AsyncNotifyWhenDone(void* tag) {
     has_notify_when_done_tag_ = true;
     async_notify_when_done_tag_ = tag;
@@ -404,7 +406,6 @@ class ServerContextBase {
   friend class grpc::ClientContext;
   friend class grpc::GenericServerContext;
   friend class grpc::GenericCallbackServerContext;
-  friend class grpc::experimental::OrcaServerInterceptor;
 
   /// Prevent copying.
   ServerContextBase(const ServerContextBase&);
@@ -418,7 +419,13 @@ class ServerContextBase {
   /// Return the tag queued by BeginCompletionOp()
   grpc::internal::CompletionQueueTag* GetCompletionOpTag();
 
-  void set_call(grpc_call* call) { call_.call = call; }
+  void set_call(grpc_call* call, bool call_metric_recording_enabled,
+                experimental::ServerMetricRecorder* server_metric_recorder) {
+    call_.call = call;
+    if (call_metric_recording_enabled) {
+      CreateCallMetricRecorder(server_metric_recorder);
+    }
+  }
 
   void BindDeadlineAndMetadata(gpr_timespec deadline, grpc_metadata_array* arr);
 
@@ -445,7 +452,10 @@ class ServerContextBase {
     }
   }
 
-  void CreateCallMetricRecorder();
+  // This should be called only once and only when call metric recording is
+  // enabled.
+  void CreateCallMetricRecorder(
+      experimental::ServerMetricRecorder* server_metric_recorder = nullptr);
 
   struct CallWrapper {
     ~CallWrapper();

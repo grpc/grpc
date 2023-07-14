@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_EXT_FILTERS_HTTP_MESSAGE_COMPRESS_COMPRESSION_FILTER_H
-#define GRPC_CORE_EXT_FILTERS_HTTP_MESSAGE_COMPRESS_COMPRESSION_FILTER_H
+#ifndef GRPC_SRC_CORE_EXT_FILTERS_HTTP_MESSAGE_COMPRESS_COMPRESSION_FILTER_H
+#define GRPC_SRC_CORE_EXT_FILTERS_HTTP_MESSAGE_COMPRESS_COMPRESSION_FILTER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -34,38 +34,41 @@
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
 
-/** Compression filter for messages.
- *
- * See <grpc/compression.h> for the available compression settings.
- *
- * Compression settings may come from:
- *  - Channel configuration, as established at channel creation time.
- *  - The metadata accompanying the outgoing data to be compressed. This is
- *    taken as a request only. We may choose not to honor it. The metadata key
- *    is given by \a GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY.
- *
- * Compression can be disabled for concrete messages (for instance in order to
- * prevent CRIME/BEAST type attacks) by having the GRPC_WRITE_NO_COMPRESS set in
- * the MessageHandle flags.
- *
- * The attempted compression mechanism is added to the resulting initial
- * metadata under the 'grpc-encoding' key.
- *
- * If compression is actually performed, the MessageHandle's flag is modified to
- * incorporate GRPC_WRITE_INTERNAL_COMPRESS. Otherwise, and regardless of the
- * aforementioned 'grpc-encoding' metadata value, data will pass through
- * uncompressed. */
+/// Compression filter for messages.
+///
+/// See <grpc/compression.h> for the available compression settings.
+///
+/// Compression settings may come from:
+/// - Channel configuration, as established at channel creation time.
+/// - The metadata accompanying the outgoing data to be compressed. This is
+///   taken as a request only. We may choose not to honor it. The metadata key
+///   is given by \a GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY.
+///
+/// Compression can be disabled for concrete messages (for instance in order to
+/// prevent CRIME/BEAST type attacks) by having the GRPC_WRITE_NO_COMPRESS set
+/// in the MessageHandle flags.
+///
+/// The attempted compression mechanism is added to the resulting initial
+/// metadata under the 'grpc-encoding' key.
+///
+/// If compression is actually performed, the MessageHandle's flag is modified
+/// to incorporate GRPC_WRITE_INTERNAL_COMPRESS. Otherwise, and regardless of
+/// the aforementioned 'grpc-encoding' metadata value, data will pass through
+/// uncompressed.
 
 class CompressionFilter : public ChannelFilter {
  protected:
-  explicit CompressionFilter(const ChannelArgs& args);
+  struct DecompressArgs {
+    grpc_compression_algorithm algorithm;
+    absl::optional<uint32_t> max_recv_message_length;
+  };
 
-  class CompressLoop;
-  class DecompressLoop;
+  explicit CompressionFilter(const ChannelArgs& args);
 
   grpc_compression_algorithm default_compression_algorithm() const {
     return default_compression_algorithm_;
@@ -75,15 +78,19 @@ class CompressionFilter : public ChannelFilter {
     return enabled_compression_algorithms_;
   }
 
- private:
+  grpc_compression_algorithm HandleOutgoingMetadata(
+      grpc_metadata_batch& outgoing_metadata);
+  DecompressArgs HandleIncomingMetadata(
+      const grpc_metadata_batch& incoming_metadata);
+
   // Compress one message synchronously.
   MessageHandle CompressMessage(MessageHandle message,
                                 grpc_compression_algorithm algorithm) const;
   // Decompress one message synchronously.
-  absl::StatusOr<MessageHandle> DecompressMessage(
-      MessageHandle message, grpc_compression_algorithm algorithm,
-      absl::optional<uint32_t> max_recv_message_length) const;
+  absl::StatusOr<MessageHandle> DecompressMessage(MessageHandle message,
+                                                  DecompressArgs args) const;
 
+ private:
   // Max receive message length, if set.
   absl::optional<uint32_t> max_recv_size_;
   size_t message_size_service_config_parser_index_;
@@ -129,5 +136,4 @@ class ServerCompressionFilter final : public CompressionFilter {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_EXT_FILTERS_HTTP_MESSAGE_COMPRESS_COMPRESSION_FILTER_H \
-        */
+#endif  // GRPC_SRC_CORE_EXT_FILTERS_HTTP_MESSAGE_COMPRESS_COMPRESSION_FILTER_H

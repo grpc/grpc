@@ -48,8 +48,8 @@ cat > /tmp/toolchain.cmake <<'EOT'
 SET(CMAKE_SYSTEM_NAME Linux)
 SET(CMAKE_SYSTEM_PROCESSOR aarch64)
 set(CMAKE_STAGING_PREFIX /tmp/stage)
-set(CMAKE_C_COMPILER /usr/bin/aarch64-linux-gnu-gcc-6)
-set(CMAKE_CXX_COMPILER /usr/bin/aarch64-linux-gnu-g++-6)
+set(CMAKE_C_COMPILER /usr/bin/aarch64-linux-gnu-gcc-8)
+set(CMAKE_CXX_COMPILER /usr/bin/aarch64-linux-gnu-g++-8)
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
@@ -78,6 +78,7 @@ cmake -DCMAKE_TOOLCHAIN_FILE=/tmp/toolchain.cmake \
       -DCMAKE_BUILD_TYPE=Release \
       -Dabsl_DIR=/tmp/stage/lib/cmake/absl \
       -DProtobuf_DIR=/tmp/stage/lib/cmake/protobuf \
+      -Dutf8_range_DIR=/tmp/stage/lib/cmake/utf8_range \
       -DgRPC_DIR=/tmp/stage/lib/cmake/grpc \
       ../..
 make "-j${GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS}"

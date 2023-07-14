@@ -188,6 +188,7 @@ grpc_tls_credentials_options_set_identity_cert_name_type grpc_tls_credentials_op
 grpc_tls_credentials_options_set_cert_request_type_type grpc_tls_credentials_options_set_cert_request_type_import;
 grpc_tls_credentials_options_set_crl_directory_type grpc_tls_credentials_options_set_crl_directory_import;
 grpc_tls_credentials_options_set_verify_server_cert_type grpc_tls_credentials_options_set_verify_server_cert_import;
+grpc_tls_credentials_options_set_send_client_ca_list_type grpc_tls_credentials_options_set_send_client_ca_list_import;
 grpc_tls_credentials_options_set_check_call_host_type grpc_tls_credentials_options_set_check_call_host_import;
 grpc_insecure_credentials_create_type grpc_insecure_credentials_create_import;
 grpc_insecure_server_credentials_create_type grpc_insecure_server_credentials_create_import;
@@ -256,6 +257,7 @@ gpr_log_message_type gpr_log_message_import;
 gpr_set_log_verbosity_type gpr_set_log_verbosity_import;
 gpr_log_verbosity_init_type gpr_log_verbosity_init_import;
 gpr_set_log_function_type gpr_set_log_function_import;
+gpr_assertion_failed_type gpr_assertion_failed_import;
 gpr_format_message_type gpr_format_message_import;
 gpr_strdup_type gpr_strdup_import;
 gpr_asprintf_type gpr_asprintf_import;
@@ -473,6 +475,7 @@ void grpc_rb_load_imports(HMODULE library) {
   grpc_tls_credentials_options_set_cert_request_type_import = (grpc_tls_credentials_options_set_cert_request_type_type) GetProcAddress(library, "grpc_tls_credentials_options_set_cert_request_type");
   grpc_tls_credentials_options_set_crl_directory_import = (grpc_tls_credentials_options_set_crl_directory_type) GetProcAddress(library, "grpc_tls_credentials_options_set_crl_directory");
   grpc_tls_credentials_options_set_verify_server_cert_import = (grpc_tls_credentials_options_set_verify_server_cert_type) GetProcAddress(library, "grpc_tls_credentials_options_set_verify_server_cert");
+  grpc_tls_credentials_options_set_send_client_ca_list_import = (grpc_tls_credentials_options_set_send_client_ca_list_type) GetProcAddress(library, "grpc_tls_credentials_options_set_send_client_ca_list");
   grpc_tls_credentials_options_set_check_call_host_import = (grpc_tls_credentials_options_set_check_call_host_type) GetProcAddress(library, "grpc_tls_credentials_options_set_check_call_host");
   grpc_insecure_credentials_create_import = (grpc_insecure_credentials_create_type) GetProcAddress(library, "grpc_insecure_credentials_create");
   grpc_insecure_server_credentials_create_import = (grpc_insecure_server_credentials_create_type) GetProcAddress(library, "grpc_insecure_server_credentials_create");
@@ -541,6 +544,7 @@ void grpc_rb_load_imports(HMODULE library) {
   gpr_set_log_verbosity_import = (gpr_set_log_verbosity_type) GetProcAddress(library, "gpr_set_log_verbosity");
   gpr_log_verbosity_init_import = (gpr_log_verbosity_init_type) GetProcAddress(library, "gpr_log_verbosity_init");
   gpr_set_log_function_import = (gpr_set_log_function_type) GetProcAddress(library, "gpr_set_log_function");
+  gpr_assertion_failed_import = (gpr_assertion_failed_type) GetProcAddress(library, "gpr_assertion_failed");
   gpr_format_message_import = (gpr_format_message_type) GetProcAddress(library, "gpr_format_message");
   gpr_strdup_import = (gpr_strdup_type) GetProcAddress(library, "gpr_strdup");
   gpr_asprintf_import = (gpr_asprintf_type) GetProcAddress(library, "gpr_asprintf");

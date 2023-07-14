@@ -53,7 +53,7 @@ absl::StatusOr<std::unique_ptr<WakeupFd>> CreateWakeupFd() {
   return g_wakeup_fd_fn();
 }
 
-#else /* GRPC_POSIX_WAKEUP_FD */
+#else  // GRPC_POSIX_WAKEUP_FD
 
 bool SupportsWakeupFd() { return false; }
 
@@ -61,7 +61,7 @@ absl::StatusOr<std::unique_ptr<WakeupFd>> CreateWakeupFd() {
   return absl::NotFoundError("Wakeup-fd is not supported on this system");
 }
 
-#endif /* GRPC_POSIX_WAKEUP_FD */
+#endif  // GRPC_POSIX_WAKEUP_FD
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

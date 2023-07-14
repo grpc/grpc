@@ -12,11 +12,38 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])
 
-grpc_package(name = "test/cpp/ext/filters/census")
+grpc_package(
+    name = "test/cpp/ext/filters/census",
+    visibility = "tests",
+)
+
+grpc_cc_library(
+    name = "library",
+    testonly = 1,
+    srcs = ["library.cc"],
+    hdrs = ["library.h"],
+    external_deps = [
+        "gtest",
+        "opencensus-stats-test",
+        "opencensus-tags",
+        "opencensus-with-tag-map",
+    ],
+    language = "C++",
+    deps = [
+        "//:grpc++",
+        "//:grpc_opencensus_plugin",
+        "//src/proto/grpc/testing:echo_proto",
+        "//test/core/util:grpc_test_util",
+        "//test/core/util:test_lb_policies",
+        "//test/cpp/end2end:test_service_impl",
+        "//test/cpp/util:test_config",
+        "//test/cpp/util:test_util",
+    ],
+)
 
 grpc_cc_test(
     name = "grpc_opencensus_plugin_test",
@@ -32,13 +59,45 @@ grpc_cc_test(
     flaky = True,
     language = "C++",
     linkstatic = True,
-    tags = ["no_windows"],  # TODO(jtattermusch): fix test on windows
+    tags = [
+        "census_test",
+        "no_windows",
+    ],  # TODO(jtattermusch): fix test on windows
     deps = [
+        "library",
         "//:grpc++",
         "//:grpc_opencensus_plugin",
         "//src/proto/grpc/testing:echo_proto",
         "//test/core/util:grpc_test_util",
-        "//test/cpp/end2end:test_service_impl",
+        "//test/cpp/util:test_config",
+        "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "constant_labels_test",
+    srcs = [
+        "constant_labels_test.cc",
+    ],
+    external_deps = [
+        "gtest",
+        "opencensus-stats-test",
+        "opencensus-tags",
+        "opencensus-with-tag-map",
+    ],
+    flaky = True,
+    language = "C++",
+    linkstatic = True,
+    tags = [
+        "census_test",
+        "no_windows",
+    ],  # TODO(jtattermusch): fix test on windows
+    deps = [
+        "library",
+        "//:grpc++",
+        "//:grpc_opencensus_plugin",
+        "//src/proto/grpc/testing:echo_proto",
+        "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
     ],

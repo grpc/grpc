@@ -36,6 +36,7 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/block_annotate.h"
@@ -123,9 +124,9 @@ NativeDNSResolver::LookupHostnameBlocking(absl::string_view name,
 
   // Call getaddrinfo
   memset(&hints, 0, sizeof(hints));
-  hints.ai_family = AF_UNSPEC;     /* ipv4 or ipv6 */
-  hints.ai_socktype = SOCK_STREAM; /* stream socket */
-  hints.ai_flags = AI_PASSIVE;     /* for wildcard IP address */
+  hints.ai_family = AF_UNSPEC;      // ipv4 or ipv6
+  hints.ai_socktype = SOCK_STREAM;  // stream socket
+  hints.ai_flags = AI_PASSIVE;      // for wildcard IP address
 
   GRPC_SCHEDULING_START_BLOCKING_REGION;
   s = getaddrinfo(host.c_str(), port.c_str(), &hints, &result);

@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2019 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2019 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #ifndef GRPCPP_OPENCENSUS_H
 #define GRPCPP_OPENCENSUS_H
@@ -65,6 +65,7 @@ extern const absl::string_view kRpcClientStartedRpcsMeasureName;
 extern const absl::string_view kRpcClientRetriesPerCallMeasureName;
 extern const absl::string_view kRpcClientTransparentRetriesPerCallMeasureName;
 extern const absl::string_view kRpcClientRetryDelayPerCallMeasureName;
+extern const absl::string_view kRpcClientTransportLatencyMeasureName;
 
 extern const absl::string_view kRpcServerSentMessagesPerRpcMeasureName;
 extern const absl::string_view kRpcServerSentBytesPerRpcMeasureName;
@@ -76,10 +77,12 @@ extern const absl::string_view kRpcServerStartedRpcsMeasureName;
 // Canonical gRPC view definitions.
 const ::opencensus::stats::ViewDescriptor& ClientStartedRpcs();
 const ::opencensus::stats::ViewDescriptor& ClientCompletedRpcs();
+const ::opencensus::stats::ViewDescriptor& ClientRoundtripLatency();
 const ::opencensus::stats::ViewDescriptor&
 ClientSentCompressedMessageBytesPerRpc();
 const ::opencensus::stats::ViewDescriptor&
 ClientReceivedCompressedMessageBytesPerRpc();
+const ::opencensus::stats::ViewDescriptor& ClientTransportLatency();
 
 const ::opencensus::stats::ViewDescriptor& ServerStartedRpcs();
 const ::opencensus::stats::ViewDescriptor& ServerCompletedRpcs();
@@ -171,6 +174,9 @@ class CensusContext {
                          const ::opencensus::tags::TagMap& tags)
       : span_(::opencensus::trace::Span::StartSpan(name)), tags_(tags) {}
 
+  explicit CensusContext(const ::opencensus::tags::TagMap& tags)
+      : span_(::opencensus::trace::Span::BlankSpan()), tags_(tags) {}
+
   CensusContext(absl::string_view name, const ::opencensus::trace::Span* parent,
                 const ::opencensus::tags::TagMap& tags)
       : span_(::opencensus::trace::Span::StartSpan(name, parent)),
@@ -181,6 +187,13 @@ class CensusContext {
       : span_(::opencensus::trace::Span::StartSpanWithRemoteParent(
             name, parent_ctxt)),
         tags_({}) {}
+
+  CensusContext(absl::string_view name,
+                const ::opencensus::trace::SpanContext& parent_ctxt,
+                const ::opencensus::tags::TagMap& tags)
+      : span_(::opencensus::trace::Span::StartSpanWithRemoteParent(
+            name, parent_ctxt)),
+        tags_(tags) {}
 
   void AddSpanAttribute(absl::string_view key,
                         opencensus::trace::AttributeValueRef attribute) {

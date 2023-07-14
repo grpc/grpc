@@ -1,4 +1,6 @@
--r requirements.txt
-yapf==0.30.0  # Mirrors yapf version set in https://github.com/grpc/grpc/blob/master/tools/distrib/yapf_code.sh
+-r requirements.lock
+# Mirrors black version set in
+# https://github.com/grpc/grpc/blob/master/tools/distrib/black_code.sh
+black==23.3.0
 isort~=5.9
 # TODO(https://github.com/grpc/grpc/pull/25872): mypy

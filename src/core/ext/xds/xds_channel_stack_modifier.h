@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_EXT_XDS_XDS_CHANNEL_STACK_MODIFIER_H
-#define GRPC_CORE_EXT_XDS_XDS_CHANNEL_STACK_MODIFIER_H
+#ifndef GRPC_SRC_CORE_EXT_XDS_XDS_CHANNEL_STACK_MODIFIER_H
+#define GRPC_SRC_CORE_EXT_XDS_XDS_CHANNEL_STACK_MODIFIER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -62,4 +62,4 @@ class XdsChannelStackModifier : public RefCounted<XdsChannelStackModifier> {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_EXT_XDS_XDS_CHANNEL_STACK_MODIFIER_H */
+#endif  // GRPC_SRC_CORE_EXT_XDS_XDS_CHANNEL_STACK_MODIFIER_H

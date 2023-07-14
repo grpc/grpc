@@ -1,28 +1,27 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "src/core/lib/channel/channel_stack.h"
-
-#include <limits.h>
 
 #include <string>
 
 #include "absl/status/status.h"
+#include "absl/types/optional.h"
 #include "gtest/gtest.h"
 
 #include <grpc/support/alloc.h>
@@ -36,12 +35,10 @@
 
 static grpc_error_handle channel_init_func(grpc_channel_element* elem,
                                            grpc_channel_element_args* args) {
-  int test_value = grpc_channel_args_find_integer(args->channel_args,
-                                                  "test_key", {-1, 0, INT_MAX});
+  int test_value = args->channel_args.GetInt("test_key").value_or(-1);
   EXPECT_EQ(test_value, 42);
-  auto* ee = grpc_channel_args_find_pointer<
-      grpc_event_engine::experimental::EventEngine>(
-      args->channel_args, GRPC_INTERNAL_ARG_EVENT_ENGINE);
+  auto* ee = args->channel_args
+                 .GetObject<grpc_event_engine::experimental::EventEngine>();
   EXPECT_NE(ee, nullptr);
   EXPECT_TRUE(args->is_first);
   EXPECT_TRUE(args->is_last);
@@ -127,14 +124,14 @@ TEST(ChannelStackTest, CreateChannelStack) {
   call_stack =
       static_cast<grpc_call_stack*>(gpr_malloc(channel_stack->call_stack_size));
   const grpc_call_element_args args = {
-      call_stack,                        /* call_stack */
-      nullptr,                           /* server_transport_data */
-      nullptr,                           /* context */
-      path,                              /* path */
-      gpr_get_cycle_counter(),           /* start_time */
-      grpc_core::Timestamp::InfFuture(), /* deadline */
-      nullptr,                           /* arena */
-      nullptr,                           /* call_combiner */
+      call_stack,                         // call_stack
+      nullptr,                            // server_transport_data
+      nullptr,                            // context
+      path,                               // path
+      gpr_get_cycle_counter(),            // start_time
+      grpc_core::Timestamp::InfFuture(),  // deadline
+      nullptr,                            // arena
+      nullptr,                            // call_combiner
   };
   grpc_error_handle error =
       grpc_call_stack_init(channel_stack, 1, free_call, call_stack, &args);

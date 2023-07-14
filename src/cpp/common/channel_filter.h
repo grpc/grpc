@@ -1,23 +1,23 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-#ifndef GRPCXX_CHANNEL_FILTER_H
-#define GRPCXX_CHANNEL_FILTER_H
+#ifndef GRPC_SRC_CPP_COMMON_CHANNEL_FILTER_H
+#define GRPC_SRC_CPP_COMMON_CHANNEL_FILTER_H
 
 #include <stddef.h>
 
@@ -30,9 +30,9 @@
 #include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
-#include <grpc/support/atm.h>
 #include <grpcpp/support/config.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
@@ -170,18 +170,6 @@ class TransportStreamOpBatch {
         op_->payload->context[GRPC_CONTEXT_TRACING].value);
   }
 
-  const gpr_atm* get_peer_string() const {
-    if (op_->send_initial_metadata &&
-        op_->payload->send_initial_metadata.peer_string != nullptr) {
-      return op_->payload->send_initial_metadata.peer_string;
-    } else if (op_->recv_initial_metadata &&
-               op_->payload->recv_initial_metadata.peer_string != nullptr) {
-      return op_->payload->recv_initial_metadata.peer_string;
-    } else {
-      return nullptr;
-    }
-  }
-
  private:
   grpc_transport_stream_op_batch* op_;  // Not owned.
   MetadataBatch send_initial_metadata_;
@@ -313,7 +301,7 @@ class ChannelFilter final {
 
 void RegisterChannelFilter(
     grpc_channel_stack_type stack_type, int priority,
-    std::function<bool(const grpc_channel_args&)> include_filter,
+    std::function<bool(const grpc_core::ChannelArgs&)> include_filter,
     const grpc_channel_filter* filter);
 
 }  // namespace internal
@@ -331,7 +319,7 @@ void RegisterChannelFilter(
 template <typename ChannelDataType, typename CallDataType>
 void RegisterChannelFilter(
     const char* name, grpc_channel_stack_type stack_type, int priority,
-    std::function<bool(const grpc_channel_args&)> include_filter) {
+    std::function<bool(const grpc_core::ChannelArgs&)> include_filter) {
   using FilterType = internal::ChannelFilter<ChannelDataType, CallDataType>;
   static const grpc_channel_filter filter = {
       FilterType::StartTransportStreamOpBatch,
@@ -353,4 +341,4 @@ void RegisterChannelFilter(
 
 }  // namespace grpc
 
-#endif  // GRPCXX_CHANNEL_FILTER_H
+#endif  // GRPC_SRC_CPP_COMMON_CHANNEL_FILTER_H

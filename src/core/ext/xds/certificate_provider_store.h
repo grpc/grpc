@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_EXT_XDS_CERTIFICATE_PROVIDER_STORE_H
-#define GRPC_CORE_EXT_XDS_CERTIFICATE_PROVIDER_STORE_H
+#ifndef GRPC_SRC_CORE_EXT_XDS_CERTIFICATE_PROVIDER_STORE_H
+#define GRPC_SRC_CORE_EXT_XDS_CERTIFICATE_PROVIDER_STORE_H
 
 #include <grpc/support/port_platform.h>
 
@@ -55,7 +55,7 @@ class CertificateProviderStore
     RefCountedPtr<CertificateProviderFactory::Config> config;
 
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
-    void JsonPostLoad(const Json& json, const JsonArgs&,
+    void JsonPostLoad(const Json& json, const JsonArgs& args,
                       ValidationErrors* errors);
   };
 
@@ -135,4 +135,4 @@ class CertificateProviderStore
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_XDS_CERTIFICATE_PROVIDER_STORE_H
+#endif  // GRPC_SRC_CORE_EXT_XDS_CERTIFICATE_PROVIDER_STORE_H

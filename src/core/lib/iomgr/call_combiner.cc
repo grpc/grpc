@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2017 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2017 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -26,6 +26,7 @@
 
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/stats_data.h"
+#include "src/core/lib/gprpp/crash.h"
 
 namespace grpc_core {
 
@@ -115,9 +116,9 @@ void CallCombiner::Start(grpc_closure* closure, grpc_error_handle error,
                          DEBUG_ARGS const char* reason) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {
     gpr_log(GPR_INFO,
-            "==> CallCombiner::Start() [%p] closure=%p [" DEBUG_FMT_STR
+            "==> CallCombiner::Start() [%p] closure=%s [" DEBUG_FMT_STR
             "%s] error=%s",
-            this, closure DEBUG_FMT_ARGS, reason,
+            this, closure->DebugString().c_str() DEBUG_FMT_ARGS, reason,
             StatusToString(error).c_str());
   }
   size_t prev_size =
@@ -175,8 +176,8 @@ void CallCombiner::Stop(DEBUG_ARGS const char* reason) {
           internal::StatusMoveFromHeapPtr(closure->error_data.error);
       closure->error_data.error = 0;
       if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {
-        gpr_log(GPR_INFO, "  EXECUTING FROM QUEUE: closure=%p error=%s",
-                closure, StatusToString(error).c_str());
+        gpr_log(GPR_INFO, "  EXECUTING FROM QUEUE: closure=%s error=%s",
+                closure->DebugString().c_str(), StatusToString(error).c_str());
       }
       ScheduleClosure(closure, error);
       break;

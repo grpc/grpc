@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CONFIG_SELECTOR_H
-#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CONFIG_SELECTOR_H
+#ifndef GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CONFIG_SELECTOR_H
+#define GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CONFIG_SELECTOR_H
 
 #include <grpc/support/port_platform.h>
 
@@ -24,21 +24,20 @@
 #include <utility>
 #include <vector>
 
-#include "absl/status/statusor.h"
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/grpc.h>
-#include <grpc/slice.h>
 #include <grpc/support/log.h>
 
+#include "src/core/ext/filters/client_channel/client_channel_internal.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/service_config/service_config.h"
-#include "src/core/lib/service_config/service_config_call_data.h"
-#include "src/core/lib/service_config/service_config_parser.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
 // Channel arg key for ConfigSelector.
@@ -50,37 +49,10 @@ namespace grpc_core {
 // MethodConfig and provide input to LB policies on a per-call basis.
 class ConfigSelector : public RefCounted<ConfigSelector> {
  public:
-  // An interface to be used by the channel when dispatching calls.
-  class CallDispatchController {
-   public:
-    virtual ~CallDispatchController() = default;
-
-    // Called by the channel to decide if it should retry the call upon a
-    // failure.
-    virtual bool ShouldRetry() = 0;
-
-    // Called by the channel when no more LB picks will be performed for
-    // the call.
-    virtual void Commit() = 0;
-  };
-
   struct GetCallConfigArgs {
-    grpc_slice* path;
     grpc_metadata_batch* initial_metadata;
     Arena* arena;
-  };
-
-  struct CallConfig {
-    // The per-method parsed configs that will be passed to
-    // ServiceConfigCallData.
-    const ServiceConfigParser::ParsedConfigVector* method_configs = nullptr;
-    // A ref to the service config that contains method_configs, held by
-    // the call to ensure that method_configs lives long enough.
-    RefCountedPtr<ServiceConfig> service_config;
-    // Call attributes that will be accessible to LB policy implementations.
-    ServiceConfigCallData::CallAttributes call_attributes;
-    // Call dispatch controller.
-    CallDispatchController* call_dispatch_controller = nullptr;
+    ClientChannelServiceConfigCallData* service_config_call_data;
   };
 
   ~ConfigSelector() override = default;
@@ -100,7 +72,7 @@ class ConfigSelector : public RefCounted<ConfigSelector> {
 
   // Returns the call config to use for the call, or a status to fail
   // the call with.
-  virtual absl::StatusOr<CallConfig> GetCallConfig(GetCallConfigArgs args) = 0;
+  virtual absl::Status GetCallConfig(GetCallConfigArgs args) = 0;
 
   grpc_arg MakeChannelArg() const;
   static RefCountedPtr<ConfigSelector> GetFromChannelArgs(
@@ -130,12 +102,14 @@ class DefaultConfigSelector : public ConfigSelector {
 
   const char* name() const override { return "default"; }
 
-  absl::StatusOr<CallConfig> GetCallConfig(GetCallConfigArgs args) override {
-    CallConfig call_config;
-    call_config.method_configs =
-        service_config_->GetMethodParsedConfigVector(*args.path);
-    call_config.service_config = service_config_;
-    return call_config;
+  absl::Status GetCallConfig(GetCallConfigArgs args) override {
+    Slice* path = args.initial_metadata->get_pointer(HttpPathMetadata());
+    GPR_ASSERT(path != nullptr);
+    auto* parsed_method_configs =
+        service_config_->GetMethodParsedConfigVector(path->c_slice());
+    args.service_config_call_data->SetServiceConfig(service_config_,
+                                                    parsed_method_configs);
+    return absl::OkStatus();
   }
 
   // Only comparing the ConfigSelector itself, not the underlying
@@ -148,4 +122,4 @@ class DefaultConfigSelector : public ConfigSelector {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CONFIG_SELECTOR_H
+#endif  // GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CONFIG_SELECTOR_H

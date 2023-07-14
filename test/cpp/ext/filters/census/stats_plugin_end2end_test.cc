@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <string>
 #include <thread>  // NOLINT
@@ -25,33 +25,19 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "opencensus/stats/stats.h"
-#include "opencensus/stats/tag_key.h"
 #include "opencensus/stats/testing/test_utils.h"
 #include "opencensus/tags/tag_map.h"
 #include "opencensus/tags/with_tag_map.h"
-#include "opencensus/trace/exporter/span_exporter.h"
 
 #include <grpc++/grpc++.h>
 #include <grpcpp/opencensus.h>
 
-#include "src/core/lib/channel/call_tracer.h"
 #include "src/cpp/ext/filters/census/context.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 #include "src/cpp/ext/filters/census/open_census_call_tracer.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/test_config.h"
-#include "test/cpp/end2end/test_service_impl.h"
-
-namespace opencensus {
-namespace trace {
-namespace exporter {
-class SpanExporterTestPeer {
- public:
-  static constexpr auto& ExportForTesting = SpanExporter::ExportForTesting;
-};
-}  // namespace exporter
-}  // namespace trace
-}  // namespace opencensus
+#include "test/cpp/ext/filters/census/library.h"
 
 namespace grpc {
 namespace testing {
@@ -62,143 +48,7 @@ using ::opencensus::stats::Distribution;
 using ::opencensus::stats::View;
 using ::opencensus::stats::ViewDescriptor;
 using ::opencensus::stats::testing::TestUtils;
-using ::opencensus::tags::TagKey;
 using ::opencensus::tags::WithTagMap;
-
-const auto TEST_TAG_KEY = TagKey::Register("my_key");
-const auto TEST_TAG_VALUE = "my_value";
-const char* kExpectedTraceIdKey = "expected_trace_id";
-
-class EchoServer final : public TestServiceImpl {
-  Status Echo(ServerContext* context, const EchoRequest* request,
-              EchoResponse* response) override {
-    CheckMetadata(context);
-    return TestServiceImpl::Echo(context, request, response);
-  }
-
-  Status BidiStream(
-      ServerContext* context,
-      ServerReaderWriter<EchoResponse, EchoRequest>* stream) override {
-    CheckMetadata(context);
-    return TestServiceImpl::BidiStream(context, stream);
-  }
-
- private:
-  void CheckMetadata(ServerContext* context) {
-    for (const auto& metadata : context->client_metadata()) {
-      if (metadata.first == kExpectedTraceIdKey) {
-        EXPECT_EQ(metadata.second, reinterpret_cast<const CensusContext*>(
-                                       context->census_context())
-                                       ->Span()
-                                       .context()
-                                       .trace_id()
-                                       .ToHex());
-        break;
-      }
-    }
-  }
-};
-
-// A handler that records exported traces. Traces can later be retrieved and
-// inspected.
-class ExportedTracesRecorder
-    : public ::opencensus::trace::exporter::SpanExporter::Handler {
- public:
-  ExportedTracesRecorder() : is_recording_(false) {}
-  void Export(const std::vector<::opencensus::trace::exporter::SpanData>& spans)
-      override {
-    absl::MutexLock lock(&mutex_);
-    if (is_recording_) {
-      for (auto const& span : spans) {
-        recorded_spans_.push_back(span);
-      }
-    }
-  }
-
-  void StartRecording() {
-    absl::MutexLock lock(&mutex_);
-    ASSERT_FALSE(is_recording_);
-    is_recording_ = true;
-  }
-
-  void StopRecording() {
-    absl::MutexLock lock(&mutex_);
-    ASSERT_TRUE(is_recording_);
-    is_recording_ = false;
-  }
-
-  std::vector<::opencensus::trace::exporter::SpanData> GetAndClearSpans() {
-    absl::MutexLock lock(&mutex_);
-    return std::move(recorded_spans_);
-  }
-
- private:
-  // This mutex is necessary as the SpanExporter runs a loop on a separate
-  // thread which periodically exports spans.
-  absl::Mutex mutex_;
-  bool is_recording_ ABSL_GUARDED_BY(mutex_);
-  std::vector<::opencensus::trace::exporter::SpanData> recorded_spans_
-      ABSL_GUARDED_BY(mutex_);
-};
-
-class StatsPluginEnd2EndTest : public ::testing::Test {
- protected:
-  static void SetUpTestSuite() {
-    RegisterOpenCensusPlugin();
-    // OpenCensus C++ has no API to unregister a previously-registered handler,
-    // therefore we register this handler once, and enable/disable recording in
-    // the individual tests.
-    ::opencensus::trace::exporter::SpanExporter::RegisterHandler(
-        absl::WrapUnique(traces_recorder_));
-  }
-
-  void SetUp() override {
-    // Set up a synchronous server on a different thread to avoid the asynch
-    // interface.
-    grpc::ServerBuilder builder;
-    int port;
-    // Use IPv4 here because it's less flaky than IPv6 ("[::]:0") on Travis.
-    builder.AddListeningPort("0.0.0.0:0", grpc::InsecureServerCredentials(),
-                             &port);
-    builder.RegisterService(&service_);
-    server_ = builder.BuildAndStart();
-    ASSERT_NE(nullptr, server_);
-    ASSERT_NE(0, port);
-    server_address_ = absl::StrCat("localhost:", port);
-    server_thread_ = std::thread(&StatsPluginEnd2EndTest::RunServerLoop, this);
-
-    stub_ = EchoTestService::NewStub(grpc::CreateChannel(
-        server_address_, grpc::InsecureChannelCredentials()));
-
-    // Clear out any previous spans
-    ::opencensus::trace::exporter::SpanExporterTestPeer::ExportForTesting();
-  }
-
-  void ResetStub(std::shared_ptr<Channel> channel) {
-    stub_ = EchoTestService::NewStub(channel);
-  }
-
-  void TearDown() override {
-    server_->Shutdown();
-    server_thread_.join();
-  }
-
-  void RunServerLoop() { server_->Wait(); }
-
-  const std::string client_method_name_ = "grpc.testing.EchoTestService/Echo";
-  const std::string server_method_name_ = "grpc.testing.EchoTestService/Echo";
-
-  std::string server_address_;
-  EchoServer service_;
-  std::unique_ptr<grpc::Server> server_;
-  std::thread server_thread_;
-
-  std::unique_ptr<EchoTestService::Stub> stub_;
-  static ExportedTracesRecorder* traces_recorder_;
-};
-
-ExportedTracesRecorder* StatsPluginEnd2EndTest::traces_recorder_ =
-    new ExportedTracesRecorder();
 
 TEST_F(StatsPluginEnd2EndTest, ErrorCount) {
   const auto client_method_descriptor =
@@ -366,6 +216,8 @@ TEST_F(StatsPluginEnd2EndTest, Latency) {
   View client_latency_view(ClientRoundtripLatencyCumulative());
   View client_server_latency_view(ClientServerLatencyCumulative());
   View server_server_latency_view(ServerServerLatencyCumulative());
+  View client_transport_latency_view(experimental::ClientTransportLatency());
+  View client_api_latency_view(grpc::internal::ClientApiLatency());
 
   const absl::Time start_time = absl::Now();
   {
@@ -408,6 +260,37 @@ TEST_F(StatsPluginEnd2EndTest, Latency) {
               ::testing::Property(&Distribution::mean, ::testing::Gt(0.0)),
               ::testing::Property(&Distribution::mean,
                                   ::testing::Lt(client_latency))))));
+
+  // Transport time is a subinterval of total latency.
+  if (grpc_core::IsTransportSuppliesClientLatencyEnabled()) {
+    const auto client_transport_latency =
+        client_transport_latency_view.GetData()
+            .distribution_data()
+            .find({client_method_name_})
+            ->second.mean();
+    EXPECT_THAT(
+        client_server_latency_view.GetData().distribution_data(),
+        ::testing::UnorderedElementsAre(::testing::Pair(
+            ::testing::ElementsAre(client_method_name_),
+            ::testing::AllOf(
+                ::testing::Property(&Distribution::count, 1),
+                ::testing::Property(&Distribution::mean, ::testing::Gt(0.0)),
+                ::testing::Property(
+                    &Distribution::mean,
+                    ::testing::Lt(client_transport_latency))))));
+  }
+
+  // client api latency should be less than max time but greater than client
+  // roundtrip (attempt) latency view.
+  EXPECT_THAT(
+      client_api_latency_view.GetData().distribution_data(),
+      ::testing::UnorderedElementsAre(::testing::Pair(
+          ::testing::ElementsAre(client_method_name_, "OK"),
+          ::testing::AllOf(::testing::Property(&Distribution::count, 1),
+                           ::testing::Property(&Distribution::mean,
+                                               ::testing::Gt(client_latency)),
+                           ::testing::Property(&Distribution::mean,
+                                               ::testing::Lt(max_time))))));
 
   // client server elapsed time should be the same value propagated to the
   // client.
@@ -746,7 +629,7 @@ bool IsAnnotationPresent(
     std::vector<opencensus::trace::exporter::SpanData>::const_iterator span,
     absl::string_view annotation) {
   for (const auto& event : span->annotations().events()) {
-    if (event.event().description() == annotation) {
+    if (absl::StrContains(event.event().description(), annotation)) {
       return true;
     }
   }
@@ -760,7 +643,10 @@ TEST_F(StatsPluginEnd2EndTest,
        TestRemovePendingResolverResultAndPendingLbPickQueueAnnotations) {
   {
     // Client spans are ended when the ClientContext's destructor is invoked.
-    auto channel = CreateChannel(server_address_, InsecureChannelCredentials());
+    ChannelArguments args;
+    args.SetLoadBalancingPolicyName("queue_once");
+    auto channel = CreateCustomChannel(server_address_,
+                                       InsecureChannelCredentials(), args);
     ResetStub(channel);
     EchoRequest request;
     request.set_message("foo");
@@ -801,6 +687,124 @@ TEST_F(StatsPluginEnd2EndTest,
   ASSERT_NE(attempt_span_data, recorded_spans.end());
   EXPECT_TRUE(
       IsAnnotationPresent(attempt_span_data, "Delayed LB pick complete."));
+}
+
+// Tests that the message size trace annotations are present.
+TEST_F(StatsPluginEnd2EndTest, TestMessageSizeAnnotations) {
+  {
+    // Client spans are ended when the ClientContext's destructor is invoked.
+    EchoRequest request;
+    request.set_message("foo");
+    EchoResponse response;
+
+    grpc::ClientContext context;
+    ::opencensus::trace::AlwaysSampler always_sampler;
+    ::opencensus::trace::StartSpanOptions options;
+    options.sampler = &always_sampler;
+    auto sampling_span =
+        ::opencensus::trace::Span::StartSpan("sampling", nullptr, options);
+    grpc::CensusContext app_census_context("root", &sampling_span,
+                                           ::opencensus::tags::TagMap{});
+    context.set_census_context(
+        reinterpret_cast<census_context*>(&app_census_context));
+    context.AddMetadata(kExpectedTraceIdKey,
+                        app_census_context.Span().context().trace_id().ToHex());
+    traces_recorder_->StartRecording();
+    grpc::Status status = stub_->Echo(&context, request, &response);
+    EXPECT_TRUE(status.ok());
+  }
+  absl::SleepFor(absl::Milliseconds(500 * grpc_test_slowdown_factor()));
+  TestUtils::Flush();
+  ::opencensus::trace::exporter::SpanExporterTestPeer::ExportForTesting();
+  traces_recorder_->StopRecording();
+  auto recorded_spans = traces_recorder_->GetAndClearSpans();
+  // Check presence of message size annotations in attempt span
+  auto attempt_span_data = GetSpanByName(
+      recorded_spans, absl::StrCat("Attempt.", client_method_name_));
+  ASSERT_NE(attempt_span_data, recorded_spans.end());
+  EXPECT_TRUE(IsAnnotationPresent(attempt_span_data, "Send message: 5 bytes"));
+  EXPECT_FALSE(IsAnnotationPresent(attempt_span_data,
+                                   "Send compressed message: 5 bytes"));
+  EXPECT_TRUE(
+      IsAnnotationPresent(attempt_span_data, "Received message: 5 bytes"));
+  EXPECT_FALSE(IsAnnotationPresent(attempt_span_data,
+                                   "Received decompressed message: 5 bytes"));
+  // Check presence of message size annotations in server span
+  auto server_span_data =
+      GetSpanByName(recorded_spans, absl::StrCat("Recv.", client_method_name_));
+  ASSERT_NE(attempt_span_data, recorded_spans.end());
+  EXPECT_TRUE(IsAnnotationPresent(server_span_data, "Send message: 5 bytes"));
+  EXPECT_FALSE(IsAnnotationPresent(attempt_span_data,
+                                   "Send compressed message: 5 bytes"));
+  EXPECT_TRUE(
+      IsAnnotationPresent(server_span_data, "Received message: 5 bytes"));
+  EXPECT_FALSE(IsAnnotationPresent(server_span_data,
+                                   "Received decompressed message: 5 bytes"));
+}
+
+std::string CreateLargeMessage() {
+  char str[1024];
+  for (int i = 0; i < 1023; ++i) {
+    str[i] = 'a';
+  }
+  str[1023] = '\0';
+  return std::string(str);
+}
+
+// Tests that the message size with compression trace annotations are present.
+TEST_F(StatsPluginEnd2EndTest, TestMessageSizeWithCompressionAnnotations) {
+  {
+    // Client spans are ended when the ClientContext's destructor is invoked.
+    EchoRequest request;
+    request.set_message(CreateLargeMessage());
+    EchoResponse response;
+
+    grpc::ClientContext context;
+    context.set_compression_algorithm(GRPC_COMPRESS_GZIP);
+    ::opencensus::trace::AlwaysSampler always_sampler;
+    ::opencensus::trace::StartSpanOptions options;
+    options.sampler = &always_sampler;
+    auto sampling_span =
+        ::opencensus::trace::Span::StartSpan("sampling", nullptr, options);
+    grpc::CensusContext app_census_context("root", &sampling_span,
+                                           ::opencensus::tags::TagMap{});
+    context.set_census_context(
+        reinterpret_cast<census_context*>(&app_census_context));
+    context.AddMetadata(kExpectedTraceIdKey,
+                        app_census_context.Span().context().trace_id().ToHex());
+    traces_recorder_->StartRecording();
+    grpc::Status status = stub_->Echo(&context, request, &response);
+    EXPECT_TRUE(status.ok());
+  }
+  absl::SleepFor(absl::Milliseconds(500 * grpc_test_slowdown_factor()));
+  TestUtils::Flush();
+  ::opencensus::trace::exporter::SpanExporterTestPeer::ExportForTesting();
+  traces_recorder_->StopRecording();
+  auto recorded_spans = traces_recorder_->GetAndClearSpans();
+  // Check presence of message size annotations in attempt span
+  auto attempt_span_data = GetSpanByName(
+      recorded_spans, absl::StrCat("Attempt.", client_method_name_));
+  ASSERT_NE(attempt_span_data, recorded_spans.end());
+  EXPECT_TRUE(
+      IsAnnotationPresent(attempt_span_data, "Send message: 1026 bytes"));
+  // We don't know what the exact compressed message size would be
+  EXPECT_TRUE(
+      IsAnnotationPresent(attempt_span_data, "Send compressed message:"));
+  EXPECT_TRUE(IsAnnotationPresent(attempt_span_data, "Received message:"));
+  EXPECT_TRUE(IsAnnotationPresent(attempt_span_data,
+                                  "Received decompressed message: 1026 bytes"));
+  // Check presence of message size annotations in server span
+  auto server_span_data =
+      GetSpanByName(recorded_spans, absl::StrCat("Recv.", client_method_name_));
+  ASSERT_NE(attempt_span_data, recorded_spans.end());
+  EXPECT_TRUE(
+      IsAnnotationPresent(server_span_data, "Send message: 1026 bytes"));
+  // We don't know what the exact compressed message size would be
+  EXPECT_TRUE(
+      IsAnnotationPresent(attempt_span_data, "Send compressed message:"));
+  EXPECT_TRUE(IsAnnotationPresent(server_span_data, "Received message:"));
+  EXPECT_TRUE(IsAnnotationPresent(server_span_data,
+                                  "Received decompressed message: 1026 bytes"));
 }
 
 // Test the working of GRPC_ARG_DISABLE_OBSERVABILITY.
@@ -849,7 +853,7 @@ TEST_F(StatsPluginEnd2EndTest, TestObservabilityDisabledChannelArg) {
 
 // Test the working of EnableOpenCensusStats.
 TEST_F(StatsPluginEnd2EndTest, TestGlobalEnableOpenCensusStats) {
-  EnableOpenCensusStats(false);
+  grpc::internal::EnableOpenCensusStats(false);
 
   View client_started_rpcs_view(ClientStartedRpcsCumulative());
   View server_started_rpcs_view(ServerStartedRpcsCumulative());
@@ -873,12 +877,12 @@ TEST_F(StatsPluginEnd2EndTest, TestGlobalEnableOpenCensusStats) {
   EXPECT_TRUE(client_completed_rpcs_view.GetData().int_data().empty());
   EXPECT_TRUE(server_completed_rpcs_view.GetData().int_data().empty());
 
-  EnableOpenCensusStats(true);
+  grpc::internal::EnableOpenCensusStats(true);
 }
 
 // Test the working of EnableOpenCensusTracing.
 TEST_F(StatsPluginEnd2EndTest, TestGlobalEnableOpenCensusTracing) {
-  EnableOpenCensusTracing(false);
+  grpc::internal::EnableOpenCensusTracing(false);
 
   {
     // Client spans are ended when the ClientContext's destructor is invoked.
@@ -908,7 +912,7 @@ TEST_F(StatsPluginEnd2EndTest, TestGlobalEnableOpenCensusTracing) {
   // No span should be exported
   ASSERT_EQ(0, recorded_spans.size());
 
-  EnableOpenCensusTracing(true);
+  grpc::internal::EnableOpenCensusTracing(true);
 }
 
 // This test verifies that users depending on src/cpp/ext/filters/census header

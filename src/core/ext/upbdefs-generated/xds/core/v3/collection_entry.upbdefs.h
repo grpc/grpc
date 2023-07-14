@@ -9,15 +9,16 @@
 #ifndef XDS_CORE_V3_COLLECTION_ENTRY_PROTO_UPBDEFS_H_
 #define XDS_CORE_V3_COLLECTION_ENTRY_PROTO_UPBDEFS_H_
 
-#include "upb/def.h"
-#include "upb/port_def.inc"
+#include "upb/reflection/def.h"
+#include "upb/reflection/def_pool_internal.h"
+#include "upb/port/def.inc"
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include "upb/def.h"
+#include "upb/reflection/def.h"
 
-#include "upb/port_def.inc"
+#include "upb/port/def.inc"
 
 extern _upb_DefPool_Init xds_core_v3_collection_entry_proto_upbdefinit;
 
@@ -35,6 +36,6 @@ UPB_INLINE const upb_MessageDef *xds_core_v3_CollectionEntry_InlineEntry_getmsgd
 }  /* extern "C" */
 #endif
 
-#include "upb/port_undef.inc"
+#include "upb/port/undef.inc"
 
 #endif  /* XDS_CORE_V3_COLLECTION_ENTRY_PROTO_UPBDEFS_H_ */

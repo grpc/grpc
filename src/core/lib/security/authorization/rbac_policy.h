@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_SECURITY_AUTHORIZATION_RBAC_POLICY_H
-#define GRPC_CORE_LIB_SECURITY_AUTHORIZATION_RBAC_POLICY_H
+#ifndef GRPC_SRC_CORE_LIB_SECURITY_AUTHORIZATION_RBAC_POLICY_H
+#define GRPC_SRC_CORE_LIB_SECURITY_AUTHORIZATION_RBAC_POLICY_H
 
 #include <grpc/support/port_platform.h>
 
@@ -26,16 +26,25 @@
 
 #include "absl/types/optional.h"
 
+#include <grpc/grpc_audit_logging.h>
+
 #include "src/core/lib/matchers/matchers.h"
 
 namespace grpc_core {
 
 // Represents Envoy RBAC Proto. [See
-// https://github.com/envoyproxy/envoy/blob/release/v1.17/api/envoy/config/rbac/v3/rbac.proto]
+// https://github.com/envoyproxy/envoy/blob/release/v1.26/api/envoy/config/rbac/v3/rbac.proto]
 struct Rbac {
   enum class Action {
     kAllow,
     kDeny,
+  };
+
+  enum class AuditCondition {
+    kNone,
+    kOnDeny,
+    kOnAllow,
+    kOnDenyAndAllow,
   };
 
   struct CidrRange {
@@ -162,17 +171,25 @@ struct Rbac {
   };
 
   Rbac() = default;
-  Rbac(Rbac::Action action, std::map<std::string, Policy> policies);
+  Rbac(std::string name, Rbac::Action action,
+       std::map<std::string, Policy> policies);
 
   Rbac(Rbac&& other) noexcept;
   Rbac& operator=(Rbac&& other) noexcept;
 
   std::string ToString() const;
 
+  // The authorization policy name or the HTTP RBAC filter name.
+  std::string name;
+
   Action action;
   std::map<std::string, Policy> policies;
+
+  AuditCondition audit_condition;
+  std::vector<std::unique_ptr<experimental::AuditLoggerFactory::Config>>
+      logger_configs;
 };
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_SECURITY_AUTHORIZATION_RBAC_POLICY_H */
+#endif  // GRPC_SRC_CORE_LIB_SECURITY_AUTHORIZATION_RBAC_POLICY_H

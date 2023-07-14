@@ -30,72 +30,77 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 import commands
 import grpc_version
 
-LICENSE = 'Apache License 2.0'
+LICENSE = "Apache License 2.0"
 
 PACKAGE_DIRECTORIES = {
-    '': '.',
+    "": ".",
 }
 
 INSTALL_REQUIRES = (
-    'coverage>=4.0', 'grpcio>={version}'.format(version=grpc_version.VERSION),
-    'grpcio-channelz>={version}'.format(version=grpc_version.VERSION),
-    'grpcio-status>={version}'.format(version=grpc_version.VERSION),
-    'grpcio-tools>={version}'.format(version=grpc_version.VERSION),
-    'grpcio-health-checking>={version}'.format(version=grpc_version.VERSION),
-    'oauth2client>=1.4.7', 'protobuf>=4.21.6', 'google-auth>=1.17.2',
-    'requests>=2.14.2')
+    "coverage>=4.0",
+    "grpcio>={version}".format(version=grpc_version.VERSION),
+    "grpcio-channelz>={version}".format(version=grpc_version.VERSION),
+    "grpcio-status>={version}".format(version=grpc_version.VERSION),
+    "grpcio-tools>={version}".format(version=grpc_version.VERSION),
+    "grpcio-health-checking>={version}".format(version=grpc_version.VERSION),
+    "oauth2client>=1.4.7",
+    "protobuf>=4.21.6rc1,!=4.22.0.*",
+    "google-auth>=1.17.2",
+    "requests>=2.14.2",
+)
 
 COMMAND_CLASS = {
     # Run `preprocess` *before* doing any packaging!
-    'preprocess': commands.GatherProto,
-    'build_package_protos': grpc_tools.command.BuildPackageProtos,
-    'build_py': commands.BuildPy,
-    'run_fork': commands.RunFork,
-    'run_interop': commands.RunInterop,
-    'test_lite': commands.TestLite,
-    'test_gevent': commands.TestGevent,
-    'test_aio': commands.TestAio,
-    'test_py3_only': commands.TestPy3Only,
+    "preprocess": commands.GatherProto,
+    "build_package_protos": grpc_tools.command.BuildPackageProtos,
+    "build_py": commands.BuildPy,
+    "run_fork": commands.RunFork,
+    "run_interop": commands.RunInterop,
+    "test_lite": commands.TestLite,
+    "test_gevent": commands.TestGevent,
+    "test_aio": commands.TestAio,
+    "test_py3_only": commands.TestPy3Only,
 }
 
 PACKAGE_DATA = {
-    'tests.interop': [
-        'credentials/ca.pem',
-        'credentials/server1.key',
-        'credentials/server1.pem',
+    "tests.interop": [
+        "credentials/ca.pem",
+        "credentials/server1.key",
+        "credentials/server1.pem",
     ],
-    'tests.protoc_plugin.protos.invocation_testing': [
-        'same.proto', 'compiler.proto'
+    "tests.protoc_plugin.protos.invocation_testing": [
+        "same.proto",
+        "compiler.proto",
     ],
-    'tests.protoc_plugin.protos.invocation_testing.split_messages': [
-        'messages.proto',
+    "tests.protoc_plugin.protos.invocation_testing.split_messages": [
+        "messages.proto",
     ],
-    'tests.protoc_plugin.protos.invocation_testing.split_services': [
-        'services.proto',
+    "tests.protoc_plugin.protos.invocation_testing.split_services": [
+        "services.proto",
     ],
-    'tests.testing.proto': [
-        'requests.proto',
-        'services.proto',
+    "tests.testing.proto": [
+        "requests.proto",
+        "services.proto",
     ],
-    'tests.unit': [
-        'credentials/ca.pem',
-        'credentials/server1.key',
-        'credentials/server1.pem',
+    "tests.unit": [
+        "credentials/ca.pem",
+        "credentials/server1.key",
+        "credentials/server1.pem",
     ],
-    'tests': ['tests.json'],
+    "tests": ["tests.json"],
 }
 
-TEST_SUITE = 'tests'
-TEST_LOADER = 'tests:Loader'
-TEST_RUNNER = 'tests:Runner'
+TEST_SUITE = "tests"
+TEST_LOADER = "tests:Loader"
+TEST_RUNNER = "tests:Runner"
 TESTS_REQUIRE = INSTALL_REQUIRES
 
-PACKAGES = setuptools.find_packages('.')
+PACKAGES = setuptools.find_packages(".")
 
 if __name__ == "__main__":
     multiprocessing.freeze_support()
     setuptools.setup(
-        name='grpcio-tests',
+        name="grpcio-tests",
         version=grpc_version.VERSION,
         license=LICENSE,
         packages=list(PACKAGES),

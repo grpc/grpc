@@ -21,6 +21,7 @@
 #include <ratio>
 #include <string>
 #include <thread>
+#include <type_traits>
 #include <vector>
 
 #include "absl/status/statusor.h"
@@ -33,6 +34,7 @@
 #include <grpc/grpc.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
@@ -40,18 +42,15 @@
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
+#include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
-#include "src/core/lib/gprpp/global_config.h"
-#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
+#include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/event_engine/posix/posix_engine_test_utils.h"
-#include "test/core/event_engine/test_suite/event_engine_test_utils.h"
-#include "test/core/event_engine/test_suite/oracle_event_engine_posix.h"
+#include "test/core/event_engine/test_suite/posix/oracle_event_engine_posix.h"
 #include "test/core/util/port.h"
-
-GPR_GLOBAL_CONFIG_DECLARE_STRING(grpc_poll_strategy);
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -80,8 +79,8 @@ std::list<Connection> CreateConnectedEndpoints(
   auto memory_quota = std::make_unique<grpc_core::MemoryQuota>("bar");
   std::string target_addr = absl::StrCat(
       "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
-  EventEngine::ResolvedAddress resolved_addr =
-      URIToResolvedAddress(target_addr);
+  auto resolved_addr = URIToResolvedAddress(target_addr);
+  GPR_ASSERT(resolved_addr.ok());
   std::unique_ptr<EventEngine::Endpoint> server_endpoint;
   grpc_core::Notification* server_signal = new grpc_core::Notification();
 
@@ -107,12 +106,12 @@ std::list<Connection> CreateConnectedEndpoints(
       std::make_unique<grpc_core::MemoryQuota>("foo"));
   GPR_ASSERT(listener.ok());
 
-  EXPECT_TRUE((*listener)->Bind(resolved_addr).ok());
+  EXPECT_TRUE((*listener)->Bind(*resolved_addr).ok());
   EXPECT_TRUE((*listener)->Start().ok());
 
   // Create client socket and connect to the target address.
   for (int i = 0; i < num_connections; ++i) {
-    int client_fd = ConnectToServerOrDie(resolved_addr);
+    int client_fd = ConnectToServerOrDie(*resolved_addr);
     EventHandle* handle =
         poller.CreateHandle(client_fd, "test", poller.CanTrackErrors());
     EXPECT_NE(handle, nullptr);
@@ -333,10 +332,8 @@ INSTANTIATE_TEST_SUITE_P(PosixEndpoint, PosixEndpointTest,
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc_core::UniquePtr<char> poll_strategy =
-      GPR_GLOBAL_CONFIG_GET(grpc_poll_strategy);
-  GPR_GLOBAL_CONFIG_GET(grpc_poll_strategy);
-  auto strings = absl::StrSplit(poll_strategy.get(), ',');
+  auto poll_strategy = grpc_core::ConfigVars::Get().PollStrategy();
+  auto strings = absl::StrSplit(poll_strategy, ',');
   if (std::find(strings.begin(), strings.end(), "none") != strings.end()) {
     // Skip the test entirely if poll strategy is none.
     return 0;

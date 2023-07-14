@@ -9,34 +9,38 @@
 #ifndef XDS_CORE_V3_RESOURCE_NAME_PROTO_UPB_H_
 #define XDS_CORE_V3_RESOURCE_NAME_PROTO_UPB_H_
 
-#include "upb/msg_internal.h"
-#include "upb/decode.h"
-#include "upb/decode_fast.h"
-#include "upb/encode.h"
+#include "upb/collections/array_internal.h"
+#include "upb/collections/map_gencode_util.h"
+#include "upb/message/accessors.h"
+#include "upb/message/internal.h"
+#include "upb/mini_table/enum_internal.h"
+#include "upb/wire/decode.h"
+#include "upb/wire/decode_fast.h"
+#include "upb/wire/encode.h"
 
-#include "upb/port_def.inc"
+// Must be last. 
+#include "upb/port/def.inc"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-struct xds_core_v3_ResourceName;
 typedef struct xds_core_v3_ResourceName xds_core_v3_ResourceName;
-extern const upb_MiniTable xds_core_v3_ResourceName_msginit;
+extern const upb_MiniTable xds_core_v3_ResourceName_msg_init;
 struct xds_core_v3_ContextParams;
-extern const upb_MiniTable xds_core_v3_ContextParams_msginit;
+extern const upb_MiniTable xds_core_v3_ContextParams_msg_init;
 
 
 
 /* xds.core.v3.ResourceName */
 
 UPB_INLINE xds_core_v3_ResourceName* xds_core_v3_ResourceName_new(upb_Arena* arena) {
-  return (xds_core_v3_ResourceName*)_upb_Message_New(&xds_core_v3_ResourceName_msginit, arena);
+  return (xds_core_v3_ResourceName*)_upb_Message_New(&xds_core_v3_ResourceName_msg_init, arena);
 }
 UPB_INLINE xds_core_v3_ResourceName* xds_core_v3_ResourceName_parse(const char* buf, size_t size, upb_Arena* arena) {
   xds_core_v3_ResourceName* ret = xds_core_v3_ResourceName_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &xds_core_v3_ResourceName_msginit, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
+  if (upb_Decode(buf, size, ret, &xds_core_v3_ResourceName_msg_init, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
@@ -46,7 +50,7 @@ UPB_INLINE xds_core_v3_ResourceName* xds_core_v3_ResourceName_parse_ex(const cha
                            int options, upb_Arena* arena) {
   xds_core_v3_ResourceName* ret = xds_core_v3_ResourceName_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &xds_core_v3_ResourceName_msginit, extreg, options, arena) !=
+  if (upb_Decode(buf, size, ret, &xds_core_v3_ResourceName_msg_init, extreg, options, arena) !=
       kUpb_DecodeStatus_Ok) {
     return NULL;
   }
@@ -54,72 +58,95 @@ UPB_INLINE xds_core_v3_ResourceName* xds_core_v3_ResourceName_parse_ex(const cha
 }
 UPB_INLINE char* xds_core_v3_ResourceName_serialize(const xds_core_v3_ResourceName* msg, upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &xds_core_v3_ResourceName_msginit, 0, arena, &ptr, len);
+  (void)upb_Encode(msg, &xds_core_v3_ResourceName_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
 UPB_INLINE char* xds_core_v3_ResourceName_serialize_ex(const xds_core_v3_ResourceName* msg, int options,
                                  upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &xds_core_v3_ResourceName_msginit, options, arena, &ptr, len);
+  (void)upb_Encode(msg, &xds_core_v3_ResourceName_msg_init, options, arena, &ptr, len);
   return ptr;
 }
-UPB_INLINE void xds_core_v3_ResourceName_clear_id(const xds_core_v3_ResourceName* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
+UPB_INLINE void xds_core_v3_ResourceName_clear_id(xds_core_v3_ResourceName* msg) {
+  const upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE upb_StringView xds_core_v3_ResourceName_id(const xds_core_v3_ResourceName* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView);
+  upb_StringView default_val = upb_StringView_FromString("");
+  upb_StringView ret;
+  const upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE void xds_core_v3_ResourceName_clear_authority(const xds_core_v3_ResourceName* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(12, 24), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
+UPB_INLINE void xds_core_v3_ResourceName_clear_authority(xds_core_v3_ResourceName* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE upb_StringView xds_core_v3_ResourceName_authority(const xds_core_v3_ResourceName* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(12, 24), upb_StringView);
+  upb_StringView default_val = upb_StringView_FromString("");
+  upb_StringView ret;
+  const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE void xds_core_v3_ResourceName_clear_resource_type(const xds_core_v3_ResourceName* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(20, 40), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
+UPB_INLINE void xds_core_v3_ResourceName_clear_resource_type(xds_core_v3_ResourceName* msg) {
+  const upb_MiniTableField field = {3, UPB_SIZE(24, 40), 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE upb_StringView xds_core_v3_ResourceName_resource_type(const xds_core_v3_ResourceName* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(20, 40), upb_StringView);
+  upb_StringView default_val = upb_StringView_FromString("");
+  upb_StringView ret;
+  const upb_MiniTableField field = {3, UPB_SIZE(24, 40), 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool xds_core_v3_ResourceName_has_context(const xds_core_v3_ResourceName* msg) {
-  return _upb_hasbit(msg, 1);
-}
-UPB_INLINE void xds_core_v3_ResourceName_clear_context(const xds_core_v3_ResourceName* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(28, 56), const upb_Message*) = NULL;
+UPB_INLINE void xds_core_v3_ResourceName_clear_context(xds_core_v3_ResourceName* msg) {
+  const upb_MiniTableField field = {4, UPB_SIZE(4, 56), 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const struct xds_core_v3_ContextParams* xds_core_v3_ResourceName_context(const xds_core_v3_ResourceName* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(28, 56), const struct xds_core_v3_ContextParams*);
+  const struct xds_core_v3_ContextParams* default_val = NULL;
+  const struct xds_core_v3_ContextParams* ret;
+  const upb_MiniTableField field = {4, UPB_SIZE(4, 56), 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
+}
+UPB_INLINE bool xds_core_v3_ResourceName_has_context(const xds_core_v3_ResourceName* msg) {
+  const upb_MiniTableField field = {4, UPB_SIZE(4, 56), 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
 
 UPB_INLINE void xds_core_v3_ResourceName_set_id(xds_core_v3_ResourceName *msg, upb_StringView value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView) = value;
+  const upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void xds_core_v3_ResourceName_set_authority(xds_core_v3_ResourceName *msg, upb_StringView value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(12, 24), upb_StringView) = value;
+  const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void xds_core_v3_ResourceName_set_resource_type(xds_core_v3_ResourceName *msg, upb_StringView value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(20, 40), upb_StringView) = value;
+  const upb_MiniTableField field = {3, UPB_SIZE(24, 40), 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void xds_core_v3_ResourceName_set_context(xds_core_v3_ResourceName *msg, struct xds_core_v3_ContextParams* value) {
-  _upb_sethas(msg, 1);
-  *UPB_PTR_AT(msg, UPB_SIZE(28, 56), struct xds_core_v3_ContextParams*) = value;
+  const upb_MiniTableField field = {4, UPB_SIZE(4, 56), 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct xds_core_v3_ContextParams* xds_core_v3_ResourceName_mutable_context(xds_core_v3_ResourceName* msg, upb_Arena* arena) {
   struct xds_core_v3_ContextParams* sub = (struct xds_core_v3_ContextParams*)xds_core_v3_ResourceName_context(msg);
   if (sub == NULL) {
-    sub = (struct xds_core_v3_ContextParams*)_upb_Message_New(&xds_core_v3_ContextParams_msginit, arena);
-    if (!sub) return NULL;
-    xds_core_v3_ResourceName_set_context(msg, sub);
+    sub = (struct xds_core_v3_ContextParams*)_upb_Message_New(&xds_core_v3_ContextParams_msg_init, arena);
+    if (sub) xds_core_v3_ResourceName_set_context(msg, sub);
   }
   return sub;
 }
 
-extern const upb_MiniTable_File xds_core_v3_resource_name_proto_upb_file_layout;
+extern const upb_MiniTableFile xds_core_v3_resource_name_proto_upb_file_layout;
 
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif
 
-#include "upb/port_undef.inc"
+#include "upb/port/undef.inc"
 
 #endif  /* XDS_CORE_V3_RESOURCE_NAME_PROTO_UPB_H_ */

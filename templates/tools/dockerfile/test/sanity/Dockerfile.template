@@ -17,7 +17,6 @@
   FROM silkeh/clang:15-bullseye
 
   <%include file="../../apt_get_basic.include"/>
-  <%include file="../../cxx_deps.include"/>
 
   # Install Python 3.7 from source (and installed as a default python3)
   # (Bullseye comes with Python 3.9 which isn't supported by pytype yet)
@@ -60,6 +59,7 @@
 
   <%include file="../../bazel.include"/>
   <%include file="../../buildifier.include"/>
+  <%include file="../../git-jenkins.include"/>
 
   # Define the default command.
   CMD ["bash"]

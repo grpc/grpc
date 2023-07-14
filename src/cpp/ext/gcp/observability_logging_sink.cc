@@ -20,62 +20,58 @@
 
 #include "src/cpp/ext/gcp/observability_logging_sink.h"
 
-#include <stddef.h>
-
 #include <algorithm>
+#include <initializer_list>
 #include <map>
 #include <utility>
 
-#include <google/protobuf/timestamp.pb.h>
-
-#include "absl/strings/str_cat.h"
+#include "absl/numeric/int128.h"
+#include "absl/strings/escaping.h"
+#include "absl/strings/match.h"
 #include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
+#include "google/api/monitored_resource.pb.h"
 #include "google/logging/v2/log_entry.pb.h"
 #include "google/logging/v2/logging.grpc.pb.h"
 #include "google/logging/v2/logging.pb.h"
+#include "google/protobuf/text_format.h"
 
+#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/status.h>
 
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/gprpp/uuid_v4.h"
 #include "src/core/lib/json/json.h"
 #include "src/cpp/ext/filters/census/open_census_call_tracer.h"
+
+// IWYU pragma: no_include "google/protobuf/struct.pb.h"
+// IWYU pragma: no_include "google/protobuf/timestamp.pb.h"
 
 namespace grpc {
 namespace internal {
 
+using grpc_core::LoggingSink;
+
 ObservabilityLoggingSink::ObservabilityLoggingSink(
-    GcpObservabilityConfig::CloudLogging logging_config, std::string project_id)
-    : project_id_(std::move(project_id)) {
+    GcpObservabilityConfig::CloudLogging logging_config, std::string project_id,
+    std::map<std::string, std::string> labels)
+    : project_id_(std::move(project_id)),
+      labels_(labels.begin(), labels.end()) {
   for (auto& client_rpc_event_config : logging_config.client_rpc_events) {
     client_configs_.emplace_back(client_rpc_event_config);
   }
   for (auto& server_rpc_event_config : logging_config.server_rpc_events) {
     server_configs_.emplace_back(server_rpc_event_config);
   }
-  std::string endpoint;
-  absl::optional<std::string> endpoint_env =
-      grpc_core::GetEnv("GOOGLE_CLOUD_CPP_LOGGING_SERVICE_V2_ENDPOINT");
-  if (endpoint_env.has_value() && !endpoint_env->empty()) {
-    endpoint = std::move(*endpoint_env);
-  } else {
-    endpoint = "logging.googleapis.com";
-  }
-  ChannelArguments args;
-  // Disable observability for RPCs on this channel
-  args.SetInt(GRPC_ARG_ENABLE_OBSERVABILITY, 0);
-  // Set keepalive time to 24 hrs to effectively disable keepalive ping, but
-  // still enable KEEPALIVE_TIMEOUT to get the TCP_USER_TIMEOUT effect.
-  args.SetInt(GRPC_ARG_KEEPALIVE_TIME_MS, 24 * 60 * 60 * 1000 /* 24 hours */);
-  args.SetInt(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, 20 * 1000 /* 20 seconds */);
-  stub_ = google::logging::v2::LoggingServiceV2::NewStub(
-      CreateCustomChannel(endpoint, GoogleDefaultCredentials(), args));
   absl::optional<std::string> authority_env =
+      grpc_core::GetEnv("GOOGLE_CLOUD_CPP_LOGGING_SERVICE_V2_ENDPOINT");
+  absl::optional<std::string> endpoint_env =
       grpc_core::GetEnv("GOOGLE_CLOUD_CPP_LOGGING_SERVICE_V2_ENDPOINT");
   if (authority_env.has_value() && !authority_env->empty()) {
     authority_ = std::move(*endpoint_env);
@@ -83,17 +79,11 @@ ObservabilityLoggingSink::ObservabilityLoggingSink(
 }
 
 LoggingSink::Config ObservabilityLoggingSink::FindMatch(
-    bool is_client, absl::string_view path) {
-  size_t pos = path.find('/');
-  if (pos == absl::string_view::npos) {
-    // bad path - did not find '/'
-    return LoggingSink::Config(0, 0);
-  }
-  absl::string_view service =
-      path.substr(0, pos);  // service name is before the '/'
-  absl::string_view method =
-      path.substr(pos + 1);  // method name starts after the '/'
+    bool is_client, absl::string_view service, absl::string_view method) {
   const auto& configs = is_client ? client_configs_ : server_configs_;
+  if (service.empty() || method.empty()) {
+    return LoggingSink::Config();
+  }
   for (const auto& config : configs) {
     for (const auto& config_method : config.parsed_methods) {
       if ((config_method.service == "*") ||
@@ -101,14 +91,14 @@ LoggingSink::Config ObservabilityLoggingSink::FindMatch(
            ((config_method.method == "*") ||
             (method == config_method.method)))) {
         if (config.exclude) {
-          return LoggingSink::Config(0, 0);
+          return LoggingSink::Config();
         }
         return LoggingSink::Config(config.max_metadata_bytes,
                                    config.max_message_bytes);
       }
     }
   }
-  return LoggingSink::Config(0, 0);
+  return LoggingSink::Config();
 }
 
 namespace {
@@ -129,7 +119,7 @@ std::string EventTypeToString(LoggingSink::Entry::EventType type) {
       return "SERVER_TRAILER";
     case LoggingSink::Entry::EventType::kCancel:
       return "CANCEL";
-    case LoggingSink::Entry::EventType::kUnkown:
+    case LoggingSink::Entry::EventType::kUnknown:
     default:
       return "EVENT_TYPE_UNKNOWN";
   }
@@ -141,7 +131,7 @@ std::string LoggerToString(LoggingSink::Entry::Logger type) {
       return "CLIENT";
     case LoggingSink::Entry::Logger::kServer:
       return "SERVER";
-    case LoggingSink::Entry::Logger::kUnkown:
+    case LoggingSink::Entry::Logger::kUnknown:
     default:
       return "LOGGER_UNKNOWN";
   }
@@ -154,8 +144,13 @@ void PayloadToJsonStructProto(LoggingSink::Entry::Payload payload,
     auto* metadata_proto =
         (*payload_proto->mutable_fields())["metadata"].mutable_struct_value();
     for (auto& metadata : payload.metadata) {
-      (*metadata_proto->mutable_fields())[metadata.first].set_string_value(
-          std::move(metadata.second));
+      if (absl::EndsWith(metadata.first, "-bin")) {
+        (*metadata_proto->mutable_fields())[metadata.first].set_string_value(
+            absl::WebSafeBase64Escape(metadata.second));
+      } else {
+        (*metadata_proto->mutable_fields())[metadata.first].set_string_value(
+            std::move(metadata.second));
+      }
     }
   }
   if (payload.timeout != grpc_core::Duration::Zero()) {
@@ -172,7 +167,7 @@ void PayloadToJsonStructProto(LoggingSink::Entry::Payload payload,
   }
   if (!payload.status_details.empty()) {
     (*payload_proto->mutable_fields())["statusDetails"].set_string_value(
-        std::move(payload.status_details));
+        absl::Base64Escape(payload.status_details));
   }
   if (payload.message_length != 0) {
     (*payload_proto->mutable_fields())["messageLength"].set_number_value(
@@ -180,7 +175,7 @@ void PayloadToJsonStructProto(LoggingSink::Entry::Payload payload,
   }
   if (!payload.message.empty()) {
     (*payload_proto->mutable_fields())["message"].set_string_value(
-        std::move(payload.message));
+        absl::Base64Escape(payload.message));
   }
 }
 
@@ -202,9 +197,11 @@ void PeerToJsonStructProto(LoggingSink::Entry::Address peer,
                            ::google::protobuf::Struct* peer_json) {
   (*peer_json->mutable_fields())["type"].set_string_value(
       AddressTypeToString(peer.type));
-  (*peer_json->mutable_fields())["address"].set_string_value(
-      std::move(peer.address));
-  (*peer_json->mutable_fields())["ipPort"].set_number_value(peer.ip_port);
+  if (peer.type != LoggingSink::Entry::Address::Type::kUnknown) {
+    (*peer_json->mutable_fields())["address"].set_string_value(
+        std::move(peer.address));
+    (*peer_json->mutable_fields())["ipPort"].set_number_value(peer.ip_port);
+  }
 }
 
 }  // namespace
@@ -212,7 +209,8 @@ void PeerToJsonStructProto(LoggingSink::Entry::Address peer,
 void EntryToJsonStructProto(LoggingSink::Entry entry,
                             ::google::protobuf::Struct* json_payload) {
   (*json_payload->mutable_fields())["callId"].set_string_value(
-      absl::StrCat(entry.call_id));
+      grpc_core::GenerateUUIDv4(absl::Uint128High64(entry.call_id),
+                                absl::Uint128Low64(entry.call_id)));
   (*json_payload->mutable_fields())["sequenceId"].set_number_value(
       entry.sequence_id);
   (*json_payload->mutable_fields())["type"].set_string_value(
@@ -237,37 +235,216 @@ void EntryToJsonStructProto(LoggingSink::Entry entry,
       std::move(entry.method_name));
 }
 
+namespace {
+
+uint64_t EstimateEntrySize(const LoggingSink::Entry& entry) {
+  uint64_t size = sizeof(entry);
+  for (const auto& pair : entry.payload.metadata) {
+    size += pair.first.size() + pair.second.size();
+  }
+  size += entry.payload.status_message.size();
+  size += entry.payload.status_details.size();
+  size += entry.payload.message.size();
+  size += entry.authority.size();
+  size += entry.service_name.size();
+  size += entry.method_name.size();
+  return size;
+}
+
+}  // namespace
+
 void ObservabilityLoggingSink::LogEntry(Entry entry) {
+  auto entry_size = EstimateEntrySize(entry);
+  grpc_core::MutexLock lock(&mu_);
+  if (sink_closed_) return;
+  entries_.push_back(std::move(entry));
+  entries_memory_footprint_ += entry_size;
+  MaybeTriggerFlushLocked();
+}
+
+void ObservabilityLoggingSink::RegisterEnvironmentResource(
+    const EnvironmentAutoDetect::ResourceType* resource) {
+  grpc_core::MutexLock lock(&mu_);
+  resource_ = resource;
+  MaybeTriggerFlushLocked();
+}
+
+void ObservabilityLoggingSink::FlushAndClose() {
+  grpc_core::MutexLock lock(&mu_);
+  sink_closed_ = true;
+  if (entries_.empty()) return;
+  MaybeTriggerFlushLocked();
+  sink_flushed_after_close_.Wait(&mu_);
+}
+
+void ObservabilityLoggingSink::Flush() {
+  std::vector<Entry> entries;
+  google::logging::v2::LoggingServiceV2::StubInterface* stub = nullptr;
+  const EnvironmentAutoDetect::ResourceType* resource = nullptr;
+  {
+    grpc_core::MutexLock lock(&mu_);
+    if (flush_in_progress_) {
+      return;
+    }
+    flush_in_progress_ = true;
+    flush_timer_in_progress_ = false;
+    flush_triggered_ = false;
+    if (stub_ == nullptr) {
+      std::string endpoint;
+      absl::optional<std::string> endpoint_env =
+          grpc_core::GetEnv("GOOGLE_CLOUD_CPP_LOGGING_SERVICE_V2_ENDPOINT");
+      if (endpoint_env.has_value() && !endpoint_env->empty()) {
+        endpoint = std::move(*endpoint_env);
+      } else {
+        endpoint = "logging.googleapis.com";
+      }
+      ChannelArguments args;
+      // Disable observability for RPCs on this channel
+      args.SetInt(GRPC_ARG_ENABLE_OBSERVABILITY, 0);
+      // Set keepalive time to 24 hrs to effectively disable keepalive ping, but
+      // still enable KEEPALIVE_TIMEOUT to get the TCP_USER_TIMEOUT effect.
+      args.SetInt(GRPC_ARG_KEEPALIVE_TIME_MS,
+                  24 * 60 * 60 * 1000 /* 24 hours */);
+      args.SetInt(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, 20 * 1000 /* 20 seconds */);
+      stub_ = google::logging::v2::LoggingServiceV2::NewStub(
+          CreateCustomChannel(endpoint, GoogleDefaultCredentials(), args));
+    }
+    stub = stub_.get();
+    entries = std::move(entries_);
+    entries_memory_footprint_ = 0;
+    resource = resource_;
+  }
+  FlushEntriesHelper(stub, std::move(entries), resource);
+}
+
+void ObservabilityLoggingSink::FlushEntriesHelper(
+    google::logging::v2::LoggingServiceV2::StubInterface* stub,
+    std::vector<Entry> entries,
+    const EnvironmentAutoDetect::ResourceType* resource) {
+  if (entries.empty()) {
+    return;
+  }
   struct CallContext {
     ClientContext context;
     google::logging::v2::WriteLogEntriesRequest request;
     google::logging::v2::WriteLogEntriesResponse response;
   };
-  // TODO(yashykt): Implement batching so that we can batch a bunch of log
-  // entries into a single entry. Also, set a reasonable deadline on the
-  // context, and actually use the entry.
   CallContext* call = new CallContext;
   call->context.set_authority(authority_);
+  call->context.set_deadline(
+      (grpc_core::Timestamp::Now() + grpc_core::Duration::Seconds(30))
+          .as_timespec(GPR_CLOCK_MONOTONIC));
   call->request.set_log_name(
-      absl::StrFormat("projects/{%s}/logs/"
+      absl::StrFormat("projects/%s/logs/"
                       "microservices.googleapis.com%%2Fobservability%%2fgrpc",
                       project_id_));
-  auto* proto_entry = call->request.add_entries();
-  // Fill the current timestamp
-  gpr_timespec timespec =
-      grpc_core::Timestamp::Now().as_timespec(GPR_CLOCK_REALTIME);
-  proto_entry->mutable_timestamp()->set_seconds(timespec.tv_sec);
-  proto_entry->mutable_timestamp()->set_nanos(timespec.tv_nsec);
-  // TODO(yashykt): Check if we need to fill receive timestamp
-  EntryToJsonStructProto(std::move(entry), proto_entry->mutable_json_payload());
-  stub_->async()->WriteLogEntries(&(call->context), &(call->request),
-                                  &(call->response), [call](Status status) {
-                                    if (!status.ok()) {
-                                      // TODO(yashykt): Log the contents of the
-                                      // request on a failure.
-                                    }
-                                    delete call;
-                                  });
+  (*call->request.mutable_labels()).insert(labels_.begin(), labels_.end());
+  // Set the proper resource type and labels.
+  call->request.mutable_resource()->set_type(resource->resource_type);
+  call->request.mutable_resource()->mutable_labels()->insert(
+      resource->labels.begin(), resource->labels.end());
+  for (auto& entry : entries) {
+    auto* proto_entry = call->request.add_entries();
+    gpr_timespec timespec = entry.timestamp.as_timespec(GPR_CLOCK_REALTIME);
+    proto_entry->mutable_timestamp()->set_seconds(timespec.tv_sec);
+    proto_entry->mutable_timestamp()->set_nanos(timespec.tv_nsec);
+    // Add tracing details
+    proto_entry->set_span_id(entry.span_id);
+    proto_entry->set_trace(
+        absl::StrFormat("projects/%s/traces/%s", project_id_, entry.trace_id));
+    proto_entry->set_trace_sampled(entry.is_sampled);
+    // TODO(yashykt): Check if we need to fill receive timestamp
+    EntryToJsonStructProto(std::move(entry),
+                           proto_entry->mutable_json_payload());
+  }
+  stub->async()->WriteLogEntries(
+      &(call->context), &(call->request), &(call->response),
+      [this, call](Status status) {
+        if (!status.ok()) {
+          gpr_log(
+              GPR_ERROR,
+              "GCP Observability Logging Error %d: %s. Dumping log entries.",
+              status.error_code(), status.error_message().c_str());
+          for (auto& entry : call->request.entries()) {
+            std::string output;
+            ::google::protobuf::TextFormat::PrintToString(entry.json_payload(),
+                                                          &output);
+            gpr_log(
+                GPR_INFO, "Log Entry recorded at time: %s : %s",
+                grpc_core::Timestamp::FromTimespecRoundUp(
+                    gpr_timespec{entry.timestamp().seconds(),
+                                 entry.timestamp().nanos(), GPR_CLOCK_REALTIME})
+                    .ToString()
+                    .c_str(),
+                output.c_str());
+          }
+        }
+        delete call;
+        grpc_core::MutexLock lock(&mu_);
+        flush_in_progress_ = false;
+        if (sink_closed_ && entries_.empty()) {
+          sink_flushed_after_close_.SignalAll();
+        } else {
+          MaybeTriggerFlushLocked();
+        }
+      });
+}
+
+void ObservabilityLoggingSink::MaybeTriggerFlush() {
+  grpc_core::MutexLock lock(&mu_);
+  return MaybeTriggerFlushLocked();
+}
+
+void ObservabilityLoggingSink::MaybeTriggerFlushLocked() {
+  constexpr int kMaxEntriesBeforeDump = 100000;
+  constexpr int kMaxMemoryFootprintBeforeDump = 10 * 1024 * 1024;
+  constexpr int kMinEntriesBeforeFlush = 1000;
+  constexpr int kMinMemoryFootprintBeforeFlush = 1 * 1024 * 1024;
+  // Use this opportunity to fetch environment resource if not fetched already
+  if (resource_ == nullptr && !registered_env_fetch_notification_) {
+    auto& env_autodetect = EnvironmentAutoDetect::Get();
+    resource_ = env_autodetect.resource();
+    event_engine_ = grpc_event_engine::experimental::GetDefaultEventEngine();
+    if (resource_ == nullptr) {
+      registered_env_fetch_notification_ = true;
+      env_autodetect.NotifyOnDone([this]() {
+        RegisterEnvironmentResource(EnvironmentAutoDetect::Get().resource());
+      });
+    }
+  }
+  if (entries_.empty()) return;
+  if (entries_.size() > kMaxEntriesBeforeDump ||
+      entries_memory_footprint_ > kMaxMemoryFootprintBeforeDump) {
+    // Buffer limits have been reached. Dump entries with gpr_log
+    gpr_log(GPR_INFO, "Buffer limit reached. Dumping log entries.");
+    for (auto& entry : entries_) {
+      google::protobuf::Struct proto;
+      std::string timestamp = entry.timestamp.ToString();
+      EntryToJsonStructProto(std::move(entry), &proto);
+      std::string output;
+      ::google::protobuf::TextFormat::PrintToString(proto, &output);
+      gpr_log(GPR_INFO, "Log Entry recorded at time: %s : %s",
+              timestamp.c_str(), output.c_str());
+    }
+    entries_.clear();
+    entries_memory_footprint_ = 0;
+  } else if (resource_ != nullptr && !flush_in_progress_) {
+    // Environment resource has been detected. Trigger flush if conditions
+    // suffice.
+    if ((entries_.size() >= kMinEntriesBeforeFlush ||
+         entries_memory_footprint_ >= kMinMemoryFootprintBeforeFlush ||
+         sink_closed_) &&
+        !flush_triggered_) {
+      // It is fine even if there were a flush with a timer in progress. What is
+      // important is that a flush is triggered.
+      flush_triggered_ = true;
+      event_engine_->Run([this]() { Flush(); });
+    } else if (!flush_timer_in_progress_) {
+      flush_timer_in_progress_ = true;
+      event_engine_->RunAfter(grpc_core::Duration::Seconds(1),
+                              [this]() { Flush(); });
+    }
+  }
 }
 
 ObservabilityLoggingSink::Configuration::Configuration(

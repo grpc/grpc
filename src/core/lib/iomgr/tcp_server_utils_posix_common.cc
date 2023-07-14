@@ -1,22 +1,24 @@
-/*
- *
- * Copyright 2017 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2017 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
+
+#include <grpc/support/atm.h>
 
 #include "src/core/lib/iomgr/port.h"
 
@@ -37,23 +39,25 @@
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/tcp_server_utils_posix.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
+#include "src/core/lib/iomgr/vsock.h"
 
 #define MIN_SAFE_ACCEPT_QUEUE_SIZE 100
 
 static gpr_once s_init_max_accept_queue_size = GPR_ONCE_INIT;
 static int s_max_accept_queue_size;
 
-/* get max listen queue size on linux */
+// get max listen queue size on linux
 static void init_max_accept_queue_size(void) {
   int n = SOMAXCONN;
   char buf[64];
   FILE* fp = fopen("/proc/sys/net/core/somaxconn", "r");
   if (fp == nullptr) {
-    /* 2.4 kernel. */
+    // 2.4 kernel.
     s_max_accept_queue_size = SOMAXCONN;
     return;
   }
@@ -78,6 +82,24 @@ static void init_max_accept_queue_size(void) {
 static int get_max_accept_queue_size(void) {
   gpr_once_init(&s_init_max_accept_queue_size, init_max_accept_queue_size);
   return s_max_accept_queue_size;
+}
+
+static void listener_retry_timer_cb(void* arg, grpc_error_handle err) {
+  // Do nothing if cancelled.
+  if (!err.ok()) return;
+  grpc_tcp_listener* listener = static_cast<grpc_tcp_listener*>(arg);
+  gpr_atm_no_barrier_store(&listener->retry_timer_armed, false);
+  if (!grpc_fd_is_shutdown(listener->emfd)) {
+    grpc_fd_set_readable(listener->emfd);
+  }
+}
+
+void grpc_tcp_server_listener_initialize_retry_timer(
+    grpc_tcp_listener* listener) {
+  gpr_atm_no_barrier_store(&listener->retry_timer_armed, false);
+  grpc_timer_init_unset(&listener->retry_timer);
+  GRPC_CLOSURE_INIT(&listener->retry_closure, listener_retry_timer_cb, listener,
+                    grpc_schedule_on_exec_ctx);
 }
 
 static grpc_error_handle add_socket_to_server(grpc_tcp_server* s, int fd,
@@ -111,6 +133,13 @@ static grpc_error_handle add_socket_to_server(grpc_tcp_server* s, int fd,
   sp->server = s;
   sp->fd = fd;
   sp->emfd = grpc_fd_create(fd, name.c_str(), true);
+  grpc_tcp_server_listener_initialize_retry_timer(sp);
+
+  // Check and set fd as prellocated
+  if (grpc_tcp_server_pre_allocated_fd(s) == fd) {
+    grpc_fd_set_pre_allocated(sp->emfd);
+  }
+
   memcpy(&sp->addr, addr, sizeof(grpc_resolved_address));
   sp->port = port;
   sp->port_index = port_index;
@@ -124,16 +153,44 @@ static grpc_error_handle add_socket_to_server(grpc_tcp_server* s, int fd,
   return err;
 }
 
-/* If successful, add a listener to s for addr, set *dsmode for the socket, and
-   return the *listener. */
+// If successful, add a listener to s for addr, set *dsmode for the socket, and
+// return the *listener.
 grpc_error_handle grpc_tcp_server_add_addr(grpc_tcp_server* s,
                                            const grpc_resolved_address* addr,
                                            unsigned port_index,
                                            unsigned fd_index,
                                            grpc_dualstack_mode* dsmode,
                                            grpc_tcp_listener** listener) {
-  grpc_resolved_address addr4_copy;
   int fd;
+  fd = grpc_tcp_server_pre_allocated_fd(s);
+
+  // Check if FD has been pre-allocated
+  if (fd > 0) {
+    int family = grpc_sockaddr_get_family(addr);
+    // Set dsmode value
+    if (family == AF_INET6) {
+      const int off = 0;
+      if (setsockopt(fd, 0, IPV6_V6ONLY, &off, sizeof(off)) == 0) {
+        *dsmode = GRPC_DSMODE_DUALSTACK;
+      } else if (!grpc_sockaddr_is_v4mapped(addr, nullptr)) {
+        *dsmode = GRPC_DSMODE_IPV6;
+      } else {
+        *dsmode = GRPC_DSMODE_IPV4;
+      }
+    } else {
+      *dsmode = family == AF_INET ? GRPC_DSMODE_IPV4 : GRPC_DSMODE_NONE;
+    }
+
+    grpc_resolved_address addr4_copy;
+    if (*dsmode == GRPC_DSMODE_IPV4 &&
+        grpc_sockaddr_is_v4mapped(addr, &addr4_copy)) {
+      addr = &addr4_copy;
+    }
+
+    return add_socket_to_server(s, fd, addr, port_index, fd_index, listener);
+  }
+
+  grpc_resolved_address addr4_copy;
   grpc_error_handle err =
       grpc_create_dualstack_socket(addr, SOCK_STREAM, 0, dsmode, &fd);
   if (!err.ok()) {
@@ -146,7 +203,7 @@ grpc_error_handle grpc_tcp_server_add_addr(grpc_tcp_server* s,
   return add_socket_to_server(s, fd, addr, port_index, fd_index, listener);
 }
 
-/* Prepare a recently-created socket for listening. */
+// Prepare a recently-created socket for listening.
 grpc_error_handle grpc_tcp_server_prepare_socket(
     grpc_tcp_server* s, int fd, const grpc_resolved_address* addr,
     bool so_reuseport, int* port) {
@@ -155,7 +212,7 @@ grpc_error_handle grpc_tcp_server_prepare_socket(
 
   GPR_ASSERT(fd >= 0);
 
-  if (so_reuseport && !grpc_is_unix_socket(addr)) {
+  if (so_reuseport && !grpc_is_unix_socket(addr) && !grpc_is_vsock(addr)) {
     err = grpc_set_socket_reuse_port(fd, 1);
     if (!err.ok()) goto error;
   }
@@ -163,7 +220,7 @@ grpc_error_handle grpc_tcp_server_prepare_socket(
 #ifdef GRPC_LINUX_ERRQUEUE
   err = grpc_set_socket_zerocopy(fd);
   if (!err.ok()) {
-    /* it's not fatal, so just log it. */
+    // it's not fatal, so just log it.
     gpr_log(GPR_DEBUG, "Node does not support SO_ZEROCOPY, continuing.");
   }
 #endif
@@ -171,10 +228,12 @@ grpc_error_handle grpc_tcp_server_prepare_socket(
   if (!err.ok()) goto error;
   err = grpc_set_socket_cloexec(fd, 1);
   if (!err.ok()) goto error;
-  if (!grpc_is_unix_socket(addr)) {
+  if (!grpc_is_unix_socket(addr) && !grpc_is_vsock(addr)) {
     err = grpc_set_socket_low_latency(fd, 1);
     if (!err.ok()) goto error;
     err = grpc_set_socket_reuse_addr(fd, 1);
+    if (!err.ok()) goto error;
+    err = grpc_set_socket_dscp(fd, s->options.dscp);
     if (!err.ok()) goto error;
     err =
         grpc_set_socket_tcp_user_timeout(fd, s->options, false /* is_client */);
@@ -187,15 +246,19 @@ grpc_error_handle grpc_tcp_server_prepare_socket(
                                           s->options);
   if (!err.ok()) goto error;
 
-  if (bind(fd, reinterpret_cast<grpc_sockaddr*>(const_cast<char*>(addr->addr)),
-           addr->len) < 0) {
-    err = GRPC_OS_ERROR(errno, "bind");
-    goto error;
-  }
+  // Only bind/listen if fd has not been already preallocated
+  if (grpc_tcp_server_pre_allocated_fd(s) != fd) {
+    if (bind(fd,
+             reinterpret_cast<grpc_sockaddr*>(const_cast<char*>(addr->addr)),
+             addr->len) < 0) {
+      err = GRPC_OS_ERROR(errno, "bind");
+      goto error;
+    }
 
-  if (listen(fd, get_max_accept_queue_size()) < 0) {
-    err = GRPC_OS_ERROR(errno, "listen");
-    goto error;
+    if (listen(fd, get_max_accept_queue_size()) < 0) {
+      err = GRPC_OS_ERROR(errno, "listen");
+      goto error;
+    }
   }
 
   sockname_temp.len = static_cast<socklen_t>(sizeof(struct sockaddr_storage));
@@ -220,4 +283,4 @@ error:
   return ret;
 }
 
-#endif /* GRPC_POSIX_SOCKET_TCP_SERVER_UTILS_COMMON */
+#endif  // GRPC_POSIX_SOCKET_TCP_SERVER_UTILS_COMMON

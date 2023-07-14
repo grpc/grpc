@@ -34,7 +34,7 @@ from src.proto.grpc.testing import test_pb2_grpc
 
 logger = logging.getLogger()
 console_handler = logging.StreamHandler()
-formatter = logging.Formatter(fmt='%(asctime)s: %(levelname)-8s %(message)s')
+formatter = logging.Formatter(fmt="%(asctime)s: %(levelname)-8s %(message)s")
 console_handler.setFormatter(formatter)
 logger.addHandler(console_handler)
 
@@ -76,7 +76,8 @@ class _StatsWatcher:
         self._rpcs_needed = end - start
         self._rpcs_by_peer = collections.defaultdict(int)
         self._rpcs_by_method = collections.defaultdict(
-            lambda: collections.defaultdict(int))
+            lambda: collections.defaultdict(int)
+        )
         self._condition = threading.Condition()
         self._no_remote_peer = 0
 
@@ -93,11 +94,13 @@ class _StatsWatcher:
                 self._condition.notify()
 
     def await_rpc_stats_response(
-            self, timeout_sec: int) -> messages_pb2.LoadBalancerStatsResponse:
+        self, timeout_sec: int
+    ) -> messages_pb2.LoadBalancerStatsResponse:
         """Blocks until a full response has been collected."""
         with self._condition:
-            self._condition.wait_for(lambda: not self._rpcs_needed,
-                                     timeout=float(timeout_sec))
+            self._condition.wait_for(
+                lambda: not self._rpcs_needed, timeout=float(timeout_sec)
+            )
             response = messages_pb2.LoadBalancerStatsResponse()
             for peer, count in self._rpcs_by_peer.items():
                 response.rpcs_by_peer[peer] = count
@@ -119,7 +122,8 @@ _global_rpcs_failed: Mapping[str, int] = collections.defaultdict(int)
 
 # Mapping[method, Mapping[status_code, count]]
 _global_rpc_statuses: Mapping[str, Mapping[int, int]] = collections.defaultdict(
-    lambda: collections.defaultdict(int))
+    lambda: collections.defaultdict(int)
+)
 
 
 def _handle_sigint(sig, frame) -> None:
@@ -128,15 +132,16 @@ def _handle_sigint(sig, frame) -> None:
     _global_server.stop(None)
 
 
-class _LoadBalancerStatsServicer(test_pb2_grpc.LoadBalancerStatsServiceServicer
-                                ):
-
+class _LoadBalancerStatsServicer(
+    test_pb2_grpc.LoadBalancerStatsServiceServicer
+):
     def __init__(self):
         super(_LoadBalancerStatsServicer).__init__()
 
     def GetClientStats(
-        self, request: messages_pb2.LoadBalancerStatsRequest,
-        context: grpc.ServicerContext
+        self,
+        request: messages_pb2.LoadBalancerStatsRequest,
+        context: grpc.ServicerContext,
     ) -> messages_pb2.LoadBalancerStatsResponse:
         logger.info("Received stats request.")
         start = None
@@ -154,8 +159,9 @@ class _LoadBalancerStatsServicer(test_pb2_grpc.LoadBalancerStatsServiceServicer
         return response
 
     def GetClientAccumulatedStats(
-        self, request: messages_pb2.LoadBalancerAccumulatedStatsRequest,
-        context: grpc.ServicerContext
+        self,
+        request: messages_pb2.LoadBalancerAccumulatedStatsRequest,
+        context: grpc.ServicerContext,
     ) -> messages_pb2.LoadBalancerAccumulatedStatsResponse:
         logger.info("Received cumulative stats request.")
         response = messages_pb2.LoadBalancerAccumulatedStatsResponse()
@@ -163,39 +169,48 @@ class _LoadBalancerStatsServicer(test_pb2_grpc.LoadBalancerStatsServiceServicer
             for method in _SUPPORTED_METHODS:
                 caps_method = _METHOD_CAMEL_TO_CAPS_SNAKE[method]
                 response.num_rpcs_started_by_method[
-                    caps_method] = _global_rpcs_started[method]
+                    caps_method
+                ] = _global_rpcs_started[method]
                 response.num_rpcs_succeeded_by_method[
-                    caps_method] = _global_rpcs_succeeded[method]
+                    caps_method
+                ] = _global_rpcs_succeeded[method]
                 response.num_rpcs_failed_by_method[
-                    caps_method] = _global_rpcs_failed[method]
+                    caps_method
+                ] = _global_rpcs_failed[method]
                 response.stats_per_method[
-                    caps_method].rpcs_started = _global_rpcs_started[method]
+                    caps_method
+                ].rpcs_started = _global_rpcs_started[method]
                 for code, count in _global_rpc_statuses[method].items():
                     response.stats_per_method[caps_method].result[code] = count
         logger.info("Returning cumulative stats response.")
         return response
 
 
-def _start_rpc(method: str, metadata: Sequence[Tuple[str, str]],
-               request_id: int, stub: test_pb2_grpc.TestServiceStub,
-               timeout: float, futures: Mapping[int, Tuple[grpc.Future,
-                                                           str]]) -> None:
+def _start_rpc(
+    method: str,
+    metadata: Sequence[Tuple[str, str]],
+    request_id: int,
+    stub: test_pb2_grpc.TestServiceStub,
+    timeout: float,
+    futures: Mapping[int, Tuple[grpc.Future, str]],
+) -> None:
     logger.debug(f"Sending {method} request to backend: {request_id}")
     if method == "UnaryCall":
-        future = stub.UnaryCall.future(messages_pb2.SimpleRequest(),
-                                       metadata=metadata,
-                                       timeout=timeout)
+        future = stub.UnaryCall.future(
+            messages_pb2.SimpleRequest(), metadata=metadata, timeout=timeout
+        )
     elif method == "EmptyCall":
-        future = stub.EmptyCall.future(empty_pb2.Empty(),
-                                       metadata=metadata,
-                                       timeout=timeout)
+        future = stub.EmptyCall.future(
+            empty_pb2.Empty(), metadata=metadata, timeout=timeout
+        )
     else:
         raise ValueError(f"Unrecognized method '{method}'.")
     futures[request_id] = (future, method)
 
 
-def _on_rpc_done(rpc_id: int, future: grpc.Future, method: str,
-                 print_response: bool) -> None:
+def _on_rpc_done(
+    rpc_id: int, future: grpc.Future, method: str, print_response: bool
+) -> None:
     exception = future.exception()
     hostname = ""
     with _global_lock:
@@ -232,8 +247,9 @@ def _on_rpc_done(rpc_id: int, future: grpc.Future, method: str,
             watcher.on_rpc_complete(rpc_id, hostname, method)
 
 
-def _remove_completed_rpcs(futures: Mapping[int, grpc.Future],
-                           print_response: bool) -> None:
+def _remove_completed_rpcs(
+    futures: Mapping[int, grpc.Future], print_response: bool
+) -> None:
     logger.debug("Removing completed RPCs")
     done = []
     for future_id, (future, method) in futures.items():
@@ -258,9 +274,16 @@ class _ChannelConfiguration:
     When accessing any of its members, the lock member should be held.
     """
 
-    def __init__(self, method: str, metadata: Sequence[Tuple[str, str]],
-                 qps: int, server: str, rpc_timeout_sec: int,
-                 print_response: bool, secure_mode: bool):
+    def __init__(
+        self,
+        method: str,
+        metadata: Sequence[Tuple[str, str]],
+        qps: int,
+        server: str,
+        rpc_timeout_sec: int,
+        print_response: bool,
+        secure_mode: bool,
+    ):
         # condition is signalled when a change is made to the config.
         self.condition = threading.Condition()
 
@@ -291,7 +314,8 @@ def _run_single_channel(config: _ChannelConfiguration) -> None:
             with config.condition:
                 if config.qps == 0:
                     config.condition.wait(
-                        timeout=_CONFIG_CHANGE_TIMEOUT.total_seconds())
+                        timeout=_CONFIG_CHANGE_TIMEOUT.total_seconds()
+                    )
                     continue
                 else:
                     duration_per_query = 1.0 / float(config.qps)
@@ -302,8 +326,14 @@ def _run_single_channel(config: _ChannelConfiguration) -> None:
                     _global_rpcs_started[config.method] += 1
                 start = time.time()
                 end = start + duration_per_query
-                _start_rpc(config.method, config.metadata, request_id, stub,
-                           float(config.rpc_timeout_sec), futures)
+                _start_rpc(
+                    config.method,
+                    config.metadata,
+                    request_id,
+                    stub,
+                    float(config.rpc_timeout_sec),
+                    futures,
+                )
                 print_response = config.print_response
             _remove_completed_rpcs(futures, config.print_response)
             logger.debug(f"Currently {len(futures)} in-flight RPCs")
@@ -315,17 +345,19 @@ def _run_single_channel(config: _ChannelConfiguration) -> None:
 
 
 class _XdsUpdateClientConfigureServicer(
-        test_pb2_grpc.XdsUpdateClientConfigureServiceServicer):
-
-    def __init__(self, per_method_configs: Mapping[str, _ChannelConfiguration],
-                 qps: int):
+    test_pb2_grpc.XdsUpdateClientConfigureServiceServicer
+):
+    def __init__(
+        self, per_method_configs: Mapping[str, _ChannelConfiguration], qps: int
+    ):
         super(_XdsUpdateClientConfigureServicer).__init__()
         self._per_method_configs = per_method_configs
         self._qps = qps
 
     def Configure(
-            self, request: messages_pb2.ClientConfigureRequest,
-            context: grpc.ServicerContext
+        self,
+        request: messages_pb2.ClientConfigureRequest,
+        context: grpc.ServicerContext,
     ) -> messages_pb2.ClientConfigureResponse:
         logger.info("Received Configure RPC: %s", request)
         method_strs = [_METHOD_ENUM_TO_STR[t] for t in request.types]
@@ -334,9 +366,11 @@ class _XdsUpdateClientConfigureServicer(
             channel_config = self._per_method_configs[method]
             if method in method_strs:
                 qps = self._qps
-                metadata = ((md.key, md.value)
-                            for md in request.metadata
-                            if md.type == method_enum)
+                metadata = (
+                    (md.key, md.value)
+                    for md in request.metadata
+                    if md.type == method_enum
+                )
                 # For backward compatibility, do not change timeout when we
                 # receive a default value timeout.
                 if request.timeout_sec == 0:
@@ -361,13 +395,15 @@ class _MethodHandle:
 
     _channel_threads: List[threading.Thread]
 
-    def __init__(self, num_channels: int,
-                 channel_config: _ChannelConfiguration):
+    def __init__(
+        self, num_channels: int, channel_config: _ChannelConfiguration
+    ):
         """Creates and starts a group of threads running the indicated method."""
         self._channel_threads = []
         for i in range(num_channels):
-            thread = threading.Thread(target=_run_single_channel,
-                                      args=(channel_config,))
+            thread = threading.Thread(
+                target=_run_single_channel, args=(channel_config,)
+            )
             thread.start()
             self._channel_threads.append(thread)
 
@@ -377,8 +413,11 @@ class _MethodHandle:
             channel_thread.join()
 
 
-def _run(args: argparse.Namespace, methods: Sequence[str],
-         per_method_metadata: PerMethodMetadataType) -> None:
+def _run(
+    args: argparse.Namespace,
+    methods: Sequence[str],
+    per_method_metadata: PerMethodMetadataType,
+) -> None:
     logger.info("Starting python xDS Interop Client.")
     global _global_server  # pylint: disable=global-statement
     method_handles = []
@@ -389,17 +428,25 @@ def _run(args: argparse.Namespace, methods: Sequence[str],
         else:
             qps = 0
         channel_config = _ChannelConfiguration(
-            method, per_method_metadata.get(method, []), qps, args.server,
-            args.rpc_timeout_sec, args.print_response, args.secure_mode)
+            method,
+            per_method_metadata.get(method, []),
+            qps,
+            args.server,
+            args.rpc_timeout_sec,
+            args.print_response,
+            args.secure_mode,
+        )
         channel_configs[method] = channel_config
         method_handles.append(_MethodHandle(args.num_channels, channel_config))
     _global_server = grpc.server(futures.ThreadPoolExecutor())
     _global_server.add_insecure_port(f"0.0.0.0:{args.stats_port}")
     test_pb2_grpc.add_LoadBalancerStatsServiceServicer_to_server(
-        _LoadBalancerStatsServicer(), _global_server)
+        _LoadBalancerStatsServicer(), _global_server
+    )
     test_pb2_grpc.add_XdsUpdateClientConfigureServiceServicer_to_server(
         _XdsUpdateClientConfigureServicer(channel_configs, args.qps),
-        _global_server)
+        _global_server,
+    )
     channelz.add_channelz_servicer(_global_server)
     grpc_admin.add_admin_servicers(_global_server)
     _global_server.start()
@@ -415,7 +462,8 @@ def parse_metadata_arg(metadata_arg: str) -> PerMethodMetadataType:
         elems = metadatum.split(":")
         if len(elems) != 3:
             raise ValueError(
-                f"'{metadatum}' was not in the form 'METHOD:KEY:VALUE'")
+                f"'{metadatum}' was not in the form 'METHOD:KEY:VALUE'"
+            )
         if elems[0] not in _SUPPORTED_METHODS:
             raise ValueError(f"Unrecognized method '{elems[0]}'")
         per_method_metadata[elems[0]].append((elems[1], elems[2]))
@@ -425,8 +473,9 @@ def parse_metadata_arg(metadata_arg: str) -> PerMethodMetadataType:
 def parse_rpc_arg(rpc_arg: str) -> Sequence[str]:
     methods = rpc_arg.split(",")
     if set(methods) - set(_SUPPORTED_METHODS):
-        raise ValueError("--rpc supported methods: {}".format(
-            ", ".join(_SUPPORTED_METHODS)))
+        raise ValueError(
+            "--rpc supported methods: {}".format(", ".join(_SUPPORTED_METHODS))
+        )
     return methods
 
 
@@ -441,61 +490,72 @@ def bool_arg(arg: str) -> bool:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description='Run Python XDS interop client.')
+        description="Run Python XDS interop client."
+    )
     parser.add_argument(
         "--num_channels",
         default=1,
         type=int,
-        help="The number of channels from which to send requests.")
-    parser.add_argument("--print_response",
-                        default="False",
-                        type=bool_arg,
-                        help="Write RPC response to STDOUT.")
+        help="The number of channels from which to send requests.",
+    )
+    parser.add_argument(
+        "--print_response",
+        default="False",
+        type=bool_arg,
+        help="Write RPC response to STDOUT.",
+    )
     parser.add_argument(
         "--qps",
         default=1,
         type=int,
-        help="The number of queries to send from each channel per second.")
-    parser.add_argument("--rpc_timeout_sec",
-                        default=30,
-                        type=int,
-                        help="The per-RPC timeout in seconds.")
-    parser.add_argument("--server",
-                        default="localhost:50051",
-                        help="The address of the server.")
+        help="The number of queries to send from each channel per second.",
+    )
+    parser.add_argument(
+        "--rpc_timeout_sec",
+        default=30,
+        type=int,
+        help="The per-RPC timeout in seconds.",
+    )
+    parser.add_argument(
+        "--server", default="localhost:50051", help="The address of the server."
+    )
     parser.add_argument(
         "--stats_port",
         default=50052,
         type=int,
-        help="The port on which to expose the peer distribution stats service.")
+        help="The port on which to expose the peer distribution stats service.",
+    )
     parser.add_argument(
         "--secure_mode",
         default="False",
         type=bool_arg,
-        help="If specified, uses xDS credentials to connect to the server.")
-    parser.add_argument('--verbose',
-                        help='verbose log output',
-                        default=False,
-                        action='store_true')
-    parser.add_argument("--log_file",
-                        default=None,
-                        type=str,
-                        help="A file to log to.")
+        help="If specified, uses xDS credentials to connect to the server.",
+    )
+    parser.add_argument(
+        "--verbose",
+        help="verbose log output",
+        default=False,
+        action="store_true",
+    )
+    parser.add_argument(
+        "--log_file", default=None, type=str, help="A file to log to."
+    )
     rpc_help = "A comma-delimited list of RPC methods to run. Must be one of "
     rpc_help += ", ".join(_SUPPORTED_METHODS)
     rpc_help += "."
     parser.add_argument("--rpc", default="UnaryCall", type=str, help=rpc_help)
     metadata_help = (
-        "A comma-delimited list of 3-tuples of the form " +
-        "METHOD:KEY:VALUE, e.g. " +
-        "EmptyCall:key1:value1,UnaryCall:key2:value2,EmptyCall:k3:v3")
+        "A comma-delimited list of 3-tuples of the form "
+        + "METHOD:KEY:VALUE, e.g. "
+        + "EmptyCall:key1:value1,UnaryCall:key2:value2,EmptyCall:k3:v3"
+    )
     parser.add_argument("--metadata", default="", type=str, help=metadata_help)
     args = parser.parse_args()
     signal.signal(signal.SIGINT, _handle_sigint)
     if args.verbose:
         logger.setLevel(logging.DEBUG)
     if args.log_file:
-        file_handler = logging.FileHandler(args.log_file, mode='a')
+        file_handler = logging.FileHandler(args.log_file, mode="a")
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)
     _run(args, parse_rpc_arg(args.rpc), parse_metadata_arg(args.metadata))

@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_XDS_XDS_ENDPOINT_H
-#define GRPC_CORE_EXT_XDS_XDS_ENDPOINT_H
+#ifndef GRPC_SRC_CORE_EXT_XDS_XDS_ENDPOINT_H
+#define GRPC_SRC_CORE_EXT_XDS_XDS_ENDPOINT_H
 
 #include <grpc/support/port_platform.h>
 
@@ -28,9 +28,11 @@
 #include <utility>
 #include <vector>
 
+#include "absl/base/thread_annotations.h"
+#include "absl/random/random.h"
 #include "absl/strings/string_view.h"
 #include "envoy/config/endpoint/v3/endpoint.upbdefs.h"
-#include "upb/def.h"
+#include "upb/reflection/def.h"
 
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_client_stats.h"
@@ -38,6 +40,7 @@
 #include "src/core/ext/xds/xds_resource_type_impl.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/resolver/server_address.h"
 
 namespace grpc_core {
@@ -90,7 +93,7 @@ struct XdsEndpointResource : public XdsResourceType::ResourceData {
 
     // The only method invoked from outside the WorkSerializer (used in
     // the data plane).
-    bool ShouldDrop(const std::string** category_name) const;
+    bool ShouldDrop(const std::string** category_name);
 
     const DropCategoryList& drop_category_list() const {
       return drop_category_list_;
@@ -108,6 +111,11 @@ struct XdsEndpointResource : public XdsResourceType::ResourceData {
    private:
     DropCategoryList drop_category_list_;
     bool drop_all_ = false;
+
+    // TODO(roth): Consider using a separate thread-local BitGen for each CPU
+    // to avoid the need for this mutex.
+    Mutex mu_;
+    absl::BitGen bit_gen_ ABSL_GUARDED_BY(&mu_);
   };
 
   PriorityList priorities;
@@ -136,4 +144,4 @@ class XdsEndpointResourceType
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_XDS_XDS_ENDPOINT_H
+#endif  // GRPC_SRC_CORE_EXT_XDS_XDS_ENDPOINT_H

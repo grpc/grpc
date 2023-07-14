@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2017 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2017 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <string.h>
 #include <sys/types.h>
@@ -33,10 +33,11 @@
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
-#include "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/executor.h"
@@ -188,17 +189,17 @@ void VerifyLbAddrOutputs(const grpc_core::ServerAddressList& addresses,
   }
 }
 
-/* We need to run each test case inside of its own
- * isolated grpc_init/grpc_shutdown pair, so that
- * the "address sorting source addr factory" can be
- * restored to its default for each test case. */
+// We need to run each test case inside of its own
+// isolated grpc_init/grpc_shutdown pair, so that
+// the "address sorting source addr factory" can be
+// restored to its default for each test case.
 class AddressSortingTest : public ::testing::Test {
  protected:
   void SetUp() override { grpc_init(); }
   void TearDown() override { grpc_shutdown(); }
 };
 
-/* Tests for rule 1 */
+// Tests for rule 1
 TEST_F(AddressSortingTest, TestDepriotizesUnreachableAddresses) {
   bool ipv4_supported = true;
   bool ipv6_supported = true;
@@ -257,7 +258,7 @@ TEST_F(AddressSortingTest, TestDepriotizesUnsupportedDomainIpv4) {
                                 });
 }
 
-/* Tests for rule 2 */
+// Tests for rule 2
 
 TEST_F(AddressSortingTest, TestDepriotizesNonMatchingScope) {
   bool ipv4_supported = true;
@@ -281,7 +282,7 @@ TEST_F(AddressSortingTest, TestDepriotizesNonMatchingScope) {
                                 });
 }
 
-/* Tests for rule 5 */
+// Tests for rule 5
 
 TEST_F(AddressSortingTest, TestUsesLabelFromDefaultTable) {
   bool ipv4_supported = true;
@@ -304,8 +305,8 @@ TEST_F(AddressSortingTest, TestUsesLabelFromDefaultTable) {
                                 });
 }
 
-/* Flip the input on the test above to reorder the sort function's
- * comparator's inputs. */
+// Flip the input on the test above to reorder the sort function's
+// comparator's inputs.
 TEST_F(AddressSortingTest, TestUsesLabelFromDefaultTableInputFlipped) {
   bool ipv4_supported = true;
   bool ipv6_supported = true;
@@ -327,7 +328,7 @@ TEST_F(AddressSortingTest, TestUsesLabelFromDefaultTableInputFlipped) {
                                 });
 }
 
-/* Tests for rule 6 */
+// Tests for rule 6
 
 TEST_F(AddressSortingTest,
        TestUsesDestinationWithHigherPrecedenceWithAnIpv4Address) {
@@ -510,7 +511,7 @@ TEST_F(
                                 });
 }
 
-/* Tests for rule 8 */
+// Tests for rule 8
 
 TEST_F(AddressSortingTest, TestPrefersSmallerScope) {
   bool ipv4_supported = true;
@@ -535,7 +536,7 @@ TEST_F(AddressSortingTest, TestPrefersSmallerScope) {
                                 });
 }
 
-/* Tests for rule 9 */
+// Tests for rule 9
 
 TEST_F(AddressSortingTest, TestPrefersLongestMatchingSrcDstPrefix) {
   bool ipv4_supported = true;
@@ -643,7 +644,7 @@ TEST_F(AddressSortingTest, TestPrefersLongestPrefixDiffersByLastBit) {
                                 });
 }
 
-/* Tests for rule 10 */
+// Tests for rule 10
 
 TEST_F(AddressSortingTest, TestStableSort) {
   bool ipv4_supported = true;
@@ -768,12 +769,12 @@ TEST_F(AddressSortingTest, TestStableSortV4CompatAndSiteLocalAddresses) {
               .value()));
 }
 
-/* TestPrefersIpv6Loopback tests the actual "address probing" code
- * for the current platform, without any mocks.
- * This test relies on the assumption that the ipv6 loopback address is
- * available in the hosts/containers that grpc C/C++ tests run on
- * (whether ipv4 loopback is available or not, an available ipv6
- * loopback should be preferred). */
+// TestPrefersIpv6Loopback tests the actual "address probing" code
+// for the current platform, without any mocks.
+// This test relies on the assumption that the ipv6 loopback address is
+// available in the hosts/containers that grpc C/C++ tests run on
+// (whether ipv4 loopback is available or not, an available ipv6
+// loopback should be preferred).
 TEST_F(AddressSortingTest, TestPrefersIpv6Loopback) {
   auto lb_addrs = BuildLbAddrInputs({
       {"[::1]:443", AF_INET6},
@@ -786,8 +787,8 @@ TEST_F(AddressSortingTest, TestPrefersIpv6Loopback) {
                                 });
 }
 
-/* Flip the order of the inputs above and expect the same output order
- * (try to rule out influence of arbitrary qsort ordering) */
+// Flip the order of the inputs above and expect the same output order
+// (try to rule out influence of arbitrary qsort ordering)
 TEST_F(AddressSortingTest, TestPrefersIpv6LoopbackInputsFlipped) {
   auto lb_addrs = BuildLbAddrInputs({
       {"127.0.0.1:443", AF_INET},
@@ -800,10 +801,10 @@ TEST_F(AddressSortingTest, TestPrefersIpv6LoopbackInputsFlipped) {
                                 });
 }
 
-/* Try to rule out false positives in the above two tests in which
- * the sorter might think that neither ipv6 or ipv4 loopback is
- * available, but ipv6 loopback is still preferred only due
- * to precedence table lookups. */
+// Try to rule out false positives in the above two tests in which
+// the sorter might think that neither ipv6 or ipv4 loopback is
+// available, but ipv6 loopback is still preferred only due
+// to precedence table lookups.
 TEST_F(AddressSortingTest, TestSorterKnowsIpv6LoopbackIsAvailable) {
   sockaddr_in6 ipv6_loopback;
   memset(&ipv6_loopback, 0, sizeof(ipv6_loopback));
@@ -841,13 +842,9 @@ TEST_F(AddressSortingTest, TestSorterKnowsIpv6LoopbackIsAvailable) {
 }  // namespace
 
 int main(int argc, char** argv) {
-  grpc_core::UniquePtr<char> resolver =
-      GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
-  if (strlen(resolver.get()) == 0) {
-    GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, "ares");
-  } else if (strcmp("ares", resolver.get()) != 0) {
-    gpr_log(GPR_INFO, "GRPC_DNS_RESOLVER != ares: %s.", resolver.get());
-  }
+  grpc_core::ConfigVars::Overrides overrides;
+  overrides.dns_resolver = "ares";
+  grpc_core::ConfigVars::SetOverrides(overrides);
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   auto result = RUN_ALL_TESTS();

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:stretch
+FROM debian:10
 
 #=================
 # Basic C core dependencies
@@ -88,8 +88,12 @@ RUN apt-get update && apt-get install -y cmake && apt-get clean
 RUN mkdir /var/local/jenkins
 
 
-# Java required by Android SDK
-RUN apt-get update && apt-get -y install openjdk-8-jdk && apt-get clean
+# Java required by Android SDK (using Eclipse Temurin Package)
+RUN apt install -y wget apt-transport-https && \
+    mkdir -p /etc/apt/keyrings && \
+    wget -O - https://packages.adoptium.net/artifactory/api/gpg/key/public | tee /etc/apt/keyrings/adoptium.asc && \
+    echo "deb [signed-by=/etc/apt/keyrings/adoptium.asc] https://packages.adoptium.net/artifactory/deb $(awk -F= '/^VERSION_CODENAME/{print$2}' /etc/os-release) main" | tee /etc/apt/sources.list.d/adoptium.list
+RUN apt update && apt install -y temurin-8-jdk
 
 # Install Android SDK
 ENV ANDROID_SDK_VERSION 4333796
@@ -101,16 +105,10 @@ ENV ANDROID_SDK_PATH /opt/android-sdk
 ENV ANDROID_HOME /opt/android-sdk
 RUN yes | $ANDROID_SDK_PATH/tools/bin/sdkmanager --licenses  # accept all licenses
 
-# Install ndk-bundle and cmake using sdkmanager
+# Install Android NDK & CMake
+# This is not required but desirable to reduce the time to download and the chance of download failure.
 RUN mkdir -p ~/.android && touch ~/.android/repositories.cfg
-RUN $ANDROID_SDK_PATH/tools/bin/sdkmanager ndk-bundle 'cmake;3.6.4111459'
-
-# Install Android NDK
-RUN curl -L -o android-ndk.zip http://dl.google.com/android/repository/android-ndk-r16b-linux-x86_64.zip && \
-    unzip -q android-ndk.zip -d /opt && \
-    rm -f android-ndk.zip
-ENV ANDROID_NDK_PATH /opt/android-ndk-r16b
-ENV ANDROID_NDK_HOME /opt/android-ndk-r16b
+RUN $ANDROID_SDK_PATH/tools/bin/sdkmanager 'ndk;25.1.8937393' 'cmake;3.10.2.4988404'
 
 # Install gcloud
 RUN curl -O https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-407.0.0-linux-x86_64.tar.gz && \

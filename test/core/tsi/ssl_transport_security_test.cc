@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2017 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2017 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "src/core/tsi/ssl_transport_security.h"
 
@@ -32,6 +32,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
@@ -47,6 +48,7 @@
 #define SSL_TSI_TEST_ALPN_NUM 2
 #define SSL_TSI_TEST_SERVER_KEY_CERT_PAIRS_NUM 2
 #define SSL_TSI_TEST_BAD_SERVER_KEY_CERT_PAIRS_NUM 1
+#define SSL_TSI_TEST_LEAF_SIGNED_BY_INTERMEDIATE_KEY_CERT_PAIRS_NUM 1
 #define SSL_TSI_TEST_CREDENTIALS_DIR "src/core/tsi/test_creds/"
 #define SSL_TSI_TEST_WRONG_SNI "test.google.cn"
 
@@ -60,6 +62,7 @@ const size_t kSessionTicketEncryptionKeySize = 48;
 
 // Indicates the TLS version used for the test.
 static tsi_tls_version test_tls_version = tsi_tls_version::TSI_TLS1_3;
+static bool test_send_client_ca_list = false;
 
 typedef enum AlpnMode {
   NO_ALPN,
@@ -81,14 +84,17 @@ typedef struct ssl_key_cert_lib {
   bool use_bad_server_cert;
   bool use_bad_client_cert;
   bool use_root_store;
+  bool use_cert_signed_by_intermediate_ca;
   char* root_cert;
   tsi_ssl_root_certs_store* root_store;
   tsi_ssl_pem_key_cert_pair* server_pem_key_cert_pairs;
   tsi_ssl_pem_key_cert_pair* bad_server_pem_key_cert_pairs;
+  tsi_ssl_pem_key_cert_pair* leaf_signed_by_intermediate_key_cert_pairs;
   tsi_ssl_pem_key_cert_pair client_pem_key_cert_pair;
   tsi_ssl_pem_key_cert_pair bad_client_pem_key_cert_pair;
   uint16_t server_num_key_cert_pairs;
   uint16_t bad_server_num_key_cert_pairs;
+  uint16_t leaf_signed_by_intermediate_num_key_cert_pairs;
 } ssl_key_cert_lib;
 
 typedef struct ssl_tsi_test_fixture {
@@ -115,7 +121,7 @@ static void ssl_test_setup_handshakers(tsi_test_fixture* fixture) {
   ASSERT_NE(ssl_fixture->alpn_lib, nullptr);
   ssl_key_cert_lib* key_cert_lib = ssl_fixture->key_cert_lib;
   ssl_alpn_lib* alpn_lib = ssl_fixture->alpn_lib;
-  /* Create client handshaker factory. */
+  // Create client handshaker factory.
   tsi_ssl_client_handshaker_options client_options;
   client_options.pem_root_certs = key_cert_lib->root_cert;
   if (ssl_fixture->force_client_auth) {
@@ -140,7 +146,7 @@ static void ssl_test_setup_handshakers(tsi_test_fixture* fixture) {
   ASSERT_EQ(tsi_create_ssl_client_handshaker_factory_with_options(
                 &client_options, &ssl_fixture->client_handshaker_factory),
             TSI_OK);
-  /* Create server handshaker factory. */
+  // Create server handshaker factory.
   tsi_ssl_server_handshaker_options server_options;
   if (alpn_lib->alpn_mode == ALPN_SERVER_NO_CLIENT ||
       alpn_lib->alpn_mode == ALPN_CLIENT_SERVER_OK ||
@@ -151,14 +157,21 @@ static void ssl_test_setup_handshakers(tsi_test_fixture* fixture) {
       server_options.num_alpn_protocols--;
     }
   }
-  server_options.pem_key_cert_pairs =
-      key_cert_lib->use_bad_server_cert
-          ? key_cert_lib->bad_server_pem_key_cert_pairs
-          : key_cert_lib->server_pem_key_cert_pairs;
-  server_options.num_key_cert_pairs =
-      key_cert_lib->use_bad_server_cert
-          ? key_cert_lib->bad_server_num_key_cert_pairs
-          : key_cert_lib->server_num_key_cert_pairs;
+  if (key_cert_lib->use_cert_signed_by_intermediate_ca) {
+    server_options.pem_key_cert_pairs =
+        key_cert_lib->leaf_signed_by_intermediate_key_cert_pairs;
+    server_options.num_key_cert_pairs =
+        key_cert_lib->leaf_signed_by_intermediate_num_key_cert_pairs;
+  } else {
+    server_options.pem_key_cert_pairs =
+        key_cert_lib->use_bad_server_cert
+            ? key_cert_lib->bad_server_pem_key_cert_pairs
+            : key_cert_lib->server_pem_key_cert_pairs;
+    server_options.num_key_cert_pairs =
+        key_cert_lib->use_bad_server_cert
+            ? key_cert_lib->bad_server_num_key_cert_pairs
+            : key_cert_lib->server_num_key_cert_pairs;
+  }
   server_options.pem_client_root_certs = key_cert_lib->root_cert;
   if (ssl_fixture->force_client_auth) {
     server_options.client_certificate_request =
@@ -174,7 +187,7 @@ static void ssl_test_setup_handshakers(tsi_test_fixture* fixture) {
   ASSERT_EQ(tsi_create_ssl_server_handshaker_factory_with_options(
                 &server_options, &ssl_fixture->server_handshaker_factory),
             TSI_OK);
-  /* Create server and client handshakers. */
+  // Create server and client handshakers.
   ASSERT_EQ(
       tsi_ssl_client_handshaker_factory_create_handshaker(
           ssl_fixture->client_handshaker_factory,
@@ -188,6 +201,27 @@ static void ssl_test_setup_handshakers(tsi_test_fixture* fixture) {
           ssl_fixture->network_bio_buf_size, ssl_fixture->ssl_bio_buf_size,
           &ssl_fixture->base.server_handshaker),
       TSI_OK);
+}
+
+static void check_verified_root_cert_subject(
+    ssl_tsi_test_fixture* /*ssl_fixture*/, const tsi_peer* peer) {
+  const tsi_peer_property* verified_root_cert_subject =
+      tsi_peer_get_property_by_name(
+          peer, TSI_X509_VERIFIED_ROOT_CERT_SUBECT_PEER_PROPERTY);
+  ASSERT_NE(verified_root_cert_subject, nullptr);
+  const char* expected_match =
+      "CN=testca,O=Internet Widgits Pty Ltd,ST=Some-State,C=AU";
+  ASSERT_EQ(memcmp(verified_root_cert_subject->value.data, expected_match,
+                   verified_root_cert_subject->value.length),
+            0);
+}
+
+static void check_verified_root_cert_subject_unset(
+    ssl_tsi_test_fixture* /*ssl_fixture*/, const tsi_peer* peer) {
+  const tsi_peer_property* verified_root_cert_subject =
+      tsi_peer_get_property_by_name(
+          peer, TSI_X509_VERIFIED_ROOT_CERT_SUBECT_PEER_PROPERTY);
+  ASSERT_EQ(verified_root_cert_subject, nullptr);
 }
 
 static void check_alpn(ssl_tsi_test_fixture* ssl_fixture,
@@ -359,6 +393,11 @@ static void ssl_test_check_handshaker_peers(tsi_test_fixture* fixture) {
     check_session_reusage(ssl_fixture, &peer);
     check_alpn(ssl_fixture, &peer);
     check_security_level(&peer);
+    if (!ssl_fixture->session_reused) {
+      check_verified_root_cert_subject(ssl_fixture, &peer);
+    } else {
+      check_verified_root_cert_subject_unset(ssl_fixture, &peer);
+    }
     if (ssl_fixture->server_name_indication == nullptr ||
         strcmp(ssl_fixture->server_name_indication, SSL_TSI_TEST_WRONG_SNI) ==
             0) {
@@ -378,6 +417,11 @@ static void ssl_test_check_handshaker_peers(tsi_test_fixture* fixture) {
     check_session_reusage(ssl_fixture, &peer);
     check_alpn(ssl_fixture, &peer);
     check_security_level(&peer);
+    if (ssl_fixture->force_client_auth && !ssl_fixture->session_reused) {
+      check_verified_root_cert_subject(ssl_fixture, &peer);
+    } else {
+      check_verified_root_cert_subject_unset(ssl_fixture, &peer);
+    }
     check_client_peer(ssl_fixture, &peer);
   } else {
     ASSERT_EQ(ssl_fixture->base.server_result, nullptr);
@@ -395,7 +439,7 @@ static void ssl_test_destruct(tsi_test_fixture* fixture) {
   if (ssl_fixture == nullptr) {
     return;
   }
-  /* Destroy ssl_alpn_lib. */
+  // Destroy ssl_alpn_lib.
   ssl_alpn_lib* alpn_lib = ssl_fixture->alpn_lib;
   for (size_t i = 0; i < alpn_lib->num_server_alpn_protocols; i++) {
     gpr_free(const_cast<char*>(alpn_lib->server_alpn_protocols[i]));
@@ -406,7 +450,7 @@ static void ssl_test_destruct(tsi_test_fixture* fixture) {
   }
   gpr_free(alpn_lib->client_alpn_protocols);
   gpr_free(alpn_lib);
-  /* Destroy ssl_key_cert_lib. */
+  // Destroy ssl_key_cert_lib.
   ssl_key_cert_lib* key_cert_lib = ssl_fixture->key_cert_lib;
   for (size_t i = 0; i < key_cert_lib->server_num_key_cert_pairs; i++) {
     ssl_test_pem_key_cert_pair_destroy(
@@ -418,6 +462,12 @@ static void ssl_test_destruct(tsi_test_fixture* fixture) {
         key_cert_lib->bad_server_pem_key_cert_pairs[i]);
   }
   gpr_free(key_cert_lib->bad_server_pem_key_cert_pairs);
+  for (size_t i = 0;
+       i < key_cert_lib->leaf_signed_by_intermediate_num_key_cert_pairs; i++) {
+    ssl_test_pem_key_cert_pair_destroy(
+        key_cert_lib->leaf_signed_by_intermediate_key_cert_pairs[i]);
+  }
+  gpr_free(key_cert_lib->leaf_signed_by_intermediate_key_cert_pairs);
   ssl_test_pem_key_cert_pair_destroy(key_cert_lib->client_pem_key_cert_pair);
   ssl_test_pem_key_cert_pair_destroy(
       key_cert_lib->bad_client_pem_key_cert_pair);
@@ -427,7 +477,7 @@ static void ssl_test_destruct(tsi_test_fixture* fixture) {
   if (ssl_fixture->session_cache != nullptr) {
     tsi_ssl_session_cache_unref(ssl_fixture->session_cache);
   }
-  /* Unreference others. */
+  // Unreference others.
   tsi_ssl_server_handshaker_factory_unref(
       ssl_fixture->server_handshaker_factory);
   tsi_ssl_client_handshaker_factory_unref(
@@ -457,7 +507,7 @@ static tsi_test_fixture* ssl_tsi_test_fixture_create() {
   tsi_test_fixture_init(&ssl_fixture->base);
   ssl_fixture->base.test_unused_bytes = true;
   ssl_fixture->base.vtable = &vtable;
-  /* Create ssl_key_cert_lib. */
+  // Create ssl_key_cert_lib.
   ssl_key_cert_lib* key_cert_lib = grpc_core::Zalloc<ssl_key_cert_lib>();
   key_cert_lib->use_bad_server_cert = false;
   key_cert_lib->use_bad_client_cert = false;
@@ -466,6 +516,8 @@ static tsi_test_fixture* ssl_tsi_test_fixture_create() {
       SSL_TSI_TEST_SERVER_KEY_CERT_PAIRS_NUM;
   key_cert_lib->bad_server_num_key_cert_pairs =
       SSL_TSI_TEST_BAD_SERVER_KEY_CERT_PAIRS_NUM;
+  key_cert_lib->leaf_signed_by_intermediate_num_key_cert_pairs =
+      SSL_TSI_TEST_LEAF_SIGNED_BY_INTERMEDIATE_KEY_CERT_PAIRS_NUM;
   key_cert_lib->server_pem_key_cert_pairs =
       static_cast<tsi_ssl_pem_key_cert_pair*>(
           gpr_malloc(sizeof(tsi_ssl_pem_key_cert_pair) *
@@ -474,6 +526,10 @@ static tsi_test_fixture* ssl_tsi_test_fixture_create() {
       static_cast<tsi_ssl_pem_key_cert_pair*>(
           gpr_malloc(sizeof(tsi_ssl_pem_key_cert_pair) *
                      key_cert_lib->bad_server_num_key_cert_pairs));
+  key_cert_lib->leaf_signed_by_intermediate_key_cert_pairs =
+      static_cast<tsi_ssl_pem_key_cert_pair*>(gpr_malloc(
+          sizeof(tsi_ssl_pem_key_cert_pair) *
+          key_cert_lib->leaf_signed_by_intermediate_num_key_cert_pairs));
   key_cert_lib->server_pem_key_cert_pairs[0].private_key =
       load_file(SSL_TSI_TEST_CREDENTIALS_DIR, "server0.key");
   key_cert_lib->server_pem_key_cert_pairs[0].cert_chain =
@@ -494,12 +550,18 @@ static tsi_test_fixture* ssl_tsi_test_fixture_create() {
       load_file(SSL_TSI_TEST_CREDENTIALS_DIR, "badclient.key");
   key_cert_lib->bad_client_pem_key_cert_pair.cert_chain =
       load_file(SSL_TSI_TEST_CREDENTIALS_DIR, "badclient.pem");
+  key_cert_lib->leaf_signed_by_intermediate_key_cert_pairs[0].private_key =
+      load_file(SSL_TSI_TEST_CREDENTIALS_DIR,
+                "leaf_signed_by_intermediate.key");
+  key_cert_lib->leaf_signed_by_intermediate_key_cert_pairs[0].cert_chain =
+      load_file(SSL_TSI_TEST_CREDENTIALS_DIR,
+                "leaf_and_intermediate_chain.pem");
   key_cert_lib->root_cert = load_file(SSL_TSI_TEST_CREDENTIALS_DIR, "ca.pem");
   key_cert_lib->root_store =
       tsi_ssl_root_certs_store_create(key_cert_lib->root_cert);
   EXPECT_NE(key_cert_lib->root_store, nullptr);
   ssl_fixture->key_cert_lib = key_cert_lib;
-  /* Create ssl_alpn_lib. */
+  // Create ssl_alpn_lib.
   ssl_alpn_lib* alpn_lib = grpc_core::Zalloc<ssl_alpn_lib>();
   alpn_lib->server_alpn_protocols = static_cast<const char**>(
       gpr_zalloc(sizeof(char*) * SSL_TSI_TEST_ALPN_NUM));
@@ -586,7 +648,7 @@ void ssl_tsi_test_do_handshake_with_client_authentication_and_root_store() {
 void ssl_tsi_test_do_handshake_with_server_name_indication_exact_domain() {
   gpr_log(GPR_INFO,
           "ssl_tsi_test_do_handshake_with_server_name_indication_exact_domain");
-  /* server1 cert contains "waterzooi.test.google.be" in SAN. */
+  // server1 cert contains "waterzooi.test.google.be" in SAN.
   tsi_test_fixture* fixture = ssl_tsi_test_fixture_create();
   ssl_tsi_test_fixture* ssl_fixture =
       reinterpret_cast<ssl_tsi_test_fixture*>(fixture);
@@ -600,7 +662,7 @@ void ssl_tsi_test_do_handshake_with_server_name_indication_wild_star_domain() {
   gpr_log(
       GPR_INFO,
       "ssl_tsi_test_do_handshake_with_server_name_indication_wild_star_domain");
-  /* server1 cert contains "*.test.google.fr" in SAN. */
+  // server1 cert contains "*.test.google.fr" in SAN.
   tsi_test_fixture* fixture = ssl_tsi_test_fixture_create();
   ssl_tsi_test_fixture* ssl_fixture =
       reinterpret_cast<ssl_tsi_test_fixture*>(fixture);
@@ -613,7 +675,7 @@ void ssl_tsi_test_do_handshake_with_server_name_indication_wild_star_domain() {
 void ssl_tsi_test_do_handshake_with_wrong_server_name_indication() {
   gpr_log(GPR_INFO,
           "ssl_tsi_test_do_handshake_with_wrong_server_name_indication");
-  /* server certs do not contain "test.google.cn". */
+  // server certs do not contain "test.google.cn".
   tsi_test_fixture* fixture = ssl_tsi_test_fixture_create();
   ssl_tsi_test_fixture* ssl_fixture =
       reinterpret_cast<ssl_tsi_test_fixture*>(fixture);
@@ -792,6 +854,20 @@ void ssl_tsi_test_do_handshake_session_cache() {
   tsi_ssl_session_cache_unref(session_cache);
 }
 
+void ssl_tsi_test_do_handshake_with_intermediate_ca() {
+  gpr_log(
+      GPR_INFO,
+      "ssl_tsi_test_do_handshake_with_client_authentication_and_root_store");
+  tsi_test_fixture* fixture = ssl_tsi_test_fixture_create();
+  ssl_tsi_test_fixture* ssl_fixture =
+      reinterpret_cast<ssl_tsi_test_fixture*>(fixture);
+  ssl_fixture->force_client_auth = true;
+  ssl_fixture->key_cert_lib->use_root_store = true;
+  ssl_fixture->key_cert_lib->use_cert_signed_by_intermediate_ca = true;
+  tsi_test_do_handshake(fixture);
+  tsi_test_fixture_destroy(fixture);
+}
+
 static const tsi_ssl_handshaker_factory_vtable* original_vtable;
 static bool handshaker_factory_destructor_called;
 
@@ -893,8 +969,8 @@ void test_tsi_ssl_server_handshaker_factory_refcounting() {
   ssl_test_pem_key_cert_pair_destroy(cert_pair);
 }
 
-/* Attempting to create a handshaker factory with invalid parameters should fail
- * but not crash. */
+// Attempting to create a handshaker factory with invalid parameters should fail
+// but not crash.
 void test_tsi_ssl_client_handshaker_factory_bad_params() {
   const char* cert_chain = "This is not a valid PEM file.";
 
@@ -1096,34 +1172,37 @@ TEST(SslTransportSecurityTest, MainTest) {
   for (size_t i = 0; i < number_tls_versions; i++) {
     // Set the TLS version to be used in the tests.
     test_tls_version = tls_versions[i];
-    // Run all the tests using that TLS version for both the client and server.
-    ssl_tsi_test_do_handshake_tiny_handshake_buffer();
-    ssl_tsi_test_do_handshake_small_handshake_buffer();
-    ssl_tsi_test_do_handshake();
-    ssl_tsi_test_do_handshake_with_root_store();
-    ssl_tsi_test_do_handshake_with_client_authentication();
-    ssl_tsi_test_do_handshake_with_client_authentication_and_root_store();
-    ssl_tsi_test_do_handshake_with_server_name_indication_exact_domain();
-    ssl_tsi_test_do_handshake_with_server_name_indication_wild_star_domain();
-    ssl_tsi_test_do_handshake_with_wrong_server_name_indication();
-    ssl_tsi_test_do_handshake_with_bad_server_cert();
-    ssl_tsi_test_do_handshake_with_bad_client_cert();
+    for (bool send_client_ca_list : {true, false}) {
+      test_send_client_ca_list = send_client_ca_list;
+      ssl_tsi_test_do_handshake_tiny_handshake_buffer();
+      ssl_tsi_test_do_handshake_small_handshake_buffer();
+      ssl_tsi_test_do_handshake();
+      ssl_tsi_test_do_handshake_with_root_store();
+      ssl_tsi_test_do_handshake_with_client_authentication();
+      ssl_tsi_test_do_handshake_with_client_authentication_and_root_store();
+      ssl_tsi_test_do_handshake_with_server_name_indication_exact_domain();
+      ssl_tsi_test_do_handshake_with_server_name_indication_wild_star_domain();
+      ssl_tsi_test_do_handshake_with_wrong_server_name_indication();
+      ssl_tsi_test_do_handshake_with_bad_server_cert();
+      ssl_tsi_test_do_handshake_with_bad_client_cert();
 #ifdef OPENSSL_IS_BORINGSSL
-    // BoringSSL and OpenSSL have different behaviors on mismatched ALPN.
-    ssl_tsi_test_do_handshake_alpn_client_no_server();
-    ssl_tsi_test_do_handshake_alpn_client_server_mismatch();
+      // BoringSSL and OpenSSL have different behaviors on mismatched ALPN.
+      ssl_tsi_test_do_handshake_alpn_client_no_server();
+      ssl_tsi_test_do_handshake_alpn_client_server_mismatch();
 #endif
-    ssl_tsi_test_do_handshake_alpn_server_no_client();
-    ssl_tsi_test_do_handshake_alpn_client_server_ok();
-    ssl_tsi_test_do_handshake_session_cache();
-    ssl_tsi_test_do_round_trip_for_all_configs();
-    ssl_tsi_test_do_round_trip_with_error_on_stack();
-    ssl_tsi_test_do_round_trip_odd_buffer_size();
-    ssl_tsi_test_handshaker_factory_internals();
-    ssl_tsi_test_duplicate_root_certificates();
-    ssl_tsi_test_extract_x509_subject_names();
-    ssl_tsi_test_extract_cert_chain();
-    ssl_tsi_test_do_handshake_with_custom_bio_pair();
+      ssl_tsi_test_do_handshake_alpn_server_no_client();
+      ssl_tsi_test_do_handshake_alpn_client_server_ok();
+      ssl_tsi_test_do_handshake_session_cache();
+      ssl_tsi_test_do_round_trip_for_all_configs();
+      ssl_tsi_test_do_round_trip_with_error_on_stack();
+      ssl_tsi_test_do_round_trip_odd_buffer_size();
+      ssl_tsi_test_handshaker_factory_internals();
+      ssl_tsi_test_duplicate_root_certificates();
+      ssl_tsi_test_extract_x509_subject_names();
+      ssl_tsi_test_extract_cert_chain();
+      ssl_tsi_test_do_handshake_with_custom_bio_pair();
+      ssl_tsi_test_do_handshake_with_intermediate_ca();
+    }
   }
   grpc_shutdown();
 }

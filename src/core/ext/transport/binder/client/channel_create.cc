@@ -30,6 +30,8 @@
 #include <grpc/grpc_posix.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/crash.h"
+
 #ifdef GPR_SUPPORT_BINDER_TRANSPORT
 
 #include <grpc/support/port_platform.h>

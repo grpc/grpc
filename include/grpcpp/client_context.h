@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 /// A ClientContext allows the person implementing a service client to:
 ///
@@ -224,16 +224,16 @@ class ClientContext {
   /// must end in "-bin".
   ///
   /// Metadata must conform to the following format:
-  /**
-  \verbatim
-  Custom-Metadata -> Binary-Header / ASCII-Header
-  Binary-Header -> {Header-Name "-bin" } {binary value}
-  ASCII-Header -> Header-Name ASCII-Value
-  Header-Name -> 1*( %x30-39 / %x61-7A / "_" / "-" / ".") ; 0-9 a-z _ - .
-  ASCII-Value -> 1*( %x20-%x7E ) ; space and printable ASCII
-  Custom-Metadata -> Binary-Header / ASCII-Header
-  \endverbatim
-  **/
+  ///
+  ///\verbatim
+  /// Custom-Metadata -> Binary-Header / ASCII-Header
+  /// Binary-Header -> {Header-Name "-bin" } {binary value}
+  /// ASCII-Header -> Header-Name ASCII-Value
+  /// Header-Name -> 1*( %x30-39 / %x61-7A / "_" / "-" / ".") ; 0-9 a-z _ - .
+  /// ASCII-Value -> 1*( %x20-%x7E ) ; space and printable ASCII
+  /// Custom-Metadata -> Binary-Header / ASCII-Header
+  ///\endverbatim
+  ///
   void AddMetadata(const std::string& meta_key, const std::string& meta_value);
 
   /// Return a collection of initial metadata key-value pairs. Note that keys

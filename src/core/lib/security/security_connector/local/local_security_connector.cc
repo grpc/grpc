@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -72,7 +72,7 @@ namespace {
 
 grpc_core::RefCountedPtr<grpc_auth_context> local_auth_context_create(
     const tsi_peer* peer) {
-  /* Create auth context. */
+  // Create auth context.
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =
       grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
   grpc_auth_context_add_cstring_property(
@@ -152,11 +152,11 @@ void local_check_peer(tsi_peer peer, grpc_endpoint* ep,
       &peer.properties[peer.property_count]);
   if (result != TSI_OK) return;
   peer.property_count++;
-  /* Create an auth context which is necessary to pass the santiy check in
-   * {client, server}_auth_filter that verifies if the peer's auth context is
-   * obtained during handshakes. The auth context is only checked for its
-   * existence and not actually used.
-   */
+  // Create an auth context which is necessary to pass the santiy check in
+  // {client, server}_auth_filter that verifies if the peer's auth context is
+  // obtained during handshakes. The auth context is only checked for its
+  // existence and not actually used.
+  //
   *auth_context = local_auth_context_create(&peer);
   tsi_peer_destruct(&peer);
   error = *auth_context != nullptr

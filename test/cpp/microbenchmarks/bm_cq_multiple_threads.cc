@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2017 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2017 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <string.h>
 
@@ -26,6 +26,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/port.h"
@@ -63,13 +64,13 @@ static grpc_error_handle pollset_kick(grpc_pollset* /*p*/,
   return absl::OkStatus();
 }
 
-/* Callback when the tag is dequeued from the completion queue. Does nothing */
+// Callback when the tag is dequeued from the completion queue. Does nothing
 static void cq_done_cb(void* /*done_arg*/, grpc_cq_completion* cq_completion) {
   gpr_free(cq_completion);
 }
 
-/* Queues a completion tag if deadline is > 0.
- * Does nothing if deadline is 0 (i.e gpr_time_0(GPR_CLOCK_MONOTONIC)) */
+// Queues a completion tag if deadline is > 0.
+// Does nothing if deadline is 0 (i.e gpr_time_0(GPR_CLOCK_MONOTONIC))
 static grpc_error_handle pollset_work(grpc_pollset* ps,
                                       grpc_pollset_worker** /*worker*/,
                                       grpc_core::Timestamp deadline) {
@@ -126,37 +127,37 @@ static void setup() {
 static void teardown() {
   grpc_completion_queue_shutdown(g_cq);
 
-  /* Drain any events */
+  // Drain any events
   gpr_timespec deadline = gpr_time_0(GPR_CLOCK_MONOTONIC);
   while (grpc_completion_queue_next(g_cq, deadline, nullptr).type !=
          GRPC_QUEUE_SHUTDOWN) {
-    /* Do nothing */
+    // Do nothing
   }
 
   grpc_completion_queue_destroy(g_cq);
   grpc_shutdown();
 }
 
-/* A few notes about Multi-threaded benchmarks:
+// A few notes about Multi-threaded benchmarks:
 
- Setup:
-  The benchmark framework ensures that none of the threads proceed beyond the
-  state.KeepRunning() call unless all the threads have called state.keepRunning
-  at least once.  So it is safe to do the initialization in one of the threads
-  before state.KeepRunning() is called.
+// Setup:
+// The benchmark framework ensures that none of the threads proceed beyond the
+// state.KeepRunning() call unless all the threads have called state.keepRunning
+// at least once.  So it is safe to do the initialization in one of the threads
+// before state.KeepRunning() is called.
 
- Teardown:
-  The benchmark framework also ensures that no thread is running the benchmark
-  code (i.e the code between two successive calls of state.KeepRunning()) if
-  state.KeepRunning() returns false. So it is safe to do the teardown in one
-  of the threads after state.keepRunning() returns false.
+// Teardown:
+// The benchmark framework also ensures that no thread is running the benchmark
+// code (i.e the code between two successive calls of state.KeepRunning()) if
+// state.KeepRunning() returns false. So it is safe to do the teardown in one
+// of the threads after state.keepRunning() returns false.
 
- However, our use requires synchronization because we do additional work at
- each thread that requires specific ordering (TrackCounters must be constructed
- after grpc_init because it needs the number of cores, initialized by grpc,
- and its Finish call must take place before grpc_shutdown so that it can use
- grpc_stats).
-*/
+// However, our use requires synchronization because we do additional work at
+// each thread that requires specific ordering (TrackCounters must be
+// constructed after grpc_init because it needs the number of cores, initialized
+// by grpc, and its Finish call must take place before grpc_shutdown so that it
+// can use grpc_stats).
+//
 static void BM_Cq_Throughput(benchmark::State& state) {
   gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
   auto thd_idx = state.thread_index();

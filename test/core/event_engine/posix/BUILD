@@ -102,9 +102,13 @@ grpc_cc_test(
 grpc_cc_test(
     name = "lock_free_event_test",
     srcs = ["lock_free_event_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "benchmark",
+        "gtest",
+    ],
     language = "C++",
     tags = [
+        "no_mac",
         "no_windows",
     ],
     uses_event_engine = True,
@@ -188,9 +192,9 @@ grpc_cc_test(
         "//src/core:posix_event_engine_endpoint",
         "//src/core:posix_event_engine_event_poller",
         "//src/core:posix_event_engine_poller_posix_default",
+        "//test/core/event_engine:event_engine_test_utils",
         "//test/core/event_engine/posix:posix_engine_test_utils",
-        "//test/core/event_engine/test_suite:conformance_test_base_lib",
-        "//test/core/event_engine/test_suite:oracle_event_engine_posix",
+        "//test/core/event_engine/test_suite/posix:oracle_event_engine_posix",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -220,6 +224,7 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "C++",
     tags = [
+        "no_mac",
         "no_windows",
     ],
     uses_event_engine = True,
@@ -232,8 +237,27 @@ grpc_cc_test(
         "//src/core:posix_event_engine_endpoint",
         "//src/core:posix_event_engine_event_poller",
         "//src/core:posix_event_engine_poller_posix_default",
-        "//test/core/event_engine/test_suite:conformance_test_base_lib",
-        "//test/core/event_engine/test_suite:oracle_event_engine_posix",
+        "//test/core/event_engine:event_engine_test_utils",
+        "//test/core/event_engine/test_suite/posix:oracle_event_engine_posix",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "log_too_many_open_files_test",
+    srcs = ["log_too_many_open_files_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    tags = [
+        "no_windows",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:grpc",
+        "//src/core:posix_event_engine",
         "//test/core/util:grpc_test_util",
     ],
 )

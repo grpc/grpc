@@ -20,7 +20,7 @@
 
 #include <memory>
 
-#include <google/protobuf/compiler/objectivec/objectivec_helpers.h>
+#include <google/protobuf/compiler/objectivec/names.h>
 
 #include "src/compiler/config.h"
 #include "src/compiler/objective_c_generator.h"

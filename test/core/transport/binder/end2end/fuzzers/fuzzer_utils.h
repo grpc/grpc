@@ -28,6 +28,7 @@
 
 #include "src/core/ext/transport/binder/wire_format/binder.h"
 #include "src/core/ext/transport/binder/wire_format/wire_reader.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "test/core/transport/binder/end2end/fuzzers/binder_transport_fuzzer.pb.h"
 
 namespace grpc_binder {

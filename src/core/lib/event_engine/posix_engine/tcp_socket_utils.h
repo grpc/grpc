@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_TCP_SOCKET_UTILS_H
-#define GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_TCP_SOCKET_UTILS_H
+#ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_TCP_SOCKET_UTILS_H
+#define GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_TCP_SOCKET_UTILS_H
 
 #include <grpc/support/port_platform.h>
 
@@ -45,7 +45,7 @@
 #ifndef SO_EE_ORIGIN_ZEROCOPY
 #define SO_EE_ORIGIN_ZEROCOPY 5
 #endif
-#endif /* ifdef GRPC_LINUX_ERRQUEUE */
+#endif  // ifdef GRPC_LINUX_ERRQUEUE
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -58,16 +58,21 @@ struct PosixTcpOptions {
   static constexpr int kMaxChunkSize = 32 * 1024 * 1024;
   static constexpr int kDefaultMaxSends = 4;
   static constexpr size_t kDefaultSendBytesThreshold = 16 * 1024;
+  // Let the system decide the proper buffer size.
+  static constexpr int kReadBufferSizeUnset = -1;
+  static constexpr int kDscpNotSet = -1;
   int tcp_read_chunk_size = kDefaultReadChunkSize;
   int tcp_min_read_chunk_size = kDefaultMinReadChunksize;
   int tcp_max_read_chunk_size = kDefaultMaxReadChunksize;
   int tcp_tx_zerocopy_send_bytes_threshold = kDefaultSendBytesThreshold;
   int tcp_tx_zerocopy_max_simultaneous_sends = kDefaultMaxSends;
+  int tcp_receive_buffer_size = kReadBufferSizeUnset;
   bool tcp_tx_zero_copy_enabled = kZerocpTxEnabledDefault;
   int keep_alive_time_ms = 0;
   int keep_alive_timeout_ms = 0;
   bool expand_wildcard_addrs = false;
   bool allow_reuse_port = false;
+  int dscp = kDscpNotSet;
   grpc_core::RefCountedPtr<grpc_core::ResourceQuota> resource_quota;
   struct grpc_socket_mutator* socket_mutator = nullptr;
   PosixTcpOptions() = default;
@@ -132,6 +137,7 @@ struct PosixTcpOptions {
     keep_alive_timeout_ms = other.keep_alive_timeout_ms;
     expand_wildcard_addrs = other.expand_wildcard_addrs;
     allow_reuse_port = other.allow_reuse_port;
+    dscp = other.dscp;
   }
 };
 
@@ -178,6 +184,9 @@ class PosixSocketWrapper {
 
   // Set SO_REUSEPORT
   absl::Status SetSocketReusePort(int reuse);
+
+  // Set Differentiated Services Code Point (DSCP)
+  absl::Status SetSocketDscp(int dscp);
 
   // Override default Tcp user timeout values if necessary.
   void TrySetSocketTcpUserTimeout(const PosixTcpOptions& options,
@@ -237,9 +246,6 @@ class PosixSocketWrapper {
     // AF_INET6, which also supports ::ffff-mapped IPv4 addresses.
     DSMODE_DUALSTACK
   };
-
-  // Tries to set the socket to dualstack. Returns true on success.
-  bool SetSocketDualStack();
 
   // Returns the underlying file-descriptor.
   int Fd() const { return fd_; }
@@ -313,4 +319,4 @@ struct PosixSocketWrapper::PosixSocketCreateResult {
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_TCP_SOCKET_UTILS_H
+#endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_TCP_SOCKET_UTILS_H

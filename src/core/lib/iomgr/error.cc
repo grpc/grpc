@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/error.h"
@@ -28,6 +28,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+
+#include "src/core/lib/gprpp/crash.h"
 
 #ifdef GPR_WINDOWS
 #include <grpc/support/log_windows.h>
@@ -68,12 +70,42 @@ absl::Status grpc_os_error(const grpc_core::DebugLocation& location, int err,
 }
 
 #ifdef GPR_WINDOWS
+std::string WSAErrorToShortDescription(int err) {
+  switch (err) {
+    case WSAEACCES:
+      return "Permission denied";
+    case WSAEFAULT:
+      return "Bad address";
+    case WSAEMFILE:
+      return "Too many open files";
+    case WSAEMSGSIZE:
+      return "Message too long";
+    case WSAENETDOWN:
+      return "Network is down";
+    case WSAENETUNREACH:
+      return "Network is unreachable";
+    case WSAENETRESET:
+      return "Network dropped connection on reset";
+    case WSAECONNABORTED:
+      return "Connection aborted";
+    case WSAECONNRESET:
+      return "Connection reset";
+    case WSAETIMEDOUT:
+      return "Connection timed out";
+    case WSAECONNREFUSED:
+      return "Connection refused";
+    case WSAEHOSTUNREACH:
+      return "No route to host";
+    default:
+      return "WSA Error";
+  };
+}
 // TODO(veblush): lift out of iomgr for use in the WindowsEventEngine
 absl::Status grpc_wsa_error(const grpc_core::DebugLocation& location, int err,
                             absl::string_view call_name) {
   char* utf8_message = gpr_format_message(err);
-  absl::Status s =
-      StatusCreate(absl::StatusCode::kUnavailable, "WSA Error", location, {});
+  absl::Status s = StatusCreate(absl::StatusCode::kUnavailable,
+                                WSAErrorToShortDescription(err), location, {});
   StatusSetInt(&s, grpc_core::StatusIntProperty::kWsaError, err);
   StatusSetInt(&s, grpc_core::StatusIntProperty::kRpcStatus,
                GRPC_STATUS_UNAVAILABLE);

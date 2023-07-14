@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h"
 
@@ -24,7 +24,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/tsi/alts/crypt/gsec.h"
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.h"
@@ -32,8 +32,8 @@
 #include "test/core/tsi/alts/crypt/gsec_test_util.h"
 #include "test/core/util/test_config.h"
 
-/* TODO: tests zero_copy_grpc_protector under TSI test library, which
- * has more comprehensive tests.  */
+// TODO(unknown): tests zero_copy_grpc_protector under TSI test library, which
+// has more comprehensive tests.
 
 constexpr size_t kSealRepeatTimes = 50;
 constexpr size_t kSmallBufferSize = 16;
@@ -41,13 +41,13 @@ constexpr size_t kLargeBufferSize = 16384;
 constexpr size_t kChannelMaxSize = 2048;
 constexpr size_t kChannelMinSize = 128;
 
-/* Test fixtures for each test cases.  */
+// Test fixtures for each test cases.
 struct alts_zero_copy_grpc_protector_test_fixture {
   tsi_zero_copy_grpc_protector* client;
   tsi_zero_copy_grpc_protector* server;
 };
 
-/* Test input variables for protect/unprotect operations.  */
+// Test input variables for protect/unprotect operations.
 struct alts_zero_copy_grpc_protector_test_var {
   grpc_slice_buffer original_sb;
   grpc_slice_buffer duplicate_sb;
@@ -56,7 +56,7 @@ struct alts_zero_copy_grpc_protector_test_var {
   grpc_slice_buffer unprotected_sb;
 };
 
-/* --- Test utility functions. --- */
+// --- Test utility functions. ---
 
 static void create_random_slice_buffer(grpc_slice_buffer* sb,
                                        grpc_slice_buffer* dup_sb,
@@ -83,8 +83,8 @@ static uint8_t* pointer_to_nth_byte(grpc_slice_buffer* sb, size_t index) {
   return nullptr;
 }
 
-/* Checks if two slice buffer contents are the same. It is not super efficient,
- * but OK for testing.  */
+// Checks if two slice buffer contents are the same. It is not super efficient,
+// but OK for testing.
 static bool are_slice_buffers_equal(grpc_slice_buffer* first,
                                     grpc_slice_buffer* second) {
   EXPECT_NE(first, nullptr);
@@ -110,7 +110,6 @@ alts_zero_copy_grpc_protector_test_fixture_create(bool rekey,
   alts_zero_copy_grpc_protector_test_fixture* fixture =
       static_cast<alts_zero_copy_grpc_protector_test_fixture*>(
           gpr_zalloc(sizeof(alts_zero_copy_grpc_protector_test_fixture)));
-  grpc_core::ExecCtx exec_ctx;
   size_t key_length = rekey ? kAes128GcmRekeyKeyLength : kAes128GcmKeyLength;
   uint8_t* key;
   size_t max_protected_frame_size = 1024;
@@ -133,7 +132,6 @@ alts_zero_copy_grpc_protector_test_fixture_create(bool rekey,
             TSI_OK);
   EXPECT_EQ(actual_max_protected_frame_size, max_protected_frame_size);
   gpr_free(key);
-  grpc_core::ExecCtx::Get()->Flush();
   return fixture;
 }
 
@@ -142,10 +140,8 @@ static void alts_zero_copy_grpc_protector_test_fixture_destroy(
   if (fixture == nullptr) {
     return;
   }
-  grpc_core::ExecCtx exec_ctx;
   tsi_zero_copy_grpc_protector_destroy(fixture->client);
   tsi_zero_copy_grpc_protector_destroy(fixture->server);
-  grpc_core::ExecCtx::Get()->Flush();
   gpr_free(fixture);
 }
 
@@ -175,30 +171,29 @@ static void alts_zero_copy_grpc_protector_test_var_destroy(
   gpr_free(var);
 }
 
-/* --- ALTS zero-copy protector tests. --- */
+// --- ALTS zero-copy protector tests. ---
 
 static void seal_unseal_small_buffer(tsi_zero_copy_grpc_protector* sender,
                                      tsi_zero_copy_grpc_protector* receiver) {
-  grpc_core::ExecCtx exec_ctx;
   for (size_t i = 0; i < kSealRepeatTimes; i++) {
     int min_progress_size;
     alts_zero_copy_grpc_protector_test_var* var =
         alts_zero_copy_grpc_protector_test_var_create();
-    /* Creates a random small slice buffer and calls protect().  */
+    // Creates a random small slice buffer and calls protect().
     create_random_slice_buffer(&var->original_sb, &var->duplicate_sb,
                                kSmallBufferSize);
     ASSERT_EQ(tsi_zero_copy_grpc_protector_protect(sender, &var->original_sb,
                                                    &var->protected_sb),
               TSI_OK);
-    /* Splits protected slice buffer into two: first one is staging_sb, and
-     * second one is protected_sb.  */
+    // Splits protected slice buffer into two: first one is staging_sb, and
+    // second one is protected_sb.
     uint32_t staging_sb_size =
         gsec_test_bias_random_uint32(
             static_cast<uint32_t>(var->protected_sb.length - 1)) +
         1;
     grpc_slice_buffer_move_first(&var->protected_sb, staging_sb_size,
                                  &var->staging_sb);
-    /* Unprotects one by one.  */
+    // Unprotects one by one.
     ASSERT_EQ(tsi_zero_copy_grpc_protector_unprotect(receiver, &var->staging_sb,
                                                      &var->unprotected_sb,
                                                      &min_progress_size),
@@ -218,23 +213,21 @@ static void seal_unseal_small_buffer(tsi_zero_copy_grpc_protector* sender,
     ASSERT_EQ(min_progress_size, 1);
     alts_zero_copy_grpc_protector_test_var_destroy(var);
   }
-  grpc_core::ExecCtx::Get()->Flush();
 }
 
 static void seal_unseal_large_buffer(tsi_zero_copy_grpc_protector* sender,
                                      tsi_zero_copy_grpc_protector* receiver) {
-  grpc_core::ExecCtx exec_ctx;
   for (size_t i = 0; i < kSealRepeatTimes; i++) {
     alts_zero_copy_grpc_protector_test_var* var =
         alts_zero_copy_grpc_protector_test_var_create();
-    /* Creates a random large slice buffer and calls protect().  */
+    // Creates a random large slice buffer and calls protect().
     create_random_slice_buffer(&var->original_sb, &var->duplicate_sb,
                                kLargeBufferSize);
     ASSERT_EQ(tsi_zero_copy_grpc_protector_protect(sender, &var->original_sb,
                                                    &var->protected_sb),
               TSI_OK);
-    /* Splits protected slice buffer into multiple pieces. Receiver unprotects
-     * each slice buffer one by one.  */
+    // Splits protected slice buffer into multiple pieces. Receiver unprotects
+    // each slice buffer one by one.
     uint32_t channel_size = gsec_test_bias_random_uint32(static_cast<uint32_t>(
                                 kChannelMaxSize + 1 - kChannelMinSize)) +
                             static_cast<uint32_t>(kChannelMinSize);
@@ -253,10 +246,9 @@ static void seal_unseal_large_buffer(tsi_zero_copy_grpc_protector* sender,
         are_slice_buffers_equal(&var->unprotected_sb, &var->duplicate_sb));
     alts_zero_copy_grpc_protector_test_var_destroy(var);
   }
-  grpc_core::ExecCtx::Get()->Flush();
 }
 
-/* --- Test cases. --- */
+// --- Test cases. ---
 
 static void alts_zero_copy_protector_seal_unseal_small_buffer_tests(
     bool enable_extra_copy) {

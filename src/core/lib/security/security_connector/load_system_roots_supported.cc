@@ -1,24 +1,25 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
 #include <algorithm>
+#include <string>
 #include <vector>
 
 #if defined(GPR_LINUX) || defined(GPR_ANDROID) || defined(GPR_FREEBSD) || \
@@ -27,7 +28,6 @@
 #include <dirent.h>
 #include <fcntl.h>
 #include <stdio.h>
-#include <string.h>
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -35,16 +35,12 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/global_config.h"
-#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/security_connector/load_system_roots.h"
 #include "src/core/lib/security/security_connector/load_system_roots_supported.h"
-
-GPR_GLOBAL_CONFIG_DEFINE_STRING(grpc_system_ssl_roots_dir, "",
-                                "Custom directory to SSL Roots");
 
 namespace grpc_core {
 namespace {
@@ -150,9 +146,9 @@ grpc_slice CreateRootCertsBundle(const char* certs_directory) {
 grpc_slice LoadSystemRootCerts() {
   grpc_slice result = grpc_empty_slice();
   // Prioritize user-specified custom directory if flag is set.
-  UniquePtr<char> custom_dir = GPR_GLOBAL_CONFIG_GET(grpc_system_ssl_roots_dir);
-  if (strlen(custom_dir.get()) > 0) {
-    result = CreateRootCertsBundle(custom_dir.get());
+  auto custom_dir = ConfigVars::Get().SystemSslRootsDir();
+  if (!custom_dir.empty()) {
+    result = CreateRootCertsBundle(std::string(custom_dir).c_str());
   }
   // If the custom directory is empty/invalid/not specified, fallback to
   // distribution-specific directory.
@@ -172,4 +168,4 @@ grpc_slice LoadSystemRootCerts() {
 
 }  // namespace grpc_core
 
-#endif /* GPR_LINUX || GPR_ANDROID || GPR_FREEBSD || GPR_APPLE */
+#endif  // GPR_LINUX || GPR_ANDROID || GPR_FREEBSD || GPR_APPLE

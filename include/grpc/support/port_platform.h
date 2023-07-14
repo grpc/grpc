@@ -625,7 +625,7 @@ typedef unsigned __int64 uint64_t;
 #define GPR_ATTRIBUTE_NORETURN
 #endif
 
-#if GPR_FORBID_UNREACHABLE_CODE
+#if defined(GPR_FORBID_UNREACHABLE_CODE) && GPR_FORBID_UNREACHABLE_CODE
 #define GPR_UNREACHABLE_CODE(STATEMENT)
 #else
 #ifdef __cplusplus
@@ -776,12 +776,12 @@ extern void gpr_unreachable_code(const char* reason, const char* file,
 
 #define GRPC_CALLBACK_API_NONEXPERIMENTAL
 
-/* clang 11 with msan miscompiles destruction of [[no_unique_address]] members
- * of zero size - for a repro see:
+/* clang 12 and lower with msan miscompiles destruction of [[no_unique_address]]
+ * members of zero size - for a repro see:
  * test/core/compiler_bugs/miscompile_with_no_unique_address_test.cc
  */
 #ifdef __clang__
-#if __clang__ && __clang_major__ <= 11 && __has_feature(memory_sanitizer)
+#if __clang__ && __clang_major__ <= 12 && __has_feature(memory_sanitizer)
 #undef GPR_NO_UNIQUE_ADDRESS
 #define GPR_NO_UNIQUE_ADDRESS
 #endif

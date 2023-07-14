@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "src/core/lib/iomgr/buffer_list.h"
 
@@ -24,7 +24,6 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/global_config_generic.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/internal_errqueue.h"
@@ -82,10 +81,10 @@ static void TestVerifierCalledOnDelayedAckVerifier(void* arg,
   gpr_atm_rel_store(done, static_cast<gpr_atm>(1));
 }
 
-/** Tests that all TracedBuffer elements in the list are flushed out on
- * shutdown.
- * Also tests that arg is passed correctly.
- */
+/// Tests that all TracedBuffer elements in the list are flushed out on
+/// shutdown.
+/// Also tests that arg is passed correctly.
+///
 TEST(BufferListTest, Testshutdownflusheslist) {
   grpc_core::grpc_tcp_set_write_timestamps_callback(
       TestShutdownFlushesListVerifier);
@@ -115,8 +114,8 @@ static void TestVerifierCalledOnAckVerifier(void* arg,
   gpr_atm_rel_store(done, gpr_atm{1});
 }
 
-/** Tests that the timestamp verifier is called on an ACK timestamp.
- */
+/// Tests that the timestamp verifier is called on an ACK timestamp.
+///
 TEST(BufferListTest, Testverifiercalledonack) {
   struct sock_extended_err serr;
   serr.ee_data = 213;
@@ -135,8 +134,8 @@ TEST(BufferListTest, Testverifiercalledonack) {
   tb_list.Shutdown(nullptr, absl::OkStatus());
 }
 
-/** Tests that shutdown can be called repeatedly.
- */
+/// Tests that shutdown can be called repeatedly.
+///
 TEST(BufferListTest, Testrepeatedshutdown) {
   struct sock_extended_err serr;
   serr.ee_data = 213;
@@ -271,8 +270,8 @@ int main(int argc, char** argv) {
   return RUN_ALL_TESTS();
 }
 
-#else /* GRPC_LINUX_ERRQUEUE */
+#else  // GRPC_LINUX_ERRQUEUE
 
 int main(int /*argc*/, char** /*argv*/) { return 0; }
 
-#endif /* GRPC_LINUX_ERRQUEUE */
+#endif  // GRPC_LINUX_ERRQUEUE

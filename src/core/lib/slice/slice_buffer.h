@@ -12,14 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_SLICE_SLICE_BUFFER_H
-#define GRPC_CORE_LIB_SLICE_SLICE_BUFFER_H
+#ifndef GRPC_SRC_CORE_LIB_SLICE_SLICE_BUFFER_H
+#define GRPC_SRC_CORE_LIB_SLICE_SLICE_BUFFER_H
 
 #include <grpc/support/port_platform.h>
 
 #include <stdint.h>
 #include <string.h>
 
+#include <memory>
 #include <string>
 
 #include <grpc/slice.h>
@@ -40,7 +41,7 @@ namespace grpc_core {
 ///
 /// The SliceBuffer API is basically a replica of the grpc_slice_buffer's,
 /// and its documentation will move here once we remove the C structure,
-/// which should happen before the Event Engine's API is no longer
+/// which should happen before the EventEngine's API is no longer
 /// an experimental API.
 class SliceBuffer {
  public:
@@ -151,6 +152,11 @@ class SliceBuffer {
  private:
   /// The backing raw slice buffer.
   grpc_slice_buffer slice_buffer_;
+
+// Make failure to destruct show up in ASAN builds.
+#ifndef NDEBUG
+  std::unique_ptr<int> asan_canary_ = std::make_unique<int>(0);
+#endif
 };
 
 }  // namespace grpc_core
@@ -159,4 +165,4 @@ class SliceBuffer {
 void grpc_slice_buffer_copy_first_into_buffer(grpc_slice_buffer* src, size_t n,
                                               void* dst);
 
-#endif  // GRPC_CORE_LIB_SLICE_SLICE_BUFFER_H
+#endif  // GRPC_SRC_CORE_LIB_SLICE_SLICE_BUFFER_H

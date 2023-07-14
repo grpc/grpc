@@ -1,33 +1,33 @@
-/*
- *
- * Copyright 2017 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2017 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-/*******************************************************************************
- * This test verifies that various stack configurations result in the set of
- * filters that we expect.
- *
- * This is akin to a golden-file test, and suffers the same disadvantages and
- * advantages: it reflects that the code as written has not been modified - and
- * valid code modifications WILL break this test and it will need updating.
- *
- * The intent therefore is to allow code reviewers to more easily catch changes
- * that perturb the generated list of channel filters in different
- * configurations and assess whether such a change is correct and desirable.
- */
+//******************************************************************************
+// This test verifies that various stack configurations result in the set of
+// filters that we expect.
+//
+// This is akin to a golden-file test, and suffers the same disadvantages and
+// advantages: it reflects that the code as written has not been modified - and
+// valid code modifications WILL break this test and it will need updating.
+//
+// The intent therefore is to allow code reviewers to more easily catch changes
+// that perturb the generated list of channel filters in different
+// configurations and assess whether such a change is correct and desirable.
+//
 
 #include <string.h>
 
@@ -91,8 +91,9 @@ TEST(ChannelStackFilters, LooksAsExpected) {
       std::vector<std::string>({"authority", "connected"}));
   EXPECT_EQ(MakeStack("unknown", minimal_stack_args, GRPC_CLIENT_SUBCHANNEL),
             std::vector<std::string>({"authority", "connected"}));
-  EXPECT_EQ(MakeStack("unknown", minimal_stack_args, GRPC_SERVER_CHANNEL),
-            std::vector<std::string>({"server", "connected"}));
+  EXPECT_EQ(
+      MakeStack("unknown", minimal_stack_args, GRPC_SERVER_CHANNEL),
+      std::vector<std::string>({"server", "server_call_tracer", "connected"}));
 
   EXPECT_EQ(MakeStack("chttp2", minimal_stack_args, GRPC_CLIENT_DIRECT_CHANNEL),
             std::vector<std::string>(
@@ -101,8 +102,8 @@ TEST(ChannelStackFilters, LooksAsExpected) {
             std::vector<std::string>(
                 {"authority", "http-client", "compression", "connected"}));
   EXPECT_EQ(MakeStack("chttp2", minimal_stack_args, GRPC_SERVER_CHANNEL),
-            std::vector<std::string>(
-                {"server", "http-server", "compression", "connected"}));
+            std::vector<std::string>({"server", "http-server", "compression",
+                                      "server_call_tracer", "connected"}));
   EXPECT_EQ(MakeStack(nullptr, minimal_stack_args, GRPC_CLIENT_CHANNEL),
             std::vector<std::string>({"client-channel"}));
 
@@ -115,8 +116,8 @@ TEST(ChannelStackFilters, LooksAsExpected) {
       MakeStack("unknown", no_args, GRPC_CLIENT_SUBCHANNEL),
       std::vector<std::string>({"authority", "message_size", "connected"}));
   EXPECT_EQ(MakeStack("unknown", no_args, GRPC_SERVER_CHANNEL),
-            std::vector<std::string>(
-                {"server", "message_size", "deadline", "connected"}));
+            std::vector<std::string>({"server", "message_size", "deadline",
+                                      "server_call_tracer", "connected"}));
 
   EXPECT_EQ(
       MakeStack("chttp2", no_args, GRPC_CLIENT_DIRECT_CHANNEL),
@@ -127,10 +128,10 @@ TEST(ChannelStackFilters, LooksAsExpected) {
       std::vector<std::string>({"authority", "message_size", "http-client",
                                 "compression", "connected"}));
 
-  EXPECT_EQ(
-      MakeStack("chttp2", no_args, GRPC_SERVER_CHANNEL),
-      std::vector<std::string>({"server", "message_size", "deadline",
-                                "http-server", "compression", "connected"}));
+  EXPECT_EQ(MakeStack("chttp2", no_args, GRPC_SERVER_CHANNEL),
+            std::vector<std::string>({"server", "message_size", "deadline",
+                                      "http-server", "compression",
+                                      "server_call_tracer", "connected"}));
   EXPECT_EQ(MakeStack(nullptr, no_args, GRPC_CLIENT_CHANNEL),
             std::vector<std::string>({"client-channel"}));
 }

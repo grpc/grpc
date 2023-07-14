@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_EV_EPOLL1_LINUX_H
-#define GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_EV_EPOLL1_LINUX_H
+#ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_EV_EPOLL1_LINUX_H
+#define GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_EV_EPOLL1_LINUX_H
 #include <grpc/support/port_platform.h>
 
 #include <list>
@@ -27,6 +27,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 
+#include "src/core/lib/event_engine/forkable.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/internal_errqueue.h"
@@ -46,7 +47,7 @@ namespace experimental {
 class Epoll1EventHandle;
 
 // Definition of epoll1 based poller.
-class Epoll1Poller : public PosixEventPoller {
+class Epoll1Poller : public PosixEventPoller, public Forkable {
  public:
   explicit Epoll1Poller(Scheduler* scheduler);
   EventHandle* CreateHandle(int fd, absl::string_view name,
@@ -67,6 +68,13 @@ class Epoll1Poller : public PosixEventPoller {
   }
   ~Epoll1Poller() override;
 
+  // Forkable
+  void PrepareFork() override;
+  void PostforkParent() override;
+  void PostforkChild() override;
+
+  void Close();
+
  private:
   // This initial vector size may need to be tuned
   using Events = absl::InlinedVector<Epoll1EventHandle*, 5>;
@@ -79,6 +87,7 @@ class Epoll1Poller : public PosixEventPoller {
   // on file descriptors that became readable/writable.
   bool ProcessEpollEvents(int max_epoll_events_to_handle,
                           Events& pending_events);
+
   //  Do epoll_wait and store the events in g_epoll_set.events field. This does
   //  not "process" any of the events yet; that is done in ProcessEpollEvents().
   //  See ProcessEpollEvents() function for more details. It returns the number
@@ -117,6 +126,7 @@ class Epoll1Poller : public PosixEventPoller {
   bool was_kicked_ ABSL_GUARDED_BY(mu_);
   std::list<EventHandle*> free_epoll1_handles_list_ ABSL_GUARDED_BY(mu_);
   std::unique_ptr<WakeupFd> wakeup_fd_;
+  bool closed_;
 };
 
 // Return an instance of a epoll1 based poller tied to the specified event
@@ -126,4 +136,4 @@ Epoll1Poller* MakeEpoll1Poller(Scheduler* scheduler);
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_EV_EPOLL1_LINUX_H
+#endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_EV_EPOLL1_LINUX_H

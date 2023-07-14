@@ -14,6 +14,7 @@
 // limitations under the License.
 //
 
+#include <initializer_list>
 #include <map>
 #include <memory>
 #include <string>
@@ -27,16 +28,16 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "upb/def.hpp"
+#include "upb/reflection/def.hpp"
 #include "upb/upb.hpp"
 
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
@@ -46,10 +47,12 @@
 #include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_writer.h"
 #include "src/proto/grpc/testing/xds/v3/address.pb.h"
 #include "src/proto/grpc/testing/xds/v3/base.pb.h"
 #include "src/proto/grpc/testing/xds/v3/config_source.pb.h"
@@ -110,9 +113,8 @@ class XdsListenerTest : public ::testing::Test {
         "  }\n"
         "}");
     if (!bootstrap.ok()) {
-      gpr_log(GPR_ERROR, "Error parsing bootstrap: %s",
-              bootstrap.status().ToString().c_str());
-      GPR_ASSERT(false);
+      Crash(absl::StrFormat("Error parsing bootstrap: %s",
+                            bootstrap.status().ToString().c_str()));
     }
     return MakeRefCounted<XdsClient>(std::move(*bootstrap),
                                      /*transport_factory=*/nullptr,
@@ -288,7 +290,7 @@ TEST_P(HttpConnectionManagerTest, MinimumValidConfig) {
   EXPECT_EQ(router.name, "router");
   EXPECT_EQ(router.config.config_proto_type_name,
             "envoy.extensions.filters.http.router.v3.Router");
-  EXPECT_EQ(router.config.config, Json()) << router.config.config.Dump();
+  EXPECT_EQ(router.config.config, Json()) << JsonDump(router.config.config);
   EXPECT_EQ(http_connection_manager->http_max_stream_duration,
             Duration::Zero());
 }
@@ -322,7 +324,7 @@ TEST_P(HttpConnectionManagerTest, RdsConfigSourceUsesAds) {
   EXPECT_EQ(router.name, "router");
   EXPECT_EQ(router.config.config_proto_type_name,
             "envoy.extensions.filters.http.router.v3.Router");
-  EXPECT_EQ(router.config.config, Json()) << router.config.config.Dump();
+  EXPECT_EQ(router.config.config, Json()) << JsonDump(router.config.config);
   EXPECT_EQ(http_connection_manager->http_max_stream_duration,
             Duration::Zero());
 }
@@ -435,7 +437,7 @@ TEST_P(HttpConnectionManagerTest, SetsMaxStreamDuration) {
   EXPECT_EQ(router.name, "router");
   EXPECT_EQ(router.config.config_proto_type_name,
             "envoy.extensions.filters.http.router.v3.Router");
-  EXPECT_EQ(router.config.config, Json()) << router.config.config.Dump();
+  EXPECT_EQ(router.config.config, Json()) << JsonDump(router.config.config);
   EXPECT_EQ(http_connection_manager->http_max_stream_duration,
             Duration::Milliseconds(5005));
 }
@@ -636,7 +638,7 @@ TEST_P(HttpConnectionManagerTest, HttpFilterTypeNotSupportedButOptional) {
   EXPECT_EQ(router.name, "router");
   EXPECT_EQ(router.config.config_proto_type_name,
             "envoy.extensions.filters.http.router.v3.Router");
-  EXPECT_EQ(router.config.config, Json()) << router.config.config.Dump();
+  EXPECT_EQ(router.config.config, Json()) << JsonDump(router.config.config);
 }
 
 TEST_P(HttpConnectionManagerTest, NoHttpFilters) {
@@ -774,7 +776,7 @@ TEST_F(HttpConnectionManagerClientOrServerOnlyTest,
   EXPECT_EQ(router.name, "router");
   EXPECT_EQ(router.config.config_proto_type_name,
             "envoy.extensions.filters.http.router.v3.Router");
-  EXPECT_EQ(router.config.config, Json()) << router.config.config.Dump();
+  EXPECT_EQ(router.config.config, Json()) << JsonDump(router.config.config);
 }
 
 TEST_F(HttpConnectionManagerClientOrServerOnlyTest,
@@ -859,7 +861,7 @@ TEST_F(HttpConnectionManagerClientOrServerOnlyTest,
   EXPECT_EQ(router.name, "router");
   EXPECT_EQ(router.config.config_proto_type_name,
             "envoy.extensions.filters.http.router.v3.Router");
-  EXPECT_EQ(router.config.config, Json()) << router.config.config.Dump();
+  EXPECT_EQ(router.config.config, Json()) << JsonDump(router.config.config);
 }
 
 //
@@ -978,7 +980,7 @@ TEST_F(TcpListenerTest, MinimumValidConfig) {
   EXPECT_EQ(router.name, "router");
   EXPECT_EQ(router.config.config_proto_type_name,
             "envoy.extensions.filters.http.router.v3.Router");
-  EXPECT_EQ(router.config.config, Json()) << router.config.config.Dump();
+  EXPECT_EQ(router.config.config, Json()) << JsonDump(router.config.config);
   EXPECT_EQ(http_connection_manager.http_max_stream_duration, Duration::Zero());
 }
 
@@ -1055,7 +1057,7 @@ TEST_F(TcpListenerTest, FilterChainMatchCriteria) {
   EXPECT_EQ(router.name, "router");
   EXPECT_EQ(router.config.config_proto_type_name,
             "envoy.extensions.filters.http.router.v3.Router");
-  EXPECT_EQ(router.config.config, Json()) << router.config.config.Dump();
+  EXPECT_EQ(router.config.config, Json()) << JsonDump(router.config.config);
   EXPECT_EQ(http_connection_manager.http_max_stream_duration, Duration::Zero());
 }
 

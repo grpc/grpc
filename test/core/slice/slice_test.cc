@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -24,6 +24,7 @@
 #include <string.h>
 
 #include <algorithm>
+#include <functional>
 #include <memory>
 #include <random>
 #include <string>
@@ -36,30 +37,32 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/slice_refcount.h"
 #include "test/core/util/build.h"
 
 TEST(GrpcSliceTest, MallocReturnsSomethingSensible) {
-  /* Calls grpc_slice_create for various lengths and verifies the internals for
-     consistency. */
+  // Calls grpc_slice_create for various lengths and verifies the internals for
+  // consistency.
   size_t length;
   size_t i;
   grpc_slice slice;
 
   for (length = 0; length <= 1024; length++) {
     slice = grpc_slice_malloc(length);
-    /* If there is a length, slice.data must be non-NULL. If length is zero
-       we don't care. */
+    // If there is a length, slice.data must be non-NULL. If length is zero
+    // we don't care.
     if (length > GRPC_SLICE_INLINED_SIZE) {
       EXPECT_NE(slice.data.refcounted.bytes, nullptr);
     }
-    /* Returned slice length must be what was requested. */
+    // Returned slice length must be what was requested.
     EXPECT_EQ(GRPC_SLICE_LENGTH(slice), length);
-    /* We must be able to write to every byte of the data */
+    // We must be able to write to every byte of the data
     for (i = 0; i < length; i++) {
       GRPC_SLICE_START_PTR(slice)[i] = static_cast<uint8_t>(i);
     }
-    /* And finally we must succeed in destroying the slice */
+    // And finally we must succeed in destroying the slice
     grpc_slice_unref(slice);
   }
 }
@@ -76,7 +79,7 @@ TEST(GrpcSliceTest, SliceNewReturnsSomethingSensible) {
   grpc_slice_unref(slice);
 }
 
-/* destroy function that sets a mark to indicate it was called. */
+// destroy function that sets a mark to indicate it was called.
 static void set_mark(void* p) { *(static_cast<int*>(p)) = 1; }
 
 TEST(GrpcSliceTest, SliceNewWithUserData) {
@@ -92,7 +95,7 @@ TEST(GrpcSliceTest, SliceNewWithUserData) {
   EXPECT_EQ(GRPC_SLICE_START_PTR(slice)[0], 0);
   EXPECT_EQ(GRPC_SLICE_START_PTR(slice)[1], 1);
 
-  /* unref should cause destroy function to run. */
+  // unref should cause destroy function to run.
   grpc_slice_unref(slice);
   EXPECT_EQ(marker, 1);
 }
@@ -106,28 +109,28 @@ static void do_nothing_with_len_1(void* /*ignored*/, size_t len) {
 
 TEST(GrpcSliceTest, SliceNewWithLenReturnsSomethingSensible) {
   uint8_t x;
-  int num_refs = 5; /* To test adding/removing an arbitrary number of refs */
+  int num_refs = 5;  // To test adding/removing an arbitrary number of refs
   int i;
 
   grpc_slice slice = grpc_slice_new_with_len(&x, 1, do_nothing_with_len_1);
   EXPECT_NE(slice.refcount,
-            nullptr); /* ref count is initialized to 1 at this point */
+            nullptr);  // ref count is initialized to 1 at this point
   EXPECT_EQ(slice.data.refcounted.bytes, &x);
   EXPECT_EQ(slice.data.refcounted.length, 1);
   EXPECT_EQ(do_nothing_with_len_1_calls, 0);
 
-  /* Add an arbitrary number of refs to the slice and remoe the refs. This is to
-     make sure that that the destroy callback (i.e do_nothing_with_len_1()) is
-     not called until the last unref operation */
+  // Add an arbitrary number of refs to the slice and remoe the refs. This is to
+  // make sure that that the destroy callback (i.e do_nothing_with_len_1()) is
+  // not called until the last unref operation
   for (i = 0; i < num_refs; i++) {
     grpc_slice_ref(slice);
   }
   for (i = 0; i < num_refs; i++) {
     grpc_slice_unref(slice);
   }
-  EXPECT_EQ(do_nothing_with_len_1_calls, 0); /* Shouldn't be called yet */
+  EXPECT_EQ(do_nothing_with_len_1_calls, 0);  // Shouldn't be called yet
 
-  /* last unref */
+  // last unref
   grpc_slice_unref(slice);
   EXPECT_EQ(do_nothing_with_len_1_calls, 1);
 }
@@ -141,15 +144,15 @@ TEST_P(GrpcSliceSizedTest, SliceSubWorks) {
   grpc_slice sub;
   unsigned i, j, k;
 
-  /* Create a slice in which each byte is equal to the distance from it to the
-     beginning of the slice. */
+  // Create a slice in which each byte is equal to the distance from it to the
+  // beginning of the slice.
   slice = grpc_slice_malloc(length);
   for (i = 0; i < length; i++) {
     GRPC_SLICE_START_PTR(slice)[i] = static_cast<uint8_t>(i);
   }
 
-  /* Ensure that for all subsets length is correct and that we start on the
-     correct byte. Additionally check that no copies were made. */
+  // Ensure that for all subsets length is correct and that we start on the
+  // correct byte. Additionally check that no copies were made.
   for (i = 0; i < length; i++) {
     for (j = i; j < length; j++) {
       sub = grpc_slice_sub(slice, i, j);
@@ -182,15 +185,15 @@ TEST_P(GrpcSliceSizedTest, SliceSplitHeadWorks) {
 
   gpr_log(GPR_INFO, "length=%" PRIuPTR, length);
 
-  /* Create a slice in which each byte is equal to the distance from it to the
-     beginning of the slice. */
+  // Create a slice in which each byte is equal to the distance from it to the
+  // beginning of the slice.
   slice = grpc_slice_malloc(length);
   for (i = 0; i < length; i++) {
     GRPC_SLICE_START_PTR(slice)[i] = static_cast<uint8_t>(i);
   }
 
-  /* Ensure that for all subsets length is correct and that we start on the
-     correct byte. Additionally check that no copies were made. */
+  // Ensure that for all subsets length is correct and that we start on the
+  // correct byte. Additionally check that no copies were made.
   for (i = 0; i < length; i++) {
     tail = grpc_slice_ref(slice);
     head = grpc_slice_split_head(&tail, i);
@@ -211,15 +214,15 @@ TEST_P(GrpcSliceSizedTest, SliceSplitTailWorks) {
 
   gpr_log(GPR_INFO, "length=%" PRIuPTR, length);
 
-  /* Create a slice in which each byte is equal to the distance from it to the
-     beginning of the slice. */
+  // Create a slice in which each byte is equal to the distance from it to the
+  // beginning of the slice.
   slice = grpc_slice_malloc(length);
   for (i = 0; i < length; i++) {
     GRPC_SLICE_START_PTR(slice)[i] = static_cast<uint8_t>(i);
   }
 
-  /* Ensure that for all subsets length is correct and that we start on the
-     correct byte. Additionally check that no copies were made. */
+  // Ensure that for all subsets length is correct and that we start on the
+  // correct byte. Additionally check that no copies were made.
   for (i = 0; i < length; i++) {
     head = grpc_slice_ref(slice);
     tail = grpc_slice_split_tail(&head, i);
@@ -347,9 +350,39 @@ INSTANTIATE_TEST_SUITE_P(SliceSizedTest, SliceSizedTest,
                            }
                            return out;
                          }()),
-                         [](const testing::TestParamInfo<size_t>& info) {
+                         [](const ::testing::TestParamInfo<size_t>& info) {
                            return std::to_string(info.param);
                          });
+
+class TakeUniquelyOwnedTest
+    : public ::testing::TestWithParam<std::function<Slice()>> {};
+
+TEST_P(TakeUniquelyOwnedTest, TakeUniquelyOwned) {
+  auto owned = GetParam()().TakeUniquelyOwned();
+  auto* refcount = owned.c_slice().refcount;
+  if (refcount != nullptr && refcount != grpc_slice_refcount::NoopRefcount()) {
+    EXPECT_TRUE(refcount->IsUnique());
+  }
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    TakeUniquelyOwnedTest, TakeUniquelyOwnedTest,
+    ::testing::Values(
+        []() {
+          static const NoDestruct<std::string> big('a', 1024);
+          return Slice::FromStaticBuffer(big->data(), big->size());
+        },
+        []() {
+          static const NoDestruct<std::string> big('a', 1024);
+          return Slice::FromCopiedBuffer(big->data(), big->size());
+        },
+        []() {
+          static const NoDestruct<std::string> big('a', 1024);
+          static const NoDestruct<Slice> big_slice(
+              Slice::FromCopiedBuffer(big->data(), big->size()));
+          return big_slice->Ref();
+        },
+        []() { return Slice::FromStaticString("hello"); }));
 
 size_t SumSlice(const Slice& slice) {
   size_t x = 0;
@@ -439,15 +472,6 @@ TEST(SliceTest, SliceCastWorks) {
   EXPECT_EQ(&slice, &test.c_slice());
   const Slice& other = SliceCast<Slice>(slice);
   EXPECT_EQ(&other, &test);
-}
-
-TEST(SliceTest, MutableSliceCastWorks) {
-  using ::grpc_event_engine::experimental::internal::SliceCast;
-  Slice test = Slice::FromCopiedString("hello world!");
-  grpc_slice& slice = SliceCast<grpc_slice>(test);
-  EXPECT_EQ(&slice, &test.c_slice());
-  slice = grpc_slice_from_static_string("goodbye world!");
-  EXPECT_EQ(test.as_string_view(), "goodbye world!");
 }
 
 }  // namespace

@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -22,17 +22,16 @@
 
 #include <stdlib.h>
 
-#include <string>
-
 #include "absl/container/inlined_vector.h"
 #include "absl/strings/ascii.h"
+#include "absl/strings/str_format.h"
 #include "absl/strings/str_split.h"
-#include "absl/types/variant.h"
 
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/surface/api_trace.h"
 
 namespace grpc_core {
@@ -112,9 +111,8 @@ CompressionAlgorithmSet::CompressionAlgorithmForLevel(
   GRPC_API_TRACE("grpc_message_compression_algorithm_for_level(level=%d)", 1,
                  ((int)level));
   if (level > GRPC_COMPRESS_LEVEL_HIGH) {
-    gpr_log(GPR_ERROR, "Unknown message compression level %d.",
-            static_cast<int>(level));
-    abort();
+    Crash(absl::StrFormat("Unknown message compression level %d.",
+                          static_cast<int>(level)));
   }
 
   if (level == GRPC_COMPRESS_LEVEL_NONE) {
@@ -123,10 +121,10 @@ CompressionAlgorithmSet::CompressionAlgorithmForLevel(
 
   GPR_ASSERT(level > 0);
 
-  /* Establish a "ranking" or compression algorithms in increasing order of
-   * compression.
-   * This is simplistic and we will probably want to introduce other dimensions
-   * in the future (cpu/memory cost, etc). */
+  // Establish a "ranking" or compression algorithms in increasing order of
+  // compression.
+  // This is simplistic and we will probably want to introduce other dimensions
+  // in the future (cpu/memory cost, etc).
   absl::InlinedVector<grpc_compression_algorithm,
                       GRPC_COMPRESS_ALGORITHMS_COUNT>
       algos;
@@ -142,7 +140,7 @@ CompressionAlgorithmSet::CompressionAlgorithmForLevel(
 
   switch (level) {
     case GRPC_COMPRESS_LEVEL_NONE:
-      abort(); /* should have been handled already */
+      abort();  // should have been handled already
     case GRPC_COMPRESS_LEVEL_LOW:
       return algos[0];
     case GRPC_COMPRESS_LEVEL_MED:
@@ -229,10 +227,10 @@ absl::optional<grpc_compression_algorithm>
 DefaultCompressionAlgorithmFromChannelArgs(const ChannelArgs& args) {
   auto* value = args.Get(GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM);
   if (value == nullptr) return absl::nullopt;
-  if (auto* p = absl::get_if<int>(value)) {
+  if (auto* p = value->GetIfInt()) {
     return static_cast<grpc_compression_algorithm>(*p);
   }
-  if (auto* p = absl::get_if<std::string>(value)) {
+  if (auto* p = value->GetIfString()) {
     return ParseCompressionAlgorithm(*p);
   }
   return absl::nullopt;

@@ -27,28 +27,29 @@ lookback_hours = 24 * 7 * 4
 
 
 def include_test(test):
-    if '@' in test:
+    if "@" in test:
         return False
     if test.startswith("//test/cpp/qps:"):
         return False
     return True
 
 
-TEST_DIRS = ['test/core', 'test/cpp']
+TEST_DIRS = ["test/core", "test/cpp"]
 tests = {}
 already_flaky = set()
 for test_dir in TEST_DIRS:
     for line in subprocess.check_output(
-        ['bazel', 'query', 'tests({}/...)'.format(test_dir)]).splitlines():
-        test = line.strip().decode('utf-8')
+        ["bazel", "query", "tests({}/...)".format(test_dir)]
+    ).splitlines():
+        test = line.strip().decode("utf-8")
         if not include_test(test):
             continue
         tests[test] = False
 for test_dir in TEST_DIRS:
     for line in subprocess.check_output(
-        ['bazel', 'query',
-         'attr(flaky, 1, tests({}/...))'.format(test_dir)]).splitlines():
-        test = line.strip().decode('utf-8')
+        ["bazel", "query", "attr(flaky, 1, tests({}/...))".format(test_dir)]
+    ).splitlines():
+        test = line.strip().decode("utf-8")
         if not include_test(test):
             continue
         already_flaky.add(test)
@@ -57,15 +58,16 @@ flaky_e2e = set()
 
 client = bigquery.Client()
 for row in client.query(
-        update_flakes_query.QUERY.format(
-            lookback_hours=lookback_hours)).result():
+    update_flakes_query.QUERY.format(lookback_hours=lookback_hours)
+).result():
     if "/macos/" in row.job_name:
         continue  # we know mac stuff is flaky
     if row.test_binary not in tests:
-        m = re.match(r'^//test/core/end2end:([^@]*)@([^@]*)(.*)',
-                     row.test_binary)
+        m = re.match(
+            r"^//test/core/end2end:([^@]*)@([^@]*)(.*)", row.test_binary
+        )
         if m:
-            flaky_e2e.add('{}@{}{}'.format(m.group(1), m.group(2), m.group(3)))
+            flaky_e2e.add("{}@{}{}".format(m.group(1), m.group(2), m.group(3)))
             print("will mark end2end test {} as flaky".format(row.test_binary))
         else:
             print("skip obsolete test {}".format(row.test_binary))
@@ -76,29 +78,33 @@ for row in client.query(
 buildozer_commands = []
 for test, flaky in sorted(tests.items()):
     if flaky:
-        buildozer_commands.append('set flaky True|{}'.format(test))
+        buildozer_commands.append("set flaky True|{}".format(test))
     elif test in already_flaky:
-        buildozer_commands.append('remove flaky|{}'.format(test))
+        buildozer_commands.append("remove flaky|{}".format(test))
 
-with open('test/core/end2end/flaky.bzl', 'w') as f:
+with open("test/core/end2end/flaky.bzl", "w") as f:
     with open(sys.argv[0]) as my_source:
         for line in my_source:
-            if line[0] != '#':
+            if line[0] != "#":
                 break
         for line in my_source:
-            if line[0] == '#':
+            if line[0] == "#":
                 print(line.strip(), file=f)
                 break
         for line in my_source:
-            if line[0] != '#':
+            if line[0] != "#":
                 break
             print(line.strip(), file=f)
     print(
-        "\"\"\"A list of flaky tests, consumed by generate_tests.bzl to set flaky attrs.\"\"\"",
-        file=f)
+        (
+            '"""A list of flaky tests, consumed by generate_tests.bzl to set'
+            ' flaky attrs."""'
+        ),
+        file=f,
+    )
     print("FLAKY_TESTS = [", file=f)
     for line in sorted(list(flaky_e2e)):
-        print("    \"{}\",".format(line), file=f)
+        print('    "{}",'.format(line), file=f)
     print("]", file=f)
 
 run_buildozer.run_buildozer(buildozer_commands)

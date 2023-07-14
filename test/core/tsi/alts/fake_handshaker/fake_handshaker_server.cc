@@ -1,25 +1,27 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 #include "test/core/tsi/alts/fake_handshaker/fake_handshaker_server.h"
 
 #include <memory>
 #include <sstream>
 #include <string>
+
+#include "absl/strings/str_format.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
@@ -30,6 +32,7 @@
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/async_stream.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "test/core/tsi/alts/fake_handshaker/handshaker.grpc.pb.h"
 #include "test/core/tsi/alts/fake_handshaker/handshaker.pb.h"
 #include "test/core/tsi/alts/fake_handshaker/transport_security_common.pb.h"
@@ -55,13 +58,12 @@ namespace gcp {
 // It is thread-safe.
 class FakeHandshakerService : public HandshakerService::Service {
  public:
-  explicit FakeHandshakerService(int expected_max_concurrent_rpcs)
-      : expected_max_concurrent_rpcs_(expected_max_concurrent_rpcs) {}
+  explicit FakeHandshakerService(const std::string& peer_identity)
+      : peer_identity_(peer_identity) {}
 
   Status DoHandshake(
       ServerContext* /*server_context*/,
       ServerReaderWriter<HandshakerResp, HandshakerReq>* stream) override {
-    ConcurrentRpcsCheck concurrent_rpcs_check(this);
     Status status;
     HandshakerContext context;
     HandshakerReq request;
@@ -232,7 +234,7 @@ class FakeHandshakerService : public HandshakerService::Service {
     HandshakerResult result;
     result.set_application_protocol("grpc");
     result.set_record_protocol("ALTSRP_GCM_AES128_REKEY");
-    result.mutable_peer_identity()->set_service_account("peer_identity");
+    result.mutable_peer_identity()->set_service_account(peer_identity_);
     result.mutable_local_identity()->set_service_account("local_identity");
     string key(1024, '\0');
     result.set_key_data(key);
@@ -244,46 +246,13 @@ class FakeHandshakerService : public HandshakerService::Service {
     return result;
   }
 
-  class ConcurrentRpcsCheck {
-   public:
-    explicit ConcurrentRpcsCheck(FakeHandshakerService* parent)
-        : parent_(parent) {
-      if (parent->expected_max_concurrent_rpcs_ > 0) {
-        grpc::internal::MutexLock lock(
-            &parent->expected_max_concurrent_rpcs_mu_);
-        if (++parent->concurrent_rpcs_ >
-            parent->expected_max_concurrent_rpcs_) {
-          gpr_log(GPR_ERROR,
-                  "FakeHandshakerService:%p concurrent_rpcs_:%d "
-                  "expected_max_concurrent_rpcs:%d",
-                  parent, parent->concurrent_rpcs_,
-                  parent->expected_max_concurrent_rpcs_);
-          abort();
-        }
-      }
-    }
-
-    ~ConcurrentRpcsCheck() {
-      if (parent_->expected_max_concurrent_rpcs_ > 0) {
-        grpc::internal::MutexLock lock(
-            &parent_->expected_max_concurrent_rpcs_mu_);
-        parent_->concurrent_rpcs_--;
-      }
-    }
-
-   private:
-    FakeHandshakerService* parent_;
-  };
-
-  grpc::internal::Mutex expected_max_concurrent_rpcs_mu_;
-  int concurrent_rpcs_ = 0;
-  const int expected_max_concurrent_rpcs_;
+  const std::string peer_identity_;
 };
 
 std::unique_ptr<grpc::Service> CreateFakeHandshakerService(
-    int expected_max_concurrent_rpcs) {
+    const std::string& peer_identity) {
   return std::unique_ptr<grpc::Service>{
-      new grpc::gcp::FakeHandshakerService(expected_max_concurrent_rpcs)};
+      new grpc::gcp::FakeHandshakerService(peer_identity)};
 }
 
 }  // namespace gcp

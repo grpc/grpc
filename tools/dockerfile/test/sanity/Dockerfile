@@ -53,10 +53,6 @@ RUN apt-get update && apt-get install -y \
   zip \
   && apt-get clean
 
-#=================
-# C++ dependencies
-RUN apt-get update && apt-get -y install libc++-dev clang && apt-get clean
-
 
 # Install Python 3.7 from source (and installed as a default python3)
 # (Bullseye comes with Python 3.9 which isn't supported by pytype yet)
@@ -106,7 +102,7 @@ RUN apt-get update && apt-get install -y jq git cmake zlib1g-dev libtinfo-dev li
 # Bazel installation
 
 # Must be in sync with tools/bazel
-ENV BAZEL_VERSION 5.3.0
+ENV BAZEL_VERSION 6.1.2
 
 # The correct bazel version is already preinstalled, no need to use //tools/bazel wrapper.
 ENV DISABLE_BAZEL_WRAPPER 1
@@ -129,6 +125,12 @@ RUN BAZEL_ARCH_SUFFIX="$(uname -m | sed s/aarch64/arm64/)" \
 RUN wget https://github.com/bazelbuild/buildtools/releases/download/0.29.0/buildifier
 RUN chmod +x buildifier
 RUN mv buildifier /usr/local/bin
+
+#=================
+# Setup git to access working directory across docker boundary
+
+RUN git config --global --add safe.directory /var/local/jenkins/grpc
+RUN git config --global protocol.file.allow always
 
 
 # Define the default command.

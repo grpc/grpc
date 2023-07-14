@@ -42,6 +42,12 @@ class StreamingOutputCallRequest extends \Google\Protobuf\Internal\Message
      * Generated from protobuf field <code>.grpc.testing.EchoStatus response_status = 7;</code>
      */
     protected $response_status = null;
+    /**
+     * If set the server should update this metrics report data at the OOB server.
+     *
+     * Generated from protobuf field <code>.grpc.testing.TestOrcaReport orca_oob_report = 8;</code>
+     */
+    protected $orca_oob_report = null;
 
     /**
      * Constructor.
@@ -60,6 +66,8 @@ class StreamingOutputCallRequest extends \Google\Protobuf\Internal\Message
      *           Optional input payload sent along with the request.
      *     @type \Grpc\Testing\EchoStatus $response_status
      *           Whether server should return a given status
+     *     @type \Grpc\Testing\TestOrcaReport $orca_oob_report
+     *           If set the server should update this metrics report data at the OOB server.
      * }
      */
     public function __construct($data = NULL) {
@@ -193,6 +201,42 @@ class StreamingOutputCallRequest extends \Google\Protobuf\Internal\Message
     {
         GPBUtil::checkMessage($var, \Grpc\Testing\EchoStatus::class);
         $this->response_status = $var;
+
+        return $this;
+    }
+
+    /**
+     * If set the server should update this metrics report data at the OOB server.
+     *
+     * Generated from protobuf field <code>.grpc.testing.TestOrcaReport orca_oob_report = 8;</code>
+     * @return \Grpc\Testing\TestOrcaReport|null
+     */
+    public function getOrcaOobReport()
+    {
+        return $this->orca_oob_report;
+    }
+
+    public function hasOrcaOobReport()
+    {
+        return isset($this->orca_oob_report);
+    }
+
+    public function clearOrcaOobReport()
+    {
+        unset($this->orca_oob_report);
+    }
+
+    /**
+     * If set the server should update this metrics report data at the OOB server.
+     *
+     * Generated from protobuf field <code>.grpc.testing.TestOrcaReport orca_oob_report = 8;</code>
+     * @param \Grpc\Testing\TestOrcaReport $var
+     * @return $this
+     */
+    public function setOrcaOobReport($var)
+    {
+        GPBUtil::checkMessage($var, \Grpc\Testing\TestOrcaReport::class);
+        $this->orca_oob_report = $var;
 
         return $this;
     }

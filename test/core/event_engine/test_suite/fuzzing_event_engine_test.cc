@@ -15,7 +15,6 @@
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 
 #include <atomic>
-#include <chrono>
 #include <thread>
 
 #include <gtest/gtest.h>
@@ -24,7 +23,8 @@
 #include "absl/time/time.h"
 
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
-#include "test/core/event_engine/test_suite/event_engine_test.h"
+#include "test/core/event_engine/test_suite/event_engine_test_framework.h"
+#include "test/core/event_engine/test_suite/tests/timer_test.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -36,7 +36,6 @@ class ThreadedFuzzingEventEngine : public FuzzingEventEngine {
       : FuzzingEventEngine(
             []() {
               Options options;
-              options.final_tick_length = std::chrono::milliseconds(10);
               return options;
             }(),
             fuzzing_event_engine::Actions()),
@@ -66,11 +65,11 @@ class ThreadedFuzzingEventEngine : public FuzzingEventEngine {
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
-  SetEventEngineFactories(
-      []() {
-        return std::make_unique<
-            grpc_event_engine::experimental::ThreadedFuzzingEventEngine>();
-      },
-      nullptr);
+  std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine> engine =
+      std::make_shared<
+          grpc_event_engine::experimental::ThreadedFuzzingEventEngine>();
+  SetEventEngineFactories([engine]() { return engine; },
+                          [engine]() { return engine; });
+  grpc_event_engine::experimental::InitTimerTests();
   return RUN_ALL_TESTS();
 }

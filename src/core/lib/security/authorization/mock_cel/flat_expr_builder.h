@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_SECURITY_AUTHORIZATION_MOCK_CEL_FLAT_EXPR_BUILDER_H
-#define GRPC_CORE_LIB_SECURITY_AUTHORIZATION_MOCK_CEL_FLAT_EXPR_BUILDER_H
+#ifndef GRPC_SRC_CORE_LIB_SECURITY_AUTHORIZATION_MOCK_CEL_FLAT_EXPR_BUILDER_H
+#define GRPC_SRC_CORE_LIB_SECURITY_AUTHORIZATION_MOCK_CEL_FLAT_EXPR_BUILDER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -62,4 +62,4 @@ class FlatExprBuilder : public CelExpressionBuilder {
 }  // namespace mock_cel
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_SECURITY_AUTHORIZATION_MOCK_CEL_FLAT_EXPR_BUILDER_H
+#endif  // GRPC_SRC_CORE_LIB_SECURITY_AUTHORIZATION_MOCK_CEL_FLAT_EXPR_BUILDER_H

@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_XDS_XDS_CLIENT_H
-#define GRPC_CORE_EXT_XDS_XDS_CLIENT_H
+#ifndef GRPC_SRC_CORE_EXT_XDS_XDS_CLIENT_H
+#define GRPC_SRC_CORE_EXT_XDS_XDS_CLIENT_H
 
 #include <grpc/support/port_platform.h>
 
@@ -30,7 +30,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "upb/def.hpp"
+#include "upb/reflection/def.hpp"
 
 #include <grpc/event_engine/event_engine.h>
 
@@ -341,4 +341,4 @@ class XdsClient : public DualRefCounted<XdsClient> {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_XDS_XDS_CLIENT_H
+#endif  // GRPC_SRC_CORE_EXT_XDS_XDS_CLIENT_H

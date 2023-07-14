@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <memory>
 #include <string>
@@ -27,13 +27,10 @@
 
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/global_config_generic.h"
-#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -101,9 +98,7 @@ TEST(DnsResolverTest, MainTest) {
   test_succeeds(dns, "dns:10.2.1.1:1234");
   test_succeeds(dns, "dns:www.google.com");
   test_succeeds(dns, "dns:///www.google.com");
-  grpc_core::UniquePtr<char> resolver =
-      GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
-  if (gpr_stricmp(resolver.get(), "native") == 0) {
+  if (grpc_core::ConfigVars::Get().DnsResolver() == "native") {
     test_fails(dns, "dns://8.8.8.8/8.8.8.8:8888");
   } else {
     test_succeeds(dns, "dns://8.8.8.8/8.8.8.8:8888");

@@ -1,23 +1,23 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-#ifndef GRPC_CORE_LIB_SECURITY_CONTEXT_SECURITY_CONTEXT_H
-#define GRPC_CORE_LIB_SECURITY_CONTEXT_SECURITY_CONTEXT_H
+#ifndef GRPC_SRC_CORE_LIB_SECURITY_CONTEXT_SECURITY_CONTEXT_H
+#define GRPC_SRC_CORE_LIB_SECURITY_CONTEXT_SECURITY_CONTEXT_H
 
 #include <grpc/support/port_platform.h>
 
@@ -42,11 +42,11 @@
 
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_auth_context_refcount;
 
-/* --- grpc_auth_context ---
+// --- grpc_auth_context ---
 
-   High level authentication context object. Can optionally be chained. */
+// High level authentication context object. Can optionally be chained.
 
-/* Property names are always NULL terminated. */
+// Property names are always NULL terminated.
 
 struct grpc_auth_property_array {
   grpc_auth_property* array = nullptr;
@@ -126,19 +126,19 @@ struct grpc_auth_context
   std::unique_ptr<Extension> extension_;
 };
 
-/* --- grpc_security_context_extension ---
+// --- grpc_security_context_extension ---
 
-   Extension to the security context that may be set in a filter and accessed
-   later by a higher level method on a grpc_call object. */
+// Extension to the security context that may be set in a filter and accessed
+// later by a higher level method on a grpc_call object.
 
 struct grpc_security_context_extension {
   void* instance = nullptr;
   void (*destroy)(void*) = nullptr;
 };
 
-/* --- grpc_client_security_context ---
+// --- grpc_client_security_context ---
 
-   Internal client-side security context. */
+// Internal client-side security context.
 
 struct grpc_client_security_context {
   explicit grpc_client_security_context(
@@ -155,9 +155,9 @@ grpc_client_security_context* grpc_client_security_context_create(
     grpc_core::Arena* arena, grpc_call_credentials* creds);
 void grpc_client_security_context_destroy(void* ctx);
 
-/* --- grpc_server_security_context ---
+// --- grpc_server_security_context ---
 
-   Internal server-side security context. */
+// Internal server-side security context.
 
 struct grpc_server_security_context {
   grpc_server_security_context() = default;
@@ -171,11 +171,11 @@ grpc_server_security_context* grpc_server_security_context_create(
     grpc_core::Arena* arena);
 void grpc_server_security_context_destroy(void* ctx);
 
-/* --- Channel args for auth context --- */
+// --- Channel args for auth context ---
 
 grpc_arg grpc_auth_context_to_arg(grpc_auth_context* c);
 grpc_auth_context* grpc_auth_context_from_arg(const grpc_arg* arg);
 grpc_auth_context* grpc_find_auth_context_in_args(
     const grpc_channel_args* args);
 
-#endif /* GRPC_CORE_LIB_SECURITY_CONTEXT_SECURITY_CONTEXT_H */
+#endif  // GRPC_SRC_CORE_LIB_SECURITY_CONTEXT_SECURITY_CONTEXT_H

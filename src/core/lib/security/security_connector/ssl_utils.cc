@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -32,23 +32,22 @@
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/ext/transport/chttp2/alpn/alpn.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/security_connector/load_system_roots.h"
-#include "src/core/lib/security/security_connector/ssl_utils_config.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security.h"
 
-/* -- Constants. -- */
+// -- Constants. --
 
 #if defined(GRPC_ROOT_PEM_PATH)
 static const char* installed_roots_path = GRPC_ROOT_PEM_PATH;
@@ -63,7 +62,7 @@ static const char* installed_roots_path = "/usr/share/grpc/roots.pem";
 #define TSI_OPENSSL_ALPN_SUPPORT 1
 #endif
 
-/* -- Overridden default roots. -- */
+// -- Overridden default roots. --
 
 static grpc_ssl_roots_override_callback ssl_roots_override_cb = nullptr;
 
@@ -71,30 +70,17 @@ void grpc_set_ssl_roots_override_callback(grpc_ssl_roots_override_callback cb) {
   ssl_roots_override_cb = cb;
 }
 
-/* -- Cipher suites. -- */
+// -- Cipher suites. --
 
 static gpr_once cipher_suites_once = GPR_ONCE_INIT;
 static const char* cipher_suites = nullptr;
 
-// All cipher suites for default are compliant with HTTP2.
-GPR_GLOBAL_CONFIG_DEFINE_STRING(
-    grpc_ssl_cipher_suites,
-    "TLS_AES_128_GCM_SHA256:"
-    "TLS_AES_256_GCM_SHA384:"
-    "TLS_CHACHA20_POLY1305_SHA256:"
-    "ECDHE-ECDSA-AES128-GCM-SHA256:"
-    "ECDHE-ECDSA-AES256-GCM-SHA384:"
-    "ECDHE-RSA-AES128-GCM-SHA256:"
-    "ECDHE-RSA-AES256-GCM-SHA384",
-    "A colon separated list of cipher suites to use with OpenSSL")
-
 static void init_cipher_suites(void) {
-  grpc_core::UniquePtr<char> value =
-      GPR_GLOBAL_CONFIG_GET(grpc_ssl_cipher_suites);
-  cipher_suites = value.release();
+  cipher_suites = gpr_strdup(
+      std::string(grpc_core::ConfigVars::Get().SslCipherSuites()).c_str());
 }
 
-/* --- Util --- */
+// --- Util ---
 
 const char* grpc_get_ssl_cipher_suites(void) {
   gpr_once_init(&cipher_suites_once, init_cipher_suites);
@@ -139,7 +125,7 @@ tsi_tls_version grpc_get_tsi_tls_version(grpc_tls_version tls_version) {
 
 grpc_error_handle grpc_ssl_check_alpn(const tsi_peer* peer) {
 #if TSI_OPENSSL_ALPN_SUPPORT
-  /* Check the ALPN if ALPN is supported. */
+  // Check the ALPN if ALPN is supported.
   const tsi_peer_property* p =
       tsi_peer_get_property_by_name(peer, TSI_SSL_ALPN_SELECTED_PROTOCOL);
   if (p == nullptr) {
@@ -149,13 +135,13 @@ grpc_error_handle grpc_ssl_check_alpn(const tsi_peer* peer) {
   if (!grpc_chttp2_is_alpn_version_supported(p->value.data, p->value.length)) {
     return GRPC_ERROR_CREATE("Cannot check peer: invalid ALPN value.");
   }
-#endif /* TSI_OPENSSL_ALPN_SUPPORT */
+#endif  // TSI_OPENSSL_ALPN_SUPPORT
   return absl::OkStatus();
 }
 
 grpc_error_handle grpc_ssl_check_peer_name(absl::string_view peer_name,
                                            const tsi_peer* peer) {
-  /* Check the peer name if specified. */
+  // Check the peer name if specified.
   if (!peer_name.empty() && !grpc_ssl_host_matches_name(peer, peer_name)) {
     return GRPC_ERROR_CREATE(
         absl::StrCat("Peer name ", peer_name, " is not in peer certificate"));
@@ -182,9 +168,9 @@ absl::Status SslCheckCallHost(absl::string_view host,
   grpc_security_status status = GRPC_SECURITY_ERROR;
   tsi_peer peer = grpc_shallow_peer_from_ssl_auth_context(auth_context);
   if (grpc_ssl_host_matches_name(&peer, host)) status = GRPC_SECURITY_OK;
-  /* If the target name was overridden, then the original target_name was
-   'checked' transitively during the previous peer check at the end of the
-   handshake. */
+  // If the target name was overridden, then the original target_name was
+  //'checked' transitively during the previous peer check at the end of the
+  // handshake.
   if (!overridden_target_name.empty() && host == target_name) {
     status = GRPC_SECURITY_OK;
   }
@@ -261,7 +247,7 @@ grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
   size_t i;
   const char* peer_identity_property_name = nullptr;
 
-  /* The caller has checked the certificate type property. */
+  // The caller has checked the certificate type property.
   GPR_ASSERT(peer->property_count >= 1);
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =
       grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
@@ -280,7 +266,7 @@ grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
                                      prop->value.data, prop->value.length);
     } else if (strcmp(prop->name, TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY) ==
                0) {
-      /* If there is no subject alt name, have the CN as the identity. */
+      // If there is no subject alt name, have the CN as the identity.
       if (peer_identity_property_name == nullptr) {
         peer_identity_property_name = GRPC_X509_CN_PROPERTY_NAME;
       }
@@ -479,7 +465,7 @@ grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
     grpc_ssl_client_certificate_request_type client_certificate_request,
     tsi_tls_version min_tls_version, tsi_tls_version max_tls_version,
     tsi::TlsSessionKeyLoggerCache::TlsSessionKeyLogger* tls_session_key_logger,
-    const char* crl_directory,
+    const char* crl_directory, bool send_client_ca_list,
     tsi_ssl_server_handshaker_factory** handshaker_factory) {
   size_t num_alpn_protocols = 0;
   const char** alpn_protocol_strings =
@@ -497,6 +483,7 @@ grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
   options.max_tls_version = max_tls_version;
   options.key_logger = tls_session_key_logger;
   options.crl_directory = crl_directory;
+  options.send_client_ca_list = send_client_ca_list;
   const tsi_result result =
       tsi_create_ssl_server_handshaker_factory_with_options(&options,
                                                             handshaker_factory);
@@ -509,7 +496,7 @@ grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
   return GRPC_SECURITY_OK;
 }
 
-/* --- Ssl cache implementation. --- */
+// --- Ssl cache implementation. ---
 
 grpc_ssl_session_cache* grpc_ssl_session_cache_create_lru(size_t capacity) {
   tsi_ssl_session_cache* cache = tsi_ssl_session_cache_create_lru(capacity);
@@ -551,7 +538,7 @@ grpc_arg grpc_ssl_session_cache_create_channel_arg(
       const_cast<char*>(GRPC_SSL_SESSION_CACHE_ARG), cache, &vtable);
 }
 
-/* --- Default SSL root store implementation. --- */
+// --- Default SSL root store implementation. ---
 
 namespace grpc_core {
 
@@ -573,14 +560,13 @@ const char* DefaultSslRootStore::GetPemRootCerts() {
 
 grpc_slice DefaultSslRootStore::ComputePemRootCerts() {
   grpc_slice result = grpc_empty_slice();
-  const bool not_use_system_roots =
-      GPR_GLOBAL_CONFIG_GET(grpc_not_use_system_ssl_roots);
   // First try to load the roots from the configuration.
-  UniquePtr<char> default_root_certs_path =
-      GPR_GLOBAL_CONFIG_GET(grpc_default_ssl_roots_file_path);
-  if (strlen(default_root_certs_path.get()) > 0) {
+  auto default_root_certs_path = ConfigVars::Get().DefaultSslRootsFilePath();
+  if (!default_root_certs_path.empty()) {
     GRPC_LOG_IF_ERROR(
-        "load_file", grpc_load_file(default_root_certs_path.get(), 1, &result));
+        "load_file",
+        grpc_load_file(std::string(default_root_certs_path).c_str(), 1,
+                       &result));
   }
   // Try overridden roots if needed.
   grpc_ssl_roots_override_result ovrd_res = GRPC_SSL_ROOTS_OVERRIDE_FAIL;
@@ -596,7 +582,8 @@ grpc_slice DefaultSslRootStore::ComputePemRootCerts() {
     gpr_free(pem_root_certs);
   }
   // Try loading roots from OS trust store if flag is enabled.
-  if (GRPC_SLICE_IS_EMPTY(result) && !not_use_system_roots) {
+  if (GRPC_SLICE_IS_EMPTY(result) &&
+      !ConfigVars::Get().NotUseSystemSslRoots()) {
     result = LoadSystemRootCerts();
   }
   // Fallback to roots manually shipped with gRPC.

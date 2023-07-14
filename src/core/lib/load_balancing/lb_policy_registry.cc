@@ -19,6 +19,7 @@
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
 
 #include <algorithm>
+#include <initializer_list>
 #include <map>
 #include <string>
 #include <utility>
@@ -30,6 +31,7 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 
+#include <grpc/support/json.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/load_balancing/lb_policy.h"
@@ -82,7 +84,7 @@ bool LoadBalancingPolicyRegistry::LoadBalancingPolicyExists(
   if (factory == nullptr) return false;
   // If requested, check if the load balancing policy allows an empty config.
   if (requires_config != nullptr) {
-    auto config = factory->ParseLoadBalancingConfig(Json());
+    auto config = factory->ParseLoadBalancingConfig(Json::FromObject({}));
     *requires_config = !config.ok();
   }
   return true;
@@ -93,23 +95,23 @@ bool LoadBalancingPolicyRegistry::LoadBalancingPolicyExists(
 absl::StatusOr<Json::Object::const_iterator>
 LoadBalancingPolicyRegistry::ParseLoadBalancingConfigHelper(
     const Json& lb_config_array) const {
-  if (lb_config_array.type() != Json::Type::ARRAY) {
+  if (lb_config_array.type() != Json::Type::kArray) {
     return absl::InvalidArgumentError("type should be array");
   }
   // Find the first LB policy that this client supports.
   std::vector<absl::string_view> policies_tried;
-  for (const Json& lb_config : lb_config_array.array_value()) {
-    if (lb_config.type() != Json::Type::OBJECT) {
+  for (const Json& lb_config : lb_config_array.array()) {
+    if (lb_config.type() != Json::Type::kObject) {
       return absl::InvalidArgumentError("child entry should be of type object");
     }
-    if (lb_config.object_value().empty()) {
+    if (lb_config.object().empty()) {
       return absl::InvalidArgumentError("no policy found in child entry");
     }
-    if (lb_config.object_value().size() > 1) {
+    if (lb_config.object().size() > 1) {
       return absl::InvalidArgumentError("oneOf violation");
     }
-    auto it = lb_config.object_value().begin();
-    if (it->second.type() != Json::Type::OBJECT) {
+    auto it = lb_config.object().begin();
+    if (it->second.type() != Json::Type::kObject) {
       return absl::InvalidArgumentError("child entry should be of type object");
     }
     // If we support this policy, then select it.

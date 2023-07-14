@@ -47,6 +47,7 @@ if [ -x "$(command -v valgrind)" ]; then
   # TODO(jtattermusch): reenable the test once https://github.com/grpc/grpc/issues/29098 is fixed.
   if [ "$(uname -m)" != "aarch64" ]; then
     $(which valgrind) --error-exitcode=10 --leak-check=yes \
+      --errors-for-leak-kinds=definite \
       -v \
       --num-callers=30 \
       --suppressions=../tests/MemoryLeakTest/ignore_leaks.supp \

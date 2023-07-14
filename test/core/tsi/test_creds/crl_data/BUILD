@@ -20,5 +20,9 @@ exports_files([
     "revoked.pem",
     "valid.key",
     "valid.pem",
-    "ab06acdd.r0",
+    "leaf_signed_by_intermediate.key",
+    "leaf_signed_by_intermediate.pem",
+    "leaf_and_intermediate_chain.pem",
+    "intermediate_ca.key",
+    "intermediate_ca.pem",
 ])

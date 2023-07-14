@@ -94,10 +94,10 @@ struct MaxAgeFilter::Config {
            max_connection_idle != Duration::Infinity();
   }
 
-  /* A random jitter of +/-10% will be added to MAX_CONNECTION_AGE to spread out
-     connection storms. Note that the MAX_CONNECTION_AGE option without jitter
-     would not create connection storms by itself, but if there happened to be a
-     connection storm it could cause it to repeat at a fixed period. */
+  // A random jitter of +/-10% will be added to MAX_CONNECTION_AGE to spread out
+  // connection storms. Note that the MAX_CONNECTION_AGE option without jitter
+  // would not create connection storms by itself, but if there happened to be a
+  // connection storm it could cause it to repeat at a fixed period.
   static Config FromChannelArgs(const ChannelArgs& args) {
     const Duration args_max_age =
         args.GetDurationFromIntMillis(GRPC_ARG_MAX_CONNECTION_AGE_MS)
@@ -108,13 +108,13 @@ struct MaxAgeFilter::Config {
     const Duration args_max_age_grace =
         args.GetDurationFromIntMillis(GRPC_ARG_MAX_CONNECTION_AGE_GRACE_MS)
             .value_or(kDefaultMaxConnectionAgeGrace);
-    /* generate a random number between 1 - kMaxConnectionAgeJitter and
-       1 + kMaxConnectionAgeJitter */
+    // generate a random number between 1 - kMaxConnectionAgeJitter and
+    // 1 + kMaxConnectionAgeJitter
     const double multiplier =
         rand() * kMaxConnectionAgeJitter * 2.0 / RAND_MAX + 1.0 -
         kMaxConnectionAgeJitter;
-    /* GRPC_MILLIS_INF_FUTURE - 0.5 converts the value to float, so that result
-       will not be cast to int implicitly before the comparison. */
+    // GRPC_MILLIS_INF_FUTURE - 0.5 converts the value to float, so that result
+    // will not be cast to int implicitly before the comparison.
     return Config{args_max_age * multiplier, args_max_idle, args_max_age_grace};
   }
 };

@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -31,6 +31,9 @@
 #include <grpc/support/log_windows.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/event_engine/shim.h"
+#include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/iomgr/event_engine_shims/tcp_client.h"
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/sockaddr_windows.h"
@@ -66,7 +69,7 @@ static void async_connect_unlock_and_cleanup(async_connect* ac,
   if (socket != NULL) grpc_winsocket_destroy(socket);
 }
 
-static void on_alarm(void* acp, grpc_error_handle error) {
+static void on_alarm(void* acp, grpc_error_handle /* error */) {
   async_connect* ac = (async_connect*)acp;
   gpr_mu_lock(&ac->mu);
   grpc_winsocket* socket = ac->socket;
@@ -113,18 +116,22 @@ static void on_connect(void* acp, grpc_error_handle error) {
   }
 
   async_connect_unlock_and_cleanup(ac, socket);
-  /* If the connection was aborted, the callback was already called when
-     the deadline was met. */
+  // If the connection was aborted, the callback was already called when
+  // the deadline was met.
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, error);
 }
 
-/* Tries to issue one async connection, then schedules both an IOCP
-   notification request for the connection, and one timeout alert. */
+// Tries to issue one async connection, then schedules both an IOCP
+// notification request for the connection, and one timeout alert.
 static int64_t tcp_connect(grpc_closure* on_done, grpc_endpoint** endpoint,
-                           grpc_pollset_set* interested_parties,
+                           grpc_pollset_set* /* interested_parties */,
                            const EndpointConfig& config,
                            const grpc_resolved_address* addr,
                            grpc_core::Timestamp deadline) {
+  if (grpc_event_engine::experimental::UseEventEngineClient()) {
+    return grpc_event_engine::experimental::event_engine_tcp_client_connect(
+        on_done, endpoint, config, addr, deadline);
+  }
   SOCKET sock = INVALID_SOCKET;
   BOOL success;
   int status;
@@ -147,7 +154,7 @@ static int64_t tcp_connect(grpc_closure* on_done, grpc_endpoint** endpoint,
 
   *endpoint = NULL;
 
-  /* Use dualstack sockets where available. */
+  // Use dualstack sockets where available.
   if (grpc_sockaddr_to_v4mapped(addr, &addr6_v4mapped)) {
     addr = &addr6_v4mapped;
   }
@@ -164,8 +171,8 @@ static int64_t tcp_connect(grpc_closure* on_done, grpc_endpoint** endpoint,
     goto failure;
   }
 
-  /* Grab the function pointer for ConnectEx for that specific socket.
-     It may change depending on the interface. */
+  // Grab the function pointer for ConnectEx for that specific socket.
+  // It may change depending on the interface.
   status =
       WSAIoctl(sock, SIO_GET_EXTENSION_FUNCTION_POINTER, &guid, sizeof(guid),
                &ConnectEx, sizeof(ConnectEx), &ioctl_num_bytes, NULL, NULL);
@@ -190,8 +197,8 @@ static int64_t tcp_connect(grpc_closure* on_done, grpc_endpoint** endpoint,
   success = ConnectEx(sock, (grpc_sockaddr*)&addr->addr, (int)addr->len, NULL,
                       0, NULL, &info->overlapped);
 
-  /* It wouldn't be unusual to get a success immediately. But we'll still get
-     an IOCP notification, so let's ignore it. */
+  // It wouldn't be unusual to get a success immediately. But we'll still get
+  // an IOCP notification, so let's ignore it.
   if (!success) {
     int last_error = WSAGetLastError();
     if (last_error != ERROR_IO_PENDING) {
@@ -231,9 +238,15 @@ failure:
   return 0;
 }
 
-static bool tcp_cancel_connect(int64_t /*connection_handle*/) { return false; }
+static bool tcp_cancel_connect(int64_t connection_handle) {
+  if (grpc_event_engine::experimental::UseEventEngineClient()) {
+    return grpc_event_engine::experimental::
+        event_engine_tcp_client_cancel_connect(connection_handle);
+  }
+  return false;
+}
 
 grpc_tcp_client_vtable grpc_windows_tcp_client_vtable = {tcp_connect,
                                                          tcp_cancel_connect};
 
-#endif /* GRPC_WINSOCK_SOCKET */
+#endif  // GRPC_WINSOCK_SOCKET

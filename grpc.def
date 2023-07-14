@@ -165,6 +165,7 @@ EXPORTS
     grpc_tls_credentials_options_set_cert_request_type
     grpc_tls_credentials_options_set_crl_directory
     grpc_tls_credentials_options_set_verify_server_cert
+    grpc_tls_credentials_options_set_send_client_ca_list
     grpc_tls_credentials_options_set_check_call_host
     grpc_insecure_credentials_create
     grpc_insecure_server_credentials_create
@@ -233,6 +234,7 @@ EXPORTS
     gpr_set_log_verbosity
     gpr_log_verbosity_init
     gpr_set_log_function
+    gpr_assertion_failed
     gpr_format_message
     gpr_strdup
     gpr_asprintf

@@ -12,24 +12,53 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_GPRPP_PER_CPU_H
-#define GRPC_CORE_LIB_GPRPP_PER_CPU_H
+#ifndef GRPC_SRC_CORE_LIB_GPRPP_PER_CPU_H
+#define GRPC_SRC_CORE_LIB_GPRPP_PER_CPU_H
 
 #include <grpc/support/port_platform.h>
 
+#include <algorithm>
 #include <cstddef>
+#include <limits>
 #include <memory>
-
-#include <grpc/support/cpu.h>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 
 namespace grpc_core {
 
+class PerCpuOptions {
+ public:
+  // Set the number of cpus that colocate on the same shard
+  PerCpuOptions SetCpusPerShard(size_t cpus_per_shard) {
+    cpus_per_shard_ = std::max<size_t>(1, cpus_per_shard);
+    return *this;
+  }
+
+  // Set the maximum number of allowable shards
+  PerCpuOptions SetMaxShards(size_t max_shards) {
+    max_shards_ = std::max<size_t>(1, max_shards);
+    return *this;
+  }
+
+  size_t cpus_per_shard() const { return cpus_per_shard_; }
+  size_t max_shards() const { return max_shards_; }
+
+  size_t Shards();
+  size_t ShardsForCpuCount(size_t cpu_count);
+
+ private:
+  size_t cpus_per_shard_ = 1;
+  size_t max_shards_ = std::numeric_limits<size_t>::max();
+};
+
 template <typename T>
 class PerCpu {
  public:
-  T& this_cpu() { return data_[ExecCtx::Get()->starting_cpu()]; }
+  // Options are not defaulted to try and force consideration of what the
+  // options specify.
+  explicit PerCpu(PerCpuOptions options) : cpus_(options.Shards()) {}
+
+  T& this_cpu() { return data_[ExecCtx::Get()->starting_cpu() % cpus_]; }
 
   T* begin() { return data_.get(); }
   T* end() { return data_.get() + cpus_; }
@@ -37,10 +66,10 @@ class PerCpu {
   const T* end() const { return data_.get() + cpus_; }
 
  private:
-  const size_t cpus_ = gpr_cpu_num_cores();
+  const size_t cpus_;
   std::unique_ptr<T[]> data_{new T[cpus_]};
 };
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_GPRPP_PER_CPU_H
+#endif  // GRPC_SRC_CORE_LIB_GPRPP_PER_CPU_H

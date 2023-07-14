@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -126,15 +126,15 @@ struct secure_endpoint {
   gpr_mu protector_mu;
   grpc_core::Mutex read_mu;
   grpc_core::Mutex write_mu;
-  /* saved upper level callbacks and user_data. */
+  // saved upper level callbacks and user_data.
   grpc_closure* read_cb = nullptr;
   grpc_closure* write_cb = nullptr;
   grpc_closure on_read;
   grpc_slice_buffer* read_buffer = nullptr;
   grpc_slice_buffer source_buffer;
-  /* saved handshaker leftover data to unprotect. */
+  // saved handshaker leftover data to unprotect.
   grpc_slice_buffer leftover_bytes;
-  /* buffers for read and write */
+  // buffers for read and write
   grpc_slice read_staging_buffer ABSL_GUARDED_BY(read_mu);
   grpc_slice write_staging_buffer ABSL_GUARDED_BY(write_mu);
   grpc_slice_buffer output_buffer;
@@ -236,7 +236,8 @@ static void flush_read_staging_buffer(secure_endpoint* ep, uint8_t** cur,
 }
 
 static void call_read_cb(secure_endpoint* ep, grpc_error_handle error) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_secure_endpoint)) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_secure_endpoint) &&
+      gpr_should_log(GPR_LOG_SEVERITY_INFO)) {
     size_t i;
     for (i = 0; i < ep->read_buffer->count; i++) {
       char* data = grpc_dump_slice(ep->read_buffer->slices[i],
@@ -285,7 +286,7 @@ static void on_read(void* user_data, grpc_error_handle error) {
       ep->min_progress_size = result != TSI_OK ? 1 : min_progress_size;
     } else {
       // Use frame protector to unprotect.
-      /* TODO(yangg) check error, maybe bail out early */
+      // TODO(yangg) check error, maybe bail out early
       for (i = 0; i < ep->source_buffer.count; i++) {
         grpc_slice encrypted = ep->source_buffer.slices[i];
         uint8_t* message_bytes = GRPC_SLICE_START_PTR(encrypted);
@@ -311,10 +312,10 @@ static void on_read(void* user_data, grpc_error_handle error) {
 
           if (cur == end) {
             flush_read_staging_buffer(ep, &cur, &end);
-            /* Force to enter the loop again to extract buffered bytes in
-              protector. The bytes could be buffered because of running out of
-              staging_buffer. If this happens at the end of all slices, doing
-              another unprotect avoids leaving data in the protector. */
+            // Force to enter the loop again to extract buffered bytes in
+            // protector. The bytes could be buffered because of running out of
+            // staging_buffer. If this happens at the end of all slices, doing
+            // another unprotect avoids leaving data in the protector.
             keep_looping = 1;
           } else if (unprotected_buffer_size_written > 0) {
             keep_looping = 1;
@@ -336,8 +337,8 @@ static void on_read(void* user_data, grpc_error_handle error) {
     }
   }
 
-  /* TODO(yangg) experiment with moving this block after read_cb to see if it
-     helps latency */
+  // TODO(yangg) experiment with moving this block after read_cb to see if it
+  // helps latency
   grpc_slice_buffer_reset_and_unref(&ep->source_buffer);
 
   if (result != TSI_OK) {
@@ -394,7 +395,8 @@ static void endpoint_write(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
 
     grpc_slice_buffer_reset_and_unref(&ep->output_buffer);
 
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_secure_endpoint)) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_secure_endpoint) &&
+        gpr_should_log(GPR_LOG_SEVERITY_INFO)) {
       for (i = 0; i < slices->count; i++) {
         char* data =
             grpc_dump_slice(slices->slices[i], GPR_DUMP_HEX | GPR_DUMP_ASCII);
@@ -481,7 +483,7 @@ static void endpoint_write(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
   }
 
   if (result != TSI_OK) {
-    /* TODO(yangg) do different things according to the error type? */
+    // TODO(yangg) do different things according to the error type?
     grpc_slice_buffer_reset_and_unref(&ep->output_buffer);
     grpc_core::ExecCtx::Run(
         DEBUG_LOCATION, cb,

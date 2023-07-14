@@ -11,8 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENGINE_H
-#define GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENGINE_H
+#ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENGINE_H
+#define GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENGINE_H
 #include <grpc/support/port_platform.h>
 
 #include <atomic>
@@ -35,9 +35,10 @@
 #include <grpc/event_engine/memory_allocator.h>
 
 #include "src/core/lib/event_engine/handle_containers.h"
+#include "src/core/lib/event_engine/posix.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
-#include "src/core/lib/event_engine/thread_pool.h"
+#include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/surface/init_internally.h"
@@ -95,7 +96,7 @@ class AsyncConnect {
 };
 
 // A helper class to manager lifetime of the poller associated with the
-// posix event engine.
+// posix EventEngine.
 class PosixEnginePollerManager
     : public grpc_event_engine::experimental::Scheduler {
  public:
@@ -124,34 +125,31 @@ class PosixEnginePollerManager
   grpc_event_engine::experimental::PosixEventPoller* poller_ = nullptr;
   std::atomic<PollerState> poller_state_{PollerState::kOk};
   std::shared_ptr<ThreadPool> executor_;
+  bool trigger_shutdown_called_;
 };
 #endif  // GRPC_POSIX_SOCKET_TCP
 
 // An iomgr-based Posix EventEngine implementation.
 // All methods require an ExecCtx to already exist on the thread's stack.
 // TODO(ctiller): KeepsGrpcInitialized is an interim measure to ensure that
-// event engine is shut down before we shut down iomgr.
-class PosixEventEngine final : public EventEngine,
+// EventEngine is shut down before we shut down iomgr.
+class PosixEventEngine final : public PosixEventEngineWithFdSupport,
                                public grpc_core::KeepsGrpcInitialized {
  public:
   class PosixDNSResolver : public EventEngine::DNSResolver {
    public:
     ~PosixDNSResolver() override;
-    LookupTaskHandle LookupHostname(LookupHostnameCallback on_resolve,
-                                    absl::string_view name,
-                                    absl::string_view default_port,
-                                    Duration timeout) override;
-    LookupTaskHandle LookupSRV(LookupSRVCallback on_resolve,
-                               absl::string_view name,
-                               Duration timeout) override;
-    LookupTaskHandle LookupTXT(LookupTXTCallback on_resolve,
-                               absl::string_view name,
-                               Duration timeout) override;
-    bool CancelLookup(LookupTaskHandle handle) override;
+    void LookupHostname(LookupHostnameCallback on_resolve,
+                        absl::string_view name,
+                        absl::string_view default_port) override;
+    void LookupSRV(LookupSRVCallback on_resolve,
+                   absl::string_view name) override;
+    void LookupTXT(LookupTXTCallback on_resolve,
+                   absl::string_view name) override;
   };
 
 #ifdef GRPC_POSIX_SOCKET_TCP
-  // Constructs an event engine which does not own the poller. Do not call this
+  // Constructs an EventEngine which does not own the poller. Do not call this
   // constructor directly. Instead use the MakeTestOnlyPosixEventEngine static
   // method. Its expected to be used only in tests.
   explicit PosixEventEngine(
@@ -163,8 +161,20 @@ class PosixEventEngine final : public EventEngine,
 
   ~PosixEventEngine() override;
 
+  std::unique_ptr<PosixEndpointWithFdSupport> CreatePosixEndpointFromFd(
+      int fd, const EndpointConfig& config,
+      MemoryAllocator memory_allocator) override;
+
   absl::StatusOr<std::unique_ptr<Listener>> CreateListener(
       Listener::AcceptCallback on_accept,
+      absl::AnyInvocable<void(absl::Status)> on_shutdown,
+      const EndpointConfig& config,
+      std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory)
+      override;
+
+  absl::StatusOr<std::unique_ptr<PosixListenerWithFdSupport>>
+  CreatePosixListener(
+      PosixEventEngineWithFdSupport::PosixAcceptCallback on_accept,
       absl::AnyInvocable<void(absl::Status)> on_shutdown,
       const EndpointConfig& config,
       std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory)
@@ -182,16 +192,17 @@ class PosixEventEngine final : public EventEngine,
       const DNSResolver::ResolverOptions& options) override;
   void Run(Closure* closure) override;
   void Run(absl::AnyInvocable<void()> closure) override;
+  // Caution!! The timer implementation cannot create any fds. See #20418.
   TaskHandle RunAfter(Duration when, Closure* closure) override;
   TaskHandle RunAfter(Duration when,
                       absl::AnyInvocable<void()> closure) override;
   bool Cancel(TaskHandle handle) override;
 
 #ifdef GRPC_POSIX_SOCKET_TCP
-  // The posix event engine returned by this method would not own the poller
+  // The posix EventEngine returned by this method would not own the poller
   // and would not be in-charge of driving the poller by calling its Work(..)
   // method. Instead its upto the test to drive the poller. The returned posix
-  // event engine will also not attempt to shutdown the poller since it does not
+  // EventEngine will also not attempt to shutdown the poller since it does not
   // own it.
   static std::shared_ptr<PosixEventEngine> MakeTestOnlyPosixEventEngine(
       grpc_event_engine::experimental::PosixEventPoller* test_only_poller) {
@@ -242,4 +253,4 @@ class PosixEventEngine final : public EventEngine,
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENGINE_H
+#endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENGINE_H

@@ -14,6 +14,7 @@
 
 #include "src/core/lib/gprpp/single_set_ptr.h"
 
+#include <algorithm>
 #include <thread>
 #include <vector>
 

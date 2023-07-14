@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "test/core/end2end/fixtures/http_proxy_fixture.h"
 
@@ -465,11 +465,11 @@ static void on_server_connect_done(void* arg, grpc_error_handle error) {
   conn->proxy->combiner->Run(&conn->on_server_connect_done, error);
 }
 
-/**
- * Parses the proxy auth header value to check if it matches :-
- * Basic <base64_encoded_expected_cred>
- * Returns true if it matches, false otherwise
- */
+///
+/// Parses the proxy auth header value to check if it matches :-
+/// Basic <base64_encoded_expected_cred>
+/// Returns true if it matches, false otherwise
+///
 static bool proxy_auth_header_matches(char* proxy_auth_header_val,
                                       char* expected_cred) {
   GPR_ASSERT(proxy_auth_header_val != nullptr);
@@ -656,6 +656,7 @@ grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
   grpc_sockaddr_in* addr =
       reinterpret_cast<grpc_sockaddr_in*>(resolved_addr.addr);
   memset(&resolved_addr, 0, sizeof(resolved_addr));
+  resolved_addr.len = sizeof(grpc_sockaddr_in);
   addr->sin_family = GRPC_AF_INET;
   grpc_sockaddr_set_port(&resolved_addr, proxy_port);
   int port;

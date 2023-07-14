@@ -22,11 +22,10 @@
 
 #include "absl/strings/str_cat.h"
 
+#include <grpc/support/json.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/security/certificate_provider/certificate_provider_registry.h"
 
 namespace grpc_core {
@@ -45,7 +44,7 @@ CertificateProviderStore::PluginDefinition::JsonLoader(const JsonArgs&) {
 }
 
 void CertificateProviderStore::PluginDefinition::JsonPostLoad(
-    const Json& json, const JsonArgs&, ValidationErrors* errors) {
+    const Json& json, const JsonArgs& args, ValidationErrors* errors) {
   // Check that plugin is supported.
   CertificateProviderFactory* factory = nullptr;
   if (!plugin_name.empty()) {
@@ -61,26 +60,22 @@ void CertificateProviderStore::PluginDefinition::JsonPostLoad(
   // Parse the config field.
   {
     ValidationErrors::ScopedField field(errors, ".config");
-    auto it = json.object_value().find("config");
+    auto it = json.object().find("config");
     // The config field is optional; if not present, we use an empty JSON
     // object.
     Json::Object config_json;
-    if (it != json.object_value().end()) {
-      if (it->second.type() != Json::Type::OBJECT) {
+    if (it != json.object().end()) {
+      if (it->second.type() != Json::Type::kObject) {
         errors->AddError("is not an object");
         return;  // No point parsing config.
       } else {
-        config_json = it->second.object_value();
+        config_json = it->second.object();
       }
     }
     if (factory == nullptr) return;
     // Use plugin to validate and parse config.
-    grpc_error_handle parse_error;
-    config =
-        factory->CreateCertificateProviderConfig(config_json, &parse_error);
-    if (!parse_error.ok()) {
-      errors->AddError(StatusToString(parse_error));
-    }
+    config = factory->CreateCertificateProviderConfig(
+        Json::FromObject(std::move(config_json)), args, errors);
   }
 }
 

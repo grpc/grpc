@@ -14,15 +14,15 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_XDS_XDS_HTTP_RBAC_FILTER_H
-#define GRPC_CORE_EXT_XDS_XDS_HTTP_RBAC_FILTER_H
+#ifndef GRPC_SRC_CORE_EXT_XDS_XDS_HTTP_RBAC_FILTER_H
+#define GRPC_SRC_CORE_EXT_XDS_XDS_HTTP_RBAC_FILTER_H
 
 #include <grpc/support/port_platform.h>
 
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-#include "upb/def.h"
+#include "upb/reflection/def.h"
 
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/ext/xds/xds_http_filters.h"
@@ -48,11 +48,12 @@ class XdsHttpRbacFilter : public XdsHttpFilterImpl {
   ChannelArgs ModifyChannelArgs(const ChannelArgs& args) const override;
   absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(
       const FilterConfig& hcm_filter_config,
-      const FilterConfig* filter_config_override) const override;
+      const FilterConfig* filter_config_override,
+      absl::string_view filter_name) const override;
   bool IsSupportedOnClients() const override { return false; }
   bool IsSupportedOnServers() const override { return true; }
 };
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_XDS_XDS_HTTP_RBAC_FILTER_H
+#endif  // GRPC_SRC_CORE_EXT_XDS_XDS_HTTP_RBAC_FILTER_H

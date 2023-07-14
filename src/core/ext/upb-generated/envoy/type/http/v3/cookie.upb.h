@@ -9,34 +9,38 @@
 #ifndef ENVOY_TYPE_HTTP_V3_COOKIE_PROTO_UPB_H_
 #define ENVOY_TYPE_HTTP_V3_COOKIE_PROTO_UPB_H_
 
-#include "upb/msg_internal.h"
-#include "upb/decode.h"
-#include "upb/decode_fast.h"
-#include "upb/encode.h"
+#include "upb/collections/array_internal.h"
+#include "upb/collections/map_gencode_util.h"
+#include "upb/message/accessors.h"
+#include "upb/message/internal.h"
+#include "upb/mini_table/enum_internal.h"
+#include "upb/wire/decode.h"
+#include "upb/wire/decode_fast.h"
+#include "upb/wire/encode.h"
 
-#include "upb/port_def.inc"
+// Must be last. 
+#include "upb/port/def.inc"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-struct envoy_type_http_v3_Cookie;
 typedef struct envoy_type_http_v3_Cookie envoy_type_http_v3_Cookie;
-extern const upb_MiniTable envoy_type_http_v3_Cookie_msginit;
+extern const upb_MiniTable envoy_type_http_v3_Cookie_msg_init;
 struct google_protobuf_Duration;
-extern const upb_MiniTable google_protobuf_Duration_msginit;
+extern const upb_MiniTable google_protobuf_Duration_msg_init;
 
 
 
 /* envoy.type.http.v3.Cookie */
 
 UPB_INLINE envoy_type_http_v3_Cookie* envoy_type_http_v3_Cookie_new(upb_Arena* arena) {
-  return (envoy_type_http_v3_Cookie*)_upb_Message_New(&envoy_type_http_v3_Cookie_msginit, arena);
+  return (envoy_type_http_v3_Cookie*)_upb_Message_New(&envoy_type_http_v3_Cookie_msg_init, arena);
 }
 UPB_INLINE envoy_type_http_v3_Cookie* envoy_type_http_v3_Cookie_parse(const char* buf, size_t size, upb_Arena* arena) {
   envoy_type_http_v3_Cookie* ret = envoy_type_http_v3_Cookie_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &envoy_type_http_v3_Cookie_msginit, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
+  if (upb_Decode(buf, size, ret, &envoy_type_http_v3_Cookie_msg_init, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
@@ -46,7 +50,7 @@ UPB_INLINE envoy_type_http_v3_Cookie* envoy_type_http_v3_Cookie_parse_ex(const c
                            int options, upb_Arena* arena) {
   envoy_type_http_v3_Cookie* ret = envoy_type_http_v3_Cookie_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &envoy_type_http_v3_Cookie_msginit, extreg, options, arena) !=
+  if (upb_Decode(buf, size, ret, &envoy_type_http_v3_Cookie_msg_init, extreg, options, arena) !=
       kUpb_DecodeStatus_Ok) {
     return NULL;
   }
@@ -54,63 +58,80 @@ UPB_INLINE envoy_type_http_v3_Cookie* envoy_type_http_v3_Cookie_parse_ex(const c
 }
 UPB_INLINE char* envoy_type_http_v3_Cookie_serialize(const envoy_type_http_v3_Cookie* msg, upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &envoy_type_http_v3_Cookie_msginit, 0, arena, &ptr, len);
+  (void)upb_Encode(msg, &envoy_type_http_v3_Cookie_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
 UPB_INLINE char* envoy_type_http_v3_Cookie_serialize_ex(const envoy_type_http_v3_Cookie* msg, int options,
                                  upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &envoy_type_http_v3_Cookie_msginit, options, arena, &ptr, len);
+  (void)upb_Encode(msg, &envoy_type_http_v3_Cookie_msg_init, options, arena, &ptr, len);
   return ptr;
 }
-UPB_INLINE void envoy_type_http_v3_Cookie_clear_name(const envoy_type_http_v3_Cookie* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
+UPB_INLINE void envoy_type_http_v3_Cookie_clear_name(envoy_type_http_v3_Cookie* msg) {
+  const upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE upb_StringView envoy_type_http_v3_Cookie_name(const envoy_type_http_v3_Cookie* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView);
+  upb_StringView default_val = upb_StringView_FromString("");
+  upb_StringView ret;
+  const upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool envoy_type_http_v3_Cookie_has_ttl(const envoy_type_http_v3_Cookie* msg) {
-  return _upb_hasbit(msg, 1);
-}
-UPB_INLINE void envoy_type_http_v3_Cookie_clear_ttl(const envoy_type_http_v3_Cookie* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(12, 24), const upb_Message*) = NULL;
+UPB_INLINE void envoy_type_http_v3_Cookie_clear_ttl(envoy_type_http_v3_Cookie* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(4, 24), 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const struct google_protobuf_Duration* envoy_type_http_v3_Cookie_ttl(const envoy_type_http_v3_Cookie* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(12, 24), const struct google_protobuf_Duration*);
+  const struct google_protobuf_Duration* default_val = NULL;
+  const struct google_protobuf_Duration* ret;
+  const upb_MiniTableField field = {2, UPB_SIZE(4, 24), 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE void envoy_type_http_v3_Cookie_clear_path(const envoy_type_http_v3_Cookie* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(16, 32), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
+UPB_INLINE bool envoy_type_http_v3_Cookie_has_ttl(const envoy_type_http_v3_Cookie* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(4, 24), 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
+}
+UPB_INLINE void envoy_type_http_v3_Cookie_clear_path(envoy_type_http_v3_Cookie* msg) {
+  const upb_MiniTableField field = {3, UPB_SIZE(16, 32), 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE upb_StringView envoy_type_http_v3_Cookie_path(const envoy_type_http_v3_Cookie* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(16, 32), upb_StringView);
+  upb_StringView default_val = upb_StringView_FromString("");
+  upb_StringView ret;
+  const upb_MiniTableField field = {3, UPB_SIZE(16, 32), 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
 
 UPB_INLINE void envoy_type_http_v3_Cookie_set_name(envoy_type_http_v3_Cookie *msg, upb_StringView value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView) = value;
+  const upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void envoy_type_http_v3_Cookie_set_ttl(envoy_type_http_v3_Cookie *msg, struct google_protobuf_Duration* value) {
-  _upb_sethas(msg, 1);
-  *UPB_PTR_AT(msg, UPB_SIZE(12, 24), struct google_protobuf_Duration*) = value;
+  const upb_MiniTableField field = {2, UPB_SIZE(4, 24), 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Duration* envoy_type_http_v3_Cookie_mutable_ttl(envoy_type_http_v3_Cookie* msg, upb_Arena* arena) {
   struct google_protobuf_Duration* sub = (struct google_protobuf_Duration*)envoy_type_http_v3_Cookie_ttl(msg);
   if (sub == NULL) {
-    sub = (struct google_protobuf_Duration*)_upb_Message_New(&google_protobuf_Duration_msginit, arena);
-    if (!sub) return NULL;
-    envoy_type_http_v3_Cookie_set_ttl(msg, sub);
+    sub = (struct google_protobuf_Duration*)_upb_Message_New(&google_protobuf_Duration_msg_init, arena);
+    if (sub) envoy_type_http_v3_Cookie_set_ttl(msg, sub);
   }
   return sub;
 }
 UPB_INLINE void envoy_type_http_v3_Cookie_set_path(envoy_type_http_v3_Cookie *msg, upb_StringView value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(16, 32), upb_StringView) = value;
+  const upb_MiniTableField field = {3, UPB_SIZE(16, 32), 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 
-extern const upb_MiniTable_File envoy_type_http_v3_cookie_proto_upb_file_layout;
+extern const upb_MiniTableFile envoy_type_http_v3_cookie_proto_upb_file_layout;
 
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif
 
-#include "upb/port_undef.inc"
+#include "upb/port/undef.inc"
 
 #endif  /* ENVOY_TYPE_HTTP_V3_COOKIE_PROTO_UPB_H_ */

@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2017 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2017 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 
@@ -22,6 +22,7 @@
 #include <string.h>
 
 #include <algorithm>
+#include <initializer_list>
 #include <memory>
 #include <string>
 #include <utility>
@@ -112,7 +113,7 @@ static grpc_core::Resolver::Result create_new_resolver_result() {
     grpc_resolved_address address;
     EXPECT_TRUE(grpc_parse_uri(*uri, &address));
     absl::InlinedVector<grpc_arg, 2> args_to_add;
-    addresses.emplace_back(address.addr, address.len, grpc_core::ChannelArgs());
+    addresses.emplace_back(address, grpc_core::ChannelArgs());
   }
   ++test_counter;
   grpc_core::Resolver::Result result;

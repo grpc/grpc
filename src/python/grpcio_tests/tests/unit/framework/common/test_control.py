@@ -21,19 +21,26 @@ import threading
 class Defect(Exception):
     """Simulates a programming defect raised into in a system under test.
 
-  Use of a standard exception type is too easily misconstrued as an actual
-  defect in either the test infrastructure or the system under test.
-  """
+    Use of a standard exception type is too easily misconstrued as an actual
+    defect in either the test infrastructure or the system under test.
+    """
+
+
+class NestedDefect(Exception):
+    """Simulates a nested programming defect raised into in a system under test."""
+
+    def __str__(self):
+        raise Exception("Nested Exception")
 
 
 class Control(abc.ABC):
     """An object that accepts program control from a system under test.
 
-  Systems under test passed a Control should call its control() method
-  frequently during execution. The control() method may block, raise an
-  exception, or do nothing, all according to the enclosing test's desire for
-  the system under test to simulate freezing, failing, or functioning.
-  """
+    Systems under test passed a Control should call its control() method
+    frequently during execution. The control() method may block, raise an
+    exception, or do nothing, all according to the enclosing test's desire for
+    the system under test to simulate freezing, failing, or functioning.
+    """
 
     @abc.abstractmethod
     def control(self):
@@ -44,10 +51,10 @@ class Control(abc.ABC):
 class PauseFailControl(Control):
     """A Control that can be used to pause or fail code under control.
 
-  This object is only safe for use from two threads: one of the system under
-  test calling control and the other from the test system calling pause,
-  block_until_paused, and fail.
-  """
+    This object is only safe for use from two threads: one of the system under
+    test calling control and the other from the test system calling pause,
+    block_until_paused, and fail.
+    """
 
     def __init__(self):
         self._condition = threading.Condition()
@@ -79,8 +86,8 @@ class PauseFailControl(Control):
     def block_until_paused(self):
         """Blocks controlling code until code under control is paused.
 
-    May only be called within the context of a pause call.
-    """
+        May only be called within the context of a pause call.
+        """
         with self._condition:
             while not self._paused:
                 self._condition.wait()

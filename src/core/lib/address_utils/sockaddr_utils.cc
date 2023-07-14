@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -22,8 +22,12 @@
 
 #include <errno.h>
 #include <inttypes.h>
+#ifdef GRPC_HAVE_VSOCK
+#include <linux/vm_sockets.h>
+#endif
 #include <string.h>
 
+#include <initializer_list>
 #include <string>
 #include <utility>
 
@@ -33,6 +37,7 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/sockaddr.h"
@@ -75,6 +80,25 @@ static absl::StatusOr<std::string> grpc_sockaddr_to_uri_unix_if_possible(
 }
 #endif
 
+#ifdef GRPC_HAVE_VSOCK
+static absl::StatusOr<std::string> grpc_sockaddr_to_uri_vsock_if_possible(
+    const grpc_resolved_address* resolved_addr) {
+  const grpc_sockaddr* addr =
+      reinterpret_cast<const grpc_sockaddr*>(resolved_addr->addr);
+  if (addr->sa_family != AF_VSOCK) {
+    return absl::InvalidArgumentError(
+        absl::StrCat("Socket family is not AF_VSOCK: ", addr->sa_family));
+  }
+  const auto* vsock_addr = reinterpret_cast<const struct sockaddr_vm*>(addr);
+  return absl::StrCat("vsock:", vsock_addr->svm_cid, ":", vsock_addr->svm_port);
+}
+#else
+static absl::StatusOr<std::string> grpc_sockaddr_to_uri_vsock_if_possible(
+    const grpc_resolved_address* /* addr */) {
+  return absl::InvalidArgumentError("VSOCK is not supported.");
+}
+#endif
+
 static const uint8_t kV4MappedPrefix[] = {0, 0, 0, 0, 0,    0,
                                           0, 0, 0, 0, 0xff, 0xff};
 
@@ -93,10 +117,10 @@ int grpc_sockaddr_is_v4mapped(const grpc_resolved_address* resolved_addr,
     if (memcmp(addr6->sin6_addr.s6_addr, kV4MappedPrefix,
                sizeof(kV4MappedPrefix)) == 0) {
       if (resolved_addr4_out != nullptr) {
-        /* Normalize ::ffff:0.0.0.0/96 to IPv4. */
+        // Normalize ::ffff:0.0.0.0/96 to IPv4.
         memset(resolved_addr4_out, 0, sizeof(*resolved_addr4_out));
         addr4_out->sin_family = GRPC_AF_INET;
-        /* s6_addr32 would be nice, but it's non-standard. */
+        // s6_addr32 would be nice, but it's non-standard.
         memcpy(&addr4_out->sin_addr, &addr6->sin6_addr.s6_addr[12], 4);
         addr4_out->sin_port = addr6->sin6_port;
         resolved_addr4_out->len =
@@ -138,7 +162,7 @@ int grpc_sockaddr_is_wildcard(const grpc_resolved_address* resolved_addr,
   }
   addr = reinterpret_cast<const grpc_sockaddr*>(resolved_addr->addr);
   if (addr->sa_family == GRPC_AF_INET) {
-    /* Check for 0.0.0.0 */
+    // Check for 0.0.0.0
     const grpc_sockaddr_in* addr4 =
         reinterpret_cast<const grpc_sockaddr_in*>(addr);
     if (addr4->sin_addr.s_addr != 0) {
@@ -147,7 +171,7 @@ int grpc_sockaddr_is_wildcard(const grpc_resolved_address* resolved_addr,
     *port_out = grpc_ntohs(addr4->sin_port);
     return 1;
   } else if (addr->sa_family == GRPC_AF_INET6) {
-    /* Check for :: */
+    // Check for ::
     const grpc_sockaddr_in6* addr6 =
         reinterpret_cast<const grpc_sockaddr_in6*>(addr);
     int i;
@@ -222,6 +246,14 @@ absl::StatusOr<std::string> grpc_sockaddr_to_string(
   }
 #endif
 
+#ifdef GRPC_HAVE_VSOCK
+  if (addr->sa_family == GRPC_AF_VSOCK) {
+    const sockaddr_vm* addr_vm = reinterpret_cast<const sockaddr_vm*>(addr);
+    out = absl::StrCat(addr_vm->svm_cid, ":", addr_vm->svm_port);
+    return out;
+  }
+#endif
+
   const void* ip = nullptr;
   int port = 0;
   uint32_t sin6_scope_id = 0;
@@ -252,7 +284,7 @@ absl::StatusOr<std::string> grpc_sockaddr_to_string(
     return absl::InvalidArgumentError(
         absl::StrCat("Unknown sockaddr family: ", addr->sa_family));
   }
-  /* This is probably redundant, but we wouldn't want to log the wrong error. */
+  // This is probably redundant, but we wouldn't want to log the wrong error.
   errno = save_errno;
   return out;
 }
@@ -267,9 +299,16 @@ absl::StatusOr<std::string> grpc_sockaddr_to_uri(
     resolved_addr = &addr_normalized;
   }
   const char* scheme = grpc_sockaddr_get_uri_scheme(resolved_addr);
-  if (scheme == nullptr || strcmp("unix", scheme) == 0) {
+  if (scheme == nullptr) {
+    return absl::InvalidArgumentError("Unknown address type");
+  }
+  if (strcmp("unix", scheme) == 0) {
     return grpc_sockaddr_to_uri_unix_if_possible(resolved_addr);
   }
+  if (strcmp("vsock", scheme) == 0) {
+    return grpc_sockaddr_to_uri_vsock_if_possible(resolved_addr);
+  }
+
   auto path = grpc_sockaddr_to_string(resolved_addr, false /* normalize */);
   if (!path.ok()) return path;
   absl::StatusOr<grpc_core::URI> uri =
@@ -290,6 +329,10 @@ const char* grpc_sockaddr_get_uri_scheme(
       return "ipv6";
     case GRPC_AF_UNIX:
       return "unix";
+#ifdef GRPC_HAVE_VSOCK
+    case GRPC_AF_VSOCK:
+      return "vsock";
+#endif
   }
   return nullptr;
 }
@@ -312,6 +355,10 @@ int grpc_sockaddr_get_port(const grpc_resolved_address* resolved_addr) {
           (reinterpret_cast<const grpc_sockaddr_in6*>(addr))->sin6_port);
 #ifdef GRPC_HAVE_UNIX_SOCKET
     case AF_UNIX:
+      return 1;
+#endif
+#ifdef GRPC_HAVE_VSOCK
+    case AF_VSOCK:
       return 1;
 #endif
     default:
@@ -356,7 +403,7 @@ std::string grpc_sockaddr_get_packed_host(
     const char* addr_bytes = reinterpret_cast<const char*>(&addr6->sin6_addr);
     return std::string(addr_bytes, 16);
   } else {
-    GPR_ASSERT(false);
+    grpc_core::Crash("unknown socket family");
   }
 }
 

@@ -24,11 +24,16 @@ changes to this codebase at the moment.
 ## Installation
 
 #### Requirements
-1. Python v3.7+
+1. Python v3.9+
 2. [Google Cloud SDK](https://cloud.google.com/sdk/docs/install)
 3. `kubectl`
 
 `kubectl` can be installed via `gcloud components install kubectl`, or system package manager: https://kubernetes.io/docs/tasks/tools/#kubectl
+
+Python3 venv tool may need to be installed from APT on some Ubuntu systems:
+```shell
+sudo apt-get install python3-venv
+```
 
 ##### Getting Started
 
@@ -39,6 +44,8 @@ changes to this codebase at the moment.
    gcloud services enable \
      compute.googleapis.com \
      container.googleapis.com \
+     logging.googleapis.com \
+     monitoring.googleapis.com \
      networksecurity.googleapis.com \
      networkservices.googleapis.com \
      secretmanager.googleapis.com \
@@ -163,6 +170,10 @@ END
 # Unless you're using GCP VM with preconfigured Application Default Credentials, acquire them for your user
 gcloud auth application-default login
 
+# Install authentication plugin for kubectl.
+# Details: https://cloud.google.com/blog/products/containers-kubernetes/kubectl-auth-changes-in-gke
+gcloud components install gke-gcloud-auth-plugin
+
 # Configuring GKE cluster access for kubectl
 gcloud container clusters get-credentials "${CLUSTER_NAME}" --zone "${ZONE}"
 
@@ -174,13 +185,13 @@ export KUBE_CONTEXT="$(kubectl config current-context)"
 
 ```shell
 # Create python virtual environment
-python3.7 -m venv venv
+python3 -m venv venv
 
 # Activate virtual environment
 . ./venv/bin/activate
 
 # Install requirements
-pip install -r requirements.txt
+pip install -r requirements.lock
 
 # Generate protos
 python -m grpc_tools.protoc --proto_path=../../../ \
@@ -205,7 +216,23 @@ from your dev environment. You need:
 
 ### Making changes to the driver
 1. Install additional dev packages: `pip install -r requirements-dev.txt`
-2. Use `./bin/yapf.sh` and `./bin/isort.sh` helpers to auto-format code.
+2. Use `./bin/black.sh` and `./bin/isort.sh` helpers to auto-format code.
+
+### Updating Python Dependencies
+
+We track our Python-level dependencies using three different files:
+
+- `requirements.txt`
+- `dev-requirements.txt`
+- `requirements.lock`
+
+`requirements.txt` lists modules without specific versions supplied, though
+versions ranges may be specified. `requirements.lock` is generated from
+`requirements.txt` and _does_ specify versions for every dependency in the
+transitive dependency tree.
+
+When updating `requirements.txt`, you must also update `requirements.lock`. To
+do this, navigate to this directory and run `./bin/freeze.sh`.
 
 ### Setup test configuration
 

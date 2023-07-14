@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -98,7 +98,7 @@ TlsCredentials::create_security_connector(
   return sc;
 }
 
-grpc_core::UniqueTypeName TlsCredentials::type() const {
+grpc_core::UniqueTypeName TlsCredentials::Type() {
   static grpc_core::UniqueTypeName::Factory kFactory("Tls");
   return kFactory.Create();
 }
@@ -128,7 +128,7 @@ grpc_core::UniqueTypeName TlsServerCredentials::type() const {
   return kFactory.Create();
 }
 
-/** -- Wrapper APIs declared in grpc_security.h -- **/
+/// -- Wrapper APIs declared in grpc_security.h -- *
 
 grpc_channel_credentials* grpc_tls_credentials_create(
     grpc_tls_credentials_options* options) {

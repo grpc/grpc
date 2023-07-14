@@ -34,6 +34,7 @@ grpc_cc_library(
     deps = [
         "//src/core:lb_policy",
         "//src/core:subchannel_interface",
+        "//test/core/event_engine:mock_event_engine",
     ],
 )
 
@@ -49,6 +50,7 @@ grpc_cc_test(
         "//src/core:channel_args",
         "//src/core:grpc_lb_policy_pick_first",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:scoped_env_var",
     ],
 )
 
@@ -177,5 +179,34 @@ grpc_cc_test(
     deps = [
         "//src/core:no_destruct",
         "//src/core:static_stride_scheduler",
+    ],
+)
+
+grpc_cc_test(
+    name = "weighted_round_robin_config_test",
+    srcs = ["weighted_round_robin_config_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    tags = ["no_test_ios"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "weighted_round_robin_test",
+    srcs = ["weighted_round_robin_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_polling = False,
+    deps = [
+        ":lb_policy_test_lib",
+        "//src/core:grpc_lb_policy_weighted_round_robin",
+        "//test/core/util:grpc_test_util",
     ],
 )

@@ -28,6 +28,12 @@ fi
 cd "$(dirname "$0")/../../.."
 
 rm -rf ./tmp
+
+SYSTEM=$(uname | cut -f 1 -d_)
+if [ "$SYSTEM" == "Darwin" ]; then
+  # work around https://github.com/rake-compiler/rake-compiler/issues/210
+  export GRPC_RUBY_TEST_ONLY_WORKAROUND_MAKE_INSTALL_BUG=true
+fi
 bundle exec rake compile
 
 # build grpc_ruby_plugin

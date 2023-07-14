@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_LIB_RESOLVER_RESOLVER_FACTORY_H
-#define GRPC_CORE_LIB_RESOLVER_RESOLVER_FACTORY_H
+#ifndef GRPC_SRC_CORE_LIB_RESOLVER_RESOLVER_FACTORY_H
+#define GRPC_SRC_CORE_LIB_RESOLVER_RESOLVER_FACTORY_H
 
 #include <grpc/support/port_platform.h>
 
@@ -55,7 +55,7 @@ class ResolverFactory {
   virtual ~ResolverFactory() {}
 
   /// Returns the URI scheme that this factory implements.
-  /// Caller does NOT take ownership of result.
+  /// Must not include any upper-case characters.
   virtual absl::string_view scheme() const = 0;
 
   /// Returns a bool indicating whether the input uri is valid to create a
@@ -66,12 +66,13 @@ class ResolverFactory {
   virtual OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const = 0;
 
   /// Returns a string representing the default authority to use for this
-  /// scheme.
+  /// scheme.  By default, we %-encode the path part of the target URI,
+  /// excluding the initial '/' character.
   virtual std::string GetDefaultAuthority(const URI& uri) const {
-    return std::string(absl::StripPrefix(uri.path(), "/"));
+    return URI::PercentEncodeAuthority(absl::StripPrefix(uri.path(), "/"));
   }
 };
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_RESOLVER_RESOLVER_FACTORY_H
+#endif  // GRPC_SRC_CORE_LIB_RESOLVER_RESOLVER_FACTORY_H

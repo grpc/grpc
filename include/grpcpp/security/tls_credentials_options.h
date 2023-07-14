@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2019 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2019 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #ifndef GRPCPP_SECURITY_TLS_CREDENTIALS_OPTIONS_H
 #define GRPCPP_SECURITY_TLS_CREDENTIALS_OPTIONS_H
@@ -147,6 +147,18 @@ class TlsServerCredentialsOptions final : public TlsCredentialsOptions {
   // The default is GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE.
   void set_cert_request_type(
       grpc_ssl_client_certificate_request_type cert_request_type);
+
+  // Sets whether or not a TLS server should send a list of CA names in the
+  // ServerHello. This list of CA names is read from the server's trust bundle,
+  // so that the client can use this list as a hint to know which certificate it
+  // should send to the server.
+  //
+  // By default, this option is turned off.
+  //
+  // WARNING: This API is extremely dangerous and should not be used. If the
+  // server's trust bundle is too large, then the TLS server will be unable to
+  // form a ServerHello, and hence will be unusable.
+  void set_send_client_ca_list(bool send_client_ca_list);
 
  private:
 };

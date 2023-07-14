@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015-2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015-2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "test/cpp/interop/interop_client.h"
 
@@ -25,8 +25,11 @@
 #include <type_traits>
 #include <utility>
 
+#include "absl/cleanup/cleanup.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
+#include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -37,10 +40,13 @@
 #include <grpcpp/client_context.h>
 #include <grpcpp/security/credentials.h>
 
+#include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
 #include "test/core/util/histogram.h"
+#include "test/cpp/interop/backend_metrics_lb_policy.h"
 #include "test/cpp/interop/client_helper.h"
 
 namespace grpc {
@@ -68,10 +74,9 @@ void UnaryCompressionChecks(const InteropClientContextInspector& inspector,
   if (request->response_compressed().value()) {
     if (received_compression == GRPC_COMPRESS_NONE) {
       // Requested some compression, got NONE. This is an error.
-      gpr_log(GPR_ERROR,
-              "Failure: Requested compression but got uncompressed response "
-              "from server.");
-      abort();
+      grpc_core::Crash(
+          "Failure: Requested compression but got uncompressed response "
+          "from server.");
     }
     GPR_ASSERT(inspector.WasCompressed());
   } else {
@@ -79,47 +84,104 @@ void UnaryCompressionChecks(const InteropClientContextInspector& inspector,
     GPR_ASSERT(!(inspector.WasCompressed()));
   }
 }
+
+absl::optional<std::string> ValuesDiff(absl::string_view field, double expected,
+                                       double actual) {
+  if (expected != actual) {
+    return absl::StrFormat("%s: expected: %f, actual: %f", field, expected,
+                           actual);
+  }
+  return absl::nullopt;
+}
+
+template <typename Map>
+absl::optional<std::string> MapsDiff(absl::string_view path,
+                                     const Map& expected, const Map& actual) {
+  auto result = ValuesDiff(absl::StrFormat("%s size", path), expected.size(),
+                           actual.size());
+  if (result.has_value()) {
+    return result;
+  }
+  for (const auto& key_value : expected) {
+    auto it = actual.find(key_value.first);
+    if (it == actual.end()) {
+      return absl::StrFormat("In field %s, key %s was not found", path,
+                             key_value.first);
+    }
+    result = ValuesDiff(absl::StrFormat("%s/%s", path, key_value.first),
+                        key_value.second, it->second);
+    if (result.has_value()) {
+      return result;
+    }
+  }
+  return absl::nullopt;
+}
+
+absl::optional<std::string> OrcaLoadReportsDiff(const TestOrcaReport& expected,
+                                                const TestOrcaReport& actual) {
+  auto error = ValuesDiff("cpu_utilization", expected.cpu_utilization(),
+                          actual.cpu_utilization());
+  if (error.has_value()) {
+    return error;
+  }
+  error = ValuesDiff("mem_utilization", expected.memory_utilization(),
+                     actual.memory_utilization());
+  if (error.has_value()) {
+    return error;
+  }
+  error =
+      MapsDiff("request_cost", expected.request_cost(), actual.request_cost());
+  if (error.has_value()) {
+    return error;
+  }
+  error = MapsDiff("utilization", expected.utilization(), actual.utilization());
+  if (error.has_value()) {
+    return error;
+  }
+  return absl::nullopt;
+}
 }  // namespace
 
 InteropClient::ServiceStub::ServiceStub(
     ChannelCreationFunc channel_creation_func, bool new_stub_every_call)
     : channel_creation_func_(std::move(channel_creation_func)),
-      channel_(channel_creation_func_()),
-      new_stub_every_call_(new_stub_every_call) {
-  // If new_stub_every_call is false, then this is our chance to initialize
-  // stub_. (see Get())
-  if (!new_stub_every_call) {
-    stub_ = TestService::NewStub(channel_);
-  }
-}
+      new_stub_every_call_(new_stub_every_call) {}
 
 TestService::Stub* InteropClient::ServiceStub::Get() {
-  if (new_stub_every_call_) {
+  if (new_stub_every_call_ || stub_ == nullptr) {
+    if (channel_ == nullptr) {
+      channel_ = channel_creation_func_();
+    }
     stub_ = TestService::NewStub(channel_);
   }
-
   return stub_.get();
 }
 
 UnimplementedService::Stub*
 InteropClient::ServiceStub::GetUnimplementedServiceStub() {
   if (unimplemented_service_stub_ == nullptr) {
+    if (channel_ == nullptr) {
+      channel_ = channel_creation_func_();
+    }
     unimplemented_service_stub_ = UnimplementedService::NewStub(channel_);
   }
   return unimplemented_service_stub_.get();
 }
 
 void InteropClient::ServiceStub::ResetChannel() {
-  channel_ = channel_creation_func_();
-  if (!new_stub_every_call_) {
-    stub_ = TestService::NewStub(channel_);
-  }
+  channel_.reset();
+  stub_.reset();
 }
 
 InteropClient::InteropClient(ChannelCreationFunc channel_creation_func,
                              bool new_stub_every_test_case,
                              bool do_not_abort_on_transient_failures)
-    : serviceStub_(std::move(channel_creation_func), new_stub_every_test_case),
+    : serviceStub_(
+          [channel_creation_func = std::move(channel_creation_func), this]() {
+            return channel_creation_func(
+                load_report_tracker_.GetChannelArguments());
+          },
+          new_stub_every_test_case),
       do_not_abort_on_transient_failures_(do_not_abort_on_transient_failures) {}
 
 bool InteropClient::AssertStatusOk(const Status& s,
@@ -930,6 +992,106 @@ bool InteropClient::DoPickFirstUnary() {
   return true;
 }
 
+bool InteropClient::DoOrcaPerRpc() {
+  load_report_tracker_.ResetCollectedLoadReports();
+  grpc_core::CoreConfiguration::RegisterBuilder(RegisterBackendMetricsLbPolicy);
+  gpr_log(GPR_DEBUG, "testing orca per rpc");
+  SimpleRequest request;
+  SimpleResponse response;
+  ClientContext context;
+  auto orca_report = request.mutable_orca_per_query_report();
+  orca_report->set_cpu_utilization(0.8210);
+  orca_report->set_memory_utilization(0.5847);
+  orca_report->mutable_request_cost()->emplace("cost", 3456.32);
+  orca_report->mutable_utilization()->emplace("util", 0.30499);
+  auto status = serviceStub_.Get()->UnaryCall(&context, request, &response);
+  if (!AssertStatusOk(status, context.debug_error_string())) {
+    return false;
+  }
+  auto report = load_report_tracker_.GetNextLoadReport();
+  GPR_ASSERT(report.has_value());
+  GPR_ASSERT(report->has_value());
+  auto comparison_result = OrcaLoadReportsDiff(report->value(), *orca_report);
+  if (comparison_result.has_value()) {
+    gpr_assertion_failed(__FILE__, __LINE__, comparison_result->c_str());
+  }
+  GPR_ASSERT(!load_report_tracker_.GetNextLoadReport().has_value());
+  gpr_log(GPR_DEBUG, "orca per rpc successfully finished");
+  return true;
+}
+
+bool InteropClient::DoOrcaOob() {
+  static constexpr auto kTimeout = absl::Seconds(10);
+  gpr_log(GPR_DEBUG, "testing orca oob");
+  load_report_tracker_.ResetCollectedLoadReports();
+  grpc_core::CoreConfiguration::RegisterBuilder(RegisterBackendMetricsLbPolicy);
+  ClientContext context;
+  std::unique_ptr<ClientReaderWriter<StreamingOutputCallRequest,
+                                     StreamingOutputCallResponse>>
+      stream(serviceStub_.Get()->FullDuplexCall(&context));
+  auto stream_cleanup = absl::MakeCleanup([&]() {
+    GPR_ASSERT(stream->WritesDone());
+    GPR_ASSERT(stream->Finish().ok());
+  });
+  {
+    StreamingOutputCallRequest request;
+    request.add_response_parameters()->set_size(1);
+    TestOrcaReport* orca_report = request.mutable_orca_oob_report();
+    orca_report->set_cpu_utilization(0.8210);
+    orca_report->set_memory_utilization(0.5847);
+    orca_report->mutable_utilization()->emplace("util", 0.30499);
+    StreamingOutputCallResponse response;
+    if (!stream->Write(request)) {
+      gpr_log(GPR_ERROR, "DoOrcaOob(): stream->Write() failed");
+      return TransientFailureOrAbort();
+    }
+    if (!stream->Read(&response)) {
+      gpr_log(GPR_ERROR, "DoOrcaOob(): stream->Read failed");
+      return TransientFailureOrAbort();
+    }
+    GPR_ASSERT(load_report_tracker_
+                   .WaitForOobLoadReport(
+                       [orca_report](const auto& actual) {
+                         auto value = OrcaLoadReportsDiff(*orca_report, actual);
+                         if (value.has_value()) {
+                           gpr_log(GPR_DEBUG, "Reports mismatch: %s",
+                                   value->c_str());
+                           return false;
+                         }
+                         return true;
+                       },
+                       kTimeout, 10)
+                   .has_value());
+  }
+  {
+    StreamingOutputCallRequest request;
+    request.add_response_parameters()->set_size(1);
+    TestOrcaReport* orca_report = request.mutable_orca_oob_report();
+    orca_report->set_cpu_utilization(0.29309);
+    orca_report->set_memory_utilization(0.2);
+    orca_report->mutable_utilization()->emplace("util", 0.2039);
+    StreamingOutputCallResponse response;
+    if (!stream->Write(request)) {
+      gpr_log(GPR_ERROR, "DoOrcaOob(): stream->Write() failed");
+      return TransientFailureOrAbort();
+    }
+    if (!stream->Read(&response)) {
+      gpr_log(GPR_ERROR, "DoOrcaOob(): stream->Read failed");
+      return TransientFailureOrAbort();
+    }
+    GPR_ASSERT(
+        load_report_tracker_
+            .WaitForOobLoadReport(
+                [orca_report](const auto& report) {
+                  return !OrcaLoadReportsDiff(*orca_report, report).has_value();
+                },
+                kTimeout, 10)
+            .has_value());
+  }
+  gpr_log(GPR_DEBUG, "orca oob successfully finished");
+  return true;
+}
+
 bool InteropClient::DoCustomMetadata() {
   const std::string kEchoInitialMetadataKey("x-grpc-test-echo-initial");
   const std::string kInitialMetadataValue("test_initial_metadata_value");
@@ -1056,8 +1218,8 @@ InteropClient::PerformOneSoakTestIteration(
 }
 
 void InteropClient::PerformSoakTest(
-    const bool reset_channel_per_iteration, const int32_t soak_iterations,
-    const int32_t max_failures,
+    const std::string& server_uri, const bool reset_channel_per_iteration,
+    const int32_t soak_iterations, const int32_t max_failures,
     const int32_t max_acceptable_per_iteration_latency_ms,
     const int32_t min_time_ms_between_rpcs,
     const int32_t overall_timeout_seconds) {
@@ -1086,12 +1248,16 @@ void InteropClient::PerformSoakTest(
     results.push_back(result);
     if (!success) {
       gpr_log(GPR_DEBUG,
-              "soak iteration: %d elapsed_ms: %d peer: %s failed: %s", i,
-              elapsed_ms, peer.c_str(), debug_string.c_str());
+              "soak iteration: %d elapsed_ms: %d peer: %s server_uri: %s "
+              "failed: %s",
+              i, elapsed_ms, peer.c_str(), server_uri.c_str(),
+              debug_string.c_str());
       total_failures++;
     } else {
-      gpr_log(GPR_DEBUG, "soak iteration: %d elapsed_ms: %d peer: %s succeeded",
-              i, elapsed_ms, peer.c_str());
+      gpr_log(
+          GPR_DEBUG,
+          "soak iteration: %d elapsed_ms: %d peer: %s server_uri: %s succeeded",
+          i, elapsed_ms, peer.c_str(), server_uri.c_str());
     }
     grpc_histogram_add(latencies_ms_histogram, std::get<1>(result));
     iterations_ran++;
@@ -1106,7 +1272,8 @@ void InteropClient::PerformSoakTest(
   if (iterations_ran < soak_iterations) {
     gpr_log(
         GPR_ERROR,
-        "soak test consumed all %d seconds of time and quit early, only "
+        "(server_uri: %s) soak test consumed all %d seconds of time and quit "
+        "early, only "
         "having ran %d out of desired %d iterations. "
         "total_failures: %d. "
         "max_failures_threshold: %d. "
@@ -1116,58 +1283,62 @@ void InteropClient::PerformSoakTest(
         "Some or all of the iterations that did run were unexpectedly slow. "
         "See breakdown above for which iterations succeeded, failed, and "
         "why for more info.",
-        overall_timeout_seconds, iterations_ran, soak_iterations,
-        total_failures, max_failures, latency_ms_median, latency_ms_90th,
-        latency_ms_worst);
+        server_uri.c_str(), overall_timeout_seconds, iterations_ran,
+        soak_iterations, total_failures, max_failures, latency_ms_median,
+        latency_ms_90th, latency_ms_worst);
     GPR_ASSERT(0);
   } else if (total_failures > max_failures) {
     gpr_log(GPR_ERROR,
-            "soak test ran: %d iterations. total_failures: %d exceeds "
+            "(server_uri: %s) soak test ran: %d iterations. total_failures: %d "
+            "exceeds "
             "max_failures_threshold: %d. "
             "median_soak_iteration_latency: %lf ms. "
             "90th_soak_iteration_latency: %lf ms. "
             "worst_soak_iteration_latency: %lf ms. "
             "See breakdown above for which iterations succeeded, failed, and "
             "why for more info.",
-            soak_iterations, total_failures, max_failures, latency_ms_median,
-            latency_ms_90th, latency_ms_worst);
+            server_uri.c_str(), soak_iterations, total_failures, max_failures,
+            latency_ms_median, latency_ms_90th, latency_ms_worst);
     GPR_ASSERT(0);
   } else {
     gpr_log(GPR_INFO,
-            "soak test ran: %d iterations. total_failures: %d is within "
+            "(server_uri: %s) soak test ran: %d iterations. total_failures: %d "
+            "is within "
             "max_failures_threshold: %d. "
             "median_soak_iteration_latency: %lf ms. "
             "90th_soak_iteration_latency: %lf ms. "
             "worst_soak_iteration_latency: %lf ms. "
             "See breakdown above for which iterations succeeded, failed, and "
             "why for more info.",
-            soak_iterations, total_failures, max_failures, latency_ms_median,
-            latency_ms_90th, latency_ms_worst);
+            server_uri.c_str(), soak_iterations, total_failures, max_failures,
+            latency_ms_median, latency_ms_90th, latency_ms_worst);
   }
 }
 
 bool InteropClient::DoRpcSoakTest(
-    int32_t soak_iterations, int32_t max_failures,
-    int64_t max_acceptable_per_iteration_latency_ms,
+    const std::string& server_uri, int32_t soak_iterations,
+    int32_t max_failures, int64_t max_acceptable_per_iteration_latency_ms,
     int32_t soak_min_time_ms_between_rpcs, int32_t overall_timeout_seconds) {
   gpr_log(GPR_DEBUG, "Sending %d RPCs...", soak_iterations);
   GPR_ASSERT(soak_iterations > 0);
-  PerformSoakTest(false /* reset channel per iteration */, soak_iterations,
-                  max_failures, max_acceptable_per_iteration_latency_ms,
+  PerformSoakTest(server_uri, false /* reset channel per iteration */,
+                  soak_iterations, max_failures,
+                  max_acceptable_per_iteration_latency_ms,
                   soak_min_time_ms_between_rpcs, overall_timeout_seconds);
   gpr_log(GPR_DEBUG, "rpc_soak test done.");
   return true;
 }
 
 bool InteropClient::DoChannelSoakTest(
-    int32_t soak_iterations, int32_t max_failures,
-    int64_t max_acceptable_per_iteration_latency_ms,
+    const std::string& server_uri, int32_t soak_iterations,
+    int32_t max_failures, int64_t max_acceptable_per_iteration_latency_ms,
     int32_t soak_min_time_ms_between_rpcs, int32_t overall_timeout_seconds) {
   gpr_log(GPR_DEBUG, "Sending %d RPCs, tearing down the channel each time...",
           soak_iterations);
   GPR_ASSERT(soak_iterations > 0);
-  PerformSoakTest(true /* reset channel per iteration */, soak_iterations,
-                  max_failures, max_acceptable_per_iteration_latency_ms,
+  PerformSoakTest(server_uri, true /* reset channel per iteration */,
+                  soak_iterations, max_failures,
+                  max_acceptable_per_iteration_latency_ms,
                   soak_min_time_ms_between_rpcs, overall_timeout_seconds);
   gpr_log(GPR_DEBUG, "channel_soak test done.");
   return true;

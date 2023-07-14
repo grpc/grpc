@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2017 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2017 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -408,7 +408,7 @@ void complete_if_batch_end_locked(inproc_stream* s, grpc_error_handle error,
   int is_rtm = static_cast<int>(op == s->recv_trailing_md_op);
 
   if ((is_sm + is_stm + is_rim + is_rm + is_rtm) == 1) {
-    INPROC_LOG(GPR_INFO, "%s %p %p %s", msg, s, op,
+    INPROC_LOG(GPR_INFO, "%s %p %p %p %s", msg, s, op, op->on_complete,
                grpc_core::StatusToString(error).c_str());
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, op->on_complete, error);
   }
@@ -697,8 +697,9 @@ void op_state_machine_locked(inproc_stream* s, grpc_error_handle error) {
       s->to_read_initial_md_filled = false;
       grpc_core::ExecCtx::Run(
           DEBUG_LOCATION,
-          s->recv_initial_md_op->payload->recv_initial_metadata
-              .recv_initial_metadata_ready,
+          std::exchange(s->recv_initial_md_op->payload->recv_initial_metadata
+                            .recv_initial_metadata_ready,
+                        nullptr),
           absl::OkStatus());
       complete_if_batch_end_locked(
           s, absl::OkStatus(), s->recv_initial_md_op,
@@ -766,6 +767,8 @@ void op_state_machine_locked(inproc_stream* s, grpc_error_handle error) {
                        nullptr);
       s->to_read_trailing_md.Clear();
       s->to_read_trailing_md_filled = false;
+      s->recv_trailing_md_op->payload->recv_trailing_metadata
+          .recv_trailing_metadata->Set(grpc_core::GrpcStatusFromWire(), true);
 
       // We should schedule the recv_trailing_md_op completion if
       // 1. this stream is the client-side
@@ -906,8 +909,6 @@ bool cancel_stream_locked(inproc_stream* s, grpc_error_handle error) {
   return ret;
 }
 
-void do_nothing(void* /*arg*/, grpc_error_handle /*error*/) {}
-
 void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
                        grpc_transport_stream_op_batch* op) {
   INPROC_LOG(GPR_INFO, "perform_stream_op %p %p %p", gt, gs, op);
@@ -933,8 +934,8 @@ void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
   // completed).  This can go away once we move to a new C++ closure API
   // that provides the ability to create a barrier closure.
   if (on_complete == nullptr) {
-    on_complete = GRPC_CLOSURE_INIT(&op->handler_private.closure, do_nothing,
-                                    nullptr, grpc_schedule_on_exec_ctx);
+    on_complete = op->on_complete =
+        grpc_core::NewClosure([](grpc_error_handle) {});
   }
 
   if (op->cancel_stream) {
@@ -1093,7 +1094,7 @@ void close_transport_locked(inproc_transport* t) {
                             "close transport");
   if (!t->is_closed) {
     t->is_closed = true;
-    /* Also end all streams on this transport */
+    // Also end all streams on this transport
     while (t->stream_list != nullptr) {
       // cancel_stream_locked also adjusts stream list
       cancel_stream_locked(
@@ -1161,9 +1162,9 @@ void destroy_transport(grpc_transport* gt) {
   t->unref();
 }
 
-/*******************************************************************************
- * INTEGRATION GLUE
- */
+//******************************************************************************
+// INTEGRATION GLUE
+//
 
 void set_pollset(grpc_transport* /*gt*/, grpc_stream* /*gs*/,
                  grpc_pollset* /*pollset*/) {
@@ -1177,17 +1178,22 @@ void set_pollset_set(grpc_transport* /*gt*/, grpc_stream* /*gs*/,
 
 grpc_endpoint* get_endpoint(grpc_transport* /*t*/) { return nullptr; }
 
-const grpc_transport_vtable inproc_vtable = {
-    sizeof(inproc_stream), "inproc",
-    init_stream,           nullptr,
-    set_pollset,           set_pollset_set,
-    perform_stream_op,     perform_transport_op,
-    destroy_stream,        destroy_transport,
-    get_endpoint};
+const grpc_transport_vtable inproc_vtable = {sizeof(inproc_stream),
+                                             true,
+                                             "inproc",
+                                             init_stream,
+                                             nullptr,
+                                             set_pollset,
+                                             set_pollset_set,
+                                             perform_stream_op,
+                                             perform_transport_op,
+                                             destroy_stream,
+                                             destroy_transport,
+                                             get_endpoint};
 
-/*******************************************************************************
- * Main inproc transport functions
- */
+//******************************************************************************
+// Main inproc transport functions
+//
 void inproc_transports_create(grpc_transport** server_transport,
                               grpc_transport** client_transport) {
   INPROC_LOG(GPR_INFO, "inproc_transports_create");

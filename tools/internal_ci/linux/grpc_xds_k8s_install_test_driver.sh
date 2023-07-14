@@ -16,13 +16,14 @@
 set -eo pipefail
 
 # Constants
-readonly PYTHON_VERSION="${PYTHON_VERSION:-3.7}"
+readonly PYTHON_VERSION="${PYTHON_VERSION:-3.10}"
 # Test driver
 readonly TEST_DRIVER_REPO_NAME="grpc"
 readonly TEST_DRIVER_REPO_URL="https://github.com/${TEST_DRIVER_REPO_OWNER:-grpc}/grpc.git"
 readonly TEST_DRIVER_BRANCH="${TEST_DRIVER_BRANCH:-master}"
 readonly TEST_DRIVER_PATH="tools/run_tests/xds_k8s_test_driver"
 readonly TEST_DRIVER_PROTOS_PATH="src/proto/grpc/testing"
+readonly FORCE_TESTING_VERSION="${FORCE_TESTING_VERSION:-}"
 
 # GKE cluster identifiers.
 readonly GKE_CLUSTER_PSM_LB="psm-lb"
@@ -42,11 +43,11 @@ readonly GKE_CLUSTER_PSM_BASIC="psm-basic"
 activate_gke_cluster() {
   case $1 in
     GKE_CLUSTER_PSM_LB)
-      GKE_CLUSTER_NAME="interop-test-psm-lb-v1-us-central1-a"
+      GKE_CLUSTER_NAME="psm-interop-lb-primary"
       GKE_CLUSTER_ZONE="us-central1-a"
       ;;
     GKE_CLUSTER_PSM_SECURITY)
-      GKE_CLUSTER_NAME="interop-test-psm-sec-v2-us-central1-a"
+      GKE_CLUSTER_NAME="psm-interop-security"
       GKE_CLUSTER_ZONE="us-central1-a"
       ;;
     GKE_CLUSTER_PSM_BASIC)
@@ -75,11 +76,7 @@ activate_gke_cluster() {
 activate_secondary_gke_cluster() {
   case $1 in
     GKE_CLUSTER_PSM_LB)
-      SECONDARY_GKE_CLUSTER_NAME="interop-test-psm-lb-v1-us-west1-b"
-      SECONDARY_GKE_CLUSTER_ZONE="us-west1-b"
-      ;;
-    GKE_CLUSTER_PSM_SECURITY)
-      SECONDARY_GKE_CLUSTER_NAME="interop-test-psm-sec-v2-us-west1-b"
+      SECONDARY_GKE_CLUSTER_NAME="psm-interop-lb-secondary"
       SECONDARY_GKE_CLUSTER_ZONE="us-west1-b"
       ;;
     *)
@@ -100,9 +97,11 @@ activate_secondary_gke_cluster() {
 #   Writes the output of given command to stdout, stderr
 #######################################
 run_ignore_exit_code() {
-  local exit_code=-1
+  local exit_code=0
   "$@" || exit_code=$?
-  echo "Exit code: ${exit_code}"
+  if [[ $exit_code != 0 ]]; then
+    echo "Cmd: '$*', exit code: ${exit_code}"
+  fi
 }
 
 #######################################
@@ -158,18 +157,6 @@ gcloud_gcr_list_image_tags() {
 }
 
 #######################################
-# A helper to execute `gcloud -q components update`.
-# Arguments:
-#   None
-# Outputs:
-#   Writes the output of `gcloud` command to stdout, stderr
-#######################################
-gcloud_update() {
-  echo "Update gcloud components:"
-  gcloud -q components update
-}
-
-#######################################
 # Create kube context authenticated with GKE cluster, saves context name.
 # to KUBE_CONTEXT
 # Globals:
@@ -220,7 +207,7 @@ test_driver_get_source() {
 }
 
 #######################################
-# Install Python modules from required in $TEST_DRIVER_FULL_DIR/requirements.txt
+# Install Python modules from required in $TEST_DRIVER_FULL_DIR/requirements.lock
 # to Python virtual environment. Creates and activates Python venv if necessary.
 # Globals:
 #   TEST_DRIVER_FULL_DIR
@@ -242,14 +229,14 @@ test_driver_pip_install() {
       echo "Found python virtual environment directory: ${venv_dir}"
     else
       echo "Creating python virtual environment: ${venv_dir}"
-      "python${PYTHON_VERSION}" -m venv "${venv_dir}"
+      "python${PYTHON_VERSION}" -m venv "${venv_dir}" --upgrade-deps
     fi
     # Intentional: No need to check python venv activate script.
     # shellcheck source=/dev/null
     source "${venv_dir}/bin/activate"
   fi
 
-  python3 -m pip install -r requirements.txt
+  python3 -m pip install -r requirements.lock
   echo "Installed Python packages:"
   python3 -m pip list
 }
@@ -308,18 +295,17 @@ test_driver_install() {
 }
 
 #######################################
-# Outputs Kokoro image version and Ubuntu's lsb_release
+# Outputs Ubuntu's lsb_release and system python, pip versions
 # Arguments:
 #   None
 # Outputs:
 #   Writes the output to stdout
 #######################################
 kokoro_print_version() {
-  echo "Kokoro VM version:"
-  if [[ -f /VERSION ]]; then
-    cat /VERSION
-  fi
+  echo "Kokoro Ubuntu version:"
   run_ignore_exit_code lsb_release -a
+  run_ignore_exit_code "python${PYTHON_VERSION}" --version
+  run_ignore_exit_code "python${PYTHON_VERSION}" -m pip --version
 }
 
 #######################################
@@ -352,28 +338,62 @@ EOF
 }
 
 #######################################
-# Configure Python virtual environment on Kokoro VM.
+# Install packages via apt.
 # Arguments:
 #   None
 # Outputs:
-#   Writes the output of `pyenv` commands to stdout
+#   Writes the output of `apt` commands to stdout
 #######################################
-kokoro_setup_python_virtual_environment() {
-  # Kokoro provides pyenv, so use it instead of `python -m venv`
-  echo "Setup pyenv environment"
-  eval "$(pyenv init -)"
-  eval "$(pyenv virtualenv-init -)"
-  py_latest_patch="$(pyenv versions --bare --skip-aliases | grep -E "^${PYTHON_VERSION}\.[0-9]{1,2}$" | sort --version-sort | tail -n 1)"
-  echo "Activating python ${py_latest_patch} virtual environment"
-  pyenv virtualenv --no-pip "${py_latest_patch}" k8s_xds_test_runner
-  pyenv local k8s_xds_test_runner
-  pyenv activate k8s_xds_test_runner
-  python3 -m ensurepip
-  # pip is fixed to 21.0.1 due to issue https://github.com/pypa/pip/pull/9835
-  # internal details: b/186411224
-  # TODO(sergiitk): revert https://github.com/grpc/grpc/pull/26087 when 21.1.1 released
-  python3 -m pip install -U pip==21.0.1
-  python3 -m pip --version
+kokoro_install_dependencies() {
+  # needrestart checks which daemons need to be restarted after library
+  # upgrades. It's useless to us in non-interactive mode.
+  sudo DEBIAN_FRONTEND=noninteractive apt-get -qq remove needrestart
+  sudo DEBIAN_FRONTEND=noninteractive apt-get -qq update
+  sudo DEBIAN_FRONTEND=noninteractive apt-get -qq install --auto-remove \
+    "python${PYTHON_VERSION}-venv" \
+    google-cloud-sdk-gke-gcloud-auth-plugin \
+    kubectl
+  sudo rm -rf /var/lib/apt/lists
+}
+
+#######################################
+# Determines the version branch under test from Kokoro environment.
+# Globals:
+#   KOKORO_JOB_NAME
+#   KOKORO_BUILD_INITIATOR
+#   FORCE_TESTING_VERSION: Forces the testing version to be something else.
+#   TESTING_VERSION: Populated with the version branch under test,
+#                    f.e. master, dev, v1.42.x.
+# Outputs:
+#   Sets TESTING_VERSION global variable.
+#######################################
+kokoro_get_testing_version() {
+  # All grpc kokoro jobs names structured to have the version identifier in the third position:
+  # - grpc/core/master/linux/...
+  # - grpc/core/v1.42.x/branch/linux/...
+  # - grpc/java/v1.47.x/branch/...
+  # - grpc/go/v1.47.x/branch/...
+  # - grpc/node/v1.6.x/...
+  local version_from_job_name
+  version_from_job_name=$(echo "${KOKORO_JOB_NAME}" | cut -d '/' -f3)
+
+  if [[ -n "${FORCE_TESTING_VERSION}" ]]; then
+    # Allows to override the testing version, and force tagging the built
+    # images, if necessary.
+    readonly TESTING_VERSION="${FORCE_TESTING_VERSION}"
+  elif [[ "${KOKORO_BUILD_INITIATOR:-anonymous}" != "kokoro" ]]; then
+    # If not initiated by Kokoro, it's a dev branch.
+    # This allows to know later down the line that the built image doesn't need
+    # to be tagged, and avoid overriding an actual versioned image used in tests
+    # (e.g. v1.42.x, master) with a dev build.
+    if [[ -n "${version_from_job_name}" ]]; then
+      readonly TESTING_VERSION="dev-${version_from_job_name}"
+    else
+      readonly TESTING_VERSION="dev"
+    fi
+  else
+    readonly TESTING_VERSION="${version_from_job_name}"
+  fi
 }
 
 #######################################
@@ -400,33 +420,32 @@ kokoro_setup_python_virtual_environment() {
 #   Writes the output to stdout, stderr, files
 #######################################
 kokoro_setup_test_driver() {
+  # Unset noisy verbose mode often set in the parent script.
+  set +x
   local src_repository_name="${1:?Usage kokoro_setup_test_driver GITHUB_REPOSITORY_NAME}"
   # Capture Kokoro VM version info in the log.
   kokoro_print_version
 
-  # All grpc kokoro jobs names structured to have the version identifier in the third position:
-  # - grpc/core/master/linux/...
-  # - grpc/core/v1.42.x/branch/linux/...
-  # - grpc/java/v1.47.x/branch/...
-  # - grpc/go/v1.47.x/branch/...
-  # - grpc/node/v1.6.x/...
-  readonly TESTING_VERSION=$(echo "${KOKORO_JOB_NAME}" | cut -d '/' -f3)
+  # Get testing version from the job name.
+  kokoro_get_testing_version
 
   # Kokoro clones repo to ${KOKORO_ARTIFACTS_DIR}/github/${GITHUB_REPOSITORY}
   local github_root="${KOKORO_ARTIFACTS_DIR}/github"
   readonly SRC_DIR="${github_root}/${src_repository_name}"
-  local test_driver_repo_dir
-  test_driver_repo_dir="${TEST_DRIVER_REPO_DIR:-$(mktemp -d)/${TEST_DRIVER_REPO_NAME}}"
   parse_src_repo_git_info SRC_DIR
   kokoro_write_sponge_properties
-  kokoro_setup_python_virtual_environment
+  kokoro_install_dependencies
 
-  # gcloud requires python, so this should be executed after pyenv setup
-  gcloud_update
+  # Get kubectl cluster credentials.
   gcloud_get_cluster_credentials
+
+  # Install the driver.
+  local test_driver_repo_dir
+  test_driver_repo_dir="${TEST_DRIVER_REPO_DIR:-$(mktemp -d)/${TEST_DRIVER_REPO_NAME}}"
   test_driver_install "${test_driver_repo_dir}"
   # shellcheck disable=SC2034  # Used in the main script
   readonly TEST_DRIVER_FLAGFILE="config/grpc-testing.cfg"
+
   # Test artifacts dir: xml reports, logs, etc.
   local artifacts_dir="${KOKORO_ARTIFACTS_DIR}/artifacts"
   # Folders after $artifacts_dir reported as target name
@@ -459,6 +478,13 @@ local_setup_test_driver() {
   parse_src_repo_git_info "${SRC_DIR}"
   readonly KUBE_CONTEXT="${KUBE_CONTEXT:-$(kubectl config current-context)}"
   readonly SECONDARY_KUBE_CONTEXT="${SECONDARY_KUBE_CONTEXT}"
+
+  # Never override docker image for local runs, unless explicitly forced.
+  if [[ -n "${FORCE_TESTING_VERSION}" ]]; then
+    readonly TESTING_VERSION="${FORCE_TESTING_VERSION}"
+  else
+    readonly TESTING_VERSION="dev"
+  fi
 
   local test_driver_repo_dir
   test_driver_repo_dir="${TEST_DRIVER_REPO_DIR:-$(mktemp -d)/${TEST_DRIVER_REPO_NAME}}"

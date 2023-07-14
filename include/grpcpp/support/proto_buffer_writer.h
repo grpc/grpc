@@ -1,25 +1,27 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #ifndef GRPCPP_SUPPORT_PROTO_BUFFER_WRITER_H
 #define GRPCPP_SUPPORT_PROTO_BUFFER_WRITER_H
 
 #include <type_traits>
+
+#include "absl/strings/cord.h"
 
 #include <grpc/byte_buffer.h>
 #include <grpc/impl/grpc_types.h>
@@ -148,6 +150,41 @@ class ProtoBufferWriter : public grpc::protobuf::io::ZeroCopyOutputStream {
 
   /// Returns the total number of bytes written since this object was created.
   int64_t ByteCount() const override { return byte_count_; }
+
+#ifdef GRPC_PROTOBUF_CORD_SUPPORT_ENABLED
+  /// Writes cord to the backing byte_buffer, sharing the memory between the
+  /// blocks of the cord, and the slices of the byte_buffer.
+  // (override is intentionally omitted here to support old Protobuf which
+  //  doesn't have ReadCord method)
+  // NOLINTNEXTLINE(modernize-use-override)
+  virtual bool WriteCord(const absl::Cord& cord) {
+    grpc_slice_buffer* buffer = slice_buffer();
+    size_t cur = 0;
+    for (absl::string_view chunk : cord.Chunks()) {
+      // TODO(veblush): Revisit this 512 threadhold which could be smaller.
+      if (chunk.size() < 512) {
+        // If chunk is small enough, just copy it.
+        grpc_slice slice =
+            grpc_slice_from_copied_buffer(chunk.data(), chunk.size());
+        grpc_slice_buffer_add(buffer, slice);
+      } else {
+        // If chunk is large, just use the pointer instead of copying.
+        // To make sure it's alive while being used, a subcord for chunk is
+        // created and attached to a grpc_slice instance.
+        absl::Cord* subcord = new absl::Cord(cord.Subcord(cur, chunk.size()));
+        grpc_slice slice = grpc_slice_new_with_user_data(
+            const_cast<uint8_t*>(
+                reinterpret_cast<const uint8_t*>(chunk.data())),
+            chunk.size(), [](void* p) { delete static_cast<absl::Cord*>(p); },
+            subcord);
+        grpc_slice_buffer_add(buffer, slice);
+      }
+      cur += chunk.size();
+    }
+    set_byte_count(ByteCount() + cur);
+    return true;
+  }
+#endif  // GRPC_PROTOBUF_CORD_SUPPORT_ENABLED
 
   // These protected members are needed to support internal optimizations.
   // they expose internal bits of grpc core that are NOT stable. If you have

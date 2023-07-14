@@ -38,6 +38,10 @@ ls -R input_artifacts || true
 # - Ruby's grpc.tools gem also requires protoc plugins build on multiple platforms
 tools/run_tests/task_runner.py -f package linux -j 6 || FAILED="true"
 
+# Fix for https://github.com/grpc/grpc/issues/32179 by avoiding name clash
+# with csharp_nugets_windows_dotnetcli.zip files from previous steps.
+cp artifacts/csharp_nugets_windows_dotnetcli.zip artifacts/csharp_nugets_windows_dotnetcli_multiplatform.zip || true
+
 tools/internal_ci/helper_scripts/store_artifacts_from_moved_src_tree.sh
 
 if [ "$FAILED" != "" ]

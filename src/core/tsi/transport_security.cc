@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -26,11 +26,11 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
-/* --- Tracing. --- */
+// --- Tracing. ---
 
 grpc_core::TraceFlag tsi_tracing_enabled(false, "tsi");
 
-/* --- tsi_result common implementation. --- */
+// --- tsi_result common implementation. ---
 
 const char* tsi_result_to_string(tsi_result result) {
   switch (result) {
@@ -80,9 +80,9 @@ const char* tsi_security_level_to_string(tsi_security_level security_level) {
   }
 }
 
-/* --- tsi_frame_protector common implementation. ---
+// --- tsi_frame_protector common implementation. ---
 
-   Calls specific implementation after state/input validation. */
+// Calls specific implementation after state/input validation.
 
 tsi_result tsi_frame_protector_protect(tsi_frame_protector* self,
                                        const unsigned char* unprotected_bytes,
@@ -137,9 +137,9 @@ void tsi_frame_protector_destroy(tsi_frame_protector* self) {
   self->vtable->destroy(self);
 }
 
-/* --- tsi_handshaker common implementation. ---
+// --- tsi_handshaker common implementation. ---
 
-   Calls specific implementation after state/input validation. */
+// Calls specific implementation after state/input validation.
 
 tsi_result tsi_handshaker_get_bytes_to_send_to_peer(tsi_handshaker* self,
                                                     unsigned char* bytes,
@@ -251,7 +251,7 @@ void tsi_handshaker_destroy(tsi_handshaker* self) {
   self->vtable->destroy(self);
 }
 
-/* --- tsi_handshaker_result implementation. --- */
+// --- tsi_handshaker_result implementation. ---
 
 tsi_result tsi_handshaker_result_extract_peer(const tsi_handshaker_result* self,
                                               tsi_peer* peer) {
@@ -302,7 +302,7 @@ void tsi_handshaker_result_destroy(tsi_handshaker_result* self) {
   self->vtable->destroy(self);
 }
 
-/* --- tsi_peer implementation. --- */
+// --- tsi_peer implementation. ---
 
 tsi_peer_property tsi_init_peer_property(void) {
   tsi_peer_property property;
@@ -326,7 +326,7 @@ void tsi_peer_property_destruct(tsi_peer_property* property) {
   if (property->value.data != nullptr) {
     gpr_free(property->value.data);
   }
-  *property = tsi_init_peer_property(); /* Reset everything to 0. */
+  *property = tsi_init_peer_property();  // Reset everything to 0.
 }
 
 void tsi_peer_destruct(tsi_peer* self) {

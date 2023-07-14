@@ -76,6 +76,7 @@ def py_grpc_gevent_test(
     native.py_test(
         name = name + ".gevent",
         args = [name],
+        data = data,
         deps = augmented_deps,
         srcs = [copied_main_filename],
         main = copied_main_filename,

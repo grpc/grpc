@@ -34,7 +34,7 @@ please refer to these documents
   Repository
 - [Kotlin](https://github.com/grpc/grpc-kotlin): Use JARs from Maven Central
   Repository
-- [Node](https://github.com/grpc/grpc-node): `npm install grpc`
+- [Node](https://github.com/grpc/grpc-node): `npm install @grpc/grpc-js`
 - [Objective-C](src/objective-c): Add `gRPC-ProtoRPC` dependency to podspec
 - [PHP](src/php): `pecl install grpc`
 - [Python](src/python/grpcio): `pip install grpcio`

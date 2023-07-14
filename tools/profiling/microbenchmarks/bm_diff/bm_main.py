@@ -23,12 +23,21 @@ import subprocess
 import sys
 
 sys.path.append(
-    os.path.join(os.path.dirname(sys.argv[0]), '..', '..', 'run_tests',
-                 'python_utils'))
+    os.path.join(
+        os.path.dirname(sys.argv[0]), "..", "..", "run_tests", "python_utils"
+    )
+)
 
 sys.path.append(
-    os.path.join(os.path.dirname(sys.argv[0]), '..', '..', '..', 'run_tests',
-                 'python_utils'))
+    os.path.join(
+        os.path.dirname(sys.argv[0]),
+        "..",
+        "..",
+        "..",
+        "run_tests",
+        "python_utils",
+    )
+)
 
 import bm_build
 import bm_constants
@@ -40,51 +49,67 @@ import jobset
 
 def _args():
     argp = argparse.ArgumentParser(
-        description='Perform diff on microbenchmarks')
-    argp.add_argument('-t',
-                      '--track',
-                      choices=sorted(bm_constants._INTERESTING),
-                      nargs='+',
-                      default=sorted(bm_constants._INTERESTING),
-                      help='Which metrics to track')
-    argp.add_argument('-b',
-                      '--benchmarks',
-                      nargs='+',
-                      choices=bm_constants._AVAILABLE_BENCHMARK_TESTS,
-                      default=bm_constants._AVAILABLE_BENCHMARK_TESTS,
-                      help='Which benchmarks to run')
-    argp.add_argument('-d',
-                      '--diff_base',
-                      type=str,
-                      help='Commit or branch to compare the current one to')
+        description="Perform diff on microbenchmarks"
+    )
     argp.add_argument(
-        '-o',
-        '--old',
-        default='old',
+        "-t",
+        "--track",
+        choices=sorted(bm_constants._INTERESTING),
+        nargs="+",
+        default=sorted(bm_constants._INTERESTING),
+        help="Which metrics to track",
+    )
+    argp.add_argument(
+        "-b",
+        "--benchmarks",
+        nargs="+",
+        choices=bm_constants._AVAILABLE_BENCHMARK_TESTS,
+        default=bm_constants._AVAILABLE_BENCHMARK_TESTS,
+        help="Which benchmarks to run",
+    )
+    argp.add_argument(
+        "-d",
+        "--diff_base",
         type=str,
-        help='Name of baseline run to compare to. Usually just called "old"')
-    argp.add_argument('-r',
-                      '--regex',
-                      type=str,
-                      default="",
-                      help='Regex to filter benchmarks run')
+        help="Commit or branch to compare the current one to",
+    )
     argp.add_argument(
-        '-l',
-        '--loops',
+        "-o",
+        "--old",
+        default="old",
+        type=str,
+        help='Name of baseline run to compare to. Usually just called "old"',
+    )
+    argp.add_argument(
+        "-r",
+        "--regex",
+        type=str,
+        default="",
+        help="Regex to filter benchmarks run",
+    )
+    argp.add_argument(
+        "-l",
+        "--loops",
         type=int,
         default=10,
-        help=
-        'Number of times to loops the benchmarks. More loops cuts down on noise'
+        help=(
+            "Number of times to loops the benchmarks. More loops cuts down on"
+            " noise"
+        ),
     )
-    argp.add_argument('-j',
-                      '--jobs',
-                      type=int,
-                      default=multiprocessing.cpu_count(),
-                      help='Number of CPUs to use')
-    argp.add_argument('--pr_comment_name',
-                      type=str,
-                      default="microbenchmarks",
-                      help='Name that Jenkins will use to comment on the PR')
+    argp.add_argument(
+        "-j",
+        "--jobs",
+        type=int,
+        default=multiprocessing.cpu_count(),
+        help="Number of CPUs to use",
+    )
+    argp.add_argument(
+        "--pr_comment_name",
+        type=str,
+        default="microbenchmarks",
+        help="Name that Jenkins will use to comment on the PR",
+    )
     args = argp.parse_args()
     assert args.diff_base or args.old, "One of diff_base or old must be set!"
     if args.loops < 3:
@@ -107,44 +132,51 @@ def eintr_be_gone(fn):
 
 
 def main(args):
-
-    bm_build.build('new', args.benchmarks, args.jobs)
+    bm_build.build("new", args.benchmarks, args.jobs)
 
     old = args.old
     if args.diff_base:
-        old = 'old'
+        old = "old"
         where_am_i = subprocess.check_output(
-            ['git', 'rev-parse', '--abbrev-ref', 'HEAD']).strip()
-        subprocess.check_call(['git', 'checkout', args.diff_base])
+            ["git", "rev-parse", "--abbrev-ref", "HEAD"]
+        ).strip()
+        subprocess.check_call(["git", "checkout", args.diff_base])
         try:
             bm_build.build(old, args.benchmarks, args.jobs)
         finally:
-            subprocess.check_call(['git', 'checkout', where_am_i])
-            subprocess.check_call(['git', 'submodule', 'update'])
+            subprocess.check_call(["git", "checkout", where_am_i])
+            subprocess.check_call(["git", "submodule", "update"])
 
     jobs_list = []
-    jobs_list += bm_run.create_jobs('new', args.benchmarks, args.loops,
-                                    args.regex)
-    jobs_list += bm_run.create_jobs(old, args.benchmarks, args.loops,
-                                    args.regex)
+    jobs_list += bm_run.create_jobs(
+        "new", args.benchmarks, args.loops, args.regex
+    )
+    jobs_list += bm_run.create_jobs(
+        old, args.benchmarks, args.loops, args.regex
+    )
 
     # shuffle all jobs to eliminate noise from GCE CPU drift
     random.shuffle(jobs_list, random.SystemRandom().random)
     jobset.run(jobs_list, maxjobs=args.jobs)
 
-    diff, note, significance = bm_diff.diff(args.benchmarks, args.loops,
-                                            args.regex, args.track, old, 'new')
+    diff, note, significance = bm_diff.diff(
+        args.benchmarks, args.loops, args.regex, args.track, old, "new"
+    )
     if diff:
-        text = '[%s] Performance differences noted:\n%s' % (
-            args.pr_comment_name, diff)
+        text = "[%s] Performance differences noted:\n%s" % (
+            args.pr_comment_name,
+            diff,
+        )
     else:
-        text = '[%s] No significant performance differences' % args.pr_comment_name
+        text = (
+            "[%s] No significant performance differences" % args.pr_comment_name
+        )
     if note:
-        text = note + '\n\n' + text
-    print('%s' % text)
-    check_on_pr.check_on_pr('Benchmark', '```\n%s\n```' % text)
+        text = note + "\n\n" + text
+    print("%s" % text)
+    check_on_pr.check_on_pr("Benchmark", "```\n%s\n```" % text)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     args = _args()
     main(args)

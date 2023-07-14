@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "src/cpp/client/secure_credentials.h"
 
@@ -32,6 +32,7 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpc/slice.h>
+#include <grpc/support/json.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
@@ -49,6 +50,7 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_reader.h"
 #include "src/core/lib/security/util/json_util.h"
 #include "src/cpp/client/create_channel_internal.h"
 #include "src/cpp/common/secure_auth_context.h"
@@ -163,8 +165,8 @@ grpc::Status StsCredentialsOptionsFromJson(const std::string& json_string,
                         "options cannot be nullptr.");
   }
   ClearStsCredentialsOptions(options);
-  auto json = grpc_core::Json::Parse(json_string.c_str());
-  if (!json.ok() || json->type() != grpc_core::Json::Type::OBJECT) {
+  auto json = grpc_core::JsonParse(json_string.c_str());
+  if (!json.ok() || json->type() != grpc_core::Json::Type::kObject) {
     return grpc::Status(
         grpc::StatusCode::INVALID_ARGUMENT,
         absl::StrCat("Invalid json: ", json.status().ToString()));

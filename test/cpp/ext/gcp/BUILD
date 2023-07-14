@@ -27,8 +27,11 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
+    uses_polling = False,
     deps = [
         "//:grpcpp_gcp_observability",
+        "//src/proto/grpc/testing:echo_proto",
+        "//test/cpp/end2end:test_service_impl",
         "//test/cpp/util:test_util",
     ],
 )
@@ -42,6 +45,7 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
+    uses_polling = False,
     deps = [
         "//src/cpp/ext/gcp:observability_config",
         "//test/cpp/util:test_util",
@@ -57,8 +61,27 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
+    uses_polling = False,
     deps = [
         "//src/cpp/ext/gcp:observability_logging_sink",
+        "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "environment_autodetect_test",
+    srcs = [
+        "environment_autodetect_test.cc",
+    ],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    linkstatic = True,
+    deps = [
+        "//src/cpp/ext/gcp:environment_autodetect",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
     ],
 )

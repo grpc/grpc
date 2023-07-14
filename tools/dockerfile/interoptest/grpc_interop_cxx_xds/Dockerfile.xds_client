@@ -17,11 +17,11 @@
 FROM phusion/baseimage:master@sha256:65ea10d5f757e5e86272625f8675d437dd83d8db64bdb429e2354d58f5462750
 
 RUN apt-get update -y && \
-        apt-get install -y \
-            build-essential \
-            clang \
-            python3 \
-            python3-dev
+    apt-get install -y \
+    build-essential \
+    clang \
+    python3 \
+    python3-dev
 
 WORKDIR /workdir
 
@@ -36,6 +36,6 @@ FROM phusion/baseimage:master@sha256:65ea10d5f757e5e86272625f8675d437dd83d8db64b
 COPY --from=0 /artifacts ./
 
 ENV GRPC_VERBOSITY="DEBUG"
-ENV GRPC_TRACE="xds_client,xds_resolver,xds_cluster_manager_lb,cds_lb,eds_lb,xds_cluster_resolver_lb,priority_lb,xds_cluster_impl_lb,weighted_target_lb,lrs_lb,xds_server_config_fetcher,ring_hash_lb,outlier_detection_lb"
+ENV GRPC_TRACE="xds_client,xds_resolver,xds_cluster_manager_lb,cds_lb,xds_cluster_resolver_lb,priority_lb,xds_cluster_impl_lb,weighted_target_lb,xds_server_config_fetcher,ring_hash_lb,outlier_detection_lb,xds_wrr_locality_lb,xds_override_host_lb"
 
 ENTRYPOINT ["/xds_interop_client"]
