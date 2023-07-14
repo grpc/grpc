@@ -25,19 +25,18 @@ from tests_aio.unit._common import ADHOC_METHOD
 from tests_aio.unit._common import AdhocGenericHandler
 from tests_aio.unit._test_base import AioTestBase
 
-_REQUEST = b'\x09\x05'
+_REQUEST = b"\x09\x05"
 _REQUEST_TIMEOUT_S = datetime.timedelta(seconds=5).total_seconds()
 
 
 class TestServerTimeRemaining(AioTestBase):
-
     async def setUp(self):
         # Create async server
-        self._server = aio.server(options=(('grpc.so_reuseport', 0),))
+        self._server = aio.server(options=(("grpc.so_reuseport", 0),))
         self._adhoc_handlers = AdhocGenericHandler()
         self._server.add_generic_rpc_handlers((self._adhoc_handlers,))
-        port = self._server.add_insecure_port('[::]:0')
-        address = 'localhost:%d' % port
+        port = self._server.add_insecure_port("[::]:0")
+        address = "localhost:%d" % port
         await self._server.start()
         # Create async channel
         self._channel = aio.insecure_channel(address)
@@ -50,15 +49,17 @@ class TestServerTimeRemaining(AioTestBase):
         seen_time_remaining = []
 
         @grpc.unary_unary_rpc_method_handler
-        def log_time_remaining(request: bytes,
-                               context: grpc.ServicerContext) -> bytes:
+        def log_time_remaining(
+            request: bytes, context: grpc.ServicerContext
+        ) -> bytes:
             seen_time_remaining.append(context.time_remaining())
             return b""
 
         # Check if the deadline propagates properly
         self._adhoc_handlers.set_adhoc_handler(log_time_remaining)
         await self._channel.unary_unary(ADHOC_METHOD)(
-            _REQUEST, timeout=_REQUEST_TIMEOUT_S)
+            _REQUEST, timeout=_REQUEST_TIMEOUT_S
+        )
         self.assertGreater(seen_time_remaining[0], _REQUEST_TIMEOUT_S / 2)
         # Check if there is no timeout, the time_remaining will be None
         self._adhoc_handlers.set_adhoc_handler(log_time_remaining)
@@ -66,6 +67,6 @@ class TestServerTimeRemaining(AioTestBase):
         self.assertIsNone(seen_time_remaining[1])
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     unittest.main(verbosity=2)

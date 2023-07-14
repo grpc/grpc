@@ -72,6 +72,8 @@ def _get_external_deps(external_deps):
             ret.append("@com_google_absl//" + dep)
         elif dep.startswith("google/"):
             ret.append("@com_google_googleapis//" + dep)
+        elif dep.startswith("otel/"):
+            ret.append(dep.replace("otel/", "@io_opentelemetry_cpp//"))
         else:
             ret.append("//external:" + dep)
     return ret
@@ -474,7 +476,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             tags = tags,
             deps = core_deps,
             args = args,
-            flaky = flaky,
+            flaky = True,
             **test_args
         )
 

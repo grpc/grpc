@@ -25,6 +25,7 @@ grpc_cc_library(
     srcs = ["cq_verifier.cc"],
     hdrs = ["cq_verifier.h"],
     external_deps = [
+        "absl/container:flat_hash_map",
         "absl/functional:any_invocable",
         "absl/strings",
         "absl/strings:str_format",
@@ -191,6 +192,8 @@ grpc_cc_library(
         "end2end_test_suites.cc",
     ],
     external_deps = [
+        "absl/base:core_headers",
+        "absl/random",
         "absl/status",
         "absl/strings:str_format",
         "absl/types:optional",
@@ -246,13 +249,25 @@ grpc_core_end2end_test(name = "call_creds")
 
 grpc_core_end2end_test(name = "call_host_override")
 
-grpc_core_end2end_test(name = "cancel_after_accept")
+grpc_core_end2end_test(
+    name = "cancel_after_accept",
+    shard_count = 50,
+)
 
-grpc_core_end2end_test(name = "cancel_after_client_done")
+grpc_core_end2end_test(
+    name = "cancel_after_client_done",
+    shard_count = 50,
+)
 
-grpc_core_end2end_test(name = "cancel_after_invoke")
+grpc_core_end2end_test(
+    name = "cancel_after_invoke",
+    shard_count = 50,
+)
 
-grpc_core_end2end_test(name = "cancel_after_round_trip")
+grpc_core_end2end_test(
+    name = "cancel_after_round_trip",
+    shard_count = 50,
+)
 
 grpc_core_end2end_test(name = "cancel_before_invoke")
 
@@ -286,15 +301,24 @@ grpc_core_end2end_test(name = "graceful_server_shutdown")
 
 grpc_core_end2end_test(name = "grpc_authz")
 
-grpc_core_end2end_test(name = "high_initial_seqno")
+grpc_core_end2end_test(
+    name = "high_initial_seqno",
+    shard_count = 20,
+)
 
-grpc_core_end2end_test(name = "hpack_size")
+grpc_core_end2end_test(
+    name = "hpack_size",
+    shard_count = 50,
+)
 
 grpc_core_end2end_test(name = "invoke_large_request")
 
 grpc_core_end2end_test(name = "keepalive_timeout")
 
-grpc_core_end2end_test(name = "large_metadata")
+grpc_core_end2end_test(
+    name = "large_metadata",
+    shard_count = 50,
+)
 
 grpc_core_end2end_test(name = "max_concurrent_streams")
 
@@ -320,7 +344,10 @@ grpc_core_end2end_test(name = "proxy_auth")
 
 grpc_core_end2end_test(name = "registered_call")
 
-grpc_core_end2end_test(name = "request_with_flags")
+grpc_core_end2end_test(
+    name = "request_with_flags",
+    shard_count = 50,
+)
 
 grpc_core_end2end_test(name = "request_with_payload")
 
@@ -402,7 +429,10 @@ grpc_core_end2end_test(name = "shutdown_finishes_calls")
 
 grpc_core_end2end_test(name = "shutdown_finishes_tags")
 
-grpc_core_end2end_test(name = "simple_delayed_request")
+grpc_core_end2end_test(
+    name = "simple_delayed_request",
+    shard_count = 3,
+)
 
 grpc_core_end2end_test(name = "simple_metadata")
 
@@ -559,6 +589,7 @@ grpc_cc_test(
         "libcrypto",
     ],
     language = "C++",
+    shard_count = 10,
     deps = [
         "cq_verifier",
         "end2end_test_lib",

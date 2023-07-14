@@ -48,10 +48,12 @@
 #include "src/proto/grpc/testing/xds/v3/client_side_weighted_round_robin.pb.h"
 #include "src/proto/grpc/testing/xds/v3/cluster.pb.h"
 #include "src/proto/grpc/testing/xds/v3/extension.pb.h"
+#include "src/proto/grpc/testing/xds/v3/pick_first.pb.h"
 #include "src/proto/grpc/testing/xds/v3/ring_hash.pb.h"
 #include "src/proto/grpc/testing/xds/v3/round_robin.pb.h"
 #include "src/proto/grpc/testing/xds/v3/typed_struct.pb.h"
 #include "src/proto/grpc/testing/xds/v3/wrr_locality.pb.h"
+#include "test/core/util/scoped_env_var.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
@@ -62,6 +64,7 @@ using LoadBalancingPolicyProto =
     ::envoy::config::cluster::v3::LoadBalancingPolicy;
 using ::envoy::extensions::load_balancing_policies::
     client_side_weighted_round_robin::v3::ClientSideWeightedRoundRobin;
+using ::envoy::extensions::load_balancing_policies::pick_first::v3::PickFirst;
 using ::envoy::extensions::load_balancing_policies::ring_hash::v3::RingHash;
 using ::envoy::extensions::load_balancing_policies::round_robin::v3::RoundRobin;
 using ::envoy::extensions::load_balancing_policies::wrr_locality::v3::
@@ -440,6 +443,56 @@ TEST(WrrLocality, UnsupportedChildPolicyTypeSkipped) {
   EXPECT_EQ(*result,
             "{\"xds_wrr_locality_experimental\":{"
             "\"childPolicy\":[{\"round_robin\":{}}]}}");
+}
+
+//
+// PickFirst
+//
+
+TEST(PickFirst, NoShuffle) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_PICKFIRST_LB_CONFIG");
+  LoadBalancingPolicyProto policy;
+  auto* lb_policy = policy.add_policies();
+  PickFirst pick_first;
+  pick_first.set_shuffle_address_list(false);
+  lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
+      pick_first);
+  auto result = ConvertXdsPolicy(policy);
+  ASSERT_TRUE(result.ok()) << result.status();
+  EXPECT_EQ(*result, "{\"pick_first\":{\"shuffleAddressList\":false}}");
+}
+
+TEST(PickFirst, Shuffle) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_PICKFIRST_LB_CONFIG");
+  LoadBalancingPolicyProto policy;
+  auto* lb_policy = policy.add_policies();
+  PickFirst pick_first;
+  pick_first.set_shuffle_address_list(true);
+  lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
+      pick_first);
+  auto result = ConvertXdsPolicy(policy);
+  ASSERT_TRUE(result.ok()) << result.status();
+  EXPECT_EQ(*result, "{\"pick_first\":{\"shuffleAddressList\":true}}");
+}
+
+TEST(PickFirst, ShuffleOmitted) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_PICKFIRST_LB_CONFIG");
+  LoadBalancingPolicyProto policy;
+  auto* lb_policy = policy.add_policies();
+  lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
+      PickFirst());
+  auto result = ConvertXdsPolicy(policy);
+  ASSERT_TRUE(result.ok()) << result.status();
+  EXPECT_EQ(*result, "{\"pick_first\":{\"shuffleAddressList\":false}}");
+}
+
+TEST(PickFirst, EnvVarDisabled) {
+  LoadBalancingPolicyProto policy;
+  auto* lb_policy = policy.add_policies();
+  lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
+      PickFirst());
+  auto result = ConvertXdsPolicy(policy);
+  ASSERT_FALSE(result.ok());
 }
 
 //

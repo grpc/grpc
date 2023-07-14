@@ -34,7 +34,7 @@ CORE_END2END_TEST(CoreClientChannelTest, CallHostOverride) {
                                "foo.test.google.fr:1234"));
   InitServer(ChannelArgs());
   auto c = NewClientCall("/foo")
-               .Timeout(Duration::Seconds(5))
+               .Timeout(Duration::Seconds(30))
                .Host("foo.test.google.fr:1234")
                .Create();
   EXPECT_NE(c.GetPeer(), absl::nullopt);

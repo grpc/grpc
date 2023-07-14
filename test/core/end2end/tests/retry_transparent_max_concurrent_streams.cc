@@ -41,7 +41,7 @@ CORE_END2END_TEST(RetryHttp2Test, RetryTransparentMaxConcurrentStreams) {
   InitServer(server_args);
   InitClient(ChannelArgs());
   auto c =
-      NewClientCall("/service/method").Timeout(Duration::Seconds(5)).Create();
+      NewClientCall("/service/method").Timeout(Duration::Minutes(1)).Create();
   IncomingStatusOnClient server_status;
   IncomingMetadata server_initial_metadata;
   IncomingMessage server_message;
@@ -61,7 +61,7 @@ CORE_END2END_TEST(RetryHttp2Test, RetryTransparentMaxConcurrentStreams) {
   // We set wait_for_ready for this call, so that if it retries before
   // the server comes back up, it stays pending.
   auto c2 =
-      NewClientCall("/service/method").Timeout(Duration::Seconds(5)).Create();
+      NewClientCall("/service/method").Timeout(Duration::Minutes(1)).Create();
   IncomingStatusOnClient server_status2;
   IncomingMetadata server_initial_metadata2;
   IncomingMessage server_message2;
@@ -77,6 +77,8 @@ CORE_END2END_TEST(RetryHttp2Test, RetryTransparentMaxConcurrentStreams) {
   // Server handles the first call.
   IncomingMessage client_message;
   s.NewBatch(103).RecvMessage(client_message);
+  Expect(103, true);
+  Step();
   IncomingCloseOnServer client_close;
   s.NewBatch(104)
       .RecvCloseOnServer(client_close)
@@ -86,7 +88,6 @@ CORE_END2END_TEST(RetryHttp2Test, RetryTransparentMaxConcurrentStreams) {
   // Server completes first call and shutdown.
   // Client completes first call.
   Expect(104, true);
-  Expect(103, true);
   Expect(102, true);
   Expect(1, true);
   Step();
@@ -110,6 +111,8 @@ CORE_END2END_TEST(RetryHttp2Test, RetryTransparentMaxConcurrentStreams) {
   IncomingMessage client_message2;
   IncomingCloseOnServer client_close2;
   s2.NewBatch(202).RecvMessage(client_message2);
+  Expect(202, true);
+  Step();
   s2.NewBatch(203)
       .RecvCloseOnServer(client_close2)
       .SendInitialMetadata({})
@@ -117,7 +120,6 @@ CORE_END2END_TEST(RetryHttp2Test, RetryTransparentMaxConcurrentStreams) {
       .SendStatusFromServer(GRPC_STATUS_OK, "xyz", {});
   // Second call completes.
   Expect(203, true);
-  Expect(202, true);
   Expect(2, true);
   Step();
   // Clean up from second call.

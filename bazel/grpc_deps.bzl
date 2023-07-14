@@ -230,11 +230,11 @@ def grpc_deps():
             name = "boringssl",
             # Use github mirror instead of https://boringssl.googlesource.com/boringssl
             # to obtain a boringssl archive with consistent sha256
-            sha256 = "f150aa2d73017fe8576a8a335f29030488d851c94368a79ac56142d107bf9e9a",
-            strip_prefix = "boringssl-e46383fc18d08def901b2ed5a194295693e905c7",
+            sha256 = "0675a4f86ce5e959703425d6f9063eaadf6b61b7f3399e77a154c0e85bad46b1",
+            strip_prefix = "boringssl-342e805bc1f5dfdd650e3f031686d6c939b095d9",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/boringssl/archive/e46383fc18d08def901b2ed5a194295693e905c7.tar.gz",
-                "https://github.com/google/boringssl/archive/e46383fc18d08def901b2ed5a194295693e905c7.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/boringssl/archive/342e805bc1f5dfdd650e3f031686d6c939b095d9.tar.gz",
+                "https://github.com/google/boringssl/archive/342e805bc1f5dfdd650e3f031686d6c939b095d9.tar.gz",
             ],
         )
 
@@ -327,11 +327,11 @@ def grpc_deps():
         http_archive(
             name = "com_github_cares_cares",
             build_file = "@com_github_grpc_grpc//third_party:cares/cares.BUILD",
-            sha256 = "ec76c5e79db59762776bece58b69507d095856c37b81fd35bfb0958e74b61d93",
-            strip_prefix = "c-ares-6654436a307a5a686b008c1d4c93b0085da6e6d8",
+            sha256 = "bf26e5b25e259911914a85ae847b6d723488adb5af4f8bdeb9d0871a318476e3",
+            strip_prefix = "c-ares-6360e96b5cf8e5980c887ce58ef727e53d77243a",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/c-ares/c-ares/archive/6654436a307a5a686b008c1d4c93b0085da6e6d8.tar.gz",
-                "https://github.com/c-ares/c-ares/archive/6654436a307a5a686b008c1d4c93b0085da6e6d8.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/c-ares/c-ares/archive/6360e96b5cf8e5980c887ce58ef727e53d77243a.tar.gz",
+                "https://github.com/c-ares/c-ares/archive/6360e96b5cf8e5980c887ce58ef727e53d77243a.tar.gz",
             ],
         )
 
@@ -362,10 +362,10 @@ def grpc_deps():
         http_archive(
             name = "bazel_skylib",
             urls = [
-                "https://mirror.bazel.build/github.com/bazelbuild/bazel-skylib/releases/download/1.0.2/bazel-skylib-1.0.2.tar.gz",
-                "https://github.com/bazelbuild/bazel-skylib/releases/download/1.0.2/bazel-skylib-1.0.2.tar.gz",
+                "https://mirror.bazel.build/github.com/bazelbuild/bazel-skylib/releases/download/1.0.3/bazel-skylib-1.0.3.tar.gz",
+                "https://github.com/bazelbuild/bazel-skylib/releases/download/1.0.3/bazel-skylib-1.0.3.tar.gz",
             ],
-            sha256 = "97e70364e9249702246c0e9444bccdc4b847bed1eb03c5a3ece4f83dfe6abc44",
+            sha256 = "1c531376ac7e5a180e0237938a2536de0c54d93f5c278634818e0efc952dd56c",
         )
 
     if "bazel_compdb" not in native.existing_rules():
@@ -405,11 +405,11 @@ def grpc_deps():
     if "envoy_api" not in native.existing_rules():
         http_archive(
             name = "envoy_api",
-            sha256 = "3c7372b5cb33e5e5cc3afd82573fc6275f9a2cac8b1530e1af14f52f34047328",
-            strip_prefix = "data-plane-api-68d4315167352ffac71f149a43b8088397d3f33d",
+            sha256 = "6fd3496c82919a433219733819a93b56699519a193126959e9c4fedc25e70663",
+            strip_prefix = "data-plane-api-e53e7bbd012f81965f2e79848ad9a58ceb67201f",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/68d4315167352ffac71f149a43b8088397d3f33d.tar.gz",
-                "https://github.com/envoyproxy/data-plane-api/archive/68d4315167352ffac71f149a43b8088397d3f33d.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/e53e7bbd012f81965f2e79848ad9a58ceb67201f.tar.gz",
+                "https://github.com/envoyproxy/data-plane-api/archive/e53e7bbd012f81965f2e79848ad9a58ceb67201f.tar.gz",
             ],
         )
 
@@ -507,6 +507,17 @@ def grpc_deps():
             urls = [
                 "https://storage.googleapis.com/grpc-bazel-mirror/github.com/cncf/xds/archive/e9ce68804cb4e64cab5a52e3c8baf840d4ff87b7.tar.gz",
                 "https://github.com/cncf/xds/archive/e9ce68804cb4e64cab5a52e3c8baf840d4ff87b7.tar.gz",
+            ],
+        )
+
+    if "io_opentelemetry_cpp" not in native.existing_rules():
+        http_archive(
+            name = "io_opentelemetry_cpp",
+            sha256 = "668de24f81c8d36d75092ad9dcb02a97cd41473adbe72485ece05e336db48249",
+            strip_prefix = "opentelemetry-cpp-1.9.1",
+            urls = [
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/open-telemetry/opentelemetry-cpp/archive/refs/tags/v1.9.1.tar.gz",
+                "https://github.com/open-telemetry/opentelemetry-cpp/archive/refs/tags/v1.9.1.tar.gz",
             ],
         )
 

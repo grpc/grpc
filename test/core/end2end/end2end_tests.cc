@@ -136,6 +136,15 @@ grpc_op CoreEnd2endTest::IncomingMetadata::MakeOp() {
   return op;
 }
 
+std::string CoreEnd2endTest::IncomingMetadata::GetSuccessfulStateString() {
+  std::string out = "incoming_metadata: {";
+  for (size_t i = 0; i < metadata_->count; i++) {
+    absl::StrAppend(&out, StringViewFromSlice(metadata_->metadata[i].key), ":",
+                    StringViewFromSlice(metadata_->metadata[i].value), ",");
+  }
+  return out + "}";
+}
+
 std::string CoreEnd2endTest::IncomingMessage::payload() const {
   Slice out;
   if (payload_->data.raw.compression > GRPC_COMPRESS_NONE) {
@@ -173,6 +182,25 @@ absl::optional<std::string>
 CoreEnd2endTest::IncomingStatusOnClient::GetTrailingMetadata(
     absl::string_view key) const {
   return FindInMetadataArray(data_->trailing_metadata, key);
+}
+
+std::string
+CoreEnd2endTest::IncomingStatusOnClient::GetSuccessfulStateString() {
+  std::string out = absl::StrCat(
+      "status_on_client: status=", data_->status,
+      " msg=", data_->status_details.as_string_view(), " trailing_metadata={");
+  for (size_t i = 0; i < data_->trailing_metadata.count; i++) {
+    absl::StrAppend(
+        &out, StringViewFromSlice(data_->trailing_metadata.metadata[i].key),
+        ": ", StringViewFromSlice(data_->trailing_metadata.metadata[i].value),
+        ",");
+  }
+  return out + "}";
+}
+
+std::string CoreEnd2endTest::IncomingMessage::GetSuccessfulStateString() {
+  if (payload_ == nullptr) return "message: empty";
+  return absl::StrCat("message: ", payload().size(), "b uncompressed");
 }
 
 grpc_op CoreEnd2endTest::IncomingStatusOnClient::MakeOp() {
@@ -276,19 +304,22 @@ CoreEnd2endTest::Call CoreEnd2endTest::ClientCallBuilder::Create() {
     absl::optional<Slice> host;
     if (u->host.has_value()) host = Slice::FromCopiedString(*u->host);
     test_.ForceInitialized();
-    return Call(grpc_channel_create_call(
-        test_.client(), parent_call_, propagation_mask_, test_.cq(),
-        Slice::FromCopiedString(u->method).c_slice(),
-        host.has_value() ? &host->c_slice() : nullptr, deadline_, nullptr));
+    return Call(
+        grpc_channel_create_call(
+            test_.client(), parent_call_, propagation_mask_, test_.cq(),
+            Slice::FromCopiedString(u->method).c_slice(),
+            host.has_value() ? &host->c_slice() : nullptr, deadline_, nullptr),
+        &test_);
   } else {
     return Call(grpc_channel_create_registered_call(
-        test_.client(), parent_call_, propagation_mask_, test_.cq(),
-        absl::get<void*>(call_selector_), deadline_, nullptr));
+                    test_.client(), parent_call_, propagation_mask_, test_.cq(),
+                    absl::get<void*>(call_selector_), deadline_, nullptr),
+                &test_);
   }
 }
 
 CoreEnd2endTest::IncomingCall::IncomingCall(CoreEnd2endTest& test, int tag)
-    : impl_(std::make_unique<Impl>()) {
+    : impl_(std::make_unique<Impl>(&test)) {
   test.ForceInitialized();
   grpc_server_request_call(test.server(), impl_->call.call_ptr(),
                            &impl_->call_details, &impl_->request_metadata,

@@ -42,10 +42,17 @@ class MutableValue
   end
 end
 
-# GreeterServer is simple server that implements the Helloworld Greeter server.
 class EchoServerImpl < Echo::EchoServer::Service
-  # say_hello implements the SayHello rpc method.
   def echo(echo_req, _)
+    Echo::EchoReply.new(response: echo_req.request)
+  end
+end
+
+class SecureEchoServerImpl < Echo::EchoServer::Service
+  def echo(echo_req, call)
+    unless call.metadata["authorization"] == 'test'
+      fail "expected authorization header with value: test"
+    end
     Echo::EchoReply.new(response: echo_req.request)
   end
 end
@@ -139,4 +146,10 @@ def report_controller_port_to_parent(parent_controller_port, client_controller_p
   m = ClientControl::Port.new
   m.port = client_controller_port.to_i
   stub.set_client_controller_port(m, deadline: Time.now + 10)
+end
+
+def with_logging(action)
+  STDERR.puts "#{action}: begin (pid=#{Process.pid})"
+  yield
+  STDERR.puts "#{action}: done (pid=#{Process.pid})"
 end

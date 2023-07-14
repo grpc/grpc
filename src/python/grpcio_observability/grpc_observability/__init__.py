@@ -14,4 +14,4 @@
 
 from grpc_observability._gcp_observability import GCPOpenCensusObservability
 
-__all__ = ('GCPOpenCensusObservability',)
+__all__ = ("GCPOpenCensusObservability",)

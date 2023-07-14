@@ -25,9 +25,12 @@ grpc_proto_fuzzer(
     srcs = ["hpack_parser_fuzzer_test.cc"],
     corpus = "hpack_parser_corpus",
     proto = "hpack_parser_fuzzer.proto",
+    proto_deps = ["//test/core/util:fuzz_config_vars_proto"],
     tags = ["no_windows"],
+    uses_polling = False,
     deps = [
         "//:grpc",
+        "//test/core/util:fuzz_config_vars",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -37,9 +40,12 @@ grpc_proto_fuzzer(
     srcs = ["hpack_sync_fuzzer.cc"],
     corpus = "hpack_sync_corpus",
     proto = "hpack_sync_fuzzer.proto",
+    proto_deps = ["//test/core/util:fuzz_config_vars_proto"],
     tags = ["no_windows"],
+    uses_polling = False,
     deps = [
         "//:grpc",
+        "//test/core/util:fuzz_config_vars",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -71,6 +77,7 @@ grpc_fuzzer(
         "absl/status",
     ],
     tags = ["no_windows"],
+    uses_polling = False,
     deps = [
         "//:grpc",
         "//test/core/util:grpc_test_util",
@@ -154,6 +161,20 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "ping_configuration_test",
+    srcs = ["ping_configuration_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
+    ],
+)
+
+grpc_cc_test(
     name = "flow_control_test",
     srcs = ["flow_control_test.cc"],
     external_deps = [
@@ -225,19 +246,6 @@ grpc_cc_test(
     tags = ["hpack_test"],
     uses_event_engine = False,
     uses_polling = False,
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
-        "//test/core/util:grpc_test_util_base",
-    ],
-)
-
-grpc_cc_test(
-    name = "stream_map_test",
-    srcs = ["stream_map_test.cc"],
-    external_deps = ["gtest"],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",

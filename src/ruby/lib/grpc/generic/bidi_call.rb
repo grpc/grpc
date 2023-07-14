@@ -141,6 +141,7 @@ module GRPC
     # set_output_stream_done is relevant on client-side
     # rubocop:disable Metrics/PerceivedComplexity
     def write_loop(requests, is_client: true, set_output_stream_done: nil)
+      GRPC::Core.fork_unsafe_begin
       GRPC.logger.debug('bidi-write-loop: starting')
       count = 0
       requests.each do |req|
@@ -181,6 +182,7 @@ module GRPC
         raise e
       end
     ensure
+      GRPC::Core.fork_unsafe_end
       set_output_stream_done.call if is_client
     end
     # rubocop:enable Metrics/PerceivedComplexity

@@ -28,6 +28,7 @@ load(
 )
 
 _GENERATED_PROTO_FORMAT = "{}_pb2.py"
+_GENERATED_PROTO_STUB_FORMAT = "{}_pb2.pyi"
 _GENERATED_GRPC_PROTO_FORMAT = "{}_pb2_grpc.py"
 
 PyProtoInfo = provider(
@@ -59,7 +60,8 @@ def _gen_py_aspect_impl(target, context):
         protos.append(get_staged_proto_file(target.label, context, p))
 
     includes = depset(direct = protos, transitive = [target[ProtoInfo].transitive_imports])
-    out_files = declare_out_files(protos, context, _GENERATED_PROTO_FORMAT)
+    out_files = (declare_out_files(protos, context, _GENERATED_PROTO_FORMAT) +
+                 declare_out_files(protos, context, _GENERATED_PROTO_STUB_FORMAT))
     generated_py_srcs = out_files
 
     tools = [context.executable._protoc]
@@ -68,6 +70,7 @@ def _gen_py_aspect_impl(target, context):
 
     arguments = ([
         "--python_out={}".format(out_dir.path),
+        "--pyi_out={}".format(out_dir.path),
     ] + [
         "--proto_path={}".format(get_include_directory(i))
         for i in includes.to_list()

@@ -38,16 +38,19 @@ flags.adopt_module_key_flags(xds_url_map_testcase)
 
 _NUM_RPCS = 150
 _TEST_METADATA_KEY = traffic_director.TEST_AFFINITY_METADATA_KEY
-_TEST_METADATA_VALUE_UNARY = 'unary_yranu'
-_TEST_METADATA_VALUE_EMPTY = 'empty_ytpme'
-_TEST_METADATA_NUMERIC_KEY = 'xds_md_numeric'
-_TEST_METADATA_NUMERIC_VALUE = '159'
+_TEST_METADATA_VALUE_UNARY = "unary_yranu"
+_TEST_METADATA_VALUE_EMPTY = "empty_ytpme"
+_TEST_METADATA_NUMERIC_KEY = "xds_md_numeric"
+_TEST_METADATA_NUMERIC_VALUE = "159"
 
 _TEST_METADATA = (
     (RpcTypeUnaryCall, _TEST_METADATA_KEY, _TEST_METADATA_VALUE_UNARY),
     (RpcTypeEmptyCall, _TEST_METADATA_KEY, _TEST_METADATA_VALUE_EMPTY),
-    (RpcTypeUnaryCall, _TEST_METADATA_NUMERIC_KEY,
-     _TEST_METADATA_NUMERIC_VALUE),
+    (
+        RpcTypeUnaryCall,
+        _TEST_METADATA_NUMERIC_KEY,
+        _TEST_METADATA_NUMERIC_VALUE,
+    ),
 )
 
 _ChannelzChannelState = grpc_channelz.ChannelState
@@ -57,9 +60,9 @@ def _is_supported(config: skips.TestConfig) -> bool:
     # Per "Ring hash" in
     # https://github.com/grpc/grpc/blob/master/doc/grpc_xds_features.md
     if config.client_lang in _Lang.CPP | _Lang.JAVA:
-        return config.version_gte('v1.40.x')
+        return config.version_gte("v1.40.x")
     elif config.client_lang == _Lang.GO:
-        return config.version_gte('v1.41.x')
+        return config.version_gte("v1.41.x")
     elif config.client_lang == _Lang.PYTHON:
         # TODO(https://github.com/grpc/grpc/issues/27430): supported after
         #      the issue is fixed.
@@ -70,7 +73,6 @@ def _is_supported(config: skips.TestConfig) -> bool:
 
 
 class TestHeaderBasedAffinity(xds_url_map_testcase.XdsUrlMapTestCase):
-
     @staticmethod
     def is_supported(config: skips.TestConfig) -> bool:
         return _is_supported(config)
@@ -82,60 +84,70 @@ class TestHeaderBasedAffinity(xds_url_map_testcase.XdsUrlMapTestCase):
         # backends (behavior of RING_HASH). This is necessary to only one
         # sub-channel is picked and used from the beginning, thus the channel
         # will only create this one sub-channel.
-        return 'EmptyCall', 'EmptyCall:%s:%s' % (_TEST_METADATA_KEY,
-                                                 _TEST_METADATA_VALUE_EMPTY)
+        return "EmptyCall", "EmptyCall:%s:%s" % (
+            _TEST_METADATA_KEY,
+            _TEST_METADATA_VALUE_EMPTY,
+        )
 
     @staticmethod
     def url_map_change(
-            host_rule: HostRule,
-            path_matcher: PathMatcher) -> Tuple[HostRule, PathMatcher]:
+        host_rule: HostRule, path_matcher: PathMatcher
+    ) -> Tuple[HostRule, PathMatcher]:
         # Update default service to the affinity service.
-        path_matcher["defaultService"] = GcpResourceManager(
-        ).affinity_backend_service()
+        path_matcher[
+            "defaultService"
+        ] = GcpResourceManager().affinity_backend_service()
         return host_rule, path_matcher
 
     def xds_config_validate(self, xds_config: DumpedXdsConfig):
         # 3 endpoints in the affinity backend service.
         self.assertNumEndpoints(xds_config, 3)
         self.assertEqual(
-            xds_config.rds['virtualHosts'][0]['routes'][0]['route']
-            ['hashPolicy'][0]['header']['headerName'], _TEST_METADATA_KEY)
-        self.assertEqual(xds_config.cds[0]['lbPolicy'], 'RING_HASH')
+            xds_config.rds["virtualHosts"][0]["routes"][0]["route"][
+                "hashPolicy"
+            ][0]["header"]["headerName"],
+            _TEST_METADATA_KEY,
+        )
+        self.assertEqual(xds_config.cds[0]["lbPolicy"], "RING_HASH")
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
-        rpc_distribution = self.configure_and_send(test_client,
-                                                   rpc_types=[RpcTypeEmptyCall],
-                                                   metadata=_TEST_METADATA,
-                                                   num_rpcs=_NUM_RPCS)
+        rpc_distribution = self.configure_and_send(
+            test_client,
+            rpc_types=[RpcTypeEmptyCall],
+            metadata=_TEST_METADATA,
+            num_rpcs=_NUM_RPCS,
+        )
         # Only one backend should receive traffic, even though there are 3
         # backends.
         self.assertEqual(1, rpc_distribution.num_peers)
         self.assertLen(
             test_client.find_subchannels_with_state(
-                _ChannelzChannelState.READY),
+                _ChannelzChannelState.READY
+            ),
             1,
         )
-        self.assertLen(
-            test_client.find_subchannels_with_state(_ChannelzChannelState.IDLE),
-            2,
-        )
+
+	# Any remaining subchannels may be in any state.
+
         # Send 150 RPCs without headers. RPCs without headers will pick random
         # backends. After this, we expect to see all backends to be connected.
         rpc_distribution = self.configure_and_send(
             test_client,
             rpc_types=[RpcTypeEmptyCall, RpcTypeUnaryCall],
-            num_rpcs=_NUM_RPCS)
+            num_rpcs=_NUM_RPCS,
+        )
         self.assertEqual(3, rpc_distribution.num_peers)
         self.assertLen(
             test_client.find_subchannels_with_state(
-                _ChannelzChannelState.READY),
+                _ChannelzChannelState.READY
+            ),
             3,
         )
 
 
 class TestHeaderBasedAffinityMultipleHeaders(
-        xds_url_map_testcase.XdsUrlMapTestCase):
-
+    xds_url_map_testcase.XdsUrlMapTestCase
+):
     @staticmethod
     def is_supported(config: skips.TestConfig) -> bool:
         return _is_supported(config)
@@ -147,45 +159,56 @@ class TestHeaderBasedAffinityMultipleHeaders(
         # backends (behavior of RING_HASH). This is necessary to only one
         # sub-channel is picked and used from the beginning, thus the channel
         # will only create this one sub-channel.
-        return 'EmptyCall', 'EmptyCall:%s:%s' % (_TEST_METADATA_KEY,
-                                                 _TEST_METADATA_VALUE_EMPTY)
+        return "EmptyCall", "EmptyCall:%s:%s" % (
+            _TEST_METADATA_KEY,
+            _TEST_METADATA_VALUE_EMPTY,
+        )
 
     @staticmethod
     def url_map_change(
-            host_rule: HostRule,
-            path_matcher: PathMatcher) -> Tuple[HostRule, PathMatcher]:
+        host_rule: HostRule, path_matcher: PathMatcher
+    ) -> Tuple[HostRule, PathMatcher]:
         # Update default service to the affinity service.
-        path_matcher["defaultService"] = GcpResourceManager(
-        ).affinity_backend_service()
+        path_matcher[
+            "defaultService"
+        ] = GcpResourceManager().affinity_backend_service()
         return host_rule, path_matcher
 
     def xds_config_validate(self, xds_config: DumpedXdsConfig):
         # 3 endpoints in the affinity backend service.
         self.assertNumEndpoints(xds_config, 3)
         self.assertEqual(
-            xds_config.rds['virtualHosts'][0]['routes'][0]['route']
-            ['hashPolicy'][0]['header']['headerName'], _TEST_METADATA_KEY)
-        self.assertEqual(xds_config.cds[0]['lbPolicy'], 'RING_HASH')
+            xds_config.rds["virtualHosts"][0]["routes"][0]["route"][
+                "hashPolicy"
+            ][0]["header"]["headerName"],
+            _TEST_METADATA_KEY,
+        )
+        self.assertEqual(xds_config.cds[0]["lbPolicy"], "RING_HASH")
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
-        rpc_distribution = self.configure_and_send(test_client,
-                                                   rpc_types=[RpcTypeEmptyCall],
-                                                   metadata=_TEST_METADATA,
-                                                   num_rpcs=_NUM_RPCS)
+        rpc_distribution = self.configure_and_send(
+            test_client,
+            rpc_types=[RpcTypeEmptyCall],
+            metadata=_TEST_METADATA,
+            num_rpcs=_NUM_RPCS,
+        )
         # Only one backend should receive traffic, even though there are 3
         # backends.
         self.assertEqual(1, rpc_distribution.num_peers)
         self.assertLen(
             test_client.find_subchannels_with_state(
-                _ChannelzChannelState.READY),
+                _ChannelzChannelState.READY
+            ),
             1,
         )
-        self.assertLen(
-            test_client.find_subchannels_with_state(_ChannelzChannelState.IDLE),
-            2,
-        )
-        empty_call_peer = list(rpc_distribution.raw['rpcsByMethod']['EmptyCall']
-                               ['rpcsByPeer'].keys())[0]
+
+        # Any remaining subchannels may be in any state.
+
+        empty_call_peer = list(
+            rpc_distribution.raw["rpcsByMethod"]["EmptyCall"][
+                "rpcsByPeer"
+            ].keys()
+        )[0]
         # Send RPCs with a different metadata value, try different values to
         # verify that the client will pick a different backend.
         #
@@ -201,38 +224,46 @@ class TestHeaderBasedAffinityMultipleHeaders(
         different_peer_picked = False
         for i in range(30):
             new_metadata = (
-                (RpcTypeEmptyCall, _TEST_METADATA_KEY,
-                 _TEST_METADATA_VALUE_EMPTY),
+                (
+                    RpcTypeEmptyCall,
+                    _TEST_METADATA_KEY,
+                    _TEST_METADATA_VALUE_EMPTY,
+                ),
                 (RpcTypeUnaryCall, _TEST_METADATA_KEY, str(i)),
             )
             rpc_distribution = self.configure_and_send(
                 test_client,
                 rpc_types=[RpcTypeEmptyCall, RpcTypeUnaryCall],
                 metadata=new_metadata,
-                num_rpcs=_NUM_RPCS)
-            unary_call_peer = list(rpc_distribution.raw['rpcsByMethod']
-                                   ['UnaryCall']['rpcsByPeer'].keys())[0]
+                num_rpcs=_NUM_RPCS,
+            )
+            unary_call_peer = list(
+                rpc_distribution.raw["rpcsByMethod"]["UnaryCall"][
+                    "rpcsByPeer"
+                ].keys()
+            )[0]
             if unary_call_peer != empty_call_peer:
                 different_peer_picked = True
                 break
         self.assertTrue(
             different_peer_picked,
-            ("the same endpoint was picked for all the headers, expect a "
-             "different endpoint to be picked"))
+            (
+                "the same endpoint was picked for all the headers, expect a "
+                "different endpoint to be picked"
+            ),
+        )
         self.assertLen(
             test_client.find_subchannels_with_state(
-                _ChannelzChannelState.READY),
+                _ChannelzChannelState.READY
+            ),
             2,
         )
-        self.assertLen(
-            test_client.find_subchannels_with_state(_ChannelzChannelState.IDLE),
-            1,
-        )
+        # Any remaining subchannels may be in any state.
 
 
 # TODO: add more test cases
 # 1. based on the basic test, turn down the backend in use, then verify that all
 #    RPCs are sent to another backend
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     absltest.main()

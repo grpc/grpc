@@ -37,7 +37,7 @@
   cpu_cost: 1000
 - script: tools/distrib/pylint_code.sh
 - script: tools/distrib/python/check_grpcio_tools.py
-- script: tools/distrib/yapf_code.sh --diff
+- script: tools/distrib/black_code.sh --diff
   cpu_cost: 1000
 - script: tools/distrib/isort_code.sh --diff
   cpu_cost: 1000
@@ -46,3 +46,4 @@
 - script: tools/run_tests/sanity/build_banned_constructs.sh
 - script: tools/distrib/check_redundant_namespace_qualifiers.py
 - script: tools/distrib/check_namespace_qualification.py
+- script: tools/distrib/check_path_length.py

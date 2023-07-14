@@ -21,8 +21,6 @@
 #include "src/core/lib/surface/validate_metadata.h"
 
 #include "absl/status/status.h"
-#include "absl/strings/escaping.h"
-#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/grpc.h>
@@ -46,32 +44,49 @@ class LegalHeaderKeyBits : public BitSet<256> {
 };
 constexpr LegalHeaderKeyBits g_legal_header_key_bits;
 
-GPR_ATTRIBUTE_NOINLINE
-absl::Status DoesNotConformTo(absl::string_view x, const char* err_desc) {
-  return absl::InternalError(absl::StrCat(err_desc, ": ", x, " (hex ",
-                                          absl::BytesToHexString(x), ")"));
-}
-
-absl::Status ConformsTo(absl::string_view x, const BitSet<256>& legal_bits,
-                        const char* err_desc) {
+ValidateMetadataResult ConformsTo(absl::string_view x,
+                                  const BitSet<256>& legal_bits,
+                                  ValidateMetadataResult error) {
   for (uint8_t c : x) {
     if (!legal_bits.is_set(c)) {
-      return DoesNotConformTo(x, err_desc);
+      return error;
     }
   }
-  return absl::OkStatus();
+  return ValidateMetadataResult::kOk;
 }
+
+absl::Status UpgradeToStatus(ValidateMetadataResult result) {
+  if (result == ValidateMetadataResult::kOk) return absl::OkStatus();
+  return absl::InternalError(ValidateMetadataResultToString(result));
+}
+
 }  // namespace
 
-absl::Status ValidateHeaderKeyIsLegal(absl::string_view key) {
+ValidateMetadataResult ValidateHeaderKeyIsLegal(absl::string_view key) {
   if (key.empty()) {
-    return absl::InternalError("Metadata keys cannot be zero length");
+    return ValidateMetadataResult::kCannotBeZeroLength;
   }
   if (key.size() > UINT32_MAX) {
-    return absl::InternalError(
-        "Metadata keys cannot be larger than UINT32_MAX");
+    return ValidateMetadataResult::kTooLong;
   }
-  return ConformsTo(key, g_legal_header_key_bits, "Illegal header key");
+  return ConformsTo(key, g_legal_header_key_bits,
+                    ValidateMetadataResult::kIllegalHeaderKey);
+}
+
+const char* ValidateMetadataResultToString(ValidateMetadataResult result) {
+  switch (result) {
+    case ValidateMetadataResult::kOk:
+      return "Ok";
+    case ValidateMetadataResult::kCannotBeZeroLength:
+      return "Metadata keys cannot be zero length";
+    case ValidateMetadataResult::kTooLong:
+      return "Metadata keys cannot be larger than UINT32_MAX";
+    case ValidateMetadataResult::kIllegalHeaderKey:
+      return "Illegal header key";
+    case ValidateMetadataResult::kIllegalHeaderValue:
+      return "Illegal header value";
+  }
+  GPR_UNREACHABLE_CODE(return "Unknown");
 }
 
 }  // namespace grpc_core
@@ -82,8 +97,8 @@ static int error2int(grpc_error_handle error) {
 }
 
 grpc_error_handle grpc_validate_header_key_is_legal(const grpc_slice& slice) {
-  return grpc_core::ValidateHeaderKeyIsLegal(
-      grpc_core::StringViewFromSlice(slice));
+  return grpc_core::UpgradeToStatus(grpc_core::ValidateHeaderKeyIsLegal(
+      grpc_core::StringViewFromSlice(slice)));
 }
 
 int grpc_header_key_is_legal(grpc_slice slice) {
@@ -104,9 +119,9 @@ constexpr LegalHeaderNonBinValueBits g_legal_header_non_bin_value_bits;
 
 grpc_error_handle grpc_validate_header_nonbin_value_is_legal(
     const grpc_slice& slice) {
-  return grpc_core::ConformsTo(grpc_core::StringViewFromSlice(slice),
-                               g_legal_header_non_bin_value_bits,
-                               "Illegal header value");
+  return grpc_core::UpgradeToStatus(grpc_core::ConformsTo(
+      grpc_core::StringViewFromSlice(slice), g_legal_header_non_bin_value_bits,
+      grpc_core::ValidateMetadataResult::kIllegalHeaderValue));
 }
 
 int grpc_header_nonbin_value_is_legal(grpc_slice slice) {

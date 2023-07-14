@@ -51,17 +51,18 @@ def mako_plugin(dictionary):
     transitive_deps property to each with the transitive closure of those
     dependency lists. The result list is sorted in a topological ordering.
     """
-    lib_map = {lib['name']: lib for lib in dictionary.get('libs')}
+    lib_map = {lib["name"]: lib for lib in dictionary.get("libs")}
 
     for target_name, target_list in list(dictionary.items()):
         for target in target_list:
             if isinstance(target, dict):
-                if 'deps' in target or target_name == 'libs':
-                    if not 'deps' in target:
+                if "deps" in target or target_name == "libs":
+                    if not "deps" in target:
                         # make sure all the libs have the "deps" field populated
-                        target['deps'] = []
-                    target['transitive_deps'] = transitive_deps(lib_map, target)
+                        target["deps"] = []
+                    target["transitive_deps"] = transitive_deps(lib_map, target)
 
-    python_dependencies = dictionary.get('python_dependencies')
-    python_dependencies['transitive_deps'] = transitive_deps(
-        lib_map, python_dependencies)
+    python_dependencies = dictionary.get("python_dependencies")
+    python_dependencies["transitive_deps"] = transitive_deps(
+        lib_map, python_dependencies
+    )

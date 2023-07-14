@@ -375,7 +375,7 @@ LDFLAGS += -pthread
 endif
 
 ifeq ($(SYSTEM),MINGW32)
-LIBS = m pthread ws2_32 dbghelp bcrypt
+LIBS = m pthread ws2_32 iphlpapi dbghelp bcrypt
 LDFLAGS += -pthread
 endif
 
@@ -980,6 +980,7 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/http_proxy.cc \
     src/core/ext/filters/client_channel/lb_policy/address_filtering.cc \
     src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc \
+    src/core/ext/filters/client_channel/lb_policy/endpoint_list.cc \
     src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc \
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc \
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc \
@@ -997,7 +998,6 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/weighted_round_robin.cc \
     src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/cds.cc \
-    src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc \
@@ -1021,6 +1021,7 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc \
     src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc \
     src/core/ext/filters/client_channel/retry_filter.cc \
+    src/core/ext/filters/client_channel/retry_filter_legacy_call_data.cc \
     src/core/ext/filters/client_channel/retry_service_config.cc \
     src/core/ext/filters/client_channel/retry_throttle.cc \
     src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc \
@@ -1058,6 +1059,7 @@ LIBGRPC_SRC = \
     src/core/ext/transport/chttp2/transport/frame_window_update.cc \
     src/core/ext/transport/chttp2/transport/hpack_encoder.cc \
     src/core/ext/transport/chttp2/transport/hpack_encoder_table.cc \
+    src/core/ext/transport/chttp2/transport/hpack_parse_result.cc \
     src/core/ext/transport/chttp2/transport/hpack_parser.cc \
     src/core/ext/transport/chttp2/transport/hpack_parser_table.cc \
     src/core/ext/transport/chttp2/transport/http2_settings.cc \
@@ -1065,7 +1067,6 @@ LIBGRPC_SRC = \
     src/core/ext/transport/chttp2/transport/huffsyms.cc \
     src/core/ext/transport/chttp2/transport/parsing.cc \
     src/core/ext/transport/chttp2/transport/stream_lists.cc \
-    src/core/ext/transport/chttp2/transport/stream_map.cc \
     src/core/ext/transport/chttp2/transport/varint.cc \
     src/core/ext/transport/chttp2/transport/writing.cc \
     src/core/ext/transport/inproc/inproc_plugin.cc \
@@ -1133,6 +1134,7 @@ LIBGRPC_SRC = \
     src/core/ext/upb-generated/envoy/config/trace/v3/trace.upb.c \
     src/core/ext/upb-generated/envoy/config/trace/v3/xray.upb.c \
     src/core/ext/upb-generated/envoy/config/trace/v3/zipkin.upb.c \
+    src/core/ext/upb-generated/envoy/data/accesslog/v3/accesslog.upb.c \
     src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.c \
     src/core/ext/upb-generated/envoy/extensions/filters/common/fault/v3/fault.upb.c \
     src/core/ext/upb-generated/envoy/extensions/filters/http/fault/v3/fault.upb.c \
@@ -1143,6 +1145,7 @@ LIBGRPC_SRC = \
     src/core/ext/upb-generated/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb.c \
     src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.upb.c \
     src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/common/v3/common.upb.c \
+    src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/pick_first/v3/pick_first.upb.c \
     src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb.c \
     src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb.c \
     src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.c \
@@ -1294,6 +1297,7 @@ LIBGRPC_SRC = \
     src/core/ext/upbdefs-generated/envoy/config/trace/v3/trace.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/config/trace/v3/xray.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/config/trace/v3/zipkin.upbdefs.c \
+    src/core/ext/upbdefs-generated/envoy/data/accesslog/v3/accesslog.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/extensions/filters/common/fault/v3/fault.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/extensions/filters/http/fault/v3/fault.upbdefs.c \
@@ -1871,6 +1875,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/http_proxy.cc \
     src/core/ext/filters/client_channel/lb_policy/address_filtering.cc \
     src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc \
+    src/core/ext/filters/client_channel/lb_policy/endpoint_list.cc \
     src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc \
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc \
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc \
@@ -1902,6 +1907,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/resolver/polling_resolver.cc \
     src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc \
     src/core/ext/filters/client_channel/retry_filter.cc \
+    src/core/ext/filters/client_channel/retry_filter_legacy_call_data.cc \
     src/core/ext/filters/client_channel/retry_service_config.cc \
     src/core/ext/filters/client_channel/retry_throttle.cc \
     src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc \
@@ -1932,6 +1938,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/transport/chttp2/transport/frame_window_update.cc \
     src/core/ext/transport/chttp2/transport/hpack_encoder.cc \
     src/core/ext/transport/chttp2/transport/hpack_encoder_table.cc \
+    src/core/ext/transport/chttp2/transport/hpack_parse_result.cc \
     src/core/ext/transport/chttp2/transport/hpack_parser.cc \
     src/core/ext/transport/chttp2/transport/hpack_parser_table.cc \
     src/core/ext/transport/chttp2/transport/http2_settings.cc \
@@ -1939,7 +1946,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/transport/chttp2/transport/huffsyms.cc \
     src/core/ext/transport/chttp2/transport/parsing.cc \
     src/core/ext/transport/chttp2/transport/stream_lists.cc \
-    src/core/ext/transport/chttp2/transport/stream_map.cc \
     src/core/ext/transport/chttp2/transport/varint.cc \
     src/core/ext/transport/chttp2/transport/writing.cc \
     src/core/ext/transport/inproc/inproc_plugin.cc \
@@ -2411,6 +2417,7 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/cpu_intel.c \
     third_party/boringssl-with-bazel/src/crypto/crypto.c \
     third_party/boringssl-with-bazel/src/crypto/curve25519/curve25519.c \
+    third_party/boringssl-with-bazel/src/crypto/curve25519/curve25519_64_adx.c \
     third_party/boringssl-with-bazel/src/crypto/curve25519/spake25519.c \
     third_party/boringssl-with-bazel/src/crypto/des/des.c \
     third_party/boringssl-with-bazel/src/crypto/dh_extra/dh_asn1.c \
@@ -2472,14 +2479,14 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/pool/pool.c \
     third_party/boringssl-with-bazel/src/crypto/rand_extra/deterministic.c \
     third_party/boringssl-with-bazel/src/crypto/rand_extra/forkunsafe.c \
-    third_party/boringssl-with-bazel/src/crypto/rand_extra/fuchsia.c \
+    third_party/boringssl-with-bazel/src/crypto/rand_extra/getentropy.c \
+    third_party/boringssl-with-bazel/src/crypto/rand_extra/ios.c \
     third_party/boringssl-with-bazel/src/crypto/rand_extra/passive.c \
     third_party/boringssl-with-bazel/src/crypto/rand_extra/rand_extra.c \
+    third_party/boringssl-with-bazel/src/crypto/rand_extra/trusty.c \
     third_party/boringssl-with-bazel/src/crypto/rand_extra/windows.c \
     third_party/boringssl-with-bazel/src/crypto/rc4/rc4.c \
-    third_party/boringssl-with-bazel/src/crypto/refcount_c11.c \
-    third_party/boringssl-with-bazel/src/crypto/refcount_no_threads.c \
-    third_party/boringssl-with-bazel/src/crypto/refcount_win.c \
+    third_party/boringssl-with-bazel/src/crypto/refcount.c \
     third_party/boringssl-with-bazel/src/crypto/rsa_extra/rsa_asn1.c \
     third_party/boringssl-with-bazel/src/crypto/rsa_extra/rsa_crypt.c \
     third_party/boringssl-with-bazel/src/crypto/rsa_extra/rsa_print.c \
@@ -2807,62 +2814,66 @@ endif
 
 # start of build recipe for library "ares" (generated by makelib(lib) template function)
 LIBARES_SRC = \
-    third_party/cares/cares/src/lib/ares_init.c \
-    third_party/cares/cares/src/lib/ares_expand_string.c \
-    third_party/cares/cares/src/lib/ares_strcasecmp.c \
-    third_party/cares/cares/src/lib/ares_destroy.c \
-    third_party/cares/cares/src/lib/ares_free_string.c \
-    third_party/cares/cares/src/lib/ares__timeval.c \
-    third_party/cares/cares/src/lib/ares_library_init.c \
-    third_party/cares/cares/src/lib/ares_getsock.c \
-    third_party/cares/cares/src/lib/ares_process.c \
-    third_party/cares/cares/src/lib/ares_create_query.c \
-    third_party/cares/cares/src/lib/ares_fds.c \
-    third_party/cares/cares/src/lib/ares_gethostbyname.c \
-    third_party/cares/cares/src/lib/ares_mkquery.c \
-    third_party/cares/cares/src/lib/ares_freeaddrinfo.c \
-    third_party/cares/cares/src/lib/ares_strdup.c \
-    third_party/cares/cares/src/lib/ares_timeout.c \
-    third_party/cares/cares/src/lib/ares_getnameinfo.c \
-    third_party/cares/cares/src/lib/ares_parse_soa_reply.c \
-    third_party/cares/cares/src/lib/ares_parse_naptr_reply.c \
-    third_party/cares/cares/src/lib/ares_parse_a_reply.c \
-    third_party/cares/cares/src/lib/ares_send.c \
-    third_party/cares/cares/src/lib/ares_nowarn.c \
-    third_party/cares/cares/src/lib/ares__sortaddrinfo.c \
-    third_party/cares/cares/src/lib/ares_android.c \
-    third_party/cares/cares/src/lib/ares_strerror.c \
-    third_party/cares/cares/src/lib/ares_parse_caa_reply.c \
-    third_party/cares/cares/src/lib/ares__close_sockets.c \
-    third_party/cares/cares/src/lib/ares_llist.c \
-    third_party/cares/cares/src/lib/ares_parse_aaaa_reply.c \
-    third_party/cares/cares/src/lib/ares_getaddrinfo.c \
-    third_party/cares/cares/src/lib/ares_parse_ns_reply.c \
-    third_party/cares/cares/src/lib/windows_port.c \
-    third_party/cares/cares/src/lib/bitncmp.c \
-    third_party/cares/cares/src/lib/ares_strsplit.c \
-    third_party/cares/cares/src/lib/ares_data.c \
-    third_party/cares/cares/src/lib/ares_free_hostent.c \
-    third_party/cares/cares/src/lib/ares_platform.c \
-    third_party/cares/cares/src/lib/ares_parse_txt_reply.c \
-    third_party/cares/cares/src/lib/ares__parse_into_addrinfo.c \
-    third_party/cares/cares/src/lib/ares_gethostbyaddr.c \
-    third_party/cares/cares/src/lib/ares_parse_srv_reply.c \
-    third_party/cares/cares/src/lib/ares_version.c \
-    third_party/cares/cares/src/lib/ares_getenv.c \
-    third_party/cares/cares/src/lib/ares_search.c \
-    third_party/cares/cares/src/lib/ares_parse_mx_reply.c \
-    third_party/cares/cares/src/lib/ares__get_hostent.c \
-    third_party/cares/cares/src/lib/ares__readaddrinfo.c \
-    third_party/cares/cares/src/lib/ares_parse_ptr_reply.c \
     third_party/cares/cares/src/lib/ares__read_line.c \
-    third_party/cares/cares/src/lib/ares_query.c \
-    third_party/cares/cares/src/lib/ares_options.c \
-    third_party/cares/cares/src/lib/inet_net_pton.c \
-    third_party/cares/cares/src/lib/ares_expand_name.c \
-    third_party/cares/cares/src/lib/inet_ntop.c \
+    third_party/cares/cares/src/lib/ares__get_hostent.c \
+    third_party/cares/cares/src/lib/ares__close_sockets.c \
+    third_party/cares/cares/src/lib/ares__timeval.c \
+    third_party/cares/cares/src/lib/ares_gethostbyaddr.c \
+    third_party/cares/cares/src/lib/ares_getenv.c \
+    third_party/cares/cares/src/lib/ares_free_string.c \
+    third_party/cares/cares/src/lib/ares_free_hostent.c \
+    third_party/cares/cares/src/lib/ares_fds.c \
+    third_party/cares/cares/src/lib/ares_expand_string.c \
+    third_party/cares/cares/src/lib/ares_create_query.c \
     third_party/cares/cares/src/lib/ares_cancel.c \
+    third_party/cares/cares/src/lib/ares_android.c \
+    third_party/cares/cares/src/lib/ares_parse_txt_reply.c \
+    third_party/cares/cares/src/lib/ares_parse_srv_reply.c \
+    third_party/cares/cares/src/lib/ares_parse_soa_reply.c \
+    third_party/cares/cares/src/lib/ares_parse_ptr_reply.c \
+    third_party/cares/cares/src/lib/ares_parse_ns_reply.c \
+    third_party/cares/cares/src/lib/ares_parse_naptr_reply.c \
+    third_party/cares/cares/src/lib/ares_parse_mx_reply.c \
+    third_party/cares/cares/src/lib/ares_parse_caa_reply.c \
+    third_party/cares/cares/src/lib/ares_options.c \
+    third_party/cares/cares/src/lib/ares_nowarn.c \
+    third_party/cares/cares/src/lib/ares_mkquery.c \
+    third_party/cares/cares/src/lib/ares_llist.c \
+    third_party/cares/cares/src/lib/ares_getsock.c \
+    third_party/cares/cares/src/lib/ares_getnameinfo.c \
+    third_party/cares/cares/src/lib/bitncmp.c \
     third_party/cares/cares/src/lib/ares_writev.c \
+    third_party/cares/cares/src/lib/ares_version.c \
+    third_party/cares/cares/src/lib/ares_timeout.c \
+    third_party/cares/cares/src/lib/ares_strerror.c \
+    third_party/cares/cares/src/lib/ares_strcasecmp.c \
+    third_party/cares/cares/src/lib/ares_search.c \
+    third_party/cares/cares/src/lib/ares_platform.c \
+    third_party/cares/cares/src/lib/windows_port.c \
+    third_party/cares/cares/src/lib/inet_ntop.c \
+    third_party/cares/cares/src/lib/ares__sortaddrinfo.c \
+    third_party/cares/cares/src/lib/ares__readaddrinfo.c \
+    third_party/cares/cares/src/lib/ares_parse_uri_reply.c \
+    third_party/cares/cares/src/lib/ares__parse_into_addrinfo.c \
+    third_party/cares/cares/src/lib/ares_parse_a_reply.c \
+    third_party/cares/cares/src/lib/ares_parse_aaaa_reply.c \
+    third_party/cares/cares/src/lib/ares_library_init.c \
+    third_party/cares/cares/src/lib/ares_init.c \
+    third_party/cares/cares/src/lib/ares_gethostbyname.c \
+    third_party/cares/cares/src/lib/ares_getaddrinfo.c \
+    third_party/cares/cares/src/lib/ares_freeaddrinfo.c \
+    third_party/cares/cares/src/lib/ares_expand_name.c \
+    third_party/cares/cares/src/lib/ares_destroy.c \
+    third_party/cares/cares/src/lib/ares_data.c \
+    third_party/cares/cares/src/lib/ares__addrinfo_localhost.c \
+    third_party/cares/cares/src/lib/ares__addrinfo2hostent.c \
+    third_party/cares/cares/src/lib/inet_net_pton.c \
+    third_party/cares/cares/src/lib/ares_strsplit.c \
+    third_party/cares/cares/src/lib/ares_strdup.c \
+    third_party/cares/cares/src/lib/ares_send.c \
+    third_party/cares/cares/src/lib/ares_rand.c \
+    third_party/cares/cares/src/lib/ares_query.c \
+    third_party/cares/cares/src/lib/ares_process.c \
 
 
 LIBARES_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBARES_SRC))))
@@ -3044,7 +3055,6 @@ ifneq ($(OPENSSL_DEP),)
 # otherwise parallel compilation will fail if a source is compiled first.
 src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc: $(OPENSSL_DEP)
 src/core/ext/filters/client_channel/lb_policy/xds/cds.cc: $(OPENSSL_DEP)
-src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.cc: $(OPENSSL_DEP)
 src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc: $(OPENSSL_DEP)
 src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc: $(OPENSSL_DEP)
 src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc: $(OPENSSL_DEP)
@@ -3122,6 +3132,7 @@ src/core/ext/upb-generated/envoy/config/trace/v3/skywalking.upb.c: $(OPENSSL_DEP
 src/core/ext/upb-generated/envoy/config/trace/v3/trace.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/config/trace/v3/xray.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/config/trace/v3/zipkin.upb.c: $(OPENSSL_DEP)
+src/core/ext/upb-generated/envoy/data/accesslog/v3/accesslog.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/extensions/filters/common/fault/v3/fault.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/extensions/filters/http/fault/v3/fault.upb.c: $(OPENSSL_DEP)
@@ -3132,6 +3143,7 @@ src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_mana
 src/core/ext/upb-generated/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/common/v3/common.upb.c: $(OPENSSL_DEP)
+src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/pick_first/v3/pick_first.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.c: $(OPENSSL_DEP)
@@ -3264,6 +3276,7 @@ src/core/ext/upbdefs-generated/envoy/config/trace/v3/skywalking.upbdefs.c: $(OPE
 src/core/ext/upbdefs-generated/envoy/config/trace/v3/trace.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/config/trace/v3/xray.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/config/trace/v3/zipkin.upbdefs.c: $(OPENSSL_DEP)
+src/core/ext/upbdefs-generated/envoy/data/accesslog/v3/accesslog.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/extensions/filters/common/fault/v3/fault.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/extensions/filters/http/fault/v3/fault.upbdefs.c: $(OPENSSL_DEP)
