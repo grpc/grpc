@@ -121,6 +121,13 @@ RUN mkdir /var/local/jenkins
 # Required by XDS interop test harness.
 RUN python3 -m pip install virtualenv==16.7.9
 
+# Passwordless sudo for all users
+# Bazel docker sandbox and bazel RBE run scripts under docker
+# as a regular user, but sometimes we need to be
+# able to do something with root privileges.
+RUN apt-get update && apt-get install -y sudo && apt-get clean
+RUN echo 'ALL ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+
 
 # Define the default command.
 CMD ["bash"]
