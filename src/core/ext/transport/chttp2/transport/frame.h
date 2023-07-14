@@ -18,6 +18,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <cstdint>
+#include <string>
 #include <vector>
 
 #include "absl/status/statusor.h"
