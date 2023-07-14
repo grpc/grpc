@@ -2894,8 +2894,10 @@ TEST_F(ClientLbAddressTest, Basic) {
   // Make sure that the attributes wind up on the subchannels.
   std::vector<std::string> expected;
   for (const int port : GetServersPorts()) {
-    expected.emplace_back(absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:",
-                                       port, " args={test_key=test_value}"));
+    expected.emplace_back(absl::StrCat(
+        ipv6_only_ ? "[::1]:" : "127.0.0.1:", port,
+        " args={grpc.internal.no_subchannel.outlier_detection_disable=1, "
+        "test_key=test_value}"));
   }
   EXPECT_EQ(addresses_seen(), expected);
 }
