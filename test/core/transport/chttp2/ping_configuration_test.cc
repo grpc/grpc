@@ -86,7 +86,8 @@ TEST_F(ConfigurationTest, ServerKeepaliveDefaults) {
   EXPECT_EQ(t->keepalive_time, Duration::Hours(2));
   EXPECT_EQ(t->keepalive_timeout, Duration::Seconds(20));
   EXPECT_EQ(t->keepalive_permit_without_calls, false);
-  EXPECT_EQ(t->ping_rate_policy.TestOnlyMaxPingsWithoutData(), 2);
+  // Server never limits based on number of pings without data.
+  EXPECT_EQ(t->ping_rate_policy.TestOnlyMaxPingsWithoutData(), 0);
   EXPECT_EQ(t->ping_abuse_policy.TestOnlyMinPingIntervalWithoutData(),
             Duration::Minutes(5));
   EXPECT_EQ(t->ping_abuse_policy.TestOnlyMaxPingStrikes(), 2);
@@ -107,7 +108,8 @@ TEST_F(ConfigurationTest, ServerKeepaliveExplicitArgs) {
   EXPECT_EQ(t->keepalive_time, Duration::Seconds(20));
   EXPECT_EQ(t->keepalive_timeout, Duration::Seconds(10));
   EXPECT_EQ(t->keepalive_permit_without_calls, true);
-  EXPECT_EQ(t->ping_rate_policy.TestOnlyMaxPingsWithoutData(), 3);
+  // Server never limits based on number of pings without data.
+  EXPECT_EQ(t->ping_rate_policy.TestOnlyMaxPingsWithoutData(), 0);
   EXPECT_EQ(t->ping_abuse_policy.TestOnlyMinPingIntervalWithoutData(),
             Duration::Seconds(20));
   EXPECT_EQ(t->ping_abuse_policy.TestOnlyMaxPingStrikes(), 0);
@@ -158,7 +160,8 @@ TEST_F(ConfigurationTest, ModifyServerDefaults) {
   EXPECT_EQ(t->keepalive_time, Duration::Seconds(20));
   EXPECT_EQ(t->keepalive_timeout, Duration::Seconds(10));
   EXPECT_EQ(t->keepalive_permit_without_calls, true);
-  EXPECT_EQ(t->ping_rate_policy.TestOnlyMaxPingsWithoutData(), 3);
+  // Server never limits based on number of pings without data.
+  EXPECT_EQ(t->ping_rate_policy.TestOnlyMaxPingsWithoutData(), 0);
   EXPECT_EQ(t->ping_abuse_policy.TestOnlyMinPingIntervalWithoutData(),
             Duration::Seconds(20));
   EXPECT_EQ(t->ping_abuse_policy.TestOnlyMaxPingStrikes(), 0);
