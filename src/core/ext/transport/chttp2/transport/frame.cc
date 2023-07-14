@@ -18,6 +18,7 @@
 
 #include "frame.h"
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/match.h"
 
 namespace grpc_core {
@@ -46,6 +47,10 @@ void Write2b(uint16_t x, uint8_t* output) {
   output[1] = static_cast<uint8_t>(x);
 }
 
+uint16_t Read2b(const uint8_t* input) {
+  return static_cast<uint16_t>(input[0]) << 8 | static_cast<uint16_t>(input[1]);
+}
+
 void Write3b(uint32_t x, uint8_t* output) {
   GPR_ASSERT(x < 16777216);
   output[0] = static_cast<uint8_t>(x >> 16);
@@ -53,11 +58,22 @@ void Write3b(uint32_t x, uint8_t* output) {
   output[2] = static_cast<uint8_t>(x);
 }
 
+uint32_t Read3b(const uint8_t* input) {
+  return static_cast<uint32_t>(input[0]) << 16 |
+         static_cast<uint32_t>(input[1]) << 8 | static_cast<uint32_t>(input[2]);
+}
+
 void Write4b(uint32_t x, uint8_t* output) {
   output[0] = static_cast<uint8_t>(x >> 24);
   output[1] = static_cast<uint8_t>(x >> 16);
   output[2] = static_cast<uint8_t>(x >> 8);
   output[3] = static_cast<uint8_t>(x);
+}
+
+uint32_t Read4b(const uint8_t* input) {
+  return static_cast<uint32_t>(input[0]) << 24 |
+         static_cast<uint32_t>(input[1]) << 16 |
+         static_cast<uint32_t>(input[2]) << 8 | static_cast<uint32_t>(input[3]);
 }
 
 void Write8b(uint64_t x, uint8_t* output) {
@@ -71,18 +87,29 @@ void Write8b(uint64_t x, uint8_t* output) {
   output[7] = static_cast<uint8_t>(x);
 }
 
-void SerializeFrameHeader(uint32_t length, uint8_t type, uint8_t flags,
-                          uint32_t stream_id, uint8_t* output) {
-  Write3b(length, output);
-  output[3] = type;
-  output[4] = flags;
-  Write4b(stream_id, output + 5);
+uint64_t Read8b(const uint8_t* input) {
+  return static_cast<uint64_t>(input[0]) << 56 |
+         static_cast<uint64_t>(input[1]) << 48 |
+         static_cast<uint64_t>(input[2]) << 40 |
+         static_cast<uint64_t>(input[3]) << 32 |
+         static_cast<uint64_t>(input[4]) << 24 |
+         static_cast<uint64_t>(input[5]) << 16 |
+         static_cast<uint64_t>(input[6]) << 8 | static_cast<uint64_t>(input[7]);
+}
+
+uint8_t MaybeFlag(bool condition, uint8_t flag_mask) {
+  return condition ? flag_mask : 0;
+}
+
+bool ExtractFlag(uint8_t flags, uint8_t flag_mask) {
+  return (flags & flag_mask) != 0;
 }
 
 class SerializeExtraBytesRequired {
  public:
   size_t operator()(const Http2DataFrame&) { return 0; }
   size_t operator()(const Http2HeaderFrame&) { return 0; }
+  size_t operator()(const Http2ContinuationFrame&) { return 0; }
   size_t operator()(const Http2RstStreamFrame&) { return 4; }
   size_t operator()(const Http2SettingsFrame& f) {
     return 6 * f.settings.size();
@@ -90,6 +117,7 @@ class SerializeExtraBytesRequired {
   size_t operator()(const Http2PingFrame&) { return 8; }
   size_t operator()(const Http2GoawayFrame&) { return 8; }
   size_t operator()(const Http2WindowUpdateFrame&) { return 4; }
+  size_t operator()(const Http2UnknownFrame&) { Crash("unreachable"); }
 };
 
 class SerializeHeaderAndPayload {
@@ -100,39 +128,41 @@ class SerializeHeaderAndPayload {
 
   void operator()(Http2DataFrame& frame) {
     auto hdr = extra_bytes_.TakeFirst(kFrameHeaderSize);
-    SerializeFrameHeader(frame.payload.Length(), kFrameTypeData,
-                         frame.end_stream ? kFlagEndStream : 0, frame.stream_id,
-                         hdr.begin());
+    Http2FrameHeader{
+        static_cast<uint32_t>(frame.payload.Length()), kFrameTypeData,
+        MaybeFlag(frame.end_stream, kFlagEndStream), frame.stream_id}
+        .Serialize(hdr.begin());
     out_.AppendIndexed(Slice(std::move(hdr)));
     out_.TakeAndAppend(frame.payload);
   }
 
   void operator()(Http2HeaderFrame& frame) {
     auto hdr = extra_bytes_.TakeFirst(kFrameHeaderSize);
-    uint8_t flags;
-    switch (frame.boundary) {
-      case Http2HeaderFrame::Boundary::None:
-        flags = 0;
-        break;
-      case Http2HeaderFrame::Boundary::EndOfHeaders:
-        flags = kFlagEndHeaders;
-        break;
-      case Http2HeaderFrame::Boundary::EndOfStream:
-        flags = kFlagEndStream;
-        break;
-    }
-    SerializeFrameHeader(
-        frame.payload.Length(),
-        frame.is_continuation ? kFrameTypeContinuation : kFrameTypeHeader,
-        flags, frame.stream_id, hdr.begin());
+    Http2FrameHeader{
+        static_cast<uint32_t>(frame.payload.Length()), kFrameTypeHeader,
+        static_cast<uint8_t>(MaybeFlag(frame.end_headers, kFlagEndHeaders) |
+                             MaybeFlag(frame.end_stream, kFlagEndStream)),
+        frame.stream_id}
+        .Serialize(hdr.begin());
+    out_.AppendIndexed(Slice(std::move(hdr)));
+    out_.TakeAndAppend(frame.payload);
+  }
+
+  void operator()(Http2ContinuationFrame& frame) {
+    auto hdr = extra_bytes_.TakeFirst(kFrameHeaderSize);
+    Http2FrameHeader{
+        static_cast<uint32_t>(frame.payload.Length()), kFrameTypeHeader,
+        static_cast<uint8_t>(MaybeFlag(frame.end_headers, kFlagEndHeaders)),
+        frame.stream_id}
+        .Serialize(hdr.begin());
     out_.AppendIndexed(Slice(std::move(hdr)));
     out_.TakeAndAppend(frame.payload);
   }
 
   void operator()(Http2RstStreamFrame& frame) {
     auto hdr_and_payload = extra_bytes_.TakeFirst(kFrameHeaderSize + 4);
-    SerializeFrameHeader(4, kFrameTypeRstStream, 0, frame.stream_id,
-                         hdr_and_payload.begin());
+    Http2FrameHeader{4, kFrameTypeRstStream, 0, frame.stream_id}.Serialize(
+        hdr_and_payload.begin());
     Write4b(frame.error_code, hdr_and_payload.begin() + kFrameHeaderSize);
     out_.AppendIndexed(Slice(std::move(hdr_and_payload)));
   }
@@ -141,8 +171,9 @@ class SerializeHeaderAndPayload {
     const size_t payload_size = 6 * frame.settings.size();
     auto hdr_and_payload =
         extra_bytes_.TakeFirst(kFrameHeaderSize + payload_size);
-    SerializeFrameHeader(payload_size, kFrameTypeSettings,
-                         frame.ack ? kFlagAck : 0, 0, hdr_and_payload.begin());
+    Http2FrameHeader{static_cast<uint32_t>(payload_size), kFrameTypeSettings,
+                     MaybeFlag(frame.ack, kFlagAck), 0}
+        .Serialize(hdr_and_payload.begin());
     size_t offset = kFrameHeaderSize;
     for (auto& setting : frame.settings) {
       Write2b(setting.id, hdr_and_payload.begin() + offset);
@@ -154,16 +185,17 @@ class SerializeHeaderAndPayload {
 
   void operator()(Http2PingFrame& frame) {
     auto hdr_and_payload = extra_bytes_.TakeFirst(kFrameHeaderSize + 8);
-    SerializeFrameHeader(8, kFrameTypePing, frame.ack ? kFlagAck : 0, 0,
-                         hdr_and_payload.begin());
+    Http2FrameHeader{8, kFrameTypePing, MaybeFlag(frame.ack, kFlagAck), 0}
+        .Serialize(hdr_and_payload.begin());
     Write8b(frame.opaque, hdr_and_payload.begin() + kFrameHeaderSize);
     out_.AppendIndexed(Slice(std::move(hdr_and_payload)));
   }
 
   void operator()(Http2GoawayFrame& frame) {
     auto hdr_and_fixed_payload = extra_bytes_.TakeFirst(kFrameHeaderSize + 8);
-    SerializeFrameHeader(8 + frame.debug_data.length(), kFrameTypeGoaway, 0, 0,
-                         hdr_and_fixed_payload.begin());
+    Http2FrameHeader{static_cast<uint32_t>(8 + frame.debug_data.length()),
+                     kFrameTypeGoaway, 0, 0}
+        .Serialize(hdr_and_fixed_payload.begin());
     Write4b(frame.last_stream_id,
             hdr_and_fixed_payload.begin() + kFrameHeaderSize);
     Write4b(frame.error_code,
@@ -174,18 +206,107 @@ class SerializeHeaderAndPayload {
 
   void operator()(Http2WindowUpdateFrame& frame) {
     auto hdr_and_payload = extra_bytes_.TakeFirst(kFrameHeaderSize + 4);
-    SerializeFrameHeader(4, kFrameTypeWindowUpdate, 0, frame.stream_id,
-                         hdr_and_payload.begin());
+    Http2FrameHeader{4, kFrameTypeWindowUpdate, 0, frame.stream_id}.Serialize(
+        hdr_and_payload.begin());
     Write4b(frame.increment, hdr_and_payload.begin() + kFrameHeaderSize);
     out_.AppendIndexed(Slice(std::move(hdr_and_payload)));
   }
+
+  void operator()(Http2UnknownFrame&) { Crash("unreachable"); }
 
  private:
   SliceBuffer& out_;
   MutableSlice extra_bytes_;
 };
 
+absl::StatusOr<Http2DataFrame> ParseDataFrame(const Http2FrameHeader& hdr,
+                                              SliceBuffer& payload) {
+  if (hdr.flags & ~kFlagEndStream) {
+    return absl::InternalError(
+        absl::StrCat("unsupported data flags: ", hdr.ToString()));
+  }
+
+  if (hdr.stream_id == 0) {
+    return absl::InternalError(
+        absl::StrCat("invalid stream id: ", hdr.ToString()));
+  }
+
+  return Http2DataFrame{hdr.stream_id, ExtractFlag(hdr.flags, kFlagEndStream),
+                        std::move(payload)};
+}
+
+absl::StatusOr<Http2HeaderFrame> ParseHeaderFrame(const Http2FrameHeader& hdr,
+                                                  SliceBuffer& payload) {
+  if (hdr.flags & ~(kFlagEndHeaders | kFlagEndStream | kFlagPriority)) {
+    return absl::InternalError(
+        absl::StrCat("unsupported header flags: ", hdr.ToString()));
+  }
+
+  if (hdr.stream_id == 0) {
+    return absl::InternalError(
+        absl::StrCat("invalid stream id: ", hdr.ToString()));
+  }
+
+  if (hdr.flags & kFlagPriority) {
+    if (payload.Length() < 5) {
+      return absl::InternalError(
+          absl::StrCat("invalid priority payload: ", hdr.ToString()));
+    }
+    payload.RemoveFirstNBytes(5);
+  }
+
+  return Http2HeaderFrame{
+      hdr.stream_id, ExtractFlag(hdr.flags, kFlagEndHeaders),
+      ExtractFlag(hdr.flags, kFlagEndStream), std::move(payload)};
+}
+
+absl::StatusOr<Http2ContinuationFrame> ParseContinuationFrame(
+    const Http2FrameHeader& hdr, SliceBuffer& payload) {
+  if (hdr.flags & ~kFlagEndHeaders) {
+    return absl::InternalError(
+        absl::StrCat("unsupported header flags: ", hdr.ToString()));
+  }
+
+  if (hdr.stream_id == 0) {
+    return absl::InternalError(
+        absl::StrCat("invalid stream id: ", hdr.ToString()));
+  }
+
+  return Http2ContinuationFrame{hdr.stream_id,
+                                ExtractFlag(hdr.flags, kFlagEndHeaders),
+                                std::move(payload)};
+}
+
+absl::StatusOr<Http2RstStreamFrame> ParseRstStreamFrame(
+    const Http2FrameHeader& hdr, SliceBuffer& payload) {
+  if (hdr.flags != 0) {
+    return absl::InternalError(
+        absl::StrCat("unsupported rst stream flags: ", hdr.ToString()));
+  }
+
+  if (payload.Length() != 4) {
+    return absl::InternalError(
+        absl::StrCat("invalid rst stream payload: ", hdr.ToString()));
+  }
+
+  uint8_t buffer[4];
+  payload.CopyToBuffer(buffer);
+
+  return Http2RstStreamFrame{hdr.stream_id, Read4b(buffer)};
+}
+
 }  // namespace
+
+void Http2FrameHeader::Serialize(uint8_t* output) {
+  Write3b(length, output);
+  output[3] = type;
+  output[4] = flags;
+  Write4b(stream_id, output + 5);
+}
+
+Http2FrameHeader Http2FrameHeader::Parse(const uint8_t* input) {
+  return Http2FrameHeader{Read3b(input), input[3], input[4], Read4b(input + 5)};
+}
 
 void Serialize(absl::Span<Http2Frame> frames, SliceBuffer& out) {
   size_t buffer_needed = 0;
@@ -198,6 +319,31 @@ void Serialize(absl::Span<Http2Frame> frames, SliceBuffer& out) {
   SerializeHeaderAndPayload serialize(buffer_needed, out);
   for (auto& frame : frames) {
     absl::visit(serialize, frame);
+  }
+}
+
+absl::StatusOr<Http2Frame> ParseFramePayload(const Http2FrameHeader& hdr,
+                                             SliceBuffer& payload) {
+  GPR_ASSERT(payload.Length() == hdr.length);
+  switch (hdr.type) {
+    case kFrameTypeData:
+      return ParseDataFrame(hdr, payload);
+    case kFrameTypeHeader:
+      return ParseHeaderFrame(hdr, payload);
+    case kFrameTypeContinuation:
+      return ParseContinuationFrame(hdr, payload);
+    case kFrameTypeRstStream:
+      return ParseRstStreamFrame(hdr, payload);
+    case kFrameTypeSettings:
+      return ParseSettingsFrame(hdr, payload);
+    case kFrameTypePing:
+      return ParsePingFrame(hdr, payload);
+    case kFrameTypeGoaway:
+      return ParseGoawayFrame(hdr, payload);
+    case kFrameTypeWindowUpdate:
+      return ParseWindowUpdateFrame(hdr, payload);
+    default:
+      return Http2UnknownFrame{};
   }
 }
 

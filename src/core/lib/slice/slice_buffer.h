@@ -76,10 +76,16 @@ class SliceBuffer {
   /// Returns the number of slices held by the SliceBuffer.
   size_t Count() const { return slice_buffer_.count; }
 
+  /// Copy the entire contents to a memory buffer.
+  void CopyToBuffer(uint8_t* dst);
+
   /// Removes/deletes the last n bytes in the SliceBuffer.
   void RemoveLastNBytes(size_t n) {
     grpc_slice_buffer_trim_end(&slice_buffer_, n, nullptr);
   }
+
+  /// Removes/deletes the first n bytes in the SliceBuffer.
+  void RemoveFirstNBytes(size_t n);
 
   /// Move the first n bytes of the SliceBuffer into a memory pointed to by dst.
   void MoveFirstNBytesIntoBuffer(size_t n, void* dst) {
