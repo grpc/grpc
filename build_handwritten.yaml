@@ -16,7 +16,7 @@ settings:
   csharp_major_version: 2
   g_stands_for: gracious
   protobuf_version: 3.21.12
-  version: 1.54.2
+  version: 1.54.3
 configs:
   asan:
     CC: clang
