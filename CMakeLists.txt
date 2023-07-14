@@ -25,12 +25,12 @@
 cmake_minimum_required(VERSION 3.8)
 
 set(PACKAGE_NAME          "grpc")
-set(PACKAGE_VERSION       "1.55.2")
+set(PACKAGE_VERSION       "1.55.3")
 set(gRPC_CORE_VERSION     "32.0.0")
 set(gRPC_CORE_SOVERSION   "32")
-set(gRPC_CPP_VERSION      "1.55.2")
+set(gRPC_CPP_VERSION      "1.55.3")
 set(gRPC_CPP_SOVERSION    "1.55")
-set(gRPC_CSHARP_VERSION   "2.55.2")
+set(gRPC_CSHARP_VERSION   "2.55.3")
 set(gRPC_CSHARP_SOVERSION "2.55")
 set(PACKAGE_STRING        "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME       "${PACKAGE_NAME}-${PACKAGE_VERSION}")
@@ -299,7 +299,7 @@ endif()
 if (gRPC_XDS_USER_AGENT_IS_CSHARP)
   # The value of the defines needs to contain quotes.
   # See https://github.com/grpc/grpc/blob/fbf32836a418cc84f58786700273b65cb9174e1d/src/core/ext/xds/xds_api.cc#L854
-  add_definitions("-DGRPC_XDS_USER_AGENT_NAME_SUFFIX=\"csharp\"" "-DGRPC_XDS_USER_AGENT_VERSION_SUFFIX=\"2.55.2\"")
+  add_definitions("-DGRPC_XDS_USER_AGENT_NAME_SUFFIX=\"csharp\"" "-DGRPC_XDS_USER_AGENT_VERSION_SUFFIX=\"2.55.3\"")
 endif()
 
 if(UNIX AND NOT HAIKU)
