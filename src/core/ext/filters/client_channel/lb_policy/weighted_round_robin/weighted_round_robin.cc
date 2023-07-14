@@ -909,12 +909,21 @@ void WeightedRoundRobin::WeightedRoundRobinSubchannelData::
     subchannel()->RequestConnection();
   } else if (new_state == GRPC_CHANNEL_READY) {
     // If we transition back to READY state, restart the blackout period.
+    // Skip this if this is the initial notification for this
+    // subchannel (which happens whenever we get updated addresses and
+    // create a new endpoint list).  Also skip it if the previous state
+    // was READY (which should never happen in practice, but we've seen
+    // at least one bug that caused this in the outlier_detection
+    // policy, so let's be defensive here).
+    //
     // Note that we cannot guarantee that we will never receive
     // lingering callbacks for backend metric reports from the previous
     // connection after the new connection has been established, but they
     // should be masked by new backend metric reports from the new
     // connection by the time the blackout period ends.
-    weight_->ResetNonEmptySince();
+    if (old_state.has_value() && old_state != GRPC_CHANNEL_READY) {
+      weight_->ResetNonEmptySince();
+    }
   }
   // Update logical connectivity state.
   UpdateLogicalConnectivityStateLocked(new_state);

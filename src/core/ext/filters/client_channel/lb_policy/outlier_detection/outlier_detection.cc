@@ -299,7 +299,7 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
     }
 
     void DisableEjection() {
-      Uneject();
+      if (ejection_time_.has_value()) Uneject();
       multiplier_ = 0;
     }
 
