@@ -963,15 +963,20 @@ class RubyLanguage(object):
             "src/ruby/end2end/call_credentials_returning_bad_metadata_doesnt_kill_background_thread_test.rb",
         ]:
             if test in [
-                # TODO(apolcyn): Unskip fork tests on linux. They are
-                # skipped everywhere for now because they're flaky since
-                # introduction.
                 "src/ruby/end2end/fork_test.rb",
                 "src/ruby/end2end/simple_fork_test.rb",
                 "src/ruby/end2end/secure_fork_test.rb",
                 "src/ruby/end2end/bad_usage_fork_test.rb",
             ]:
-                continue
+                if platform_string() == "mac":
+                    # Skip fork tests on mac, it's only supported on linux.
+                    continue
+                if self.config.build_config == "dbg":
+                    # There's a known issue with dbg builds that breaks fork
+                    # support: https://github.com/grpc/grpc/issues/31885.
+                    # TODO(apolcyn): unskip these tests on dbg builds after we
+                    # migrate to event engine and hence fix that issue.
+                    continue
             tests.append(
                 self.config.job_spec(
                     ["ruby", test],
