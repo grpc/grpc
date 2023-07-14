@@ -3705,6 +3705,7 @@ grpc_cc_library(
         "//src/core:ext/transport/chttp2/transport/frame.h",
     ],
     external_deps = [
+        "absl/status:statusor",
         "absl/types:span",
         "absl/types:variant",
     ],
