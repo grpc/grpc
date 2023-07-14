@@ -75,7 +75,7 @@ enum class StallEdge { kNoChange, kStalled, kUnstalled };
 // Encapsulates a collections of actions the transport needs to take with
 // regard to flow control. Each action comes with urgencies that tell the
 // transport how quickly the action must take place.
-class GRPC_MUST_USE_RESULT FlowControlAction {
+class FlowControlAction {
  public:
   enum class Urgency : uint8_t {
     // Nothing to be done.
