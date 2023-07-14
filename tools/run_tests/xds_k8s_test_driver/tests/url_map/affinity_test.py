@@ -127,7 +127,7 @@ class TestHeaderBasedAffinity(xds_url_map_testcase.XdsUrlMapTestCase):
             1,
         )
 
-	# Any remaining subchannels may be in any state.
+        # Any remaining subchannels may be in any state.
 
         # Send 150 RPCs without headers. RPCs without headers will pick random
         # backends. After this, we expect to see all backends to be connected.
