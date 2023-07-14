@@ -5465,6 +5465,7 @@ grpc_cc_library(
         "channel_args",
         "time",
         "//:channel_arg_names",
+        "//:gpr_platform",
     ],
 )
 
@@ -5486,6 +5487,7 @@ grpc_cc_library(
         "match",
         "time",
         "//:channel_arg_names",
+        "//:gpr_platform",
     ],
 )
 
