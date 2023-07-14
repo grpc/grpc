@@ -16,7 +16,6 @@
 
 from __future__ import print_function
 
-import argparse
 import errno
 import filecmp
 import glob
@@ -90,8 +89,6 @@ COPY_FILES_SOURCE_TARGET_PAIRS = [
     ("third_party/protobuf/src", "third_party/protobuf/src"),
     ("third_party/utf8_range", "third_party/utf8_range"),
 ]
-
-DELETE_TARGETS_ON_CLEANUP = ["third_party"]
 
 # grpc repo root
 GRPC_ROOT = os.path.abspath(
@@ -231,19 +228,7 @@ def _copy_source_tree(source, target):
             shutil.copyfile(source_file, target_file)
 
 
-def _delete_source_tree(target):
-    """Deletes the copied target directory."""
-    target = GRPCIO_TOOLS_ROOT_PREFIX + target
-    target_abs = os.path.join(*target.split("/"))
-    print("Deleting copied folder %s" % (target_abs))
-    shutil.rmtree(target_abs, ignore_errors=True)
-
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--cleanup-third-party", default=False, action="store_true", help="Delete the temporary third_party folder"
-    )
-    args = parser.parse_args()
     os.chdir(GRPC_ROOT)
 
     # Step 1:
@@ -284,9 +269,6 @@ def main():
     with open(GRPC_PYTHON_PROTOC_LIB_DEPS, "w") as deps_file:
         deps_file.write(protoc_lib_deps_content)
     print('File "%s" updated.' % GRPC_PYTHON_PROTOC_LIB_DEPS)
-    if args.cleanup_third_party:
-        for target in DELETE_TARGETS_ON_CLEANUP:
-            _delete_source_tree(target)
     print("Done.")
 
 
