@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-RxLibrary'
-  version = '1.54.2'
+  version = '1.54.3'
   s.version  = version
   s.summary  = 'Reactive Extensions library for iOS/OSX.'
   s.homepage = 'https://grpc.io'
