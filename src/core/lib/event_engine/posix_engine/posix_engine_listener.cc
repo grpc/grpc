@@ -153,11 +153,11 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
     }
 
     // For UNIX sockets, the accept call might not fill up the member
-    // sun_path of sockaddr_un, so explicitly call getsockname to get it.
+    // sun_path of sockaddr_un, so explicitly call getpeername to get it.
     if (addr.address()->sa_family == AF_UNIX) {
       socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
-      if (getsockname(fd, const_cast<sockaddr*>(addr.address()), &len) < 0) {
-        gpr_log(GPR_ERROR, "Closing acceptor. Failed getsockname: %s",
+      if (getpeername(fd, const_cast<sockaddr*>(addr.address()), &len) < 0) {
+        gpr_log(GPR_ERROR, "Closing acceptor. Failed getpeername: %s",
                 strerror(errno));
         close(fd);
         // Shutting down the acceptor. Unref the ref grabbed in
