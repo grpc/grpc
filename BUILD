@@ -552,7 +552,7 @@ grpc_cc_library(
     ],
     visibility = ["@grpc:public"],
     deps = [
-        "channel_stack_builder",
+        "channel_stack_builder","channel_arg_names",
         "config",
         "exec_ctx",
         "gpr",
@@ -624,7 +624,7 @@ grpc_cc_library(
         "@grpc:public",
     ],
     deps = [
-        "channel_stack_builder",
+        "channel_stack_builder","channel_arg_names",
         "config",
         "exec_ctx",
         "gpr",
@@ -1674,6 +1674,7 @@ grpc_cc_library(
         "grpc",
         "grpc++",
         "grpc++_public_hdrs",
+        "channel_arg_names",
         "grpc_public_hdrs",
         "lb_server_load_reporting_service_server_builder_plugin",
         "//src/core:lb_server_load_reporting_filter",
@@ -1933,7 +1934,7 @@ grpc_cc_library(
     tags = ["nofixdeps"],
     visibility = ["@grpc:alt_grpc++_base_legacy"],
     deps = [
-        "channel_stack_builder",
+        "channel_stack_builder","channel_arg_names",
         "config",
         "exec_ctx",
         "gpr",
@@ -2008,7 +2009,7 @@ grpc_cc_library(
     ],
     visibility = ["@grpc:alt_grpc++_base_unsecure_legacy"],
     deps = [
-        "channel_stack_builder",
+        "channel_stack_builder","channel_arg_names",
         "config",
         "exec_ctx",
         "gpr",

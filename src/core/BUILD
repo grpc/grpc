@@ -3114,6 +3114,7 @@ grpc_cc_library(
     tags = ["nofixdeps"],
     deps = [
         "channel_args",
+        "//:channel_arg_names",
         "closure",
         "env",
         "error",
@@ -4110,6 +4111,7 @@ grpc_cc_library(
         "certificate_provider_factory",
         "certificate_provider_registry",
         "channel_args",
+        "//:channel_arg_names",
         "channel_creds_registry",
         "channel_fwd",
         "closure",
