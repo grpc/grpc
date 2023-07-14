@@ -17,7 +17,7 @@ trap 'date' DEBUG
 set -ex
 
 # change to grpc repo root
-cd "${KOKORO_ARTIFACTS_DIR}/github/grpc"
+pushd "${KOKORO_ARTIFACTS_DIR}/github/grpc"
 
 sudo DEBIAN_FRONTEND=noninteractive apt-get -qq update
 sudo DEBIAN_FRONTEND=noninteractive apt-get -qq install --auto-remove "python3.10-venv"
@@ -54,3 +54,5 @@ python3 -m grpc_tools.protoc \
     --python_out=${TOOLS_DIR} \
     --grpc_python_out=${TOOLS_DIR} \
     ${HEALTH_PROTO_SOURCE_DIR}/health.proto
+
+popd
