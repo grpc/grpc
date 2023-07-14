@@ -17,7 +17,7 @@ trap 'date' DEBUG
 set -ex
 
 # change to grpc repo root
-cd "$(dirname "$0")/../../.."
+cd "${KOKORO_ARTIFACTS_DIR}/github/grpc"
 
 sudo DEBIAN_FRONTEND=noninteractive apt-get -qq update
 sudo DEBIAN_FRONTEND=noninteractive apt-get -qq install --auto-remove "python3.10-venv"
