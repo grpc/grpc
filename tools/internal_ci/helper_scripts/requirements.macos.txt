@@ -1,4 +1,4 @@
-cryptography==3.4.6
+cryptography==41.0.2
 PyJWT==2.0.1
 pyOpenSSL==20.0.1
 PyYAML==5.4.1
