@@ -129,21 +129,13 @@ class OrcaService::Reactor : public ServerWriteReactor<ByteBuffer>,
 
   bool MaybeScheduleTimer() {
     grpc::internal::MutexLock lock(&timer_mu_);
-    if (cancelled_) return false;
-    timer_handle_ = engine_->RunAfter(
-        report_interval_,
-        [self = Ref(DEBUG_LOCATION, "Orca Service")] { self->OnTimer(); });
-    return true;
+    return !cancelled_;
   }
 
   bool MaybeCancelTimer() {
     grpc::internal::MutexLock lock(&timer_mu_);
     cancelled_ = true;
-    if (timer_handle_.has_value() && engine_->Cancel(*timer_handle_)) {
-      timer_handle_.reset();
-      return true;
-    }
-    return false;
+    return timer_handle_.has_value() && engine_->Cancel(*timer_handle_);
   }
 
   void OnTimer() {
