@@ -837,7 +837,10 @@ grpc_cc_library(
         "avoid_dep",
         "nofixdeps",
     ],
-    deps = ["gpr_public_hdrs"],
+    deps = [
+        "channel_arg_names",
+        "gpr_public_hdrs",
+    ],
 )
 
 grpc_cc_library(
@@ -858,6 +861,11 @@ grpc_cc_library(
         "grpc_public_hdrs",
         "//src/core:gpr_atm",
     ],
+)
+
+grpc_cc_library(
+    name = "channel_arg_names",
+    hdrs = ["include/grpc/impl/channel_arg_names.h"],
 )
 
 grpc_cc_library(
@@ -1259,6 +1267,7 @@ grpc_cc_library(
     ],
     deps = [
         "gpr",
+        "channel_arg_names",
     ],
 )
 
@@ -1496,6 +1505,7 @@ grpc_cc_library(
     public_hdrs = GRPC_PUBLIC_HDRS + GRPC_PUBLIC_EVENT_ENGINE_HDRS,
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
+        "channel_arg_names",
         "channel_stack_builder",
         "config",
         "config_vars",
@@ -1772,6 +1782,7 @@ grpc_cc_library(
     public_hdrs = GRPC_PUBLIC_HDRS,
     visibility = ["@grpc:public"],
     deps = [
+        "channel_arg_names",
         "config",
         "debug_location",
         "exec_ctx",
@@ -3943,7 +3954,10 @@ grpc_cc_library(
         "//src/core:init_internally",
         "//src/core:iomgr_fwd",
         "//src/core:iomgr_port",
+        "//src/core:match",
         "//src/core:memory_quota",
+        "//src/core:ping_abuse_policy",
+        "//src/core:ping_rate_policy",
         "//src/core:poll",
         "//src/core:ref_counted",
         "//src/core:resource_quota",

@@ -5430,6 +5430,43 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "ping_abuse_policy",
+    srcs = [
+        "ext/transport/chttp2/transport/ping_abuse_policy.cc",
+    ],
+    hdrs = [
+        "ext/transport/chttp2/transport/ping_abuse_policy.h",
+    ],
+    external_deps = ["absl/types:optional"],
+    deps = [
+        "channel_args",
+        "time",
+        "//:channel_arg_names",
+    ],
+)
+
+grpc_cc_library(
+    name = "ping_rate_policy",
+    srcs = [
+        "ext/transport/chttp2/transport/ping_rate_policy.cc",
+    ],
+    hdrs = [
+        "ext/transport/chttp2/transport/ping_rate_policy.h",
+    ],
+    external_deps = [
+        "absl/strings",
+        "absl/types:optional",
+        "absl/types:variant",
+    ],
+    deps = [
+        "channel_args",
+        "match",
+        "time",
+        "//:channel_arg_names",
+    ],
+)
+
+grpc_cc_library(
     name = "huffsyms",
     srcs = [
         "ext/transport/chttp2/transport/huffsyms.cc",

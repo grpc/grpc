@@ -17,10 +17,10 @@
 //
 
 #include <grpc/support/port_platform.h>
-
 #include <inttypes.h>
 #include <string.h>
-
+#include <grpc/slice.h>
+#include <grpc/support/log.h>
 #include <initializer_list>
 #include <string>
 
@@ -30,10 +30,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/slice.h>
-#include <grpc/support/log.h>
-
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/frame_data.h"
@@ -51,7 +47,6 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -62,6 +57,7 @@
 #include "src/core/lib/transport/http2_errors.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
 
 using grpc_core::HPackParser;
 
@@ -549,7 +545,7 @@ error_handler:
     t->incoming_stream = s;
     t->parser = grpc_chttp2_transport::Parser{
         "data", grpc_chttp2_data_parser_parse, nullptr};
-    t->ping_state.last_ping_sent_time = grpc_core::Timestamp::InfPast();
+    t->ping_rate_policy.ReceivedDataFrame();
     return absl::OkStatus();
   } else if (s != nullptr) {
     // handle stream errors by closing the stream
@@ -588,7 +584,7 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
                                  ? HPackParser::Priority::Included
                                  : HPackParser::Priority::None;
 
-  t->ping_state.last_ping_sent_time = grpc_core::Timestamp::InfPast();
+  t->ping_rate_policy.ReceivedDataFrame();
 
   // could be a new grpc_chttp2_stream or an existing grpc_chttp2_stream
   s = grpc_chttp2_parsing_lookup_stream(t, t->incoming_stream_id);
