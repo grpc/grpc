@@ -183,7 +183,7 @@ g_stands_for = "glockenspiel"  # @unused
 
 core_version = "30.1.0"  # @unused
 
-version = "1.53.1"  # @unused
+version = "1.53.2"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
