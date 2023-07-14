@@ -3704,7 +3704,15 @@ grpc_cc_library(
     hdrs = [
         "//src/core:ext/transport/chttp2/transport/frame.h",
     ],
-    deps = ["gpr"],
+    external_deps = [
+        "absl/types:span",
+        "absl/types:variant",
+    ],
+    deps = [
+        "gpr",
+        "//src/core:slice",
+        "//src/core:slice_buffer",
+    ],
 )
 
 grpc_cc_library(

@@ -18,11 +18,13 @@
 #include <grpc/support/port_platform.h>
 
 #include <cstdint>
+#include <vector>
 
 #include "absl/status/statusor.h"
 #include "absl/types/span.h"
 #include "absl/types/variant.h"
 
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 
 namespace grpc_core {

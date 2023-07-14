@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 
 #include <cstdint>
-
-#include "frame.h"
 
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/match.h"
