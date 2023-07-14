@@ -80,6 +80,4 @@ void grpc_rb_fork_unsafe_end();
 
 void grpc_ruby_init();
 
-void grpc_ruby_shutdown();
-
 #endif /* GRPC_RB_H_ */

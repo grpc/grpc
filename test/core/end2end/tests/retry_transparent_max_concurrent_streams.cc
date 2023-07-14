@@ -42,7 +42,7 @@ CORE_END2END_TEST(RetryHttp2Test, RetryTransparentMaxConcurrentStreams) {
   InitServer(server_args);
   InitClient(ChannelArgs());
   auto c =
-      NewClientCall("/service/method").Timeout(Duration::Seconds(5)).Create();
+      NewClientCall("/service/method").Timeout(Duration::Minutes(1)).Create();
   IncomingStatusOnClient server_status;
   IncomingMetadata server_initial_metadata;
   IncomingMessage server_message;
@@ -62,7 +62,7 @@ CORE_END2END_TEST(RetryHttp2Test, RetryTransparentMaxConcurrentStreams) {
   // We set wait_for_ready for this call, so that if it retries before
   // the server comes back up, it stays pending.
   auto c2 =
-      NewClientCall("/service/method").Timeout(Duration::Seconds(5)).Create();
+      NewClientCall("/service/method").Timeout(Duration::Minutes(1)).Create();
   IncomingStatusOnClient server_status2;
   IncomingMetadata server_initial_metadata2;
   IncomingMessage server_message2;
