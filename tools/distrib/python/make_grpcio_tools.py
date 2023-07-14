@@ -241,7 +241,7 @@ def _delete_source_tree(target):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--keep-third-party", default=False, action="store_true", help="Do not delete the temporary third_party folder"
+        "--cleanup-third-party", default=False, action="store_true", help="Delete the temporary third_party folder"
     )
     args = parser.parse_args()
     os.chdir(GRPC_ROOT)
@@ -284,7 +284,7 @@ def main():
     with open(GRPC_PYTHON_PROTOC_LIB_DEPS, "w") as deps_file:
         deps_file.write(protoc_lib_deps_content)
     print('File "%s" updated.' % GRPC_PYTHON_PROTOC_LIB_DEPS)
-    if not args.keep_third_party:
+    if args.cleanup_third_party:
         for target in DELETE_TARGETS_ON_CLEANUP:
             _delete_source_tree(target)
     print("Done.")
