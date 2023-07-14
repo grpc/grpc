@@ -57,8 +57,10 @@
 
 #include "src/core/ext/filters/client_channel/client_channel_internal.h"
 #include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
+#include "src/core/ext/filters/client_channel/lb_policy/health_check_client_internal.h"
 #include "src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h"
 #include "src/core/ext/filters/client_channel/lb_policy/oob_backend_metric_internal.h"
+#include "src/core/ext/filters/client_channel/subchannel_interface_internal.h"
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -111,7 +113,10 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       ~FakeSubchannel() override {
         if (orca_watcher_ != nullptr) {
           MutexLock lock(&state_->backend_metric_watcher_mu_);
-          state_->watchers_.erase(orca_watcher_.get());
+          state_->orca_watchers_.erase(orca_watcher_.get());
+        }
+        for (const auto& p : watcher_map_) {
+          state_->state_tracker_.RemoveWatcher(p.second);
         }
       }
 
@@ -121,6 +126,11 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       // Converts between
       // SubchannelInterface::ConnectivityStateWatcherInterface and
       // ConnectivityStateWatcherInterface.
+      //
+      // We support both unique_ptr<> and shared_ptr<>, since raw
+      // connectivity watches use the latter but health watches use the
+      // former.
+      // TODO(roth): Clean this up.
       class WatcherWrapper : public AsyncConnectivityStateWatcherInterface {
        public:
         WatcherWrapper(
@@ -132,33 +142,59 @@ class LoadBalancingPolicyTest : public ::testing::Test {
                   std::move(work_serializer)),
               watcher_(std::move(watcher)) {}
 
+        WatcherWrapper(
+            std::shared_ptr<WorkSerializer> work_serializer,
+            std::shared_ptr<
+                SubchannelInterface::ConnectivityStateWatcherInterface>
+                watcher)
+            : AsyncConnectivityStateWatcherInterface(
+                  std::move(work_serializer)),
+              watcher_(std::move(watcher)) {}
+
         void OnConnectivityStateChange(grpc_connectivity_state new_state,
                                        const absl::Status& status) override {
-          watcher_->OnConnectivityStateChange(new_state, status);
+          watcher()->OnConnectivityStateChange(new_state, status);
         }
 
        private:
-        std::unique_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>
+        SubchannelInterface::ConnectivityStateWatcherInterface* watcher()
+            const {
+          return Match(
+              watcher_,
+              [](const std::unique_ptr<
+                  SubchannelInterface::ConnectivityStateWatcherInterface>&
+                     watcher) { return watcher.get(); },
+              [](const std::shared_ptr<
+                  SubchannelInterface::ConnectivityStateWatcherInterface>&
+                     watcher) { return watcher.get(); });
+        }
+
+        absl::variant<
+            std::unique_ptr<
+                SubchannelInterface::ConnectivityStateWatcherInterface>,
+            std::shared_ptr<
+                SubchannelInterface::ConnectivityStateWatcherInterface>>
             watcher_;
       };
 
       void WatchConnectivityState(
           std::unique_ptr<
               SubchannelInterface::ConnectivityStateWatcherInterface>
-              watcher) override {
+              watcher) override
+          ABSL_EXCLUSIVE_LOCKS_REQUIRED(*state_->work_serializer_) {
+        auto* watcher_ptr = watcher.get();
         auto watcher_wrapper = MakeOrphanable<WatcherWrapper>(
             work_serializer_, std::move(watcher));
-        watcher_map_[watcher.get()] = watcher_wrapper.get();
-        MutexLock lock(&state_->mu_);
+        watcher_map_[watcher_ptr] = watcher_wrapper.get();
         state_->state_tracker_.AddWatcher(GRPC_CHANNEL_SHUTDOWN,
                                           std::move(watcher_wrapper));
       }
 
       void CancelConnectivityStateWatch(
-          ConnectivityStateWatcherInterface* watcher) override {
+          ConnectivityStateWatcherInterface* watcher) override
+          ABSL_EXCLUSIVE_LOCKS_REQUIRED(*state_->work_serializer_) {
         auto it = watcher_map_.find(watcher);
         if (it == watcher_map_.end()) return;
-        MutexLock lock(&state_->mu_);
         state_->state_tracker_.RemoveWatcher(it->second);
         watcher_map_.erase(it);
       }
@@ -168,19 +204,56 @@ class LoadBalancingPolicyTest : public ::testing::Test {
         state_->requested_connection_ = true;
       }
 
-      void AddDataWatcher(
-          std::unique_ptr<DataWatcherInterface> watcher) override {
+      void AddDataWatcher(std::unique_ptr<DataWatcherInterface> watcher)
+          override ABSL_EXCLUSIVE_LOCKS_REQUIRED(*state_->work_serializer_) {
         MutexLock lock(&state_->backend_metric_watcher_mu_);
-        GPR_ASSERT(orca_watcher_ == nullptr);
-        orca_watcher_.reset(static_cast<OrcaWatcher*>(watcher.release()));
-        state_->watchers_.insert(orca_watcher_.get());
+        auto* w =
+            static_cast<InternalSubchannelDataWatcherInterface*>(watcher.get());
+        if (w->type() == OrcaProducer::Type()) {
+          GPR_ASSERT(orca_watcher_ == nullptr);
+          orca_watcher_.reset(static_cast<OrcaWatcher*>(watcher.release()));
+          state_->orca_watchers_.insert(orca_watcher_.get());
+        } else if (w->type() == HealthProducer::Type()) {
+          // TODO(roth): Support health checking in test framework.
+          // For now, we just hard-code this to the raw connectivity state.
+          GPR_ASSERT(health_watcher_ == nullptr);
+          GPR_ASSERT(health_watcher_wrapper_ == nullptr);
+          health_watcher_.reset(static_cast<HealthWatcher*>(watcher.release()));
+          auto connectivity_watcher = health_watcher_->TakeWatcher();
+          auto* connectivity_watcher_ptr = connectivity_watcher.get();
+          auto watcher_wrapper = MakeOrphanable<WatcherWrapper>(
+              work_serializer_, std::move(connectivity_watcher));
+          health_watcher_wrapper_ = watcher_wrapper.get();
+          state_->state_tracker_.AddWatcher(GRPC_CHANNEL_SHUTDOWN,
+                                            std::move(watcher_wrapper));
+          gpr_log(GPR_INFO,
+                  "AddDataWatcher(): added HealthWatch=%p "
+                  "connectivity_watcher=%p watcher_wrapper=%p",
+                  health_watcher_.get(), connectivity_watcher_ptr,
+                  health_watcher_wrapper_);
+        }
       }
 
-      void CancelDataWatcher(DataWatcherInterface* watcher) override {
+      void CancelDataWatcher(DataWatcherInterface* watcher) override
+          ABSL_EXCLUSIVE_LOCKS_REQUIRED(*state_->work_serializer_) {
         MutexLock lock(&state_->backend_metric_watcher_mu_);
-        if (orca_watcher_.get() != static_cast<OrcaWatcher*>(watcher)) return;
-        state_->watchers_.erase(orca_watcher_.get());
-        orca_watcher_.reset();
+        auto* w = static_cast<InternalSubchannelDataWatcherInterface*>(watcher);
+        if (w->type() == OrcaProducer::Type()) {
+          if (orca_watcher_.get() != static_cast<OrcaWatcher*>(watcher)) return;
+          state_->orca_watchers_.erase(orca_watcher_.get());
+          orca_watcher_.reset();
+        } else if (w->type() == HealthProducer::Type()) {
+          if (health_watcher_.get() != static_cast<HealthWatcher*>(watcher)) {
+            return;
+          }
+          gpr_log(GPR_INFO,
+                  "CancelDataWatcher(): cancelling HealthWatch=%p "
+                  "watcher_wrapper=%p",
+                  health_watcher_.get(), health_watcher_wrapper_);
+          state_->state_tracker_.RemoveWatcher(health_watcher_wrapper_);
+          health_watcher_wrapper_ = nullptr;
+          health_watcher_.reset();
+        }
       }
 
       // Don't need this method, so it's a no-op.
@@ -191,11 +264,16 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       std::map<SubchannelInterface::ConnectivityStateWatcherInterface*,
                WatcherWrapper*>
           watcher_map_;
+      std::unique_ptr<HealthWatcher> health_watcher_;
+      WatcherWrapper* health_watcher_wrapper_ = nullptr;
       std::unique_ptr<OrcaWatcher> orca_watcher_;
     };
 
-    explicit SubchannelState(absl::string_view address)
-        : address_(address), state_tracker_("LoadBalancingPolicyTest") {}
+    SubchannelState(absl::string_view address,
+                    std::shared_ptr<WorkSerializer> work_serializer)
+        : address_(address),
+          work_serializer_(std::move(work_serializer)),
+          state_tracker_("LoadBalancingPolicyTest") {}
 
     const std::string& address() const { return address_; }
 
@@ -250,10 +328,14 @@ class LoadBalancingPolicyTest : public ::testing::Test {
             << "bug in test: " << ConnectivityStateName(state)
             << " must have OK status: " << status;
       }
-      MutexLock lock(&mu_);
-      AssertValidConnectivityStateTransition(state_tracker_.state(), state,
-                                             location);
-      state_tracker_.SetState(state, status, "set from test");
+      work_serializer_->Run(
+          [this, state, status, location]()
+              ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_) {
+                AssertValidConnectivityStateTransition(state_tracker_.state(),
+                                                       state, location);
+                state_tracker_.SetState(state, status, "set from test");
+              },
+          DEBUG_LOCATION);
     }
 
     // Indicates if any of the associated SubchannelInterface objects
@@ -273,7 +355,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     // Sends an OOB backend metric report to all watchers.
     void SendOobBackendMetricReport(const BackendMetricData& backend_metrics) {
       MutexLock lock(&backend_metric_watcher_mu_);
-      for (const auto* watcher : watchers_) {
+      for (const auto* watcher : orca_watchers_) {
         watcher->watcher()->OnBackendMetricReport(backend_metrics);
       }
     }
@@ -282,7 +364,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     void CheckOobReportingPeriod(Duration expected,
                                  SourceLocation location = SourceLocation()) {
       MutexLock lock(&backend_metric_watcher_mu_);
-      for (const auto* watcher : watchers_) {
+      for (const auto* watcher : orca_watchers_) {
         EXPECT_EQ(watcher->report_interval(), expected)
             << location.file() << ":" << location.line();
       }
@@ -290,16 +372,15 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
    private:
     const std::string address_;
-
-    Mutex mu_;
-    ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(&mu_);
+    std::shared_ptr<WorkSerializer> work_serializer_;
+    ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(*work_serializer_);
 
     Mutex requested_connection_mu_;
     bool requested_connection_ ABSL_GUARDED_BY(&requested_connection_mu_) =
         false;
 
     Mutex backend_metric_watcher_mu_;
-    std::set<OrcaWatcher*> watchers_
+    std::set<OrcaWatcher*> orca_watchers_
         ABSL_GUARDED_BY(&backend_metric_watcher_mu_);
   };
 
@@ -417,7 +498,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
         GPR_ASSERT(address_uri.ok());
         it = test_->subchannel_pool_
                  .emplace(std::piecewise_construct, std::forward_as_tuple(key),
-                          std::forward_as_tuple(std::move(*address_uri)))
+                          std::forward_as_tuple(std::move(*address_uri),
+                                                work_serializer_))
                  .first;
       }
       return it->second.CreateSubchannel(work_serializer_);
@@ -927,7 +1009,6 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   // Expect startup with RR with a set of addresses.
   RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> ExpectRoundRobinStartup(
       absl::Span<const absl::string_view> addresses) {
-    ExpectConnectingUpdate();
     RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker;
     for (size_t i = 0; i < addresses.size(); ++i) {
       auto* subchannel = FindSubchannel(addresses[i]);
@@ -935,6 +1016,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       if (subchannel == nullptr) return nullptr;
       EXPECT_TRUE(subchannel->ConnectionRequested());
       subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+      if (i == 0) ExpectConnectingUpdate();
       subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
       if (i == 0) {
         picker = WaitForConnected();
@@ -1004,7 +1086,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     SubchannelKey key(MakeAddress(address), args);
     auto it = subchannel_pool_
                   .emplace(std::piecewise_construct, std::forward_as_tuple(key),
-                           std::forward_as_tuple(address))
+                           std::forward_as_tuple(address, work_serializer_))
                   .first;
     return &it->second;
   }

@@ -136,6 +136,8 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/endpoint_list.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/endpoint_list.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc" role="src" />
@@ -161,7 +163,6 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/rls/rls.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/subchannel_list.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/weighted_round_robin.cc" role="src" />
