@@ -17,10 +17,10 @@
 //
 
 #include <grpc/support/port_platform.h>
+
 #include <inttypes.h>
 #include <string.h>
-#include <grpc/slice.h>
-#include <grpc/support/log.h>
+
 #include <initializer_list>
 #include <string>
 
@@ -30,6 +30,10 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
+
+#include <grpc/slice.h>
+#include <grpc/support/log.h>
+
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/frame_data.h"
@@ -43,6 +47,7 @@
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http_trace.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
+#include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -57,7 +62,6 @@
 #include "src/core/lib/transport/http2_errors.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
-#include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
 
 using grpc_core::HPackParser;
 

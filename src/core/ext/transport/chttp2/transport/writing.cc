@@ -17,12 +17,10 @@
 //
 
 #include <grpc/support/port_platform.h>
+
 #include <inttypes.h>
 #include <stddef.h>
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/slice.h>
-#include <grpc/slice_buffer.h>
-#include <grpc/support/log.h>
+
 #include <algorithm>
 #include <memory>
 #include <string>
@@ -32,6 +30,12 @@
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/support/log.h>
+
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/context_list_entry.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"

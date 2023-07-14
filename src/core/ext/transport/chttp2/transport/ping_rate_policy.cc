@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
 
 #include <algorithm>
@@ -52,7 +54,7 @@ Chttp2PingRatePolicy::RequestSendPing(Duration next_allowed_ping_interval) {
   }
   const Timestamp next_allowed_ping =
       last_ping_sent_time_ + next_allowed_ping_interval;
-  const Timestamp now = grpc_core::Timestamp::Now();
+  const Timestamp now = Timestamp::Now();
   if (next_allowed_ping > now) {
     return TooSoon{next_allowed_ping_interval, last_ping_sent_time_,
                    next_allowed_ping - now};

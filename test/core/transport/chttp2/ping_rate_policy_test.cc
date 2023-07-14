@@ -14,8 +14,8 @@
 
 #include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
 
-#include <thread>
 #include <chrono>
+#include <thread>
 
 #include "gtest/gtest.h"
 
