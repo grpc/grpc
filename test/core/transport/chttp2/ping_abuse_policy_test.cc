@@ -14,11 +14,12 @@
 
 #include "src/core/ext/transport/chttp2/transport/ping_abuse_policy.h"
 
-#include <grpc/grpc.h>
-#include <thread>
 #include <chrono>
+#include <thread>
 
 #include "gtest/gtest.h"
+
+#include <grpc/impl/channel_arg_names.h>
 
 namespace grpc_core {
 namespace {

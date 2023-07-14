@@ -368,4 +368,4 @@
 #define GRPC_ARG_DSCP "grpc.dscp"
 /** \} */
 
-#endif
+#endif /* GRPC_IMPL_CHANNEL_ARG_NAMES_H */

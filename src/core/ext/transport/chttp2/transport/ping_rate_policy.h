@@ -12,14 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_PING_DATA_RATE_POLICY_H
-#define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_PING_DATA_RATE_POLICY_H
+#ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_PING_RATE_POLICY_H
+#define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_PING_RATE_POLICY_H
+
+#include <grpc/support/port_platform.h>
 
 #include <iosfwd>
 #include <string>
 
-#include "src/core/lib/channel/channel_args.h"
 #include "absl/types/variant.h"
+
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/time.h"
 
 namespace grpc_core {
@@ -67,4 +70,4 @@ std::ostream& operator<<(std::ostream& out,
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_PING_RATE_POLICY_H

@@ -1266,8 +1266,8 @@ grpc_cc_library(
         "nofixdeps",
     ],
     deps = [
-        "gpr",
         "channel_arg_names",
+        "gpr",
     ],
 )
 
@@ -3019,6 +3019,7 @@ grpc_cc_library(
     visibility = ["@grpc:client_channel"],
     deps = [
         "backoff",
+        "channel_arg_names",
         "channel_stack_builder",
         "config",
         "config_vars",
@@ -3121,6 +3122,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "backoff",
+        "channel_arg_names",
         "config",
         "config_vars",
         "debug_location",
@@ -3228,6 +3230,7 @@ grpc_cc_library(
     visibility = ["@grpc:public"],
     deps = [
         "alts_util",
+        "channel_arg_names",
         "debug_location",
         "exec_ctx",
         "gpr",
@@ -3490,6 +3493,7 @@ grpc_cc_library(
     language = "c++",
     visibility = ["@grpc:public"],
     deps = [
+        "channel_arg_names",
         "config_vars",
         "gpr",
         "grpc_base",
@@ -3534,6 +3538,7 @@ grpc_cc_library(
     language = "c++",
     visibility = ["@grpc:http"],
     deps = [
+        "channel_arg_names",
         "channel_stack_builder",
         "config",
         "gpr",
@@ -3923,6 +3928,7 @@ grpc_cc_library(
     language = "c++",
     visibility = ["@grpc:grpclb"],
     deps = [
+        "channel_arg_names",
         "chttp2_context_list_entry",
         "chttp2_frame",
         "chttp2_varint",
