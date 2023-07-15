@@ -33,7 +33,6 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/backoff/backoff.h"
-#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/thread_local.h"
 #include "src/core/lib/event_engine/trace.h"
@@ -177,6 +176,7 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Quiesce() {
   GPR_ASSERT(queue_.Empty());
   quiesced_.store(true, std::memory_order_relaxed);
   lifeguard_.BlockUntilShutdown();
+  lifeguard_.Reset();
   GRPC_EVENT_ENGINE_TRACE("%ld cycles spent quiescing the pool",
                           std::lround(gpr_get_cycle_counter() - start_time));
 }
@@ -216,6 +216,7 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::PrepareFork() {
   thread_count()->BlockUntilThreadCount(CounterType::kLivingThreadCount, 0,
                                         "forking", &work_signal_);
   lifeguard_.BlockUntilShutdown();
+  lifeguard_.Reset();
 }
 
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Postfork() {
@@ -231,13 +232,14 @@ WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::Lifeguard(
       backoff_(grpc_core::BackOff::Options()
                    .set_initial_backoff(kLifeguardMinSleepBetweenChecks)
                    .set_max_backoff(kLifeguardMaxSleepBetweenChecks)
-                   .set_multiplier(1.3)) {}
+                   .set_multiplier(1.3)),
+      lifeguard_should_shut_down_(std::make_unique<grpc_core::Notification>()),
+      lifeguard_is_shut_down_(std::make_unique<grpc_core::Notification>()) {}
 
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::Start() {
   // lifeguard_running_ is set early to avoid a quiesce race while the
   // lifeguard is still starting up.
-  grpc_core::MutexLock lock(&lifeguard_shutdown_mu_);
-  lifeguard_running_ = true;
+  lifeguard_running_.store(true);
   grpc_core::Thread(
       "lifeguard",
       [](void* arg) {
@@ -249,9 +251,15 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::Start() {
       .Start();
 }
 
+void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::Reset() {
+  GPR_ASSERT(!lifeguard_running_.load());
+  backoff_.Reset();
+  lifeguard_should_shut_down_ = std::make_unique<grpc_core::Notification>();
+  lifeguard_is_shut_down_ = std::make_unique<grpc_core::Notification>();
+}
+
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::
     LifeguardMain() {
-  grpc_core::MutexLock lock(&lifeguard_shutdown_mu_);
   while (true) {
     if (pool_->IsForking()) break;
     // If the pool is shut down, loop quickly until quiesced. Otherwise,
@@ -259,28 +267,25 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::
     if (pool_->IsShutdown()) {
       if (pool_->IsQuiesced()) break;
     } else {
-      lifeguard_should_shut_down_cv_.WaitWithTimeout(
-          &lifeguard_shutdown_mu_,
+      lifeguard_should_shut_down_->WaitForNotificationWithTimeout(
           absl::Milliseconds(
               (backoff_.NextAttemptTime() - grpc_core::Timestamp::Now())
                   .millis()));
     }
     MaybeStartNewThread();
   }
-  lifeguard_running_ = false;
-  lifeguard_is_shut_down_cv_.Signal();
+  lifeguard_is_shut_down_->Notify();
+  lifeguard_running_.store(false, std::memory_order_relaxed);
 }
 
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::
     BlockUntilShutdown() {
-  grpc_core::MutexLock lock(&lifeguard_shutdown_mu_);
-  while (lifeguard_running_) {
-    lifeguard_should_shut_down_cv_.Signal();
-    lifeguard_is_shut_down_cv_.WaitWithTimeout(
-        &lifeguard_shutdown_mu_, absl::Seconds(kBlockingQuiesceLogRateSeconds));
+  lifeguard_should_shut_down_->Notify();
+  while (lifeguard_running_.load(std::memory_order_relaxed)) {
     GRPC_LOG_EVERY_N_SEC_DELAYED(kBlockingQuiesceLogRateSeconds, GPR_DEBUG,
                                  "%s",
                                  "Waiting for lifeguard thread to shut down");
+    lifeguard_is_shut_down_->WaitForNotification();
   }
 }
 

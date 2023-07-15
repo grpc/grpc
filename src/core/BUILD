@@ -1503,12 +1503,12 @@ grpc_cc_library(
         "event_engine_work_queue",
         "experiments",
         "forkable",
+        "notification",
         "time",
         "useful",
         "//:backoff",
         "//:event_engine_base_hdrs",
         "//:gpr",
-        "//:grpc_trace",
     ],
 )
 
