@@ -417,7 +417,7 @@ if BUILD_WITH_BORING_SSL_ASM and not BUILD_WITH_SYSTEM_OPENSSL:
     # by the preprocessor. Provided the platform has a gas-compatible assembler
     # (i.e. not Windows), we can include the assembly files and let BoringSSL
     # decide which ones should and shouldn't be used for the build.
-    if "win32" not in boringssl_asm_platform:
+    if not boringssl_asm_platform.startswith("win"):
         asm_key = "crypto_asm"
     else:
         print(
