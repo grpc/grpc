@@ -41,6 +41,7 @@ int main(int /* argc */, char** /* argv */) { return 0; }
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+#include "test/cpp/util/test_config.h"
 
 namespace grpc {
 namespace testing {
@@ -96,6 +97,7 @@ TEST(ClientForkTest, ClientCallsBeforeAndAfterForkSucceed) {
   }
 
   // Do a round trip before we fork.
+  // NOTE: without this scope, test running with the epoll1 poller will fail.
   {
     std::unique_ptr<EchoTestService::Stub> stub = MakeStub(addr);
     EchoRequest request;
@@ -163,11 +165,10 @@ TEST(ClientForkTest, ClientCallsBeforeAndAfterForkSucceed) {
 }  // namespace testing
 }  // namespace grpc
 
-#endif  // GRPC_ENABLE_FORK_SUPPORT
-
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
   grpc::testing::TestEnvironment env(&argc, argv);
   return RUN_ALL_TESTS();
 }
+#endif  // GRPC_ENABLE_FORK_SUPPORT

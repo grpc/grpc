@@ -200,8 +200,6 @@ grpc_cc_test(
     name = "client_fork_test",
     size = "small",
     srcs = ["client_fork_test.cc"],
-    # TODO(hork): enable epoll1 when its fork implementation is fixed
-    exclude_pollers = ["epoll1"],
     # TODO(hork): locate and fix the 1.5% flake in the poll implementation
     flaky = True,
     external_deps = [
@@ -221,7 +219,7 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
         "//test/core/util:grpc_test_util",
-        "//test/cpp/util:test_util",
+        "//test/cpp/util:test_config",
     ],
 )
 

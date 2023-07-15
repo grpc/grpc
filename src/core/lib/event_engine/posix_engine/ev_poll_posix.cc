@@ -881,6 +881,12 @@ PollPoller* MakePollPoller(Scheduler* /*scheduler*/,
   return nullptr;
 }
 
+void PollPoller::PrepareFork() { grpc_core::Crash("unimplemented"); }
+
+void PollPoller::PostforkParent() { grpc_core::Crash("unimplemented"); }
+
+void PollPoller::PostforkChild() { grpc_core::Crash("unimplemented"); }
+
 void PollPoller::KickExternal(bool /*ext*/) {
   grpc_core::Crash("unimplemented");
 }
