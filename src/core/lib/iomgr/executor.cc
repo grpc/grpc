@@ -128,9 +128,6 @@ size_t Executor::RunClosures(const char* executor_name,
     c = next;
     n++;
     ExecCtx::Get()->Flush();
-#ifndef NDEBUG
-    EXECUTOR_TRACE("(%s) finished %p", executor_name, c);
-#endif
   }
 
   return n;
@@ -185,11 +182,7 @@ void Executor::SetThreading(bool threading) {
     gpr_spinlock_unlock(&adding_thread_lock_);
 
     curr_num_threads = gpr_atm_no_barrier_load(&num_threads_);
-    EXECUTOR_TRACE("(%s) Total thread count = %" PRIdPTR, name_,
-                   curr_num_threads);
     for (gpr_atm i = 0; i < curr_num_threads; i++) {
-      EXECUTOR_TRACE("(%s) Attempting to join Thread %s (%zu)", name_,
-                     thd_state_[i].name, thd_state_[i].id);
       thd_state_[i].thd.Join();
       EXECUTOR_TRACE("(%s) Thread %" PRIdPTR " of %" PRIdPTR " joined", name_,
                      i + 1, curr_num_threads);
@@ -448,7 +441,6 @@ void Executor::SetThreadingAll(bool enable) {
        i++) {
     executors[i]->SetThreading(enable);
   }
-  EXECUTOR_TRACE("Executor::SetThreadingAll(%d) done", enable);
 }
 
 void Executor::SetThreadingDefault(bool enable) {

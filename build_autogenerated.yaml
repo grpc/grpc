@@ -6302,6 +6302,27 @@ targets:
   deps:
   - grpc++_test
   - grpc++_test_util
+- name: client_fork_test
+  gtest: true
+  build: test
+  run: false
+  language: c++
+  headers: []
+  src:
+  - src/proto/grpc/testing/duplicate/echo_duplicate.proto
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - test/cpp/end2end/client_fork_test.cc
+  deps:
+  - grpc++
+  - grpc_test_util
+  - grpc++_test_config
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: client_interceptors_end2end_test
   gtest: true
   build: test
@@ -7970,11 +7991,14 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/lib/debug/trace.h
   - src/core/lib/event_engine/forkable.h
   src:
+  - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/forkable.cc
   - test/core/event_engine/forkable_test.cc
   deps:
+  - absl/status:statusor
   - gpr
 - name: format_request_test
   gtest: true

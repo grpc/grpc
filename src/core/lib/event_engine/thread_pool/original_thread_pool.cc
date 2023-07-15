@@ -30,6 +30,8 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/event_engine/forkable.h"
 #include "src/core/lib/event_engine/thread_local.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/gprpp/time.h"
