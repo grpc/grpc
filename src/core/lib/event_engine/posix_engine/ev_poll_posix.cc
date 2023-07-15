@@ -829,6 +829,12 @@ void PollPoller::Shutdown() {
   Unref();
 }
 
+void PollPoller::PrepareFork() { Kick(); }
+// TODO(vigneshbabu): implement
+void PollPoller::PostforkParent() {}
+// TODO(vigneshbabu): implement
+void PollPoller::PostforkChild() {}
+
 PollPoller* MakePollPoller(Scheduler* scheduler, bool use_phony_poll) {
   static bool kPollPollerSupported = InitPollPollerPosix();
   if (kPollPollerSupported) {

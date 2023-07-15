@@ -166,7 +166,8 @@ TEST(ClientForkTest, ClientCallsBeforeAndAfterForkSucceed) {
 #endif  // GRPC_ENABLE_FORK_SUPPORT
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(&argc, argv);
   testing::InitGoogleTest(&argc, argv);
+  grpc::testing::InitTest(&argc, &argv, true);
+  grpc::testing::TestEnvironment env(&argc, argv);
   return RUN_ALL_TESTS();
 }
