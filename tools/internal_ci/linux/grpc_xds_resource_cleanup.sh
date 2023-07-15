@@ -104,7 +104,6 @@ main() {
   echo "Sourcing test driver install captured from: ${TEST_DRIVER_INSTALL_SCRIPT_URL}"
   source /dev/stdin <<< "$(curl -s "${TEST_DRIVER_INSTALL_SCRIPT_URL}")"
   set +x
-  pyenv versions --bare --skip-aliases
 
   # Valid cluster variables needed for the automatic driver setup.
   activate_gke_cluster GKE_CLUSTER_PSM_BASIC
