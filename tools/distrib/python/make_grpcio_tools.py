@@ -238,15 +238,19 @@ def _delete_source_tree(target):
     print("Deleting copied folder %s" % (target_abs))
     shutil.rmtree(target_abs, ignore_errors=True)
 
+
 def main():
     parser = argparse.ArgumentParser()
     # In Step 1 below, the third_party folder is copied to a location required
-    # by the build scripts. This folder does not need to be committed to the 
-    # repo, so you can pass `--cleanup_third_party` in automated scripts to 
+    # by the build scripts. This folder does not need to be committed to the
+    # repo, so you can pass `--cleanup_third_party` in automated scripts to
     # ensure that the temporary folders are deleted after the script runs.
     # See Jan's TODO in _copy_source_tree above.
     parser.add_argument(
-        "--cleanup_third_party", default=False, action="store_true", help="Delete the temporary third_party folder"
+        "--cleanup_third_party",
+        default=False,
+        action="store_true",
+        help="Delete the temporary third_party folder",
     )
     args = parser.parse_args()
     os.chdir(GRPC_ROOT)
