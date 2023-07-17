@@ -16,31 +16,25 @@
 //
 //
 
-#include "api/include/opentelemetry/metrics/provider.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
-#include "sdk/include/opentelemetry/sdk/metrics/meter_provider.h"
+#ifndef GRPC_SRC_CPP_EXT_OTEL_OTEL_SERVER_CALL_TRACER_H
+#define GRPC_SRC_CPP_EXT_OTEL_OTEL_SERVER_CALL_TRACER_H
 
-#include "test/core/util/test_config.h"
+#include <grpc/support/port_platform.h>
+
+#include "src/core/lib/channel/call_tracer.h"
+#include "src/core/lib/resource_quota/arena.h"
 
 namespace grpc {
-namespace testing {
-namespace {
+namespace internal {
 
-TEST(OTelPluginTest, ApiDependency) {
-  opentelemetry::metrics::Provider::GetMeterProvider();
-}
+class OpenTelemetryServerCallTracerFactory
+    : public grpc_core::ServerCallTracerFactory {
+ public:
+  grpc_core::ServerCallTracer* CreateNewServerCallTracer(
+      grpc_core::Arena* arena) override;
+};
 
-TEST(OTelPluginTest, SdkDependency) {
-  opentelemetry::sdk::metrics::MeterProvider();
-}
-
-}  // namespace
-}  // namespace testing
+}  // namespace internal
 }  // namespace grpc
 
-int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(&argc, argv);
-  ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
-}
+#endif  // GRPC_SRC_CPP_EXT_OTEL_OTEL_SERVER_CALL_TRACER_H

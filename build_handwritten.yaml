@@ -15,7 +15,7 @@ settings:
   core_version: 33.0.0
   csharp_major_version: 2
   g_stands_for: grounded
-  protobuf_version: 3.23.1
+  protobuf_version: 3.23.4
   version: 1.57.0-dev
 configs:
   asan:

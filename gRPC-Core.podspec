@@ -182,7 +182,7 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
-    ss.dependency 'BoringSSL-GRPC', '0.0.29'
+    ss.dependency 'BoringSSL-GRPC', '0.0.30'
     ss.dependency 'abseil/algorithm/container', abseil_version
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/core_headers', abseil_version
@@ -249,8 +249,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h',
                       'src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc',
                       'src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h',
-                      'src/core/ext/filters/client_channel/lb_policy/endpoint_list.cc',
-                      'src/core/ext/filters/client_channel/lb_policy/endpoint_list.h',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc',
@@ -276,6 +274,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h',
                       'src/core/ext/filters/client_channel/lb_policy/rls/rls.cc',
                       'src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc',
+                      'src/core/ext/filters/client_channel/lb_policy/subchannel_list.h',
                       'src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.cc',
                       'src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.h',
                       'src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/weighted_round_robin.cc',
@@ -2079,7 +2078,6 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/client_channel/lb_policy/address_filtering.h',
                               'src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h',
                               'src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h',
-                              'src/core/ext/filters/client_channel/lb_policy/endpoint_list.h',
                               'src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h',
                               'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h',
                               'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h',
@@ -2092,6 +2090,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h',
                               'src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.h',
                               'src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h',
+                              'src/core/ext/filters/client_channel/lb_policy/subchannel_list.h',
                               'src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.h',
                               'src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h',
                               'src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.h',

@@ -2080,8 +2080,7 @@ TEST_F(RoundRobinTest, HealthChecking) {
   EXPECT_TRUE(WaitForChannelNotReady(channel.get()));
   CheckRpcSendFailure(DEBUG_LOCATION, stub, StatusCode::UNAVAILABLE,
                       "connections to all backends failing; last error: "
-                      "(ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
-                      "backend unhealthy");
+                      "UNAVAILABLE: backend unhealthy");
   // Clean up.
   EnableDefaultHealthCheckService(false);
 }
@@ -2139,8 +2138,7 @@ TEST_F(RoundRobinTest, WithHealthCheckingInhibitPerChannel) {
   EXPECT_FALSE(WaitForChannelReady(channel1.get(), 1));
   CheckRpcSendFailure(DEBUG_LOCATION, stub1, StatusCode::UNAVAILABLE,
                       "connections to all backends failing; last error: "
-                      "(ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
-                      "backend unhealthy");
+                      "UNAVAILABLE: backend unhealthy");
   // Second channel should be READY.
   EXPECT_TRUE(WaitForChannelReady(channel2.get(), 1));
   CheckRpcSendOk(DEBUG_LOCATION, stub2);
@@ -2185,8 +2183,7 @@ TEST_F(RoundRobinTest, HealthCheckingServiceNamePerChannel) {
   EXPECT_FALSE(WaitForChannelReady(channel1.get(), 1));
   CheckRpcSendFailure(DEBUG_LOCATION, stub1, StatusCode::UNAVAILABLE,
                       "connections to all backends failing; last error: "
-                      "(ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
-                      "backend unhealthy");
+                      "UNAVAILABLE: backend unhealthy");
   // Second channel should be READY.
   EXPECT_TRUE(WaitForChannelReady(channel2.get(), 1));
   CheckRpcSendOk(DEBUG_LOCATION, stub2);
@@ -2894,8 +2891,10 @@ TEST_F(ClientLbAddressTest, Basic) {
   // Make sure that the attributes wind up on the subchannels.
   std::vector<std::string> expected;
   for (const int port : GetServersPorts()) {
-    expected.emplace_back(absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:",
-                                       port, " args={test_key=test_value}"));
+    expected.emplace_back(absl::StrCat(
+        ipv6_only_ ? "[::1]:" : "127.0.0.1:", port,
+        " args={grpc.internal.no_subchannel.outlier_detection_disable=1, "
+        "test_key=test_value}"));
   }
   EXPECT_EQ(addresses_seen(), expected);
 }
@@ -3138,13 +3137,27 @@ const char kServiceConfigOob[] =
     "  ]\n"
     "}";
 
+const char kServiceConfigWithOutlierDetection[] =
+    "{\n"
+    "  \"loadBalancingConfig\": [\n"
+    "    {\"outlier_detection_experimental\": {\n"
+    "      \"childPolicy\": [\n"
+    "        {\"weighted_round_robin\": {\n"
+    "          \"blackoutPeriod\": \"%ds\",\n"
+    "          \"weightUpdatePeriod\": \"0.1s\"\n"
+    "        }}\n"
+    "      ]\n"
+    "    }}\n"
+    "  ]\n"
+    "}";
+
 class WeightedRoundRobinTest : public ClientLbEnd2endTest {
  protected:
   void ExpectWeightedRoundRobinPicks(
       const grpc_core::DebugLocation& location,
       const std::unique_ptr<grpc::testing::EchoTestService::Stub>& stub,
       const std::vector<size_t>& expected_weights, size_t total_passes = 3,
-      EchoRequest* request_ptr = nullptr) {
+      EchoRequest* request_ptr = nullptr, int timeout_ms = 15000) {
     GPR_ASSERT(expected_weights.size() == servers_.size());
     size_t total_picks_per_pass = 0;
     for (size_t picks : expected_weights) {
@@ -3174,7 +3187,7 @@ class WeightedRoundRobinTest : public ClientLbEnd2endTest {
           }
           return true;
         },
-        request_ptr);
+        request_ptr, timeout_ms);
   }
 };
 
@@ -3216,6 +3229,66 @@ TEST_F(WeightedRoundRobinTest, CallAndServerMetric) {
                                 /*expected_weights=*/{6, 4, 3});
   // Check LB policy name for the channel.
   EXPECT_EQ("weighted_round_robin", channel->GetLoadBalancingPolicyName());
+}
+
+// This tests a bug seen in production where the outlier_detection
+// policy would incorrectly generate a duplicate READY notification on
+// all of its subchannels every time it saw an update, thus causing the
+// WRR policy to re-enter the blackout period for that address.
+TEST_F(WeightedRoundRobinTest, WithOutlierDetection) {
+  const int kBlackoutPeriodSeconds = 5;
+  const int kNumServers = 3;
+  StartServers(kNumServers);
+  // Report server metrics that should give 6:4:3 WRR picks.
+  // weights = qps / (util + (eps/qps)) =
+  //   1/(0.2+0.2) : 1/(0.3+0.3) : 2/(1.5+0.1) = 6:4:3
+  // where util is app_util if set, or cpu_util.
+  servers_[0]->server_metric_recorder_->SetApplicationUtilization(0.2);
+  servers_[0]->server_metric_recorder_->SetEps(20);
+  servers_[0]->server_metric_recorder_->SetQps(100);
+  servers_[1]->server_metric_recorder_->SetApplicationUtilization(0.3);
+  servers_[1]->server_metric_recorder_->SetEps(30);
+  servers_[1]->server_metric_recorder_->SetQps(100);
+  servers_[2]->server_metric_recorder_->SetApplicationUtilization(1.5);
+  servers_[2]->server_metric_recorder_->SetEps(20);
+  servers_[2]->server_metric_recorder_->SetQps(200);
+  // Create channel.
+  // Initial blackout period is 0, so that we start seeing traffic in
+  // the right proportions right away.
+  auto response_generator = BuildResolverResponseGenerator();
+  auto channel = BuildChannel("", response_generator);
+  auto stub = BuildStub(channel);
+  response_generator.SetNextResolution(
+      GetServersPorts(),
+      absl::StrFormat(kServiceConfigWithOutlierDetection, 0).c_str());
+  // Send requests with per-call reported EPS/QPS set to 0/100.
+  // This should give 1/2:1/3:1/15 = 15:10:2 WRR picks.
+  // Keep sending RPCs long enough to go past the new blackout period
+  // that we're going to add later.
+  absl::Time deadline =
+      absl::Now() +
+      absl::Seconds(kBlackoutPeriodSeconds * grpc_test_slowdown_factor());
+  EchoRequest request;
+  // We cannot override with 0 with proto3, so setting it to almost 0.
+  request.mutable_param()->mutable_backend_metrics()->set_eps(
+      std::numeric_limits<double>::min());
+  request.mutable_param()->mutable_backend_metrics()->set_rps_fractional(100);
+  do {
+    ExpectWeightedRoundRobinPicks(DEBUG_LOCATION, stub,
+                                  /*expected_weights=*/{15, 10, 2},
+                                  /*total_passes=*/3, &request);
+  } while (absl::Now() < deadline);
+  // Send a new resolver response that increases blackout period.
+  response_generator.SetNextResolution(
+      GetServersPorts(),
+      absl::StrFormat(kServiceConfigWithOutlierDetection,
+                      kBlackoutPeriodSeconds * grpc_test_slowdown_factor())
+          .c_str());
+  // Weights should be the same before the blackout period expires.
+  ExpectWeightedRoundRobinPicks(
+      DEBUG_LOCATION, stub, /*expected_weights=*/{15, 10, 2},
+      /*total_passes=*/3, &request,
+      /*timeout_ms=*/(kBlackoutPeriodSeconds - 1) * 1000);
 }
 
 class WeightedRoundRobinParamTest
