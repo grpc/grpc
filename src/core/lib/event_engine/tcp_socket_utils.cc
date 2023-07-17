@@ -100,12 +100,10 @@ absl::StatusOr<std::string> ResolvedAddrToUnixPathIfPossible(
 #else
   int len = resolved_addr->size() - sizeof(unix_addr->sun_family) - 1;
 #endif
-  if (len <= 0) {
-    return "";
-  }
-  bool abstract = (unix_addr->sun_path[0] == '\0');
+  if (len <= 0) return "";
   std::string path;
-  if (abstract) {
+  if (unix_addr->sun_path[0] == '\0') {
+    // unix-abstract socket processing.
     path = std::string(unix_addr->sun_path + 1, len);
     path = absl::StrCat(std::string(1, '\0'), path);
   } else {
