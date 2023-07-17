@@ -33,6 +33,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/backoff/backoff.h"
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/thread_local.h"
 #include "src/core/lib/event_engine/trace.h"
