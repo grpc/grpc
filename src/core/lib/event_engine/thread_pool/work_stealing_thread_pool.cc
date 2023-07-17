@@ -274,8 +274,8 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::
     }
     MaybeStartNewThread();
   }
-  lifeguard_is_shut_down_->Notify();
   lifeguard_running_.store(false, std::memory_order_relaxed);
+  lifeguard_is_shut_down_->Notify();
 }
 
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::
@@ -287,6 +287,10 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::
                                  "Waiting for lifeguard thread to shut down");
     lifeguard_is_shut_down_->WaitForNotification();
   }
+  // Do an additional wait in case this method races with LifeguardMain's
+  // shutdown. This should return immediately if the lifeguard is already shut
+  // down.
+  lifeguard_is_shut_down_->WaitForNotification();
 }
 
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::
