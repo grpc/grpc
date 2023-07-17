@@ -307,8 +307,8 @@ def grpc_deps():
             sha256 = "2aab2980d0376137f969d92848fbb68216abb07633034534fc8c65cc4e7a0e93",
             strip_prefix = "benchmark-1.8.2",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/benchmark/archive/refs/tags/v1.8.2.tar.gz"
-                "https://github.com/google/benchmark/archive/refs/tags/v1.8.2.tar.gz"
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/benchmark/archive/refs/tags/v1.8.2.tar.gz",
+                "https://github.com/google/benchmark/archive/refs/tags/v1.8.2.tar.gz",
             ],
         )
 
