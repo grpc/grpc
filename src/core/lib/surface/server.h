@@ -420,8 +420,8 @@ class Server : public InternallyRefCounted<Server>,
   }
   // Returns a notification pointer to wait on if there are requests in-flight,
   // or null.
-  Notification* ShutdownUnrefOnShutdownCall()
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_) GRPC_MUST_USE_RESULT {
+  GRPC_MUST_USE_RESULT Notification* ShutdownUnrefOnShutdownCall()
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_) {
     if (shutdown_refs_.fetch_sub(1, std::memory_order_acq_rel) == 1) {
       // There is no request in-flight.
       MaybeFinishShutdown();
