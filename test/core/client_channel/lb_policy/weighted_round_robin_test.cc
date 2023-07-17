@@ -127,6 +127,8 @@ class WeightedRoundRobinTest : public TimeAwareLoadBalancingPolicyTest {
     EXPECT_EQ(ApplyUpdate(BuildUpdate(update_addresses, config_builder.Build()),
                           lb_policy_.get()),
               absl::OkStatus());
+    // Expect the initial CONNECTNG update with a picker that queues.
+    ExpectConnectingUpdate(location);
     // RR should have created a subchannel for each address.
     for (size_t i = 0; i < addresses.size(); ++i) {
       auto* subchannel = FindSubchannel(addresses[i]);
@@ -140,8 +142,6 @@ class WeightedRoundRobinTest : public TimeAwareLoadBalancingPolicyTest {
           << location.line();
       // The subchannel will connect successfully.
       subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
-      // Expect the initial CONNECTNG update with a picker that queues.
-      if (i == 0) ExpectConnectingUpdate(location);
       subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
     }
     return WaitForConnected(location);
