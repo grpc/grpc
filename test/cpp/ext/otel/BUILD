@@ -17,7 +17,7 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 licenses(["notice"])
 
 grpc_package(
-    name = "test/cpp/ext/filters/otel",
+    name = "test/cpp/ext/otel",
     visibility = "tests",
 )
 
@@ -34,5 +34,10 @@ grpc_cc_test(
     language = "C++",
     tags = [
     ],
-    deps = ["//test/core/util:grpc_test_util"],
+    deps = [
+        "//:grpc++",
+        "//src/cpp/ext/otel:otel_plugin",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/end2end:test_service_impl",
+    ],
 )
