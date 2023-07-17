@@ -18,7 +18,6 @@
 #include <errno.h>
 #include <inttypes.h>
 #include <limits.h>
-#include <sys/socket.h>
 
 #include <algorithm>
 #include <cctype>
@@ -66,10 +65,6 @@
 #include <sys/resource.h>      // IWYU pragma: keep
 #endif
 #include <netinet/in.h>  // IWYU pragma: keep
-
-#ifdef GRPC_HAVE_UNIX_SOCKET
-#include <sys/un.h>  // IWYU pragma: keep
-#endif
 
 #ifndef SOL_TCP
 #define SOL_TCP IPPROTO_TCP
@@ -1258,24 +1253,10 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
   if (local_address.ok()) {
     local_address_ = *local_address;
   }
-
   auto peer_address = sock.PeerAddress();
   if (peer_address.ok()) {
     peer_address_ = *peer_address;
-#ifdef GRPC_HAVE_UNIX_SOCKET
-  } else if (local_address_.address()->sa_family == AF_UNIX) {
-    // If this is a unix domain socket, peer_address may not be populated
-    // depending on whether the remote end called bind.
-    memset(const_cast<sockaddr*>(peer_address_.address()), 0,
-           EventEngine::ResolvedAddress::MAX_SIZE_BYTES);
-    struct sockaddr_un* un = reinterpret_cast<struct sockaddr_un*>(
-        const_cast<sockaddr*>(peer_address_.address()));
-    un->sun_family = AF_UNIX;
-    un->sun_path[0] = '\0';
   }
-#else
-  }
-#endif
   target_length_ = static_cast<double>(options.tcp_read_chunk_size);
   bytes_read_this_round_ = 0;
   min_read_chunk_size_ = options.tcp_min_read_chunk_size;
