@@ -19,7 +19,6 @@
 int main(int /* argc */, char** /* argv */) { return 0; }
 #else  // GRPC_ENABLE_FORK_SUPPORT
 
-#include <pthread.h>
 #include <signal.h>
 
 #include <gtest/gtest.h>
