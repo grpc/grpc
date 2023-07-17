@@ -980,7 +980,6 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/http_proxy.cc \
     src/core/ext/filters/client_channel/lb_policy/address_filtering.cc \
     src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc \
-    src/core/ext/filters/client_channel/lb_policy/endpoint_list.cc \
     src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc \
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc \
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc \
@@ -1878,7 +1877,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/http_proxy.cc \
     src/core/ext/filters/client_channel/lb_policy/address_filtering.cc \
     src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc \
-    src/core/ext/filters/client_channel/lb_policy/endpoint_list.cc \
     src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc \
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc \
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc \
