@@ -1509,6 +1509,7 @@ grpc_cc_library(
         "//:backoff",
         "//:event_engine_base_hdrs",
         "//:gpr",
+        "//:grpc_trace",
     ],
 )
 
