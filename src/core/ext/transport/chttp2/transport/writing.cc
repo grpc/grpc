@@ -157,12 +157,11 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
           now.milliseconds_after_process_epoch());
     }
     if (!t->ping_state.delayed_ping_timer_handle.has_value()) {
-      GRPC_CHTTP2_REF_TRANSPORT(t, "retry_initiate_ping_locked");
-      t->ping_state.delayed_ping_timer_handle =
-          t->event_engine->RunAfter(next_allowed_ping - now, [t] {
+      t->ping_state.delayed_ping_timer_handle = t->event_engine->RunAfter(
+          next_allowed_ping - now, [t = t->Ref()]() mutable {
             grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
             grpc_core::ExecCtx exec_ctx;
-            grpc_chttp2_retry_initiate_ping(t);
+            grpc_chttp2_retry_initiate_ping(std::move(t));
           });
     }
     return;

@@ -30,6 +30,7 @@
 #include "absl/meta/type_traits.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+#include "frame.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
@@ -249,6 +250,19 @@ struct grpc_chttp2_transport : public grpc_core::KeepsGrpcInitialized {
   grpc_chttp2_transport(const grpc_core::ChannelArgs& channel_args,
                         grpc_endpoint* ep, bool is_client);
   ~grpc_chttp2_transport();
+
+  // Make this be able to be contained in RefCountedPtr<>
+  // Can't yet make this derive from RefCounted because we need to keep
+  // `grpc_transport base` first.
+  // TODO(ctiller): Make a transport interface.
+  void IncrementRefCount() { refs.Ref(); }
+  void Unref() {
+    if (refs.Unref()) delete this;
+  }
+  grpc_core::RefCountedPtr<grpc_chttp2_transport> Ref() {
+    IncrementRefCount();
+    return grpc_core::RefCountedPtr<grpc_chttp2_transport>(this);
+  }
 
   grpc_transport base;  // must be first
   grpc_core::RefCount refs;
@@ -487,7 +501,7 @@ struct grpc_chttp2_stream {
   ~grpc_chttp2_stream();
 
   void* context;
-  grpc_chttp2_transport* t;
+  const grpc_core::RefCountedPtr<grpc_chttp2_transport> t;
   grpc_stream_refcount* refcount;
   // Reffer is a 0-len structure, simply reffing `t` and `refcount` in its ctor
   // before initializing the rest of the stream, to avoid cache misses. This
@@ -740,36 +754,6 @@ void grpc_chttp2_stream_ref(grpc_chttp2_stream* s);
 void grpc_chttp2_stream_unref(grpc_chttp2_stream* s);
 #endif
 
-#ifndef NDEBUG
-#define GRPC_CHTTP2_REF_TRANSPORT(t, r) \
-  grpc_chttp2_ref_transport(t, r, __FILE__, __LINE__)
-#define GRPC_CHTTP2_UNREF_TRANSPORT(t, r) \
-  grpc_chttp2_unref_transport(t, r, __FILE__, __LINE__)
-inline void grpc_chttp2_unref_transport(grpc_chttp2_transport* t,
-                                        const char* reason, const char* file,
-                                        int line) {
-  if (t->refs.Unref(grpc_core::DebugLocation(file, line), reason)) {
-    delete t;
-  }
-}
-inline void grpc_chttp2_ref_transport(grpc_chttp2_transport* t,
-                                      const char* reason, const char* file,
-                                      int line) {
-  t->refs.Ref(grpc_core::DebugLocation(file, line), reason);
-}
-#else
-#define GRPC_CHTTP2_REF_TRANSPORT(t, r) grpc_chttp2_ref_transport(t)
-#define GRPC_CHTTP2_UNREF_TRANSPORT(t, r) grpc_chttp2_unref_transport(t)
-inline void grpc_chttp2_unref_transport(grpc_chttp2_transport* t) {
-  if (t->refs.Unref()) {
-    delete t;
-  }
-}
-inline void grpc_chttp2_ref_transport(grpc_chttp2_transport* t) {
-  t->refs.Ref();
-}
-#endif
-
 void grpc_chttp2_ack_ping(grpc_chttp2_transport* t, uint64_t id);
 
 /// Add a new ping strike to ping_recv_state.ping_strikes. If
@@ -810,9 +794,11 @@ void grpc_chttp2_config_default_keepalive_args(grpc_channel_args* args,
 void grpc_chttp2_config_default_keepalive_args(
     const grpc_core::ChannelArgs& channel_args, bool is_client);
 
-void grpc_chttp2_retry_initiate_ping(grpc_chttp2_transport* t);
+void grpc_chttp2_retry_initiate_ping(
+    grpc_core::RefCountedPtr<grpc_chttp2_transport> t);
 
-void schedule_bdp_ping_locked(grpc_chttp2_transport* t);
+void schedule_bdp_ping_locked(
+    grpc_core::RefCountedPtr<grpc_chttp2_transport> t);
 
 uint32_t grpc_chttp2_min_read_progress_size(grpc_chttp2_transport* t);
 
