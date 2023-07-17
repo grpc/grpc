@@ -38,7 +38,6 @@
 #include "absl/types/optional.h"
 
 #include <grpc/impl/channel_arg_names.h>
-#include <grpc/support/json.h>
 
 #define XXH_INLINE_ALL
 #include "xxhash.h"
