@@ -481,6 +481,9 @@ typedef struct {
  * channel arg. Int valued, milliseconds. Defaults to 10 minutes.*/
 #define GRPC_ARG_SERVER_CONFIG_CHANGE_DRAIN_GRACE_TIME_MS \
   "grpc.experimental.server_config_change_drain_grace_time_ms"
+/** Configure the Differentiated Services Code Point used on outgoing packets.
+ *  Integer value ranging from 0 to 63. */
+#define GRPC_ARG_DSCP "grpc.dscp"
 /** \} */
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a

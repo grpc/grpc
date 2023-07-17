@@ -62,14 +62,6 @@ namespace grpc_core {
 
 TraceFlag grpc_lb_pick_first_trace(false, "pick_first");
 
-namespace {
-
-//
-// pick_first LB policy
-//
-
-constexpr absl::string_view kPickFirst = "pick_first";
-
 // TODO(eostroukhov): Remove once this feature is no longer experimental.
 bool ShufflePickFirstEnabled() {
   auto value = GetEnv("GRPC_EXPERIMENTAL_PICKFIRST_LB_CONFIG");
@@ -78,6 +70,14 @@ bool ShufflePickFirstEnabled() {
   bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
   return parse_succeeded && parsed_value;
 }
+
+namespace {
+
+//
+// pick_first LB policy
+//
+
+constexpr absl::string_view kPickFirst = "pick_first";
 
 class PickFirstConfig : public LoadBalancingPolicy::Config {
  public:
@@ -270,7 +270,8 @@ void PickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
   }
   latest_pending_subchannel_list_ = MakeRefCounted<PickFirstSubchannelList>(
       this, std::move(addresses), latest_update_args_.args);
-  latest_pending_subchannel_list_->StartWatchingLocked();
+  latest_pending_subchannel_list_->StartWatchingLocked(
+      latest_update_args_.args);
   // Empty update or no valid subchannels.  Put the channel in
   // TRANSIENT_FAILURE and request re-resolution.
   if (latest_pending_subchannel_list_->num_subchannels() == 0) {
@@ -330,9 +331,9 @@ absl::Status PickFirst::UpdateLocked(UpdateArgs args) {
   if (args.addresses.ok()) {
     ServerAddressList addresses;
     for (const auto& address : *args.addresses) {
-      addresses.emplace_back(address.WithAttribute(
-          DisableOutlierDetectionAttribute::kName,
-          std::make_unique<DisableOutlierDetectionAttribute>()));
+      addresses.emplace_back(
+          address.address(),
+          address.args().Set(GRPC_ARG_OUTLIER_DETECTION_DISABLE, 1));
     }
     args.addresses = std::move(addresses);
   }

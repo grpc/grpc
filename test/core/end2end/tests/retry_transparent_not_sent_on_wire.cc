@@ -148,7 +148,7 @@ CORE_END2END_TEST(RetryTest, RetryTransparentNotSentOnWire) {
         });
   });
   auto c =
-      NewClientCall("/service/method").Timeout(Duration::Seconds(5)).Create();
+      NewClientCall("/service/method").Timeout(Duration::Minutes(1)).Create();
   EXPECT_NE(c.GetPeer(), absl::nullopt);
   // Start a batch containing send ops.
   c.NewBatch(1)

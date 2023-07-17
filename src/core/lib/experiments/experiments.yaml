@@ -57,7 +57,7 @@
   test_tags: ["flow_control_test"]
 - name: memory_pressure_controller
   description: New memory pressure controller
-  expiry: 2023/08/01
+  expiry: 2023/10/01
   owner: ctiller@google.com
   test_tags: [resource_quota_test]
 - name: unconstrained_max_quota_buffer_size
@@ -106,12 +106,12 @@
   test_tags: ["core_end2end_test", "event_engine_listener_test"]
 - name: schedule_cancellation_over_write
   description: Allow cancellation op to be scheduled over a write
-  expiry: 2023/07/01
+  expiry: 2023/10/01
   owner: vigneshbabu@google.com
   test_tags: []
 - name: trace_record_callops
   description: Enables tracing of call batch initiation and completion.
-  expiry: 2023/07/01
+  expiry: 2023/10/01
   owner: vigneshbabu@google.com
   test_tags: []
 - name: event_engine_dns
@@ -147,5 +147,22 @@
     If set, server privacy
   expiry: 2023/11/01
   owner: alishananda@google.com
+  test_tags: []
+  allow_in_fuzzing_config: false
+- name: unique_metadata_strings
+  description:
+    Ensure a unique copy of strings from parsed metadata are taken.
+    The hypothesis here is that ref counting these are causing read buffer
+    lifetimes to be extended leading to memory bloat.
+  expiry: 2023/11/01
+  owner: ctiller@google.com
+  test_tags: ["core_end2end_test"]
+  allow_in_fuzzing_config: true
+- name: keepalive_fix
+  description:
+    Allows overriding keepalive_permit_without_calls.
+    Refer https://github.com/grpc/grpc/pull/33428 for more information.
+  expiry: 2023/09/07
+  owner: yashkt@google.com
   test_tags: []
   allow_in_fuzzing_config: false

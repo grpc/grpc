@@ -24,6 +24,7 @@
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
 
+#include "src/core/lib/channel/call_finalization.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/timer_manager.h"
@@ -52,6 +53,7 @@ class FilterTestBase::Call::Impl
   Arena* arena() { return arena_.get(); }
   grpc_call_context_element* legacy_context() { return legacy_context_; }
   const std::shared_ptr<Channel::Impl>& channel() const { return channel_; }
+  CallFinalization* call_finalization() { return &call_finalization_; }
 
   void Start(ClientMetadataHandle md);
   void ForwardServerInitialMetadata(ServerMetadataHandle md);
@@ -76,6 +78,8 @@ class FilterTestBase::Call::Impl
   std::shared_ptr<Channel::Impl> const channel_;
   ScopedArenaPtr arena_{MakeScopedArena(channel_->initial_arena_size,
                                         &channel_->memory_allocator)};
+  bool run_call_finalization_ = false;
+  CallFinalization call_finalization_;
   absl::optional<ArenaPromise<ServerMetadataHandle>> promise_;
   Poll<ServerMetadataHandle> poll_next_filter_result_;
   Pipe<ServerMetadataHandle> pipe_server_initial_metadata_{arena_.get()};
@@ -104,6 +108,9 @@ class FilterTestBase::Call::Impl
 };
 
 FilterTestBase::Call::Impl::~Impl() {
+  if (!run_call_finalization_) {
+    call_finalization_.Run(nullptr);
+  }
   for (size_t i = 0; i < GRPC_CONTEXT_COUNT; ++i) {
     if (legacy_context_[i].destroy != nullptr) {
       legacy_context_[i].destroy(legacy_context_[i].value);
@@ -264,7 +271,8 @@ bool FilterTestBase::Call::Impl::StepOnce() {
 class FilterTestBase::Call::ScopedContext final
     : public Activity,
       public promise_detail::Context<Arena>,
-      public promise_detail::Context<grpc_call_context_element> {
+      public promise_detail::Context<grpc_call_context_element>,
+      public promise_detail::Context<CallFinalization> {
  private:
   class TestWakeable final : public Wakeable {
    public:
@@ -293,6 +301,7 @@ class FilterTestBase::Call::ScopedContext final
       : promise_detail::Context<Arena>(impl->arena()),
         promise_detail::Context<grpc_call_context_element>(
             impl->legacy_context()),
+        promise_detail::Context<CallFinalization>(impl->call_finalization()),
         impl_(std::move(impl)) {}
 
   void Orphan() override { Crash("Orphan called on Call::ScopedContext"); }
@@ -333,13 +342,15 @@ FilterTestBase::Call::Call(const Channel& channel)
 
 FilterTestBase::Call::~Call() { ScopedContext x(std::move(impl_)); }
 
+Arena* FilterTestBase::Call::arena() { return impl_->arena(); }
+
 ClientMetadataHandle FilterTestBase::Call::NewClientMetadata(
     std::initializer_list<std::pair<absl::string_view, absl::string_view>>
         init) {
   auto md = impl_->arena()->MakePooled<ClientMetadata>(impl_->arena());
   for (auto& p : init) {
     auto parsed = ClientMetadata::Parse(
-        p.first, Slice::FromCopiedString(p.second),
+        p.first, Slice::FromCopiedString(p.second), false,
         p.first.length() + p.second.length() + 32,
         [p](absl::string_view, const Slice&) {
           Crash(absl::StrCat("Illegal metadata value: ", p.first, ": ",
@@ -356,7 +367,7 @@ ServerMetadataHandle FilterTestBase::Call::NewServerMetadata(
   auto md = impl_->arena()->MakePooled<ClientMetadata>(impl_->arena());
   for (auto& p : init) {
     auto parsed = ServerMetadata::Parse(
-        p.first, Slice::FromCopiedString(p.second),
+        p.first, Slice::FromCopiedString(p.second), false,
         p.first.length() + p.second.length() + 32,
         [p](absl::string_view, const Slice&) {
           Crash(absl::StrCat("Illegal metadata value: ", p.first, ": ",

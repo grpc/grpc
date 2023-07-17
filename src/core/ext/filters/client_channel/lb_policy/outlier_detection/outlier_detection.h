@@ -21,9 +21,6 @@
 
 #include <stdint.h>  // for uint32_t
 
-#include <memory>
-#include <string>
-
 #include "absl/types/optional.h"
 
 #include "src/core/lib/gprpp/time.h"
@@ -96,19 +93,8 @@ struct OutlierDetectionConfig {
 // TODO(roth): This is a horrible hack used to disable outlier detection
 // when used with the pick_first policy.  Remove this as part of
 // implementing the dualstack backend design.
-class DisableOutlierDetectionAttribute
-    : public ServerAddress::AttributeInterface {
- public:
-  static const char* kName;
-
-  std::unique_ptr<AttributeInterface> Copy() const override {
-    return std::make_unique<DisableOutlierDetectionAttribute>();
-  }
-
-  int Cmp(const AttributeInterface*) const override { return true; }
-
-  std::string ToString() const override { return "true"; }
-};
+#define GRPC_ARG_OUTLIER_DETECTION_DISABLE \
+  GRPC_ARG_NO_SUBCHANNEL_PREFIX "outlier_detection_disable"
 
 }  // namespace grpc_core
 

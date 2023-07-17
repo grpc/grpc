@@ -32,6 +32,9 @@
 #include <vector>
 
 #include "absl/base/attributes.h"
+#include "absl/container/flat_hash_map.h"
+#include "absl/hash/hash.h"
+#include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
 #include "absl/strings/cord.h"
 #include "absl/strings/str_cat.h"
@@ -58,7 +61,6 @@
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http_trace.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
-#include "src/core/ext/transport/chttp2/transport/stream_map.h"
 #include "src/core/ext/transport/chttp2/transport/varint.h"
 #include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -106,11 +108,7 @@
 #define DEFAULT_MAX_HEADER_LIST_SIZE (16 * 1024)
 #define DEFAULT_MAX_HEADER_LIST_SIZE_SOFT_LIMIT (8 * 1024)
 
-#define DEFAULT_KEEPALIVE_PERMIT_WITHOUT_CALLS false
 #define KEEPALIVE_TIME_BACKOFF_MULTIPLIER 2
-
-#define DEFAULT_MAX_PINGS_BETWEEN_DATA 2
-#define DEFAULT_MAX_PING_STRIKES 2
 
 #define DEFAULT_MAX_PENDING_INDUCED_FRAMES 10000
 
@@ -122,15 +120,13 @@ static grpc_core::Duration g_default_server_keepalive_time =
     grpc_core::Duration::Hours(2);
 static grpc_core::Duration g_default_server_keepalive_timeout =
     grpc_core::Duration::Seconds(20);
-static bool g_default_client_keepalive_permit_without_calls =
-    DEFAULT_KEEPALIVE_PERMIT_WITHOUT_CALLS;
-static bool g_default_server_keepalive_permit_without_calls =
-    DEFAULT_KEEPALIVE_PERMIT_WITHOUT_CALLS;
+static bool g_default_client_keepalive_permit_without_calls = false;
+static bool g_default_server_keepalive_permit_without_calls = false;
 
 static grpc_core::Duration g_default_min_recv_ping_interval_without_data =
     grpc_core::Duration::Minutes(5);
-static int g_default_max_pings_without_data = DEFAULT_MAX_PINGS_BETWEEN_DATA;
-static int g_default_max_ping_strikes = DEFAULT_MAX_PING_STRIKES;
+static int g_default_max_pings_without_data = 2;
+static int g_default_max_ping_strikes = 2;
 
 #define MAX_CLIENT_STREAM_ID 0x7fffffffu
 grpc_core::TraceFlag grpc_keepalive_trace(false, "http_keepalive");
@@ -310,10 +306,7 @@ grpc_chttp2_transport::~grpc_chttp2_transport() {
     GPR_ASSERT(lists[i].tail == nullptr);
   }
 
-  GPR_ASSERT(grpc_chttp2_stream_map_size(&stream_map) == 0);
-
-  grpc_chttp2_stream_map_destroy(&stream_map);
-
+  GPR_ASSERT(stream_map.empty());
   GRPC_COMBINER_UNREF(combiner, "chttp2_transport");
 
   cancel_pings(this, GRPC_ERROR_CREATE("Transport destroyed"));
@@ -378,11 +371,18 @@ static void read_channel_args(grpc_chttp2_transport* t,
       channel_args.GetDurationFromIntMillis(GRPC_ARG_KEEPALIVE_TIMEOUT_MS)
           .value_or(t->is_client ? g_default_client_keepalive_timeout
                                  : g_default_server_keepalive_timeout));
-  t->keepalive_permit_without_calls =
-      channel_args.GetBool(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS)
-          .value_or(t->is_client
-                        ? g_default_client_keepalive_permit_without_calls
-                        : g_default_server_keepalive_permit_without_calls);
+  if (grpc_core::IsKeepaliveFixEnabled()) {
+    t->keepalive_permit_without_calls =
+        channel_args.GetBool(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS)
+            .value_or(t->is_client
+                          ? g_default_client_keepalive_permit_without_calls
+                          : g_default_server_keepalive_permit_without_calls);
+  } else {
+    t->keepalive_permit_without_calls =
+        channel_args.GetBool(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS)
+            .value_or(false);
+  }
+
   // Only send the prefered rx frame size http2 setting if we are instructed
   // to auto size the buffers allocated at tcp level and we also can adjust
   // sending frame size.
@@ -558,12 +558,6 @@ grpc_chttp2_transport::grpc_chttp2_transport(
   GPR_ASSERT(strlen(GRPC_CHTTP2_CLIENT_CONNECT_STRING) ==
              GRPC_CHTTP2_CLIENT_CONNECT_STRLEN);
   base.vtable = get_vtable();
-  // 8 is a random stab in the dark as to a good initial size: it's small enough
-  //   that it shouldn't waste memory for infrequently used connections, yet
-  //   large enough that the exponential growth should happen nicely when it's
-  //   needed.
-  //   TODO(ctiller): tune this
-  grpc_chttp2_stream_map_init(&stream_map, 8);
 
   grpc_slice_buffer_init(&read_buffer);
   grpc_slice_buffer_init(&outbuf);
@@ -770,7 +764,7 @@ grpc_chttp2_stream::grpc_chttp2_stream(grpc_chttp2_transport* t,
               this, id, server_data);
     }
     *t->accepting_stream = this;
-    grpc_chttp2_stream_map_add(&t->stream_map, id, this);
+    t->stream_map.emplace(id, this);
     post_destructive_reclaimer(t);
   }
 
@@ -792,7 +786,7 @@ grpc_chttp2_stream::~grpc_chttp2_stream() {
 
   GPR_ASSERT((write_closed && read_closed) || id == 0);
   if (id != 0) {
-    GPR_ASSERT(grpc_chttp2_stream_map_find(&t->stream_map, id) == nullptr);
+    GPR_ASSERT(t->stream_map.count(id) == 0);
   }
 
   grpc_slice_buffer_destroy(&frame_storage);
@@ -1033,7 +1027,7 @@ static void write_action_end_locked(void* tp, grpc_error_handle error) {
   if (t->sent_goaway_state == GRPC_CHTTP2_FINAL_GOAWAY_SEND_SCHEDULED) {
     t->sent_goaway_state = GRPC_CHTTP2_FINAL_GOAWAY_SENT;
     closed = true;
-    if (grpc_chttp2_stream_map_size(&t->stream_map) == 0) {
+    if (t->stream_map.empty()) {
       close_transport_locked(t, GRPC_ERROR_CREATE("goaway sent"));
     }
   }
@@ -1126,19 +1120,18 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
   if (t->is_client) {
     cancel_unstarted_streams(t, t->goaway_error);
     // Cancel all unseen streams
-    grpc_chttp2_stream_map_for_each(
-        &t->stream_map,
-        [](void* user_data, uint32_t /* key */, void* stream) {
-          uint32_t last_stream_id = *(static_cast<uint32_t*>(user_data));
-          grpc_chttp2_stream* s = static_cast<grpc_chttp2_stream*>(stream);
-          if (s->id > last_stream_id) {
-            s->trailing_metadata_buffer.Set(
-                grpc_core::GrpcStreamNetworkState(),
-                grpc_core::GrpcStreamNetworkState::kNotSeenByServer);
-            grpc_chttp2_cancel_stream(s->t, s, s->t->goaway_error);
-          }
-        },
-        &last_stream_id);
+    std::vector<grpc_chttp2_stream*> to_cancel;
+    for (auto id_stream : t->stream_map) {
+      if (id_stream.first > last_stream_id) {
+        to_cancel.push_back(id_stream.second);
+      }
+    }
+    for (auto s : to_cancel) {
+      s->trailing_metadata_buffer.Set(
+          grpc_core::GrpcStreamNetworkState(),
+          grpc_core::GrpcStreamNetworkState::kNotSeenByServer);
+      grpc_chttp2_cancel_stream(s->t, s, s->t->goaway_error);
+    }
   }
   absl::Status status = grpc_error_to_absl_status(t->goaway_error);
   // When a client receives a GOAWAY with error code ENHANCE_YOUR_CALM and debug
@@ -1182,7 +1175,7 @@ static void maybe_start_some_streams(grpc_chttp2_transport* t) {
   // start streams where we have free grpc_chttp2_stream ids and free
   // * concurrency
   while (t->next_stream_id <= MAX_CLIENT_STREAM_ID &&
-         grpc_chttp2_stream_map_size(&t->stream_map) <
+         t->stream_map.size() <
              t->settings[GRPC_PEER_SETTINGS]
                         [GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS] &&
          grpc_chttp2_list_pop_waiting_for_concurrency(t, &s)) {
@@ -1203,7 +1196,7 @@ static void maybe_start_some_streams(grpc_chttp2_transport* t) {
                              "no_more_stream_ids");
     }
 
-    grpc_chttp2_stream_map_add(&t->stream_map, s->id, s);
+    t->stream_map.emplace(s->id, s);
     post_destructive_reclaimer(t);
     grpc_chttp2_mark_stream_writable(t, s);
     grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_START_NEW_STREAM);
@@ -1605,8 +1598,8 @@ static void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
 }
 
 static void cancel_pings(grpc_chttp2_transport* t, grpc_error_handle error) {
-  GRPC_CHTTP2_IF_TRACING(
-      gpr_log(GPR_INFO, "%p CANCEL PINGS: %s", t, error.ToString().c_str()));
+  GRPC_CHTTP2_IF_TRACING(gpr_log(GPR_INFO, "%p CANCEL PINGS: %s", t,
+                                 grpc_core::StatusToString(error).c_str()));
   // callback remaining pings: they're not allowed to call into the transport,
   //   and maybe they hold resources that need to be freed
   grpc_chttp2_ping_queue* pq = &t->ping_queue;
@@ -2052,15 +2045,14 @@ void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_chttp2_transport* t,
 
 static void remove_stream(grpc_chttp2_transport* t, uint32_t id,
                           grpc_error_handle error) {
-  grpc_chttp2_stream* s = static_cast<grpc_chttp2_stream*>(
-      grpc_chttp2_stream_map_delete(&t->stream_map, id));
+  grpc_chttp2_stream* s = t->stream_map.extract(id).mapped();
   GPR_DEBUG_ASSERT(s);
   if (t->incoming_stream == s) {
     t->incoming_stream = nullptr;
     grpc_chttp2_parsing_become_skip_parser(t);
   }
 
-  if (grpc_chttp2_stream_map_size(&t->stream_map) == 0) {
+  if (t->stream_map.empty()) {
     post_benign_reclaimer(t);
     if (t->sent_goaway_state == GRPC_CHTTP2_FINAL_GOAWAY_SENT) {
       close_transport_locked(
@@ -2199,7 +2191,7 @@ void grpc_chttp2_mark_stream_closed(grpc_chttp2_transport* t,
         (close_reads && close_writes)
             ? "read+write"
             : (close_reads ? "read" : (close_writes ? "write" : "nothing??")),
-        error.ToString().c_str());
+        grpc_core::StatusToString(error).c_str());
   }
   if (s->read_closed && s->write_closed) {
     // already closed, but we should still fake the status if needed.
@@ -2411,17 +2403,6 @@ static void close_from_api(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
   grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_CLOSE_FROM_API);
 }
 
-struct cancel_stream_cb_args {
-  grpc_error_handle error;
-  grpc_chttp2_transport* t;
-};
-
-static void cancel_stream_cb(void* user_data, uint32_t /*key*/, void* stream) {
-  cancel_stream_cb_args* args = static_cast<cancel_stream_cb_args*>(user_data);
-  grpc_chttp2_stream* s = static_cast<grpc_chttp2_stream*>(stream);
-  grpc_chttp2_cancel_stream(args->t, s, args->error);
-}
-
 static void end_all_the_calls(grpc_chttp2_transport* t,
                               grpc_error_handle error) {
   intptr_t http2_error;
@@ -2433,8 +2414,13 @@ static void end_all_the_calls(grpc_chttp2_transport* t,
                                GRPC_STATUS_UNAVAILABLE);
   }
   cancel_unstarted_streams(t, error);
-  cancel_stream_cb_args args = {error, t};
-  grpc_chttp2_stream_map_for_each(&t->stream_map, cancel_stream_cb, &args);
+  std::vector<grpc_chttp2_stream*> to_cancel;
+  for (auto id_stream : t->stream_map) {
+    to_cancel.push_back(id_stream.second);
+  }
+  for (auto s : to_cancel) {
+    grpc_chttp2_cancel_stream(t, s, error);
+  }
 }
 
 //
@@ -2782,8 +2768,7 @@ static void init_keepalive_ping_locked(void* arg,
   if (t->destroying || !t->closed_with_error.ok()) {
     t->keepalive_state = GRPC_CHTTP2_KEEPALIVE_STATE_DYING;
   } else {
-    if (t->keepalive_permit_without_calls ||
-        grpc_chttp2_stream_map_size(&t->stream_map) > 0) {
+    if (t->keepalive_permit_without_calls || !t->stream_map.empty()) {
       t->keepalive_state = GRPC_CHTTP2_KEEPALIVE_STATE_PINGING;
       GRPC_CHTTP2_REF_TRANSPORT(t, "keepalive ping end");
       send_keepalive_ping_locked(t);
@@ -3005,7 +2990,7 @@ static void post_destructive_reclaimer(grpc_chttp2_transport* t) {
 
 static void benign_reclaimer_locked(void* arg, grpc_error_handle error) {
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(arg);
-  if (error.ok() && grpc_chttp2_stream_map_size(&t->stream_map) == 0) {
+  if (error.ok() && t->stream_map.empty()) {
     // Channel with no active streams: send a goaway to try and make it
     // disconnect cleanly
     if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
@@ -3022,7 +3007,7 @@ static void benign_reclaimer_locked(void* arg, grpc_error_handle error) {
             "HTTP2: %s - skip benign reclamation, there are still %" PRIdPTR
             " streams",
             std::string(t->peer_string.as_string_view()).c_str(),
-            grpc_chttp2_stream_map_size(&t->stream_map));
+            t->stream_map.size());
   }
   t->benign_reclaimer_registered = false;
   if (error != absl::CancelledError()) {
@@ -3033,11 +3018,10 @@ static void benign_reclaimer_locked(void* arg, grpc_error_handle error) {
 
 static void destructive_reclaimer_locked(void* arg, grpc_error_handle error) {
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(arg);
-  size_t n = grpc_chttp2_stream_map_size(&t->stream_map);
   t->destructive_reclaimer_registered = false;
-  if (error.ok() && n > 0) {
-    grpc_chttp2_stream* s = static_cast<grpc_chttp2_stream*>(
-        grpc_chttp2_stream_map_rand(&t->stream_map));
+  if (error.ok() && !t->stream_map.empty()) {
+    // As stream_map is a hash map, this selects effectively a random stream.
+    grpc_chttp2_stream* s = t->stream_map.begin()->second;
     if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
       gpr_log(GPR_INFO, "HTTP2: %s - abandon stream id %d",
               std::string(t->peer_string.as_string_view()).c_str(), s->id);
@@ -3047,7 +3031,7 @@ static void destructive_reclaimer_locked(void* arg, grpc_error_handle error) {
         grpc_error_set_int(GRPC_ERROR_CREATE("Buffers full"),
                            grpc_core::StatusIntProperty::kHttp2Error,
                            GRPC_HTTP2_ENHANCE_YOUR_CALM));
-    if (n > 1) {
+    if (!t->stream_map.empty()) {
       // Since we cancel one stream per destructive reclamation, if
       //   there are more streams left, we can immediately post a new
       //   reclaimer in case the resource quota needs to free more

@@ -72,6 +72,8 @@ def _get_external_deps(external_deps):
             ret.append("@com_google_absl//" + dep)
         elif dep.startswith("google/"):
             ret.append("@com_google_googleapis//" + dep)
+        elif dep.startswith("otel/"):
+            ret.append(dep.replace("otel/", "@io_opentelemetry_cpp//"))
         else:
             ret.append("//external:" + dep)
     return ret
@@ -195,6 +197,7 @@ def grpc_cc_library(
         testonly = testonly,
         linkopts = linkopts,
         includes = [
+            "api/include",
             "include",
             "src/core/ext/upb-generated",  # Once upb code-gen issue is resolved, remove this.
             "src/core/ext/upbdefs-generated",  # Once upb code-gen issue is resolved, remove this.

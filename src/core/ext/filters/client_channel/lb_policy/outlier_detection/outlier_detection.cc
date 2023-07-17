@@ -43,14 +43,18 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
+#include "src/core/ext/filters/client_channel/lb_policy/health_check_client_internal.h"
+#include "src/core/ext/filters/client_channel/subchannel_interface_internal.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -68,9 +72,6 @@
 namespace grpc_core {
 
 TraceFlag grpc_outlier_detection_lb_trace(false, "outlier_detection_lb");
-
-const char* DisableOutlierDetectionAttribute::kName =
-    "disable_outlier_detection";
 
 namespace {
 
@@ -124,9 +125,12 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
   class SubchannelWrapper : public DelegatingSubchannel {
    public:
     SubchannelWrapper(RefCountedPtr<SubchannelState> subchannel_state,
-                      RefCountedPtr<SubchannelInterface> subchannel)
+                      RefCountedPtr<SubchannelInterface> subchannel,
+                      bool disable_via_raw_connectivity_watch)
         : DelegatingSubchannel(std::move(subchannel)),
-          subchannel_state_(std::move(subchannel_state)) {
+          subchannel_state_(std::move(subchannel_state)),
+          disable_via_raw_connectivity_watch_(
+              disable_via_raw_connectivity_watch) {
       if (subchannel_state_ != nullptr) {
         subchannel_state_->AddSubchannel(this);
         if (subchannel_state_->ejection_time().has_value()) {
@@ -151,14 +155,27 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
     void CancelConnectivityStateWatch(
         ConnectivityStateWatcherInterface* watcher) override;
 
+    void AddDataWatcher(std::unique_ptr<DataWatcherInterface> watcher) override;
+
     RefCountedPtr<SubchannelState> subchannel_state() const {
       return subchannel_state_;
     }
 
    private:
+    // TODO(roth): As a temporary hack, this needs to handle watchers
+    // stored as both unique_ptr<> and shared_ptr<>, since the former is
+    // used for raw connectivity state watches and the latter is used
+    // for health watches.  This hack will go away as part of implementing
+    // dualstack backend support.
     class WatcherWrapper
         : public SubchannelInterface::ConnectivityStateWatcherInterface {
      public:
+      WatcherWrapper(std::shared_ptr<
+                         SubchannelInterface::ConnectivityStateWatcherInterface>
+                         health_watcher,
+                     bool ejected)
+          : watcher_(std::move(health_watcher)), ejected_(ejected) {}
+
       WatcherWrapper(std::unique_ptr<
                          SubchannelInterface::ConnectivityStateWatcherInterface>
                          watcher,
@@ -168,7 +185,7 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
       void Eject() {
         ejected_ = true;
         if (last_seen_state_.has_value()) {
-          watcher_->OnConnectivityStateChange(
+          watcher()->OnConnectivityStateChange(
               GRPC_CHANNEL_TRANSIENT_FAILURE,
               absl::UnavailableError(
                   "subchannel ejected by outlier detection"));
@@ -178,8 +195,8 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
       void Uneject() {
         ejected_ = false;
         if (last_seen_state_.has_value()) {
-          watcher_->OnConnectivityStateChange(*last_seen_state_,
-                                              last_seen_status_);
+          watcher()->OnConnectivityStateChange(*last_seen_state_,
+                                               last_seen_status_);
         }
       }
 
@@ -194,16 +211,30 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
             status = absl::UnavailableError(
                 "subchannel ejected by outlier detection");
           }
-          watcher_->OnConnectivityStateChange(new_state, status);
+          watcher()->OnConnectivityStateChange(new_state, status);
         }
       }
 
       grpc_pollset_set* interested_parties() override {
-        return watcher_->interested_parties();
+        return watcher()->interested_parties();
       }
 
      private:
-      std::unique_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>
+      SubchannelInterface::ConnectivityStateWatcherInterface* watcher() const {
+        return Match(
+            watcher_,
+            [](const std::shared_ptr<
+                SubchannelInterface::ConnectivityStateWatcherInterface>&
+                   watcher) { return watcher.get(); },
+            [](const std::unique_ptr<
+                SubchannelInterface::ConnectivityStateWatcherInterface>&
+                   watcher) { return watcher.get(); });
+      }
+
+      absl::variant<std::shared_ptr<
+                        SubchannelInterface::ConnectivityStateWatcherInterface>,
+                    std::unique_ptr<
+                        SubchannelInterface::ConnectivityStateWatcherInterface>>
           watcher_;
       absl::optional<grpc_connectivity_state> last_seen_state_;
       absl::Status last_seen_status_;
@@ -211,10 +242,12 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
     };
 
     RefCountedPtr<SubchannelState> subchannel_state_;
+    const bool disable_via_raw_connectivity_watch_;
     bool ejected_ = false;
     std::map<SubchannelInterface::ConnectivityStateWatcherInterface*,
              WatcherWrapper*>
         watchers_;
+    WatcherWrapper* watcher_wrapper_ = nullptr;  // For health watching.
   };
 
   class SubchannelState : public RefCounted<SubchannelState> {
@@ -300,7 +333,7 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
     }
 
     void DisableEjection() {
-      Uneject();
+      if (ejection_time_.has_value()) Uneject();
       multiplier_ = 0;
     }
 
@@ -403,6 +436,7 @@ void OutlierDetectionLb::SubchannelWrapper::Eject() {
     ++it;
     watcher->Eject();
   }
+  if (watcher_wrapper_ != nullptr) watcher_wrapper_->Eject();
 }
 
 void OutlierDetectionLb::SubchannelWrapper::Uneject() {
@@ -410,10 +444,15 @@ void OutlierDetectionLb::SubchannelWrapper::Uneject() {
   for (auto& watcher : watchers_) {
     watcher.second->Uneject();
   }
+  if (watcher_wrapper_ != nullptr) watcher_wrapper_->Uneject();
 }
 
 void OutlierDetectionLb::SubchannelWrapper::WatchConnectivityState(
     std::unique_ptr<ConnectivityStateWatcherInterface> watcher) {
+  if (disable_via_raw_connectivity_watch_) {
+    wrapped_subchannel()->WatchConnectivityState(std::move(watcher));
+    return;
+  }
   ConnectivityStateWatcherInterface* watcher_ptr = watcher.get();
   auto watcher_wrapper =
       std::make_unique<WatcherWrapper>(std::move(watcher), ejected_);
@@ -423,10 +462,27 @@ void OutlierDetectionLb::SubchannelWrapper::WatchConnectivityState(
 
 void OutlierDetectionLb::SubchannelWrapper::CancelConnectivityStateWatch(
     ConnectivityStateWatcherInterface* watcher) {
+  if (disable_via_raw_connectivity_watch_) {
+    wrapped_subchannel()->CancelConnectivityStateWatch(watcher);
+    return;
+  }
   auto it = watchers_.find(watcher);
   if (it == watchers_.end()) return;
   wrapped_subchannel()->CancelConnectivityStateWatch(it->second);
   watchers_.erase(it);
+}
+
+void OutlierDetectionLb::SubchannelWrapper::AddDataWatcher(
+    std::unique_ptr<DataWatcherInterface> watcher) {
+  auto* w = static_cast<InternalSubchannelDataWatcherInterface*>(watcher.get());
+  if (w->type() == HealthProducer::Type()) {
+    auto* health_watcher = static_cast<HealthWatcher*>(watcher.get());
+    auto watcher_wrapper = std::make_shared<WatcherWrapper>(
+        health_watcher->TakeWatcher(), ejected_);
+    watcher_wrapper_ = watcher_wrapper.get();
+    health_watcher->SetWatcher(std::move(watcher_wrapper));
+  }
+  DelegatingSubchannel::AddDataWatcher(std::move(watcher));
 }
 
 //
@@ -542,16 +598,6 @@ OutlierDetectionLb::~OutlierDetectionLb() {
 
 std::string OutlierDetectionLb::MakeKeyForAddress(
     const ServerAddress& address) {
-  // If the address has the DisableOutlierDetectionAttribute attribute,
-  // ignore it.
-  // TODO(roth): This is a hack to prevent outlier_detection from
-  // working with pick_first, as per discussion in
-  // https://github.com/grpc/grpc/issues/32967.  Remove this as part of
-  // implementing dualstack backend support.
-  if (address.GetAttribute(DisableOutlierDetectionAttribute::kName) !=
-      nullptr) {
-    return "";
-  }
   // Use only the address, not the attributes.
   auto addr_str = grpc_sockaddr_to_string(&address.address(), false);
   // If address couldn't be stringified, ignore it.
@@ -731,12 +777,22 @@ OrphanablePtr<LoadBalancingPolicy> OutlierDetectionLb::CreateChildPolicyLocked(
 RefCountedPtr<SubchannelInterface> OutlierDetectionLb::Helper::CreateSubchannel(
     ServerAddress address, const ChannelArgs& args) {
   if (parent()->shutting_down_) return nullptr;
+  // If the address has the DisableOutlierDetectionAttribute attribute,
+  // ignore it for raw connectivity state updates.
+  // TODO(roth): This is a hack to prevent outlier_detection from
+  // working with pick_first, as per discussion in
+  // https://github.com/grpc/grpc/issues/32967.  Remove this as part of
+  // implementing dualstack backend support.
+  const bool disable_via_raw_connectivity_watch =
+      address.args().GetInt(GRPC_ARG_OUTLIER_DETECTION_DISABLE) == 1;
   RefCountedPtr<SubchannelState> subchannel_state;
   std::string key = MakeKeyForAddress(address);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
     gpr_log(GPR_INFO,
-            "[outlier_detection_lb %p] using key %s for subchannel address %s",
-            parent(), key.c_str(), address.ToString().c_str());
+            "[outlier_detection_lb %p] using key %s for subchannel "
+            "address %s, disable_via_raw_connectivity_watch=%d",
+            parent(), key.c_str(), address.ToString().c_str(),
+            disable_via_raw_connectivity_watch);
   }
   if (!key.empty()) {
     auto it = parent()->subchannel_state_map_.find(key);
@@ -745,8 +801,10 @@ RefCountedPtr<SubchannelInterface> OutlierDetectionLb::Helper::CreateSubchannel(
     }
   }
   auto subchannel = MakeRefCounted<SubchannelWrapper>(
-      subchannel_state, parent()->channel_control_helper()->CreateSubchannel(
-                            std::move(address), args));
+      subchannel_state,
+      parent()->channel_control_helper()->CreateSubchannel(std::move(address),
+                                                           args),
+      disable_via_raw_connectivity_watch);
   if (subchannel_state != nullptr) {
     subchannel_state->AddSubchannel(subchannel.get());
   }
