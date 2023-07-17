@@ -200,9 +200,17 @@ EventEngineClientChannelDNSResolver::EventEngineClientChannelDNSResolver(
       event_engine_(channel_args().GetObjectRef<EventEngine>()) {}
 
 OrphanablePtr<Orphanable> EventEngineClientChannelDNSResolver::StartRequest() {
+  auto dns_resolver =
+      event_engine_->GetDNSResolver({/*dns_server=*/authority()});
+  if (!dns_resolver.ok()) {
+    Result result;
+    result.addresses = dns_resolver.status();
+    result.service_config = dns_resolver.status();
+    OnRequestComplete(std::move(result));
+    return nullptr;
+  }
   return MakeOrphanable<EventEngineDNSRequestWrapper>(
-      Ref(DEBUG_LOCATION, "dns-resolving"),
-      event_engine_->GetDNSResolver({/*dns_server=*/authority()}));
+      Ref(DEBUG_LOCATION, "dns-resolving"), std::move(*dns_resolver));
 }
 
 // ----------------------------------------------------------------------------
