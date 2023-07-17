@@ -99,6 +99,7 @@ swift_rules_dependencies()
 # This loads the libpfm transitive dependency.
 # See https://github.com/google/benchmark/pull/1520
 load("@com_github_google_benchmark//:bazel/benchmark_deps.bzl", "benchmark_deps")
+
 benchmark_deps()
 
 # TODO: Enable below once https://github.com/bazel-xcode/PodToBUILD/issues/232 is resolved
@@ -119,4 +120,3 @@ benchmark_deps()
 #    podspec_url = "https://raw.githubusercontent.com/CocoaPods/Specs/master/Specs/2/e/1/CronetFramework/0.0.5/CronetFramework.podspec.json",
 #    url = "https://storage.googleapis.com/grpc-precompiled-binaries/cronet/Cronet.framework-v0.0.5.zip",
 #)
-
