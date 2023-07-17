@@ -591,7 +591,7 @@ typedef unsigned __int64 uint64_t;
 #if defined(__GNUC__) && !defined(__MINGW32__)
 #define GPR_ALIGN_STRUCT(n) __attribute__((aligned(n)))
 #else
-#define GRPC_MUST_USE_RESULT
+#define GPR_ALIGN_STRUCT(n)
 #endif
 
 #ifndef GRPC_MUST_USE_RESULT
