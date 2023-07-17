@@ -233,8 +233,9 @@ static int poll_deadline_to_millis_timeout(grpc_core::Timestamp deadline);
 #define GRPC_POLLSET_REEVALUATE_POLLING_ON_WAKEUP 2
 // As per pollset_kick, with an extended set of flags (defined above)
 // -- mostly for fd_posix's use.
-static grpc_error_handle pollset_kick_ext(
-    grpc_pollset* p, grpc_pollset_worker* specific_worker, uint32_t flags);
+static grpc_error_handle pollset_kick_ext(grpc_pollset* p,
+                                          grpc_pollset_worker* specific_worker,
+                                          uint32_t flags);
 
 // Return 1 if the pollset has active threads in pollset_work (pollset must
 // be locked)
