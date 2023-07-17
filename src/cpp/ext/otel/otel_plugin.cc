@@ -52,6 +52,7 @@ const struct OTelPluginState& OTelPluginState() {
 void RegisterOpenTelemetryPlugin() {
   auto meter_provider = opentelemetry::metrics::Provider::GetMeterProvider();
   auto meter = meter_provider->GetMeter("grpc");
+  delete g_otel_plugin_state_;
   g_otel_plugin_state_ = new struct OTelPluginState;
   g_otel_plugin_state_->client.attempt.started =
       meter->CreateUInt64Counter("grpc.client.attempt.started");
