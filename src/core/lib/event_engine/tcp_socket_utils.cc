@@ -124,7 +124,7 @@ absl::StatusOr<std::string> ResolvedAddrToUriUnixIfPossible(
   GRPC_RETURN_IF_ERROR(path.status());
   std::string scheme;
   std::string path_string;
-  if (path->at(0) == '\0' && path->length() > 1) {
+  if (!path->empty() && path->at(0) == '\0' && path->length() > 1) {
     scheme = "unix-abstract";
     path_string = path->substr(1, std::string::npos);
   } else {
