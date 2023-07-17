@@ -30,8 +30,6 @@
 
 #include <grpc/support/log.h>
 
-#include "src/core/lib/debug/trace.h"
-#include "src/core/lib/event_engine/forkable.h"
 #include "src/core/lib/event_engine/thread_local.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/gprpp/time.h"
@@ -239,20 +237,13 @@ void OriginalThreadPool::ThreadCount::BlockUntilThreadCount(int threads,
 }
 
 void OriginalThreadPool::PrepareFork() {
-  GRPC_FORK_TRACE_LOG("ThreadPool::%p PrepareFork", this);
   state_->queue.SetForking(true);
   state_->thread_count.BlockUntilThreadCount(0, "forking");
 }
 
-void OriginalThreadPool::PostforkParent() {
-  GRPC_FORK_TRACE_LOG("ThreadPool::%p Postfork", this);
-  Postfork();
-}
+void OriginalThreadPool::PostforkParent() { Postfork(); }
 
-void OriginalThreadPool::PostforkChild() {
-  GRPC_FORK_TRACE_LOG("ThreadPool::%p Postfork", this);
-  Postfork();
-}
+void OriginalThreadPool::PostforkChild() { Postfork(); }
 
 void OriginalThreadPool::Postfork() {
   state_->queue.SetForking(false);

@@ -29,11 +29,8 @@
 #include "absl/base/thread_annotations.h"
 
 #include "src/core/lib/config/config_vars.h"
-#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/sync.h"
-
-grpc_core::TraceFlag grpc_trace_fork(false, "fork");
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -61,47 +58,37 @@ void RegisterForkHandlers() {
     grpc_core::MutexLock lock(g_mu.get());
     if (!std::exchange(g_registered, true)) {
 #ifdef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
-      GRPC_FORK_TRACE_LOG_STRING("RegisterForkHandlers");
       pthread_atfork(PrepareFork, PostforkParent, PostforkChild);
 #endif
     }
   }
-}
+};
 
 void PrepareFork() {
-  GRPC_FORK_TRACE_LOG_STRING("PrepareFork");
   if (IsForkEnabled()) {
     grpc_core::MutexLock lock(g_mu.get());
     for (auto forkable_iter = g_forkables->rbegin();
          forkable_iter != g_forkables->rend(); ++forkable_iter) {
-      GRPC_FORK_TRACE_LOG("Calling PrepareFork for forkable::%p",
-                          *forkable_iter);
       (*forkable_iter)->PrepareFork();
     }
   }
-  GRPC_FORK_TRACE_LOG_STRING("PrepareFork finished");
 }
-
 void PostforkParent() {
   if (IsForkEnabled()) {
     grpc_core::MutexLock lock(g_mu.get());
     for (auto* forkable : *g_forkables) {
-      GRPC_FORK_TRACE_LOG("Calling PostforkParent for forkable::%p", forkable);
       forkable->PostforkParent();
     }
   }
-  GRPC_FORK_TRACE_LOG_STRING("PostforkParent finished");
 }
 
 void PostforkChild() {
   if (IsForkEnabled()) {
     grpc_core::MutexLock lock(g_mu.get());
     for (auto* forkable : *g_forkables) {
-      GRPC_FORK_TRACE_LOG("Calling PostforkChild for forkable::%p", forkable);
       forkable->PostforkChild();
     }
   }
-  GRPC_FORK_TRACE_LOG_STRING("PostforkChild finished");
 }
 
 void ManageForkable(Forkable* forkable) {

@@ -1380,7 +1380,6 @@ grpc_cc_library(
         "//:config_vars",
         "//:gpr",
         "//:gpr_platform",
-        "//:grpc_trace",
     ],
 )
 

@@ -165,18 +165,9 @@ void TimerManager::RestartPostFork() {
   StartMainLoopThread();
 }
 
-void TimerManager::PrepareFork() {
-  GRPC_FORK_TRACE_LOG("TimerManager::%p PrepareFork", this);
-  Shutdown();
-}
-void TimerManager::PostforkParent() {
-  GRPC_FORK_TRACE_LOG("TimerManager::%p PostforkParent", this);
-  RestartPostFork();
-}
-void TimerManager::PostforkChild() {
-  GRPC_FORK_TRACE_LOG("TimerManager::%p PostforkChild", this);
-  RestartPostFork();
-}
+void TimerManager::PrepareFork() { Shutdown(); }
+void TimerManager::PostforkParent() { RestartPostFork(); }
+void TimerManager::PostforkChild() { RestartPostFork(); }
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

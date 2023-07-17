@@ -12303,7 +12303,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(forkable_test
-  src/core/lib/debug/trace.cc
   src/core/lib/event_engine/forkable.cc
   test/core/event_engine/forkable_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -12334,7 +12333,6 @@ target_link_libraries(forkable_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::statusor
   gpr
 )
 

@@ -16,21 +16,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/support/log.h>
-
-#include "src/core/lib/debug/trace.h"
-
-extern grpc_core::TraceFlag grpc_trace_fork;
-
-#define GRPC_FORK_TRACE_LOG(format, ...)                 \
-  do {                                                   \
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_fork)) {      \
-      gpr_log(GPR_DEBUG, "[fork] " format, __VA_ARGS__); \
-    }                                                    \
-  } while (0)
-
-#define GRPC_FORK_TRACE_LOG_STRING(format) GRPC_FORK_TRACE_LOG("%s", format)
-
 namespace grpc_event_engine {
 namespace experimental {
 
