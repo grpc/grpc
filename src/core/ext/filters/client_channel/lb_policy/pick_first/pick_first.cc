@@ -134,8 +134,12 @@ class PickFirst : public LoadBalancingPolicy {
         absl::optional<grpc_connectivity_state> old_state,
         grpc_connectivity_state new_state) override;
 
+   private:
     // Processes the connectivity change to READY for an unselected subchannel.
     void ProcessUnselectedReadyLocked();
+
+    // Reacts to the current connectivity state while trying to connect.
+    void ReactToConnectivityStateLocked();
   };
 
   class PickFirstSubchannelList
@@ -434,20 +438,26 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
   }
   // If this is the initial connectivity state notification for this
   // subchannel, check to see if it's the last one we were waiting for,
-  // in which case we start trying to connect to the first subchannel.
-  // Otherwise, do nothing, since we'll continue to wait until all of
-  // the subchannels report their state.
+  // in which case we start trying to connect, starting with the first
+  // subchannel.  Otherwise, do nothing, since we'll continue to wait
+  // until all of the subchannels report their state.
   if (!old_state.has_value()) {
     if (subchannel_list()->AllSubchannelsSeenInitialState()) {
-      subchannel_list()->subchannel(0)->subchannel()->RequestConnection();
+      subchannel_list()->subchannel(0)->ReactToConnectivityStateLocked();
     }
     return;
   }
   // Ignore any other updates for subchannels we're not currently trying to
   // connect to.
   if (Index() != subchannel_list()->attempting_index()) return;
+  // React to the connectivity state.
+  ReactToConnectivityStateLocked();
+}
+
+void PickFirst::PickFirstSubchannelData::ReactToConnectivityStateLocked() {
+  PickFirst* p = static_cast<PickFirst*>(subchannel_list()->policy());
   // Otherwise, process connectivity state.
-  switch (new_state) {
+  switch (connectivity_state().value()) {
     case GRPC_CHANNEL_READY:
       // Already handled this case above, so this should not happen.
       GPR_UNREACHABLE_CODE(break);
@@ -491,23 +501,14 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
               MakeRefCounted<TransientFailurePicker>(status));
         }
       }
-      // If the next subchannel is in IDLE, trigger a connection attempt.
-      // If it's in READY, we can't get here, because we would already
-      // have selected the subchannel above.
-      // If it's already in CONNECTING, we don't need to do this.
-      // If it's in TRANSIENT_FAILURE, then we will trigger the
-      // connection attempt later when it reports IDLE.
-      auto sd_state = sd->connectivity_state();
-      if (sd_state.has_value() && *sd_state == GRPC_CHANNEL_IDLE) {
-        sd->subchannel()->RequestConnection();
-      }
+      // Trigger the right behavior for the next subchannel in the list.
+      sd->ReactToConnectivityStateLocked();
       break;
     }
-    case GRPC_CHANNEL_IDLE: {
+    case GRPC_CHANNEL_IDLE:
       subchannel()->RequestConnection();
       break;
-    }
-    case GRPC_CHANNEL_CONNECTING: {
+    case GRPC_CHANNEL_CONNECTING:
       // Only update connectivity state in case 1, and only if we're not
       // already in TRANSIENT_FAILURE.
       if (subchannel_list() == p->subchannel_list_.get() &&
@@ -517,7 +518,6 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
             MakeRefCounted<QueuePicker>(p->Ref(DEBUG_LOCATION, "QueuePicker")));
       }
       break;
-    }
     case GRPC_CHANNEL_SHUTDOWN:
       GPR_UNREACHABLE_CODE(break);
   }

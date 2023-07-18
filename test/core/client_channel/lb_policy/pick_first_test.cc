@@ -210,6 +210,54 @@ TEST_F(PickFirstTest, FirstAddressFails) {
   }
 }
 
+TEST_F(PickFirstTest, FirstTwoAddressesInTransientFailureAtStart) {
+  // Send an update containing three addresses.
+  // The first two addresses are already in state TRANSIENT_FAILURE when the
+  // LB policy gets the update.
+  constexpr std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444", "ipv4:127.0.0.1:445"};
+  auto* subchannel = CreateSubchannel(
+      kAddresses[0], ChannelArgs().Set(GRPC_ARG_INHIBIT_HEALTH_CHECKING, true));
+  subchannel->SetConnectivityState(
+      GRPC_CHANNEL_TRANSIENT_FAILURE,
+      absl::UnavailableError("failed to connect"),
+      /*validate_state_transition=*/false);
+  auto* subchannel2 = CreateSubchannel(
+      kAddresses[1], ChannelArgs().Set(GRPC_ARG_INHIBIT_HEALTH_CHECKING, true));
+  subchannel2->SetConnectivityState(
+      GRPC_CHANNEL_TRANSIENT_FAILURE,
+      absl::UnavailableError("failed to connect"),
+      /*validate_state_transition=*/false);
+  absl::Status status = ApplyUpdate(
+      BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy_.get());
+  EXPECT_TRUE(status.ok()) << status;
+  // LB policy should have created a subchannel for all addresses with
+  // the GRPC_ARG_INHIBIT_HEALTH_CHECKING channel arg.
+  auto* subchannel3 = FindSubchannel(
+      kAddresses[2], ChannelArgs().Set(GRPC_ARG_INHIBIT_HEALTH_CHECKING, true));
+  ASSERT_NE(subchannel3, nullptr);
+  // When the LB policy receives the first subchannel's initial connectivity
+  // state notification (TRANSIENT_FAILURE), it will move on to the second
+  // subchannel.  The second subchannel is in state IDLE, so the LB
+  // policy will request a connection attempt on it.
+  EXPECT_TRUE(subchannel3->ConnectionRequested());
+  // This causes the subchannel to start to connect, so it reports
+  // CONNECTING.
+  subchannel3->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  // LB policy should have reported CONNECTING state.
+  ExpectConnectingUpdate();
+  // The connection attempt succeeds.
+  subchannel3->SetConnectivityState(GRPC_CHANNEL_READY);
+  // The LB policy will report CONNECTING some number of times (doesn't
+  // matter how many) and then report READY.
+  auto picker = WaitForConnected();
+  ASSERT_NE(picker, nullptr);
+  // Picker should return the same subchannel repeatedly.
+  for (size_t i = 0; i < 3; ++i) {
+    EXPECT_EQ(ExpectPickComplete(picker.get()), kAddresses[2]);
+  }
+}
+
 TEST_F(PickFirstTest, GoesIdleWhenConnectionFailsThenCanReconnect) {
   // Send an update containing two addresses.
   constexpr std::array<absl::string_view, 2> kAddresses = {
