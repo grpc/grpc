@@ -661,12 +661,10 @@ void ssl_tsi_test_do_handshake_with_large_server_handshake_messages(
   fixture->handshake_buffer_size = 18000;
   ssl_tsi_test_fixture* ssl_fixture =
       reinterpret_cast<ssl_tsi_test_fixture*>(fixture);
-
   // Make a copy of the root cert and free the original.
   std::string root_cert(ssl_fixture->key_cert_lib->root_cert);
   gpr_free(ssl_fixture->key_cert_lib->root_cert);
   ssl_fixture->key_cert_lib->root_cert = nullptr;
-
   // Create a new root store, consisting of the root cert that is actually
   // needed and 200 self-signed certs.
   std::string effective_trust_bundle = absl::StrCat(root_cert, trust_bundle);
@@ -677,7 +675,6 @@ void ssl_tsi_test_do_handshake_with_large_server_handshake_messages(
       tsi_ssl_root_certs_store_create(effective_trust_bundle.c_str());
   ssl_fixture->key_cert_lib->use_root_store = true;
   ssl_fixture->force_client_auth = true;
-
   tsi_test_do_handshake(fixture);
   // Overwrite the root_cert pointer so that tsi_test_fixture_destroy does not
   // try to gpr_free it.

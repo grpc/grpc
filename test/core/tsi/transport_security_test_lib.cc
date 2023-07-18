@@ -691,11 +691,9 @@ std::string GenerateSelfSignedCertificate(
       RSA_generate_key_ex(rsa, /*key_size=*/2048, bignum, /*cb=*/nullptr));
   EVP_PKEY* key = EVP_PKEY_new();
   GPR_ASSERT(EVP_PKEY_assign_RSA(key, rsa));
-
   // Create the X509 object.
   X509* x509 = X509_new();
   GPR_ASSERT(X509_set_version(x509, X509_VERSION_3));
-
   // Set the not_before/after fields to infinite past/future. The value for
   // infinite future is from RFC 5280 Section 4.1.2.5.1.
   ASN1_UTCTIME* infinite_past = ASN1_UTCTIME_new();
@@ -707,7 +705,6 @@ std::string GenerateSelfSignedCertificate(
       ASN1_GENERALIZEDTIME_set_string(infinite_future, "99991231235959Z"));
   GPR_ASSERT(X509_set1_notAfter(x509, infinite_future));
   ASN1_GENERALIZEDTIME_free(infinite_future);
-
   // Set the subject DN.
   X509_NAME* subject_name = X509_NAME_new();
   GPR_ASSERT(X509_NAME_add_entry_by_txt(
@@ -728,11 +725,9 @@ std::string GenerateSelfSignedCertificate(
                                  /*set=*/0));
   GPR_ASSERT(X509_set_subject_name(x509, subject_name));
   X509_NAME_free(subject_name);
-
   // Set the public key and sign the certificate.
   GPR_ASSERT(X509_set_pubkey(x509, key));
   GPR_ASSERT(X509_sign(x509, key, EVP_sha256()));
-
   // Convert to PEM.
   BIO* bio = BIO_new(BIO_s_mem());
   GPR_ASSERT(PEM_write_bio_X509(bio, x509));
@@ -740,7 +735,6 @@ std::string GenerateSelfSignedCertificate(
   size_t len = 0;
   GPR_ASSERT(BIO_mem_contents(bio, &data, &len));
   std::string pem = std::string(reinterpret_cast<const char*>(data), len);
-
   // Cleanup all of the OpenSSL objects and return the PEM-encoded cert.
   EVP_PKEY_free(key);
   X509_free(x509);
