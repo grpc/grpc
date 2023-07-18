@@ -43,7 +43,7 @@ _FOLLOW = flags.DEFINE_bool(
         " --debug_use_port_forwarding"
     ),
 )
-_CONFIG_MESH = flags.DEFINE_bool(
+_CONFIG_MESH = flags.DEFINE_string(
     "config_mesh",
     default=None,
     help="Optional. Supplied to bootstrap generator to indicate AppNet mesh.",
@@ -100,7 +100,9 @@ def main(argv):
     # Setup.
     gcp_api_manager = gcp.api.GcpApiManager()
     k8s_api_manager = k8s.KubernetesApiManager(xds_k8s_flags.KUBE_CONTEXT.value)
-    client_namespace = common.make_client_namespace(k8s_api_manager)
+    client_namespace = common.make_client_namespace(
+        k8s_api_manager, "sergiitk-server-dev"
+    )
     client_runner = common.make_client_runner(
         client_namespace,
         gcp_api_manager,
@@ -113,6 +115,7 @@ def main(argv):
     server_xds_host = xds_flags.SERVER_XDS_HOST.value
 
     server_xds_port = xds_flags.SERVER_XDS_PORT.value
+    # server_target = f"xds:///{server_xds_host}.sergiitk-server-dev"
     server_target = f"xds:///{server_xds_host}"
     if server_xds_port != 80:
         server_target = f"{server_target}:{server_xds_port}"
