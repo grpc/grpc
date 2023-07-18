@@ -3142,9 +3142,10 @@ void grpc_chttp2_transport_start_reading(
     grpc_slice_buffer_move_into(read_buffer, &t->read_buffer);
     gpr_free(read_buffer);
   }
-  t->combiner->Run(
-      grpc_core::NewClosure([t, notify_on_receive_settings,
-                             notify_on_close](grpc_error_handle) {
+  auto* tp = t.get();
+  tp->combiner->Run(
+      grpc_core::NewClosure([t = std::move(t), notify_on_receive_settings,
+                             notify_on_close](grpc_error_handle) mutable {
         if (!t->closed_with_error.ok()) {
           if (notify_on_receive_settings != nullptr) {
             grpc_core::ExecCtx::Run(DEBUG_LOCATION, notify_on_receive_settings,
@@ -3158,7 +3159,7 @@ void grpc_chttp2_transport_start_reading(
         }
         t->notify_on_receive_settings = notify_on_receive_settings;
         t->notify_on_close = notify_on_close;
-        read_action_locked(t.get(), absl::OkStatus());
+        read_action_locked(t.release(), absl::OkStatus());
       }),
       absl::OkStatus());
 }
