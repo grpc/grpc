@@ -23,11 +23,15 @@
 
 #include <stdint.h>
 
+#include <memory>
+#include <string>
 #include <vector>
 
+#include "absl/functional/function_ref.h"
+
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_parse_result.h"
 #include "src/core/lib/gprpp/no_destruct.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/parsed_metadata.h"
 
@@ -43,9 +47,13 @@ class HPackTable {
   HPackTable& operator=(const HPackTable&) = delete;
 
   void SetMaxBytes(uint32_t max_bytes);
-  grpc_error_handle SetCurrentTableSize(uint32_t bytes);
+  bool SetCurrentTableSize(uint32_t bytes);
+  uint32_t current_table_size() { return current_table_bytes_; }
 
-  using Memento = ParsedMetadata<grpc_metadata_batch>;
+  struct Memento {
+    ParsedMetadata<grpc_metadata_batch> md;
+    std::unique_ptr<HpackParseResult> parse_status;
+  };
 
   // Lookup, but don't ref.
   const Memento* Lookup(uint32_t index) const {
@@ -63,10 +71,21 @@ class HPackTable {
   }
 
   // add a table entry to the index
-  grpc_error_handle Add(Memento md) GRPC_MUST_USE_RESULT;
+  bool Add(Memento md) GRPC_MUST_USE_RESULT;
+  void AddLargerThanCurrentTableSize();
 
   // Current entry count in the table.
   uint32_t num_entries() const { return entries_.num_entries(); }
+
+  // Current size of the table.
+  uint32_t test_only_table_size() const { return mem_used_; }
+
+  // Maximum allowed size of the table currently
+  uint32_t max_bytes() const { return max_bytes_; }
+  uint32_t current_table_bytes() const { return current_table_bytes_; }
+
+  // Dynamic table entries, stringified
+  std::string TestOnlyDynamicTableAsString() const;
 
  private:
   struct StaticMementos {
@@ -89,6 +108,9 @@ class HPackTable {
 
     // Lookup the entry at index, or return nullptr if none exists.
     const Memento* Lookup(uint32_t index) const;
+
+    void ForEach(absl::FunctionRef<void(uint32_t dynamic_index, const Memento&)>
+                     f) const;
 
     uint32_t max_entries() const { return max_entries_; }
     uint32_t num_entries() const { return num_entries_; }

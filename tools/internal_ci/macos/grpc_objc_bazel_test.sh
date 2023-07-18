@@ -56,10 +56,12 @@ TEST_TARGETS=(
   //src/objective-c/tests:InteropTestsRemote
   //src/objective-c/tests:MacTests
   //src/objective-c/tests:UnitTests
-  //src/objective-c/tests:CppCronetTests
-  //src/objective-c/tests:CronetTests
-  //src/objective-c/tests:PerfTests
+  # TODO: Enable this again once @CronetFramework is working
+  #//src/objective-c/tests:CppCronetTests
+  #//src/objective-c/tests:CronetTests
+  #//src/objective-c/tests:PerfTests
   //src/objective-c/tests:CFStreamTests
+  //src/objective-c/tests:EventEngineTests
   //src/objective-c/tests:tvtests_build_test
   # codegen plugin tests
   //src/objective-c/tests:objc_codegen_plugin_test
@@ -113,6 +115,36 @@ objc_bazel_tests/bazel_wrapper \
   --google_credentials="${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json" \
   "${BAZEL_REMOTE_CACHE_ARGS[@]}" \
   $BAZEL_FLAGS \
+  "${OBJC_TEST_ENV_ARGS[@]}" \
+  -- \
+  "${EXAMPLE_TARGETS[@]}" \
+  "${TEST_TARGETS[@]}"
+
+
+# Enable event engine and run tests again.
+TEST_TARGETS=(
+  //src/objective-c/tests:InteropTestsLocalCleartext
+  //src/objective-c/tests:InteropTestsLocalSSL
+  //src/objective-c/tests:InteropTestsRemote
+  //src/objective-c/tests:MacTests
+  //src/objective-c/tests:UnitTests
+  //src/objective-c/tests:tvtests_build_test
+  # codegen plugin tests
+  //src/objective-c/tests:objc_codegen_plugin_test
+  //src/objective-c/tests:objc_codegen_plugin_option_test
+)
+
+python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path objc_event_engine_bazel_tests
+
+objc_event_engine_bazel_tests/bazel_wrapper \
+  --bazelrc=tools/remote_build/include/test_locally_with_resultstore_results.bazelrc \
+  test \
+  --google_credentials="${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json" \
+  "${BAZEL_REMOTE_CACHE_ARGS[@]}" \
+  $BAZEL_FLAGS \
+  --cxxopt=-DGRPC_IOS_EVENT_ENGINE_CLIENT=1 \
+  --test_env=GRPC_EXPERIMENTS=event_engine_client \
+  --test_env=GRPC_VERBOSITY=debug --test_env=GRPC_TRACE=event_engine,api \
   "${OBJC_TEST_ENV_ARGS[@]}" \
   -- \
   "${EXAMPLE_TARGETS[@]}" \

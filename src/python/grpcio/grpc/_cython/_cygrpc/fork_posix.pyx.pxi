@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 
 _AWAIT_THREADS_TIMEOUT_SECONDS = 5
 
@@ -90,7 +91,9 @@ def fork_handlers_and_grpc_init():
     if _GRPC_ENABLE_FORK_SUPPORT:
         with _fork_state.fork_handler_registered_lock:
             if not _fork_state.fork_handler_registered:
-                pthread_atfork(&__prefork, &__postfork_parent, &__postfork_child)
+                os.register_at_fork(before=__prefork,
+                                    after_in_parent=__postfork_parent,
+                                    after_in_child=__postfork_child)
                 _fork_state.fork_handler_registered = True
 
 

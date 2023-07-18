@@ -36,11 +36,10 @@ lang/php:
 - src/php/**
 
 lang/python:
-- any:
-  - bazel/python_rules.bzl
-  - examples/python/**
-  - requirements.bazel.txt
-  - src/compiler/python*
+- bazel/python_rules.bzl
+- examples/python/**
+- requirements.bazel.txt
+- src/compiler/python*
 - any:
   - src/python/**
   - "!src/python/grpcio/grpc_core_dependencies.py"

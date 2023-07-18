@@ -28,7 +28,9 @@
 
 #include <memory>
 
-#include "upb/upb.h"
+#include "upb/base/descriptor_constants.h"
+#include "upb/base/status.h"
+#include "upb/mem/arena.h"
 
 namespace upb {
 
@@ -73,26 +75,11 @@ class Arena {
       : ptr_(upb_Arena_Init(initial_block, size, &upb_alloc_global),
              upb_Arena_Free) {}
 
-  upb_Arena* ptr() { return ptr_.get(); }
-
-  // Allows this arena to be used as a generic allocator.
-  //
-  // The arena does not need free() calls so when using Arena as an allocator
-  // it is safe to skip them.  However they are no-ops so there is no harm in
-  // calling free() either.
-  upb_alloc* allocator() { return upb_Arena_Alloc(ptr_.get()); }
-
-  // Add a cleanup function to run when the arena is destroyed.
-  // Returns false on out-of-memory.
-  template <class T>
-  bool Own(T* obj) {
-    return upb_Arena_AddCleanup(ptr_.get(), obj,
-                                [](void* obj) { delete static_cast<T*>(obj); });
-  }
+  upb_Arena* ptr() const { return ptr_.get(); }
 
   void Fuse(Arena& other) { upb_Arena_Fuse(ptr(), other.ptr()); }
 
- private:
+ protected:
   std::unique_ptr<upb_Arena, decltype(&upb_Arena_Free)> ptr_;
 };
 
@@ -102,6 +89,11 @@ template <int N>
 class InlinedArena : public Arena {
  public:
   InlinedArena() : Arena(initial_block_, N) {}
+  ~InlinedArena() {
+    // Explicitly destroy the arena now so that it does not outlive
+    // initial_block_.
+    ptr_.reset();
+  }
 
  private:
   InlinedArena(const InlinedArena*) = delete;

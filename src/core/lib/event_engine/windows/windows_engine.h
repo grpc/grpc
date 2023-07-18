@@ -30,7 +30,7 @@
 
 #include "src/core/lib/event_engine/handle_containers.h"
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
-#include "src/core/lib/event_engine/thread_pool.h"
+#include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
 #include "src/core/lib/event_engine/windows/windows_endpoint.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -48,17 +48,13 @@ class WindowsEventEngine : public EventEngine,
   class WindowsDNSResolver : public EventEngine::DNSResolver {
    public:
     ~WindowsDNSResolver() override;
-    LookupTaskHandle LookupHostname(LookupHostnameCallback on_resolve,
-                                    absl::string_view name,
-                                    absl::string_view default_port,
-                                    Duration timeout) override;
-    LookupTaskHandle LookupSRV(LookupSRVCallback on_resolve,
-                               absl::string_view name,
-                               Duration timeout) override;
-    LookupTaskHandle LookupTXT(LookupTXTCallback on_resolve,
-                               absl::string_view name,
-                               Duration timeout) override;
-    bool CancelLookup(LookupTaskHandle handle) override;
+    void LookupHostname(LookupHostnameCallback on_resolve,
+                        absl::string_view name,
+                        absl::string_view default_port) override;
+    void LookupSRV(LookupSRVCallback on_resolve,
+                   absl::string_view name) override;
+    void LookupTXT(LookupTXTCallback on_resolve,
+                   absl::string_view name) override;
   };
 
   WindowsEventEngine();
@@ -88,11 +84,11 @@ class WindowsEventEngine : public EventEngine,
                       absl::AnyInvocable<void()> closure) override;
   bool Cancel(TaskHandle handle) override;
 
-  // Retrieve the base executor.
+  // Retrieve the base ThreadPool.
   // This is public because most classes that know the concrete
   // WindowsEventEngine type are effectively friends.
   // Not intended for external use.
-  Executor* executor() { return executor_.get(); }
+  ThreadPool* thread_pool() { return thread_pool_.get(); }
   IOCP* poller() { return &iocp_; }
 
  private:
@@ -116,14 +112,14 @@ class WindowsEventEngine : public EventEngine,
   // A poll worker which schedules itself unless kicked
   class IOCPWorkClosure : public EventEngine::Closure {
    public:
-    explicit IOCPWorkClosure(Executor* executor, IOCP* iocp);
+    explicit IOCPWorkClosure(ThreadPool* thread_pool, IOCP* iocp);
     void Run() override;
     void WaitForShutdown();
 
    private:
     std::atomic<int> workers_{1};
     grpc_core::Notification done_signal_;
-    Executor* executor_;
+    ThreadPool* thread_pool_;
     IOCP* iocp_;
   };
 
@@ -150,7 +146,7 @@ class WindowsEventEngine : public EventEngine,
   ConnectionHandleSet known_connection_handles_ ABSL_GUARDED_BY(connection_mu_);
   std::atomic<intptr_t> aba_token_{0};
 
-  std::shared_ptr<ThreadPool> executor_;
+  std::shared_ptr<ThreadPool> thread_pool_;
   IOCP iocp_;
   TimerManager timer_manager_;
   IOCPWorkClosure iocp_worker_;

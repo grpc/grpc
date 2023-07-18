@@ -43,7 +43,6 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
-#include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -107,6 +106,7 @@ class CallContext {
 
   // Update the deadline (if deadline < the current deadline).
   void UpdateDeadline(Timestamp deadline);
+  Timestamp deadline() const;
 
   // Run some action in the call activity context. This is needed to adapt some
   // legacy systems to promises, and will likely disappear once that conversion
@@ -126,7 +126,6 @@ class CallContext {
 
   grpc_call_stats* call_stats() { return &call_stats_; }
   gpr_atm* peer_string_atm_ptr();
-  grpc_polling_entity* polling_entity() { return &pollent_; }
 
   ServerCallContext* server_call_context();
 
@@ -137,9 +136,6 @@ class CallContext {
   friend class PromiseBasedCall;
   // Call final info.
   grpc_call_stats call_stats_;
-  // Pollset stuff, can't wait to remove.
-  // TODO(ctiller): bring forth EventEngine.
-  grpc_polling_entity pollent_;
   // TODO(ctiller): remove this once transport APIs are promise based and we
   // don't need refcounting here.
   PromiseBasedCall* const call_;

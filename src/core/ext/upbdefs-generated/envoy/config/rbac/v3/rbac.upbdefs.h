@@ -9,15 +9,16 @@
 #ifndef ENVOY_CONFIG_RBAC_V3_RBAC_PROTO_UPBDEFS_H_
 #define ENVOY_CONFIG_RBAC_V3_RBAC_PROTO_UPBDEFS_H_
 
-#include "upb/def.h"
-#include "upb/port_def.inc"
+#include "upb/reflection/def.h"
+#include "upb/reflection/def_pool_internal.h"
+#include "upb/port/def.inc"
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include "upb/def.h"
+#include "upb/reflection/def.h"
 
-#include "upb/port_def.inc"
+#include "upb/port/def.inc"
 
 extern _upb_DefPool_Init envoy_config_rbac_v3_rbac_proto_upbdefinit;
 
@@ -29,6 +30,11 @@ UPB_INLINE const upb_MessageDef *envoy_config_rbac_v3_RBAC_getmsgdef(upb_DefPool
 UPB_INLINE const upb_MessageDef *envoy_config_rbac_v3_RBAC_AuditLoggingOptions_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &envoy_config_rbac_v3_rbac_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "envoy.config.rbac.v3.RBAC.AuditLoggingOptions");
+}
+
+UPB_INLINE const upb_MessageDef *envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_rbac_v3_rbac_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.rbac.v3.RBAC.AuditLoggingOptions.AuditLoggerConfig");
 }
 
 UPB_INLINE const upb_MessageDef *envoy_config_rbac_v3_RBAC_PoliciesEntry_getmsgdef(upb_DefPool *s) {
@@ -75,6 +81,6 @@ UPB_INLINE const upb_MessageDef *envoy_config_rbac_v3_Action_getmsgdef(upb_DefPo
 }  /* extern "C" */
 #endif
 
-#include "upb/port_undef.inc"
+#include "upb/port/undef.inc"
 
 #endif  /* ENVOY_CONFIG_RBAC_V3_RBAC_PROTO_UPBDEFS_H_ */

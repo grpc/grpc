@@ -275,6 +275,66 @@ TEST_F(PipeTest, CanCloseSend) {
       MakeScopedArena(1024, &memory_allocator_));
 }
 
+TEST_F(PipeTest, CanCloseWithErrorSend) {
+  StrictMock<MockFunction<void(absl::Status)>> on_done;
+  EXPECT_CALL(on_done, Call(absl::OkStatus()));
+  MakeActivity(
+      [] {
+        auto* pipe = GetContext<Arena>()->ManagedNew<Pipe<int>>();
+        return Seq(
+            // Concurrently:
+            // - wait for a received value (will stall forever since we push
+            //   nothing into the queue)
+            // - close the sender, which will signal the receiver to return an
+            //   end-of-stream.
+            Join(pipe->receiver.Next(),
+                 [pipe]() mutable {
+                   pipe->sender.CloseWithError();
+                   return absl::OkStatus();
+                 }),
+            // Verify we received end-of-stream and closed the sender.
+            [](std::tuple<NextResult<int>, absl::Status> result) {
+              EXPECT_FALSE(std::get<0>(result).has_value());
+              EXPECT_TRUE(std::get<0>(result).cancelled());
+              EXPECT_EQ(std::get<1>(result), absl::OkStatus());
+              return absl::OkStatus();
+            });
+      },
+      NoWakeupScheduler(),
+      [&on_done](absl::Status status) { on_done.Call(std::move(status)); },
+      MakeScopedArena(1024, &memory_allocator_));
+}
+
+TEST_F(PipeTest, CanCloseWithErrorRecv) {
+  StrictMock<MockFunction<void(absl::Status)>> on_done;
+  EXPECT_CALL(on_done, Call(absl::OkStatus()));
+  MakeActivity(
+      [] {
+        auto* pipe = GetContext<Arena>()->ManagedNew<Pipe<int>>();
+        return Seq(
+            // Concurrently:
+            // - wait for a received value (will stall forever since we push
+            //   nothing into the queue)
+            // - close the sender, which will signal the receiver to return an
+            //   end-of-stream.
+            Join(pipe->receiver.Next(),
+                 [pipe]() mutable {
+                   pipe->receiver.CloseWithError();
+                   return absl::OkStatus();
+                 }),
+            // Verify we received end-of-stream and closed the sender.
+            [](std::tuple<NextResult<int>, absl::Status> result) {
+              EXPECT_FALSE(std::get<0>(result).has_value());
+              EXPECT_TRUE(std::get<0>(result).cancelled());
+              EXPECT_EQ(std::get<1>(result), absl::OkStatus());
+              return absl::OkStatus();
+            });
+      },
+      NoWakeupScheduler(),
+      [&on_done](absl::Status status) { on_done.Call(std::move(status)); },
+      MakeScopedArena(1024, &memory_allocator_));
+}
+
 TEST_F(PipeTest, CanCloseSendWithInterceptor) {
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   EXPECT_CALL(on_done, Call(absl::OkStatus()));

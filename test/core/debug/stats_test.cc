@@ -52,6 +52,11 @@ TEST(StatsTest, IncSpecificCounter) {
   EXPECT_EQ(snapshot->delta()->client_calls_created, 1);
 }
 
+TEST(StatsTest, IncrementHttp2MetadataSize) {
+  ExecCtx exec_ctx;
+  global_stats().IncrementHttp2MetadataSize(0);
+}
+
 static int FindExpectedBucket(const HistogramView& h, int value) {
   if (value < 0) {
     return 0;

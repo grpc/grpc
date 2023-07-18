@@ -30,13 +30,17 @@ If "%GRPC_BUILD_ACTIVATE_VS_TOOLS%" == "2019" (
 )
 
 If "%GRPC_CMAKE_GENERATOR%" == "Visual Studio 16 2019" (
-  @rem Force using a new-enough Windows 10 SDK that supports C++11's stdalign.h
-  @rem For some reason, cmake together with visual studio generator by default
-  @rem pick an old version of Win SDK even when a newer version is installed on the system.
+  @rem Always use the newest Windows 10 SDK available.
+  @rem A new-enough Windows 10 SDK that supports C++11's stdalign.h is required
+  @rem for a successful build.
+  @rem By default cmake together with Visual Studio generator
+  @rem pick a version of Win SDK that matches the Windows version,
+  @rem even when a newer version of the SDK available.
+  @rem Setting CMAKE_SYSTEM_VERSION=10.0 changes this behavior
+  @rem to pick the newest Windows SDK available.
   @rem When using Ninja generator, this problem doesn't happen.
-  @rem The argument corresponds to Microsoft.VisualStudio.Component.Windows10SDK.20348
-  @rem See b/275694647
-  set "CMAKE_SYSTEM_VERSION_ARG=-DCMAKE_SYSTEM_VERSION=10.0.20348.0"
+  @rem See b/275694647 and https://gitlab.kitware.com/cmake/cmake/-/issues/16202#note_140259
+  set "CMAKE_SYSTEM_VERSION_ARG=-DCMAKE_SYSTEM_VERSION=10.0"
 ) else (
   @rem Setting the env variable to a single space translates to passing no argument
   @rem when evaluated on the command line.

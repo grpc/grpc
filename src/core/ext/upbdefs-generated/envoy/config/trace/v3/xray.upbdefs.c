@@ -6,7 +6,7 @@
  * Do not edit -- your changes will be discarded when the file is
  * regenerated. */
 
-#include "upb/def.h"
+#include "upb/reflection/def.h"
 #include "envoy/config/trace/v3/xray.upbdefs.h"
 #include "envoy/config/trace/v3/xray.upb.h"
 

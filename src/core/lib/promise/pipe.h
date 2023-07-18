@@ -377,8 +377,8 @@ class Center : public InterceptorList<T> {
 
   std::string DebugTag() {
     if (auto* activity = Activity::current()) {
-      return absl::StrCat(activity->DebugTag(), " PIPE[0x",
-                          reinterpret_cast<uintptr_t>(this), "]: ");
+      return absl::StrCat(activity->DebugTag(), " PIPE[0x", absl::Hex(this),
+                          "]: ");
     } else {
       return absl::StrCat("PIPE[0x", reinterpret_cast<uintptr_t>(this), "]: ");
     }
@@ -473,6 +473,13 @@ class PipeSender {
   void Close() {
     if (center_ != nullptr) {
       center_->MarkClosed();
+      center_.reset();
+    }
+  }
+
+  void CloseWithError() {
+    if (center_ != nullptr) {
+      center_->MarkCancelled();
       center_.reset();
     }
   }
@@ -601,6 +608,13 @@ class PipeReceiver {
 
   auto AwaitEmpty() {
     return [center = center_]() { return center->PollEmpty(); };
+  }
+
+  void CloseWithError() {
+    if (center_ != nullptr) {
+      center_->MarkCancelled();
+      center_.reset();
+    }
   }
 
   // Interject PromiseFactory f into the pipeline.

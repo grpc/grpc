@@ -19,15 +19,15 @@ import shutil
 import setuptools
 
 ROOT_DIR = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
-HEALTH_PROTO = os.path.join(ROOT_DIR, '../../proto/grpc/health/v1/health.proto')
-LICENSE = os.path.join(ROOT_DIR, '../../../LICENSE')
+HEALTH_PROTO = os.path.join(ROOT_DIR, "../../proto/grpc/health/v1/health.proto")
+LICENSE = os.path.join(ROOT_DIR, "../../../LICENSE")
 
 
 class Preprocess(setuptools.Command):
     """Command to copy proto modules from grpc/src/proto and LICENSE from
     the root directory"""
 
-    description = ''
+    description = ""
     user_options = []
 
     def initialize_options(self):
@@ -40,15 +40,16 @@ class Preprocess(setuptools.Command):
         if os.path.isfile(HEALTH_PROTO):
             shutil.copyfile(
                 HEALTH_PROTO,
-                os.path.join(ROOT_DIR, 'grpc_health/v1/health.proto'))
+                os.path.join(ROOT_DIR, "grpc_health/v1/health.proto"),
+            )
         if os.path.isfile(LICENSE):
-            shutil.copyfile(LICENSE, os.path.join(ROOT_DIR, 'LICENSE'))
+            shutil.copyfile(LICENSE, os.path.join(ROOT_DIR, "LICENSE"))
 
 
 class BuildPackageProtos(setuptools.Command):
     """Command to generate project *_pb2.py modules from proto files."""
 
-    description = 'build grpc protobuf modules'
+    description = "build grpc protobuf modules"
     user_options = []
 
     def initialize_options(self):
@@ -63,4 +64,5 @@ class BuildPackageProtos(setuptools.Command):
         # to `self.distribution.package_dir` (and get a key error if it's not
         # there).
         from grpc_tools import command
-        command.build_package_protos(self.distribution.package_dir[''])
+
+        command.build_package_protos(self.distribution.package_dir[""])

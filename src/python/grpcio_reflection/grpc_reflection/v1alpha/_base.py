@@ -27,16 +27,35 @@ def _not_found_error():
         error_response=_reflection_pb2.ErrorResponse(
             error_code=grpc.StatusCode.NOT_FOUND.value[0],
             error_message=grpc.StatusCode.NOT_FOUND.value[1].encode(),
-        ))
+        )
+    )
+
+
+def _collect_transitive_dependencies(descriptor, seen_files):
+    seen_files.update({descriptor.name: descriptor})
+    for dependency in descriptor.dependencies:
+        if not dependency.name in seen_files:
+            # descriptors cannot have circular dependencies
+            _collect_transitive_dependencies(dependency, seen_files)
 
 
 def _file_descriptor_response(descriptor):
-    proto = descriptor_pb2.FileDescriptorProto()
-    descriptor.CopyToProto(proto)
-    serialized_proto = proto.SerializeToString()
+    # collect all dependencies
+    descriptors = {}
+    _collect_transitive_dependencies(descriptor, descriptors)
+
+    # serialize all descriptors
+    serialized_proto_list = []
+    for d_key in descriptors:
+        proto = descriptor_pb2.FileDescriptorProto()
+        descriptors[d_key].CopyToProto(proto)
+        serialized_proto_list.append(proto.SerializeToString())
+
     return _reflection_pb2.ServerReflectionResponse(
         file_descriptor_response=_reflection_pb2.FileDescriptorResponse(
-            file_descriptor_proto=(serialized_proto,)),)
+            file_descriptor_proto=(serialized_proto_list)
+        ),
+    )
 
 
 class BaseReflectionServicer(_reflection_pb2_grpc.ServerReflectionServicer):
@@ -63,7 +82,8 @@ class BaseReflectionServicer(_reflection_pb2_grpc.ServerReflectionServicer):
     def _file_containing_symbol(self, fully_qualified_name):
         try:
             descriptor = self._pool.FindFileContainingSymbol(
-                fully_qualified_name)
+                fully_qualified_name
+            )
         except KeyError:
             return _not_found_error()
         else:
@@ -72,11 +92,14 @@ class BaseReflectionServicer(_reflection_pb2_grpc.ServerReflectionServicer):
     def _file_containing_extension(self, containing_type, extension_number):
         try:
             message_descriptor = self._pool.FindMessageTypeByName(
-                containing_type)
+                containing_type
+            )
             extension_descriptor = self._pool.FindExtensionByNumber(
-                message_descriptor, extension_number)
+                message_descriptor, extension_number
+            )
             descriptor = self._pool.FindFileContainingSymbol(
-                extension_descriptor.full_name)
+                extension_descriptor.full_name
+            )
         except KeyError:
             return _not_found_error()
         else:
@@ -85,25 +108,35 @@ class BaseReflectionServicer(_reflection_pb2_grpc.ServerReflectionServicer):
     def _all_extension_numbers_of_type(self, containing_type):
         try:
             message_descriptor = self._pool.FindMessageTypeByName(
-                containing_type)
+                containing_type
+            )
             extension_numbers = tuple(
-                sorted(extension.number for extension in
-                       self._pool.FindAllExtensions(message_descriptor)))
+                sorted(
+                    extension.number
+                    for extension in self._pool.FindAllExtensions(
+                        message_descriptor
+                    )
+                )
+            )
         except KeyError:
             return _not_found_error()
         else:
             return _reflection_pb2.ServerReflectionResponse(
-                all_extension_numbers_response=_reflection_pb2.
-                ExtensionNumberResponse(
+                all_extension_numbers_response=_reflection_pb2.ExtensionNumberResponse(
                     base_type_name=message_descriptor.full_name,
-                    extension_number=extension_numbers))
+                    extension_number=extension_numbers,
+                )
+            )
 
     def _list_services(self):
         return _reflection_pb2.ServerReflectionResponse(
-            list_services_response=_reflection_pb2.ListServiceResponse(service=[
-                _reflection_pb2.ServiceResponse(name=service_name)
-                for service_name in self._service_names
-            ]))
+            list_services_response=_reflection_pb2.ListServiceResponse(
+                service=[
+                    _reflection_pb2.ServiceResponse(name=service_name)
+                    for service_name in self._service_names
+                ]
+            )
+        )
 
 
-__all__ = ['BaseReflectionServicer']
+__all__ = ["BaseReflectionServicer"]

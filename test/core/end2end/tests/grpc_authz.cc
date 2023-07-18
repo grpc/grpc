@@ -12,502 +12,267 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <string.h>
-
-#include <functional>
-#include <memory>
 #include <string>
-#include <utility>
 
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
+#include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
-#include <grpc/impl/propagation_bits.h>
-#include <grpc/slice.h>
 #include <grpc/status.h>
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/notification.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/security/authorization/authorization_policy_provider.h"
 #include "src/core/lib/security/authorization/grpc_authorization_policy_provider.h"
-#include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
-#include "test/core/util/test_config.h"
 #include "test/core/util/tls_utils.h"
 
-static std::unique_ptr<CoreTestFixture> begin_test(
-    const CoreTestConfiguration& config, const char* test_name,
-    grpc_channel_args* client_args, grpc_channel_args* server_args) {
-  gpr_log(GPR_INFO, "%s", std::string(80, '*').c_str());
-  gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
-  auto f = config.create_fixture(grpc_core::ChannelArgs::FromC(client_args),
-                                 grpc_core::ChannelArgs::FromC(server_args));
-  f->InitServer(grpc_core::ChannelArgs::FromC(server_args));
-  f->InitClient(grpc_core::ChannelArgs::FromC(client_args));
-  return f;
+namespace grpc_core {
+namespace {
+
+void TestAllowAuthorizedRequest(CoreEnd2endTest& test) {
+  auto c = test.NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
+  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
+  CoreEnd2endTest::IncomingStatusOnClient server_status;
+  c.NewBatch(1)
+      .SendInitialMetadata({})
+      .SendCloseFromClient()
+      .RecvInitialMetadata(server_initial_metadata)
+      .RecvStatusOnClient(server_status);
+  auto s = test.RequestCall(101);
+  test.Expect(101, true);
+  test.Step();
+  CoreEnd2endTest::IncomingCloseOnServer client_close;
+  s.NewBatch(102)
+      .SendInitialMetadata({})
+      .SendStatusFromServer(GRPC_STATUS_OK, "xyz", {})
+      .RecvCloseOnServer(client_close);
+  test.Expect(102, true);
+  test.Expect(1, true);
+  test.Step();
+  EXPECT_EQ(server_status.status(), GRPC_STATUS_OK);
 }
 
-static void test_allow_authorized_request(CoreTestFixture* f) {
-  grpc_call* c;
-  grpc_call* s;
-  grpc_op ops[6];
-  grpc_op* op;
-  grpc_metadata_array initial_metadata_recv;
-  grpc_metadata_array trailing_metadata_recv;
-  grpc_metadata_array request_metadata_recv;
-  grpc_call_details call_details;
-  grpc_status_code status;
-  const char* error_string = nullptr;
-  grpc_call_error error;
-  grpc_slice details = grpc_empty_slice();
-  int was_cancelled = 2;
-
-  grpc_core::CqVerifier cqv(f->cq());
-
-  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
-  c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
-                               f->cq(), grpc_slice_from_static_string("/foo"),
-                               nullptr, deadline, nullptr);
-  GPR_ASSERT(c);
-
-  grpc_metadata_array_init(&initial_metadata_recv);
-  grpc_metadata_array_init(&trailing_metadata_recv);
-  grpc_metadata_array_init(&request_metadata_recv);
-  grpc_call_details_init(&call_details);
-
-  memset(ops, 0, sizeof(ops));
-  op = ops;
-  op->op = GRPC_OP_SEND_INITIAL_METADATA;
-  op->data.send_initial_metadata.count = 0;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
-  op->data.recv_status_on_client.status = &status;
-  op->data.recv_status_on_client.status_details = &details;
-  op->data.recv_status_on_client.error_string = &error_string;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
-                                grpc_core::CqVerifier::tag(1), nullptr);
-  GPR_ASSERT(GRPC_CALL_OK == error);
-
-  error = grpc_server_request_call(f->server(), &s, &call_details,
-                                   &request_metadata_recv, f->cq(), f->cq(),
-                                   grpc_core::CqVerifier::tag(101));
-  GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(grpc_core::CqVerifier::tag(101), true);
-  cqv.Verify();
-
-  memset(ops, 0, sizeof(ops));
-  op = ops;
-  op->op = GRPC_OP_SEND_INITIAL_METADATA;
-  op->data.send_initial_metadata.count = 0;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
-  op->data.send_status_from_server.trailing_metadata_count = 0;
-  op->data.send_status_from_server.status = GRPC_STATUS_OK;
-  grpc_slice status_details = grpc_slice_from_static_string("xyz");
-  op->data.send_status_from_server.status_details = &status_details;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
-  op->data.recv_close_on_server.cancelled = &was_cancelled;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
-                                grpc_core::CqVerifier::tag(102), nullptr);
-  GPR_ASSERT(GRPC_CALL_OK == error);
-
-  cqv.Expect(grpc_core::CqVerifier::tag(102), true);
-  cqv.Expect(grpc_core::CqVerifier::tag(1), true);
-  cqv.Verify();
-  GPR_ASSERT(GRPC_STATUS_OK == status);
-  GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
-
-  grpc_slice_unref(details);
-  gpr_free(const_cast<char*>(error_string));
-  grpc_metadata_array_destroy(&initial_metadata_recv);
-  grpc_metadata_array_destroy(&trailing_metadata_recv);
-  grpc_metadata_array_destroy(&request_metadata_recv);
-  grpc_call_details_destroy(&call_details);
-
-  grpc_call_unref(c);
-  grpc_call_unref(s);
+void TestDenyUnauthorizedRequest(CoreEnd2endTest& test) {
+  auto c = test.NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
+  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
+  CoreEnd2endTest::IncomingStatusOnClient server_status;
+  c.NewBatch(1)
+      .SendInitialMetadata({})
+      .SendCloseFromClient()
+      .RecvInitialMetadata(server_initial_metadata)
+      .RecvStatusOnClient(server_status);
+  test.Expect(1, true);
+  test.Step();
+  EXPECT_EQ(server_status.status(), GRPC_STATUS_PERMISSION_DENIED);
+  EXPECT_EQ(server_status.message(), "Unauthorized RPC request rejected.");
 }
 
-static void test_deny_unauthorized_request(CoreTestFixture* f) {
-  grpc_call* c;
-  grpc_op ops[6];
-  grpc_op* op;
-  grpc_metadata_array initial_metadata_recv;
-  grpc_metadata_array trailing_metadata_recv;
-  grpc_status_code status;
-  const char* error_string = nullptr;
-  grpc_call_error error;
-  grpc_slice details = grpc_empty_slice();
-
-  grpc_core::CqVerifier cqv(f->cq());
-
-  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
-  c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
-                               f->cq(), grpc_slice_from_static_string("/foo"),
-                               nullptr, deadline, nullptr);
-  GPR_ASSERT(c);
-
-  grpc_metadata_array_init(&initial_metadata_recv);
-  grpc_metadata_array_init(&trailing_metadata_recv);
-
-  memset(ops, 0, sizeof(ops));
-  op = ops;
-  op->op = GRPC_OP_SEND_INITIAL_METADATA;
-  op->data.send_initial_metadata.count = 0;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
-  op->data.recv_status_on_client.status = &status;
-  op->data.recv_status_on_client.status_details = &details;
-  op->data.recv_status_on_client.error_string = &error_string;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
-                                grpc_core::CqVerifier::tag(1), nullptr);
-  GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(grpc_core::CqVerifier::tag(1), true);
-  cqv.Verify();
-
-  GPR_ASSERT(GRPC_STATUS_PERMISSION_DENIED == status);
-  GPR_ASSERT(0 ==
-             grpc_slice_str_cmp(details, "Unauthorized RPC request rejected."));
-
-  grpc_slice_unref(details);
-  gpr_free(const_cast<char*>(error_string));
-  grpc_metadata_array_destroy(&initial_metadata_recv);
-  grpc_metadata_array_destroy(&trailing_metadata_recv);
-
-  grpc_call_unref(c);
+void InitWithPolicy(CoreEnd2endTest& test,
+                    grpc_authorization_policy_provider* provider) {
+  test.InitServer(ChannelArgs().Set(
+      GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER,
+      ChannelArgs::Pointer(provider,
+                           grpc_authorization_policy_provider_arg_vtable())));
+  test.InitClient(ChannelArgs());
 }
 
-static void test_static_init_allow_authorized_request(
-    const CoreTestConfiguration& config) {
-  const char* authz_policy =
-      "{"
-      "  \"name\": \"authz\","
-      "  \"allow_rules\": ["
-      "    {"
-      "      \"name\": \"allow_foo\","
-      "      \"request\": {"
-      "        \"paths\": ["
-      "          \"*/foo\""
-      "        ]"
-      "      }"
-      "    }"
-      "  ]"
-      "}";
+void InitWithStaticData(CoreEnd2endTest& test, const char* authz_policy) {
   grpc_status_code code = GRPC_STATUS_OK;
   const char* error_details;
   grpc_authorization_policy_provider* provider =
       grpc_authorization_policy_provider_static_data_create(authz_policy, &code,
                                                             &error_details);
-  GPR_ASSERT(GRPC_STATUS_OK == code);
-  grpc_arg args[] = {
-      grpc_channel_arg_pointer_create(
-          const_cast<char*>(GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER), provider,
-          grpc_authorization_policy_provider_arg_vtable()),
-  };
-  grpc_channel_args server_args = {GPR_ARRAY_SIZE(args), args};
-
-  auto f = begin_test(config, "test_static_init_allow_authorized_request",
-                      nullptr, &server_args);
-  grpc_authorization_policy_provider_release(provider);
-  test_allow_authorized_request(f.get());
+  EXPECT_EQ(code, GRPC_STATUS_OK);
+  InitWithPolicy(test, provider);
 }
 
-static void test_static_init_deny_unauthorized_request(
-    const CoreTestConfiguration& config) {
-  const char* authz_policy =
-      "{"
-      "  \"name\": \"authz\","
-      "  \"allow_rules\": ["
-      "    {"
-      "      \"name\": \"allow_bar\","
-      "      \"request\": {"
-      "        \"paths\": ["
-      "          \"*/bar\""
-      "        ]"
-      "      }"
-      "    }"
-      "  ],"
-      "  \"deny_rules\": ["
-      "    {"
-      "      \"name\": \"deny_foo\","
-      "      \"request\": {"
-      "        \"paths\": ["
-      "          \"*/foo\""
-      "        ]"
-      "      }"
-      "    }"
-      "  ]"
-      "}";
-  grpc_status_code code = GRPC_STATUS_OK;
-  const char* error_details;
-  grpc_authorization_policy_provider* provider =
-      grpc_authorization_policy_provider_static_data_create(authz_policy, &code,
-                                                            &error_details);
-  GPR_ASSERT(GRPC_STATUS_OK == code);
-  grpc_arg args[] = {
-      grpc_channel_arg_pointer_create(
-          const_cast<char*>(GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER), provider,
-          grpc_authorization_policy_provider_arg_vtable()),
-  };
-  grpc_channel_args server_args = {GPR_ARRAY_SIZE(args), args};
+class InitWithTempFile {
+ public:
+  InitWithTempFile(CoreEnd2endTest& test, const char* authz_policy)
+      : tmp_file_(authz_policy) {
+    grpc_status_code code = GRPC_STATUS_OK;
+    const char* error_details;
+    provider_ = grpc_authorization_policy_provider_file_watcher_create(
+        tmp_file_.name().c_str(), /*refresh_interval_sec=*/1, &code,
+        &error_details);
+    GPR_ASSERT(GRPC_STATUS_OK == code);
+    InitWithPolicy(test, provider_);
+  }
 
-  auto f = begin_test(config, "test_static_init_deny_unauthorized_request",
-                      nullptr, &server_args);
-  grpc_authorization_policy_provider_release(provider);
-  test_deny_unauthorized_request(f.get());
+  InitWithTempFile(const InitWithTempFile&) = delete;
+  InitWithTempFile& operator=(const InitWithTempFile&) = delete;
+
+  FileWatcherAuthorizationPolicyProvider* provider() {
+    return dynamic_cast<FileWatcherAuthorizationPolicyProvider*>(provider_);
+  }
+
+  testing::TmpFile& file() { return tmp_file_; }
+
+ private:
+  testing::TmpFile tmp_file_;
+  grpc_authorization_policy_provider* provider_;
+};
+
+CORE_END2END_TEST(SecureEnd2endTest, StaticInitAllowAuthorizedRequest) {
+  InitWithStaticData(*this,
+                     "{"
+                     "  \"name\": \"authz\","
+                     "  \"allow_rules\": ["
+                     "    {"
+                     "      \"name\": \"allow_foo\","
+                     "      \"request\": {"
+                     "        \"paths\": ["
+                     "          \"*/foo\""
+                     "        ]"
+                     "      }"
+                     "    }"
+                     "  ]"
+                     "}");
+  TestAllowAuthorizedRequest(*this);
 }
 
-static void test_static_init_deny_request_no_match_in_policy(
-    const CoreTestConfiguration& config) {
-  const char* authz_policy =
-      "{"
-      "  \"name\": \"authz\","
-      "  \"allow_rules\": ["
-      "    {"
-      "      \"name\": \"allow_bar\","
-      "      \"request\": {"
-      "        \"paths\": ["
-      "          \"*/bar\""
-      "        ]"
-      "      }"
-      "    }"
-      "  ]"
-      "}";
-  grpc_status_code code = GRPC_STATUS_OK;
-  const char* error_details;
-  grpc_authorization_policy_provider* provider =
-      grpc_authorization_policy_provider_static_data_create(authz_policy, &code,
-                                                            &error_details);
-  GPR_ASSERT(GRPC_STATUS_OK == code);
-  grpc_arg args[] = {
-      grpc_channel_arg_pointer_create(
-          const_cast<char*>(GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER), provider,
-          grpc_authorization_policy_provider_arg_vtable()),
-  };
-  grpc_channel_args server_args = {GPR_ARRAY_SIZE(args), args};
-
-  auto f =
-      begin_test(config, "test_static_init_deny_request_no_match_in_policy",
-                 nullptr, &server_args);
-  grpc_authorization_policy_provider_release(provider);
-  test_deny_unauthorized_request(f.get());
+CORE_END2END_TEST(SecureEnd2endTest, StaticInitDenyUnauthorizedRequest) {
+  InitWithStaticData(*this,
+                     "{"
+                     "  \"name\": \"authz\","
+                     "  \"allow_rules\": ["
+                     "    {"
+                     "      \"name\": \"allow_bar\","
+                     "      \"request\": {"
+                     "        \"paths\": ["
+                     "          \"*/bar\""
+                     "        ]"
+                     "      }"
+                     "    }"
+                     "  ],"
+                     "  \"deny_rules\": ["
+                     "    {"
+                     "      \"name\": \"deny_foo\","
+                     "      \"request\": {"
+                     "        \"paths\": ["
+                     "          \"*/foo\""
+                     "        ]"
+                     "      }"
+                     "    }"
+                     "  ]"
+                     "}");
+  TestDenyUnauthorizedRequest(*this);
 }
 
-static void test_file_watcher_init_allow_authorized_request(
-    const CoreTestConfiguration& config) {
-  const char* authz_policy =
-      "{"
-      "  \"name\": \"authz\","
-      "  \"allow_rules\": ["
-      "    {"
-      "      \"name\": \"allow_foo\","
-      "      \"request\": {"
-      "        \"paths\": ["
-      "          \"*/foo\""
-      "        ]"
-      "      }"
-      "    }"
-      "  ]"
-      "}";
-  grpc_core::testing::TmpFile tmp_policy(authz_policy);
-  grpc_status_code code = GRPC_STATUS_OK;
-  const char* error_details;
-  grpc_authorization_policy_provider* provider =
-      grpc_authorization_policy_provider_file_watcher_create(
-          tmp_policy.name().c_str(), /*refresh_interval_sec=*/1, &code,
-          &error_details);
-  GPR_ASSERT(GRPC_STATUS_OK == code);
-  grpc_arg args[] = {
-      grpc_channel_arg_pointer_create(
-          const_cast<char*>(GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER), provider,
-          grpc_authorization_policy_provider_arg_vtable()),
-  };
-  grpc_channel_args server_args = {GPR_ARRAY_SIZE(args), args};
-
-  auto f = begin_test(config, "test_file_watcher_init_allow_authorized_request",
-                      nullptr, &server_args);
-  grpc_authorization_policy_provider_release(provider);
-  test_allow_authorized_request(f.get());
+CORE_END2END_TEST(SecureEnd2endTest, StaticInitDenyRequestNoMatchInPolicy) {
+  InitWithStaticData(*this,
+                     "{"
+                     "  \"name\": \"authz\","
+                     "  \"allow_rules\": ["
+                     "    {"
+                     "      \"name\": \"allow_bar\","
+                     "      \"request\": {"
+                     "        \"paths\": ["
+                     "          \"*/bar\""
+                     "        ]"
+                     "      }"
+                     "    }"
+                     "  ]"
+                     "}");
+  TestDenyUnauthorizedRequest(*this);
 }
 
-static void test_file_watcher_init_deny_unauthorized_request(
-    const CoreTestConfiguration& config) {
-  const char* authz_policy =
-      "{"
-      "  \"name\": \"authz\","
-      "  \"allow_rules\": ["
-      "    {"
-      "      \"name\": \"allow_bar\","
-      "      \"request\": {"
-      "        \"paths\": ["
-      "          \"*/bar\""
-      "        ]"
-      "      }"
-      "    }"
-      "  ],"
-      "  \"deny_rules\": ["
-      "    {"
-      "      \"name\": \"deny_foo\","
-      "      \"request\": {"
-      "        \"paths\": ["
-      "          \"*/foo\""
-      "        ]"
-      "      }"
-      "    }"
-      "  ]"
-      "}";
-  grpc_core::testing::TmpFile tmp_policy(authz_policy);
-  grpc_status_code code = GRPC_STATUS_OK;
-  const char* error_details;
-  grpc_authorization_policy_provider* provider =
-      grpc_authorization_policy_provider_file_watcher_create(
-          tmp_policy.name().c_str(), /*refresh_interval_sec=*/1, &code,
-          &error_details);
-  GPR_ASSERT(GRPC_STATUS_OK == code);
-  grpc_arg args[] = {
-      grpc_channel_arg_pointer_create(
-          const_cast<char*>(GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER), provider,
-          grpc_authorization_policy_provider_arg_vtable()),
-  };
-  grpc_channel_args server_args = {GPR_ARRAY_SIZE(args), args};
-
-  auto f =
-      begin_test(config, "test_file_watcher_init_deny_unauthorized_request",
-                 nullptr, &server_args);
-  grpc_authorization_policy_provider_release(provider);
-  test_deny_unauthorized_request(f.get());
+CORE_END2END_TEST(SecureEnd2endTest, FileWatcherInitAllowAuthorizedRequest) {
+  InitWithTempFile tmp_policy(*this,
+                              "{"
+                              "  \"name\": \"authz\","
+                              "  \"allow_rules\": ["
+                              "    {"
+                              "      \"name\": \"allow_foo\","
+                              "      \"request\": {"
+                              "        \"paths\": ["
+                              "          \"*/foo\""
+                              "        ]"
+                              "      }"
+                              "    }"
+                              "  ]"
+                              "}");
+  TestAllowAuthorizedRequest(*this);
 }
 
-static void test_file_watcher_init_deny_request_no_match_in_policy(
-    const CoreTestConfiguration& config) {
-  const char* authz_policy =
-      "{"
-      "  \"name\": \"authz\","
-      "  \"allow_rules\": ["
-      "    {"
-      "      \"name\": \"allow_bar\","
-      "      \"request\": {"
-      "        \"paths\": ["
-      "          \"*/bar\""
-      "        ]"
-      "      }"
-      "    }"
-      "  ]"
-      "}";
-  grpc_core::testing::TmpFile tmp_policy(authz_policy);
-  grpc_status_code code = GRPC_STATUS_OK;
-  const char* error_details;
-  grpc_authorization_policy_provider* provider =
-      grpc_authorization_policy_provider_file_watcher_create(
-          tmp_policy.name().c_str(), /*refresh_interval_sec=*/1, &code,
-          &error_details);
-  GPR_ASSERT(GRPC_STATUS_OK == code);
-  grpc_arg args[] = {
-      grpc_channel_arg_pointer_create(
-          const_cast<char*>(GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER), provider,
-          grpc_authorization_policy_provider_arg_vtable()),
-  };
-  grpc_channel_args server_args = {GPR_ARRAY_SIZE(args), args};
-
-  auto f = begin_test(config,
-                      "test_file_watcher_init_deny_request_no_match_in_policy",
-                      nullptr, &server_args);
-  grpc_authorization_policy_provider_release(provider);
-  test_deny_unauthorized_request(f.get());
+CORE_END2END_TEST(SecureEnd2endTest, FileWatcherInitDenyUnauthorizedRequest) {
+  InitWithTempFile tmp_policy(*this,
+                              "{"
+                              "  \"name\": \"authz\","
+                              "  \"allow_rules\": ["
+                              "    {"
+                              "      \"name\": \"allow_bar\","
+                              "      \"request\": {"
+                              "        \"paths\": ["
+                              "          \"*/bar\""
+                              "        ]"
+                              "      }"
+                              "    }"
+                              "  ],"
+                              "  \"deny_rules\": ["
+                              "    {"
+                              "      \"name\": \"deny_foo\","
+                              "      \"request\": {"
+                              "        \"paths\": ["
+                              "          \"*/foo\""
+                              "        ]"
+                              "      }"
+                              "    }"
+                              "  ]"
+                              "}");
+  TestDenyUnauthorizedRequest(*this);
 }
 
-static void test_file_watcher_valid_policy_reload(
-    const CoreTestConfiguration& config) {
-  const char* authz_policy =
-      "{"
-      "  \"name\": \"authz\","
-      "  \"allow_rules\": ["
-      "    {"
-      "      \"name\": \"allow_foo\","
-      "      \"request\": {"
-      "        \"paths\": ["
-      "          \"*/foo\""
-      "        ]"
-      "      }"
-      "    }"
-      "  ]"
-      "}";
-  grpc_core::testing::TmpFile tmp_policy(authz_policy);
-  grpc_status_code code = GRPC_STATUS_OK;
-  const char* error_details;
-  grpc_authorization_policy_provider* provider =
-      grpc_authorization_policy_provider_file_watcher_create(
-          tmp_policy.name().c_str(), /*refresh_interval_sec=*/1, &code,
-          &error_details);
-  GPR_ASSERT(GRPC_STATUS_OK == code);
-  grpc_arg args[] = {
-      grpc_channel_arg_pointer_create(
-          const_cast<char*>(GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER), provider,
-          grpc_authorization_policy_provider_arg_vtable()),
-  };
-  grpc_channel_args server_args = {GPR_ARRAY_SIZE(args), args};
+CORE_END2END_TEST(SecureEnd2endTest,
+                  FileWatcherInitDenyRequestNoMatchInPolicy) {
+  InitWithTempFile tmp_policy(*this,
+                              "{"
+                              "  \"name\": \"authz\","
+                              "  \"allow_rules\": ["
+                              "    {"
+                              "      \"name\": \"allow_bar\","
+                              "      \"request\": {"
+                              "        \"paths\": ["
+                              "          \"*/bar\""
+                              "        ]"
+                              "      }"
+                              "    }"
+                              "  ]"
+                              "}");
+  TestDenyUnauthorizedRequest(*this);
+}
 
-  auto f = begin_test(config, "test_file_watcher_valid_policy_reload", nullptr,
-                      &server_args);
-  grpc_authorization_policy_provider_release(provider);
-  test_allow_authorized_request(f.get());
-  gpr_event on_reload_done;
-  gpr_event_init(&on_reload_done);
-  std::function<void(bool contents_changed, absl::Status status)> callback =
+CORE_END2END_TEST(SecureEnd2endTest, FileWatcherValidPolicyReload) {
+  InitWithTempFile tmp_policy(*this,
+                              "{"
+                              "  \"name\": \"authz\","
+                              "  \"allow_rules\": ["
+                              "    {"
+                              "      \"name\": \"allow_foo\","
+                              "      \"request\": {"
+                              "        \"paths\": ["
+                              "          \"*/foo\""
+                              "        ]"
+                              "      }"
+                              "    }"
+                              "  ]"
+                              "}");
+  TestAllowAuthorizedRequest(*this);
+  Notification on_reload_done;
+  tmp_policy.provider()->SetCallbackForTesting(
       [&on_reload_done](bool contents_changed, absl::Status status) {
         if (contents_changed) {
-          GPR_ASSERT(status.ok());
-          gpr_event_set(&on_reload_done, reinterpret_cast<void*>(1));
+          EXPECT_EQ(status, absl::OkStatus());
+          on_reload_done.Notify();
         }
-      };
-  dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(provider)
-      ->SetCallbackForTesting(std::move(callback));
+      });
   // Replace existing policy in file with a different authorization policy.
-  authz_policy =
+  tmp_policy.file().RewriteFile(
       "{"
       "  \"name\": \"authz\","
       "  \"allow_rules\": ["
@@ -530,142 +295,84 @@ static void test_file_watcher_valid_policy_reload(
       "      }"
       "    }"
       "  ]"
-      "}";
-  tmp_policy.RewriteFile(authz_policy);
-  GPR_ASSERT(
-      reinterpret_cast<void*>(1) ==
-      gpr_event_wait(&on_reload_done, gpr_inf_future(GPR_CLOCK_MONOTONIC)));
-  test_deny_unauthorized_request(f.get());
-  dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(provider)
-      ->SetCallbackForTesting(nullptr);
+      "}");
+  on_reload_done.WaitForNotification();
+  TestDenyUnauthorizedRequest(*this);
+  tmp_policy.provider()->SetCallbackForTesting(nullptr);
 }
 
-static void test_file_watcher_invalid_policy_skip_reload(
-    const CoreTestConfiguration& config) {
-  const char* authz_policy =
-      "{"
-      "  \"name\": \"authz\","
-      "  \"allow_rules\": ["
-      "    {"
-      "      \"name\": \"allow_foo\","
-      "      \"request\": {"
-      "        \"paths\": ["
-      "          \"*/foo\""
-      "        ]"
-      "      }"
-      "    }"
-      "  ]"
-      "}";
-  grpc_core::testing::TmpFile tmp_policy(authz_policy);
-  grpc_status_code code = GRPC_STATUS_OK;
-  const char* error_details;
-  grpc_authorization_policy_provider* provider =
-      grpc_authorization_policy_provider_file_watcher_create(
-          tmp_policy.name().c_str(), /*refresh_interval_sec=*/1, &code,
-          &error_details);
-  GPR_ASSERT(GRPC_STATUS_OK == code);
-  grpc_arg args[] = {
-      grpc_channel_arg_pointer_create(
-          const_cast<char*>(GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER), provider,
-          grpc_authorization_policy_provider_arg_vtable()),
-  };
-  grpc_channel_args server_args = {GPR_ARRAY_SIZE(args), args};
-
-  auto f = begin_test(config, "test_file_watcher_invalid_policy_skip_reload",
-                      nullptr, &server_args);
-  grpc_authorization_policy_provider_release(provider);
-  test_allow_authorized_request(f.get());
-  gpr_event on_reload_done;
-  gpr_event_init(&on_reload_done);
-  std::function<void(bool contents_changed, absl::Status status)> callback =
+CORE_END2END_TEST(SecureEnd2endTest, FileWatcherInvalidPolicySkipReload) {
+  InitWithTempFile tmp_policy(*this,
+                              "{"
+                              "  \"name\": \"authz\","
+                              "  \"allow_rules\": ["
+                              "    {"
+                              "      \"name\": \"allow_foo\","
+                              "      \"request\": {"
+                              "        \"paths\": ["
+                              "          \"*/foo\""
+                              "        ]"
+                              "      }"
+                              "    }"
+                              "  ]"
+                              "}");
+  TestAllowAuthorizedRequest(*this);
+  Notification on_reload_done;
+  tmp_policy.provider()->SetCallbackForTesting(
       [&on_reload_done](bool contents_changed, absl::Status status) {
         if (contents_changed) {
-          GPR_ASSERT(absl::StatusCode::kInvalidArgument == status.code());
-          GPR_ASSERT("\"name\" field is not present." == status.message());
-          gpr_event_set(&on_reload_done, reinterpret_cast<void*>(1));
+          EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+          EXPECT_EQ(status.message(), "\"name\" field is not present.");
+          on_reload_done.Notify();
         }
-      };
-  dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(provider)
-      ->SetCallbackForTesting(std::move(callback));
+      });
   // Replace exisiting policy in file with an invalid policy.
-  authz_policy = "{}";
-  tmp_policy.RewriteFile(authz_policy);
-  GPR_ASSERT(
-      reinterpret_cast<void*>(1) ==
-      gpr_event_wait(&on_reload_done, gpr_inf_future(GPR_CLOCK_MONOTONIC)));
-  test_allow_authorized_request(f.get());
-  dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(provider)
-      ->SetCallbackForTesting(nullptr);
+  tmp_policy.file().RewriteFile("{}");
+  on_reload_done.WaitForNotification();
+  TestAllowAuthorizedRequest(*this);
+  tmp_policy.provider()->SetCallbackForTesting(nullptr);
 }
 
-static void test_file_watcher_recovers_from_failure(
-    const CoreTestConfiguration& config) {
-  const char* authz_policy =
-      "{"
-      "  \"name\": \"authz\","
-      "  \"allow_rules\": ["
-      "    {"
-      "      \"name\": \"allow_foo\","
-      "      \"request\": {"
-      "        \"paths\": ["
-      "          \"*/foo\""
-      "        ]"
-      "      }"
-      "    }"
-      "  ]"
-      "}";
-  grpc_core::testing::TmpFile tmp_policy(authz_policy);
-  grpc_status_code code = GRPC_STATUS_OK;
-  const char* error_details;
-  grpc_authorization_policy_provider* provider =
-      grpc_authorization_policy_provider_file_watcher_create(
-          tmp_policy.name().c_str(), /*refresh_interval_sec=*/1, &code,
-          &error_details);
-  GPR_ASSERT(GRPC_STATUS_OK == code);
-  grpc_arg args[] = {
-      grpc_channel_arg_pointer_create(
-          const_cast<char*>(GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER), provider,
-          grpc_authorization_policy_provider_arg_vtable()),
-  };
-  grpc_channel_args server_args = {GPR_ARRAY_SIZE(args), args};
-
-  auto f = begin_test(config, "test_file_watcher_recovers_from_failure",
-                      nullptr, &server_args);
-  grpc_authorization_policy_provider_release(provider);
-  test_allow_authorized_request(f.get());
-  gpr_event on_first_reload_done;
-  gpr_event_init(&on_first_reload_done);
-  std::function<void(bool contents_changed, absl::Status status)> callback1 =
+CORE_END2END_TEST(SecureEnd2endTest, FileWatcherRecoversFromFailure) {
+  InitWithTempFile tmp_policy(*this,
+                              "{"
+                              "  \"name\": \"authz\","
+                              "  \"allow_rules\": ["
+                              "    {"
+                              "      \"name\": \"allow_foo\","
+                              "      \"request\": {"
+                              "        \"paths\": ["
+                              "          \"*/foo\""
+                              "        ]"
+                              "      }"
+                              "    }"
+                              "  ]"
+                              "}");
+  TestAllowAuthorizedRequest(*this);
+  Notification on_first_reload_done;
+  tmp_policy.provider()->SetCallbackForTesting(
       [&on_first_reload_done](bool contents_changed, absl::Status status) {
         if (contents_changed) {
-          GPR_ASSERT(absl::StatusCode::kInvalidArgument == status.code());
-          GPR_ASSERT("\"name\" field is not present." == status.message());
-          gpr_event_set(&on_first_reload_done, reinterpret_cast<void*>(1));
+          EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+          EXPECT_EQ(status.message(), "\"name\" field is not present.");
+          on_first_reload_done.Notify();
         }
-      };
-  dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(provider)
-      ->SetCallbackForTesting(std::move(callback1));
+      });
   // Replace exisiting policy in file with an invalid policy.
-  authz_policy = "{}";
-  tmp_policy.RewriteFile(authz_policy);
-  GPR_ASSERT(reinterpret_cast<void*>(1) ==
-             gpr_event_wait(&on_first_reload_done,
-                            gpr_inf_future(GPR_CLOCK_MONOTONIC)));
-  test_allow_authorized_request(f.get());
-  gpr_event on_second_reload_done;
-  gpr_event_init(&on_second_reload_done);
-  std::function<void(bool contents_changed, absl::Status status)> callback2 =
+  tmp_policy.file().RewriteFile("{}");
+  on_first_reload_done.WaitForNotification();
+  TestAllowAuthorizedRequest(*this);
+  Notification on_second_reload_done;
+  tmp_policy.provider()->SetCallbackForTesting(
       [&on_second_reload_done](bool contents_changed, absl::Status status) {
         if (contents_changed) {
-          GPR_ASSERT(status.ok());
-          gpr_event_set(&on_second_reload_done, reinterpret_cast<void*>(1));
+          EXPECT_EQ(status, absl::OkStatus());
+          on_second_reload_done.Notify();
         }
-      };
-  dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(provider)
-      ->SetCallbackForTesting(std::move(callback2));
+      });
   // Recover from reload errors, by replacing invalid policy in file with a
   // valid policy.
-  authz_policy =
+  tmp_policy.file().RewriteFile(
       "{"
       "  \"name\": \"authz\","
       "  \"allow_rules\": ["
@@ -688,26 +395,11 @@ static void test_file_watcher_recovers_from_failure(
       "      }"
       "    }"
       "  ]"
-      "}";
-  tmp_policy.RewriteFile(authz_policy);
-  GPR_ASSERT(reinterpret_cast<void*>(1) ==
-             gpr_event_wait(&on_second_reload_done,
-                            gpr_inf_future(GPR_CLOCK_MONOTONIC)));
-  test_deny_unauthorized_request(f.get());
-  dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(provider)
-      ->SetCallbackForTesting(nullptr);
+      "}");
+  on_second_reload_done.WaitForNotification();
+  TestDenyUnauthorizedRequest(*this);
+  tmp_policy.provider()->SetCallbackForTesting(nullptr);
 }
 
-void grpc_authz(const CoreTestConfiguration& config) {
-  test_static_init_allow_authorized_request(config);
-  test_static_init_deny_unauthorized_request(config);
-  test_static_init_deny_request_no_match_in_policy(config);
-  test_file_watcher_init_allow_authorized_request(config);
-  test_file_watcher_init_deny_unauthorized_request(config);
-  test_file_watcher_init_deny_request_no_match_in_policy(config);
-  test_file_watcher_valid_policy_reload(config);
-  test_file_watcher_invalid_policy_skip_reload(config);
-  test_file_watcher_recovers_from_failure(config);
-}
-
-void grpc_authz_pre_init(void) {}
+}  // namespace
+}  // namespace grpc_core

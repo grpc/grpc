@@ -40,6 +40,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/time",
         "absl/types:optional",
         "google/api:monitored_resource_cc_proto",
         "googleapis_monitoring_grpc_service",
@@ -80,7 +81,10 @@ grpc_cc_library(
         "absl/types:optional",
     ],
     language = "c++",
-    visibility = ["//test:__subpackages__"],
+    visibility = [
+        "//test:__subpackages__",
+        "@grpc:grpc_python_observability",
+    ],
     deps = [
         "//:gpr",
         "//:grpc_base",

@@ -25,10 +25,10 @@ message Add {
     int32 key = 2;
 }
 
-message PopFront {
+message PopMostRecent {
 }
 
-message PopBack {
+message PopOldest {
 }
 
 message Empty {
@@ -37,8 +37,8 @@ message Empty {
 message Action {
     oneof action_type {
         Add add = 1;
-        PopFront pop_front = 2;
-        PopBack pop_back = 3;
+        PopMostRecent pop_most_recent = 2;
+        PopOldest pop_oldest = 3;
         Empty empty = 4;
     }
 }

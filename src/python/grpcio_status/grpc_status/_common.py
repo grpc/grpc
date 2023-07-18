@@ -17,11 +17,11 @@ import grpc
 
 _CODE_TO_GRPC_CODE_MAPPING = {x.value[0]: x for x in grpc.StatusCode}
 
-GRPC_DETAILS_METADATA_KEY = 'grpc-status-details-bin'
+GRPC_DETAILS_METADATA_KEY = "grpc-status-details-bin"
 
 
 def code_to_grpc_status_code(code):
     try:
         return _CODE_TO_GRPC_CODE_MAPPING[code]
     except KeyError:
-        raise ValueError('Invalid status code %s' % code)
+        raise ValueError("Invalid status code %s" % code)

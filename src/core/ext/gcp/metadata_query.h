@@ -38,11 +38,16 @@ namespace grpc_core {
 // environment.
 class MetadataQuery : public InternallyRefCounted<MetadataQuery> {
  public:
-  static const char kZoneAttribute[];
-  static const char kClusterNameAttribute[];
-  static const char kRegionAttribute[];
-  static const char kInstanceIdAttribute[];
-  static const char kIPv6Attribute[];
+  static constexpr const char kZoneAttribute[] =
+      "/computeMetadata/v1/instance/zone";
+  static constexpr const char kClusterNameAttribute[] =
+      "/computeMetadata/v1/instance/attributes/cluster-name";
+  static constexpr const char kRegionAttribute[] =
+      "/computeMetadata/v1/instance/region";
+  static constexpr const char kInstanceIdAttribute[] =
+      "/computeMetadata/v1/instance/id";
+  static constexpr const char kIPv6Attribute[] =
+      "/computeMetadata/v1/instance/network-interfaces/0/ipv6s";
 
   MetadataQuery(
       std::string attribute, grpc_polling_entity* pollent,

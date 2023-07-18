@@ -7,45 +7,60 @@
  * regenerated. */
 
 #include <stddef.h>
-#include "upb/msg_internal.h"
+#include "upb/collections/array_internal.h"
+#include "upb/message/internal.h"
+#include "upb/mini_table/enum_internal.h"
 #include "envoy/config/core/v3/proxy_protocol.upb.h"
 #include "udpa/annotations/status.upb.h"
 #include "validate/validate.upb.h"
 
-#include "upb/port_def.inc"
+// Must be last.
+#include "upb/port/def.inc"
 
-static const upb_MiniTable_Field envoy_config_core_v3_ProxyProtocolPassThroughTLVs__fields[2] = {
-  {1, UPB_SIZE(0, 0), UPB_SIZE(0, 0), kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
-  {2, UPB_SIZE(4, 8), UPB_SIZE(0, 0), kUpb_NoSub, 13, kUpb_FieldMode_Array | kUpb_LabelFlags_IsPacked | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+static const upb_MiniTableField envoy_config_core_v3_ProxyProtocolPassThroughTLVs__fields[2] = {
+  {1, 0, 0, kUpb_NoSub, 5, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsAlternate | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(4, 8), 0, kUpb_NoSub, 13, kUpb_FieldMode_Array | kUpb_LabelFlags_IsPacked | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
 };
 
-const upb_MiniTable envoy_config_core_v3_ProxyProtocolPassThroughTLVs_msginit = {
+const upb_MiniTable envoy_config_core_v3_ProxyProtocolPassThroughTLVs_msg_init = {
   NULL,
   &envoy_config_core_v3_ProxyProtocolPassThroughTLVs__fields[0],
-  UPB_SIZE(8, 16), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(8, 16), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x000000003f000008, &upb_psv4_1bt},
+    {0x000800003f000012, &upb_ppv4_1bt},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+  })
 };
 
-static const upb_MiniTable_Sub envoy_config_core_v3_ProxyProtocolConfig_submsgs[1] = {
-  {.submsg = &envoy_config_core_v3_ProxyProtocolPassThroughTLVs_msginit},
+static const upb_MiniTableSub envoy_config_core_v3_ProxyProtocolConfig_submsgs[1] = {
+  {.submsg = &envoy_config_core_v3_ProxyProtocolPassThroughTLVs_msg_init},
 };
 
-static const upb_MiniTable_Field envoy_config_core_v3_ProxyProtocolConfig__fields[2] = {
-  {1, UPB_SIZE(4, 4), UPB_SIZE(0, 0), kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
-  {2, UPB_SIZE(8, 8), UPB_SIZE(1, 1), 0, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+static const upb_MiniTableField envoy_config_core_v3_ProxyProtocolConfig__fields[2] = {
+  {1, 4, 0, kUpb_NoSub, 5, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsAlternate | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
+  {2, 8, 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
 };
 
-const upb_MiniTable envoy_config_core_v3_ProxyProtocolConfig_msginit = {
+const upb_MiniTable envoy_config_core_v3_ProxyProtocolConfig_msg_init = {
   &envoy_config_core_v3_ProxyProtocolConfig_submsgs[0],
   &envoy_config_core_v3_ProxyProtocolConfig__fields[0],
-  UPB_SIZE(16, 16), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  16, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x000400003f000008, &upb_psv4_1bt},
+    {0x0008000001000012, &upb_psm_1bt_max64b},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+  })
 };
 
 static const upb_MiniTable *messages_layout[2] = {
-  &envoy_config_core_v3_ProxyProtocolPassThroughTLVs_msginit,
-  &envoy_config_core_v3_ProxyProtocolConfig_msginit,
+  &envoy_config_core_v3_ProxyProtocolPassThroughTLVs_msg_init,
+  &envoy_config_core_v3_ProxyProtocolConfig_msg_init,
 };
 
-const upb_MiniTable_File envoy_config_core_v3_proxy_protocol_proto_upb_file_layout = {
+const upb_MiniTableFile envoy_config_core_v3_proxy_protocol_proto_upb_file_layout = {
   messages_layout,
   NULL,
   NULL,
@@ -54,5 +69,5 @@ const upb_MiniTable_File envoy_config_core_v3_proxy_protocol_proto_upb_file_layo
   0,
 };
 
-#include "upb/port_undef.inc"
+#include "upb/port/undef.inc"
 

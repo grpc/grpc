@@ -36,6 +36,7 @@
 
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/json.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
@@ -165,12 +166,12 @@ void grpc_auth_json_key_destruct(grpc_auth_json_key* json_key) {
 // --- jwt encoding and signature. ---
 
 static char* encoded_jwt_header(const char* key_id, const char* algorithm) {
-  Json json = Json::Object{
-      {"alg", algorithm},
-      {"typ", GRPC_JWT_TYPE},
-      {"kid", key_id},
-  };
-  std::string json_str = JsonDump(json);
+  Json json = Json::FromObject({
+      {"alg", Json::FromString(algorithm)},
+      {"typ", Json::FromString(GRPC_JWT_TYPE)},
+      {"kid", Json::FromString(key_id)},
+  });
+  std::string json_str = grpc_core::JsonDump(json);
   return grpc_base64_encode(json_str.c_str(), json_str.size(), 1, 0);
 }
 
@@ -185,20 +186,20 @@ static char* encoded_jwt_claim(const grpc_auth_json_key* json_key,
   }
 
   Json::Object object = {
-      {"iss", json_key->client_email},
-      {"aud", audience},
-      {"iat", now.tv_sec},
-      {"exp", expiration.tv_sec},
+      {"iss", Json::FromString(json_key->client_email)},
+      {"aud", Json::FromString(audience)},
+      {"iat", Json::FromNumber(now.tv_sec)},
+      {"exp", Json::FromNumber(expiration.tv_sec)},
   };
   if (scope != nullptr) {
-    object["scope"] = scope;
+    object["scope"] = Json::FromString(scope);
   } else {
     // Unscoped JWTs need a sub field.
-    object["sub"] = json_key->client_email;
+    object["sub"] = Json::FromString(json_key->client_email);
   }
 
-  Json json(object);
-  std::string json_str = JsonDump(json);
+  std::string json_str =
+      grpc_core::JsonDump(Json::FromObject(std::move(object)));
   return grpc_base64_encode(json_str.c_str(), json_str.size(), 1, 0);
 }
 

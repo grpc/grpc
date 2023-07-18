@@ -1,0 +1,32 @@
+name: PR Title Check & Tag
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, edited]
+permissions:
+  contents: read # to determine modified files (actions/labeler)
+
+jobs:
+  triage:
+    permissions:
+      contents: read # to determine modified files (actions/labeler)
+      pull-requests: write # to add labels to PRs (actions/labeler)
+
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/labeler@v3
+      with:
+        repo-token: "${{ secrets.GITHUB_TOKEN }}"
+        sync-labels: ""
+
+  title-check:
+    permissions:
+      contents: read
+      pull-requests: write
+
+    runs-on: ubuntu-latest
+    steps:
+    - uses: thehanimo/pr-title-checker@v1.3.5
+      with:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        pass_on_octokit_error: false
+        configuration_path: ".github/pr_title_checker_config.json"

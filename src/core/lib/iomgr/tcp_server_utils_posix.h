@@ -30,6 +30,7 @@
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/iomgr/tcp_server.h"
+#include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 
 // one listening port
@@ -52,6 +53,11 @@ typedef struct grpc_tcp_listener {
   // identified while iterating through 'next'.
   struct grpc_tcp_listener* sibling;
   int is_sibling;
+  // If an accept4() call fails, a timer is started to drain the accept queue in
+  // case no further connection attempts reach the gRPC server.
+  grpc_closure retry_closure;
+  grpc_timer retry_timer;
+  gpr_atm retry_timer_armed;
 } grpc_tcp_listener;
 
 // the overall server
@@ -107,7 +113,7 @@ struct grpc_tcp_server {
   /* used when event engine based servers are enabled */
   int n_bind_ports = 0;
   absl::flat_hash_map<int, std::tuple<int, int>> listen_fd_to_index_map;
-  std::unique_ptr<grpc_event_engine::experimental::PosixListenerWithFdSupport>
+  std::unique_ptr<grpc_event_engine::experimental::EventEngine::Listener>
       ee_listener = nullptr;
   /* used to store a pre-allocated FD assigned to a socket */
   int pre_allocated_fd;
@@ -138,5 +144,11 @@ grpc_error_handle grpc_tcp_server_prepare_socket(
     bool so_reuseport, int* port);
 // Ruturn true if the platform supports ifaddrs
 bool grpc_tcp_server_have_ifaddrs(void);
+
+// Initialize (but don't start) the timer and callback to retry accept4() on a
+// listening socket after file descriptors have been exhausted. This must be
+// called when creating a new listener.
+void grpc_tcp_server_listener_initialize_retry_timer(
+    grpc_tcp_listener* listener);
 
 #endif  // GRPC_SRC_CORE_LIB_IOMGR_TCP_SERVER_UTILS_POSIX_H

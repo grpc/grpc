@@ -68,6 +68,8 @@ class BuildFileFunctions(object):
       return
     if kwargs["name"] == "lupb":
       return
+    if "testonly" in kwargs:
+      return
     files = kwargs.get("srcs", []) + kwargs.get("hdrs", [])
     found_files = []
     pregenerated_files = [
@@ -126,6 +128,9 @@ class BuildFileFunctions(object):
   def cc_fuzz_test(self, **kwargs):
     pass
 
+  def pkg_files(self, **kwargs):
+    pass
+
   def py_library(self, **kwargs):
     pass
 
@@ -150,7 +155,7 @@ class BuildFileFunctions(object):
   def cc_proto_library(self, **kwargs):
     pass
 
-  def generated_file_staleness_test(self, **kwargs):
+  def staleness_test(self, **kwargs):
     pass
 
   def upb_amalgamation(self, **kwargs):
@@ -180,7 +185,7 @@ class BuildFileFunctions(object):
   def select(self, arg_dict):
     return []
 
-  def glob(self, *args):
+  def glob(self, *args, **kwargs):
     return []
 
   def licenses(self, *args):
@@ -195,17 +200,31 @@ class BuildFileFunctions(object):
   def package_group(self, **kwargs):
     pass
 
+  def bool_flag(self, **kwargs):
+    pass
+
+  def bootstrap_upb_proto_library(self, **kwargs):
+    pass
+
+  def bootstrap_cc_library(self, **kwargs):
+    pass
+
 
 class WorkspaceFileFunctions(object):
   def __init__(self, converter):
     self.converter = converter
 
-  def load(self, *args):
+  def load(self, *args, **kwargs):
     pass
 
   def workspace(self, **kwargs):
     self.converter.prelude += "project(%s)\n" % (kwargs["name"])
     self.converter.prelude += "set(CMAKE_C_STANDARD 99)\n"
+
+  def maybe(self, rule, **kwargs):
+    if kwargs["name"] == "utf8_range":
+      self.converter.utf8_range_commit = kwargs["commit"]
+    pass
 
   def http_archive(self, **kwargs):
     pass
@@ -219,10 +238,13 @@ class WorkspaceFileFunctions(object):
   def bazel_version_repository(self, **kwargs):
     pass
 
-  def upb_deps(self):
+  def protobuf_deps(self):
     pass
 
-  def protobuf_deps(self):
+  def utf8_range_deps(self):
+    pass
+
+  def pip_parse(self, **kwargs):
     pass
 
   def rules_fuzzing_dependencies(self):
@@ -231,7 +253,13 @@ class WorkspaceFileFunctions(object):
   def rules_fuzzing_init(self):
     pass
 
+  def rules_pkg_dependencies(self):
+    pass
+
   def system_python(self, **kwargs):
+    pass
+
+  def register_system_python(self, **kwargs):
     pass
 
   def register_toolchains(self, toolchain):
@@ -243,17 +271,28 @@ class WorkspaceFileFunctions(object):
   def python_nuget_package(self, **kwargs):
     pass
 
+  def install_deps(self):
+    pass
+
+  def fuzzing_py_install_deps(self):
+    pass
+
+  def googletest_deps(self):
+    pass
+
 
 class Converter(object):
   def __init__(self):
     self.prelude = ""
     self.toplevel = ""
     self.if_lua = ""
+    self.utf8_range_commit = ""
 
   def convert(self):
     return self.template % {
         "prelude": converter.prelude,
         "toplevel": converter.toplevel,
+        "utf8_range_commit": converter.utf8_range_commit,
     }
 
   template = textwrap.dedent("""\
@@ -310,6 +349,25 @@ class Converter(object):
     include_directories(../cmake)
     include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
+    if(NOT TARGET utf8_range)
+      if(EXISTS ../external/utf8_range)
+        # utf8_range is already installed
+        include_directories(../external/utf8_range)
+      else()
+        include(FetchContent)
+        FetchContent_Declare(
+          utf8_range
+          GIT_REPOSITORY "https://github.com/protocolbuffers/utf8_range.git"
+          GIT_TAG "%(utf8_range_commit)s"
+        )
+        FetchContent_GetProperties(utf8_range)
+        if(NOT utf8_range_POPULATED)
+          FetchContent_Populate(utf8_range)
+          include_directories(${utf8_range_SOURCE_DIR})
+        endif()
+      endif()
+    endif()
+
     if(APPLE)
       set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -undefined dynamic_lookup -flat_namespace")
     elseif(UNIX)
@@ -336,7 +394,9 @@ def GetDict(obj):
 
 globs = GetDict(converter)
 
-exec(open("WORKSPACE").read(), GetDict(WorkspaceFileFunctions(converter)))
+workspace_dict = GetDict(WorkspaceFileFunctions(converter))
+exec(open("bazel/workspace_deps.bzl").read(), workspace_dict)
+exec(open("WORKSPACE").read(), workspace_dict)
 exec(open("BUILD").read(), GetDict(BuildFileFunctions(converter)))
 
 with open(sys.argv[1], "w") as f:

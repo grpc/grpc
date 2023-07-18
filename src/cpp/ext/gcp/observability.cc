@@ -28,6 +28,8 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
 #include "absl/types/optional.h"
 #include "google/api/monitored_resource.pb.h"
 #include "google/devtools/cloudtrace/v2/tracing.grpc.pb.h"
@@ -45,6 +47,7 @@
 #include <grpcpp/support/channel_arguments.h>
 
 #include "src/core/ext/filters/logging/logging_filter.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/cpp/client/client_stats_interceptor.h"
 #include "src/cpp/ext/filters/census/client_filter.h"
@@ -55,11 +58,13 @@
 #include "src/cpp/ext/gcp/observability_logging_sink.h"
 
 namespace grpc {
-namespace experimental {
 
+namespace internal {
 namespace {
 
 grpc::internal::ObservabilityLoggingSink* g_logging_sink = nullptr;
+
+bool g_gcp_observability_initialized = false;
 
 // TODO(yashykt): These constants are currently derived from the example at
 // https://cloud.google.com/traffic-director/docs/observability-proxyless#c++.
@@ -74,18 +79,20 @@ constexpr char kGoogleStackdriverStatsAddress[] = "monitoring.googleapis.com";
 
 void RegisterOpenCensusViewsForGcpObservability() {
   // Register client default views for GCP observability
-  ClientStartedRpcs().RegisterForExport();
-  ClientCompletedRpcs().RegisterForExport();
-  ClientRoundtripLatency().RegisterForExport();
+  experimental::ClientStartedRpcs().RegisterForExport();
+  experimental::ClientCompletedRpcs().RegisterForExport();
+  experimental::ClientRoundtripLatency().RegisterForExport();
   internal::ClientApiLatency().RegisterForExport();
-  ClientSentCompressedMessageBytesPerRpc().RegisterForExport();
-  ClientReceivedCompressedMessageBytesPerRpc().RegisterForExport();
+  experimental::ClientSentCompressedMessageBytesPerRpc().RegisterForExport();
+  experimental::ClientReceivedCompressedMessageBytesPerRpc()
+      .RegisterForExport();
   // Register server default views for GCP observability
-  ServerStartedRpcs().RegisterForExport();
-  ServerCompletedRpcs().RegisterForExport();
-  ServerSentCompressedMessageBytesPerRpc().RegisterForExport();
-  ServerReceivedCompressedMessageBytesPerRpc().RegisterForExport();
-  ServerServerLatency().RegisterForExport();
+  experimental::ServerStartedRpcs().RegisterForExport();
+  experimental::ServerCompletedRpcs().RegisterForExport();
+  experimental::ServerSentCompressedMessageBytesPerRpc().RegisterForExport();
+  experimental::ServerReceivedCompressedMessageBytesPerRpc()
+      .RegisterForExport();
+  experimental::ServerServerLatency().RegisterForExport();
 }
 
 }  // namespace
@@ -100,6 +107,10 @@ absl::Status GcpObservabilityInit() {
       !config->cloud_logging.has_value()) {
     return absl::OkStatus();
   }
+  if (g_gcp_observability_initialized) {
+    grpc_core::Crash("GCP Observability for gRPC was already initialized.");
+  }
+  g_gcp_observability_initialized = true;
   grpc::internal::EnvironmentAutoDetect::Create(config->project_id);
   if (!config->cloud_trace.has_value()) {
     // Disable OpenCensus tracing
@@ -206,7 +217,55 @@ void GcpObservabilityClose() {
   if (g_logging_sink != nullptr) {
     g_logging_sink->FlushAndClose();
   }
+  // Currently, GcpObservabilityClose() only supports flushing logs. Stats and
+  // tracing get automatically flushed at a regular interval, so sleep for an
+  // interval to make sure that those are flushed too.
+  absl::SleepFor(absl::Seconds(25));
 }
 
+}  // namespace internal
+
+namespace experimental {
+
+absl::Status GcpObservabilityInit() {
+  return grpc::internal::GcpObservabilityInit();
+}
+
+void GcpObservabilityClose() { return grpc::internal::GcpObservabilityClose(); }
+
 }  // namespace experimental
+
+//
+// GcpObservability
+//
+
+absl::StatusOr<GcpObservability> GcpObservability::Init() {
+  absl::Status status = grpc::internal::GcpObservabilityInit();
+  if (!status.ok()) {
+    return status;
+  }
+  GcpObservability obj;
+  obj.impl_ = std::make_unique<GcpObservabilityImpl>();
+  return obj;
+}
+
+GcpObservability::GcpObservability(GcpObservability&& other) noexcept
+    : impl_(std::move(other.impl_)) {}
+
+GcpObservability& GcpObservability::operator=(
+    GcpObservability&& other) noexcept {
+  if (this != &other) {
+    impl_ = std::move(other.impl_);
+  }
+  return *this;
+}
+
+//
+// GcpObservability::GcpObservabilityImpl
+//
+
+GcpObservability::GcpObservabilityImpl::~GcpObservabilityImpl() {
+  grpc::internal::GcpObservabilityClose();
+}
+
 }  // namespace grpc

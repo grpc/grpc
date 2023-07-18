@@ -39,7 +39,7 @@
 #include "envoy/config/endpoint/v3/endpoint_components.upb.h"
 #include "envoy/type/v3/percent.upb.h"
 #include "google/protobuf/wrappers.upb.h"
-#include "upb/text_encode.h"
+#include "upb/text/encode.h"
 
 #include <grpc/support/log.h>
 
@@ -220,13 +220,10 @@ absl::optional<ServerAddress> ServerAddressParse(
     }
   }
   // Convert to ServerAddress.
-  std::map<const char*, std::unique_ptr<ServerAddress::AttributeInterface>>
-      attributes;
-  attributes[ServerAddressWeightAttribute::kServerAddressWeightAttributeKey] =
-      std::make_unique<ServerAddressWeightAttribute>(weight);
-  attributes[XdsEndpointHealthStatusAttribute::kKey] =
-      std::make_unique<XdsEndpointHealthStatusAttribute>(*status);
-  return ServerAddress(grpc_address, ChannelArgs(), std::move(attributes));
+  return ServerAddress(grpc_address,
+                       ChannelArgs()
+                           .Set(GRPC_ARG_ADDRESS_WEIGHT, weight)
+                           .Set(GRPC_ARG_XDS_HEALTH_STATUS, status->status()));
 }
 
 struct ParsedLocality {
@@ -432,7 +429,10 @@ absl::StatusOr<XdsEndpointResource> EdsResourceParse(
     }
   }
   // Return result.
-  if (!errors.ok()) return errors.status("errors parsing EDS resource");
+  if (!errors.ok()) {
+    return errors.status(absl::StatusCode::kInvalidArgument,
+                         "errors parsing EDS resource");
+  }
   return eds_resource;
 }
 

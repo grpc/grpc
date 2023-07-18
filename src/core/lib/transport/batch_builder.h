@@ -19,12 +19,14 @@
 
 #include <stdint.h>
 
+#include <initializer_list>
 #include <memory>
 #include <string>
 #include <utility>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
@@ -154,6 +156,7 @@ class BatchBuilder {
 
     absl::optional<SliceBuffer> payload;
     uint32_t flags;
+    bool call_failed_before_recv_message = false;
   };
 
   // A pending receive metadata.
@@ -201,6 +204,11 @@ class BatchBuilder {
     ~Batch();
     Batch(const Batch&) = delete;
     Batch& operator=(const Batch&) = delete;
+    std::string DebugPrefix(Activity* activity = Activity::current()) const {
+      return absl::StrFormat("%s[connected] [batch %p] ", activity->DebugTag(),
+                             this);
+    }
+
     void IncrementRefCount() { ++refs; }
     void Unref() {
       if (--refs == 0) party->arena()->DeletePooled(this);
@@ -221,8 +229,8 @@ class BatchBuilder {
       if (this->*field != nullptr) return this->*field;
       this->*field = party->arena()->NewPooled<T>(Ref());
       if (grpc_call_trace.enabled()) {
-        gpr_log(GPR_DEBUG, "%s[connected] Add batch closure for %s @ %s",
-                Activity::current()->DebugTag().c_str(),
+        gpr_log(GPR_DEBUG, "%sAdd batch closure for %s @ %s",
+                DebugPrefix().c_str(),
                 std::string((this->*field)->name()).c_str(),
                 (this->*field)->on_done_closure.DebugString().c_str());
       }
@@ -272,8 +280,8 @@ class BatchBuilder {
   // Combine send status and server metadata into a final status to report back
   // to the containing call.
   static ServerMetadataHandle CompleteSendServerTrailingMetadata(
-      ServerMetadataHandle sent_metadata, absl::Status send_result,
-      bool actually_sent);
+      Batch* batch, ServerMetadataHandle sent_metadata,
+      absl::Status send_result, bool actually_sent);
 
   grpc_transport_stream_op_batch_payload* const payload_;
   absl::optional<Target> target_;
@@ -281,12 +289,11 @@ class BatchBuilder {
 };
 
 inline auto BatchBuilder::SendMessage(Target target, MessageHandle message) {
+  auto* batch = GetBatch(target);
   if (grpc_call_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "%s[connected] Queue send message: %s",
-            Activity::current()->DebugTag().c_str(),
+    gpr_log(GPR_DEBUG, "%sQueue send message: %s", batch->DebugPrefix().c_str(),
             message->DebugString().c_str());
   }
-  auto* batch = GetBatch(target);
   auto* pc = batch->GetInitializedCompletion(&Batch::pending_sends);
   batch->batch.on_complete = &pc->on_done_closure;
   batch->batch.send_message = true;
@@ -298,11 +305,11 @@ inline auto BatchBuilder::SendMessage(Target target, MessageHandle message) {
 
 inline auto BatchBuilder::SendInitialMetadata(
     Target target, Arena::PoolPtr<grpc_metadata_batch> md) {
-  if (grpc_call_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "%s[connected] Queue send initial metadata: %s",
-            Activity::current()->DebugTag().c_str(), md->DebugString().c_str());
-  }
   auto* batch = GetBatch(target);
+  if (grpc_call_trace.enabled()) {
+    gpr_log(GPR_DEBUG, "%sQueue send initial metadata: %s",
+            batch->DebugPrefix().c_str(), md->DebugString().c_str());
+  }
   auto* pc = batch->GetInitializedCompletion(&Batch::pending_sends);
   batch->batch.on_complete = &pc->on_done_closure;
   batch->batch.send_initial_metadata = true;
@@ -317,11 +324,11 @@ inline auto BatchBuilder::SendClientInitialMetadata(
 }
 
 inline auto BatchBuilder::SendClientTrailingMetadata(Target target) {
-  if (grpc_call_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "%s[connected] Queue send trailing metadata",
-            Activity::current()->DebugTag().c_str());
-  }
   auto* batch = GetBatch(target);
+  if (grpc_call_trace.enabled()) {
+    gpr_log(GPR_DEBUG, "%sQueue send trailing metadata",
+            batch->DebugPrefix().c_str());
+  }
   auto* pc = batch->GetInitializedCompletion(&Batch::pending_sends);
   batch->batch.on_complete = &pc->on_done_closure;
   batch->batch.send_trailing_metadata = true;
@@ -341,13 +348,6 @@ inline auto BatchBuilder::SendServerInitialMetadata(
 inline auto BatchBuilder::SendServerTrailingMetadata(
     Target target, ServerMetadataHandle metadata,
     bool convert_to_cancellation) {
-  if (grpc_call_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "%s[connected] %s: %s",
-            Activity::current()->DebugTag().c_str(),
-            convert_to_cancellation ? "Send trailing metadata as cancellation"
-                                    : "Queue send trailing metadata",
-            metadata->DebugString().c_str());
-  }
   Batch* batch;
   PendingSends* pc;
   if (convert_to_cancellation) {
@@ -367,14 +367,20 @@ inline auto BatchBuilder::SendServerTrailingMetadata(
     payload_->send_trailing_metadata.send_trailing_metadata = metadata.get();
     payload_->send_trailing_metadata.sent = &pc->trailing_metadata_sent;
   }
+  if (grpc_call_trace.enabled()) {
+    gpr_log(GPR_DEBUG, "%s%s: %s", batch->DebugPrefix().c_str(),
+            convert_to_cancellation ? "Send trailing metadata as cancellation"
+                                    : "Queue send trailing metadata",
+            metadata->DebugString().c_str());
+  }
   batch->batch.on_complete = &pc->on_done_closure;
   pc->send_trailing_metadata = std::move(metadata);
-  auto promise = batch->RefUntil(
-      Map(pc->done_latch.WaitAndCopy(), [pc](absl::Status status) {
-        return CompleteSendServerTrailingMetadata(
-            std::move(pc->send_trailing_metadata), std::move(status),
-            pc->trailing_metadata_sent);
-      }));
+  auto promise = Map(pc->done_latch.WaitAndCopy(),
+                     [pc, batch = batch->Ref()](absl::Status status) {
+                       return CompleteSendServerTrailingMetadata(
+                           batch.get(), std::move(pc->send_trailing_metadata),
+                           std::move(status), pc->trailing_metadata_sent);
+                     });
   if (convert_to_cancellation) {
     batch->PerformWith(target);
   }
@@ -382,32 +388,38 @@ inline auto BatchBuilder::SendServerTrailingMetadata(
 }
 
 inline auto BatchBuilder::ReceiveMessage(Target target) {
-  if (grpc_call_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "%s[connected] Queue receive message",
-            Activity::current()->DebugTag().c_str());
-  }
   auto* batch = GetBatch(target);
+  if (grpc_call_trace.enabled()) {
+    gpr_log(GPR_DEBUG, "%sQueue receive message", batch->DebugPrefix().c_str());
+  }
   auto* pc = batch->GetInitializedCompletion(&Batch::pending_receive_message);
   batch->batch.recv_message = true;
   payload_->recv_message.recv_message_ready = &pc->on_done_closure;
   payload_->recv_message.recv_message = &pc->payload;
   payload_->recv_message.flags = &pc->flags;
+  payload_->recv_message.call_failed_before_recv_message =
+      &pc->call_failed_before_recv_message;
   return batch->RefUntil(
       Map(pc->done_latch.Wait(),
           [pc](absl::Status status)
               -> absl::StatusOr<absl::optional<MessageHandle>> {
             if (!status.ok()) return status;
-            if (!pc->payload.has_value()) return absl::nullopt;
+            if (!pc->payload.has_value()) {
+              if (pc->call_failed_before_recv_message) {
+                return absl::CancelledError();
+              }
+              return absl::nullopt;
+            }
             return pc->IntoMessageHandle();
           }));
 }
 
 inline auto BatchBuilder::ReceiveInitialMetadata(Target target) {
-  if (grpc_call_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "%s[connected] Queue receive initial metadata",
-            Activity::current()->DebugTag().c_str());
-  }
   auto* batch = GetBatch(target);
+  if (grpc_call_trace.enabled()) {
+    gpr_log(GPR_DEBUG, "%sQueue receive initial metadata",
+            batch->DebugPrefix().c_str());
+  }
   auto* pc =
       batch->GetInitializedCompletion(&Batch::pending_receive_initial_metadata);
   batch->batch.recv_initial_metadata = true;
@@ -431,11 +443,11 @@ inline auto BatchBuilder::ReceiveServerInitialMetadata(Target target) {
 }
 
 inline auto BatchBuilder::ReceiveTrailingMetadata(Target target) {
-  if (grpc_call_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "%s[connected] Queue receive trailing metadata",
-            Activity::current()->DebugTag().c_str());
-  }
   auto* batch = GetBatch(target);
+  if (grpc_call_trace.enabled()) {
+    gpr_log(GPR_DEBUG, "%sQueue receive trailing metadata",
+            batch->DebugPrefix().c_str());
+  }
   auto* pc = batch->GetInitializedCompletion(
       &Batch::pending_receive_trailing_metadata);
   batch->batch.recv_trailing_metadata = true;

@@ -25,8 +25,6 @@
 #include <map>
 #include <utility>
 
-#include <google/protobuf/timestamp.pb.h>
-
 #include "absl/numeric/int128.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
@@ -51,6 +49,9 @@
 #include "src/core/lib/gprpp/uuid_v4.h"
 #include "src/core/lib/json/json.h"
 #include "src/cpp/ext/filters/census/open_census_call_tracer.h"
+
+// IWYU pragma: no_include "google/protobuf/struct.pb.h"
+// IWYU pragma: no_include "google/protobuf/timestamp.pb.h"
 
 namespace grpc {
 namespace internal {
@@ -118,7 +119,7 @@ std::string EventTypeToString(LoggingSink::Entry::EventType type) {
       return "SERVER_TRAILER";
     case LoggingSink::Entry::EventType::kCancel:
       return "CANCEL";
-    case LoggingSink::Entry::EventType::kUnkown:
+    case LoggingSink::Entry::EventType::kUnknown:
     default:
       return "EVENT_TYPE_UNKNOWN";
   }
@@ -130,7 +131,7 @@ std::string LoggerToString(LoggingSink::Entry::Logger type) {
       return "CLIENT";
     case LoggingSink::Entry::Logger::kServer:
       return "SERVER";
-    case LoggingSink::Entry::Logger::kUnkown:
+    case LoggingSink::Entry::Logger::kUnknown:
     default:
       return "LOGGER_UNKNOWN";
   }

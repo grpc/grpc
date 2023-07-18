@@ -44,6 +44,7 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
@@ -153,6 +154,10 @@ class RoundRobin : public LoadBalancingPolicy {
         absl::Status status_for_tf);
 
    private:
+    std::shared_ptr<WorkSerializer> work_serializer() const override {
+      return static_cast<RoundRobin*>(policy())->work_serializer();
+    }
+
     std::string CountersString() const {
       return absl::StrCat("num_subchannels=", num_subchannels(),
                           " num_ready=", num_ready_,
@@ -293,7 +298,7 @@ absl::Status RoundRobin::UpdateLocked(UpdateArgs args) {
   }
   latest_pending_subchannel_list_ = MakeRefCounted<RoundRobinSubchannelList>(
       this, std::move(addresses), args.args);
-  latest_pending_subchannel_list_->StartWatchingLocked();
+  latest_pending_subchannel_list_->StartWatchingLocked(args.args);
   // If the new list is empty, immediately promote it to
   // subchannel_list_ and report TRANSIENT_FAILURE.
   if (latest_pending_subchannel_list_->num_subchannels() == 0) {
@@ -313,12 +318,9 @@ absl::Status RoundRobin::UpdateLocked(UpdateArgs args) {
     return status;
   }
   // Otherwise, if this is the initial update, immediately promote it to
-  // subchannel_list_ and report CONNECTING.
+  // subchannel_list_.
   if (subchannel_list_.get() == nullptr) {
     subchannel_list_ = std::move(latest_pending_subchannel_list_);
-    channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_CONNECTING, absl::Status(),
-        MakeRefCounted<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker")));
   }
   return absl::OkStatus();
 }

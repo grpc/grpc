@@ -56,8 +56,8 @@
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/detail/basic_join.h"
 #include "src/core/lib/promise/detail/basic_seq.h"
+#include "src/core/lib/promise/detail/status.h"
 #include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/latch.h"
@@ -69,7 +69,6 @@
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/seq.h"
-#include "src/core/lib/promise/try_join.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
@@ -321,7 +320,8 @@ class ConnectedChannelStream : public Orphanable {
   }
 
   // Returns a promise that implements the receive message loop.
-  auto RecvMessages(PipeSender<MessageHandle>* incoming_messages);
+  auto RecvMessages(PipeSender<MessageHandle>* incoming_messages,
+                    bool cancel_on_error);
   // Returns a promise that implements the send message loop.
   auto SendMessages(PipeReceiver<MessageHandle>* outgoing_messages);
 
@@ -374,12 +374,12 @@ class ConnectedChannelStream : public Orphanable {
 };
 
 auto ConnectedChannelStream::RecvMessages(
-    PipeSender<MessageHandle>* incoming_messages) {
-  return Loop([self = InternalRef(),
+    PipeSender<MessageHandle>* incoming_messages, bool cancel_on_error) {
+  return Loop([self = InternalRef(), cancel_on_error,
                incoming_messages = std::move(*incoming_messages)]() mutable {
     return Seq(
         GetContext<BatchBuilder>()->ReceiveMessage(self->batch_target()),
-        [&incoming_messages](
+        [cancel_on_error, &incoming_messages](
             absl::StatusOr<absl::optional<MessageHandle>> status) mutable {
           bool has_message = status.ok() && status->has_value();
           auto publish_message = [&incoming_messages, &status]() {
@@ -405,13 +405,17 @@ auto ConnectedChannelStream::RecvMessages(
                          return Continue{};
                        });
           };
-          auto publish_close = [&status]() mutable {
+          auto publish_close = [cancel_on_error, &incoming_messages,
+                                &status]() mutable {
             if (grpc_call_trace.enabled()) {
               gpr_log(GPR_INFO,
                       "%s[connected] RecvMessage: reached end of stream with "
                       "status:%s",
                       Activity::current()->DebugTag().c_str(),
                       status.status().ToString().c_str());
+            }
+            if (cancel_on_error && !status.ok()) {
+              incoming_messages.CloseWithError();
             }
             return Immediate(LoopCtl<absl::Status>(status.status()));
           };
@@ -442,9 +446,13 @@ ArenaPromise<ServerMetadataHandle> MakeClientCallPromise(
   grpc_transport_init_stream(transport, stream->stream(),
                              stream->stream_refcount(), nullptr,
                              GetContext<Arena>());
-  grpc_transport_set_pops(transport, stream->stream(),
-                          GetContext<CallContext>()->polling_entity());
   auto* party = static_cast<Party*>(Activity::current());
+  party->Spawn(
+      "set_polling_entity", call_args.polling_entity->Wait(),
+      [transport,
+       stream = stream->InternalRef()](grpc_polling_entity polling_entity) {
+        grpc_transport_set_pops(transport, stream->stream(), &polling_entity);
+      });
   // Start a loop to send messages from client_to_server_messages to the
   // transport. When the pipe closes and the loop completes, send a trailing
   // metadata batch to close the stream.
@@ -523,14 +531,44 @@ ArenaPromise<ServerMetadataHandle> MakeClientCallPromise(
   // complete (or one fails).
   // Next: receive trailing metadata, and return that up the stack.
   auto recv_messages =
-      stream->RecvMessages(call_args.server_to_client_messages);
-  return Map(TrySeq(TryJoin(std::move(send_initial_metadata),
-                            std::move(recv_messages)),
-                    std::move(recv_trailing_metadata)),
-             [stream = std::move(stream)](ServerMetadataHandle result) {
-               stream->set_finished();
-               return result;
-             });
+      stream->RecvMessages(call_args.server_to_client_messages, false);
+  return Map(
+      [send_initial_metadata = std::move(send_initial_metadata),
+       recv_messages = std::move(recv_messages),
+       recv_trailing_metadata = std::move(recv_trailing_metadata),
+       done_send_initial_metadata = false, done_recv_messages = false,
+       done_recv_trailing_metadata =
+           false]() mutable -> Poll<ServerMetadataHandle> {
+        if (!done_send_initial_metadata) {
+          auto p = send_initial_metadata();
+          if (auto* r = p.value_if_ready()) {
+            done_send_initial_metadata = true;
+            if (!r->ok()) return StatusCast<ServerMetadataHandle>(*r);
+          }
+        }
+        if (!done_recv_messages) {
+          auto p = recv_messages();
+          if (auto* r = p.value_if_ready()) {
+            // NOTE: ignore errors here, they'll be collected in the
+            // recv_trailing_metadata.
+            done_recv_messages = true;
+          } else {
+            return Pending{};
+          }
+        }
+        if (!done_recv_trailing_metadata) {
+          auto p = recv_trailing_metadata();
+          if (auto* r = p.value_if_ready()) {
+            done_recv_trailing_metadata = true;
+            return std::move(*r);
+          }
+        }
+        return Pending{};
+      },
+      [stream = std::move(stream)](ServerMetadataHandle result) {
+        stream->set_finished();
+        return result;
+      });
 }
 #endif
 
@@ -547,9 +585,6 @@ ArenaPromise<ServerMetadataHandle> MakeServerCallPromise(
       transport, stream->stream(), stream->stream_refcount(),
       GetContext<CallContext>()->server_call_context()->server_stream_data(),
       GetContext<Arena>());
-  grpc_transport_set_pops(transport, stream->stream(),
-                          GetContext<CallContext>()->polling_entity());
-
   auto* party = static_cast<Party*>(Activity::current());
 
   // Arifacts we need for the lifetime of the call.
@@ -558,10 +593,18 @@ ArenaPromise<ServerMetadataHandle> MakeServerCallPromise(
     Pipe<MessageHandle> client_to_server;
     Pipe<ServerMetadataHandle> server_initial_metadata;
     Latch<ServerMetadataHandle> failure_latch;
+    Latch<grpc_polling_entity> polling_entity_latch;
     bool sent_initial_metadata = false;
     bool sent_trailing_metadata = false;
   };
   auto* call_data = GetContext<Arena>()->ManagedNew<CallData>();
+
+  party->Spawn(
+      "set_polling_entity", call_data->polling_entity_latch.Wait(),
+      [transport,
+       stream = stream->InternalRef()](grpc_polling_entity polling_entity) {
+        grpc_transport_set_pops(transport, stream->stream(), &polling_entity);
+      });
 
   auto server_to_client_empty =
       call_data->server_to_client.receiver.AwaitEmpty();
@@ -580,6 +623,7 @@ ArenaPromise<ServerMetadataHandle> MakeServerCallPromise(
                auto call_promise = next_promise_factory(CallArgs{
                    std::move(client_initial_metadata),
                    ClientInitialMetadataOutstandingToken::Empty(),
+                   &call_data->polling_entity_latch,
                    &call_data->server_initial_metadata.sender,
                    &call_data->client_to_server.receiver,
                    &call_data->server_to_client.sender,
@@ -666,13 +710,16 @@ ArenaPromise<ServerMetadataHandle> MakeServerCallPromise(
 
   // Promise factory that accepts a ServerMetadataHandle, and sends it as the
   // trailing metadata for this call.
-  auto send_trailing_metadata =
-      [call_data, stream = stream->InternalRef()](
-          ServerMetadataHandle server_trailing_metadata) {
-        return GetContext<BatchBuilder>()->SendServerTrailingMetadata(
-            stream->batch_target(), std::move(server_trailing_metadata),
+  auto send_trailing_metadata = [call_data, stream = stream->InternalRef()](
+                                    ServerMetadataHandle
+                                        server_trailing_metadata) {
+    bool is_cancellation =
+        server_trailing_metadata->get(GrpcCallWasCancelled()).value_or(false);
+    return GetContext<BatchBuilder>()->SendServerTrailingMetadata(
+        stream->batch_target(), std::move(server_trailing_metadata),
+        is_cancellation ||
             !std::exchange(call_data->sent_initial_metadata, true));
-      };
+  };
 
   // Runs the receive message loop, either until all the messages
   // are received or the server call is complete.
@@ -680,7 +727,7 @@ ArenaPromise<ServerMetadataHandle> MakeServerCallPromise(
       "recv_messages",
       Race(
           Map(stream->WaitFinished(), [](Empty) { return absl::OkStatus(); }),
-          Map(stream->RecvMessages(&call_data->client_to_server.sender),
+          Map(stream->RecvMessages(&call_data->client_to_server.sender, true),
               [failure_latch = &call_data->failure_latch](absl::Status status) {
                 if (!status.ok() && !failure_latch->is_set()) {
                   failure_latch->Set(ServerMetadataFromStatus(status));
@@ -769,12 +816,31 @@ ArenaPromise<ServerMetadataHandle> MakeServerCallPromise(
   // (allowing the call code to decide on what signalling to give the
   // application).
 
-  return Map(Seq(std::move(recv_initial_metadata_then_run_promise),
-                 std::move(send_trailing_metadata)),
-             [stream = std::move(stream)](ServerMetadataHandle md) {
-               stream->set_finished();
-               return md;
-             });
+  struct CleanupPollingEntityLatch {
+    void operator()(Latch<grpc_polling_entity>* latch) {
+      if (!latch->is_set()) latch->Set(grpc_polling_entity());
+    }
+  };
+  auto cleanup_polling_entity_latch =
+      std::unique_ptr<Latch<grpc_polling_entity>, CleanupPollingEntityLatch>(
+          &call_data->polling_entity_latch);
+  struct CleanupSendInitialMetadata {
+    void operator()(CallData* call_data) {
+      call_data->server_initial_metadata.receiver.CloseWithError();
+    }
+  };
+  auto cleanup_send_initial_metadata =
+      std::unique_ptr<CallData, CleanupSendInitialMetadata>(call_data);
+
+  return Map(
+      Seq(std::move(recv_initial_metadata_then_run_promise),
+          std::move(send_trailing_metadata)),
+      [cleanup_polling_entity_latch = std::move(cleanup_polling_entity_latch),
+       cleanup_send_initial_metadata = std::move(cleanup_send_initial_metadata),
+       stream = std::move(stream)](ServerMetadataHandle md) {
+        stream->set_finished();
+        return md;
+      });
 }
 #endif
 

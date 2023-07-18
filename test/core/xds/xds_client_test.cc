@@ -37,9 +37,10 @@
 #include "absl/types/variant.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "upb/def.h"
+#include "upb/reflection/def.h"
 
 #include <grpc/grpc.h>
+#include <grpc/support/json.h>
 #include <grpc/support/log.h>
 #include <grpcpp/impl/codegen/config_protobuf.h>
 
@@ -63,6 +64,8 @@
 // IWYU pragma: no_include <google/protobuf/stubs/status.h>
 // IWYU pragma: no_include <google/protobuf/unknown_field_set.h>
 // IWYU pragma: no_include <google/protobuf/util/json_util.h>
+// IWYU pragma: no_include "google/protobuf/json/json.h"
+// IWYU pragma: no_include "google/protobuf/util/json_util.h"
 
 using envoy::service::discovery::v3::DiscoveryRequest;
 using envoy::service::discovery::v3::DiscoveryResponse;
@@ -79,6 +82,7 @@ class XdsClientTest : public ::testing::Test {
    public:
     class FakeNode : public Node {
      public:
+      FakeNode() = default;
       const std::string& id() const override { return id_; }
       const std::string& cluster() const override { return cluster_; }
       const std::string& locality_region() const override {
@@ -711,9 +715,11 @@ class XdsClientTest : public ::testing::Test {
       ASSERT_TRUE(metadata_json.ok())
           << metadata_json.status() << " on " << location.file() << ":"
           << location.line();
-      EXPECT_EQ(*metadata_json, xds_client_->bootstrap().node()->metadata())
-          << location.file() << ":" << location.line() << ":\nexpected: "
-          << JsonDump(Json{xds_client_->bootstrap().node()->metadata()})
+      Json expected =
+          Json::FromObject(xds_client_->bootstrap().node()->metadata());
+      EXPECT_EQ(*metadata_json, expected)
+          << location.file() << ":" << location.line()
+          << ":\nexpected: " << JsonDump(expected)
           << "\nactual: " << JsonDump(*metadata_json);
     }
     EXPECT_EQ(request.node().user_agent_name(), "foo agent")

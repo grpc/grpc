@@ -16,30 +16,8 @@
 //
 //
 
-#include <functional>
-#include <memory>
-
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
-
-#include "src/core/lib/channel/channel_args.h"
 #include "test/core/end2end/end2end_tests.h"
 
-static std::unique_ptr<CoreTestFixture> begin_test(
-    const CoreTestConfiguration& config, const char* test_name,
-    grpc_channel_args* client_args, grpc_channel_args* server_args) {
-  gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
-  auto f = config.create_fixture(grpc_core::ChannelArgs::FromC(client_args),
-                                 grpc_core::ChannelArgs::FromC(server_args));
-  f->InitServer(grpc_core::ChannelArgs::FromC(server_args));
-  f->InitClient(grpc_core::ChannelArgs::FromC(client_args));
-  return f;
-}
-
-static void test_no_op(const CoreTestConfiguration& config) {
-  auto f = begin_test(config, "no-op", nullptr, nullptr);
-}
-
-void no_op(const CoreTestConfiguration& config) { test_no_op(config); }
-
-void no_op_pre_init(void) {}
+namespace grpc_core {
+CORE_END2END_TEST(CoreEnd2endTest, NoOp) {}
+}  // namespace grpc_core

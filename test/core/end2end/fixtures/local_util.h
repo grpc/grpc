@@ -27,13 +27,15 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "test/core/end2end/end2end_tests.h"
 
-class LocalTestFixture final : public CoreTestFixture {
+class LocalTestFixture final : public grpc_core::CoreTestFixture {
  public:
   LocalTestFixture(std::string localaddr, grpc_local_connect_type type);
 
  private:
-  grpc_server* MakeServer(const grpc_core::ChannelArgs& args) override;
-  grpc_channel* MakeClient(const grpc_core::ChannelArgs& args) override;
+  grpc_server* MakeServer(const grpc_core::ChannelArgs& args,
+                          grpc_completion_queue* cq) override;
+  grpc_channel* MakeClient(const grpc_core::ChannelArgs& args,
+                           grpc_completion_queue* cq) override;
 
   std::string localaddr_;
   grpc_local_connect_type type_;

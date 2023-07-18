@@ -29,6 +29,7 @@
 #include "absl/strings/strip.h"
 #include "absl/types/optional.h"
 
+#include <grpc/support/json.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/gcp/metadata_query.h"
@@ -219,17 +220,17 @@ void GoogleCloud2ProdResolver::StartXdsResolver() {
   std::mt19937 mt(rd());
   std::uniform_int_distribution<uint64_t> dist(1, UINT64_MAX);
   Json::Object node = {
-      {"id", absl::StrCat("C2P-", dist(mt))},
+      {"id", Json::FromString(absl::StrCat("C2P-", dist(mt)))},
   };
   if (!zone_->empty()) {
-    node["locality"] = Json::Object{
-        {"zone", *zone_},
-    };
+    node["locality"] = Json::FromObject({
+        {"zone", Json::FromString(*zone_)},
+    });
   };
   if (*supports_ipv6_) {
-    node["metadata"] = Json::Object{
-        {"TRAFFICDIRECTOR_DIRECTPATH_C2P_IPV6_CAPABLE", true},
-    };
+    node["metadata"] = Json::FromObject({
+        {"TRAFFICDIRECTOR_DIRECTPATH_C2P_IPV6_CAPABLE", Json::FromBool(true)},
+    });
   }
   // Allow the TD server uri to be overridden for testing purposes.
   auto override_server =
@@ -238,29 +239,29 @@ void GoogleCloud2ProdResolver::StartXdsResolver() {
       override_server.has_value() && !override_server->empty()
           ? override_server->c_str()
           : "directpath-pa.googleapis.com";
-  Json xds_server = Json::Array{
-      Json::Object{
-          {"server_uri", server_uri},
+  Json xds_server = Json::FromArray({
+      Json::FromObject({
+          {"server_uri", Json::FromString(server_uri)},
           {"channel_creds",
-           Json::Array{
-               Json::Object{
-                   {"type", "google_default"},
-               },
-           }},
-          {"server_features", Json::Array{"xds_v3"}},
-      },
-  };
-  Json bootstrap = Json::Object{
+           Json::FromArray({
+               Json::FromObject({
+                   {"type", Json::FromString("google_default")},
+               }),
+           })},
+          {"server_features",
+           Json::FromArray({Json::FromString("ignore_resource_deletion")})},
+      }),
+  });
+  Json bootstrap = Json::FromObject({
       {"xds_servers", xds_server},
       {"authorities",
-       Json::Object{
-           {kC2PAuthority,
-            Json::Object{
-                {"xds_servers", std::move(xds_server)},
-            }},
-       }},
-      {"node", std::move(node)},
-  };
+       Json::FromObject({
+           {kC2PAuthority, Json::FromObject({
+                               {"xds_servers", std::move(xds_server)},
+                           })},
+       })},
+      {"node", Json::FromObject(std::move(node))},
+  });
   // Inject bootstrap JSON as fallback config.
   internal::SetXdsFallbackBootstrapConfig(JsonDump(bootstrap).c_str());
   // Now start xDS resolver.

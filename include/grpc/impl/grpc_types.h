@@ -368,6 +368,8 @@ typedef struct {
    issued by the tcp_write(). By default, this is set to 4. */
 #define GRPC_ARG_TCP_TX_ZEROCOPY_MAX_SIMULT_SENDS \
   "grpc.experimental.tcp_tx_zerocopy_max_simultaneous_sends"
+/* Overrides the TCP socket recieve buffer size, SO_RCVBUF. */
+#define GRPC_ARG_TCP_RECEIVE_BUFFER_SIZE "grpc.tcp_receive_buffer_size"
 /* Timeout in milliseconds to use for calls to the grpclb load balancer.
    If 0 or unset, the balancer calls will have no deadline. */
 #define GRPC_ARG_GRPCLB_CALL_TIMEOUT_MS "grpc.grpclb_call_timeout_ms"
@@ -479,6 +481,9 @@ typedef struct {
  * channel arg. Int valued, milliseconds. Defaults to 10 minutes.*/
 #define GRPC_ARG_SERVER_CONFIG_CHANGE_DRAIN_GRACE_TIME_MS \
   "grpc.experimental.server_config_change_drain_grace_time_ms"
+/** Configure the Differentiated Services Code Point used on outgoing packets.
+ *  Integer value ranging from 0 to 63. */
+#define GRPC_ARG_DSCP "grpc.dscp"
 /** \} */
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a

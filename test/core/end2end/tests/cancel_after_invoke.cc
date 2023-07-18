@@ -16,143 +16,127 @@
 //
 //
 
-#include <inttypes.h>
-#include <stdio.h>
-#include <string.h>
-
-#include <functional>
 #include <memory>
 
-#include <grpc/byte_buffer.h>
-#include <grpc/grpc.h>
-#include <grpc/impl/propagation_bits.h>
-#include <grpc/slice.h>
-#include <grpc/status.h>
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
-#include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/useful.h"
-#include "test/core/end2end/cq_verifier.h"
+#include <grpc/status.h>
+
+#include "src/core/lib/gprpp/time.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/tests/cancel_test_helpers.h"
-#include "test/core/util/test_config.h"
 
-static std::unique_ptr<CoreTestFixture> begin_test(
-    const CoreTestConfiguration& config, const char* test_name,
-    cancellation_mode mode, size_t test_ops, grpc_channel_args* client_args,
-    grpc_channel_args* server_args) {
-  gpr_log(GPR_INFO, "Running test: %s/%s/%s [%" PRIdPTR " ops]", test_name,
-          config.name, mode.name, test_ops);
-  auto f = config.create_fixture(grpc_core::ChannelArgs::FromC(client_args),
-                                 grpc_core::ChannelArgs::FromC(server_args));
-  f->InitServer(grpc_core::ChannelArgs::FromC(server_args));
-  f->InitClient(grpc_core::ChannelArgs::FromC(client_args));
-  return f;
+namespace grpc_core {
+namespace {
+const Duration kTimeout = Duration::Seconds(2);
+}  // namespace
+
+void CancelAfterInvoke6(CoreEnd2endTest& test,
+                        std::unique_ptr<CancellationMode> mode) {
+  auto c = test.NewClientCall("/service/method").Timeout(kTimeout).Create();
+  CoreEnd2endTest::IncomingStatusOnClient server_status;
+  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
+  CoreEnd2endTest::IncomingMessage server_message;
+  c.NewBatch(1)
+      .RecvStatusOnClient(server_status)
+      .RecvInitialMetadata(server_initial_metadata)
+      .SendInitialMetadata({})
+      .SendMessage(RandomSlice(1024))
+      .SendCloseFromClient()
+      .RecvMessage(server_message);
+  mode->Apply(c);
+  test.Expect(1, true);
+  test.Step();
+  EXPECT_THAT(server_status.status(),
+              ::testing::AnyOf(mode->ExpectedStatus(), GRPC_STATUS_INTERNAL));
 }
 
-// Cancel after invoke, no payload
-static void test_cancel_after_invoke(const CoreTestConfiguration& config,
-                                     cancellation_mode mode, size_t test_ops) {
-  grpc_op ops[6];
-  grpc_op* op;
-  grpc_call* c;
-  auto f = begin_test(config, "test_cancel_after_invoke", mode, test_ops,
-                      nullptr, nullptr);
-  grpc_core::CqVerifier cqv(f->cq());
-  grpc_metadata_array initial_metadata_recv;
-  grpc_metadata_array trailing_metadata_recv;
-  grpc_metadata_array request_metadata_recv;
-  grpc_call_details call_details;
-  grpc_status_code status;
-  grpc_call_error error;
-  grpc_slice details;
-  grpc_byte_buffer* response_payload_recv = nullptr;
-  grpc_slice request_payload_slice =
-      grpc_slice_from_copied_string("hello world");
-  grpc_byte_buffer* request_payload =
-      grpc_raw_byte_buffer_create(&request_payload_slice, 1);
-
-  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
-  c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
-                               f->cq(), grpc_slice_from_static_string("/foo"),
-                               nullptr, deadline, nullptr);
-  GPR_ASSERT(c);
-
-  grpc_metadata_array_init(&initial_metadata_recv);
-  grpc_metadata_array_init(&trailing_metadata_recv);
-  grpc_metadata_array_init(&request_metadata_recv);
-  grpc_call_details_init(&call_details);
-
-  memset(ops, 0, sizeof(ops));
-  op = ops;
-  op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
-  op->data.recv_status_on_client.status = &status;
-  op->data.recv_status_on_client.status_details = &details;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  op->op = GRPC_OP_SEND_INITIAL_METADATA;
-  op->data.send_initial_metadata.count = 0;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  op->op = GRPC_OP_SEND_MESSAGE;
-  op->data.send_message.send_message = request_payload;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message.recv_message = &response_payload_recv;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  error = grpc_call_start_batch(c, ops, test_ops, grpc_core::CqVerifier::tag(1),
-                                nullptr);
-  GPR_ASSERT(GRPC_CALL_OK == error);
-
-  GPR_ASSERT(GRPC_CALL_OK == mode.initiate_cancel(c, nullptr));
-
-  cqv.Expect(grpc_core::CqVerifier::tag(1), true);
-  cqv.Verify();
-
-  GPR_ASSERT(status == mode.expect_status || status == GRPC_STATUS_INTERNAL);
-
-  grpc_metadata_array_destroy(&initial_metadata_recv);
-  grpc_metadata_array_destroy(&trailing_metadata_recv);
-  grpc_metadata_array_destroy(&request_metadata_recv);
-  grpc_call_details_destroy(&call_details);
-
-  grpc_byte_buffer_destroy(request_payload);
-  grpc_byte_buffer_destroy(response_payload_recv);
-  grpc_slice_unref(details);
-
-  grpc_call_unref(c);
+void CancelAfterInvoke5(CoreEnd2endTest& test,
+                        std::unique_ptr<CancellationMode> mode) {
+  auto c = test.NewClientCall("/service/method").Timeout(kTimeout).Create();
+  CoreEnd2endTest::IncomingStatusOnClient server_status;
+  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
+  c.NewBatch(1)
+      .RecvStatusOnClient(server_status)
+      .RecvInitialMetadata(server_initial_metadata)
+      .SendInitialMetadata({})
+      .SendMessage(RandomSlice(1024))
+      .SendCloseFromClient();
+  mode->Apply(c);
+  test.Expect(1, true);
+  test.Step();
+  EXPECT_THAT(server_status.status(),
+              ::testing::AnyOf(mode->ExpectedStatus(), GRPC_STATUS_INTERNAL));
 }
 
-void cancel_after_invoke(const CoreTestConfiguration& config) {
-  unsigned i, j;
-
-  for (j = 3; j < 6; j++) {
-    for (i = 0; i < GPR_ARRAY_SIZE(cancellation_modes); i++) {
-      if (config.feature_mask & FEATURE_MASK_DOES_NOT_SUPPORT_DEADLINES &&
-          cancellation_modes[i].expect_status ==
-              GRPC_STATUS_DEADLINE_EXCEEDED) {
-        continue;
-      }
-      test_cancel_after_invoke(config, cancellation_modes[i], j);
-    }
-  }
+void CancelAfterInvoke4(CoreEnd2endTest& test,
+                        std::unique_ptr<CancellationMode> mode) {
+  auto c = test.NewClientCall("/service/method").Timeout(kTimeout).Create();
+  CoreEnd2endTest::IncomingStatusOnClient server_status;
+  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
+  c.NewBatch(1)
+      .RecvStatusOnClient(server_status)
+      .RecvInitialMetadata(server_initial_metadata)
+      .SendInitialMetadata({})
+      .SendMessage(RandomSlice(1024));
+  mode->Apply(c);
+  test.Expect(1, true);
+  test.Step();
+  EXPECT_THAT(server_status.status(),
+              ::testing::AnyOf(mode->ExpectedStatus(), GRPC_STATUS_INTERNAL));
 }
 
-void cancel_after_invoke_pre_init(void) {}
+void CancelAfterInvoke3(CoreEnd2endTest& test,
+                        std::unique_ptr<CancellationMode> mode) {
+  auto c = test.NewClientCall("/service/method").Timeout(kTimeout).Create();
+  CoreEnd2endTest::IncomingStatusOnClient server_status;
+  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
+  c.NewBatch(1)
+      .RecvStatusOnClient(server_status)
+      .RecvInitialMetadata(server_initial_metadata)
+      .SendInitialMetadata({});
+  mode->Apply(c);
+  test.Expect(1, true);
+  test.Step();
+  EXPECT_THAT(server_status.status(),
+              ::testing::AnyOf(mode->ExpectedStatus(), GRPC_STATUS_INTERNAL));
+}
+
+CORE_END2END_TEST(CoreEnd2endTest, CancelAfterInvoke6) {
+  SKIP_IF_USES_EVENT_ENGINE_LISTENER();
+  CancelAfterInvoke6(*this, std::make_unique<CancelCancellationMode>());
+}
+
+CORE_END2END_TEST(CoreEnd2endTest, CancelAfterInvoke5) {
+  SKIP_IF_USES_EVENT_ENGINE_LISTENER();
+  CancelAfterInvoke5(*this, std::make_unique<CancelCancellationMode>());
+}
+
+CORE_END2END_TEST(CoreEnd2endTest, CancelAfterInvoke4) {
+  SKIP_IF_USES_EVENT_ENGINE_LISTENER();
+  CancelAfterInvoke4(*this, std::make_unique<CancelCancellationMode>());
+}
+
+CORE_END2END_TEST(CoreEnd2endTest, CancelAfterInvoke3) {
+  SKIP_IF_USES_EVENT_ENGINE_LISTENER();
+  CancelAfterInvoke3(*this, std::make_unique<CancelCancellationMode>());
+}
+
+CORE_END2END_TEST(CoreDeadlineTest, DeadlineAfterInvoke6) {
+  CancelAfterInvoke6(*this, std::make_unique<DeadlineCancellationMode>());
+}
+
+CORE_END2END_TEST(CoreDeadlineTest, DeadlineAfterInvoke5) {
+  CancelAfterInvoke5(*this, std::make_unique<DeadlineCancellationMode>());
+}
+
+CORE_END2END_TEST(CoreDeadlineTest, DeadlineAfterInvoke4) {
+  CancelAfterInvoke4(*this, std::make_unique<DeadlineCancellationMode>());
+}
+
+CORE_END2END_TEST(CoreDeadlineTest, DeadlineAfterInvoke3) {
+  CancelAfterInvoke3(*this, std::make_unique<DeadlineCancellationMode>());
+}
+
+}  // namespace grpc_core

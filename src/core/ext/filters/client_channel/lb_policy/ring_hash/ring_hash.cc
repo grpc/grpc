@@ -70,7 +70,7 @@ namespace grpc_core {
 
 TraceFlag grpc_lb_ring_hash_trace(false, "ring_hash_lb");
 
-UniqueTypeName RequestHashAttributeName() {
+UniqueTypeName RequestHashAttribute::TypeName() {
   static UniqueTypeName::Factory kFactory("request_hash");
   return kFactory.Create();
 }
@@ -232,6 +232,10 @@ class RingHash : public LoadBalancingPolicy {
                                                absl::Status status);
 
    private:
+    std::shared_ptr<WorkSerializer> work_serializer() const override {
+      return static_cast<RingHash*>(policy())->work_serializer();
+    }
+
     size_t num_idle_;
     size_t num_ready_ = 0;
     size_t num_connecting_ = 0;
@@ -341,7 +345,12 @@ class RingHash : public LoadBalancingPolicy {
 
 RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
   auto* call_state = static_cast<ClientChannelLbCallState*>(args.call_state);
-  auto hash = call_state->GetCallAttribute(RequestHashAttributeName());
+  auto* hash_attribute = static_cast<RequestHashAttribute*>(
+      call_state->GetCallAttribute(RequestHashAttribute::TypeName()));
+  absl::string_view hash;
+  if (hash_attribute != nullptr) {
+    hash = hash_attribute->request_hash();
+  }
   uint64_t h;
   if (!absl::SimpleAtoi(hash, &h)) {
     return PickResult::Fail(
@@ -351,12 +360,12 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
   // Ported from https://github.com/RJ/ketama/blob/master/libketama/ketama.c
   // (ketama_get_server) NOTE: The algorithm depends on using signed integers
   // for lowp, highp, and first_index. Do not change them!
-  size_t lowp = 0;
-  size_t highp = ring.size();
-  size_t first_index = 0;
+  int64_t lowp = 0;
+  int64_t highp = ring.size();
+  int64_t first_index = 0;
   while (true) {
     first_index = (lowp + highp) / 2;
-    if (first_index == ring.size()) {
+    if (first_index == static_cast<int64_t>(ring.size())) {
       first_index = 0;
       break;
     }
@@ -461,16 +470,14 @@ RingHash::RingHashSubchannelList::Ring::Ring(
   address_weights.reserve(subchannel_list->num_subchannels());
   for (size_t i = 0; i < subchannel_list->num_subchannels(); ++i) {
     RingHashSubchannelData* sd = subchannel_list->subchannel(i);
-    const ServerAddressWeightAttribute* weight_attribute = static_cast<
-        const ServerAddressWeightAttribute*>(sd->address().GetAttribute(
-        ServerAddressWeightAttribute::kServerAddressWeightAttributeKey));
+    auto weight_arg = sd->address().args().GetInt(GRPC_ARG_ADDRESS_WEIGHT);
     AddressWeight address_weight;
     address_weight.address =
         grpc_sockaddr_to_string(&sd->address().address(), false).value();
     // Weight should never be zero, but ignore it just in case, since
     // that value would screw up the ring-building algorithm.
-    if (weight_attribute != nullptr && weight_attribute->weight() > 0) {
-      address_weight.weight = weight_attribute->weight();
+    if (weight_arg.value_or(0) > 0) {
+      address_weight.weight = *weight_arg;
     }
     sum += address_weight.weight;
     address_weights.push_back(std::move(address_weight));
@@ -500,7 +507,7 @@ RingHash::RingHashSubchannelList::Ring::Ring(
       std::ceil(min_normalized_weight * min_ring_size) / min_normalized_weight,
       static_cast<double>(max_ring_size));
   // Reserve memory for the entire ring up front.
-  const size_t ring_size = std::ceil(scale);
+  const uint64_t ring_size = std::ceil(scale);
   ring_.reserve(ring_size);
   // Populate the hash ring by walking through the (host, weight) pairs in
   // normalized_host_weights, and generating (scale * weight) hashes for each
@@ -807,7 +814,7 @@ absl::Status RingHash::UpdateLocked(UpdateArgs args) {
   }
   latest_pending_subchannel_list_ = MakeRefCounted<RingHashSubchannelList>(
       this, std::move(addresses), args.args);
-  latest_pending_subchannel_list_->StartWatchingLocked();
+  latest_pending_subchannel_list_->StartWatchingLocked(args.args);
   // If we have no existing list or the new list is empty, immediately
   // promote the new list.
   // Otherwise, do nothing; the new list will be promoted when the

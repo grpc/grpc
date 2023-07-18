@@ -35,7 +35,6 @@
 #include "absl/types/optional.h"
 
 #include <grpc/byte_buffer.h>
-#include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -47,45 +46,36 @@
 #include <grpc/support/time.h>
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
-#include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/experiments/config.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/env.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/iomgr/endpoint.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/resolved_address.h"
-#include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/channel.h"
-#include "src/core/lib/surface/server.h"
-#include "src/core/lib/transport/transport_fwd.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/end2end/fuzzers/api_fuzzer.pb.h"
+#include "test/core/end2end/fuzzers/fuzzing_common.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/util/fuzz_config_vars.h"
-#include "test/core/util/passthru_endpoint.h"
+#include "test/core/util/fuzzing_channel_args.h"
 
 // IWYU pragma: no_include <google/protobuf/repeated_ptr_field.h>
-
-// Applicable when simulating channel actions. Prevents overflows.
-static constexpr uint64_t kMaxWaitMs = grpc_core::Duration::Hours(1).millis();
-// Applicable when simulating channel actions. Prevents overflows.
-static constexpr uint64_t kMaxAddNReadableBytes = (2 * 1024 * 1024);  // 2GB
-// Applicable when simulating channel actions. Prevents overflows.
-static constexpr uint64_t kMaxAddNWritableBytes = (2 * 1024 * 1024);  // 2GB
 
 ////////////////////////////////////////////////////////////////////////////////
 // logging
@@ -94,15 +84,6 @@ bool squelch = true;
 bool leak_check = true;
 
 static void dont_log(gpr_log_func_args* /*args*/) {}
-
-////////////////////////////////////////////////////////////////////////////////
-// global state
-
-static grpc_server* g_server;
-static grpc_channel* g_channel;
-static grpc_resource_quota* g_resource_quota;
-static std::vector<grpc_passthru_endpoint_channel_action> g_channel_actions;
-static std::atomic<bool> g_channel_force_delete{false};
 
 ////////////////////////////////////////////////////////////////////////////////
 // dns resolution
@@ -249,76 +230,68 @@ grpc_ares_request* my_dns_lookup_ares(
 static void my_cancel_ares_request(grpc_ares_request* request) {
   GPR_ASSERT(request == nullptr);
 }
+
 ////////////////////////////////////////////////////////////////////////////////
-// client connection
+// globals
 
-static void sched_connect(grpc_closure* closure, grpc_endpoint** ep,
-                          gpr_timespec deadline);
+class Call;
 
-typedef struct {
-  grpc_closure* closure;
-  grpc_endpoint** ep;
-  gpr_timespec deadline;
-} future_connect;
+namespace grpc {
+namespace testing {
 
-static void do_connect(future_connect fc) {
-  if (g_server != nullptr) {
-    grpc_endpoint* client;
-    grpc_endpoint* server;
-    grpc_passthru_endpoint_create(&client, &server, nullptr, true);
-    *fc.ep = client;
-    start_scheduling_grpc_passthru_endpoint_channel_effects(client,
-                                                            g_channel_actions);
+class ApiFuzzer : public BasicFuzzer {
+ public:
+  ApiFuzzer();
+  ~ApiFuzzer() override;
+  Call* ActiveCall();
+  bool Continue();
+  void TryShutdown();
+  void Tick();
+  grpc_server* Server() { return server_; }
 
-    grpc_core::Server* core_server = grpc_core::Server::FromC(g_server);
-    grpc_transport* transport = grpc_create_chttp2_transport(
-        core_server->channel_args(), server, false);
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "SetupTransport",
-        core_server->SetupTransport(transport, nullptr,
-                                    core_server->channel_args(), nullptr)));
-    grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
+ private:
+  Result PollCq() override;
+  Result CreateChannel(
+      const api_fuzzer::CreateChannel& create_channel) override;
 
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, fc.closure, absl::OkStatus());
-  } else {
-    sched_connect(fc.closure, fc.ep, fc.deadline);
-  }
+  Result CloseChannel() override;
+  Result CreateServer(const api_fuzzer::CreateServer& create_server) override;
+  Result ShutdownServer() override;
+  Result CancelAllCallsIfShutdown() override;
+  Result DestroyServerIfReady() override;
+  Result CheckConnectivity(bool try_to_connect) override;
+  Result WatchConnectivity(uint32_t duration_us) override;
+  Result CreateCall(const api_fuzzer::CreateCall& create_call) override;
+  Result QueueBatchForActiveCall(const api_fuzzer::Batch& queue_batch) override;
+  Result ChangeActiveCall() override;
+  Result CancelActiveCall() override;
+  Result SendPingOnChannel() override;
+  Result ServerRequestCall() override;
+  Result DestroyActiveCall() override;
+  Result ValidatePeerForActiveCall() override;
+  Result ValidateChannelTarget() override;
+  Result ResizeResourceQuota(uint32_t resize_resource_quota) override;
+
+  std::shared_ptr<FuzzingEventEngine> engine_;
+  grpc_completion_queue* cq_ = nullptr;
+  grpc_server* server_ = nullptr;
+  grpc_channel* channel_ = nullptr;
+  grpc_core::RefCountedPtr<grpc_core::ResourceQuota> resource_quota_;
+  std::atomic<bool> channel_force_delete_{false};
+  std::vector<std::shared_ptr<Call>> calls_;
+  size_t active_call_ = 0;
+  bool server_shutdown_ = false;
+  int pending_server_shutdowns_ = 0;
+  int pending_channel_watches_ = 0;
+  int pending_pings_ = 0;
+};
+
+}  // namespace testing
+}  // namespace grpc
+
+namespace {
+grpc::testing::ApiFuzzer* g_api_fuzzer = nullptr;
 }
-
-static void sched_connect(grpc_closure* closure, grpc_endpoint** ep,
-                          gpr_timespec deadline) {
-  if (gpr_time_cmp(deadline, gpr_now(deadline.clock_type)) < 0) {
-    *ep = nullptr;
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure,
-                            GRPC_ERROR_CREATE("Connect deadline exceeded"));
-    return;
-  }
-  future_connect fc;
-  fc.closure = closure;
-  fc.ep = ep;
-  fc.deadline = deadline;
-  GetDefaultEventEngine()->RunAfter(grpc_core::Duration::Seconds(1), [fc] {
-    grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
-    grpc_core::ExecCtx exec_ctx;
-    do_connect(fc);
-  });
-}
-
-static int64_t my_tcp_client_connect(
-    grpc_closure* closure, grpc_endpoint** ep,
-    grpc_pollset_set* /*interested_parties*/,
-    const grpc_event_engine::experimental::EndpointConfig& /*config*/,
-    const grpc_resolved_address* /*addr*/, grpc_core::Timestamp deadline) {
-  sched_connect(closure, ep, deadline.as_timespec(GPR_CLOCK_MONOTONIC));
-  return 0;
-}
-
-static bool my_tcp_cancel_connect(int64_t /*connection_handle*/) {
-  return false;
-}
-
-grpc_tcp_client_vtable fuzz_tcp_client_vtable = {my_tcp_client_connect,
-                                                 my_tcp_cancel_connect};
 
 ////////////////////////////////////////////////////////////////////////////////
 // test driver
@@ -520,8 +493,8 @@ class Call : public std::enable_shared_from_this<Call> {
       case api_fuzzer::BatchOp::kReceiveMessage:
         // Allow only one active pending_recv_message_op to exist. Otherwise if
         // the previous enqueued recv_message_op is not complete by the time
-        // we get here, then under certain conditions, enqueing this op will
-        // over-write the internal call->receiving_buffer maintained by grpc
+        // we get here, then under certain conditions, enqueuing this op will
+        // overwrite the internal call->receiving_buffer maintained by grpc
         // leading to a memory leak.
         if (call_closed_ || pending_recv_message_op_) {
           *batch_is_ok = false;
@@ -613,22 +586,6 @@ class Call : public std::enable_shared_from_this<Call> {
   std::vector<grpc_slice> unref_slices_;
 };
 
-static std::vector<std::shared_ptr<Call>> g_calls;
-static size_t g_active_call = 0;
-
-static Call* ActiveCall() {
-  while (!g_calls.empty()) {
-    if (g_active_call >= g_calls.size()) {
-      g_active_call = 0;
-    }
-    if (g_calls[g_active_call] != nullptr && !g_calls[g_active_call]->done()) {
-      return g_calls[g_active_call].get();
-    }
-    g_calls.erase(g_calls.begin() + g_active_call);
-  }
-  return nullptr;
-}
-
 Call::~Call() {
   if (call_ != nullptr) {
     grpc_call_unref(call_);
@@ -650,42 +607,6 @@ Call::~Call() {
 
   grpc_metadata_array_destroy(&recv_initial_metadata_);
   grpc_metadata_array_destroy(&recv_trailing_metadata_);
-}
-
-template <typename ChannelArgContainer>
-grpc_channel_args* ReadArgs(const ChannelArgContainer& args) {
-  grpc_channel_args* res =
-      static_cast<grpc_channel_args*>(gpr_malloc(sizeof(grpc_channel_args)));
-  res->args =
-      static_cast<grpc_arg*>(gpr_malloc(sizeof(grpc_arg) * args.size()));
-  int j = 0;
-  for (int i = 0; i < args.size(); i++) {
-    switch (args[i].value_case()) {
-      case api_fuzzer::ChannelArg::kStr:
-        res->args[j].type = GRPC_ARG_STRING;
-        res->args[j].value.string = gpr_strdup(args[i].str().c_str());
-        break;
-      case api_fuzzer::ChannelArg::kI:
-        res->args[j].type = GRPC_ARG_INTEGER;
-        res->args[j].value.integer = args[i].i();
-        break;
-      case api_fuzzer::ChannelArg::kResourceQuota:
-        if (args[i].key() != GRPC_ARG_RESOURCE_QUOTA) continue;
-        grpc_resource_quota_ref(g_resource_quota);
-        res->args[j].type = GRPC_ARG_POINTER;
-        res->args[j].value.pointer.p = g_resource_quota;
-        res->args[j].value.pointer.vtable = grpc_resource_quota_arg_vtable();
-        break;
-      case api_fuzzer::ChannelArg::VALUE_NOT_SET:
-        res->args[j].type = GRPC_ARG_INTEGER;
-        res->args[j].value.integer = 0;
-        break;
-    }
-    res->args[j].key = gpr_strdup(args[i].key().c_str());
-    ++j;
-  }
-  res->num_args = j;
-  return res;
 }
 
 static const char* ReadCredArtifact(
@@ -802,414 +723,418 @@ static grpc_channel_credentials* ReadChannelCreds(
   }
 }
 
-DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
-  if (squelch && !grpc_core::GetEnv("GRPC_TRACE_FUZZER").has_value()) {
-    gpr_set_log_function(dont_log);
-  }
-  if (msg.has_config_vars()) {
-    grpc_core::ApplyFuzzConfigVars(msg.config_vars());
-  }
-  grpc_event_engine::experimental::SetEventEngineFactory(
-      [actions = msg.event_engine_actions()]() {
-        return std::make_unique<FuzzingEventEngine>(
-            FuzzingEventEngine::Options(), actions);
-      });
-  auto engine =
-      std::dynamic_pointer_cast<FuzzingEventEngine>(GetDefaultEventEngine());
+namespace grpc_event_engine {
+namespace experimental {
+extern bool g_event_engine_supports_fd;
+}
+}  // namespace grpc_event_engine
+
+namespace grpc {
+namespace testing {
+
+namespace {
+int force_experiments = []() {
+  grpc_event_engine::experimental::g_event_engine_supports_fd = false;
+  grpc_core::ForceEnableExperiment("event_engine_client", true);
+  grpc_core::ForceEnableExperiment("event_engine_listener", true);
+  return 1;
+}();
+}
+
+ApiFuzzer::ApiFuzzer()
+    : engine_(std::dynamic_pointer_cast<FuzzingEventEngine>(
+          GetDefaultEventEngine())),
+      resource_quota_(grpc_core::MakeResourceQuota("api_fuzzer")) {
   grpc_init();
-  grpc_set_tcp_client_impl(&fuzz_tcp_client_vtable);
   grpc_timer_manager_set_threading(false);
   {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Executor::SetThreadingAll(false);
   }
   grpc_core::ResetDNSResolver(
-      std::make_unique<FuzzerDNSResolver>(engine.get()));
+      std::make_unique<FuzzerDNSResolver>(engine_.get()));
   grpc_dns_lookup_hostname_ares = my_dns_lookup_ares;
   grpc_cancel_ares_request = my_cancel_ares_request;
 
-  GPR_ASSERT(g_channel == nullptr);
-  GPR_ASSERT(g_server == nullptr);
+  GPR_ASSERT(channel_ == nullptr);
+  GPR_ASSERT(server_ == nullptr);
 
-  bool server_shutdown = false;
-  int pending_server_shutdowns = 0;
-  int pending_channel_watches = 0;
-  int pending_pings = 0;
+  cq_ = grpc_completion_queue_create_for_next(nullptr);
+}
 
-  g_resource_quota = grpc_resource_quota_create("api_fuzzer");
+Call* ApiFuzzer::ActiveCall() {
+  while (!calls_.empty()) {
+    if (active_call_ >= calls_.size()) {
+      active_call_ = 0;
+    }
+    if (calls_[active_call_] != nullptr && !calls_[active_call_]->done()) {
+      return calls_[active_call_].get();
+    }
+    calls_.erase(calls_.begin() + active_call_);
+  }
+  return nullptr;
+}
 
-  grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
+bool ApiFuzzer::Continue() {
+  return channel_ != nullptr || server_ != nullptr ||
+         pending_channel_watches_ > 0 || pending_pings_ > 0 ||
+         ActiveCall() != nullptr;
+}
 
+void ApiFuzzer::TryShutdown() {
+  engine_->FuzzingDone();
+  if (channel_ != nullptr) {
+    grpc_channel_destroy(channel_);
+    channel_ = nullptr;
+  }
+  if (server_ != nullptr) {
+    if (!server_shutdown_) {
+      grpc_server_shutdown_and_notify(
+          server_, cq_, AssertSuccessAndDecrement(&pending_server_shutdowns_));
+      server_shutdown_ = true;
+      pending_server_shutdowns_++;
+    } else if (pending_server_shutdowns_ == 0) {
+      grpc_server_destroy(server_);
+      server_ = nullptr;
+    }
+  }
+  for (auto& call : calls_) {
+    if (call == nullptr) continue;
+    if (call->type() == CallType::PENDING_SERVER) continue;
+    call->Shutdown();
+  }
+
+  grpc_timer_manager_tick();
+  GPR_ASSERT(PollCq() == Result::kPending);
+}
+
+ApiFuzzer::~ApiFuzzer() {
+  GPR_ASSERT(channel_ == nullptr);
+  GPR_ASSERT(server_ == nullptr);
+  GPR_ASSERT(ActiveCall() == nullptr);
+  GPR_ASSERT(calls_.empty());
+
+  engine_->TickUntilIdle();
+
+  grpc_completion_queue_shutdown(cq_);
+  GPR_ASSERT(PollCq() == Result::kComplete);
+  grpc_completion_queue_destroy(cq_);
+
+  grpc_shutdown_blocking();
+  engine_->UnsetGlobalHooks();
+}
+
+void ApiFuzzer::Tick() {
+  engine_->Tick();
+  grpc_timer_manager_tick();
+  if (channel_force_delete_.exchange(false) && channel_) {
+    grpc_channel_destroy(channel_);
+    channel_ = nullptr;
+  }
+}
+
+ApiFuzzer::Result ApiFuzzer::PollCq() {
+  grpc_event ev = grpc_completion_queue_next(
+      cq_, gpr_inf_past(GPR_CLOCK_REALTIME), nullptr);
+  switch (ev.type) {
+    case GRPC_OP_COMPLETE: {
+      static_cast<Validator*>(ev.tag)->Run(ev.success);
+      break;
+    }
+    case GRPC_QUEUE_TIMEOUT:
+      break;
+    case GRPC_QUEUE_SHUTDOWN:
+      return Result::kComplete;
+  }
+  return Result::kPending;
+}
+ApiFuzzer::Result ApiFuzzer::CreateChannel(
+    const api_fuzzer::CreateChannel& create_channel) {
+  if (channel_ == nullptr) return Result::kComplete;
+  // ExecCtx is needed for ChannelArgs destruction.
+  grpc_core::ExecCtx exec_ctx;
+  grpc_core::testing::FuzzingEnvironment fuzzing_env;
+  fuzzing_env.resource_quota = resource_quota_;
+  grpc_core::ChannelArgs args =
+      grpc_core::testing::CreateChannelArgsFromFuzzingConfiguration(
+          create_channel.channel_args(), fuzzing_env);
+  grpc_channel_credentials* creds =
+      create_channel.has_channel_creds()
+          ? ReadChannelCreds(create_channel.channel_creds())
+          : grpc_insecure_credentials_create();
+  channel_ = grpc_channel_create(create_channel.target().c_str(), creds,
+                                 args.ToC().get());
+  grpc_channel_credentials_release(creds);
+  GPR_ASSERT(channel_ != nullptr);
+  channel_force_delete_ = false;
+  return Result::kComplete;
+}
+
+ApiFuzzer::Result ApiFuzzer::CloseChannel() {
+  if (channel_ != nullptr) {
+    grpc_channel_destroy(channel_);
+    channel_ = nullptr;
+  } else {
+    return Result::kFailed;
+  }
+  return Result::kComplete;
+}
+
+ApiFuzzer::Result ApiFuzzer::CreateServer(
+    const api_fuzzer::CreateServer& create_server) {
+  if (server_ == nullptr) {
+    // ExecCtx is needed for ChannelArgs destruction.
+    grpc_core::ExecCtx exec_ctx;
+    grpc_core::testing::FuzzingEnvironment fuzzing_env;
+    fuzzing_env.resource_quota = resource_quota_;
+    grpc_core::ChannelArgs args =
+        grpc_core::testing::CreateChannelArgsFromFuzzingConfiguration(
+            create_server.channel_args(), fuzzing_env);
+    server_ = grpc_server_create(args.ToC().get(), nullptr);
+    GPR_ASSERT(server_ != nullptr);
+    grpc_server_register_completion_queue(server_, cq_, nullptr);
+    grpc_server_start(server_);
+    server_shutdown_ = false;
+    GPR_ASSERT(pending_server_shutdowns_ == 0);
+  } else {
+    return Result::kFailed;
+  }
+  return Result::kComplete;
+}
+
+ApiFuzzer::Result ApiFuzzer::ShutdownServer() {
+  if (server_ != nullptr) {
+    grpc_server_shutdown_and_notify(
+        server_, cq_, AssertSuccessAndDecrement(&pending_server_shutdowns_));
+    pending_server_shutdowns_++;
+    server_shutdown_ = true;
+  } else {
+    return Result::kFailed;
+  }
+  return Result::kComplete;
+}
+
+ApiFuzzer::Result ApiFuzzer::CancelAllCallsIfShutdown() {
+  if (server_ != nullptr && server_shutdown_) {
+    grpc_server_cancel_all_calls(server_);
+  } else {
+    return Result::kFailed;
+  }
+  return Result::kComplete;
+}
+
+ApiFuzzer::Result ApiFuzzer::DestroyServerIfReady() {
+  if (server_ != nullptr && server_shutdown_ &&
+      pending_server_shutdowns_ == 0) {
+    grpc_server_destroy(server_);
+    server_ = nullptr;
+  } else {
+    return Result::kFailed;
+  }
+  return Result::kComplete;
+}
+
+ApiFuzzer::Result ApiFuzzer::CheckConnectivity(bool try_to_connect) {
+  if (channel_ != nullptr) {
+    grpc_channel_check_connectivity_state(channel_, try_to_connect);
+  } else {
+    return Result::kFailed;
+  }
+  return Result::kComplete;
+}
+
+ApiFuzzer::Result ApiFuzzer::WatchConnectivity(uint32_t duration_us) {
+  if (channel_ != nullptr) {
+    grpc_connectivity_state st =
+        grpc_channel_check_connectivity_state(channel_, 0);
+    if (st != GRPC_CHANNEL_SHUTDOWN) {
+      gpr_timespec deadline =
+          gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                       gpr_time_from_micros(duration_us, GPR_TIMESPAN));
+      grpc_channel_watch_connectivity_state(
+          channel_, st, deadline, cq_,
+          ValidateConnectivityWatch(deadline, &pending_channel_watches_));
+      pending_channel_watches_++;
+    }
+  } else {
+    return Result::kFailed;
+  }
+  return Result::kComplete;
+}
+
+ApiFuzzer::Result ApiFuzzer::CreateCall(
+    const api_fuzzer::CreateCall& create_call) {
+  bool ok = true;
+  if (channel_ == nullptr) ok = false;
+  // If the active call is a server call, then use it as the parent call
+  // to exercise the propagation logic.
+  Call* parent_call = ActiveCall();
+  if (parent_call != nullptr && parent_call->type() != CallType::SERVER) {
+    parent_call = nullptr;
+  }
+  calls_.emplace_back(new Call(CallType::CLIENT));
+  grpc_slice method = calls_.back()->ReadSlice(create_call.method());
+  if (GRPC_SLICE_LENGTH(method) == 0) {
+    ok = false;
+  }
+  grpc_slice host = calls_.back()->ReadSlice(create_call.host());
+  gpr_timespec deadline =
+      gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                   gpr_time_from_micros(create_call.timeout(), GPR_TIMESPAN));
+
+  if (ok) {
+    calls_.back()->SetCall(grpc_channel_create_call(
+        channel_, parent_call == nullptr ? nullptr : parent_call->call(),
+        create_call.propagation_mask(), cq_, method, &host, deadline, nullptr));
+  } else {
+    calls_.pop_back();
+    return Result::kFailed;
+  }
+  return Result::kComplete;
+}
+
+ApiFuzzer::Result ApiFuzzer::ChangeActiveCall() {
+  active_call_++;
+  ActiveCall();
+  return Result::kComplete;
+}
+
+ApiFuzzer::Result ApiFuzzer::QueueBatchForActiveCall(
+    const api_fuzzer::Batch& queue_batch) {
+  auto* active_call = ActiveCall();
+  if (active_call == nullptr ||
+      active_call->type() == CallType::PENDING_SERVER ||
+      active_call->call() == nullptr) {
+    return Result::kFailed;
+  }
+  const auto& batch = queue_batch.operations();
+  if (batch.size() > 6) {
+    return Result::kFailed;
+  }
+  std::vector<grpc_op> ops;
+  bool ok = true;
+  uint8_t has_ops = 0;
+  std::vector<std::function<void()>> unwinders;
+  for (const auto& batch_op : batch) {
+    auto op = active_call->ReadOp(batch_op, &ok, &has_ops, &unwinders);
+    if (!op.has_value()) continue;
+    ops.push_back(*op);
+  }
+
+  if (channel_ == nullptr) ok = false;
+  if (ok) {
+    auto* v = active_call->FinishedBatchValidator(has_ops);
+    grpc_call_error error = grpc_call_start_batch(
+        active_call->call(), ops.data(), ops.size(), v, nullptr);
+    if (error != GRPC_CALL_OK) {
+      v->Run(false);
+    }
+  } else {
+    for (auto& unwind : unwinders) {
+      unwind();
+    }
+    return Result::kFailed;
+  }
+  return Result::kComplete;
+}
+
+ApiFuzzer::Result ApiFuzzer::CancelActiveCall() {
+  auto* active_call = ActiveCall();
+  if (active_call != nullptr && active_call->call() != nullptr) {
+    grpc_call_cancel(active_call->call(), nullptr);
+  } else {
+    return Result::kFailed;
+  }
+  return Result::kComplete;
+}
+
+ApiFuzzer::Result ApiFuzzer::SendPingOnChannel() {
+  if (channel_ != nullptr) {
+    pending_pings_++;
+    grpc_channel_ping(channel_, cq_, Decrement(&pending_pings_), nullptr);
+  } else {
+    return Result::kFailed;
+  }
+  return Result::kComplete;
+}
+
+ApiFuzzer::Result ApiFuzzer::ServerRequestCall() {
+  if (server_ == nullptr) {
+    return Result::kFailed;
+  }
+  calls_.emplace_back(new Call(CallType::PENDING_SERVER));
+  calls_.back()->RequestCall(server_, cq_);
+  return Result::kComplete;
+}
+
+ApiFuzzer::Result ApiFuzzer::DestroyActiveCall() {
+  auto* active_call = ActiveCall();
+  if (active_call != nullptr &&
+      active_call->type() != CallType::PENDING_SERVER &&
+      active_call->call() != nullptr) {
+    calls_[active_call_]->Shutdown();
+  } else {
+    return Result::kFailed;
+  }
+  return Result::kComplete;
+}
+
+ApiFuzzer::Result ApiFuzzer::ValidatePeerForActiveCall() {
+  auto* active_call = ActiveCall();
+  if (active_call != nullptr && active_call->call() != nullptr) {
+    free_non_null(grpc_call_get_peer(active_call->call()));
+  } else {
+    return Result::kFailed;
+  }
+  return Result::kComplete;
+}
+
+ApiFuzzer::Result ApiFuzzer::ValidateChannelTarget() {
+  if (channel_ != nullptr) {
+    free_non_null(grpc_channel_get_target(channel_));
+  } else {
+    return Result::kFailed;
+  }
+  return Result::kComplete;
+}
+
+ApiFuzzer::Result ApiFuzzer::ResizeResourceQuota(
+    uint32_t resize_resource_quota) {
+  resource_quota_->memory_quota()->SetSize(resize_resource_quota);
+  return Result::kComplete;
+}
+
+}  // namespace testing
+}  // namespace grpc
+
+DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
+  if (squelch && !grpc_core::GetEnv("GRPC_TRACE_FUZZER").has_value()) {
+    gpr_set_log_function(dont_log);
+  }
+  grpc_core::ApplyFuzzConfigVars(msg.config_vars());
+  grpc_core::TestOnlyReloadExperimentsFromConfigVariables();
+  grpc_event_engine::experimental::SetEventEngineFactory(
+      [actions = msg.event_engine_actions()]() {
+        return std::make_unique<FuzzingEventEngine>(
+            FuzzingEventEngine::Options(), actions);
+      });
+
+  g_api_fuzzer = new grpc::testing::ApiFuzzer();
   int action_index = 0;
   auto no_more_actions = [&]() { action_index = msg.actions_size(); };
-  auto poll_cq = [&]() -> bool {
-    grpc_event ev = grpc_completion_queue_next(
-        cq, gpr_inf_past(GPR_CLOCK_REALTIME), nullptr);
-    switch (ev.type) {
-      case GRPC_OP_COMPLETE: {
-        static_cast<Validator*>(ev.tag)->Run(ev.success);
-        break;
-      }
-      case GRPC_QUEUE_TIMEOUT:
-        break;
-      case GRPC_QUEUE_SHUTDOWN:
-        return true;
-    }
-    return false;
-  };
 
-  while (action_index < msg.actions_size() || g_channel != nullptr ||
-         g_server != nullptr || pending_channel_watches > 0 ||
-         pending_pings > 0 || ActiveCall() != nullptr) {
-    engine->Tick();
+  while (action_index < msg.actions_size() || g_api_fuzzer->Continue()) {
+    g_api_fuzzer->Tick();
 
     if (action_index == msg.actions_size()) {
-      engine->FuzzingDone();
-      if (g_channel != nullptr) {
-        grpc_channel_destroy(g_channel);
-        g_channel = nullptr;
-      }
-      if (g_server != nullptr) {
-        if (!server_shutdown) {
-          grpc_server_shutdown_and_notify(
-              g_server, cq,
-              AssertSuccessAndDecrement(&pending_server_shutdowns));
-          server_shutdown = true;
-          pending_server_shutdowns++;
-        } else if (pending_server_shutdowns == 0) {
-          grpc_server_destroy(g_server);
-          g_server = nullptr;
-        }
-      }
-      for (auto& call : g_calls) {
-        if (call == nullptr) continue;
-        if (call->type() == CallType::PENDING_SERVER) continue;
-        call->Shutdown();
-      }
-
-      grpc_timer_manager_tick();
-      GPR_ASSERT(!poll_cq());
+      g_api_fuzzer->TryShutdown();
       continue;
     }
 
-    grpc_timer_manager_tick();
-
-    if (g_channel_force_delete.exchange(false) && g_channel) {
-      grpc_channel_destroy(g_channel);
-      g_channel = nullptr;
-      g_channel_actions.clear();
-    }
-
-    const api_fuzzer::Action& action = msg.actions(action_index);
-    action_index++;
-    switch (action.type_case()) {
-      case api_fuzzer::Action::TYPE_NOT_SET:
-        no_more_actions();
-        break;
-      // tickle completion queue
-      case api_fuzzer::Action::kPollCq: {
-        GPR_ASSERT(!poll_cq());
-        break;
-      }
-      // create an insecure channel
-      case api_fuzzer::Action::kCreateChannel: {
-        if (!action.create_channel().channel_actions_size() ||
-            g_channel != nullptr) {
-          no_more_actions();
-        } else {
-          grpc_channel_args* args =
-              ReadArgs(action.create_channel().channel_args());
-          grpc_channel_credentials* creds =
-              action.create_channel().has_channel_creds()
-                  ? ReadChannelCreds(action.create_channel().channel_creds())
-                  : grpc_insecure_credentials_create();
-          g_channel = grpc_channel_create(
-              action.create_channel().target().c_str(), creds, args);
-          grpc_channel_credentials_release(creds);
-          g_channel_actions.clear();
-          for (int i = 0; i < action.create_channel().channel_actions_size();
-               i++) {
-            const api_fuzzer::ChannelAction& channel_action =
-                action.create_channel().channel_actions(i);
-            g_channel_actions.push_back({
-                std::min(channel_action.wait_ms(), kMaxWaitMs),
-                std::min(channel_action.add_n_bytes_writable(),
-                         kMaxAddNWritableBytes),
-                std::min(channel_action.add_n_bytes_readable(),
-                         kMaxAddNReadableBytes),
-            });
-          }
-          GPR_ASSERT(g_channel != nullptr);
-          g_channel_force_delete = false;
-          {
-            grpc_core::ExecCtx exec_ctx;
-            grpc_channel_args_destroy(args);
-          }
-        }
-        break;
-      }
-      // destroy a channel
-      case api_fuzzer::Action::kCloseChannel: {
-        if (g_channel != nullptr) {
-          grpc_channel_destroy(g_channel);
-          g_channel = nullptr;
-        } else {
-          no_more_actions();
-        }
-        break;
-      }
-      // bring up a server
-      case api_fuzzer::Action::kCreateServer: {
-        if (g_server == nullptr) {
-          grpc_channel_args* args =
-              ReadArgs(action.create_server().channel_args());
-          g_server = grpc_server_create(args, nullptr);
-          GPR_ASSERT(g_server != nullptr);
-          {
-            grpc_core::ExecCtx exec_ctx;
-            grpc_channel_args_destroy(args);
-          }
-          grpc_server_register_completion_queue(g_server, cq, nullptr);
-          grpc_server_start(g_server);
-          server_shutdown = false;
-          GPR_ASSERT(pending_server_shutdowns == 0);
-        } else {
-          no_more_actions();
-        }
-        break;
-      }
-      // begin server shutdown
-      case api_fuzzer::Action::kShutdownServer: {
-        if (g_server != nullptr) {
-          grpc_server_shutdown_and_notify(
-              g_server, cq,
-              AssertSuccessAndDecrement(&pending_server_shutdowns));
-          pending_server_shutdowns++;
-          server_shutdown = true;
-        } else {
-          no_more_actions();
-        }
-        break;
-      }
-      // cancel all calls if shutdown
-      case api_fuzzer::Action::kCancelAllCallsIfShutdown: {
-        if (g_server != nullptr && server_shutdown) {
-          grpc_server_cancel_all_calls(g_server);
-        } else {
-          no_more_actions();
-        }
-        break;
-      }
-      // destroy server
-      case api_fuzzer::Action::kDestroyServerIfReady: {
-        if (g_server != nullptr && server_shutdown &&
-            pending_server_shutdowns == 0) {
-          grpc_server_destroy(g_server);
-          g_server = nullptr;
-        } else {
-          no_more_actions();
-        }
-        break;
-      }
-      // check connectivity
-      case api_fuzzer::Action::kCheckConnectivity: {
-        if (g_channel != nullptr) {
-          grpc_channel_check_connectivity_state(g_channel,
-                                                action.check_connectivity());
-        } else {
-          no_more_actions();
-        }
-        break;
-      }
-      // watch connectivity
-      case api_fuzzer::Action::kWatchConnectivity: {
-        if (g_channel != nullptr) {
-          grpc_connectivity_state st =
-              grpc_channel_check_connectivity_state(g_channel, 0);
-          if (st != GRPC_CHANNEL_SHUTDOWN) {
-            gpr_timespec deadline =
-                gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                             gpr_time_from_micros(action.watch_connectivity(),
-                                                  GPR_TIMESPAN));
-            grpc_channel_watch_connectivity_state(
-                g_channel, st, deadline, cq,
-                ValidateConnectivityWatch(deadline, &pending_channel_watches));
-            pending_channel_watches++;
-          }
-        } else {
-          no_more_actions();
-        }
-        break;
-      }
-      // create a call
-      case api_fuzzer::Action::kCreateCall: {
-        bool ok = true;
-        if (g_channel == nullptr) ok = false;
-        // If the active call is a server call, then use it as the parent call
-        // to exercise the propagation logic.
-        Call* parent_call = ActiveCall();
-        if (parent_call != nullptr && parent_call->type() != CallType::SERVER) {
-          parent_call = nullptr;
-        }
-        g_calls.emplace_back(new Call(CallType::CLIENT));
-        grpc_slice method =
-            g_calls.back()->ReadSlice(action.create_call().method());
-        if (GRPC_SLICE_LENGTH(method) == 0) {
-          ok = false;
-        }
-        grpc_slice host =
-            g_calls.back()->ReadSlice(action.create_call().host());
-        gpr_timespec deadline = gpr_time_add(
-            gpr_now(GPR_CLOCK_REALTIME),
-            gpr_time_from_micros(action.create_call().timeout(), GPR_TIMESPAN));
-
-        if (ok) {
-          g_calls.back()->SetCall(grpc_channel_create_call(
-              g_channel, parent_call == nullptr ? nullptr : parent_call->call(),
-              action.create_call().propagation_mask(), cq, method, &host,
-              deadline, nullptr));
-        } else {
-          g_calls.pop_back();
-          no_more_actions();
-        }
-        break;
-      }
-      // switch the 'current' call
-      case api_fuzzer::Action::kChangeActiveCall: {
-        g_active_call++;
-        ActiveCall();
-        break;
-      }
-      // queue some ops on a call
-      case api_fuzzer::Action::kQueueBatch: {
-        auto* active_call = ActiveCall();
-        if (active_call == nullptr ||
-            active_call->type() == CallType::PENDING_SERVER ||
-            active_call->call() == nullptr) {
-          no_more_actions();
-          break;
-        }
-        const auto& batch = action.queue_batch().operations();
-        if (batch.size() > 6) {
-          no_more_actions();
-          break;
-        }
-        std::vector<grpc_op> ops;
-        bool ok = true;
-        uint8_t has_ops = 0;
-        std::vector<std::function<void()>> unwinders;
-        for (const auto& batch_op : batch) {
-          auto op = active_call->ReadOp(batch_op, &ok, &has_ops, &unwinders);
-          if (!op.has_value()) continue;
-          ops.push_back(*op);
-        }
-
-        if (g_channel == nullptr) ok = false;
-        if (ok) {
-          auto* v = active_call->FinishedBatchValidator(has_ops);
-          grpc_call_error error = grpc_call_start_batch(
-              active_call->call(), ops.data(), ops.size(), v, nullptr);
-          if (error != GRPC_CALL_OK) {
-            v->Run(false);
-          }
-        } else {
-          no_more_actions();
-          for (auto& unwind : unwinders) {
-            unwind();
-          }
-        }
-        break;
-      }
-      // cancel current call
-      case api_fuzzer::Action::kCancelCall: {
-        auto* active_call = ActiveCall();
-        if (active_call != nullptr && active_call->call() != nullptr) {
-          grpc_call_cancel(active_call->call(), nullptr);
-        } else {
-          no_more_actions();
-        }
-        break;
-      }
-      // get a calls peer
-      case api_fuzzer::Action::kGetPeer: {
-        auto* active_call = ActiveCall();
-        if (active_call != nullptr && active_call->call() != nullptr) {
-          free_non_null(grpc_call_get_peer(active_call->call()));
-        } else {
-          no_more_actions();
-        }
-        break;
-      }
-      // get a channels target
-      case api_fuzzer::Action::kGetTarget: {
-        if (g_channel != nullptr) {
-          free_non_null(grpc_channel_get_target(g_channel));
-        } else {
-          no_more_actions();
-        }
-        break;
-      }
-      // send a ping on a channel
-      case api_fuzzer::Action::kPing: {
-        if (g_channel != nullptr) {
-          pending_pings++;
-          grpc_channel_ping(g_channel, cq, Decrement(&pending_pings), nullptr);
-        } else {
-          no_more_actions();
-        }
-        break;
-      }
-      // enable a tracer
-      case api_fuzzer::Action::kEnableTracer: {
-        grpc_tracer_set_enabled(action.enable_tracer().c_str(), 1);
-        break;
-      }
-      // disable a tracer
-      case api_fuzzer::Action::kDisableTracer: {
-        grpc_tracer_set_enabled(action.disable_tracer().c_str(), 0);
-        break;
-      }
-      // request a server call
-      case api_fuzzer::Action::kRequestCall: {
-        if (g_server == nullptr) {
-          no_more_actions();
-          break;
-        }
-        g_calls.emplace_back(new Call(CallType::PENDING_SERVER));
-        g_calls.back()->RequestCall(g_server, cq);
-        break;
-      }
-      // destroy a call
-      case api_fuzzer::Action::kDestroyCall: {
-        auto* active_call = ActiveCall();
-        if (active_call != nullptr &&
-            active_call->type() != CallType::PENDING_SERVER &&
-            active_call->call() != nullptr) {
-          g_calls[g_active_call]->Shutdown();
-        } else {
-          no_more_actions();
-        }
-        break;
-      }
-      // resize the buffer pool
-      case api_fuzzer::Action::kResizeResourceQuota: {
-        grpc_resource_quota_resize(g_resource_quota,
-                                   action.resize_resource_quota());
-        break;
-      }
+    auto result = g_api_fuzzer->ExecuteAction(msg.actions(action_index++));
+    if (result == grpc::testing::ApiFuzzer::Result::kFailed) {
+      no_more_actions();
     }
   }
-
-  GPR_ASSERT(g_channel == nullptr);
-  GPR_ASSERT(g_server == nullptr);
-  GPR_ASSERT(ActiveCall() == nullptr);
-  GPR_ASSERT(g_calls.empty());
-
-  grpc_completion_queue_shutdown(cq);
-  GPR_ASSERT(poll_cq());
-  grpc_completion_queue_destroy(cq);
-
-  grpc_resource_quota_unref(g_resource_quota);
-  grpc_shutdown_blocking();
-  engine->UnsetGlobalHooks();
+  delete g_api_fuzzer;
 }

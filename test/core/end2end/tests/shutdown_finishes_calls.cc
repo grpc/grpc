@@ -16,109 +16,34 @@
 //
 //
 
-#include <string.h>
+#include "gtest/gtest.h"
 
-#include <functional>
-#include <memory>
-
-#include <grpc/grpc.h>
-#include <grpc/impl/propagation_bits.h>
-#include <grpc/slice.h>
 #include <grpc/status.h>
-#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/channel/channel_args.h"
-#include "test/core/end2end/cq_verifier.h"
+#include "src/core/lib/gprpp/time.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
 
-static std::unique_ptr<CoreTestFixture> begin_test(
-    const CoreTestConfiguration& config, const char* test_name,
-    grpc_channel_args* client_args, grpc_channel_args* server_args) {
-  gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
-  auto f = config.create_fixture(grpc_core::ChannelArgs::FromC(client_args),
-                                 grpc_core::ChannelArgs::FromC(server_args));
-  f->InitServer(grpc_core::ChannelArgs::FromC(server_args));
-  f->InitClient(grpc_core::ChannelArgs::FromC(client_args));
-  return f;
-}
+namespace grpc_core {
+namespace {
 
-static void test_early_server_shutdown_finishes_inflight_calls(
-    const CoreTestConfiguration& config) {
-  grpc_call* c;
-  grpc_call* s;
-  auto f =
-      begin_test(config, "test_early_server_shutdown_finishes_inflight_calls",
-                 nullptr, nullptr);
-  grpc_core::CqVerifier cqv(f->cq());
-  grpc_op ops[6];
-  grpc_op* op;
-  grpc_metadata_array initial_metadata_recv;
-  grpc_metadata_array trailing_metadata_recv;
-  grpc_metadata_array request_metadata_recv;
-  grpc_call_details call_details;
-  grpc_status_code status;
-  grpc_call_error error;
-  grpc_slice details;
-  int was_cancelled = 2;
+CORE_END2END_TEST(CoreEnd2endTest, EarlyServerShutdownFinishesInflightCalls) {
+  SKIP_IF_FUZZING();
 
-  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
-  c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
-                               f->cq(), grpc_slice_from_static_string("/foo"),
-                               nullptr, deadline, nullptr);
-  GPR_ASSERT(c);
-
-  grpc_metadata_array_init(&initial_metadata_recv);
-  grpc_metadata_array_init(&trailing_metadata_recv);
-  grpc_metadata_array_init(&request_metadata_recv);
-  grpc_call_details_init(&call_details);
-
-  memset(ops, 0, sizeof(ops));
-  op = ops;
-  op->op = GRPC_OP_SEND_INITIAL_METADATA;
-  op->data.send_initial_metadata.count = 0;
-  op->data.send_initial_metadata.metadata = nullptr;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
-  op->data.recv_status_on_client.status = &status;
-  op->data.recv_status_on_client.status_details = &details;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
-                                grpc_core::CqVerifier::tag(1), nullptr);
-  GPR_ASSERT(GRPC_CALL_OK == error);
-
-  error = grpc_server_request_call(f->server(), &s, &call_details,
-                                   &request_metadata_recv, f->cq(), f->cq(),
-                                   grpc_core::CqVerifier::tag(101));
-  GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(grpc_core::CqVerifier::tag(101), true);
-  cqv.Verify();
-
-  memset(ops, 0, sizeof(ops));
-  op = ops;
-  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
-  op->data.recv_close_on_server.cancelled = &was_cancelled;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
-                                grpc_core::CqVerifier::tag(102), nullptr);
-  GPR_ASSERT(GRPC_CALL_OK == error);
+  auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
+  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
+  CoreEnd2endTest::IncomingStatusOnClient server_status;
+  c.NewBatch(1)
+      .SendInitialMetadata({})
+      .SendCloseFromClient()
+      .RecvInitialMetadata(server_initial_metadata)
+      .RecvStatusOnClient(server_status);
+  auto s = RequestCall(101);
+  Expect(101, true);
+  Step();
+  CoreEnd2endTest::IncomingCloseOnServer client_close;
+  s.NewBatch(102).RecvCloseOnServer(client_close);
 
   // Make sure we don't shutdown the server while HTTP/2 PING frames are still
   // being exchanged on the newly established connection. It can lead to
@@ -128,33 +53,20 @@ static void test_early_server_shutdown_finishes_inflight_calls(
   gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
 
   // shutdown and destroy the server
-  grpc_server_shutdown_and_notify(f->server(), f->cq(),
-                                  grpc_core::CqVerifier::tag(1000));
-  grpc_server_cancel_all_calls(f->server());
+  ShutdownServerAndNotify(1000);
+  CancelAllCallsOnServer();
 
-  cqv.Expect(grpc_core::CqVerifier::tag(1000), true);
-  cqv.Expect(grpc_core::CqVerifier::tag(102), true);
-  cqv.Expect(grpc_core::CqVerifier::tag(1), true);
-  cqv.Verify();
+  Expect(1000, true);
+  Expect(102, true);
+  Expect(1, true);
+  Step();
 
-  f->DestroyServer();
+  DestroyServer();
 
-  GPR_ASSERT(status == GRPC_STATUS_UNAVAILABLE);
-  GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
-  GPR_ASSERT(was_cancelled == 1);
-
-  grpc_slice_unref(details);
-  grpc_metadata_array_destroy(&initial_metadata_recv);
-  grpc_metadata_array_destroy(&trailing_metadata_recv);
-  grpc_metadata_array_destroy(&request_metadata_recv);
-  grpc_call_details_destroy(&call_details);
-
-  grpc_call_unref(c);
-  grpc_call_unref(s);
+  EXPECT_EQ(server_status.status(), GRPC_STATUS_UNAVAILABLE);
+  EXPECT_EQ(s.method(), "/foo");
+  EXPECT_TRUE(client_close.was_cancelled());
 }
 
-void shutdown_finishes_calls(const CoreTestConfiguration& config) {
-  test_early_server_shutdown_finishes_inflight_calls(config);
-}
-
-void shutdown_finishes_calls_pre_init(void) {}
+}  // namespace
+}  // namespace grpc_core

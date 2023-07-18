@@ -16,329 +16,154 @@
 //
 //
 
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <stddef.h>
 
-#include <functional>
+#include <algorithm>
 #include <initializer_list>
-#include <memory>
+#include <vector>
 
 #include "absl/strings/str_format.h"
+#include "gtest/gtest.h"
 
-#include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
-#include <grpc/impl/propagation_bits.h>
-#include <grpc/slice.h>
 #include <grpc/status.h>
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/crash.h"
-#include "test/core/end2end/cq_verifier.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/slice/slice.h"
 #include "test/core/end2end/end2end_tests.h"
-#include "test/core/util/test_config.h"
 
-static std::unique_ptr<CoreTestFixture> begin_test(
-    const CoreTestConfiguration& config, const char* test_name,
-    grpc_channel_args* client_args, grpc_channel_args* server_args) {
-  gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
-  auto f = config.create_fixture(grpc_core::ChannelArgs::FromC(client_args),
-                                 grpc_core::ChannelArgs::FromC(server_args));
-  f->InitServer(grpc_core::ChannelArgs::FromC(server_args));
-  f->InitClient(grpc_core::ChannelArgs::FromC(client_args));
-  return f;
-}
+namespace grpc_core {
+namespace {
 
-// Creates and returns a grpc_slice containing random alphanumeric characters.
-//
-static grpc_slice generate_random_slice() {
-  size_t i;
-  static const char chars[] = "abcdefghijklmnopqrstuvwxyz1234567890";
-  char* output;
-  const size_t output_size = 1024 * 1024;
-  output = static_cast<char*>(gpr_malloc(output_size));
-  for (i = 0; i < output_size - 1; ++i) {
-    output[i] = chars[rand() % static_cast<int>(sizeof(chars) - 1)];
+const int kNumCalls = 8;
+const int kClientBaseTag = 1000;
+const int kServerStartBaseTag = 2000;
+const int kServerRecvBaseTag = 3000;
+const int kServerEndBaseTag = 4000;
+
+template <typename F>
+auto MakeVec(F init) {
+  std::vector<decltype(init(0))> v;
+  v.reserve(kNumCalls);
+  for (int i = 0; i < kNumCalls; ++i) {
+    v.push_back(init(i));
   }
-  output[output_size - 1] = '\0';
-  grpc_slice out = grpc_slice_from_copied_string(output);
-  gpr_free(output);
-  return out;
+  return v;
 }
 
-void resource_quota_server(const CoreTestConfiguration& config) {
+CORE_END2END_TEST(ResourceQuotaTest, ResourceQuota) {
+  if (IsEventEngineListenerEnabled()) {
+    GTEST_SKIP() << "Not with event engine listener";
+  }
+
   grpc_resource_quota* resource_quota =
       grpc_resource_quota_create("test_server");
-  grpc_resource_quota_resize(resource_quota, 5 * 1024 * 1024);
-
-#define NUM_CALLS 100
-#define CLIENT_BASE_TAG 0x1000
-#define SERVER_START_BASE_TAG 0x2000
-#define SERVER_RECV_BASE_TAG 0x3000
-#define SERVER_END_BASE_TAG 0x4000
-
-  grpc_arg arg;
-  arg.key = const_cast<char*>(GRPC_ARG_RESOURCE_QUOTA);
-  arg.type = GRPC_ARG_POINTER;
-  arg.value.pointer.p = resource_quota;
-  arg.value.pointer.vtable = grpc_resource_quota_arg_vtable();
-  grpc_channel_args args = {1, &arg};
-
-  auto f = begin_test(config, "resource_quota_server", nullptr, &args);
-
+  grpc_resource_quota_resize(resource_quota, 1024 * 1024);
+  InitServer(ChannelArgs().Set(
+      GRPC_ARG_RESOURCE_QUOTA,
+      ChannelArgs::Pointer(resource_quota, grpc_resource_quota_arg_vtable())));
+  InitClient(ChannelArgs());
   // Create large request and response bodies. These are big enough to require
   // multiple round trips to deliver to the peer, and their exact contents of
   // will be verified on completion.
-  grpc_slice request_payload_slice = generate_random_slice();
+  auto requests = MakeVec([](int) { return RandomSlice(128 * 1024); });
+  auto server_calls =
+      MakeVec([this](int i) { return RequestCall(kServerRecvBaseTag + i); });
+  IncomingMetadata server_metadata[kNumCalls];
+  IncomingStatusOnClient server_status[kNumCalls];
+  IncomingMessage client_message[kNumCalls];
+  IncomingCloseOnServer client_close[kNumCalls];
+  enum class SeenServerCall {
+    kNotSeen = 0,
+    kSeenWithSuccess,
+    kSeenWithFailure
+  };
+  // Yep, this really initializes all the elements.
+  SeenServerCall seen_server_call[kNumCalls] = {SeenServerCall::kNotSeen};
+  auto client_calls =
+      MakeVec([this, &requests, &server_metadata, &server_status](int i) {
+        auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
+        c.NewBatch(kClientBaseTag + i)
+            .SendInitialMetadata({}, GRPC_INITIAL_METADATA_WAIT_FOR_READY)
+            .SendMessage(requests[i].Ref())
+            .SendCloseFromClient()
+            .RecvInitialMetadata(server_metadata[i])
+            .RecvStatusOnClient(server_status[i]);
+        return c;
+      });
+  for (int i = 0; i < kNumCalls; i++) {
+    Expect(kClientBaseTag + i, true);
+    Expect(
+        kServerRecvBaseTag + i,
+        MaybePerformAction{[this, &seen_server_call, &server_calls,
+                            &client_message, &client_close, i](bool success) {
+          seen_server_call[i] = success ? SeenServerCall::kSeenWithSuccess
+                                        : SeenServerCall::kSeenWithFailure;
+          if (!success) return;
+          server_calls[i]
+              .NewBatch(kServerStartBaseTag + i)
+              .RecvMessage(client_message[i])
+              .SendInitialMetadata({});
+          Expect(kServerStartBaseTag + i,
+                 PerformAction{[&server_calls, &client_close, i](bool) {
+                   server_calls[i]
+                       .NewBatch(kServerEndBaseTag + i)
+                       .RecvCloseOnServer(client_close[i])
+                       .SendStatusFromServer(GRPC_STATUS_OK, "xyz", {});
+                 }});
+          Expect(kServerEndBaseTag + i, true);
+        }});
+  }
+  Step();
 
-  grpc_call** client_calls =
-      static_cast<grpc_call**>(malloc(sizeof(grpc_call*) * NUM_CALLS));
-  grpc_call** server_calls =
-      static_cast<grpc_call**>(malloc(sizeof(grpc_call*) * NUM_CALLS));
-  grpc_metadata_array* initial_metadata_recv =
-      static_cast<grpc_metadata_array*>(
-          malloc(sizeof(grpc_metadata_array) * NUM_CALLS));
-  grpc_metadata_array* trailing_metadata_recv =
-      static_cast<grpc_metadata_array*>(
-          malloc(sizeof(grpc_metadata_array) * NUM_CALLS));
-  grpc_metadata_array* request_metadata_recv =
-      static_cast<grpc_metadata_array*>(
-          malloc(sizeof(grpc_metadata_array) * NUM_CALLS));
-  grpc_call_details* call_details = static_cast<grpc_call_details*>(
-      malloc(sizeof(grpc_call_details) * NUM_CALLS));
-  grpc_status_code* status = static_cast<grpc_status_code*>(
-      malloc(sizeof(grpc_status_code) * NUM_CALLS));
-  grpc_slice* details =
-      static_cast<grpc_slice*>(malloc(sizeof(grpc_slice) * NUM_CALLS));
-  grpc_byte_buffer** request_payload = static_cast<grpc_byte_buffer**>(
-      malloc(sizeof(grpc_byte_buffer*) * NUM_CALLS));
-  grpc_byte_buffer** request_payload_recv = static_cast<grpc_byte_buffer**>(
-      malloc(sizeof(grpc_byte_buffer*) * NUM_CALLS));
-  int* was_cancelled = static_cast<int*>(malloc(sizeof(int) * NUM_CALLS));
-  grpc_call_error error;
-  int pending_client_calls = 0;
-  int pending_server_start_calls = 0;
-  int pending_server_recv_calls = 0;
-  int pending_server_end_calls = 0;
   int cancelled_calls_on_client = 0;
   int cancelled_calls_on_server = 0;
   int deadline_exceeded = 0;
   int unavailable = 0;
-
-  grpc_op ops[6];
-  grpc_op* op;
-
-  for (int i = 0; i < NUM_CALLS; i++) {
-    grpc_metadata_array_init(&initial_metadata_recv[i]);
-    grpc_metadata_array_init(&trailing_metadata_recv[i]);
-    grpc_metadata_array_init(&request_metadata_recv[i]);
-    grpc_call_details_init(&call_details[i]);
-    request_payload[i] = grpc_raw_byte_buffer_create(&request_payload_slice, 1);
-    request_payload_recv[i] = nullptr;
-    was_cancelled[i] = 0;
-  }
-
-  for (int i = 0; i < NUM_CALLS; i++) {
-    error = grpc_server_request_call(
-        f->server(), &server_calls[i], &call_details[i],
-        &request_metadata_recv[i], f->cq(), f->cq(),
-        grpc_core::CqVerifier::tag(SERVER_START_BASE_TAG + i));
-    GPR_ASSERT(GRPC_CALL_OK == error);
-
-    pending_server_start_calls++;
-  }
-
-  for (int i = 0; i < NUM_CALLS; i++) {
-    client_calls[i] = grpc_channel_create_call(
-        f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS, f->cq(),
-        grpc_slice_from_static_string("/foo"), nullptr,
-        grpc_timeout_seconds_to_deadline(60), nullptr);
-
-    memset(ops, 0, sizeof(ops));
-    op = ops;
-    op->op = GRPC_OP_SEND_INITIAL_METADATA;
-    op->data.send_initial_metadata.count = 0;
-    op->flags = GRPC_INITIAL_METADATA_WAIT_FOR_READY;
-    op->reserved = nullptr;
-    op++;
-    op->op = GRPC_OP_SEND_MESSAGE;
-    op->data.send_message.send_message = request_payload[i];
-    op->flags = 0;
-    op->reserved = nullptr;
-    op++;
-    op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
-    op->flags = 0;
-    op->reserved = nullptr;
-    op++;
-    op->op = GRPC_OP_RECV_INITIAL_METADATA;
-    op->data.recv_initial_metadata.recv_initial_metadata =
-        &initial_metadata_recv[i];
-    op->flags = 0;
-    op->reserved = nullptr;
-    op++;
-    op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-    op->data.recv_status_on_client.trailing_metadata =
-        &trailing_metadata_recv[i];
-    op->data.recv_status_on_client.status = &status[i];
-    op->data.recv_status_on_client.status_details = &details[i];
-    op->flags = 0;
-    op->reserved = nullptr;
-    op++;
-    error = grpc_call_start_batch(
-        client_calls[i], ops, static_cast<size_t>(op - ops),
-        grpc_core::CqVerifier::tag(CLIENT_BASE_TAG + i), nullptr);
-    GPR_ASSERT(GRPC_CALL_OK == error);
-
-    pending_client_calls++;
-  }
-
-  while (pending_client_calls + pending_server_recv_calls +
-             pending_server_end_calls >
-         0) {
-    grpc_event ev = grpc_completion_queue_next(
-        f->cq(), grpc_timeout_seconds_to_deadline(60), nullptr);
-    GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
-
-    int ev_tag = static_cast<int>(reinterpret_cast<intptr_t>(ev.tag));
-    if (ev_tag < CLIENT_BASE_TAG) {
-      abort();  // illegal tag
-    } else if (ev_tag < SERVER_START_BASE_TAG) {
-      // client call finished
-      int call_id = ev_tag - CLIENT_BASE_TAG;
-      GPR_ASSERT(call_id >= 0);
-      GPR_ASSERT(call_id < NUM_CALLS);
-      switch (status[call_id]) {
-        case GRPC_STATUS_RESOURCE_EXHAUSTED:
-          cancelled_calls_on_client++;
-          break;
-        case GRPC_STATUS_DEADLINE_EXCEEDED:
-          deadline_exceeded++;
-          break;
-        case GRPC_STATUS_UNAVAILABLE:
-          unavailable++;
-          break;
-        case GRPC_STATUS_OK:
-          break;
-        default:
-          grpc_core::Crash(
-              absl::StrFormat("Unexpected status code: %d", status[call_id]));
-      }
-      GPR_ASSERT(pending_client_calls > 0);
-
-      grpc_metadata_array_destroy(&initial_metadata_recv[call_id]);
-      grpc_metadata_array_destroy(&trailing_metadata_recv[call_id]);
-      grpc_call_unref(client_calls[call_id]);
-      grpc_slice_unref(details[call_id]);
-      grpc_byte_buffer_destroy(request_payload[call_id]);
-
-      pending_client_calls--;
-    } else if (ev_tag < SERVER_RECV_BASE_TAG) {
-      // new incoming call to the server
-      int call_id = ev_tag - SERVER_START_BASE_TAG;
-      GPR_ASSERT(call_id >= 0);
-      GPR_ASSERT(call_id < NUM_CALLS);
-
-      memset(ops, 0, sizeof(ops));
-      op = ops;
-      op->op = GRPC_OP_SEND_INITIAL_METADATA;
-      op->data.send_initial_metadata.count = 0;
-      op->flags = 0;
-      op->reserved = nullptr;
-      op++;
-      op->op = GRPC_OP_RECV_MESSAGE;
-      op->data.recv_message.recv_message = &request_payload_recv[call_id];
-      op->flags = 0;
-      op->reserved = nullptr;
-      op++;
-      error = grpc_call_start_batch(
-          server_calls[call_id], ops, static_cast<size_t>(op - ops),
-          grpc_core::CqVerifier::tag(SERVER_RECV_BASE_TAG + call_id), nullptr);
-      GPR_ASSERT(GRPC_CALL_OK == error);
-
-      GPR_ASSERT(pending_server_start_calls > 0);
-      pending_server_start_calls--;
-      pending_server_recv_calls++;
-
-      grpc_call_details_destroy(&call_details[call_id]);
-      grpc_metadata_array_destroy(&request_metadata_recv[call_id]);
-    } else if (ev_tag < SERVER_END_BASE_TAG) {
-      // finished read on the server
-      int call_id = ev_tag - SERVER_RECV_BASE_TAG;
-      GPR_ASSERT(call_id >= 0);
-      GPR_ASSERT(call_id < NUM_CALLS);
-
-      if (ev.success) {
-        if (request_payload_recv[call_id] != nullptr) {
-          grpc_byte_buffer_destroy(request_payload_recv[call_id]);
-          request_payload_recv[call_id] = nullptr;
-        }
-      } else {
-        GPR_ASSERT(request_payload_recv[call_id] == nullptr);
-      }
-
-      memset(ops, 0, sizeof(ops));
-      op = ops;
-      op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
-      op->data.recv_close_on_server.cancelled = &was_cancelled[call_id];
-      op->flags = 0;
-      op->reserved = nullptr;
-      op++;
-      op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
-      op->data.send_status_from_server.trailing_metadata_count = 0;
-      op->data.send_status_from_server.status = GRPC_STATUS_OK;
-      grpc_slice status_details = grpc_slice_from_static_string("xyz");
-      op->data.send_status_from_server.status_details = &status_details;
-      op->flags = 0;
-      op->reserved = nullptr;
-      op++;
-      error = grpc_call_start_batch(
-          server_calls[call_id], ops, static_cast<size_t>(op - ops),
-          grpc_core::CqVerifier::tag(SERVER_END_BASE_TAG + call_id), nullptr);
-      GPR_ASSERT(GRPC_CALL_OK == error);
-
-      GPR_ASSERT(pending_server_recv_calls > 0);
-      pending_server_recv_calls--;
-      pending_server_end_calls++;
-    } else {
-      int call_id = ev_tag - SERVER_END_BASE_TAG;
-      GPR_ASSERT(call_id >= 0);
-      GPR_ASSERT(call_id < NUM_CALLS);
-
-      if (was_cancelled[call_id]) {
-        cancelled_calls_on_server++;
-      }
-      GPR_ASSERT(pending_server_end_calls > 0);
-      pending_server_end_calls--;
-
-      grpc_call_unref(server_calls[call_id]);
+  for (int i = 0; i < kNumCalls; i++) {
+    switch (server_status[i].status()) {
+      case GRPC_STATUS_RESOURCE_EXHAUSTED:
+        cancelled_calls_on_client++;
+        break;
+      case GRPC_STATUS_DEADLINE_EXCEEDED:
+        deadline_exceeded++;
+        break;
+      case GRPC_STATUS_UNAVAILABLE:
+        unavailable++;
+        break;
+      case GRPC_STATUS_OK:
+        break;
+      default:
+        Crash(absl::StrFormat("Unexpected status code: %d",
+                              server_status[i].status()));
+    }
+    if (seen_server_call[i] == SeenServerCall::kSeenWithSuccess &&
+        client_close[i].was_cancelled()) {
+      cancelled_calls_on_server++;
     }
   }
-
   gpr_log(GPR_INFO,
           "Done. %d total calls: %d cancelled at server, %d cancelled at "
           "client, %d timed out, %d unavailable.",
-          NUM_CALLS, cancelled_calls_on_server, cancelled_calls_on_client,
+          kNumCalls, cancelled_calls_on_server, cancelled_calls_on_client,
           deadline_exceeded, unavailable);
 
-  f->ShutdownServer();
-
-  grpc_slice_unref(request_payload_slice);
-  grpc_resource_quota_unref(resource_quota);
-
-  free(client_calls);
-  free(server_calls);
-  free(initial_metadata_recv);
-  free(trailing_metadata_recv);
-  free(request_metadata_recv);
-  free(call_details);
-  free(status);
-  free(details);
-  free(request_payload);
-  free(request_payload_recv);
-  free(was_cancelled);
+  ShutdownServerAndNotify(0);
+  Expect(0, PerformAction{[this](bool success) {
+           EXPECT_TRUE(success);
+           DestroyServer();
+         }});
+  for (size_t i = 0; i < kNumCalls; i++) {
+    if (seen_server_call[i] == SeenServerCall::kNotSeen) {
+      Expect(kServerRecvBaseTag + i, false);
+    }
+  }
+  Step();
 }
 
-void resource_quota_server_pre_init(void) {}
+}  // namespace
+}  // namespace grpc_core

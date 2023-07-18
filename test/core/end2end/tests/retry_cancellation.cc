@@ -16,215 +16,91 @@
 //
 //
 
-#include <string.h>
-
-#include <functional>
 #include <memory>
-#include <string>
 
-#include "absl/strings/str_cat.h"
+#include "absl/types/optional.h"
+#include "gtest/gtest.h"
 
-#include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
-#include <grpc/impl/propagation_bits.h>
-#include <grpc/slice.h>
 #include <grpc/status.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/useful.h"
-#include "test/core/end2end/cq_verifier.h"
+#include "src/core/lib/gprpp/time.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/tests/cancel_test_helpers.h"
-#include "test/core/util/test_config.h"
 
-static std::unique_ptr<CoreTestFixture> begin_test(
-    const CoreTestConfiguration& config, const char* test_name,
-    grpc_channel_args* client_args, grpc_channel_args* server_args) {
-  gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
-  auto f = config.create_fixture(grpc_core::ChannelArgs::FromC(client_args),
-                                 grpc_core::ChannelArgs::FromC(server_args));
-  f->InitServer(grpc_core::ChannelArgs::FromC(server_args));
-  f->InitClient(grpc_core::ChannelArgs::FromC(client_args));
-  return f;
-}
+namespace grpc_core {
+namespace {
 
 // Tests retry cancellation.
-static void test_retry_cancellation(const CoreTestConfiguration& config,
-                                    cancellation_mode mode) {
-  grpc_call* c;
-  grpc_call* s;
-  grpc_op ops[6];
-  grpc_op* op;
-  grpc_metadata_array initial_metadata_recv;
-  grpc_metadata_array trailing_metadata_recv;
-  grpc_metadata_array request_metadata_recv;
-  grpc_call_details call_details;
-  grpc_slice request_payload_slice = grpc_slice_from_static_string("foo");
-  grpc_slice response_payload_slice = grpc_slice_from_static_string("bar");
-  grpc_byte_buffer* request_payload =
-      grpc_raw_byte_buffer_create(&request_payload_slice, 1);
-  grpc_byte_buffer* response_payload =
-      grpc_raw_byte_buffer_create(&response_payload_slice, 1);
-  grpc_byte_buffer* request_payload_recv = nullptr;
-  grpc_byte_buffer* response_payload_recv = nullptr;
-  grpc_status_code status;
-  grpc_call_error error;
-  grpc_slice details;
-  int was_cancelled = 2;
-  char* peer;
-
-  grpc_arg args[] = {
-      grpc_channel_arg_string_create(
-          const_cast<char*>(GRPC_ARG_SERVICE_CONFIG),
-          const_cast<char*>(
-              "{\n"
-              "  \"methodConfig\": [ {\n"
-              "    \"name\": [\n"
-              "      { \"service\": \"service\", \"method\": \"method\" }\n"
-              "    ],\n"
-              "    \"retryPolicy\": {\n"
-              "      \"maxAttempts\": 5,\n"
-              "      \"initialBackoff\": \"1s\",\n"
-              "      \"maxBackoff\": \"120s\",\n"
-              "      \"backoffMultiplier\": 1.6,\n"
-              "      \"retryableStatusCodes\": [ \"ABORTED\" ]\n"
-              "    },\n"
-              "    \"timeout\": \"10s\"\n"
-              "  } ]\n"
-              "}")),
-  };
-  grpc_channel_args client_args = {GPR_ARRAY_SIZE(args), args};
-  std::string name = absl::StrCat("retry_cancellation/", mode.name);
-  auto f = begin_test(config, name.c_str(), &client_args, nullptr);
-
-  grpc_core::CqVerifier cqv(f->cq());
-
-  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
-  c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
-                               f->cq(),
-                               grpc_slice_from_static_string("/service/method"),
-                               nullptr, deadline, nullptr);
-  GPR_ASSERT(c);
-
-  peer = grpc_call_get_peer(c);
-  GPR_ASSERT(peer != nullptr);
-  gpr_log(GPR_DEBUG, "client_peer_before_call=%s", peer);
-  gpr_free(peer);
-
-  grpc_metadata_array_init(&initial_metadata_recv);
-  grpc_metadata_array_init(&trailing_metadata_recv);
-  grpc_metadata_array_init(&request_metadata_recv);
-  grpc_call_details_init(&call_details);
-  grpc_slice status_details = grpc_slice_from_static_string("xyz");
-
+void TestRetryCancellation(CoreEnd2endTest& test,
+                           std::unique_ptr<CancellationMode> mode) {
+  test.InitServer(ChannelArgs());
+  test.InitClient(ChannelArgs().Set(
+      GRPC_ARG_SERVICE_CONFIG,
+      "{\n"
+      "  \"methodConfig\": [ {\n"
+      "    \"name\": [\n"
+      "      { \"service\": \"service\", \"method\": \"method\" }\n"
+      "    ],\n"
+      "    \"retryPolicy\": {\n"
+      "      \"maxAttempts\": 5,\n"
+      "      \"initialBackoff\": \"1s\",\n"
+      "      \"maxBackoff\": \"120s\",\n"
+      "      \"backoffMultiplier\": 1.6,\n"
+      "      \"retryableStatusCodes\": [ \"ABORTED\" ]\n"
+      "    },\n"
+      "    \"timeout\": \"10s\"\n"
+      "  } ]\n"
+      "}"));
+  auto c = test.NewClientCall("/service/method")
+               .Timeout(Duration::Seconds(5))
+               .Create();
+  EXPECT_NE(c.GetPeer(), absl::nullopt);
   // Client starts a batch with all 6 ops.
-  memset(ops, 0, sizeof(ops));
-  op = ops;
-  op->op = GRPC_OP_SEND_INITIAL_METADATA;
-  op->data.send_initial_metadata.count = 0;
-  op++;
-  op->op = GRPC_OP_SEND_MESSAGE;
-  op->data.send_message.send_message = request_payload;
-  op++;
-  op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message.recv_message = &response_payload_recv;
-  op++;
-  op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
-  op++;
-  op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
-  op++;
-  op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
-  op->data.recv_status_on_client.status = &status;
-  op->data.recv_status_on_client.status_details = &details;
-  op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
-                                grpc_core::CqVerifier::tag(1), nullptr);
-  GPR_ASSERT(GRPC_CALL_OK == error);
-
+  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
+  CoreEnd2endTest::IncomingMessage server_message;
+  CoreEnd2endTest::IncomingStatusOnClient server_status;
+  c.NewBatch(1)
+      .SendInitialMetadata({})
+      .SendMessage("foo")
+      .RecvMessage(server_message)
+      .SendCloseFromClient()
+      .RecvInitialMetadata(server_initial_metadata)
+      .RecvStatusOnClient(server_status);
   // Server gets a call and fails with retryable status.
-  error = grpc_server_request_call(f->server(), &s, &call_details,
-                                   &request_metadata_recv, f->cq(), f->cq(),
-                                   grpc_core::CqVerifier::tag(101));
-  GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(grpc_core::CqVerifier::tag(101), true);
-  cqv.Verify();
-
-  peer = grpc_call_get_peer(s);
-  GPR_ASSERT(peer != nullptr);
-  gpr_log(GPR_DEBUG, "server_peer=%s", peer);
-  gpr_free(peer);
-  peer = grpc_call_get_peer(c);
-  GPR_ASSERT(peer != nullptr);
-  gpr_log(GPR_DEBUG, "client_peer=%s", peer);
-  gpr_free(peer);
-
-  memset(ops, 0, sizeof(ops));
-  op = ops;
-  op->op = GRPC_OP_SEND_INITIAL_METADATA;
-  op->data.send_initial_metadata.count = 0;
-  op++;
-  op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
-  op->data.send_status_from_server.trailing_metadata_count = 0;
-  op->data.send_status_from_server.status = GRPC_STATUS_ABORTED;
-  op->data.send_status_from_server.status_details = &status_details;
-  op++;
-  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
-  op->data.recv_close_on_server.cancelled = &was_cancelled;
-  op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
-                                grpc_core::CqVerifier::tag(102), nullptr);
-  GPR_ASSERT(GRPC_CALL_OK == error);
-
-  cqv.Expect(grpc_core::CqVerifier::tag(102), true);
-  cqv.Verify();
-
-  grpc_call_unref(s);
-  grpc_metadata_array_destroy(&request_metadata_recv);
-  grpc_metadata_array_init(&request_metadata_recv);
-  grpc_call_details_destroy(&call_details);
-  grpc_call_details_init(&call_details);
-
+  absl::optional<CoreEnd2endTest::IncomingCall> s = test.RequestCall(101);
+  test.Expect(101, true);
+  test.Step();
+  EXPECT_NE(s->GetPeer(), absl::nullopt);
+  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  CoreEnd2endTest::IncomingCloseOnServer client_close;
+  s->NewBatch(102)
+      .SendInitialMetadata({})
+      .SendStatusFromServer(GRPC_STATUS_ABORTED, "xyz", {})
+      .RecvCloseOnServer(client_close);
+  test.Expect(102, true);
+  test.Step();
+  s.reset();
   // Server gets a second call (the retry).
-  error = grpc_server_request_call(f->server(), &s, &call_details,
-                                   &request_metadata_recv, f->cq(), f->cq(),
-                                   grpc_core::CqVerifier::tag(201));
-  GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(grpc_core::CqVerifier::tag(201), true);
-  cqv.Verify();
-
+  s.emplace(test.RequestCall(201));
+  test.Expect(201, true);
+  test.Step();
   // Initiate cancellation.
-  GPR_ASSERT(GRPC_CALL_OK == mode.initiate_cancel(c, nullptr));
-
-  cqv.Expect(grpc_core::CqVerifier::tag(1), true);
-  cqv.Verify();
-
-  GPR_ASSERT(status == mode.expect_status);
-  GPR_ASSERT(was_cancelled == 0);
-
-  grpc_slice_unref(details);
-  grpc_metadata_array_destroy(&initial_metadata_recv);
-  grpc_metadata_array_destroy(&trailing_metadata_recv);
-  grpc_metadata_array_destroy(&request_metadata_recv);
-  grpc_call_details_destroy(&call_details);
-  grpc_byte_buffer_destroy(request_payload);
-  grpc_byte_buffer_destroy(response_payload);
-  grpc_byte_buffer_destroy(request_payload_recv);
-  grpc_byte_buffer_destroy(response_payload_recv);
-
-  grpc_call_unref(c);
-  grpc_call_unref(s);
+  mode->Apply(c);
+  test.Expect(1, true);
+  test.Step();
+  EXPECT_EQ(server_status.status(), mode->ExpectedStatus());
+  EXPECT_FALSE(client_close.was_cancelled());
 }
 
-void retry_cancellation(const CoreTestConfiguration& config) {
-  GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL);
-  for (size_t i = 0; i < GPR_ARRAY_SIZE(cancellation_modes); ++i) {
-    test_retry_cancellation(config, cancellation_modes[i]);
-  }
+CORE_END2END_TEST(RetryTest, RetryCancellation) {
+  TestRetryCancellation(*this, std::make_unique<CancelCancellationMode>());
 }
 
-void retry_cancellation_pre_init(void) {}
+CORE_END2END_TEST(RetryTest, RetryDeadline) {
+  TestRetryCancellation(*this, std::make_unique<DeadlineCancellationMode>());
+}
+
+}  // namespace
+}  // namespace grpc_core

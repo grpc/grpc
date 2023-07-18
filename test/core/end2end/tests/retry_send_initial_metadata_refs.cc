@@ -16,303 +16,112 @@
 //
 //
 
-#include <string.h>
-
-#include <functional>
-#include <memory>
 #include <string>
 
-#include <grpc/byte_buffer.h>
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
+#include "gtest/gtest.h"
+
 #include <grpc/grpc.h>
-#include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/useful.h"
-#include "test/core/end2end/cq_verifier.h"
+#include "src/core/lib/gprpp/time.h"
 #include "test/core/end2end/end2end_tests.h"
-#include "test/core/util/test_config.h"
 
-static std::unique_ptr<CoreTestFixture> begin_test(
-    const CoreTestConfiguration& config, const char* test_name,
-    grpc_channel_args* client_args, grpc_channel_args* server_args) {
-  gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
-  auto f = config.create_fixture(grpc_core::ChannelArgs::FromC(client_args),
-                                 grpc_core::ChannelArgs::FromC(server_args));
-  f->InitServer(grpc_core::ChannelArgs::FromC(server_args));
-  f->InitClient(grpc_core::ChannelArgs::FromC(client_args));
-  return f;
-}
+namespace grpc_core {
+namespace {
 
 // Tests that we hold refs to send_initial_metadata payload while
 // cached, even after the caller has released its refs:
 // - 2 retries allowed for ABORTED status
 // - first attempt returns ABORTED
 // - second attempt returns OK
-static void test_retry_send_initial_metadata_refs(
-    const CoreTestConfiguration& config) {
-  grpc_call* c;
-  grpc_call* s;
-  grpc_op ops[6];
-  grpc_op* op;
-  grpc_metadata_array client_send_initial_metadata;
-  grpc_metadata_array initial_metadata_recv;
-  grpc_metadata_array trailing_metadata_recv;
-  grpc_metadata_array request_metadata_recv;
-  grpc_call_details call_details;
-  grpc_slice request_payload_slice = grpc_slice_from_static_string("foo");
-  grpc_slice response_payload_slice = grpc_slice_from_static_string("bar");
-  grpc_byte_buffer* request_payload =
-      grpc_raw_byte_buffer_create(&request_payload_slice, 1);
-  grpc_byte_buffer* response_payload =
-      grpc_raw_byte_buffer_create(&response_payload_slice, 1);
-  grpc_byte_buffer* request_payload_recv = nullptr;
-  grpc_byte_buffer* response_payload_recv = nullptr;
-  grpc_status_code status;
-  grpc_call_error error;
-  grpc_slice details;
-  int was_cancelled = 2;
-  char* peer;
-
-  grpc_arg args[] = {
-      grpc_channel_arg_string_create(
-          const_cast<char*>(GRPC_ARG_SERVICE_CONFIG),
-          const_cast<char*>(
-              "{\n"
-              "  \"methodConfig\": [ {\n"
-              "    \"name\": [\n"
-              "      { \"service\": \"service\", \"method\": \"method\" }\n"
-              "    ],\n"
-              "    \"retryPolicy\": {\n"
-              "      \"maxAttempts\": 3,\n"
-              "      \"initialBackoff\": \"1s\",\n"
-              "      \"maxBackoff\": \"120s\",\n"
-              "      \"backoffMultiplier\": 1.6,\n"
-              "      \"retryableStatusCodes\": [ \"ABORTED\" ]\n"
-              "    }\n"
-              "  } ]\n"
-              "}")),
-  };
-  grpc_channel_args client_args = {GPR_ARRAY_SIZE(args), args};
-  auto f = begin_test(config, "retry_send_initial_metadata_refs", &client_args,
-                      nullptr);
-
-  grpc_core::CqVerifier cqv(f->cq());
-
-  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
-  c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
-                               f->cq(),
-                               grpc_slice_from_static_string("/service/method"),
-                               nullptr, deadline, nullptr);
-  GPR_ASSERT(c);
-
-  peer = grpc_call_get_peer(c);
-  GPR_ASSERT(peer != nullptr);
-  gpr_log(GPR_DEBUG, "client_peer_before_call=%s", peer);
-  gpr_free(peer);
-
-  grpc_metadata_array_init(&client_send_initial_metadata);
-  client_send_initial_metadata.count = 2;
-  client_send_initial_metadata.metadata = static_cast<grpc_metadata*>(
-      gpr_malloc(client_send_initial_metadata.count * sizeof(grpc_metadata)));
-  // First element is short enough for slices to be inlined.
-  client_send_initial_metadata.metadata[0].key =
-      grpc_slice_from_copied_string(std::string("foo").c_str());
-  client_send_initial_metadata.metadata[0].value =
-      grpc_slice_from_copied_string(std::string("bar").c_str());
-  // Second element requires slice allocation.
-  client_send_initial_metadata.metadata[1].key = grpc_slice_from_copied_string(
-      std::string(GRPC_SLICE_INLINED_SIZE + 1, 'x').c_str());
-  client_send_initial_metadata.metadata[1].value =
-      grpc_slice_from_copied_string(
-          std::string(GRPC_SLICE_INLINED_SIZE + 1, 'y').c_str());
-
-  grpc_metadata_array_init(&initial_metadata_recv);
-  grpc_metadata_array_init(&trailing_metadata_recv);
-  grpc_metadata_array_init(&request_metadata_recv);
-  grpc_call_details_init(&call_details);
-  grpc_slice status_details = grpc_slice_from_static_string("xyz");
-
-  memset(ops, 0, sizeof(ops));
-  op = ops;
-  op->op = GRPC_OP_SEND_INITIAL_METADATA;
-  op->data.send_initial_metadata.count = client_send_initial_metadata.count;
-  op->data.send_initial_metadata.metadata =
-      client_send_initial_metadata.metadata;
-  op++;
-  op->op = GRPC_OP_SEND_MESSAGE;
-  op->data.send_message.send_message = request_payload;
-  op++;
-  op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
-  op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
-                                grpc_core::CqVerifier::tag(1), nullptr);
-  GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(grpc_core::CqVerifier::tag(1), true);
-  cqv.Verify();
-
-  for (size_t i = 0; i < client_send_initial_metadata.count; ++i) {
-    grpc_slice_unref(client_send_initial_metadata.metadata[i].key);
-    grpc_slice_unref(client_send_initial_metadata.metadata[i].value);
-  }
-  grpc_metadata_array_destroy(&client_send_initial_metadata);
-
-  memset(ops, 0, sizeof(ops));
-  op = ops;
-  op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message.recv_message = &response_payload_recv;
-  op++;
-  op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
-  op++;
-  op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
-  op->data.recv_status_on_client.status = &status;
-  op->data.recv_status_on_client.status_details = &details;
-  op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
-                                grpc_core::CqVerifier::tag(2), nullptr);
-  GPR_ASSERT(GRPC_CALL_OK == error);
-
-  error = grpc_server_request_call(f->server(), &s, &call_details,
-                                   &request_metadata_recv, f->cq(), f->cq(),
-                                   grpc_core::CqVerifier::tag(101));
-  GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(grpc_core::CqVerifier::tag(101), true);
-  cqv.Verify();
-
+CORE_END2END_TEST(RetryTest, RetrySendInitialMetadataRefs) {
+  InitServer(ChannelArgs());
+  InitClient(ChannelArgs().Set(
+      GRPC_ARG_SERVICE_CONFIG,
+      "{\n"
+      "  \"methodConfig\": [ {\n"
+      "    \"name\": [\n"
+      "      { \"service\": \"service\", \"method\": \"method\" }\n"
+      "    ],\n"
+      "    \"retryPolicy\": {\n"
+      "      \"maxAttempts\": 3,\n"
+      "      \"initialBackoff\": \"1s\",\n"
+      "      \"maxBackoff\": \"120s\",\n"
+      "      \"backoffMultiplier\": 1.6,\n"
+      "      \"retryableStatusCodes\": [ \"ABORTED\" ]\n"
+      "    }\n"
+      "  } ]\n"
+      "}"));
+  auto c =
+      NewClientCall("/service/method").Timeout(Duration::Seconds(5)).Create();
+  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  c.NewBatch(1)
+      .SendInitialMetadata(
+          {// First element is short enough for slices to be inlined.
+           {"foo", "bar"},
+           // Second element requires slice allocation.
+           {std::string(GRPC_SLICE_INLINED_SIZE + 1, 'x'),
+            std::string(GRPC_SLICE_INLINED_SIZE + 1, 'y')}})
+      .SendMessage("foo")
+      .SendCloseFromClient();
+  Expect(1, true);
+  Step();
+  IncomingMessage server_message;
+  IncomingMetadata server_initial_metadata;
+  IncomingStatusOnClient server_status;
+  c.NewBatch(2)
+      .RecvMessage(server_message)
+      .RecvInitialMetadata(server_initial_metadata)
+      .RecvStatusOnClient(server_status);
+  auto s = RequestCall(101);
+  Expect(101, true);
+  Step();
   // Make sure the "grpc-previous-rpc-attempts" header was not sent in the
   // initial attempt.
-  for (size_t i = 0; i < request_metadata_recv.count; ++i) {
-    GPR_ASSERT(!grpc_slice_eq(
-        request_metadata_recv.metadata[i].key,
-        grpc_slice_from_static_string("grpc-previous-rpc-attempts")));
-  }
-
-  peer = grpc_call_get_peer(s);
-  GPR_ASSERT(peer != nullptr);
-  gpr_log(GPR_DEBUG, "server_peer=%s", peer);
-  gpr_free(peer);
-  peer = grpc_call_get_peer(c);
-  GPR_ASSERT(peer != nullptr);
-  gpr_log(GPR_DEBUG, "client_peer=%s", peer);
-  gpr_free(peer);
-
-  memset(ops, 0, sizeof(ops));
-  op = ops;
-  op->op = GRPC_OP_SEND_INITIAL_METADATA;
-  op->data.send_initial_metadata.count = 0;
-  op++;
-  op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
-  op->data.send_status_from_server.trailing_metadata_count = 0;
-  op->data.send_status_from_server.status = GRPC_STATUS_ABORTED;
-  op->data.send_status_from_server.status_details = &status_details;
-  op++;
-  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
-  op->data.recv_close_on_server.cancelled = &was_cancelled;
-  op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
-                                grpc_core::CqVerifier::tag(102), nullptr);
-  GPR_ASSERT(GRPC_CALL_OK == error);
-
-  cqv.Expect(grpc_core::CqVerifier::tag(102), true);
-  cqv.Verify();
-
-  grpc_call_unref(s);
-  grpc_metadata_array_destroy(&request_metadata_recv);
-  grpc_metadata_array_init(&request_metadata_recv);
-  grpc_call_details_destroy(&call_details);
-  grpc_call_details_init(&call_details);
-
-  error = grpc_server_request_call(f->server(), &s, &call_details,
-                                   &request_metadata_recv, f->cq(), f->cq(),
-                                   grpc_core::CqVerifier::tag(201));
-  GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(grpc_core::CqVerifier::tag(201), true);
-  cqv.Verify();
-
+  EXPECT_EQ(s.GetInitialMetadata("grpc-previous-rpc-attempts"), absl::nullopt);
+  EXPECT_NE(s.GetPeer(), absl::nullopt);
+  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  IncomingCloseOnServer client_close;
+  s.NewBatch(102)
+      .SendInitialMetadata({})
+      .SendStatusFromServer(GRPC_STATUS_ABORTED, "xyz", {})
+      .RecvCloseOnServer(client_close);
+  Expect(102, true);
+  Step();
+  auto s2 = RequestCall(201);
+  Expect(201, true);
+  Step();
   // Make sure the "grpc-previous-rpc-attempts" header was sent in the retry.
-  GPR_ASSERT(contains_metadata_slices(
-      &request_metadata_recv,
-      grpc_slice_from_static_string("grpc-previous-rpc-attempts"),
-      grpc_slice_from_static_string("1")));
+  EXPECT_EQ(s2.GetInitialMetadata("grpc-previous-rpc-attempts"), "1");
   // It should also contain the initial metadata, even though the client
   // freed it already.
-  GPR_ASSERT(contains_metadata(&request_metadata_recv, "foo", "bar"));
-  GPR_ASSERT(
-      contains_metadata(&request_metadata_recv,
-                        std::string(GRPC_SLICE_INLINED_SIZE + 1, 'x').c_str(),
-                        std::string(GRPC_SLICE_INLINED_SIZE + 1, 'y').c_str()));
-
-  peer = grpc_call_get_peer(s);
-  GPR_ASSERT(peer != nullptr);
-  gpr_log(GPR_DEBUG, "server_peer=%s", peer);
-  gpr_free(peer);
-  peer = grpc_call_get_peer(c);
-  GPR_ASSERT(peer != nullptr);
-  gpr_log(GPR_DEBUG, "client_peer=%s", peer);
-  gpr_free(peer);
-
-  memset(ops, 0, sizeof(ops));
-  op = ops;
-  op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message.recv_message = &request_payload_recv;
-  op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
-                                grpc_core::CqVerifier::tag(202), nullptr);
-  GPR_ASSERT(GRPC_CALL_OK == error);
-
-  memset(ops, 0, sizeof(ops));
-  op = ops;
-  op->op = GRPC_OP_SEND_INITIAL_METADATA;
-  op->data.send_initial_metadata.count = 0;
-  op++;
-  op->op = GRPC_OP_SEND_MESSAGE;
-  op->data.send_message.send_message = response_payload;
-  op++;
-  op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
-  op->data.send_status_from_server.trailing_metadata_count = 0;
-  op->data.send_status_from_server.status = GRPC_STATUS_OK;
-  op->data.send_status_from_server.status_details = &status_details;
-  op++;
-  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
-  op->data.recv_close_on_server.cancelled = &was_cancelled;
-  op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
-                                grpc_core::CqVerifier::tag(203), nullptr);
-  GPR_ASSERT(GRPC_CALL_OK == error);
-
-  cqv.Expect(grpc_core::CqVerifier::tag(202), true);
-  cqv.Expect(grpc_core::CqVerifier::tag(203), true);
-  cqv.Expect(grpc_core::CqVerifier::tag(2), true);
-  cqv.Verify();
-
-  GPR_ASSERT(status == GRPC_STATUS_OK);
-  GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
-  GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/service/method"));
-  GPR_ASSERT(was_cancelled == 0);
-
-  grpc_slice_unref(details);
-  grpc_metadata_array_destroy(&initial_metadata_recv);
-  grpc_metadata_array_destroy(&trailing_metadata_recv);
-  grpc_metadata_array_destroy(&request_metadata_recv);
-  grpc_call_details_destroy(&call_details);
-  grpc_byte_buffer_destroy(request_payload);
-  grpc_byte_buffer_destroy(response_payload);
-  grpc_byte_buffer_destroy(request_payload_recv);
-  grpc_byte_buffer_destroy(response_payload_recv);
-
-  grpc_call_unref(c);
-  grpc_call_unref(s);
+  EXPECT_EQ(s2.GetInitialMetadata("foo"), "bar");
+  EXPECT_EQ(
+      s2.GetInitialMetadata(std::string(GRPC_SLICE_INLINED_SIZE + 1, 'x')),
+      std::string(GRPC_SLICE_INLINED_SIZE + 1, 'y'));
+  EXPECT_NE(s.GetPeer(), absl::nullopt);
+  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  IncomingMessage client_message;
+  s2.NewBatch(202).RecvMessage(client_message);
+  IncomingCloseOnServer client_close2;
+  s2.NewBatch(203)
+      .SendInitialMetadata({})
+      .SendMessage("bar")
+      .SendStatusFromServer(GRPC_STATUS_OK, "xyz", {})
+      .RecvCloseOnServer(client_close2);
+  Expect(202, true);
+  Expect(203, true);
+  Expect(2, true);
+  Step();
+  EXPECT_EQ(server_status.status(), GRPC_STATUS_OK);
+  EXPECT_EQ(server_status.message(), "xyz");
+  EXPECT_EQ(s.method(), "/service/method");
+  EXPECT_FALSE(client_close.was_cancelled());
 }
 
-void retry_send_initial_metadata_refs(const CoreTestConfiguration& config) {
-  GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL);
-  test_retry_send_initial_metadata_refs(config);
-}
-
-void retry_send_initial_metadata_refs_pre_init(void) {}
+}  // namespace
+}  // namespace grpc_core

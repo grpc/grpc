@@ -9,40 +9,22 @@
 #ifndef VALIDATE_VALIDATE_PROTO_UPB_H_
 #define VALIDATE_VALIDATE_PROTO_UPB_H_
 
-#include "upb/msg_internal.h"
-#include "upb/decode.h"
-#include "upb/decode_fast.h"
-#include "upb/encode.h"
+#include "upb/collections/array_internal.h"
+#include "upb/collections/map_gencode_util.h"
+#include "upb/message/accessors.h"
+#include "upb/message/internal.h"
+#include "upb/mini_table/enum_internal.h"
+#include "upb/wire/decode.h"
+#include "upb/wire/decode_fast.h"
+#include "upb/wire/encode.h"
 
-#include "upb/port_def.inc"
+// Must be last. 
+#include "upb/port/def.inc"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-struct validate_FieldRules;
-struct validate_FloatRules;
-struct validate_DoubleRules;
-struct validate_Int32Rules;
-struct validate_Int64Rules;
-struct validate_UInt32Rules;
-struct validate_UInt64Rules;
-struct validate_SInt32Rules;
-struct validate_SInt64Rules;
-struct validate_Fixed32Rules;
-struct validate_Fixed64Rules;
-struct validate_SFixed32Rules;
-struct validate_SFixed64Rules;
-struct validate_BoolRules;
-struct validate_StringRules;
-struct validate_BytesRules;
-struct validate_EnumRules;
-struct validate_MessageRules;
-struct validate_RepeatedRules;
-struct validate_MapRules;
-struct validate_AnyRules;
-struct validate_DurationRules;
-struct validate_TimestampRules;
 typedef struct validate_FieldRules validate_FieldRules;
 typedef struct validate_FloatRules validate_FloatRules;
 typedef struct validate_DoubleRules validate_DoubleRules;
@@ -66,43 +48,43 @@ typedef struct validate_MapRules validate_MapRules;
 typedef struct validate_AnyRules validate_AnyRules;
 typedef struct validate_DurationRules validate_DurationRules;
 typedef struct validate_TimestampRules validate_TimestampRules;
-extern const upb_MiniTable validate_FieldRules_msginit;
-extern const upb_MiniTable validate_FloatRules_msginit;
-extern const upb_MiniTable validate_DoubleRules_msginit;
-extern const upb_MiniTable validate_Int32Rules_msginit;
-extern const upb_MiniTable validate_Int64Rules_msginit;
-extern const upb_MiniTable validate_UInt32Rules_msginit;
-extern const upb_MiniTable validate_UInt64Rules_msginit;
-extern const upb_MiniTable validate_SInt32Rules_msginit;
-extern const upb_MiniTable validate_SInt64Rules_msginit;
-extern const upb_MiniTable validate_Fixed32Rules_msginit;
-extern const upb_MiniTable validate_Fixed64Rules_msginit;
-extern const upb_MiniTable validate_SFixed32Rules_msginit;
-extern const upb_MiniTable validate_SFixed64Rules_msginit;
-extern const upb_MiniTable validate_BoolRules_msginit;
-extern const upb_MiniTable validate_StringRules_msginit;
-extern const upb_MiniTable validate_BytesRules_msginit;
-extern const upb_MiniTable validate_EnumRules_msginit;
-extern const upb_MiniTable validate_MessageRules_msginit;
-extern const upb_MiniTable validate_RepeatedRules_msginit;
-extern const upb_MiniTable validate_MapRules_msginit;
-extern const upb_MiniTable validate_AnyRules_msginit;
-extern const upb_MiniTable validate_DurationRules_msginit;
-extern const upb_MiniTable validate_TimestampRules_msginit;
-extern const upb_MiniTable_Extension validate_disabled_ext;
-extern const upb_MiniTable_Extension validate_ignored_ext;
-extern const upb_MiniTable_Extension validate_required_ext;
-extern const upb_MiniTable_Extension validate_rules_ext;
+extern const upb_MiniTable validate_FieldRules_msg_init;
+extern const upb_MiniTable validate_FloatRules_msg_init;
+extern const upb_MiniTable validate_DoubleRules_msg_init;
+extern const upb_MiniTable validate_Int32Rules_msg_init;
+extern const upb_MiniTable validate_Int64Rules_msg_init;
+extern const upb_MiniTable validate_UInt32Rules_msg_init;
+extern const upb_MiniTable validate_UInt64Rules_msg_init;
+extern const upb_MiniTable validate_SInt32Rules_msg_init;
+extern const upb_MiniTable validate_SInt64Rules_msg_init;
+extern const upb_MiniTable validate_Fixed32Rules_msg_init;
+extern const upb_MiniTable validate_Fixed64Rules_msg_init;
+extern const upb_MiniTable validate_SFixed32Rules_msg_init;
+extern const upb_MiniTable validate_SFixed64Rules_msg_init;
+extern const upb_MiniTable validate_BoolRules_msg_init;
+extern const upb_MiniTable validate_StringRules_msg_init;
+extern const upb_MiniTable validate_BytesRules_msg_init;
+extern const upb_MiniTable validate_EnumRules_msg_init;
+extern const upb_MiniTable validate_MessageRules_msg_init;
+extern const upb_MiniTable validate_RepeatedRules_msg_init;
+extern const upb_MiniTable validate_MapRules_msg_init;
+extern const upb_MiniTable validate_AnyRules_msg_init;
+extern const upb_MiniTable validate_DurationRules_msg_init;
+extern const upb_MiniTable validate_TimestampRules_msg_init;
+extern const upb_MiniTableExtension validate_disabled_ext;
+extern const upb_MiniTableExtension validate_ignored_ext;
+extern const upb_MiniTableExtension validate_required_ext;
+extern const upb_MiniTableExtension validate_rules_ext;
 struct google_protobuf_Duration;
 struct google_protobuf_FieldOptions;
 struct google_protobuf_MessageOptions;
 struct google_protobuf_OneofOptions;
 struct google_protobuf_Timestamp;
-extern const upb_MiniTable google_protobuf_Duration_msginit;
-extern const upb_MiniTable google_protobuf_FieldOptions_msginit;
-extern const upb_MiniTable google_protobuf_MessageOptions_msginit;
-extern const upb_MiniTable google_protobuf_OneofOptions_msginit;
-extern const upb_MiniTable google_protobuf_Timestamp_msginit;
+extern const upb_MiniTable google_protobuf_Duration_msg_init;
+extern const upb_MiniTable google_protobuf_FieldOptions_msg_init;
+extern const upb_MiniTable google_protobuf_MessageOptions_msg_init;
+extern const upb_MiniTable google_protobuf_OneofOptions_msg_init;
+extern const upb_MiniTable google_protobuf_Timestamp_msg_init;
 
 typedef enum {
   validate_UNKNOWN = 0,
@@ -111,17 +93,17 @@ typedef enum {
 } validate_KnownRegex;
 
 
-extern const upb_MiniTable_Enum validate_KnownRegex_enuminit;
+extern const upb_MiniTableEnum validate_KnownRegex_enum_init;
 
 /* validate.FieldRules */
 
 UPB_INLINE validate_FieldRules* validate_FieldRules_new(upb_Arena* arena) {
-  return (validate_FieldRules*)_upb_Message_New(&validate_FieldRules_msginit, arena);
+  return (validate_FieldRules*)_upb_Message_New(&validate_FieldRules_msg_init, arena);
 }
 UPB_INLINE validate_FieldRules* validate_FieldRules_parse(const char* buf, size_t size, upb_Arena* arena) {
   validate_FieldRules* ret = validate_FieldRules_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &validate_FieldRules_msginit, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
+  if (upb_Decode(buf, size, ret, &validate_FieldRules_msg_init, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
@@ -131,7 +113,7 @@ UPB_INLINE validate_FieldRules* validate_FieldRules_parse_ex(const char* buf, si
                            int options, upb_Arena* arena) {
   validate_FieldRules* ret = validate_FieldRules_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &validate_FieldRules_msginit, extreg, options, arena) !=
+  if (upb_Decode(buf, size, ret, &validate_FieldRules_msg_init, extreg, options, arena) !=
       kUpb_DecodeStatus_Ok) {
     return NULL;
   }
@@ -139,13 +121,13 @@ UPB_INLINE validate_FieldRules* validate_FieldRules_parse_ex(const char* buf, si
 }
 UPB_INLINE char* validate_FieldRules_serialize(const validate_FieldRules* msg, upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &validate_FieldRules_msginit, 0, arena, &ptr, len);
+  (void)upb_Encode(msg, &validate_FieldRules_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
 UPB_INLINE char* validate_FieldRules_serialize_ex(const validate_FieldRules* msg, int options,
                                  upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &validate_FieldRules_msginit, options, arena, &ptr, len);
+  (void)upb_Encode(msg, &validate_FieldRules_msg_init, options, arena, &ptr, len);
   return ptr;
 }
 typedef enum {
@@ -173,469 +155,601 @@ typedef enum {
   validate_FieldRules_type_NOT_SET = 0
 } validate_FieldRules_type_oneofcases;
 UPB_INLINE validate_FieldRules_type_oneofcases validate_FieldRules_type_case(const validate_FieldRules* msg) {
-  return (validate_FieldRules_type_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t);
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return (validate_FieldRules_type_oneofcases)upb_Message_WhichOneofFieldNumber(msg, &field);
 }
-UPB_INLINE bool validate_FieldRules_has_float(const validate_FieldRules* msg) {
-  return _upb_getoneofcase(msg, UPB_SIZE(4, 4)) == 1;
-}
-UPB_INLINE void validate_FieldRules_clear_float(const validate_FieldRules* msg) {
-  UPB_WRITE_ONEOF(msg, validate_FloatRules*, UPB_SIZE(12, 16), 0, UPB_SIZE(4, 4), validate_FieldRules_type_NOT_SET);
+UPB_INLINE void validate_FieldRules_clear_float(validate_FieldRules* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const validate_FloatRules* validate_FieldRules_float(const validate_FieldRules* msg) {
-  return UPB_READ_ONEOF(msg, const validate_FloatRules*, UPB_SIZE(12, 16), UPB_SIZE(4, 4), 1, NULL);
+  const validate_FloatRules* default_val = NULL;
+  const validate_FloatRules* ret;
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_FieldRules_has_double(const validate_FieldRules* msg) {
-  return _upb_getoneofcase(msg, UPB_SIZE(4, 4)) == 2;
+UPB_INLINE bool validate_FieldRules_has_float(const validate_FieldRules* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_FieldRules_clear_double(const validate_FieldRules* msg) {
-  UPB_WRITE_ONEOF(msg, validate_DoubleRules*, UPB_SIZE(12, 16), 0, UPB_SIZE(4, 4), validate_FieldRules_type_NOT_SET);
+UPB_INLINE void validate_FieldRules_clear_double(validate_FieldRules* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const validate_DoubleRules* validate_FieldRules_double(const validate_FieldRules* msg) {
-  return UPB_READ_ONEOF(msg, const validate_DoubleRules*, UPB_SIZE(12, 16), UPB_SIZE(4, 4), 2, NULL);
+  const validate_DoubleRules* default_val = NULL;
+  const validate_DoubleRules* ret;
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_FieldRules_has_int32(const validate_FieldRules* msg) {
-  return _upb_getoneofcase(msg, UPB_SIZE(4, 4)) == 3;
+UPB_INLINE bool validate_FieldRules_has_double(const validate_FieldRules* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_FieldRules_clear_int32(const validate_FieldRules* msg) {
-  UPB_WRITE_ONEOF(msg, validate_Int32Rules*, UPB_SIZE(12, 16), 0, UPB_SIZE(4, 4), validate_FieldRules_type_NOT_SET);
+UPB_INLINE void validate_FieldRules_clear_int32(validate_FieldRules* msg) {
+  const upb_MiniTableField field = {3, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 2, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const validate_Int32Rules* validate_FieldRules_int32(const validate_FieldRules* msg) {
-  return UPB_READ_ONEOF(msg, const validate_Int32Rules*, UPB_SIZE(12, 16), UPB_SIZE(4, 4), 3, NULL);
+  const validate_Int32Rules* default_val = NULL;
+  const validate_Int32Rules* ret;
+  const upb_MiniTableField field = {3, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 2, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_FieldRules_has_int64(const validate_FieldRules* msg) {
-  return _upb_getoneofcase(msg, UPB_SIZE(4, 4)) == 4;
+UPB_INLINE bool validate_FieldRules_has_int32(const validate_FieldRules* msg) {
+  const upb_MiniTableField field = {3, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 2, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_FieldRules_clear_int64(const validate_FieldRules* msg) {
-  UPB_WRITE_ONEOF(msg, validate_Int64Rules*, UPB_SIZE(12, 16), 0, UPB_SIZE(4, 4), validate_FieldRules_type_NOT_SET);
+UPB_INLINE void validate_FieldRules_clear_int64(validate_FieldRules* msg) {
+  const upb_MiniTableField field = {4, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 3, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const validate_Int64Rules* validate_FieldRules_int64(const validate_FieldRules* msg) {
-  return UPB_READ_ONEOF(msg, const validate_Int64Rules*, UPB_SIZE(12, 16), UPB_SIZE(4, 4), 4, NULL);
+  const validate_Int64Rules* default_val = NULL;
+  const validate_Int64Rules* ret;
+  const upb_MiniTableField field = {4, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 3, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_FieldRules_has_uint32(const validate_FieldRules* msg) {
-  return _upb_getoneofcase(msg, UPB_SIZE(4, 4)) == 5;
+UPB_INLINE bool validate_FieldRules_has_int64(const validate_FieldRules* msg) {
+  const upb_MiniTableField field = {4, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 3, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_FieldRules_clear_uint32(const validate_FieldRules* msg) {
-  UPB_WRITE_ONEOF(msg, validate_UInt32Rules*, UPB_SIZE(12, 16), 0, UPB_SIZE(4, 4), validate_FieldRules_type_NOT_SET);
+UPB_INLINE void validate_FieldRules_clear_uint32(validate_FieldRules* msg) {
+  const upb_MiniTableField field = {5, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 4, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const validate_UInt32Rules* validate_FieldRules_uint32(const validate_FieldRules* msg) {
-  return UPB_READ_ONEOF(msg, const validate_UInt32Rules*, UPB_SIZE(12, 16), UPB_SIZE(4, 4), 5, NULL);
+  const validate_UInt32Rules* default_val = NULL;
+  const validate_UInt32Rules* ret;
+  const upb_MiniTableField field = {5, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 4, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_FieldRules_has_uint64(const validate_FieldRules* msg) {
-  return _upb_getoneofcase(msg, UPB_SIZE(4, 4)) == 6;
+UPB_INLINE bool validate_FieldRules_has_uint32(const validate_FieldRules* msg) {
+  const upb_MiniTableField field = {5, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 4, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_FieldRules_clear_uint64(const validate_FieldRules* msg) {
-  UPB_WRITE_ONEOF(msg, validate_UInt64Rules*, UPB_SIZE(12, 16), 0, UPB_SIZE(4, 4), validate_FieldRules_type_NOT_SET);
+UPB_INLINE void validate_FieldRules_clear_uint64(validate_FieldRules* msg) {
+  const upb_MiniTableField field = {6, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 5, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const validate_UInt64Rules* validate_FieldRules_uint64(const validate_FieldRules* msg) {
-  return UPB_READ_ONEOF(msg, const validate_UInt64Rules*, UPB_SIZE(12, 16), UPB_SIZE(4, 4), 6, NULL);
+  const validate_UInt64Rules* default_val = NULL;
+  const validate_UInt64Rules* ret;
+  const upb_MiniTableField field = {6, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 5, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_FieldRules_has_sint32(const validate_FieldRules* msg) {
-  return _upb_getoneofcase(msg, UPB_SIZE(4, 4)) == 7;
+UPB_INLINE bool validate_FieldRules_has_uint64(const validate_FieldRules* msg) {
+  const upb_MiniTableField field = {6, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 5, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_FieldRules_clear_sint32(const validate_FieldRules* msg) {
-  UPB_WRITE_ONEOF(msg, validate_SInt32Rules*, UPB_SIZE(12, 16), 0, UPB_SIZE(4, 4), validate_FieldRules_type_NOT_SET);
+UPB_INLINE void validate_FieldRules_clear_sint32(validate_FieldRules* msg) {
+  const upb_MiniTableField field = {7, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 6, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const validate_SInt32Rules* validate_FieldRules_sint32(const validate_FieldRules* msg) {
-  return UPB_READ_ONEOF(msg, const validate_SInt32Rules*, UPB_SIZE(12, 16), UPB_SIZE(4, 4), 7, NULL);
+  const validate_SInt32Rules* default_val = NULL;
+  const validate_SInt32Rules* ret;
+  const upb_MiniTableField field = {7, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 6, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_FieldRules_has_sint64(const validate_FieldRules* msg) {
-  return _upb_getoneofcase(msg, UPB_SIZE(4, 4)) == 8;
+UPB_INLINE bool validate_FieldRules_has_sint32(const validate_FieldRules* msg) {
+  const upb_MiniTableField field = {7, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 6, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_FieldRules_clear_sint64(const validate_FieldRules* msg) {
-  UPB_WRITE_ONEOF(msg, validate_SInt64Rules*, UPB_SIZE(12, 16), 0, UPB_SIZE(4, 4), validate_FieldRules_type_NOT_SET);
+UPB_INLINE void validate_FieldRules_clear_sint64(validate_FieldRules* msg) {
+  const upb_MiniTableField field = {8, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 7, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const validate_SInt64Rules* validate_FieldRules_sint64(const validate_FieldRules* msg) {
-  return UPB_READ_ONEOF(msg, const validate_SInt64Rules*, UPB_SIZE(12, 16), UPB_SIZE(4, 4), 8, NULL);
+  const validate_SInt64Rules* default_val = NULL;
+  const validate_SInt64Rules* ret;
+  const upb_MiniTableField field = {8, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 7, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_FieldRules_has_fixed32(const validate_FieldRules* msg) {
-  return _upb_getoneofcase(msg, UPB_SIZE(4, 4)) == 9;
+UPB_INLINE bool validate_FieldRules_has_sint64(const validate_FieldRules* msg) {
+  const upb_MiniTableField field = {8, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 7, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_FieldRules_clear_fixed32(const validate_FieldRules* msg) {
-  UPB_WRITE_ONEOF(msg, validate_Fixed32Rules*, UPB_SIZE(12, 16), 0, UPB_SIZE(4, 4), validate_FieldRules_type_NOT_SET);
+UPB_INLINE void validate_FieldRules_clear_fixed32(validate_FieldRules* msg) {
+  const upb_MiniTableField field = {9, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 8, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const validate_Fixed32Rules* validate_FieldRules_fixed32(const validate_FieldRules* msg) {
-  return UPB_READ_ONEOF(msg, const validate_Fixed32Rules*, UPB_SIZE(12, 16), UPB_SIZE(4, 4), 9, NULL);
+  const validate_Fixed32Rules* default_val = NULL;
+  const validate_Fixed32Rules* ret;
+  const upb_MiniTableField field = {9, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 8, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_FieldRules_has_fixed64(const validate_FieldRules* msg) {
-  return _upb_getoneofcase(msg, UPB_SIZE(4, 4)) == 10;
+UPB_INLINE bool validate_FieldRules_has_fixed32(const validate_FieldRules* msg) {
+  const upb_MiniTableField field = {9, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 8, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_FieldRules_clear_fixed64(const validate_FieldRules* msg) {
-  UPB_WRITE_ONEOF(msg, validate_Fixed64Rules*, UPB_SIZE(12, 16), 0, UPB_SIZE(4, 4), validate_FieldRules_type_NOT_SET);
+UPB_INLINE void validate_FieldRules_clear_fixed64(validate_FieldRules* msg) {
+  const upb_MiniTableField field = {10, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 9, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const validate_Fixed64Rules* validate_FieldRules_fixed64(const validate_FieldRules* msg) {
-  return UPB_READ_ONEOF(msg, const validate_Fixed64Rules*, UPB_SIZE(12, 16), UPB_SIZE(4, 4), 10, NULL);
+  const validate_Fixed64Rules* default_val = NULL;
+  const validate_Fixed64Rules* ret;
+  const upb_MiniTableField field = {10, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 9, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_FieldRules_has_sfixed32(const validate_FieldRules* msg) {
-  return _upb_getoneofcase(msg, UPB_SIZE(4, 4)) == 11;
+UPB_INLINE bool validate_FieldRules_has_fixed64(const validate_FieldRules* msg) {
+  const upb_MiniTableField field = {10, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 9, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_FieldRules_clear_sfixed32(const validate_FieldRules* msg) {
-  UPB_WRITE_ONEOF(msg, validate_SFixed32Rules*, UPB_SIZE(12, 16), 0, UPB_SIZE(4, 4), validate_FieldRules_type_NOT_SET);
+UPB_INLINE void validate_FieldRules_clear_sfixed32(validate_FieldRules* msg) {
+  const upb_MiniTableField field = {11, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 10, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const validate_SFixed32Rules* validate_FieldRules_sfixed32(const validate_FieldRules* msg) {
-  return UPB_READ_ONEOF(msg, const validate_SFixed32Rules*, UPB_SIZE(12, 16), UPB_SIZE(4, 4), 11, NULL);
+  const validate_SFixed32Rules* default_val = NULL;
+  const validate_SFixed32Rules* ret;
+  const upb_MiniTableField field = {11, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 10, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_FieldRules_has_sfixed64(const validate_FieldRules* msg) {
-  return _upb_getoneofcase(msg, UPB_SIZE(4, 4)) == 12;
+UPB_INLINE bool validate_FieldRules_has_sfixed32(const validate_FieldRules* msg) {
+  const upb_MiniTableField field = {11, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 10, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_FieldRules_clear_sfixed64(const validate_FieldRules* msg) {
-  UPB_WRITE_ONEOF(msg, validate_SFixed64Rules*, UPB_SIZE(12, 16), 0, UPB_SIZE(4, 4), validate_FieldRules_type_NOT_SET);
+UPB_INLINE void validate_FieldRules_clear_sfixed64(validate_FieldRules* msg) {
+  const upb_MiniTableField field = {12, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 11, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const validate_SFixed64Rules* validate_FieldRules_sfixed64(const validate_FieldRules* msg) {
-  return UPB_READ_ONEOF(msg, const validate_SFixed64Rules*, UPB_SIZE(12, 16), UPB_SIZE(4, 4), 12, NULL);
+  const validate_SFixed64Rules* default_val = NULL;
+  const validate_SFixed64Rules* ret;
+  const upb_MiniTableField field = {12, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 11, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_FieldRules_has_bool(const validate_FieldRules* msg) {
-  return _upb_getoneofcase(msg, UPB_SIZE(4, 4)) == 13;
+UPB_INLINE bool validate_FieldRules_has_sfixed64(const validate_FieldRules* msg) {
+  const upb_MiniTableField field = {12, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 11, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_FieldRules_clear_bool(const validate_FieldRules* msg) {
-  UPB_WRITE_ONEOF(msg, validate_BoolRules*, UPB_SIZE(12, 16), 0, UPB_SIZE(4, 4), validate_FieldRules_type_NOT_SET);
+UPB_INLINE void validate_FieldRules_clear_bool(validate_FieldRules* msg) {
+  const upb_MiniTableField field = {13, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 12, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const validate_BoolRules* validate_FieldRules_bool(const validate_FieldRules* msg) {
-  return UPB_READ_ONEOF(msg, const validate_BoolRules*, UPB_SIZE(12, 16), UPB_SIZE(4, 4), 13, NULL);
+  const validate_BoolRules* default_val = NULL;
+  const validate_BoolRules* ret;
+  const upb_MiniTableField field = {13, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 12, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_FieldRules_has_string(const validate_FieldRules* msg) {
-  return _upb_getoneofcase(msg, UPB_SIZE(4, 4)) == 14;
+UPB_INLINE bool validate_FieldRules_has_bool(const validate_FieldRules* msg) {
+  const upb_MiniTableField field = {13, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 12, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_FieldRules_clear_string(const validate_FieldRules* msg) {
-  UPB_WRITE_ONEOF(msg, validate_StringRules*, UPB_SIZE(12, 16), 0, UPB_SIZE(4, 4), validate_FieldRules_type_NOT_SET);
+UPB_INLINE void validate_FieldRules_clear_string(validate_FieldRules* msg) {
+  const upb_MiniTableField field = {14, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 13, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const validate_StringRules* validate_FieldRules_string(const validate_FieldRules* msg) {
-  return UPB_READ_ONEOF(msg, const validate_StringRules*, UPB_SIZE(12, 16), UPB_SIZE(4, 4), 14, NULL);
+  const validate_StringRules* default_val = NULL;
+  const validate_StringRules* ret;
+  const upb_MiniTableField field = {14, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 13, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_FieldRules_has_bytes(const validate_FieldRules* msg) {
-  return _upb_getoneofcase(msg, UPB_SIZE(4, 4)) == 15;
+UPB_INLINE bool validate_FieldRules_has_string(const validate_FieldRules* msg) {
+  const upb_MiniTableField field = {14, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 13, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_FieldRules_clear_bytes(const validate_FieldRules* msg) {
-  UPB_WRITE_ONEOF(msg, validate_BytesRules*, UPB_SIZE(12, 16), 0, UPB_SIZE(4, 4), validate_FieldRules_type_NOT_SET);
+UPB_INLINE void validate_FieldRules_clear_bytes(validate_FieldRules* msg) {
+  const upb_MiniTableField field = {15, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 14, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const validate_BytesRules* validate_FieldRules_bytes(const validate_FieldRules* msg) {
-  return UPB_READ_ONEOF(msg, const validate_BytesRules*, UPB_SIZE(12, 16), UPB_SIZE(4, 4), 15, NULL);
+  const validate_BytesRules* default_val = NULL;
+  const validate_BytesRules* ret;
+  const upb_MiniTableField field = {15, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 14, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_FieldRules_has_enum(const validate_FieldRules* msg) {
-  return _upb_getoneofcase(msg, UPB_SIZE(4, 4)) == 16;
+UPB_INLINE bool validate_FieldRules_has_bytes(const validate_FieldRules* msg) {
+  const upb_MiniTableField field = {15, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 14, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_FieldRules_clear_enum(const validate_FieldRules* msg) {
-  UPB_WRITE_ONEOF(msg, validate_EnumRules*, UPB_SIZE(12, 16), 0, UPB_SIZE(4, 4), validate_FieldRules_type_NOT_SET);
+UPB_INLINE void validate_FieldRules_clear_enum(validate_FieldRules* msg) {
+  const upb_MiniTableField field = {16, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 15, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const validate_EnumRules* validate_FieldRules_enum(const validate_FieldRules* msg) {
-  return UPB_READ_ONEOF(msg, const validate_EnumRules*, UPB_SIZE(12, 16), UPB_SIZE(4, 4), 16, NULL);
+  const validate_EnumRules* default_val = NULL;
+  const validate_EnumRules* ret;
+  const upb_MiniTableField field = {16, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 15, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_FieldRules_has_message(const validate_FieldRules* msg) {
-  return _upb_hasbit(msg, 1);
+UPB_INLINE bool validate_FieldRules_has_enum(const validate_FieldRules* msg) {
+  const upb_MiniTableField field = {16, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 15, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_FieldRules_clear_message(const validate_FieldRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), const upb_Message*) = NULL;
+UPB_INLINE void validate_FieldRules_clear_message(validate_FieldRules* msg) {
+  const upb_MiniTableField field = {17, UPB_SIZE(4, 8), 1, 16, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const validate_MessageRules* validate_FieldRules_message(const validate_FieldRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(8, 8), const validate_MessageRules*);
+  const validate_MessageRules* default_val = NULL;
+  const validate_MessageRules* ret;
+  const upb_MiniTableField field = {17, UPB_SIZE(4, 8), 1, 16, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_FieldRules_has_repeated(const validate_FieldRules* msg) {
-  return _upb_getoneofcase(msg, UPB_SIZE(4, 4)) == 18;
+UPB_INLINE bool validate_FieldRules_has_message(const validate_FieldRules* msg) {
+  const upb_MiniTableField field = {17, UPB_SIZE(4, 8), 1, 16, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_FieldRules_clear_repeated(const validate_FieldRules* msg) {
-  UPB_WRITE_ONEOF(msg, validate_RepeatedRules*, UPB_SIZE(12, 16), 0, UPB_SIZE(4, 4), validate_FieldRules_type_NOT_SET);
+UPB_INLINE void validate_FieldRules_clear_repeated(validate_FieldRules* msg) {
+  const upb_MiniTableField field = {18, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 17, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const validate_RepeatedRules* validate_FieldRules_repeated(const validate_FieldRules* msg) {
-  return UPB_READ_ONEOF(msg, const validate_RepeatedRules*, UPB_SIZE(12, 16), UPB_SIZE(4, 4), 18, NULL);
+  const validate_RepeatedRules* default_val = NULL;
+  const validate_RepeatedRules* ret;
+  const upb_MiniTableField field = {18, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 17, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_FieldRules_has_map(const validate_FieldRules* msg) {
-  return _upb_getoneofcase(msg, UPB_SIZE(4, 4)) == 19;
+UPB_INLINE bool validate_FieldRules_has_repeated(const validate_FieldRules* msg) {
+  const upb_MiniTableField field = {18, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 17, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_FieldRules_clear_map(const validate_FieldRules* msg) {
-  UPB_WRITE_ONEOF(msg, validate_MapRules*, UPB_SIZE(12, 16), 0, UPB_SIZE(4, 4), validate_FieldRules_type_NOT_SET);
+UPB_INLINE void validate_FieldRules_clear_map(validate_FieldRules* msg) {
+  const upb_MiniTableField field = {19, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 18, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const validate_MapRules* validate_FieldRules_map(const validate_FieldRules* msg) {
-  return UPB_READ_ONEOF(msg, const validate_MapRules*, UPB_SIZE(12, 16), UPB_SIZE(4, 4), 19, NULL);
+  const validate_MapRules* default_val = NULL;
+  const validate_MapRules* ret;
+  const upb_MiniTableField field = {19, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 18, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_FieldRules_has_any(const validate_FieldRules* msg) {
-  return _upb_getoneofcase(msg, UPB_SIZE(4, 4)) == 20;
+UPB_INLINE bool validate_FieldRules_has_map(const validate_FieldRules* msg) {
+  const upb_MiniTableField field = {19, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 18, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_FieldRules_clear_any(const validate_FieldRules* msg) {
-  UPB_WRITE_ONEOF(msg, validate_AnyRules*, UPB_SIZE(12, 16), 0, UPB_SIZE(4, 4), validate_FieldRules_type_NOT_SET);
+UPB_INLINE void validate_FieldRules_clear_any(validate_FieldRules* msg) {
+  const upb_MiniTableField field = {20, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 19, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const validate_AnyRules* validate_FieldRules_any(const validate_FieldRules* msg) {
-  return UPB_READ_ONEOF(msg, const validate_AnyRules*, UPB_SIZE(12, 16), UPB_SIZE(4, 4), 20, NULL);
+  const validate_AnyRules* default_val = NULL;
+  const validate_AnyRules* ret;
+  const upb_MiniTableField field = {20, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 19, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_FieldRules_has_duration(const validate_FieldRules* msg) {
-  return _upb_getoneofcase(msg, UPB_SIZE(4, 4)) == 21;
+UPB_INLINE bool validate_FieldRules_has_any(const validate_FieldRules* msg) {
+  const upb_MiniTableField field = {20, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 19, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_FieldRules_clear_duration(const validate_FieldRules* msg) {
-  UPB_WRITE_ONEOF(msg, validate_DurationRules*, UPB_SIZE(12, 16), 0, UPB_SIZE(4, 4), validate_FieldRules_type_NOT_SET);
+UPB_INLINE void validate_FieldRules_clear_duration(validate_FieldRules* msg) {
+  const upb_MiniTableField field = {21, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 20, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const validate_DurationRules* validate_FieldRules_duration(const validate_FieldRules* msg) {
-  return UPB_READ_ONEOF(msg, const validate_DurationRules*, UPB_SIZE(12, 16), UPB_SIZE(4, 4), 21, NULL);
+  const validate_DurationRules* default_val = NULL;
+  const validate_DurationRules* ret;
+  const upb_MiniTableField field = {21, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 20, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_FieldRules_has_timestamp(const validate_FieldRules* msg) {
-  return _upb_getoneofcase(msg, UPB_SIZE(4, 4)) == 22;
+UPB_INLINE bool validate_FieldRules_has_duration(const validate_FieldRules* msg) {
+  const upb_MiniTableField field = {21, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 20, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_FieldRules_clear_timestamp(const validate_FieldRules* msg) {
-  UPB_WRITE_ONEOF(msg, validate_TimestampRules*, UPB_SIZE(12, 16), 0, UPB_SIZE(4, 4), validate_FieldRules_type_NOT_SET);
+UPB_INLINE void validate_FieldRules_clear_timestamp(validate_FieldRules* msg) {
+  const upb_MiniTableField field = {22, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 21, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const validate_TimestampRules* validate_FieldRules_timestamp(const validate_FieldRules* msg) {
-  return UPB_READ_ONEOF(msg, const validate_TimestampRules*, UPB_SIZE(12, 16), UPB_SIZE(4, 4), 22, NULL);
+  const validate_TimestampRules* default_val = NULL;
+  const validate_TimestampRules* ret;
+  const upb_MiniTableField field = {22, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 21, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
+}
+UPB_INLINE bool validate_FieldRules_has_timestamp(const validate_FieldRules* msg) {
+  const upb_MiniTableField field = {22, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 21, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
 
 UPB_INLINE void validate_FieldRules_set_float(validate_FieldRules *msg, validate_FloatRules* value) {
-  UPB_WRITE_ONEOF(msg, validate_FloatRules*, UPB_SIZE(12, 16), value, UPB_SIZE(4, 4), 1);
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct validate_FloatRules* validate_FieldRules_mutable_float(validate_FieldRules* msg, upb_Arena* arena) {
   struct validate_FloatRules* sub = (struct validate_FloatRules*)validate_FieldRules_float(msg);
   if (sub == NULL) {
-    sub = (struct validate_FloatRules*)_upb_Message_New(&validate_FloatRules_msginit, arena);
-    if (!sub) return NULL;
-    validate_FieldRules_set_float(msg, sub);
+    sub = (struct validate_FloatRules*)_upb_Message_New(&validate_FloatRules_msg_init, arena);
+    if (sub) validate_FieldRules_set_float(msg, sub);
   }
   return sub;
 }
 UPB_INLINE void validate_FieldRules_set_double(validate_FieldRules *msg, validate_DoubleRules* value) {
-  UPB_WRITE_ONEOF(msg, validate_DoubleRules*, UPB_SIZE(12, 16), value, UPB_SIZE(4, 4), 2);
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct validate_DoubleRules* validate_FieldRules_mutable_double(validate_FieldRules* msg, upb_Arena* arena) {
   struct validate_DoubleRules* sub = (struct validate_DoubleRules*)validate_FieldRules_double(msg);
   if (sub == NULL) {
-    sub = (struct validate_DoubleRules*)_upb_Message_New(&validate_DoubleRules_msginit, arena);
-    if (!sub) return NULL;
-    validate_FieldRules_set_double(msg, sub);
+    sub = (struct validate_DoubleRules*)_upb_Message_New(&validate_DoubleRules_msg_init, arena);
+    if (sub) validate_FieldRules_set_double(msg, sub);
   }
   return sub;
 }
 UPB_INLINE void validate_FieldRules_set_int32(validate_FieldRules *msg, validate_Int32Rules* value) {
-  UPB_WRITE_ONEOF(msg, validate_Int32Rules*, UPB_SIZE(12, 16), value, UPB_SIZE(4, 4), 3);
+  const upb_MiniTableField field = {3, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 2, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct validate_Int32Rules* validate_FieldRules_mutable_int32(validate_FieldRules* msg, upb_Arena* arena) {
   struct validate_Int32Rules* sub = (struct validate_Int32Rules*)validate_FieldRules_int32(msg);
   if (sub == NULL) {
-    sub = (struct validate_Int32Rules*)_upb_Message_New(&validate_Int32Rules_msginit, arena);
-    if (!sub) return NULL;
-    validate_FieldRules_set_int32(msg, sub);
+    sub = (struct validate_Int32Rules*)_upb_Message_New(&validate_Int32Rules_msg_init, arena);
+    if (sub) validate_FieldRules_set_int32(msg, sub);
   }
   return sub;
 }
 UPB_INLINE void validate_FieldRules_set_int64(validate_FieldRules *msg, validate_Int64Rules* value) {
-  UPB_WRITE_ONEOF(msg, validate_Int64Rules*, UPB_SIZE(12, 16), value, UPB_SIZE(4, 4), 4);
+  const upb_MiniTableField field = {4, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 3, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct validate_Int64Rules* validate_FieldRules_mutable_int64(validate_FieldRules* msg, upb_Arena* arena) {
   struct validate_Int64Rules* sub = (struct validate_Int64Rules*)validate_FieldRules_int64(msg);
   if (sub == NULL) {
-    sub = (struct validate_Int64Rules*)_upb_Message_New(&validate_Int64Rules_msginit, arena);
-    if (!sub) return NULL;
-    validate_FieldRules_set_int64(msg, sub);
+    sub = (struct validate_Int64Rules*)_upb_Message_New(&validate_Int64Rules_msg_init, arena);
+    if (sub) validate_FieldRules_set_int64(msg, sub);
   }
   return sub;
 }
 UPB_INLINE void validate_FieldRules_set_uint32(validate_FieldRules *msg, validate_UInt32Rules* value) {
-  UPB_WRITE_ONEOF(msg, validate_UInt32Rules*, UPB_SIZE(12, 16), value, UPB_SIZE(4, 4), 5);
+  const upb_MiniTableField field = {5, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 4, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct validate_UInt32Rules* validate_FieldRules_mutable_uint32(validate_FieldRules* msg, upb_Arena* arena) {
   struct validate_UInt32Rules* sub = (struct validate_UInt32Rules*)validate_FieldRules_uint32(msg);
   if (sub == NULL) {
-    sub = (struct validate_UInt32Rules*)_upb_Message_New(&validate_UInt32Rules_msginit, arena);
-    if (!sub) return NULL;
-    validate_FieldRules_set_uint32(msg, sub);
+    sub = (struct validate_UInt32Rules*)_upb_Message_New(&validate_UInt32Rules_msg_init, arena);
+    if (sub) validate_FieldRules_set_uint32(msg, sub);
   }
   return sub;
 }
 UPB_INLINE void validate_FieldRules_set_uint64(validate_FieldRules *msg, validate_UInt64Rules* value) {
-  UPB_WRITE_ONEOF(msg, validate_UInt64Rules*, UPB_SIZE(12, 16), value, UPB_SIZE(4, 4), 6);
+  const upb_MiniTableField field = {6, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 5, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct validate_UInt64Rules* validate_FieldRules_mutable_uint64(validate_FieldRules* msg, upb_Arena* arena) {
   struct validate_UInt64Rules* sub = (struct validate_UInt64Rules*)validate_FieldRules_uint64(msg);
   if (sub == NULL) {
-    sub = (struct validate_UInt64Rules*)_upb_Message_New(&validate_UInt64Rules_msginit, arena);
-    if (!sub) return NULL;
-    validate_FieldRules_set_uint64(msg, sub);
+    sub = (struct validate_UInt64Rules*)_upb_Message_New(&validate_UInt64Rules_msg_init, arena);
+    if (sub) validate_FieldRules_set_uint64(msg, sub);
   }
   return sub;
 }
 UPB_INLINE void validate_FieldRules_set_sint32(validate_FieldRules *msg, validate_SInt32Rules* value) {
-  UPB_WRITE_ONEOF(msg, validate_SInt32Rules*, UPB_SIZE(12, 16), value, UPB_SIZE(4, 4), 7);
+  const upb_MiniTableField field = {7, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 6, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct validate_SInt32Rules* validate_FieldRules_mutable_sint32(validate_FieldRules* msg, upb_Arena* arena) {
   struct validate_SInt32Rules* sub = (struct validate_SInt32Rules*)validate_FieldRules_sint32(msg);
   if (sub == NULL) {
-    sub = (struct validate_SInt32Rules*)_upb_Message_New(&validate_SInt32Rules_msginit, arena);
-    if (!sub) return NULL;
-    validate_FieldRules_set_sint32(msg, sub);
+    sub = (struct validate_SInt32Rules*)_upb_Message_New(&validate_SInt32Rules_msg_init, arena);
+    if (sub) validate_FieldRules_set_sint32(msg, sub);
   }
   return sub;
 }
 UPB_INLINE void validate_FieldRules_set_sint64(validate_FieldRules *msg, validate_SInt64Rules* value) {
-  UPB_WRITE_ONEOF(msg, validate_SInt64Rules*, UPB_SIZE(12, 16), value, UPB_SIZE(4, 4), 8);
+  const upb_MiniTableField field = {8, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 7, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct validate_SInt64Rules* validate_FieldRules_mutable_sint64(validate_FieldRules* msg, upb_Arena* arena) {
   struct validate_SInt64Rules* sub = (struct validate_SInt64Rules*)validate_FieldRules_sint64(msg);
   if (sub == NULL) {
-    sub = (struct validate_SInt64Rules*)_upb_Message_New(&validate_SInt64Rules_msginit, arena);
-    if (!sub) return NULL;
-    validate_FieldRules_set_sint64(msg, sub);
+    sub = (struct validate_SInt64Rules*)_upb_Message_New(&validate_SInt64Rules_msg_init, arena);
+    if (sub) validate_FieldRules_set_sint64(msg, sub);
   }
   return sub;
 }
 UPB_INLINE void validate_FieldRules_set_fixed32(validate_FieldRules *msg, validate_Fixed32Rules* value) {
-  UPB_WRITE_ONEOF(msg, validate_Fixed32Rules*, UPB_SIZE(12, 16), value, UPB_SIZE(4, 4), 9);
+  const upb_MiniTableField field = {9, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 8, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct validate_Fixed32Rules* validate_FieldRules_mutable_fixed32(validate_FieldRules* msg, upb_Arena* arena) {
   struct validate_Fixed32Rules* sub = (struct validate_Fixed32Rules*)validate_FieldRules_fixed32(msg);
   if (sub == NULL) {
-    sub = (struct validate_Fixed32Rules*)_upb_Message_New(&validate_Fixed32Rules_msginit, arena);
-    if (!sub) return NULL;
-    validate_FieldRules_set_fixed32(msg, sub);
+    sub = (struct validate_Fixed32Rules*)_upb_Message_New(&validate_Fixed32Rules_msg_init, arena);
+    if (sub) validate_FieldRules_set_fixed32(msg, sub);
   }
   return sub;
 }
 UPB_INLINE void validate_FieldRules_set_fixed64(validate_FieldRules *msg, validate_Fixed64Rules* value) {
-  UPB_WRITE_ONEOF(msg, validate_Fixed64Rules*, UPB_SIZE(12, 16), value, UPB_SIZE(4, 4), 10);
+  const upb_MiniTableField field = {10, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 9, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct validate_Fixed64Rules* validate_FieldRules_mutable_fixed64(validate_FieldRules* msg, upb_Arena* arena) {
   struct validate_Fixed64Rules* sub = (struct validate_Fixed64Rules*)validate_FieldRules_fixed64(msg);
   if (sub == NULL) {
-    sub = (struct validate_Fixed64Rules*)_upb_Message_New(&validate_Fixed64Rules_msginit, arena);
-    if (!sub) return NULL;
-    validate_FieldRules_set_fixed64(msg, sub);
+    sub = (struct validate_Fixed64Rules*)_upb_Message_New(&validate_Fixed64Rules_msg_init, arena);
+    if (sub) validate_FieldRules_set_fixed64(msg, sub);
   }
   return sub;
 }
 UPB_INLINE void validate_FieldRules_set_sfixed32(validate_FieldRules *msg, validate_SFixed32Rules* value) {
-  UPB_WRITE_ONEOF(msg, validate_SFixed32Rules*, UPB_SIZE(12, 16), value, UPB_SIZE(4, 4), 11);
+  const upb_MiniTableField field = {11, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 10, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct validate_SFixed32Rules* validate_FieldRules_mutable_sfixed32(validate_FieldRules* msg, upb_Arena* arena) {
   struct validate_SFixed32Rules* sub = (struct validate_SFixed32Rules*)validate_FieldRules_sfixed32(msg);
   if (sub == NULL) {
-    sub = (struct validate_SFixed32Rules*)_upb_Message_New(&validate_SFixed32Rules_msginit, arena);
-    if (!sub) return NULL;
-    validate_FieldRules_set_sfixed32(msg, sub);
+    sub = (struct validate_SFixed32Rules*)_upb_Message_New(&validate_SFixed32Rules_msg_init, arena);
+    if (sub) validate_FieldRules_set_sfixed32(msg, sub);
   }
   return sub;
 }
 UPB_INLINE void validate_FieldRules_set_sfixed64(validate_FieldRules *msg, validate_SFixed64Rules* value) {
-  UPB_WRITE_ONEOF(msg, validate_SFixed64Rules*, UPB_SIZE(12, 16), value, UPB_SIZE(4, 4), 12);
+  const upb_MiniTableField field = {12, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 11, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct validate_SFixed64Rules* validate_FieldRules_mutable_sfixed64(validate_FieldRules* msg, upb_Arena* arena) {
   struct validate_SFixed64Rules* sub = (struct validate_SFixed64Rules*)validate_FieldRules_sfixed64(msg);
   if (sub == NULL) {
-    sub = (struct validate_SFixed64Rules*)_upb_Message_New(&validate_SFixed64Rules_msginit, arena);
-    if (!sub) return NULL;
-    validate_FieldRules_set_sfixed64(msg, sub);
+    sub = (struct validate_SFixed64Rules*)_upb_Message_New(&validate_SFixed64Rules_msg_init, arena);
+    if (sub) validate_FieldRules_set_sfixed64(msg, sub);
   }
   return sub;
 }
 UPB_INLINE void validate_FieldRules_set_bool(validate_FieldRules *msg, validate_BoolRules* value) {
-  UPB_WRITE_ONEOF(msg, validate_BoolRules*, UPB_SIZE(12, 16), value, UPB_SIZE(4, 4), 13);
+  const upb_MiniTableField field = {13, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 12, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct validate_BoolRules* validate_FieldRules_mutable_bool(validate_FieldRules* msg, upb_Arena* arena) {
   struct validate_BoolRules* sub = (struct validate_BoolRules*)validate_FieldRules_bool(msg);
   if (sub == NULL) {
-    sub = (struct validate_BoolRules*)_upb_Message_New(&validate_BoolRules_msginit, arena);
-    if (!sub) return NULL;
-    validate_FieldRules_set_bool(msg, sub);
+    sub = (struct validate_BoolRules*)_upb_Message_New(&validate_BoolRules_msg_init, arena);
+    if (sub) validate_FieldRules_set_bool(msg, sub);
   }
   return sub;
 }
 UPB_INLINE void validate_FieldRules_set_string(validate_FieldRules *msg, validate_StringRules* value) {
-  UPB_WRITE_ONEOF(msg, validate_StringRules*, UPB_SIZE(12, 16), value, UPB_SIZE(4, 4), 14);
+  const upb_MiniTableField field = {14, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 13, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct validate_StringRules* validate_FieldRules_mutable_string(validate_FieldRules* msg, upb_Arena* arena) {
   struct validate_StringRules* sub = (struct validate_StringRules*)validate_FieldRules_string(msg);
   if (sub == NULL) {
-    sub = (struct validate_StringRules*)_upb_Message_New(&validate_StringRules_msginit, arena);
-    if (!sub) return NULL;
-    validate_FieldRules_set_string(msg, sub);
+    sub = (struct validate_StringRules*)_upb_Message_New(&validate_StringRules_msg_init, arena);
+    if (sub) validate_FieldRules_set_string(msg, sub);
   }
   return sub;
 }
 UPB_INLINE void validate_FieldRules_set_bytes(validate_FieldRules *msg, validate_BytesRules* value) {
-  UPB_WRITE_ONEOF(msg, validate_BytesRules*, UPB_SIZE(12, 16), value, UPB_SIZE(4, 4), 15);
+  const upb_MiniTableField field = {15, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 14, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct validate_BytesRules* validate_FieldRules_mutable_bytes(validate_FieldRules* msg, upb_Arena* arena) {
   struct validate_BytesRules* sub = (struct validate_BytesRules*)validate_FieldRules_bytes(msg);
   if (sub == NULL) {
-    sub = (struct validate_BytesRules*)_upb_Message_New(&validate_BytesRules_msginit, arena);
-    if (!sub) return NULL;
-    validate_FieldRules_set_bytes(msg, sub);
+    sub = (struct validate_BytesRules*)_upb_Message_New(&validate_BytesRules_msg_init, arena);
+    if (sub) validate_FieldRules_set_bytes(msg, sub);
   }
   return sub;
 }
 UPB_INLINE void validate_FieldRules_set_enum(validate_FieldRules *msg, validate_EnumRules* value) {
-  UPB_WRITE_ONEOF(msg, validate_EnumRules*, UPB_SIZE(12, 16), value, UPB_SIZE(4, 4), 16);
+  const upb_MiniTableField field = {16, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 15, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct validate_EnumRules* validate_FieldRules_mutable_enum(validate_FieldRules* msg, upb_Arena* arena) {
   struct validate_EnumRules* sub = (struct validate_EnumRules*)validate_FieldRules_enum(msg);
   if (sub == NULL) {
-    sub = (struct validate_EnumRules*)_upb_Message_New(&validate_EnumRules_msginit, arena);
-    if (!sub) return NULL;
-    validate_FieldRules_set_enum(msg, sub);
+    sub = (struct validate_EnumRules*)_upb_Message_New(&validate_EnumRules_msg_init, arena);
+    if (sub) validate_FieldRules_set_enum(msg, sub);
   }
   return sub;
 }
 UPB_INLINE void validate_FieldRules_set_message(validate_FieldRules *msg, validate_MessageRules* value) {
-  _upb_sethas(msg, 1);
-  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), validate_MessageRules*) = value;
+  const upb_MiniTableField field = {17, UPB_SIZE(4, 8), 1, 16, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct validate_MessageRules* validate_FieldRules_mutable_message(validate_FieldRules* msg, upb_Arena* arena) {
   struct validate_MessageRules* sub = (struct validate_MessageRules*)validate_FieldRules_message(msg);
   if (sub == NULL) {
-    sub = (struct validate_MessageRules*)_upb_Message_New(&validate_MessageRules_msginit, arena);
-    if (!sub) return NULL;
-    validate_FieldRules_set_message(msg, sub);
+    sub = (struct validate_MessageRules*)_upb_Message_New(&validate_MessageRules_msg_init, arena);
+    if (sub) validate_FieldRules_set_message(msg, sub);
   }
   return sub;
 }
 UPB_INLINE void validate_FieldRules_set_repeated(validate_FieldRules *msg, validate_RepeatedRules* value) {
-  UPB_WRITE_ONEOF(msg, validate_RepeatedRules*, UPB_SIZE(12, 16), value, UPB_SIZE(4, 4), 18);
+  const upb_MiniTableField field = {18, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 17, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct validate_RepeatedRules* validate_FieldRules_mutable_repeated(validate_FieldRules* msg, upb_Arena* arena) {
   struct validate_RepeatedRules* sub = (struct validate_RepeatedRules*)validate_FieldRules_repeated(msg);
   if (sub == NULL) {
-    sub = (struct validate_RepeatedRules*)_upb_Message_New(&validate_RepeatedRules_msginit, arena);
-    if (!sub) return NULL;
-    validate_FieldRules_set_repeated(msg, sub);
+    sub = (struct validate_RepeatedRules*)_upb_Message_New(&validate_RepeatedRules_msg_init, arena);
+    if (sub) validate_FieldRules_set_repeated(msg, sub);
   }
   return sub;
 }
 UPB_INLINE void validate_FieldRules_set_map(validate_FieldRules *msg, validate_MapRules* value) {
-  UPB_WRITE_ONEOF(msg, validate_MapRules*, UPB_SIZE(12, 16), value, UPB_SIZE(4, 4), 19);
+  const upb_MiniTableField field = {19, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 18, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct validate_MapRules* validate_FieldRules_mutable_map(validate_FieldRules* msg, upb_Arena* arena) {
   struct validate_MapRules* sub = (struct validate_MapRules*)validate_FieldRules_map(msg);
   if (sub == NULL) {
-    sub = (struct validate_MapRules*)_upb_Message_New(&validate_MapRules_msginit, arena);
-    if (!sub) return NULL;
-    validate_FieldRules_set_map(msg, sub);
+    sub = (struct validate_MapRules*)_upb_Message_New(&validate_MapRules_msg_init, arena);
+    if (sub) validate_FieldRules_set_map(msg, sub);
   }
   return sub;
 }
 UPB_INLINE void validate_FieldRules_set_any(validate_FieldRules *msg, validate_AnyRules* value) {
-  UPB_WRITE_ONEOF(msg, validate_AnyRules*, UPB_SIZE(12, 16), value, UPB_SIZE(4, 4), 20);
+  const upb_MiniTableField field = {20, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 19, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct validate_AnyRules* validate_FieldRules_mutable_any(validate_FieldRules* msg, upb_Arena* arena) {
   struct validate_AnyRules* sub = (struct validate_AnyRules*)validate_FieldRules_any(msg);
   if (sub == NULL) {
-    sub = (struct validate_AnyRules*)_upb_Message_New(&validate_AnyRules_msginit, arena);
-    if (!sub) return NULL;
-    validate_FieldRules_set_any(msg, sub);
+    sub = (struct validate_AnyRules*)_upb_Message_New(&validate_AnyRules_msg_init, arena);
+    if (sub) validate_FieldRules_set_any(msg, sub);
   }
   return sub;
 }
 UPB_INLINE void validate_FieldRules_set_duration(validate_FieldRules *msg, validate_DurationRules* value) {
-  UPB_WRITE_ONEOF(msg, validate_DurationRules*, UPB_SIZE(12, 16), value, UPB_SIZE(4, 4), 21);
+  const upb_MiniTableField field = {21, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 20, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct validate_DurationRules* validate_FieldRules_mutable_duration(validate_FieldRules* msg, upb_Arena* arena) {
   struct validate_DurationRules* sub = (struct validate_DurationRules*)validate_FieldRules_duration(msg);
   if (sub == NULL) {
-    sub = (struct validate_DurationRules*)_upb_Message_New(&validate_DurationRules_msginit, arena);
-    if (!sub) return NULL;
-    validate_FieldRules_set_duration(msg, sub);
+    sub = (struct validate_DurationRules*)_upb_Message_New(&validate_DurationRules_msg_init, arena);
+    if (sub) validate_FieldRules_set_duration(msg, sub);
   }
   return sub;
 }
 UPB_INLINE void validate_FieldRules_set_timestamp(validate_FieldRules *msg, validate_TimestampRules* value) {
-  UPB_WRITE_ONEOF(msg, validate_TimestampRules*, UPB_SIZE(12, 16), value, UPB_SIZE(4, 4), 22);
+  const upb_MiniTableField field = {22, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 21, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct validate_TimestampRules* validate_FieldRules_mutable_timestamp(validate_FieldRules* msg, upb_Arena* arena) {
   struct validate_TimestampRules* sub = (struct validate_TimestampRules*)validate_FieldRules_timestamp(msg);
   if (sub == NULL) {
-    sub = (struct validate_TimestampRules*)_upb_Message_New(&validate_TimestampRules_msginit, arena);
-    if (!sub) return NULL;
-    validate_FieldRules_set_timestamp(msg, sub);
+    sub = (struct validate_TimestampRules*)_upb_Message_New(&validate_TimestampRules_msg_init, arena);
+    if (sub) validate_FieldRules_set_timestamp(msg, sub);
   }
   return sub;
 }
@@ -643,12 +757,12 @@ UPB_INLINE struct validate_TimestampRules* validate_FieldRules_mutable_timestamp
 /* validate.FloatRules */
 
 UPB_INLINE validate_FloatRules* validate_FloatRules_new(upb_Arena* arena) {
-  return (validate_FloatRules*)_upb_Message_New(&validate_FloatRules_msginit, arena);
+  return (validate_FloatRules*)_upb_Message_New(&validate_FloatRules_msg_init, arena);
 }
 UPB_INLINE validate_FloatRules* validate_FloatRules_parse(const char* buf, size_t size, upb_Arena* arena) {
   validate_FloatRules* ret = validate_FloatRules_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &validate_FloatRules_msginit, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
+  if (upb_Decode(buf, size, ret, &validate_FloatRules_msg_init, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
@@ -658,7 +772,7 @@ UPB_INLINE validate_FloatRules* validate_FloatRules_parse_ex(const char* buf, si
                            int options, upb_Arena* arena) {
   validate_FloatRules* ret = validate_FloatRules_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &validate_FloatRules_msginit, extreg, options, arena) !=
+  if (upb_Decode(buf, size, ret, &validate_FloatRules_msg_init, extreg, options, arena) !=
       kUpb_DecodeStatus_Ok) {
     return NULL;
   }
@@ -666,140 +780,262 @@ UPB_INLINE validate_FloatRules* validate_FloatRules_parse_ex(const char* buf, si
 }
 UPB_INLINE char* validate_FloatRules_serialize(const validate_FloatRules* msg, upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &validate_FloatRules_msginit, 0, arena, &ptr, len);
+  (void)upb_Encode(msg, &validate_FloatRules_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
 UPB_INLINE char* validate_FloatRules_serialize_ex(const validate_FloatRules* msg, int options,
                                  upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &validate_FloatRules_msginit, options, arena, &ptr, len);
+  (void)upb_Encode(msg, &validate_FloatRules_msg_init, options, arena, &ptr, len);
   return ptr;
 }
-UPB_INLINE bool validate_FloatRules_has_const(const validate_FloatRules* msg) {
-  return _upb_hasbit(msg, 1);
-}
-UPB_INLINE void validate_FloatRules_clear_const(const validate_FloatRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(4, 4), float) = 0;
-  _upb_clearhas(msg, 1);
+UPB_INLINE void validate_FloatRules_clear_const(validate_FloatRules* msg) {
+  const upb_MiniTableField field = {1, 4, 1, kUpb_NoSub, 2, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE float validate_FloatRules_const(const validate_FloatRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(4, 4), float);
+  float default_val = 0;
+  float ret;
+  const upb_MiniTableField field = {1, 4, 1, kUpb_NoSub, 2, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_FloatRules_has_lt(const validate_FloatRules* msg) {
-  return _upb_hasbit(msg, 2);
+UPB_INLINE bool validate_FloatRules_has_const(const validate_FloatRules* msg) {
+  const upb_MiniTableField field = {1, 4, 1, kUpb_NoSub, 2, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_FloatRules_clear_lt(const validate_FloatRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), float) = 0;
-  _upb_clearhas(msg, 2);
+UPB_INLINE void validate_FloatRules_clear_lt(validate_FloatRules* msg) {
+  const upb_MiniTableField field = {2, 8, 2, kUpb_NoSub, 2, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE float validate_FloatRules_lt(const validate_FloatRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(8, 8), float);
+  float default_val = 0;
+  float ret;
+  const upb_MiniTableField field = {2, 8, 2, kUpb_NoSub, 2, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_FloatRules_has_lte(const validate_FloatRules* msg) {
-  return _upb_hasbit(msg, 3);
+UPB_INLINE bool validate_FloatRules_has_lt(const validate_FloatRules* msg) {
+  const upb_MiniTableField field = {2, 8, 2, kUpb_NoSub, 2, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_FloatRules_clear_lte(const validate_FloatRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(12, 12), float) = 0;
-  _upb_clearhas(msg, 3);
+UPB_INLINE void validate_FloatRules_clear_lte(validate_FloatRules* msg) {
+  const upb_MiniTableField field = {3, 12, 3, kUpb_NoSub, 2, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE float validate_FloatRules_lte(const validate_FloatRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(12, 12), float);
+  float default_val = 0;
+  float ret;
+  const upb_MiniTableField field = {3, 12, 3, kUpb_NoSub, 2, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_FloatRules_has_gt(const validate_FloatRules* msg) {
-  return _upb_hasbit(msg, 4);
+UPB_INLINE bool validate_FloatRules_has_lte(const validate_FloatRules* msg) {
+  const upb_MiniTableField field = {3, 12, 3, kUpb_NoSub, 2, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_FloatRules_clear_gt(const validate_FloatRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(16, 16), float) = 0;
-  _upb_clearhas(msg, 4);
+UPB_INLINE void validate_FloatRules_clear_gt(validate_FloatRules* msg) {
+  const upb_MiniTableField field = {4, 16, 4, kUpb_NoSub, 2, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE float validate_FloatRules_gt(const validate_FloatRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(16, 16), float);
+  float default_val = 0;
+  float ret;
+  const upb_MiniTableField field = {4, 16, 4, kUpb_NoSub, 2, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_FloatRules_has_gte(const validate_FloatRules* msg) {
-  return _upb_hasbit(msg, 5);
+UPB_INLINE bool validate_FloatRules_has_gt(const validate_FloatRules* msg) {
+  const upb_MiniTableField field = {4, 16, 4, kUpb_NoSub, 2, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_FloatRules_clear_gte(const validate_FloatRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(20, 20), float) = 0;
-  _upb_clearhas(msg, 5);
+UPB_INLINE void validate_FloatRules_clear_gte(validate_FloatRules* msg) {
+  const upb_MiniTableField field = {5, 20, 5, kUpb_NoSub, 2, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE float validate_FloatRules_gte(const validate_FloatRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(20, 20), float);
+  float default_val = 0;
+  float ret;
+  const upb_MiniTableField field = {5, 20, 5, kUpb_NoSub, 2, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE void validate_FloatRules_clear_in(const validate_FloatRules* msg) {
-  _upb_array_detach(msg, UPB_SIZE(28, 32));
+UPB_INLINE bool validate_FloatRules_has_gte(const validate_FloatRules* msg) {
+  const upb_MiniTableField field = {5, 20, 5, kUpb_NoSub, 2, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE float const* validate_FloatRules_in(const validate_FloatRules* msg, size_t* len) {
-  return (float const*)_upb_array_accessor(msg, UPB_SIZE(28, 32), len);
+UPB_INLINE void validate_FloatRules_clear_in(validate_FloatRules* msg) {
+  const upb_MiniTableField field = {6, UPB_SIZE(24, 32), 0, kUpb_NoSub, 2, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_FloatRules_clear_not_in(const validate_FloatRules* msg) {
-  _upb_array_detach(msg, UPB_SIZE(32, 40));
+UPB_INLINE float const* validate_FloatRules_in(const validate_FloatRules* msg, size_t* size) {
+  const upb_MiniTableField field = {6, UPB_SIZE(24, 32), 0, kUpb_NoSub, 2, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (float const*)_upb_array_constptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
 }
-UPB_INLINE float const* validate_FloatRules_not_in(const validate_FloatRules* msg, size_t* len) {
-  return (float const*)_upb_array_accessor(msg, UPB_SIZE(32, 40), len);
+UPB_INLINE const upb_Array* _validate_FloatRules_in_upb_array(const validate_FloatRules* msg, size_t* size) {
+  const upb_MiniTableField field = {6, UPB_SIZE(24, 32), 0, kUpb_NoSub, 2, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
 }
-UPB_INLINE bool validate_FloatRules_has_ignore_empty(const validate_FloatRules* msg) {
-  return _upb_hasbit(msg, 6);
+UPB_INLINE upb_Array* _validate_FloatRules_in_mutable_upb_array(const validate_FloatRules* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {6, UPB_SIZE(24, 32), 0, kUpb_NoSub, 2, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
 }
-UPB_INLINE void validate_FloatRules_clear_ignore_empty(const validate_FloatRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(24, 24), bool) = 0;
-  _upb_clearhas(msg, 6);
+UPB_INLINE bool validate_FloatRules_has_in(const validate_FloatRules* msg) {
+  size_t size;
+  validate_FloatRules_in(msg, &size);
+  return size != 0;
+}
+UPB_INLINE void validate_FloatRules_clear_not_in(validate_FloatRules* msg) {
+  const upb_MiniTableField field = {7, UPB_SIZE(28, 40), 0, kUpb_NoSub, 2, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
+}
+UPB_INLINE float const* validate_FloatRules_not_in(const validate_FloatRules* msg, size_t* size) {
+  const upb_MiniTableField field = {7, UPB_SIZE(28, 40), 0, kUpb_NoSub, 2, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (float const*)_upb_array_constptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
+}
+UPB_INLINE const upb_Array* _validate_FloatRules_not_in_upb_array(const validate_FloatRules* msg, size_t* size) {
+  const upb_MiniTableField field = {7, UPB_SIZE(28, 40), 0, kUpb_NoSub, 2, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _validate_FloatRules_not_in_mutable_upb_array(const validate_FloatRules* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {7, UPB_SIZE(28, 40), 0, kUpb_NoSub, 2, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE bool validate_FloatRules_has_not_in(const validate_FloatRules* msg) {
+  size_t size;
+  validate_FloatRules_not_in(msg, &size);
+  return size != 0;
+}
+UPB_INLINE void validate_FloatRules_clear_ignore_empty(validate_FloatRules* msg) {
+  const upb_MiniTableField field = {8, UPB_SIZE(32, 24), 6, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE bool validate_FloatRules_ignore_empty(const validate_FloatRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(24, 24), bool);
+  bool default_val = false;
+  bool ret;
+  const upb_MiniTableField field = {8, UPB_SIZE(32, 24), 6, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
+}
+UPB_INLINE bool validate_FloatRules_has_ignore_empty(const validate_FloatRules* msg) {
+  const upb_MiniTableField field = {8, UPB_SIZE(32, 24), 6, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
 
 UPB_INLINE void validate_FloatRules_set_const(validate_FloatRules *msg, float value) {
-  _upb_sethas(msg, 1);
-  *UPB_PTR_AT(msg, UPB_SIZE(4, 4), float) = value;
+  const upb_MiniTableField field = {1, 4, 1, kUpb_NoSub, 2, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_FloatRules_set_lt(validate_FloatRules *msg, float value) {
-  _upb_sethas(msg, 2);
-  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), float) = value;
+  const upb_MiniTableField field = {2, 8, 2, kUpb_NoSub, 2, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_FloatRules_set_lte(validate_FloatRules *msg, float value) {
-  _upb_sethas(msg, 3);
-  *UPB_PTR_AT(msg, UPB_SIZE(12, 12), float) = value;
+  const upb_MiniTableField field = {3, 12, 3, kUpb_NoSub, 2, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_FloatRules_set_gt(validate_FloatRules *msg, float value) {
-  _upb_sethas(msg, 4);
-  *UPB_PTR_AT(msg, UPB_SIZE(16, 16), float) = value;
+  const upb_MiniTableField field = {4, 16, 4, kUpb_NoSub, 2, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_FloatRules_set_gte(validate_FloatRules *msg, float value) {
-  _upb_sethas(msg, 5);
-  *UPB_PTR_AT(msg, UPB_SIZE(20, 20), float) = value;
+  const upb_MiniTableField field = {5, 20, 5, kUpb_NoSub, 2, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
-UPB_INLINE float* validate_FloatRules_mutable_in(validate_FloatRules* msg, size_t* len) {
-  return (float*)_upb_array_mutable_accessor(msg, UPB_SIZE(28, 32), len);
+UPB_INLINE float* validate_FloatRules_mutable_in(validate_FloatRules* msg, size_t* size) {
+  upb_MiniTableField field = {6, UPB_SIZE(24, 32), 0, kUpb_NoSub, 2, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetMutableArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (float*)_upb_array_ptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
 }
-UPB_INLINE float* validate_FloatRules_resize_in(validate_FloatRules* msg, size_t len, upb_Arena* arena) {
-  return (float*)_upb_Array_Resize_accessor2(msg, UPB_SIZE(28, 32), len, 2, arena);
+UPB_INLINE float* validate_FloatRules_resize_in(validate_FloatRules* msg, size_t size, upb_Arena* arena) {
+  upb_MiniTableField field = {6, UPB_SIZE(24, 32), 0, kUpb_NoSub, 2, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return (float*)upb_Message_ResizeArray(msg, &field, size, arena);
 }
 UPB_INLINE bool validate_FloatRules_add_in(validate_FloatRules* msg, float val, upb_Arena* arena) {
-  return _upb_Array_Append_accessor2(msg, UPB_SIZE(28, 32), 2, &val, arena);
+  upb_MiniTableField field = {6, UPB_SIZE(24, 32), 0, kUpb_NoSub, 2, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(msg, &field, arena);
+  if (!arr || !_upb_Array_ResizeUninitialized(arr, arr->size + 1, arena)) {
+    return false;
+  }
+  _upb_Array_Set(arr, arr->size - 1, &val, sizeof(val));
+  return true;
 }
-UPB_INLINE float* validate_FloatRules_mutable_not_in(validate_FloatRules* msg, size_t* len) {
-  return (float*)_upb_array_mutable_accessor(msg, UPB_SIZE(32, 40), len);
+UPB_INLINE float* validate_FloatRules_mutable_not_in(validate_FloatRules* msg, size_t* size) {
+  upb_MiniTableField field = {7, UPB_SIZE(28, 40), 0, kUpb_NoSub, 2, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetMutableArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (float*)_upb_array_ptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
 }
-UPB_INLINE float* validate_FloatRules_resize_not_in(validate_FloatRules* msg, size_t len, upb_Arena* arena) {
-  return (float*)_upb_Array_Resize_accessor2(msg, UPB_SIZE(32, 40), len, 2, arena);
+UPB_INLINE float* validate_FloatRules_resize_not_in(validate_FloatRules* msg, size_t size, upb_Arena* arena) {
+  upb_MiniTableField field = {7, UPB_SIZE(28, 40), 0, kUpb_NoSub, 2, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return (float*)upb_Message_ResizeArray(msg, &field, size, arena);
 }
 UPB_INLINE bool validate_FloatRules_add_not_in(validate_FloatRules* msg, float val, upb_Arena* arena) {
-  return _upb_Array_Append_accessor2(msg, UPB_SIZE(32, 40), 2, &val, arena);
+  upb_MiniTableField field = {7, UPB_SIZE(28, 40), 0, kUpb_NoSub, 2, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(msg, &field, arena);
+  if (!arr || !_upb_Array_ResizeUninitialized(arr, arr->size + 1, arena)) {
+    return false;
+  }
+  _upb_Array_Set(arr, arr->size - 1, &val, sizeof(val));
+  return true;
 }
 UPB_INLINE void validate_FloatRules_set_ignore_empty(validate_FloatRules *msg, bool value) {
-  _upb_sethas(msg, 6);
-  *UPB_PTR_AT(msg, UPB_SIZE(24, 24), bool) = value;
+  const upb_MiniTableField field = {8, UPB_SIZE(32, 24), 6, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 
 /* validate.DoubleRules */
 
 UPB_INLINE validate_DoubleRules* validate_DoubleRules_new(upb_Arena* arena) {
-  return (validate_DoubleRules*)_upb_Message_New(&validate_DoubleRules_msginit, arena);
+  return (validate_DoubleRules*)_upb_Message_New(&validate_DoubleRules_msg_init, arena);
 }
 UPB_INLINE validate_DoubleRules* validate_DoubleRules_parse(const char* buf, size_t size, upb_Arena* arena) {
   validate_DoubleRules* ret = validate_DoubleRules_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &validate_DoubleRules_msginit, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
+  if (upb_Decode(buf, size, ret, &validate_DoubleRules_msg_init, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
@@ -809,7 +1045,7 @@ UPB_INLINE validate_DoubleRules* validate_DoubleRules_parse_ex(const char* buf, 
                            int options, upb_Arena* arena) {
   validate_DoubleRules* ret = validate_DoubleRules_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &validate_DoubleRules_msginit, extreg, options, arena) !=
+  if (upb_Decode(buf, size, ret, &validate_DoubleRules_msg_init, extreg, options, arena) !=
       kUpb_DecodeStatus_Ok) {
     return NULL;
   }
@@ -817,140 +1053,262 @@ UPB_INLINE validate_DoubleRules* validate_DoubleRules_parse_ex(const char* buf, 
 }
 UPB_INLINE char* validate_DoubleRules_serialize(const validate_DoubleRules* msg, upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &validate_DoubleRules_msginit, 0, arena, &ptr, len);
+  (void)upb_Encode(msg, &validate_DoubleRules_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
 UPB_INLINE char* validate_DoubleRules_serialize_ex(const validate_DoubleRules* msg, int options,
                                  upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &validate_DoubleRules_msginit, options, arena, &ptr, len);
+  (void)upb_Encode(msg, &validate_DoubleRules_msg_init, options, arena, &ptr, len);
   return ptr;
 }
-UPB_INLINE bool validate_DoubleRules_has_const(const validate_DoubleRules* msg) {
-  return _upb_hasbit(msg, 1);
-}
-UPB_INLINE void validate_DoubleRules_clear_const(const validate_DoubleRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(16, 24), double) = 0;
-  _upb_clearhas(msg, 1);
+UPB_INLINE void validate_DoubleRules_clear_const(validate_DoubleRules* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(16, 8), 1, kUpb_NoSub, 1, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE double validate_DoubleRules_const(const validate_DoubleRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(16, 24), double);
+  double default_val = 0;
+  double ret;
+  const upb_MiniTableField field = {1, UPB_SIZE(16, 8), 1, kUpb_NoSub, 1, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_DoubleRules_has_lt(const validate_DoubleRules* msg) {
-  return _upb_hasbit(msg, 2);
+UPB_INLINE bool validate_DoubleRules_has_const(const validate_DoubleRules* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(16, 8), 1, kUpb_NoSub, 1, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_DoubleRules_clear_lt(const validate_DoubleRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(24, 32), double) = 0;
-  _upb_clearhas(msg, 2);
+UPB_INLINE void validate_DoubleRules_clear_lt(validate_DoubleRules* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(24, 16), 2, kUpb_NoSub, 1, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE double validate_DoubleRules_lt(const validate_DoubleRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(24, 32), double);
+  double default_val = 0;
+  double ret;
+  const upb_MiniTableField field = {2, UPB_SIZE(24, 16), 2, kUpb_NoSub, 1, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_DoubleRules_has_lte(const validate_DoubleRules* msg) {
-  return _upb_hasbit(msg, 3);
+UPB_INLINE bool validate_DoubleRules_has_lt(const validate_DoubleRules* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(24, 16), 2, kUpb_NoSub, 1, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_DoubleRules_clear_lte(const validate_DoubleRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(32, 40), double) = 0;
-  _upb_clearhas(msg, 3);
+UPB_INLINE void validate_DoubleRules_clear_lte(validate_DoubleRules* msg) {
+  const upb_MiniTableField field = {3, UPB_SIZE(32, 24), 3, kUpb_NoSub, 1, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE double validate_DoubleRules_lte(const validate_DoubleRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(32, 40), double);
+  double default_val = 0;
+  double ret;
+  const upb_MiniTableField field = {3, UPB_SIZE(32, 24), 3, kUpb_NoSub, 1, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_DoubleRules_has_gt(const validate_DoubleRules* msg) {
-  return _upb_hasbit(msg, 4);
+UPB_INLINE bool validate_DoubleRules_has_lte(const validate_DoubleRules* msg) {
+  const upb_MiniTableField field = {3, UPB_SIZE(32, 24), 3, kUpb_NoSub, 1, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_DoubleRules_clear_gt(const validate_DoubleRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(40, 48), double) = 0;
-  _upb_clearhas(msg, 4);
+UPB_INLINE void validate_DoubleRules_clear_gt(validate_DoubleRules* msg) {
+  const upb_MiniTableField field = {4, UPB_SIZE(40, 32), 4, kUpb_NoSub, 1, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE double validate_DoubleRules_gt(const validate_DoubleRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(40, 48), double);
+  double default_val = 0;
+  double ret;
+  const upb_MiniTableField field = {4, UPB_SIZE(40, 32), 4, kUpb_NoSub, 1, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_DoubleRules_has_gte(const validate_DoubleRules* msg) {
-  return _upb_hasbit(msg, 5);
+UPB_INLINE bool validate_DoubleRules_has_gt(const validate_DoubleRules* msg) {
+  const upb_MiniTableField field = {4, UPB_SIZE(40, 32), 4, kUpb_NoSub, 1, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_DoubleRules_clear_gte(const validate_DoubleRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(48, 56), double) = 0;
-  _upb_clearhas(msg, 5);
+UPB_INLINE void validate_DoubleRules_clear_gte(validate_DoubleRules* msg) {
+  const upb_MiniTableField field = {5, UPB_SIZE(48, 40), 5, kUpb_NoSub, 1, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE double validate_DoubleRules_gte(const validate_DoubleRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(48, 56), double);
+  double default_val = 0;
+  double ret;
+  const upb_MiniTableField field = {5, UPB_SIZE(48, 40), 5, kUpb_NoSub, 1, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE void validate_DoubleRules_clear_in(const validate_DoubleRules* msg) {
-  _upb_array_detach(msg, UPB_SIZE(4, 8));
+UPB_INLINE bool validate_DoubleRules_has_gte(const validate_DoubleRules* msg) {
+  const upb_MiniTableField field = {5, UPB_SIZE(48, 40), 5, kUpb_NoSub, 1, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE double const* validate_DoubleRules_in(const validate_DoubleRules* msg, size_t* len) {
-  return (double const*)_upb_array_accessor(msg, UPB_SIZE(4, 8), len);
+UPB_INLINE void validate_DoubleRules_clear_in(validate_DoubleRules* msg) {
+  const upb_MiniTableField field = {6, UPB_SIZE(4, 48), 0, kUpb_NoSub, 1, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_DoubleRules_clear_not_in(const validate_DoubleRules* msg) {
-  _upb_array_detach(msg, UPB_SIZE(8, 16));
+UPB_INLINE double const* validate_DoubleRules_in(const validate_DoubleRules* msg, size_t* size) {
+  const upb_MiniTableField field = {6, UPB_SIZE(4, 48), 0, kUpb_NoSub, 1, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (double const*)_upb_array_constptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
 }
-UPB_INLINE double const* validate_DoubleRules_not_in(const validate_DoubleRules* msg, size_t* len) {
-  return (double const*)_upb_array_accessor(msg, UPB_SIZE(8, 16), len);
+UPB_INLINE const upb_Array* _validate_DoubleRules_in_upb_array(const validate_DoubleRules* msg, size_t* size) {
+  const upb_MiniTableField field = {6, UPB_SIZE(4, 48), 0, kUpb_NoSub, 1, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
 }
-UPB_INLINE bool validate_DoubleRules_has_ignore_empty(const validate_DoubleRules* msg) {
-  return _upb_hasbit(msg, 6);
+UPB_INLINE upb_Array* _validate_DoubleRules_in_mutable_upb_array(const validate_DoubleRules* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {6, UPB_SIZE(4, 48), 0, kUpb_NoSub, 1, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
 }
-UPB_INLINE void validate_DoubleRules_clear_ignore_empty(const validate_DoubleRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool) = 0;
-  _upb_clearhas(msg, 6);
+UPB_INLINE bool validate_DoubleRules_has_in(const validate_DoubleRules* msg) {
+  size_t size;
+  validate_DoubleRules_in(msg, &size);
+  return size != 0;
+}
+UPB_INLINE void validate_DoubleRules_clear_not_in(validate_DoubleRules* msg) {
+  const upb_MiniTableField field = {7, UPB_SIZE(8, 56), 0, kUpb_NoSub, 1, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
+}
+UPB_INLINE double const* validate_DoubleRules_not_in(const validate_DoubleRules* msg, size_t* size) {
+  const upb_MiniTableField field = {7, UPB_SIZE(8, 56), 0, kUpb_NoSub, 1, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (double const*)_upb_array_constptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
+}
+UPB_INLINE const upb_Array* _validate_DoubleRules_not_in_upb_array(const validate_DoubleRules* msg, size_t* size) {
+  const upb_MiniTableField field = {7, UPB_SIZE(8, 56), 0, kUpb_NoSub, 1, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _validate_DoubleRules_not_in_mutable_upb_array(const validate_DoubleRules* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {7, UPB_SIZE(8, 56), 0, kUpb_NoSub, 1, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE bool validate_DoubleRules_has_not_in(const validate_DoubleRules* msg) {
+  size_t size;
+  validate_DoubleRules_not_in(msg, &size);
+  return size != 0;
+}
+UPB_INLINE void validate_DoubleRules_clear_ignore_empty(validate_DoubleRules* msg) {
+  const upb_MiniTableField field = {8, UPB_SIZE(12, 1), 6, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE bool validate_DoubleRules_ignore_empty(const validate_DoubleRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool);
+  bool default_val = false;
+  bool ret;
+  const upb_MiniTableField field = {8, UPB_SIZE(12, 1), 6, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
+}
+UPB_INLINE bool validate_DoubleRules_has_ignore_empty(const validate_DoubleRules* msg) {
+  const upb_MiniTableField field = {8, UPB_SIZE(12, 1), 6, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
 
 UPB_INLINE void validate_DoubleRules_set_const(validate_DoubleRules *msg, double value) {
-  _upb_sethas(msg, 1);
-  *UPB_PTR_AT(msg, UPB_SIZE(16, 24), double) = value;
+  const upb_MiniTableField field = {1, UPB_SIZE(16, 8), 1, kUpb_NoSub, 1, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_DoubleRules_set_lt(validate_DoubleRules *msg, double value) {
-  _upb_sethas(msg, 2);
-  *UPB_PTR_AT(msg, UPB_SIZE(24, 32), double) = value;
+  const upb_MiniTableField field = {2, UPB_SIZE(24, 16), 2, kUpb_NoSub, 1, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_DoubleRules_set_lte(validate_DoubleRules *msg, double value) {
-  _upb_sethas(msg, 3);
-  *UPB_PTR_AT(msg, UPB_SIZE(32, 40), double) = value;
+  const upb_MiniTableField field = {3, UPB_SIZE(32, 24), 3, kUpb_NoSub, 1, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_DoubleRules_set_gt(validate_DoubleRules *msg, double value) {
-  _upb_sethas(msg, 4);
-  *UPB_PTR_AT(msg, UPB_SIZE(40, 48), double) = value;
+  const upb_MiniTableField field = {4, UPB_SIZE(40, 32), 4, kUpb_NoSub, 1, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_DoubleRules_set_gte(validate_DoubleRules *msg, double value) {
-  _upb_sethas(msg, 5);
-  *UPB_PTR_AT(msg, UPB_SIZE(48, 56), double) = value;
+  const upb_MiniTableField field = {5, UPB_SIZE(48, 40), 5, kUpb_NoSub, 1, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
-UPB_INLINE double* validate_DoubleRules_mutable_in(validate_DoubleRules* msg, size_t* len) {
-  return (double*)_upb_array_mutable_accessor(msg, UPB_SIZE(4, 8), len);
+UPB_INLINE double* validate_DoubleRules_mutable_in(validate_DoubleRules* msg, size_t* size) {
+  upb_MiniTableField field = {6, UPB_SIZE(4, 48), 0, kUpb_NoSub, 1, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetMutableArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (double*)_upb_array_ptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
 }
-UPB_INLINE double* validate_DoubleRules_resize_in(validate_DoubleRules* msg, size_t len, upb_Arena* arena) {
-  return (double*)_upb_Array_Resize_accessor2(msg, UPB_SIZE(4, 8), len, 3, arena);
+UPB_INLINE double* validate_DoubleRules_resize_in(validate_DoubleRules* msg, size_t size, upb_Arena* arena) {
+  upb_MiniTableField field = {6, UPB_SIZE(4, 48), 0, kUpb_NoSub, 1, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return (double*)upb_Message_ResizeArray(msg, &field, size, arena);
 }
 UPB_INLINE bool validate_DoubleRules_add_in(validate_DoubleRules* msg, double val, upb_Arena* arena) {
-  return _upb_Array_Append_accessor2(msg, UPB_SIZE(4, 8), 3, &val, arena);
+  upb_MiniTableField field = {6, UPB_SIZE(4, 48), 0, kUpb_NoSub, 1, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(msg, &field, arena);
+  if (!arr || !_upb_Array_ResizeUninitialized(arr, arr->size + 1, arena)) {
+    return false;
+  }
+  _upb_Array_Set(arr, arr->size - 1, &val, sizeof(val));
+  return true;
 }
-UPB_INLINE double* validate_DoubleRules_mutable_not_in(validate_DoubleRules* msg, size_t* len) {
-  return (double*)_upb_array_mutable_accessor(msg, UPB_SIZE(8, 16), len);
+UPB_INLINE double* validate_DoubleRules_mutable_not_in(validate_DoubleRules* msg, size_t* size) {
+  upb_MiniTableField field = {7, UPB_SIZE(8, 56), 0, kUpb_NoSub, 1, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetMutableArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (double*)_upb_array_ptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
 }
-UPB_INLINE double* validate_DoubleRules_resize_not_in(validate_DoubleRules* msg, size_t len, upb_Arena* arena) {
-  return (double*)_upb_Array_Resize_accessor2(msg, UPB_SIZE(8, 16), len, 3, arena);
+UPB_INLINE double* validate_DoubleRules_resize_not_in(validate_DoubleRules* msg, size_t size, upb_Arena* arena) {
+  upb_MiniTableField field = {7, UPB_SIZE(8, 56), 0, kUpb_NoSub, 1, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return (double*)upb_Message_ResizeArray(msg, &field, size, arena);
 }
 UPB_INLINE bool validate_DoubleRules_add_not_in(validate_DoubleRules* msg, double val, upb_Arena* arena) {
-  return _upb_Array_Append_accessor2(msg, UPB_SIZE(8, 16), 3, &val, arena);
+  upb_MiniTableField field = {7, UPB_SIZE(8, 56), 0, kUpb_NoSub, 1, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(msg, &field, arena);
+  if (!arr || !_upb_Array_ResizeUninitialized(arr, arr->size + 1, arena)) {
+    return false;
+  }
+  _upb_Array_Set(arr, arr->size - 1, &val, sizeof(val));
+  return true;
 }
 UPB_INLINE void validate_DoubleRules_set_ignore_empty(validate_DoubleRules *msg, bool value) {
-  _upb_sethas(msg, 6);
-  *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool) = value;
+  const upb_MiniTableField field = {8, UPB_SIZE(12, 1), 6, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 
 /* validate.Int32Rules */
 
 UPB_INLINE validate_Int32Rules* validate_Int32Rules_new(upb_Arena* arena) {
-  return (validate_Int32Rules*)_upb_Message_New(&validate_Int32Rules_msginit, arena);
+  return (validate_Int32Rules*)_upb_Message_New(&validate_Int32Rules_msg_init, arena);
 }
 UPB_INLINE validate_Int32Rules* validate_Int32Rules_parse(const char* buf, size_t size, upb_Arena* arena) {
   validate_Int32Rules* ret = validate_Int32Rules_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &validate_Int32Rules_msginit, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
+  if (upb_Decode(buf, size, ret, &validate_Int32Rules_msg_init, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
@@ -960,7 +1318,7 @@ UPB_INLINE validate_Int32Rules* validate_Int32Rules_parse_ex(const char* buf, si
                            int options, upb_Arena* arena) {
   validate_Int32Rules* ret = validate_Int32Rules_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &validate_Int32Rules_msginit, extreg, options, arena) !=
+  if (upb_Decode(buf, size, ret, &validate_Int32Rules_msg_init, extreg, options, arena) !=
       kUpb_DecodeStatus_Ok) {
     return NULL;
   }
@@ -968,140 +1326,262 @@ UPB_INLINE validate_Int32Rules* validate_Int32Rules_parse_ex(const char* buf, si
 }
 UPB_INLINE char* validate_Int32Rules_serialize(const validate_Int32Rules* msg, upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &validate_Int32Rules_msginit, 0, arena, &ptr, len);
+  (void)upb_Encode(msg, &validate_Int32Rules_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
 UPB_INLINE char* validate_Int32Rules_serialize_ex(const validate_Int32Rules* msg, int options,
                                  upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &validate_Int32Rules_msginit, options, arena, &ptr, len);
+  (void)upb_Encode(msg, &validate_Int32Rules_msg_init, options, arena, &ptr, len);
   return ptr;
 }
-UPB_INLINE bool validate_Int32Rules_has_const(const validate_Int32Rules* msg) {
-  return _upb_hasbit(msg, 1);
-}
-UPB_INLINE void validate_Int32Rules_clear_const(const validate_Int32Rules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t) = 0;
-  _upb_clearhas(msg, 1);
+UPB_INLINE void validate_Int32Rules_clear_const(validate_Int32Rules* msg) {
+  const upb_MiniTableField field = {1, 4, 1, kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE int32_t validate_Int32Rules_const(const validate_Int32Rules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t);
+  int32_t default_val = (int32_t)0;
+  int32_t ret;
+  const upb_MiniTableField field = {1, 4, 1, kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_Int32Rules_has_lt(const validate_Int32Rules* msg) {
-  return _upb_hasbit(msg, 2);
+UPB_INLINE bool validate_Int32Rules_has_const(const validate_Int32Rules* msg) {
+  const upb_MiniTableField field = {1, 4, 1, kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_Int32Rules_clear_lt(const validate_Int32Rules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), int32_t) = 0;
-  _upb_clearhas(msg, 2);
+UPB_INLINE void validate_Int32Rules_clear_lt(validate_Int32Rules* msg) {
+  const upb_MiniTableField field = {2, 8, 2, kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE int32_t validate_Int32Rules_lt(const validate_Int32Rules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(8, 8), int32_t);
+  int32_t default_val = (int32_t)0;
+  int32_t ret;
+  const upb_MiniTableField field = {2, 8, 2, kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_Int32Rules_has_lte(const validate_Int32Rules* msg) {
-  return _upb_hasbit(msg, 3);
+UPB_INLINE bool validate_Int32Rules_has_lt(const validate_Int32Rules* msg) {
+  const upb_MiniTableField field = {2, 8, 2, kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_Int32Rules_clear_lte(const validate_Int32Rules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(12, 12), int32_t) = 0;
-  _upb_clearhas(msg, 3);
+UPB_INLINE void validate_Int32Rules_clear_lte(validate_Int32Rules* msg) {
+  const upb_MiniTableField field = {3, 12, 3, kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE int32_t validate_Int32Rules_lte(const validate_Int32Rules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(12, 12), int32_t);
+  int32_t default_val = (int32_t)0;
+  int32_t ret;
+  const upb_MiniTableField field = {3, 12, 3, kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_Int32Rules_has_gt(const validate_Int32Rules* msg) {
-  return _upb_hasbit(msg, 4);
+UPB_INLINE bool validate_Int32Rules_has_lte(const validate_Int32Rules* msg) {
+  const upb_MiniTableField field = {3, 12, 3, kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_Int32Rules_clear_gt(const validate_Int32Rules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(16, 16), int32_t) = 0;
-  _upb_clearhas(msg, 4);
+UPB_INLINE void validate_Int32Rules_clear_gt(validate_Int32Rules* msg) {
+  const upb_MiniTableField field = {4, 16, 4, kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE int32_t validate_Int32Rules_gt(const validate_Int32Rules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(16, 16), int32_t);
+  int32_t default_val = (int32_t)0;
+  int32_t ret;
+  const upb_MiniTableField field = {4, 16, 4, kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_Int32Rules_has_gte(const validate_Int32Rules* msg) {
-  return _upb_hasbit(msg, 5);
+UPB_INLINE bool validate_Int32Rules_has_gt(const validate_Int32Rules* msg) {
+  const upb_MiniTableField field = {4, 16, 4, kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_Int32Rules_clear_gte(const validate_Int32Rules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(20, 20), int32_t) = 0;
-  _upb_clearhas(msg, 5);
+UPB_INLINE void validate_Int32Rules_clear_gte(validate_Int32Rules* msg) {
+  const upb_MiniTableField field = {5, 20, 5, kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE int32_t validate_Int32Rules_gte(const validate_Int32Rules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(20, 20), int32_t);
+  int32_t default_val = (int32_t)0;
+  int32_t ret;
+  const upb_MiniTableField field = {5, 20, 5, kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE void validate_Int32Rules_clear_in(const validate_Int32Rules* msg) {
-  _upb_array_detach(msg, UPB_SIZE(28, 32));
+UPB_INLINE bool validate_Int32Rules_has_gte(const validate_Int32Rules* msg) {
+  const upb_MiniTableField field = {5, 20, 5, kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE int32_t const* validate_Int32Rules_in(const validate_Int32Rules* msg, size_t* len) {
-  return (int32_t const*)_upb_array_accessor(msg, UPB_SIZE(28, 32), len);
+UPB_INLINE void validate_Int32Rules_clear_in(validate_Int32Rules* msg) {
+  const upb_MiniTableField field = {6, UPB_SIZE(24, 32), 0, kUpb_NoSub, 5, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_Int32Rules_clear_not_in(const validate_Int32Rules* msg) {
-  _upb_array_detach(msg, UPB_SIZE(32, 40));
+UPB_INLINE int32_t const* validate_Int32Rules_in(const validate_Int32Rules* msg, size_t* size) {
+  const upb_MiniTableField field = {6, UPB_SIZE(24, 32), 0, kUpb_NoSub, 5, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (int32_t const*)_upb_array_constptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
 }
-UPB_INLINE int32_t const* validate_Int32Rules_not_in(const validate_Int32Rules* msg, size_t* len) {
-  return (int32_t const*)_upb_array_accessor(msg, UPB_SIZE(32, 40), len);
+UPB_INLINE const upb_Array* _validate_Int32Rules_in_upb_array(const validate_Int32Rules* msg, size_t* size) {
+  const upb_MiniTableField field = {6, UPB_SIZE(24, 32), 0, kUpb_NoSub, 5, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
 }
-UPB_INLINE bool validate_Int32Rules_has_ignore_empty(const validate_Int32Rules* msg) {
-  return _upb_hasbit(msg, 6);
+UPB_INLINE upb_Array* _validate_Int32Rules_in_mutable_upb_array(const validate_Int32Rules* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {6, UPB_SIZE(24, 32), 0, kUpb_NoSub, 5, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
 }
-UPB_INLINE void validate_Int32Rules_clear_ignore_empty(const validate_Int32Rules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(24, 24), bool) = 0;
-  _upb_clearhas(msg, 6);
+UPB_INLINE bool validate_Int32Rules_has_in(const validate_Int32Rules* msg) {
+  size_t size;
+  validate_Int32Rules_in(msg, &size);
+  return size != 0;
+}
+UPB_INLINE void validate_Int32Rules_clear_not_in(validate_Int32Rules* msg) {
+  const upb_MiniTableField field = {7, UPB_SIZE(28, 40), 0, kUpb_NoSub, 5, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
+}
+UPB_INLINE int32_t const* validate_Int32Rules_not_in(const validate_Int32Rules* msg, size_t* size) {
+  const upb_MiniTableField field = {7, UPB_SIZE(28, 40), 0, kUpb_NoSub, 5, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (int32_t const*)_upb_array_constptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
+}
+UPB_INLINE const upb_Array* _validate_Int32Rules_not_in_upb_array(const validate_Int32Rules* msg, size_t* size) {
+  const upb_MiniTableField field = {7, UPB_SIZE(28, 40), 0, kUpb_NoSub, 5, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _validate_Int32Rules_not_in_mutable_upb_array(const validate_Int32Rules* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {7, UPB_SIZE(28, 40), 0, kUpb_NoSub, 5, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE bool validate_Int32Rules_has_not_in(const validate_Int32Rules* msg) {
+  size_t size;
+  validate_Int32Rules_not_in(msg, &size);
+  return size != 0;
+}
+UPB_INLINE void validate_Int32Rules_clear_ignore_empty(validate_Int32Rules* msg) {
+  const upb_MiniTableField field = {8, UPB_SIZE(32, 24), 6, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE bool validate_Int32Rules_ignore_empty(const validate_Int32Rules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(24, 24), bool);
+  bool default_val = false;
+  bool ret;
+  const upb_MiniTableField field = {8, UPB_SIZE(32, 24), 6, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
+}
+UPB_INLINE bool validate_Int32Rules_has_ignore_empty(const validate_Int32Rules* msg) {
+  const upb_MiniTableField field = {8, UPB_SIZE(32, 24), 6, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
 
 UPB_INLINE void validate_Int32Rules_set_const(validate_Int32Rules *msg, int32_t value) {
-  _upb_sethas(msg, 1);
-  *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t) = value;
+  const upb_MiniTableField field = {1, 4, 1, kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_Int32Rules_set_lt(validate_Int32Rules *msg, int32_t value) {
-  _upb_sethas(msg, 2);
-  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), int32_t) = value;
+  const upb_MiniTableField field = {2, 8, 2, kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_Int32Rules_set_lte(validate_Int32Rules *msg, int32_t value) {
-  _upb_sethas(msg, 3);
-  *UPB_PTR_AT(msg, UPB_SIZE(12, 12), int32_t) = value;
+  const upb_MiniTableField field = {3, 12, 3, kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_Int32Rules_set_gt(validate_Int32Rules *msg, int32_t value) {
-  _upb_sethas(msg, 4);
-  *UPB_PTR_AT(msg, UPB_SIZE(16, 16), int32_t) = value;
+  const upb_MiniTableField field = {4, 16, 4, kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_Int32Rules_set_gte(validate_Int32Rules *msg, int32_t value) {
-  _upb_sethas(msg, 5);
-  *UPB_PTR_AT(msg, UPB_SIZE(20, 20), int32_t) = value;
+  const upb_MiniTableField field = {5, 20, 5, kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
-UPB_INLINE int32_t* validate_Int32Rules_mutable_in(validate_Int32Rules* msg, size_t* len) {
-  return (int32_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(28, 32), len);
+UPB_INLINE int32_t* validate_Int32Rules_mutable_in(validate_Int32Rules* msg, size_t* size) {
+  upb_MiniTableField field = {6, UPB_SIZE(24, 32), 0, kUpb_NoSub, 5, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetMutableArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (int32_t*)_upb_array_ptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
 }
-UPB_INLINE int32_t* validate_Int32Rules_resize_in(validate_Int32Rules* msg, size_t len, upb_Arena* arena) {
-  return (int32_t*)_upb_Array_Resize_accessor2(msg, UPB_SIZE(28, 32), len, 2, arena);
+UPB_INLINE int32_t* validate_Int32Rules_resize_in(validate_Int32Rules* msg, size_t size, upb_Arena* arena) {
+  upb_MiniTableField field = {6, UPB_SIZE(24, 32), 0, kUpb_NoSub, 5, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return (int32_t*)upb_Message_ResizeArray(msg, &field, size, arena);
 }
 UPB_INLINE bool validate_Int32Rules_add_in(validate_Int32Rules* msg, int32_t val, upb_Arena* arena) {
-  return _upb_Array_Append_accessor2(msg, UPB_SIZE(28, 32), 2, &val, arena);
+  upb_MiniTableField field = {6, UPB_SIZE(24, 32), 0, kUpb_NoSub, 5, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(msg, &field, arena);
+  if (!arr || !_upb_Array_ResizeUninitialized(arr, arr->size + 1, arena)) {
+    return false;
+  }
+  _upb_Array_Set(arr, arr->size - 1, &val, sizeof(val));
+  return true;
 }
-UPB_INLINE int32_t* validate_Int32Rules_mutable_not_in(validate_Int32Rules* msg, size_t* len) {
-  return (int32_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(32, 40), len);
+UPB_INLINE int32_t* validate_Int32Rules_mutable_not_in(validate_Int32Rules* msg, size_t* size) {
+  upb_MiniTableField field = {7, UPB_SIZE(28, 40), 0, kUpb_NoSub, 5, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetMutableArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (int32_t*)_upb_array_ptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
 }
-UPB_INLINE int32_t* validate_Int32Rules_resize_not_in(validate_Int32Rules* msg, size_t len, upb_Arena* arena) {
-  return (int32_t*)_upb_Array_Resize_accessor2(msg, UPB_SIZE(32, 40), len, 2, arena);
+UPB_INLINE int32_t* validate_Int32Rules_resize_not_in(validate_Int32Rules* msg, size_t size, upb_Arena* arena) {
+  upb_MiniTableField field = {7, UPB_SIZE(28, 40), 0, kUpb_NoSub, 5, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return (int32_t*)upb_Message_ResizeArray(msg, &field, size, arena);
 }
 UPB_INLINE bool validate_Int32Rules_add_not_in(validate_Int32Rules* msg, int32_t val, upb_Arena* arena) {
-  return _upb_Array_Append_accessor2(msg, UPB_SIZE(32, 40), 2, &val, arena);
+  upb_MiniTableField field = {7, UPB_SIZE(28, 40), 0, kUpb_NoSub, 5, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(msg, &field, arena);
+  if (!arr || !_upb_Array_ResizeUninitialized(arr, arr->size + 1, arena)) {
+    return false;
+  }
+  _upb_Array_Set(arr, arr->size - 1, &val, sizeof(val));
+  return true;
 }
 UPB_INLINE void validate_Int32Rules_set_ignore_empty(validate_Int32Rules *msg, bool value) {
-  _upb_sethas(msg, 6);
-  *UPB_PTR_AT(msg, UPB_SIZE(24, 24), bool) = value;
+  const upb_MiniTableField field = {8, UPB_SIZE(32, 24), 6, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 
 /* validate.Int64Rules */
 
 UPB_INLINE validate_Int64Rules* validate_Int64Rules_new(upb_Arena* arena) {
-  return (validate_Int64Rules*)_upb_Message_New(&validate_Int64Rules_msginit, arena);
+  return (validate_Int64Rules*)_upb_Message_New(&validate_Int64Rules_msg_init, arena);
 }
 UPB_INLINE validate_Int64Rules* validate_Int64Rules_parse(const char* buf, size_t size, upb_Arena* arena) {
   validate_Int64Rules* ret = validate_Int64Rules_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &validate_Int64Rules_msginit, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
+  if (upb_Decode(buf, size, ret, &validate_Int64Rules_msg_init, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
@@ -1111,7 +1591,7 @@ UPB_INLINE validate_Int64Rules* validate_Int64Rules_parse_ex(const char* buf, si
                            int options, upb_Arena* arena) {
   validate_Int64Rules* ret = validate_Int64Rules_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &validate_Int64Rules_msginit, extreg, options, arena) !=
+  if (upb_Decode(buf, size, ret, &validate_Int64Rules_msg_init, extreg, options, arena) !=
       kUpb_DecodeStatus_Ok) {
     return NULL;
   }
@@ -1119,140 +1599,262 @@ UPB_INLINE validate_Int64Rules* validate_Int64Rules_parse_ex(const char* buf, si
 }
 UPB_INLINE char* validate_Int64Rules_serialize(const validate_Int64Rules* msg, upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &validate_Int64Rules_msginit, 0, arena, &ptr, len);
+  (void)upb_Encode(msg, &validate_Int64Rules_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
 UPB_INLINE char* validate_Int64Rules_serialize_ex(const validate_Int64Rules* msg, int options,
                                  upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &validate_Int64Rules_msginit, options, arena, &ptr, len);
+  (void)upb_Encode(msg, &validate_Int64Rules_msg_init, options, arena, &ptr, len);
   return ptr;
 }
-UPB_INLINE bool validate_Int64Rules_has_const(const validate_Int64Rules* msg) {
-  return _upb_hasbit(msg, 1);
-}
-UPB_INLINE void validate_Int64Rules_clear_const(const validate_Int64Rules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(16, 24), int64_t) = 0;
-  _upb_clearhas(msg, 1);
+UPB_INLINE void validate_Int64Rules_clear_const(validate_Int64Rules* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(16, 8), 1, kUpb_NoSub, 3, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE int64_t validate_Int64Rules_const(const validate_Int64Rules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(16, 24), int64_t);
+  int64_t default_val = (int64_t)0ll;
+  int64_t ret;
+  const upb_MiniTableField field = {1, UPB_SIZE(16, 8), 1, kUpb_NoSub, 3, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_Int64Rules_has_lt(const validate_Int64Rules* msg) {
-  return _upb_hasbit(msg, 2);
+UPB_INLINE bool validate_Int64Rules_has_const(const validate_Int64Rules* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(16, 8), 1, kUpb_NoSub, 3, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_Int64Rules_clear_lt(const validate_Int64Rules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(24, 32), int64_t) = 0;
-  _upb_clearhas(msg, 2);
+UPB_INLINE void validate_Int64Rules_clear_lt(validate_Int64Rules* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(24, 16), 2, kUpb_NoSub, 3, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE int64_t validate_Int64Rules_lt(const validate_Int64Rules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(24, 32), int64_t);
+  int64_t default_val = (int64_t)0ll;
+  int64_t ret;
+  const upb_MiniTableField field = {2, UPB_SIZE(24, 16), 2, kUpb_NoSub, 3, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_Int64Rules_has_lte(const validate_Int64Rules* msg) {
-  return _upb_hasbit(msg, 3);
+UPB_INLINE bool validate_Int64Rules_has_lt(const validate_Int64Rules* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(24, 16), 2, kUpb_NoSub, 3, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_Int64Rules_clear_lte(const validate_Int64Rules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(32, 40), int64_t) = 0;
-  _upb_clearhas(msg, 3);
+UPB_INLINE void validate_Int64Rules_clear_lte(validate_Int64Rules* msg) {
+  const upb_MiniTableField field = {3, UPB_SIZE(32, 24), 3, kUpb_NoSub, 3, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE int64_t validate_Int64Rules_lte(const validate_Int64Rules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(32, 40), int64_t);
+  int64_t default_val = (int64_t)0ll;
+  int64_t ret;
+  const upb_MiniTableField field = {3, UPB_SIZE(32, 24), 3, kUpb_NoSub, 3, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_Int64Rules_has_gt(const validate_Int64Rules* msg) {
-  return _upb_hasbit(msg, 4);
+UPB_INLINE bool validate_Int64Rules_has_lte(const validate_Int64Rules* msg) {
+  const upb_MiniTableField field = {3, UPB_SIZE(32, 24), 3, kUpb_NoSub, 3, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_Int64Rules_clear_gt(const validate_Int64Rules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(40, 48), int64_t) = 0;
-  _upb_clearhas(msg, 4);
+UPB_INLINE void validate_Int64Rules_clear_gt(validate_Int64Rules* msg) {
+  const upb_MiniTableField field = {4, UPB_SIZE(40, 32), 4, kUpb_NoSub, 3, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE int64_t validate_Int64Rules_gt(const validate_Int64Rules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(40, 48), int64_t);
+  int64_t default_val = (int64_t)0ll;
+  int64_t ret;
+  const upb_MiniTableField field = {4, UPB_SIZE(40, 32), 4, kUpb_NoSub, 3, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_Int64Rules_has_gte(const validate_Int64Rules* msg) {
-  return _upb_hasbit(msg, 5);
+UPB_INLINE bool validate_Int64Rules_has_gt(const validate_Int64Rules* msg) {
+  const upb_MiniTableField field = {4, UPB_SIZE(40, 32), 4, kUpb_NoSub, 3, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_Int64Rules_clear_gte(const validate_Int64Rules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(48, 56), int64_t) = 0;
-  _upb_clearhas(msg, 5);
+UPB_INLINE void validate_Int64Rules_clear_gte(validate_Int64Rules* msg) {
+  const upb_MiniTableField field = {5, UPB_SIZE(48, 40), 5, kUpb_NoSub, 3, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE int64_t validate_Int64Rules_gte(const validate_Int64Rules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(48, 56), int64_t);
+  int64_t default_val = (int64_t)0ll;
+  int64_t ret;
+  const upb_MiniTableField field = {5, UPB_SIZE(48, 40), 5, kUpb_NoSub, 3, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE void validate_Int64Rules_clear_in(const validate_Int64Rules* msg) {
-  _upb_array_detach(msg, UPB_SIZE(4, 8));
+UPB_INLINE bool validate_Int64Rules_has_gte(const validate_Int64Rules* msg) {
+  const upb_MiniTableField field = {5, UPB_SIZE(48, 40), 5, kUpb_NoSub, 3, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE int64_t const* validate_Int64Rules_in(const validate_Int64Rules* msg, size_t* len) {
-  return (int64_t const*)_upb_array_accessor(msg, UPB_SIZE(4, 8), len);
+UPB_INLINE void validate_Int64Rules_clear_in(validate_Int64Rules* msg) {
+  const upb_MiniTableField field = {6, UPB_SIZE(4, 48), 0, kUpb_NoSub, 3, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_Int64Rules_clear_not_in(const validate_Int64Rules* msg) {
-  _upb_array_detach(msg, UPB_SIZE(8, 16));
+UPB_INLINE int64_t const* validate_Int64Rules_in(const validate_Int64Rules* msg, size_t* size) {
+  const upb_MiniTableField field = {6, UPB_SIZE(4, 48), 0, kUpb_NoSub, 3, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (int64_t const*)_upb_array_constptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
 }
-UPB_INLINE int64_t const* validate_Int64Rules_not_in(const validate_Int64Rules* msg, size_t* len) {
-  return (int64_t const*)_upb_array_accessor(msg, UPB_SIZE(8, 16), len);
+UPB_INLINE const upb_Array* _validate_Int64Rules_in_upb_array(const validate_Int64Rules* msg, size_t* size) {
+  const upb_MiniTableField field = {6, UPB_SIZE(4, 48), 0, kUpb_NoSub, 3, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
 }
-UPB_INLINE bool validate_Int64Rules_has_ignore_empty(const validate_Int64Rules* msg) {
-  return _upb_hasbit(msg, 6);
+UPB_INLINE upb_Array* _validate_Int64Rules_in_mutable_upb_array(const validate_Int64Rules* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {6, UPB_SIZE(4, 48), 0, kUpb_NoSub, 3, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
 }
-UPB_INLINE void validate_Int64Rules_clear_ignore_empty(const validate_Int64Rules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool) = 0;
-  _upb_clearhas(msg, 6);
+UPB_INLINE bool validate_Int64Rules_has_in(const validate_Int64Rules* msg) {
+  size_t size;
+  validate_Int64Rules_in(msg, &size);
+  return size != 0;
+}
+UPB_INLINE void validate_Int64Rules_clear_not_in(validate_Int64Rules* msg) {
+  const upb_MiniTableField field = {7, UPB_SIZE(8, 56), 0, kUpb_NoSub, 3, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
+}
+UPB_INLINE int64_t const* validate_Int64Rules_not_in(const validate_Int64Rules* msg, size_t* size) {
+  const upb_MiniTableField field = {7, UPB_SIZE(8, 56), 0, kUpb_NoSub, 3, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (int64_t const*)_upb_array_constptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
+}
+UPB_INLINE const upb_Array* _validate_Int64Rules_not_in_upb_array(const validate_Int64Rules* msg, size_t* size) {
+  const upb_MiniTableField field = {7, UPB_SIZE(8, 56), 0, kUpb_NoSub, 3, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _validate_Int64Rules_not_in_mutable_upb_array(const validate_Int64Rules* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {7, UPB_SIZE(8, 56), 0, kUpb_NoSub, 3, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE bool validate_Int64Rules_has_not_in(const validate_Int64Rules* msg) {
+  size_t size;
+  validate_Int64Rules_not_in(msg, &size);
+  return size != 0;
+}
+UPB_INLINE void validate_Int64Rules_clear_ignore_empty(validate_Int64Rules* msg) {
+  const upb_MiniTableField field = {8, UPB_SIZE(12, 1), 6, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE bool validate_Int64Rules_ignore_empty(const validate_Int64Rules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool);
+  bool default_val = false;
+  bool ret;
+  const upb_MiniTableField field = {8, UPB_SIZE(12, 1), 6, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
+}
+UPB_INLINE bool validate_Int64Rules_has_ignore_empty(const validate_Int64Rules* msg) {
+  const upb_MiniTableField field = {8, UPB_SIZE(12, 1), 6, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
 
 UPB_INLINE void validate_Int64Rules_set_const(validate_Int64Rules *msg, int64_t value) {
-  _upb_sethas(msg, 1);
-  *UPB_PTR_AT(msg, UPB_SIZE(16, 24), int64_t) = value;
+  const upb_MiniTableField field = {1, UPB_SIZE(16, 8), 1, kUpb_NoSub, 3, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_Int64Rules_set_lt(validate_Int64Rules *msg, int64_t value) {
-  _upb_sethas(msg, 2);
-  *UPB_PTR_AT(msg, UPB_SIZE(24, 32), int64_t) = value;
+  const upb_MiniTableField field = {2, UPB_SIZE(24, 16), 2, kUpb_NoSub, 3, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_Int64Rules_set_lte(validate_Int64Rules *msg, int64_t value) {
-  _upb_sethas(msg, 3);
-  *UPB_PTR_AT(msg, UPB_SIZE(32, 40), int64_t) = value;
+  const upb_MiniTableField field = {3, UPB_SIZE(32, 24), 3, kUpb_NoSub, 3, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_Int64Rules_set_gt(validate_Int64Rules *msg, int64_t value) {
-  _upb_sethas(msg, 4);
-  *UPB_PTR_AT(msg, UPB_SIZE(40, 48), int64_t) = value;
+  const upb_MiniTableField field = {4, UPB_SIZE(40, 32), 4, kUpb_NoSub, 3, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_Int64Rules_set_gte(validate_Int64Rules *msg, int64_t value) {
-  _upb_sethas(msg, 5);
-  *UPB_PTR_AT(msg, UPB_SIZE(48, 56), int64_t) = value;
+  const upb_MiniTableField field = {5, UPB_SIZE(48, 40), 5, kUpb_NoSub, 3, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
-UPB_INLINE int64_t* validate_Int64Rules_mutable_in(validate_Int64Rules* msg, size_t* len) {
-  return (int64_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(4, 8), len);
+UPB_INLINE int64_t* validate_Int64Rules_mutable_in(validate_Int64Rules* msg, size_t* size) {
+  upb_MiniTableField field = {6, UPB_SIZE(4, 48), 0, kUpb_NoSub, 3, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetMutableArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (int64_t*)_upb_array_ptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
 }
-UPB_INLINE int64_t* validate_Int64Rules_resize_in(validate_Int64Rules* msg, size_t len, upb_Arena* arena) {
-  return (int64_t*)_upb_Array_Resize_accessor2(msg, UPB_SIZE(4, 8), len, 3, arena);
+UPB_INLINE int64_t* validate_Int64Rules_resize_in(validate_Int64Rules* msg, size_t size, upb_Arena* arena) {
+  upb_MiniTableField field = {6, UPB_SIZE(4, 48), 0, kUpb_NoSub, 3, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return (int64_t*)upb_Message_ResizeArray(msg, &field, size, arena);
 }
 UPB_INLINE bool validate_Int64Rules_add_in(validate_Int64Rules* msg, int64_t val, upb_Arena* arena) {
-  return _upb_Array_Append_accessor2(msg, UPB_SIZE(4, 8), 3, &val, arena);
+  upb_MiniTableField field = {6, UPB_SIZE(4, 48), 0, kUpb_NoSub, 3, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(msg, &field, arena);
+  if (!arr || !_upb_Array_ResizeUninitialized(arr, arr->size + 1, arena)) {
+    return false;
+  }
+  _upb_Array_Set(arr, arr->size - 1, &val, sizeof(val));
+  return true;
 }
-UPB_INLINE int64_t* validate_Int64Rules_mutable_not_in(validate_Int64Rules* msg, size_t* len) {
-  return (int64_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(8, 16), len);
+UPB_INLINE int64_t* validate_Int64Rules_mutable_not_in(validate_Int64Rules* msg, size_t* size) {
+  upb_MiniTableField field = {7, UPB_SIZE(8, 56), 0, kUpb_NoSub, 3, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetMutableArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (int64_t*)_upb_array_ptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
 }
-UPB_INLINE int64_t* validate_Int64Rules_resize_not_in(validate_Int64Rules* msg, size_t len, upb_Arena* arena) {
-  return (int64_t*)_upb_Array_Resize_accessor2(msg, UPB_SIZE(8, 16), len, 3, arena);
+UPB_INLINE int64_t* validate_Int64Rules_resize_not_in(validate_Int64Rules* msg, size_t size, upb_Arena* arena) {
+  upb_MiniTableField field = {7, UPB_SIZE(8, 56), 0, kUpb_NoSub, 3, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return (int64_t*)upb_Message_ResizeArray(msg, &field, size, arena);
 }
 UPB_INLINE bool validate_Int64Rules_add_not_in(validate_Int64Rules* msg, int64_t val, upb_Arena* arena) {
-  return _upb_Array_Append_accessor2(msg, UPB_SIZE(8, 16), 3, &val, arena);
+  upb_MiniTableField field = {7, UPB_SIZE(8, 56), 0, kUpb_NoSub, 3, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(msg, &field, arena);
+  if (!arr || !_upb_Array_ResizeUninitialized(arr, arr->size + 1, arena)) {
+    return false;
+  }
+  _upb_Array_Set(arr, arr->size - 1, &val, sizeof(val));
+  return true;
 }
 UPB_INLINE void validate_Int64Rules_set_ignore_empty(validate_Int64Rules *msg, bool value) {
-  _upb_sethas(msg, 6);
-  *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool) = value;
+  const upb_MiniTableField field = {8, UPB_SIZE(12, 1), 6, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 
 /* validate.UInt32Rules */
 
 UPB_INLINE validate_UInt32Rules* validate_UInt32Rules_new(upb_Arena* arena) {
-  return (validate_UInt32Rules*)_upb_Message_New(&validate_UInt32Rules_msginit, arena);
+  return (validate_UInt32Rules*)_upb_Message_New(&validate_UInt32Rules_msg_init, arena);
 }
 UPB_INLINE validate_UInt32Rules* validate_UInt32Rules_parse(const char* buf, size_t size, upb_Arena* arena) {
   validate_UInt32Rules* ret = validate_UInt32Rules_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &validate_UInt32Rules_msginit, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
+  if (upb_Decode(buf, size, ret, &validate_UInt32Rules_msg_init, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
@@ -1262,7 +1864,7 @@ UPB_INLINE validate_UInt32Rules* validate_UInt32Rules_parse_ex(const char* buf, 
                            int options, upb_Arena* arena) {
   validate_UInt32Rules* ret = validate_UInt32Rules_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &validate_UInt32Rules_msginit, extreg, options, arena) !=
+  if (upb_Decode(buf, size, ret, &validate_UInt32Rules_msg_init, extreg, options, arena) !=
       kUpb_DecodeStatus_Ok) {
     return NULL;
   }
@@ -1270,140 +1872,262 @@ UPB_INLINE validate_UInt32Rules* validate_UInt32Rules_parse_ex(const char* buf, 
 }
 UPB_INLINE char* validate_UInt32Rules_serialize(const validate_UInt32Rules* msg, upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &validate_UInt32Rules_msginit, 0, arena, &ptr, len);
+  (void)upb_Encode(msg, &validate_UInt32Rules_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
 UPB_INLINE char* validate_UInt32Rules_serialize_ex(const validate_UInt32Rules* msg, int options,
                                  upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &validate_UInt32Rules_msginit, options, arena, &ptr, len);
+  (void)upb_Encode(msg, &validate_UInt32Rules_msg_init, options, arena, &ptr, len);
   return ptr;
 }
-UPB_INLINE bool validate_UInt32Rules_has_const(const validate_UInt32Rules* msg) {
-  return _upb_hasbit(msg, 1);
-}
-UPB_INLINE void validate_UInt32Rules_clear_const(const validate_UInt32Rules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(4, 4), uint32_t) = 0;
-  _upb_clearhas(msg, 1);
+UPB_INLINE void validate_UInt32Rules_clear_const(validate_UInt32Rules* msg) {
+  const upb_MiniTableField field = {1, 4, 1, kUpb_NoSub, 13, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE uint32_t validate_UInt32Rules_const(const validate_UInt32Rules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(4, 4), uint32_t);
+  uint32_t default_val = (uint32_t)0u;
+  uint32_t ret;
+  const upb_MiniTableField field = {1, 4, 1, kUpb_NoSub, 13, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_UInt32Rules_has_lt(const validate_UInt32Rules* msg) {
-  return _upb_hasbit(msg, 2);
+UPB_INLINE bool validate_UInt32Rules_has_const(const validate_UInt32Rules* msg) {
+  const upb_MiniTableField field = {1, 4, 1, kUpb_NoSub, 13, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_UInt32Rules_clear_lt(const validate_UInt32Rules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), uint32_t) = 0;
-  _upb_clearhas(msg, 2);
+UPB_INLINE void validate_UInt32Rules_clear_lt(validate_UInt32Rules* msg) {
+  const upb_MiniTableField field = {2, 8, 2, kUpb_NoSub, 13, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE uint32_t validate_UInt32Rules_lt(const validate_UInt32Rules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(8, 8), uint32_t);
+  uint32_t default_val = (uint32_t)0u;
+  uint32_t ret;
+  const upb_MiniTableField field = {2, 8, 2, kUpb_NoSub, 13, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_UInt32Rules_has_lte(const validate_UInt32Rules* msg) {
-  return _upb_hasbit(msg, 3);
+UPB_INLINE bool validate_UInt32Rules_has_lt(const validate_UInt32Rules* msg) {
+  const upb_MiniTableField field = {2, 8, 2, kUpb_NoSub, 13, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_UInt32Rules_clear_lte(const validate_UInt32Rules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(12, 12), uint32_t) = 0;
-  _upb_clearhas(msg, 3);
+UPB_INLINE void validate_UInt32Rules_clear_lte(validate_UInt32Rules* msg) {
+  const upb_MiniTableField field = {3, 12, 3, kUpb_NoSub, 13, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE uint32_t validate_UInt32Rules_lte(const validate_UInt32Rules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(12, 12), uint32_t);
+  uint32_t default_val = (uint32_t)0u;
+  uint32_t ret;
+  const upb_MiniTableField field = {3, 12, 3, kUpb_NoSub, 13, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_UInt32Rules_has_gt(const validate_UInt32Rules* msg) {
-  return _upb_hasbit(msg, 4);
+UPB_INLINE bool validate_UInt32Rules_has_lte(const validate_UInt32Rules* msg) {
+  const upb_MiniTableField field = {3, 12, 3, kUpb_NoSub, 13, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_UInt32Rules_clear_gt(const validate_UInt32Rules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(16, 16), uint32_t) = 0;
-  _upb_clearhas(msg, 4);
+UPB_INLINE void validate_UInt32Rules_clear_gt(validate_UInt32Rules* msg) {
+  const upb_MiniTableField field = {4, 16, 4, kUpb_NoSub, 13, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE uint32_t validate_UInt32Rules_gt(const validate_UInt32Rules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(16, 16), uint32_t);
+  uint32_t default_val = (uint32_t)0u;
+  uint32_t ret;
+  const upb_MiniTableField field = {4, 16, 4, kUpb_NoSub, 13, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_UInt32Rules_has_gte(const validate_UInt32Rules* msg) {
-  return _upb_hasbit(msg, 5);
+UPB_INLINE bool validate_UInt32Rules_has_gt(const validate_UInt32Rules* msg) {
+  const upb_MiniTableField field = {4, 16, 4, kUpb_NoSub, 13, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_UInt32Rules_clear_gte(const validate_UInt32Rules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(20, 20), uint32_t) = 0;
-  _upb_clearhas(msg, 5);
+UPB_INLINE void validate_UInt32Rules_clear_gte(validate_UInt32Rules* msg) {
+  const upb_MiniTableField field = {5, 20, 5, kUpb_NoSub, 13, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE uint32_t validate_UInt32Rules_gte(const validate_UInt32Rules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(20, 20), uint32_t);
+  uint32_t default_val = (uint32_t)0u;
+  uint32_t ret;
+  const upb_MiniTableField field = {5, 20, 5, kUpb_NoSub, 13, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE void validate_UInt32Rules_clear_in(const validate_UInt32Rules* msg) {
-  _upb_array_detach(msg, UPB_SIZE(28, 32));
+UPB_INLINE bool validate_UInt32Rules_has_gte(const validate_UInt32Rules* msg) {
+  const upb_MiniTableField field = {5, 20, 5, kUpb_NoSub, 13, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE uint32_t const* validate_UInt32Rules_in(const validate_UInt32Rules* msg, size_t* len) {
-  return (uint32_t const*)_upb_array_accessor(msg, UPB_SIZE(28, 32), len);
+UPB_INLINE void validate_UInt32Rules_clear_in(validate_UInt32Rules* msg) {
+  const upb_MiniTableField field = {6, UPB_SIZE(24, 32), 0, kUpb_NoSub, 13, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_UInt32Rules_clear_not_in(const validate_UInt32Rules* msg) {
-  _upb_array_detach(msg, UPB_SIZE(32, 40));
+UPB_INLINE uint32_t const* validate_UInt32Rules_in(const validate_UInt32Rules* msg, size_t* size) {
+  const upb_MiniTableField field = {6, UPB_SIZE(24, 32), 0, kUpb_NoSub, 13, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (uint32_t const*)_upb_array_constptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
 }
-UPB_INLINE uint32_t const* validate_UInt32Rules_not_in(const validate_UInt32Rules* msg, size_t* len) {
-  return (uint32_t const*)_upb_array_accessor(msg, UPB_SIZE(32, 40), len);
+UPB_INLINE const upb_Array* _validate_UInt32Rules_in_upb_array(const validate_UInt32Rules* msg, size_t* size) {
+  const upb_MiniTableField field = {6, UPB_SIZE(24, 32), 0, kUpb_NoSub, 13, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
 }
-UPB_INLINE bool validate_UInt32Rules_has_ignore_empty(const validate_UInt32Rules* msg) {
-  return _upb_hasbit(msg, 6);
+UPB_INLINE upb_Array* _validate_UInt32Rules_in_mutable_upb_array(const validate_UInt32Rules* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {6, UPB_SIZE(24, 32), 0, kUpb_NoSub, 13, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
 }
-UPB_INLINE void validate_UInt32Rules_clear_ignore_empty(const validate_UInt32Rules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(24, 24), bool) = 0;
-  _upb_clearhas(msg, 6);
+UPB_INLINE bool validate_UInt32Rules_has_in(const validate_UInt32Rules* msg) {
+  size_t size;
+  validate_UInt32Rules_in(msg, &size);
+  return size != 0;
+}
+UPB_INLINE void validate_UInt32Rules_clear_not_in(validate_UInt32Rules* msg) {
+  const upb_MiniTableField field = {7, UPB_SIZE(28, 40), 0, kUpb_NoSub, 13, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
+}
+UPB_INLINE uint32_t const* validate_UInt32Rules_not_in(const validate_UInt32Rules* msg, size_t* size) {
+  const upb_MiniTableField field = {7, UPB_SIZE(28, 40), 0, kUpb_NoSub, 13, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (uint32_t const*)_upb_array_constptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
+}
+UPB_INLINE const upb_Array* _validate_UInt32Rules_not_in_upb_array(const validate_UInt32Rules* msg, size_t* size) {
+  const upb_MiniTableField field = {7, UPB_SIZE(28, 40), 0, kUpb_NoSub, 13, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _validate_UInt32Rules_not_in_mutable_upb_array(const validate_UInt32Rules* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {7, UPB_SIZE(28, 40), 0, kUpb_NoSub, 13, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE bool validate_UInt32Rules_has_not_in(const validate_UInt32Rules* msg) {
+  size_t size;
+  validate_UInt32Rules_not_in(msg, &size);
+  return size != 0;
+}
+UPB_INLINE void validate_UInt32Rules_clear_ignore_empty(validate_UInt32Rules* msg) {
+  const upb_MiniTableField field = {8, UPB_SIZE(32, 24), 6, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE bool validate_UInt32Rules_ignore_empty(const validate_UInt32Rules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(24, 24), bool);
+  bool default_val = false;
+  bool ret;
+  const upb_MiniTableField field = {8, UPB_SIZE(32, 24), 6, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
+}
+UPB_INLINE bool validate_UInt32Rules_has_ignore_empty(const validate_UInt32Rules* msg) {
+  const upb_MiniTableField field = {8, UPB_SIZE(32, 24), 6, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
 
 UPB_INLINE void validate_UInt32Rules_set_const(validate_UInt32Rules *msg, uint32_t value) {
-  _upb_sethas(msg, 1);
-  *UPB_PTR_AT(msg, UPB_SIZE(4, 4), uint32_t) = value;
+  const upb_MiniTableField field = {1, 4, 1, kUpb_NoSub, 13, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_UInt32Rules_set_lt(validate_UInt32Rules *msg, uint32_t value) {
-  _upb_sethas(msg, 2);
-  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), uint32_t) = value;
+  const upb_MiniTableField field = {2, 8, 2, kUpb_NoSub, 13, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_UInt32Rules_set_lte(validate_UInt32Rules *msg, uint32_t value) {
-  _upb_sethas(msg, 3);
-  *UPB_PTR_AT(msg, UPB_SIZE(12, 12), uint32_t) = value;
+  const upb_MiniTableField field = {3, 12, 3, kUpb_NoSub, 13, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_UInt32Rules_set_gt(validate_UInt32Rules *msg, uint32_t value) {
-  _upb_sethas(msg, 4);
-  *UPB_PTR_AT(msg, UPB_SIZE(16, 16), uint32_t) = value;
+  const upb_MiniTableField field = {4, 16, 4, kUpb_NoSub, 13, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_UInt32Rules_set_gte(validate_UInt32Rules *msg, uint32_t value) {
-  _upb_sethas(msg, 5);
-  *UPB_PTR_AT(msg, UPB_SIZE(20, 20), uint32_t) = value;
+  const upb_MiniTableField field = {5, 20, 5, kUpb_NoSub, 13, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
-UPB_INLINE uint32_t* validate_UInt32Rules_mutable_in(validate_UInt32Rules* msg, size_t* len) {
-  return (uint32_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(28, 32), len);
+UPB_INLINE uint32_t* validate_UInt32Rules_mutable_in(validate_UInt32Rules* msg, size_t* size) {
+  upb_MiniTableField field = {6, UPB_SIZE(24, 32), 0, kUpb_NoSub, 13, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetMutableArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (uint32_t*)_upb_array_ptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
 }
-UPB_INLINE uint32_t* validate_UInt32Rules_resize_in(validate_UInt32Rules* msg, size_t len, upb_Arena* arena) {
-  return (uint32_t*)_upb_Array_Resize_accessor2(msg, UPB_SIZE(28, 32), len, 2, arena);
+UPB_INLINE uint32_t* validate_UInt32Rules_resize_in(validate_UInt32Rules* msg, size_t size, upb_Arena* arena) {
+  upb_MiniTableField field = {6, UPB_SIZE(24, 32), 0, kUpb_NoSub, 13, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return (uint32_t*)upb_Message_ResizeArray(msg, &field, size, arena);
 }
 UPB_INLINE bool validate_UInt32Rules_add_in(validate_UInt32Rules* msg, uint32_t val, upb_Arena* arena) {
-  return _upb_Array_Append_accessor2(msg, UPB_SIZE(28, 32), 2, &val, arena);
+  upb_MiniTableField field = {6, UPB_SIZE(24, 32), 0, kUpb_NoSub, 13, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(msg, &field, arena);
+  if (!arr || !_upb_Array_ResizeUninitialized(arr, arr->size + 1, arena)) {
+    return false;
+  }
+  _upb_Array_Set(arr, arr->size - 1, &val, sizeof(val));
+  return true;
 }
-UPB_INLINE uint32_t* validate_UInt32Rules_mutable_not_in(validate_UInt32Rules* msg, size_t* len) {
-  return (uint32_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(32, 40), len);
+UPB_INLINE uint32_t* validate_UInt32Rules_mutable_not_in(validate_UInt32Rules* msg, size_t* size) {
+  upb_MiniTableField field = {7, UPB_SIZE(28, 40), 0, kUpb_NoSub, 13, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetMutableArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (uint32_t*)_upb_array_ptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
 }
-UPB_INLINE uint32_t* validate_UInt32Rules_resize_not_in(validate_UInt32Rules* msg, size_t len, upb_Arena* arena) {
-  return (uint32_t*)_upb_Array_Resize_accessor2(msg, UPB_SIZE(32, 40), len, 2, arena);
+UPB_INLINE uint32_t* validate_UInt32Rules_resize_not_in(validate_UInt32Rules* msg, size_t size, upb_Arena* arena) {
+  upb_MiniTableField field = {7, UPB_SIZE(28, 40), 0, kUpb_NoSub, 13, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return (uint32_t*)upb_Message_ResizeArray(msg, &field, size, arena);
 }
 UPB_INLINE bool validate_UInt32Rules_add_not_in(validate_UInt32Rules* msg, uint32_t val, upb_Arena* arena) {
-  return _upb_Array_Append_accessor2(msg, UPB_SIZE(32, 40), 2, &val, arena);
+  upb_MiniTableField field = {7, UPB_SIZE(28, 40), 0, kUpb_NoSub, 13, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(msg, &field, arena);
+  if (!arr || !_upb_Array_ResizeUninitialized(arr, arr->size + 1, arena)) {
+    return false;
+  }
+  _upb_Array_Set(arr, arr->size - 1, &val, sizeof(val));
+  return true;
 }
 UPB_INLINE void validate_UInt32Rules_set_ignore_empty(validate_UInt32Rules *msg, bool value) {
-  _upb_sethas(msg, 6);
-  *UPB_PTR_AT(msg, UPB_SIZE(24, 24), bool) = value;
+  const upb_MiniTableField field = {8, UPB_SIZE(32, 24), 6, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 
 /* validate.UInt64Rules */
 
 UPB_INLINE validate_UInt64Rules* validate_UInt64Rules_new(upb_Arena* arena) {
-  return (validate_UInt64Rules*)_upb_Message_New(&validate_UInt64Rules_msginit, arena);
+  return (validate_UInt64Rules*)_upb_Message_New(&validate_UInt64Rules_msg_init, arena);
 }
 UPB_INLINE validate_UInt64Rules* validate_UInt64Rules_parse(const char* buf, size_t size, upb_Arena* arena) {
   validate_UInt64Rules* ret = validate_UInt64Rules_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &validate_UInt64Rules_msginit, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
+  if (upb_Decode(buf, size, ret, &validate_UInt64Rules_msg_init, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
@@ -1413,7 +2137,7 @@ UPB_INLINE validate_UInt64Rules* validate_UInt64Rules_parse_ex(const char* buf, 
                            int options, upb_Arena* arena) {
   validate_UInt64Rules* ret = validate_UInt64Rules_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &validate_UInt64Rules_msginit, extreg, options, arena) !=
+  if (upb_Decode(buf, size, ret, &validate_UInt64Rules_msg_init, extreg, options, arena) !=
       kUpb_DecodeStatus_Ok) {
     return NULL;
   }
@@ -1421,140 +2145,262 @@ UPB_INLINE validate_UInt64Rules* validate_UInt64Rules_parse_ex(const char* buf, 
 }
 UPB_INLINE char* validate_UInt64Rules_serialize(const validate_UInt64Rules* msg, upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &validate_UInt64Rules_msginit, 0, arena, &ptr, len);
+  (void)upb_Encode(msg, &validate_UInt64Rules_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
 UPB_INLINE char* validate_UInt64Rules_serialize_ex(const validate_UInt64Rules* msg, int options,
                                  upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &validate_UInt64Rules_msginit, options, arena, &ptr, len);
+  (void)upb_Encode(msg, &validate_UInt64Rules_msg_init, options, arena, &ptr, len);
   return ptr;
 }
-UPB_INLINE bool validate_UInt64Rules_has_const(const validate_UInt64Rules* msg) {
-  return _upb_hasbit(msg, 1);
-}
-UPB_INLINE void validate_UInt64Rules_clear_const(const validate_UInt64Rules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(16, 24), uint64_t) = 0;
-  _upb_clearhas(msg, 1);
+UPB_INLINE void validate_UInt64Rules_clear_const(validate_UInt64Rules* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(16, 8), 1, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE uint64_t validate_UInt64Rules_const(const validate_UInt64Rules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(16, 24), uint64_t);
+  uint64_t default_val = (uint64_t)0ull;
+  uint64_t ret;
+  const upb_MiniTableField field = {1, UPB_SIZE(16, 8), 1, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_UInt64Rules_has_lt(const validate_UInt64Rules* msg) {
-  return _upb_hasbit(msg, 2);
+UPB_INLINE bool validate_UInt64Rules_has_const(const validate_UInt64Rules* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(16, 8), 1, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_UInt64Rules_clear_lt(const validate_UInt64Rules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(24, 32), uint64_t) = 0;
-  _upb_clearhas(msg, 2);
+UPB_INLINE void validate_UInt64Rules_clear_lt(validate_UInt64Rules* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(24, 16), 2, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE uint64_t validate_UInt64Rules_lt(const validate_UInt64Rules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(24, 32), uint64_t);
+  uint64_t default_val = (uint64_t)0ull;
+  uint64_t ret;
+  const upb_MiniTableField field = {2, UPB_SIZE(24, 16), 2, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_UInt64Rules_has_lte(const validate_UInt64Rules* msg) {
-  return _upb_hasbit(msg, 3);
+UPB_INLINE bool validate_UInt64Rules_has_lt(const validate_UInt64Rules* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(24, 16), 2, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_UInt64Rules_clear_lte(const validate_UInt64Rules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(32, 40), uint64_t) = 0;
-  _upb_clearhas(msg, 3);
+UPB_INLINE void validate_UInt64Rules_clear_lte(validate_UInt64Rules* msg) {
+  const upb_MiniTableField field = {3, UPB_SIZE(32, 24), 3, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE uint64_t validate_UInt64Rules_lte(const validate_UInt64Rules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(32, 40), uint64_t);
+  uint64_t default_val = (uint64_t)0ull;
+  uint64_t ret;
+  const upb_MiniTableField field = {3, UPB_SIZE(32, 24), 3, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_UInt64Rules_has_gt(const validate_UInt64Rules* msg) {
-  return _upb_hasbit(msg, 4);
+UPB_INLINE bool validate_UInt64Rules_has_lte(const validate_UInt64Rules* msg) {
+  const upb_MiniTableField field = {3, UPB_SIZE(32, 24), 3, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_UInt64Rules_clear_gt(const validate_UInt64Rules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(40, 48), uint64_t) = 0;
-  _upb_clearhas(msg, 4);
+UPB_INLINE void validate_UInt64Rules_clear_gt(validate_UInt64Rules* msg) {
+  const upb_MiniTableField field = {4, UPB_SIZE(40, 32), 4, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE uint64_t validate_UInt64Rules_gt(const validate_UInt64Rules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(40, 48), uint64_t);
+  uint64_t default_val = (uint64_t)0ull;
+  uint64_t ret;
+  const upb_MiniTableField field = {4, UPB_SIZE(40, 32), 4, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_UInt64Rules_has_gte(const validate_UInt64Rules* msg) {
-  return _upb_hasbit(msg, 5);
+UPB_INLINE bool validate_UInt64Rules_has_gt(const validate_UInt64Rules* msg) {
+  const upb_MiniTableField field = {4, UPB_SIZE(40, 32), 4, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_UInt64Rules_clear_gte(const validate_UInt64Rules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(48, 56), uint64_t) = 0;
-  _upb_clearhas(msg, 5);
+UPB_INLINE void validate_UInt64Rules_clear_gte(validate_UInt64Rules* msg) {
+  const upb_MiniTableField field = {5, UPB_SIZE(48, 40), 5, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE uint64_t validate_UInt64Rules_gte(const validate_UInt64Rules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(48, 56), uint64_t);
+  uint64_t default_val = (uint64_t)0ull;
+  uint64_t ret;
+  const upb_MiniTableField field = {5, UPB_SIZE(48, 40), 5, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE void validate_UInt64Rules_clear_in(const validate_UInt64Rules* msg) {
-  _upb_array_detach(msg, UPB_SIZE(4, 8));
+UPB_INLINE bool validate_UInt64Rules_has_gte(const validate_UInt64Rules* msg) {
+  const upb_MiniTableField field = {5, UPB_SIZE(48, 40), 5, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE uint64_t const* validate_UInt64Rules_in(const validate_UInt64Rules* msg, size_t* len) {
-  return (uint64_t const*)_upb_array_accessor(msg, UPB_SIZE(4, 8), len);
+UPB_INLINE void validate_UInt64Rules_clear_in(validate_UInt64Rules* msg) {
+  const upb_MiniTableField field = {6, UPB_SIZE(4, 48), 0, kUpb_NoSub, 4, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_UInt64Rules_clear_not_in(const validate_UInt64Rules* msg) {
-  _upb_array_detach(msg, UPB_SIZE(8, 16));
+UPB_INLINE uint64_t const* validate_UInt64Rules_in(const validate_UInt64Rules* msg, size_t* size) {
+  const upb_MiniTableField field = {6, UPB_SIZE(4, 48), 0, kUpb_NoSub, 4, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (uint64_t const*)_upb_array_constptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
 }
-UPB_INLINE uint64_t const* validate_UInt64Rules_not_in(const validate_UInt64Rules* msg, size_t* len) {
-  return (uint64_t const*)_upb_array_accessor(msg, UPB_SIZE(8, 16), len);
+UPB_INLINE const upb_Array* _validate_UInt64Rules_in_upb_array(const validate_UInt64Rules* msg, size_t* size) {
+  const upb_MiniTableField field = {6, UPB_SIZE(4, 48), 0, kUpb_NoSub, 4, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
 }
-UPB_INLINE bool validate_UInt64Rules_has_ignore_empty(const validate_UInt64Rules* msg) {
-  return _upb_hasbit(msg, 6);
+UPB_INLINE upb_Array* _validate_UInt64Rules_in_mutable_upb_array(const validate_UInt64Rules* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {6, UPB_SIZE(4, 48), 0, kUpb_NoSub, 4, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
 }
-UPB_INLINE void validate_UInt64Rules_clear_ignore_empty(const validate_UInt64Rules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool) = 0;
-  _upb_clearhas(msg, 6);
+UPB_INLINE bool validate_UInt64Rules_has_in(const validate_UInt64Rules* msg) {
+  size_t size;
+  validate_UInt64Rules_in(msg, &size);
+  return size != 0;
+}
+UPB_INLINE void validate_UInt64Rules_clear_not_in(validate_UInt64Rules* msg) {
+  const upb_MiniTableField field = {7, UPB_SIZE(8, 56), 0, kUpb_NoSub, 4, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
+}
+UPB_INLINE uint64_t const* validate_UInt64Rules_not_in(const validate_UInt64Rules* msg, size_t* size) {
+  const upb_MiniTableField field = {7, UPB_SIZE(8, 56), 0, kUpb_NoSub, 4, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (uint64_t const*)_upb_array_constptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
+}
+UPB_INLINE const upb_Array* _validate_UInt64Rules_not_in_upb_array(const validate_UInt64Rules* msg, size_t* size) {
+  const upb_MiniTableField field = {7, UPB_SIZE(8, 56), 0, kUpb_NoSub, 4, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _validate_UInt64Rules_not_in_mutable_upb_array(const validate_UInt64Rules* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {7, UPB_SIZE(8, 56), 0, kUpb_NoSub, 4, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE bool validate_UInt64Rules_has_not_in(const validate_UInt64Rules* msg) {
+  size_t size;
+  validate_UInt64Rules_not_in(msg, &size);
+  return size != 0;
+}
+UPB_INLINE void validate_UInt64Rules_clear_ignore_empty(validate_UInt64Rules* msg) {
+  const upb_MiniTableField field = {8, UPB_SIZE(12, 1), 6, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE bool validate_UInt64Rules_ignore_empty(const validate_UInt64Rules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool);
+  bool default_val = false;
+  bool ret;
+  const upb_MiniTableField field = {8, UPB_SIZE(12, 1), 6, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
+}
+UPB_INLINE bool validate_UInt64Rules_has_ignore_empty(const validate_UInt64Rules* msg) {
+  const upb_MiniTableField field = {8, UPB_SIZE(12, 1), 6, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
 
 UPB_INLINE void validate_UInt64Rules_set_const(validate_UInt64Rules *msg, uint64_t value) {
-  _upb_sethas(msg, 1);
-  *UPB_PTR_AT(msg, UPB_SIZE(16, 24), uint64_t) = value;
+  const upb_MiniTableField field = {1, UPB_SIZE(16, 8), 1, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_UInt64Rules_set_lt(validate_UInt64Rules *msg, uint64_t value) {
-  _upb_sethas(msg, 2);
-  *UPB_PTR_AT(msg, UPB_SIZE(24, 32), uint64_t) = value;
+  const upb_MiniTableField field = {2, UPB_SIZE(24, 16), 2, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_UInt64Rules_set_lte(validate_UInt64Rules *msg, uint64_t value) {
-  _upb_sethas(msg, 3);
-  *UPB_PTR_AT(msg, UPB_SIZE(32, 40), uint64_t) = value;
+  const upb_MiniTableField field = {3, UPB_SIZE(32, 24), 3, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_UInt64Rules_set_gt(validate_UInt64Rules *msg, uint64_t value) {
-  _upb_sethas(msg, 4);
-  *UPB_PTR_AT(msg, UPB_SIZE(40, 48), uint64_t) = value;
+  const upb_MiniTableField field = {4, UPB_SIZE(40, 32), 4, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_UInt64Rules_set_gte(validate_UInt64Rules *msg, uint64_t value) {
-  _upb_sethas(msg, 5);
-  *UPB_PTR_AT(msg, UPB_SIZE(48, 56), uint64_t) = value;
+  const upb_MiniTableField field = {5, UPB_SIZE(48, 40), 5, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
-UPB_INLINE uint64_t* validate_UInt64Rules_mutable_in(validate_UInt64Rules* msg, size_t* len) {
-  return (uint64_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(4, 8), len);
+UPB_INLINE uint64_t* validate_UInt64Rules_mutable_in(validate_UInt64Rules* msg, size_t* size) {
+  upb_MiniTableField field = {6, UPB_SIZE(4, 48), 0, kUpb_NoSub, 4, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetMutableArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (uint64_t*)_upb_array_ptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
 }
-UPB_INLINE uint64_t* validate_UInt64Rules_resize_in(validate_UInt64Rules* msg, size_t len, upb_Arena* arena) {
-  return (uint64_t*)_upb_Array_Resize_accessor2(msg, UPB_SIZE(4, 8), len, 3, arena);
+UPB_INLINE uint64_t* validate_UInt64Rules_resize_in(validate_UInt64Rules* msg, size_t size, upb_Arena* arena) {
+  upb_MiniTableField field = {6, UPB_SIZE(4, 48), 0, kUpb_NoSub, 4, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return (uint64_t*)upb_Message_ResizeArray(msg, &field, size, arena);
 }
 UPB_INLINE bool validate_UInt64Rules_add_in(validate_UInt64Rules* msg, uint64_t val, upb_Arena* arena) {
-  return _upb_Array_Append_accessor2(msg, UPB_SIZE(4, 8), 3, &val, arena);
+  upb_MiniTableField field = {6, UPB_SIZE(4, 48), 0, kUpb_NoSub, 4, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(msg, &field, arena);
+  if (!arr || !_upb_Array_ResizeUninitialized(arr, arr->size + 1, arena)) {
+    return false;
+  }
+  _upb_Array_Set(arr, arr->size - 1, &val, sizeof(val));
+  return true;
 }
-UPB_INLINE uint64_t* validate_UInt64Rules_mutable_not_in(validate_UInt64Rules* msg, size_t* len) {
-  return (uint64_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(8, 16), len);
+UPB_INLINE uint64_t* validate_UInt64Rules_mutable_not_in(validate_UInt64Rules* msg, size_t* size) {
+  upb_MiniTableField field = {7, UPB_SIZE(8, 56), 0, kUpb_NoSub, 4, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetMutableArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (uint64_t*)_upb_array_ptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
 }
-UPB_INLINE uint64_t* validate_UInt64Rules_resize_not_in(validate_UInt64Rules* msg, size_t len, upb_Arena* arena) {
-  return (uint64_t*)_upb_Array_Resize_accessor2(msg, UPB_SIZE(8, 16), len, 3, arena);
+UPB_INLINE uint64_t* validate_UInt64Rules_resize_not_in(validate_UInt64Rules* msg, size_t size, upb_Arena* arena) {
+  upb_MiniTableField field = {7, UPB_SIZE(8, 56), 0, kUpb_NoSub, 4, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return (uint64_t*)upb_Message_ResizeArray(msg, &field, size, arena);
 }
 UPB_INLINE bool validate_UInt64Rules_add_not_in(validate_UInt64Rules* msg, uint64_t val, upb_Arena* arena) {
-  return _upb_Array_Append_accessor2(msg, UPB_SIZE(8, 16), 3, &val, arena);
+  upb_MiniTableField field = {7, UPB_SIZE(8, 56), 0, kUpb_NoSub, 4, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(msg, &field, arena);
+  if (!arr || !_upb_Array_ResizeUninitialized(arr, arr->size + 1, arena)) {
+    return false;
+  }
+  _upb_Array_Set(arr, arr->size - 1, &val, sizeof(val));
+  return true;
 }
 UPB_INLINE void validate_UInt64Rules_set_ignore_empty(validate_UInt64Rules *msg, bool value) {
-  _upb_sethas(msg, 6);
-  *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool) = value;
+  const upb_MiniTableField field = {8, UPB_SIZE(12, 1), 6, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 
 /* validate.SInt32Rules */
 
 UPB_INLINE validate_SInt32Rules* validate_SInt32Rules_new(upb_Arena* arena) {
-  return (validate_SInt32Rules*)_upb_Message_New(&validate_SInt32Rules_msginit, arena);
+  return (validate_SInt32Rules*)_upb_Message_New(&validate_SInt32Rules_msg_init, arena);
 }
 UPB_INLINE validate_SInt32Rules* validate_SInt32Rules_parse(const char* buf, size_t size, upb_Arena* arena) {
   validate_SInt32Rules* ret = validate_SInt32Rules_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &validate_SInt32Rules_msginit, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
+  if (upb_Decode(buf, size, ret, &validate_SInt32Rules_msg_init, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
@@ -1564,7 +2410,7 @@ UPB_INLINE validate_SInt32Rules* validate_SInt32Rules_parse_ex(const char* buf, 
                            int options, upb_Arena* arena) {
   validate_SInt32Rules* ret = validate_SInt32Rules_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &validate_SInt32Rules_msginit, extreg, options, arena) !=
+  if (upb_Decode(buf, size, ret, &validate_SInt32Rules_msg_init, extreg, options, arena) !=
       kUpb_DecodeStatus_Ok) {
     return NULL;
   }
@@ -1572,140 +2418,262 @@ UPB_INLINE validate_SInt32Rules* validate_SInt32Rules_parse_ex(const char* buf, 
 }
 UPB_INLINE char* validate_SInt32Rules_serialize(const validate_SInt32Rules* msg, upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &validate_SInt32Rules_msginit, 0, arena, &ptr, len);
+  (void)upb_Encode(msg, &validate_SInt32Rules_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
 UPB_INLINE char* validate_SInt32Rules_serialize_ex(const validate_SInt32Rules* msg, int options,
                                  upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &validate_SInt32Rules_msginit, options, arena, &ptr, len);
+  (void)upb_Encode(msg, &validate_SInt32Rules_msg_init, options, arena, &ptr, len);
   return ptr;
 }
-UPB_INLINE bool validate_SInt32Rules_has_const(const validate_SInt32Rules* msg) {
-  return _upb_hasbit(msg, 1);
-}
-UPB_INLINE void validate_SInt32Rules_clear_const(const validate_SInt32Rules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t) = 0;
-  _upb_clearhas(msg, 1);
+UPB_INLINE void validate_SInt32Rules_clear_const(validate_SInt32Rules* msg) {
+  const upb_MiniTableField field = {1, 4, 1, kUpb_NoSub, 17, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE int32_t validate_SInt32Rules_const(const validate_SInt32Rules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t);
+  int32_t default_val = (int32_t)0;
+  int32_t ret;
+  const upb_MiniTableField field = {1, 4, 1, kUpb_NoSub, 17, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_SInt32Rules_has_lt(const validate_SInt32Rules* msg) {
-  return _upb_hasbit(msg, 2);
+UPB_INLINE bool validate_SInt32Rules_has_const(const validate_SInt32Rules* msg) {
+  const upb_MiniTableField field = {1, 4, 1, kUpb_NoSub, 17, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_SInt32Rules_clear_lt(const validate_SInt32Rules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), int32_t) = 0;
-  _upb_clearhas(msg, 2);
+UPB_INLINE void validate_SInt32Rules_clear_lt(validate_SInt32Rules* msg) {
+  const upb_MiniTableField field = {2, 8, 2, kUpb_NoSub, 17, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE int32_t validate_SInt32Rules_lt(const validate_SInt32Rules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(8, 8), int32_t);
+  int32_t default_val = (int32_t)0;
+  int32_t ret;
+  const upb_MiniTableField field = {2, 8, 2, kUpb_NoSub, 17, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_SInt32Rules_has_lte(const validate_SInt32Rules* msg) {
-  return _upb_hasbit(msg, 3);
+UPB_INLINE bool validate_SInt32Rules_has_lt(const validate_SInt32Rules* msg) {
+  const upb_MiniTableField field = {2, 8, 2, kUpb_NoSub, 17, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_SInt32Rules_clear_lte(const validate_SInt32Rules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(12, 12), int32_t) = 0;
-  _upb_clearhas(msg, 3);
+UPB_INLINE void validate_SInt32Rules_clear_lte(validate_SInt32Rules* msg) {
+  const upb_MiniTableField field = {3, 12, 3, kUpb_NoSub, 17, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE int32_t validate_SInt32Rules_lte(const validate_SInt32Rules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(12, 12), int32_t);
+  int32_t default_val = (int32_t)0;
+  int32_t ret;
+  const upb_MiniTableField field = {3, 12, 3, kUpb_NoSub, 17, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_SInt32Rules_has_gt(const validate_SInt32Rules* msg) {
-  return _upb_hasbit(msg, 4);
+UPB_INLINE bool validate_SInt32Rules_has_lte(const validate_SInt32Rules* msg) {
+  const upb_MiniTableField field = {3, 12, 3, kUpb_NoSub, 17, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_SInt32Rules_clear_gt(const validate_SInt32Rules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(16, 16), int32_t) = 0;
-  _upb_clearhas(msg, 4);
+UPB_INLINE void validate_SInt32Rules_clear_gt(validate_SInt32Rules* msg) {
+  const upb_MiniTableField field = {4, 16, 4, kUpb_NoSub, 17, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE int32_t validate_SInt32Rules_gt(const validate_SInt32Rules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(16, 16), int32_t);
+  int32_t default_val = (int32_t)0;
+  int32_t ret;
+  const upb_MiniTableField field = {4, 16, 4, kUpb_NoSub, 17, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_SInt32Rules_has_gte(const validate_SInt32Rules* msg) {
-  return _upb_hasbit(msg, 5);
+UPB_INLINE bool validate_SInt32Rules_has_gt(const validate_SInt32Rules* msg) {
+  const upb_MiniTableField field = {4, 16, 4, kUpb_NoSub, 17, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_SInt32Rules_clear_gte(const validate_SInt32Rules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(20, 20), int32_t) = 0;
-  _upb_clearhas(msg, 5);
+UPB_INLINE void validate_SInt32Rules_clear_gte(validate_SInt32Rules* msg) {
+  const upb_MiniTableField field = {5, 20, 5, kUpb_NoSub, 17, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE int32_t validate_SInt32Rules_gte(const validate_SInt32Rules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(20, 20), int32_t);
+  int32_t default_val = (int32_t)0;
+  int32_t ret;
+  const upb_MiniTableField field = {5, 20, 5, kUpb_NoSub, 17, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE void validate_SInt32Rules_clear_in(const validate_SInt32Rules* msg) {
-  _upb_array_detach(msg, UPB_SIZE(28, 32));
+UPB_INLINE bool validate_SInt32Rules_has_gte(const validate_SInt32Rules* msg) {
+  const upb_MiniTableField field = {5, 20, 5, kUpb_NoSub, 17, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE int32_t const* validate_SInt32Rules_in(const validate_SInt32Rules* msg, size_t* len) {
-  return (int32_t const*)_upb_array_accessor(msg, UPB_SIZE(28, 32), len);
+UPB_INLINE void validate_SInt32Rules_clear_in(validate_SInt32Rules* msg) {
+  const upb_MiniTableField field = {6, UPB_SIZE(24, 32), 0, kUpb_NoSub, 17, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_SInt32Rules_clear_not_in(const validate_SInt32Rules* msg) {
-  _upb_array_detach(msg, UPB_SIZE(32, 40));
+UPB_INLINE int32_t const* validate_SInt32Rules_in(const validate_SInt32Rules* msg, size_t* size) {
+  const upb_MiniTableField field = {6, UPB_SIZE(24, 32), 0, kUpb_NoSub, 17, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (int32_t const*)_upb_array_constptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
 }
-UPB_INLINE int32_t const* validate_SInt32Rules_not_in(const validate_SInt32Rules* msg, size_t* len) {
-  return (int32_t const*)_upb_array_accessor(msg, UPB_SIZE(32, 40), len);
+UPB_INLINE const upb_Array* _validate_SInt32Rules_in_upb_array(const validate_SInt32Rules* msg, size_t* size) {
+  const upb_MiniTableField field = {6, UPB_SIZE(24, 32), 0, kUpb_NoSub, 17, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
 }
-UPB_INLINE bool validate_SInt32Rules_has_ignore_empty(const validate_SInt32Rules* msg) {
-  return _upb_hasbit(msg, 6);
+UPB_INLINE upb_Array* _validate_SInt32Rules_in_mutable_upb_array(const validate_SInt32Rules* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {6, UPB_SIZE(24, 32), 0, kUpb_NoSub, 17, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
 }
-UPB_INLINE void validate_SInt32Rules_clear_ignore_empty(const validate_SInt32Rules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(24, 24), bool) = 0;
-  _upb_clearhas(msg, 6);
+UPB_INLINE bool validate_SInt32Rules_has_in(const validate_SInt32Rules* msg) {
+  size_t size;
+  validate_SInt32Rules_in(msg, &size);
+  return size != 0;
+}
+UPB_INLINE void validate_SInt32Rules_clear_not_in(validate_SInt32Rules* msg) {
+  const upb_MiniTableField field = {7, UPB_SIZE(28, 40), 0, kUpb_NoSub, 17, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
+}
+UPB_INLINE int32_t const* validate_SInt32Rules_not_in(const validate_SInt32Rules* msg, size_t* size) {
+  const upb_MiniTableField field = {7, UPB_SIZE(28, 40), 0, kUpb_NoSub, 17, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (int32_t const*)_upb_array_constptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
+}
+UPB_INLINE const upb_Array* _validate_SInt32Rules_not_in_upb_array(const validate_SInt32Rules* msg, size_t* size) {
+  const upb_MiniTableField field = {7, UPB_SIZE(28, 40), 0, kUpb_NoSub, 17, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _validate_SInt32Rules_not_in_mutable_upb_array(const validate_SInt32Rules* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {7, UPB_SIZE(28, 40), 0, kUpb_NoSub, 17, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE bool validate_SInt32Rules_has_not_in(const validate_SInt32Rules* msg) {
+  size_t size;
+  validate_SInt32Rules_not_in(msg, &size);
+  return size != 0;
+}
+UPB_INLINE void validate_SInt32Rules_clear_ignore_empty(validate_SInt32Rules* msg) {
+  const upb_MiniTableField field = {8, UPB_SIZE(32, 24), 6, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE bool validate_SInt32Rules_ignore_empty(const validate_SInt32Rules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(24, 24), bool);
+  bool default_val = false;
+  bool ret;
+  const upb_MiniTableField field = {8, UPB_SIZE(32, 24), 6, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
+}
+UPB_INLINE bool validate_SInt32Rules_has_ignore_empty(const validate_SInt32Rules* msg) {
+  const upb_MiniTableField field = {8, UPB_SIZE(32, 24), 6, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
 
 UPB_INLINE void validate_SInt32Rules_set_const(validate_SInt32Rules *msg, int32_t value) {
-  _upb_sethas(msg, 1);
-  *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t) = value;
+  const upb_MiniTableField field = {1, 4, 1, kUpb_NoSub, 17, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_SInt32Rules_set_lt(validate_SInt32Rules *msg, int32_t value) {
-  _upb_sethas(msg, 2);
-  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), int32_t) = value;
+  const upb_MiniTableField field = {2, 8, 2, kUpb_NoSub, 17, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_SInt32Rules_set_lte(validate_SInt32Rules *msg, int32_t value) {
-  _upb_sethas(msg, 3);
-  *UPB_PTR_AT(msg, UPB_SIZE(12, 12), int32_t) = value;
+  const upb_MiniTableField field = {3, 12, 3, kUpb_NoSub, 17, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_SInt32Rules_set_gt(validate_SInt32Rules *msg, int32_t value) {
-  _upb_sethas(msg, 4);
-  *UPB_PTR_AT(msg, UPB_SIZE(16, 16), int32_t) = value;
+  const upb_MiniTableField field = {4, 16, 4, kUpb_NoSub, 17, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_SInt32Rules_set_gte(validate_SInt32Rules *msg, int32_t value) {
-  _upb_sethas(msg, 5);
-  *UPB_PTR_AT(msg, UPB_SIZE(20, 20), int32_t) = value;
+  const upb_MiniTableField field = {5, 20, 5, kUpb_NoSub, 17, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
-UPB_INLINE int32_t* validate_SInt32Rules_mutable_in(validate_SInt32Rules* msg, size_t* len) {
-  return (int32_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(28, 32), len);
+UPB_INLINE int32_t* validate_SInt32Rules_mutable_in(validate_SInt32Rules* msg, size_t* size) {
+  upb_MiniTableField field = {6, UPB_SIZE(24, 32), 0, kUpb_NoSub, 17, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetMutableArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (int32_t*)_upb_array_ptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
 }
-UPB_INLINE int32_t* validate_SInt32Rules_resize_in(validate_SInt32Rules* msg, size_t len, upb_Arena* arena) {
-  return (int32_t*)_upb_Array_Resize_accessor2(msg, UPB_SIZE(28, 32), len, 2, arena);
+UPB_INLINE int32_t* validate_SInt32Rules_resize_in(validate_SInt32Rules* msg, size_t size, upb_Arena* arena) {
+  upb_MiniTableField field = {6, UPB_SIZE(24, 32), 0, kUpb_NoSub, 17, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return (int32_t*)upb_Message_ResizeArray(msg, &field, size, arena);
 }
 UPB_INLINE bool validate_SInt32Rules_add_in(validate_SInt32Rules* msg, int32_t val, upb_Arena* arena) {
-  return _upb_Array_Append_accessor2(msg, UPB_SIZE(28, 32), 2, &val, arena);
+  upb_MiniTableField field = {6, UPB_SIZE(24, 32), 0, kUpb_NoSub, 17, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(msg, &field, arena);
+  if (!arr || !_upb_Array_ResizeUninitialized(arr, arr->size + 1, arena)) {
+    return false;
+  }
+  _upb_Array_Set(arr, arr->size - 1, &val, sizeof(val));
+  return true;
 }
-UPB_INLINE int32_t* validate_SInt32Rules_mutable_not_in(validate_SInt32Rules* msg, size_t* len) {
-  return (int32_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(32, 40), len);
+UPB_INLINE int32_t* validate_SInt32Rules_mutable_not_in(validate_SInt32Rules* msg, size_t* size) {
+  upb_MiniTableField field = {7, UPB_SIZE(28, 40), 0, kUpb_NoSub, 17, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetMutableArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (int32_t*)_upb_array_ptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
 }
-UPB_INLINE int32_t* validate_SInt32Rules_resize_not_in(validate_SInt32Rules* msg, size_t len, upb_Arena* arena) {
-  return (int32_t*)_upb_Array_Resize_accessor2(msg, UPB_SIZE(32, 40), len, 2, arena);
+UPB_INLINE int32_t* validate_SInt32Rules_resize_not_in(validate_SInt32Rules* msg, size_t size, upb_Arena* arena) {
+  upb_MiniTableField field = {7, UPB_SIZE(28, 40), 0, kUpb_NoSub, 17, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return (int32_t*)upb_Message_ResizeArray(msg, &field, size, arena);
 }
 UPB_INLINE bool validate_SInt32Rules_add_not_in(validate_SInt32Rules* msg, int32_t val, upb_Arena* arena) {
-  return _upb_Array_Append_accessor2(msg, UPB_SIZE(32, 40), 2, &val, arena);
+  upb_MiniTableField field = {7, UPB_SIZE(28, 40), 0, kUpb_NoSub, 17, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(msg, &field, arena);
+  if (!arr || !_upb_Array_ResizeUninitialized(arr, arr->size + 1, arena)) {
+    return false;
+  }
+  _upb_Array_Set(arr, arr->size - 1, &val, sizeof(val));
+  return true;
 }
 UPB_INLINE void validate_SInt32Rules_set_ignore_empty(validate_SInt32Rules *msg, bool value) {
-  _upb_sethas(msg, 6);
-  *UPB_PTR_AT(msg, UPB_SIZE(24, 24), bool) = value;
+  const upb_MiniTableField field = {8, UPB_SIZE(32, 24), 6, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 
 /* validate.SInt64Rules */
 
 UPB_INLINE validate_SInt64Rules* validate_SInt64Rules_new(upb_Arena* arena) {
-  return (validate_SInt64Rules*)_upb_Message_New(&validate_SInt64Rules_msginit, arena);
+  return (validate_SInt64Rules*)_upb_Message_New(&validate_SInt64Rules_msg_init, arena);
 }
 UPB_INLINE validate_SInt64Rules* validate_SInt64Rules_parse(const char* buf, size_t size, upb_Arena* arena) {
   validate_SInt64Rules* ret = validate_SInt64Rules_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &validate_SInt64Rules_msginit, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
+  if (upb_Decode(buf, size, ret, &validate_SInt64Rules_msg_init, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
@@ -1715,7 +2683,7 @@ UPB_INLINE validate_SInt64Rules* validate_SInt64Rules_parse_ex(const char* buf, 
                            int options, upb_Arena* arena) {
   validate_SInt64Rules* ret = validate_SInt64Rules_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &validate_SInt64Rules_msginit, extreg, options, arena) !=
+  if (upb_Decode(buf, size, ret, &validate_SInt64Rules_msg_init, extreg, options, arena) !=
       kUpb_DecodeStatus_Ok) {
     return NULL;
   }
@@ -1723,140 +2691,262 @@ UPB_INLINE validate_SInt64Rules* validate_SInt64Rules_parse_ex(const char* buf, 
 }
 UPB_INLINE char* validate_SInt64Rules_serialize(const validate_SInt64Rules* msg, upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &validate_SInt64Rules_msginit, 0, arena, &ptr, len);
+  (void)upb_Encode(msg, &validate_SInt64Rules_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
 UPB_INLINE char* validate_SInt64Rules_serialize_ex(const validate_SInt64Rules* msg, int options,
                                  upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &validate_SInt64Rules_msginit, options, arena, &ptr, len);
+  (void)upb_Encode(msg, &validate_SInt64Rules_msg_init, options, arena, &ptr, len);
   return ptr;
 }
-UPB_INLINE bool validate_SInt64Rules_has_const(const validate_SInt64Rules* msg) {
-  return _upb_hasbit(msg, 1);
-}
-UPB_INLINE void validate_SInt64Rules_clear_const(const validate_SInt64Rules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(16, 24), int64_t) = 0;
-  _upb_clearhas(msg, 1);
+UPB_INLINE void validate_SInt64Rules_clear_const(validate_SInt64Rules* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(16, 8), 1, kUpb_NoSub, 18, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE int64_t validate_SInt64Rules_const(const validate_SInt64Rules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(16, 24), int64_t);
+  int64_t default_val = (int64_t)0ll;
+  int64_t ret;
+  const upb_MiniTableField field = {1, UPB_SIZE(16, 8), 1, kUpb_NoSub, 18, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_SInt64Rules_has_lt(const validate_SInt64Rules* msg) {
-  return _upb_hasbit(msg, 2);
+UPB_INLINE bool validate_SInt64Rules_has_const(const validate_SInt64Rules* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(16, 8), 1, kUpb_NoSub, 18, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_SInt64Rules_clear_lt(const validate_SInt64Rules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(24, 32), int64_t) = 0;
-  _upb_clearhas(msg, 2);
+UPB_INLINE void validate_SInt64Rules_clear_lt(validate_SInt64Rules* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(24, 16), 2, kUpb_NoSub, 18, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE int64_t validate_SInt64Rules_lt(const validate_SInt64Rules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(24, 32), int64_t);
+  int64_t default_val = (int64_t)0ll;
+  int64_t ret;
+  const upb_MiniTableField field = {2, UPB_SIZE(24, 16), 2, kUpb_NoSub, 18, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_SInt64Rules_has_lte(const validate_SInt64Rules* msg) {
-  return _upb_hasbit(msg, 3);
+UPB_INLINE bool validate_SInt64Rules_has_lt(const validate_SInt64Rules* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(24, 16), 2, kUpb_NoSub, 18, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_SInt64Rules_clear_lte(const validate_SInt64Rules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(32, 40), int64_t) = 0;
-  _upb_clearhas(msg, 3);
+UPB_INLINE void validate_SInt64Rules_clear_lte(validate_SInt64Rules* msg) {
+  const upb_MiniTableField field = {3, UPB_SIZE(32, 24), 3, kUpb_NoSub, 18, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE int64_t validate_SInt64Rules_lte(const validate_SInt64Rules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(32, 40), int64_t);
+  int64_t default_val = (int64_t)0ll;
+  int64_t ret;
+  const upb_MiniTableField field = {3, UPB_SIZE(32, 24), 3, kUpb_NoSub, 18, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_SInt64Rules_has_gt(const validate_SInt64Rules* msg) {
-  return _upb_hasbit(msg, 4);
+UPB_INLINE bool validate_SInt64Rules_has_lte(const validate_SInt64Rules* msg) {
+  const upb_MiniTableField field = {3, UPB_SIZE(32, 24), 3, kUpb_NoSub, 18, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_SInt64Rules_clear_gt(const validate_SInt64Rules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(40, 48), int64_t) = 0;
-  _upb_clearhas(msg, 4);
+UPB_INLINE void validate_SInt64Rules_clear_gt(validate_SInt64Rules* msg) {
+  const upb_MiniTableField field = {4, UPB_SIZE(40, 32), 4, kUpb_NoSub, 18, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE int64_t validate_SInt64Rules_gt(const validate_SInt64Rules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(40, 48), int64_t);
+  int64_t default_val = (int64_t)0ll;
+  int64_t ret;
+  const upb_MiniTableField field = {4, UPB_SIZE(40, 32), 4, kUpb_NoSub, 18, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_SInt64Rules_has_gte(const validate_SInt64Rules* msg) {
-  return _upb_hasbit(msg, 5);
+UPB_INLINE bool validate_SInt64Rules_has_gt(const validate_SInt64Rules* msg) {
+  const upb_MiniTableField field = {4, UPB_SIZE(40, 32), 4, kUpb_NoSub, 18, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_SInt64Rules_clear_gte(const validate_SInt64Rules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(48, 56), int64_t) = 0;
-  _upb_clearhas(msg, 5);
+UPB_INLINE void validate_SInt64Rules_clear_gte(validate_SInt64Rules* msg) {
+  const upb_MiniTableField field = {5, UPB_SIZE(48, 40), 5, kUpb_NoSub, 18, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE int64_t validate_SInt64Rules_gte(const validate_SInt64Rules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(48, 56), int64_t);
+  int64_t default_val = (int64_t)0ll;
+  int64_t ret;
+  const upb_MiniTableField field = {5, UPB_SIZE(48, 40), 5, kUpb_NoSub, 18, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE void validate_SInt64Rules_clear_in(const validate_SInt64Rules* msg) {
-  _upb_array_detach(msg, UPB_SIZE(4, 8));
+UPB_INLINE bool validate_SInt64Rules_has_gte(const validate_SInt64Rules* msg) {
+  const upb_MiniTableField field = {5, UPB_SIZE(48, 40), 5, kUpb_NoSub, 18, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE int64_t const* validate_SInt64Rules_in(const validate_SInt64Rules* msg, size_t* len) {
-  return (int64_t const*)_upb_array_accessor(msg, UPB_SIZE(4, 8), len);
+UPB_INLINE void validate_SInt64Rules_clear_in(validate_SInt64Rules* msg) {
+  const upb_MiniTableField field = {6, UPB_SIZE(4, 48), 0, kUpb_NoSub, 18, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_SInt64Rules_clear_not_in(const validate_SInt64Rules* msg) {
-  _upb_array_detach(msg, UPB_SIZE(8, 16));
+UPB_INLINE int64_t const* validate_SInt64Rules_in(const validate_SInt64Rules* msg, size_t* size) {
+  const upb_MiniTableField field = {6, UPB_SIZE(4, 48), 0, kUpb_NoSub, 18, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (int64_t const*)_upb_array_constptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
 }
-UPB_INLINE int64_t const* validate_SInt64Rules_not_in(const validate_SInt64Rules* msg, size_t* len) {
-  return (int64_t const*)_upb_array_accessor(msg, UPB_SIZE(8, 16), len);
+UPB_INLINE const upb_Array* _validate_SInt64Rules_in_upb_array(const validate_SInt64Rules* msg, size_t* size) {
+  const upb_MiniTableField field = {6, UPB_SIZE(4, 48), 0, kUpb_NoSub, 18, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
 }
-UPB_INLINE bool validate_SInt64Rules_has_ignore_empty(const validate_SInt64Rules* msg) {
-  return _upb_hasbit(msg, 6);
+UPB_INLINE upb_Array* _validate_SInt64Rules_in_mutable_upb_array(const validate_SInt64Rules* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {6, UPB_SIZE(4, 48), 0, kUpb_NoSub, 18, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
 }
-UPB_INLINE void validate_SInt64Rules_clear_ignore_empty(const validate_SInt64Rules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool) = 0;
-  _upb_clearhas(msg, 6);
+UPB_INLINE bool validate_SInt64Rules_has_in(const validate_SInt64Rules* msg) {
+  size_t size;
+  validate_SInt64Rules_in(msg, &size);
+  return size != 0;
+}
+UPB_INLINE void validate_SInt64Rules_clear_not_in(validate_SInt64Rules* msg) {
+  const upb_MiniTableField field = {7, UPB_SIZE(8, 56), 0, kUpb_NoSub, 18, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
+}
+UPB_INLINE int64_t const* validate_SInt64Rules_not_in(const validate_SInt64Rules* msg, size_t* size) {
+  const upb_MiniTableField field = {7, UPB_SIZE(8, 56), 0, kUpb_NoSub, 18, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (int64_t const*)_upb_array_constptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
+}
+UPB_INLINE const upb_Array* _validate_SInt64Rules_not_in_upb_array(const validate_SInt64Rules* msg, size_t* size) {
+  const upb_MiniTableField field = {7, UPB_SIZE(8, 56), 0, kUpb_NoSub, 18, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _validate_SInt64Rules_not_in_mutable_upb_array(const validate_SInt64Rules* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {7, UPB_SIZE(8, 56), 0, kUpb_NoSub, 18, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE bool validate_SInt64Rules_has_not_in(const validate_SInt64Rules* msg) {
+  size_t size;
+  validate_SInt64Rules_not_in(msg, &size);
+  return size != 0;
+}
+UPB_INLINE void validate_SInt64Rules_clear_ignore_empty(validate_SInt64Rules* msg) {
+  const upb_MiniTableField field = {8, UPB_SIZE(12, 1), 6, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE bool validate_SInt64Rules_ignore_empty(const validate_SInt64Rules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool);
+  bool default_val = false;
+  bool ret;
+  const upb_MiniTableField field = {8, UPB_SIZE(12, 1), 6, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
+}
+UPB_INLINE bool validate_SInt64Rules_has_ignore_empty(const validate_SInt64Rules* msg) {
+  const upb_MiniTableField field = {8, UPB_SIZE(12, 1), 6, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
 
 UPB_INLINE void validate_SInt64Rules_set_const(validate_SInt64Rules *msg, int64_t value) {
-  _upb_sethas(msg, 1);
-  *UPB_PTR_AT(msg, UPB_SIZE(16, 24), int64_t) = value;
+  const upb_MiniTableField field = {1, UPB_SIZE(16, 8), 1, kUpb_NoSub, 18, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_SInt64Rules_set_lt(validate_SInt64Rules *msg, int64_t value) {
-  _upb_sethas(msg, 2);
-  *UPB_PTR_AT(msg, UPB_SIZE(24, 32), int64_t) = value;
+  const upb_MiniTableField field = {2, UPB_SIZE(24, 16), 2, kUpb_NoSub, 18, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_SInt64Rules_set_lte(validate_SInt64Rules *msg, int64_t value) {
-  _upb_sethas(msg, 3);
-  *UPB_PTR_AT(msg, UPB_SIZE(32, 40), int64_t) = value;
+  const upb_MiniTableField field = {3, UPB_SIZE(32, 24), 3, kUpb_NoSub, 18, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_SInt64Rules_set_gt(validate_SInt64Rules *msg, int64_t value) {
-  _upb_sethas(msg, 4);
-  *UPB_PTR_AT(msg, UPB_SIZE(40, 48), int64_t) = value;
+  const upb_MiniTableField field = {4, UPB_SIZE(40, 32), 4, kUpb_NoSub, 18, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_SInt64Rules_set_gte(validate_SInt64Rules *msg, int64_t value) {
-  _upb_sethas(msg, 5);
-  *UPB_PTR_AT(msg, UPB_SIZE(48, 56), int64_t) = value;
+  const upb_MiniTableField field = {5, UPB_SIZE(48, 40), 5, kUpb_NoSub, 18, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
-UPB_INLINE int64_t* validate_SInt64Rules_mutable_in(validate_SInt64Rules* msg, size_t* len) {
-  return (int64_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(4, 8), len);
+UPB_INLINE int64_t* validate_SInt64Rules_mutable_in(validate_SInt64Rules* msg, size_t* size) {
+  upb_MiniTableField field = {6, UPB_SIZE(4, 48), 0, kUpb_NoSub, 18, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetMutableArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (int64_t*)_upb_array_ptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
 }
-UPB_INLINE int64_t* validate_SInt64Rules_resize_in(validate_SInt64Rules* msg, size_t len, upb_Arena* arena) {
-  return (int64_t*)_upb_Array_Resize_accessor2(msg, UPB_SIZE(4, 8), len, 3, arena);
+UPB_INLINE int64_t* validate_SInt64Rules_resize_in(validate_SInt64Rules* msg, size_t size, upb_Arena* arena) {
+  upb_MiniTableField field = {6, UPB_SIZE(4, 48), 0, kUpb_NoSub, 18, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return (int64_t*)upb_Message_ResizeArray(msg, &field, size, arena);
 }
 UPB_INLINE bool validate_SInt64Rules_add_in(validate_SInt64Rules* msg, int64_t val, upb_Arena* arena) {
-  return _upb_Array_Append_accessor2(msg, UPB_SIZE(4, 8), 3, &val, arena);
+  upb_MiniTableField field = {6, UPB_SIZE(4, 48), 0, kUpb_NoSub, 18, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(msg, &field, arena);
+  if (!arr || !_upb_Array_ResizeUninitialized(arr, arr->size + 1, arena)) {
+    return false;
+  }
+  _upb_Array_Set(arr, arr->size - 1, &val, sizeof(val));
+  return true;
 }
-UPB_INLINE int64_t* validate_SInt64Rules_mutable_not_in(validate_SInt64Rules* msg, size_t* len) {
-  return (int64_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(8, 16), len);
+UPB_INLINE int64_t* validate_SInt64Rules_mutable_not_in(validate_SInt64Rules* msg, size_t* size) {
+  upb_MiniTableField field = {7, UPB_SIZE(8, 56), 0, kUpb_NoSub, 18, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetMutableArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (int64_t*)_upb_array_ptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
 }
-UPB_INLINE int64_t* validate_SInt64Rules_resize_not_in(validate_SInt64Rules* msg, size_t len, upb_Arena* arena) {
-  return (int64_t*)_upb_Array_Resize_accessor2(msg, UPB_SIZE(8, 16), len, 3, arena);
+UPB_INLINE int64_t* validate_SInt64Rules_resize_not_in(validate_SInt64Rules* msg, size_t size, upb_Arena* arena) {
+  upb_MiniTableField field = {7, UPB_SIZE(8, 56), 0, kUpb_NoSub, 18, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return (int64_t*)upb_Message_ResizeArray(msg, &field, size, arena);
 }
 UPB_INLINE bool validate_SInt64Rules_add_not_in(validate_SInt64Rules* msg, int64_t val, upb_Arena* arena) {
-  return _upb_Array_Append_accessor2(msg, UPB_SIZE(8, 16), 3, &val, arena);
+  upb_MiniTableField field = {7, UPB_SIZE(8, 56), 0, kUpb_NoSub, 18, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(msg, &field, arena);
+  if (!arr || !_upb_Array_ResizeUninitialized(arr, arr->size + 1, arena)) {
+    return false;
+  }
+  _upb_Array_Set(arr, arr->size - 1, &val, sizeof(val));
+  return true;
 }
 UPB_INLINE void validate_SInt64Rules_set_ignore_empty(validate_SInt64Rules *msg, bool value) {
-  _upb_sethas(msg, 6);
-  *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool) = value;
+  const upb_MiniTableField field = {8, UPB_SIZE(12, 1), 6, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 
 /* validate.Fixed32Rules */
 
 UPB_INLINE validate_Fixed32Rules* validate_Fixed32Rules_new(upb_Arena* arena) {
-  return (validate_Fixed32Rules*)_upb_Message_New(&validate_Fixed32Rules_msginit, arena);
+  return (validate_Fixed32Rules*)_upb_Message_New(&validate_Fixed32Rules_msg_init, arena);
 }
 UPB_INLINE validate_Fixed32Rules* validate_Fixed32Rules_parse(const char* buf, size_t size, upb_Arena* arena) {
   validate_Fixed32Rules* ret = validate_Fixed32Rules_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &validate_Fixed32Rules_msginit, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
+  if (upb_Decode(buf, size, ret, &validate_Fixed32Rules_msg_init, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
@@ -1866,7 +2956,7 @@ UPB_INLINE validate_Fixed32Rules* validate_Fixed32Rules_parse_ex(const char* buf
                            int options, upb_Arena* arena) {
   validate_Fixed32Rules* ret = validate_Fixed32Rules_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &validate_Fixed32Rules_msginit, extreg, options, arena) !=
+  if (upb_Decode(buf, size, ret, &validate_Fixed32Rules_msg_init, extreg, options, arena) !=
       kUpb_DecodeStatus_Ok) {
     return NULL;
   }
@@ -1874,140 +2964,262 @@ UPB_INLINE validate_Fixed32Rules* validate_Fixed32Rules_parse_ex(const char* buf
 }
 UPB_INLINE char* validate_Fixed32Rules_serialize(const validate_Fixed32Rules* msg, upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &validate_Fixed32Rules_msginit, 0, arena, &ptr, len);
+  (void)upb_Encode(msg, &validate_Fixed32Rules_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
 UPB_INLINE char* validate_Fixed32Rules_serialize_ex(const validate_Fixed32Rules* msg, int options,
                                  upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &validate_Fixed32Rules_msginit, options, arena, &ptr, len);
+  (void)upb_Encode(msg, &validate_Fixed32Rules_msg_init, options, arena, &ptr, len);
   return ptr;
 }
-UPB_INLINE bool validate_Fixed32Rules_has_const(const validate_Fixed32Rules* msg) {
-  return _upb_hasbit(msg, 1);
-}
-UPB_INLINE void validate_Fixed32Rules_clear_const(const validate_Fixed32Rules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(4, 4), uint32_t) = 0;
-  _upb_clearhas(msg, 1);
+UPB_INLINE void validate_Fixed32Rules_clear_const(validate_Fixed32Rules* msg) {
+  const upb_MiniTableField field = {1, 4, 1, kUpb_NoSub, 7, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE uint32_t validate_Fixed32Rules_const(const validate_Fixed32Rules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(4, 4), uint32_t);
+  uint32_t default_val = (uint32_t)0u;
+  uint32_t ret;
+  const upb_MiniTableField field = {1, 4, 1, kUpb_NoSub, 7, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_Fixed32Rules_has_lt(const validate_Fixed32Rules* msg) {
-  return _upb_hasbit(msg, 2);
+UPB_INLINE bool validate_Fixed32Rules_has_const(const validate_Fixed32Rules* msg) {
+  const upb_MiniTableField field = {1, 4, 1, kUpb_NoSub, 7, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_Fixed32Rules_clear_lt(const validate_Fixed32Rules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), uint32_t) = 0;
-  _upb_clearhas(msg, 2);
+UPB_INLINE void validate_Fixed32Rules_clear_lt(validate_Fixed32Rules* msg) {
+  const upb_MiniTableField field = {2, 8, 2, kUpb_NoSub, 7, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE uint32_t validate_Fixed32Rules_lt(const validate_Fixed32Rules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(8, 8), uint32_t);
+  uint32_t default_val = (uint32_t)0u;
+  uint32_t ret;
+  const upb_MiniTableField field = {2, 8, 2, kUpb_NoSub, 7, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_Fixed32Rules_has_lte(const validate_Fixed32Rules* msg) {
-  return _upb_hasbit(msg, 3);
+UPB_INLINE bool validate_Fixed32Rules_has_lt(const validate_Fixed32Rules* msg) {
+  const upb_MiniTableField field = {2, 8, 2, kUpb_NoSub, 7, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_Fixed32Rules_clear_lte(const validate_Fixed32Rules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(12, 12), uint32_t) = 0;
-  _upb_clearhas(msg, 3);
+UPB_INLINE void validate_Fixed32Rules_clear_lte(validate_Fixed32Rules* msg) {
+  const upb_MiniTableField field = {3, 12, 3, kUpb_NoSub, 7, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE uint32_t validate_Fixed32Rules_lte(const validate_Fixed32Rules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(12, 12), uint32_t);
+  uint32_t default_val = (uint32_t)0u;
+  uint32_t ret;
+  const upb_MiniTableField field = {3, 12, 3, kUpb_NoSub, 7, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_Fixed32Rules_has_gt(const validate_Fixed32Rules* msg) {
-  return _upb_hasbit(msg, 4);
+UPB_INLINE bool validate_Fixed32Rules_has_lte(const validate_Fixed32Rules* msg) {
+  const upb_MiniTableField field = {3, 12, 3, kUpb_NoSub, 7, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_Fixed32Rules_clear_gt(const validate_Fixed32Rules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(16, 16), uint32_t) = 0;
-  _upb_clearhas(msg, 4);
+UPB_INLINE void validate_Fixed32Rules_clear_gt(validate_Fixed32Rules* msg) {
+  const upb_MiniTableField field = {4, 16, 4, kUpb_NoSub, 7, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE uint32_t validate_Fixed32Rules_gt(const validate_Fixed32Rules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(16, 16), uint32_t);
+  uint32_t default_val = (uint32_t)0u;
+  uint32_t ret;
+  const upb_MiniTableField field = {4, 16, 4, kUpb_NoSub, 7, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_Fixed32Rules_has_gte(const validate_Fixed32Rules* msg) {
-  return _upb_hasbit(msg, 5);
+UPB_INLINE bool validate_Fixed32Rules_has_gt(const validate_Fixed32Rules* msg) {
+  const upb_MiniTableField field = {4, 16, 4, kUpb_NoSub, 7, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_Fixed32Rules_clear_gte(const validate_Fixed32Rules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(20, 20), uint32_t) = 0;
-  _upb_clearhas(msg, 5);
+UPB_INLINE void validate_Fixed32Rules_clear_gte(validate_Fixed32Rules* msg) {
+  const upb_MiniTableField field = {5, 20, 5, kUpb_NoSub, 7, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE uint32_t validate_Fixed32Rules_gte(const validate_Fixed32Rules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(20, 20), uint32_t);
+  uint32_t default_val = (uint32_t)0u;
+  uint32_t ret;
+  const upb_MiniTableField field = {5, 20, 5, kUpb_NoSub, 7, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE void validate_Fixed32Rules_clear_in(const validate_Fixed32Rules* msg) {
-  _upb_array_detach(msg, UPB_SIZE(28, 32));
+UPB_INLINE bool validate_Fixed32Rules_has_gte(const validate_Fixed32Rules* msg) {
+  const upb_MiniTableField field = {5, 20, 5, kUpb_NoSub, 7, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE uint32_t const* validate_Fixed32Rules_in(const validate_Fixed32Rules* msg, size_t* len) {
-  return (uint32_t const*)_upb_array_accessor(msg, UPB_SIZE(28, 32), len);
+UPB_INLINE void validate_Fixed32Rules_clear_in(validate_Fixed32Rules* msg) {
+  const upb_MiniTableField field = {6, UPB_SIZE(24, 32), 0, kUpb_NoSub, 7, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_Fixed32Rules_clear_not_in(const validate_Fixed32Rules* msg) {
-  _upb_array_detach(msg, UPB_SIZE(32, 40));
+UPB_INLINE uint32_t const* validate_Fixed32Rules_in(const validate_Fixed32Rules* msg, size_t* size) {
+  const upb_MiniTableField field = {6, UPB_SIZE(24, 32), 0, kUpb_NoSub, 7, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (uint32_t const*)_upb_array_constptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
 }
-UPB_INLINE uint32_t const* validate_Fixed32Rules_not_in(const validate_Fixed32Rules* msg, size_t* len) {
-  return (uint32_t const*)_upb_array_accessor(msg, UPB_SIZE(32, 40), len);
+UPB_INLINE const upb_Array* _validate_Fixed32Rules_in_upb_array(const validate_Fixed32Rules* msg, size_t* size) {
+  const upb_MiniTableField field = {6, UPB_SIZE(24, 32), 0, kUpb_NoSub, 7, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
 }
-UPB_INLINE bool validate_Fixed32Rules_has_ignore_empty(const validate_Fixed32Rules* msg) {
-  return _upb_hasbit(msg, 6);
+UPB_INLINE upb_Array* _validate_Fixed32Rules_in_mutable_upb_array(const validate_Fixed32Rules* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {6, UPB_SIZE(24, 32), 0, kUpb_NoSub, 7, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
 }
-UPB_INLINE void validate_Fixed32Rules_clear_ignore_empty(const validate_Fixed32Rules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(24, 24), bool) = 0;
-  _upb_clearhas(msg, 6);
+UPB_INLINE bool validate_Fixed32Rules_has_in(const validate_Fixed32Rules* msg) {
+  size_t size;
+  validate_Fixed32Rules_in(msg, &size);
+  return size != 0;
+}
+UPB_INLINE void validate_Fixed32Rules_clear_not_in(validate_Fixed32Rules* msg) {
+  const upb_MiniTableField field = {7, UPB_SIZE(28, 40), 0, kUpb_NoSub, 7, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
+}
+UPB_INLINE uint32_t const* validate_Fixed32Rules_not_in(const validate_Fixed32Rules* msg, size_t* size) {
+  const upb_MiniTableField field = {7, UPB_SIZE(28, 40), 0, kUpb_NoSub, 7, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (uint32_t const*)_upb_array_constptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
+}
+UPB_INLINE const upb_Array* _validate_Fixed32Rules_not_in_upb_array(const validate_Fixed32Rules* msg, size_t* size) {
+  const upb_MiniTableField field = {7, UPB_SIZE(28, 40), 0, kUpb_NoSub, 7, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _validate_Fixed32Rules_not_in_mutable_upb_array(const validate_Fixed32Rules* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {7, UPB_SIZE(28, 40), 0, kUpb_NoSub, 7, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE bool validate_Fixed32Rules_has_not_in(const validate_Fixed32Rules* msg) {
+  size_t size;
+  validate_Fixed32Rules_not_in(msg, &size);
+  return size != 0;
+}
+UPB_INLINE void validate_Fixed32Rules_clear_ignore_empty(validate_Fixed32Rules* msg) {
+  const upb_MiniTableField field = {8, UPB_SIZE(32, 24), 6, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE bool validate_Fixed32Rules_ignore_empty(const validate_Fixed32Rules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(24, 24), bool);
+  bool default_val = false;
+  bool ret;
+  const upb_MiniTableField field = {8, UPB_SIZE(32, 24), 6, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
+}
+UPB_INLINE bool validate_Fixed32Rules_has_ignore_empty(const validate_Fixed32Rules* msg) {
+  const upb_MiniTableField field = {8, UPB_SIZE(32, 24), 6, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
 
 UPB_INLINE void validate_Fixed32Rules_set_const(validate_Fixed32Rules *msg, uint32_t value) {
-  _upb_sethas(msg, 1);
-  *UPB_PTR_AT(msg, UPB_SIZE(4, 4), uint32_t) = value;
+  const upb_MiniTableField field = {1, 4, 1, kUpb_NoSub, 7, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_Fixed32Rules_set_lt(validate_Fixed32Rules *msg, uint32_t value) {
-  _upb_sethas(msg, 2);
-  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), uint32_t) = value;
+  const upb_MiniTableField field = {2, 8, 2, kUpb_NoSub, 7, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_Fixed32Rules_set_lte(validate_Fixed32Rules *msg, uint32_t value) {
-  _upb_sethas(msg, 3);
-  *UPB_PTR_AT(msg, UPB_SIZE(12, 12), uint32_t) = value;
+  const upb_MiniTableField field = {3, 12, 3, kUpb_NoSub, 7, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_Fixed32Rules_set_gt(validate_Fixed32Rules *msg, uint32_t value) {
-  _upb_sethas(msg, 4);
-  *UPB_PTR_AT(msg, UPB_SIZE(16, 16), uint32_t) = value;
+  const upb_MiniTableField field = {4, 16, 4, kUpb_NoSub, 7, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_Fixed32Rules_set_gte(validate_Fixed32Rules *msg, uint32_t value) {
-  _upb_sethas(msg, 5);
-  *UPB_PTR_AT(msg, UPB_SIZE(20, 20), uint32_t) = value;
+  const upb_MiniTableField field = {5, 20, 5, kUpb_NoSub, 7, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
-UPB_INLINE uint32_t* validate_Fixed32Rules_mutable_in(validate_Fixed32Rules* msg, size_t* len) {
-  return (uint32_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(28, 32), len);
+UPB_INLINE uint32_t* validate_Fixed32Rules_mutable_in(validate_Fixed32Rules* msg, size_t* size) {
+  upb_MiniTableField field = {6, UPB_SIZE(24, 32), 0, kUpb_NoSub, 7, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetMutableArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (uint32_t*)_upb_array_ptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
 }
-UPB_INLINE uint32_t* validate_Fixed32Rules_resize_in(validate_Fixed32Rules* msg, size_t len, upb_Arena* arena) {
-  return (uint32_t*)_upb_Array_Resize_accessor2(msg, UPB_SIZE(28, 32), len, 2, arena);
+UPB_INLINE uint32_t* validate_Fixed32Rules_resize_in(validate_Fixed32Rules* msg, size_t size, upb_Arena* arena) {
+  upb_MiniTableField field = {6, UPB_SIZE(24, 32), 0, kUpb_NoSub, 7, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return (uint32_t*)upb_Message_ResizeArray(msg, &field, size, arena);
 }
 UPB_INLINE bool validate_Fixed32Rules_add_in(validate_Fixed32Rules* msg, uint32_t val, upb_Arena* arena) {
-  return _upb_Array_Append_accessor2(msg, UPB_SIZE(28, 32), 2, &val, arena);
+  upb_MiniTableField field = {6, UPB_SIZE(24, 32), 0, kUpb_NoSub, 7, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(msg, &field, arena);
+  if (!arr || !_upb_Array_ResizeUninitialized(arr, arr->size + 1, arena)) {
+    return false;
+  }
+  _upb_Array_Set(arr, arr->size - 1, &val, sizeof(val));
+  return true;
 }
-UPB_INLINE uint32_t* validate_Fixed32Rules_mutable_not_in(validate_Fixed32Rules* msg, size_t* len) {
-  return (uint32_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(32, 40), len);
+UPB_INLINE uint32_t* validate_Fixed32Rules_mutable_not_in(validate_Fixed32Rules* msg, size_t* size) {
+  upb_MiniTableField field = {7, UPB_SIZE(28, 40), 0, kUpb_NoSub, 7, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetMutableArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (uint32_t*)_upb_array_ptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
 }
-UPB_INLINE uint32_t* validate_Fixed32Rules_resize_not_in(validate_Fixed32Rules* msg, size_t len, upb_Arena* arena) {
-  return (uint32_t*)_upb_Array_Resize_accessor2(msg, UPB_SIZE(32, 40), len, 2, arena);
+UPB_INLINE uint32_t* validate_Fixed32Rules_resize_not_in(validate_Fixed32Rules* msg, size_t size, upb_Arena* arena) {
+  upb_MiniTableField field = {7, UPB_SIZE(28, 40), 0, kUpb_NoSub, 7, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return (uint32_t*)upb_Message_ResizeArray(msg, &field, size, arena);
 }
 UPB_INLINE bool validate_Fixed32Rules_add_not_in(validate_Fixed32Rules* msg, uint32_t val, upb_Arena* arena) {
-  return _upb_Array_Append_accessor2(msg, UPB_SIZE(32, 40), 2, &val, arena);
+  upb_MiniTableField field = {7, UPB_SIZE(28, 40), 0, kUpb_NoSub, 7, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(msg, &field, arena);
+  if (!arr || !_upb_Array_ResizeUninitialized(arr, arr->size + 1, arena)) {
+    return false;
+  }
+  _upb_Array_Set(arr, arr->size - 1, &val, sizeof(val));
+  return true;
 }
 UPB_INLINE void validate_Fixed32Rules_set_ignore_empty(validate_Fixed32Rules *msg, bool value) {
-  _upb_sethas(msg, 6);
-  *UPB_PTR_AT(msg, UPB_SIZE(24, 24), bool) = value;
+  const upb_MiniTableField field = {8, UPB_SIZE(32, 24), 6, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 
 /* validate.Fixed64Rules */
 
 UPB_INLINE validate_Fixed64Rules* validate_Fixed64Rules_new(upb_Arena* arena) {
-  return (validate_Fixed64Rules*)_upb_Message_New(&validate_Fixed64Rules_msginit, arena);
+  return (validate_Fixed64Rules*)_upb_Message_New(&validate_Fixed64Rules_msg_init, arena);
 }
 UPB_INLINE validate_Fixed64Rules* validate_Fixed64Rules_parse(const char* buf, size_t size, upb_Arena* arena) {
   validate_Fixed64Rules* ret = validate_Fixed64Rules_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &validate_Fixed64Rules_msginit, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
+  if (upb_Decode(buf, size, ret, &validate_Fixed64Rules_msg_init, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
@@ -2017,7 +3229,7 @@ UPB_INLINE validate_Fixed64Rules* validate_Fixed64Rules_parse_ex(const char* buf
                            int options, upb_Arena* arena) {
   validate_Fixed64Rules* ret = validate_Fixed64Rules_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &validate_Fixed64Rules_msginit, extreg, options, arena) !=
+  if (upb_Decode(buf, size, ret, &validate_Fixed64Rules_msg_init, extreg, options, arena) !=
       kUpb_DecodeStatus_Ok) {
     return NULL;
   }
@@ -2025,140 +3237,262 @@ UPB_INLINE validate_Fixed64Rules* validate_Fixed64Rules_parse_ex(const char* buf
 }
 UPB_INLINE char* validate_Fixed64Rules_serialize(const validate_Fixed64Rules* msg, upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &validate_Fixed64Rules_msginit, 0, arena, &ptr, len);
+  (void)upb_Encode(msg, &validate_Fixed64Rules_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
 UPB_INLINE char* validate_Fixed64Rules_serialize_ex(const validate_Fixed64Rules* msg, int options,
                                  upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &validate_Fixed64Rules_msginit, options, arena, &ptr, len);
+  (void)upb_Encode(msg, &validate_Fixed64Rules_msg_init, options, arena, &ptr, len);
   return ptr;
 }
-UPB_INLINE bool validate_Fixed64Rules_has_const(const validate_Fixed64Rules* msg) {
-  return _upb_hasbit(msg, 1);
-}
-UPB_INLINE void validate_Fixed64Rules_clear_const(const validate_Fixed64Rules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(16, 24), uint64_t) = 0;
-  _upb_clearhas(msg, 1);
+UPB_INLINE void validate_Fixed64Rules_clear_const(validate_Fixed64Rules* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(16, 8), 1, kUpb_NoSub, 6, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE uint64_t validate_Fixed64Rules_const(const validate_Fixed64Rules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(16, 24), uint64_t);
+  uint64_t default_val = (uint64_t)0ull;
+  uint64_t ret;
+  const upb_MiniTableField field = {1, UPB_SIZE(16, 8), 1, kUpb_NoSub, 6, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_Fixed64Rules_has_lt(const validate_Fixed64Rules* msg) {
-  return _upb_hasbit(msg, 2);
+UPB_INLINE bool validate_Fixed64Rules_has_const(const validate_Fixed64Rules* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(16, 8), 1, kUpb_NoSub, 6, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_Fixed64Rules_clear_lt(const validate_Fixed64Rules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(24, 32), uint64_t) = 0;
-  _upb_clearhas(msg, 2);
+UPB_INLINE void validate_Fixed64Rules_clear_lt(validate_Fixed64Rules* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(24, 16), 2, kUpb_NoSub, 6, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE uint64_t validate_Fixed64Rules_lt(const validate_Fixed64Rules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(24, 32), uint64_t);
+  uint64_t default_val = (uint64_t)0ull;
+  uint64_t ret;
+  const upb_MiniTableField field = {2, UPB_SIZE(24, 16), 2, kUpb_NoSub, 6, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_Fixed64Rules_has_lte(const validate_Fixed64Rules* msg) {
-  return _upb_hasbit(msg, 3);
+UPB_INLINE bool validate_Fixed64Rules_has_lt(const validate_Fixed64Rules* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(24, 16), 2, kUpb_NoSub, 6, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_Fixed64Rules_clear_lte(const validate_Fixed64Rules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(32, 40), uint64_t) = 0;
-  _upb_clearhas(msg, 3);
+UPB_INLINE void validate_Fixed64Rules_clear_lte(validate_Fixed64Rules* msg) {
+  const upb_MiniTableField field = {3, UPB_SIZE(32, 24), 3, kUpb_NoSub, 6, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE uint64_t validate_Fixed64Rules_lte(const validate_Fixed64Rules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(32, 40), uint64_t);
+  uint64_t default_val = (uint64_t)0ull;
+  uint64_t ret;
+  const upb_MiniTableField field = {3, UPB_SIZE(32, 24), 3, kUpb_NoSub, 6, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_Fixed64Rules_has_gt(const validate_Fixed64Rules* msg) {
-  return _upb_hasbit(msg, 4);
+UPB_INLINE bool validate_Fixed64Rules_has_lte(const validate_Fixed64Rules* msg) {
+  const upb_MiniTableField field = {3, UPB_SIZE(32, 24), 3, kUpb_NoSub, 6, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_Fixed64Rules_clear_gt(const validate_Fixed64Rules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(40, 48), uint64_t) = 0;
-  _upb_clearhas(msg, 4);
+UPB_INLINE void validate_Fixed64Rules_clear_gt(validate_Fixed64Rules* msg) {
+  const upb_MiniTableField field = {4, UPB_SIZE(40, 32), 4, kUpb_NoSub, 6, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE uint64_t validate_Fixed64Rules_gt(const validate_Fixed64Rules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(40, 48), uint64_t);
+  uint64_t default_val = (uint64_t)0ull;
+  uint64_t ret;
+  const upb_MiniTableField field = {4, UPB_SIZE(40, 32), 4, kUpb_NoSub, 6, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_Fixed64Rules_has_gte(const validate_Fixed64Rules* msg) {
-  return _upb_hasbit(msg, 5);
+UPB_INLINE bool validate_Fixed64Rules_has_gt(const validate_Fixed64Rules* msg) {
+  const upb_MiniTableField field = {4, UPB_SIZE(40, 32), 4, kUpb_NoSub, 6, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_Fixed64Rules_clear_gte(const validate_Fixed64Rules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(48, 56), uint64_t) = 0;
-  _upb_clearhas(msg, 5);
+UPB_INLINE void validate_Fixed64Rules_clear_gte(validate_Fixed64Rules* msg) {
+  const upb_MiniTableField field = {5, UPB_SIZE(48, 40), 5, kUpb_NoSub, 6, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE uint64_t validate_Fixed64Rules_gte(const validate_Fixed64Rules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(48, 56), uint64_t);
+  uint64_t default_val = (uint64_t)0ull;
+  uint64_t ret;
+  const upb_MiniTableField field = {5, UPB_SIZE(48, 40), 5, kUpb_NoSub, 6, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE void validate_Fixed64Rules_clear_in(const validate_Fixed64Rules* msg) {
-  _upb_array_detach(msg, UPB_SIZE(4, 8));
+UPB_INLINE bool validate_Fixed64Rules_has_gte(const validate_Fixed64Rules* msg) {
+  const upb_MiniTableField field = {5, UPB_SIZE(48, 40), 5, kUpb_NoSub, 6, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE uint64_t const* validate_Fixed64Rules_in(const validate_Fixed64Rules* msg, size_t* len) {
-  return (uint64_t const*)_upb_array_accessor(msg, UPB_SIZE(4, 8), len);
+UPB_INLINE void validate_Fixed64Rules_clear_in(validate_Fixed64Rules* msg) {
+  const upb_MiniTableField field = {6, UPB_SIZE(4, 48), 0, kUpb_NoSub, 6, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_Fixed64Rules_clear_not_in(const validate_Fixed64Rules* msg) {
-  _upb_array_detach(msg, UPB_SIZE(8, 16));
+UPB_INLINE uint64_t const* validate_Fixed64Rules_in(const validate_Fixed64Rules* msg, size_t* size) {
+  const upb_MiniTableField field = {6, UPB_SIZE(4, 48), 0, kUpb_NoSub, 6, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (uint64_t const*)_upb_array_constptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
 }
-UPB_INLINE uint64_t const* validate_Fixed64Rules_not_in(const validate_Fixed64Rules* msg, size_t* len) {
-  return (uint64_t const*)_upb_array_accessor(msg, UPB_SIZE(8, 16), len);
+UPB_INLINE const upb_Array* _validate_Fixed64Rules_in_upb_array(const validate_Fixed64Rules* msg, size_t* size) {
+  const upb_MiniTableField field = {6, UPB_SIZE(4, 48), 0, kUpb_NoSub, 6, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
 }
-UPB_INLINE bool validate_Fixed64Rules_has_ignore_empty(const validate_Fixed64Rules* msg) {
-  return _upb_hasbit(msg, 6);
+UPB_INLINE upb_Array* _validate_Fixed64Rules_in_mutable_upb_array(const validate_Fixed64Rules* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {6, UPB_SIZE(4, 48), 0, kUpb_NoSub, 6, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
 }
-UPB_INLINE void validate_Fixed64Rules_clear_ignore_empty(const validate_Fixed64Rules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool) = 0;
-  _upb_clearhas(msg, 6);
+UPB_INLINE bool validate_Fixed64Rules_has_in(const validate_Fixed64Rules* msg) {
+  size_t size;
+  validate_Fixed64Rules_in(msg, &size);
+  return size != 0;
+}
+UPB_INLINE void validate_Fixed64Rules_clear_not_in(validate_Fixed64Rules* msg) {
+  const upb_MiniTableField field = {7, UPB_SIZE(8, 56), 0, kUpb_NoSub, 6, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
+}
+UPB_INLINE uint64_t const* validate_Fixed64Rules_not_in(const validate_Fixed64Rules* msg, size_t* size) {
+  const upb_MiniTableField field = {7, UPB_SIZE(8, 56), 0, kUpb_NoSub, 6, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (uint64_t const*)_upb_array_constptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
+}
+UPB_INLINE const upb_Array* _validate_Fixed64Rules_not_in_upb_array(const validate_Fixed64Rules* msg, size_t* size) {
+  const upb_MiniTableField field = {7, UPB_SIZE(8, 56), 0, kUpb_NoSub, 6, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _validate_Fixed64Rules_not_in_mutable_upb_array(const validate_Fixed64Rules* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {7, UPB_SIZE(8, 56), 0, kUpb_NoSub, 6, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE bool validate_Fixed64Rules_has_not_in(const validate_Fixed64Rules* msg) {
+  size_t size;
+  validate_Fixed64Rules_not_in(msg, &size);
+  return size != 0;
+}
+UPB_INLINE void validate_Fixed64Rules_clear_ignore_empty(validate_Fixed64Rules* msg) {
+  const upb_MiniTableField field = {8, UPB_SIZE(12, 1), 6, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE bool validate_Fixed64Rules_ignore_empty(const validate_Fixed64Rules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool);
+  bool default_val = false;
+  bool ret;
+  const upb_MiniTableField field = {8, UPB_SIZE(12, 1), 6, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
+}
+UPB_INLINE bool validate_Fixed64Rules_has_ignore_empty(const validate_Fixed64Rules* msg) {
+  const upb_MiniTableField field = {8, UPB_SIZE(12, 1), 6, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
 
 UPB_INLINE void validate_Fixed64Rules_set_const(validate_Fixed64Rules *msg, uint64_t value) {
-  _upb_sethas(msg, 1);
-  *UPB_PTR_AT(msg, UPB_SIZE(16, 24), uint64_t) = value;
+  const upb_MiniTableField field = {1, UPB_SIZE(16, 8), 1, kUpb_NoSub, 6, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_Fixed64Rules_set_lt(validate_Fixed64Rules *msg, uint64_t value) {
-  _upb_sethas(msg, 2);
-  *UPB_PTR_AT(msg, UPB_SIZE(24, 32), uint64_t) = value;
+  const upb_MiniTableField field = {2, UPB_SIZE(24, 16), 2, kUpb_NoSub, 6, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_Fixed64Rules_set_lte(validate_Fixed64Rules *msg, uint64_t value) {
-  _upb_sethas(msg, 3);
-  *UPB_PTR_AT(msg, UPB_SIZE(32, 40), uint64_t) = value;
+  const upb_MiniTableField field = {3, UPB_SIZE(32, 24), 3, kUpb_NoSub, 6, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_Fixed64Rules_set_gt(validate_Fixed64Rules *msg, uint64_t value) {
-  _upb_sethas(msg, 4);
-  *UPB_PTR_AT(msg, UPB_SIZE(40, 48), uint64_t) = value;
+  const upb_MiniTableField field = {4, UPB_SIZE(40, 32), 4, kUpb_NoSub, 6, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_Fixed64Rules_set_gte(validate_Fixed64Rules *msg, uint64_t value) {
-  _upb_sethas(msg, 5);
-  *UPB_PTR_AT(msg, UPB_SIZE(48, 56), uint64_t) = value;
+  const upb_MiniTableField field = {5, UPB_SIZE(48, 40), 5, kUpb_NoSub, 6, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
-UPB_INLINE uint64_t* validate_Fixed64Rules_mutable_in(validate_Fixed64Rules* msg, size_t* len) {
-  return (uint64_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(4, 8), len);
+UPB_INLINE uint64_t* validate_Fixed64Rules_mutable_in(validate_Fixed64Rules* msg, size_t* size) {
+  upb_MiniTableField field = {6, UPB_SIZE(4, 48), 0, kUpb_NoSub, 6, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetMutableArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (uint64_t*)_upb_array_ptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
 }
-UPB_INLINE uint64_t* validate_Fixed64Rules_resize_in(validate_Fixed64Rules* msg, size_t len, upb_Arena* arena) {
-  return (uint64_t*)_upb_Array_Resize_accessor2(msg, UPB_SIZE(4, 8), len, 3, arena);
+UPB_INLINE uint64_t* validate_Fixed64Rules_resize_in(validate_Fixed64Rules* msg, size_t size, upb_Arena* arena) {
+  upb_MiniTableField field = {6, UPB_SIZE(4, 48), 0, kUpb_NoSub, 6, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return (uint64_t*)upb_Message_ResizeArray(msg, &field, size, arena);
 }
 UPB_INLINE bool validate_Fixed64Rules_add_in(validate_Fixed64Rules* msg, uint64_t val, upb_Arena* arena) {
-  return _upb_Array_Append_accessor2(msg, UPB_SIZE(4, 8), 3, &val, arena);
+  upb_MiniTableField field = {6, UPB_SIZE(4, 48), 0, kUpb_NoSub, 6, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(msg, &field, arena);
+  if (!arr || !_upb_Array_ResizeUninitialized(arr, arr->size + 1, arena)) {
+    return false;
+  }
+  _upb_Array_Set(arr, arr->size - 1, &val, sizeof(val));
+  return true;
 }
-UPB_INLINE uint64_t* validate_Fixed64Rules_mutable_not_in(validate_Fixed64Rules* msg, size_t* len) {
-  return (uint64_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(8, 16), len);
+UPB_INLINE uint64_t* validate_Fixed64Rules_mutable_not_in(validate_Fixed64Rules* msg, size_t* size) {
+  upb_MiniTableField field = {7, UPB_SIZE(8, 56), 0, kUpb_NoSub, 6, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetMutableArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (uint64_t*)_upb_array_ptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
 }
-UPB_INLINE uint64_t* validate_Fixed64Rules_resize_not_in(validate_Fixed64Rules* msg, size_t len, upb_Arena* arena) {
-  return (uint64_t*)_upb_Array_Resize_accessor2(msg, UPB_SIZE(8, 16), len, 3, arena);
+UPB_INLINE uint64_t* validate_Fixed64Rules_resize_not_in(validate_Fixed64Rules* msg, size_t size, upb_Arena* arena) {
+  upb_MiniTableField field = {7, UPB_SIZE(8, 56), 0, kUpb_NoSub, 6, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return (uint64_t*)upb_Message_ResizeArray(msg, &field, size, arena);
 }
 UPB_INLINE bool validate_Fixed64Rules_add_not_in(validate_Fixed64Rules* msg, uint64_t val, upb_Arena* arena) {
-  return _upb_Array_Append_accessor2(msg, UPB_SIZE(8, 16), 3, &val, arena);
+  upb_MiniTableField field = {7, UPB_SIZE(8, 56), 0, kUpb_NoSub, 6, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(msg, &field, arena);
+  if (!arr || !_upb_Array_ResizeUninitialized(arr, arr->size + 1, arena)) {
+    return false;
+  }
+  _upb_Array_Set(arr, arr->size - 1, &val, sizeof(val));
+  return true;
 }
 UPB_INLINE void validate_Fixed64Rules_set_ignore_empty(validate_Fixed64Rules *msg, bool value) {
-  _upb_sethas(msg, 6);
-  *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool) = value;
+  const upb_MiniTableField field = {8, UPB_SIZE(12, 1), 6, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 
 /* validate.SFixed32Rules */
 
 UPB_INLINE validate_SFixed32Rules* validate_SFixed32Rules_new(upb_Arena* arena) {
-  return (validate_SFixed32Rules*)_upb_Message_New(&validate_SFixed32Rules_msginit, arena);
+  return (validate_SFixed32Rules*)_upb_Message_New(&validate_SFixed32Rules_msg_init, arena);
 }
 UPB_INLINE validate_SFixed32Rules* validate_SFixed32Rules_parse(const char* buf, size_t size, upb_Arena* arena) {
   validate_SFixed32Rules* ret = validate_SFixed32Rules_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &validate_SFixed32Rules_msginit, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
+  if (upb_Decode(buf, size, ret, &validate_SFixed32Rules_msg_init, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
@@ -2168,7 +3502,7 @@ UPB_INLINE validate_SFixed32Rules* validate_SFixed32Rules_parse_ex(const char* b
                            int options, upb_Arena* arena) {
   validate_SFixed32Rules* ret = validate_SFixed32Rules_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &validate_SFixed32Rules_msginit, extreg, options, arena) !=
+  if (upb_Decode(buf, size, ret, &validate_SFixed32Rules_msg_init, extreg, options, arena) !=
       kUpb_DecodeStatus_Ok) {
     return NULL;
   }
@@ -2176,140 +3510,262 @@ UPB_INLINE validate_SFixed32Rules* validate_SFixed32Rules_parse_ex(const char* b
 }
 UPB_INLINE char* validate_SFixed32Rules_serialize(const validate_SFixed32Rules* msg, upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &validate_SFixed32Rules_msginit, 0, arena, &ptr, len);
+  (void)upb_Encode(msg, &validate_SFixed32Rules_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
 UPB_INLINE char* validate_SFixed32Rules_serialize_ex(const validate_SFixed32Rules* msg, int options,
                                  upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &validate_SFixed32Rules_msginit, options, arena, &ptr, len);
+  (void)upb_Encode(msg, &validate_SFixed32Rules_msg_init, options, arena, &ptr, len);
   return ptr;
 }
-UPB_INLINE bool validate_SFixed32Rules_has_const(const validate_SFixed32Rules* msg) {
-  return _upb_hasbit(msg, 1);
-}
-UPB_INLINE void validate_SFixed32Rules_clear_const(const validate_SFixed32Rules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t) = 0;
-  _upb_clearhas(msg, 1);
+UPB_INLINE void validate_SFixed32Rules_clear_const(validate_SFixed32Rules* msg) {
+  const upb_MiniTableField field = {1, 4, 1, kUpb_NoSub, 15, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE int32_t validate_SFixed32Rules_const(const validate_SFixed32Rules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t);
+  int32_t default_val = (int32_t)0;
+  int32_t ret;
+  const upb_MiniTableField field = {1, 4, 1, kUpb_NoSub, 15, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_SFixed32Rules_has_lt(const validate_SFixed32Rules* msg) {
-  return _upb_hasbit(msg, 2);
+UPB_INLINE bool validate_SFixed32Rules_has_const(const validate_SFixed32Rules* msg) {
+  const upb_MiniTableField field = {1, 4, 1, kUpb_NoSub, 15, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_SFixed32Rules_clear_lt(const validate_SFixed32Rules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), int32_t) = 0;
-  _upb_clearhas(msg, 2);
+UPB_INLINE void validate_SFixed32Rules_clear_lt(validate_SFixed32Rules* msg) {
+  const upb_MiniTableField field = {2, 8, 2, kUpb_NoSub, 15, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE int32_t validate_SFixed32Rules_lt(const validate_SFixed32Rules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(8, 8), int32_t);
+  int32_t default_val = (int32_t)0;
+  int32_t ret;
+  const upb_MiniTableField field = {2, 8, 2, kUpb_NoSub, 15, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_SFixed32Rules_has_lte(const validate_SFixed32Rules* msg) {
-  return _upb_hasbit(msg, 3);
+UPB_INLINE bool validate_SFixed32Rules_has_lt(const validate_SFixed32Rules* msg) {
+  const upb_MiniTableField field = {2, 8, 2, kUpb_NoSub, 15, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_SFixed32Rules_clear_lte(const validate_SFixed32Rules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(12, 12), int32_t) = 0;
-  _upb_clearhas(msg, 3);
+UPB_INLINE void validate_SFixed32Rules_clear_lte(validate_SFixed32Rules* msg) {
+  const upb_MiniTableField field = {3, 12, 3, kUpb_NoSub, 15, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE int32_t validate_SFixed32Rules_lte(const validate_SFixed32Rules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(12, 12), int32_t);
+  int32_t default_val = (int32_t)0;
+  int32_t ret;
+  const upb_MiniTableField field = {3, 12, 3, kUpb_NoSub, 15, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_SFixed32Rules_has_gt(const validate_SFixed32Rules* msg) {
-  return _upb_hasbit(msg, 4);
+UPB_INLINE bool validate_SFixed32Rules_has_lte(const validate_SFixed32Rules* msg) {
+  const upb_MiniTableField field = {3, 12, 3, kUpb_NoSub, 15, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_SFixed32Rules_clear_gt(const validate_SFixed32Rules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(16, 16), int32_t) = 0;
-  _upb_clearhas(msg, 4);
+UPB_INLINE void validate_SFixed32Rules_clear_gt(validate_SFixed32Rules* msg) {
+  const upb_MiniTableField field = {4, 16, 4, kUpb_NoSub, 15, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE int32_t validate_SFixed32Rules_gt(const validate_SFixed32Rules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(16, 16), int32_t);
+  int32_t default_val = (int32_t)0;
+  int32_t ret;
+  const upb_MiniTableField field = {4, 16, 4, kUpb_NoSub, 15, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_SFixed32Rules_has_gte(const validate_SFixed32Rules* msg) {
-  return _upb_hasbit(msg, 5);
+UPB_INLINE bool validate_SFixed32Rules_has_gt(const validate_SFixed32Rules* msg) {
+  const upb_MiniTableField field = {4, 16, 4, kUpb_NoSub, 15, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_SFixed32Rules_clear_gte(const validate_SFixed32Rules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(20, 20), int32_t) = 0;
-  _upb_clearhas(msg, 5);
+UPB_INLINE void validate_SFixed32Rules_clear_gte(validate_SFixed32Rules* msg) {
+  const upb_MiniTableField field = {5, 20, 5, kUpb_NoSub, 15, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE int32_t validate_SFixed32Rules_gte(const validate_SFixed32Rules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(20, 20), int32_t);
+  int32_t default_val = (int32_t)0;
+  int32_t ret;
+  const upb_MiniTableField field = {5, 20, 5, kUpb_NoSub, 15, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE void validate_SFixed32Rules_clear_in(const validate_SFixed32Rules* msg) {
-  _upb_array_detach(msg, UPB_SIZE(28, 32));
+UPB_INLINE bool validate_SFixed32Rules_has_gte(const validate_SFixed32Rules* msg) {
+  const upb_MiniTableField field = {5, 20, 5, kUpb_NoSub, 15, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE int32_t const* validate_SFixed32Rules_in(const validate_SFixed32Rules* msg, size_t* len) {
-  return (int32_t const*)_upb_array_accessor(msg, UPB_SIZE(28, 32), len);
+UPB_INLINE void validate_SFixed32Rules_clear_in(validate_SFixed32Rules* msg) {
+  const upb_MiniTableField field = {6, UPB_SIZE(24, 32), 0, kUpb_NoSub, 15, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_SFixed32Rules_clear_not_in(const validate_SFixed32Rules* msg) {
-  _upb_array_detach(msg, UPB_SIZE(32, 40));
+UPB_INLINE int32_t const* validate_SFixed32Rules_in(const validate_SFixed32Rules* msg, size_t* size) {
+  const upb_MiniTableField field = {6, UPB_SIZE(24, 32), 0, kUpb_NoSub, 15, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (int32_t const*)_upb_array_constptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
 }
-UPB_INLINE int32_t const* validate_SFixed32Rules_not_in(const validate_SFixed32Rules* msg, size_t* len) {
-  return (int32_t const*)_upb_array_accessor(msg, UPB_SIZE(32, 40), len);
+UPB_INLINE const upb_Array* _validate_SFixed32Rules_in_upb_array(const validate_SFixed32Rules* msg, size_t* size) {
+  const upb_MiniTableField field = {6, UPB_SIZE(24, 32), 0, kUpb_NoSub, 15, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
 }
-UPB_INLINE bool validate_SFixed32Rules_has_ignore_empty(const validate_SFixed32Rules* msg) {
-  return _upb_hasbit(msg, 6);
+UPB_INLINE upb_Array* _validate_SFixed32Rules_in_mutable_upb_array(const validate_SFixed32Rules* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {6, UPB_SIZE(24, 32), 0, kUpb_NoSub, 15, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
 }
-UPB_INLINE void validate_SFixed32Rules_clear_ignore_empty(const validate_SFixed32Rules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(24, 24), bool) = 0;
-  _upb_clearhas(msg, 6);
+UPB_INLINE bool validate_SFixed32Rules_has_in(const validate_SFixed32Rules* msg) {
+  size_t size;
+  validate_SFixed32Rules_in(msg, &size);
+  return size != 0;
+}
+UPB_INLINE void validate_SFixed32Rules_clear_not_in(validate_SFixed32Rules* msg) {
+  const upb_MiniTableField field = {7, UPB_SIZE(28, 40), 0, kUpb_NoSub, 15, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
+}
+UPB_INLINE int32_t const* validate_SFixed32Rules_not_in(const validate_SFixed32Rules* msg, size_t* size) {
+  const upb_MiniTableField field = {7, UPB_SIZE(28, 40), 0, kUpb_NoSub, 15, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (int32_t const*)_upb_array_constptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
+}
+UPB_INLINE const upb_Array* _validate_SFixed32Rules_not_in_upb_array(const validate_SFixed32Rules* msg, size_t* size) {
+  const upb_MiniTableField field = {7, UPB_SIZE(28, 40), 0, kUpb_NoSub, 15, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _validate_SFixed32Rules_not_in_mutable_upb_array(const validate_SFixed32Rules* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {7, UPB_SIZE(28, 40), 0, kUpb_NoSub, 15, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE bool validate_SFixed32Rules_has_not_in(const validate_SFixed32Rules* msg) {
+  size_t size;
+  validate_SFixed32Rules_not_in(msg, &size);
+  return size != 0;
+}
+UPB_INLINE void validate_SFixed32Rules_clear_ignore_empty(validate_SFixed32Rules* msg) {
+  const upb_MiniTableField field = {8, UPB_SIZE(32, 24), 6, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE bool validate_SFixed32Rules_ignore_empty(const validate_SFixed32Rules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(24, 24), bool);
+  bool default_val = false;
+  bool ret;
+  const upb_MiniTableField field = {8, UPB_SIZE(32, 24), 6, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
+}
+UPB_INLINE bool validate_SFixed32Rules_has_ignore_empty(const validate_SFixed32Rules* msg) {
+  const upb_MiniTableField field = {8, UPB_SIZE(32, 24), 6, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
 
 UPB_INLINE void validate_SFixed32Rules_set_const(validate_SFixed32Rules *msg, int32_t value) {
-  _upb_sethas(msg, 1);
-  *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t) = value;
+  const upb_MiniTableField field = {1, 4, 1, kUpb_NoSub, 15, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_SFixed32Rules_set_lt(validate_SFixed32Rules *msg, int32_t value) {
-  _upb_sethas(msg, 2);
-  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), int32_t) = value;
+  const upb_MiniTableField field = {2, 8, 2, kUpb_NoSub, 15, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_SFixed32Rules_set_lte(validate_SFixed32Rules *msg, int32_t value) {
-  _upb_sethas(msg, 3);
-  *UPB_PTR_AT(msg, UPB_SIZE(12, 12), int32_t) = value;
+  const upb_MiniTableField field = {3, 12, 3, kUpb_NoSub, 15, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_SFixed32Rules_set_gt(validate_SFixed32Rules *msg, int32_t value) {
-  _upb_sethas(msg, 4);
-  *UPB_PTR_AT(msg, UPB_SIZE(16, 16), int32_t) = value;
+  const upb_MiniTableField field = {4, 16, 4, kUpb_NoSub, 15, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_SFixed32Rules_set_gte(validate_SFixed32Rules *msg, int32_t value) {
-  _upb_sethas(msg, 5);
-  *UPB_PTR_AT(msg, UPB_SIZE(20, 20), int32_t) = value;
+  const upb_MiniTableField field = {5, 20, 5, kUpb_NoSub, 15, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
-UPB_INLINE int32_t* validate_SFixed32Rules_mutable_in(validate_SFixed32Rules* msg, size_t* len) {
-  return (int32_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(28, 32), len);
+UPB_INLINE int32_t* validate_SFixed32Rules_mutable_in(validate_SFixed32Rules* msg, size_t* size) {
+  upb_MiniTableField field = {6, UPB_SIZE(24, 32), 0, kUpb_NoSub, 15, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetMutableArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (int32_t*)_upb_array_ptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
 }
-UPB_INLINE int32_t* validate_SFixed32Rules_resize_in(validate_SFixed32Rules* msg, size_t len, upb_Arena* arena) {
-  return (int32_t*)_upb_Array_Resize_accessor2(msg, UPB_SIZE(28, 32), len, 2, arena);
+UPB_INLINE int32_t* validate_SFixed32Rules_resize_in(validate_SFixed32Rules* msg, size_t size, upb_Arena* arena) {
+  upb_MiniTableField field = {6, UPB_SIZE(24, 32), 0, kUpb_NoSub, 15, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return (int32_t*)upb_Message_ResizeArray(msg, &field, size, arena);
 }
 UPB_INLINE bool validate_SFixed32Rules_add_in(validate_SFixed32Rules* msg, int32_t val, upb_Arena* arena) {
-  return _upb_Array_Append_accessor2(msg, UPB_SIZE(28, 32), 2, &val, arena);
+  upb_MiniTableField field = {6, UPB_SIZE(24, 32), 0, kUpb_NoSub, 15, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(msg, &field, arena);
+  if (!arr || !_upb_Array_ResizeUninitialized(arr, arr->size + 1, arena)) {
+    return false;
+  }
+  _upb_Array_Set(arr, arr->size - 1, &val, sizeof(val));
+  return true;
 }
-UPB_INLINE int32_t* validate_SFixed32Rules_mutable_not_in(validate_SFixed32Rules* msg, size_t* len) {
-  return (int32_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(32, 40), len);
+UPB_INLINE int32_t* validate_SFixed32Rules_mutable_not_in(validate_SFixed32Rules* msg, size_t* size) {
+  upb_MiniTableField field = {7, UPB_SIZE(28, 40), 0, kUpb_NoSub, 15, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetMutableArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (int32_t*)_upb_array_ptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
 }
-UPB_INLINE int32_t* validate_SFixed32Rules_resize_not_in(validate_SFixed32Rules* msg, size_t len, upb_Arena* arena) {
-  return (int32_t*)_upb_Array_Resize_accessor2(msg, UPB_SIZE(32, 40), len, 2, arena);
+UPB_INLINE int32_t* validate_SFixed32Rules_resize_not_in(validate_SFixed32Rules* msg, size_t size, upb_Arena* arena) {
+  upb_MiniTableField field = {7, UPB_SIZE(28, 40), 0, kUpb_NoSub, 15, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return (int32_t*)upb_Message_ResizeArray(msg, &field, size, arena);
 }
 UPB_INLINE bool validate_SFixed32Rules_add_not_in(validate_SFixed32Rules* msg, int32_t val, upb_Arena* arena) {
-  return _upb_Array_Append_accessor2(msg, UPB_SIZE(32, 40), 2, &val, arena);
+  upb_MiniTableField field = {7, UPB_SIZE(28, 40), 0, kUpb_NoSub, 15, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(msg, &field, arena);
+  if (!arr || !_upb_Array_ResizeUninitialized(arr, arr->size + 1, arena)) {
+    return false;
+  }
+  _upb_Array_Set(arr, arr->size - 1, &val, sizeof(val));
+  return true;
 }
 UPB_INLINE void validate_SFixed32Rules_set_ignore_empty(validate_SFixed32Rules *msg, bool value) {
-  _upb_sethas(msg, 6);
-  *UPB_PTR_AT(msg, UPB_SIZE(24, 24), bool) = value;
+  const upb_MiniTableField field = {8, UPB_SIZE(32, 24), 6, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 
 /* validate.SFixed64Rules */
 
 UPB_INLINE validate_SFixed64Rules* validate_SFixed64Rules_new(upb_Arena* arena) {
-  return (validate_SFixed64Rules*)_upb_Message_New(&validate_SFixed64Rules_msginit, arena);
+  return (validate_SFixed64Rules*)_upb_Message_New(&validate_SFixed64Rules_msg_init, arena);
 }
 UPB_INLINE validate_SFixed64Rules* validate_SFixed64Rules_parse(const char* buf, size_t size, upb_Arena* arena) {
   validate_SFixed64Rules* ret = validate_SFixed64Rules_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &validate_SFixed64Rules_msginit, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
+  if (upb_Decode(buf, size, ret, &validate_SFixed64Rules_msg_init, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
@@ -2319,7 +3775,7 @@ UPB_INLINE validate_SFixed64Rules* validate_SFixed64Rules_parse_ex(const char* b
                            int options, upb_Arena* arena) {
   validate_SFixed64Rules* ret = validate_SFixed64Rules_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &validate_SFixed64Rules_msginit, extreg, options, arena) !=
+  if (upb_Decode(buf, size, ret, &validate_SFixed64Rules_msg_init, extreg, options, arena) !=
       kUpb_DecodeStatus_Ok) {
     return NULL;
   }
@@ -2327,140 +3783,262 @@ UPB_INLINE validate_SFixed64Rules* validate_SFixed64Rules_parse_ex(const char* b
 }
 UPB_INLINE char* validate_SFixed64Rules_serialize(const validate_SFixed64Rules* msg, upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &validate_SFixed64Rules_msginit, 0, arena, &ptr, len);
+  (void)upb_Encode(msg, &validate_SFixed64Rules_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
 UPB_INLINE char* validate_SFixed64Rules_serialize_ex(const validate_SFixed64Rules* msg, int options,
                                  upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &validate_SFixed64Rules_msginit, options, arena, &ptr, len);
+  (void)upb_Encode(msg, &validate_SFixed64Rules_msg_init, options, arena, &ptr, len);
   return ptr;
 }
-UPB_INLINE bool validate_SFixed64Rules_has_const(const validate_SFixed64Rules* msg) {
-  return _upb_hasbit(msg, 1);
-}
-UPB_INLINE void validate_SFixed64Rules_clear_const(const validate_SFixed64Rules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(16, 24), int64_t) = 0;
-  _upb_clearhas(msg, 1);
+UPB_INLINE void validate_SFixed64Rules_clear_const(validate_SFixed64Rules* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(16, 8), 1, kUpb_NoSub, 16, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE int64_t validate_SFixed64Rules_const(const validate_SFixed64Rules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(16, 24), int64_t);
+  int64_t default_val = (int64_t)0ll;
+  int64_t ret;
+  const upb_MiniTableField field = {1, UPB_SIZE(16, 8), 1, kUpb_NoSub, 16, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_SFixed64Rules_has_lt(const validate_SFixed64Rules* msg) {
-  return _upb_hasbit(msg, 2);
+UPB_INLINE bool validate_SFixed64Rules_has_const(const validate_SFixed64Rules* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(16, 8), 1, kUpb_NoSub, 16, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_SFixed64Rules_clear_lt(const validate_SFixed64Rules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(24, 32), int64_t) = 0;
-  _upb_clearhas(msg, 2);
+UPB_INLINE void validate_SFixed64Rules_clear_lt(validate_SFixed64Rules* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(24, 16), 2, kUpb_NoSub, 16, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE int64_t validate_SFixed64Rules_lt(const validate_SFixed64Rules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(24, 32), int64_t);
+  int64_t default_val = (int64_t)0ll;
+  int64_t ret;
+  const upb_MiniTableField field = {2, UPB_SIZE(24, 16), 2, kUpb_NoSub, 16, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_SFixed64Rules_has_lte(const validate_SFixed64Rules* msg) {
-  return _upb_hasbit(msg, 3);
+UPB_INLINE bool validate_SFixed64Rules_has_lt(const validate_SFixed64Rules* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(24, 16), 2, kUpb_NoSub, 16, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_SFixed64Rules_clear_lte(const validate_SFixed64Rules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(32, 40), int64_t) = 0;
-  _upb_clearhas(msg, 3);
+UPB_INLINE void validate_SFixed64Rules_clear_lte(validate_SFixed64Rules* msg) {
+  const upb_MiniTableField field = {3, UPB_SIZE(32, 24), 3, kUpb_NoSub, 16, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE int64_t validate_SFixed64Rules_lte(const validate_SFixed64Rules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(32, 40), int64_t);
+  int64_t default_val = (int64_t)0ll;
+  int64_t ret;
+  const upb_MiniTableField field = {3, UPB_SIZE(32, 24), 3, kUpb_NoSub, 16, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_SFixed64Rules_has_gt(const validate_SFixed64Rules* msg) {
-  return _upb_hasbit(msg, 4);
+UPB_INLINE bool validate_SFixed64Rules_has_lte(const validate_SFixed64Rules* msg) {
+  const upb_MiniTableField field = {3, UPB_SIZE(32, 24), 3, kUpb_NoSub, 16, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_SFixed64Rules_clear_gt(const validate_SFixed64Rules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(40, 48), int64_t) = 0;
-  _upb_clearhas(msg, 4);
+UPB_INLINE void validate_SFixed64Rules_clear_gt(validate_SFixed64Rules* msg) {
+  const upb_MiniTableField field = {4, UPB_SIZE(40, 32), 4, kUpb_NoSub, 16, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE int64_t validate_SFixed64Rules_gt(const validate_SFixed64Rules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(40, 48), int64_t);
+  int64_t default_val = (int64_t)0ll;
+  int64_t ret;
+  const upb_MiniTableField field = {4, UPB_SIZE(40, 32), 4, kUpb_NoSub, 16, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_SFixed64Rules_has_gte(const validate_SFixed64Rules* msg) {
-  return _upb_hasbit(msg, 5);
+UPB_INLINE bool validate_SFixed64Rules_has_gt(const validate_SFixed64Rules* msg) {
+  const upb_MiniTableField field = {4, UPB_SIZE(40, 32), 4, kUpb_NoSub, 16, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_SFixed64Rules_clear_gte(const validate_SFixed64Rules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(48, 56), int64_t) = 0;
-  _upb_clearhas(msg, 5);
+UPB_INLINE void validate_SFixed64Rules_clear_gte(validate_SFixed64Rules* msg) {
+  const upb_MiniTableField field = {5, UPB_SIZE(48, 40), 5, kUpb_NoSub, 16, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE int64_t validate_SFixed64Rules_gte(const validate_SFixed64Rules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(48, 56), int64_t);
+  int64_t default_val = (int64_t)0ll;
+  int64_t ret;
+  const upb_MiniTableField field = {5, UPB_SIZE(48, 40), 5, kUpb_NoSub, 16, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE void validate_SFixed64Rules_clear_in(const validate_SFixed64Rules* msg) {
-  _upb_array_detach(msg, UPB_SIZE(4, 8));
+UPB_INLINE bool validate_SFixed64Rules_has_gte(const validate_SFixed64Rules* msg) {
+  const upb_MiniTableField field = {5, UPB_SIZE(48, 40), 5, kUpb_NoSub, 16, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE int64_t const* validate_SFixed64Rules_in(const validate_SFixed64Rules* msg, size_t* len) {
-  return (int64_t const*)_upb_array_accessor(msg, UPB_SIZE(4, 8), len);
+UPB_INLINE void validate_SFixed64Rules_clear_in(validate_SFixed64Rules* msg) {
+  const upb_MiniTableField field = {6, UPB_SIZE(4, 48), 0, kUpb_NoSub, 16, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_SFixed64Rules_clear_not_in(const validate_SFixed64Rules* msg) {
-  _upb_array_detach(msg, UPB_SIZE(8, 16));
+UPB_INLINE int64_t const* validate_SFixed64Rules_in(const validate_SFixed64Rules* msg, size_t* size) {
+  const upb_MiniTableField field = {6, UPB_SIZE(4, 48), 0, kUpb_NoSub, 16, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (int64_t const*)_upb_array_constptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
 }
-UPB_INLINE int64_t const* validate_SFixed64Rules_not_in(const validate_SFixed64Rules* msg, size_t* len) {
-  return (int64_t const*)_upb_array_accessor(msg, UPB_SIZE(8, 16), len);
+UPB_INLINE const upb_Array* _validate_SFixed64Rules_in_upb_array(const validate_SFixed64Rules* msg, size_t* size) {
+  const upb_MiniTableField field = {6, UPB_SIZE(4, 48), 0, kUpb_NoSub, 16, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
 }
-UPB_INLINE bool validate_SFixed64Rules_has_ignore_empty(const validate_SFixed64Rules* msg) {
-  return _upb_hasbit(msg, 6);
+UPB_INLINE upb_Array* _validate_SFixed64Rules_in_mutable_upb_array(const validate_SFixed64Rules* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {6, UPB_SIZE(4, 48), 0, kUpb_NoSub, 16, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
 }
-UPB_INLINE void validate_SFixed64Rules_clear_ignore_empty(const validate_SFixed64Rules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool) = 0;
-  _upb_clearhas(msg, 6);
+UPB_INLINE bool validate_SFixed64Rules_has_in(const validate_SFixed64Rules* msg) {
+  size_t size;
+  validate_SFixed64Rules_in(msg, &size);
+  return size != 0;
+}
+UPB_INLINE void validate_SFixed64Rules_clear_not_in(validate_SFixed64Rules* msg) {
+  const upb_MiniTableField field = {7, UPB_SIZE(8, 56), 0, kUpb_NoSub, 16, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
+}
+UPB_INLINE int64_t const* validate_SFixed64Rules_not_in(const validate_SFixed64Rules* msg, size_t* size) {
+  const upb_MiniTableField field = {7, UPB_SIZE(8, 56), 0, kUpb_NoSub, 16, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (int64_t const*)_upb_array_constptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
+}
+UPB_INLINE const upb_Array* _validate_SFixed64Rules_not_in_upb_array(const validate_SFixed64Rules* msg, size_t* size) {
+  const upb_MiniTableField field = {7, UPB_SIZE(8, 56), 0, kUpb_NoSub, 16, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _validate_SFixed64Rules_not_in_mutable_upb_array(const validate_SFixed64Rules* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {7, UPB_SIZE(8, 56), 0, kUpb_NoSub, 16, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE bool validate_SFixed64Rules_has_not_in(const validate_SFixed64Rules* msg) {
+  size_t size;
+  validate_SFixed64Rules_not_in(msg, &size);
+  return size != 0;
+}
+UPB_INLINE void validate_SFixed64Rules_clear_ignore_empty(validate_SFixed64Rules* msg) {
+  const upb_MiniTableField field = {8, UPB_SIZE(12, 1), 6, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE bool validate_SFixed64Rules_ignore_empty(const validate_SFixed64Rules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool);
+  bool default_val = false;
+  bool ret;
+  const upb_MiniTableField field = {8, UPB_SIZE(12, 1), 6, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
+}
+UPB_INLINE bool validate_SFixed64Rules_has_ignore_empty(const validate_SFixed64Rules* msg) {
+  const upb_MiniTableField field = {8, UPB_SIZE(12, 1), 6, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
 
 UPB_INLINE void validate_SFixed64Rules_set_const(validate_SFixed64Rules *msg, int64_t value) {
-  _upb_sethas(msg, 1);
-  *UPB_PTR_AT(msg, UPB_SIZE(16, 24), int64_t) = value;
+  const upb_MiniTableField field = {1, UPB_SIZE(16, 8), 1, kUpb_NoSub, 16, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_SFixed64Rules_set_lt(validate_SFixed64Rules *msg, int64_t value) {
-  _upb_sethas(msg, 2);
-  *UPB_PTR_AT(msg, UPB_SIZE(24, 32), int64_t) = value;
+  const upb_MiniTableField field = {2, UPB_SIZE(24, 16), 2, kUpb_NoSub, 16, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_SFixed64Rules_set_lte(validate_SFixed64Rules *msg, int64_t value) {
-  _upb_sethas(msg, 3);
-  *UPB_PTR_AT(msg, UPB_SIZE(32, 40), int64_t) = value;
+  const upb_MiniTableField field = {3, UPB_SIZE(32, 24), 3, kUpb_NoSub, 16, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_SFixed64Rules_set_gt(validate_SFixed64Rules *msg, int64_t value) {
-  _upb_sethas(msg, 4);
-  *UPB_PTR_AT(msg, UPB_SIZE(40, 48), int64_t) = value;
+  const upb_MiniTableField field = {4, UPB_SIZE(40, 32), 4, kUpb_NoSub, 16, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_SFixed64Rules_set_gte(validate_SFixed64Rules *msg, int64_t value) {
-  _upb_sethas(msg, 5);
-  *UPB_PTR_AT(msg, UPB_SIZE(48, 56), int64_t) = value;
+  const upb_MiniTableField field = {5, UPB_SIZE(48, 40), 5, kUpb_NoSub, 16, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
-UPB_INLINE int64_t* validate_SFixed64Rules_mutable_in(validate_SFixed64Rules* msg, size_t* len) {
-  return (int64_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(4, 8), len);
+UPB_INLINE int64_t* validate_SFixed64Rules_mutable_in(validate_SFixed64Rules* msg, size_t* size) {
+  upb_MiniTableField field = {6, UPB_SIZE(4, 48), 0, kUpb_NoSub, 16, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetMutableArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (int64_t*)_upb_array_ptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
 }
-UPB_INLINE int64_t* validate_SFixed64Rules_resize_in(validate_SFixed64Rules* msg, size_t len, upb_Arena* arena) {
-  return (int64_t*)_upb_Array_Resize_accessor2(msg, UPB_SIZE(4, 8), len, 3, arena);
+UPB_INLINE int64_t* validate_SFixed64Rules_resize_in(validate_SFixed64Rules* msg, size_t size, upb_Arena* arena) {
+  upb_MiniTableField field = {6, UPB_SIZE(4, 48), 0, kUpb_NoSub, 16, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return (int64_t*)upb_Message_ResizeArray(msg, &field, size, arena);
 }
 UPB_INLINE bool validate_SFixed64Rules_add_in(validate_SFixed64Rules* msg, int64_t val, upb_Arena* arena) {
-  return _upb_Array_Append_accessor2(msg, UPB_SIZE(4, 8), 3, &val, arena);
+  upb_MiniTableField field = {6, UPB_SIZE(4, 48), 0, kUpb_NoSub, 16, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(msg, &field, arena);
+  if (!arr || !_upb_Array_ResizeUninitialized(arr, arr->size + 1, arena)) {
+    return false;
+  }
+  _upb_Array_Set(arr, arr->size - 1, &val, sizeof(val));
+  return true;
 }
-UPB_INLINE int64_t* validate_SFixed64Rules_mutable_not_in(validate_SFixed64Rules* msg, size_t* len) {
-  return (int64_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(8, 16), len);
+UPB_INLINE int64_t* validate_SFixed64Rules_mutable_not_in(validate_SFixed64Rules* msg, size_t* size) {
+  upb_MiniTableField field = {7, UPB_SIZE(8, 56), 0, kUpb_NoSub, 16, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetMutableArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (int64_t*)_upb_array_ptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
 }
-UPB_INLINE int64_t* validate_SFixed64Rules_resize_not_in(validate_SFixed64Rules* msg, size_t len, upb_Arena* arena) {
-  return (int64_t*)_upb_Array_Resize_accessor2(msg, UPB_SIZE(8, 16), len, 3, arena);
+UPB_INLINE int64_t* validate_SFixed64Rules_resize_not_in(validate_SFixed64Rules* msg, size_t size, upb_Arena* arena) {
+  upb_MiniTableField field = {7, UPB_SIZE(8, 56), 0, kUpb_NoSub, 16, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return (int64_t*)upb_Message_ResizeArray(msg, &field, size, arena);
 }
 UPB_INLINE bool validate_SFixed64Rules_add_not_in(validate_SFixed64Rules* msg, int64_t val, upb_Arena* arena) {
-  return _upb_Array_Append_accessor2(msg, UPB_SIZE(8, 16), 3, &val, arena);
+  upb_MiniTableField field = {7, UPB_SIZE(8, 56), 0, kUpb_NoSub, 16, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(msg, &field, arena);
+  if (!arr || !_upb_Array_ResizeUninitialized(arr, arr->size + 1, arena)) {
+    return false;
+  }
+  _upb_Array_Set(arr, arr->size - 1, &val, sizeof(val));
+  return true;
 }
 UPB_INLINE void validate_SFixed64Rules_set_ignore_empty(validate_SFixed64Rules *msg, bool value) {
-  _upb_sethas(msg, 6);
-  *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool) = value;
+  const upb_MiniTableField field = {8, UPB_SIZE(12, 1), 6, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 
 /* validate.BoolRules */
 
 UPB_INLINE validate_BoolRules* validate_BoolRules_new(upb_Arena* arena) {
-  return (validate_BoolRules*)_upb_Message_New(&validate_BoolRules_msginit, arena);
+  return (validate_BoolRules*)_upb_Message_New(&validate_BoolRules_msg_init, arena);
 }
 UPB_INLINE validate_BoolRules* validate_BoolRules_parse(const char* buf, size_t size, upb_Arena* arena) {
   validate_BoolRules* ret = validate_BoolRules_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &validate_BoolRules_msginit, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
+  if (upb_Decode(buf, size, ret, &validate_BoolRules_msg_init, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
@@ -2470,7 +4048,7 @@ UPB_INLINE validate_BoolRules* validate_BoolRules_parse_ex(const char* buf, size
                            int options, upb_Arena* arena) {
   validate_BoolRules* ret = validate_BoolRules_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &validate_BoolRules_msginit, extreg, options, arena) !=
+  if (upb_Decode(buf, size, ret, &validate_BoolRules_msg_init, extreg, options, arena) !=
       kUpb_DecodeStatus_Ok) {
     return NULL;
   }
@@ -2478,40 +4056,45 @@ UPB_INLINE validate_BoolRules* validate_BoolRules_parse_ex(const char* buf, size
 }
 UPB_INLINE char* validate_BoolRules_serialize(const validate_BoolRules* msg, upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &validate_BoolRules_msginit, 0, arena, &ptr, len);
+  (void)upb_Encode(msg, &validate_BoolRules_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
 UPB_INLINE char* validate_BoolRules_serialize_ex(const validate_BoolRules* msg, int options,
                                  upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &validate_BoolRules_msginit, options, arena, &ptr, len);
+  (void)upb_Encode(msg, &validate_BoolRules_msg_init, options, arena, &ptr, len);
   return ptr;
 }
-UPB_INLINE bool validate_BoolRules_has_const(const validate_BoolRules* msg) {
-  return _upb_hasbit(msg, 1);
-}
-UPB_INLINE void validate_BoolRules_clear_const(const validate_BoolRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool) = 0;
-  _upb_clearhas(msg, 1);
+UPB_INLINE void validate_BoolRules_clear_const(validate_BoolRules* msg) {
+  const upb_MiniTableField field = {1, 1, 1, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE bool validate_BoolRules_const(const validate_BoolRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool);
+  bool default_val = false;
+  bool ret;
+  const upb_MiniTableField field = {1, 1, 1, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
+}
+UPB_INLINE bool validate_BoolRules_has_const(const validate_BoolRules* msg) {
+  const upb_MiniTableField field = {1, 1, 1, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
 
 UPB_INLINE void validate_BoolRules_set_const(validate_BoolRules *msg, bool value) {
-  _upb_sethas(msg, 1);
-  *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool) = value;
+  const upb_MiniTableField field = {1, 1, 1, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 
 /* validate.StringRules */
 
 UPB_INLINE validate_StringRules* validate_StringRules_new(upb_Arena* arena) {
-  return (validate_StringRules*)_upb_Message_New(&validate_StringRules_msginit, arena);
+  return (validate_StringRules*)_upb_Message_New(&validate_StringRules_msg_init, arena);
 }
 UPB_INLINE validate_StringRules* validate_StringRules_parse(const char* buf, size_t size, upb_Arena* arena) {
   validate_StringRules* ret = validate_StringRules_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &validate_StringRules_msginit, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
+  if (upb_Decode(buf, size, ret, &validate_StringRules_msg_init, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
@@ -2521,7 +4104,7 @@ UPB_INLINE validate_StringRules* validate_StringRules_parse_ex(const char* buf, 
                            int options, upb_Arena* arena) {
   validate_StringRules* ret = validate_StringRules_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &validate_StringRules_msginit, extreg, options, arena) !=
+  if (upb_Decode(buf, size, ret, &validate_StringRules_msg_init, extreg, options, arena) !=
       kUpb_DecodeStatus_Ok) {
     return NULL;
   }
@@ -2529,13 +4112,13 @@ UPB_INLINE validate_StringRules* validate_StringRules_parse_ex(const char* buf, 
 }
 UPB_INLINE char* validate_StringRules_serialize(const validate_StringRules* msg, upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &validate_StringRules_msginit, 0, arena, &ptr, len);
+  (void)upb_Encode(msg, &validate_StringRules_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
 UPB_INLINE char* validate_StringRules_serialize_ex(const validate_StringRules* msg, int options,
                                  upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &validate_StringRules_msginit, options, arena, &ptr, len);
+  (void)upb_Encode(msg, &validate_StringRules_msg_init, options, arena, &ptr, len);
   return ptr;
 }
 typedef enum {
@@ -2552,365 +4135,598 @@ typedef enum {
   validate_StringRules_well_known_NOT_SET = 0
 } validate_StringRules_well_known_oneofcases;
 UPB_INLINE validate_StringRules_well_known_oneofcases validate_StringRules_well_known_case(const validate_StringRules* msg) {
-  return (validate_StringRules_well_known_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t);
+  const upb_MiniTableField field = {12, UPB_SIZE(20, 12), UPB_SIZE(-13, -5), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  return (validate_StringRules_well_known_oneofcases)upb_Message_WhichOneofFieldNumber(msg, &field);
 }
-UPB_INLINE bool validate_StringRules_has_const(const validate_StringRules* msg) {
-  return _upb_hasbit(msg, 1);
-}
-UPB_INLINE void validate_StringRules_clear_const(const validate_StringRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(16, 16), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
-  _upb_clearhas(msg, 1);
+UPB_INLINE void validate_StringRules_clear_const(validate_StringRules* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(24, 16), 1, kUpb_NoSub, 12, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsAlternate | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE upb_StringView validate_StringRules_const(const validate_StringRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(16, 16), upb_StringView);
+  upb_StringView default_val = upb_StringView_FromString("");
+  upb_StringView ret;
+  const upb_MiniTableField field = {1, UPB_SIZE(24, 16), 1, kUpb_NoSub, 12, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsAlternate | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_StringRules_has_min_len(const validate_StringRules* msg) {
-  return _upb_hasbit(msg, 2);
+UPB_INLINE bool validate_StringRules_has_const(const validate_StringRules* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(24, 16), 1, kUpb_NoSub, 12, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsAlternate | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_StringRules_clear_min_len(const validate_StringRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(72, 128), uint64_t) = 0;
-  _upb_clearhas(msg, 2);
+UPB_INLINE void validate_StringRules_clear_min_len(validate_StringRules* msg) {
+  const upb_MiniTableField field = {2, 32, 2, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE uint64_t validate_StringRules_min_len(const validate_StringRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(72, 128), uint64_t);
+  uint64_t default_val = (uint64_t)0ull;
+  uint64_t ret;
+  const upb_MiniTableField field = {2, 32, 2, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_StringRules_has_max_len(const validate_StringRules* msg) {
-  return _upb_hasbit(msg, 3);
+UPB_INLINE bool validate_StringRules_has_min_len(const validate_StringRules* msg) {
+  const upb_MiniTableField field = {2, 32, 2, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_StringRules_clear_max_len(const validate_StringRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(80, 136), uint64_t) = 0;
-  _upb_clearhas(msg, 3);
+UPB_INLINE void validate_StringRules_clear_max_len(validate_StringRules* msg) {
+  const upb_MiniTableField field = {3, 40, 3, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE uint64_t validate_StringRules_max_len(const validate_StringRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(80, 136), uint64_t);
+  uint64_t default_val = (uint64_t)0ull;
+  uint64_t ret;
+  const upb_MiniTableField field = {3, 40, 3, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_StringRules_has_min_bytes(const validate_StringRules* msg) {
-  return _upb_hasbit(msg, 4);
+UPB_INLINE bool validate_StringRules_has_max_len(const validate_StringRules* msg) {
+  const upb_MiniTableField field = {3, 40, 3, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_StringRules_clear_min_bytes(const validate_StringRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(88, 144), uint64_t) = 0;
-  _upb_clearhas(msg, 4);
+UPB_INLINE void validate_StringRules_clear_min_bytes(validate_StringRules* msg) {
+  const upb_MiniTableField field = {4, 48, 4, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE uint64_t validate_StringRules_min_bytes(const validate_StringRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(88, 144), uint64_t);
+  uint64_t default_val = (uint64_t)0ull;
+  uint64_t ret;
+  const upb_MiniTableField field = {4, 48, 4, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_StringRules_has_max_bytes(const validate_StringRules* msg) {
-  return _upb_hasbit(msg, 5);
+UPB_INLINE bool validate_StringRules_has_min_bytes(const validate_StringRules* msg) {
+  const upb_MiniTableField field = {4, 48, 4, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_StringRules_clear_max_bytes(const validate_StringRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(96, 152), uint64_t) = 0;
-  _upb_clearhas(msg, 5);
+UPB_INLINE void validate_StringRules_clear_max_bytes(validate_StringRules* msg) {
+  const upb_MiniTableField field = {5, 56, 5, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE uint64_t validate_StringRules_max_bytes(const validate_StringRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(96, 152), uint64_t);
+  uint64_t default_val = (uint64_t)0ull;
+  uint64_t ret;
+  const upb_MiniTableField field = {5, 56, 5, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_StringRules_has_pattern(const validate_StringRules* msg) {
-  return _upb_hasbit(msg, 6);
+UPB_INLINE bool validate_StringRules_has_max_bytes(const validate_StringRules* msg) {
+  const upb_MiniTableField field = {5, 56, 5, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_StringRules_clear_pattern(const validate_StringRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(24, 32), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
-  _upb_clearhas(msg, 6);
+UPB_INLINE void validate_StringRules_clear_pattern(validate_StringRules* msg) {
+  const upb_MiniTableField field = {6, 64, 6, kUpb_NoSub, 12, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsAlternate | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE upb_StringView validate_StringRules_pattern(const validate_StringRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(24, 32), upb_StringView);
+  upb_StringView default_val = upb_StringView_FromString("");
+  upb_StringView ret;
+  const upb_MiniTableField field = {6, 64, 6, kUpb_NoSub, 12, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsAlternate | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_StringRules_has_prefix(const validate_StringRules* msg) {
-  return _upb_hasbit(msg, 7);
+UPB_INLINE bool validate_StringRules_has_pattern(const validate_StringRules* msg) {
+  const upb_MiniTableField field = {6, 64, 6, kUpb_NoSub, 12, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsAlternate | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_StringRules_clear_prefix(const validate_StringRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(32, 48), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
-  _upb_clearhas(msg, 7);
+UPB_INLINE void validate_StringRules_clear_prefix(validate_StringRules* msg) {
+  const upb_MiniTableField field = {7, UPB_SIZE(72, 80), 7, kUpb_NoSub, 12, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsAlternate | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE upb_StringView validate_StringRules_prefix(const validate_StringRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(32, 48), upb_StringView);
+  upb_StringView default_val = upb_StringView_FromString("");
+  upb_StringView ret;
+  const upb_MiniTableField field = {7, UPB_SIZE(72, 80), 7, kUpb_NoSub, 12, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsAlternate | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_StringRules_has_suffix(const validate_StringRules* msg) {
-  return _upb_hasbit(msg, 8);
+UPB_INLINE bool validate_StringRules_has_prefix(const validate_StringRules* msg) {
+  const upb_MiniTableField field = {7, UPB_SIZE(72, 80), 7, kUpb_NoSub, 12, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsAlternate | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_StringRules_clear_suffix(const validate_StringRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(40, 64), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
-  _upb_clearhas(msg, 8);
+UPB_INLINE void validate_StringRules_clear_suffix(validate_StringRules* msg) {
+  const upb_MiniTableField field = {8, UPB_SIZE(80, 96), 8, kUpb_NoSub, 12, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsAlternate | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE upb_StringView validate_StringRules_suffix(const validate_StringRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(40, 64), upb_StringView);
+  upb_StringView default_val = upb_StringView_FromString("");
+  upb_StringView ret;
+  const upb_MiniTableField field = {8, UPB_SIZE(80, 96), 8, kUpb_NoSub, 12, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsAlternate | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_StringRules_has_contains(const validate_StringRules* msg) {
-  return _upb_hasbit(msg, 9);
+UPB_INLINE bool validate_StringRules_has_suffix(const validate_StringRules* msg) {
+  const upb_MiniTableField field = {8, UPB_SIZE(80, 96), 8, kUpb_NoSub, 12, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsAlternate | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_StringRules_clear_contains(const validate_StringRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(48, 80), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
-  _upb_clearhas(msg, 9);
+UPB_INLINE void validate_StringRules_clear_contains(validate_StringRules* msg) {
+  const upb_MiniTableField field = {9, UPB_SIZE(88, 112), 9, kUpb_NoSub, 12, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsAlternate | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE upb_StringView validate_StringRules_contains(const validate_StringRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(48, 80), upb_StringView);
+  upb_StringView default_val = upb_StringView_FromString("");
+  upb_StringView ret;
+  const upb_MiniTableField field = {9, UPB_SIZE(88, 112), 9, kUpb_NoSub, 12, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsAlternate | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE void validate_StringRules_clear_in(const validate_StringRules* msg) {
-  _upb_array_detach(msg, UPB_SIZE(56, 96));
+UPB_INLINE bool validate_StringRules_has_contains(const validate_StringRules* msg) {
+  const upb_MiniTableField field = {9, UPB_SIZE(88, 112), 9, kUpb_NoSub, 12, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsAlternate | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE upb_StringView const* validate_StringRules_in(const validate_StringRules* msg, size_t* len) {
-  return (upb_StringView const*)_upb_array_accessor(msg, UPB_SIZE(56, 96), len);
+UPB_INLINE void validate_StringRules_clear_in(validate_StringRules* msg) {
+  const upb_MiniTableField field = {10, UPB_SIZE(4, 128), 0, kUpb_NoSub, 12, kUpb_FieldMode_Array | kUpb_LabelFlags_IsAlternate | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_StringRules_clear_not_in(const validate_StringRules* msg) {
-  _upb_array_detach(msg, UPB_SIZE(60, 104));
+UPB_INLINE upb_StringView const* validate_StringRules_in(const validate_StringRules* msg, size_t* size) {
+  const upb_MiniTableField field = {10, UPB_SIZE(4, 128), 0, kUpb_NoSub, 12, kUpb_FieldMode_Array | kUpb_LabelFlags_IsAlternate | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (upb_StringView const*)_upb_array_constptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
 }
-UPB_INLINE upb_StringView const* validate_StringRules_not_in(const validate_StringRules* msg, size_t* len) {
-  return (upb_StringView const*)_upb_array_accessor(msg, UPB_SIZE(60, 104), len);
+UPB_INLINE const upb_Array* _validate_StringRules_in_upb_array(const validate_StringRules* msg, size_t* size) {
+  const upb_MiniTableField field = {10, UPB_SIZE(4, 128), 0, kUpb_NoSub, 12, kUpb_FieldMode_Array | kUpb_LabelFlags_IsAlternate | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
 }
-UPB_INLINE bool validate_StringRules_has_email(const validate_StringRules* msg) {
-  return _upb_getoneofcase(msg, UPB_SIZE(4, 4)) == 12;
+UPB_INLINE upb_Array* _validate_StringRules_in_mutable_upb_array(const validate_StringRules* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {10, UPB_SIZE(4, 128), 0, kUpb_NoSub, 12, kUpb_FieldMode_Array | kUpb_LabelFlags_IsAlternate | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
 }
-UPB_INLINE void validate_StringRules_clear_email(const validate_StringRules* msg) {
-  UPB_WRITE_ONEOF(msg, bool, UPB_SIZE(12, 12), 0, UPB_SIZE(4, 4), validate_StringRules_well_known_NOT_SET);
+UPB_INLINE bool validate_StringRules_has_in(const validate_StringRules* msg) {
+  size_t size;
+  validate_StringRules_in(msg, &size);
+  return size != 0;
+}
+UPB_INLINE void validate_StringRules_clear_not_in(validate_StringRules* msg) {
+  const upb_MiniTableField field = {11, UPB_SIZE(8, 136), 0, kUpb_NoSub, 12, kUpb_FieldMode_Array | kUpb_LabelFlags_IsAlternate | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
+}
+UPB_INLINE upb_StringView const* validate_StringRules_not_in(const validate_StringRules* msg, size_t* size) {
+  const upb_MiniTableField field = {11, UPB_SIZE(8, 136), 0, kUpb_NoSub, 12, kUpb_FieldMode_Array | kUpb_LabelFlags_IsAlternate | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (upb_StringView const*)_upb_array_constptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
+}
+UPB_INLINE const upb_Array* _validate_StringRules_not_in_upb_array(const validate_StringRules* msg, size_t* size) {
+  const upb_MiniTableField field = {11, UPB_SIZE(8, 136), 0, kUpb_NoSub, 12, kUpb_FieldMode_Array | kUpb_LabelFlags_IsAlternate | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _validate_StringRules_not_in_mutable_upb_array(const validate_StringRules* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {11, UPB_SIZE(8, 136), 0, kUpb_NoSub, 12, kUpb_FieldMode_Array | kUpb_LabelFlags_IsAlternate | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE bool validate_StringRules_has_not_in(const validate_StringRules* msg) {
+  size_t size;
+  validate_StringRules_not_in(msg, &size);
+  return size != 0;
+}
+UPB_INLINE void validate_StringRules_clear_email(validate_StringRules* msg) {
+  const upb_MiniTableField field = {12, UPB_SIZE(20, 12), UPB_SIZE(-13, -5), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE bool validate_StringRules_email(const validate_StringRules* msg) {
-  return UPB_READ_ONEOF(msg, bool, UPB_SIZE(12, 12), UPB_SIZE(4, 4), 12, false);
+  bool default_val = false;
+  bool ret;
+  const upb_MiniTableField field = {12, UPB_SIZE(20, 12), UPB_SIZE(-13, -5), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_StringRules_has_hostname(const validate_StringRules* msg) {
-  return _upb_getoneofcase(msg, UPB_SIZE(4, 4)) == 13;
+UPB_INLINE bool validate_StringRules_has_email(const validate_StringRules* msg) {
+  const upb_MiniTableField field = {12, UPB_SIZE(20, 12), UPB_SIZE(-13, -5), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_StringRules_clear_hostname(const validate_StringRules* msg) {
-  UPB_WRITE_ONEOF(msg, bool, UPB_SIZE(12, 12), 0, UPB_SIZE(4, 4), validate_StringRules_well_known_NOT_SET);
+UPB_INLINE void validate_StringRules_clear_hostname(validate_StringRules* msg) {
+  const upb_MiniTableField field = {13, UPB_SIZE(20, 12), UPB_SIZE(-13, -5), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE bool validate_StringRules_hostname(const validate_StringRules* msg) {
-  return UPB_READ_ONEOF(msg, bool, UPB_SIZE(12, 12), UPB_SIZE(4, 4), 13, false);
+  bool default_val = false;
+  bool ret;
+  const upb_MiniTableField field = {13, UPB_SIZE(20, 12), UPB_SIZE(-13, -5), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_StringRules_has_ip(const validate_StringRules* msg) {
-  return _upb_getoneofcase(msg, UPB_SIZE(4, 4)) == 14;
+UPB_INLINE bool validate_StringRules_has_hostname(const validate_StringRules* msg) {
+  const upb_MiniTableField field = {13, UPB_SIZE(20, 12), UPB_SIZE(-13, -5), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_StringRules_clear_ip(const validate_StringRules* msg) {
-  UPB_WRITE_ONEOF(msg, bool, UPB_SIZE(12, 12), 0, UPB_SIZE(4, 4), validate_StringRules_well_known_NOT_SET);
+UPB_INLINE void validate_StringRules_clear_ip(validate_StringRules* msg) {
+  const upb_MiniTableField field = {14, UPB_SIZE(20, 12), UPB_SIZE(-13, -5), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE bool validate_StringRules_ip(const validate_StringRules* msg) {
-  return UPB_READ_ONEOF(msg, bool, UPB_SIZE(12, 12), UPB_SIZE(4, 4), 14, false);
+  bool default_val = false;
+  bool ret;
+  const upb_MiniTableField field = {14, UPB_SIZE(20, 12), UPB_SIZE(-13, -5), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_StringRules_has_ipv4(const validate_StringRules* msg) {
-  return _upb_getoneofcase(msg, UPB_SIZE(4, 4)) == 15;
+UPB_INLINE bool validate_StringRules_has_ip(const validate_StringRules* msg) {
+  const upb_MiniTableField field = {14, UPB_SIZE(20, 12), UPB_SIZE(-13, -5), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_StringRules_clear_ipv4(const validate_StringRules* msg) {
-  UPB_WRITE_ONEOF(msg, bool, UPB_SIZE(12, 12), 0, UPB_SIZE(4, 4), validate_StringRules_well_known_NOT_SET);
+UPB_INLINE void validate_StringRules_clear_ipv4(validate_StringRules* msg) {
+  const upb_MiniTableField field = {15, UPB_SIZE(20, 12), UPB_SIZE(-13, -5), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE bool validate_StringRules_ipv4(const validate_StringRules* msg) {
-  return UPB_READ_ONEOF(msg, bool, UPB_SIZE(12, 12), UPB_SIZE(4, 4), 15, false);
+  bool default_val = false;
+  bool ret;
+  const upb_MiniTableField field = {15, UPB_SIZE(20, 12), UPB_SIZE(-13, -5), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_StringRules_has_ipv6(const validate_StringRules* msg) {
-  return _upb_getoneofcase(msg, UPB_SIZE(4, 4)) == 16;
+UPB_INLINE bool validate_StringRules_has_ipv4(const validate_StringRules* msg) {
+  const upb_MiniTableField field = {15, UPB_SIZE(20, 12), UPB_SIZE(-13, -5), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_StringRules_clear_ipv6(const validate_StringRules* msg) {
-  UPB_WRITE_ONEOF(msg, bool, UPB_SIZE(12, 12), 0, UPB_SIZE(4, 4), validate_StringRules_well_known_NOT_SET);
+UPB_INLINE void validate_StringRules_clear_ipv6(validate_StringRules* msg) {
+  const upb_MiniTableField field = {16, UPB_SIZE(20, 12), UPB_SIZE(-13, -5), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE bool validate_StringRules_ipv6(const validate_StringRules* msg) {
-  return UPB_READ_ONEOF(msg, bool, UPB_SIZE(12, 12), UPB_SIZE(4, 4), 16, false);
+  bool default_val = false;
+  bool ret;
+  const upb_MiniTableField field = {16, UPB_SIZE(20, 12), UPB_SIZE(-13, -5), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_StringRules_has_uri(const validate_StringRules* msg) {
-  return _upb_getoneofcase(msg, UPB_SIZE(4, 4)) == 17;
+UPB_INLINE bool validate_StringRules_has_ipv6(const validate_StringRules* msg) {
+  const upb_MiniTableField field = {16, UPB_SIZE(20, 12), UPB_SIZE(-13, -5), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_StringRules_clear_uri(const validate_StringRules* msg) {
-  UPB_WRITE_ONEOF(msg, bool, UPB_SIZE(12, 12), 0, UPB_SIZE(4, 4), validate_StringRules_well_known_NOT_SET);
+UPB_INLINE void validate_StringRules_clear_uri(validate_StringRules* msg) {
+  const upb_MiniTableField field = {17, UPB_SIZE(20, 12), UPB_SIZE(-13, -5), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE bool validate_StringRules_uri(const validate_StringRules* msg) {
-  return UPB_READ_ONEOF(msg, bool, UPB_SIZE(12, 12), UPB_SIZE(4, 4), 17, false);
+  bool default_val = false;
+  bool ret;
+  const upb_MiniTableField field = {17, UPB_SIZE(20, 12), UPB_SIZE(-13, -5), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_StringRules_has_uri_ref(const validate_StringRules* msg) {
-  return _upb_getoneofcase(msg, UPB_SIZE(4, 4)) == 18;
+UPB_INLINE bool validate_StringRules_has_uri(const validate_StringRules* msg) {
+  const upb_MiniTableField field = {17, UPB_SIZE(20, 12), UPB_SIZE(-13, -5), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_StringRules_clear_uri_ref(const validate_StringRules* msg) {
-  UPB_WRITE_ONEOF(msg, bool, UPB_SIZE(12, 12), 0, UPB_SIZE(4, 4), validate_StringRules_well_known_NOT_SET);
+UPB_INLINE void validate_StringRules_clear_uri_ref(validate_StringRules* msg) {
+  const upb_MiniTableField field = {18, UPB_SIZE(20, 12), UPB_SIZE(-13, -5), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE bool validate_StringRules_uri_ref(const validate_StringRules* msg) {
-  return UPB_READ_ONEOF(msg, bool, UPB_SIZE(12, 12), UPB_SIZE(4, 4), 18, false);
+  bool default_val = false;
+  bool ret;
+  const upb_MiniTableField field = {18, UPB_SIZE(20, 12), UPB_SIZE(-13, -5), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_StringRules_has_len(const validate_StringRules* msg) {
-  return _upb_hasbit(msg, 10);
+UPB_INLINE bool validate_StringRules_has_uri_ref(const validate_StringRules* msg) {
+  const upb_MiniTableField field = {18, UPB_SIZE(20, 12), UPB_SIZE(-13, -5), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_StringRules_clear_len(const validate_StringRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(104, 160), uint64_t) = 0;
-  _upb_clearhas(msg, 10);
+UPB_INLINE void validate_StringRules_clear_len(validate_StringRules* msg) {
+  const upb_MiniTableField field = {19, UPB_SIZE(96, 144), 10, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE uint64_t validate_StringRules_len(const validate_StringRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(104, 160), uint64_t);
+  uint64_t default_val = (uint64_t)0ull;
+  uint64_t ret;
+  const upb_MiniTableField field = {19, UPB_SIZE(96, 144), 10, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_StringRules_has_len_bytes(const validate_StringRules* msg) {
-  return _upb_hasbit(msg, 11);
+UPB_INLINE bool validate_StringRules_has_len(const validate_StringRules* msg) {
+  const upb_MiniTableField field = {19, UPB_SIZE(96, 144), 10, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_StringRules_clear_len_bytes(const validate_StringRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(112, 168), uint64_t) = 0;
-  _upb_clearhas(msg, 11);
+UPB_INLINE void validate_StringRules_clear_len_bytes(validate_StringRules* msg) {
+  const upb_MiniTableField field = {20, UPB_SIZE(104, 152), 11, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE uint64_t validate_StringRules_len_bytes(const validate_StringRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(112, 168), uint64_t);
+  uint64_t default_val = (uint64_t)0ull;
+  uint64_t ret;
+  const upb_MiniTableField field = {20, UPB_SIZE(104, 152), 11, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_StringRules_has_address(const validate_StringRules* msg) {
-  return _upb_getoneofcase(msg, UPB_SIZE(4, 4)) == 21;
+UPB_INLINE bool validate_StringRules_has_len_bytes(const validate_StringRules* msg) {
+  const upb_MiniTableField field = {20, UPB_SIZE(104, 152), 11, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_StringRules_clear_address(const validate_StringRules* msg) {
-  UPB_WRITE_ONEOF(msg, bool, UPB_SIZE(12, 12), 0, UPB_SIZE(4, 4), validate_StringRules_well_known_NOT_SET);
+UPB_INLINE void validate_StringRules_clear_address(validate_StringRules* msg) {
+  const upb_MiniTableField field = {21, UPB_SIZE(20, 12), UPB_SIZE(-13, -5), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE bool validate_StringRules_address(const validate_StringRules* msg) {
-  return UPB_READ_ONEOF(msg, bool, UPB_SIZE(12, 12), UPB_SIZE(4, 4), 21, false);
+  bool default_val = false;
+  bool ret;
+  const upb_MiniTableField field = {21, UPB_SIZE(20, 12), UPB_SIZE(-13, -5), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_StringRules_has_uuid(const validate_StringRules* msg) {
-  return _upb_getoneofcase(msg, UPB_SIZE(4, 4)) == 22;
+UPB_INLINE bool validate_StringRules_has_address(const validate_StringRules* msg) {
+  const upb_MiniTableField field = {21, UPB_SIZE(20, 12), UPB_SIZE(-13, -5), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_StringRules_clear_uuid(const validate_StringRules* msg) {
-  UPB_WRITE_ONEOF(msg, bool, UPB_SIZE(12, 12), 0, UPB_SIZE(4, 4), validate_StringRules_well_known_NOT_SET);
+UPB_INLINE void validate_StringRules_clear_uuid(validate_StringRules* msg) {
+  const upb_MiniTableField field = {22, UPB_SIZE(20, 12), UPB_SIZE(-13, -5), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE bool validate_StringRules_uuid(const validate_StringRules* msg) {
-  return UPB_READ_ONEOF(msg, bool, UPB_SIZE(12, 12), UPB_SIZE(4, 4), 22, false);
+  bool default_val = false;
+  bool ret;
+  const upb_MiniTableField field = {22, UPB_SIZE(20, 12), UPB_SIZE(-13, -5), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_StringRules_has_not_contains(const validate_StringRules* msg) {
-  return _upb_hasbit(msg, 12);
+UPB_INLINE bool validate_StringRules_has_uuid(const validate_StringRules* msg) {
+  const upb_MiniTableField field = {22, UPB_SIZE(20, 12), UPB_SIZE(-13, -5), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_StringRules_clear_not_contains(const validate_StringRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(64, 112), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
-  _upb_clearhas(msg, 12);
+UPB_INLINE void validate_StringRules_clear_not_contains(validate_StringRules* msg) {
+  const upb_MiniTableField field = {23, UPB_SIZE(112, 160), 12, kUpb_NoSub, 12, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsAlternate | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE upb_StringView validate_StringRules_not_contains(const validate_StringRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(64, 112), upb_StringView);
+  upb_StringView default_val = upb_StringView_FromString("");
+  upb_StringView ret;
+  const upb_MiniTableField field = {23, UPB_SIZE(112, 160), 12, kUpb_NoSub, 12, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsAlternate | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_StringRules_has_well_known_regex(const validate_StringRules* msg) {
-  return _upb_getoneofcase(msg, UPB_SIZE(4, 4)) == 24;
+UPB_INLINE bool validate_StringRules_has_not_contains(const validate_StringRules* msg) {
+  const upb_MiniTableField field = {23, UPB_SIZE(112, 160), 12, kUpb_NoSub, 12, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsAlternate | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_StringRules_clear_well_known_regex(const validate_StringRules* msg) {
-  UPB_WRITE_ONEOF(msg, int32_t, UPB_SIZE(12, 12), 0, UPB_SIZE(4, 4), validate_StringRules_well_known_NOT_SET);
+UPB_INLINE void validate_StringRules_clear_well_known_regex(validate_StringRules* msg) {
+  const upb_MiniTableField field = {24, UPB_SIZE(20, 12), UPB_SIZE(-13, -5), 0, 14, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE int32_t validate_StringRules_well_known_regex(const validate_StringRules* msg) {
-  return UPB_READ_ONEOF(msg, int32_t, UPB_SIZE(12, 12), UPB_SIZE(4, 4), 24, 0);
+  int32_t default_val = 0;
+  int32_t ret;
+  const upb_MiniTableField field = {24, UPB_SIZE(20, 12), UPB_SIZE(-13, -5), 0, 14, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_StringRules_has_strict(const validate_StringRules* msg) {
-  return _upb_hasbit(msg, 13);
+UPB_INLINE bool validate_StringRules_has_well_known_regex(const validate_StringRules* msg) {
+  const upb_MiniTableField field = {24, UPB_SIZE(20, 12), UPB_SIZE(-13, -5), 0, 14, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_StringRules_clear_strict(const validate_StringRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), bool) = 0;
-  _upb_clearhas(msg, 13);
+UPB_INLINE void validate_StringRules_clear_strict(validate_StringRules* msg) {
+  const upb_MiniTableField field = {25, UPB_SIZE(16, 8), 13, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE bool validate_StringRules_strict(const validate_StringRules* msg) {
-  return validate_StringRules_has_strict(msg) ? *UPB_PTR_AT(msg, UPB_SIZE(8, 8), bool) : true;
+  bool default_val = true;
+  bool ret;
+  const upb_MiniTableField field = {25, UPB_SIZE(16, 8), 13, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_StringRules_has_ignore_empty(const validate_StringRules* msg) {
-  return _upb_hasbit(msg, 14);
+UPB_INLINE bool validate_StringRules_has_strict(const validate_StringRules* msg) {
+  const upb_MiniTableField field = {25, UPB_SIZE(16, 8), 13, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_StringRules_clear_ignore_empty(const validate_StringRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(9, 9), bool) = 0;
-  _upb_clearhas(msg, 14);
+UPB_INLINE void validate_StringRules_clear_ignore_empty(validate_StringRules* msg) {
+  const upb_MiniTableField field = {26, UPB_SIZE(17, 9), 14, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE bool validate_StringRules_ignore_empty(const validate_StringRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(9, 9), bool);
+  bool default_val = false;
+  bool ret;
+  const upb_MiniTableField field = {26, UPB_SIZE(17, 9), 14, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
+}
+UPB_INLINE bool validate_StringRules_has_ignore_empty(const validate_StringRules* msg) {
+  const upb_MiniTableField field = {26, UPB_SIZE(17, 9), 14, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
 
 UPB_INLINE void validate_StringRules_set_const(validate_StringRules *msg, upb_StringView value) {
-  _upb_sethas(msg, 1);
-  *UPB_PTR_AT(msg, UPB_SIZE(16, 16), upb_StringView) = value;
+  const upb_MiniTableField field = {1, UPB_SIZE(24, 16), 1, kUpb_NoSub, 12, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsAlternate | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_StringRules_set_min_len(validate_StringRules *msg, uint64_t value) {
-  _upb_sethas(msg, 2);
-  *UPB_PTR_AT(msg, UPB_SIZE(72, 128), uint64_t) = value;
+  const upb_MiniTableField field = {2, 32, 2, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_StringRules_set_max_len(validate_StringRules *msg, uint64_t value) {
-  _upb_sethas(msg, 3);
-  *UPB_PTR_AT(msg, UPB_SIZE(80, 136), uint64_t) = value;
+  const upb_MiniTableField field = {3, 40, 3, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_StringRules_set_min_bytes(validate_StringRules *msg, uint64_t value) {
-  _upb_sethas(msg, 4);
-  *UPB_PTR_AT(msg, UPB_SIZE(88, 144), uint64_t) = value;
+  const upb_MiniTableField field = {4, 48, 4, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_StringRules_set_max_bytes(validate_StringRules *msg, uint64_t value) {
-  _upb_sethas(msg, 5);
-  *UPB_PTR_AT(msg, UPB_SIZE(96, 152), uint64_t) = value;
+  const upb_MiniTableField field = {5, 56, 5, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_StringRules_set_pattern(validate_StringRules *msg, upb_StringView value) {
-  _upb_sethas(msg, 6);
-  *UPB_PTR_AT(msg, UPB_SIZE(24, 32), upb_StringView) = value;
+  const upb_MiniTableField field = {6, 64, 6, kUpb_NoSub, 12, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsAlternate | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_StringRules_set_prefix(validate_StringRules *msg, upb_StringView value) {
-  _upb_sethas(msg, 7);
-  *UPB_PTR_AT(msg, UPB_SIZE(32, 48), upb_StringView) = value;
+  const upb_MiniTableField field = {7, UPB_SIZE(72, 80), 7, kUpb_NoSub, 12, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsAlternate | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_StringRules_set_suffix(validate_StringRules *msg, upb_StringView value) {
-  _upb_sethas(msg, 8);
-  *UPB_PTR_AT(msg, UPB_SIZE(40, 64), upb_StringView) = value;
+  const upb_MiniTableField field = {8, UPB_SIZE(80, 96), 8, kUpb_NoSub, 12, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsAlternate | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_StringRules_set_contains(validate_StringRules *msg, upb_StringView value) {
-  _upb_sethas(msg, 9);
-  *UPB_PTR_AT(msg, UPB_SIZE(48, 80), upb_StringView) = value;
+  const upb_MiniTableField field = {9, UPB_SIZE(88, 112), 9, kUpb_NoSub, 12, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsAlternate | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
-UPB_INLINE upb_StringView* validate_StringRules_mutable_in(validate_StringRules* msg, size_t* len) {
-  return (upb_StringView*)_upb_array_mutable_accessor(msg, UPB_SIZE(56, 96), len);
+UPB_INLINE upb_StringView* validate_StringRules_mutable_in(validate_StringRules* msg, size_t* size) {
+  upb_MiniTableField field = {10, UPB_SIZE(4, 128), 0, kUpb_NoSub, 12, kUpb_FieldMode_Array | kUpb_LabelFlags_IsAlternate | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetMutableArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (upb_StringView*)_upb_array_ptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
 }
-UPB_INLINE upb_StringView* validate_StringRules_resize_in(validate_StringRules* msg, size_t len, upb_Arena* arena) {
-  return (upb_StringView*)_upb_Array_Resize_accessor2(msg, UPB_SIZE(56, 96), len, UPB_SIZE(3, 4), arena);
+UPB_INLINE upb_StringView* validate_StringRules_resize_in(validate_StringRules* msg, size_t size, upb_Arena* arena) {
+  upb_MiniTableField field = {10, UPB_SIZE(4, 128), 0, kUpb_NoSub, 12, kUpb_FieldMode_Array | kUpb_LabelFlags_IsAlternate | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return (upb_StringView*)upb_Message_ResizeArray(msg, &field, size, arena);
 }
 UPB_INLINE bool validate_StringRules_add_in(validate_StringRules* msg, upb_StringView val, upb_Arena* arena) {
-  return _upb_Array_Append_accessor2(msg, UPB_SIZE(56, 96), UPB_SIZE(3, 4), &val, arena);
+  upb_MiniTableField field = {10, UPB_SIZE(4, 128), 0, kUpb_NoSub, 12, kUpb_FieldMode_Array | kUpb_LabelFlags_IsAlternate | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(msg, &field, arena);
+  if (!arr || !_upb_Array_ResizeUninitialized(arr, arr->size + 1, arena)) {
+    return false;
+  }
+  _upb_Array_Set(arr, arr->size - 1, &val, sizeof(val));
+  return true;
 }
-UPB_INLINE upb_StringView* validate_StringRules_mutable_not_in(validate_StringRules* msg, size_t* len) {
-  return (upb_StringView*)_upb_array_mutable_accessor(msg, UPB_SIZE(60, 104), len);
+UPB_INLINE upb_StringView* validate_StringRules_mutable_not_in(validate_StringRules* msg, size_t* size) {
+  upb_MiniTableField field = {11, UPB_SIZE(8, 136), 0, kUpb_NoSub, 12, kUpb_FieldMode_Array | kUpb_LabelFlags_IsAlternate | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetMutableArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (upb_StringView*)_upb_array_ptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
 }
-UPB_INLINE upb_StringView* validate_StringRules_resize_not_in(validate_StringRules* msg, size_t len, upb_Arena* arena) {
-  return (upb_StringView*)_upb_Array_Resize_accessor2(msg, UPB_SIZE(60, 104), len, UPB_SIZE(3, 4), arena);
+UPB_INLINE upb_StringView* validate_StringRules_resize_not_in(validate_StringRules* msg, size_t size, upb_Arena* arena) {
+  upb_MiniTableField field = {11, UPB_SIZE(8, 136), 0, kUpb_NoSub, 12, kUpb_FieldMode_Array | kUpb_LabelFlags_IsAlternate | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return (upb_StringView*)upb_Message_ResizeArray(msg, &field, size, arena);
 }
 UPB_INLINE bool validate_StringRules_add_not_in(validate_StringRules* msg, upb_StringView val, upb_Arena* arena) {
-  return _upb_Array_Append_accessor2(msg, UPB_SIZE(60, 104), UPB_SIZE(3, 4), &val, arena);
+  upb_MiniTableField field = {11, UPB_SIZE(8, 136), 0, kUpb_NoSub, 12, kUpb_FieldMode_Array | kUpb_LabelFlags_IsAlternate | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(msg, &field, arena);
+  if (!arr || !_upb_Array_ResizeUninitialized(arr, arr->size + 1, arena)) {
+    return false;
+  }
+  _upb_Array_Set(arr, arr->size - 1, &val, sizeof(val));
+  return true;
 }
 UPB_INLINE void validate_StringRules_set_email(validate_StringRules *msg, bool value) {
-  UPB_WRITE_ONEOF(msg, bool, UPB_SIZE(12, 12), value, UPB_SIZE(4, 4), 12);
+  const upb_MiniTableField field = {12, UPB_SIZE(20, 12), UPB_SIZE(-13, -5), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_StringRules_set_hostname(validate_StringRules *msg, bool value) {
-  UPB_WRITE_ONEOF(msg, bool, UPB_SIZE(12, 12), value, UPB_SIZE(4, 4), 13);
+  const upb_MiniTableField field = {13, UPB_SIZE(20, 12), UPB_SIZE(-13, -5), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_StringRules_set_ip(validate_StringRules *msg, bool value) {
-  UPB_WRITE_ONEOF(msg, bool, UPB_SIZE(12, 12), value, UPB_SIZE(4, 4), 14);
+  const upb_MiniTableField field = {14, UPB_SIZE(20, 12), UPB_SIZE(-13, -5), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_StringRules_set_ipv4(validate_StringRules *msg, bool value) {
-  UPB_WRITE_ONEOF(msg, bool, UPB_SIZE(12, 12), value, UPB_SIZE(4, 4), 15);
+  const upb_MiniTableField field = {15, UPB_SIZE(20, 12), UPB_SIZE(-13, -5), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_StringRules_set_ipv6(validate_StringRules *msg, bool value) {
-  UPB_WRITE_ONEOF(msg, bool, UPB_SIZE(12, 12), value, UPB_SIZE(4, 4), 16);
+  const upb_MiniTableField field = {16, UPB_SIZE(20, 12), UPB_SIZE(-13, -5), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_StringRules_set_uri(validate_StringRules *msg, bool value) {
-  UPB_WRITE_ONEOF(msg, bool, UPB_SIZE(12, 12), value, UPB_SIZE(4, 4), 17);
+  const upb_MiniTableField field = {17, UPB_SIZE(20, 12), UPB_SIZE(-13, -5), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_StringRules_set_uri_ref(validate_StringRules *msg, bool value) {
-  UPB_WRITE_ONEOF(msg, bool, UPB_SIZE(12, 12), value, UPB_SIZE(4, 4), 18);
+  const upb_MiniTableField field = {18, UPB_SIZE(20, 12), UPB_SIZE(-13, -5), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_StringRules_set_len(validate_StringRules *msg, uint64_t value) {
-  _upb_sethas(msg, 10);
-  *UPB_PTR_AT(msg, UPB_SIZE(104, 160), uint64_t) = value;
+  const upb_MiniTableField field = {19, UPB_SIZE(96, 144), 10, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_StringRules_set_len_bytes(validate_StringRules *msg, uint64_t value) {
-  _upb_sethas(msg, 11);
-  *UPB_PTR_AT(msg, UPB_SIZE(112, 168), uint64_t) = value;
+  const upb_MiniTableField field = {20, UPB_SIZE(104, 152), 11, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_StringRules_set_address(validate_StringRules *msg, bool value) {
-  UPB_WRITE_ONEOF(msg, bool, UPB_SIZE(12, 12), value, UPB_SIZE(4, 4), 21);
+  const upb_MiniTableField field = {21, UPB_SIZE(20, 12), UPB_SIZE(-13, -5), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_StringRules_set_uuid(validate_StringRules *msg, bool value) {
-  UPB_WRITE_ONEOF(msg, bool, UPB_SIZE(12, 12), value, UPB_SIZE(4, 4), 22);
+  const upb_MiniTableField field = {22, UPB_SIZE(20, 12), UPB_SIZE(-13, -5), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_StringRules_set_not_contains(validate_StringRules *msg, upb_StringView value) {
-  _upb_sethas(msg, 12);
-  *UPB_PTR_AT(msg, UPB_SIZE(64, 112), upb_StringView) = value;
+  const upb_MiniTableField field = {23, UPB_SIZE(112, 160), 12, kUpb_NoSub, 12, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsAlternate | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_StringRules_set_well_known_regex(validate_StringRules *msg, int32_t value) {
-  UPB_WRITE_ONEOF(msg, int32_t, UPB_SIZE(12, 12), value, UPB_SIZE(4, 4), 24);
+  const upb_MiniTableField field = {24, UPB_SIZE(20, 12), UPB_SIZE(-13, -5), 0, 14, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_StringRules_set_strict(validate_StringRules *msg, bool value) {
-  _upb_sethas(msg, 13);
-  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), bool) = value;
+  const upb_MiniTableField field = {25, UPB_SIZE(16, 8), 13, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_StringRules_set_ignore_empty(validate_StringRules *msg, bool value) {
-  _upb_sethas(msg, 14);
-  *UPB_PTR_AT(msg, UPB_SIZE(9, 9), bool) = value;
+  const upb_MiniTableField field = {26, UPB_SIZE(17, 9), 14, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 
 /* validate.BytesRules */
 
 UPB_INLINE validate_BytesRules* validate_BytesRules_new(upb_Arena* arena) {
-  return (validate_BytesRules*)_upb_Message_New(&validate_BytesRules_msginit, arena);
+  return (validate_BytesRules*)_upb_Message_New(&validate_BytesRules_msg_init, arena);
 }
 UPB_INLINE validate_BytesRules* validate_BytesRules_parse(const char* buf, size_t size, upb_Arena* arena) {
   validate_BytesRules* ret = validate_BytesRules_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &validate_BytesRules_msginit, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
+  if (upb_Decode(buf, size, ret, &validate_BytesRules_msg_init, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
@@ -2920,7 +4736,7 @@ UPB_INLINE validate_BytesRules* validate_BytesRules_parse_ex(const char* buf, si
                            int options, upb_Arena* arena) {
   validate_BytesRules* ret = validate_BytesRules_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &validate_BytesRules_msginit, extreg, options, arena) !=
+  if (upb_Decode(buf, size, ret, &validate_BytesRules_msg_init, extreg, options, arena) !=
       kUpb_DecodeStatus_Ok) {
     return NULL;
   }
@@ -2928,13 +4744,13 @@ UPB_INLINE validate_BytesRules* validate_BytesRules_parse_ex(const char* buf, si
 }
 UPB_INLINE char* validate_BytesRules_serialize(const validate_BytesRules* msg, upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &validate_BytesRules_msginit, 0, arena, &ptr, len);
+  (void)upb_Encode(msg, &validate_BytesRules_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
 UPB_INLINE char* validate_BytesRules_serialize_ex(const validate_BytesRules* msg, int options,
                                  upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &validate_BytesRules_msginit, options, arena, &ptr, len);
+  (void)upb_Encode(msg, &validate_BytesRules_msg_init, options, arena, &ptr, len);
   return ptr;
 }
 typedef enum {
@@ -2944,211 +4760,370 @@ typedef enum {
   validate_BytesRules_well_known_NOT_SET = 0
 } validate_BytesRules_well_known_oneofcases;
 UPB_INLINE validate_BytesRules_well_known_oneofcases validate_BytesRules_well_known_case(const validate_BytesRules* msg) {
-  return (validate_BytesRules_well_known_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t);
+  const upb_MiniTableField field = {10, 2, UPB_SIZE(-13, -5), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  return (validate_BytesRules_well_known_oneofcases)upb_Message_WhichOneofFieldNumber(msg, &field);
 }
-UPB_INLINE bool validate_BytesRules_has_const(const validate_BytesRules* msg) {
-  return _upb_hasbit(msg, 1);
-}
-UPB_INLINE void validate_BytesRules_clear_const(const validate_BytesRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(12, 16), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
-  _upb_clearhas(msg, 1);
+UPB_INLINE void validate_BytesRules_clear_const(validate_BytesRules* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(20, 16), 1, kUpb_NoSub, 12, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE upb_StringView validate_BytesRules_const(const validate_BytesRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(12, 16), upb_StringView);
+  upb_StringView default_val = upb_StringView_FromString("");
+  upb_StringView ret;
+  const upb_MiniTableField field = {1, UPB_SIZE(20, 16), 1, kUpb_NoSub, 12, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_BytesRules_has_min_len(const validate_BytesRules* msg) {
-  return _upb_hasbit(msg, 2);
+UPB_INLINE bool validate_BytesRules_has_const(const validate_BytesRules* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(20, 16), 1, kUpb_NoSub, 12, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_BytesRules_clear_min_len(const validate_BytesRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(64, 112), uint64_t) = 0;
-  _upb_clearhas(msg, 2);
+UPB_INLINE void validate_BytesRules_clear_min_len(validate_BytesRules* msg) {
+  const upb_MiniTableField field = {2, 32, 2, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE uint64_t validate_BytesRules_min_len(const validate_BytesRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(64, 112), uint64_t);
+  uint64_t default_val = (uint64_t)0ull;
+  uint64_t ret;
+  const upb_MiniTableField field = {2, 32, 2, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_BytesRules_has_max_len(const validate_BytesRules* msg) {
-  return _upb_hasbit(msg, 3);
+UPB_INLINE bool validate_BytesRules_has_min_len(const validate_BytesRules* msg) {
+  const upb_MiniTableField field = {2, 32, 2, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_BytesRules_clear_max_len(const validate_BytesRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(72, 120), uint64_t) = 0;
-  _upb_clearhas(msg, 3);
+UPB_INLINE void validate_BytesRules_clear_max_len(validate_BytesRules* msg) {
+  const upb_MiniTableField field = {3, 40, 3, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE uint64_t validate_BytesRules_max_len(const validate_BytesRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(72, 120), uint64_t);
+  uint64_t default_val = (uint64_t)0ull;
+  uint64_t ret;
+  const upb_MiniTableField field = {3, 40, 3, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_BytesRules_has_pattern(const validate_BytesRules* msg) {
-  return _upb_hasbit(msg, 4);
+UPB_INLINE bool validate_BytesRules_has_max_len(const validate_BytesRules* msg) {
+  const upb_MiniTableField field = {3, 40, 3, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_BytesRules_clear_pattern(const validate_BytesRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(20, 32), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
-  _upb_clearhas(msg, 4);
+UPB_INLINE void validate_BytesRules_clear_pattern(validate_BytesRules* msg) {
+  const upb_MiniTableField field = {4, 48, 4, kUpb_NoSub, 12, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsAlternate | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE upb_StringView validate_BytesRules_pattern(const validate_BytesRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(20, 32), upb_StringView);
+  upb_StringView default_val = upb_StringView_FromString("");
+  upb_StringView ret;
+  const upb_MiniTableField field = {4, 48, 4, kUpb_NoSub, 12, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsAlternate | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_BytesRules_has_prefix(const validate_BytesRules* msg) {
-  return _upb_hasbit(msg, 5);
+UPB_INLINE bool validate_BytesRules_has_pattern(const validate_BytesRules* msg) {
+  const upb_MiniTableField field = {4, 48, 4, kUpb_NoSub, 12, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsAlternate | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_BytesRules_clear_prefix(const validate_BytesRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(28, 48), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
-  _upb_clearhas(msg, 5);
+UPB_INLINE void validate_BytesRules_clear_prefix(validate_BytesRules* msg) {
+  const upb_MiniTableField field = {5, UPB_SIZE(56, 64), 5, kUpb_NoSub, 12, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE upb_StringView validate_BytesRules_prefix(const validate_BytesRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(28, 48), upb_StringView);
+  upb_StringView default_val = upb_StringView_FromString("");
+  upb_StringView ret;
+  const upb_MiniTableField field = {5, UPB_SIZE(56, 64), 5, kUpb_NoSub, 12, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_BytesRules_has_suffix(const validate_BytesRules* msg) {
-  return _upb_hasbit(msg, 6);
+UPB_INLINE bool validate_BytesRules_has_prefix(const validate_BytesRules* msg) {
+  const upb_MiniTableField field = {5, UPB_SIZE(56, 64), 5, kUpb_NoSub, 12, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_BytesRules_clear_suffix(const validate_BytesRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(36, 64), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
-  _upb_clearhas(msg, 6);
+UPB_INLINE void validate_BytesRules_clear_suffix(validate_BytesRules* msg) {
+  const upb_MiniTableField field = {6, UPB_SIZE(64, 80), 6, kUpb_NoSub, 12, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE upb_StringView validate_BytesRules_suffix(const validate_BytesRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(36, 64), upb_StringView);
+  upb_StringView default_val = upb_StringView_FromString("");
+  upb_StringView ret;
+  const upb_MiniTableField field = {6, UPB_SIZE(64, 80), 6, kUpb_NoSub, 12, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_BytesRules_has_contains(const validate_BytesRules* msg) {
-  return _upb_hasbit(msg, 7);
+UPB_INLINE bool validate_BytesRules_has_suffix(const validate_BytesRules* msg) {
+  const upb_MiniTableField field = {6, UPB_SIZE(64, 80), 6, kUpb_NoSub, 12, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_BytesRules_clear_contains(const validate_BytesRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(44, 80), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
-  _upb_clearhas(msg, 7);
+UPB_INLINE void validate_BytesRules_clear_contains(validate_BytesRules* msg) {
+  const upb_MiniTableField field = {7, UPB_SIZE(72, 96), 7, kUpb_NoSub, 12, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE upb_StringView validate_BytesRules_contains(const validate_BytesRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(44, 80), upb_StringView);
+  upb_StringView default_val = upb_StringView_FromString("");
+  upb_StringView ret;
+  const upb_MiniTableField field = {7, UPB_SIZE(72, 96), 7, kUpb_NoSub, 12, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE void validate_BytesRules_clear_in(const validate_BytesRules* msg) {
-  _upb_array_detach(msg, UPB_SIZE(52, 96));
+UPB_INLINE bool validate_BytesRules_has_contains(const validate_BytesRules* msg) {
+  const upb_MiniTableField field = {7, UPB_SIZE(72, 96), 7, kUpb_NoSub, 12, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE upb_StringView const* validate_BytesRules_in(const validate_BytesRules* msg, size_t* len) {
-  return (upb_StringView const*)_upb_array_accessor(msg, UPB_SIZE(52, 96), len);
+UPB_INLINE void validate_BytesRules_clear_in(validate_BytesRules* msg) {
+  const upb_MiniTableField field = {8, UPB_SIZE(4, 112), 0, kUpb_NoSub, 12, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_BytesRules_clear_not_in(const validate_BytesRules* msg) {
-  _upb_array_detach(msg, UPB_SIZE(56, 104));
+UPB_INLINE upb_StringView const* validate_BytesRules_in(const validate_BytesRules* msg, size_t* size) {
+  const upb_MiniTableField field = {8, UPB_SIZE(4, 112), 0, kUpb_NoSub, 12, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (upb_StringView const*)_upb_array_constptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
 }
-UPB_INLINE upb_StringView const* validate_BytesRules_not_in(const validate_BytesRules* msg, size_t* len) {
-  return (upb_StringView const*)_upb_array_accessor(msg, UPB_SIZE(56, 104), len);
+UPB_INLINE const upb_Array* _validate_BytesRules_in_upb_array(const validate_BytesRules* msg, size_t* size) {
+  const upb_MiniTableField field = {8, UPB_SIZE(4, 112), 0, kUpb_NoSub, 12, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
 }
-UPB_INLINE bool validate_BytesRules_has_ip(const validate_BytesRules* msg) {
-  return _upb_getoneofcase(msg, UPB_SIZE(4, 4)) == 10;
+UPB_INLINE upb_Array* _validate_BytesRules_in_mutable_upb_array(const validate_BytesRules* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {8, UPB_SIZE(4, 112), 0, kUpb_NoSub, 12, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
 }
-UPB_INLINE void validate_BytesRules_clear_ip(const validate_BytesRules* msg) {
-  UPB_WRITE_ONEOF(msg, bool, UPB_SIZE(2, 2), 0, UPB_SIZE(4, 4), validate_BytesRules_well_known_NOT_SET);
+UPB_INLINE bool validate_BytesRules_has_in(const validate_BytesRules* msg) {
+  size_t size;
+  validate_BytesRules_in(msg, &size);
+  return size != 0;
+}
+UPB_INLINE void validate_BytesRules_clear_not_in(validate_BytesRules* msg) {
+  const upb_MiniTableField field = {9, UPB_SIZE(8, 120), 0, kUpb_NoSub, 12, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
+}
+UPB_INLINE upb_StringView const* validate_BytesRules_not_in(const validate_BytesRules* msg, size_t* size) {
+  const upb_MiniTableField field = {9, UPB_SIZE(8, 120), 0, kUpb_NoSub, 12, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (upb_StringView const*)_upb_array_constptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
+}
+UPB_INLINE const upb_Array* _validate_BytesRules_not_in_upb_array(const validate_BytesRules* msg, size_t* size) {
+  const upb_MiniTableField field = {9, UPB_SIZE(8, 120), 0, kUpb_NoSub, 12, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _validate_BytesRules_not_in_mutable_upb_array(const validate_BytesRules* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {9, UPB_SIZE(8, 120), 0, kUpb_NoSub, 12, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE bool validate_BytesRules_has_not_in(const validate_BytesRules* msg) {
+  size_t size;
+  validate_BytesRules_not_in(msg, &size);
+  return size != 0;
+}
+UPB_INLINE void validate_BytesRules_clear_ip(validate_BytesRules* msg) {
+  const upb_MiniTableField field = {10, 2, UPB_SIZE(-13, -5), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE bool validate_BytesRules_ip(const validate_BytesRules* msg) {
-  return UPB_READ_ONEOF(msg, bool, UPB_SIZE(2, 2), UPB_SIZE(4, 4), 10, false);
+  bool default_val = false;
+  bool ret;
+  const upb_MiniTableField field = {10, 2, UPB_SIZE(-13, -5), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_BytesRules_has_ipv4(const validate_BytesRules* msg) {
-  return _upb_getoneofcase(msg, UPB_SIZE(4, 4)) == 11;
+UPB_INLINE bool validate_BytesRules_has_ip(const validate_BytesRules* msg) {
+  const upb_MiniTableField field = {10, 2, UPB_SIZE(-13, -5), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_BytesRules_clear_ipv4(const validate_BytesRules* msg) {
-  UPB_WRITE_ONEOF(msg, bool, UPB_SIZE(2, 2), 0, UPB_SIZE(4, 4), validate_BytesRules_well_known_NOT_SET);
+UPB_INLINE void validate_BytesRules_clear_ipv4(validate_BytesRules* msg) {
+  const upb_MiniTableField field = {11, 2, UPB_SIZE(-13, -5), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE bool validate_BytesRules_ipv4(const validate_BytesRules* msg) {
-  return UPB_READ_ONEOF(msg, bool, UPB_SIZE(2, 2), UPB_SIZE(4, 4), 11, false);
+  bool default_val = false;
+  bool ret;
+  const upb_MiniTableField field = {11, 2, UPB_SIZE(-13, -5), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_BytesRules_has_ipv6(const validate_BytesRules* msg) {
-  return _upb_getoneofcase(msg, UPB_SIZE(4, 4)) == 12;
+UPB_INLINE bool validate_BytesRules_has_ipv4(const validate_BytesRules* msg) {
+  const upb_MiniTableField field = {11, 2, UPB_SIZE(-13, -5), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_BytesRules_clear_ipv6(const validate_BytesRules* msg) {
-  UPB_WRITE_ONEOF(msg, bool, UPB_SIZE(2, 2), 0, UPB_SIZE(4, 4), validate_BytesRules_well_known_NOT_SET);
+UPB_INLINE void validate_BytesRules_clear_ipv6(validate_BytesRules* msg) {
+  const upb_MiniTableField field = {12, 2, UPB_SIZE(-13, -5), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE bool validate_BytesRules_ipv6(const validate_BytesRules* msg) {
-  return UPB_READ_ONEOF(msg, bool, UPB_SIZE(2, 2), UPB_SIZE(4, 4), 12, false);
+  bool default_val = false;
+  bool ret;
+  const upb_MiniTableField field = {12, 2, UPB_SIZE(-13, -5), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_BytesRules_has_len(const validate_BytesRules* msg) {
-  return _upb_hasbit(msg, 8);
+UPB_INLINE bool validate_BytesRules_has_ipv6(const validate_BytesRules* msg) {
+  const upb_MiniTableField field = {12, 2, UPB_SIZE(-13, -5), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_BytesRules_clear_len(const validate_BytesRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(80, 128), uint64_t) = 0;
-  _upb_clearhas(msg, 8);
+UPB_INLINE void validate_BytesRules_clear_len(validate_BytesRules* msg) {
+  const upb_MiniTableField field = {13, UPB_SIZE(80, 128), 8, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE uint64_t validate_BytesRules_len(const validate_BytesRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(80, 128), uint64_t);
+  uint64_t default_val = (uint64_t)0ull;
+  uint64_t ret;
+  const upb_MiniTableField field = {13, UPB_SIZE(80, 128), 8, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_BytesRules_has_ignore_empty(const validate_BytesRules* msg) {
-  return _upb_hasbit(msg, 9);
+UPB_INLINE bool validate_BytesRules_has_len(const validate_BytesRules* msg) {
+  const upb_MiniTableField field = {13, UPB_SIZE(80, 128), 8, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_BytesRules_clear_ignore_empty(const validate_BytesRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), bool) = 0;
-  _upb_clearhas(msg, 9);
+UPB_INLINE void validate_BytesRules_clear_ignore_empty(validate_BytesRules* msg) {
+  const upb_MiniTableField field = {14, UPB_SIZE(16, 8), 9, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE bool validate_BytesRules_ignore_empty(const validate_BytesRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(8, 8), bool);
+  bool default_val = false;
+  bool ret;
+  const upb_MiniTableField field = {14, UPB_SIZE(16, 8), 9, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
+}
+UPB_INLINE bool validate_BytesRules_has_ignore_empty(const validate_BytesRules* msg) {
+  const upb_MiniTableField field = {14, UPB_SIZE(16, 8), 9, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
 
 UPB_INLINE void validate_BytesRules_set_const(validate_BytesRules *msg, upb_StringView value) {
-  _upb_sethas(msg, 1);
-  *UPB_PTR_AT(msg, UPB_SIZE(12, 16), upb_StringView) = value;
+  const upb_MiniTableField field = {1, UPB_SIZE(20, 16), 1, kUpb_NoSub, 12, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_BytesRules_set_min_len(validate_BytesRules *msg, uint64_t value) {
-  _upb_sethas(msg, 2);
-  *UPB_PTR_AT(msg, UPB_SIZE(64, 112), uint64_t) = value;
+  const upb_MiniTableField field = {2, 32, 2, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_BytesRules_set_max_len(validate_BytesRules *msg, uint64_t value) {
-  _upb_sethas(msg, 3);
-  *UPB_PTR_AT(msg, UPB_SIZE(72, 120), uint64_t) = value;
+  const upb_MiniTableField field = {3, 40, 3, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_BytesRules_set_pattern(validate_BytesRules *msg, upb_StringView value) {
-  _upb_sethas(msg, 4);
-  *UPB_PTR_AT(msg, UPB_SIZE(20, 32), upb_StringView) = value;
+  const upb_MiniTableField field = {4, 48, 4, kUpb_NoSub, 12, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsAlternate | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_BytesRules_set_prefix(validate_BytesRules *msg, upb_StringView value) {
-  _upb_sethas(msg, 5);
-  *UPB_PTR_AT(msg, UPB_SIZE(28, 48), upb_StringView) = value;
+  const upb_MiniTableField field = {5, UPB_SIZE(56, 64), 5, kUpb_NoSub, 12, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_BytesRules_set_suffix(validate_BytesRules *msg, upb_StringView value) {
-  _upb_sethas(msg, 6);
-  *UPB_PTR_AT(msg, UPB_SIZE(36, 64), upb_StringView) = value;
+  const upb_MiniTableField field = {6, UPB_SIZE(64, 80), 6, kUpb_NoSub, 12, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_BytesRules_set_contains(validate_BytesRules *msg, upb_StringView value) {
-  _upb_sethas(msg, 7);
-  *UPB_PTR_AT(msg, UPB_SIZE(44, 80), upb_StringView) = value;
+  const upb_MiniTableField field = {7, UPB_SIZE(72, 96), 7, kUpb_NoSub, 12, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
-UPB_INLINE upb_StringView* validate_BytesRules_mutable_in(validate_BytesRules* msg, size_t* len) {
-  return (upb_StringView*)_upb_array_mutable_accessor(msg, UPB_SIZE(52, 96), len);
+UPB_INLINE upb_StringView* validate_BytesRules_mutable_in(validate_BytesRules* msg, size_t* size) {
+  upb_MiniTableField field = {8, UPB_SIZE(4, 112), 0, kUpb_NoSub, 12, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetMutableArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (upb_StringView*)_upb_array_ptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
 }
-UPB_INLINE upb_StringView* validate_BytesRules_resize_in(validate_BytesRules* msg, size_t len, upb_Arena* arena) {
-  return (upb_StringView*)_upb_Array_Resize_accessor2(msg, UPB_SIZE(52, 96), len, UPB_SIZE(3, 4), arena);
+UPB_INLINE upb_StringView* validate_BytesRules_resize_in(validate_BytesRules* msg, size_t size, upb_Arena* arena) {
+  upb_MiniTableField field = {8, UPB_SIZE(4, 112), 0, kUpb_NoSub, 12, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return (upb_StringView*)upb_Message_ResizeArray(msg, &field, size, arena);
 }
 UPB_INLINE bool validate_BytesRules_add_in(validate_BytesRules* msg, upb_StringView val, upb_Arena* arena) {
-  return _upb_Array_Append_accessor2(msg, UPB_SIZE(52, 96), UPB_SIZE(3, 4), &val, arena);
+  upb_MiniTableField field = {8, UPB_SIZE(4, 112), 0, kUpb_NoSub, 12, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(msg, &field, arena);
+  if (!arr || !_upb_Array_ResizeUninitialized(arr, arr->size + 1, arena)) {
+    return false;
+  }
+  _upb_Array_Set(arr, arr->size - 1, &val, sizeof(val));
+  return true;
 }
-UPB_INLINE upb_StringView* validate_BytesRules_mutable_not_in(validate_BytesRules* msg, size_t* len) {
-  return (upb_StringView*)_upb_array_mutable_accessor(msg, UPB_SIZE(56, 104), len);
+UPB_INLINE upb_StringView* validate_BytesRules_mutable_not_in(validate_BytesRules* msg, size_t* size) {
+  upb_MiniTableField field = {9, UPB_SIZE(8, 120), 0, kUpb_NoSub, 12, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetMutableArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (upb_StringView*)_upb_array_ptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
 }
-UPB_INLINE upb_StringView* validate_BytesRules_resize_not_in(validate_BytesRules* msg, size_t len, upb_Arena* arena) {
-  return (upb_StringView*)_upb_Array_Resize_accessor2(msg, UPB_SIZE(56, 104), len, UPB_SIZE(3, 4), arena);
+UPB_INLINE upb_StringView* validate_BytesRules_resize_not_in(validate_BytesRules* msg, size_t size, upb_Arena* arena) {
+  upb_MiniTableField field = {9, UPB_SIZE(8, 120), 0, kUpb_NoSub, 12, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return (upb_StringView*)upb_Message_ResizeArray(msg, &field, size, arena);
 }
 UPB_INLINE bool validate_BytesRules_add_not_in(validate_BytesRules* msg, upb_StringView val, upb_Arena* arena) {
-  return _upb_Array_Append_accessor2(msg, UPB_SIZE(56, 104), UPB_SIZE(3, 4), &val, arena);
+  upb_MiniTableField field = {9, UPB_SIZE(8, 120), 0, kUpb_NoSub, 12, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(msg, &field, arena);
+  if (!arr || !_upb_Array_ResizeUninitialized(arr, arr->size + 1, arena)) {
+    return false;
+  }
+  _upb_Array_Set(arr, arr->size - 1, &val, sizeof(val));
+  return true;
 }
 UPB_INLINE void validate_BytesRules_set_ip(validate_BytesRules *msg, bool value) {
-  UPB_WRITE_ONEOF(msg, bool, UPB_SIZE(2, 2), value, UPB_SIZE(4, 4), 10);
+  const upb_MiniTableField field = {10, 2, UPB_SIZE(-13, -5), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_BytesRules_set_ipv4(validate_BytesRules *msg, bool value) {
-  UPB_WRITE_ONEOF(msg, bool, UPB_SIZE(2, 2), value, UPB_SIZE(4, 4), 11);
+  const upb_MiniTableField field = {11, 2, UPB_SIZE(-13, -5), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_BytesRules_set_ipv6(validate_BytesRules *msg, bool value) {
-  UPB_WRITE_ONEOF(msg, bool, UPB_SIZE(2, 2), value, UPB_SIZE(4, 4), 12);
+  const upb_MiniTableField field = {12, 2, UPB_SIZE(-13, -5), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_BytesRules_set_len(validate_BytesRules *msg, uint64_t value) {
-  _upb_sethas(msg, 8);
-  *UPB_PTR_AT(msg, UPB_SIZE(80, 128), uint64_t) = value;
+  const upb_MiniTableField field = {13, UPB_SIZE(80, 128), 8, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_BytesRules_set_ignore_empty(validate_BytesRules *msg, bool value) {
-  _upb_sethas(msg, 9);
-  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), bool) = value;
+  const upb_MiniTableField field = {14, UPB_SIZE(16, 8), 9, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 
 /* validate.EnumRules */
 
 UPB_INLINE validate_EnumRules* validate_EnumRules_new(upb_Arena* arena) {
-  return (validate_EnumRules*)_upb_Message_New(&validate_EnumRules_msginit, arena);
+  return (validate_EnumRules*)_upb_Message_New(&validate_EnumRules_msg_init, arena);
 }
 UPB_INLINE validate_EnumRules* validate_EnumRules_parse(const char* buf, size_t size, upb_Arena* arena) {
   validate_EnumRules* ret = validate_EnumRules_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &validate_EnumRules_msginit, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
+  if (upb_Decode(buf, size, ret, &validate_EnumRules_msg_init, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
@@ -3158,7 +5133,7 @@ UPB_INLINE validate_EnumRules* validate_EnumRules_parse_ex(const char* buf, size
                            int options, upb_Arena* arena) {
   validate_EnumRules* ret = validate_EnumRules_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &validate_EnumRules_msginit, extreg, options, arena) !=
+  if (upb_Decode(buf, size, ret, &validate_EnumRules_msg_init, extreg, options, arena) !=
       kUpb_DecodeStatus_Ok) {
     return NULL;
   }
@@ -3166,84 +5141,186 @@ UPB_INLINE validate_EnumRules* validate_EnumRules_parse_ex(const char* buf, size
 }
 UPB_INLINE char* validate_EnumRules_serialize(const validate_EnumRules* msg, upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &validate_EnumRules_msginit, 0, arena, &ptr, len);
+  (void)upb_Encode(msg, &validate_EnumRules_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
 UPB_INLINE char* validate_EnumRules_serialize_ex(const validate_EnumRules* msg, int options,
                                  upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &validate_EnumRules_msginit, options, arena, &ptr, len);
+  (void)upb_Encode(msg, &validate_EnumRules_msg_init, options, arena, &ptr, len);
   return ptr;
 }
-UPB_INLINE bool validate_EnumRules_has_const(const validate_EnumRules* msg) {
-  return _upb_hasbit(msg, 1);
-}
-UPB_INLINE void validate_EnumRules_clear_const(const validate_EnumRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t) = 0;
-  _upb_clearhas(msg, 1);
+UPB_INLINE void validate_EnumRules_clear_const(validate_EnumRules* msg) {
+  const upb_MiniTableField field = {1, 4, 1, kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE int32_t validate_EnumRules_const(const validate_EnumRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t);
+  int32_t default_val = (int32_t)0;
+  int32_t ret;
+  const upb_MiniTableField field = {1, 4, 1, kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_EnumRules_has_defined_only(const validate_EnumRules* msg) {
-  return _upb_hasbit(msg, 2);
+UPB_INLINE bool validate_EnumRules_has_const(const validate_EnumRules* msg) {
+  const upb_MiniTableField field = {1, 4, 1, kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_EnumRules_clear_defined_only(const validate_EnumRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), bool) = 0;
-  _upb_clearhas(msg, 2);
+UPB_INLINE void validate_EnumRules_clear_defined_only(validate_EnumRules* msg) {
+  const upb_MiniTableField field = {2, 8, 2, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE bool validate_EnumRules_defined_only(const validate_EnumRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(8, 8), bool);
+  bool default_val = false;
+  bool ret;
+  const upb_MiniTableField field = {2, 8, 2, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE void validate_EnumRules_clear_in(const validate_EnumRules* msg) {
-  _upb_array_detach(msg, UPB_SIZE(12, 16));
+UPB_INLINE bool validate_EnumRules_has_defined_only(const validate_EnumRules* msg) {
+  const upb_MiniTableField field = {2, 8, 2, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE int32_t const* validate_EnumRules_in(const validate_EnumRules* msg, size_t* len) {
-  return (int32_t const*)_upb_array_accessor(msg, UPB_SIZE(12, 16), len);
+UPB_INLINE void validate_EnumRules_clear_in(validate_EnumRules* msg) {
+  const upb_MiniTableField field = {3, UPB_SIZE(12, 16), 0, kUpb_NoSub, 5, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_EnumRules_clear_not_in(const validate_EnumRules* msg) {
-  _upb_array_detach(msg, UPB_SIZE(16, 24));
+UPB_INLINE int32_t const* validate_EnumRules_in(const validate_EnumRules* msg, size_t* size) {
+  const upb_MiniTableField field = {3, UPB_SIZE(12, 16), 0, kUpb_NoSub, 5, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (int32_t const*)_upb_array_constptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
 }
-UPB_INLINE int32_t const* validate_EnumRules_not_in(const validate_EnumRules* msg, size_t* len) {
-  return (int32_t const*)_upb_array_accessor(msg, UPB_SIZE(16, 24), len);
+UPB_INLINE const upb_Array* _validate_EnumRules_in_upb_array(const validate_EnumRules* msg, size_t* size) {
+  const upb_MiniTableField field = {3, UPB_SIZE(12, 16), 0, kUpb_NoSub, 5, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _validate_EnumRules_in_mutable_upb_array(const validate_EnumRules* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {3, UPB_SIZE(12, 16), 0, kUpb_NoSub, 5, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE bool validate_EnumRules_has_in(const validate_EnumRules* msg) {
+  size_t size;
+  validate_EnumRules_in(msg, &size);
+  return size != 0;
+}
+UPB_INLINE void validate_EnumRules_clear_not_in(validate_EnumRules* msg) {
+  const upb_MiniTableField field = {4, UPB_SIZE(16, 24), 0, kUpb_NoSub, 5, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
+}
+UPB_INLINE int32_t const* validate_EnumRules_not_in(const validate_EnumRules* msg, size_t* size) {
+  const upb_MiniTableField field = {4, UPB_SIZE(16, 24), 0, kUpb_NoSub, 5, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (int32_t const*)_upb_array_constptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
+}
+UPB_INLINE const upb_Array* _validate_EnumRules_not_in_upb_array(const validate_EnumRules* msg, size_t* size) {
+  const upb_MiniTableField field = {4, UPB_SIZE(16, 24), 0, kUpb_NoSub, 5, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _validate_EnumRules_not_in_mutable_upb_array(const validate_EnumRules* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {4, UPB_SIZE(16, 24), 0, kUpb_NoSub, 5, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE bool validate_EnumRules_has_not_in(const validate_EnumRules* msg) {
+  size_t size;
+  validate_EnumRules_not_in(msg, &size);
+  return size != 0;
 }
 
 UPB_INLINE void validate_EnumRules_set_const(validate_EnumRules *msg, int32_t value) {
-  _upb_sethas(msg, 1);
-  *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t) = value;
+  const upb_MiniTableField field = {1, 4, 1, kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_EnumRules_set_defined_only(validate_EnumRules *msg, bool value) {
-  _upb_sethas(msg, 2);
-  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), bool) = value;
+  const upb_MiniTableField field = {2, 8, 2, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
-UPB_INLINE int32_t* validate_EnumRules_mutable_in(validate_EnumRules* msg, size_t* len) {
-  return (int32_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(12, 16), len);
+UPB_INLINE int32_t* validate_EnumRules_mutable_in(validate_EnumRules* msg, size_t* size) {
+  upb_MiniTableField field = {3, UPB_SIZE(12, 16), 0, kUpb_NoSub, 5, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetMutableArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (int32_t*)_upb_array_ptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
 }
-UPB_INLINE int32_t* validate_EnumRules_resize_in(validate_EnumRules* msg, size_t len, upb_Arena* arena) {
-  return (int32_t*)_upb_Array_Resize_accessor2(msg, UPB_SIZE(12, 16), len, 2, arena);
+UPB_INLINE int32_t* validate_EnumRules_resize_in(validate_EnumRules* msg, size_t size, upb_Arena* arena) {
+  upb_MiniTableField field = {3, UPB_SIZE(12, 16), 0, kUpb_NoSub, 5, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return (int32_t*)upb_Message_ResizeArray(msg, &field, size, arena);
 }
 UPB_INLINE bool validate_EnumRules_add_in(validate_EnumRules* msg, int32_t val, upb_Arena* arena) {
-  return _upb_Array_Append_accessor2(msg, UPB_SIZE(12, 16), 2, &val, arena);
+  upb_MiniTableField field = {3, UPB_SIZE(12, 16), 0, kUpb_NoSub, 5, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(msg, &field, arena);
+  if (!arr || !_upb_Array_ResizeUninitialized(arr, arr->size + 1, arena)) {
+    return false;
+  }
+  _upb_Array_Set(arr, arr->size - 1, &val, sizeof(val));
+  return true;
 }
-UPB_INLINE int32_t* validate_EnumRules_mutable_not_in(validate_EnumRules* msg, size_t* len) {
-  return (int32_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(16, 24), len);
+UPB_INLINE int32_t* validate_EnumRules_mutable_not_in(validate_EnumRules* msg, size_t* size) {
+  upb_MiniTableField field = {4, UPB_SIZE(16, 24), 0, kUpb_NoSub, 5, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetMutableArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (int32_t*)_upb_array_ptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
 }
-UPB_INLINE int32_t* validate_EnumRules_resize_not_in(validate_EnumRules* msg, size_t len, upb_Arena* arena) {
-  return (int32_t*)_upb_Array_Resize_accessor2(msg, UPB_SIZE(16, 24), len, 2, arena);
+UPB_INLINE int32_t* validate_EnumRules_resize_not_in(validate_EnumRules* msg, size_t size, upb_Arena* arena) {
+  upb_MiniTableField field = {4, UPB_SIZE(16, 24), 0, kUpb_NoSub, 5, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return (int32_t*)upb_Message_ResizeArray(msg, &field, size, arena);
 }
 UPB_INLINE bool validate_EnumRules_add_not_in(validate_EnumRules* msg, int32_t val, upb_Arena* arena) {
-  return _upb_Array_Append_accessor2(msg, UPB_SIZE(16, 24), 2, &val, arena);
+  upb_MiniTableField field = {4, UPB_SIZE(16, 24), 0, kUpb_NoSub, 5, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(msg, &field, arena);
+  if (!arr || !_upb_Array_ResizeUninitialized(arr, arr->size + 1, arena)) {
+    return false;
+  }
+  _upb_Array_Set(arr, arr->size - 1, &val, sizeof(val));
+  return true;
 }
 
 /* validate.MessageRules */
 
 UPB_INLINE validate_MessageRules* validate_MessageRules_new(upb_Arena* arena) {
-  return (validate_MessageRules*)_upb_Message_New(&validate_MessageRules_msginit, arena);
+  return (validate_MessageRules*)_upb_Message_New(&validate_MessageRules_msg_init, arena);
 }
 UPB_INLINE validate_MessageRules* validate_MessageRules_parse(const char* buf, size_t size, upb_Arena* arena) {
   validate_MessageRules* ret = validate_MessageRules_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &validate_MessageRules_msginit, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
+  if (upb_Decode(buf, size, ret, &validate_MessageRules_msg_init, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
@@ -3253,7 +5330,7 @@ UPB_INLINE validate_MessageRules* validate_MessageRules_parse_ex(const char* buf
                            int options, upb_Arena* arena) {
   validate_MessageRules* ret = validate_MessageRules_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &validate_MessageRules_msginit, extreg, options, arena) !=
+  if (upb_Decode(buf, size, ret, &validate_MessageRules_msg_init, extreg, options, arena) !=
       kUpb_DecodeStatus_Ok) {
     return NULL;
   }
@@ -3261,54 +5338,64 @@ UPB_INLINE validate_MessageRules* validate_MessageRules_parse_ex(const char* buf
 }
 UPB_INLINE char* validate_MessageRules_serialize(const validate_MessageRules* msg, upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &validate_MessageRules_msginit, 0, arena, &ptr, len);
+  (void)upb_Encode(msg, &validate_MessageRules_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
 UPB_INLINE char* validate_MessageRules_serialize_ex(const validate_MessageRules* msg, int options,
                                  upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &validate_MessageRules_msginit, options, arena, &ptr, len);
+  (void)upb_Encode(msg, &validate_MessageRules_msg_init, options, arena, &ptr, len);
   return ptr;
 }
-UPB_INLINE bool validate_MessageRules_has_skip(const validate_MessageRules* msg) {
-  return _upb_hasbit(msg, 1);
-}
-UPB_INLINE void validate_MessageRules_clear_skip(const validate_MessageRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool) = 0;
-  _upb_clearhas(msg, 1);
+UPB_INLINE void validate_MessageRules_clear_skip(validate_MessageRules* msg) {
+  const upb_MiniTableField field = {1, 1, 1, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE bool validate_MessageRules_skip(const validate_MessageRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool);
+  bool default_val = false;
+  bool ret;
+  const upb_MiniTableField field = {1, 1, 1, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_MessageRules_has_required(const validate_MessageRules* msg) {
-  return _upb_hasbit(msg, 2);
+UPB_INLINE bool validate_MessageRules_has_skip(const validate_MessageRules* msg) {
+  const upb_MiniTableField field = {1, 1, 1, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_MessageRules_clear_required(const validate_MessageRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(2, 2), bool) = 0;
-  _upb_clearhas(msg, 2);
+UPB_INLINE void validate_MessageRules_clear_required(validate_MessageRules* msg) {
+  const upb_MiniTableField field = {2, 2, 2, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE bool validate_MessageRules_required(const validate_MessageRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(2, 2), bool);
+  bool default_val = false;
+  bool ret;
+  const upb_MiniTableField field = {2, 2, 2, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
+}
+UPB_INLINE bool validate_MessageRules_has_required(const validate_MessageRules* msg) {
+  const upb_MiniTableField field = {2, 2, 2, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
 
 UPB_INLINE void validate_MessageRules_set_skip(validate_MessageRules *msg, bool value) {
-  _upb_sethas(msg, 1);
-  *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool) = value;
+  const upb_MiniTableField field = {1, 1, 1, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_MessageRules_set_required(validate_MessageRules *msg, bool value) {
-  _upb_sethas(msg, 2);
-  *UPB_PTR_AT(msg, UPB_SIZE(2, 2), bool) = value;
+  const upb_MiniTableField field = {2, 2, 2, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 
 /* validate.RepeatedRules */
 
 UPB_INLINE validate_RepeatedRules* validate_RepeatedRules_new(upb_Arena* arena) {
-  return (validate_RepeatedRules*)_upb_Message_New(&validate_RepeatedRules_msginit, arena);
+  return (validate_RepeatedRules*)_upb_Message_New(&validate_RepeatedRules_msg_init, arena);
 }
 UPB_INLINE validate_RepeatedRules* validate_RepeatedRules_parse(const char* buf, size_t size, upb_Arena* arena) {
   validate_RepeatedRules* ret = validate_RepeatedRules_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &validate_RepeatedRules_msginit, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
+  if (upb_Decode(buf, size, ret, &validate_RepeatedRules_msg_init, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
@@ -3318,7 +5405,7 @@ UPB_INLINE validate_RepeatedRules* validate_RepeatedRules_parse_ex(const char* b
                            int options, upb_Arena* arena) {
   validate_RepeatedRules* ret = validate_RepeatedRules_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &validate_RepeatedRules_msginit, extreg, options, arena) !=
+  if (upb_Decode(buf, size, ret, &validate_RepeatedRules_msg_init, extreg, options, arena) !=
       kUpb_DecodeStatus_Ok) {
     return NULL;
   }
@@ -3326,104 +5413,129 @@ UPB_INLINE validate_RepeatedRules* validate_RepeatedRules_parse_ex(const char* b
 }
 UPB_INLINE char* validate_RepeatedRules_serialize(const validate_RepeatedRules* msg, upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &validate_RepeatedRules_msginit, 0, arena, &ptr, len);
+  (void)upb_Encode(msg, &validate_RepeatedRules_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
 UPB_INLINE char* validate_RepeatedRules_serialize_ex(const validate_RepeatedRules* msg, int options,
                                  upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &validate_RepeatedRules_msginit, options, arena, &ptr, len);
+  (void)upb_Encode(msg, &validate_RepeatedRules_msg_init, options, arena, &ptr, len);
   return ptr;
 }
-UPB_INLINE bool validate_RepeatedRules_has_min_items(const validate_RepeatedRules* msg) {
-  return _upb_hasbit(msg, 1);
-}
-UPB_INLINE void validate_RepeatedRules_clear_min_items(const validate_RepeatedRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), uint64_t) = 0;
-  _upb_clearhas(msg, 1);
+UPB_INLINE void validate_RepeatedRules_clear_min_items(validate_RepeatedRules* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(16, 8), 1, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE uint64_t validate_RepeatedRules_min_items(const validate_RepeatedRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(8, 16), uint64_t);
+  uint64_t default_val = (uint64_t)0ull;
+  uint64_t ret;
+  const upb_MiniTableField field = {1, UPB_SIZE(16, 8), 1, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_RepeatedRules_has_max_items(const validate_RepeatedRules* msg) {
-  return _upb_hasbit(msg, 2);
+UPB_INLINE bool validate_RepeatedRules_has_min_items(const validate_RepeatedRules* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(16, 8), 1, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_RepeatedRules_clear_max_items(const validate_RepeatedRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(16, 24), uint64_t) = 0;
-  _upb_clearhas(msg, 2);
+UPB_INLINE void validate_RepeatedRules_clear_max_items(validate_RepeatedRules* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(24, 16), 2, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE uint64_t validate_RepeatedRules_max_items(const validate_RepeatedRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(16, 24), uint64_t);
+  uint64_t default_val = (uint64_t)0ull;
+  uint64_t ret;
+  const upb_MiniTableField field = {2, UPB_SIZE(24, 16), 2, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_RepeatedRules_has_unique(const validate_RepeatedRules* msg) {
-  return _upb_hasbit(msg, 3);
+UPB_INLINE bool validate_RepeatedRules_has_max_items(const validate_RepeatedRules* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(24, 16), 2, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_RepeatedRules_clear_unique(const validate_RepeatedRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool) = 0;
-  _upb_clearhas(msg, 3);
+UPB_INLINE void validate_RepeatedRules_clear_unique(validate_RepeatedRules* msg) {
+  const upb_MiniTableField field = {3, 1, 3, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE bool validate_RepeatedRules_unique(const validate_RepeatedRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool);
+  bool default_val = false;
+  bool ret;
+  const upb_MiniTableField field = {3, 1, 3, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_RepeatedRules_has_items(const validate_RepeatedRules* msg) {
-  return _upb_hasbit(msg, 4);
+UPB_INLINE bool validate_RepeatedRules_has_unique(const validate_RepeatedRules* msg) {
+  const upb_MiniTableField field = {3, 1, 3, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_RepeatedRules_clear_items(const validate_RepeatedRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const upb_Message*) = NULL;
+UPB_INLINE void validate_RepeatedRules_clear_items(validate_RepeatedRules* msg) {
+  const upb_MiniTableField field = {4, UPB_SIZE(4, 24), 4, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const validate_FieldRules* validate_RepeatedRules_items(const validate_RepeatedRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const validate_FieldRules*);
+  const validate_FieldRules* default_val = NULL;
+  const validate_FieldRules* ret;
+  const upb_MiniTableField field = {4, UPB_SIZE(4, 24), 4, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_RepeatedRules_has_ignore_empty(const validate_RepeatedRules* msg) {
-  return _upb_hasbit(msg, 5);
+UPB_INLINE bool validate_RepeatedRules_has_items(const validate_RepeatedRules* msg) {
+  const upb_MiniTableField field = {4, UPB_SIZE(4, 24), 4, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_RepeatedRules_clear_ignore_empty(const validate_RepeatedRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(2, 2), bool) = 0;
-  _upb_clearhas(msg, 5);
+UPB_INLINE void validate_RepeatedRules_clear_ignore_empty(validate_RepeatedRules* msg) {
+  const upb_MiniTableField field = {5, UPB_SIZE(8, 2), 5, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE bool validate_RepeatedRules_ignore_empty(const validate_RepeatedRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(2, 2), bool);
+  bool default_val = false;
+  bool ret;
+  const upb_MiniTableField field = {5, UPB_SIZE(8, 2), 5, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
+}
+UPB_INLINE bool validate_RepeatedRules_has_ignore_empty(const validate_RepeatedRules* msg) {
+  const upb_MiniTableField field = {5, UPB_SIZE(8, 2), 5, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
 
 UPB_INLINE void validate_RepeatedRules_set_min_items(validate_RepeatedRules *msg, uint64_t value) {
-  _upb_sethas(msg, 1);
-  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), uint64_t) = value;
+  const upb_MiniTableField field = {1, UPB_SIZE(16, 8), 1, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_RepeatedRules_set_max_items(validate_RepeatedRules *msg, uint64_t value) {
-  _upb_sethas(msg, 2);
-  *UPB_PTR_AT(msg, UPB_SIZE(16, 24), uint64_t) = value;
+  const upb_MiniTableField field = {2, UPB_SIZE(24, 16), 2, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_RepeatedRules_set_unique(validate_RepeatedRules *msg, bool value) {
-  _upb_sethas(msg, 3);
-  *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool) = value;
+  const upb_MiniTableField field = {3, 1, 3, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_RepeatedRules_set_items(validate_RepeatedRules *msg, validate_FieldRules* value) {
-  _upb_sethas(msg, 4);
-  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), validate_FieldRules*) = value;
+  const upb_MiniTableField field = {4, UPB_SIZE(4, 24), 4, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct validate_FieldRules* validate_RepeatedRules_mutable_items(validate_RepeatedRules* msg, upb_Arena* arena) {
   struct validate_FieldRules* sub = (struct validate_FieldRules*)validate_RepeatedRules_items(msg);
   if (sub == NULL) {
-    sub = (struct validate_FieldRules*)_upb_Message_New(&validate_FieldRules_msginit, arena);
-    if (!sub) return NULL;
-    validate_RepeatedRules_set_items(msg, sub);
+    sub = (struct validate_FieldRules*)_upb_Message_New(&validate_FieldRules_msg_init, arena);
+    if (sub) validate_RepeatedRules_set_items(msg, sub);
   }
   return sub;
 }
 UPB_INLINE void validate_RepeatedRules_set_ignore_empty(validate_RepeatedRules *msg, bool value) {
-  _upb_sethas(msg, 5);
-  *UPB_PTR_AT(msg, UPB_SIZE(2, 2), bool) = value;
+  const upb_MiniTableField field = {5, UPB_SIZE(8, 2), 5, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 
 /* validate.MapRules */
 
 UPB_INLINE validate_MapRules* validate_MapRules_new(upb_Arena* arena) {
-  return (validate_MapRules*)_upb_Message_New(&validate_MapRules_msginit, arena);
+  return (validate_MapRules*)_upb_Message_New(&validate_MapRules_msg_init, arena);
 }
 UPB_INLINE validate_MapRules* validate_MapRules_parse(const char* buf, size_t size, upb_Arena* arena) {
   validate_MapRules* ret = validate_MapRules_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &validate_MapRules_msginit, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
+  if (upb_Decode(buf, size, ret, &validate_MapRules_msg_init, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
@@ -3433,7 +5545,7 @@ UPB_INLINE validate_MapRules* validate_MapRules_parse_ex(const char* buf, size_t
                            int options, upb_Arena* arena) {
   validate_MapRules* ret = validate_MapRules_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &validate_MapRules_msginit, extreg, options, arena) !=
+  if (upb_Decode(buf, size, ret, &validate_MapRules_msg_init, extreg, options, arena) !=
       kUpb_DecodeStatus_Ok) {
     return NULL;
   }
@@ -3441,126 +5553,156 @@ UPB_INLINE validate_MapRules* validate_MapRules_parse_ex(const char* buf, size_t
 }
 UPB_INLINE char* validate_MapRules_serialize(const validate_MapRules* msg, upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &validate_MapRules_msginit, 0, arena, &ptr, len);
+  (void)upb_Encode(msg, &validate_MapRules_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
 UPB_INLINE char* validate_MapRules_serialize_ex(const validate_MapRules* msg, int options,
                                  upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &validate_MapRules_msginit, options, arena, &ptr, len);
+  (void)upb_Encode(msg, &validate_MapRules_msg_init, options, arena, &ptr, len);
   return ptr;
 }
-UPB_INLINE bool validate_MapRules_has_min_pairs(const validate_MapRules* msg) {
-  return _upb_hasbit(msg, 1);
-}
-UPB_INLINE void validate_MapRules_clear_min_pairs(const validate_MapRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(16, 24), uint64_t) = 0;
-  _upb_clearhas(msg, 1);
+UPB_INLINE void validate_MapRules_clear_min_pairs(validate_MapRules* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(16, 8), 1, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE uint64_t validate_MapRules_min_pairs(const validate_MapRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(16, 24), uint64_t);
+  uint64_t default_val = (uint64_t)0ull;
+  uint64_t ret;
+  const upb_MiniTableField field = {1, UPB_SIZE(16, 8), 1, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_MapRules_has_max_pairs(const validate_MapRules* msg) {
-  return _upb_hasbit(msg, 2);
+UPB_INLINE bool validate_MapRules_has_min_pairs(const validate_MapRules* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(16, 8), 1, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_MapRules_clear_max_pairs(const validate_MapRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(24, 32), uint64_t) = 0;
-  _upb_clearhas(msg, 2);
+UPB_INLINE void validate_MapRules_clear_max_pairs(validate_MapRules* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(24, 16), 2, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE uint64_t validate_MapRules_max_pairs(const validate_MapRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(24, 32), uint64_t);
+  uint64_t default_val = (uint64_t)0ull;
+  uint64_t ret;
+  const upb_MiniTableField field = {2, UPB_SIZE(24, 16), 2, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_MapRules_has_no_sparse(const validate_MapRules* msg) {
-  return _upb_hasbit(msg, 3);
+UPB_INLINE bool validate_MapRules_has_max_pairs(const validate_MapRules* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(24, 16), 2, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_MapRules_clear_no_sparse(const validate_MapRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool) = 0;
-  _upb_clearhas(msg, 3);
+UPB_INLINE void validate_MapRules_clear_no_sparse(validate_MapRules* msg) {
+  const upb_MiniTableField field = {3, 1, 3, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE bool validate_MapRules_no_sparse(const validate_MapRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool);
+  bool default_val = false;
+  bool ret;
+  const upb_MiniTableField field = {3, 1, 3, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_MapRules_has_keys(const validate_MapRules* msg) {
-  return _upb_hasbit(msg, 4);
+UPB_INLINE bool validate_MapRules_has_no_sparse(const validate_MapRules* msg) {
+  const upb_MiniTableField field = {3, 1, 3, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_MapRules_clear_keys(const validate_MapRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const upb_Message*) = NULL;
+UPB_INLINE void validate_MapRules_clear_keys(validate_MapRules* msg) {
+  const upb_MiniTableField field = {4, UPB_SIZE(4, 24), 4, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const validate_FieldRules* validate_MapRules_keys(const validate_MapRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const validate_FieldRules*);
+  const validate_FieldRules* default_val = NULL;
+  const validate_FieldRules* ret;
+  const upb_MiniTableField field = {4, UPB_SIZE(4, 24), 4, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_MapRules_has_values(const validate_MapRules* msg) {
-  return _upb_hasbit(msg, 5);
+UPB_INLINE bool validate_MapRules_has_keys(const validate_MapRules* msg) {
+  const upb_MiniTableField field = {4, UPB_SIZE(4, 24), 4, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_MapRules_clear_values(const validate_MapRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), const upb_Message*) = NULL;
+UPB_INLINE void validate_MapRules_clear_values(validate_MapRules* msg) {
+  const upb_MiniTableField field = {5, UPB_SIZE(8, 32), 5, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const validate_FieldRules* validate_MapRules_values(const validate_MapRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(8, 16), const validate_FieldRules*);
+  const validate_FieldRules* default_val = NULL;
+  const validate_FieldRules* ret;
+  const upb_MiniTableField field = {5, UPB_SIZE(8, 32), 5, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_MapRules_has_ignore_empty(const validate_MapRules* msg) {
-  return _upb_hasbit(msg, 6);
+UPB_INLINE bool validate_MapRules_has_values(const validate_MapRules* msg) {
+  const upb_MiniTableField field = {5, UPB_SIZE(8, 32), 5, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_MapRules_clear_ignore_empty(const validate_MapRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(2, 2), bool) = 0;
-  _upb_clearhas(msg, 6);
+UPB_INLINE void validate_MapRules_clear_ignore_empty(validate_MapRules* msg) {
+  const upb_MiniTableField field = {6, UPB_SIZE(12, 2), 6, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE bool validate_MapRules_ignore_empty(const validate_MapRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(2, 2), bool);
+  bool default_val = false;
+  bool ret;
+  const upb_MiniTableField field = {6, UPB_SIZE(12, 2), 6, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
+}
+UPB_INLINE bool validate_MapRules_has_ignore_empty(const validate_MapRules* msg) {
+  const upb_MiniTableField field = {6, UPB_SIZE(12, 2), 6, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
 
 UPB_INLINE void validate_MapRules_set_min_pairs(validate_MapRules *msg, uint64_t value) {
-  _upb_sethas(msg, 1);
-  *UPB_PTR_AT(msg, UPB_SIZE(16, 24), uint64_t) = value;
+  const upb_MiniTableField field = {1, UPB_SIZE(16, 8), 1, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_MapRules_set_max_pairs(validate_MapRules *msg, uint64_t value) {
-  _upb_sethas(msg, 2);
-  *UPB_PTR_AT(msg, UPB_SIZE(24, 32), uint64_t) = value;
+  const upb_MiniTableField field = {2, UPB_SIZE(24, 16), 2, kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_MapRules_set_no_sparse(validate_MapRules *msg, bool value) {
-  _upb_sethas(msg, 3);
-  *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool) = value;
+  const upb_MiniTableField field = {3, 1, 3, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_MapRules_set_keys(validate_MapRules *msg, validate_FieldRules* value) {
-  _upb_sethas(msg, 4);
-  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), validate_FieldRules*) = value;
+  const upb_MiniTableField field = {4, UPB_SIZE(4, 24), 4, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct validate_FieldRules* validate_MapRules_mutable_keys(validate_MapRules* msg, upb_Arena* arena) {
   struct validate_FieldRules* sub = (struct validate_FieldRules*)validate_MapRules_keys(msg);
   if (sub == NULL) {
-    sub = (struct validate_FieldRules*)_upb_Message_New(&validate_FieldRules_msginit, arena);
-    if (!sub) return NULL;
-    validate_MapRules_set_keys(msg, sub);
+    sub = (struct validate_FieldRules*)_upb_Message_New(&validate_FieldRules_msg_init, arena);
+    if (sub) validate_MapRules_set_keys(msg, sub);
   }
   return sub;
 }
 UPB_INLINE void validate_MapRules_set_values(validate_MapRules *msg, validate_FieldRules* value) {
-  _upb_sethas(msg, 5);
-  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), validate_FieldRules*) = value;
+  const upb_MiniTableField field = {5, UPB_SIZE(8, 32), 5, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct validate_FieldRules* validate_MapRules_mutable_values(validate_MapRules* msg, upb_Arena* arena) {
   struct validate_FieldRules* sub = (struct validate_FieldRules*)validate_MapRules_values(msg);
   if (sub == NULL) {
-    sub = (struct validate_FieldRules*)_upb_Message_New(&validate_FieldRules_msginit, arena);
-    if (!sub) return NULL;
-    validate_MapRules_set_values(msg, sub);
+    sub = (struct validate_FieldRules*)_upb_Message_New(&validate_FieldRules_msg_init, arena);
+    if (sub) validate_MapRules_set_values(msg, sub);
   }
   return sub;
 }
 UPB_INLINE void validate_MapRules_set_ignore_empty(validate_MapRules *msg, bool value) {
-  _upb_sethas(msg, 6);
-  *UPB_PTR_AT(msg, UPB_SIZE(2, 2), bool) = value;
+  const upb_MiniTableField field = {6, UPB_SIZE(12, 2), 6, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 
 /* validate.AnyRules */
 
 UPB_INLINE validate_AnyRules* validate_AnyRules_new(upb_Arena* arena) {
-  return (validate_AnyRules*)_upb_Message_New(&validate_AnyRules_msginit, arena);
+  return (validate_AnyRules*)_upb_Message_New(&validate_AnyRules_msg_init, arena);
 }
 UPB_INLINE validate_AnyRules* validate_AnyRules_parse(const char* buf, size_t size, upb_Arena* arena) {
   validate_AnyRules* ret = validate_AnyRules_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &validate_AnyRules_msginit, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
+  if (upb_Decode(buf, size, ret, &validate_AnyRules_msg_init, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
@@ -3570,7 +5712,7 @@ UPB_INLINE validate_AnyRules* validate_AnyRules_parse_ex(const char* buf, size_t
                            int options, upb_Arena* arena) {
   validate_AnyRules* ret = validate_AnyRules_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &validate_AnyRules_msginit, extreg, options, arena) !=
+  if (upb_Decode(buf, size, ret, &validate_AnyRules_msg_init, extreg, options, arena) !=
       kUpb_DecodeStatus_Ok) {
     return NULL;
   }
@@ -3578,70 +5720,167 @@ UPB_INLINE validate_AnyRules* validate_AnyRules_parse_ex(const char* buf, size_t
 }
 UPB_INLINE char* validate_AnyRules_serialize(const validate_AnyRules* msg, upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &validate_AnyRules_msginit, 0, arena, &ptr, len);
+  (void)upb_Encode(msg, &validate_AnyRules_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
 UPB_INLINE char* validate_AnyRules_serialize_ex(const validate_AnyRules* msg, int options,
                                  upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &validate_AnyRules_msginit, options, arena, &ptr, len);
+  (void)upb_Encode(msg, &validate_AnyRules_msg_init, options, arena, &ptr, len);
   return ptr;
 }
-UPB_INLINE bool validate_AnyRules_has_required(const validate_AnyRules* msg) {
-  return _upb_hasbit(msg, 1);
-}
-UPB_INLINE void validate_AnyRules_clear_required(const validate_AnyRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool) = 0;
-  _upb_clearhas(msg, 1);
+UPB_INLINE void validate_AnyRules_clear_required(validate_AnyRules* msg) {
+  const upb_MiniTableField field = {1, 1, 1, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE bool validate_AnyRules_required(const validate_AnyRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool);
+  bool default_val = false;
+  bool ret;
+  const upb_MiniTableField field = {1, 1, 1, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE void validate_AnyRules_clear_in(const validate_AnyRules* msg) {
-  _upb_array_detach(msg, UPB_SIZE(4, 8));
+UPB_INLINE bool validate_AnyRules_has_required(const validate_AnyRules* msg) {
+  const upb_MiniTableField field = {1, 1, 1, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE upb_StringView const* validate_AnyRules_in(const validate_AnyRules* msg, size_t* len) {
-  return (upb_StringView const*)_upb_array_accessor(msg, UPB_SIZE(4, 8), len);
+UPB_INLINE void validate_AnyRules_clear_in(validate_AnyRules* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(4, 8), 0, kUpb_NoSub, 12, kUpb_FieldMode_Array | kUpb_LabelFlags_IsAlternate | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_AnyRules_clear_not_in(const validate_AnyRules* msg) {
-  _upb_array_detach(msg, UPB_SIZE(8, 16));
+UPB_INLINE upb_StringView const* validate_AnyRules_in(const validate_AnyRules* msg, size_t* size) {
+  const upb_MiniTableField field = {2, UPB_SIZE(4, 8), 0, kUpb_NoSub, 12, kUpb_FieldMode_Array | kUpb_LabelFlags_IsAlternate | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (upb_StringView const*)_upb_array_constptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
 }
-UPB_INLINE upb_StringView const* validate_AnyRules_not_in(const validate_AnyRules* msg, size_t* len) {
-  return (upb_StringView const*)_upb_array_accessor(msg, UPB_SIZE(8, 16), len);
+UPB_INLINE const upb_Array* _validate_AnyRules_in_upb_array(const validate_AnyRules* msg, size_t* size) {
+  const upb_MiniTableField field = {2, UPB_SIZE(4, 8), 0, kUpb_NoSub, 12, kUpb_FieldMode_Array | kUpb_LabelFlags_IsAlternate | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _validate_AnyRules_in_mutable_upb_array(const validate_AnyRules* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {2, UPB_SIZE(4, 8), 0, kUpb_NoSub, 12, kUpb_FieldMode_Array | kUpb_LabelFlags_IsAlternate | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE bool validate_AnyRules_has_in(const validate_AnyRules* msg) {
+  size_t size;
+  validate_AnyRules_in(msg, &size);
+  return size != 0;
+}
+UPB_INLINE void validate_AnyRules_clear_not_in(validate_AnyRules* msg) {
+  const upb_MiniTableField field = {3, UPB_SIZE(8, 16), 0, kUpb_NoSub, 12, kUpb_FieldMode_Array | kUpb_LabelFlags_IsAlternate | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
+}
+UPB_INLINE upb_StringView const* validate_AnyRules_not_in(const validate_AnyRules* msg, size_t* size) {
+  const upb_MiniTableField field = {3, UPB_SIZE(8, 16), 0, kUpb_NoSub, 12, kUpb_FieldMode_Array | kUpb_LabelFlags_IsAlternate | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (upb_StringView const*)_upb_array_constptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
+}
+UPB_INLINE const upb_Array* _validate_AnyRules_not_in_upb_array(const validate_AnyRules* msg, size_t* size) {
+  const upb_MiniTableField field = {3, UPB_SIZE(8, 16), 0, kUpb_NoSub, 12, kUpb_FieldMode_Array | kUpb_LabelFlags_IsAlternate | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _validate_AnyRules_not_in_mutable_upb_array(const validate_AnyRules* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {3, UPB_SIZE(8, 16), 0, kUpb_NoSub, 12, kUpb_FieldMode_Array | kUpb_LabelFlags_IsAlternate | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE bool validate_AnyRules_has_not_in(const validate_AnyRules* msg) {
+  size_t size;
+  validate_AnyRules_not_in(msg, &size);
+  return size != 0;
 }
 
 UPB_INLINE void validate_AnyRules_set_required(validate_AnyRules *msg, bool value) {
-  _upb_sethas(msg, 1);
-  *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool) = value;
+  const upb_MiniTableField field = {1, 1, 1, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
-UPB_INLINE upb_StringView* validate_AnyRules_mutable_in(validate_AnyRules* msg, size_t* len) {
-  return (upb_StringView*)_upb_array_mutable_accessor(msg, UPB_SIZE(4, 8), len);
+UPB_INLINE upb_StringView* validate_AnyRules_mutable_in(validate_AnyRules* msg, size_t* size) {
+  upb_MiniTableField field = {2, UPB_SIZE(4, 8), 0, kUpb_NoSub, 12, kUpb_FieldMode_Array | kUpb_LabelFlags_IsAlternate | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetMutableArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (upb_StringView*)_upb_array_ptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
 }
-UPB_INLINE upb_StringView* validate_AnyRules_resize_in(validate_AnyRules* msg, size_t len, upb_Arena* arena) {
-  return (upb_StringView*)_upb_Array_Resize_accessor2(msg, UPB_SIZE(4, 8), len, UPB_SIZE(3, 4), arena);
+UPB_INLINE upb_StringView* validate_AnyRules_resize_in(validate_AnyRules* msg, size_t size, upb_Arena* arena) {
+  upb_MiniTableField field = {2, UPB_SIZE(4, 8), 0, kUpb_NoSub, 12, kUpb_FieldMode_Array | kUpb_LabelFlags_IsAlternate | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return (upb_StringView*)upb_Message_ResizeArray(msg, &field, size, arena);
 }
 UPB_INLINE bool validate_AnyRules_add_in(validate_AnyRules* msg, upb_StringView val, upb_Arena* arena) {
-  return _upb_Array_Append_accessor2(msg, UPB_SIZE(4, 8), UPB_SIZE(3, 4), &val, arena);
+  upb_MiniTableField field = {2, UPB_SIZE(4, 8), 0, kUpb_NoSub, 12, kUpb_FieldMode_Array | kUpb_LabelFlags_IsAlternate | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(msg, &field, arena);
+  if (!arr || !_upb_Array_ResizeUninitialized(arr, arr->size + 1, arena)) {
+    return false;
+  }
+  _upb_Array_Set(arr, arr->size - 1, &val, sizeof(val));
+  return true;
 }
-UPB_INLINE upb_StringView* validate_AnyRules_mutable_not_in(validate_AnyRules* msg, size_t* len) {
-  return (upb_StringView*)_upb_array_mutable_accessor(msg, UPB_SIZE(8, 16), len);
+UPB_INLINE upb_StringView* validate_AnyRules_mutable_not_in(validate_AnyRules* msg, size_t* size) {
+  upb_MiniTableField field = {3, UPB_SIZE(8, 16), 0, kUpb_NoSub, 12, kUpb_FieldMode_Array | kUpb_LabelFlags_IsAlternate | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetMutableArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (upb_StringView*)_upb_array_ptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
 }
-UPB_INLINE upb_StringView* validate_AnyRules_resize_not_in(validate_AnyRules* msg, size_t len, upb_Arena* arena) {
-  return (upb_StringView*)_upb_Array_Resize_accessor2(msg, UPB_SIZE(8, 16), len, UPB_SIZE(3, 4), arena);
+UPB_INLINE upb_StringView* validate_AnyRules_resize_not_in(validate_AnyRules* msg, size_t size, upb_Arena* arena) {
+  upb_MiniTableField field = {3, UPB_SIZE(8, 16), 0, kUpb_NoSub, 12, kUpb_FieldMode_Array | kUpb_LabelFlags_IsAlternate | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return (upb_StringView*)upb_Message_ResizeArray(msg, &field, size, arena);
 }
 UPB_INLINE bool validate_AnyRules_add_not_in(validate_AnyRules* msg, upb_StringView val, upb_Arena* arena) {
-  return _upb_Array_Append_accessor2(msg, UPB_SIZE(8, 16), UPB_SIZE(3, 4), &val, arena);
+  upb_MiniTableField field = {3, UPB_SIZE(8, 16), 0, kUpb_NoSub, 12, kUpb_FieldMode_Array | kUpb_LabelFlags_IsAlternate | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(msg, &field, arena);
+  if (!arr || !_upb_Array_ResizeUninitialized(arr, arr->size + 1, arena)) {
+    return false;
+  }
+  _upb_Array_Set(arr, arr->size - 1, &val, sizeof(val));
+  return true;
 }
 
 /* validate.DurationRules */
 
 UPB_INLINE validate_DurationRules* validate_DurationRules_new(upb_Arena* arena) {
-  return (validate_DurationRules*)_upb_Message_New(&validate_DurationRules_msginit, arena);
+  return (validate_DurationRules*)_upb_Message_New(&validate_DurationRules_msg_init, arena);
 }
 UPB_INLINE validate_DurationRules* validate_DurationRules_parse(const char* buf, size_t size, upb_Arena* arena) {
   validate_DurationRules* ret = validate_DurationRules_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &validate_DurationRules_msginit, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
+  if (upb_Decode(buf, size, ret, &validate_DurationRules_msg_init, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
@@ -3651,7 +5890,7 @@ UPB_INLINE validate_DurationRules* validate_DurationRules_parse_ex(const char* b
                            int options, upb_Arena* arena) {
   validate_DurationRules* ret = validate_DurationRules_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &validate_DurationRules_msginit, extreg, options, arena) !=
+  if (upb_Decode(buf, size, ret, &validate_DurationRules_msg_init, extreg, options, arena) !=
       kUpb_DecodeStatus_Ok) {
     return NULL;
   }
@@ -3659,192 +5898,306 @@ UPB_INLINE validate_DurationRules* validate_DurationRules_parse_ex(const char* b
 }
 UPB_INLINE char* validate_DurationRules_serialize(const validate_DurationRules* msg, upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &validate_DurationRules_msginit, 0, arena, &ptr, len);
+  (void)upb_Encode(msg, &validate_DurationRules_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
 UPB_INLINE char* validate_DurationRules_serialize_ex(const validate_DurationRules* msg, int options,
                                  upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &validate_DurationRules_msginit, options, arena, &ptr, len);
+  (void)upb_Encode(msg, &validate_DurationRules_msg_init, options, arena, &ptr, len);
   return ptr;
 }
-UPB_INLINE bool validate_DurationRules_has_required(const validate_DurationRules* msg) {
-  return _upb_hasbit(msg, 1);
-}
-UPB_INLINE void validate_DurationRules_clear_required(const validate_DurationRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool) = 0;
-  _upb_clearhas(msg, 1);
+UPB_INLINE void validate_DurationRules_clear_required(validate_DurationRules* msg) {
+  const upb_MiniTableField field = {1, 1, 1, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE bool validate_DurationRules_required(const validate_DurationRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool);
+  bool default_val = false;
+  bool ret;
+  const upb_MiniTableField field = {1, 1, 1, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_DurationRules_has_const(const validate_DurationRules* msg) {
-  return _upb_hasbit(msg, 2);
+UPB_INLINE bool validate_DurationRules_has_required(const validate_DurationRules* msg) {
+  const upb_MiniTableField field = {1, 1, 1, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_DurationRules_clear_const(const validate_DurationRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const upb_Message*) = NULL;
+UPB_INLINE void validate_DurationRules_clear_const(validate_DurationRules* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(4, 8), 2, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const struct google_protobuf_Duration* validate_DurationRules_const(const validate_DurationRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const struct google_protobuf_Duration*);
+  const struct google_protobuf_Duration* default_val = NULL;
+  const struct google_protobuf_Duration* ret;
+  const upb_MiniTableField field = {2, UPB_SIZE(4, 8), 2, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_DurationRules_has_lt(const validate_DurationRules* msg) {
-  return _upb_hasbit(msg, 3);
+UPB_INLINE bool validate_DurationRules_has_const(const validate_DurationRules* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(4, 8), 2, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_DurationRules_clear_lt(const validate_DurationRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), const upb_Message*) = NULL;
+UPB_INLINE void validate_DurationRules_clear_lt(validate_DurationRules* msg) {
+  const upb_MiniTableField field = {3, UPB_SIZE(8, 16), 3, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const struct google_protobuf_Duration* validate_DurationRules_lt(const validate_DurationRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(8, 16), const struct google_protobuf_Duration*);
+  const struct google_protobuf_Duration* default_val = NULL;
+  const struct google_protobuf_Duration* ret;
+  const upb_MiniTableField field = {3, UPB_SIZE(8, 16), 3, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_DurationRules_has_lte(const validate_DurationRules* msg) {
-  return _upb_hasbit(msg, 4);
+UPB_INLINE bool validate_DurationRules_has_lt(const validate_DurationRules* msg) {
+  const upb_MiniTableField field = {3, UPB_SIZE(8, 16), 3, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_DurationRules_clear_lte(const validate_DurationRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(12, 24), const upb_Message*) = NULL;
+UPB_INLINE void validate_DurationRules_clear_lte(validate_DurationRules* msg) {
+  const upb_MiniTableField field = {4, UPB_SIZE(12, 24), 4, 2, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const struct google_protobuf_Duration* validate_DurationRules_lte(const validate_DurationRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(12, 24), const struct google_protobuf_Duration*);
+  const struct google_protobuf_Duration* default_val = NULL;
+  const struct google_protobuf_Duration* ret;
+  const upb_MiniTableField field = {4, UPB_SIZE(12, 24), 4, 2, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_DurationRules_has_gt(const validate_DurationRules* msg) {
-  return _upb_hasbit(msg, 5);
+UPB_INLINE bool validate_DurationRules_has_lte(const validate_DurationRules* msg) {
+  const upb_MiniTableField field = {4, UPB_SIZE(12, 24), 4, 2, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_DurationRules_clear_gt(const validate_DurationRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(16, 32), const upb_Message*) = NULL;
+UPB_INLINE void validate_DurationRules_clear_gt(validate_DurationRules* msg) {
+  const upb_MiniTableField field = {5, UPB_SIZE(16, 32), 5, 3, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const struct google_protobuf_Duration* validate_DurationRules_gt(const validate_DurationRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(16, 32), const struct google_protobuf_Duration*);
+  const struct google_protobuf_Duration* default_val = NULL;
+  const struct google_protobuf_Duration* ret;
+  const upb_MiniTableField field = {5, UPB_SIZE(16, 32), 5, 3, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_DurationRules_has_gte(const validate_DurationRules* msg) {
-  return _upb_hasbit(msg, 6);
+UPB_INLINE bool validate_DurationRules_has_gt(const validate_DurationRules* msg) {
+  const upb_MiniTableField field = {5, UPB_SIZE(16, 32), 5, 3, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_DurationRules_clear_gte(const validate_DurationRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(20, 40), const upb_Message*) = NULL;
+UPB_INLINE void validate_DurationRules_clear_gte(validate_DurationRules* msg) {
+  const upb_MiniTableField field = {6, UPB_SIZE(20, 40), 6, 4, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const struct google_protobuf_Duration* validate_DurationRules_gte(const validate_DurationRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(20, 40), const struct google_protobuf_Duration*);
+  const struct google_protobuf_Duration* default_val = NULL;
+  const struct google_protobuf_Duration* ret;
+  const upb_MiniTableField field = {6, UPB_SIZE(20, 40), 6, 4, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
+}
+UPB_INLINE bool validate_DurationRules_has_gte(const validate_DurationRules* msg) {
+  const upb_MiniTableField field = {6, UPB_SIZE(20, 40), 6, 4, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
+}
+UPB_INLINE void validate_DurationRules_clear_in(validate_DurationRules* msg) {
+  const upb_MiniTableField field = {7, UPB_SIZE(24, 48), 0, 5, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
+}
+UPB_INLINE const struct google_protobuf_Duration* const* validate_DurationRules_in(const validate_DurationRules* msg, size_t* size) {
+  const upb_MiniTableField field = {7, UPB_SIZE(24, 48), 0, 5, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (const struct google_protobuf_Duration* const*)_upb_array_constptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
+}
+UPB_INLINE const upb_Array* _validate_DurationRules_in_upb_array(const validate_DurationRules* msg, size_t* size) {
+  const upb_MiniTableField field = {7, UPB_SIZE(24, 48), 0, 5, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _validate_DurationRules_in_mutable_upb_array(const validate_DurationRules* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {7, UPB_SIZE(24, 48), 0, 5, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
 }
 UPB_INLINE bool validate_DurationRules_has_in(const validate_DurationRules* msg) {
-  return _upb_has_submsg_nohasbit(msg, UPB_SIZE(24, 48));
+  size_t size;
+  validate_DurationRules_in(msg, &size);
+  return size != 0;
 }
-UPB_INLINE void validate_DurationRules_clear_in(const validate_DurationRules* msg) {
-  _upb_array_detach(msg, UPB_SIZE(24, 48));
+UPB_INLINE void validate_DurationRules_clear_not_in(validate_DurationRules* msg) {
+  const upb_MiniTableField field = {8, UPB_SIZE(28, 56), 0, 6, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
-UPB_INLINE const struct google_protobuf_Duration* const* validate_DurationRules_in(const validate_DurationRules* msg, size_t* len) {
-  return (const struct google_protobuf_Duration* const*)_upb_array_accessor(msg, UPB_SIZE(24, 48), len);
+UPB_INLINE const struct google_protobuf_Duration* const* validate_DurationRules_not_in(const validate_DurationRules* msg, size_t* size) {
+  const upb_MiniTableField field = {8, UPB_SIZE(28, 56), 0, 6, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (const struct google_protobuf_Duration* const*)_upb_array_constptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
+}
+UPB_INLINE const upb_Array* _validate_DurationRules_not_in_upb_array(const validate_DurationRules* msg, size_t* size) {
+  const upb_MiniTableField field = {8, UPB_SIZE(28, 56), 0, 6, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _validate_DurationRules_not_in_mutable_upb_array(const validate_DurationRules* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {8, UPB_SIZE(28, 56), 0, 6, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
 }
 UPB_INLINE bool validate_DurationRules_has_not_in(const validate_DurationRules* msg) {
-  return _upb_has_submsg_nohasbit(msg, UPB_SIZE(28, 56));
-}
-UPB_INLINE void validate_DurationRules_clear_not_in(const validate_DurationRules* msg) {
-  _upb_array_detach(msg, UPB_SIZE(28, 56));
-}
-UPB_INLINE const struct google_protobuf_Duration* const* validate_DurationRules_not_in(const validate_DurationRules* msg, size_t* len) {
-  return (const struct google_protobuf_Duration* const*)_upb_array_accessor(msg, UPB_SIZE(28, 56), len);
+  size_t size;
+  validate_DurationRules_not_in(msg, &size);
+  return size != 0;
 }
 
 UPB_INLINE void validate_DurationRules_set_required(validate_DurationRules *msg, bool value) {
-  _upb_sethas(msg, 1);
-  *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool) = value;
+  const upb_MiniTableField field = {1, 1, 1, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_DurationRules_set_const(validate_DurationRules *msg, struct google_protobuf_Duration* value) {
-  _upb_sethas(msg, 2);
-  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), struct google_protobuf_Duration*) = value;
+  const upb_MiniTableField field = {2, UPB_SIZE(4, 8), 2, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Duration* validate_DurationRules_mutable_const(validate_DurationRules* msg, upb_Arena* arena) {
   struct google_protobuf_Duration* sub = (struct google_protobuf_Duration*)validate_DurationRules_const(msg);
   if (sub == NULL) {
-    sub = (struct google_protobuf_Duration*)_upb_Message_New(&google_protobuf_Duration_msginit, arena);
-    if (!sub) return NULL;
-    validate_DurationRules_set_const(msg, sub);
+    sub = (struct google_protobuf_Duration*)_upb_Message_New(&google_protobuf_Duration_msg_init, arena);
+    if (sub) validate_DurationRules_set_const(msg, sub);
   }
   return sub;
 }
 UPB_INLINE void validate_DurationRules_set_lt(validate_DurationRules *msg, struct google_protobuf_Duration* value) {
-  _upb_sethas(msg, 3);
-  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), struct google_protobuf_Duration*) = value;
+  const upb_MiniTableField field = {3, UPB_SIZE(8, 16), 3, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Duration* validate_DurationRules_mutable_lt(validate_DurationRules* msg, upb_Arena* arena) {
   struct google_protobuf_Duration* sub = (struct google_protobuf_Duration*)validate_DurationRules_lt(msg);
   if (sub == NULL) {
-    sub = (struct google_protobuf_Duration*)_upb_Message_New(&google_protobuf_Duration_msginit, arena);
-    if (!sub) return NULL;
-    validate_DurationRules_set_lt(msg, sub);
+    sub = (struct google_protobuf_Duration*)_upb_Message_New(&google_protobuf_Duration_msg_init, arena);
+    if (sub) validate_DurationRules_set_lt(msg, sub);
   }
   return sub;
 }
 UPB_INLINE void validate_DurationRules_set_lte(validate_DurationRules *msg, struct google_protobuf_Duration* value) {
-  _upb_sethas(msg, 4);
-  *UPB_PTR_AT(msg, UPB_SIZE(12, 24), struct google_protobuf_Duration*) = value;
+  const upb_MiniTableField field = {4, UPB_SIZE(12, 24), 4, 2, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Duration* validate_DurationRules_mutable_lte(validate_DurationRules* msg, upb_Arena* arena) {
   struct google_protobuf_Duration* sub = (struct google_protobuf_Duration*)validate_DurationRules_lte(msg);
   if (sub == NULL) {
-    sub = (struct google_protobuf_Duration*)_upb_Message_New(&google_protobuf_Duration_msginit, arena);
-    if (!sub) return NULL;
-    validate_DurationRules_set_lte(msg, sub);
+    sub = (struct google_protobuf_Duration*)_upb_Message_New(&google_protobuf_Duration_msg_init, arena);
+    if (sub) validate_DurationRules_set_lte(msg, sub);
   }
   return sub;
 }
 UPB_INLINE void validate_DurationRules_set_gt(validate_DurationRules *msg, struct google_protobuf_Duration* value) {
-  _upb_sethas(msg, 5);
-  *UPB_PTR_AT(msg, UPB_SIZE(16, 32), struct google_protobuf_Duration*) = value;
+  const upb_MiniTableField field = {5, UPB_SIZE(16, 32), 5, 3, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Duration* validate_DurationRules_mutable_gt(validate_DurationRules* msg, upb_Arena* arena) {
   struct google_protobuf_Duration* sub = (struct google_protobuf_Duration*)validate_DurationRules_gt(msg);
   if (sub == NULL) {
-    sub = (struct google_protobuf_Duration*)_upb_Message_New(&google_protobuf_Duration_msginit, arena);
-    if (!sub) return NULL;
-    validate_DurationRules_set_gt(msg, sub);
+    sub = (struct google_protobuf_Duration*)_upb_Message_New(&google_protobuf_Duration_msg_init, arena);
+    if (sub) validate_DurationRules_set_gt(msg, sub);
   }
   return sub;
 }
 UPB_INLINE void validate_DurationRules_set_gte(validate_DurationRules *msg, struct google_protobuf_Duration* value) {
-  _upb_sethas(msg, 6);
-  *UPB_PTR_AT(msg, UPB_SIZE(20, 40), struct google_protobuf_Duration*) = value;
+  const upb_MiniTableField field = {6, UPB_SIZE(20, 40), 6, 4, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Duration* validate_DurationRules_mutable_gte(validate_DurationRules* msg, upb_Arena* arena) {
   struct google_protobuf_Duration* sub = (struct google_protobuf_Duration*)validate_DurationRules_gte(msg);
   if (sub == NULL) {
-    sub = (struct google_protobuf_Duration*)_upb_Message_New(&google_protobuf_Duration_msginit, arena);
-    if (!sub) return NULL;
-    validate_DurationRules_set_gte(msg, sub);
+    sub = (struct google_protobuf_Duration*)_upb_Message_New(&google_protobuf_Duration_msg_init, arena);
+    if (sub) validate_DurationRules_set_gte(msg, sub);
   }
   return sub;
 }
-UPB_INLINE struct google_protobuf_Duration** validate_DurationRules_mutable_in(validate_DurationRules* msg, size_t* len) {
-  return (struct google_protobuf_Duration**)_upb_array_mutable_accessor(msg, UPB_SIZE(24, 48), len);
+UPB_INLINE struct google_protobuf_Duration** validate_DurationRules_mutable_in(validate_DurationRules* msg, size_t* size) {
+  upb_MiniTableField field = {7, UPB_SIZE(24, 48), 0, 5, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetMutableArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (struct google_protobuf_Duration**)_upb_array_ptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
 }
-UPB_INLINE struct google_protobuf_Duration** validate_DurationRules_resize_in(validate_DurationRules* msg, size_t len, upb_Arena* arena) {
-  return (struct google_protobuf_Duration**)_upb_Array_Resize_accessor2(msg, UPB_SIZE(24, 48), len, UPB_SIZE(2, 3), arena);
+UPB_INLINE struct google_protobuf_Duration** validate_DurationRules_resize_in(validate_DurationRules* msg, size_t size, upb_Arena* arena) {
+  upb_MiniTableField field = {7, UPB_SIZE(24, 48), 0, 5, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return (struct google_protobuf_Duration**)upb_Message_ResizeArray(msg, &field, size, arena);
 }
 UPB_INLINE struct google_protobuf_Duration* validate_DurationRules_add_in(validate_DurationRules* msg, upb_Arena* arena) {
-  struct google_protobuf_Duration* sub = (struct google_protobuf_Duration*)_upb_Message_New(&google_protobuf_Duration_msginit, arena);
-  bool ok = _upb_Array_Append_accessor2(msg, UPB_SIZE(24, 48), UPB_SIZE(2, 3), &sub, arena);
-  if (!ok) return NULL;
+  upb_MiniTableField field = {7, UPB_SIZE(24, 48), 0, 5, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(msg, &field, arena);
+  if (!arr || !_upb_Array_ResizeUninitialized(arr, arr->size + 1, arena)) {
+    return NULL;
+  }
+  struct google_protobuf_Duration* sub = (struct google_protobuf_Duration*)_upb_Message_New(&google_protobuf_Duration_msg_init, arena);
+  if (!arr || !sub) return NULL;
+  _upb_Array_Set(arr, arr->size - 1, &sub, sizeof(sub));
   return sub;
 }
-UPB_INLINE struct google_protobuf_Duration** validate_DurationRules_mutable_not_in(validate_DurationRules* msg, size_t* len) {
-  return (struct google_protobuf_Duration**)_upb_array_mutable_accessor(msg, UPB_SIZE(28, 56), len);
+UPB_INLINE struct google_protobuf_Duration** validate_DurationRules_mutable_not_in(validate_DurationRules* msg, size_t* size) {
+  upb_MiniTableField field = {8, UPB_SIZE(28, 56), 0, 6, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetMutableArray(msg, &field);
+  if (arr) {
+    if (size) *size = arr->size;
+    return (struct google_protobuf_Duration**)_upb_array_ptr(arr);
+  } else {
+    if (size) *size = 0;
+    return NULL;
+  }
 }
-UPB_INLINE struct google_protobuf_Duration** validate_DurationRules_resize_not_in(validate_DurationRules* msg, size_t len, upb_Arena* arena) {
-  return (struct google_protobuf_Duration**)_upb_Array_Resize_accessor2(msg, UPB_SIZE(28, 56), len, UPB_SIZE(2, 3), arena);
+UPB_INLINE struct google_protobuf_Duration** validate_DurationRules_resize_not_in(validate_DurationRules* msg, size_t size, upb_Arena* arena) {
+  upb_MiniTableField field = {8, UPB_SIZE(28, 56), 0, 6, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return (struct google_protobuf_Duration**)upb_Message_ResizeArray(msg, &field, size, arena);
 }
 UPB_INLINE struct google_protobuf_Duration* validate_DurationRules_add_not_in(validate_DurationRules* msg, upb_Arena* arena) {
-  struct google_protobuf_Duration* sub = (struct google_protobuf_Duration*)_upb_Message_New(&google_protobuf_Duration_msginit, arena);
-  bool ok = _upb_Array_Append_accessor2(msg, UPB_SIZE(28, 56), UPB_SIZE(2, 3), &sub, arena);
-  if (!ok) return NULL;
+  upb_MiniTableField field = {8, UPB_SIZE(28, 56), 0, 6, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(msg, &field, arena);
+  if (!arr || !_upb_Array_ResizeUninitialized(arr, arr->size + 1, arena)) {
+    return NULL;
+  }
+  struct google_protobuf_Duration* sub = (struct google_protobuf_Duration*)_upb_Message_New(&google_protobuf_Duration_msg_init, arena);
+  if (!arr || !sub) return NULL;
+  _upb_Array_Set(arr, arr->size - 1, &sub, sizeof(sub));
   return sub;
 }
 
 /* validate.TimestampRules */
 
 UPB_INLINE validate_TimestampRules* validate_TimestampRules_new(upb_Arena* arena) {
-  return (validate_TimestampRules*)_upb_Message_New(&validate_TimestampRules_msginit, arena);
+  return (validate_TimestampRules*)_upb_Message_New(&validate_TimestampRules_msg_init, arena);
 }
 UPB_INLINE validate_TimestampRules* validate_TimestampRules_parse(const char* buf, size_t size, upb_Arena* arena) {
   validate_TimestampRules* ret = validate_TimestampRules_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &validate_TimestampRules_msginit, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
+  if (upb_Decode(buf, size, ret, &validate_TimestampRules_msg_init, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
@@ -3854,7 +6207,7 @@ UPB_INLINE validate_TimestampRules* validate_TimestampRules_parse_ex(const char*
                            int options, upb_Arena* arena) {
   validate_TimestampRules* ret = validate_TimestampRules_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &validate_TimestampRules_msginit, extreg, options, arena) !=
+  if (upb_Decode(buf, size, ret, &validate_TimestampRules_msg_init, extreg, options, arena) !=
       kUpb_DecodeStatus_Ok) {
     return NULL;
   }
@@ -3862,244 +6215,330 @@ UPB_INLINE validate_TimestampRules* validate_TimestampRules_parse_ex(const char*
 }
 UPB_INLINE char* validate_TimestampRules_serialize(const validate_TimestampRules* msg, upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &validate_TimestampRules_msginit, 0, arena, &ptr, len);
+  (void)upb_Encode(msg, &validate_TimestampRules_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
 UPB_INLINE char* validate_TimestampRules_serialize_ex(const validate_TimestampRules* msg, int options,
                                  upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &validate_TimestampRules_msginit, options, arena, &ptr, len);
+  (void)upb_Encode(msg, &validate_TimestampRules_msg_init, options, arena, &ptr, len);
   return ptr;
 }
-UPB_INLINE bool validate_TimestampRules_has_required(const validate_TimestampRules* msg) {
-  return _upb_hasbit(msg, 1);
-}
-UPB_INLINE void validate_TimestampRules_clear_required(const validate_TimestampRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(2, 2), bool) = 0;
-  _upb_clearhas(msg, 1);
+UPB_INLINE void validate_TimestampRules_clear_required(validate_TimestampRules* msg) {
+  const upb_MiniTableField field = {1, 2, 1, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE bool validate_TimestampRules_required(const validate_TimestampRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(2, 2), bool);
+  bool default_val = false;
+  bool ret;
+  const upb_MiniTableField field = {1, 2, 1, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_TimestampRules_has_const(const validate_TimestampRules* msg) {
-  return _upb_hasbit(msg, 2);
+UPB_INLINE bool validate_TimestampRules_has_required(const validate_TimestampRules* msg) {
+  const upb_MiniTableField field = {1, 2, 1, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_TimestampRules_clear_const(const validate_TimestampRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), const upb_Message*) = NULL;
+UPB_INLINE void validate_TimestampRules_clear_const(validate_TimestampRules* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(4, 8), 2, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const struct google_protobuf_Timestamp* validate_TimestampRules_const(const validate_TimestampRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(8, 8), const struct google_protobuf_Timestamp*);
+  const struct google_protobuf_Timestamp* default_val = NULL;
+  const struct google_protobuf_Timestamp* ret;
+  const upb_MiniTableField field = {2, UPB_SIZE(4, 8), 2, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_TimestampRules_has_lt(const validate_TimestampRules* msg) {
-  return _upb_hasbit(msg, 3);
+UPB_INLINE bool validate_TimestampRules_has_const(const validate_TimestampRules* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(4, 8), 2, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_TimestampRules_clear_lt(const validate_TimestampRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(12, 16), const upb_Message*) = NULL;
+UPB_INLINE void validate_TimestampRules_clear_lt(validate_TimestampRules* msg) {
+  const upb_MiniTableField field = {3, UPB_SIZE(8, 16), 3, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const struct google_protobuf_Timestamp* validate_TimestampRules_lt(const validate_TimestampRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(12, 16), const struct google_protobuf_Timestamp*);
+  const struct google_protobuf_Timestamp* default_val = NULL;
+  const struct google_protobuf_Timestamp* ret;
+  const upb_MiniTableField field = {3, UPB_SIZE(8, 16), 3, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_TimestampRules_has_lte(const validate_TimestampRules* msg) {
-  return _upb_hasbit(msg, 4);
+UPB_INLINE bool validate_TimestampRules_has_lt(const validate_TimestampRules* msg) {
+  const upb_MiniTableField field = {3, UPB_SIZE(8, 16), 3, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_TimestampRules_clear_lte(const validate_TimestampRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(16, 24), const upb_Message*) = NULL;
+UPB_INLINE void validate_TimestampRules_clear_lte(validate_TimestampRules* msg) {
+  const upb_MiniTableField field = {4, UPB_SIZE(12, 24), 4, 2, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const struct google_protobuf_Timestamp* validate_TimestampRules_lte(const validate_TimestampRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(16, 24), const struct google_protobuf_Timestamp*);
+  const struct google_protobuf_Timestamp* default_val = NULL;
+  const struct google_protobuf_Timestamp* ret;
+  const upb_MiniTableField field = {4, UPB_SIZE(12, 24), 4, 2, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_TimestampRules_has_gt(const validate_TimestampRules* msg) {
-  return _upb_hasbit(msg, 5);
+UPB_INLINE bool validate_TimestampRules_has_lte(const validate_TimestampRules* msg) {
+  const upb_MiniTableField field = {4, UPB_SIZE(12, 24), 4, 2, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_TimestampRules_clear_gt(const validate_TimestampRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(20, 32), const upb_Message*) = NULL;
+UPB_INLINE void validate_TimestampRules_clear_gt(validate_TimestampRules* msg) {
+  const upb_MiniTableField field = {5, UPB_SIZE(16, 32), 5, 3, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const struct google_protobuf_Timestamp* validate_TimestampRules_gt(const validate_TimestampRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(20, 32), const struct google_protobuf_Timestamp*);
+  const struct google_protobuf_Timestamp* default_val = NULL;
+  const struct google_protobuf_Timestamp* ret;
+  const upb_MiniTableField field = {5, UPB_SIZE(16, 32), 5, 3, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_TimestampRules_has_gte(const validate_TimestampRules* msg) {
-  return _upb_hasbit(msg, 6);
+UPB_INLINE bool validate_TimestampRules_has_gt(const validate_TimestampRules* msg) {
+  const upb_MiniTableField field = {5, UPB_SIZE(16, 32), 5, 3, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_TimestampRules_clear_gte(const validate_TimestampRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(24, 40), const upb_Message*) = NULL;
+UPB_INLINE void validate_TimestampRules_clear_gte(validate_TimestampRules* msg) {
+  const upb_MiniTableField field = {6, UPB_SIZE(20, 40), 6, 4, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const struct google_protobuf_Timestamp* validate_TimestampRules_gte(const validate_TimestampRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(24, 40), const struct google_protobuf_Timestamp*);
+  const struct google_protobuf_Timestamp* default_val = NULL;
+  const struct google_protobuf_Timestamp* ret;
+  const upb_MiniTableField field = {6, UPB_SIZE(20, 40), 6, 4, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_TimestampRules_has_lt_now(const validate_TimestampRules* msg) {
-  return _upb_hasbit(msg, 7);
+UPB_INLINE bool validate_TimestampRules_has_gte(const validate_TimestampRules* msg) {
+  const upb_MiniTableField field = {6, UPB_SIZE(20, 40), 6, 4, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_TimestampRules_clear_lt_now(const validate_TimestampRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(3, 3), bool) = 0;
-  _upb_clearhas(msg, 7);
+UPB_INLINE void validate_TimestampRules_clear_lt_now(validate_TimestampRules* msg) {
+  const upb_MiniTableField field = {7, UPB_SIZE(24, 3), 7, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE bool validate_TimestampRules_lt_now(const validate_TimestampRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(3, 3), bool);
+  bool default_val = false;
+  bool ret;
+  const upb_MiniTableField field = {7, UPB_SIZE(24, 3), 7, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_TimestampRules_has_gt_now(const validate_TimestampRules* msg) {
-  return _upb_hasbit(msg, 8);
+UPB_INLINE bool validate_TimestampRules_has_lt_now(const validate_TimestampRules* msg) {
+  const upb_MiniTableField field = {7, UPB_SIZE(24, 3), 7, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_TimestampRules_clear_gt_now(const validate_TimestampRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(4, 4), bool) = 0;
-  _upb_clearhas(msg, 8);
+UPB_INLINE void validate_TimestampRules_clear_gt_now(validate_TimestampRules* msg) {
+  const upb_MiniTableField field = {8, UPB_SIZE(25, 4), 8, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE bool validate_TimestampRules_gt_now(const validate_TimestampRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(4, 4), bool);
+  bool default_val = false;
+  bool ret;
+  const upb_MiniTableField field = {8, UPB_SIZE(25, 4), 8, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool validate_TimestampRules_has_within(const validate_TimestampRules* msg) {
-  return _upb_hasbit(msg, 9);
+UPB_INLINE bool validate_TimestampRules_has_gt_now(const validate_TimestampRules* msg) {
+  const upb_MiniTableField field = {8, UPB_SIZE(25, 4), 8, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void validate_TimestampRules_clear_within(const validate_TimestampRules* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(28, 48), const upb_Message*) = NULL;
+UPB_INLINE void validate_TimestampRules_clear_within(validate_TimestampRules* msg) {
+  const upb_MiniTableField field = {9, UPB_SIZE(28, 48), 9, 5, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const struct google_protobuf_Duration* validate_TimestampRules_within(const validate_TimestampRules* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(28, 48), const struct google_protobuf_Duration*);
+  const struct google_protobuf_Duration* default_val = NULL;
+  const struct google_protobuf_Duration* ret;
+  const upb_MiniTableField field = {9, UPB_SIZE(28, 48), 9, 5, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
+}
+UPB_INLINE bool validate_TimestampRules_has_within(const validate_TimestampRules* msg) {
+  const upb_MiniTableField field = {9, UPB_SIZE(28, 48), 9, 5, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
 
 UPB_INLINE void validate_TimestampRules_set_required(validate_TimestampRules *msg, bool value) {
-  _upb_sethas(msg, 1);
-  *UPB_PTR_AT(msg, UPB_SIZE(2, 2), bool) = value;
+  const upb_MiniTableField field = {1, 2, 1, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_TimestampRules_set_const(validate_TimestampRules *msg, struct google_protobuf_Timestamp* value) {
-  _upb_sethas(msg, 2);
-  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), struct google_protobuf_Timestamp*) = value;
+  const upb_MiniTableField field = {2, UPB_SIZE(4, 8), 2, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Timestamp* validate_TimestampRules_mutable_const(validate_TimestampRules* msg, upb_Arena* arena) {
   struct google_protobuf_Timestamp* sub = (struct google_protobuf_Timestamp*)validate_TimestampRules_const(msg);
   if (sub == NULL) {
-    sub = (struct google_protobuf_Timestamp*)_upb_Message_New(&google_protobuf_Timestamp_msginit, arena);
-    if (!sub) return NULL;
-    validate_TimestampRules_set_const(msg, sub);
+    sub = (struct google_protobuf_Timestamp*)_upb_Message_New(&google_protobuf_Timestamp_msg_init, arena);
+    if (sub) validate_TimestampRules_set_const(msg, sub);
   }
   return sub;
 }
 UPB_INLINE void validate_TimestampRules_set_lt(validate_TimestampRules *msg, struct google_protobuf_Timestamp* value) {
-  _upb_sethas(msg, 3);
-  *UPB_PTR_AT(msg, UPB_SIZE(12, 16), struct google_protobuf_Timestamp*) = value;
+  const upb_MiniTableField field = {3, UPB_SIZE(8, 16), 3, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Timestamp* validate_TimestampRules_mutable_lt(validate_TimestampRules* msg, upb_Arena* arena) {
   struct google_protobuf_Timestamp* sub = (struct google_protobuf_Timestamp*)validate_TimestampRules_lt(msg);
   if (sub == NULL) {
-    sub = (struct google_protobuf_Timestamp*)_upb_Message_New(&google_protobuf_Timestamp_msginit, arena);
-    if (!sub) return NULL;
-    validate_TimestampRules_set_lt(msg, sub);
+    sub = (struct google_protobuf_Timestamp*)_upb_Message_New(&google_protobuf_Timestamp_msg_init, arena);
+    if (sub) validate_TimestampRules_set_lt(msg, sub);
   }
   return sub;
 }
 UPB_INLINE void validate_TimestampRules_set_lte(validate_TimestampRules *msg, struct google_protobuf_Timestamp* value) {
-  _upb_sethas(msg, 4);
-  *UPB_PTR_AT(msg, UPB_SIZE(16, 24), struct google_protobuf_Timestamp*) = value;
+  const upb_MiniTableField field = {4, UPB_SIZE(12, 24), 4, 2, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Timestamp* validate_TimestampRules_mutable_lte(validate_TimestampRules* msg, upb_Arena* arena) {
   struct google_protobuf_Timestamp* sub = (struct google_protobuf_Timestamp*)validate_TimestampRules_lte(msg);
   if (sub == NULL) {
-    sub = (struct google_protobuf_Timestamp*)_upb_Message_New(&google_protobuf_Timestamp_msginit, arena);
-    if (!sub) return NULL;
-    validate_TimestampRules_set_lte(msg, sub);
+    sub = (struct google_protobuf_Timestamp*)_upb_Message_New(&google_protobuf_Timestamp_msg_init, arena);
+    if (sub) validate_TimestampRules_set_lte(msg, sub);
   }
   return sub;
 }
 UPB_INLINE void validate_TimestampRules_set_gt(validate_TimestampRules *msg, struct google_protobuf_Timestamp* value) {
-  _upb_sethas(msg, 5);
-  *UPB_PTR_AT(msg, UPB_SIZE(20, 32), struct google_protobuf_Timestamp*) = value;
+  const upb_MiniTableField field = {5, UPB_SIZE(16, 32), 5, 3, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Timestamp* validate_TimestampRules_mutable_gt(validate_TimestampRules* msg, upb_Arena* arena) {
   struct google_protobuf_Timestamp* sub = (struct google_protobuf_Timestamp*)validate_TimestampRules_gt(msg);
   if (sub == NULL) {
-    sub = (struct google_protobuf_Timestamp*)_upb_Message_New(&google_protobuf_Timestamp_msginit, arena);
-    if (!sub) return NULL;
-    validate_TimestampRules_set_gt(msg, sub);
+    sub = (struct google_protobuf_Timestamp*)_upb_Message_New(&google_protobuf_Timestamp_msg_init, arena);
+    if (sub) validate_TimestampRules_set_gt(msg, sub);
   }
   return sub;
 }
 UPB_INLINE void validate_TimestampRules_set_gte(validate_TimestampRules *msg, struct google_protobuf_Timestamp* value) {
-  _upb_sethas(msg, 6);
-  *UPB_PTR_AT(msg, UPB_SIZE(24, 40), struct google_protobuf_Timestamp*) = value;
+  const upb_MiniTableField field = {6, UPB_SIZE(20, 40), 6, 4, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Timestamp* validate_TimestampRules_mutable_gte(validate_TimestampRules* msg, upb_Arena* arena) {
   struct google_protobuf_Timestamp* sub = (struct google_protobuf_Timestamp*)validate_TimestampRules_gte(msg);
   if (sub == NULL) {
-    sub = (struct google_protobuf_Timestamp*)_upb_Message_New(&google_protobuf_Timestamp_msginit, arena);
-    if (!sub) return NULL;
-    validate_TimestampRules_set_gte(msg, sub);
+    sub = (struct google_protobuf_Timestamp*)_upb_Message_New(&google_protobuf_Timestamp_msg_init, arena);
+    if (sub) validate_TimestampRules_set_gte(msg, sub);
   }
   return sub;
 }
 UPB_INLINE void validate_TimestampRules_set_lt_now(validate_TimestampRules *msg, bool value) {
-  _upb_sethas(msg, 7);
-  *UPB_PTR_AT(msg, UPB_SIZE(3, 3), bool) = value;
+  const upb_MiniTableField field = {7, UPB_SIZE(24, 3), 7, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_TimestampRules_set_gt_now(validate_TimestampRules *msg, bool value) {
-  _upb_sethas(msg, 8);
-  *UPB_PTR_AT(msg, UPB_SIZE(4, 4), bool) = value;
+  const upb_MiniTableField field = {8, UPB_SIZE(25, 4), 8, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void validate_TimestampRules_set_within(validate_TimestampRules *msg, struct google_protobuf_Duration* value) {
-  _upb_sethas(msg, 9);
-  *UPB_PTR_AT(msg, UPB_SIZE(28, 48), struct google_protobuf_Duration*) = value;
+  const upb_MiniTableField field = {9, UPB_SIZE(28, 48), 9, 5, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Duration* validate_TimestampRules_mutable_within(validate_TimestampRules* msg, upb_Arena* arena) {
   struct google_protobuf_Duration* sub = (struct google_protobuf_Duration*)validate_TimestampRules_within(msg);
   if (sub == NULL) {
-    sub = (struct google_protobuf_Duration*)_upb_Message_New(&google_protobuf_Duration_msginit, arena);
-    if (!sub) return NULL;
-    validate_TimestampRules_set_within(msg, sub);
+    sub = (struct google_protobuf_Duration*)_upb_Message_New(&google_protobuf_Duration_msg_init, arena);
+    if (sub) validate_TimestampRules_set_within(msg, sub);
   }
   return sub;
 }
 
 UPB_INLINE bool validate_has_disabled(const struct google_protobuf_MessageOptions* msg) {
-  return _upb_Message_Getext(msg, &validate_disabled_ext) != NULL;
+  return _upb_Message_HasExtensionField(msg, &validate_disabled_ext);
 }
 UPB_INLINE void validate_clear_disabled(struct google_protobuf_MessageOptions* msg) {
-  _upb_Message_Clearext(msg, &validate_disabled_ext);
+  _upb_Message_ClearExtensionField(msg, &validate_disabled_ext);
 }
 UPB_INLINE bool validate_disabled(const struct google_protobuf_MessageOptions* msg) {
-  const upb_Message_Extension* ext = _upb_Message_Getext(msg, &validate_disabled_ext);
-  return ext ? *UPB_PTR_AT(&ext->data, 0, bool) : false;
+  const upb_MiniTableExtension* ext = &validate_disabled_ext;
+  UPB_ASSUME(!upb_IsRepeatedOrMap(&ext->field));
+  UPB_ASSUME(_upb_MiniTableField_GetRep(&ext->field) == kUpb_FieldRep_1Byte);
+  bool default_val = false;
+  bool ret;
+  _upb_Message_GetExtensionField(msg, ext, &default_val, &ret);
+  return ret;
+}
+UPB_INLINE void validate_set_disabled(struct google_protobuf_MessageOptions* msg, bool val, upb_Arena* arena) {
+  const upb_MiniTableExtension* ext = &validate_disabled_ext;
+  UPB_ASSUME(!upb_IsRepeatedOrMap(&ext->field));
+  UPB_ASSUME(_upb_MiniTableField_GetRep(&ext->field) == kUpb_FieldRep_1Byte);
+  bool ok = _upb_Message_SetExtensionField(msg, ext, &val, arena);
+  UPB_ASSERT(ok);
 }
 UPB_INLINE bool validate_has_ignored(const struct google_protobuf_MessageOptions* msg) {
-  return _upb_Message_Getext(msg, &validate_ignored_ext) != NULL;
+  return _upb_Message_HasExtensionField(msg, &validate_ignored_ext);
 }
 UPB_INLINE void validate_clear_ignored(struct google_protobuf_MessageOptions* msg) {
-  _upb_Message_Clearext(msg, &validate_ignored_ext);
+  _upb_Message_ClearExtensionField(msg, &validate_ignored_ext);
 }
 UPB_INLINE bool validate_ignored(const struct google_protobuf_MessageOptions* msg) {
-  const upb_Message_Extension* ext = _upb_Message_Getext(msg, &validate_ignored_ext);
-  return ext ? *UPB_PTR_AT(&ext->data, 0, bool) : false;
+  const upb_MiniTableExtension* ext = &validate_ignored_ext;
+  UPB_ASSUME(!upb_IsRepeatedOrMap(&ext->field));
+  UPB_ASSUME(_upb_MiniTableField_GetRep(&ext->field) == kUpb_FieldRep_1Byte);
+  bool default_val = false;
+  bool ret;
+  _upb_Message_GetExtensionField(msg, ext, &default_val, &ret);
+  return ret;
+}
+UPB_INLINE void validate_set_ignored(struct google_protobuf_MessageOptions* msg, bool val, upb_Arena* arena) {
+  const upb_MiniTableExtension* ext = &validate_ignored_ext;
+  UPB_ASSUME(!upb_IsRepeatedOrMap(&ext->field));
+  UPB_ASSUME(_upb_MiniTableField_GetRep(&ext->field) == kUpb_FieldRep_1Byte);
+  bool ok = _upb_Message_SetExtensionField(msg, ext, &val, arena);
+  UPB_ASSERT(ok);
 }
 UPB_INLINE bool validate_has_required(const struct google_protobuf_OneofOptions* msg) {
-  return _upb_Message_Getext(msg, &validate_required_ext) != NULL;
+  return _upb_Message_HasExtensionField(msg, &validate_required_ext);
 }
 UPB_INLINE void validate_clear_required(struct google_protobuf_OneofOptions* msg) {
-  _upb_Message_Clearext(msg, &validate_required_ext);
+  _upb_Message_ClearExtensionField(msg, &validate_required_ext);
 }
 UPB_INLINE bool validate_required(const struct google_protobuf_OneofOptions* msg) {
-  const upb_Message_Extension* ext = _upb_Message_Getext(msg, &validate_required_ext);
-  return ext ? *UPB_PTR_AT(&ext->data, 0, bool) : false;
+  const upb_MiniTableExtension* ext = &validate_required_ext;
+  UPB_ASSUME(!upb_IsRepeatedOrMap(&ext->field));
+  UPB_ASSUME(_upb_MiniTableField_GetRep(&ext->field) == kUpb_FieldRep_1Byte);
+  bool default_val = false;
+  bool ret;
+  _upb_Message_GetExtensionField(msg, ext, &default_val, &ret);
+  return ret;
+}
+UPB_INLINE void validate_set_required(struct google_protobuf_OneofOptions* msg, bool val, upb_Arena* arena) {
+  const upb_MiniTableExtension* ext = &validate_required_ext;
+  UPB_ASSUME(!upb_IsRepeatedOrMap(&ext->field));
+  UPB_ASSUME(_upb_MiniTableField_GetRep(&ext->field) == kUpb_FieldRep_1Byte);
+  bool ok = _upb_Message_SetExtensionField(msg, ext, &val, arena);
+  UPB_ASSERT(ok);
 }
 UPB_INLINE bool validate_has_rules(const struct google_protobuf_FieldOptions* msg) {
-  return _upb_Message_Getext(msg, &validate_rules_ext) != NULL;
+  return _upb_Message_HasExtensionField(msg, &validate_rules_ext);
 }
 UPB_INLINE void validate_clear_rules(struct google_protobuf_FieldOptions* msg) {
-  _upb_Message_Clearext(msg, &validate_rules_ext);
+  _upb_Message_ClearExtensionField(msg, &validate_rules_ext);
 }
 UPB_INLINE const validate_FieldRules* validate_rules(const struct google_protobuf_FieldOptions* msg) {
-  const upb_Message_Extension* ext = _upb_Message_Getext(msg, &validate_rules_ext);
-  UPB_ASSERT(ext);
-  return *UPB_PTR_AT(&ext->data, 0, const validate_FieldRules*);
+  const upb_MiniTableExtension* ext = &validate_rules_ext;
+  UPB_ASSUME(!upb_IsRepeatedOrMap(&ext->field));
+  UPB_ASSUME(_upb_MiniTableField_GetRep(&ext->field) == kUpb_FieldRep_8Byte);
+  const validate_FieldRules* default_val = NULL;
+  const validate_FieldRules* ret;
+  _upb_Message_GetExtensionField(msg, ext, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE void validate_set_rules(struct google_protobuf_FieldOptions* msg, const validate_FieldRules* ext, upb_Arena* arena) {
-  const upb_Message_Extension* msg_ext =
-      _upb_Message_GetOrCreateExtension(msg, &validate_rules_ext, arena);
-  UPB_ASSERT(msg_ext);
-  *UPB_PTR_AT(&msg_ext->data, 0, const validate_FieldRules*) = ext;
+UPB_INLINE void validate_set_rules(struct google_protobuf_FieldOptions* msg, const validate_FieldRules* val, upb_Arena* arena) {
+  const upb_MiniTableExtension* ext = &validate_rules_ext;
+  UPB_ASSUME(!upb_IsRepeatedOrMap(&ext->field));
+  UPB_ASSUME(_upb_MiniTableField_GetRep(&ext->field) == kUpb_FieldRep_8Byte);
+  bool ok = _upb_Message_SetExtensionField(msg, ext, &val, arena);
+  UPB_ASSERT(ok);
 }
-extern const upb_MiniTable_File validate_validate_proto_upb_file_layout;
+extern const upb_MiniTableFile validate_validate_proto_upb_file_layout;
 
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif
 
-#include "upb/port_undef.inc"
+#include "upb/port/undef.inc"
 
 #endif  /* VALIDATE_VALIDATE_PROTO_UPB_H_ */

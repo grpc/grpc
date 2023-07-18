@@ -211,6 +211,9 @@ struct CallArgs {
   // This should be moved around and only destroyed when the transport is
   // satisfied that the metadata has passed any flow control measures it has.
   ClientInitialMetadataOutstandingToken client_initial_metadata_outstanding;
+  // Latch that will ultimately contain the polling entity for the call.
+  // TODO(ctiller): remove once event engine lands
+  Latch<grpc_polling_entity>* polling_entity;
   // Initial metadata from the server to the client.
   // Set once when it's available.
   // During promise setup filters can substitute their own latch for this

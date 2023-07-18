@@ -7,23 +7,26 @@
  * regenerated. */
 
 #include <stddef.h>
-#include "upb/msg_internal.h"
+#include "upb/collections/array_internal.h"
+#include "upb/message/internal.h"
+#include "upb/mini_table/enum_internal.h"
 #include "xds/type/matcher/v3/http_inputs.upb.h"
 #include "xds/annotations/v3/status.upb.h"
 
-#include "upb/port_def.inc"
+// Must be last.
+#include "upb/port/def.inc"
 
-const upb_MiniTable xds_type_matcher_v3_HttpAttributesCelMatchInput_msginit = {
+const upb_MiniTable xds_type_matcher_v3_HttpAttributesCelMatchInput_msg_init = {
   NULL,
   NULL,
-  UPB_SIZE(0, 0), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
+  0, 0, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
 };
 
 static const upb_MiniTable *messages_layout[1] = {
-  &xds_type_matcher_v3_HttpAttributesCelMatchInput_msginit,
+  &xds_type_matcher_v3_HttpAttributesCelMatchInput_msg_init,
 };
 
-const upb_MiniTable_File xds_type_matcher_v3_http_inputs_proto_upb_file_layout = {
+const upb_MiniTableFile xds_type_matcher_v3_http_inputs_proto_upb_file_layout = {
   messages_layout,
   NULL,
   NULL,
@@ -32,5 +35,5 @@ const upb_MiniTable_File xds_type_matcher_v3_http_inputs_proto_upb_file_layout =
   0,
 };
 
-#include "upb/port_undef.inc"
+#include "upb/port/undef.inc"
 

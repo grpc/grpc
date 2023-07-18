@@ -7,33 +7,40 @@
  * regenerated. */
 
 #include <stddef.h>
-#include "upb/msg_internal.h"
+#include "upb/collections/array_internal.h"
+#include "upb/message/internal.h"
+#include "upb/mini_table/enum_internal.h"
 #include "envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb.h"
 #include "envoy/config/cluster/v3/cluster.upb.h"
 #include "udpa/annotations/status.upb.h"
 #include "validate/validate.upb.h"
 
-#include "upb/port_def.inc"
+// Must be last.
+#include "upb/port/def.inc"
 
-static const upb_MiniTable_Sub envoy_extensions_load_balancing_policies_wrr_locality_v3_WrrLocality_submsgs[1] = {
-  {.submsg = &envoy_config_cluster_v3_LoadBalancingPolicy_msginit},
+static const upb_MiniTableSub envoy_extensions_load_balancing_policies_wrr_locality_v3_WrrLocality_submsgs[1] = {
+  {.submsg = &envoy_config_cluster_v3_LoadBalancingPolicy_msg_init},
 };
 
-static const upb_MiniTable_Field envoy_extensions_load_balancing_policies_wrr_locality_v3_WrrLocality__fields[1] = {
-  {1, UPB_SIZE(4, 8), UPB_SIZE(1, 1), 0, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+static const upb_MiniTableField envoy_extensions_load_balancing_policies_wrr_locality_v3_WrrLocality__fields[1] = {
+  {1, UPB_SIZE(4, 8), 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
 };
 
-const upb_MiniTable envoy_extensions_load_balancing_policies_wrr_locality_v3_WrrLocality_msginit = {
+const upb_MiniTable envoy_extensions_load_balancing_policies_wrr_locality_v3_WrrLocality_msg_init = {
   &envoy_extensions_load_balancing_policies_wrr_locality_v3_WrrLocality_submsgs[0],
   &envoy_extensions_load_balancing_policies_wrr_locality_v3_WrrLocality__fields[0],
-  UPB_SIZE(8, 16), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 16), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x000800000100000a, &upb_psm_1bt_maxmaxb},
+  })
 };
 
 static const upb_MiniTable *messages_layout[1] = {
-  &envoy_extensions_load_balancing_policies_wrr_locality_v3_WrrLocality_msginit,
+  &envoy_extensions_load_balancing_policies_wrr_locality_v3_WrrLocality_msg_init,
 };
 
-const upb_MiniTable_File envoy_extensions_load_balancing_policies_wrr_locality_v3_wrr_locality_proto_upb_file_layout = {
+const upb_MiniTableFile envoy_extensions_load_balancing_policies_wrr_locality_v3_wrr_locality_proto_upb_file_layout = {
   messages_layout,
   NULL,
   NULL,
@@ -42,5 +49,5 @@ const upb_MiniTable_File envoy_extensions_load_balancing_policies_wrr_locality_v
   0,
 };
 
-#include "upb/port_undef.inc"
+#include "upb/port/undef.inc"
 

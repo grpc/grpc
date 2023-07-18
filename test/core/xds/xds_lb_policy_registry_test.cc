@@ -18,7 +18,8 @@
 
 #include "src/core/ext/xds/xds_lb_policy_registry.h"
 
-#include <algorithm>
+#include <stdint.h>
+
 #include <string>
 
 #include <google/protobuf/any.pb.h>
@@ -30,7 +31,7 @@
 #include "absl/status/statusor.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "upb/def.hpp"
+#include "upb/reflection/def.hpp"
 #include "upb/upb.hpp"
 
 #include <grpc/grpc.h>
@@ -47,6 +48,7 @@
 #include "src/proto/grpc/testing/xds/v3/client_side_weighted_round_robin.pb.h"
 #include "src/proto/grpc/testing/xds/v3/cluster.pb.h"
 #include "src/proto/grpc/testing/xds/v3/extension.pb.h"
+#include "src/proto/grpc/testing/xds/v3/pick_first.pb.h"
 #include "src/proto/grpc/testing/xds/v3/ring_hash.pb.h"
 #include "src/proto/grpc/testing/xds/v3/round_robin.pb.h"
 #include "src/proto/grpc/testing/xds/v3/typed_struct.pb.h"
@@ -62,6 +64,7 @@ using LoadBalancingPolicyProto =
     ::envoy::config::cluster::v3::LoadBalancingPolicy;
 using ::envoy::extensions::load_balancing_policies::
     client_side_weighted_round_robin::v3::ClientSideWeightedRoundRobin;
+using ::envoy::extensions::load_balancing_policies::pick_first::v3::PickFirst;
 using ::envoy::extensions::load_balancing_policies::ring_hash::v3::RingHash;
 using ::envoy::extensions::load_balancing_policies::round_robin::v3::RoundRobin;
 using ::envoy::extensions::load_balancing_policies::wrr_locality::v3::
@@ -84,7 +87,10 @@ absl::StatusOr<std::string> ConvertXdsPolicy(
   ValidationErrors::ScopedField field(&errors, ".load_balancing_policy");
   auto config = XdsLbPolicyRegistry().ConvertXdsLbPolicyConfig(
       context, upb_policy, &errors);
-  if (!errors.ok()) return errors.status("validation errors");
+  if (!errors.ok()) {
+    return errors.status(absl::StatusCode::kInvalidArgument,
+                         "validation errors");
+  }
   EXPECT_EQ(config.size(), 1);
   return JsonDump(Json{config[0]});
 }
@@ -127,7 +133,6 @@ TEST(RoundRobin, Basic) {
 //
 
 TEST(ClientSideWeightedRoundRobinTest, DefaultConfig) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_WRR_LB");
   LoadBalancingPolicyProto policy;
   policy.add_policies()
       ->mutable_typed_extension_config()
@@ -135,11 +140,10 @@ TEST(ClientSideWeightedRoundRobinTest, DefaultConfig) {
       ->PackFrom(ClientSideWeightedRoundRobin());
   auto result = ConvertXdsPolicy(policy);
   ASSERT_TRUE(result.ok()) << result.status();
-  EXPECT_EQ(*result, "{\"weighted_round_robin_experimental\":{}}");
+  EXPECT_EQ(*result, "{\"weighted_round_robin\":{}}");
 }
 
 TEST(ClientSideWeightedRoundRobinTest, FieldsExplicitlySet) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_WRR_LB");
   ClientSideWeightedRoundRobin wrr;
   wrr.mutable_enable_oob_load_report()->set_value(true);
   wrr.mutable_oob_reporting_period()->set_seconds(1);
@@ -155,10 +159,10 @@ TEST(ClientSideWeightedRoundRobinTest, FieldsExplicitlySet) {
   auto result = ConvertXdsPolicy(policy);
   ASSERT_TRUE(result.ok()) << result.status();
   EXPECT_EQ(*result,
-            "{\"weighted_round_robin_experimental\":{"
+            "{\"weighted_round_robin\":{"
             "\"blackoutPeriod\":\"2.000000000s\","
             "\"enableOobLoadReport\":true,"
-            "\"errorUtilizationPenalty\":5.000000,"
+            "\"errorUtilizationPenalty\":5,"
             "\"oobReportingPeriod\":\"1.000000000s\","
             "\"weightExpirationPeriod\":\"3.000000000s\","
             "\"weightUpdatePeriod\":\"4.000000000s\""
@@ -166,7 +170,6 @@ TEST(ClientSideWeightedRoundRobinTest, FieldsExplicitlySet) {
 }
 
 TEST(ClientSideWeightedRoundRobinTest, InvalidValues) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_WRR_LB");
   ClientSideWeightedRoundRobin wrr;
   wrr.mutable_oob_reporting_period()->set_seconds(-1);
   wrr.mutable_blackout_period()->set_seconds(-2);
@@ -206,20 +209,6 @@ TEST(ClientSideWeightedRoundRobinTest, InvalidValues) {
             ".client_side_weighted_round_robin.v3.ClientSideWeightedRoundRobin]"
             ".weight_update_period.seconds "
             "error:value must be in the range [0, 315576000000]]")
-      << result.status();
-}
-
-TEST(ClientSideWeightedRoundRobinTest, EnvVarNotEnabled) {
-  LoadBalancingPolicyProto policy;
-  policy.add_policies()
-      ->mutable_typed_extension_config()
-      ->mutable_typed_config()
-      ->PackFrom(ClientSideWeightedRoundRobin());
-  auto result = ConvertXdsPolicy(policy);
-  EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(result.status().message(),
-            "validation errors: [field:load_balancing_policy "
-            "error:no supported load balancing policy config found]")
       << result.status();
 }
 
@@ -454,6 +443,56 @@ TEST(WrrLocality, UnsupportedChildPolicyTypeSkipped) {
   EXPECT_EQ(*result,
             "{\"xds_wrr_locality_experimental\":{"
             "\"childPolicy\":[{\"round_robin\":{}}]}}");
+}
+
+//
+// PickFirst
+//
+
+TEST(PickFirst, NoShuffle) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_PICKFIRST_LB_CONFIG");
+  LoadBalancingPolicyProto policy;
+  auto* lb_policy = policy.add_policies();
+  PickFirst pick_first;
+  pick_first.set_shuffle_address_list(false);
+  lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
+      pick_first);
+  auto result = ConvertXdsPolicy(policy);
+  ASSERT_TRUE(result.ok()) << result.status();
+  EXPECT_EQ(*result, "{\"pick_first\":{\"shuffleAddressList\":false}}");
+}
+
+TEST(PickFirst, Shuffle) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_PICKFIRST_LB_CONFIG");
+  LoadBalancingPolicyProto policy;
+  auto* lb_policy = policy.add_policies();
+  PickFirst pick_first;
+  pick_first.set_shuffle_address_list(true);
+  lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
+      pick_first);
+  auto result = ConvertXdsPolicy(policy);
+  ASSERT_TRUE(result.ok()) << result.status();
+  EXPECT_EQ(*result, "{\"pick_first\":{\"shuffleAddressList\":true}}");
+}
+
+TEST(PickFirst, ShuffleOmitted) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_PICKFIRST_LB_CONFIG");
+  LoadBalancingPolicyProto policy;
+  auto* lb_policy = policy.add_policies();
+  lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
+      PickFirst());
+  auto result = ConvertXdsPolicy(policy);
+  ASSERT_TRUE(result.ok()) << result.status();
+  EXPECT_EQ(*result, "{\"pick_first\":{\"shuffleAddressList\":false}}");
+}
+
+TEST(PickFirst, EnvVarDisabled) {
+  LoadBalancingPolicyProto policy;
+  auto* lb_policy = policy.add_policies();
+  lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
+      PickFirst());
+  auto result = ConvertXdsPolicy(policy);
+  ASSERT_FALSE(result.ok());
 }
 
 //

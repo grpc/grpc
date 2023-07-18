@@ -26,6 +26,8 @@
 
 #include <memory>
 
+#include "absl/container/flat_hash_map.h"
+#include "absl/meta/type_traits.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
@@ -35,6 +37,7 @@
 #include <grpc/slice.h>
 #include <grpc/support/time.h>
 
+#include "src/core/ext/transport/chttp2/transport/context_list_entry.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/frame_goaway.h"
@@ -45,7 +48,6 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
-#include "src/core/ext/transport/chttp2/transport/stream_map.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/debug/trace.h"
@@ -76,10 +78,6 @@
 // First bit of the reference count, stored in the high order bits (with the low
 //   bits being used for flags defined above)
 #define CLOSURE_BARRIER_FIRST_REF_BIT (1 << 16)
-
-namespace grpc_core {
-class ContextList;
-}
 
 // streams are kept in various linked lists depending on what things need to
 // happen to them... this enum labels each list
@@ -247,21 +245,7 @@ typedef enum {
   GRPC_CHTTP2_KEEPALIVE_STATE_DISABLED,
 } grpc_chttp2_keepalive_state;
 
-struct grpc_chttp2_transport
-// TODO(ctiller): #31319 fixed a crash on Linux & Mac whereby iomgr was
-// accessed after shutdown by chttp2. We've not seen similar behavior on
-// Windows afaik, but this fix has exposed another refcounting bug whereby
-// transports leak on Windows and prevent test shutdown.
-// This hack attempts to compromise between two things that are blocking our CI
-// from giving us a good quality signal, but are unlikely to be problems for
-// most customers. We should continue tracking down what's causing the failure,
-// but this gives us some runway to do so - and given that we're actively
-// working on removing the problematic code paths, it may be that effort brings
-// the result we need.
-#ifndef GPR_WINDOWS
-    : public grpc_core::KeepsGrpcInitialized
-#endif
-{
+struct grpc_chttp2_transport : public grpc_core::KeepsGrpcInitialized {
   grpc_chttp2_transport(const grpc_core::ChannelArgs& channel_args,
                         grpc_endpoint* ep, bool is_client);
   ~grpc_chttp2_transport();
@@ -295,7 +279,7 @@ struct grpc_chttp2_transport
   grpc_chttp2_stream_list lists[STREAM_LIST_COUNT] = {};
 
   /// maps stream id to grpc_chttp2_stream objects
-  grpc_chttp2_stream_map stream_map;
+  absl::flat_hash_map<uint32_t, grpc_chttp2_stream*> stream_map;
 
   grpc_closure write_action_begin_locked;
   grpc_closure write_action;
@@ -436,6 +420,8 @@ struct grpc_chttp2_transport
 
   /// If start_bdp_ping_locked has been called
   bool bdp_ping_started = false;
+  // True if pings should be acked
+  bool ack_pings = true;
   // next bdp ping timer handle
   absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
       next_bdp_ping_timer_handle;
@@ -694,8 +680,9 @@ void grpc_chttp2_act_on_flowctl_action(
 
 inline grpc_chttp2_stream* grpc_chttp2_parsing_lookup_stream(
     grpc_chttp2_transport* t, uint32_t id) {
-  return static_cast<grpc_chttp2_stream*>(
-      grpc_chttp2_stream_map_find(&t->stream_map, id));
+  auto it = t->stream_map.find(id);
+  if (it == t->stream_map.end()) return nullptr;
+  return it->second;
 }
 grpc_chttp2_stream* grpc_chttp2_parsing_accept_stream(grpc_chttp2_transport* t,
                                                       uint32_t id);
@@ -820,6 +807,8 @@ void grpc_chttp2_fail_pending_writes(grpc_chttp2_transport* t,
 /// initialization
 void grpc_chttp2_config_default_keepalive_args(grpc_channel_args* args,
                                                bool is_client);
+void grpc_chttp2_config_default_keepalive_args(
+    const grpc_core::ChannelArgs& channel_args, bool is_client);
 
 void grpc_chttp2_retry_initiate_ping(grpc_chttp2_transport* t);
 

@@ -21,8 +21,9 @@
 #include <algorithm>
 #include <atomic>
 #include <string>
+#include <utility>
 
-#include "absl/strings/ascii.h"
+#include "absl/functional/any_invocable.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
@@ -48,26 +49,55 @@ struct ForcedExperiment {
 };
 ForcedExperiment g_forced_experiments[kNumExperiments];
 
-std::atomic<bool> g_loaded;
+std::atomic<bool> g_loaded(false);
+
+absl::AnyInvocable<bool(struct ExperimentMetadata)>* g_check_constraints_cb =
+    nullptr;
+
+class TestExperiments {
+ public:
+  TestExperiments(const ExperimentMetadata* experiment_metadata,
+                  size_t num_experiments) {
+    enabled_ = new bool[num_experiments];
+    for (size_t i = 0; i < num_experiments; i++) {
+      if (g_check_constraints_cb != nullptr) {
+        enabled_[i] = (*g_check_constraints_cb)(experiment_metadata[i]);
+      } else {
+        enabled_[i] = experiment_metadata[i].default_value;
+      }
+    }
+  }
+
+  // Overloading [] operator to access elements in array style
+  bool operator[](int index) { return enabled_[index]; }
+
+  ~TestExperiments() { delete enabled_; }
+
+ private:
+  bool* enabled_;
+};
+
+TestExperiments* g_test_experiments = nullptr;
 
 GPR_ATTRIBUTE_NOINLINE Experiments LoadExperimentsFromConfigVariable() {
-  GPR_ASSERT(g_loaded.exchange(true, std::memory_order_relaxed) == false);
+  g_loaded.store(true, std::memory_order_relaxed);
   // Set defaults from metadata.
   Experiments experiments;
   for (size_t i = 0; i < kNumExperiments; i++) {
     if (!g_forced_experiments[i].forced) {
-      experiments.enabled[i] = g_experiment_metadata[i].default_value;
+      if (g_check_constraints_cb != nullptr) {
+        experiments.enabled[i] =
+            (*g_check_constraints_cb)(g_experiment_metadata[i]);
+      } else {
+        experiments.enabled[i] = g_experiment_metadata[i].default_value;
+      }
     } else {
       experiments.enabled[i] = g_forced_experiments[i].value;
     }
   }
   // For each comma-separated experiment in the global config:
-  for (auto experiment : absl::StrSplit(
-           absl::string_view(ConfigVars::Get().Experiments()), ',')) {
-    // Strip whitespace.
-    experiment = absl::StripAsciiWhitespace(experiment);
-    // Handle ",," without crashing.
-    if (experiment.empty()) continue;
+  for (auto experiment : absl::StrSplit(ConfigVars::Get().Experiments(), ',',
+                                        absl::SkipWhitespace())) {
     // Enable unless prefixed with '-' (=> disable).
     bool enable = true;
     if (experiment[0] == '-') {
@@ -92,14 +122,32 @@ GPR_ATTRIBUTE_NOINLINE Experiments LoadExperimentsFromConfigVariable() {
   }
   return experiments;
 }
+
+Experiments& ExperimentsSingleton() {
+  // One time initialization:
+  static NoDestruct<Experiments> experiments{
+      LoadExperimentsFromConfigVariable()};
+  return *experiments;
+}
 }  // namespace
 
+void TestOnlyReloadExperimentsFromConfigVariables() {
+  ExperimentsSingleton() = LoadExperimentsFromConfigVariable();
+  PrintExperimentsList();
+}
+
+void LoadTestOnlyExperimentsFromMetadata(
+    const ExperimentMetadata* experiment_metadata, size_t num_experiments) {
+  g_test_experiments =
+      new TestExperiments(experiment_metadata, num_experiments);
+}
+
 bool IsExperimentEnabled(size_t experiment_id) {
-  // One time initialization:
-  static const NoDestruct<Experiments> experiments{
-      LoadExperimentsFromConfigVariable()};
-  // Normal path: just return the value;
-  return experiments->enabled[experiment_id];
+  return ExperimentsSingleton().enabled[experiment_id];
+}
+
+bool IsTestExperimentEnabled(size_t experiment_id) {
+  return (*g_test_experiments)[experiment_id];
 }
 
 void PrintExperimentsList() {
@@ -109,20 +157,29 @@ void PrintExperimentsList() {
         std::max(max_experiment_length, strlen(g_experiment_metadata[i].name));
   }
   for (size_t i = 0; i < kNumExperiments; i++) {
-    gpr_log(GPR_DEBUG, "%s",
-            absl::StrCat(
-                "gRPC EXPERIMENT ", g_experiment_metadata[i].name,
-                std::string(max_experiment_length -
-                                strlen(g_experiment_metadata[i].name) + 1,
-                            ' '),
-                IsExperimentEnabled(i) ? "ON " : "OFF", " (default:",
-                g_experiment_metadata[i].default_value ? "ON" : "OFF",
-                g_forced_experiments[i].forced
-                    ? absl::StrCat(" force:",
-                                   g_forced_experiments[i].value ? "ON" : "OFF")
-                    : std::string(),
-                ")")
-                .c_str());
+    gpr_log(
+        GPR_DEBUG, "%s",
+        absl::StrCat(
+            "gRPC EXPERIMENT ", g_experiment_metadata[i].name,
+            std::string(max_experiment_length -
+                            strlen(g_experiment_metadata[i].name) + 1,
+                        ' '),
+            IsExperimentEnabled(i) ? "ON " : "OFF",
+            " (default:", g_experiment_metadata[i].default_value ? "ON" : "OFF",
+            (g_check_constraints_cb != nullptr
+                 ? absl::StrCat(
+                       " + ", g_experiment_metadata[i].additional_constaints,
+                       " => ",
+                       (*g_check_constraints_cb)(g_experiment_metadata[i])
+                           ? "ON "
+                           : "OFF")
+                 : std::string()),
+            g_forced_experiments[i].forced
+                ? absl::StrCat(" force:",
+                               g_forced_experiments[i].value ? "ON" : "OFF")
+                : std::string(),
+            ")")
+            .c_str());
   }
 }
 
@@ -142,6 +199,13 @@ void ForceEnableExperiment(absl::string_view experiment, bool enable) {
           std::string(experiment).c_str(), enable ? "enable" : "disable");
 }
 
+void RegisterExperimentConstraintsValidator(
+    absl::AnyInvocable<bool(struct ExperimentMetadata)> check_constraints_cb) {
+  g_check_constraints_cb =
+      new absl::AnyInvocable<bool(struct ExperimentMetadata)>(
+          std::move(check_constraints_cb));
+}
+
 }  // namespace grpc_core
 #else
 namespace grpc_core {
@@ -150,5 +214,10 @@ void ForceEnableExperiment(absl::string_view experiment_name, bool) {
   Crash(absl::StrCat("ForceEnableExperiment(\"", experiment_name,
                      "\") called in final build"));
 }
+
+void RegisterExperimentConstraintsValidator(
+    absl::AnyInvocable<
+        bool(struct ExperimentMetadata)> /*check_constraints_cb*/) {}
+
 }  // namespace grpc_core
 #endif

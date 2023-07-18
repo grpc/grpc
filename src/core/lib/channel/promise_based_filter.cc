@@ -16,8 +16,6 @@
 
 #include "src/core/lib/channel/promise_based_filter.h"
 
-#include <inttypes.h>
-
 #include <algorithm>
 #include <initializer_list>
 #include <memory>
@@ -245,16 +243,8 @@ void BaseCallData::CapturedBatch::CancelWith(grpc_error_handle error,
   auto* batch = std::exchange(batch_, nullptr);
   GPR_ASSERT(batch != nullptr);
   uintptr_t& refcnt = *RefCountField(batch);
-  gpr_log(GPR_DEBUG, "%sCancelWith: %p refs=%" PRIdPTR " err=%s [%s]",
-          releaser->call()->DebugTag().c_str(), batch, refcnt,
-          error.ToString().c_str(),
-          grpc_transport_stream_op_batch_string(batch, false).c_str());
   if (refcnt == 0) {
     // refcnt==0 ==> cancelled
-    if (grpc_trace_channel.enabled()) {
-      gpr_log(GPR_INFO, "%sCANCEL BATCH REQUEST ALREADY CANCELLED",
-              Activity::current()->DebugTag().c_str());
-    }
     return;
   }
   refcnt = 0;
@@ -1583,7 +1573,7 @@ void ClientCallData::StartPromise(Flusher* flusher) {
   promise_ = filter->MakeCallPromise(
       CallArgs{WrapMetadata(send_initial_metadata_batch_->payload
                                 ->send_initial_metadata.send_initial_metadata),
-               std::move(initial_metadata_outstanding_token_),
+               std::move(initial_metadata_outstanding_token_), nullptr,
                server_initial_metadata_pipe() == nullptr
                    ? nullptr
                    : &server_initial_metadata_pipe()->sender,
@@ -2373,7 +2363,7 @@ void ServerCallData::RecvInitialMetadataReady(grpc_error_handle error) {
   FakeActivity(this).Run([this, filter] {
     promise_ = filter->MakeCallPromise(
         CallArgs{WrapMetadata(recv_initial_metadata_),
-                 ClientInitialMetadataOutstandingToken::Empty(),
+                 ClientInitialMetadataOutstandingToken::Empty(), nullptr,
                  server_initial_metadata_pipe() == nullptr
                      ? nullptr
                      : &server_initial_metadata_pipe()->sender,

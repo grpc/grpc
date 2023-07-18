@@ -9,54 +9,54 @@
 #ifndef ENVOY_EXTENSIONS_LOAD_BALANCING_POLICIES_COMMON_V3_COMMON_PROTO_UPB_H_
 #define ENVOY_EXTENSIONS_LOAD_BALANCING_POLICIES_COMMON_V3_COMMON_PROTO_UPB_H_
 
-#include "upb/msg_internal.h"
-#include "upb/decode.h"
-#include "upb/decode_fast.h"
-#include "upb/encode.h"
+#include "upb/collections/array_internal.h"
+#include "upb/collections/map_gencode_util.h"
+#include "upb/message/accessors.h"
+#include "upb/message/internal.h"
+#include "upb/mini_table/enum_internal.h"
+#include "upb/wire/decode.h"
+#include "upb/wire/decode_fast.h"
+#include "upb/wire/encode.h"
 
-#include "upb/port_def.inc"
+// Must be last. 
+#include "upb/port/def.inc"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-struct envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig;
-struct envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig;
-struct envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig;
-struct envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig;
-struct envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig;
 typedef struct envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig;
 typedef struct envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig;
 typedef struct envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig;
 typedef struct envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig;
 typedef struct envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig;
-extern const upb_MiniTable envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_msginit;
-extern const upb_MiniTable envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig_msginit;
-extern const upb_MiniTable envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig_msginit;
-extern const upb_MiniTable envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig_msginit;
-extern const upb_MiniTable envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig_msginit;
+extern const upb_MiniTable envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_msg_init;
+extern const upb_MiniTable envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig_msg_init;
+extern const upb_MiniTable envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig_msg_init;
+extern const upb_MiniTable envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig_msg_init;
+extern const upb_MiniTable envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig_msg_init;
 struct envoy_config_core_v3_RuntimeDouble;
 struct envoy_type_v3_Percent;
 struct google_protobuf_Duration;
 struct google_protobuf_UInt32Value;
 struct google_protobuf_UInt64Value;
-extern const upb_MiniTable envoy_config_core_v3_RuntimeDouble_msginit;
-extern const upb_MiniTable envoy_type_v3_Percent_msginit;
-extern const upb_MiniTable google_protobuf_Duration_msginit;
-extern const upb_MiniTable google_protobuf_UInt32Value_msginit;
-extern const upb_MiniTable google_protobuf_UInt64Value_msginit;
+extern const upb_MiniTable envoy_config_core_v3_RuntimeDouble_msg_init;
+extern const upb_MiniTable envoy_type_v3_Percent_msg_init;
+extern const upb_MiniTable google_protobuf_Duration_msg_init;
+extern const upb_MiniTable google_protobuf_UInt32Value_msg_init;
+extern const upb_MiniTable google_protobuf_UInt64Value_msg_init;
 
 
 
 /* envoy.extensions.load_balancing_policies.common.v3.LocalityLbConfig */
 
 UPB_INLINE envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig* envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_new(upb_Arena* arena) {
-  return (envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig*)_upb_Message_New(&envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_msginit, arena);
+  return (envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig*)_upb_Message_New(&envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_msg_init, arena);
 }
 UPB_INLINE envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig* envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_parse(const char* buf, size_t size, upb_Arena* arena) {
   envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig* ret = envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_msginit, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
+  if (upb_Decode(buf, size, ret, &envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_msg_init, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
@@ -66,7 +66,7 @@ UPB_INLINE envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig* 
                            int options, upb_Arena* arena) {
   envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig* ret = envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_msginit, extreg, options, arena) !=
+  if (upb_Decode(buf, size, ret, &envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_msg_init, extreg, options, arena) !=
       kUpb_DecodeStatus_Ok) {
     return NULL;
   }
@@ -74,13 +74,13 @@ UPB_INLINE envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig* 
 }
 UPB_INLINE char* envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_serialize(const envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig* msg, upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_msginit, 0, arena, &ptr, len);
+  (void)upb_Encode(msg, &envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
 UPB_INLINE char* envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_serialize_ex(const envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig* msg, int options,
                                  upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_msginit, options, arena, &ptr, len);
+  (void)upb_Encode(msg, &envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_msg_init, options, arena, &ptr, len);
   return ptr;
 }
 typedef enum {
@@ -89,48 +89,61 @@ typedef enum {
   envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_locality_config_specifier_NOT_SET = 0
 } envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_locality_config_specifier_oneofcases;
 UPB_INLINE envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_locality_config_specifier_oneofcases envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_locality_config_specifier_case(const envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig* msg) {
-  return (envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_locality_config_specifier_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t);
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), -1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return (envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_locality_config_specifier_oneofcases)upb_Message_WhichOneofFieldNumber(msg, &field);
 }
-UPB_INLINE bool envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_has_zone_aware_lb_config(const envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig* msg) {
-  return _upb_getoneofcase(msg, UPB_SIZE(0, 0)) == 1;
-}
-UPB_INLINE void envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_clear_zone_aware_lb_config(const envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig* msg) {
-  UPB_WRITE_ONEOF(msg, envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig*, UPB_SIZE(4, 8), 0, UPB_SIZE(0, 0), envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_locality_config_specifier_NOT_SET);
+UPB_INLINE void envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_clear_zone_aware_lb_config(envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), -1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig* envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_zone_aware_lb_config(const envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig* msg) {
-  return UPB_READ_ONEOF(msg, const envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig*, UPB_SIZE(4, 8), UPB_SIZE(0, 0), 1, NULL);
+  const envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig* default_val = NULL;
+  const envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig* ret;
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), -1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_has_locality_weighted_lb_config(const envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig* msg) {
-  return _upb_getoneofcase(msg, UPB_SIZE(0, 0)) == 2;
+UPB_INLINE bool envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_has_zone_aware_lb_config(const envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), -1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_clear_locality_weighted_lb_config(const envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig* msg) {
-  UPB_WRITE_ONEOF(msg, envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig*, UPB_SIZE(4, 8), 0, UPB_SIZE(0, 0), envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_locality_config_specifier_NOT_SET);
+UPB_INLINE void envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_clear_locality_weighted_lb_config(envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(4, 8), -1, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig* envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_locality_weighted_lb_config(const envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig* msg) {
-  return UPB_READ_ONEOF(msg, const envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig*, UPB_SIZE(4, 8), UPB_SIZE(0, 0), 2, NULL);
+  const envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig* default_val = NULL;
+  const envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig* ret;
+  const upb_MiniTableField field = {2, UPB_SIZE(4, 8), -1, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
+}
+UPB_INLINE bool envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_has_locality_weighted_lb_config(const envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(4, 8), -1, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
 
 UPB_INLINE void envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_set_zone_aware_lb_config(envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig *msg, envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig* value) {
-  UPB_WRITE_ONEOF(msg, envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig*, UPB_SIZE(4, 8), value, UPB_SIZE(0, 0), 1);
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), -1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig* envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_mutable_zone_aware_lb_config(envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig* msg, upb_Arena* arena) {
   struct envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig* sub = (struct envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig*)envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_zone_aware_lb_config(msg);
   if (sub == NULL) {
-    sub = (struct envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig*)_upb_Message_New(&envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig_msginit, arena);
-    if (!sub) return NULL;
-    envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_set_zone_aware_lb_config(msg, sub);
+    sub = (struct envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig*)_upb_Message_New(&envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig_msg_init, arena);
+    if (sub) envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_set_zone_aware_lb_config(msg, sub);
   }
   return sub;
 }
 UPB_INLINE void envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_set_locality_weighted_lb_config(envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig *msg, envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig* value) {
-  UPB_WRITE_ONEOF(msg, envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig*, UPB_SIZE(4, 8), value, UPB_SIZE(0, 0), 2);
+  const upb_MiniTableField field = {2, UPB_SIZE(4, 8), -1, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig* envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_mutable_locality_weighted_lb_config(envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig* msg, upb_Arena* arena) {
   struct envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig* sub = (struct envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig*)envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_locality_weighted_lb_config(msg);
   if (sub == NULL) {
-    sub = (struct envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig*)_upb_Message_New(&envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig_msginit, arena);
-    if (!sub) return NULL;
-    envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_set_locality_weighted_lb_config(msg, sub);
+    sub = (struct envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig*)_upb_Message_New(&envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig_msg_init, arena);
+    if (sub) envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_set_locality_weighted_lb_config(msg, sub);
   }
   return sub;
 }
@@ -138,12 +151,12 @@ UPB_INLINE struct envoy_extensions_load_balancing_policies_common_v3_LocalityLbC
 /* envoy.extensions.load_balancing_policies.common.v3.LocalityLbConfig.ZoneAwareLbConfig */
 
 UPB_INLINE envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig* envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig_new(upb_Arena* arena) {
-  return (envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig*)_upb_Message_New(&envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig_msginit, arena);
+  return (envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig*)_upb_Message_New(&envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig_msg_init, arena);
 }
 UPB_INLINE envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig* envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig_parse(const char* buf, size_t size, upb_Arena* arena) {
   envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig* ret = envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig_msginit, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
+  if (upb_Decode(buf, size, ret, &envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig_msg_init, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
@@ -153,7 +166,7 @@ UPB_INLINE envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_Z
                            int options, upb_Arena* arena) {
   envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig* ret = envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig_msginit, extreg, options, arena) !=
+  if (upb_Decode(buf, size, ret, &envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig_msg_init, extreg, options, arena) !=
       kUpb_DecodeStatus_Ok) {
     return NULL;
   }
@@ -161,79 +174,95 @@ UPB_INLINE envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_Z
 }
 UPB_INLINE char* envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig_serialize(const envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig* msg, upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig_msginit, 0, arena, &ptr, len);
+  (void)upb_Encode(msg, &envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
 UPB_INLINE char* envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig_serialize_ex(const envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig* msg, int options,
                                  upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig_msginit, options, arena, &ptr, len);
+  (void)upb_Encode(msg, &envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig_msg_init, options, arena, &ptr, len);
   return ptr;
 }
-UPB_INLINE bool envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig_has_routing_enabled(const envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig* msg) {
-  return _upb_hasbit(msg, 1);
-}
-UPB_INLINE void envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig_clear_routing_enabled(const envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const upb_Message*) = NULL;
+UPB_INLINE void envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig_clear_routing_enabled(envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const struct envoy_type_v3_Percent* envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig_routing_enabled(const envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const struct envoy_type_v3_Percent*);
+  const struct envoy_type_v3_Percent* default_val = NULL;
+  const struct envoy_type_v3_Percent* ret;
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig_has_min_cluster_size(const envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig* msg) {
-  return _upb_hasbit(msg, 2);
+UPB_INLINE bool envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig_has_routing_enabled(const envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig_clear_min_cluster_size(const envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), const upb_Message*) = NULL;
+UPB_INLINE void envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig_clear_min_cluster_size(envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 2, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const struct google_protobuf_UInt64Value* envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig_min_cluster_size(const envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(8, 16), const struct google_protobuf_UInt64Value*);
+  const struct google_protobuf_UInt64Value* default_val = NULL;
+  const struct google_protobuf_UInt64Value* ret;
+  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 2, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE void envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig_clear_fail_traffic_on_panic(const envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool) = 0;
+UPB_INLINE bool envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig_has_min_cluster_size(const envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 2, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
+}
+UPB_INLINE void envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig_clear_fail_traffic_on_panic(envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig* msg) {
+  const upb_MiniTableField field = {3, UPB_SIZE(12, 1), 0, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE bool envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig_fail_traffic_on_panic(const envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool);
+  bool default_val = false;
+  bool ret;
+  const upb_MiniTableField field = {3, UPB_SIZE(12, 1), 0, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
 
 UPB_INLINE void envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig_set_routing_enabled(envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig *msg, struct envoy_type_v3_Percent* value) {
-  _upb_sethas(msg, 1);
-  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), struct envoy_type_v3_Percent*) = value;
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct envoy_type_v3_Percent* envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig_mutable_routing_enabled(envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig* msg, upb_Arena* arena) {
   struct envoy_type_v3_Percent* sub = (struct envoy_type_v3_Percent*)envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig_routing_enabled(msg);
   if (sub == NULL) {
-    sub = (struct envoy_type_v3_Percent*)_upb_Message_New(&envoy_type_v3_Percent_msginit, arena);
-    if (!sub) return NULL;
-    envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig_set_routing_enabled(msg, sub);
+    sub = (struct envoy_type_v3_Percent*)_upb_Message_New(&envoy_type_v3_Percent_msg_init, arena);
+    if (sub) envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig_set_routing_enabled(msg, sub);
   }
   return sub;
 }
 UPB_INLINE void envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig_set_min_cluster_size(envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig *msg, struct google_protobuf_UInt64Value* value) {
-  _upb_sethas(msg, 2);
-  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), struct google_protobuf_UInt64Value*) = value;
+  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 2, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_UInt64Value* envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig_mutable_min_cluster_size(envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig* msg, upb_Arena* arena) {
   struct google_protobuf_UInt64Value* sub = (struct google_protobuf_UInt64Value*)envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig_min_cluster_size(msg);
   if (sub == NULL) {
-    sub = (struct google_protobuf_UInt64Value*)_upb_Message_New(&google_protobuf_UInt64Value_msginit, arena);
-    if (!sub) return NULL;
-    envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig_set_min_cluster_size(msg, sub);
+    sub = (struct google_protobuf_UInt64Value*)_upb_Message_New(&google_protobuf_UInt64Value_msg_init, arena);
+    if (sub) envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig_set_min_cluster_size(msg, sub);
   }
   return sub;
 }
 UPB_INLINE void envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig_set_fail_traffic_on_panic(envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig *msg, bool value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool) = value;
+  const upb_MiniTableField field = {3, UPB_SIZE(12, 1), 0, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 
 /* envoy.extensions.load_balancing_policies.common.v3.LocalityLbConfig.LocalityWeightedLbConfig */
 
 UPB_INLINE envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig* envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig_new(upb_Arena* arena) {
-  return (envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig*)_upb_Message_New(&envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig_msginit, arena);
+  return (envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig*)_upb_Message_New(&envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig_msg_init, arena);
 }
 UPB_INLINE envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig* envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig_parse(const char* buf, size_t size, upb_Arena* arena) {
   envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig* ret = envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig_msginit, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
+  if (upb_Decode(buf, size, ret, &envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig_msg_init, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
@@ -243,7 +272,7 @@ UPB_INLINE envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_L
                            int options, upb_Arena* arena) {
   envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig* ret = envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig_msginit, extreg, options, arena) !=
+  if (upb_Decode(buf, size, ret, &envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig_msg_init, extreg, options, arena) !=
       kUpb_DecodeStatus_Ok) {
     return NULL;
   }
@@ -251,13 +280,13 @@ UPB_INLINE envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_L
 }
 UPB_INLINE char* envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig_serialize(const envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig* msg, upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig_msginit, 0, arena, &ptr, len);
+  (void)upb_Encode(msg, &envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
 UPB_INLINE char* envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig_serialize_ex(const envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig* msg, int options,
                                  upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig_msginit, options, arena, &ptr, len);
+  (void)upb_Encode(msg, &envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig_msg_init, options, arena, &ptr, len);
   return ptr;
 }
 
@@ -265,12 +294,12 @@ UPB_INLINE char* envoy_extensions_load_balancing_policies_common_v3_LocalityLbCo
 /* envoy.extensions.load_balancing_policies.common.v3.SlowStartConfig */
 
 UPB_INLINE envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig* envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig_new(upb_Arena* arena) {
-  return (envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig*)_upb_Message_New(&envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig_msginit, arena);
+  return (envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig*)_upb_Message_New(&envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig_msg_init, arena);
 }
 UPB_INLINE envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig* envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig_parse(const char* buf, size_t size, upb_Arena* arena) {
   envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig* ret = envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig_msginit, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
+  if (upb_Decode(buf, size, ret, &envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig_msg_init, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
@@ -280,7 +309,7 @@ UPB_INLINE envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig* e
                            int options, upb_Arena* arena) {
   envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig* ret = envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig_msginit, extreg, options, arena) !=
+  if (upb_Decode(buf, size, ret, &envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig_msg_init, extreg, options, arena) !=
       kUpb_DecodeStatus_Ok) {
     return NULL;
   }
@@ -288,79 +317,94 @@ UPB_INLINE envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig* e
 }
 UPB_INLINE char* envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig_serialize(const envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig* msg, upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig_msginit, 0, arena, &ptr, len);
+  (void)upb_Encode(msg, &envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
 UPB_INLINE char* envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig_serialize_ex(const envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig* msg, int options,
                                  upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig_msginit, options, arena, &ptr, len);
+  (void)upb_Encode(msg, &envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig_msg_init, options, arena, &ptr, len);
   return ptr;
 }
-UPB_INLINE bool envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig_has_slow_start_window(const envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig* msg) {
-  return _upb_hasbit(msg, 1);
-}
-UPB_INLINE void envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig_clear_slow_start_window(const envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const upb_Message*) = NULL;
+UPB_INLINE void envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig_clear_slow_start_window(envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const struct google_protobuf_Duration* envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig_slow_start_window(const envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const struct google_protobuf_Duration*);
+  const struct google_protobuf_Duration* default_val = NULL;
+  const struct google_protobuf_Duration* ret;
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig_has_aggression(const envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig* msg) {
-  return _upb_hasbit(msg, 2);
+UPB_INLINE bool envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig_has_slow_start_window(const envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig_clear_aggression(const envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), const upb_Message*) = NULL;
+UPB_INLINE void envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig_clear_aggression(envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 2, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const struct envoy_config_core_v3_RuntimeDouble* envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig_aggression(const envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(8, 16), const struct envoy_config_core_v3_RuntimeDouble*);
+  const struct envoy_config_core_v3_RuntimeDouble* default_val = NULL;
+  const struct envoy_config_core_v3_RuntimeDouble* ret;
+  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 2, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig_has_min_weight_percent(const envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig* msg) {
-  return _upb_hasbit(msg, 3);
+UPB_INLINE bool envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig_has_aggression(const envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 2, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig_clear_min_weight_percent(const envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(12, 24), const upb_Message*) = NULL;
+UPB_INLINE void envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig_clear_min_weight_percent(envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig* msg) {
+  const upb_MiniTableField field = {3, UPB_SIZE(12, 24), 3, 2, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const struct envoy_type_v3_Percent* envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig_min_weight_percent(const envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(12, 24), const struct envoy_type_v3_Percent*);
+  const struct envoy_type_v3_Percent* default_val = NULL;
+  const struct envoy_type_v3_Percent* ret;
+  const upb_MiniTableField field = {3, UPB_SIZE(12, 24), 3, 2, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
+}
+UPB_INLINE bool envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig_has_min_weight_percent(const envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig* msg) {
+  const upb_MiniTableField field = {3, UPB_SIZE(12, 24), 3, 2, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
 
 UPB_INLINE void envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig_set_slow_start_window(envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig *msg, struct google_protobuf_Duration* value) {
-  _upb_sethas(msg, 1);
-  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), struct google_protobuf_Duration*) = value;
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Duration* envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig_mutable_slow_start_window(envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig* msg, upb_Arena* arena) {
   struct google_protobuf_Duration* sub = (struct google_protobuf_Duration*)envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig_slow_start_window(msg);
   if (sub == NULL) {
-    sub = (struct google_protobuf_Duration*)_upb_Message_New(&google_protobuf_Duration_msginit, arena);
-    if (!sub) return NULL;
-    envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig_set_slow_start_window(msg, sub);
+    sub = (struct google_protobuf_Duration*)_upb_Message_New(&google_protobuf_Duration_msg_init, arena);
+    if (sub) envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig_set_slow_start_window(msg, sub);
   }
   return sub;
 }
 UPB_INLINE void envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig_set_aggression(envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig *msg, struct envoy_config_core_v3_RuntimeDouble* value) {
-  _upb_sethas(msg, 2);
-  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), struct envoy_config_core_v3_RuntimeDouble*) = value;
+  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 2, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_RuntimeDouble* envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig_mutable_aggression(envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig* msg, upb_Arena* arena) {
   struct envoy_config_core_v3_RuntimeDouble* sub = (struct envoy_config_core_v3_RuntimeDouble*)envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig_aggression(msg);
   if (sub == NULL) {
-    sub = (struct envoy_config_core_v3_RuntimeDouble*)_upb_Message_New(&envoy_config_core_v3_RuntimeDouble_msginit, arena);
-    if (!sub) return NULL;
-    envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig_set_aggression(msg, sub);
+    sub = (struct envoy_config_core_v3_RuntimeDouble*)_upb_Message_New(&envoy_config_core_v3_RuntimeDouble_msg_init, arena);
+    if (sub) envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig_set_aggression(msg, sub);
   }
   return sub;
 }
 UPB_INLINE void envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig_set_min_weight_percent(envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig *msg, struct envoy_type_v3_Percent* value) {
-  _upb_sethas(msg, 3);
-  *UPB_PTR_AT(msg, UPB_SIZE(12, 24), struct envoy_type_v3_Percent*) = value;
+  const upb_MiniTableField field = {3, UPB_SIZE(12, 24), 3, 2, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct envoy_type_v3_Percent* envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig_mutable_min_weight_percent(envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig* msg, upb_Arena* arena) {
   struct envoy_type_v3_Percent* sub = (struct envoy_type_v3_Percent*)envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig_min_weight_percent(msg);
   if (sub == NULL) {
-    sub = (struct envoy_type_v3_Percent*)_upb_Message_New(&envoy_type_v3_Percent_msginit, arena);
-    if (!sub) return NULL;
-    envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig_set_min_weight_percent(msg, sub);
+    sub = (struct envoy_type_v3_Percent*)_upb_Message_New(&envoy_type_v3_Percent_msg_init, arena);
+    if (sub) envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig_set_min_weight_percent(msg, sub);
   }
   return sub;
 }
@@ -368,12 +412,12 @@ UPB_INLINE struct envoy_type_v3_Percent* envoy_extensions_load_balancing_policie
 /* envoy.extensions.load_balancing_policies.common.v3.ConsistentHashingLbConfig */
 
 UPB_INLINE envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig* envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig_new(upb_Arena* arena) {
-  return (envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig*)_upb_Message_New(&envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig_msginit, arena);
+  return (envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig*)_upb_Message_New(&envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig_msg_init, arena);
 }
 UPB_INLINE envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig* envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig_parse(const char* buf, size_t size, upb_Arena* arena) {
   envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig* ret = envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig_msginit, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
+  if (upb_Decode(buf, size, ret, &envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig_msg_init, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
@@ -383,7 +427,7 @@ UPB_INLINE envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingL
                            int options, upb_Arena* arena) {
   envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig* ret = envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig_msginit, extreg, options, arena) !=
+  if (upb_Decode(buf, size, ret, &envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig_msg_init, extreg, options, arena) !=
       kUpb_DecodeStatus_Ok) {
     return NULL;
   }
@@ -391,54 +435,65 @@ UPB_INLINE envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingL
 }
 UPB_INLINE char* envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig_serialize(const envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig* msg, upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig_msginit, 0, arena, &ptr, len);
+  (void)upb_Encode(msg, &envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
 UPB_INLINE char* envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig_serialize_ex(const envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig* msg, int options,
                                  upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig_msginit, options, arena, &ptr, len);
+  (void)upb_Encode(msg, &envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig_msg_init, options, arena, &ptr, len);
   return ptr;
 }
-UPB_INLINE void envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig_clear_use_hostname_for_hashing(const envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool) = 0;
+UPB_INLINE void envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig_clear_use_hostname_for_hashing(envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig* msg) {
+  const upb_MiniTableField field = {1, 1, 0, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE bool envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig_use_hostname_for_hashing(const envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool);
+  bool default_val = false;
+  bool ret;
+  const upb_MiniTableField field = {1, 1, 0, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig_has_hash_balance_factor(const envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig* msg) {
-  return _upb_hasbit(msg, 1);
-}
-UPB_INLINE void envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig_clear_hash_balance_factor(const envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const upb_Message*) = NULL;
+UPB_INLINE void envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig_clear_hash_balance_factor(envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(4, 8), 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const struct google_protobuf_UInt32Value* envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig_hash_balance_factor(const envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const struct google_protobuf_UInt32Value*);
+  const struct google_protobuf_UInt32Value* default_val = NULL;
+  const struct google_protobuf_UInt32Value* ret;
+  const upb_MiniTableField field = {2, UPB_SIZE(4, 8), 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
+}
+UPB_INLINE bool envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig_has_hash_balance_factor(const envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(4, 8), 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
 
 UPB_INLINE void envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig_set_use_hostname_for_hashing(envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig *msg, bool value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool) = value;
+  const upb_MiniTableField field = {1, 1, 0, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig_set_hash_balance_factor(envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig *msg, struct google_protobuf_UInt32Value* value) {
-  _upb_sethas(msg, 1);
-  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), struct google_protobuf_UInt32Value*) = value;
+  const upb_MiniTableField field = {2, UPB_SIZE(4, 8), 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig_mutable_hash_balance_factor(envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig* msg, upb_Arena* arena) {
   struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig_hash_balance_factor(msg);
   if (sub == NULL) {
-    sub = (struct google_protobuf_UInt32Value*)_upb_Message_New(&google_protobuf_UInt32Value_msginit, arena);
-    if (!sub) return NULL;
-    envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig_set_hash_balance_factor(msg, sub);
+    sub = (struct google_protobuf_UInt32Value*)_upb_Message_New(&google_protobuf_UInt32Value_msg_init, arena);
+    if (sub) envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig_set_hash_balance_factor(msg, sub);
   }
   return sub;
 }
 
-extern const upb_MiniTable_File envoy_extensions_load_balancing_policies_common_v3_common_proto_upb_file_layout;
+extern const upb_MiniTableFile envoy_extensions_load_balancing_policies_common_v3_common_proto_upb_file_layout;
 
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif
 
-#include "upb/port_undef.inc"
+#include "upb/port/undef.inc"
 
 #endif  /* ENVOY_EXTENSIONS_LOAD_BALANCING_POLICIES_COMMON_V3_COMMON_PROTO_UPB_H_ */

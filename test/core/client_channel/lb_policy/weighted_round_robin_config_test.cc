@@ -34,7 +34,7 @@ TEST(WeightedRoundRobinConfigTest, EmptyConfig) {
   const char* service_config_json =
       "{\n"
       "  \"loadBalancingConfig\":[{\n"
-      "    \"weighted_round_robin_experimental\":{\n"
+      "    \"weighted_round_robin\":{\n"
       "    }\n"
       "  }]\n"
       "}\n";
@@ -48,7 +48,7 @@ TEST(WeightedRoundRobinConfigTest, InvalidTypes) {
   const char* service_config_json =
       "{\n"
       "  \"loadBalancingConfig\":[{\n"
-      "    \"weighted_round_robin_experimental\":{\n"
+      "    \"weighted_round_robin\":{\n"
       "      \"enableOobLoadReport\": 5,\n"
       "      \"oobReportingPeriod\": true,\n"
       "      \"blackoutPeriod\": [],\n"
@@ -78,7 +78,7 @@ TEST(WeightedRoundRobinConfigTest, InvalidValues) {
   const char* service_config_json =
       "{\n"
       "  \"loadBalancingConfig\":[{\n"
-      "    \"weighted_round_robin_experimental\":{\n"
+      "    \"weighted_round_robin\":{\n"
       "      \"errorUtilizationPenalty\": -1.0\n"
       "    }\n"
       "  }]\n"

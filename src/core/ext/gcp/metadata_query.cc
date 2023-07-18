@@ -46,16 +46,11 @@ namespace grpc_core {
 
 TraceFlag grpc_metadata_query_trace(false, "metadata_query");
 
-constexpr const char MetadataQuery::kZoneAttribute[] =
-    "/computeMetadata/v1/instance/zone";
-constexpr const char MetadataQuery::kClusterNameAttribute[] =
-    "/computeMetadata/v1/instance/attributes/cluster-name";
-constexpr const char MetadataQuery::kRegionAttribute[] =
-    "/computeMetadata/v1/instance/region";
-constexpr const char MetadataQuery::kInstanceIdAttribute[] =
-    "/computeMetadata/v1/instance/id";
-constexpr const char MetadataQuery::kIPv6Attribute[] =
-    "/computeMetadata/v1/instance/network-interfaces/0/ipv6s";
+constexpr const char MetadataQuery::kZoneAttribute[];
+constexpr const char MetadataQuery::kClusterNameAttribute[];
+constexpr const char MetadataQuery::kRegionAttribute[];
+constexpr const char MetadataQuery::kInstanceIdAttribute[];
+constexpr const char MetadataQuery::kIPv6Attribute[];
 
 MetadataQuery::MetadataQuery(
     std::string attribute, grpc_polling_entity* pollent,

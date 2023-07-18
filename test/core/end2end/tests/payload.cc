@@ -16,230 +16,74 @@
 //
 //
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include "gtest/gtest.h"
 
-#include <functional>
-#include <memory>
-
-#include <grpc/byte_buffer.h>
-#include <grpc/grpc.h>
-#include <grpc/impl/propagation_bits.h>
-#include <grpc/slice.h>
 #include <grpc/status.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
 
-#include "src/core/lib/channel/channel_args.h"
-#include "test/core/end2end/cq_verifier.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/slice/slice.h"
 #include "test/core/end2end/end2end_tests.h"
-#include "test/core/util/test_config.h"
 
-static std::unique_ptr<CoreTestFixture> begin_test(
-    const CoreTestConfiguration& config, const char* test_name,
-    grpc_channel_args* client_args, grpc_channel_args* server_args) {
-  gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
-  auto f = config.create_fixture(grpc_core::ChannelArgs::FromC(client_args),
-                                 grpc_core::ChannelArgs::FromC(server_args));
-  f->InitServer(grpc_core::ChannelArgs::FromC(server_args));
-  f->InitClient(grpc_core::ChannelArgs::FromC(client_args));
-  return f;
-}
+namespace grpc_core {
 
-// Creates and returns a grpc_slice containing random alphanumeric characters.
-//
-static grpc_slice generate_random_slice() {
-  size_t i;
-  static const char chars[] = "abcdefghijklmnopqrstuvwxyz1234567890";
-  char* output;
-  const size_t output_size = 1024 * 1024;
-  output = static_cast<char*>(gpr_malloc(output_size));
-  for (i = 0; i < output_size - 1; ++i) {
-    output[i] = chars[rand() % static_cast<int>(sizeof(chars) - 1)];
-  }
-  output[output_size - 1] = '\0';
-  grpc_slice out = grpc_slice_from_copied_string(output);
-  gpr_free(output);
-  return out;
-}
-
-static void request_response_with_payload(
-    const CoreTestConfiguration& /*config*/, CoreTestFixture* f) {
+namespace {
+void RequestResponseWithPayload(CoreEnd2endTest& test) {
   // Create large request and response bodies. These are big enough to require
   // multiple round trips to deliver to the peer, and their exact contents of
   // will be verified on completion.
-  grpc_slice request_payload_slice = generate_random_slice();
-  grpc_slice response_payload_slice = generate_random_slice();
+  auto request_slice = RandomSlice(1024 * 1024);
+  auto response_slice = RandomSlice(1024 * 1024);
 
-  grpc_call* c;
-  grpc_call* s;
-  grpc_byte_buffer* request_payload =
-      grpc_raw_byte_buffer_create(&request_payload_slice, 1);
-  grpc_byte_buffer* response_payload =
-      grpc_raw_byte_buffer_create(&response_payload_slice, 1);
-  grpc_core::CqVerifier cqv(f->cq());
-  grpc_op ops[6];
-  grpc_op* op;
-  grpc_metadata_array initial_metadata_recv;
-  grpc_metadata_array trailing_metadata_recv;
-  grpc_metadata_array request_metadata_recv;
-  grpc_byte_buffer* request_payload_recv = nullptr;
-  grpc_byte_buffer* response_payload_recv = nullptr;
-  grpc_call_details call_details;
-  grpc_status_code status;
-  grpc_call_error error;
-  grpc_slice details;
-  int was_cancelled = 2;
+  auto c = test.NewClientCall("/foo").Timeout(Duration::Seconds(60)).Create();
 
-  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(60);
-  c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
-                               f->cq(), grpc_slice_from_static_string("/foo"),
-                               nullptr, deadline, nullptr);
-  GPR_ASSERT(c);
+  CoreEnd2endTest::IncomingMetadata server_initial_md;
+  CoreEnd2endTest::IncomingMessage server_message;
+  CoreEnd2endTest::IncomingStatusOnClient server_status;
+  c.NewBatch(1)
+      .SendInitialMetadata({})
+      .SendMessage(request_slice.Ref())
+      .SendCloseFromClient()
+      .RecvInitialMetadata(server_initial_md)
+      .RecvMessage(server_message)
+      .RecvStatusOnClient(server_status);
 
-  grpc_metadata_array_init(&initial_metadata_recv);
-  grpc_metadata_array_init(&trailing_metadata_recv);
-  grpc_metadata_array_init(&request_metadata_recv);
-  grpc_call_details_init(&call_details);
+  CoreEnd2endTest::IncomingCall s = test.RequestCall(101);
+  test.Expect(101, true);
+  test.Step();
 
-  memset(ops, 0, sizeof(ops));
-  op = ops;
-  op->op = GRPC_OP_SEND_INITIAL_METADATA;
-  op->data.send_initial_metadata.count = 0;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  op->op = GRPC_OP_SEND_MESSAGE;
-  op->data.send_message.send_message = request_payload;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message.recv_message = &response_payload_recv;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
-  op->data.recv_status_on_client.status = &status;
-  op->data.recv_status_on_client.status_details = &details;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
-                                grpc_core::CqVerifier::tag(1), nullptr);
-  GPR_ASSERT(GRPC_CALL_OK == error);
+  CoreEnd2endTest::IncomingMessage client_message;
+  s.NewBatch(102).SendInitialMetadata({}).RecvMessage(client_message);
+  test.Expect(102, true);
+  test.Step();
 
-  error = grpc_server_request_call(f->server(), &s, &call_details,
-                                   &request_metadata_recv, f->cq(), f->cq(),
-                                   grpc_core::CqVerifier::tag(101));
-  GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(grpc_core::CqVerifier::tag(101), true);
-  cqv.Verify();
+  CoreEnd2endTest::IncomingCloseOnServer client_close;
+  s.NewBatch(103)
+      .RecvCloseOnServer(client_close)
+      .SendMessage(response_slice.Ref())
+      .SendStatusFromServer(GRPC_STATUS_OK, "xyz", {});
+  test.Expect(103, true);
+  test.Expect(1, true);
+  test.Step();
 
-  memset(ops, 0, sizeof(ops));
-  op = ops;
-  op->op = GRPC_OP_SEND_INITIAL_METADATA;
-  op->data.send_initial_metadata.count = 0;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message.recv_message = &request_payload_recv;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
-                                grpc_core::CqVerifier::tag(102), nullptr);
-  GPR_ASSERT(GRPC_CALL_OK == error);
-
-  cqv.Expect(grpc_core::CqVerifier::tag(102), true);
-  cqv.Verify();
-
-  memset(ops, 0, sizeof(ops));
-  op = ops;
-  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
-  op->data.recv_close_on_server.cancelled = &was_cancelled;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  op->op = GRPC_OP_SEND_MESSAGE;
-  op->data.send_message.send_message = response_payload;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
-  op->data.send_status_from_server.trailing_metadata_count = 0;
-  op->data.send_status_from_server.status = GRPC_STATUS_OK;
-  grpc_slice status_details = grpc_slice_from_static_string("xyz");
-  op->data.send_status_from_server.status_details = &status_details;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
-                                grpc_core::CqVerifier::tag(103), nullptr);
-  GPR_ASSERT(GRPC_CALL_OK == error);
-
-  cqv.Expect(grpc_core::CqVerifier::tag(103), true);
-  cqv.Expect(grpc_core::CqVerifier::tag(1), true);
-  cqv.Verify();
-
-  GPR_ASSERT(status == GRPC_STATUS_OK);
-  GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
-  GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
-  GPR_ASSERT(was_cancelled == 0);
-  GPR_ASSERT(byte_buffer_eq_slice(request_payload_recv, request_payload_slice));
-  GPR_ASSERT(
-      byte_buffer_eq_slice(response_payload_recv, response_payload_slice));
-
-  grpc_slice_unref(details);
-  grpc_metadata_array_destroy(&initial_metadata_recv);
-  grpc_metadata_array_destroy(&trailing_metadata_recv);
-  grpc_metadata_array_destroy(&request_metadata_recv);
-  grpc_call_details_destroy(&call_details);
-
-  grpc_call_unref(c);
-  grpc_call_unref(s);
-
-  grpc_byte_buffer_destroy(request_payload);
-  grpc_byte_buffer_destroy(response_payload);
-  grpc_byte_buffer_destroy(request_payload_recv);
-  grpc_byte_buffer_destroy(response_payload_recv);
+  EXPECT_EQ(server_status.status(), GRPC_STATUS_OK);
+  EXPECT_EQ(server_status.message(), "xyz");
+  EXPECT_EQ(s.method(), "/foo");
+  EXPECT_FALSE(client_close.was_cancelled());
+  EXPECT_EQ(client_message.payload(), request_slice);
+  EXPECT_EQ(server_message.payload(), response_slice);
 }
+}  // namespace
 
 // Client sends a request with payload, server reads then returns a response
 // payload and status.
-static void test_invoke_request_response_with_payload(
-    const CoreTestConfiguration& config) {
-  auto f = begin_test(config, "test_invoke_request_response_with_payload",
-                      nullptr, nullptr);
-  request_response_with_payload(config, f.get());
+CORE_END2END_TEST(CoreLargeSendTest, RequestResponseWithPayload) {
+  RequestResponseWithPayload(*this);
 }
 
-static void test_invoke_10_request_response_with_payload(
-    const CoreTestConfiguration& config) {
-  int i;
-  auto f = begin_test(config, "test_invoke_10_request_response_with_payload",
-                      nullptr, nullptr);
-  for (i = 0; i < 10; i++) {
-    request_response_with_payload(config, f.get());
+CORE_END2END_TEST(CoreLargeSendTest, RequestResponseWithPayload10Times) {
+  for (int i = 0; i < 10; i++) {
+    RequestResponseWithPayload(*this);
   }
 }
 
-void payload(const CoreTestConfiguration& config) {
-  test_invoke_request_response_with_payload(config);
-  test_invoke_10_request_response_with_payload(config);
-}
-
-void payload_pre_init(void) {}
+}  // namespace grpc_core
