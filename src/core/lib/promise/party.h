@@ -384,7 +384,7 @@ class Party : public Activity, private Wakeable {
   // Should not be called by derived types except as a tail call to the base
   // class RunParty when overriding this method to add custom context.
   // Returns true if the party is over.
-  virtual bool RunParty() GRPC_MUST_USE_RESULT;
+  GRPC_MUST_USE_RESULT virtual bool RunParty();
 
   bool RefIfNonZero() { return sync_.RefIfNonZero(); }
 
