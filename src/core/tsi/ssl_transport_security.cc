@@ -1541,20 +1541,20 @@ static tsi_result ssl_handshaker_next(tsi_handshaker* self,
   tsi_result status = TSI_OK;
   size_t bytes_written = 0;
   if (received_bytes_size > 0) {
-    unsigned char* remaining_bytes_to_write_to_network_io =
+    unsigned char* remaining_bytes_to_write_to_openssl =
         const_cast<unsigned char*>(received_bytes);
-    size_t remaining_bytes_to_write_to_network_io_size = received_bytes_size;
+    size_t remaining_bytes_to_write_to_openssl_size = received_bytes_size;
     size_t number_bio_write_attempts = 0;
-    while (remaining_bytes_to_write_to_network_io_size > 0 &&
+    while (remaining_bytes_to_write_to_openssl_size > 0 &&
            (status == TSI_OK || status == TSI_INCOMPLETE_DATA) &&
            number_bio_write_attempts < TSI_SSL_MAX_BIO_WRITE_ATTEMPTS) {
       ++number_bio_write_attempts;
       // Try to write all of the remaining bytes to the BIO.
-      size_t bytes_written_to_network_io =
-          remaining_bytes_to_write_to_network_io_size;
+      size_t bytes_written_to_openssl =
+          remaining_bytes_to_write_to_openssl_size;
       status = ssl_handshaker_process_bytes_from_peer(
-          impl, remaining_bytes_to_write_to_network_io,
-          &bytes_written_to_network_io, error);
+          impl, remaining_bytes_to_write_to_openssl, &bytes_written_to_openssl,
+          error);
       // As long as the BIO is full, drive the SSL handshake to consume bytes
       // from the BIO. If the SSL handshake returns any bytes, write them to the
       // peer.
@@ -1566,9 +1566,8 @@ static tsi_result ssl_handshaker_next(tsi_handshaker* self,
       }
       // Move the pointer to the first byte not yet successfully written to the
       // BIO.
-      remaining_bytes_to_write_to_network_io_size -=
-          bytes_written_to_network_io;
-      remaining_bytes_to_write_to_network_io += bytes_written_to_network_io;
+      remaining_bytes_to_write_to_openssl_size -= bytes_written_to_openssl;
+      remaining_bytes_to_write_to_openssl += bytes_written_to_openssl;
     }
   }
   if (status != TSI_OK) return status;
