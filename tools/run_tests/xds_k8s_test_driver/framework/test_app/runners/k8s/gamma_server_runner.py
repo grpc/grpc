@@ -30,8 +30,12 @@ KubernetesServerRunner = k8s_xds_server_runner.KubernetesServerRunner
 
 class GammaServerRunner(KubernetesServerRunner):
     # Mutable state.
-    # mesh: Optional[k8s.V1Service] = None
-    mesh = None
+    mesh: Optional[k8s.GammaMesh] = None
+    route: Optional[k8s.GammaGrpcRoute] = None
+
+    # Mesh
+    mesh_name: str
+    route_name: str
 
     def __init__(
         self,
@@ -48,6 +52,7 @@ class GammaServerRunner(KubernetesServerRunner):
         service_account_name: Optional[str] = None,
         service_name: Optional[str] = None,
         mesh_name: Optional[str] = None,
+        route_name: Optional[str] = None,
         neg_name: Optional[str] = None,
         deployment_template: str = "server.deployment.yaml",
         service_account_template: str = "service-account.yaml",
@@ -70,7 +75,6 @@ class GammaServerRunner(KubernetesServerRunner):
             gcp_service_account=gcp_service_account,
             service_account_name=service_account_name,
             service_name=service_name,
-            mesh_name=mesh_name,
             neg_name=neg_name,
             deployment_template=deployment_template,
             service_account_template=service_account_template,
@@ -81,6 +85,9 @@ class GammaServerRunner(KubernetesServerRunner):
             debug_use_port_forwarding=debug_use_port_forwarding,
             enable_workload_identity=enable_workload_identity,
         )
+
+        self.mesh_name = mesh_name or deployment_name
+        self.route_name = route_name or deployment_name
 
     def run(
         self,
@@ -118,7 +125,7 @@ class GammaServerRunner(KubernetesServerRunner):
 
         # Create gamma mesh.
         self.mesh = self._create_gamma_mesh(
-            template="gamma/tdmesh.yaml",
+            "gamma/tdmesh.yaml",
             mesh_name=self.mesh_name,
             namespace_name=self.k8s_namespace.name,
         )
@@ -137,8 +144,18 @@ class GammaServerRunner(KubernetesServerRunner):
                 test_port=test_port,
             )
 
+        # Create route
+        self.route = self._create_gamma_route(
+            "gamma/route_grpc.yaml",
+            route_name=self.route_name,
+            mesh_name=self.mesh_name,
+            service_name=self.service_name,
+            namespace_name=self.k8s_namespace.name,
+            test_port=test_port,
+        )
+
         # Todo: wait for mesh?
-        # self._wait_service_neg(self.service_name, test_port)
+        self._wait_service_neg(self.service_name, test_port)
 
         if self.enable_workload_identity:
             # Allow Kubernetes service account to use the GCP service account
@@ -184,14 +201,21 @@ class GammaServerRunner(KubernetesServerRunner):
     # pylint: disable=arguments-differ
     def cleanup(self, *, force=False, force_namespace=False):
         try:
-            if self.mesh or force:
+            if True or self.route or force:
+                self._delete_gamma_route(self.route_name)
+                self.route = None
+
+            if True or self.mesh or force:
                 self._delete_gamma_mesh(self.mesh_name)
-            if self.deployment or force:
-                self._delete_deployment(self.deployment_name)
-                self.deployment = None
+
             if (self.service and not self.reuse_service) or force:
                 self._delete_service(self.service_name)
                 self.service = None
+
+            if self.deployment or force:
+                self._delete_deployment(self.deployment_name)
+                self.deployment = None
+
             if self.enable_workload_identity and (
                 self.service_account or force
             ):
@@ -202,6 +226,7 @@ class GammaServerRunner(KubernetesServerRunner):
                 )
                 self._delete_service_account(self.service_account_name)
                 self.service_account = None
+
             self._cleanup_namespace(force=(force_namespace and force))
         finally:
             self._stop()

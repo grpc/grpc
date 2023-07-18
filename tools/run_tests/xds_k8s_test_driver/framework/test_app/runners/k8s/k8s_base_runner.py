@@ -258,7 +258,7 @@ class KubernetesBaseRunner(base_runner.BaseRunner, metaclass=ABCMeta):
         **kwargs,
     ) -> object:
         template_file = self._template_file_from_name(template_name)
-        logger.debug("Loading k8s manifest template: %s", template_file)
+        logger.info("Loading k8s manifest template: %s", template_file)
 
         yaml_doc = self._render_template(template_file, **kwargs)
         logger.info(
@@ -291,10 +291,12 @@ class KubernetesBaseRunner(base_runner.BaseRunner, metaclass=ABCMeta):
 
     def _reuse_service(self, service_name) -> k8s.V1Service:
         service = self.k8s_namespace.get_service(service_name)
+        logger.info("Reusing service: %s", service_name)
         # TODO(sergiitk): check if good or must be recreated
         return service
 
     def _reuse_namespace(self) -> k8s.V1Namespace:
+        logger.info("Reusing namespace: %s", self.k8s_namespace.name)
         return self.k8s_namespace.get()
 
     def _create_namespace(self, template, **kwargs) -> k8s.V1Namespace:
@@ -441,25 +443,51 @@ class KubernetesBaseRunner(base_runner.BaseRunner, metaclass=ABCMeta):
         )
         return deployment
 
-    def _create_gamma_mesh(self, template, **kwargs):
-        gamma_mesh = self._create_from_template(
+    def _create_gamma_mesh(self, template, **kwargs) -> k8s.GammaMesh:
+        mesh = self._create_from_template(
             template, custom_object=True, **kwargs
         )
-        # if not isinstance(service, k8s.V1Service):
-        #     raise _RunnerError(
-        #         f"Expected V1Service to be created from manifest {template}"
-        #     )
-        # if service.metadata.name != kwargs["service_name"]:
-        #     raise _RunnerError(
-        #         "V1Service created with unexpected name: "
-        #         f"{service.metadata.name}"
-        #     )
-        # logger.debug(
-        #     "V1Service %s created at %s",
-        #     service.metadata.self_link,
-        #     service.metadata.creation_timestamp,
-        # )
-        return gamma_mesh
+        if not (isinstance(mesh, k8s.GammaMesh) and mesh.kind == "TDMesh"):
+            raise _RunnerError(
+                f"Expected ResourceInstance[TDMesh] to be created from"
+                f" manifest {template}"
+            )
+        if mesh.metadata.name != kwargs["mesh_name"]:
+            raise _RunnerError(
+                "ResourceInstance[TDMesh] created with unexpected name: "
+                f"{mesh.metadata.name}"
+            )
+        logger.debug(
+            "ResourceInstance[TDMesh] %s created at %s",
+            mesh.metadata.name,
+            mesh.metadata.creation_timestamp,
+        )
+        return mesh
+
+    def _create_gamma_route(self, template, **kwargs) -> k8s.GammaGrpcRoute:
+        route = self._create_from_template(
+            template,
+            custom_object=True,
+            **kwargs,
+        )
+        if not (
+            isinstance(route, k8s.GammaGrpcRoute) and route.kind == "GRPCRoute"
+        ):
+            raise _RunnerError(
+                f"Expected ResourceInstance[GRPCRoute] to be created from"
+                f" manifest {template}"
+            )
+        if route.metadata.name != kwargs["route_name"]:
+            raise _RunnerError(
+                "ResourceInstance[GRPCRoute] created with unexpected name: "
+                f"{route.metadata.name}"
+            )
+        logger.debug(
+            "ResourceInstance[GRPCRoute] %s created at %s",
+            route.metadata.name,
+            route.metadata.creation_timestamp,
+        )
+        return route
 
     def _delete_gamma_mesh(self, name, wait_for_deletion=True):
         logger.info("Deleting GAMMA mesh %s", name)
@@ -472,6 +500,18 @@ class KubernetesBaseRunner(base_runner.BaseRunner, metaclass=ABCMeta):
         if wait_for_deletion:
             self.k8s_namespace.wait_for_get_gamma_mesh_deleted(name)
         logger.debug("GAMMA mesh %s deleted", name)
+
+    def _delete_gamma_route(self, name, wait_for_deletion=True):
+        logger.info("Deleting GRPCRoute %s", name)
+        try:
+            self.k8s_namespace.delete_gamma_route(name)
+        except (retryers.RetryError, k8s.NotFound) as e:
+            logger.info("GRPCRoute %s deletion failed: %s", name, e)
+            return
+
+        if wait_for_deletion:
+            self.k8s_namespace.wait_for_get_gamma_route_deleted(name)
+        logger.debug("GRPCRoute %s deleted", name)
 
     def _create_service(self, template, **kwargs) -> k8s.V1Service:
         service = self._create_from_template(template, **kwargs)

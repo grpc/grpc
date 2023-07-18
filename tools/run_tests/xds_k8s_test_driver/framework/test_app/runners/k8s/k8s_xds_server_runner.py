@@ -64,7 +64,6 @@ class KubernetesServerRunner(k8s_base_runner.KubernetesBaseRunner):
         gcp_service_account: str,
         service_account_name: Optional[str] = None,
         service_name: Optional[str] = None,
-        mesh_name: Optional[str] = None,
         neg_name: Optional[str] = None,
         deployment_template: str = "server.deployment.yaml",
         service_account_template: str = "service-account.yaml",
@@ -89,7 +88,6 @@ class KubernetesServerRunner(k8s_base_runner.KubernetesBaseRunner):
         # Settings
         self.deployment_template = deployment_template
         self.service_name = service_name or deployment_name
-        self.mesh_name = mesh_name or deployment_name
         self.service_template = service_template
         self.reuse_service = reuse_service
         self.enable_workload_identity = enable_workload_identity
