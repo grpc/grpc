@@ -64,8 +64,8 @@ find_oldest_branch() {
 #   Test xUnit report to ${TEST_XML_OUTPUT_DIR}/${test_name}/sponge_log.xml
 #######################################
 run_test() {
-  if [ "$#" -ne 4 ]; then
-    echo "Usage: run_test client_lang client_branch server_lang server_branch" >&2
+  if [ "$#" -ne 6 ]; then
+    echo "Usage: run_test client_lang client_branch server_lang server_branch cl-branch-fixed srv-branch-fixed" >&2
     exit 1
   fi
   # Test driver usage:
@@ -74,6 +74,8 @@ run_test() {
   local client_branch="$2"
   local server_lang="$3"
   local server_branch="$4"
+  local client_branch_fixed="$5"
+  local server_branch_fixed="$6"
   local server_image_name="${IMAGE_REPO}/${server_lang}-server"
   local client_image_name="${IMAGE_REPO}/${client_lang}-client"
 
@@ -87,9 +89,10 @@ run_test() {
   local server_image_name_tag="${server_image_name}:${server_branch}"
   local client_image_name_tag="${client_image_name}:${client_branch}"
 
-  local out_dir="${TEST_XML_OUTPUT_DIR}/${client_branch}-${server_branch}/${client_lang}-${server_lang}"
+  local out_dir="${TEST_XML_OUTPUT_DIR}/${client_branch_fixed}-${server_branch_fixed}/${client_lang}-${server_lang}"
   mkdir -pv "${out_dir}"
   set -x
+  echo "Client branch=" "${client_branch}" ", Server branch=" "${server_branch}" > ${out_dir}/sponge_log.log
   python -m "tests.security_test" \
     --flagfile="${TEST_DRIVER_FLAGFILE}" \
     --kube_context="${KUBE_CONTEXT}" \
@@ -101,5 +104,5 @@ run_test() {
     --collect_app_logs \
     --log_dir="${out_dir}" \
     --xml_output_file="${out_dir}/sponge_log.xml" \
-    |& tee "${out_dir}/sponge_log.log"
+    |& tee -a "${out_dir}/sponge_log.log"
 }
