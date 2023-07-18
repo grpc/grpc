@@ -412,11 +412,14 @@ bool WorkStealingThreadPool::ThreadState::Step() {
         backoff_.NextAttemptTime() - grpc_core::Timestamp::Now());
     // Quit a thread if the pool has more than it requires, and this thread
     // has been idle long enough.
-    if (timed_out &&
-        pool_->thread_count()->GetCount(CounterType::kLivingThreadCount) >
-            pool_->reserve_threads() &&
-        grpc_core::Timestamp::Now() - start_time > kIdleThreadLimit) {
-      return false;
+    if (timed_out) {
+      if (pool_->IsForking()) break;
+      ;
+      if (pool_->thread_count()->GetCount(CounterType::kLivingThreadCount) >
+              pool_->reserve_threads() &&
+          grpc_core::Timestamp::Now() - start_time > kIdleThreadLimit) {
+        return false;
+      }
     }
   }
   if (pool_->IsForking()) {
