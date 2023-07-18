@@ -29,6 +29,7 @@
 #include "src/core/lib/event_engine/thread_pool/original_thread_pool.h"
 #include "src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h"
 #include "src/core/lib/gprpp/notification.h"
+#include "src/core/lib/gprpp/thd.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_event_engine {
@@ -130,6 +131,49 @@ TYPED_TEST(ThreadPoolTest, ForkStressTest) {
   ASSERT_GE(fork_count.load(), expected_runcount / num_closures_between_forks);
   // owners are the local pool, and the copy inside `inner_fn`.
   pool.Quiesce();
+}
+
+TYPED_TEST(ThreadPoolTest, StartQuiesceRaceStressTest) {
+  // Repeatedly race Start and Quiesce against each other to ensure thread
+  // safety.
+  constexpr int iter_count = 5;
+  struct ThdState {
+    std::unique_ptr<TypeParam> pool;
+    int i;
+  };
+  for (int i = 0; i < iter_count; i++) {
+    gpr_cycle_counter start_time = gpr_get_cycle_counter();
+    ThdState state{std::make_unique<TypeParam>(8), i};
+    gpr_log(GPR_ERROR, "%d: %ld cycles spent creating the pool", i,
+            std::lround(gpr_get_cycle_counter() - start_time));
+    state.pool->PrepareFork();
+    gpr_log(GPR_ERROR, "%d: %ld cycles spent preparing fork", i,
+            std::lround(gpr_get_cycle_counter() - start_time));
+    grpc_core::Thread t1(
+        "t1",
+        [](void* arg) {
+          ThdState* state = static_cast<ThdState*>(arg);
+          state->i % 2 == 0 ? state->pool->Quiesce()
+                            : state->pool->PostforkParent();
+        },
+        &state, nullptr,
+        grpc_core::Thread::Options().set_tracked(false).set_joinable(true));
+    grpc_core::Thread t2(
+        "t2",
+        [](void* arg) {
+          ThdState* state = static_cast<ThdState*>(arg);
+          state->i % 2 == 1 ? state->pool->Quiesce()
+                            : state->pool->PostforkParent();
+        },
+        &state, nullptr,
+        grpc_core::Thread::Options().set_tracked(false).set_joinable(true));
+    t1.Start();
+    t2.Start();
+    t1.Join();
+    t2.Join();
+    gpr_log(GPR_ERROR, "%d: %ld total cycles", i,
+            std::lround(gpr_get_cycle_counter() - start_time));
+  }
 }
 
 void ScheduleSelf(ThreadPool* p) {
