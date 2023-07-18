@@ -30,6 +30,7 @@ Contains macros used throughout the repo.
 load("//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 load("//bazel:copts.bzl", "GRPC_DEFAULT_COPTS")
 load("//bazel:experiments.bzl", "EXPERIMENTS")
+load("//bazel:test_experiments.bzl", "TEST_EXPERIMENTS")
 load("@upb//bazel:upb_proto_library.bzl", "upb_proto_library", "upb_proto_reflection_library")
 load("@build_bazel_rules_apple//apple:ios.bzl", "ios_unit_test")
 load("@build_bazel_rules_apple//apple/testing/default_runner:ios_test_runner.bzl", "ios_test_runner")
@@ -379,17 +380,19 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
                 })
 
     experiments = {}
-    for platform, experiments_on_platform in EXPERIMENTS.items():
+    def _populate_experiments_platform_config(config, platform_experiments_map):
         for mode, tag_to_experiments in experiments_on_platform.items():
-            if mode not in experiments:
-                experiments[mode] = {}
-            for tag in tags:
-                if tag not in tag_to_experiments:
-                    continue
-                for experiment in tag_to_experiments[tag]:
-                    if experiment not in experiments[mode]:
-                        experiments[mode][experiment] = []
-                    experiments[mode][experiment].append(platform)
+                if mode not in config:
+                    config[mode] = {}
+                for tag in tags:
+                    if tag not in tag_to_experiments:
+                        continue
+                    for experiment in tag_to_experiments[tag]:
+                        if experiment not in experiments[mode]:
+                            experiments[mode][experiment] = []
+                        experiments[mode][experiment].append(platform)
+
+    for platform, experiments_on_platform in EXPERIMENTS.items():
 
     mode_config = {
         # format: <mode>: (enabled_target_tags, disabled_target_tags)

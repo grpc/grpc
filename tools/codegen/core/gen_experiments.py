@@ -143,12 +143,15 @@ def _GenerateExperimentFiles(args, mode):
         _EXPERIMENTS_SRC_FILE, _EXPERIMENTS_HDR_FILE, mode
     )
 
+    print("Generating experiments.bzl")
+    if mode == "test":
+        compiler.GenExperimentsBzl(mode, "bazel/test_experiments.bzl")
+    else:
+        compiler.GenExperimentsBzl(mode, "bazel/experiments.bzl")
+
     if mode == "test":
         print("Generating experiments tests")
         compiler.GenTest("test/core/experiments/experiments_test.cc")
-    else:
-        print("Generating experiments.bzl")
-        compiler.GenExperimentsBzl("bazel/experiments.bzl")
 
 
 _GenerateExperimentFiles(args, "production")

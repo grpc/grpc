@@ -552,7 +552,7 @@ class ExperimentsCompiler(object):
                 test_body += _EXPERIMENT_CHECK_TEXT(SnakeToPascal(exp.name))
             print(_EXPERIMENTS_TEST_SKELETON(defs, test_body), file=C)
 
-    def GenExperimentsBzl(self, output_file):
+    def GenExperimentsBzl(self, mode, output_file):
         if self._bzl_list_for_defaults is None:
             return
 
@@ -590,7 +590,10 @@ class ExperimentsCompiler(object):
             )
 
             print(file=B)
-            print("EXPERIMENTS = {", file=B)
+            if mode == "test":
+                print("TEST_EXPERIMENTS = {", file=B)
+            else:
+                print("EXPERIMENTS = {", file=B)
 
             print (bzl_to_tags_to_experiments['windows'].items())
             for platform in self._platforms_define.keys():
