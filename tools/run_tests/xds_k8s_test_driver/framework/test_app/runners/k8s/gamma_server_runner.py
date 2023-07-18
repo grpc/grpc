@@ -201,11 +201,11 @@ class GammaServerRunner(KubernetesServerRunner):
     # pylint: disable=arguments-differ
     def cleanup(self, *, force=False, force_namespace=False):
         try:
-            if True or self.route or force:
+            if self.route or force:
                 self._delete_gamma_route(self.route_name)
                 self.route = None
 
-            if True or self.mesh or force:
+            if self.mesh or force:
                 self._delete_gamma_mesh(self.mesh_name)
 
             if (self.service and not self.reuse_service) or force:

@@ -105,7 +105,7 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
     server_namespace: str
     server_runner: KubernetesServerRunner
     server_xds_host: str
-    server_xds_port: int
+    server_xds_port: Optional[int]
     td: TrafficDirectorManager
     td_bootstrap_image: str
     _prev_sigint_handler: Optional[_SignalHandler] = None
@@ -168,6 +168,7 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
 
         # Test suite settings
         cls.force_cleanup = xds_flags.FORCE_CLEANUP.value
+        cls.force_cleanup_namespace = xds_flags.FORCE_CLEANUP.value
         cls.debug_use_port_forwarding = (
             xds_k8s_flags.DEBUG_USE_PORT_FORWARDING.value
         )
@@ -585,13 +586,8 @@ class IsolatedXdsKubernetesTestCase(
         """Hook method for setting up the test fixture before exercising it."""
         super().setUp()
 
-        if self.resource_suffix_randomize:
-            self.resource_suffix = helpers_rand.random_resource_suffix()
-        logger.info(
-            "Test run resource prefix: %s, suffix: %s",
-            self.resource_prefix,
-            self.resource_suffix,
-        )
+        # Random suffix per test.
+        self.createRandomSuffix()
 
         # TD Manager
         self.td = self.initTrafficDirectorManager()
@@ -623,6 +619,15 @@ class IsolatedXdsKubernetesTestCase(
             #  but we should find a better approach.
             self.server_xds_port = self.td.find_unused_forwarding_rule_port()
             logger.info("Found unused xds port: %s", self.server_xds_port)
+
+    def createRandomSuffix(self):
+        if self.resource_suffix_randomize:
+            self.resource_suffix = helpers_rand.random_resource_suffix()
+        logger.info(
+            "Test run resource prefix: %s, suffix: %s",
+            self.resource_prefix,
+            self.resource_suffix,
+        )
 
     @abc.abstractmethod
     def initTrafficDirectorManager(self) -> TrafficDirectorManager:

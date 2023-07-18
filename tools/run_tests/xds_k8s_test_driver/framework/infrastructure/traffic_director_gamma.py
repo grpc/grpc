@@ -16,3 +16,6 @@ import framework.infrastructure.traffic_director as td_base
 
 class TrafficDirectorGammaManager(td_base.TrafficDirectorManager):
     """Gamma."""
+
+    def cleanup(self, *, force=False):
+        return True
