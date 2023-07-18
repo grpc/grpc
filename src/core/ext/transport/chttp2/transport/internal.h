@@ -503,12 +503,6 @@ struct grpc_chttp2_stream {
   void* context;
   const grpc_core::RefCountedPtr<grpc_chttp2_transport> t;
   grpc_stream_refcount* refcount;
-  // Reffer is a 0-len structure, simply reffing `t` and `refcount` in its ctor
-  // before initializing the rest of the stream, to avoid cache misses. This
-  // field MUST be right after `t` and `refcount`.
-  struct Reffer {
-    explicit Reffer(grpc_chttp2_stream* s);
-  } reffer;
 
   grpc_closure destroy_stream;
   grpc_closure* destroy_stream_arg;

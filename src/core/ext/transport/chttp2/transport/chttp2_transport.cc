@@ -736,20 +736,23 @@ void grpc_chttp2_stream_unref(grpc_chttp2_stream* s) {
 }
 #endif
 
-grpc_chttp2_stream::Reffer::Reffer(grpc_chttp2_stream* s) {
-  // We reserve one 'active stream' that's dropped when the stream is
-  //   read-closed. The others are for Chttp2IncomingByteStreams that are
-  //   actively reading
-  GRPC_CHTTP2_STREAM_REF(s, "chttp2");
-}
-
 grpc_chttp2_stream::grpc_chttp2_stream(grpc_chttp2_transport* t,
                                        grpc_stream_refcount* refcount,
                                        const void* server_data,
                                        grpc_core::Arena* arena)
-    : t(t),
-      refcount(refcount),
-      reffer(this),
+    : t(t->Ref()),
+      refcount([refcount]() {
+// We reserve one 'active stream' that's dropped when the stream is
+//   read-closed. The others are for Chttp2IncomingByteStreams that are
+//   actively reading
+// We do this here to avoid cache misses.
+#ifndef NDEBUG
+        grpc_stream_ref(refcount, "chttp2");
+#else
+        grpc_stream_ref(refcount);
+#endif
+        return refcount;
+      }()),
       initial_metadata_buffer(arena),
       trailing_metadata_buffer(arena),
       flow_control(&t->flow_control) {
@@ -996,8 +999,8 @@ static void write_action(void* gt, grpc_error_handle /*error*/) {
   }
   grpc_endpoint_write(
       t->ep, &t->outbuf,
-      GRPC_CLOSURE_INIT(&t->write_action_end_locked, write_action_end, t,
-                        grpc_schedule_on_exec_ctx),
+      GRPC_CLOSURE_INIT(&t->write_action_end_locked, write_action_end,
+                        t->Ref().release(), grpc_schedule_on_exec_ctx),
       cl, max_frame_size);
 }
 
