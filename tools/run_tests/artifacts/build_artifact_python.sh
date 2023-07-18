@@ -37,7 +37,7 @@ then
   # Any installation step is a potential source of breakages,
   # so we are trying to perform as few download-and-install operations
   # as possible.
-  "${PYTHON}" -m pip install --upgrade cython<3.0.0rc1
+  "${PYTHON}" -m pip install --upgrade 'cython<3.0.0rc1'
 fi
 
 # Allow build_ext to build C/C++ files in parallel
