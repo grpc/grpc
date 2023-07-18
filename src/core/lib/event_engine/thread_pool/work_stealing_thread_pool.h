@@ -202,10 +202,9 @@ class WorkStealingThreadPool final : public ThreadPool {
       explicit Lifeguard(WorkStealingThreadPoolImpl* pool);
       // Start the lifeguard thread.
       void Start();
-      // After shutdown, reset the lifeguard state so it can Start again clean.
-      void Reset();
       // Block until the lifeguard thread is shut down.
-      void BlockUntilShutdown();
+      // Afterwards, reset the lifeguard state so it can start again cleanly.
+      void BlockUntilShutdownAndReset();
 
      private:
       // The main body of the lifeguard thread.

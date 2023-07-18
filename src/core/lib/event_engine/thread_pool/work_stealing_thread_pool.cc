@@ -176,8 +176,7 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Quiesce() {
                                         "shutting down", work_signal());
   GPR_ASSERT(queue_.Empty());
   quiesced_.store(true, std::memory_order_relaxed);
-  lifeguard_.BlockUntilShutdown();
-  lifeguard_.Reset();
+  lifeguard_.BlockUntilShutdownAndReset();
   GRPC_EVENT_ENGINE_TRACE("%ld cycles spent quiescing the pool",
                           std::lround(gpr_get_cycle_counter() - start_time));
 }
@@ -216,8 +215,7 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::PrepareFork() {
   SetForking(true);
   thread_count()->BlockUntilThreadCount(CounterType::kLivingThreadCount, 0,
                                         "forking", &work_signal_);
-  lifeguard_.BlockUntilShutdown();
-  lifeguard_.Reset();
+  lifeguard_.BlockUntilShutdownAndReset();
 }
 
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Postfork() {
@@ -252,13 +250,6 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::Start() {
       .Start();
 }
 
-void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::Reset() {
-  GPR_ASSERT(!lifeguard_running_.load());
-  backoff_.Reset();
-  lifeguard_should_shut_down_ = std::make_unique<grpc_core::Notification>();
-  lifeguard_is_shut_down_ = std::make_unique<grpc_core::Notification>();
-}
-
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::
     LifeguardMain() {
   while (true) {
@@ -280,7 +271,7 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::
 }
 
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::
-    BlockUntilShutdown() {
+    BlockUntilShutdownAndReset() {
   lifeguard_should_shut_down_->Notify();
   while (lifeguard_running_.load(std::memory_order_relaxed)) {
     GRPC_LOG_EVERY_N_SEC_DELAYED(kBlockingQuiesceLogRateSeconds, GPR_DEBUG,
@@ -292,6 +283,9 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::
   // shutdown. This should return immediately if the lifeguard is already shut
   // down.
   lifeguard_is_shut_down_->WaitForNotification();
+  backoff_.Reset();
+  lifeguard_should_shut_down_ = std::make_unique<grpc_core::Notification>();
+  lifeguard_is_shut_down_ = std::make_unique<grpc_core::Notification>();
 }
 
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::
