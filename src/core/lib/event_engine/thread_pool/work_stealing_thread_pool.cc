@@ -232,7 +232,8 @@ WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::Lifeguard(
                    .set_initial_backoff(kLifeguardMinSleepBetweenChecks)
                    .set_max_backoff(kLifeguardMaxSleepBetweenChecks)
                    .set_multiplier(1.3)),
-      lifeguard_should_shut_down_(std::make_unique<grpc_core::Notification>()) {}
+      lifeguard_should_shut_down_(std::make_unique<grpc_core::Notification>()) {
+}
 
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::Start() {
   lifeguard_thread_ = grpc_core::Thread(
