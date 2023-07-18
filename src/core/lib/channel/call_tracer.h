@@ -50,8 +50,7 @@ namespace grpc_core {
 class CallTracerAnnotationInterface {
  public:
   // Enum associated with types of Annotations.
-  enum AnnotationType {
-    kMetadataSizes,
+  enum class AnnotationType {
     kDoNotUse_MustBeLast,
   };
 
@@ -61,10 +60,12 @@ class CallTracerAnnotationInterface {
     explicit Annotation(AnnotationType type) : type_(type) {}
     AnnotationType type() const { return type_; }
     virtual std::string ToString() const = 0;
-    virtual ~Annotation() {}
+
+   protected:
+    ~Annotation() {}
 
    private:
-    AnnotationType type_;
+    const AnnotationType type_;
   };
 
   virtual ~CallTracerAnnotationInterface() {}

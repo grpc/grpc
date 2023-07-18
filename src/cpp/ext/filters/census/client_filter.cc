@@ -284,15 +284,20 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordEnd(
 
 void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordAnnotation(
     absl::string_view annotation) {
-  // If tracing is disabled, the following will be a no-op.
+  if (!context_.Span().IsRecording()) {
+    return;
+  }
   context_.AddSpanAnnotation(annotation, {});
 }
 
 void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordAnnotation(
     const Annotation& annotation) {
+  if (!context_.Span().IsRecording()) {
+    return;
+  }
+
   switch (annotation.type()) {
     default:
-      // If tracing is disabled, the following will be a no-op.
       context_.AddSpanAnnotation(annotation.ToString(), {});
   }
 }
