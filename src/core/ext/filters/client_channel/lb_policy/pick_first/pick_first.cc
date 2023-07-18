@@ -462,47 +462,62 @@ void PickFirst::PickFirstSubchannelData::ReactToConnectivityStateLocked() {
       // Already handled this case above, so this should not happen.
       GPR_UNREACHABLE_CODE(break);
     case GRPC_CHANNEL_TRANSIENT_FAILURE: {
-      size_t next_index = (Index() + 1) % subchannel_list()->num_subchannels();
-      subchannel_list()->set_attempting_index(next_index);
-      PickFirstSubchannelData* sd = subchannel_list()->subchannel(next_index);
-      // If we're tried all subchannels, set state to TRANSIENT_FAILURE.
-      if (sd->Index() == 0) {
-        if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
-          gpr_log(GPR_INFO,
-                  "Pick First %p subchannel list %p failed to connect to "
-                  "all subchannels",
-                  p, subchannel_list());
-        }
-        subchannel_list()->set_in_transient_failure(true);
-        // In case 2, swap to the new subchannel list.  This means reporting
-        // TRANSIENT_FAILURE and dropping the existing (working) connection,
-        // but we can't ignore what the control plane has told us.
-        if (subchannel_list() == p->latest_pending_subchannel_list_.get()) {
-          if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
-            gpr_log(GPR_INFO,
-                    "Pick First %p promoting pending subchannel list %p to "
-                    "replace %p",
-                    p, p->latest_pending_subchannel_list_.get(),
-                    p->subchannel_list_.get());
-          }
-          p->selected_ = nullptr;  // owned by p->subchannel_list_
-          p->subchannel_list_ = std::move(p->latest_pending_subchannel_list_);
-        }
-        // If this is the current subchannel list (either because we were
-        // in case 1 or because we were in case 2 and just promoted it to
-        // be the current list), re-resolve and report new state.
-        if (subchannel_list() == p->subchannel_list_.get()) {
-          p->channel_control_helper()->RequestReresolution();
-          absl::Status status = absl::UnavailableError(
-              absl::StrCat("failed to connect to all addresses; last error: ",
-                           connectivity_status().ToString()));
-          p->channel_control_helper()->UpdateState(
-              GRPC_CHANNEL_TRANSIENT_FAILURE, status,
-              MakeRefCounted<TransientFailurePicker>(status));
+      // Find the next subchannel not in state TRANSIENT_FAILURE.
+      // We skip subchannels in state TRANSIENT_FAILURE to avoid a
+      // large recursion that could overflow the stack.
+      PickFirstSubchannelData* found_subchannel = nullptr;
+      for (size_t next_index = Index() + 1;
+           next_index < subchannel_list()->num_subchannels(); ++next_index) {
+        PickFirstSubchannelData* sc = subchannel_list()->subchannel(next_index);
+        if (sc->connectivity_state() != GRPC_CHANNEL_TRANSIENT_FAILURE) {
+          subchannel_list()->set_attempting_index(next_index);
+          found_subchannel = sc;
+          break;
         }
       }
-      // Trigger the right behavior for the next subchannel in the list.
-      sd->ReactToConnectivityStateLocked();
+      // If we found another subchannel in the list not in state
+      // TRANSIENT_FAILURE, trigger the right behavior for that subchannel.
+      if (found_subchannel != nullptr) {
+        found_subchannel->ReactToConnectivityStateLocked();
+        break;
+      }
+      // We didn't find another subchannel not in state TRANSIENT_FAILURE,
+      // so report TRANSIENT_FAILURE and wait for the first subchannel
+      // in the list to report IDLE before continuing.
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
+        gpr_log(GPR_INFO,
+                "Pick First %p subchannel list %p failed to connect to "
+                "all subchannels",
+                p, subchannel_list());
+      }
+      subchannel_list()->set_attempting_index(0);
+      subchannel_list()->set_in_transient_failure(true);
+      // In case 2, swap to the new subchannel list.  This means reporting
+      // TRANSIENT_FAILURE and dropping the existing (working) connection,
+      // but we can't ignore what the control plane has told us.
+      if (subchannel_list() == p->latest_pending_subchannel_list_.get()) {
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
+          gpr_log(GPR_INFO,
+                  "Pick First %p promoting pending subchannel list %p to "
+                  "replace %p",
+                  p, p->latest_pending_subchannel_list_.get(),
+                  p->subchannel_list_.get());
+        }
+        p->selected_ = nullptr;  // owned by p->subchannel_list_
+        p->subchannel_list_ = std::move(p->latest_pending_subchannel_list_);
+      }
+      // If this is the current subchannel list (either because we were
+      // in case 1 or because we were in case 2 and just promoted it to
+      // be the current list), re-resolve and report new state.
+      if (subchannel_list() == p->subchannel_list_.get()) {
+        p->channel_control_helper()->RequestReresolution();
+        absl::Status status = absl::UnavailableError(
+            absl::StrCat("failed to connect to all addresses; last error: ",
+                         connectivity_status().ToString()));
+        p->channel_control_helper()->UpdateState(
+            GRPC_CHANNEL_TRANSIENT_FAILURE, status,
+            MakeRefCounted<TransientFailurePicker>(status));
+      }
       break;
     }
     case GRPC_CHANNEL_IDLE:
