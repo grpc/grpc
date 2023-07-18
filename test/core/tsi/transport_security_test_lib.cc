@@ -22,6 +22,17 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <openssl/asn1.h>
+#include <openssl/base.h>
+#include <openssl/bio.h>
+#include <openssl/bn.h>
+#include <openssl/digest.h>
+#include <openssl/evp.h>
+#include <openssl/pem.h>
+#include <openssl/rsa.h>
+#include <openssl/x509.h>
+#include <openssl/x509v3.h>
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -402,6 +413,11 @@ void tsi_test_do_handshake(tsi_test_fixture* fixture) {
     if (!server_args->error.ok()) {
       break;
     }
+    // If this assertion is hit, this is likely an indication that the client
+    // and server handshakers are hanging, each thinking that the other is
+    // responsible for sending the next chunk of bytes to the other. This can
+    // happen e.g. when a bug in the handshaker code results in some bytes being
+    // dropped instead of passed to the BIO or SSL objects.
     GPR_ASSERT(client_args->transferred_data || server_args->transferred_data);
   } while (fixture->client_result == nullptr ||
            fixture->server_result == nullptr);
@@ -663,4 +679,66 @@ void tsi_test_frame_protector_fixture_destroy(
   tsi_frame_protector_destroy(fixture->client_frame_protector);
   tsi_frame_protector_destroy(fixture->server_frame_protector);
   gpr_free(fixture);
+}
+
+std::string GenerateSelfSignedCertificate(
+    const SelfSignedCertificateOptions& options) {
+  // Generate an RSA keypair.
+  RSA* rsa = RSA_new();
+  BIGNUM* bignum = BN_new();
+  GPR_ASSERT(BN_set_word(bignum, RSA_F4));
+  GPR_ASSERT(
+      RSA_generate_key_ex(rsa, /*key_size=*/2048, bignum, /*cb=*/nullptr));
+  EVP_PKEY* key = EVP_PKEY_new();
+  GPR_ASSERT(EVP_PKEY_assign_RSA(key, rsa));
+  // Create the X509 object.
+  X509* x509 = X509_new();
+  GPR_ASSERT(X509_set_version(x509, X509_VERSION_3));
+  // Set the not_before/after fields to infinite past/future. The value for
+  // infinite future is from RFC 5280 Section 4.1.2.5.1.
+  ASN1_UTCTIME* infinite_past = ASN1_UTCTIME_new();
+  GPR_ASSERT(ASN1_UTCTIME_set(infinite_past, /*posix_time=*/0));
+  GPR_ASSERT(X509_set1_notBefore(x509, infinite_past));
+  ASN1_UTCTIME_free(infinite_past);
+  ASN1_GENERALIZEDTIME* infinite_future = ASN1_GENERALIZEDTIME_new();
+  GPR_ASSERT(
+      ASN1_GENERALIZEDTIME_set_string(infinite_future, "99991231235959Z"));
+  GPR_ASSERT(X509_set1_notAfter(x509, infinite_future));
+  ASN1_GENERALIZEDTIME_free(infinite_future);
+  // Set the subject DN.
+  X509_NAME* subject_name = X509_NAME_new();
+  GPR_ASSERT(X509_NAME_add_entry_by_txt(
+      subject_name, /*field=*/"CN", MBSTRING_ASC,
+      reinterpret_cast<const unsigned char*>(options.common_name.c_str()),
+      /*len=*/-1, /*loc=*/-1,
+      /*set=*/0));
+  GPR_ASSERT(X509_NAME_add_entry_by_txt(
+      subject_name, /*field=*/"O", MBSTRING_ASC,
+      reinterpret_cast<const unsigned char*>(options.organization.c_str()),
+      /*len=*/-1, /*loc=*/-1,
+      /*set=*/0));
+  GPR_ASSERT(
+      X509_NAME_add_entry_by_txt(subject_name, /*field=*/"OU", MBSTRING_ASC,
+                                 reinterpret_cast<const unsigned char*>(
+                                     options.organizational_unit.c_str()),
+                                 /*len=*/-1, /*loc=*/-1,
+                                 /*set=*/0));
+  GPR_ASSERT(X509_set_subject_name(x509, subject_name));
+  X509_NAME_free(subject_name);
+  // Set the public key and sign the certificate.
+  GPR_ASSERT(X509_set_pubkey(x509, key));
+  GPR_ASSERT(X509_sign(x509, key, EVP_sha256()));
+  // Convert to PEM.
+  BIO* bio = BIO_new(BIO_s_mem());
+  GPR_ASSERT(PEM_write_bio_X509(bio, x509));
+  const uint8_t* data = nullptr;
+  size_t len = 0;
+  GPR_ASSERT(BIO_mem_contents(bio, &data, &len));
+  std::string pem = std::string(reinterpret_cast<const char*>(data), len);
+  // Cleanup all of the OpenSSL objects and return the PEM-encoded cert.
+  EVP_PKEY_free(key);
+  X509_free(x509);
+  BIO_free(bio);
+  BN_free(bignum);
+  return pem;
 }
