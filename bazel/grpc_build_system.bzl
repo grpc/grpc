@@ -273,6 +273,16 @@ def ios_cc_test(
             deps = ios_test_deps,
         )
 
+
+def _update_platform_tags(tags, platforms):
+    if "posix" not in platforms:
+        tags = tags + ["no_linux", "no_mac"]
+    if "windows" not in platforms:
+        tags = tags + ["no_windows"]
+    if "ios" not in platforms:
+        tags = tags + ["no_ios"]
+    return tags
+
 def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, uses_event_engine, flaky):
     """Common logic used to parameterize tests for every poller and EventEngine and experiment.
 
@@ -365,14 +375,17 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
                 })
 
     experiments = {}
-    for mode, tag_to_experiments in EXPERIMENTS.items():
-        experiments[mode] = {}
-        for tag in tags:
-            if tag not in tag_to_experiments:
-                continue
-            for experiment in tag_to_experiments[tag]:
-                experiments[mode][experiment] = 1
-        experiments[mode] = list(experiments[mode].keys())
+    for platform, experiments_on_platform in EXPERIMENTS.items():
+        for mode, tag_to_experiments in experiments_on_platform.items():
+            if mode not in experiments:
+                experiments[mode] = {}
+            for tag in tags:
+                if tag not in tag_to_experiments:
+                    continue
+                for experiment in tag_to_experiments[tag]:
+                    if experiment not in experiments[mode]:
+                        experiments[mode][experiment] = []
+                    experiments[mode][experiment].append(platform)
 
     mode_config = {
         # format: <mode>: (enabled_target_tags, disabled_target_tags)
@@ -395,7 +408,7 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
     for mode, config in mode_config.items():
         enabled_tags, disabled_tags = config
         if enabled_tags != None:
-            for experiment in experiments[mode]:
+            for experiment in sorted(experiments[mode].keys()):
                 for config in poller_config:
                     config = dict(config)
                     config["name"] = config["name"] + "@experiment=" + experiment
@@ -406,11 +419,11 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
                     for tag in must_have_tags + enabled_tags:
                         if tag not in tags:
                             tags = tags + [tag]
-                    config["tags"] = tags
+                    config["tags"] = _update_platform_tags(tags, experiments[mode][experiment])
                     config["flaky"] = True
                     experiment_config.append(config)
         if disabled_tags != None:
-            for experiment in experiments[mode]:
+            for experiment in sorted(experiments[mode].keys()):
                 for config in poller_config:
                     config = dict(config)
                     config["name"] = config["name"] + "@experiment=no_" + experiment
@@ -421,7 +434,7 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
                     for tag in must_have_tags + disabled_tags:
                         if tag not in tags:
                             tags = tags + [tag]
-                    config["tags"] = tags
+                    config["tags"] = _update_platform_tags(tags, experiments[mode][experiment])
                     experiment_config.append(config)
     return experiment_config
 
