@@ -136,19 +136,14 @@ TYPED_TEST(ThreadPoolTest, ForkStressTest) {
 TYPED_TEST(ThreadPoolTest, StartQuiesceRaceStressTest) {
   // Repeatedly race Start and Quiesce against each other to ensure thread
   // safety.
-  constexpr int iter_count = 5;
+  constexpr int iter_count = 500;
   struct ThdState {
     std::unique_ptr<TypeParam> pool;
     int i;
   };
   for (int i = 0; i < iter_count; i++) {
-    gpr_cycle_counter start_time = gpr_get_cycle_counter();
     ThdState state{std::make_unique<TypeParam>(8), i};
-    gpr_log(GPR_ERROR, "%d: %ld cycles spent creating the pool", i,
-            std::lround(gpr_get_cycle_counter() - start_time));
     state.pool->PrepareFork();
-    gpr_log(GPR_ERROR, "%d: %ld cycles spent preparing fork", i,
-            std::lround(gpr_get_cycle_counter() - start_time));
     grpc_core::Thread t1(
         "t1",
         [](void* arg) {
@@ -171,8 +166,6 @@ TYPED_TEST(ThreadPoolTest, StartQuiesceRaceStressTest) {
     t2.Start();
     t1.Join();
     t2.Join();
-    gpr_log(GPR_ERROR, "%d: %ld total cycles", i,
-            std::lround(gpr_get_cycle_counter() - start_time));
   }
 }
 

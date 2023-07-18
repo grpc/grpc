@@ -169,7 +169,6 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Quiesce() {
   // Note that if this is a threadpool thread then we won't exit this thread
   // until all other threads have exited, so we need to wait for just one thread
   // running instead of zero.
-  gpr_cycle_counter start_time = gpr_get_cycle_counter();
   bool is_threadpool_thread = g_local_queue != nullptr;
   thread_count()->BlockUntilThreadCount(CounterType::kLivingThreadCount,
                                         is_threadpool_thread ? 1 : 0,
@@ -177,8 +176,6 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Quiesce() {
   GPR_ASSERT(queue_.Empty());
   quiesced_.store(true, std::memory_order_relaxed);
   lifeguard_.BlockUntilShutdownAndReset();
-  GRPC_EVENT_ENGINE_TRACE("%ld cycles spent quiescing the pool",
-                          std::lround(gpr_get_cycle_counter() - start_time));
 }
 
 bool WorkStealingThreadPool::WorkStealingThreadPoolImpl::SetThrottled(
@@ -410,16 +407,14 @@ bool WorkStealingThreadPool::ThreadState::Step() {
     if (pool_->IsShutdown()) break;
     bool timed_out = pool_->work_signal()->WaitWithTimeout(
         backoff_.NextAttemptTime() - grpc_core::Timestamp::Now());
+    if (pool_->IsForking() || pool_->IsShutdown()) break;
     // Quit a thread if the pool has more than it requires, and this thread
     // has been idle long enough.
-    if (timed_out) {
-      if (pool_->IsForking()) break;
-      ;
-      if (pool_->thread_count()->GetCount(CounterType::kLivingThreadCount) >
-              pool_->reserve_threads() &&
-          grpc_core::Timestamp::Now() - start_time > kIdleThreadLimit) {
-        return false;
-      }
+    if (timed_out &&
+        pool_->thread_count()->GetCount(CounterType::kLivingThreadCount) >
+            pool_->reserve_threads() &&
+        grpc_core::Timestamp::Now() - start_time > kIdleThreadLimit) {
+      return false;
     }
   }
   if (pool_->IsForking()) {
@@ -479,6 +474,7 @@ void WorkStealingThreadPool::ThreadCount::BlockUntilThreadCount(
     CounterType counter_type, size_t desired_threads, const char* why,
     WorkSignal* work_signal) {
   // Wait for all threads to exit.
+  work_signal->SignalAll();
   while (true) {
     auto curr_threads = WaitForCountChange(
         counter_type, desired_threads,
@@ -489,7 +485,6 @@ void WorkStealingThreadPool::ThreadCount::BlockUntilThreadCount(
         "Waiting for thread pool to idle before %s. (%" PRIdPTR " to %" PRIdPTR
         ")",
         why, curr_threads, desired_threads);
-    work_signal->SignalAll();
   }
 }
 
