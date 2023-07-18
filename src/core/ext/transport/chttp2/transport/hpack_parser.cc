@@ -24,6 +24,7 @@
 #include <stdlib.h>
 
 #include <algorithm>
+#include <memory>
 #include <string>
 #include <utility>
 
@@ -696,19 +697,19 @@ class HPackParser::Parser {
     gpr_log(
         GPR_DEBUG, "HTTP:%d:%s:%s: %s%s", log_info_.stream_id, type,
         log_info_.is_client ? "CLI" : "SVR", memento.md.DebugString().c_str(),
-        memento.parse_status.ok()
+        memento.parse_status == nullptr
             ? ""
             : absl::StrCat(" (parse error: ",
-                           memento.parse_status.Materialize().ToString(), ")")
+                           memento.parse_status->Materialize().ToString(), ")")
                   .c_str());
   }
 
   void EmitHeader(const HPackTable::Memento& md) {
     // Pass up to the transport
     state_.frame_length += md.md.transport_size();
-    if (!md.parse_status.ok()) {
+    if (md.parse_status != nullptr) {
       // Reject any requests with invalid metadata.
-      input_->SetErrorAndContinueParsing(md.parse_status);
+      input_->SetErrorAndContinueParsing(*md.parse_status);
     }
     if (GPR_LIKELY(metadata_buffer_ != nullptr)) {
       metadata_buffer_->Set(md.md);
@@ -957,8 +958,8 @@ class HPackParser::Parser {
     } else {
       const auto* memento = absl::get<const HPackTable::Memento*>(state_.key);
       key_string = memento->md.key();
-      if (status.ok() && !memento->parse_status.ok()) {
-        input_->SetErrorAndContinueParsing(memento->parse_status);
+      if (status.ok() && memento->parse_status != nullptr) {
+        input_->SetErrorAndContinueParsing(*memento->parse_status);
       }
     }
     switch (value.status) {
@@ -993,7 +994,7 @@ class HPackParser::Parser {
                   std::string(message).c_str());
         });
     HPackTable::Memento memento{std::move(md),
-                                status.PersistentStreamErrorOrOk()};
+                                status.PersistentStreamErrorOrNullptr()};
     input_->UpdateFrontier();
     state_.parse_state = ParseState::kTop;
     if (state_.add_to_table) {
