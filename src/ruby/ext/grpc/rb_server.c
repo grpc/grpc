@@ -106,7 +106,10 @@ static void grpc_rb_server_free_internal(void* p) {
 }
 
 /* Destroys server instances. */
-static void grpc_rb_server_free(void* p) { grpc_rb_server_free_internal(p); }
+static void grpc_rb_server_free(void* p) {
+  grpc_rb_server_free_internal(p);
+  grpc_ruby_shutdown();
+}
 
 static const rb_data_type_t grpc_rb_server_data_type = {
     "grpc_server",
@@ -152,7 +155,10 @@ static VALUE grpc_rb_server_init(VALUE self, VALUE channel_args) {
                        wrapper);
   grpc_rb_hash_convert_to_channel_args(channel_args, &args);
   srv = grpc_server_create(&args, NULL);
-  grpc_rb_channel_args_destroy(&args);
+
+  if (args.args != NULL) {
+    xfree(args.args); /* Allocated by grpc_rb_hash_convert_to_channel_args */
+  }
   if (srv == NULL) {
     rb_raise(rb_eRuntimeError, "could not create a gRPC server, not sure why");
   }
@@ -192,7 +198,6 @@ struct server_request_call_args {
 };
 
 static VALUE grpc_rb_server_request_call_try(VALUE value_args) {
-  grpc_rb_fork_unsafe_begin();
   struct server_request_call_args* args =
       (struct server_request_call_args*)value_args;
 
@@ -235,7 +240,6 @@ static VALUE grpc_rb_server_request_call_try(VALUE value_args) {
 }
 
 static VALUE grpc_rb_server_request_call_ensure(VALUE value_args) {
-  grpc_rb_fork_unsafe_end();
   struct server_request_call_args* args =
       (struct server_request_call_args*)value_args;
 
@@ -254,12 +258,14 @@ static VALUE grpc_rb_server_request_call_ensure(VALUE value_args) {
    Requests notification of a new call on a server. */
 static VALUE grpc_rb_server_request_call(VALUE self) {
   grpc_rb_server* s;
+
   TypedData_Get_Struct(self, grpc_rb_server, &grpc_rb_server_data_type, s);
-  grpc_ruby_fork_guard();
   if (s->wrapped == NULL) {
     rb_raise(rb_eRuntimeError, "destroyed!");
   }
+
   struct server_request_call_args args = {.server = s, .call_queue = NULL};
+
   return rb_ensure(grpc_rb_server_request_call_try, (VALUE)&args,
                    grpc_rb_server_request_call_ensure, (VALUE)&args);
 }
@@ -267,6 +273,7 @@ static VALUE grpc_rb_server_request_call(VALUE self) {
 static VALUE grpc_rb_server_start(VALUE self) {
   grpc_rb_server* s = NULL;
   TypedData_Get_Struct(self, grpc_rb_server, &grpc_rb_server_data_type, s);
+
   grpc_ruby_fork_guard();
   if (s->wrapped == NULL) {
     rb_raise(rb_eRuntimeError, "destroyed!");

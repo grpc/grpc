@@ -79,18 +79,6 @@ class SimpleRequest extends \Google\Protobuf\Internal\Message
      * Generated from protobuf field <code>bool fill_grpclb_route_type = 10;</code>
      */
     protected $fill_grpclb_route_type = false;
-    /**
-     * If set the server should record this metrics report data for the current RPC.
-     *
-     * Generated from protobuf field <code>.grpc.testing.TestOrcaReport orca_per_query_report = 11;</code>
-     */
-    protected $orca_per_query_report = null;
-    /**
-     * If set the server should update this metrics report data at the OOB server.
-     *
-     * Generated from protobuf field <code>.grpc.testing.TestOrcaReport orca_oob_report = 12;</code>
-     */
-    protected $orca_oob_report = null;
 
     /**
      * Constructor.
@@ -122,10 +110,6 @@ class SimpleRequest extends \Google\Protobuf\Internal\Message
      *           Whether SimpleResponse should include server_id.
      *     @type bool $fill_grpclb_route_type
      *           Whether SimpleResponse should include grpclb_route_type.
-     *     @type \Grpc\Testing\TestOrcaReport $orca_per_query_report
-     *           If set the server should record this metrics report data for the current RPC.
-     *     @type \Grpc\Testing\TestOrcaReport $orca_oob_report
-     *           If set the server should update this metrics report data at the OOB server.
      * }
      */
     public function __construct($data = NULL) {
@@ -437,78 +421,6 @@ class SimpleRequest extends \Google\Protobuf\Internal\Message
     {
         GPBUtil::checkBool($var);
         $this->fill_grpclb_route_type = $var;
-
-        return $this;
-    }
-
-    /**
-     * If set the server should record this metrics report data for the current RPC.
-     *
-     * Generated from protobuf field <code>.grpc.testing.TestOrcaReport orca_per_query_report = 11;</code>
-     * @return \Grpc\Testing\TestOrcaReport|null
-     */
-    public function getOrcaPerQueryReport()
-    {
-        return $this->orca_per_query_report;
-    }
-
-    public function hasOrcaPerQueryReport()
-    {
-        return isset($this->orca_per_query_report);
-    }
-
-    public function clearOrcaPerQueryReport()
-    {
-        unset($this->orca_per_query_report);
-    }
-
-    /**
-     * If set the server should record this metrics report data for the current RPC.
-     *
-     * Generated from protobuf field <code>.grpc.testing.TestOrcaReport orca_per_query_report = 11;</code>
-     * @param \Grpc\Testing\TestOrcaReport $var
-     * @return $this
-     */
-    public function setOrcaPerQueryReport($var)
-    {
-        GPBUtil::checkMessage($var, \Grpc\Testing\TestOrcaReport::class);
-        $this->orca_per_query_report = $var;
-
-        return $this;
-    }
-
-    /**
-     * If set the server should update this metrics report data at the OOB server.
-     *
-     * Generated from protobuf field <code>.grpc.testing.TestOrcaReport orca_oob_report = 12;</code>
-     * @return \Grpc\Testing\TestOrcaReport|null
-     */
-    public function getOrcaOobReport()
-    {
-        return $this->orca_oob_report;
-    }
-
-    public function hasOrcaOobReport()
-    {
-        return isset($this->orca_oob_report);
-    }
-
-    public function clearOrcaOobReport()
-    {
-        unset($this->orca_oob_report);
-    }
-
-    /**
-     * If set the server should update this metrics report data at the OOB server.
-     *
-     * Generated from protobuf field <code>.grpc.testing.TestOrcaReport orca_oob_report = 12;</code>
-     * @param \Grpc\Testing\TestOrcaReport $var
-     * @return $this
-     */
-    public function setOrcaOobReport($var)
-    {
-        GPBUtil::checkMessage($var, \Grpc\Testing\TestOrcaReport::class);
-        $this->orca_oob_report = $var;
 
         return $this;
     }

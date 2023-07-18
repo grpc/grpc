@@ -21,6 +21,8 @@
   <!-- This target is invoked in a C# project, or can be called in a customized project. -->
   <Target Name="gRPC_ResolvePluginFullPath" AfterTargets="Protobuf_ResolvePlatform">
     <PropertyGroup>
+      <!-- TODO(kkm): Do not use Protobuf_PackagedToolsPath, roll gRPC's own. -->
+
       <!-- First try environment variable. -->
       <gRPC_PluginFullPath Condition=" '$(gRPC_PluginFullPath)' == '' ">$(GRPC_PROTOC_PLUGIN)</gRPC_PluginFullPath>
 

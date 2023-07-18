@@ -273,14 +273,18 @@ def ios_cc_test(
             deps = ios_test_deps,
         )
 
-
 def _update_platform_tags(tags, platforms):
     if "posix" not in platforms:
-        tags = tags + ["no_linux", "no_mac"]
+        if "no_linux" not in tags:
+            tags += ["no_linux"]
+        if "no_mac" not in tags:
+            tags += ["no_mac"]
     if "windows" not in platforms:
-        tags = tags + ["no_windows"]
+        if "no_windows" not in tags:
+            tags += ["no_windows"]
     if "ios" not in platforms:
-        tags = tags + ["no_ios"]
+        if "no_test_ios" not in tags:
+            tags += ["no_test_ios"]
     return tags
 
 def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, uses_event_engine, flaky):
@@ -389,7 +393,6 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
 
     mode_config = {
         # format: <mode>: (enabled_target_tags, disabled_target_tags)
-        "dbg": (["noopt"], ["nodbg"]),
         "on": (None, []),
         "off": ([], None),
     }
@@ -404,6 +407,7 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
         # Nor on arm64
         "no_arm64",
     ]
+
     experiment_config = list(poller_config)
     for mode, config in mode_config.items():
         enabled_tags, disabled_tags = config

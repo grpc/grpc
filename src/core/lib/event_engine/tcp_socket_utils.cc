@@ -100,11 +100,12 @@ absl::StatusOr<std::string> ResolvedAddrToUnixPathIfPossible(
 #else
   int len = resolved_addr->size() - sizeof(unix_addr->sun_family) - 1;
 #endif
-  if (len <= 0) return "";
+  bool abstract = (len < 0 || unix_addr->sun_path[0] == '\0');
   std::string path;
-  if (unix_addr->sun_path[0] == '\0') {
-    // unix-abstract socket processing.
-    path = std::string(unix_addr->sun_path + 1, len);
+  if (abstract) {
+    if (len >= 0) {
+      path = std::string(unix_addr->sun_path + 1, len);
+    }
     path = absl::StrCat(std::string(1, '\0'), path);
   } else {
     size_t maxlen = sizeof(unix_addr->sun_path);
@@ -122,9 +123,9 @@ absl::StatusOr<std::string> ResolvedAddrToUriUnixIfPossible(
   GRPC_RETURN_IF_ERROR(path.status());
   std::string scheme;
   std::string path_string;
-  if (!path->empty() && path->at(0) == '\0' && path->length() > 1) {
+  if (path->at(0) == '\0') {
     scheme = "unix-abstract";
-    path_string = path->substr(1, std::string::npos);
+    path_string = path->length() > 1 ? path->substr(1, std::string::npos) : "";
   } else {
     scheme = "unix";
     path_string = std::move(*path);

@@ -63,6 +63,7 @@ static void grpc_rb_xds_server_credentials_free_internal(void* p) {
 /* Destroys the server credentials instances. */
 static void grpc_rb_xds_server_credentials_free(void* p) {
   grpc_rb_xds_server_credentials_free_internal(p);
+  grpc_ruby_shutdown();
 }
 
 /* Protects the mark object from GC */

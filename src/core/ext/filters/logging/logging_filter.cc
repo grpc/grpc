@@ -257,7 +257,6 @@ class CallData {
                        const ServerMetadata* metadata) {
     LoggingSink::Entry entry;
     if (metadata != nullptr) {
-      entry.is_trailer_only = metadata->get(GrpcTrailersOnly()).value_or(false);
       if (is_client) {
         if (auto* value = metadata->get_pointer(PeerString())) {
           peer_ = PeerStringToAddress(*value);
@@ -281,7 +280,6 @@ class CallData {
     SetCommonEntryFields(&entry, is_client, tracer,
                          LoggingSink::Entry::EventType::kServerTrailer);
     if (metadata != nullptr) {
-      entry.is_trailer_only = metadata->get(GrpcTrailersOnly()).value_or(false);
       MetadataEncoder encoder(&entry.payload, &entry.payload.status_details,
                               config_.max_metadata_bytes());
       metadata->Encode(&encoder);

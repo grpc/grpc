@@ -110,8 +110,6 @@ class PosixEngineListenerImpl
     }
     ListenerSocketsContainer::ListenerSocket& Socket() { return socket_; }
     ~AsyncConnectionAcceptor() {
-      // If uds socket, unlink it so that the corresponding file is deleted.
-      UnlinkIfUnixDomainSocket(*socket_.sock.LocalAddress());
       handle_->OrphanHandle(nullptr, nullptr, "");
       delete notify_on_accept_;
     }
@@ -123,9 +121,6 @@ class PosixEngineListenerImpl
     ListenerSocketsContainer::ListenerSocket socket_;
     EventHandle* handle_;
     PosixEngineClosure* notify_on_accept_;
-    // Tracks the status of a backup timer to retry accept4 calls after file
-    // descriptor exhaustion.
-    std::atomic<bool> retry_timer_armed_{false};
   };
   class ListenerAsyncAcceptors : public ListenerSocketsContainer {
    public:

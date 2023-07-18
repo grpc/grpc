@@ -809,7 +809,6 @@ struct call_run_batch_args {
 };
 
 static VALUE grpc_rb_call_run_batch_try(VALUE value_args) {
-  grpc_rb_fork_unsafe_begin();
   struct call_run_batch_args* args = (struct call_run_batch_args*)value_args;
   void* tag = (void*)&args->st;
 
@@ -840,7 +839,6 @@ static VALUE grpc_rb_call_run_batch_try(VALUE value_args) {
 }
 
 static VALUE grpc_rb_call_run_batch_ensure(VALUE value_args) {
-  grpc_rb_fork_unsafe_end();
   struct call_run_batch_args* args = (struct call_run_batch_args*)value_args;
 
   if (args->st) {

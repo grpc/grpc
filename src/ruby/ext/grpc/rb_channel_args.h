@@ -35,8 +35,4 @@
 void grpc_rb_hash_convert_to_channel_args(VALUE src_hash,
                                           grpc_channel_args* dst);
 
-/* Destroys inner fields of args (does not deallocate the args pointer itself)
- */
-void grpc_rb_channel_args_destroy(grpc_channel_args* args);
-
 #endif /* GRPC_RB_CHANNEL_ARGS_H_ */

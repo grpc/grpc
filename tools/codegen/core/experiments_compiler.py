@@ -567,6 +567,10 @@ class ExperimentsCompiler(object):
                 for tag in exp.test_tags:
                     # Search through default values for all platforms.
                     default = exp.default(platform)
+                    # Interpret the debug default value as True to switch the
+                    # experiment to the "on" mode.
+                    if default == "debug":
+                        default = True
                     bzl_to_tags_to_experiments[platform][default][tag].append(exp.name)
 
         with open(output_file, "w") as B:

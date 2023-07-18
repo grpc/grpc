@@ -6,10 +6,9 @@
     <!-- Revision number of this package conventions (as if "API" version). -->
     <Protobuf_ToolingRevision>1</Protobuf_ToolingRevision>
 
-
-    <!-- Tools - protocol buffers compiler and plugins -->
+    <!-- TODO(kkm): Remove one "../" when separating packages. -->
+    <!-- TODO(kkm): Do not place non-tools under tools/, use build/native/bin/. -->
     <Protobuf_PackagedToolsPath>$( [System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)../../tools) )</Protobuf_PackagedToolsPath>
-    <!-- Protocol buffers Well Known Types -->
     <Protobuf_StandardImportsPath>$( [System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)../native/include) )</Protobuf_StandardImportsPath>
   </PropertyGroup>
 

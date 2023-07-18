@@ -29,7 +29,6 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/match.h"
-#include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
@@ -64,9 +63,6 @@
   "urn:ietf:params:oauth:token-type:access_token"
 #define GOOGLE_CLOUD_PLATFORM_DEFAULT_SCOPE \
   "https://www.googleapis.com/auth/cloud-platform"
-#define IMPERSONATED_CRED_DEFAULT_LIFETIME_IN_SECONDS 3600  // 1 hour
-#define IMPERSONATED_CRED_MIN_LIFETIME_IN_SECONDS 600       // 10 mins
-#define IMPERSONATED_CRED_MAX_LIFETIME_IN_SECONDS 43200     // 12 hours
 
 namespace grpc_core {
 
@@ -199,36 +195,6 @@ RefCountedPtr<ExternalAccountCredentials> ExternalAccountCredentials::Create(
           "workforce_pool_user_project should not be set for non-workforce "
           "pool credentials");
       return nullptr;
-    }
-  }
-  it = json.object().find("service_account_impersonation");
-  options.service_account_impersonation.token_lifetime_seconds =
-      IMPERSONATED_CRED_DEFAULT_LIFETIME_IN_SECONDS;
-  if (it != json.object().end() && it->second.type() == Json::Type::kObject) {
-    auto service_acc_imp_json = it->second;
-    auto service_acc_imp_obj_it =
-        service_acc_imp_json.object().find("token_lifetime_seconds");
-    if (service_acc_imp_obj_it != service_acc_imp_json.object().end()) {
-      if (!absl::SimpleAtoi(
-              service_acc_imp_obj_it->second.string(),
-              &options.service_account_impersonation.token_lifetime_seconds)) {
-        *error = GRPC_ERROR_CREATE("token_lifetime_seconds must be a number");
-        return nullptr;
-      }
-      if (options.service_account_impersonation.token_lifetime_seconds >
-          IMPERSONATED_CRED_MAX_LIFETIME_IN_SECONDS) {
-        *error = GRPC_ERROR_CREATE(
-            absl::StrFormat("token_lifetime_seconds must be less than %ds",
-                            IMPERSONATED_CRED_MAX_LIFETIME_IN_SECONDS));
-        return nullptr;
-      }
-      if (options.service_account_impersonation.token_lifetime_seconds <
-          IMPERSONATED_CRED_MIN_LIFETIME_IN_SECONDS) {
-        *error = GRPC_ERROR_CREATE(
-            absl::StrFormat("token_lifetime_seconds must be more than %ds",
-                            IMPERSONATED_CRED_MIN_LIFETIME_IN_SECONDS));
-        return nullptr;
-      }
     }
   }
   RefCountedPtr<ExternalAccountCredentials> creds;
@@ -464,13 +430,8 @@ void ExternalAccountCredentials::ImpersenateServiceAccount() {
   headers[1].key = gpr_strdup("Authorization");
   headers[1].value = gpr_strdup(str.c_str());
   request.hdrs = headers;
-  std::vector<std::string> body_members;
   std::string scope = absl::StrJoin(scopes_, " ");
-  body_members.push_back(absl::StrFormat("scope=%s", UrlEncode(scope).c_str()));
-  body_members.push_back(absl::StrFormat(
-      "lifetime=%ds",
-      options_.service_account_impersonation.token_lifetime_seconds));
-  std::string body = absl::StrJoin(body_members, "&");
+  std::string body = absl::StrFormat("scope=%s", scope);
   request.body = const_cast<char*>(body.c_str());
   request.body_length = body.size();
   grpc_http_response_destroy(&ctx_->response);

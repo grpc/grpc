@@ -9,14 +9,17 @@
 
   <Import Project="SourceLink.csproj.include" />
 
-  <PropertyGroup Label="Asset root folders.">
-    <!-- Root of well known types .proto files -->
+  <PropertyGroup Label="Asset root folders. TODO(kkm): Change with package separation.">
+    <!-- TODO(kkm): Rework whole section when splitting packages.  -->
+    <!-- GRPC: ../../third_party/protobuf/src/google/protobuf/  -->
+    <!-- GPB:  ../src/google/protobuf/ -->
     <Assets_ProtoInclude>../../../third_party/protobuf/src/google/protobuf/</Assets_ProtoInclude>
 
-    <!-- Protocol buffers compiler binaries -->
+    <!-- GPB:  ../protoc/ -->
+    <!-- GRPC: ../protoc_plugins/protoc_ -->
     <Assets_ProtoCompiler>../protoc_plugins/protoc_</Assets_ProtoCompiler>
 
-    <!-- Plugins binaries -->
+    <!-- GRPC: ../protoc_plugins/ -->
     <Assets_GrpcPlugins>../protoc_plugins/</Assets_GrpcPlugins>
   </PropertyGroup>
 
@@ -25,6 +28,7 @@
   </PropertyGroup>
 
   <PropertyGroup Label="NuGet package definition" Condition=" '$(Configuration)' == 'Release' ">
+    <!-- TODO(kkm): Change to "build\" after splitting. -->
     <BuildOutputTargetFolder>build\_protobuf\</BuildOutputTargetFolder>
     <DevelopmentDependency>true</DevelopmentDependency>
     <NoPackageAnalysis>true</NoPackageAnalysis>
@@ -47,20 +51,22 @@
   <ItemGroup Label="NuGet package assets">
     <None Pack="true" PackagePath="build\" Include="build\**\*.xml; build\**\*.props; build\**\*.targets;" />
 
-    <!-- Protobuf assets - well known types -->
+    <!-- Protobuf assets (for Google.Protobuf.Tools) -->
     <_ProtoAssetName Include="any;api;descriptor;duration;empty;field_mask;
                               source_context;struct;timestamp;type;wrappers" />
     <_Asset PackagePath="build/native/include/google/protobuf/" Include="@(_ProtoAssetName->'$(Assets_ProtoInclude)%(Identity).proto')" />
 
-    <!-- protocol buffers compiler -->
+    <!-- TODO(kkm): GPB builds assets into "macosx", GRPC into "macos". -->
+    <!-- TODO(kkm): Do not place non-tools under tools/, use build/native/bin/. -->
+    <!-- TODO(kkm): Do not package windows x64 builds (#13098). -->
     <_Asset PackagePath="tools/windows_x86/" Include="$(Assets_ProtoCompiler)windows_x86/protoc.exe" />
     <_Asset PackagePath="tools/windows_x64/" Include="$(Assets_ProtoCompiler)windows_x64/protoc.exe" />
     <_Asset PackagePath="tools/linux_x86/" Include="$(Assets_ProtoCompiler)linux_x86/protoc" />
     <_Asset PackagePath="tools/linux_x64/" Include="$(Assets_ProtoCompiler)linux_x64/protoc" />
     <_Asset PackagePath="tools/linux_arm64/" Include="$(Assets_ProtoCompiler)linux_aarch64/protoc" />
-    <_Asset PackagePath="tools/macosx_x64/" Include="$(Assets_ProtoCompiler)macos_x64/protoc" /> 
+    <_Asset PackagePath="tools/macosx_x64/" Include="$(Assets_ProtoCompiler)macos_x64/protoc" /> <!-- GPB: macosx-->
 
-    <!-- gRPC protocol buffer compiler plugins -->
+    <!-- gRPC assets (for Grpc.Tools) -->
     <_Asset PackagePath="tools/windows_x86/" Include="$(Assets_GrpcPlugins)protoc_windows_x86/grpc_csharp_plugin.exe" />
     <_Asset PackagePath="tools/windows_x64/" Include="$(Assets_GrpcPlugins)protoc_windows_x64/grpc_csharp_plugin.exe" />
     <_Asset PackagePath="tools/linux_x86/" Include="$(Assets_GrpcPlugins)protoc_linux_x86/grpc_csharp_plugin" />

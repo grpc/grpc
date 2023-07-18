@@ -70,6 +70,7 @@ static void grpc_rb_compression_options_free_internal(void* p) {
  * wrapped grpc compression options. */
 static void grpc_rb_compression_options_free(void* p) {
   grpc_rb_compression_options_free_internal(p);
+  grpc_ruby_shutdown();
 }
 
 /* Ruby recognized data type for the CompressionOptions class. */
