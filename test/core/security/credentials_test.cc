@@ -60,6 +60,7 @@
 #include "src/core/lib/security/credentials/external/aws_external_account_credentials.h"
 #include "src/core/lib/security/credentials/external/external_account_credentials.h"
 #include "src/core/lib/security/credentials/external/file_external_account_credentials.h"
+#include "src/core/lib/security/credentials/external/pluggable_auth_external_account_credentials.h"
 #include "src/core/lib/security/credentials/external/url_external_account_credentials.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/security/credentials/google_default/google_default_credentials.h"
@@ -3797,6 +3798,113 @@ TEST(CredentialsTest,
   grpc_call_credentials* url_creds = grpc_external_account_credentials_create(
       url_options_string, url_scopes_string);
   GPR_ASSERT(url_creds == nullptr);
+}
+
+TEST(CredentialsTest,
+     TestPluggableAuthExternalAccountCredentialsCreateSuccess) {
+  const char* options_string =
+      "{\"type\":\"external_account\","
+      "\"audience\":\"audience\","
+      "\"subject_token_type\":\"subject_token_type\","
+      "\"service_account_impersonation_url\":\"service_account_impersonation_"
+      "url\",\"token_url\":\"token_url\","
+      "\"token_info_url\":\"token_info_url\",	\"credential_source\": "
+      "{\"executable\":{"
+      "\"command\":\"command\","
+      "\"output_file\":\"output_file\"}},"
+      "\"quota_project_id\":\"quota_project_id\","
+      "\"client_id\":\"client_id\","
+      "\"client_secret\":\"client_secret\"}";
+  auto options_json = JsonParse(options_string);
+  GPR_ASSERT(options_json.ok());
+  grpc_error_handle error;
+  auto creds =
+      ExternalAccountCredentials::Create(*options_json, {"scope"}, &error);
+  GPR_ASSERT(error.ok());
+  GPR_ASSERT(creds != nullptr);
+}
+
+TEST(CredentialsTest,
+     TestPluggableAuthExternalAccountCredentialsCreateFailureInvalidCommand) {
+  const char* options_string =
+      "{\"type\":\"external_account\","
+      "\"audience\":\"audience\","
+      "\"subject_token_type\":\"subject_token_type\","
+      "\"service_account_impersonation_url\":\"service_account_impersonation_"
+      "url\",\"token_url\":\"token_url\","
+      "\"token_info_url\":\"token_info_url\",	\"credential_source\": "
+      "{\"executable\":{"
+      "\"timeout_millis\":10000,"
+      "\"output_file\":\"output_file\"}},"
+      "\"quota_project_id\":\"quota_project_id\","
+      "\"client_id\":\"client_id\","
+      "\"client_secret\":\"client_secret\"}";
+  auto options_json = JsonParse(options_string);
+  GPR_ASSERT(options_json.ok());
+  grpc_error_handle error;
+  auto creds =
+      ExternalAccountCredentials::Create(*options_json, {"scope"}, &error);
+  std::string actual_error, expected_error = "command field not present.";
+  grpc_error_get_str(error, StatusStrProperty::kDescription, &actual_error);
+  GPR_ASSERT(strcmp(actual_error.c_str(), expected_error.c_str()) == 0);
+}
+
+TEST(
+    CredentialsTest,
+    TestPluggableAuthExternalAccountCredentialsCreateFailureExecutableTimeoutLessThan5Seconds) {
+  const char* options_string =
+      "{\"type\":\"external_account\","
+      "\"audience\":\"audience\","
+      "\"subject_token_type\":\"subject_token_type\","
+      "\"service_account_impersonation_url\":\"service_account_impersonation_"
+      "url\",\"token_url\":\"token_url\","
+      "\"token_info_url\":\"token_info_url\",	\"credential_source\": "
+      "{\"executable\":{"
+      "\"command\":\"command\","
+      "\"timeout_millis\":4999,"
+      "\"output_file\":\"output_file\"}},"
+      "\"quota_project_id\":\"quota_project_id\","
+      "\"client_id\":\"client_id\","
+      "\"client_secret\":\"client_secret\"}";
+  auto options_json = JsonParse(options_string);
+  GPR_ASSERT(options_json.ok());
+  grpc_error_handle error;
+  auto creds =
+      ExternalAccountCredentials::Create(*options_json, {"scope"}, &error);
+  std::string actual_error,
+      expected_error =
+          "timeout_millis should be between 5000 and 120000 milliseconds.";
+  grpc_error_get_str(error, StatusStrProperty::kDescription, &actual_error);
+  GPR_ASSERT(strcmp(actual_error.c_str(), expected_error.c_str()) == 0);
+}
+
+TEST(
+    CredentialsTest,
+    TestPluggableAuthExternalAccountCredentialsCreateFailureExecutableTimeoutMoreThan120Seconds) {
+  const char* options_string =
+      "{\"type\":\"external_account\","
+      "\"audience\":\"audience\","
+      "\"subject_token_type\":\"subject_token_type\","
+      "\"service_account_impersonation_url\":\"service_account_impersonation_"
+      "url\",\"token_url\":\"token_url\","
+      "\"token_info_url\":\"token_info_url\",	\"credential_source\": "
+      "{\"executable\":{"
+      "\"command\":\"command\","
+      "\"timeout_millis\":120001,"
+      "\"output_file\":\"output_file\"}},"
+      "\"quota_project_id\":\"quota_project_id\","
+      "\"client_id\":\"client_id\","
+      "\"client_secret\":\"client_secret\"}";
+  auto options_json = JsonParse(options_string);
+  GPR_ASSERT(options_json.ok());
+  grpc_error_handle error;
+  auto creds =
+      ExternalAccountCredentials::Create(*options_json, {"scope"}, &error);
+  std::string actual_error,
+      expected_error =
+          "timeout_millis should be between 5000 and 120000 milliseconds.";
+  grpc_error_get_str(error, StatusStrProperty::kDescription, &actual_error);
+  GPR_ASSERT(strcmp(actual_error.c_str(), expected_error.c_str()) == 0);
 }
 
 TEST(CredentialsTest, TestInsecureCredentialsCompareSuccess) {

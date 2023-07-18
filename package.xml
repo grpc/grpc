@@ -1525,6 +1525,8 @@
     <file baseinstalldir="/" name="src/core/lib/security/credentials/external/external_account_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/external/file_external_account_credentials.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/external/file_external_account_credentials.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials/external/pluggable_auth_external_account_credentials.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials/external/pluggable_auth_external_account_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/external/url_external_account_credentials.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/external/url_external_account_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/fake/fake_credentials.cc" role="src" />

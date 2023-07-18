@@ -53,6 +53,7 @@
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/external/aws_external_account_credentials.h"
 #include "src/core/lib/security/credentials/external/file_external_account_credentials.h"
+#include "src/core/lib/security/credentials/external/pluggable_auth_external_account_credentials.h"
 #include "src/core/lib/security/credentials/external/url_external_account_credentials.h"
 #include "src/core/lib/security/util/json_util.h"
 #include "src/core/lib/slice/b64.h"
@@ -243,6 +244,10 @@ RefCountedPtr<ExternalAccountCredentials> ExternalAccountCredentials::Create(
   } else if (options.credential_source.object().find("url") !=
              options.credential_source.object().end()) {
     creds = MakeRefCounted<UrlExternalAccountCredentials>(
+        std::move(options), std::move(scopes), error);
+  } else if (options.credential_source.object().find("executable") !=
+             options.credential_source.object().end()) {
+    creds = MakeRefCounted<PluggableAuthExternalAccountCredentials>(
         std::move(options), std::move(scopes), error);
   } else {
     *error = GRPC_ERROR_CREATE(
