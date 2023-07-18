@@ -398,7 +398,9 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
 
   /// Creates and returns an instance of a DNSResolver, optionally configured by
   /// the \a options struct. This method may return a non-OK status if an error
-  /// occurred when creating the DNSResolver.
+  /// occurred when creating the DNSResolver. If the caller requests a custom
+  /// DNS resolver, and the EventEngine implementation does not support it, this
+  /// must return an error.
   virtual absl::StatusOr<std::unique_ptr<DNSResolver>> GetDNSResolver(
       const DNSResolver::ResolverOptions& options) = 0;
 
