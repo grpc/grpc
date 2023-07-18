@@ -93,8 +93,8 @@ TEST_F(RoundRobinTest, Basic) {
 }
 
 TEST_F(RoundRobinTest, SingleAddress) {
-  auto status =
-      ApplyUpdate(BuildUpdate({"ipv4:127.0.0.1:441"}), lb_policy_.get());
+  auto status = ApplyUpdate(BuildUpdate({"ipv4:127.0.0.1:441"}, nullptr),
+                            lb_policy_.get());
   ASSERT_TRUE(status.ok()) << status;
   // LB policy should have reported CONNECTING state.
   ExpectConnectingUpdate();
@@ -135,7 +135,7 @@ TEST_F(RoundRobinTest, SingleAddress) {
 TEST_F(RoundRobinTest, ThreeAddresses) {
   std::array<absl::string_view, 3> addresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
-  auto status = ApplyUpdate(BuildUpdate(addresses), lb_policy_.get());
+  auto status = ApplyUpdate(BuildUpdate(addresses, nullptr), lb_policy_.get());
   ASSERT_TRUE(status.ok()) << status;
   ExpectConnectingUpdate();
   std::vector<SubchannelState*> subchannels;
@@ -175,14 +175,15 @@ TEST_F(RoundRobinTest, OneChannelReady) {
   auto subchannel = CreateSubchannel("ipv4:127.0.0.1:441");
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
-  auto status = ApplyUpdate(BuildUpdate({
-                                "ipv4:127.0.0.1:441",
-                                "ipv4:127.0.0.1:442",
-                                "ipv4:127.0.0.1:443",
-                            }),
+  auto status = ApplyUpdate(BuildUpdate(
+                                {
+                                    "ipv4:127.0.0.1:441",
+                                    "ipv4:127.0.0.1:442",
+                                    "ipv4:127.0.0.1:443",
+                                },
+                                nullptr),
                             lb_policy_.get());
   ASSERT_TRUE(status.ok()) << status;
-  ExpectConnectingUpdate();
   ExpectState(GRPC_CHANNEL_READY);
   ExpectState(GRPC_CHANNEL_READY);
   ExpectRoundRobinPicks(ExpectState(GRPC_CHANNEL_READY).get(),
@@ -190,11 +191,13 @@ TEST_F(RoundRobinTest, OneChannelReady) {
 }
 
 TEST_F(RoundRobinTest, AllTransientFailure) {
-  auto status = ApplyUpdate(BuildUpdate({
-                                "ipv4:127.0.0.1:441",
-                                "ipv4:127.0.0.1:442",
-                                "ipv4:127.0.0.1:443",
-                            }),
+  auto status = ApplyUpdate(BuildUpdate(
+                                {
+                                    "ipv4:127.0.0.1:441",
+                                    "ipv4:127.0.0.1:442",
+                                    "ipv4:127.0.0.1:443",
+                                },
+                                nullptr),
                             lb_policy_.get());
   ASSERT_TRUE(status.ok()) << status;
   ExpectConnectingUpdate();
@@ -232,8 +235,9 @@ TEST_F(RoundRobinTest, EmptyAddressList) {
   WaitForConnectionFailedWithStatus(
       absl::UnavailableError("empty address list: This is a test"));
   // Fixes memory leaks. Will debug at a later point.
-  EXPECT_TRUE(
-      ApplyUpdate(BuildUpdate({"ipv4:127.0.0.1:441"}), lb_policy_.get()).ok());
+  EXPECT_TRUE(ApplyUpdate(BuildUpdate({"ipv4:127.0.0.1:441"}, nullptr),
+                          lb_policy_.get())
+                  .ok());
   ExpectConnectingUpdate();
 }
 
