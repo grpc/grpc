@@ -26,12 +26,14 @@ from framework.test_app import client_app
 from framework.test_app import server_app
 from framework.test_app.runners.k8s import k8s_xds_client_runner
 from framework.test_app.runners.k8s import k8s_xds_server_runner
+from framework.test_app.runners.k8s import gamma_server_runner
 
 logger = logging.get_absl_logger()
 
 # Type aliases
 KubernetesClientRunner = k8s_xds_client_runner.KubernetesClientRunner
 KubernetesServerRunner = k8s_xds_server_runner.KubernetesServerRunner
+GammaServerRunner = gamma_server_runner.GammaServerRunner
 _XdsTestServer = server_app.XdsTestServer
 _XdsTestClient = client_app.XdsTestClient
 
@@ -76,8 +78,9 @@ def make_client_runner(
 
 def make_server_namespace(
     k8s_api_manager: k8s.KubernetesApiManager,
+    server_runner: KubernetesServerRunner = KubernetesServerRunner,
 ) -> k8s.KubernetesNamespace:
-    namespace_name: str = KubernetesServerRunner.make_namespace_name(
+    namespace_name: str = server_runner.make_namespace_name(
         xds_flags.RESOURCE_PREFIX.value, xds_flags.RESOURCE_SUFFIX.value
     )
     return k8s.KubernetesNamespace(k8s_api_manager, namespace_name)
@@ -89,7 +92,7 @@ def make_server_runner(
     port_forwarding: bool = False,
     reuse_namespace: bool = True,
     reuse_service: bool = False,
-    secure: bool = False,
+    mode: str = "default",
 ) -> KubernetesServerRunner:
     # KubernetesServerRunner arguments.
     runner_kwargs = dict(
@@ -106,10 +109,13 @@ def make_server_runner(
         debug_use_port_forwarding=port_forwarding,
     )
 
-    if secure:
+    server_runner = KubernetesServerRunner
+    if mode == "secure":
         runner_kwargs["deployment_template"] = "server-secure.deployment.yaml"
+    elif mode == "gamma":
+        server_runner = GammaServerRunner
 
-    return KubernetesServerRunner(namespace, **runner_kwargs)
+    return server_runner(namespace, **runner_kwargs)
 
 
 def _ensure_atexit(signum, frame):

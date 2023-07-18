@@ -111,12 +111,16 @@ def main(argv):
 
     # Server target
     server_xds_host = xds_flags.SERVER_XDS_HOST.value
+
     server_xds_port = xds_flags.SERVER_XDS_PORT.value
+    server_target = f"xds:///{server_xds_host}"
+    if server_xds_port != 80:
+        server_target = f"{server_target}:{server_xds_port}"
 
     if _CMD.value == "run":
         logger.info("Run client, secure_mode=%s", _SECURE.value)
         client_runner.run(
-            server_target=f"xds:///{server_xds_host}:{server_xds_port}",
+            server_target=server_target,
             qps=_QPS.value,
             print_response=_PRINT_RESPONSE.value,
             secure_mode=_SECURE.value,

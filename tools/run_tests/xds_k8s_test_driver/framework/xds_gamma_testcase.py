@@ -56,7 +56,7 @@ class GammaXdsKubernetesTestCase(xds_k8s_testcase.RegularXdsKubernetesTestCase):
 
         # Cleanup.
         self.force_cleanup = True
-        self.force_cleanup_namespace = False
+        self.force_cleanup_namespace = True
 
     def initTrafficDirectorManager(
         self,
