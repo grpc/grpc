@@ -369,14 +369,19 @@ OpenCensusCallTracer::StartNewAttempt(bool is_transparent_retry) {
 }
 
 void OpenCensusCallTracer::RecordAnnotation(absl::string_view annotation) {
-  // If tracing is disabled, the following will be a no-op.
+  if (!context_.Span().IsRecording()) {
+    return;
+  }
   context_.AddSpanAnnotation(annotation, {});
 }
 
 void OpenCensusCallTracer::RecordAnnotation(const Annotation& annotation) {
+  if (!context_.Span().IsRecording()) {
+    return;
+  }
+
   switch (annotation.type()) {
     default:
-      // If tracing is disabled, the following will be a no-op.
       context_.AddSpanAnnotation(annotation.ToString(), {});
   }
 }
