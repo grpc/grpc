@@ -38,7 +38,6 @@
 #include "src/core/lib/event_engine/work_queue/work_queue.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/gprpp/time.h"
 
 namespace grpc_event_engine {
@@ -217,7 +216,8 @@ class WorkStealingThreadPool final : public ThreadPool {
       grpc_core::BackOff backoff_;
       // Used for signaling that the lifeguard thread has stopped running.
       std::unique_ptr<grpc_core::Notification> lifeguard_should_shut_down_;
-      grpc_core::Thread lifeguard_thread_;
+      std::unique_ptr<grpc_core::Notification> lifeguard_is_shut_down_;
+      std::atomic<bool> lifeguard_running_{false};
     };
 
     const size_t reserve_threads_;
