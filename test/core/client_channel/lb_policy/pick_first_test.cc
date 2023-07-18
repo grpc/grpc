@@ -218,16 +218,14 @@ TEST_F(PickFirstTest, FirstTwoAddressesInTransientFailureAtStart) {
       "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444", "ipv4:127.0.0.1:445"};
   auto* subchannel = CreateSubchannel(
       kAddresses[0], ChannelArgs().Set(GRPC_ARG_INHIBIT_HEALTH_CHECKING, true));
-  subchannel->SetConnectivityState(
-      GRPC_CHANNEL_TRANSIENT_FAILURE,
-      absl::UnavailableError("failed to connect"),
-      /*validate_state_transition=*/false);
+  subchannel->SetConnectivityState(GRPC_CHANNEL_TRANSIENT_FAILURE,
+                                   absl::UnavailableError("failed to connect"),
+                                   /*validate_state_transition=*/false);
   auto* subchannel2 = CreateSubchannel(
       kAddresses[1], ChannelArgs().Set(GRPC_ARG_INHIBIT_HEALTH_CHECKING, true));
-  subchannel2->SetConnectivityState(
-      GRPC_CHANNEL_TRANSIENT_FAILURE,
-      absl::UnavailableError("failed to connect"),
-      /*validate_state_transition=*/false);
+  subchannel2->SetConnectivityState(GRPC_CHANNEL_TRANSIENT_FAILURE,
+                                    absl::UnavailableError("failed to connect"),
+                                    /*validate_state_transition=*/false);
   absl::Status status = ApplyUpdate(
       BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy_.get());
   EXPECT_TRUE(status.ok()) << status;
@@ -265,16 +263,14 @@ TEST_F(PickFirstTest, AllAddressesInTransientFailureAtStart) {
       "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444"};
   auto* subchannel = CreateSubchannel(
       kAddresses[0], ChannelArgs().Set(GRPC_ARG_INHIBIT_HEALTH_CHECKING, true));
-  subchannel->SetConnectivityState(
-      GRPC_CHANNEL_TRANSIENT_FAILURE,
-      absl::UnavailableError("failed to connect"),
-      /*validate_state_transition=*/false);
+  subchannel->SetConnectivityState(GRPC_CHANNEL_TRANSIENT_FAILURE,
+                                   absl::UnavailableError("failed to connect"),
+                                   /*validate_state_transition=*/false);
   auto* subchannel2 = CreateSubchannel(
       kAddresses[1], ChannelArgs().Set(GRPC_ARG_INHIBIT_HEALTH_CHECKING, true));
-  subchannel2->SetConnectivityState(
-      GRPC_CHANNEL_TRANSIENT_FAILURE,
-      absl::UnavailableError("failed to connect"),
-      /*validate_state_transition=*/false);
+  subchannel2->SetConnectivityState(GRPC_CHANNEL_TRANSIENT_FAILURE,
+                                    absl::UnavailableError("failed to connect"),
+                                    /*validate_state_transition=*/false);
   absl::Status status = ApplyUpdate(
       BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy_.get());
   EXPECT_TRUE(status.ok()) << status;
@@ -282,11 +278,9 @@ TEST_F(PickFirstTest, AllAddressesInTransientFailureAtStart) {
   ExpectReresolutionRequest();
   // The LB policy should report TRANSIENT_FAILURE.
   WaitForConnectionFailed([&](const absl::Status& status) {
-    EXPECT_EQ(
-        status,
-        absl::UnavailableError(
-            "failed to connect to all addresses; "
-            "last error: UNAVAILABLE: failed to connect"));
+    EXPECT_EQ(status, absl::UnavailableError(
+                          "failed to connect to all addresses; "
+                          "last error: UNAVAILABLE: failed to connect"));
   });
   // No connections should have been requested.
   EXPECT_FALSE(subchannel->ConnectionRequested());
