@@ -23,7 +23,6 @@
 #include <inttypes.h>
 
 #include <atomic>
-#include <cmath>
 #include <memory>
 #include <utility>
 
@@ -39,7 +38,6 @@
 #include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/event_engine/work_queue/basic_work_queue.h"
 #include "src/core/lib/event_engine/work_queue/work_queue.h"
-#include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/gprpp/time.h"
 
