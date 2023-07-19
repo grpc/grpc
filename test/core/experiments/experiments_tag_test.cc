@@ -50,8 +50,9 @@ absl::StatusOr<bool> IsExperimentEnabledThroughFlag(
 }
 
 TEST(ExperimentsTestTagTest, CheckExperimentValuesTest) {
-  auto status = IsExperimentEnabledThroughFlag("test_experiment_1");
-  if (!status.ok()) {
+  auto is_experiment_enabled_through_flag =
+      IsExperimentEnabledThroughFlag("test_experiment_1");
+  if (!is_experiment_enabled_through_flag.ok()) {
     return;
   }
 #ifdef GRPC_CFSTREAM
@@ -62,14 +63,14 @@ TEST(ExperimentsTestTagTest, CheckExperimentValuesTest) {
   // command line vars, we expect that the value of the experiment should be
   // true since this test uses the test_tag. This test should not execute
   // with experiment set to false using the command line vars.
-  EXPECT_TRUE(*status);
+  EXPECT_TRUE(*is_experiment_enabled_through_flag);
   EXPECT_TRUE(grpc_core::IsTestExperiment1Enabled());
 #else
   // Since default on posix is debug, when this test is run using the
   // command line vars, we expect that the value of the experiment should be
   // false since this test uses the test_tag. This test should not execute
   // with experiment set to true using the command line vars.
-  EXPECT_FALSE(*status);
+  EXPECT_FALSE(*is_experiment_enabled_through_flag);
   EXPECT_FALSE(grpc_core::IsTestExperiment1Enabled());
 #endif
 }
