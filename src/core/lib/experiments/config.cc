@@ -70,11 +70,7 @@ class TestExperiments {
     for (auto experiment : absl::StrSplit(ConfigVars::Get().Experiments(), ',',
                                           absl::SkipWhitespace())) {
       // Enable unless prefixed with '-' (=> disable).
-      bool enable = true;
-      if (experiment[0] == '-') {
-        enable = false;
-        experiment.remove_prefix(1);
-      }
+      bool enable = !absl::ConsumePrefix(&experiment, "-");
       // See if we can find the experiment in the list in this binary.
       for (size_t i = 0; i < num_experiments; i++) {
         if (experiment == experiment_metadata[i].name) {
