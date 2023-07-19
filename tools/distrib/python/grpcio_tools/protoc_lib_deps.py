@@ -130,10 +130,12 @@ CC_FILES=[
     'third_party/protobuf/src/google/protobuf/any_lite.cc',
     'third_party/protobuf/src/google/protobuf/arena.cc',
     'third_party/protobuf/src/google/protobuf/arena_align.cc',
-    'third_party/protobuf/src/google/protobuf/arena_config.cc',
     'third_party/protobuf/src/google/protobuf/arenastring.cc',
     'third_party/protobuf/src/google/protobuf/arenaz_sampler.cc',
+    'third_party/protobuf/src/google/protobuf/compiler/allowlists/editions.cc',
     'third_party/protobuf/src/google/protobuf/compiler/allowlists/empty_package.cc',
+    'third_party/protobuf/src/google/protobuf/compiler/allowlists/open_enum.cc',
+    'third_party/protobuf/src/google/protobuf/compiler/allowlists/unused_imports.cc',
     'third_party/protobuf/src/google/protobuf/compiler/allowlists/weak_imports.cc',
     'third_party/protobuf/src/google/protobuf/compiler/code_generator.cc',
     'third_party/protobuf/src/google/protobuf/compiler/command_line_interface.cc',
@@ -239,12 +241,14 @@ CC_FILES=[
     'third_party/protobuf/src/google/protobuf/compiler/rust/naming.cc',
     'third_party/protobuf/src/google/protobuf/compiler/subprocess.cc',
     'third_party/protobuf/src/google/protobuf/compiler/zip_writer.cc',
+    'third_party/protobuf/src/google/protobuf/cpp_features.pb.cc',
     'third_party/protobuf/src/google/protobuf/descriptor.cc',
     'third_party/protobuf/src/google/protobuf/descriptor.pb.cc',
     'third_party/protobuf/src/google/protobuf/descriptor_database.cc',
     'third_party/protobuf/src/google/protobuf/dynamic_message.cc',
     'third_party/protobuf/src/google/protobuf/extension_set.cc',
     'third_party/protobuf/src/google/protobuf/extension_set_heavy.cc',
+    'third_party/protobuf/src/google/protobuf/feature_resolver.cc',
     'third_party/protobuf/src/google/protobuf/generated_enum_util.cc',
     'third_party/protobuf/src/google/protobuf/generated_message_bases.cc',
     'third_party/protobuf/src/google/protobuf/generated_message_reflection.cc',
@@ -254,6 +258,7 @@ CC_FILES=[
     'third_party/protobuf/src/google/protobuf/generated_message_util.cc',
     'third_party/protobuf/src/google/protobuf/implicit_weak_message.cc',
     'third_party/protobuf/src/google/protobuf/inlined_string_field.cc',
+    'third_party/protobuf/src/google/protobuf/internal_message_util.cc',
     'third_party/protobuf/src/google/protobuf/io/coded_stream.cc',
     'third_party/protobuf/src/google/protobuf/io/gzip_stream.cc',
     'third_party/protobuf/src/google/protobuf/io/io_win32.cc',
@@ -270,6 +275,7 @@ CC_FILES=[
     'third_party/protobuf/src/google/protobuf/message_lite.cc',
     'third_party/protobuf/src/google/protobuf/parse_context.cc',
     'third_party/protobuf/src/google/protobuf/port.cc',
+    'third_party/protobuf/src/google/protobuf/raw_ptr.cc',
     'third_party/protobuf/src/google/protobuf/reflection_mode.cc',
     'third_party/protobuf/src/google/protobuf/reflection_ops.cc',
     'third_party/protobuf/src/google/protobuf/repeated_field.cc',
@@ -303,4 +309,4 @@ CC_INCLUDES=[
 ]
 PROTO_INCLUDE='third_party/protobuf/src'
 
-PROTOBUF_SUBMODULE_VERSION="2c5fa078d8e86e5f4bd34e6f4c9ea9e8d7d4d44a"
+PROTOBUF_SUBMODULE_VERSION="87ffe68c720a43afc332ee420d84576f5c293c46"
