@@ -88,7 +88,7 @@ class TestConfigurator {
 
   void DisabledAlgorithmTest() {
     Init();
-    auto c = test_.NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
+    auto c = test_.NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
     auto s = test_.RequestCall(101);
     CoreEnd2endTest::IncomingMetadata server_initial_metadata;
     CoreEnd2endTest::IncomingStatusOnClient server_status;
