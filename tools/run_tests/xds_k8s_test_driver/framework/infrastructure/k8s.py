@@ -324,8 +324,7 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
 
         # ApiException means the server has received our request and responded
         # with an error we can parse (except a few corner cases, f.e. SSLError).
-        # TODO(sergiitk): check why CRD not found not handled properly.
-        if isinstance(err, (_ApiException, dynamic_exc.DynamicApiError)):
+        if isinstance(err, _ApiException):
             return self._handle_api_exception(err)
 
         # Unwrap FailToCreateError.
@@ -520,8 +519,8 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
     def wait_for_get_gamma_mesh_deleted(
         self,
         name: str,
-        timeout_sec: int = WAIT_SHORT_TIMEOUT_SEC,
-        wait_sec: int = WAIT_SHORT_SLEEP_SEC,
+        timeout_sec: int = WAIT_MEDIUM_TIMEOUT_SEC,
+        wait_sec: int = WAIT_MEDIUM_SLEEP_SEC,
     ) -> None:
         retryer = retryers.constant_retryer(
             wait_fixed=_timedelta(seconds=wait_sec),
