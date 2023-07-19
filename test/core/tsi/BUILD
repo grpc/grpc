@@ -25,6 +25,10 @@ grpc_cc_library(
     name = "transport_security_test_lib",
     srcs = ["transport_security_test_lib.cc"],
     hdrs = ["transport_security_test_lib.h"],
+    external_deps = [
+        "libssl",
+        "libcrypto",
+    ],
     deps = [
         "//:grpc",
     ],
@@ -90,7 +94,10 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server1.key",
         "//src/core/tsi/test_creds:server1.pem",
     ],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/strings",
+        "gtest",
+    ],
     language = "C++",
     tags = ["no_windows"],
     deps = [
