@@ -25,16 +25,10 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef UPB_MINI_TABLE_TYPES_H_
-#define UPB_MINI_TABLE_TYPES_H_
+#include "gtest/gtest.h"
+#include "upb/test/test_import_empty_srcs.upb.h"
 
-typedef void upb_Message;
-
-typedef struct upb_MiniTable upb_MiniTable;
-typedef struct upb_MiniTableEnum upb_MiniTableEnum;
-typedef struct upb_MiniTableExtension upb_MiniTableExtension;
-typedef struct upb_MiniTableField upb_MiniTableField;
-typedef struct upb_MiniTableFile upb_MiniTableFile;
-typedef union upb_MiniTableSub upb_MiniTableSub;
-
-#endif /* UPB_MINI_TABLE_TYPES_H_ */
+TEST(Test, Reexport) {
+  // This test really just ensures that compilation succeeds.
+  ASSERT_GT(sizeof(upb_test_ContainsImported_msg_init), 0);
+}
