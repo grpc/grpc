@@ -338,13 +338,13 @@ TEST_F(PickFirstTest, StaysInTransientFailureAfterAddressListUpdate) {
   // be in state IDLE.
   constexpr std::array<absl::string_view, 2> kAddresses2 = {
       kAddresses[0], "ipv4:127.0.0.1:445"};
-  status = ApplyUpdate(
-      BuildUpdate(kAddresses2, MakePickFirstConfig(false)), lb_policy_.get());
+  status = ApplyUpdate(BuildUpdate(kAddresses2, MakePickFirstConfig(false)),
+                       lb_policy_.get());
   EXPECT_TRUE(status.ok()) << status;
   // The LB policy should have created a subchannel for the new address.
-  auto* subchannel3 = FindSubchannel(
-      kAddresses2[1],
-      ChannelArgs().Set(GRPC_ARG_INHIBIT_HEALTH_CHECKING, true));
+  auto* subchannel3 =
+      FindSubchannel(kAddresses2[1],
+                     ChannelArgs().Set(GRPC_ARG_INHIBIT_HEALTH_CHECKING, true));
   ASSERT_NE(subchannel3, nullptr);
   // The policy will ask it to connect.
   EXPECT_TRUE(subchannel3->ConnectionRequested());
