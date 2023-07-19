@@ -1028,9 +1028,8 @@ TEST_F(
   gpr_log(GPR_INFO, "=== RESUMING CHANNEL 2 PORT 0 ===");
   hold_channel2_port0->Resume();
   // Channel 2 should soon report TRANSIENT_FAILURE.
-  EXPECT_TRUE(WaitForChannelState(
-      channel2.get(),
-      [](grpc_connectivity_state state) {
+  EXPECT_TRUE(
+      WaitForChannelState(channel2.get(), [](grpc_connectivity_state state) {
         if (state == GRPC_CHANNEL_TRANSIENT_FAILURE) return true;
         EXPECT_EQ(state, GRPC_CHANNEL_CONNECTING);
         return false;
