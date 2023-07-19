@@ -14,12 +14,16 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <string>
+
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
 
 #include "src/core/lib/config/config_vars.h"
+#include "src/core/lib/experiments/config.h"
 #include "test/core/experiments/fixtures/experiments.h"
 
 #ifndef GRPC_EXPERIMENTS_ARE_FINAL

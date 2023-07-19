@@ -277,15 +277,15 @@ def ios_cc_test(
 def _update_platform_tags(tags, platforms):
     if "posix" not in platforms:
         if "no_linux" not in tags:
-            tags += ["no_linux"]
+            tags.append("no_linux")
         if "no_mac" not in tags:
-            tags += ["no_mac"]
+            tags.append("no_mac")
     if "windows" not in platforms:
         if "no_windows" not in tags:
-            tags += ["no_windows"]
+            tags.append("no_windows")
     if "ios" not in platforms:
         if "no_test_ios" not in tags:
-            tags += ["no_test_ios"]
+            tags.append("no_test_ios")
     return tags
 
 def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, uses_event_engine, flaky):
@@ -380,18 +380,19 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
                 })
 
     experiments = {}
+
     def _populate_experiments_platform_config(config, platform_experiments_map):
         for platform, experiments_on_platform in platform_experiments_map.items():
             for mode, tag_to_experiments in experiments_on_platform.items():
-                    if mode not in config:
-                        config[mode] = {}
-                    for tag in tags:
-                        if tag not in tag_to_experiments:
-                            continue
-                        for experiment in tag_to_experiments[tag]:
-                            if experiment not in config[mode]:
-                                config[mode][experiment] = []
-                            config[mode][experiment].append(platform)
+                if mode not in config:
+                    config[mode] = {}
+                for tag in tags:
+                    if tag not in tag_to_experiments:
+                        continue
+                    for experiment in tag_to_experiments[tag]:
+                        if experiment not in config[mode]:
+                            config[mode][experiment] = []
+                        config[mode][experiment].append(platform)
         return config
 
     experiments = _populate_experiments_platform_config(experiments, EXPERIMENTS)
