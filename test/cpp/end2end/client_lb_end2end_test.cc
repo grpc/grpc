@@ -1021,30 +1021,23 @@ TEST_F(
   // Channel 2 should continue to report CONNECTING.
   EXPECT_EQ(GRPC_CHANNEL_TRANSIENT_FAILURE, channel1->GetState(false));
   EXPECT_EQ(GRPC_CHANNEL_CONNECTING, channel2->GetState(false));
-  // Inject a hold for port 2, which will eventually be tried by channel 2.
-  auto hold_channel2_port2 = injector.AddHold(ports2[2]);
   // Allow channel 2 to resume port 0.  Port 0 will fail, as will port 1.
+  // When it gets to port 2, it will see it already in state
+  // TRANSIENT_FAILURE due to being shared with channel 1, so it won't
+  // trigger another connection attempt.
   gpr_log(GPR_INFO, "=== RESUMING CHANNEL 2 PORT 0 ===");
   hold_channel2_port0->Resume();
-  // Wait for channel 2 to try port 2.
-  gpr_log(GPR_INFO, "=== WAITING FOR CHANNEL 2 PORT 2 ===");
-  hold_channel2_port2->Wait();
-  gpr_log(GPR_INFO, "=== CHANNEL 2 PORT 2 STARTED ===");
-  // Channel 2 should still be CONNECTING here.
-  EXPECT_EQ(GRPC_CHANNEL_CONNECTING, channel2->GetState(false));
-  // Add a hold for channel 2 port 0.
-  hold_channel2_port0 = injector.AddHold(ports2[0]);
-  gpr_log(GPR_INFO, "=== RESUMING CHANNEL 2 PORT 2 ===");
-  hold_channel2_port2->Resume();
-  // Wait for channel 2 to retry port 0.
-  gpr_log(GPR_INFO, "=== WAITING FOR CHANNEL 2 PORT 0 ===");
-  hold_channel2_port0->Wait();
-  // Now channel 2 should be reporting TRANSIENT_FAILURE.
-  EXPECT_EQ(GRPC_CHANNEL_TRANSIENT_FAILURE, channel2->GetState(false));
+  // Channel 2 should soon report TRANSIENT_FAILURE.
+  EXPECT_TRUE(WaitForChannelState(
+      channel2.get(),
+      [](grpc_connectivity_state state) {
+        if (state == GRPC_CHANNEL_TRANSIENT_FAILURE) return true;
+        EXPECT_EQ(state, GRPC_CHANNEL_CONNECTING);
+        return false;
+      }));
   // Clean up.
-  gpr_log(GPR_INFO, "=== RESUMING CHANNEL 1 PORT 0 AND CHANNEL 2 PORT 0 ===");
+  gpr_log(GPR_INFO, "=== RESUMING CHANNEL 1 PORT 0 ===");
   hold_channel1_port0->Resume();
-  hold_channel2_port0->Resume();
 }
 
 TEST_F(PickFirstTest, Updates) {

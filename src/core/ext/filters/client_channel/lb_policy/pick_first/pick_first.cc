@@ -210,8 +210,9 @@ class PickFirst : public LoadBalancingPolicy {
   RefCountedPtr<PickFirstSubchannelList> latest_pending_subchannel_list_;
   // Selected subchannel in \a subchannel_list_.
   PickFirstSubchannelData* selected_ = nullptr;
-  // Are we in IDLE state?
-  bool idle_ = false;
+  // Are we in IDLE or TRANSIENT_FAILURE state?
+  enum PolicyState { kNone, kTransientFailure, kIdle };
+  PolicyState state_ = kNone;
   // Are we shut down?
   bool shutdown_ = false;
   // Random bit generator used for shuffling addresses if configured
@@ -243,11 +244,11 @@ void PickFirst::ShutdownLocked() {
 
 void PickFirst::ExitIdleLocked() {
   if (shutdown_) return;
-  if (idle_) {
+  if (state_ == kIdle) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
       gpr_log(GPR_INFO, "Pick First %p exiting idle", this);
     }
-    idle_ = false;
+    state_ = kNone;
     AttemptToConnectUsingLatestUpdateArgsLocked();
   }
 }
@@ -279,6 +280,8 @@ void PickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
   // Empty update or no valid subchannels.  Put the channel in
   // TRANSIENT_FAILURE and request re-resolution.
   if (latest_pending_subchannel_list_->num_subchannels() == 0) {
+    state_ = kTransientFailure;
+    channel_control_helper()->RequestReresolution();
     absl::Status status =
         latest_update_args_.addresses.ok()
             ? absl::UnavailableError(absl::StrCat(
@@ -287,7 +290,6 @@ void PickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE, status,
         MakeRefCounted<TransientFailurePicker>(status));
-    channel_control_helper()->RequestReresolution();
   }
   // If the new update is empty or we don't yet have a selected subchannel in
   // the current list, replace the current subchannel list immediately.
@@ -350,7 +352,7 @@ absl::Status PickFirst::UpdateLocked(UpdateArgs args) {
   latest_update_args_ = std::move(args);
   // If we are not in idle, start connection attempt immediately.
   // Otherwise, we defer the attempt into ExitIdleLocked().
-  if (!idle_) {
+  if (state_ != kIdle) {
     AttemptToConnectUsingLatestUpdateArgsLocked();
   }
   return status;
@@ -375,6 +377,13 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
     }
     // Any state change is considered to be a failure of the existing
     // connection.
+    // TODO(roth): We chould check the connectivity states of all the
+    // subchannels here, just in case one of them happens to be READY,
+    // and we could switch to that rather than going IDLE.
+    // Request a re-resolution.
+    // TODO(qianchengz): We may want to request re-resolution in
+    // ExitIdleLocked().
+    p->channel_control_helper()->RequestReresolution();
     // If there is a pending update, switch to the pending update.
     if (p->latest_pending_subchannel_list_ != nullptr) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
@@ -388,6 +397,7 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
       p->subchannel_list_ = std::move(p->latest_pending_subchannel_list_);
       // Set our state to that of the pending subchannel list.
       if (p->subchannel_list_->in_transient_failure()) {
+        p->state_ = kTransientFailure;
         absl::Status status = absl::UnavailableError(absl::StrCat(
             "selected subchannel failed; switching to pending update; "
             "last failure: ",
@@ -398,22 +408,15 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
         p->channel_control_helper()->UpdateState(
             GRPC_CHANNEL_TRANSIENT_FAILURE, status,
             MakeRefCounted<TransientFailurePicker>(status));
-      } else {
+      } else if (p->state_ == kNone) {
         p->channel_control_helper()->UpdateState(
             GRPC_CHANNEL_CONNECTING, absl::Status(),
-            MakeRefCounted<QueuePicker>(p->Ref(DEBUG_LOCATION, "QueuePicker")));
+            MakeRefCounted<QueuePicker>(nullptr));
       }
       return;
     }
-    // If the selected subchannel goes bad, request a re-resolution.
-    // TODO(qianchengz): We may want to request re-resolution in
-    // ExitIdleLocked().
-    p->channel_control_helper()->RequestReresolution();
-    // TODO(roth): We chould check the connectivity states of all the
-    // subchannels here, just in case one of them happens to be READY,
-    // and we could switch to that rather than going IDLE.
     // Enter idle.
-    p->idle_ = true;
+    p->state_ = kIdle;
     p->selected_ = nullptr;
     p->subchannel_list_.reset();
     p->channel_control_helper()->UpdateState(
@@ -432,6 +435,7 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
   //    select in place of the current one.
   // If the subchannel is READY, use it.
   if (new_state == GRPC_CHANNEL_READY) {
+    p->state_ = kNone;
     subchannel_list()->set_in_transient_failure(false);
     ProcessUnselectedReadyLocked();
     return;
@@ -510,6 +514,7 @@ void PickFirst::PickFirstSubchannelData::ReactToConnectivityStateLocked() {
       // in case 1 or because we were in case 2 and just promoted it to
       // be the current list), re-resolve and report new state.
       if (subchannel_list() == p->subchannel_list_.get()) {
+        p->state_ = kTransientFailure;
         p->channel_control_helper()->RequestReresolution();
         absl::Status status = absl::UnavailableError(
             absl::StrCat("failed to connect to all addresses; last error: ",
@@ -527,10 +532,10 @@ void PickFirst::PickFirstSubchannelData::ReactToConnectivityStateLocked() {
       // Only update connectivity state in case 1, and only if we're not
       // already in TRANSIENT_FAILURE.
       if (subchannel_list() == p->subchannel_list_.get() &&
-          !subchannel_list()->in_transient_failure()) {
+          p->state_ == kNone) {
         p->channel_control_helper()->UpdateState(
             GRPC_CHANNEL_CONNECTING, absl::Status(),
-            MakeRefCounted<QueuePicker>(p->Ref(DEBUG_LOCATION, "QueuePicker")));
+            MakeRefCounted<QueuePicker>(nullptr));
       }
       break;
     case GRPC_CHANNEL_SHUTDOWN:
