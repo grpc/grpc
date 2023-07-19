@@ -202,6 +202,9 @@ class PickFirst : public LoadBalancingPolicy {
 
   void AttemptToConnectUsingLatestUpdateArgsLocked();
 
+  void UpdateState(grpc_connectivity_state state, const absl::Status& status,
+                   RefCountedPtr<SubchannelPicker> picker);
+
   // Lateset update args.
   UpdateArgs latest_update_args_;
   // All our subchannels.
@@ -210,9 +213,8 @@ class PickFirst : public LoadBalancingPolicy {
   RefCountedPtr<PickFirstSubchannelList> latest_pending_subchannel_list_;
   // Selected subchannel in \a subchannel_list_.
   PickFirstSubchannelData* selected_ = nullptr;
-  // Are we in IDLE or TRANSIENT_FAILURE state?
-  enum PolicyState { kNone, kTransientFailure, kIdle };
-  PolicyState state_ = kNone;
+  // Current connectivity state.
+  grpc_connectivity_state state_ = GRPC_CHANNEL_CONNECTING;
   // Are we shut down?
   bool shutdown_ = false;
   // Random bit generator used for shuffling addresses if configured
@@ -244,11 +246,10 @@ void PickFirst::ShutdownLocked() {
 
 void PickFirst::ExitIdleLocked() {
   if (shutdown_) return;
-  if (state_ == kIdle) {
+  if (state_ == GRPC_CHANNEL_IDLE) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
       gpr_log(GPR_INFO, "Pick First %p exiting idle", this);
     }
-    state_ = kNone;
     AttemptToConnectUsingLatestUpdateArgsLocked();
   }
 }
@@ -280,16 +281,14 @@ void PickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
   // Empty update or no valid subchannels.  Put the channel in
   // TRANSIENT_FAILURE and request re-resolution.
   if (latest_pending_subchannel_list_->num_subchannels() == 0) {
-    state_ = kTransientFailure;
     channel_control_helper()->RequestReresolution();
     absl::Status status =
         latest_update_args_.addresses.ok()
             ? absl::UnavailableError(absl::StrCat(
                   "empty address list: ", latest_update_args_.resolution_note))
             : latest_update_args_.addresses.status();
-    channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_TRANSIENT_FAILURE, status,
-        MakeRefCounted<TransientFailurePicker>(status));
+    UpdateState(GRPC_CHANNEL_TRANSIENT_FAILURE, status,
+                MakeRefCounted<TransientFailurePicker>(status));
   }
   // If the new update is empty or we don't yet have a selected subchannel in
   // the current list, replace the current subchannel list immediately.
@@ -352,10 +351,17 @@ absl::Status PickFirst::UpdateLocked(UpdateArgs args) {
   latest_update_args_ = std::move(args);
   // If we are not in idle, start connection attempt immediately.
   // Otherwise, we defer the attempt into ExitIdleLocked().
-  if (state_ != kIdle) {
+  if (state_ != GRPC_CHANNEL_IDLE) {
     AttemptToConnectUsingLatestUpdateArgsLocked();
   }
   return status;
+}
+
+void PickFirst::UpdateState(grpc_connectivity_state state,
+                            const absl::Status& status,
+                            RefCountedPtr<SubchannelPicker> picker) {
+  state_ = state;
+  channel_control_helper()->UpdateState(state, status, std::move(picker));
 }
 
 void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
@@ -397,7 +403,6 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
       p->subchannel_list_ = std::move(p->latest_pending_subchannel_list_);
       // Set our state to that of the pending subchannel list.
       if (p->subchannel_list_->in_transient_failure()) {
-        p->state_ = kTransientFailure;
         absl::Status status = absl::UnavailableError(absl::StrCat(
             "selected subchannel failed; switching to pending update; "
             "last failure: ",
@@ -405,21 +410,18 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
                 ->subchannel(p->subchannel_list_->num_subchannels())
                 ->connectivity_status()
                 .ToString()));
-        p->channel_control_helper()->UpdateState(
-            GRPC_CHANNEL_TRANSIENT_FAILURE, status,
-            MakeRefCounted<TransientFailurePicker>(status));
-      } else if (p->state_ == kNone) {
-        p->channel_control_helper()->UpdateState(
-            GRPC_CHANNEL_CONNECTING, absl::Status(),
-            MakeRefCounted<QueuePicker>(nullptr));
+        p->UpdateState(GRPC_CHANNEL_TRANSIENT_FAILURE, status,
+                       MakeRefCounted<TransientFailurePicker>(status));
+      } else if (p->state_ != GRPC_CHANNEL_TRANSIENT_FAILURE) {
+        p->UpdateState(GRPC_CHANNEL_CONNECTING, absl::Status(),
+                       MakeRefCounted<QueuePicker>(nullptr));
       }
       return;
     }
     // Enter idle.
-    p->state_ = kIdle;
     p->selected_ = nullptr;
     p->subchannel_list_.reset();
-    p->channel_control_helper()->UpdateState(
+    p->UpdateState(
         GRPC_CHANNEL_IDLE, absl::Status(),
         MakeRefCounted<QueuePicker>(p->Ref(DEBUG_LOCATION, "QueuePicker")));
     return;
@@ -435,7 +437,6 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
   //    select in place of the current one.
   // If the subchannel is READY, use it.
   if (new_state == GRPC_CHANNEL_READY) {
-    p->state_ = kNone;
     subchannel_list()->set_in_transient_failure(false);
     ProcessUnselectedReadyLocked();
     return;
@@ -514,14 +515,12 @@ void PickFirst::PickFirstSubchannelData::ReactToConnectivityStateLocked() {
       // in case 1 or because we were in case 2 and just promoted it to
       // be the current list), re-resolve and report new state.
       if (subchannel_list() == p->subchannel_list_.get()) {
-        p->state_ = kTransientFailure;
         p->channel_control_helper()->RequestReresolution();
         absl::Status status = absl::UnavailableError(
             absl::StrCat("failed to connect to all addresses; last error: ",
                          connectivity_status().ToString()));
-        p->channel_control_helper()->UpdateState(
-            GRPC_CHANNEL_TRANSIENT_FAILURE, status,
-            MakeRefCounted<TransientFailurePicker>(status));
+        p->UpdateState(GRPC_CHANNEL_TRANSIENT_FAILURE, status,
+                       MakeRefCounted<TransientFailurePicker>(status));
       }
       break;
     }
@@ -532,10 +531,9 @@ void PickFirst::PickFirstSubchannelData::ReactToConnectivityStateLocked() {
       // Only update connectivity state in case 1, and only if we're not
       // already in TRANSIENT_FAILURE.
       if (subchannel_list() == p->subchannel_list_.get() &&
-          p->state_ == kNone) {
-        p->channel_control_helper()->UpdateState(
-            GRPC_CHANNEL_CONNECTING, absl::Status(),
-            MakeRefCounted<QueuePicker>(nullptr));
+          p->state_ != GRPC_CHANNEL_TRANSIENT_FAILURE) {
+        p->UpdateState(GRPC_CHANNEL_CONNECTING, absl::Status(),
+                       MakeRefCounted<QueuePicker>(nullptr));
       }
       break;
     case GRPC_CHANNEL_SHUTDOWN:
@@ -572,9 +570,8 @@ void PickFirst::PickFirstSubchannelData::ProcessUnselectedReadyLocked() {
     gpr_log(GPR_INFO, "Pick First %p selected subchannel %p", p, subchannel());
   }
   p->selected_ = this;
-  p->channel_control_helper()->UpdateState(
-      GRPC_CHANNEL_READY, absl::Status(),
-      MakeRefCounted<Picker>(subchannel()->Ref()));
+  p->UpdateState(GRPC_CHANNEL_READY, absl::Status(),
+                 MakeRefCounted<Picker>(subchannel()->Ref()));
   for (size_t i = 0; i < subchannel_list()->num_subchannels(); ++i) {
     if (i != Index()) {
       subchannel_list()->subchannel(i)->ShutdownLocked();
