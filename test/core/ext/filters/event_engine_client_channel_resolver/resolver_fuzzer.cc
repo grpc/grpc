@@ -132,7 +132,7 @@ class FuzzingResolverEventEngine
     }
   }
 
-  std::unique_ptr<DNSResolver> GetDNSResolver(
+  absl::StatusOr<std::unique_ptr<DNSResolver>> GetDNSResolver(
       const DNSResolver::ResolverOptions& /* options */) override {
     return std::make_unique<FuzzingDNSResolver>(this);
   }
