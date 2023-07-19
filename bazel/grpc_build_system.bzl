@@ -381,8 +381,8 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
                         config[mode][experiment].append(platform)
         return config
 
-    experiments = _populate_experiments_platform_config(experiments, EXPERIMENTS)
-    experiments = _populate_experiments_platform_config(experiments, TEST_EXPERIMENTS)
+    _populate_experiments_platform_config(experiments, EXPERIMENTS)
+    _populate_experiments_platform_config(experiments, TEST_EXPERIMENTS)
 
     mode_config = {
         # format: <mode>: (enabled_target_tags, disabled_target_tags)
