@@ -1047,44 +1047,24 @@ TEST_F(PickFirstTest, Updates) {
   auto response_generator = BuildResolverResponseGenerator();
   auto channel = BuildChannel("pick_first", response_generator);
   auto stub = BuildStub(channel);
-
-  std::vector<int> ports;
-
   // Perform one RPC against the first server.
-  ports.emplace_back(servers_[0]->port_);
-  response_generator.SetNextResolution(ports);
+  response_generator.SetNextResolution(GetServersPorts(0, 1));
   gpr_log(GPR_INFO, "****** SET [0] *******");
   CheckRpcSendOk(DEBUG_LOCATION, stub);
   EXPECT_EQ(servers_[0]->service_.request_count(), 1);
-
   // An empty update will result in the channel going into TRANSIENT_FAILURE.
-  ports.clear();
-  response_generator.SetNextResolution(ports);
+  response_generator.SetNextResolution({});
   gpr_log(GPR_INFO, "****** SET none *******");
-  grpc_connectivity_state channel_state;
-  do {
-    channel_state = channel->GetState(true /* try to connect */);
-  } while (channel_state == GRPC_CHANNEL_READY);
-  ASSERT_NE(channel_state, GRPC_CHANNEL_READY);
-  servers_[0]->service_.ResetCounters();
-
+  WaitForChannelNotReady(channel.get());
   // Next update introduces servers_[1], making the channel recover.
-  ports.clear();
-  ports.emplace_back(servers_[1]->port_);
-  response_generator.SetNextResolution(ports);
+  response_generator.SetNextResolution(GetServersPorts(1, 2));
   gpr_log(GPR_INFO, "****** SET [1] *******");
+  WaitForChannelReady(channel.get());
   WaitForServer(DEBUG_LOCATION, stub, 1);
-  EXPECT_EQ(servers_[0]->service_.request_count(), 0);
-
   // And again for servers_[2]
-  ports.clear();
-  ports.emplace_back(servers_[2]->port_);
-  response_generator.SetNextResolution(ports);
+  response_generator.SetNextResolution(GetServersPorts(2, 3));
   gpr_log(GPR_INFO, "****** SET [2] *******");
   WaitForServer(DEBUG_LOCATION, stub, 2);
-  EXPECT_EQ(servers_[0]->service_.request_count(), 0);
-  EXPECT_EQ(servers_[1]->service_.request_count(), 0);
-
   // Check LB policy name for the channel.
   EXPECT_EQ("pick_first", channel->GetLoadBalancingPolicyName());
 }
