@@ -26,6 +26,12 @@
 #include "src/core/lib/experiments/config.h"
 #include "test/core/experiments/fixtures/experiments.h"
 
+// This test is coupled with bazel/test_experiments.bzl because it is tagged
+// with test_experiments. If the
+// test/core/experiments/fixtures/test_experiments.yaml is changed this test
+// may require an update depending on the default values of the test
+// experiments.
+
 #ifndef GRPC_EXPERIMENTS_ARE_FINAL
 
 absl::StatusOr<bool> IsExperimentEnabledThroughFlag(
@@ -34,11 +40,7 @@ absl::StatusOr<bool> IsExperimentEnabledThroughFlag(
        absl::StrSplit(grpc_core::ConfigVars::Get().Experiments(), ',',
                       absl::SkipWhitespace())) {
     // Enable unless prefixed with '-' (=> disable).
-    bool enable = true;
-    if (experiment[0] == '-') {
-      enable = false;
-      experiment.remove_prefix(1);
-    }
+    bool enable = !absl::ConsumePrefix(&experiment, "-");
     // See if we can find the experiment in the list in this binary.
     if (experiment == experiment_name) {
       return enable;
