@@ -71,7 +71,6 @@ _GRPC_DEP_NAMES = [
     "io_bazel_rules_go",
     "build_bazel_rules_apple",
     "build_bazel_apple_support",
-    "com_github_libuv_libuv",
     "com_googlesource_code_re2",
     "bazel_gazelle",
     "opencensus_proto",
