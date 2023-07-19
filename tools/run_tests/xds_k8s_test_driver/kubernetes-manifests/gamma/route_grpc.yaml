@@ -13,7 +13,7 @@ spec:
     group: net.gke.io
     kind: TDMesh
   hostnames:
-  - ${service_name}
+  - ${xds_server_uri}
   rules:
   - backendRefs:
     - name: ${service_name}

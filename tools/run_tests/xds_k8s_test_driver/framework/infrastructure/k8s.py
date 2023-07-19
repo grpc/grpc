@@ -227,7 +227,8 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
     @functools.cached_property  # pylint: disable=no-member
     def api_grpc_route(self) -> dynamic_res.Resource:
         return self._get_dynamic_api(
-            "gateway.networking.k8s.io/v1alpha2", "GRPCRoute",
+            "gateway.networking.k8s.io/v1alpha2",
+            "GRPCRoute",
         )
 
     def _refresh_auth(self):
@@ -323,7 +324,8 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
 
         # ApiException means the server has received our request and responded
         # with an error we can parse (except a few corner cases, f.e. SSLError).
-        if isinstance(err, _ApiException):
+        # TODO(sergiitk): check why CRD not found not handled properly.
+        if isinstance(err, (_ApiException, dynamic_exc.DynamicApiError)):
             return self._handle_api_exception(err)
 
         # Unwrap FailToCreateError.

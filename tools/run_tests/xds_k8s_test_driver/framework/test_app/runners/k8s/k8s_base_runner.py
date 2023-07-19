@@ -508,6 +508,9 @@ class KubernetesBaseRunner(base_runner.BaseRunner, metaclass=ABCMeta):
         except (retryers.RetryError, k8s.NotFound) as e:
             logger.info("GRPCRoute %s deletion failed: %s", name, e)
             return
+        except Exception:
+            logger.error("grpc route delete err")
+            return
 
         if wait_for_deletion:
             self.k8s_namespace.wait_for_get_gamma_route_deleted(name)

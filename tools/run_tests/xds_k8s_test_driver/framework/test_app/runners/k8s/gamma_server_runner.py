@@ -34,6 +34,7 @@ class GammaServerRunner(KubernetesServerRunner):
     route: Optional[k8s.GammaGrpcRoute] = None
 
     # Mesh
+    server_xds_host: str
     mesh_name: str
     route_name: str
 
@@ -41,6 +42,8 @@ class GammaServerRunner(KubernetesServerRunner):
         self,
         k8s_namespace: k8s.KubernetesNamespace,
         *,
+        mesh_name: str,
+        server_xds_host: str,
         deployment_name: str,
         image_name: str,
         td_bootstrap_image: str,
@@ -51,7 +54,6 @@ class GammaServerRunner(KubernetesServerRunner):
         gcp_service_account: str,
         service_account_name: Optional[str] = None,
         service_name: Optional[str] = None,
-        mesh_name: Optional[str] = None,
         route_name: Optional[str] = None,
         neg_name: Optional[str] = None,
         deployment_template: str = "server.deployment.yaml",
@@ -86,8 +88,9 @@ class GammaServerRunner(KubernetesServerRunner):
             enable_workload_identity=enable_workload_identity,
         )
 
-        self.mesh_name = mesh_name or deployment_name
-        self.route_name = route_name or deployment_name
+        self.server_xds_host = server_xds_host
+        self.mesh_name = mesh_name
+        self.route_name = route_name or f"route-{deployment_name}"
 
     def run(
         self,
@@ -124,6 +127,7 @@ class GammaServerRunner(KubernetesServerRunner):
             )
 
         # Create gamma mesh.
+        # Note: this will be pre-provisioned per cluster.
         self.mesh = self._create_gamma_mesh(
             "gamma/tdmesh.yaml",
             mesh_name=self.mesh_name,
@@ -144,9 +148,10 @@ class GammaServerRunner(KubernetesServerRunner):
                 test_port=test_port,
             )
 
-        # Create route
+        # Create the route.
         self.route = self._create_gamma_route(
             "gamma/route_grpc.yaml",
+            xds_server_uri=self.server_xds_host,
             route_name=self.route_name,
             mesh_name=self.mesh_name,
             service_name=self.service_name,
@@ -154,7 +159,7 @@ class GammaServerRunner(KubernetesServerRunner):
             test_port=test_port,
         )
 
-        # Todo: wait for mesh?
+        # Surprised this just works.
         self._wait_service_neg(self.service_name, test_port)
 
         if self.enable_workload_identity:

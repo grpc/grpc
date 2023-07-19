@@ -11,6 +11,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""
+Run test xds client.
+
+Gamma example:
+./run.sh bin/run_test_client.py --server_xds_host=psm-grpc-server \
+    --server_xds_port=80 \
+    --config_mesh=gketd-psm-grpc-server
+"""
+
+
 import logging
 import signal
 
@@ -100,9 +110,7 @@ def main(argv):
     # Setup.
     gcp_api_manager = gcp.api.GcpApiManager()
     k8s_api_manager = k8s.KubernetesApiManager(xds_k8s_flags.KUBE_CONTEXT.value)
-    client_namespace = common.make_client_namespace(
-        k8s_api_manager, "sergiitk-server-dev"
-    )
+    client_namespace = common.make_client_namespace(k8s_api_manager)
     client_runner = common.make_client_runner(
         client_namespace,
         gcp_api_manager,
@@ -112,13 +120,9 @@ def main(argv):
     )
 
     # Server target
-    server_xds_host = xds_flags.SERVER_XDS_HOST.value
-
-    server_xds_port = xds_flags.SERVER_XDS_PORT.value
-    # server_target = f"xds:///{server_xds_host}.sergiitk-server-dev"
-    server_target = f"xds:///{server_xds_host}"
-    if server_xds_port != 80:
-        server_target = f"{server_target}:{server_xds_port}"
+    server_target = f"xds:///{xds_flags.SERVER_XDS_HOST.value}"
+    if xds_flags.SERVER_XDS_PORT.value != 80:
+        server_target = f"{server_target}:{xds_flags.SERVER_XDS_PORT.value}"
 
     if _CMD.value == "run":
         logger.info("Run client, secure_mode=%s", _SECURE.value)

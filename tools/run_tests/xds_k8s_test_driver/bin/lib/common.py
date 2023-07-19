@@ -40,7 +40,7 @@ _XdsTestClient = client_app.XdsTestClient
 
 def make_client_namespace(
     k8s_api_manager: k8s.KubernetesApiManager,
-    namespace_name: str,
+    namespace_name: str = None,
 ) -> k8s.KubernetesNamespace:
     if not namespace_name:
         namespace_name: str = KubernetesClientRunner.make_namespace_name(
