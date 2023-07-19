@@ -48,6 +48,13 @@ grpc_ssl_credentials::grpc_ssl_credentials(
     const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pair,
     const grpc_ssl_verify_peer_options* verify_options) {
   build_config(pem_root_certs, pem_key_cert_pair, verify_options);
+  const tsi_ssl_root_certs_store* root_store;
+  // TODO(gtcooke94) handle ssl_session_cache
+  grpc_security_status status = initialize_handshaker_factory(
+      &config_, pem_root_certs, root_store, nullptr);
+  if (status != GRPC_SECURITY_OK) {
+    // TODO(gtcooke94)
+  }
 }
 
 grpc_ssl_credentials::~grpc_ssl_credentials() {
@@ -117,6 +124,38 @@ void grpc_ssl_credentials::set_min_tls_version(
 void grpc_ssl_credentials::set_max_tls_version(
     grpc_tls_version max_tls_version) {
   config_.max_tls_version = max_tls_version;
+}
+
+grpc_security_status grpc_ssl_credentials::initialize_handshaker_factory(
+    const grpc_ssl_config* config, const char* pem_root_certs,
+    const tsi_ssl_root_certs_store* root_store,
+    tsi_ssl_session_cache* ssl_session_cache) {
+  bool has_key_cert_pair = config->pem_key_cert_pair != nullptr &&
+                           config->pem_key_cert_pair->private_key != nullptr &&
+                           config->pem_key_cert_pair->cert_chain != nullptr;
+  tsi_ssl_client_handshaker_options options;
+  GPR_DEBUG_ASSERT(pem_root_certs != nullptr);
+  options.pem_root_certs = pem_root_certs;
+  options.root_store = root_store;
+  options.alpn_protocols =
+      grpc_fill_alpn_protocol_strings(&options.num_alpn_protocols);
+  if (has_key_cert_pair) {
+    options.pem_key_cert_pair = config->pem_key_cert_pair;
+  }
+  options.cipher_suites = grpc_get_ssl_cipher_suites();
+  options.session_cache = ssl_session_cache;
+  options.min_tls_version = grpc_get_tsi_tls_version(config->min_tls_version);
+  options.max_tls_version = grpc_get_tsi_tls_version(config->max_tls_version);
+  const tsi_result result =
+      tsi_create_ssl_client_handshaker_factory_with_options(
+          &options, &client_handshaker_factory_);
+  gpr_free(options.alpn_protocols);
+  if (result != TSI_OK) {
+    gpr_log(GPR_ERROR, "Handshaker factory creation failed with %s.",
+            tsi_result_to_string(result));
+    return GRPC_SECURITY_ERROR;
+  }
+  return GRPC_SECURITY_OK;
 }
 
 // Deprecated in favor of grpc_ssl_credentials_create_ex. Will be removed

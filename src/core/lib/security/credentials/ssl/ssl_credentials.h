@@ -70,6 +70,11 @@ class grpc_ssl_credentials : public grpc_channel_credentials {
                     const grpc_ssl_verify_peer_options* verify_options);
 
   grpc_ssl_config config_;
+  grpc_security_status initialize_handshaker_factory(
+      const grpc_ssl_config* config, const char* pem_root_certs,
+      const tsi_ssl_root_certs_store* root_store,
+      tsi_ssl_session_cache* ssl_session_cache);
+  tsi_ssl_client_handshaker_factory* client_handshaker_factory_;
 };
 
 struct grpc_ssl_server_certificate_config {
