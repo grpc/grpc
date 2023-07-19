@@ -1279,8 +1279,6 @@ if test "$PHP_GRPC" != "no"; then
     third_party/upb/upb/collections/map.c \
     third_party/upb/upb/collections/map_sorter.c \
     third_party/upb/upb/hash/common.c \
-    third_party/upb/upb/json/decode.c \
-    third_party/upb/upb/json/encode.c \
     third_party/upb/upb/lex/atoi.c \
     third_party/upb/upb/lex/round_trip.c \
     third_party/upb/upb/lex/strtod.c \
@@ -1289,10 +1287,6 @@ if test "$PHP_GRPC" != "no"; then
     third_party/upb/upb/mem/arena.c \
     third_party/upb/upb/message/accessors.c \
     third_party/upb/upb/message/message.c \
-    third_party/upb/upb/mini_table/common.c \
-    third_party/upb/upb/mini_table/decode.c \
-    third_party/upb/upb/mini_table/encode.c \
-    third_party/upb/upb/mini_table/extension_registry.c \
     third_party/upb/upb/reflection/def_builder.c \
     third_party/upb/upb/reflection/def_pool.c \
     third_party/upb/upb/reflection/def_type.c \
@@ -1615,11 +1609,9 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/base)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/collections)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/hash)
-  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/json)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/lex)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/mem)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/message)
-  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/mini_table)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/reflection)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/text)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/wire)

@@ -2710,16 +2710,11 @@
     <file baseinstalldir="/" name="third_party/upb/upb/def.hpp" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/encode.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/extension_registry.h" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/generated_code_support.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/hash/common.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/hash/common.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/hash/int_table.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/hash/str_table.h" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/json/decode.c" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/json/decode.h" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/json/encode.c" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/json/encode.h" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/json_decode.h" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/json_encode.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/lex/atoi.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/lex/atoi.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/lex/round_trip.c" role="src" />
@@ -2739,26 +2734,10 @@
     <file baseinstalldir="/" name="third_party/upb/upb/message/accessors_internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/message/extension_internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/message/internal.h" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/message/internal/map_entry.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/message/message.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/message/message.h" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/mini_table.h" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/mini_table/common.c" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/mini_table/common.h" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/mini_table/common_internal.h" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/mini_table/decode.c" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/mini_table/decode.h" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/mini_table/encode.c" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/mini_table/encode_internal.h" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/mini_table/encode_internal.hpp" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/mini_table/enum_internal.h" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/mini_table/extension_internal.h" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/mini_table/extension_registry.c" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/mini_table/extension_registry.h" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/mini_table/field_internal.h" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/mini_table/file_internal.h" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/mini_table/message_internal.h" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/mini_table/sub_internal.h" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/mini_table/types.h" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/message/tagged_ptr.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/msg.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/port/atomic.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/port/def.inc" role="src" />

@@ -1244,8 +1244,6 @@ if (PHP_GRPC != "no") {
     "third_party\\upb\\upb\\collections\\map.c " +
     "third_party\\upb\\upb\\collections\\map_sorter.c " +
     "third_party\\upb\\upb\\hash\\common.c " +
-    "third_party\\upb\\upb\\json\\decode.c " +
-    "third_party\\upb\\upb\\json\\encode.c " +
     "third_party\\upb\\upb\\lex\\atoi.c " +
     "third_party\\upb\\upb\\lex\\round_trip.c " +
     "third_party\\upb\\upb\\lex\\strtod.c " +
@@ -1254,10 +1252,6 @@ if (PHP_GRPC != "no") {
     "third_party\\upb\\upb\\mem\\arena.c " +
     "third_party\\upb\\upb\\message\\accessors.c " +
     "third_party\\upb\\upb\\message\\message.c " +
-    "third_party\\upb\\upb\\mini_table\\common.c " +
-    "third_party\\upb\\upb\\mini_table\\decode.c " +
-    "third_party\\upb\\upb\\mini_table\\encode.c " +
-    "third_party\\upb\\upb\\mini_table\\extension_registry.c " +
     "third_party\\upb\\upb\\reflection\\def_builder.c " +
     "third_party\\upb\\upb\\reflection\\def_pool.c " +
     "third_party\\upb\\upb\\reflection\\def_type.c " +
@@ -1769,11 +1763,9 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb\\upb\\base");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb\\upb\\collections");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb\\upb\\hash");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb\\upb\\json");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb\\upb\\lex");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb\\upb\\mem");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb\\upb\\message");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb\\upb\\mini_table");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb\\upb\\reflection");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb\\upb\\text");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb\\upb\\wire");
