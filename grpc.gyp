@@ -2319,7 +2319,6 @@
         'third_party/benchmark/src/json_reporter.cc',
         'third_party/benchmark/src/perf_counters.cc',
         'third_party/benchmark/src/reporter.cc',
-        'third_party/benchmark/src/sleep.cc',
         'third_party/benchmark/src/statistics.cc',
         'third_party/benchmark/src/string_util.cc',
         'third_party/benchmark/src/sysinfo.cc',

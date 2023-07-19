@@ -3917,7 +3917,6 @@ grpc_cc_library(
         "//:ref_counted_ptr",
         "//:server_address",
         "//:sockaddr_utils",
-        "//:uri_parser",
         "//:work_serializer",
     ],
 )
@@ -4004,7 +4003,6 @@ grpc_cc_library(
         "//:ref_counted_ptr",
         "//:rls_upb",
         "//:server_address",
-        "//:uri_parser",
         "//:work_serializer",
     ],
 )
