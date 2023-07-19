@@ -7,16 +7,14 @@
  * regenerated. */
 
 #include <stddef.h>
-#include "upb/collections/array_internal.h"
-#include "upb/message/internal.h"
-#include "upb/mini_table/enum_internal.h"
+#include "upb/generated_code_support.h"
 #include "src/proto/grpc/health/v1/health.upb.h"
 
 // Must be last.
 #include "upb/port/def.inc"
 
 static const upb_MiniTableField grpc_health_v1_HealthCheckRequest__fields[1] = {
-  {1, 0, 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {1, 0, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable grpc_health_v1_HealthCheckRequest_msg_init = {
@@ -30,7 +28,7 @@ const upb_MiniTable grpc_health_v1_HealthCheckRequest_msg_init = {
 };
 
 static const upb_MiniTableField grpc_health_v1_HealthCheckResponse__fields[1] = {
-  {1, 0, 0, kUpb_NoSub, 5, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsAlternate | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
+  {1, 0, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable grpc_health_v1_HealthCheckResponse_msg_init = {
