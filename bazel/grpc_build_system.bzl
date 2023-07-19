@@ -381,18 +381,21 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
 
     experiments = {}
     def _populate_experiments_platform_config(config, platform_experiments_map):
-        for mode, tag_to_experiments in experiments_on_platform.items():
-                if mode not in config:
-                    config[mode] = {}
-                for tag in tags:
-                    if tag not in tag_to_experiments:
-                        continue
-                    for experiment in tag_to_experiments[tag]:
-                        if experiment not in experiments[mode]:
-                            experiments[mode][experiment] = []
-                        experiments[mode][experiment].append(platform)
+        for platform, experiments_on_platform in platform_experiments_map.items():
+            for mode, tag_to_experiments in experiments_on_platform.items():
+                    if mode not in config:
+                        config[mode] = {}
+                    for tag in tags:
+                        if tag not in tag_to_experiments:
+                            continue
+                        for experiment in tag_to_experiments[tag]:
+                            if experiment not in config[mode]:
+                                config[mode][experiment] = []
+                            config[mode][experiment].append(platform)
+        return config
 
-    for platform, experiments_on_platform in EXPERIMENTS.items():
+    experiments = _populate_experiments_platform_config(experiments, EXPERIMENTS)
+    experiments = _populate_experiments_platform_config(experiments, TEST_EXPERIMENTS)
 
     mode_config = {
         # format: <mode>: (enabled_target_tags, disabled_target_tags)

@@ -66,6 +66,23 @@ class TestExperiments {
         enabled_[i] = experiment_metadata[i].default_value;
       }
     }
+    // For each comma-separated experiment in the global config:
+    for (auto experiment : absl::StrSplit(ConfigVars::Get().Experiments(), ',',
+                                          absl::SkipWhitespace())) {
+      // Enable unless prefixed with '-' (=> disable).
+      bool enable = true;
+      if (experiment[0] == '-') {
+        enable = false;
+        experiment.remove_prefix(1);
+      }
+      // See if we can find the experiment in the list in this binary.
+      for (size_t i = 0; i < num_experiments; i++) {
+        if (experiment == experiment_metadata[i].name) {
+          enabled_[i] = enable;
+          break;
+        }
+      }
+    }
   }
 
   // Overloading [] operator to access elements in array style
