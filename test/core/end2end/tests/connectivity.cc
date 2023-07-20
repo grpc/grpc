@@ -29,6 +29,11 @@ namespace grpc_core {
 namespace {
 
 CORE_END2END_TEST(RetryHttp2Test, ConnectivityWatch) {
+  gpr_set_log_verbosity(GPR_LOG_SEVERITY_DEBUG);
+  grpc_tracer_set_enabled("client_channel", true);
+  grpc_tracer_set_enabled("client_channel_lb_call", true);
+  grpc_tracer_set_enabled("subchannel", true);
+  grpc_tracer_set_enabled("pick_first", true);
   InitClient(ChannelArgs()
                  .Set(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS, 1000)
                  .Set(GRPC_ARG_MAX_RECONNECT_BACKOFF_MS, 1000)
