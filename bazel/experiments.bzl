@@ -52,6 +52,9 @@ EXPERIMENTS = {
         "lame_client_test": [
             "promise_based_client_call",
         ],
+        "logging_test": [
+            "promise_based_server_call",
+        ],
         "resource_quota_test": [
             "free_large_allocator",
             "memory_pressure_controller",

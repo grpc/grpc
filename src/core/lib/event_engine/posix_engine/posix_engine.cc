@@ -487,7 +487,8 @@ EventEngine::TaskHandle PosixEventEngine::RunAfterInternal(
   return handle;
 }
 
-std::unique_ptr<EventEngine::DNSResolver> PosixEventEngine::GetDNSResolver(
+absl::StatusOr<std::unique_ptr<EventEngine::DNSResolver>>
+PosixEventEngine::GetDNSResolver(
     EventEngine::DNSResolver::ResolverOptions const& /*options*/) {
   grpc_core::Crash("unimplemented");
 }

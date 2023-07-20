@@ -29,7 +29,7 @@ grpc_cc_library(
     tags = [
         "no_windows",
     ],
-    visibility = ["//test:__subpackages__"],
+    visibility = ["//visibility:private"],
     deps = [
         "//src/core:event_engine_common",
         "//src/core:posix_event_engine_event_poller",

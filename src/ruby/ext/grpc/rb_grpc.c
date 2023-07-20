@@ -362,9 +362,12 @@ void grpc_ruby_init() {
 // into the gRPC library during or after prefork has been called, until
 // the corresponding postfork_{parent,child} APIs have been called.
 static VALUE grpc_rb_prefork(VALUE self) {
-  gpr_once_init(
-      &g_once_init,
-      grpc_ruby_basic_init);  // maybe be the first time called into gRPC
+  // This might be the first time we've called into the grpc library, so make
+  // sure basic one-time initialization is taken care of. Note that if this is
+  // the case, then grpc_init() will start up c-core threads; that's OK since
+  // they will be shut down in C-core's pthread_atfork handler.
+  gpr_once_init(&g_once_init, grpc_ruby_basic_init);
+  grpc_init();
   if (!g_enable_fork_support) {
     rb_raise(rb_eRuntimeError,
              "forking with gRPC/Ruby is only supported on linux with env var: "
@@ -426,15 +429,15 @@ static VALUE grpc_rb_postfork_parent(VALUE self) {
              "GRPC::postfork_parent can only be called once following a "
              "GRPC::prefork");
   }
-  if (!grpc_ruby_initial_thread()) {
-    rb_raise(rb_eRuntimeError,
-             "GRPC.postfork_parent needs to be called from the same thread "
-             "that GRPC.prefork (and fork) was called from");
-  }
   if (!grpc_ruby_initial_pid()) {
     rb_raise(rb_eRuntimeError,
              "GRPC.postfork_parent must be called only from the parent process "
              "after a fork");
+  }
+  if (!grpc_ruby_initial_thread()) {
+    rb_raise(rb_eRuntimeError,
+             "GRPC.postfork_parent needs to be called from the same thread "
+             "that GRPC.prefork (and fork) was called from");
   }
   grpc_ruby_init_threads();
   g_grpc_rb_prefork_pending = false;
