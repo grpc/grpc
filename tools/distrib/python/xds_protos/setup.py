@@ -15,40 +15,42 @@
 """A PyPI package for xDS protos generated Python code."""
 
 import os
+import grpc_version
 
 import setuptools
 
 WORK_DIR = os.path.dirname(os.path.abspath(__file__))
-EXCLUDE_PYTHON_FILES = ["generated_file_import_test.py", "build.py"]
+EXCLUDE_PYTHON_FILES = ['generated_file_import_test.py', 'build.py']
 
 # Use setuptools to build Python package
-with open(os.path.join(WORK_DIR, "README.rst"), "r") as f:
+with open(os.path.join(WORK_DIR, 'README.rst'), 'r') as f:
     LONG_DESCRIPTION = f.read()
 PACKAGES = setuptools.find_packages(where=".", exclude=EXCLUDE_PYTHON_FILES)
 CLASSIFIERS = [
-    "Development Status :: 3 - Alpha",
-    "Programming Language :: Python",
-    "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: Apache Software License",
+    'Development Status :: 3 - Alpha',
+    'Programming Language :: Python',
+    'Programming Language :: Python :: 3',
+    'License :: OSI Approved :: Apache Software License',
 ]
 INSTALL_REQUIRES = [
-    "grpcio>=1.49.0",
-    "protobuf>=4.21.6,<5.0dev",
+    'grpcio>=1.49.0',
+    'protobuf>=4.21.6,<5.0dev',
 ]
-SETUP_REQUIRES = INSTALL_REQUIRES + ["grpcio-tools"]
+
+SETUP_REQUIRES = INSTALL_REQUIRES + ['grpcio-tools>=1.49.0']
+
 setuptools.setup(
-    name="xds-protos",
-    version="0.0.12",
+    name='xds-protos',
+    version=grpc_version.VERSION,
     packages=PACKAGES,
-    description="Generated Python code from envoyproxy/data-plane-api",
-    long_description_content_type="text/x-rst",
+    description='Generated Python code from envoyproxy/data-plane-api',
+    long_description_content_type='text/x-rst',
     long_description=LONG_DESCRIPTION,
-    author="The gRPC Authors",
-    author_email="grpc-io@googlegroups.com",
-    url="https://grpc.io",
-    license="Apache License 2.0",
-    python_requires=">=3.7",
+    author='The gRPC Authors',
+    author_email='grpc-io@googlegroups.com',
+    url='https://grpc.io',
+    license='Apache License 2.0',
+    python_requires='>=3.7',
     install_requires=INSTALL_REQUIRES,
     setup_requires=SETUP_REQUIRES,
-    classifiers=CLASSIFIERS,
-)
+    classifiers=CLASSIFIERS)

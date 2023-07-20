@@ -33,7 +33,7 @@
 	url = https://github.com/protocolbuffers/protobuf.git
 [submodule "third_party/protoc-gen-validate"]
 	path = third_party/protoc-gen-validate
-	url = https://github.com/envoyproxy/protoc-gen-validate.git
+	url = git@github.com:bufbuild/protoc-gen-validate.git
 [submodule "third_party/re2"]
 	path = third_party/re2
 	url = https://github.com/google/re2.git

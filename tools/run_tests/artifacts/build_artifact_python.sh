@@ -219,6 +219,12 @@ then
   # through setup.py, but we can optimize it with "bdist_wheel" command, which
   # skips the wheel building step.
 
+  # Build grpcio_reflection source distribution
+  ${SETARCH_CMD} "${PYTHON}" tools/distrib/python/xds_protos/build.py
+  ${SETARCH_CMD} "${PYTHON}" tools/distrib/python/xds_protos/setup.py \
+      sdist bdist_wheel
+  cp -r tools/distrib/python/xds_protos/dist/* "$ARTIFACT_DIR"
+
   # Build grpcio_testing source distribution
   ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_testing/setup.py preprocess \
       sdist bdist_wheel
