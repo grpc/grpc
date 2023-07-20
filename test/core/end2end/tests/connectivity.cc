@@ -46,6 +46,8 @@ CORE_END2END_TEST(RetryHttp2Test, ConnectivityWatch) {
   // start watching for a change
   WatchConnectivityState(GRPC_CHANNEL_IDLE, Duration::Seconds(10), 2);
   // and now the watch should trigger
+  // (we might miss the notification for CONNECTING, so we might see
+  // TRANSIENT_FAILURE instead)
   Expect(2, true);
   Step();
   grpc_connectivity_state state = CheckConnectivityState(false);
@@ -56,32 +58,24 @@ CORE_END2END_TEST(RetryHttp2Test, ConnectivityWatch) {
   Expect(3, true);
   Step();
   state = CheckConnectivityState(false);
-  EXPECT_THAT(state, ::testing::AnyOf(GRPC_CHANNEL_TRANSIENT_FAILURE,
-                                      GRPC_CHANNEL_CONNECTING));
+  EXPECT_EQ(state, GRPC_CHANNEL_TRANSIENT_FAILURE);
   // now let's bring up a server to connect to
   InitServer(ChannelArgs());
-  // we'll go through some set of transitions (some might be missed), until
-  // READY is reached
-  while (state != GRPC_CHANNEL_READY) {
-    WatchConnectivityState(state, Duration::Seconds(10), 4);
-    Expect(4, true);
-    Step(Duration::Seconds(20));
-    state = CheckConnectivityState(false);
-    EXPECT_THAT(state,
-                ::testing::AnyOf(GRPC_CHANNEL_TRANSIENT_FAILURE,
-                                 GRPC_CHANNEL_CONNECTING, GRPC_CHANNEL_READY));
-  }
+  // when the channel gets connected, it will report READY
+  WatchConnectivityState(state, Duration::Seconds(20), 4);
+  Expect(4, true);
+  Step(Duration::Seconds(30));
+  state = CheckConnectivityState(false);
+  EXPECT_EQ(state, GRPC_CHANNEL_READY);
   // bring down the server again
-  // we should go immediately to TRANSIENT_FAILURE
+  // we should go immediately to IDLE
   WatchConnectivityState(GRPC_CHANNEL_READY, Duration::Seconds(10), 5);
   ShutdownServerAndNotify(1000);
   Expect(5, true);
   Expect(1000, true);
   Step();
   state = CheckConnectivityState(false);
-  EXPECT_THAT(state,
-              ::testing::AnyOf(GRPC_CHANNEL_TRANSIENT_FAILURE,
-                               GRPC_CHANNEL_CONNECTING, GRPC_CHANNEL_IDLE));
+  EXPECT_EQ(state, GRPC_CHANNEL_IDLE);
 }
 
 }  // namespace
