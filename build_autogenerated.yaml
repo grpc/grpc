@@ -15578,6 +15578,33 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
+- name: wait_for_callback_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/gprpp/atomic_utils.h
+  - src/core/lib/gprpp/notification.h
+  - src/core/lib/gprpp/orphanable.h
+  - src/core/lib/gprpp/ref_counted.h
+  - src/core/lib/gprpp/ref_counted_ptr.h
+  - src/core/lib/promise/activity.h
+  - src/core/lib/promise/context.h
+  - src/core/lib/promise/detail/promise_factory.h
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/status.h
+  - src/core/lib/promise/map.h
+  - src/core/lib/promise/poll.h
+  - src/core/lib/promise/wait_for_callback.h
+  - test/core/promise/test_wakeup_schedulers.h
+  src:
+  - src/core/lib/promise/activity.cc
+  - test/core/promise/wait_for_callback_test.cc
+  deps:
+  - absl/meta:type_traits
+  - absl/status:statusor
+  - gpr
+  uses_polling: false
 - name: wakeup_fd_posix_test
   gtest: true
   build: test

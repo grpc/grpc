@@ -494,7 +494,12 @@ grpc_cc_library(
     hdrs = [
         "lib/promise/wait_for_callback.h",
     ],
-    deps = ["activity"],
+    external_deps = ["absl/base:core_headers"],
+    deps = [
+        "activity",
+        "poll",
+        "//:gpr",
+    ],
 )
 
 grpc_cc_library(

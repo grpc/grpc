@@ -14,6 +14,7 @@
 
 #include "src/core/lib/promise/wait_for_callback.h"
 
+#include "absl/status/status.h"
 #include "gtest/gtest.h"
 
 #include "src/core/lib/gprpp/notification.h"
