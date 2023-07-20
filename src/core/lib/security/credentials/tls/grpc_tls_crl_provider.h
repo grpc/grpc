@@ -28,8 +28,9 @@ namespace experimental {
 
 class CrlImpl : public Crl {
  public:
-  explicit CrlImpl(absl::string_view crl_string);
+  explicit CrlImpl(X509_CRL* crl);
   const X509_CRL& crl() const { return *crl_; }
+  ~CrlImpl() override;
 
  private:
   X509_CRL* crl_;

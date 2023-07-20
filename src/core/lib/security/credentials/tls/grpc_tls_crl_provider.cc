@@ -18,15 +18,35 @@
 
 #include "src/core/lib/security/credentials/tls/grpc_tls_crl_provider.h"
 
+#include <openssl/bio.h>
+#include <openssl/crypto.h>
+#include <openssl/evp.h>
+#include <openssl/pem.h>
+#include <openssl/x509.h>
+
 namespace grpc_core {
 namespace experimental {
 
-CrlImpl::CrlImpl(absl::string_view crl_string) {
-  // TODO(gtcooke94) actually parse CRL with OpenSSL
-}
+CrlImpl::CrlImpl(X509_CRL* crl) : crl_(crl) {}
 
-std::unique_ptr<Crl> Crl::Parse(absl::string_view crl_string) {
-  return std::make_unique<CrlImpl>(crl_string);
+CrlImpl::~CrlImpl() { X509_CRL_free(crl_); }
+
+absl::StatusOr<std::unique_ptr<Crl>> Crl::Parse(absl::string_view crl_string) {
+  BIO* crl_bio =
+      BIO_new_mem_buf(crl_string.data(), static_cast<int>(crl_string.size()));
+  // Errors on BIO
+  if (crl_bio == nullptr) {
+    return absl::InvalidArgumentError(
+        "Conversion from crl string to BIO failed.");
+  }
+  X509_CRL* crl = PEM_read_bio_X509_CRL(crl_bio, nullptr, nullptr, nullptr);
+  BIO_free(crl_bio);
+  if (crl == nullptr) {
+    return absl::InvalidArgumentError(
+        "Conversion from PEM string to X509 CRL failed.");
+  }
+  return std::make_unique<CrlImpl>(crl);
+  //   return 0;
 }
 
 }  // namespace experimental

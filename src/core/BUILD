@@ -2910,6 +2910,28 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_crl_provider",
+    srcs = [
+        "lib/security/credentials/tls/grpc_tls_crl_provider.cc",
+    ],
+    hdrs = [
+        "lib/security/credentials/tls/grpc_tls_crl_provider.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/status",
+        "absl/strings",
+        "absl/strings:str_format",
+        "libcrypto",
+        "libssl",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc_base",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_fake_credentials",
     srcs = [
         "lib/security/credentials/fake/fake_credentials.cc",

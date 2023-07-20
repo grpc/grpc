@@ -23,6 +23,7 @@
 #include <string>
 
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
@@ -31,7 +32,8 @@ namespace experimental {
 // Opaque representation of a CRL
 class Crl {
  public:
-  static std::unique_ptr<Crl> Parse(absl::string_view crl_string);
+  static absl::StatusOr<std::unique_ptr<Crl>> Parse(
+      absl::string_view crl_string);
   virtual ~Crl() = default;
 
  protected:
@@ -44,7 +46,8 @@ class Crl {
 // Opaque representation of a Certificate
 class Cert {
  public:
-  static std::unique_ptr<Cert> Parse(absl::string_view cert_string);
+  static absl::StatusOr<std::unique_ptr<Cert>> Parse(
+      absl::string_view cert_string);
   virtual ~Cert() = default;
 
  protected:

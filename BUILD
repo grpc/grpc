@@ -254,6 +254,7 @@ GPR_PUBLIC_HDRS = [
 
 GRPC_PUBLIC_HDRS = [
     "include/grpc/grpc_audit_logging.h",
+    "include/grpc/grpc_crl_provider.h",
     "include/grpc/byte_buffer.h",
     "include/grpc/byte_buffer_reader.h",
     "include/grpc/compression.h",
@@ -423,6 +424,7 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/impl/sync.h",
     "include/grpcpp/resource_quota.h",
     "include/grpcpp/security/audit_logging.h",
+    "include/grpcpp/security/crl_provider.h",
     "include/grpcpp/security/auth_context.h",
     "include/grpcpp/security/auth_metadata_processor.h",
     "include/grpcpp/security/credentials.h",
@@ -1954,6 +1956,7 @@ grpc_cc_library(
         "//src/core:gpr_manual_constructor",
         "//src/core:grpc_audit_logging",
         "//src/core:grpc_backend_metric_provider",
+        "//src/core:grpc_crl_provider",
         "//src/core:grpc_service_config",
         "//src/core:grpc_transport_inproc",
         "//src/core:json",
