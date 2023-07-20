@@ -70,8 +70,18 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
                                    &request_metadata_recv, cq, cq,
                                    grpc_core::CqVerifier::tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(grpc_core::CqVerifier::tag(101), true);
-  cqv.Verify();
+  bool got = false;
+  cqv.Expect(grpc_core::CqVerifier::tag(101),
+             grpc_core::CqVerifier::Maybe{&got});
+  cqv.Verify(grpc_core::Duration::Seconds(1));
+
+  if (!got) {
+    grpc_server_shutdown_and_notify(server, cq, grpc_core::CqVerifier::tag(99));
+    cqv.Expect(grpc_core::CqVerifier::tag(101), false);
+    cqv.Expect(grpc_core::CqVerifier::tag(99), true);
+    cqv.Verify();
+    return;
+  }
 
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.host, "localhost"));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo/bar"));
