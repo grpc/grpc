@@ -127,6 +127,7 @@ grpc_cc_library(
     ],
     language = "c++",
     tags = ["nofixdeps"],
+    visibility = ["@grpc:grpc_experiments"],
     deps = [
         "no_destruct",
         "//:config_vars",

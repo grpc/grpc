@@ -98,6 +98,7 @@ def _update_visibility(visibility):
         "endpoint_tests": PRIVATE,
         "exec_ctx": PRIVATE,
         "grpclb": PRIVATE,
+        "grpc_experiments": PRIVATE,
         "grpc_opencensus_plugin": PUBLIC,
         "grpcpp_gcp_observability": PUBLIC,
         "grpc_resolver_fake": PRIVATE,
