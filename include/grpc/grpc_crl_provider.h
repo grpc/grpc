@@ -60,7 +60,7 @@ class Cert {
 // The base class for CRL Provider implementations.
 class CrlProvider {
  public:
-  CrlProvider() {}
+  CrlProvider() = default;
   // Get the CRL associated with a certificate. Read-only.
   virtual std::shared_ptr<Crl> GetCrl(const Cert& cert) = 0;
   virtual void CrlReadErrorCallback(absl::Status) = 0;
