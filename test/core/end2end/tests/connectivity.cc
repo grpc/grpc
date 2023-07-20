@@ -29,11 +29,6 @@ namespace grpc_core {
 namespace {
 
 CORE_END2END_TEST(RetryHttp2Test, ConnectivityWatch) {
-  gpr_set_log_verbosity(GPR_LOG_SEVERITY_DEBUG);
-  grpc_tracer_set_enabled("client_channel", true);
-  grpc_tracer_set_enabled("client_channel_lb_call", true);
-  grpc_tracer_set_enabled("subchannel", true);
-  grpc_tracer_set_enabled("pick_first", true);
   InitClient(ChannelArgs()
                  .Set(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS, 1000)
                  .Set(GRPC_ARG_MAX_RECONNECT_BACKOFF_MS, 1000)
@@ -67,9 +62,9 @@ CORE_END2END_TEST(RetryHttp2Test, ConnectivityWatch) {
   // now let's bring up a server to connect to
   InitServer(ChannelArgs());
   // when the channel gets connected, it will report READY
-  WatchConnectivityState(state, Duration::Seconds(20), 4);
+  WatchConnectivityState(state, Duration::Seconds(10), 4);
   Expect(4, true);
-  Step(Duration::Seconds(30));
+  Step(Duration::Seconds(20));
   state = CheckConnectivityState(false);
   EXPECT_EQ(state, GRPC_CHANNEL_READY);
   // bring down the server again
