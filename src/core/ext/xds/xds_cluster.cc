@@ -67,6 +67,7 @@
 #include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
 #include "src/core/lib/matchers/matchers.h"
+#include "src/core/lib/resolver/resolver_registry.h"
 
 namespace grpc_core {
 
