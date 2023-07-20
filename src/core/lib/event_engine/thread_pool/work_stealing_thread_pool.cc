@@ -41,6 +41,47 @@
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/gprpp/time.h"
 
+// ## Thread Pool Fork-handling
+//
+// Thread-safety needs special attention with regard to fork() calls. The
+// Forkable system employs a pre- and post- fork callback system that does not
+// guarantee any ordering of execution. On fork() events, the thread pool does
+// the following:
+//
+// On pre-fork:
+// * the WorkStealingThreadPool trigger all threads to exit,
+// * all queued work will be saved, and
+// * all threads will be shut down, including the Lifeguard thread.
+//
+// On post-fork:
+//  * all threads will be restarted, including the Lifeguard thread, and
+//  * all saved work will be enqueued for execution.
+//
+// However, the queue may may get into trouble if one thread is attempting to
+// restart the thread pool while another thread is shutting it down. For that
+// reason, Quiesce and Start must be thread-safe, and Quiesce must wait for the
+// pool to be in a fully started state before it is allowed to continue.
+// Consider this potential ordering of events between Start and Quiesce:
+//
+//     ┌──────────┐
+//     │ Thread 1 │
+//     └────┬─────┘  ┌──────────┐
+//          │        │ Thread 2 │
+//          ▼        └────┬─────┘
+//        Start()         │
+//          │             ▼
+//          │        Quiesce()
+//          │        Wait for worker threads to exit
+//          │        Wait for the lifeguard thread to exit
+//          ▼
+//        Start the Lifeguard thread
+//        Start the worker threads
+//
+// Thread 2 will find no worker threads, and it will then want to wait on a
+// non-existent Lifeguard thread to finish. Trying a simple
+// `lifeguard_thread_.Join()` leads to memory access errors. This implementation
+// uses Notifications to coordinate startup and shutdown states.
+
 namespace grpc_event_engine {
 namespace experimental {
 
