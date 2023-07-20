@@ -429,15 +429,15 @@ static VALUE grpc_rb_postfork_parent(VALUE self) {
              "GRPC::postfork_parent can only be called once following a "
              "GRPC::prefork");
   }
-  if (!grpc_ruby_initial_thread()) {
-    rb_raise(rb_eRuntimeError,
-             "GRPC.postfork_parent needs to be called from the same thread "
-             "that GRPC.prefork (and fork) was called from");
-  }
   if (!grpc_ruby_initial_pid()) {
     rb_raise(rb_eRuntimeError,
              "GRPC.postfork_parent must be called only from the parent process "
              "after a fork");
+  }
+  if (!grpc_ruby_initial_thread()) {
+    rb_raise(rb_eRuntimeError,
+             "GRPC.postfork_parent needs to be called from the same thread "
+             "that GRPC.prefork (and fork) was called from");
   }
   grpc_ruby_init_threads();
   g_grpc_rb_prefork_pending = false;
