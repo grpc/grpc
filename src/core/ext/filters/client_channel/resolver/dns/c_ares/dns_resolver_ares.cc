@@ -347,8 +347,13 @@ class AresClientChannelDNSResolverFactory : public ResolverFactory {
   absl::string_view scheme() const override { return "dns"; }
 
   bool IsValidUri(const URI& uri) const override {
-    if (absl::StripPrefix(uri.path(), "/").empty()) {
+    absl::string_view path = absl::StripPrefix(uri.path(), "/");
+    if (path.empty()) {
       gpr_log(GPR_ERROR, "no server name supplied in dns URI");
+      return false;
+    }
+    if (path.find('/') != path.npos) {
+      gpr_log(GPR_ERROR, "DNS names must not contain slashes");
       return false;
     }
     return true;

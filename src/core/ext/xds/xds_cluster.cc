@@ -291,6 +291,10 @@ XdsClusterResource::LogicalDns LogicalDnsParse(
   logical_dns.hostname = JoinHostPort(
       address_str,
       envoy_config_core_v3_SocketAddress_port_value(socket_address));
+  if (!CoreConfiguration::Get().resolver_registry().IsValidTarget(
+          logical_dns.hostname)) {
+    errors->AddError(absl::StrCat("invalid DNS name: ", logical_dns.hostname));
+  }
   return logical_dns;
 }
 

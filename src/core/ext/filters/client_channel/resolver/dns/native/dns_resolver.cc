@@ -155,8 +155,13 @@ class NativeClientChannelDNSResolverFactory : public ResolverFactory {
       gpr_log(GPR_ERROR, "authority based dns uri's not supported");
       return false;
     }
-    if (absl::StripPrefix(uri.path(), "/").empty()) {
+    absl::string_view path = absl::StripPrefix(uri.path(), "/");
+    if (path.empty()) {
       gpr_log(GPR_ERROR, "no server name supplied in dns URI");
+      return false;
+    }
+    if (path.find('/') != path.npos) {
+      gpr_log(GPR_ERROR, "DNS names must not contain slashes");
       return false;
     }
     return true;

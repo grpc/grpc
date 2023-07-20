@@ -553,6 +553,35 @@ TEST_F(ClusterTypeTest, LogicalDnsSocketAddressInvalid) {
       << decode_result.resource.status();
 }
 
+TEST_F(ClusterTypeTest, LogicalDnsSocketAddressInvalidResolverTarget) {
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.set_type(cluster.LOGICAL_DNS);
+  auto* socket_address = cluster.mutable_load_assignment()
+                             ->add_endpoints()
+                             ->add_lb_endpoints()
+                             ->mutable_endpoint()
+                             ->mutable_address()
+                             ->mutable_socket_address();
+  socket_address->set_address("server/example.com");
+  socket_address->set_port_value(443);
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating Cluster resource: ["
+            "field:load_assignment.endpoints[0].lb_endpoints[0].endpoint"
+            ".address.socket_address "
+            "error:invalid DNS name: server/example.com:443]")
+      << decode_result.resource.status();
+}
+
 TEST_F(ClusterTypeTest, AggregateClusterValid) {
   Cluster cluster;
   cluster.set_name("foo");
