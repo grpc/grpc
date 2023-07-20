@@ -247,13 +247,12 @@ class Chttp2ServerListener : public Server::ListenerInterface {
     IncrementRefCount();
   }
 
-  RefCountedPtr<Chttp2ServerListener> Ref() GRPC_MUST_USE_RESULT {
+  GRPC_MUST_USE_RESULT RefCountedPtr<Chttp2ServerListener> Ref() {
     IncrementRefCount();
     return RefCountedPtr<Chttp2ServerListener>(this);
   }
-  RefCountedPtr<Chttp2ServerListener> Ref(const DebugLocation& /* location */,
-                                          const char* /* reason */)
-      GRPC_MUST_USE_RESULT {
+  GRPC_MUST_USE_RESULT RefCountedPtr<Chttp2ServerListener> Ref(
+      const DebugLocation& /* location */, const char* /* reason */) {
     return Ref();
   }
 

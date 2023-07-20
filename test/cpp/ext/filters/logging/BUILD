@@ -51,6 +51,7 @@ grpc_cc_test(
     ],
     language = "C++",
     tags = [
+        "logging_test",
         "no_mac",  # TODO(yashykt): The default stack-sizes are not enough to run this test on MacOS
     ],
     deps = [
@@ -76,6 +77,7 @@ grpc_cc_test(
     ],
     language = "C++",
     tags = [
+        "logging_test",
         "no_mac",  # TODO(yashykt): The default stack-sizes are not enough to run this test on MacOS
     ],
     deps = [

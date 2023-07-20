@@ -127,6 +127,7 @@ grpc_cc_library(
     ],
     language = "c++",
     tags = ["nofixdeps"],
+    visibility = ["@grpc:grpc_experiments"],
     deps = [
         "no_destruct",
         "//:config_vars",
@@ -1127,6 +1128,9 @@ grpc_cc_library(
         "absl/meta:type_traits",
         "absl/utility",
     ],
+    visibility = [
+        "@grpc:alt_grpc_base_legacy",
+    ],
     deps = [
         "construct_destruct",
         "context",
@@ -1175,6 +1179,9 @@ grpc_cc_library(
         "lib/resource_quota/resource_quota.h",
     ],
     external_deps = ["absl/strings"],
+    visibility = [
+        "@grpc:alt_grpc_base_legacy",
+    ],
     deps = [
         "memory_quota",
         "ref_counted",
@@ -3917,7 +3924,6 @@ grpc_cc_library(
         "//:ref_counted_ptr",
         "//:server_address",
         "//:sockaddr_utils",
-        "//:uri_parser",
         "//:work_serializer",
     ],
 )
@@ -4004,7 +4010,6 @@ grpc_cc_library(
         "//:ref_counted_ptr",
         "//:rls_upb",
         "//:server_address",
-        "//:uri_parser",
         "//:work_serializer",
     ],
 )
