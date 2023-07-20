@@ -59,7 +59,7 @@ class CrlProvider {
  public:
   CrlProvider() {}
   // Get the CRL associated with a certificate. Read-only.
-  virtual std::shared_ptr<Crl> Crl(const Cert& cert) = 0;
+  virtual std::shared_ptr<Crl> GetCrl(const Cert& cert) = 0;
   virtual void CrlReadErrorCallback(absl::Status) = 0;
 };
 
