@@ -441,16 +441,15 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
     ProcessUnselectedReadyLocked();
     return;
   }
-  // If this is the initial connectivity state notification for this
-  // subchannel, check to see if it's the last one we were waiting for,
-  // in which case we start trying to connect, starting with the first
-  // subchannel.  Otherwise, do nothing, since we'll continue to wait
-  // until all of the subchannels report their state.
+  // If we haven't yet seen the initial connectivity state notification
+  // for all subchannels, do nothing.
+  if (!subchannel_list()->AllSubchannelsSeenInitialState()) return;
+  // If we're still here and this is the initial connectivity state
+  // notification for this subchannel, that means it was the last one to
+  // see its initial notification.  Start trying to connect, starting
+  // with the first subchannel.
   if (!old_state.has_value()) {
-    if (subchannel_list()->AllSubchannelsSeenInitialState()) {
-      subchannel_list()->subchannel(0)->ReactToConnectivityStateLocked();
-    }
-    return;
+    subchannel_list()->subchannel(0)->ReactToConnectivityStateLocked();
   }
   // Ignore any other updates for subchannels we're not currently trying to
   // connect to.
@@ -474,6 +473,7 @@ void PickFirst::PickFirstSubchannelData::ReactToConnectivityStateLocked() {
       for (size_t next_index = Index() + 1;
            next_index < subchannel_list()->num_subchannels(); ++next_index) {
         PickFirstSubchannelData* sc = subchannel_list()->subchannel(next_index);
+        GPR_ASSERT(sc->connectivity_state().has_value());
         if (sc->connectivity_state() != GRPC_CHANNEL_TRANSIENT_FAILURE) {
           subchannel_list()->set_attempting_index(next_index);
           found_subchannel = sc;
