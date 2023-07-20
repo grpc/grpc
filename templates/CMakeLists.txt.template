@@ -76,11 +76,7 @@
       deps.append("${_gRPC_PROTOBUF_PROTOC_LIBRARIES}")
     if target_dict.language == 'c++':
       deps.append("${_gRPC_PROTOBUF_LIBRARIES}")
-    deps.append("${_gRPC_ZLIB_LIBRARIES}")
     if target_dict['name'] in ['grpc', 'grpc_cronet', 'grpc_unsecure']:
-      deps.append("${_gRPC_CARES_LIBRARIES}")
-      deps.append("${_gRPC_ADDRESS_SORTING_LIBRARIES}")
-      deps.append("${_gRPC_RE2_LIBRARIES}")
       deps.append("${_gRPC_UPB_LIBRARIES}")
     # TODO(yijiem): These targets depend on grpc_base instead of grpc. Since we don't populate grpc_base as a cmake target, the sources all get collapsed into these targets. This workaround adds c-ares and/or re2 dependencies to these targets. We should clean this up.
     if target_dict['name'] in ['frame_test']:
@@ -90,12 +86,25 @@
       deps.append("${_gRPC_RE2_LIBRARIES}")
     deps.append("${_gRPC_ALLTARGETS_LIBRARIES}")
     for d in target_dict.get('deps', []):
-      if d == 'benchmark':
+      if d == 'z':
+        deps.append("${_gRPC_ZLIB_LIBRARIES}")
+      elif d == 'address_sorting':
+        deps.append("${_gRPC_ADDRESS_SORTING_LIBRARIES}")
+      elif d == 'benchmark':
         deps.append("${_gRPC_BENCHMARK_LIBRARIES}")
       elif d == 'libssl':
         deps.append("${_gRPC_SSL_LIBRARIES}")
+      elif d == 're2':
+        deps.append("${_gRPC_RE2_LIBRARIES}")
+      elif d == 'cares':
+        deps.append("${_gRPC_CARES_LIBRARIES}")
+      elif d == 'protobuf':
+        deps.append("${_gRPC_PROTOBUF_LIBRARIES}")
+      elif d == 'protoc':
+        deps.append("${_gRPC_PROTOBUF_PROTOC_LIBRARIES}")
       elif is_absl_lib(d):
         deps.append(get_absl_dep(d))
+      # TODO(jtattermusch): add handling for upb libraries
       else:
         deps.append(d)
     return deps
@@ -685,7 +694,7 @@
       <%text>${_gRPC_UPB_INCLUDE_DIR}</%text>
       <%text>${_gRPC_XXHASH_INCLUDE_DIR}</%text>
       <%text>${_gRPC_ZLIB_INCLUDE_DIR}</%text>
-  % if (lib.build in ['test', 'private'] and lib.language == 'c++') or lib.name == 'end2end_tests':
+  % if 'gtest' in lib.transitive_deps or lib.name == 'gtest':
       third_party/googletest/googletest/include
       third_party/googletest/googletest
       third_party/googletest/googlemock/include
@@ -748,10 +757,6 @@
     ${proto_replace_ext(src, '.grpc.pb.h')}
   % endif
   % endfor
-  % if tgt.build == 'test' and tgt.language == 'c++':
-    third_party/googletest/googletest/src/gtest-all.cc
-    third_party/googletest/googlemock/src/gmock-all.cc
-  % endif
   )
   target_compile_features(${tgt.name} PUBLIC cxx_std_14)
   target_include_directories(${tgt.name}
@@ -766,7 +771,7 @@
       <%text>${_gRPC_UPB_INCLUDE_DIR}</%text>
       <%text>${_gRPC_XXHASH_INCLUDE_DIR}</%text>
       <%text>${_gRPC_ZLIB_INCLUDE_DIR}</%text>
-  % if tgt.build in ['test', 'private'] and tgt.language == 'c++':
+  % if 'gtest' in tgt.transitive_deps:
       third_party/googletest/googletest/include
       third_party/googletest/googletest
       third_party/googletest/googlemock/include

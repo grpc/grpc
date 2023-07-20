@@ -952,7 +952,10 @@
     mingw_lib_deps = ' $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)'
     for dep in lib.get('deps', []):
       if is_absl_lib(dep): continue
+      if 'cares' == dep: continue
       if 'libssl' == dep: continue
+      if 're2' == dep: continue
+      if 'z' == dep: continue
       lib_archive = '$(LIBDIR)/$(CONFIG)/lib' + dep + '.a'
       common = common + ' ' + lib_archive
       lib_deps = lib_deps + ' ' + lib_archive
