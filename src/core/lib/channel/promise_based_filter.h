@@ -188,6 +188,7 @@ class BaseCallData : public Activity, private Wakeable {
   std::string ActivityDebugTag(WakeupMask) const override { return DebugTag(); }
 
   void Finalize(const grpc_call_final_info* final_info) {
+    ScopedContext ctx(this);
     finalization_.Run(final_info);
   }
 
