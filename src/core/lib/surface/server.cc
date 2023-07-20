@@ -28,7 +28,6 @@
 #include <list>
 #include <new>
 #include <queue>
-#include <tuple>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -61,13 +60,11 @@
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/detail/basic_join.h"
 #include "src/core/lib/promise/detail/basic_seq.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
-#include "src/core/lib/promise/try_join.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -426,7 +423,7 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
  private:
   Server* const server_;
   struct ActivityWaiter {
-    ActivityWaiter(Waker waker) : waker(std::move(waker)) {}
+    explicit ActivityWaiter(Waker waker) : waker(std::move(waker)) {}
     ~ActivityWaiter() { delete result.load(std::memory_order_acquire); }
     void Finish(absl::Status status) {
       result.store(new absl::StatusOr<MatchResult>(std::move(status)),

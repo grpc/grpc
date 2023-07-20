@@ -847,7 +847,6 @@ libs:
   - src/core/lib/promise/arena_promise.h
   - src/core/lib/promise/cancel_callback.h
   - src/core/lib/promise/context.h
-  - src/core/lib/promise/detail/basic_join.h
   - src/core/lib/promise/detail/basic_seq.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
@@ -869,7 +868,6 @@ libs:
   - src/core/lib/promise/seq.h
   - src/core/lib/promise/sleep.h
   - src/core/lib/promise/trace.h
-  - src/core/lib/promise/try_join.h
   - src/core/lib/promise/try_seq.h
   - src/core/lib/resolver/resolver.h
   - src/core/lib/resolver/resolver_factory.h
@@ -2234,7 +2232,6 @@ libs:
   - src/core/lib/promise/arena_promise.h
   - src/core/lib/promise/cancel_callback.h
   - src/core/lib/promise/context.h
-  - src/core/lib/promise/detail/basic_join.h
   - src/core/lib/promise/detail/basic_seq.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
@@ -2256,7 +2253,6 @@ libs:
   - src/core/lib/promise/seq.h
   - src/core/lib/promise/sleep.h
   - src/core/lib/promise/trace.h
-  - src/core/lib/promise/try_join.h
   - src/core/lib/promise/try_seq.h
   - src/core/lib/resolver/resolver.h
   - src/core/lib/resolver/resolver_factory.h
@@ -3731,7 +3727,6 @@ libs:
   - src/core/lib/promise/arena_promise.h
   - src/core/lib/promise/cancel_callback.h
   - src/core/lib/promise/context.h
-  - src/core/lib/promise/detail/basic_join.h
   - src/core/lib/promise/detail/basic_seq.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
@@ -3751,7 +3746,6 @@ libs:
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
   - src/core/lib/promise/trace.h
-  - src/core/lib/promise/try_join.h
   - src/core/lib/promise/try_seq.h
   - src/core/lib/resolver/resolver.h
   - src/core/lib/resolver/resolver_factory.h
@@ -8227,7 +8221,6 @@ targets:
   - src/core/lib/promise/arena_promise.h
   - src/core/lib/promise/cancel_callback.h
   - src/core/lib/promise/context.h
-  - src/core/lib/promise/detail/basic_join.h
   - src/core/lib/promise/detail/basic_seq.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
@@ -8247,7 +8240,6 @@ targets:
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
   - src/core/lib/promise/trace.h
-  - src/core/lib/promise/try_join.h
   - src/core/lib/promise/try_seq.h
   - src/core/lib/resolver/resolver.h
   - src/core/lib/resolver/resolver_factory.h
@@ -11331,6 +11323,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/lib/promise/detail/basic_join.h
   - src/core/lib/promise/join.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
@@ -11460,6 +11453,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/lib/promise/detail/basic_join.h
   - src/core/lib/promise/join.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/promise/test_wakeup_schedulers.h
