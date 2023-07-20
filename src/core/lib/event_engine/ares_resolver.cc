@@ -522,8 +522,8 @@ void AresResolver::OnHostbynameDoneLocked(void* arg, int status,
     std::string error_msg =
         absl::StrFormat("address lookup failed for %s: %s",
                         hostname_qa->query_name, ares_strerror(status));
-    GRPC_ARES_RESOLVER_TRACE_LOG("OnHostbynameDoneLocked: %s",
-                                 error_msg.c_str());
+    GRPC_ARES_RESOLVER_TRACE_LOG("resolver:%p OnHostbynameDoneLocked: %s",
+                                 ares_resolver, error_msg.c_str());
     ares_resolver->event_engine_->Run(
         [callback = std::move(callback),
          status = AresStatusToAbslStatus(status, error_msg)]() mutable {
@@ -531,8 +531,9 @@ void AresResolver::OnHostbynameDoneLocked(void* arg, int status,
         });
     return;
   }
-  GRPC_ARES_RESOLVER_TRACE_LOG("OnHostbynameDoneLocked name=%s ARES_SUCCESS",
-                               hostname_qa->query_name.c_str());
+  GRPC_ARES_RESOLVER_TRACE_LOG(
+      "resolver:%p OnHostbynameDoneLocked name=%s ARES_SUCCESS", ares_resolver,
+      hostname_qa->query_name.c_str());
   std::vector<EventEngine::ResolvedAddress> result;
   for (size_t i = 0; hostent->h_addr_list[i] != nullptr; i++) {
     switch (hostent->h_addrtype) {
@@ -548,9 +549,9 @@ void AresResolver::OnHostbynameDoneLocked(void* arg, int status,
         char output[INET6_ADDRSTRLEN];
         ares_inet_ntop(AF_INET6, &addr.sin6_addr, output, INET6_ADDRSTRLEN);
         GRPC_ARES_RESOLVER_TRACE_LOG(
-            "c-ares resolver gets a AF_INET6 result: \n"
+            "resolver:%p c-ares resolver gets a AF_INET6 result: \n"
             "  addr: %s\n  port: %d\n  sin6_scope_id: %d\n",
-            output, hostname_qa->port, addr.sin6_scope_id);
+            ares_resolver, output, hostname_qa->port, addr.sin6_scope_id);
         break;
       }
       case AF_INET: {
@@ -564,9 +565,9 @@ void AresResolver::OnHostbynameDoneLocked(void* arg, int status,
         char output[INET_ADDRSTRLEN];
         ares_inet_ntop(AF_INET, &addr.sin_addr, output, INET_ADDRSTRLEN);
         GRPC_ARES_RESOLVER_TRACE_LOG(
-            "c-ares resolver gets a AF_INET result: \n"
+            "resolver:%p c-ares resolver gets a AF_INET result: \n"
             "  addr: %s\n  port: %d\n",
-            output, hostname_qa->port);
+            ares_resolver, output, hostname_qa->port);
         break;
       }
     }
@@ -603,11 +604,13 @@ void AresResolver::OnSRVQueryDoneLocked(void* arg, int status, int /*timeouts*/,
     fail("SRV lookup failed");
     return;
   }
-  GRPC_ARES_RESOLVER_TRACE_LOG("OnSRVQueryDoneLocked name=%s ARES_SUCCESS",
-                               qa->query_name.c_str());
+  GRPC_ARES_RESOLVER_TRACE_LOG(
+      "resolver:%p OnSRVQueryDoneLocked name=%s ARES_SUCCESS", ares_resolver,
+      qa->query_name.c_str());
   struct ares_srv_reply* reply = nullptr;
   status = ares_parse_srv_reply(abuf, alen, &reply);
-  GRPC_ARES_RESOLVER_TRACE_LOG("ares_parse_srv_reply: %d", status);
+  GRPC_ARES_RESOLVER_TRACE_LOG("resolver:%p ares_parse_srv_reply: %d",
+                               ares_resolver, status);
   if (status != ARES_SUCCESS) {
     fail("Failed to parse SRV reply");
     return;
@@ -645,7 +648,8 @@ void AresResolver::OnTXTDoneLocked(void* arg, int status, int /*timeouts*/,
   auto fail = [&](absl::string_view prefix) {
     std::string error_message = absl::StrFormat(
         "%s for %s: %s", prefix, qa->query_name, ares_strerror(status));
-    GRPC_ARES_RESOLVER_TRACE_LOG("OnTXTDoneLocked: %s", error_message.c_str());
+    GRPC_ARES_RESOLVER_TRACE_LOG("resolver:%p OnTXTDoneLocked: %s",
+                                 ares_resolver, error_message.c_str());
     ares_resolver->event_engine_->Run(
         [callback = std::move(callback),
          status = AresStatusToAbslStatus(status, error_message)]() mutable {
@@ -656,8 +660,9 @@ void AresResolver::OnTXTDoneLocked(void* arg, int status, int /*timeouts*/,
     fail("TXT lookup failed");
     return;
   }
-  GRPC_ARES_RESOLVER_TRACE_LOG("OnTXTDoneLocked name=%s ARES_SUCCESS",
-                               qa->query_name.c_str());
+  GRPC_ARES_RESOLVER_TRACE_LOG(
+      "resolver:%p OnTXTDoneLocked name=%s ARES_SUCCESS", ares_resolver,
+      qa->query_name.c_str());
   struct ares_txt_ext* reply = nullptr;
   status = ares_parse_txt_reply_ext(buf, len, &reply);
   if (status != ARES_SUCCESS) {
@@ -674,7 +679,8 @@ void AresResolver::OnTXTDoneLocked(void* arg, int status, int /*timeouts*/,
           std::string(reinterpret_cast<char*>(part->txt), part->length));
     }
   }
-  GRPC_ARES_RESOLVER_TRACE_LOG("Got %zu TXT records", result.size());
+  GRPC_ARES_RESOLVER_TRACE_LOG("resolver:%p Got %zu TXT records", ares_resolver,
+                               result.size());
   if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_ares_resolver)) {
     for (const auto& record : result) {
       gpr_log(GPR_INFO, "%s", record.c_str());
