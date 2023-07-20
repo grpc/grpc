@@ -155,7 +155,7 @@ class EventEngineDNSTest : public EventEngineTest {
     std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
     EventEngine::DNSResolver::ResolverOptions options;
     options.dns_server = dns_server_.address();
-    return test_ee->GetDNSResolver(options);
+    return *test_ee->GetDNSResolver(options);
   }
 
   std::unique_ptr<EventEngine::DNSResolver>
@@ -170,14 +170,14 @@ class EventEngineDNSTest : public EventEngineTest {
     std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
     EventEngine::DNSResolver::ResolverOptions options;
     options.dns_server = dns_server;
-    return test_ee->GetDNSResolver(options);
+    return *test_ee->GetDNSResolver(options);
   }
 
   std::unique_ptr<EventEngine::DNSResolver>
   CreateDNSResolverWithoutSpecifyingServer() {
     std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
     EventEngine::DNSResolver::ResolverOptions options;
-    return test_ee->GetDNSResolver(options);
+    return *test_ee->GetDNSResolver(options);
   }
 
   struct DNSServer {
