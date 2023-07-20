@@ -490,6 +490,14 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "wait_for_callback",
+    hdrs = [
+        "lib/promise/wait_for_callback.h",
+    ],
+    deps = ["activity"],
+)
+
+grpc_cc_library(
     name = "arena_promise",
     external_deps = ["absl/meta:type_traits"],
     language = "c++",

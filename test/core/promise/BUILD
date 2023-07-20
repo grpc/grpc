@@ -471,6 +471,22 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "wait_for_callback_test",
+    srcs = ["wait_for_callback_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    tags = ["promise_test"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "test_wakeup_schedulers",
+        "//src/core:map",
+        "//src/core:notification",
+        "//src/core:wait_for_callback",
+    ],
+)
+
+grpc_cc_test(
     name = "event_engine_wakeup_scheduler_test",
     srcs = ["event_engine_wakeup_scheduler_test.cc"],
     external_deps = [
