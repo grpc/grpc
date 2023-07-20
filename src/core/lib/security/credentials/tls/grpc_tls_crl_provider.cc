@@ -46,7 +46,6 @@ absl::StatusOr<std::unique_ptr<Crl>> Crl::Parse(absl::string_view crl_string) {
         "Conversion from PEM string to X509 CRL failed.");
   }
   return std::make_unique<CrlImpl>(crl);
-  //   return 0;
 }
 
 }  // namespace experimental
