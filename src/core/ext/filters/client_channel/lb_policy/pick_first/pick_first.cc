@@ -486,12 +486,6 @@ void PickFirst::PickFirstSubchannelData::ReactToConnectivityStateLocked() {
         found_subchannel->ReactToConnectivityStateLocked();
         break;
       }
-      // If the first subchannel is already IDLE, trigger the right
-      // behavior immediately.
-      if (subchannel_list()->subchannel(0)->connectivity_state() ==
-          GRPC_CHANNEL_IDLE) {
-        subchannel_list()->subchannel(0)->ReactToConnectivityStateLocked();
-      }
       // We didn't find another subchannel not in state TRANSIENT_FAILURE,
       // so report TRANSIENT_FAILURE and wait for the first subchannel
       // in the list to report IDLE before continuing.
@@ -527,6 +521,13 @@ void PickFirst::PickFirstSubchannelData::ReactToConnectivityStateLocked() {
                          connectivity_status().ToString()));
         p->UpdateState(GRPC_CHANNEL_TRANSIENT_FAILURE, status,
                        MakeRefCounted<TransientFailurePicker>(status));
+      }
+      // If the first subchannel is already IDLE, trigger the next connection
+      // attempt immediately.  Otherwise, we'll wait for it to report
+      // its own connectivity state change.
+      auto* subchannel0 = subchannel_list()->subchannel(0);
+      if (subchannel0->connectivity_state() == GRPC_CHANNEL_IDLE) {
+        subchannel0->subchannel()->RequestConnection();
       }
       break;
     }
