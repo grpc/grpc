@@ -352,6 +352,21 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "dns_domain_test",
+    srcs = ["dns_domain_test.cc"],
+    external_deps = [
+        "gtest",
+        "absl/strings:str_format",
+    ],
+    language = "c++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:dns_domain",
+    ],
+)
+
+grpc_cc_test(
     name = "unique_type_name_test",
     srcs = ["unique_type_name_test.cc"],
     external_deps = [

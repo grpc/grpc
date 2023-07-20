@@ -784,6 +784,7 @@
         'src/core/lib/event_engine/work_queue/basic_work_queue.cc',
         'src/core/lib/experiments/config.cc',
         'src/core/lib/experiments/experiments.cc',
+        'src/core/lib/gprpp/dns_domain.cc',
         'src/core/lib/gprpp/load_file.cc',
         'src/core/lib/gprpp/per_cpu.cc',
         'src/core/lib/gprpp/status_helper.cc',

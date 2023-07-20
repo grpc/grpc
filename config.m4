@@ -591,6 +591,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/gpr/windows/tmpfile.cc \
     src/core/lib/gpr/wrap_memcpy.cc \
     src/core/lib/gprpp/crash.cc \
+    src/core/lib/gprpp/dns_domain.cc \
     src/core/lib/gprpp/examine_stack.cc \
     src/core/lib/gprpp/fork.cc \
     src/core/lib/gprpp/host_port.cc \

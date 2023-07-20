@@ -284,6 +284,15 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "dns_domain",
+    srcs = ["lib/gprpp/dns_domain.cc"],
+    hdrs = ["lib/gprpp/dns_domain.h"],
+    external_deps = ["absl/strings"],
+    language = "c++",
+    deps = ["//:gpr_platform"],
+)
+
+grpc_cc_library(
     name = "unique_type_name",
     hdrs = ["lib/gprpp/unique_type_name.h"],
     external_deps = ["absl/strings"],
@@ -4105,6 +4114,7 @@ grpc_cc_library(
         "channel_fwd",
         "closure",
         "default_event_engine",
+        "dns_domain",
         "env",
         "envoy_admin_upb",
         "envoy_config_cluster_upb",
@@ -4200,7 +4210,6 @@ grpc_cc_library(
         "//:grpc_client_channel",
         "//:grpc_credentials_util",
         "//:grpc_public_hdrs",
-        "//:grpc_resolver",
         "//:grpc_security_base",
         "//:grpc_trace",
         "//:iomgr_timer",

@@ -553,7 +553,7 @@ TEST_F(ClusterTypeTest, LogicalDnsSocketAddressInvalid) {
       << decode_result.resource.status();
 }
 
-TEST_F(ClusterTypeTest, LogicalDnsSocketAddressInvalidResolverTarget) {
+TEST_F(ClusterTypeTest, LogicalDnsSocketAddressInvalidDnsDomain) {
   Cluster cluster;
   cluster.set_name("foo");
   cluster.set_type(cluster.LOGICAL_DNS);
@@ -577,8 +577,7 @@ TEST_F(ClusterTypeTest, LogicalDnsSocketAddressInvalidResolverTarget) {
   EXPECT_EQ(decode_result.resource.status().message(),
             "errors validating Cluster resource: ["
             "field:load_assignment.endpoints[0].lb_endpoints[0].endpoint"
-            ".address.socket_address "
-            "error:invalid DNS name: server/example.com:443]")
+            ".address.socket_address.address error:invalid DNS domain]")
       << decode_result.resource.status();
 }
 

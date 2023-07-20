@@ -1203,6 +1203,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/gprpp/crash.cc )
   s.files += %w( src/core/lib/gprpp/crash.h )
   s.files += %w( src/core/lib/gprpp/debug_location.h )
+  s.files += %w( src/core/lib/gprpp/dns_domain.cc )
+  s.files += %w( src/core/lib/gprpp/dns_domain.h )
   s.files += %w( src/core/lib/gprpp/dual_ref_counted.h )
   s.files += %w( src/core/lib/gprpp/env.h )
   s.files += %w( src/core/lib/gprpp/examine_stack.cc )

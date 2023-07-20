@@ -736,6 +736,7 @@ libs:
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/chunked_vector.h
   - src/core/lib/gprpp/cpp_impl_of.h
+  - src/core/lib/gprpp/dns_domain.h
   - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/if_list.h
   - src/core/lib/gprpp/load_file.h
@@ -1537,6 +1538,7 @@ libs:
   - src/core/lib/event_engine/work_queue/basic_work_queue.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
+  - src/core/lib/gprpp/dns_domain.cc
   - src/core/lib/gprpp/load_file.cc
   - src/core/lib/gprpp/per_cpu.cc
   - src/core/lib/gprpp/status_helper.cc
@@ -6808,6 +6810,19 @@ targets:
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
+- name: dns_domain_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/gprpp/dns_domain.h
+  src:
+  - src/core/lib/gprpp/dns_domain.cc
+  - test/core/gprpp/dns_domain_test.cc
+  deps:
+  - absl/strings:str_format
+  - absl/strings:strings
+  uses_polling: false
 - name: dns_resolver_cooldown_test
   gtest: true
   build: test

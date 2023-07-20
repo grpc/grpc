@@ -58,6 +58,7 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/dns_domain.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/match.h"
@@ -67,7 +68,6 @@
 #include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
 #include "src/core/lib/matchers/matchers.h"
-#include "src/core/lib/resolver/resolver_registry.h"
 
 namespace grpc_core {
 
@@ -285,6 +285,10 @@ XdsClusterResource::LogicalDns LogicalDnsParse(
     ValidationErrors::ScopedField field(errors, ".address");
     errors->AddError("field not present");
   }
+  if (!IsValidDnsDomain(address_str)) {
+    ValidationErrors::ScopedField field(errors, ".address");
+    errors->AddError("invalid DNS domain");
+  }
   if (!envoy_config_core_v3_SocketAddress_has_port_value(socket_address)) {
     ValidationErrors::ScopedField field(errors, ".port_value");
     errors->AddError("field not present");
@@ -292,10 +296,6 @@ XdsClusterResource::LogicalDns LogicalDnsParse(
   logical_dns.hostname = JoinHostPort(
       address_str,
       envoy_config_core_v3_SocketAddress_port_value(socket_address));
-  if (!CoreConfiguration::Get().resolver_registry().IsValidTarget(
-          logical_dns.hostname)) {
-    errors->AddError(absl::StrCat("invalid DNS name: ", logical_dns.hostname));
-  }
   return logical_dns;
 }
 

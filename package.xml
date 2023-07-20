@@ -1185,6 +1185,8 @@
     <file baseinstalldir="/" name="src/core/lib/gprpp/crash.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/crash.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/debug_location.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/dns_domain.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/dns_domain.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/dual_ref_counted.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/env.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/examine_stack.cc" role="src" />
