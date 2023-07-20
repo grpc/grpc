@@ -1128,6 +1128,9 @@ grpc_cc_library(
         "absl/meta:type_traits",
         "absl/utility",
     ],
+    visibility = [
+        "@grpc:alt_grpc_base_legacy",
+    ],
     deps = [
         "construct_destruct",
         "context",
@@ -1176,6 +1179,9 @@ grpc_cc_library(
         "lib/resource_quota/resource_quota.h",
     ],
     external_deps = ["absl/strings"],
+    visibility = [
+        "@grpc:alt_grpc_base_legacy",
+    ],
     deps = [
         "memory_quota",
         "ref_counted",
