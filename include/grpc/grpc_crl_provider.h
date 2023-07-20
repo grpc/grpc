@@ -37,7 +37,7 @@ class Crl {
  private:
   absl::string_view crl_;
   // best way to accomplish this? Where to have OpenSSL import?
-  // X509_CRL openssl_cert_;
+  // X509_CRL openssl_crl_;
 };
 
 // Representation of a Certificate
@@ -55,7 +55,9 @@ class Cert {
 class CrlProvider {
  public:
   CrlProvider() {}
-  virtual Crl Crl(const Cert& cert) = 0;
+  // Get the CRL associated with a certificate. Read-only.
+  virtual const Crl* Crl(const Cert& cert) = 0;
+  virtual void CrlReadErrorCallback(/*TODO*/) = 0;
 };
 
 }  // namespace experimental
