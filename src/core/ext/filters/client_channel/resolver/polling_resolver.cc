@@ -261,8 +261,13 @@ void PollingResolver::StartResolvingLocked() {
   request_ = StartRequest();
   last_resolution_timestamp_ = Timestamp::Now();
   if (GPR_UNLIKELY(tracer_ != nullptr && tracer_->enabled())) {
-    gpr_log(GPR_INFO, "[polling resolver %p] starting resolution, request_=%p",
-            this, request_.get());
+    if (request_ != nullptr) {
+      gpr_log(GPR_INFO,
+              "[polling resolver %p] starting resolution, request_=%p", this,
+              request_.get());
+    } else {
+      gpr_log(GPR_INFO, "[polling resolver %p] StartRequest failed", this);
+    }
   }
 }
 

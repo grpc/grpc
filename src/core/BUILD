@@ -127,6 +127,7 @@ grpc_cc_library(
     ],
     language = "c++",
     tags = ["nofixdeps"],
+    visibility = ["@grpc:grpc_experiments"],
     deps = [
         "no_destruct",
         "//:config_vars",
@@ -1374,9 +1375,10 @@ grpc_cc_library(
     hdrs = [
         "lib/event_engine/forkable.h",
     ],
-    external_deps = ["absl/container:flat_hash_set"],
+    external_deps = ["absl/base:core_headers"],
     deps = [
         "no_destruct",
+        "//:config_vars",
         "//:gpr",
         "//:gpr_platform",
     ],
@@ -1943,6 +1945,7 @@ grpc_cc_library(
         "posix_event_engine_tcp_socket_utils",
         "socket_mutator",
         "status_helper",
+        "time",
         "//:event_engine_base_hdrs",
         "//:exec_ctx",
         "//:gpr",
@@ -3960,7 +3963,6 @@ grpc_cc_library(
         "//:ref_counted_ptr",
         "//:server_address",
         "//:sockaddr_utils",
-        "//:uri_parser",
         "//:work_serializer",
     ],
 )
@@ -4047,7 +4049,6 @@ grpc_cc_library(
         "//:ref_counted_ptr",
         "//:rls_upb",
         "//:server_address",
-        "//:uri_parser",
         "//:work_serializer",
     ],
 )
@@ -4171,6 +4172,7 @@ grpc_cc_library(
         "envoy_extensions_http_stateful_session_cookie_upb",
         "envoy_extensions_http_stateful_session_cookie_upbdefs",
         "envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_upb",
+        "envoy_extensions_load_balancing_policies_pick_first_upb",
         "envoy_extensions_load_balancing_policies_ring_hash_upb",
         "envoy_extensions_load_balancing_policies_wrr_locality_upb",
         "envoy_extensions_transport_sockets_tls_upb",
@@ -4189,6 +4191,7 @@ grpc_cc_library(
         "grpc_audit_logging",
         "grpc_fake_credentials",
         "grpc_fault_injection_filter",
+        "grpc_lb_policy_pick_first",
         "grpc_lb_xds_channel_args",
         "grpc_matchers",
         "grpc_outlier_detection_header",
@@ -4623,40 +4626,32 @@ grpc_cc_library(
         "//:grpc_trace",
         "//:orphanable",
         "//:ref_counted_ptr",
-        "//:sockaddr_utils",
         "//:work_serializer",
     ],
 )
 
 grpc_cc_library(
-    name = "lb_endpoint_list",
-    srcs = [
-        "ext/filters/client_channel/lb_policy/endpoint_list.cc",
-    ],
+    name = "grpc_lb_subchannel_list",
     hdrs = [
-        "ext/filters/client_channel/lb_policy/endpoint_list.h",
+        "ext/filters/client_channel/lb_policy/subchannel_list.h",
     ],
     external_deps = [
-        "absl/functional:any_invocable",
         "absl/status",
-        "absl/status:statusor",
         "absl/types:optional",
     ],
     language = "c++",
     deps = [
         "channel_args",
-        "delegating_helper",
-        "grpc_lb_policy_pick_first",
-        "json",
+        "dual_ref_counted",
+        "gpr_manual_constructor",
+        "health_check_client",
+        "iomgr_fwd",
         "lb_policy",
-        "lb_policy_registry",
-        "pollset_set",
         "subchannel_interface",
-        "//:config",
         "//:debug_location",
         "//:gpr",
         "//:grpc_base",
-        "//:orphanable",
+        "//:grpc_client_channel",
         "//:ref_counted_ptr",
         "//:server_address",
         "//:work_serializer",
@@ -4683,8 +4678,8 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "env",
-        "health_check_client",
-        "iomgr_fwd",
+        "grpc_lb_subchannel_list",
+        "grpc_outlier_detection_header",
         "json",
         "json_args",
         "json_object_loader",
@@ -4700,6 +4695,7 @@ grpc_cc_library(
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:server_address",
+        "//:work_serializer",
     ],
 )
 
@@ -4724,18 +4720,16 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "closure",
-        "delegating_helper",
         "error",
-        "grpc_lb_policy_pick_first",
+        "grpc_lb_subchannel_list",
         "grpc_service_config",
         "json",
         "json_args",
         "json_object_loader",
         "lb_policy",
         "lb_policy_factory",
-        "lb_policy_registry",
-        "pollset_set",
         "ref_counted",
+        "subchannel_interface",
         "unique_type_name",
         "validation_errors",
         "//:config",
@@ -4768,10 +4762,11 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
+        "grpc_lb_subchannel_list",
         "json",
-        "lb_endpoint_list",
         "lb_policy",
         "lb_policy_factory",
+        "subchannel_interface",
         "//:config",
         "//:debug_location",
         "//:gpr",
@@ -4813,16 +4808,15 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/types:optional",
-        "absl/types:variant",
     ],
     language = "c++",
     deps = [
         "channel_args",
         "grpc_backend_metric_data",
+        "grpc_lb_subchannel_list",
         "json",
         "json_args",
         "json_object_loader",
-        "lb_endpoint_list",
         "lb_policy",
         "lb_policy_factory",
         "ref_counted",
@@ -4860,6 +4854,7 @@ grpc_cc_library(
         "time",
         "validation_errors",
         "//:gpr_platform",
+        "//:server_address",
     ],
 )
 
@@ -4886,6 +4881,7 @@ grpc_cc_library(
         "lb_policy",
         "lb_policy_factory",
         "lb_policy_registry",
+        "match",
         "pollset_set",
         "ref_counted",
         "subchannel_interface",
@@ -5811,6 +5807,32 @@ grpc_cc_library(
     ],
 )
 
+grpc_cc_library(
+    name = "grpc_promise_endpoint",
+    srcs = [
+        "lib/transport/promise_endpoint.cc",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/types:optional",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "lib/transport/promise_endpoint.h",
+    ],
+    deps = [
+        "activity",
+        "event_engine_common",
+        "poll",
+        "slice",
+        "slice_buffer",
+        "//:event_engine_base_hdrs",
+        "//:gpr",
+    ],
+)
+
 ### UPB Targets
 
 grpc_upb_proto_library(
@@ -5951,6 +5973,11 @@ grpc_upb_proto_library(
 grpc_upb_proto_library(
     name = "envoy_extensions_load_balancing_policies_wrr_locality_upb",
     deps = ["@envoy_api//envoy/extensions/load_balancing_policies/wrr_locality/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "envoy_extensions_load_balancing_policies_pick_first_upb",
+    deps = ["@envoy_api//envoy/extensions/load_balancing_policies/pick_first/v3:pkg"],
 )
 
 grpc_upb_proto_library(

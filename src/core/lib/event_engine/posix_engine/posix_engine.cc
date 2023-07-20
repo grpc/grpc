@@ -493,55 +493,40 @@ EventEngine::TaskHandle PosixEventEngine::RunAfterInternal(
 #if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_TCP)
 
 PosixEventEngine::PosixDNSResolver::PosixDNSResolver(
-    const ResolverOptions& options, PosixEventPoller* poller,
-    std::shared_ptr<EventEngine> event_engine)
-    : event_engine_(event_engine),
-      ares_resolver_(AresResolver::CreateAresResolver(
-          options.dns_server,
-          std::make_unique<GrpcPolledFdFactoryPosix>(poller),
-          std::move(event_engine))) {}
+    grpc_core::OrphanablePtr<AresResolver> ares_resolver)
+    : ares_resolver_(std::move(ares_resolver)) {}
 
 void PosixEventEngine::PosixDNSResolver::LookupHostname(
     LookupHostnameCallback on_resolve, absl::string_view name,
     absl::string_view default_port) {
-  if (!ares_resolver_.ok()) {
-    event_engine_->Run(
-        [on_resolve = std::move(on_resolve),
-         status = ares_resolver_.status()]() mutable { on_resolve(status); });
-    return;
-  }
-  (*ares_resolver_)->LookupHostname(name, default_port, std::move(on_resolve));
+  ares_resolver_->LookupHostname(name, default_port, std::move(on_resolve));
 }
 
 void PosixEventEngine::PosixDNSResolver::LookupSRV(LookupSRVCallback on_resolve,
                                                    absl::string_view name) {
-  if (!ares_resolver_.ok()) {
-    event_engine_->Run(
-        [on_resolve = std::move(on_resolve),
-         status = ares_resolver_.status()]() mutable { on_resolve(status); });
-    return;
-  }
-  (*ares_resolver_)->LookupSRV(name, std::move(on_resolve));
+  ares_resolver_->LookupSRV(name, std::move(on_resolve));
 }
 
 void PosixEventEngine::PosixDNSResolver::LookupTXT(LookupTXTCallback on_resolve,
                                                    absl::string_view name) {
-  if (!ares_resolver_.ok()) {
-    event_engine_->Run(
-        [on_resolve = std::move(on_resolve),
-         status = ares_resolver_.status()]() mutable { on_resolve(status); });
-    return;
-  }
-  (*ares_resolver_)->LookupTXT(name, std::move(on_resolve));
+  ares_resolver_->LookupTXT(name, std::move(on_resolve));
 }
 
 #endif  // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_TCP)
 
-std::unique_ptr<EventEngine::DNSResolver> PosixEventEngine::GetDNSResolver(
+absl::StatusOr<std::unique_ptr<EventEngine::DNSResolver>>
+PosixEventEngine::GetDNSResolver(
     const EventEngine::DNSResolver::ResolverOptions& options) {
 #if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_TCP)
+  auto ares_resolver = AresResolver::CreateAresResolver(
+      options.dns_server,
+      std::make_unique<GrpcPolledFdFactoryPosix>(poller_manager_->Poller()),
+      shared_from_this());
+  if (!ares_resolver.ok()) {
+    return ares_resolver.status();
+  }
   return std::make_unique<PosixEventEngine::PosixDNSResolver>(
-      options, poller_manager_->Poller(), shared_from_this());
+      std::move(*ares_resolver));
 #else   // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_TCP)
   // TODO(yijiem): Implement a basic A/AAAA-only native resolver in
   // PosixEventEngine.

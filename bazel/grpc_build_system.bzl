@@ -98,6 +98,7 @@ def _update_visibility(visibility):
         "endpoint_tests": PRIVATE,
         "exec_ctx": PRIVATE,
         "grpclb": PRIVATE,
+        "grpc_experiments": PRIVATE,
         "grpc_opencensus_plugin": PUBLIC,
         "grpcpp_gcp_observability": PUBLIC,
         "grpc_resolver_fake": PRIVATE,
@@ -197,6 +198,7 @@ def grpc_cc_library(
         testonly = testonly,
         linkopts = linkopts,
         includes = [
+            "api/include",
             "include",
             "src/core/ext/upb-generated",  # Once upb code-gen issue is resolved, remove this.
             "src/core/ext/upbdefs-generated",  # Once upb code-gen issue is resolved, remove this.

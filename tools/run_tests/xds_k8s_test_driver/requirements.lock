@@ -1,5 +1,5 @@
 Mako==1.2.4
-PyYAML==5.4.1
+PyYAML==6.0
 absl-py==0.15.0
 google-api-python-client==1.12.11
 google-cloud-secret-manager==2.15.1

@@ -16,6 +16,8 @@ syntax = "proto3";
 
 package hpack_sync_fuzzer;
 
+import "test/core/util/fuzz_config_vars.proto";
+
 message Empty {}
 
 message StringKeyValue {
@@ -40,4 +42,5 @@ message Header {
 message Msg {
   bool use_true_binary_metadata = 1;
   repeated Header headers = 2;
+  grpc.testing.FuzzConfigVars config_vars = 3;
 }

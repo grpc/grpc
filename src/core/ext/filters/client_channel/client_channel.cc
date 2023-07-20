@@ -1499,7 +1499,7 @@ void ClientChannel::UpdateServiceConfigInDataPlaneLocked() {
   std::vector<const grpc_channel_filter*> filters =
       config_selector->GetFilters();
   if (enable_retries) {
-    filters.push_back(&kRetryFilterVtable);
+    filters.push_back(&RetryFilter::kVtable);
   } else {
     filters.push_back(&DynamicTerminationFilter::kFilterVtable);
   }

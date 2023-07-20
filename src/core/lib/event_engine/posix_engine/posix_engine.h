@@ -142,8 +142,8 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
    public:
     PosixDNSResolver() = delete;
 #if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_TCP)
-    PosixDNSResolver(const ResolverOptions& options, PosixEventPoller* poller,
-                     std::shared_ptr<EventEngine> event_engine);
+    explicit PosixDNSResolver(
+        grpc_core::OrphanablePtr<AresResolver> ares_resolver);
 #endif  // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_TCP)
     void LookupHostname(LookupHostnameCallback on_resolve,
                         absl::string_view name,
@@ -155,8 +155,7 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
 
 #if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_TCP)
    private:
-    std::shared_ptr<EventEngine> event_engine_;
-    absl::StatusOr<grpc_core::OrphanablePtr<AresResolver>> ares_resolver_;
+    grpc_core::OrphanablePtr<AresResolver> ares_resolver_;
 #endif  // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_TCP)
   };
 
@@ -200,10 +199,11 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
 
   bool CancelConnect(ConnectionHandle handle) override;
   bool IsWorkerThread() override;
-  std::unique_ptr<DNSResolver> GetDNSResolver(
+  absl::StatusOr<std::unique_ptr<DNSResolver>> GetDNSResolver(
       const DNSResolver::ResolverOptions& options) override;
   void Run(Closure* closure) override;
   void Run(absl::AnyInvocable<void()> closure) override;
+  // Caution!! The timer implementation cannot create any fds. See #20418.
   TaskHandle RunAfter(Duration when, Closure* closure) override;
   TaskHandle RunAfter(Duration when,
                       absl::AnyInvocable<void()> closure) override;
