@@ -19,12 +19,12 @@ set -ex
 # change to grpc repo root
 pushd "${KOKORO_ARTIFACTS_DIR}/github/grpc"
 
-sudo DEBIAN_FRONTEND=noninteractive apt-get -qq update
-sudo DEBIAN_FRONTEND=noninteractive apt-get -qq install --auto-remove "python3.10-venv"
+# sudo DEBIAN_FRONTEND=noninteractive apt-get -qq update
+# sudo DEBIAN_FRONTEND=noninteractive apt-get -qq install --auto-remove "python3.10-venv"
 
-VIRTUAL_ENV=$(mktemp -d)
-python3 -m venv "${VIRTUAL_ENV}"
-source "${VIRTUAL_ENV}/bin/activate"
+# VIRTUAL_ENV=$(mktemp -d)
+# python3 -m venv "${VIRTUAL_ENV}"
+# source "${VIRTUAL_ENV}/bin/activate"
 
 python3 -m pip install --upgrade pip==19.3.1
 # TODO(sergiitk): Unpin grpcio-tools when a version of xds-protos
