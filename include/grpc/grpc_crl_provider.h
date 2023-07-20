@@ -22,31 +22,36 @@
 #include <memory>
 #include <string>
 
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
 namespace experimental {
 
-// Representation of a CRL
+// Opaque representation of a CRL
 class Crl {
  public:
-  explicit Crl(const char* crl) : crl_(crl){};
+  static std::unique_ptr<Crl> Parse(absl::string_view crl_string);
+  virtual ~Crl() = default;
+
+ protected:
+  Crl() = default;
 
  private:
-  absl::string_view crl_;
-  // best way to accomplish this? Where to have OpenSSL import?
-  // X509_CRL openssl_crl_;
+  std::string raw_crl_;
 };
 
-// Representation of a Certificate
+// Opaque representation of a Certificate
 class Cert {
  public:
-  explicit Cert(const char* cert) : cert_(cert){};
+  static std::unique_ptr<Cert> Parse(absl::string_view cert_string);
+  virtual ~Cert() = default;
+
+ protected:
+  Cert() = default;
 
  private:
-  absl::string_view cert_;
-  // best way to accomplish this? Where to have OpenSSL import?
-  // X509 openssl_cert_;
+  absl::string_view raw_cert_;
 };
 
 // The base class for CRL Provider implementations.
@@ -54,8 +59,8 @@ class CrlProvider {
  public:
   CrlProvider() {}
   // Get the CRL associated with a certificate. Read-only.
-  virtual const Crl* Crl(const Cert& cert) = 0;
-  virtual void CrlReadErrorCallback(/*TODO*/) = 0;
+  virtual std::shared_ptr<Crl> Crl(const Cert& cert) = 0;
+  virtual void CrlReadErrorCallback(absl::Status) = 0;
 };
 
 }  // namespace experimental
