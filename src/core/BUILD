@@ -4200,6 +4200,7 @@ grpc_cc_library(
         "//:grpc_client_channel",
         "//:grpc_credentials_util",
         "//:grpc_public_hdrs",
+        "//:grpc_resolver",
         "//:grpc_security_base",
         "//:grpc_trace",
         "//:iomgr_timer",
