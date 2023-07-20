@@ -29,15 +29,17 @@ EXCLUDE_PROTO_PACKAGES_LIST = [
 
 # Compute the pathes
 WORK_DIR = os.path.dirname(os.path.abspath(__file__))
-GRPC_ROOT = os.path.abspath(os.path.join(WORK_DIR, '..', '..', '..', '..'))
-ENVOY_API_PROTO_ROOT = os.path.join(GRPC_ROOT, 'third_party', 'envoy-api')
-XDS_PROTO_ROOT = os.path.join(GRPC_ROOT, 'third_party', 'xds')
-GOOGLEAPIS_ROOT = os.path.join(GRPC_ROOT, 'third_party', 'googleapis')
-VALIDATE_ROOT = os.path.join(GRPC_ROOT, 'third_party', 'protoc-gen-validate')
-OPENCENSUS_PROTO_ROOT = os.path.join(GRPC_ROOT, 'third_party',
-                                     'opencensus-proto', 'src')
-OPENTELEMETRY_PROTO_ROOT = os.path.join(GRPC_ROOT, 'third_party',
-                                        'opentelemetry')
+GRPC_ROOT = os.path.abspath(os.path.join(WORK_DIR, "..", "..", "..", ".."))
+ENVOY_API_PROTO_ROOT = os.path.join(GRPC_ROOT, "third_party", "envoy-api")
+XDS_PROTO_ROOT = os.path.join(GRPC_ROOT, "third_party", "xds")
+GOOGLEAPIS_ROOT = os.path.join(GRPC_ROOT, "third_party", "googleapis")
+VALIDATE_ROOT = os.path.join(GRPC_ROOT, "third_party", "protoc-gen-validate")
+OPENCENSUS_PROTO_ROOT = os.path.join(
+    GRPC_ROOT, "third_party", "opencensus-proto", "src"
+)
+OPENTELEMETRY_PROTO_ROOT = os.path.join(
+    GRPC_ROOT, "third_party", "opentelemetry"
+)
 WELL_KNOWN_PROTOS_INCLUDE = pkg_resources.resource_filename(
     "grpc_tools", "_proto"
 )
@@ -76,15 +78,15 @@ def add_test_import(
 
 # Prepare Protoc command
 COMPILE_PROTO_ONLY = [
-    'grpc_tools.protoc',
-    '--proto_path={}'.format(ENVOY_API_PROTO_ROOT),
-    '--proto_path={}'.format(XDS_PROTO_ROOT),
-    '--proto_path={}'.format(GOOGLEAPIS_ROOT),
-    '--proto_path={}'.format(VALIDATE_ROOT),
-    '--proto_path={}'.format(WELL_KNOWN_PROTOS_INCLUDE),
-    '--proto_path={}'.format(OPENCENSUS_PROTO_ROOT),
-    '--proto_path={}'.format(OPENTELEMETRY_PROTO_ROOT),
-    '--python_out={}'.format(OUTPUT_PATH),
+    "grpc_tools.protoc",
+    "--proto_path={}".format(ENVOY_API_PROTO_ROOT),
+    "--proto_path={}".format(XDS_PROTO_ROOT),
+    "--proto_path={}".format(GOOGLEAPIS_ROOT),
+    "--proto_path={}".format(VALIDATE_ROOT),
+    "--proto_path={}".format(WELL_KNOWN_PROTOS_INCLUDE),
+    "--proto_path={}".format(OPENCENSUS_PROTO_ROOT),
+    "--proto_path={}".format(OPENTELEMETRY_PROTO_ROOT),
+    "--python_out={}".format(OUTPUT_PATH),
 ]
 COMPILE_BOTH = COMPILE_PROTO_ONLY + ["--grpc_python_out={}".format(OUTPUT_PATH)]
 
