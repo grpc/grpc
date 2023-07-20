@@ -26,10 +26,10 @@ pushd "${KOKORO_ARTIFACTS_DIR}/github/grpc"
 # python3 -m venv "${VIRTUAL_ENV}"
 # source "${VIRTUAL_ENV}/bin/activate"
 
-python3 -m pip install --upgrade pip==19.3.1
+sudo python3 -m pip install --upgrade pip==19.3.1
 # TODO(sergiitk): Unpin grpcio-tools when a version of xds-protos
 #   compatible with protobuf 4.X is uploaded to PyPi.
-python3 -m pip install --upgrade grpcio grpcio-tools==1.48.1 google-api-python-client google-auth-httplib2 oauth2client xds-protos
+sudo python3 -m pip install --upgrade grpcio grpcio-tools==1.48.1 google-api-python-client google-auth-httplib2 oauth2client xds-protos
 
 # Prepare generated Python code.
 TOOLS_DIR=tools/run_tests
