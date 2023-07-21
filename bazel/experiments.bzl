@@ -55,6 +55,9 @@ EXPERIMENTS = {
         "lame_client_test": [
             "promise_based_client_call",
         ],
+        "logging_test": [
+            "promise_based_server_call",
+        ],
         "resolver_component_tests_runner_invoker": [
             "event_engine_dns",
         ],
