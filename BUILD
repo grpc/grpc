@@ -213,7 +213,7 @@ python_config_settings()
 # This should be updated along with build_handwritten.yaml
 g_stands_for = "grounded"  # @unused
 
-core_version = "33.0.0"  # @unused
+core_version = "34.0.0"  # @unused
 
 version = "1.57.0-dev"  # @unused
 

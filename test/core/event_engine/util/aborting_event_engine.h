@@ -49,7 +49,7 @@ class AbortingEventEngine : public EventEngine {
     abort();
   };
   bool IsWorkerThread() override { abort(); }
-  std::unique_ptr<DNSResolver> GetDNSResolver(
+  absl::StatusOr<std::unique_ptr<DNSResolver>> GetDNSResolver(
       const DNSResolver::ResolverOptions& /* options */) override {
     abort();
   }

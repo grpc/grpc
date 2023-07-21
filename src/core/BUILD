@@ -127,6 +127,7 @@ grpc_cc_library(
     ],
     language = "c++",
     tags = ["nofixdeps"],
+    visibility = ["@grpc:grpc_experiments"],
     deps = [
         "no_destruct",
         "//:config_vars",
@@ -1127,6 +1128,9 @@ grpc_cc_library(
         "absl/meta:type_traits",
         "absl/utility",
     ],
+    visibility = [
+        "@grpc:alt_grpc_base_legacy",
+    ],
     deps = [
         "construct_destruct",
         "context",
@@ -1175,6 +1179,9 @@ grpc_cc_library(
         "lib/resource_quota/resource_quota.h",
     ],
     external_deps = ["absl/strings"],
+    visibility = [
+        "@grpc:alt_grpc_base_legacy",
+    ],
     deps = [
         "memory_quota",
         "ref_counted",
@@ -1503,6 +1510,7 @@ grpc_cc_library(
         "event_engine_work_queue",
         "experiments",
         "forkable",
+        "notification",
         "time",
         "useful",
         "//:backoff",

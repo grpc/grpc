@@ -188,7 +188,7 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
 
   bool CancelConnect(ConnectionHandle handle) override;
   bool IsWorkerThread() override;
-  std::unique_ptr<DNSResolver> GetDNSResolver(
+  absl::StatusOr<std::unique_ptr<DNSResolver>> GetDNSResolver(
       const DNSResolver::ResolverOptions& options) override;
   void Run(Closure* closure) override;
   void Run(absl::AnyInvocable<void()> closure) override;

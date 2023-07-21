@@ -93,7 +93,7 @@
     (ie when all filters in a stack are promise based)
   expiry: 2023/11/01
   owner: ctiller@google.com
-  test_tags: ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test"]
+  test_tags: ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test", "logging_test"]
 - name: transport_supplies_client_latency
   description: If set, use the transport represented value for client latency in opencensus
   expiry: 2023/09/01
