@@ -777,8 +777,6 @@ class PythonLanguage(object):
                         ]
                     )
 
-        # TODO: Remove
-        print(jobs)
         return jobs
 
     def pre_build_steps(self):
