@@ -38,10 +38,8 @@
 namespace grpc_core {
 namespace testing {
 
-using experimental::CertificateInfo;
 using experimental::Crl;
 using experimental::CrlImpl;
-using experimental::CrlProvider;
 
 TEST(CrlProviderTest, CanParseCrl) {
   std::string crl_string = GetFileContents(CRL_PATH);
