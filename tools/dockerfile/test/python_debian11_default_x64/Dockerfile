@@ -189,3 +189,7 @@ RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/downloa
     && cd ../.. \
     && rm -rf ccache-4.5.1 ccache.tar.gz
 
+# Fix dubious ownerhsip issue.
+RUN git config --global --add safe.directory '*' && \
+	git config --global protocol.file.allow always
+
