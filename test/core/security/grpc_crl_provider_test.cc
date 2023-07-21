@@ -49,8 +49,9 @@ TEST(CrlProviderTest, CanParseCrl) {
   auto* crl = static_cast<CrlImpl*>(result->get());
   const X509_CRL* x509_crl = &crl->crl();
   X509_NAME* issuer = X509_CRL_get_issuer(x509_crl);
-  const char* buf = X509_NAME_oneline(issuer, nullptr, 0);
+  char* buf = X509_NAME_oneline(issuer, nullptr, 0);
   EXPECT_STREQ(buf, CRL_ISSUER);
+  OPENSSL_free(buf);
 }
 
 TEST(CrlProviderTest, InvalidFile) {
