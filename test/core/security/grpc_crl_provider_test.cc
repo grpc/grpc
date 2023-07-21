@@ -56,7 +56,6 @@ TEST(CrlProviderTest, CanParseCrl) {
 TEST(CrlProviderTest, InvalidFile) {
   std::string crl_string = "INVALID CRL FILE";
   absl::StatusOr<std::shared_ptr<Crl>> result = Crl::Parse(crl_string);
-  EXPECT_FALSE(result.ok());
   EXPECT_EQ(result.status(),
             absl::InvalidArgumentError(
                 "Conversion from PEM string to X509 CRL failed."));
