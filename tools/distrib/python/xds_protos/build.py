@@ -19,16 +19,21 @@ import os
 from grpc_tools import protoc
 import pkg_resources
 
+
 def localize_path(p):
     return os.path.join(*p.split("/"))
 
+
 # We might not want to compile all the protos
-EXCLUDE_PROTO_PACKAGES_LIST = [localize_path(p) for p in [
-    # Requires extra dependency to Prometheus protos
-    "envoy/service/metrics/v2",
-    "envoy/service/metrics/v3",
-    "envoy/service/metrics/v4alpha",
-]]
+EXCLUDE_PROTO_PACKAGES_LIST = [
+    localize_path(p)
+    for p in [
+        # Requires extra dependency to Prometheus protos
+        "envoy/service/metrics/v2",
+        "envoy/service/metrics/v3",
+        "envoy/service/metrics/v4alpha",
+    ]
+]
 
 # Compute the pathes
 WORK_DIR = os.path.dirname(os.path.abspath(__file__))
