@@ -75,25 +75,25 @@ main() {
   # Run cross branch tests per language: master x latest and master x oldest
   for LANG in ${LANGS}
   do
-    if run_test "${LANG}" "${MAIN_BRANCH}" "${LANG}" "${LATEST_BRANCH}"; then
+    if run_test "${LANG}" "${MAIN_BRANCH}" "${LANG}" "${LATEST_BRANCH}" "${MAIN_BRANCH}" "latest"; then
       successful_string="${successful_string} ${MAIN_BRANCH}-${LATEST_BRANCH}/${LANG}"
     else
       failed_tests=$((failed_tests + 1))
       failed_string="${failed_string} ${MAIN_BRANCH}-${LATEST_BRANCH}/${LANG}"
     fi
-    if run_test "${LANG}" "${LATEST_BRANCH}" "${LANG}" "${MAIN_BRANCH}"; then
+    if run_test "${LANG}" "${LATEST_BRANCH}" "${LANG}" "${MAIN_BRANCH}" "latest" "${MAIN_BRANCH}"; then
       successful_string="${successful_string} ${LATEST_BRANCH}-${MAIN_BRANCH}/${LANG}"
     else
       failed_tests=$((failed_tests + 1))
       failed_string="${failed_string} ${LATEST_BRANCH}-${MAIN_BRANCH}/${LANG}"
     fi
-    if run_test "${LANG}" "${MAIN_BRANCH}" "${LANG}" "${OLDEST_BRANCH}"; then
+    if run_test "${LANG}" "${MAIN_BRANCH}" "${LANG}" "${OLDEST_BRANCH}" "${MAIN_BRANCH}" "oldest"; then
       successful_string="${successful_string} ${MAIN_BRANCH}-${OLDEST_BRANCH}/${LANG}"
     else
       failed_tests=$((failed_tests + 1))
       failed_string="${failed_string} ${MAIN_BRANCH}-${OLDEST_BRANCH}/${LANG}"
     fi
-    if run_test "${LANG}" "${OLDEST_BRANCH}" "${LANG}" "${MAIN_BRANCH}"; then
+    if run_test "${LANG}" "${OLDEST_BRANCH}" "${LANG}" "${MAIN_BRANCH}" "oldest" "${MAIN_BRANCH}"; then
       successful_string="${successful_string} ${OLDEST_BRANCH}-${MAIN_BRANCH}/${LANG}"
     else
       failed_tests=$((failed_tests + 1))

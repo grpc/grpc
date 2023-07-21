@@ -26,20 +26,32 @@ TEST_EXPERIMENTS = {
             ],
         },
         "on": {
+            "experiments_tag_test": [
+                "test_experiment_1",
+            ],
         },
     },
     "ios": {
         "dbg": {
         },
         "off": {
+            "experiments_tag_test": [
+                "test_experiment_1",
+            ],
         },
         "on": {
+            "experiments_tag_test": [
+                "test_experiment_1",
+            ],
         },
     },
     "posix": {
         "dbg": {
         },
         "off": {
+            "experiments_tag_test": [
+                "test_experiment_1",
+            ],
         },
         "on": {
             "experiments_tag_test": [
