@@ -2636,7 +2636,7 @@ void schedule_bdp_ping_locked(
   tp->flow_control.bdp_estimator()->SchedulePing();
   send_ping_locked(tp,
                    grpc_core::InitTransportClosure<start_bdp_ping>(
-                       t, &tp->start_bdp_ping_locked),
+                       tp->Ref(), &tp->start_bdp_ping_locked),
                    grpc_core::InitTransportClosure<finish_bdp_ping>(
                        std::move(t), &tp->finish_bdp_ping_locked));
   grpc_chttp2_initiate_write(tp, GRPC_CHTTP2_INITIATE_WRITE_BDP_PING);
