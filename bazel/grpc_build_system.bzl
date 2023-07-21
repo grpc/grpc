@@ -275,6 +275,33 @@ def ios_cc_test(
             deps = ios_test_deps,
         )
 
+def _populate_experiments_platform_config(config, platform_experiments_map):
+    for platform, experiments_on_platform in platform_experiments_map.items():
+        for mode, tag_to_experiments in experiments_on_platform.items():
+            if mode not in config:
+                config[mode] = {}
+            for tag in tags:
+                if tag not in tag_to_experiments:
+                    continue
+                for experiment in tag_to_experiments[tag]:
+                    if experiment not in config[mode]:
+                        config[mode][experiment] = []
+                    config[mode][experiment].append(platform)
+
+def _update_experiments_platform_test_tags(tags, platforms):
+    if "posix" not in platforms:
+        if "no_linux" not in tags:
+            tags.append("no_linux")
+        if "no_mac" not in tags:
+            tags.append("no_mac")
+    if "windows" not in platforms:
+        if "no_windows" not in tags:
+            tags.append("no_windows")
+    if "ios" not in platforms:
+        if "no_test_ios" not in tags:
+            tags.append("no_test_ios")
+    return tags
+
 def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, uses_event_engine, flaky):
     """Common logic used to parameterize tests for every poller and EventEngine and experiment.
 
@@ -368,20 +395,6 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
 
     experiments = {}
 
-    def _populate_experiments_platform_config(config, platform_experiments_map):
-        for platform, experiments_on_platform in platform_experiments_map.items():
-            for mode, tag_to_experiments in experiments_on_platform.items():
-                if mode not in config:
-                    config[mode] = {}
-                for tag in tags:
-                    if tag not in tag_to_experiments:
-                        continue
-                    for experiment in tag_to_experiments[tag]:
-                        if experiment not in config[mode]:
-                            config[mode][experiment] = []
-                        config[mode][experiment].append(platform)
-        return config
-
     _populate_experiments_platform_config(experiments, EXPERIMENTS)
     _populate_experiments_platform_config(experiments, TEST_EXPERIMENTS)
 
@@ -401,20 +414,6 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
         # Nor on arm64
         "no_arm64",
     ]
-
-    def _update_experiments_platform_test_tags(tags, platforms):
-        if "posix" not in platforms:
-            if "no_linux" not in tags:
-                tags.append("no_linux")
-            if "no_mac" not in tags:
-                tags.append("no_mac")
-        if "windows" not in platforms:
-            if "no_windows" not in tags:
-                tags.append("no_windows")
-        if "ios" not in platforms:
-            if "no_test_ios" not in tags:
-                tags.append("no_test_ios")
-        return tags
 
     experiment_config = list(poller_config)
     for mode, config in mode_config.items():
