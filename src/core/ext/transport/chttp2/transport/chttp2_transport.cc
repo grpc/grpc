@@ -236,6 +236,8 @@ grpc_core::CopyContextFn g_get_copied_context_fn = nullptr;
 namespace grpc_core {
 
 namespace {
+// Initialize a grpc_closure \a c to call \a Fn with \a t and \a error. Holds
+// the passed in reference to \a t until it's moved into Fn.
 template <void (*Fn)(RefCountedPtr<grpc_chttp2_transport>, grpc_error_handle)>
 grpc_closure* InitTransportClosure(RefCountedPtr<grpc_chttp2_transport> t,
                                    grpc_closure* c) {
