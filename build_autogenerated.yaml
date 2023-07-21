@@ -7365,6 +7365,18 @@ targets:
   - gpr
   - upb
   uses_polling: false
+- name: experiments_tag_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/experiments/fixtures/experiments.h
+  src:
+  - test/core/experiments/experiments_tag_test.cc
+  - test/core/experiments/fixtures/experiments.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: experiments_test
   gtest: true
   build: test

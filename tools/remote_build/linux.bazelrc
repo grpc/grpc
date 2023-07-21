@@ -34,8 +34,8 @@ import %workspace%/tools/remote_build/include/test_config_common.bazelrc
 
 build --jobs=100
 
-build:opt --test_tag_filters=-noopt
-build:dbg --test_tag_filters=-nodbg
+build:opt --test_tag_filters=-noopt,-no_linux
+build:dbg --test_tag_filters=-nodbg,-no_linux
 
 # address sanitizer: most settings are already in %workspace%/.bazelrc
 # we only need a few additional ones that are Foundry specific

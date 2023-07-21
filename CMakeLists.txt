@@ -965,6 +965,7 @@ if(gRPC_BUILD_TESTS)
   endif()
   add_dependencies(buildtests_cxx exception_test)
   add_dependencies(buildtests_cxx exec_ctx_wakeup_scheduler_test)
+  add_dependencies(buildtests_cxx experiments_tag_test)
   add_dependencies(buildtests_cxx experiments_test)
   add_dependencies(buildtests_cxx factory_test)
   add_dependencies(buildtests_cxx fake_binder_test)
@@ -11302,6 +11303,44 @@ target_link_libraries(exec_ctx_wakeup_scheduler_test
   absl::statusor
   gpr
   upb
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(experiments_tag_test
+  test/core/experiments/experiments_tag_test.cc
+  test/core/experiments/fixtures/experiments.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+target_compile_features(experiments_tag_test PUBLIC cxx_std_14)
+target_include_directories(experiments_tag_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(experiments_tag_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
 )
 
 
