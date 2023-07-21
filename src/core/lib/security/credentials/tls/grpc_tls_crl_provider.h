@@ -19,7 +19,9 @@
 #ifndef GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CRL_PROVIDER_H
 #define GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CRL_PROVIDER_H
 
-#include <openssl/x509.h>
+#include <openssl/crypto.h>
+
+#include "absl/strings/string_view.h"
 
 #include <grpc/grpc_crl_provider.h>
 
