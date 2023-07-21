@@ -57,6 +57,7 @@ let package = Package(
         "include/grpc/fork.h",
         "include/grpc/grpc.h",
         "include/grpc/grpc_audit_logging.h",
+        "include/grpc/grpc_crl_provider.h",
         "include/grpc/grpc_posix.h",
         "include/grpc/grpc_security.h",
         "include/grpc/grpc_security_constants.h",

@@ -63,6 +63,7 @@ Gem::Specification.new do |s|
   s.files += %w( include/grpc/fork.h )
   s.files += %w( include/grpc/grpc.h )
   s.files += %w( include/grpc/grpc_audit_logging.h )
+  s.files += %w( include/grpc/grpc_crl_provider.h )
   s.files += %w( include/grpc/grpc_posix.h )
   s.files += %w( include/grpc/grpc_security.h )
   s.files += %w( include/grpc/grpc_security_constants.h )

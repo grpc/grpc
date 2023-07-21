@@ -1528,6 +1528,7 @@
         'src/core/ext/transport/binder/wire_format/transaction.cc',
         'src/core/ext/transport/binder/wire_format/wire_reader_impl.cc',
         'src/core/ext/transport/binder/wire_format/wire_writer.cc',
+        'src/core/lib/security/credentials/tls/grpc_tls_crl_provider.cc',
         'src/cpp/client/channel_cc.cc',
         'src/cpp/client/client_callback.cc',
         'src/cpp/client/client_context.cc',
