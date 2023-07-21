@@ -59,6 +59,7 @@ touch "$TOOLS_DIR"/src/proto/grpc/health/v1/__init__.py
     --grpc_python_out=${TOOLS_DIR} \
     ${HEALTH_PROTO_SOURCE_DIR}/health.proto
 
+cd /var/local/jenkins/grpc/
 bazel build test/cpp/interop:xds_interop_client
 
 # Test cases "path_matching" and "header_matching" are not included in "all",
@@ -67,7 +68,7 @@ bazel build test/cpp/interop:xds_interop_client
 # TODO: remove "path_matching" and "header_matching" from --test_case after
 # they are added into "all".
 GRPC_VERBOSITY=debug GRPC_TRACE=xds_client,xds_resolver,xds_cluster_manager_lb,cds_lb,xds_cluster_resolver_lb,priority_lb,xds_cluster_impl_lb,weighted_target_lb "$PYTHON" \
-  tools/run_tests/run_xds_tests.py \
+   /var/local/git/grpc/tools/run_tests/run_xds_tests.py \
     --halt_after_fail \
     --test_case="ping_pong,circuit_breaking" \
     --project_id=grpc-testing \
