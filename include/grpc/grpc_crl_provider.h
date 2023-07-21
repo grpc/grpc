@@ -38,9 +38,6 @@ class Crl {
 
  protected:
   Crl() = default;
-
- private:
-  std::string raw_crl_;
 };
 
 // Representation of a cert to be used to fetch its associated CRL.
@@ -60,9 +57,9 @@ class Cert {
 class CrlProvider {
  public:
   CrlProvider() = default;
+  virtual ~CrlProvider() = default;
   // Get the CRL associated with a certificate. Read-only.
   virtual std::shared_ptr<Crl> GetCrl(const Cert& cert) = 0;
-  virtual void CrlReadErrorCallback(absl::Status) = 0;
 };
 
 }  // namespace experimental

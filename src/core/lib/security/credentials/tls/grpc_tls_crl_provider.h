@@ -29,8 +29,8 @@ namespace experimental {
 class CrlImpl : public Crl {
  public:
   explicit CrlImpl(X509_CRL* crl);
-  const X509_CRL& crl() const { return *crl_; }
   ~CrlImpl() override;
+  const X509_CRL& crl() const { return *crl_; }
 
  private:
   X509_CRL* crl_;

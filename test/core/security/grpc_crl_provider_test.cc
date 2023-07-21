@@ -49,7 +49,6 @@ namespace {
 class TestCrlProvider : public experimental::CrlProvider {
  public:
   std::shared_ptr<Crl> GetCrl(const Cert& cert) { return test_crl_; }
-  void CrlReadErrorCallback(absl::Status status) {}
   void SetCrl(absl::string_view crl_string) {
     absl::StatusOr<std::shared_ptr<Crl>> result = Crl::Parse(crl_string);
     if (result.ok()) {
