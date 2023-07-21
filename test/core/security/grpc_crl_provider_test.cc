@@ -23,15 +23,11 @@
 
 #include <gtest/gtest.h>
 
-#include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
 
 #include <grpc/grpc_audit_logging.h>
 #include <grpc/grpc_crl_provider.h>
 
-#include "src/core/lib/json/json.h"
-#include "src/core/lib/security/authorization/audit_logging.h"
 #include "test/core/util/test_config.h"
 #include "test/core/util/tls_utils.h"
 
