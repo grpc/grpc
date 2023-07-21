@@ -44,29 +44,13 @@ using experimental::CertificateInfo;
 using experimental::Crl;
 using experimental::CrlProvider;
 
-namespace {
+// namespace {
 
-class TestCrlProvider : public experimental::CrlProvider {
- public:
-  std::shared_ptr<Crl> GetCrl(const CertificateInfo& cert) { return test_crl_; }
-  void SetCrl(absl::string_view crl_string) {
-    absl::StatusOr<std::shared_ptr<Crl>> result = Crl::Parse(crl_string);
-    if (result.ok()) {
-      test_crl_ = *result;
-    } else {
-      test_crl_ = nullptr;
-    }
-  }
+// class CrlProviderTest : public ::testing::Test {};
 
- private:
-  std::shared_ptr<Crl> test_crl_;
-};
+// }  // namespace
 
-class CrlProviderTest : public ::testing::Test {};
-
-}  // namespace
-
-TEST_F(CrlProviderTest, CanParseCrl) {
+TEST(CrlProviderTest, CanParseCrl) {
   std::string crl_string = GetFileContents(CRL_PATH);
   absl::StatusOr<std::shared_ptr<Crl>> result = Crl::Parse(crl_string);
   ASSERT_TRUE(result.ok());
