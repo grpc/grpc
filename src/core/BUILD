@@ -2918,17 +2918,10 @@ grpc_cc_library(
         "lib/security/credentials/tls/grpc_tls_crl_provider.h",
     ],
     external_deps = [
-        "absl/base:core_headers",
-        "absl/status",
-        "absl/strings",
-        "absl/strings:str_format",
         "libcrypto",
         "libssl",
     ],
-    deps = [
-        "//:gpr",
-        "//:grpc_base",
-    ],
+    deps = ["//:grpc_base"],
 )
 
 grpc_cc_library(
