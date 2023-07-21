@@ -20,7 +20,7 @@ A module to assist in generating experiment related code and artifacts.
 from __future__ import print_function
 
 import collections
-from copy import copy
+from copy import deepcopy
 import ctypes
 import datetime
 import json
@@ -557,16 +557,16 @@ class ExperimentsCompiler(object):
         if self._bzl_list_for_defaults is None:
             return
 
-        defaults = {
-            key: collections.defaultdict(list)
+        defaults = dict(
+            (key, collections.defaultdict(list))
             for key in self._bzl_list_for_defaults.keys()
             if key is not None
-        }
+        )
 
-        bzl_to_tags_to_experiments = {
-            platform: copy(defaults)
+        bzl_to_tags_to_experiments = dict(
+            (platform, deepcopy(defaults))
             for platform in self._platforms_define.keys()
-        }
+        )
 
         for platform in self._platforms_define.keys():
             for _, exp in self._experiment_definitions.items():
@@ -603,7 +603,6 @@ class ExperimentsCompiler(object):
             else:
                 print("EXPERIMENTS = {", file=B)
 
-            print(bzl_to_tags_to_experiments["windows"].items())
             for platform in self._platforms_define.keys():
                 bzl_to_tags_to_experiments_platform = sorted(
                     (self._bzl_list_for_defaults[default], tags_to_experiments)
