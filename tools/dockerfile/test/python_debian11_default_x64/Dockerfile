@@ -134,13 +134,18 @@ RUN cd /tmp && \
     make -j4 && \
     make install
 
-
 RUN cd /tmp && \
     echo "f276ffcd05bccafe46da023d0a5bb04a Python-3.10.3.tgz" > checksum.md5 && \
     md5sum -c checksum.md5
 
 RUN python3.10 -m ensurepip && \
     python3.10 -m pip install coverage
+
+#=================
+# Compile CPython 3.:1.4 from source
+
+RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev && apt-get clean
+RUN apt-get update && apt-get install -y jq build-essential libffi-dev && apt-get clean
 
 RUN cd /tmp && \
     wget -q https://www.python.org/ftp/python/3.11.4/Python-3.11.4.tgz && \
@@ -157,6 +162,7 @@ RUN cd /tmp && \
 
 RUN python3.11 -m ensurepip && \
     python3.11 -m pip install coverage
+
 
 # 3.9 is the default python3 version on debian11
 RUN apt-get update && apt-get install -y python3.9 python3.9-dev python3-pip
@@ -189,7 +195,7 @@ RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/downloa
     && cd ../.. \
     && rm -rf ccache-4.5.1 ccache.tar.gz
 
+
 # Fix dubious ownerhsip issue.
 RUN git config --global --add safe.directory '*' && \
 	git config --global protocol.file.allow always
-
