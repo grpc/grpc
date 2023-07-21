@@ -222,7 +222,7 @@ then
   # Build grpcio_reflection source distribution
   ${SETARCH_CMD} "${PYTHON}" tools/distrib/python/xds_protos/build.py
   ${SETARCH_CMD} "${PYTHON}" tools/distrib/python/xds_protos/setup.py \
-      sdist bdist_wheel
+      sdist bdist_wheel install
   cp -r tools/distrib/python/xds_protos/dist/* "$ARTIFACT_DIR"
 
   # Build grpcio_testing source distribution
@@ -250,6 +250,9 @@ then
       preprocess sdist bdist_wheel
   cp -r src/python/grpcio_status/dist/* "$ARTIFACT_DIR"
 
+  # Install xds-protos as a dependency of grpcio-csds
+  "${PYTHON}" -m pip install xds-protos --no-index --find-links "file://$ARTIFACT_DIR/"
+
   # Build grpcio_csds source distribution
   ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_csds/setup.py \
       sdist bdist_wheel
@@ -257,7 +260,6 @@ then
 
   # Build grpcio_admin source distribution and it needs the cutting-edge version
   # of Channelz and CSDS to be installed.
-  "${PYTHON}" -m pip install --upgrade xds-protos==0.0.8
   "${PYTHON}" -m pip install grpcio-channelz --no-index --find-links "file://$ARTIFACT_DIR/"
   "${PYTHON}" -m pip install grpcio-csds --no-index --find-links "file://$ARTIFACT_DIR/"
   ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_admin/setup.py \
