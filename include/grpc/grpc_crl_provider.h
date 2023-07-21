@@ -59,4 +59,4 @@ class CrlProvider {
 }  // namespace experimental
 }  // namespace grpc_core
 
-#endif  // GRPC_GRPC_CRL_PROVIDER_H
+#endif /* GRPC_GRPC_CRL_PROVIDER_H */
