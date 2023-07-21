@@ -40,7 +40,7 @@
 namespace grpc_core {
 namespace testing {
 
-using experimental::Cert;
+using experimental::CertificateInfo;
 using experimental::Crl;
 using experimental::CrlProvider;
 
@@ -48,7 +48,7 @@ namespace {
 
 class TestCrlProvider : public experimental::CrlProvider {
  public:
-  std::shared_ptr<Crl> GetCrl(const Cert& cert) { return test_crl_; }
+  std::shared_ptr<Crl> GetCrl(const CertificateInfo& cert) { return test_crl_; }
   void SetCrl(absl::string_view crl_string) {
     absl::StatusOr<std::shared_ptr<Crl>> result = Crl::Parse(crl_string);
     if (result.ok()) {
@@ -70,7 +70,7 @@ TEST_F(CrlProviderTest, CrlProviderCanReadCrl) {
   std::string crl_string = GetFileContents(CRL_PATH);
   TestCrlProvider provider = TestCrlProvider();
   provider.SetCrl(crl_string);
-  Cert dummy_cert = Cert();
+  CertificateInfo dummy_cert = CertificateInfo("");
   std::shared_ptr<Crl> crl = provider.GetCrl(dummy_cert);
   ASSERT_NE(crl, nullptr);
 }

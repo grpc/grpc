@@ -40,16 +40,14 @@ class Crl {
   Crl() = default;
 };
 
-// Representation of a cert to be used to fetch its associated CRL.
-class Cert {
+// Information about a certificate to be used to fetch its associated CRL.
+class CertificateInfo {
  public:
-  Cert() = default;
-  explicit Cert(absl::string_view issuer) : issuer_(issuer) {}
+  explicit CertificateInfo(absl::string_view issuer) : issuer_(issuer) {}
   absl::string_view GetIssuer() { return issuer_; }
 
  protected:
  private:
-  absl::string_view raw_cert_;
   std::string issuer_;
 };
 
@@ -59,7 +57,7 @@ class CrlProvider {
   CrlProvider() = default;
   virtual ~CrlProvider() = default;
   // Get the CRL associated with a certificate. Read-only.
-  virtual std::shared_ptr<Crl> GetCrl(const Cert& cert) = 0;
+  virtual std::shared_ptr<Crl> GetCrl(const CertificateInfo& cert) = 0;
 };
 
 }  // namespace experimental

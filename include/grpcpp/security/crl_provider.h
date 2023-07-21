@@ -29,7 +29,8 @@
 namespace grpc {
 namespace experimental {
 
-using grpc_core::experimental::Cert;         // NOLINT(misc-unused-using-decls)
+using grpc_core::experimental::
+    CertificateInfo;                         // NOLINT(misc-unused-using-decls)
 using grpc_core::experimental::Crl;          // NOLINT(misc-unused-using-decls)
 using grpc_core::experimental::CrlProvider;  // NOLINT(misc-unused-using-decls)
 
