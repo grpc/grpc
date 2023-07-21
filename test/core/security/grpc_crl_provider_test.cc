@@ -48,17 +48,20 @@ TEST(CrlProviderTest, CanParseCrl) {
   absl::StatusOr<std::shared_ptr<Crl>> result = Crl::Parse(crl_string);
   ASSERT_TRUE(result.ok());
   ASSERT_NE(*result, nullptr);
-  std::shared_ptr<CrlImpl> crl = std::static_pointer_cast<CrlImpl>(*result);
+  auto* crl = static_cast<CrlImpl*>(result->get());
   const X509_CRL* x509_crl = &crl->crl();
   X509_NAME* issuer = X509_CRL_get_issuer(x509_crl);
   const char* buf = X509_NAME_oneline(issuer, nullptr, 0);
-  ASSERT_EQ(std::string(buf), CRL_ISSUER);
+  EXPECT_STREQ(buf, CRL_ISSUER);
 }
 
 TEST(CrlProviderTest, InvalidFile) {
   std::string crl_string = "INVALID CRL FILE";
   absl::StatusOr<std::shared_ptr<Crl>> result = Crl::Parse(crl_string);
-  ASSERT_FALSE(result.ok());
+  EXPECT_FALSE(result.ok());
+  EXPECT_EQ(result.status(),
+            absl::InvalidArgumentError(
+                "Conversion from PEM string to X509 CRL failed."));
 }
 
 }  // namespace testing

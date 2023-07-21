@@ -43,8 +43,8 @@ class Crl {
 // Information about a certificate to be used to fetch its associated CRL.
 class CertificateInfo {
  public:
-  virtual absl::string_view GetIssuer() = 0;
   virtual ~CertificateInfo() = default;
+  virtual absl::string_view GetIssuer() = 0;
 };
 
 // The base class for CRL Provider implementations.
