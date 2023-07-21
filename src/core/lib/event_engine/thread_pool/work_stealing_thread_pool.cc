@@ -49,13 +49,13 @@
 // the following:
 //
 // On pre-fork:
-// * the WorkStealingThreadPool trigger all threads to exit,
-// * all queued work will be saved, and
-// * all threads will be shut down, including the Lifeguard thread.
+// * the WorkStealingThreadPool triggers all threads to exit,
+// * all queued work is saved, and
+// * all threads will are down, including the Lifeguard thread.
 //
 // On post-fork:
-//  * all threads will be restarted, including the Lifeguard thread, and
-//  * all saved work will be enqueued for execution.
+//  * all threads are restarted, including the Lifeguard thread, and
+//  * all previously-saved work is enqueued for execution.
 //
 // However, the queue may may get into trouble if one thread is attempting to
 // restart the thread pool while another thread is shutting it down. For that
