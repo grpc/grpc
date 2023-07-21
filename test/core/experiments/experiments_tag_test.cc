@@ -20,6 +20,7 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
+#include "absl/strings/strip.h"
 #include "gtest/gtest.h"
 
 #include "src/core/lib/config/config_vars.h"
