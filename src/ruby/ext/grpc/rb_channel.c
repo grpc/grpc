@@ -826,7 +826,14 @@ void grpc_rb_channel_polling_thread_start() {
                                NULL, NULL);
     return;
   }
-}
+
+  int stop_waiting_for_thread_start = 0;
+  rb_thread_call_without_gvl(
+      wait_until_channel_polling_thread_started_no_gil,
+      &stop_waiting_for_thread_start,
+      wait_until_channel_polling_thread_started_unblocking_func,
+      &stop_waiting_for_thread_start);
+ }
 
 void grpc_rb_channel_polling_thread_stop() {
   if (!RTEST(g_channel_polling_thread)) {
