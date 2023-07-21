@@ -43,18 +43,17 @@ class Crl {
   std::string raw_crl_;
 };
 
-// Opaque representation of a Certificate
+// Representation of a cert to be used to fetch its associated CRL.
 class Cert {
  public:
-  static absl::StatusOr<std::unique_ptr<Cert>> Parse(
-      absl::string_view cert_string);
-  virtual ~Cert() = default;
+  Cert() = default;
+  explicit Cert(absl::string_view issuer) : issuer_(issuer) {}
+  absl::string_view GetIssuer() { return issuer_; }
 
  protected:
-  Cert() = default;
-
  private:
   absl::string_view raw_cert_;
+  std::string issuer_;
 };
 
 // The base class for CRL Provider implementations.

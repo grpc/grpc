@@ -51,7 +51,12 @@ class TestCrlProvider : public experimental::CrlProvider {
   std::shared_ptr<Crl> GetCrl(const Cert& cert) { return test_crl_; }
   void CrlReadErrorCallback(absl::Status status) {}
   void SetCrl(absl::string_view crl_string) {
-    absl::StatusOr<std::unique_ptr<Crl>> crl = Crl::Parse(crl_string);
+    absl::StatusOr<std::shared_ptr<Crl>> result = Crl::Parse(crl_string);
+    if (result.ok()) {
+      test_crl_ = *result;
+    } else {
+      test_crl_ = nullptr;
+    }
   }
 
  private:
@@ -66,10 +71,9 @@ TEST_F(CrlProviderTest, CrlProviderCanReadCrl) {
   std::string crl_string = GetFileContents(CRL_PATH);
   TestCrlProvider provider = TestCrlProvider();
   provider.SetCrl(crl_string);
-  // TODO(gtcooke94) - keep going on this test, make sure it can be fetched,
-  // expand. Just hit a stopping point and wanted to commit
-  ASSERT_TRUE(true);
-  //   Crl crl = provider.GetCrl()
+  Cert dummy_cert = Cert();
+  std::shared_ptr<Crl> crl = provider.GetCrl(dummy_cert);
+  ASSERT_NE(crl, nullptr);
 }
 
 }  // namespace testing
