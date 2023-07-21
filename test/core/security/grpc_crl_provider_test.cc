@@ -44,12 +44,6 @@ using experimental::CertificateInfo;
 using experimental::Crl;
 using experimental::CrlProvider;
 
-// namespace {
-
-// class CrlProviderTest : public ::testing::Test {};
-
-// }  // namespace
-
 TEST(CrlProviderTest, CanParseCrl) {
   std::string crl_string = GetFileContents(CRL_PATH);
   absl::StatusOr<std::shared_ptr<Crl>> result = Crl::Parse(crl_string);
