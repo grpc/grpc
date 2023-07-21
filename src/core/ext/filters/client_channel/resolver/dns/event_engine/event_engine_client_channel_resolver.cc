@@ -275,8 +275,12 @@ EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
                      ? EventEngine::Duration::max()
                      : resolver_->query_timeout_ms_;
   timeout_handle_ = resolver_->event_engine_->RunAfter(
-      timeout,
-      [self = Ref(DEBUG_LOCATION, "OnTimeout")]() { self->OnTimeout(); });
+      timeout, [self = Ref(DEBUG_LOCATION, "OnTimeout")]() mutable {
+        ApplicationCallbackExecCtx callback_exec_ctx;
+        ExecCtx exec_ctx;
+        self->OnTimeout();
+        self.reset();
+      });
 }
 
 EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
@@ -377,8 +381,11 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
          self = Ref(DEBUG_LOCATION, "OnBalancerHostnamesResolved")](
             absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>
                 new_balancer_addresses) mutable {
+          ApplicationCallbackExecCtx callback_exec_ctx;
+          ExecCtx exec_ctx;
           self->OnBalancerHostnamesResolved(std::move(host),
                                             std::move(new_balancer_addresses));
+          self.reset();
         },
         srv_record.host, std::to_string(srv_record.port));
   }
