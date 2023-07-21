@@ -213,9 +213,11 @@ static void start_keepalive_ping_locked(
     grpc_core::RefCountedPtr<grpc_chttp2_transport> t, grpc_error_handle error);
 static void finish_keepalive_ping_locked(
     grpc_core::RefCountedPtr<grpc_chttp2_transport> t, grpc_error_handle error);
-static void keepalive_watchdog_fired(grpc_chttp2_transport* t);
+static void keepalive_watchdog_fired(
+    grpc_core::RefCountedPtr<grpc_chttp2_transport> t);
 static void keepalive_watchdog_fired_locked(
-    void* arg, GRPC_UNUSED grpc_error_handle error);
+    grpc_core::RefCountedPtr<grpc_chttp2_transport> t,
+    GRPC_UNUSED grpc_error_handle error);
 static void maybe_reset_keepalive_ping_timer_locked(grpc_chttp2_transport* t);
 
 namespace {
@@ -1819,7 +1821,7 @@ class GracefulGoaway : public grpc_core::RefCounted<GracefulGoaway> {
     self->Unref();
   }
 
-  grpc_core::RefCountedPtr<grpc_chttp2_transport> t_;
+  const grpc_core::RefCountedPtr<grpc_chttp2_transport> t_;
   grpc_closure on_ping_ack_;
   TaskHandle timer_handle_ = TaskHandle::kInvalid;
   grpc_closure on_timer_;
@@ -2846,10 +2848,10 @@ static void start_keepalive_ping_locked(
             std::string(t->peer_string.as_string_view()).c_str());
   }
   t->keepalive_watchdog_timer_handle =
-      t->event_engine->RunAfter(t->keepalive_timeout, [t = t->Ref()] {
+      t->event_engine->RunAfter(t->keepalive_timeout, [t]() mutable {
         grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
         grpc_core::ExecCtx exec_ctx;
-        keepalive_watchdog_fired(t.get());
+        keepalive_watchdog_fired(std::move(t));
       });
   t->keepalive_ping_started = true;
 }
@@ -2898,18 +2900,19 @@ static void finish_keepalive_ping_locked(
   }
 }
 
-static void keepalive_watchdog_fired(grpc_chttp2_transport* t) {
-  t->combiner->Run(
-      GRPC_CLOSURE_INIT(&t->keepalive_watchdog_fired_locked,
-                        keepalive_watchdog_fired_locked, t, nullptr),
+static void keepalive_watchdog_fired(
+    grpc_core::RefCountedPtr<grpc_chttp2_transport> t) {
+  auto* tp = t.get();
+  tp->combiner->Run(
+      grpc_core::InitTransportClosure<keepalive_watchdog_fired_locked>(
+          std::move(t), &tp->keepalive_watchdog_fired_locked),
       absl::OkStatus());
 }
 
 static void keepalive_watchdog_fired_locked(
-    void* arg, GRPC_UNUSED grpc_error_handle error) {
+    grpc_core::RefCountedPtr<grpc_chttp2_transport> t,
+    GRPC_UNUSED grpc_error_handle error) {
   GPR_DEBUG_ASSERT(error.ok());
-  grpc_core::RefCountedPtr<grpc_chttp2_transport> t(
-      static_cast<grpc_chttp2_transport*>(arg));
   GPR_ASSERT(t->keepalive_watchdog_timer_handle.has_value());
   t->keepalive_watchdog_timer_handle.reset();
   if (t->keepalive_state == GRPC_CHTTP2_KEEPALIVE_STATE_PINGING) {
