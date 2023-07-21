@@ -66,13 +66,11 @@ class CrlProviderTest : public ::testing::Test {};
 
 }  // namespace
 
-TEST_F(CrlProviderTest, CrlProviderCanReadCrl) {
+TEST_F(CrlProviderTest, CanParseCrl) {
   std::string crl_string = GetFileContents(CRL_PATH);
-  TestCrlProvider provider = TestCrlProvider();
-  provider.SetCrl(crl_string);
-  CertificateInfo dummy_cert = CertificateInfo("");
-  std::shared_ptr<Crl> crl = provider.GetCrl(dummy_cert);
-  ASSERT_NE(crl, nullptr);
+  absl::StatusOr<std::shared_ptr<Crl>> result = Crl::Parse(crl_string);
+  ASSERT_TRUE(result.ok());
+  ASSERT_NE(*result, nullptr);
 }
 
 }  // namespace testing

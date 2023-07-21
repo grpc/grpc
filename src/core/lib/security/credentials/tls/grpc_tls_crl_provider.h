@@ -36,6 +36,15 @@ class CrlImpl : public Crl {
   X509_CRL* crl_;
 };
 
+class CertificateInfoImpl : public CertificateInfo {
+ public:
+  explicit CertificateInfoImpl(absl::string_view issuer) : issuer_(issuer) {}
+  absl::string_view GetIssuer() override { return issuer_; }
+
+ private:
+  absl::string_view issuer_;
+};
+
 }  // namespace experimental
 }  // namespace grpc_core
 
