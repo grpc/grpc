@@ -21,6 +21,10 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_test")
 
 # buildifier: disable=unnamed-macro
 def generate_resolver_component_tests():
+    """Generate address_sorting_test and resolver_component_test suite with different configurations.
+
+    Note that the resolver_component_test suite's configuration is 2 dimensional: security and whether to enable the event_engine_dns experiment.
+    """
     for unsecure_build_config_suffix in ["_unsecure", ""]:
         grpc_cc_test(
             name = "address_sorting_test%s" % unsecure_build_config_suffix,
@@ -58,6 +62,7 @@ def generate_resolver_component_tests():
                 "//:grpc++%s" % unsecure_build_config_suffix,
                 "//:grpc%s" % unsecure_build_config_suffix,
                 "//:gpr",
+                "//src/core:ares_resolver",
                 "//test/cpp/util:test_config",
             ],
             tags = ["no_windows"],
@@ -84,7 +89,7 @@ def generate_resolver_component_tests():
                 "//test/cpp/naming/utils:dns_server",
                 "//test/cpp/naming/utils:dns_resolver",
                 "//test/cpp/naming/utils:tcp_connect",
-                "resolver_test_record_groups.yaml",  # include the transitive dependency so that the dns sever py binary can locate this
+                "resolver_test_record_groups.yaml",  # include the transitive dependency so that the dns server py binary can locate this
             ],
             args = [
                 "--test_bin_name=resolver_component_test%s" % unsecure_build_config_suffix,
@@ -93,5 +98,5 @@ def generate_resolver_component_tests():
             # The test is highly flaky on AWS workers that we use for running ARM64 tests.
             # The "no_arm64" tag can be used to skip it.
             # (see https://github.com/grpc/grpc/issues/25289).
-            tags = ["no_windows", "no_mac", "no_arm64"],
+            tags = ["no_windows", "no_mac", "no_arm64", "resolver_component_tests_runner_invoker"],
         )

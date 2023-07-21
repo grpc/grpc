@@ -1975,6 +1975,7 @@ grpc_cc_library(
         "absl/strings",
     ],
     deps = [
+        "ares_resolver",
         "event_engine_common",
         "event_engine_poller",
         "event_engine_tcp_socket_utils",
@@ -1996,6 +1997,7 @@ grpc_cc_library(
         "//:event_engine_base_hdrs",
         "//:gpr",
         "//:grpc_trace",
+        "//:orphanable",
     ],
 )
 
@@ -2295,6 +2297,49 @@ grpc_cc_library(
         "//:event_engine_base_hdrs",
         "//:gpr",
         "//:grpc_trace",
+    ],
+)
+
+grpc_cc_library(
+    name = "ares_resolver",
+    srcs = [
+        "lib/event_engine/ares_resolver.cc",
+    ],
+    hdrs = [
+        "lib/event_engine/ares_resolver.h",
+        "lib/event_engine/grpc_polled_fd.h",
+        "lib/event_engine/posix_engine/grpc_polled_fd_posix.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/container:flat_hash_map",
+        "absl/functional:any_invocable",
+        "absl/hash",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/strings:str_format",
+        "absl/types:optional",
+        "absl/types:variant",
+        "cares",
+    ],
+    deps = [
+        "error",
+        "event_engine_time_util",
+        "grpc_sockaddr",
+        "iomgr_port",
+        "posix_event_engine_closure",
+        "posix_event_engine_event_poller",
+        "posix_event_engine_tcp_socket_utils",
+        "resolved_address",
+        "//:debug_location",
+        "//:event_engine_base_hdrs",
+        "//:gpr",
+        "//:grpc_trace",
+        "//:orphanable",
+        "//:parse_address",
+        "//:ref_counted_ptr",
+        "//:sockaddr_utils",
     ],
 )
 
@@ -5153,6 +5198,7 @@ grpc_cc_library(
         "validation_errors",
         "//:backoff",
         "//:debug_location",
+        "//:exec_ctx",
         "//:gpr",
         "//:gpr_platform",
         "//:grpc_base",
