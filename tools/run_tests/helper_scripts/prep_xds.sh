@@ -19,9 +19,14 @@ set -ex
 # change to grpc repo root
 pushd "${KOKORO_ARTIFACTS_DIR}/github/grpc"
 
+# Note: we don't use venv here because then per-language build files would need
+#   to source this script to have venv python be on the PATH. This would require
+#   backport this change to ~30 branches. Instead, we just install pip packages
+#   globally here. If this ever breaks, uncomment the following lines, remove
+#   sudo from pip install, and do the backports.
+#
 # sudo DEBIAN_FRONTEND=noninteractive apt-get -qq update
 # sudo DEBIAN_FRONTEND=noninteractive apt-get -qq install --auto-remove "python3.10-venv"
-
 # VIRTUAL_ENV=$(mktemp -d)
 # python3 -m venv "${VIRTUAL_ENV}"
 # source "${VIRTUAL_ENV}/bin/activate"

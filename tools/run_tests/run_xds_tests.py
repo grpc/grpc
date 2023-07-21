@@ -255,7 +255,7 @@ argp.add_argument(
     ),
 )
 argp.add_argument(
-    "--network", default="global/networks/default-vpc", help="GCP network to use"
+    "--network", default="global/networks/default", help="GCP network to use"
 )
 _DEFAULT_PORT_RANGE = "8080:8280"
 argp.add_argument(
@@ -336,6 +336,14 @@ args = argp.parse_args()
 
 if args.verbose:
     logger.setLevel(logging.DEBUG)
+
+# In grpc-testing, use non-legacy network.
+if (
+    args.project_id == "grpc-testing"
+    and args.network
+    and args.network == argp.get_default("network")
+):
+    args.network += "-vpc"
 
 CLIENT_HOSTS = []
 if args.client_hosts:
