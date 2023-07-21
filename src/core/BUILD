@@ -1510,6 +1510,7 @@ grpc_cc_library(
         "event_engine_work_queue",
         "experiments",
         "forkable",
+        "notification",
         "time",
         "useful",
         "//:backoff",
