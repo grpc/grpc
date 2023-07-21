@@ -2920,6 +2920,7 @@ grpc_cc_library(
     external_deps = [
         "absl/status",
         "absl/status:statusor",
+        "absl/strings",
         "libcrypto",
         "libssl",
     ],
