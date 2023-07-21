@@ -28,16 +28,19 @@
 #include <grpc/grpc_audit_logging.h>
 #include <grpc/grpc_crl_provider.h>
 
+#include "src/core/lib/security/credentials/tls/grpc_tls_crl_provider.h"
 #include "test/core/util/test_config.h"
 #include "test/core/util/tls_utils.h"
 
 #define CRL_PATH "test/core/tsi/test_creds/crl_data/crls/ab06acdd.r0"
+#define CRL_ISSUER "/C=AU/ST=Some-State/O=Internet Widgits Pty Ltd/CN=testca"
 
 namespace grpc_core {
 namespace testing {
 
 using experimental::CertificateInfo;
 using experimental::Crl;
+using experimental::CrlImpl;
 using experimental::CrlProvider;
 
 TEST(CrlProviderTest, CanParseCrl) {
@@ -45,6 +48,17 @@ TEST(CrlProviderTest, CanParseCrl) {
   absl::StatusOr<std::shared_ptr<Crl>> result = Crl::Parse(crl_string);
   ASSERT_TRUE(result.ok());
   ASSERT_NE(*result, nullptr);
+  std::shared_ptr<CrlImpl> crl = std::static_pointer_cast<CrlImpl>(*result);
+  const X509_CRL* x509_crl = &crl->crl();
+  X509_NAME* issuer = X509_CRL_get_issuer(x509_crl);
+  const char* buf = X509_NAME_oneline(issuer, nullptr, 0);
+  ASSERT_EQ(std::string(buf), CRL_ISSUER);
+}
+
+TEST(CrlProviderTest, InvalidFile) {
+  std::string crl_string = "INVALID CRL FILE";
+  absl::StatusOr<std::shared_ptr<Crl>> result = Crl::Parse(crl_string);
+  ASSERT_FALSE(result.ok());
 }
 
 }  // namespace testing
