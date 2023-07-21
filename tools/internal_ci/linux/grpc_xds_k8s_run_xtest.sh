@@ -92,7 +92,7 @@ run_test() {
   local out_dir="${TEST_XML_OUTPUT_DIR}/${client_branch_fixed}-${server_branch_fixed}/${client_lang}-${server_lang}"
   mkdir -pv "${out_dir}"
   set -x
-  echo "Client branch=" "${client_branch}" ", Server branch=" "${server_branch}" > ${out_dir}/sponge_log.log
+  echo "Client branch='${client_branch}', Server branch='${server_branch}'" > ${out_dir}/sponge_log.log
   python -m "tests.security_test" \
     --flagfile="${TEST_DRIVER_FLAGFILE}" \
     --kube_context="${KUBE_CONTEXT}" \
