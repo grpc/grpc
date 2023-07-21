@@ -221,15 +221,17 @@ def _python_config_generator(name, major, minor, bits, config_vars):
         + config_vars.venv_relative_python
         + config_vars.toolchain
     )
-    # run: [tools/run_tests/helper_scripts/run_python.sh py37/bin/python]
-    python_path = os.path.join(name, config_vars.venv_relative_python[0])
-    run = config_vars.shell + config_vars.runner + [python_path]
-    return PythonConfig(name, build, run, python_path)
+    run = (
+        config_vars.shell
+        + config_vars.runner
+        + [
+            os.path.join(name, config_vars.venv_relative_python[0]),
+        ]
+    )
+    return PythonConfig(name, build, run)
 
 
 def _pypy_config_generator(name, major, config_vars):
-    # Something like "py37/bin/python"
-    python_path = os.path.join(name, config_vars.venv_relative_python[0])
     return PythonConfig(
         name,
         config_vars.shell
@@ -239,8 +241,9 @@ def _pypy_config_generator(name, major, config_vars):
         + [name]
         + config_vars.venv_relative_python
         + config_vars.toolchain,
-        config_vars.shell + config_vars.runner + [python_path],
-        python_path,
+        config_vars.shell
+        + config_vars.runner
+        + [os.path.join(name, config_vars.venv_relative_python[0])],
     )
 
 
@@ -697,9 +700,7 @@ class Php7Language(object):
 
 
 class PythonConfig(
-    collections.namedtuple(
-        "PythonConfig", ["name", "build", "run", "python_path"]
-    )
+    collections.namedtuple("PythonConfig", ["name", "build", "run"])
 ):
     """Tuple of commands (named s.t. 'what it says on the tin' applies)"""
 
@@ -728,55 +729,35 @@ class PythonLanguage(object):
     def test_specs(self):
         # load list of known test suites
         jobs = []
+        for io_platform in self._TEST_SPECS_FILE:
+            test_cases = []
+            for tests_json_file_name in self._TEST_SPECS_FILE[io_platform]:
+                with open(tests_json_file_name) as tests_json_file:
+                    test_cases.extend(json.load(tests_json_file))
 
-        # Run tests across all supported interpreters.
-        for python_config in self.pythons:
-            # Run non-io-manager-specific tests.
-            if os.name != "nt":
-                jobs.append(
-                    self.config.job_spec(
-                        [
-                            python_config.python_path,
-                            "tools/distrib/python/xds_protos/generated_file_import_test.py",
-                        ],
-                        timeout_seconds=60,
-                        environ=_FORCE_ENVIRON_FOR_WRAPPERS,
-                        shortname="{}.xds_protos".format(python_config.name),
-                    )
+            environment = dict(_FORCE_ENVIRON_FOR_WRAPPERS)
+            # TODO(https://github.com/grpc/grpc/issues/21401) Fork handlers is not
+            # designed for non-native IO manager. It has a side-effect that
+            # overrides threading settings in C-Core.
+            if io_platform != "native":
+                environment["GRPC_ENABLE_FORK_SUPPORT"] = "0"
+            for python_config in self.pythons:
+                jobs.extend(
+                    [
+                        self.config.job_spec(
+                            python_config.run
+                            + [self._TEST_COMMAND[io_platform]],
+                            timeout_seconds=8 * 60,
+                            environ=dict(
+                                GRPC_PYTHON_TESTRUNNER_FILTER=str(test_case),
+                                **environment,
+                            ),
+                            shortname="%s.%s.%s"
+                            % (python_config.name, io_platform, test_case),
+                        )
+                        for test_case in test_cases
+                    ]
                 )
-
-            # Run main test suite across all support IO managers.
-            for io_platform in self._TEST_SPECS_FILE:
-                test_cases = []
-                for tests_json_file_name in self._TEST_SPECS_FILE[io_platform]:
-                    with open(tests_json_file_name) as tests_json_file:
-                        test_cases.extend(json.load(tests_json_file))
-
-                environment = dict(_FORCE_ENVIRON_FOR_WRAPPERS)
-                # TODO(https://github.com/grpc/grpc/issues/21401) Fork handlers is not
-                # designed for non-native IO manager. It has a side-effect that
-                # overrides threading settings in C-Core.
-                if io_platform != "native":
-                    environment["GRPC_ENABLE_FORK_SUPPORT"] = "0"
-                    jobs.extend(
-                        [
-                            self.config.job_spec(
-                                python_config.run
-                                + [self._TEST_COMMAND[io_platform]],
-                                timeout_seconds=8 * 60,
-                                environ=dict(
-                                    GRPC_PYTHON_TESTRUNNER_FILTER=str(
-                                        test_case
-                                    ),
-                                    **environment,
-                                ),
-                                shortname="%s.%s.%s"
-                                % (python_config.name, io_platform, test_case),
-                            )
-                            for test_case in test_cases
-                        ]
-                    )
-
         return jobs
 
     def pre_build_steps(self):
@@ -812,7 +793,8 @@ class PythonLanguage(object):
         """Get python runtimes to test with, based on current platform, architecture, compiler etc."""
         if args.iomgr_platform != "native":
             raise ValueError(
-                'Python builds no longer differentiate IO Manager platforms, please use "native"'
+                "Python builds no longer differentiate IO Manager platforms,"
+                ' please use "native"'
             )
 
         if args.arch == "x86":
@@ -853,9 +835,6 @@ class PythonLanguage(object):
             toolchain,
             runner,
         )
-
-        # TODO: Supported version range should be defined by a single
-        # source of truth.
         python37_config = _python_config_generator(
             name="py37",
             major="3",
@@ -884,13 +863,6 @@ class PythonLanguage(object):
             bits=bits,
             config_vars=config_vars,
         )
-        python311_config = _python_config_generator(
-            name="py311",
-            major="3",
-            minor="11",
-            bits=bits,
-            config_vars=config_vars,
-        )
         pypy27_config = _pypy_config_generator(
             name="pypy", major="2", config_vars=config_vars
         )
@@ -912,10 +884,9 @@ class PythonLanguage(object):
                 # for arm64 testing)
                 return (python39_config,)
             else:
-                # Default set tested on master. Test oldest and newest.
                 return (
                     python37_config,
-                    python311_config,
+                    python38_config,
                 )
         elif args.compiler == "python3.7":
             return (python37_config,)
@@ -925,8 +896,6 @@ class PythonLanguage(object):
             return (python39_config,)
         elif args.compiler == "python3.10":
             return (python310_config,)
-        elif args.compiler == "python3.11":
-            return (python311_config,)
         elif args.compiler == "pypy":
             return (pypy27_config,)
         elif args.compiler == "pypy3":
@@ -939,7 +908,6 @@ class PythonLanguage(object):
                 python38_config,
                 python39_config,
                 python310_config,
-                python311_config,
             )
         else:
             raise Exception("Compiler %s not supported." % args.compiler)
@@ -974,6 +942,11 @@ class RubyLanguage(object):
         # b/266212253.
         #   - src/ruby/end2end/grpc_class_init_test.rb
         for test in [
+            "src/ruby/end2end/fork_test.rb",
+            "src/ruby/end2end/simple_fork_test.rb",
+            "src/ruby/end2end/prefork_without_using_grpc_test.rb",
+            "src/ruby/end2end/secure_fork_test.rb",
+            "src/ruby/end2end/bad_usage_fork_test.rb",
             "src/ruby/end2end/sig_handling_test.rb",
             "src/ruby/end2end/channel_closing_test.rb",
             "src/ruby/end2end/killed_client_thread_test.rb",
@@ -990,6 +963,22 @@ class RubyLanguage(object):
             "src/ruby/end2end/call_credentials_timeout_test.rb",
             "src/ruby/end2end/call_credentials_returning_bad_metadata_doesnt_kill_background_thread_test.rb",
         ]:
+            if test in [
+                "src/ruby/end2end/fork_test.rb",
+                "src/ruby/end2end/simple_fork_test.rb",
+                "src/ruby/end2end/secure_fork_test.rb",
+                "src/ruby/end2end/bad_usage_fork_test.rb",
+                "src/ruby/end2end/prefork_without_using_grpc_test.rb",
+            ]:
+                if platform_string() == "mac":
+                    # Skip fork tests on mac, it's only supported on linux.
+                    continue
+                if self.config.build_config == "dbg":
+                    # There's a known issue with dbg builds that breaks fork
+                    # support: https://github.com/grpc/grpc/issues/31885.
+                    # TODO(apolcyn): unskip these tests on dbg builds after we
+                    # migrate to event engine and hence fix that issue.
+                    continue
             tests.append(
                 self.config.job_spec(
                     ["ruby", test],
@@ -1609,8 +1598,10 @@ argp.add_argument(
     "--runs_per_test",
     default=1,
     type=runs_per_test_type,
-    help='A positive integer or "inf". If "inf", all tests will run in an '
-    'infinite loop. Especially useful in combination with "-f"',
+    help=(
+        'A positive integer or "inf". If "inf", all tests will run in an '
+        'infinite loop. Especially useful in combination with "-f"'
+    ),
 )
 argp.add_argument("-r", "--regex", default=".*", type=str)
 argp.add_argument("--regex_exclude", default="", type=str)
@@ -1629,7 +1620,9 @@ argp.add_argument(
     default=False,
     action="store_const",
     const=True,
-    help="When set, indicates that the script is running on CI (= not locally).",
+    help=(
+        "When set, indicates that the script is running on CI (= not locally)."
+    ),
 )
 argp.add_argument(
     "--newline_on_success", default=False, action="store_const", const=True
@@ -1658,13 +1651,19 @@ argp.add_argument(
     default=False,
     action="store_const",
     const=True,
-    help="Allow flaky tests to show as passing (re-runs failed tests up to five times)",
+    help=(
+        "Allow flaky tests to show as passing (re-runs failed tests up to five"
+        " times)"
+    ),
 )
 argp.add_argument(
     "--arch",
     choices=["default", "x86", "x64", "arm64"],
     default="default",
-    help='Selects architecture to target. For some platforms "default" is the only supported choice.',
+    help=(
+        'Selects architecture to target. For some platforms "default" is the'
+        " only supported choice."
+    ),
 )
 argp.add_argument(
     "--compiler",
@@ -1677,14 +1676,11 @@ argp.add_argument(
         "gcc_musl",
         "clang6",
         "clang15",
-        # TODO: Automatically populate from supported version
         "python2.7",
         "python3.5",
         "python3.7",
         "python3.8",
         "python3.9",
-        "python3.10",
-        "python3.11",
         "pypy",
         "pypy3",
         "python_alpine",
@@ -1698,7 +1694,10 @@ argp.add_argument(
         "mono",
     ],
     default="default",
-    help="Selects compiler to use. Allowed values depend on the platform and language.",
+    help=(
+        "Selects compiler to use. Allowed values depend on the platform and"
+        " language."
+    ),
 )
 argp.add_argument(
     "--iomgr_platform",
@@ -1739,14 +1738,19 @@ argp.add_argument(
     default=False,
     const=True,
     action="store_const",
-    help="Generate separate XML report for each test job (Looks better in UIs).",
+    help=(
+        "Generate separate XML report for each test job (Looks better in UIs)."
+    ),
 )
 argp.add_argument(
     "--quiet_success",
     default=False,
     action="store_const",
     const=True,
-    help="Don't print anything when a test passes. Passing tests also will not be reported in XML report. "
+    help=(
+        "Don't print anything when a test passes. Passing tests also will not"
+        " be reported in XML report. "
+    )
     + "Useful when running many iterations of each test (argument -n).",
 )
 argp.add_argument(
@@ -1760,9 +1764,11 @@ argp.add_argument(
     "--force_use_pollers",
     default=None,
     type=str,
-    help="Only use the specified comma-delimited list of polling engines. "
-    "Example: --force_use_pollers epoll1,poll "
-    " (This flag has no effect if --force_default_poller flag is also used)",
+    help=(
+        "Only use the specified comma-delimited list of polling engines. "
+        "Example: --force_use_pollers epoll1,poll "
+        " (This flag has no effect if --force_default_poller flag is also used)"
+    ),
 )
 argp.add_argument(
     "--max_time", default=-1, type=int, help="Maximum test runtime in seconds"
@@ -1809,7 +1815,8 @@ if args.use_docker:
         print("Seen --use_docker flag, will run tests under docker.")
         print("")
         print(
-            "IMPORTANT: The changes you are testing need to be locally committed"
+            "IMPORTANT: The changes you are testing need to be locally"
+            " committed"
         )
         print(
             "because only the committed changes in the current branch will be"
