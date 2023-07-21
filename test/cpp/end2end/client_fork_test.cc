@@ -168,6 +168,9 @@ int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
   grpc::testing::TestEnvironment env(&argc, argv);
-  return RUN_ALL_TESTS();
+  grpc_init();
+  int res = RUN_ALL_TESTS();
+  grpc_shutdown();
+  return res;
 }
 #endif  // GRPC_ENABLE_FORK_SUPPORT
