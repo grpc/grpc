@@ -94,6 +94,7 @@ buildConfigs() {
         --prefix="${LOAD_TEST_PREFIX}" -u "${UNIQUE_IDENTIFIER}" -u "${pool}" \
         -a pool="${pool}" --category=scalable \
         --allow_client_language=c++ --allow_server_language=c++ \
+        --allow_server_language=node \
         -o "loadtest_with_prebuilt_workers_${pool}.yaml"
 }
 
