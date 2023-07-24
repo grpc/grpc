@@ -127,6 +127,8 @@ class WeightedRoundRobinTest : public TimeAwareLoadBalancingPolicyTest {
     EXPECT_EQ(ApplyUpdate(BuildUpdate(update_addresses, config_builder.Build()),
                           lb_policy_.get()),
               absl::OkStatus());
+    // Expect the initial CONNECTNG update with a picker that queues.
+    ExpectConnectingUpdate(location);
     // RR should have created a subchannel for each address.
     for (size_t i = 0; i < addresses.size(); ++i) {
       auto* subchannel = FindSubchannel(addresses[i]);
@@ -140,8 +142,6 @@ class WeightedRoundRobinTest : public TimeAwareLoadBalancingPolicyTest {
           << location.line();
       // The subchannel will connect successfully.
       subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
-      // Expect the initial CONNECTNG update with a picker that queues.
-      if (i == 0) ExpectConnectingUpdate(location);
       subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
     }
     return WaitForConnected(location);
@@ -252,6 +252,7 @@ class WeightedRoundRobinTest : public TimeAwareLoadBalancingPolicyTest {
           backend_metrics,
       std::map<absl::string_view /*address*/, size_t /*num_picks*/> expected,
       absl::Duration timeout = absl::Seconds(5),
+      bool run_timer_callbacks = true,
       SourceLocation location = SourceLocation()) {
     gpr_log(GPR_INFO, "==> WaitForWeightedRoundRobinPicks(): Expecting %s",
             PickMapString(expected).c_str());
@@ -308,7 +309,7 @@ class WeightedRoundRobinTest : public TimeAwareLoadBalancingPolicyTest {
         EXPECT_NE(*picker, nullptr)
             << location.file() << ":" << location.line();
         if (*picker == nullptr) return false;
-      } else {
+      } else if (run_timer_callbacks) {
         gpr_log(GPR_INFO, "running timer callback...");
         RunTimerCallback();
       }
@@ -801,6 +802,45 @@ TEST_F(WeightedRoundRobinTest, BlackoutPeriodAfterDisconnect) {
        {kAddresses[2], MakeBackendMetricData(/*app_utilization=*/0.9,
                                              /*qps=*/100.0, /*eps=*/0.0)}},
       {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 3}});
+}
+
+TEST_F(WeightedRoundRobinTest, BlackoutPeriodDoesNotGetResetAfterUpdate) {
+  // Send address list to LB policy.
+  const std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
+  auto config_builder =
+      ConfigBuilder().SetWeightExpirationPeriod(Duration::Seconds(2));
+  auto picker =
+      SendInitialUpdateAndWaitForConnected(kAddresses, config_builder);
+  ASSERT_NE(picker, nullptr);
+  // All backends report weights.
+  WaitForWeightedRoundRobinPicks(
+      &picker,
+      {{kAddresses[0], MakeBackendMetricData(/*app_utilization=*/0.9,
+                                             /*qps=*/100.0, /*eps=*/0.0)},
+       {kAddresses[1], MakeBackendMetricData(/*app_utilization=*/0.3,
+                                             /*qps=*/100.0, /*eps=*/0.0)},
+       {kAddresses[2], MakeBackendMetricData(/*app_utilization=*/0.3,
+                                             /*qps=*/100.0, /*eps=*/0.0)}},
+      {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 3}});
+  // Send a duplicate update with the same addresses and config.
+  EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, config_builder.Build()),
+                        lb_policy_.get()),
+            absl::OkStatus());
+  // Note that we have not advanced time, so if the update incorrectly
+  // triggers resetting the blackout period, none of the weights will
+  // actually be used.
+  picker = ExpectState(GRPC_CHANNEL_READY, absl::OkStatus());
+  WaitForWeightedRoundRobinPicks(
+      &picker,
+      {{kAddresses[0], MakeBackendMetricData(/*app_utilization=*/0.9,
+                                             /*qps=*/100.0, /*eps=*/0.0)},
+       {kAddresses[1], MakeBackendMetricData(/*app_utilization=*/0.3,
+                                             /*qps=*/100.0, /*eps=*/0.0)},
+       {kAddresses[2], MakeBackendMetricData(/*app_utilization=*/0.3,
+                                             /*qps=*/100.0, /*eps=*/0.0)}},
+      {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 3}},
+      /*timeout=*/absl::Seconds(5), /*run_timer_callbacks=*/false);
 }
 
 TEST_F(WeightedRoundRobinTest, ZeroErrorUtilPenalty) {

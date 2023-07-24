@@ -123,7 +123,7 @@ TEST(HpackParserTableTest, ManyAdditions) {
             ParsedMetadata<grpc_metadata_batch>::FromSlicePair{},
             std::move(key_slice), std::move(value_slice),
             key.length() + value.length() + 32),
-        HpackParseResult()};
+        nullptr};
     ASSERT_TRUE(tbl.Add(std::move(memento)));
     AssertIndex(&tbl, 1 + hpack_constants::kLastStaticEntry, key.c_str(),
                 value.c_str());

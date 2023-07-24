@@ -76,3 +76,5 @@
   default: false
 - name: unique_metadata_strings
   default: false
+- name: keepalive_fix
+  default: false

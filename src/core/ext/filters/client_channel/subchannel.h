@@ -119,9 +119,9 @@ class SubchannelCall {
   void SetAfterCallStackDestroy(grpc_closure* closure);
 
   // Interface of RefCounted<>.
-  RefCountedPtr<SubchannelCall> Ref() GRPC_MUST_USE_RESULT;
-  RefCountedPtr<SubchannelCall> Ref(const DebugLocation& location,
-                                    const char* reason) GRPC_MUST_USE_RESULT;
+  GRPC_MUST_USE_RESULT RefCountedPtr<SubchannelCall> Ref();
+  GRPC_MUST_USE_RESULT RefCountedPtr<SubchannelCall> Ref(
+      const DebugLocation& location, const char* reason);
   // When refcount drops to 0, destroys itself and the associated call stack,
   // but does NOT free the memory because it's in the call arena.
   void Unref();
@@ -211,8 +211,6 @@ class Subchannel : public DualRefCounted<Subchannel> {
   grpc_pollset_set* pollset_set() const { return pollset_set_; }
 
   channelz::SubchannelNode* channelz_node();
-
-  const grpc_resolved_address& address() const { return key_.address(); }
 
   // Starts watching the subchannel's connectivity state.
   // The first callback to the watcher will be delivered ~immediately.

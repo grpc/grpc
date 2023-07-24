@@ -57,7 +57,7 @@
   test_tags: ["flow_control_test"]
 - name: memory_pressure_controller
   description: New memory pressure controller
-  expiry: 2023/08/01
+  expiry: 2023/10/01
   owner: ctiller@google.com
   test_tags: [resource_quota_test]
 - name: unconstrained_max_quota_buffer_size
@@ -93,7 +93,7 @@
     (ie when all filters in a stack are promise based)
   expiry: 2023/11/01
   owner: ctiller@google.com
-  test_tags: ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test"]
+  test_tags: ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test", "logging_test"]
 - name: transport_supplies_client_latency
   description: If set, use the transport represented value for client latency in opencensus
   expiry: 2023/09/01
@@ -119,7 +119,7 @@
     If set, use EventEngine DNSResolver for client channel resolution
   expiry: 2023/10/01
   owner: yijiem@google.com
-  test_tags: []
+  test_tags: ["cancel_ares_query_test", "resolver_component_tests_runner_invoker"]
   allow_in_fuzzing_config: false
 - name: work_stealing
   description:
@@ -158,3 +158,11 @@
   owner: ctiller@google.com
   test_tags: ["core_end2end_test"]
   allow_in_fuzzing_config: true
+- name: keepalive_fix
+  description:
+    Allows overriding keepalive_permit_without_calls.
+    Refer https://github.com/grpc/grpc/pull/33428 for more information.
+  expiry: 2023/09/07
+  owner: yashkt@google.com
+  test_tags: []
+  allow_in_fuzzing_config: false

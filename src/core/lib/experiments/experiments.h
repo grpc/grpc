@@ -80,6 +80,7 @@ inline bool IsClientPrivacyEnabled() { return false; }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
 inline bool IsServerPrivacyEnabled() { return false; }
 inline bool IsUniqueMetadataStringsEnabled() { return false; }
+inline bool IsKeepaliveFixEnabled() { return false; }
 
 #elif defined(GPR_WINDOWS)
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -103,6 +104,7 @@ inline bool IsClientPrivacyEnabled() { return false; }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
 inline bool IsServerPrivacyEnabled() { return false; }
 inline bool IsUniqueMetadataStringsEnabled() { return false; }
+inline bool IsKeepaliveFixEnabled() { return false; }
 
 #else
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -126,6 +128,7 @@ inline bool IsClientPrivacyEnabled() { return false; }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
 inline bool IsServerPrivacyEnabled() { return false; }
 inline bool IsUniqueMetadataStringsEnabled() { return false; }
+inline bool IsKeepaliveFixEnabled() { return false; }
 #endif
 
 #else
@@ -177,8 +180,10 @@ inline bool IsCanaryClientPrivacyEnabled() { return IsExperimentEnabled(17); }
 inline bool IsServerPrivacyEnabled() { return IsExperimentEnabled(18); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_UNIQUE_METADATA_STRINGS
 inline bool IsUniqueMetadataStringsEnabled() { return IsExperimentEnabled(19); }
+#define GRPC_EXPERIMENT_IS_INCLUDED_KEEPALIVE_FIX
+inline bool IsKeepaliveFixEnabled() { return IsExperimentEnabled(20); }
 
-constexpr const size_t kNumExperiments = 20;
+constexpr const size_t kNumExperiments = 21;
 extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];
 
 #endif

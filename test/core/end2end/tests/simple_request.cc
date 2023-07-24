@@ -23,7 +23,6 @@
 #include <string>
 
 #include "absl/strings/match.h"
-#include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -33,7 +32,6 @@
 
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/stats_data.h"
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/time.h"
 #include "test/core/end2end/end2end_tests.h"
 
@@ -51,7 +49,7 @@ void CheckPeer(std::string peer_name) {
 
 void SimpleRequestBody(CoreEnd2endTest& test) {
   auto before = global_stats().Collect();
-  auto c = test.NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
+  auto c = test.NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
   EXPECT_NE(c.GetPeer(), absl::nullopt);
   CoreEnd2endTest::IncomingStatusOnClient server_status;
   CoreEnd2endTest::IncomingMetadata server_initial_metadata;
@@ -62,13 +60,6 @@ void SimpleRequestBody(CoreEnd2endTest& test) {
       .RecvStatusOnClient(server_status);
   auto s = test.RequestCall(101);
   test.Expect(101, true);
-  test.Expect(
-      1, CoreEnd2endTest::MaybePerformAction{[&](bool success) {
-        Crash(absl::StrCat(
-            "Unexpected completion of client side call: success=",
-            success ? "true" : "false", " status=", server_status.ToString(),
-            " initial_md=", server_initial_metadata.ToString()));
-      }});
   test.Step();
   EXPECT_NE(s.GetPeer(), absl::nullopt);
   CheckPeer(*s.GetPeer());

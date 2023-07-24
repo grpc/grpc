@@ -150,8 +150,14 @@ grpc_cc_test(
     tags = [
         "no_mac",
         "no_windows",
+        "nomsan",
+        "notsan",
+        "noubsan",
     ],
-    deps = [":helpers"],
+    deps = [
+        ":helpers",
+        "//test/cpp/microbenchmarks/huffman_geometries",
+    ],
 )
 
 grpc_cc_test(

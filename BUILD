@@ -211,11 +211,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "grounded"  # @unused
+g_stands_for = "goku"  # @unused
 
-core_version = "33.0.0"  # @unused
+core_version = "34.0.0"  # @unused
 
-version = "1.57.0-dev"  # @unused
+version = "1.58.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -2955,6 +2955,7 @@ grpc_cc_library(
         "//src/core:ext/filters/client_channel/lb_policy/oob_backend_metric.cc",
         "//src/core:ext/filters/client_channel/local_subchannel_pool.cc",
         "//src/core:ext/filters/client_channel/retry_filter.cc",
+        "//src/core:ext/filters/client_channel/retry_filter_legacy_call_data.cc",
         "//src/core:ext/filters/client_channel/retry_service_config.cc",
         "//src/core:ext/filters/client_channel/retry_throttle.cc",
         "//src/core:ext/filters/client_channel/service_config_channel_arg_filter.cc",
@@ -2980,6 +2981,7 @@ grpc_cc_library(
         "//src/core:ext/filters/client_channel/lb_policy/oob_backend_metric_internal.h",
         "//src/core:ext/filters/client_channel/local_subchannel_pool.h",
         "//src/core:ext/filters/client_channel/retry_filter.h",
+        "//src/core:ext/filters/client_channel/retry_filter_legacy_call_data.h",
         "//src/core:ext/filters/client_channel/retry_service_config.h",
         "//src/core:ext/filters/client_channel/retry_throttle.h",
         "//src/core:ext/filters/client_channel/subchannel.h",

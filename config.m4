@@ -59,7 +59,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/client_channel/http_proxy.cc \
     src/core/ext/filters/client_channel/lb_policy/address_filtering.cc \
     src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc \
-    src/core/ext/filters/client_channel/lb_policy/endpoint_list.cc \
     src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc \
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc \
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc \
@@ -100,6 +99,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc \
     src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc \
     src/core/ext/filters/client_channel/retry_filter.cc \
+    src/core/ext/filters/client_channel/retry_filter_legacy_call_data.cc \
     src/core/ext/filters/client_channel/retry_service_config.cc \
     src/core/ext/filters/client_channel/retry_throttle.cc \
     src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc \
@@ -517,6 +517,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/debug/stats.cc \
     src/core/lib/debug/stats_data.cc \
     src/core/lib/debug/trace.cc \
+    src/core/lib/event_engine/ares_resolver.cc \
     src/core/lib/event_engine/cf_engine/cf_engine.cc \
     src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc \
     src/core/lib/event_engine/channel_args_endpoint_config.cc \
@@ -1060,6 +1061,7 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl-with-bazel/src/crypto/cpu_intel.c \
     third_party/boringssl-with-bazel/src/crypto/crypto.c \
     third_party/boringssl-with-bazel/src/crypto/curve25519/curve25519.c \
+    third_party/boringssl-with-bazel/src/crypto/curve25519/curve25519_64_adx.c \
     third_party/boringssl-with-bazel/src/crypto/curve25519/spake25519.c \
     third_party/boringssl-with-bazel/src/crypto/des/des.c \
     third_party/boringssl-with-bazel/src/crypto/dh_extra/dh_asn1.c \
@@ -1121,14 +1123,14 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl-with-bazel/src/crypto/pool/pool.c \
     third_party/boringssl-with-bazel/src/crypto/rand_extra/deterministic.c \
     third_party/boringssl-with-bazel/src/crypto/rand_extra/forkunsafe.c \
-    third_party/boringssl-with-bazel/src/crypto/rand_extra/fuchsia.c \
+    third_party/boringssl-with-bazel/src/crypto/rand_extra/getentropy.c \
+    third_party/boringssl-with-bazel/src/crypto/rand_extra/ios.c \
     third_party/boringssl-with-bazel/src/crypto/rand_extra/passive.c \
     third_party/boringssl-with-bazel/src/crypto/rand_extra/rand_extra.c \
+    third_party/boringssl-with-bazel/src/crypto/rand_extra/trusty.c \
     third_party/boringssl-with-bazel/src/crypto/rand_extra/windows.c \
     third_party/boringssl-with-bazel/src/crypto/rc4/rc4.c \
-    third_party/boringssl-with-bazel/src/crypto/refcount_c11.c \
-    third_party/boringssl-with-bazel/src/crypto/refcount_no_threads.c \
-    third_party/boringssl-with-bazel/src/crypto/refcount_win.c \
+    third_party/boringssl-with-bazel/src/crypto/refcount.c \
     third_party/boringssl-with-bazel/src/crypto/rsa_extra/rsa_asn1.c \
     third_party/boringssl-with-bazel/src/crypto/rsa_extra/rsa_crypt.c \
     third_party/boringssl-with-bazel/src/crypto/rsa_extra/rsa_print.c \
@@ -1322,7 +1324,7 @@ if test "$PHP_GRPC" != "no"; then
     -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DGRPC_ARES=0 \
     -DGRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK=1 \
     -DGRPC_XDS_USER_AGENT_NAME_SUFFIX='"\"PHP\""' \
-    -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"1.57.0dev\""')
+    -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"1.58.0dev\""')
 
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/backend_metrics)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/census)

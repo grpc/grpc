@@ -127,6 +127,7 @@ grpc_cc_library(
     ],
     language = "c++",
     tags = ["nofixdeps"],
+    visibility = ["@grpc:grpc_experiments"],
     deps = [
         "no_destruct",
         "//:config_vars",
@@ -1127,6 +1128,9 @@ grpc_cc_library(
         "absl/meta:type_traits",
         "absl/utility",
     ],
+    visibility = [
+        "@grpc:alt_grpc_base_legacy",
+    ],
     deps = [
         "construct_destruct",
         "context",
@@ -1175,6 +1179,9 @@ grpc_cc_library(
         "lib/resource_quota/resource_quota.h",
     ],
     external_deps = ["absl/strings"],
+    visibility = [
+        "@grpc:alt_grpc_base_legacy",
+    ],
     deps = [
         "memory_quota",
         "ref_counted",
@@ -1503,6 +1510,7 @@ grpc_cc_library(
         "event_engine_work_queue",
         "experiments",
         "forkable",
+        "notification",
         "time",
         "useful",
         "//:backoff",
@@ -1944,6 +1952,7 @@ grpc_cc_library(
         "posix_event_engine_tcp_socket_utils",
         "socket_mutator",
         "status_helper",
+        "time",
         "//:event_engine_base_hdrs",
         "//:exec_ctx",
         "//:gpr",
@@ -1966,6 +1975,7 @@ grpc_cc_library(
         "absl/strings",
     ],
     deps = [
+        "ares_resolver",
         "event_engine_common",
         "event_engine_poller",
         "event_engine_tcp_socket_utils",
@@ -1987,6 +1997,7 @@ grpc_cc_library(
         "//:event_engine_base_hdrs",
         "//:gpr",
         "//:grpc_trace",
+        "//:orphanable",
     ],
 )
 
@@ -2286,6 +2297,49 @@ grpc_cc_library(
         "//:event_engine_base_hdrs",
         "//:gpr",
         "//:grpc_trace",
+    ],
+)
+
+grpc_cc_library(
+    name = "ares_resolver",
+    srcs = [
+        "lib/event_engine/ares_resolver.cc",
+    ],
+    hdrs = [
+        "lib/event_engine/ares_resolver.h",
+        "lib/event_engine/grpc_polled_fd.h",
+        "lib/event_engine/posix_engine/grpc_polled_fd_posix.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/container:flat_hash_map",
+        "absl/functional:any_invocable",
+        "absl/hash",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/strings:str_format",
+        "absl/types:optional",
+        "absl/types:variant",
+        "cares",
+    ],
+    deps = [
+        "error",
+        "event_engine_time_util",
+        "grpc_sockaddr",
+        "iomgr_port",
+        "posix_event_engine_closure",
+        "posix_event_engine_event_poller",
+        "posix_event_engine_tcp_socket_utils",
+        "resolved_address",
+        "//:debug_location",
+        "//:event_engine_base_hdrs",
+        "//:gpr",
+        "//:grpc_trace",
+        "//:orphanable",
+        "//:parse_address",
+        "//:ref_counted_ptr",
+        "//:sockaddr_utils",
     ],
 )
 
@@ -3916,7 +3970,6 @@ grpc_cc_library(
         "//:ref_counted_ptr",
         "//:server_address",
         "//:sockaddr_utils",
-        "//:uri_parser",
         "//:work_serializer",
     ],
 )
@@ -4003,7 +4056,6 @@ grpc_cc_library(
         "//:ref_counted_ptr",
         "//:rls_upb",
         "//:server_address",
-        "//:uri_parser",
         "//:work_serializer",
     ],
 )
@@ -4581,40 +4633,32 @@ grpc_cc_library(
         "//:grpc_trace",
         "//:orphanable",
         "//:ref_counted_ptr",
-        "//:sockaddr_utils",
         "//:work_serializer",
     ],
 )
 
 grpc_cc_library(
-    name = "lb_endpoint_list",
-    srcs = [
-        "ext/filters/client_channel/lb_policy/endpoint_list.cc",
-    ],
+    name = "grpc_lb_subchannel_list",
     hdrs = [
-        "ext/filters/client_channel/lb_policy/endpoint_list.h",
+        "ext/filters/client_channel/lb_policy/subchannel_list.h",
     ],
     external_deps = [
-        "absl/functional:any_invocable",
         "absl/status",
-        "absl/status:statusor",
         "absl/types:optional",
     ],
     language = "c++",
     deps = [
         "channel_args",
-        "delegating_helper",
-        "grpc_lb_policy_pick_first",
-        "json",
+        "dual_ref_counted",
+        "gpr_manual_constructor",
+        "health_check_client",
+        "iomgr_fwd",
         "lb_policy",
-        "lb_policy_registry",
-        "pollset_set",
         "subchannel_interface",
-        "//:config",
         "//:debug_location",
         "//:gpr",
         "//:grpc_base",
-        "//:orphanable",
+        "//:grpc_client_channel",
         "//:ref_counted_ptr",
         "//:server_address",
         "//:work_serializer",
@@ -4641,8 +4685,8 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "env",
-        "health_check_client",
-        "iomgr_fwd",
+        "grpc_lb_subchannel_list",
+        "grpc_outlier_detection_header",
         "json",
         "json_args",
         "json_object_loader",
@@ -4658,6 +4702,7 @@ grpc_cc_library(
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:server_address",
+        "//:work_serializer",
     ],
 )
 
@@ -4682,18 +4727,16 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "closure",
-        "delegating_helper",
         "error",
-        "grpc_lb_policy_pick_first",
+        "grpc_lb_subchannel_list",
         "grpc_service_config",
         "json",
         "json_args",
         "json_object_loader",
         "lb_policy",
         "lb_policy_factory",
-        "lb_policy_registry",
-        "pollset_set",
         "ref_counted",
+        "subchannel_interface",
         "unique_type_name",
         "validation_errors",
         "//:config",
@@ -4726,10 +4769,11 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
+        "grpc_lb_subchannel_list",
         "json",
-        "lb_endpoint_list",
         "lb_policy",
         "lb_policy_factory",
+        "subchannel_interface",
         "//:config",
         "//:debug_location",
         "//:gpr",
@@ -4771,16 +4815,15 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/types:optional",
-        "absl/types:variant",
     ],
     language = "c++",
     deps = [
         "channel_args",
         "grpc_backend_metric_data",
+        "grpc_lb_subchannel_list",
         "json",
         "json_args",
         "json_object_loader",
-        "lb_endpoint_list",
         "lb_policy",
         "lb_policy_factory",
         "ref_counted",
@@ -4818,6 +4861,7 @@ grpc_cc_library(
         "time",
         "validation_errors",
         "//:gpr_platform",
+        "//:server_address",
     ],
 )
 
@@ -4844,6 +4888,7 @@ grpc_cc_library(
         "lb_policy",
         "lb_policy_factory",
         "lb_policy_registry",
+        "match",
         "pollset_set",
         "ref_counted",
         "subchannel_interface",
@@ -5153,6 +5198,7 @@ grpc_cc_library(
         "validation_errors",
         "//:backoff",
         "//:debug_location",
+        "//:exec_ctx",
         "//:gpr",
         "//:gpr_platform",
         "//:grpc_base",
@@ -5765,6 +5811,32 @@ grpc_cc_library(
         "//:grpc_resolver",
         "//:legacy_context",
         "//:uri_parser",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_promise_endpoint",
+    srcs = [
+        "lib/transport/promise_endpoint.cc",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/types:optional",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "lib/transport/promise_endpoint.h",
+    ],
+    deps = [
+        "activity",
+        "event_engine_common",
+        "poll",
+        "slice",
+        "slice_buffer",
+        "//:event_engine_base_hdrs",
+        "//:gpr",
     ],
 )
 

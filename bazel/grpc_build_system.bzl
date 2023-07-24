@@ -30,6 +30,7 @@ Contains macros used throughout the repo.
 load("//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 load("//bazel:copts.bzl", "GRPC_DEFAULT_COPTS")
 load("//bazel:experiments.bzl", "EXPERIMENTS")
+load("//bazel:test_experiments.bzl", "TEST_EXPERIMENTS")
 load("@upb//bazel:upb_proto_library.bzl", "upb_proto_library", "upb_proto_reflection_library")
 load("@build_bazel_rules_apple//apple:ios.bzl", "ios_unit_test")
 load("@build_bazel_rules_apple//apple/testing/default_runner:ios_test_runner.bzl", "ios_test_runner")
@@ -98,6 +99,7 @@ def _update_visibility(visibility):
         "endpoint_tests": PRIVATE,
         "exec_ctx": PRIVATE,
         "grpclb": PRIVATE,
+        "grpc_experiments": PRIVATE,
         "grpc_opencensus_plugin": PUBLIC,
         "grpcpp_gcp_observability": PUBLIC,
         "grpc_resolver_fake": PRIVATE,
@@ -197,6 +199,7 @@ def grpc_cc_library(
         testonly = testonly,
         linkopts = linkopts,
         includes = [
+            "api/include",
             "include",
             "src/core/ext/upb-generated",  # Once upb code-gen issue is resolved, remove this.
             "src/core/ext/upbdefs-generated",  # Once upb code-gen issue is resolved, remove this.
@@ -364,18 +367,26 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
                 })
 
     experiments = {}
-    for mode, tag_to_experiments in EXPERIMENTS.items():
-        experiments[mode] = {}
-        for tag in tags:
-            if tag not in tag_to_experiments:
-                continue
-            for experiment in tag_to_experiments[tag]:
-                experiments[mode][experiment] = 1
-        experiments[mode] = list(experiments[mode].keys())
+
+    # buildifier: disable=uninitialized
+    def _populate_experiments_platform_config(config, platform_experiments_map):
+        for platform, experiments_on_platform in platform_experiments_map.items():
+            for mode, tag_to_experiments in experiments_on_platform.items():
+                if mode not in config:
+                    config[mode] = {}
+                for tag in tags:
+                    if tag not in tag_to_experiments:
+                        continue
+                    for experiment in tag_to_experiments[tag]:
+                        if experiment not in config[mode]:
+                            config[mode][experiment] = []
+                        config[mode][experiment].append(platform)
+
+    _populate_experiments_platform_config(experiments, EXPERIMENTS)
+    _populate_experiments_platform_config(experiments, TEST_EXPERIMENTS)
 
     mode_config = {
         # format: <mode>: (enabled_target_tags, disabled_target_tags)
-        "dbg": (["noopt"], ["nodbg"]),
         "on": (None, []),
         "off": ([], None),
     }
@@ -390,11 +401,26 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
         # Nor on arm64
         "no_arm64",
     ]
+
+    def _update_experiments_platform_test_tags(tags, platforms):
+        if "posix" not in platforms:
+            if "no_linux" not in tags:
+                tags.append("no_linux")
+            if "no_mac" not in tags:
+                tags.append("no_mac")
+        if "windows" not in platforms:
+            if "no_windows" not in tags:
+                tags.append("no_windows")
+        if "ios" not in platforms:
+            if "no_test_ios" not in tags:
+                tags.append("no_test_ios")
+        return tags
+
     experiment_config = list(poller_config)
     for mode, config in mode_config.items():
         enabled_tags, disabled_tags = config
         if enabled_tags != None:
-            for experiment in experiments[mode]:
+            for experiment in experiments[mode].keys():
                 for config in poller_config:
                     config = dict(config)
                     config["name"] = config["name"] + "@experiment=" + experiment
@@ -405,11 +431,11 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
                     for tag in must_have_tags + enabled_tags:
                         if tag not in tags:
                             tags = tags + [tag]
-                    config["tags"] = tags
+                    config["tags"] = _update_experiments_platform_test_tags(tags, experiments[mode][experiment])
                     config["flaky"] = True
                     experiment_config.append(config)
         if disabled_tags != None:
-            for experiment in experiments[mode]:
+            for experiment in experiments[mode].keys():
                 for config in poller_config:
                     config = dict(config)
                     config["name"] = config["name"] + "@experiment=no_" + experiment
@@ -420,7 +446,7 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
                     for tag in must_have_tags + disabled_tags:
                         if tag not in tags:
                             tags = tags + [tag]
-                    config["tags"] = tags
+                    config["tags"] = _update_experiments_platform_test_tags(tags, experiments[mode][experiment])
                     experiment_config.append(config)
     return experiment_config
 
