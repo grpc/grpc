@@ -130,6 +130,13 @@ RUN wget https://github.com/bazelbuild/buildtools/releases/download/0.29.0/build
 RUN chmod +x buildifier
 RUN mv buildifier /usr/local/bin
 
+#=================
+# Setup git to access working directory across docker boundary
+
+RUN git config --global --add safe.directory /var/local/jenkins/grpc
+RUN git config --global protocol.file.allow always
+
+
 
 # Define the default command.
 CMD ["bash"]
