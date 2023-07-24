@@ -203,7 +203,6 @@ class GCPOpenCensusObservability(grpc._observability.ObservabilityPlugin):
             trace_id=trace_id,
             span_id=span_id,
             trace_options=trace_options,
-            from_header=True,
         )
         execution_context.set_opencensus_attr(GRPC_SPAN_CONTEXT, span_context)
 
