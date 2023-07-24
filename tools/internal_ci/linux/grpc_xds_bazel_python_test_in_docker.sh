@@ -18,7 +18,7 @@ set -ex -o igncr || set -ex
 
 
 mkdir -p /var/local/git
-git clone -b master --single-branch --depth=1 https://github.com/grpc/grpc.git /var/local/git/grpc
+git clone -b psm-interop-kokoro-2204-legacy --single-branch --depth=1 https://github.com/sergiitk/grpc.git /var/local/git/grpc
 cd /var/local/git/grpc
 
 python3 -m pip install virtualenv
