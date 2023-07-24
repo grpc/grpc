@@ -53,6 +53,7 @@ grpc_cc_test(
         "gtest",
         "absl/strings",
         "absl/status",
+        "absl/status:statusor",
     ],
     language = "C++",
     tags = [
