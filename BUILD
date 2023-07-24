@@ -211,11 +211,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "grounded"  # @unused
+g_stands_for = "goku"  # @unused
 
 core_version = "34.0.0"  # @unused
 
-version = "1.57.0-dev"  # @unused
+version = "1.58.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
