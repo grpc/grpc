@@ -48,3 +48,9 @@ grpc_py_binary(
     testonly = True,
     srcs = ["tcp_connect.py"],
 )
+
+grpc_py_binary(
+    name = "health_check",
+    testonly = True,
+    srcs = ["health_check.py"],
+)

@@ -517,6 +517,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/debug/stats.cc \
     src/core/lib/debug/stats_data.cc \
     src/core/lib/debug/trace.cc \
+    src/core/lib/event_engine/ares_resolver.cc \
     src/core/lib/event_engine/cf_engine/cf_engine.cc \
     src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc \
     src/core/lib/event_engine/channel_args_endpoint_config.cc \
@@ -1323,7 +1324,7 @@ if test "$PHP_GRPC" != "no"; then
     -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DGRPC_ARES=0 \
     -DGRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK=1 \
     -DGRPC_XDS_USER_AGENT_NAME_SUFFIX='"\"PHP\""' \
-    -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"1.57.0dev\""')
+    -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"1.58.0dev\""')
 
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/backend_metrics)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/census)

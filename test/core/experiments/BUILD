@@ -45,3 +45,26 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "experiments_tag_test",
+    srcs = ["experiments_tag_test.cc"],
+    external_deps = [
+        "gtest",
+        "absl/strings",
+        "absl/status",
+    ],
+    language = "C++",
+    tags = [
+        "experiments_tag_test",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        ":experiments_lib",
+        "//:config_vars",
+        "//:gpr",
+        "//src/core:experiments",
+        "//test/core/util:grpc_test_util",
+    ],
+)
