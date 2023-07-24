@@ -93,7 +93,9 @@ def handle_unary_unary(request, servicer_context):
             if "port" in k:
                 unary_unary_call(port=int(v))
             if "to_new_server" in k:
-                second_server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+                second_server = grpc.server(
+                    futures.ThreadPoolExecutor(max_workers=10)
+                )
                 second_server.add_generic_rpc_handlers((_GenericHandler(),))
                 second_server_port = second_server.add_insecure_port("[::]:0")
                 second_server.start()
@@ -186,7 +188,10 @@ class ObservabilityTest(unittest.TestCase):
             exporter=self.test_exporter
         ):
             port = self._start_server()
-            metadata = (TRIGGER_RPC_METADATA, ("port", str(port)),)
+            metadata = (
+                TRIGGER_RPC_METADATA,
+                ("port", str(port)),
+            )
             unary_unary_call(port=port, metadata=metadata)
 
         # 2 of each for ["Recv", "Sent", "Attempt"]
@@ -206,8 +211,10 @@ class ObservabilityTest(unittest.TestCase):
             exporter=self.test_exporter
         ):
             port = self._start_server()
-            metadata = (TRIGGER_RPC_METADATA,
-                        TRIGGER_RPC_TO_NEW_SERVER_METADATA,)
+            metadata = (
+                TRIGGER_RPC_METADATA,
+                TRIGGER_RPC_TO_NEW_SERVER_METADATA,
+            )
             unary_unary_call(port=port, metadata=metadata)
 
         # 2 of each for ["Recv", "Sent", "Attempt"]
