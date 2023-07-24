@@ -11310,6 +11310,8 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(experiments_tag_test
+  src/core/lib/experiments/config.cc
+  src/core/lib/experiments/experiments.cc
   test/core/experiments/experiments_tag_test.cc
   test/core/experiments/fixtures/experiments.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -11340,7 +11342,8 @@ target_link_libraries(experiments_tag_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
+  absl::statusor
+  gpr
 )
 
 
@@ -11348,6 +11351,8 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(experiments_test
+  src/core/lib/experiments/config.cc
+  src/core/lib/experiments/experiments.cc
   test/core/experiments/experiments_test.cc
   test/core/experiments/fixtures/experiments.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -11378,7 +11383,7 @@ target_link_libraries(experiments_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
+  gpr
 )
 
 

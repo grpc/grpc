@@ -7370,24 +7370,33 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/lib/experiments/config.h
+  - src/core/lib/experiments/experiments.h
   - test/core/experiments/fixtures/experiments.h
   src:
+  - src/core/lib/experiments/config.cc
+  - src/core/lib/experiments/experiments.cc
   - test/core/experiments/experiments_tag_test.cc
   - test/core/experiments/fixtures/experiments.cc
   deps:
-  - grpc_test_util
+  - absl/status:statusor
+  - gpr
   uses_polling: false
 - name: experiments_test
   gtest: true
   build: test
   language: c++
   headers:
+  - src/core/lib/experiments/config.h
+  - src/core/lib/experiments/experiments.h
   - test/core/experiments/fixtures/experiments.h
   src:
+  - src/core/lib/experiments/config.cc
+  - src/core/lib/experiments/experiments.cc
   - test/core/experiments/experiments_test.cc
   - test/core/experiments/fixtures/experiments.cc
   deps:
-  - grpc_test_util
+  - gpr
   uses_polling: false
 - name: factory_test
   gtest: true
