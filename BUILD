@@ -215,7 +215,7 @@ g_stands_for = "grounded"  # @unused
 
 core_version = "34.0.0"  # @unused
 
-version = "1.57.0-dev"  # @unused
+version = "1.57.0-pre1"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
