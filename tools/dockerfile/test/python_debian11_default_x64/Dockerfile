@@ -142,7 +142,7 @@ RUN python3.10 -m ensurepip && \
     python3.10 -m pip install coverage
 
 #=================
-# Compile CPython 3.:1.4 from source
+# Compile CPython 3.11.4 from source
 
 RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev && apt-get clean
 RUN apt-get update && apt-get install -y jq build-essential libffi-dev && apt-get clean

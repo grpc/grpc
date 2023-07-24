@@ -741,7 +741,7 @@ class PythonLanguage(object):
                         ],
                         timeout_seconds=60,
                         environ=_FORCE_ENVIRON_FOR_WRAPPERS,
-                        shortname="{}.xds_protos".format(python_config.name),
+                        shortname="f{python_config.name}.xds_protos",
                     )
                 )
 
@@ -770,8 +770,7 @@ class PythonLanguage(object):
                                     ),
                                     **environment,
                                 ),
-                                shortname="%s.%s.%s"
-                                % (python_config.name, io_platform, test_case),
+                                shortname=f"{python_config.name}.{io_platform}.{test_case}",
                             )
                             for test_case in test_cases
                         ]
