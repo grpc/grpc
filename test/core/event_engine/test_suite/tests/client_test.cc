@@ -12,9 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <stddef.h>
 #include <stdint.h>
 
 #include <algorithm>
+#include <atomic>
 #include <chrono>
 #include <memory>
 #include <ratio>
@@ -34,6 +36,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
+#include <grpc/event_engine/slice_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
@@ -68,7 +71,9 @@ using ::grpc_event_engine::experimental::URIToResolvedAddress;
 using Endpoint = ::grpc_event_engine::experimental::EventEngine::Endpoint;
 using Listener = ::grpc_event_engine::experimental::EventEngine::Listener;
 using ::grpc_event_engine::experimental::GetNextSendMessage;
+using ::grpc_event_engine::experimental::GetRandomBoundedMessage;
 using ::grpc_event_engine::experimental::NotifyOnDelete;
+using ::grpc_event_engine::experimental::SliceBuffer;
 
 constexpr int kNumExchangedMessages = 100;
 
@@ -295,6 +300,60 @@ TEST_F(EventEngineClientTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
     t.join();
   }
   server_endpoint.reset();
+}
+
+// It's valid usage for an Endpoint to be destroyed immediately after a Read
+// request was issued. The Engine must handle this scenario. Unfortunately, this
+// test is non-deterministic since it's up to the implementation to determine
+// the correct status to issue after the endpoint is destroyed.
+TEST_F(EventEngineClientTest, StressTestEndpointDestructionDuringReads) {
+  constexpr size_t iterations = 300;
+  constexpr size_t min_message_length = 1024;
+  // A significant payload to hopefuly force the endpoint to do multiple TCP
+  // reads.
+  constexpr size_t max_message_length = 1024 * 1024 * 2;
+  auto test_ee = this->NewEventEngine();
+  auto oracle_ee = this->NewOracleEventEngine();
+  std::string target_addr = absl::StrCat(
+      "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
+  Endpoint::ReadArgs read_args;
+  Endpoint::WriteArgs write_args;
+  std::atomic<size_t> read_callback_run_count{0};
+  grpc_core::Notification iterations_complete;
+  for (size_t i = 0; i < iterations; i++) {
+    SliceBuffer read_buffer;
+    auto endpoints =
+        grpc_event_engine::experimental::SimpleConnectionFactory::Connect(
+            test_ee.get(), oracle_ee.get(), target_addr);
+    ASSERT_TRUE(endpoints.ok()) << "Could not create connected endpoints: "
+                                << endpoints.status().ToString();
+    grpc_core::Notification read_done;
+    auto read_cb = [&](absl::Status) {
+      if (read_callback_run_count.fetch_add(1) + 1 == iterations) {
+        iterations_complete.Notify();
+      }
+      read_done.Notify();
+    };
+    bool completed_immediately =
+        endpoints->client->Read(read_cb, &read_buffer, &read_args);
+    // Destroy the client endpoint with an outstanding read.
+    endpoints->client.reset();
+    if (completed_immediately) read_cb(absl::OkStatus());
+    SliceBuffer write_buffer;
+    AppendStringToSliceBuffer(
+        &write_buffer,
+        GetRandomBoundedMessage(min_message_length, max_message_length));
+    grpc_core::Notification write_done;
+    auto write_cb = [&](absl::Status) { write_done.Notify(); };
+    bool write_completed_immediately =
+        endpoints->listener->Write(write_cb, &write_buffer, &write_args);
+    if (write_completed_immediately) write_cb(absl::OkStatus());
+    write_done.WaitForNotification();
+    read_done.WaitForNotification();
+  }
+  iterations_complete.WaitForNotification();
+  grpc_event_engine::experimental::WaitForSingleOwner(std::move(test_ee));
+  grpc_event_engine::experimental::WaitForSingleOwner(std::move(oracle_ee));
 }
 
 // TODO(vigneshbabu): Add more tests which create listeners bound to a mix
