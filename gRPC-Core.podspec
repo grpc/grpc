@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.57.0-dev'
+  version = '1.58.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -1158,6 +1158,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/debug/stats_data.h',
                       'src/core/lib/debug/trace.cc',
                       'src/core/lib/debug/trace.h',
+                      'src/core/lib/event_engine/ares_resolver.cc',
+                      'src/core/lib/event_engine/ares_resolver.h',
                       'src/core/lib/event_engine/cf_engine/cf_engine.cc',
                       'src/core/lib/event_engine/cf_engine/cf_engine.h',
                       'src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc',
@@ -1173,6 +1175,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/event_engine/event_engine.cc',
                       'src/core/lib/event_engine/forkable.cc',
                       'src/core/lib/event_engine/forkable.h',
+                      'src/core/lib/event_engine/grpc_polled_fd.h',
                       'src/core/lib/event_engine/handle_containers.h',
                       'src/core/lib/event_engine/memory_allocator.cc',
                       'src/core/lib/event_engine/memory_allocator_factory.h',
@@ -1185,6 +1188,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/event_engine/posix_engine/event_poller.h',
                       'src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc',
                       'src/core/lib/event_engine/posix_engine/event_poller_posix_default.h',
+                      'src/core/lib/event_engine/posix_engine/grpc_polled_fd_posix.h',
                       'src/core/lib/event_engine/posix_engine/internal_errqueue.cc',
                       'src/core/lib/event_engine/posix_engine/internal_errqueue.h',
                       'src/core/lib/event_engine/posix_engine/lockfree_event.cc',
@@ -2529,6 +2533,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/debug/stats.h',
                               'src/core/lib/debug/stats_data.h',
                               'src/core/lib/debug/trace.h',
+                              'src/core/lib/event_engine/ares_resolver.h',
                               'src/core/lib/event_engine/cf_engine/cf_engine.h',
                               'src/core/lib/event_engine/cf_engine/cfstream_endpoint.h',
                               'src/core/lib/event_engine/cf_engine/cftype_unique_ref.h',
@@ -2537,6 +2542,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/event_engine/default_event_engine.h',
                               'src/core/lib/event_engine/default_event_engine_factory.h',
                               'src/core/lib/event_engine/forkable.h',
+                              'src/core/lib/event_engine/grpc_polled_fd.h',
                               'src/core/lib/event_engine/handle_containers.h',
                               'src/core/lib/event_engine/memory_allocator_factory.h',
                               'src/core/lib/event_engine/poller.h',
@@ -2545,6 +2551,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/event_engine/posix_engine/ev_poll_posix.h',
                               'src/core/lib/event_engine/posix_engine/event_poller.h',
                               'src/core/lib/event_engine/posix_engine/event_poller_posix_default.h',
+                              'src/core/lib/event_engine/posix_engine/grpc_polled_fd_posix.h',
                               'src/core/lib/event_engine/posix_engine/internal_errqueue.h',
                               'src/core/lib/event_engine/posix_engine/lockfree_event.h',
                               'src/core/lib/event_engine/posix_engine/posix_endpoint.h',

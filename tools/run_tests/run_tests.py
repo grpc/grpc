@@ -976,6 +976,7 @@ class RubyLanguage(object):
             "src/ruby/end2end/fork_test.rb",
             "src/ruby/end2end/simple_fork_test.rb",
             "src/ruby/end2end/prefork_without_using_grpc_test.rb",
+            "src/ruby/end2end/prefork_postfork_loop_test.rb",
             "src/ruby/end2end/secure_fork_test.rb",
             "src/ruby/end2end/bad_usage_fork_test.rb",
             "src/ruby/end2end/sig_handling_test.rb",
@@ -1000,6 +1001,7 @@ class RubyLanguage(object):
                 "src/ruby/end2end/secure_fork_test.rb",
                 "src/ruby/end2end/bad_usage_fork_test.rb",
                 "src/ruby/end2end/prefork_without_using_grpc_test.rb",
+                "src/ruby/end2end/prefork_postfork_loop_test.rb",
             ]:
                 if platform_string() == "mac":
                     # Skip fork tests on mac, it's only supported on linux.
