@@ -25,7 +25,7 @@ def localize_path(p):
 
 
 # We might not want to compile all the protos
-EXCLUDE_PROTO_PACKAGES_LIST = (
+EXCLUDE_PROTO_PACKAGES_LIST = tuple(
     localize_path(p)
     for p in (
         # Requires extra dependency to Prometheus protos
