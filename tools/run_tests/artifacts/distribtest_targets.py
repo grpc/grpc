@@ -193,6 +193,7 @@ class PythonDistribTest(object):
                 % (self.docker_suffix, self.arch),
                 "test/distrib/python/run_source_distrib_test.sh",
                 copy_rel_path="test/distrib",
+                timeout_seconds=60 * 60,
             )
         else:
             return create_docker_jobspec(
@@ -201,6 +202,7 @@ class PythonDistribTest(object):
                 % (self.docker_suffix, self.arch),
                 "test/distrib/python/run_binary_distrib_test.sh",
                 copy_rel_path="test/distrib",
+                timeout_seconds=60 * 60,
             )
 
     def __str__(self):
