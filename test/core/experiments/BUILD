@@ -24,10 +24,8 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "//:config_vars",
         "//:gpr",
         "//src/core:experiments",
-        "//src/core:no_destruct",
     ],
 )
 
@@ -39,10 +37,9 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        ":experiments_lib",
+        "experiments_lib",
         "//:gpr",
         "//src/core:experiments",
-        "//test/core/util:grpc_test_util",
     ],
 )
 
@@ -50,9 +47,10 @@ grpc_cc_test(
     name = "experiments_tag_test",
     srcs = ["experiments_tag_test.cc"],
     external_deps = [
-        "gtest",
-        "absl/strings",
         "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "gtest",
     ],
     language = "C++",
     tags = [
@@ -61,10 +59,9 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        ":experiments_lib",
+        "experiments_lib",
         "//:config_vars",
         "//:gpr",
         "//src/core:experiments",
-        "//test/core/util:grpc_test_util",
     ],
 )
