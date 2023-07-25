@@ -147,11 +147,23 @@ do
   # if the .current_version file doesn't exist or it doesn't contain the right SHA checksum,
   # it is out of date and we will need to rebuild the docker image locally.
   LOCAL_BUILD_REQUIRED=""
-  grep "^${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}@sha256:.*" ${DOCKERFILE_DIR}.current_version >/dev/null || LOCAL_BUILD_REQUIRED=true
+  grep "^${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}@sha256:.*$" ${DOCKERFILE_DIR}.current_version >/dev/null || LOCAL_BUILD_REQUIRED=true
+
+  # If the current version file has contains SHA checksum, but not the remote image digest,
+  # it means the locally-built image hasn't been pushed to artifact registry yet.
+  DIGEST_MISSING_IN_CURRENT_VERSION_FILE=""
+  grep "^${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}$" ${DOCKERFILE_DIR}.current_version >/dev/null && DIGEST_MISSING_IN_CURRENT_VERSION_FILE=true
 
   if [ "${LOCAL_BUILD_REQUIRED}" == "" ]
   then
     echo "Dockerfile for ${DOCKER_IMAGE_NAME} hasn't changed. Will skip 'docker build'."
+    continue
+  fi
+
+  if [ "${CHECK_MODE}" != "" ] && [ "${DIGEST_MISSING_IN_CURRENT_VERSION_FILE}" != "" ]
+  then
+    echo "CHECK FAILED: Dockerfile for ${DOCKER_IMAGE_NAME} has changed and was built locally, but looks like it hasn't been pushed."
+    CHECK_FAILED=true
     continue
   fi
 
