@@ -33,12 +33,15 @@ RUN python3 -m pip install --upgrade pip==19.3.1
 
 # TODO(jtattermusch): currently six is needed for tools/run_tests scripts
 # but since our python2 usage is deprecated, we should get rid of it.
-RUN python3 -m pip install six==1.16.0 twisted
+RUN python3 -m pip install six==1.16.0
 
 # Google Cloud Platform API libraries
 # These are needed for uploading test results to BigQuery (e.g. by tools/run_tests scripts)
 RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-client==1.12.8 oauth2client==4.1.0
 
+
+# Some cxx tests depend on the twisted package
+RUN python3 -m pip install twisted
 
 #=================
 # Install cmake
@@ -62,6 +65,12 @@ RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/downloa
 
 
 RUN mkdir /var/local/jenkins
+
+#=================
+# Setup git to access working directory across docker boundary
+
+RUN git config --global --add safe.directory /var/local/jenkins/grpc
+RUN git config --global protocol.file.allow always
 
 
 # Define the default command.
