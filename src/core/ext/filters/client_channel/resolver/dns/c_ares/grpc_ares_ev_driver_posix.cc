@@ -118,7 +118,8 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
 
  private:
   /// Overridden socket API for c-ares
-  static ares_socket_t Socket(int af, int type, int protocol, void* /*user_data*/) {
+  static ares_socket_t Socket(int af, int type, int protocol,
+                              void* /*user_data*/) {
     return socket(af, type, protocol);
   }
 
@@ -130,7 +131,7 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
 
   /// Overridden writev API for c-ares
   static ares_ssize_t WriteV(ares_socket_t as, const struct iovec* iov,
-                            int iovec_count, void* /*user_data*/) {
+                             int iovec_count, void* /*user_data*/) {
     return writev(as, iov, iovec_count);
   }
 
@@ -143,7 +144,8 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
 
   /// Overridden close API for c-ares
   static int Close(ares_socket_t as, void* user_data) {
-    GrpcPolledFdFactoryPosix* self = static_cast<GrpcPolledFdFactoryPosix*>(user_data);
+    GrpcPolledFdFactoryPosix* self =
+        static_cast<GrpcPolledFdFactoryPosix*>(user_data);
     if (self->owned_fds_.find(as) == self->owned_fds_.end()) {
       // c-ares owns this fd, grpc has never seen it
       return close(as);
@@ -152,14 +154,15 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
   }
 
   static constexpr struct ares_socket_functions kSockFuncs = {
-    &GrpcPolledFdFactoryPosix::Socket /* socket */,
-    &GrpcPolledFdFactoryPosix::Close/* close */,
-    &GrpcPolledFdFactoryPosix::Connect /* connect */,
-    &GrpcPolledFdFactoryPosix::RecvFrom /* recvfrom */,
-    &GrpcPolledFdFactoryPosix::WriteV /* writev */,
+      &GrpcPolledFdFactoryPosix::Socket /* socket */,
+      &GrpcPolledFdFactoryPosix::Close /* close */,
+      &GrpcPolledFdFactoryPosix::Connect /* connect */,
+      &GrpcPolledFdFactoryPosix::RecvFrom /* recvfrom */,
+      &GrpcPolledFdFactoryPosix::WriteV /* writev */,
   };
 
-  // fds that are used/owned by grpc - we (grpc) will close them rather than c-ares
+  // fds that are used/owned by grpc - we (grpc) will close them rather than
+  // c-ares
   std::set<ares_socket_t> owned_fds_;
 };
 
