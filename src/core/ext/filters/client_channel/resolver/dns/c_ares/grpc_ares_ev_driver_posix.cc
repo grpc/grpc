@@ -153,7 +153,7 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
     return 0;
   }
 
-  static constexpr struct ares_socket_functions kSockFuncs = {
+  const struct ares_socket_functions kSockFuncs = {
       &GrpcPolledFdFactoryPosix::Socket /* socket */,
       &GrpcPolledFdFactoryPosix::Close /* close */,
       &GrpcPolledFdFactoryPosix::Connect /* connect */,
