@@ -108,7 +108,7 @@ RUN mkdir /var/local/jenkins
 #=================
 # Setup git to access working directory across docker boundary
 
-RUN git config --global --add safe.directory /var/local/jenkins/grpc
+RUN git config --global --add safe.directory "*"
 RUN git config --global protocol.file.allow always
 
 
