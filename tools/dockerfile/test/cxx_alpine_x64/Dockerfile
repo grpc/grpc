@@ -41,13 +41,13 @@ RUN python3 -m pip install --upgrade pip==19.3.1
 
 # TODO(jtattermusch): currently six is needed for tools/run_tests scripts
 # but since our python2 usage is deprecated, we should get rid of it.
-RUN python3 -m pip install six==1.16.0
+RUN python3 -m pip install six==1.16.0 twisted
 
 # Google Cloud Platform API libraries
 # These are needed for uploading test results to BigQuery (e.g. by tools/run_tests scripts)
 RUN python3 -m pip install --upgrade google-auth==1.24.0 google-api-python-client==1.12.8 oauth2client==4.1.0
 
-RUN python3 -m pip install --upgrade --ignore-installed PyYAML==5.4.1 --user
+RUN python3 -m pip install --upgrade --ignore-installed PyYAML==6.0.1 --user
 
 #=================
 # Install ccache
