@@ -41,7 +41,9 @@
 
 #include <string.h>
 #include <sys/types.h>  // IWYU pragma: keep
+#include <unistd.h>
 
+#include <set>
 #include <string>
 #include <utility>
 
