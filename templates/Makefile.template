@@ -173,7 +173,6 @@
     lang_to_var = {
       'c': 'CORE',
       'c++': 'CPP',
-      'csharp': 'CSHARP'
     }
   %>
   <%
@@ -447,7 +446,6 @@
 
   CORE_VERSION = ${settings.core_version}
   CPP_VERSION = ${settings.cpp_version}
-  CSHARP_VERSION = ${settings.csharp_version}
 
   CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
   CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
@@ -478,29 +476,24 @@
   EXECUTABLE_SUFFIX = .exe
   SHARED_EXT_CORE = dll
   SHARED_EXT_CPP = dll
-  SHARED_EXT_CSHARP = dll
+
   SHARED_PREFIX =
   SHARED_VERSION_CORE = -${settings.core_version.major}
   SHARED_VERSION_CPP = -${settings.cpp_version.major}
-  SHARED_VERSION_CSHARP = -${settings.csharp_version.major}
   else ifeq ($(SYSTEM),Darwin)
   EXECUTABLE_SUFFIX =
   SHARED_EXT_CORE = dylib
   SHARED_EXT_CPP = dylib
-  SHARED_EXT_CSHARP = dylib
   SHARED_PREFIX = lib
   SHARED_VERSION_CORE =
   SHARED_VERSION_CPP =
-  SHARED_VERSION_CSHARP =
   else
   EXECUTABLE_SUFFIX =
   SHARED_EXT_CORE = so.$(CORE_VERSION)
   SHARED_EXT_CPP = so.$(CPP_VERSION)
-  SHARED_EXT_CSHARP = so.$(CSHARP_VERSION)
   SHARED_PREFIX = lib
   SHARED_VERSION_CORE =
   SHARED_VERSION_CPP =
-  SHARED_VERSION_CSHARP =
   endif
 
   ifeq ($(wildcard .git),)
@@ -710,16 +703,6 @@
   % endfor
 
 
-  static_csharp: static_c \
-  % for lib in filtered_libs:
-  % if 'Makefile' in lib.get('build_system', ['Makefile']):
-  % if lib.build == 'all' and lib.language == 'csharp':
-   $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
-  % endif
-  % endif
-  % endfor
-
-
   shared: shared_c shared_cxx
 
   shared_c: cache.mk\
@@ -740,17 +723,6 @@
   % endif
   % endfor
 
-
-  shared_csharp: shared_c \
-  % for lib in filtered_libs:
-  % if 'Makefile' in lib.get('build_system', ['Makefile']):
-  % if lib.build == 'all' and lib.language == 'csharp':
-   $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP)\
-  % endif
-  % endif
-  % endfor
-
-  grpc_csharp_ext: shared_csharp
 
   privatelibs: privatelibs_c privatelibs_cxx
 
@@ -852,20 +824,6 @@
   % endfor
   endif
 
-  strip-shared_csharp: shared_csharp
-  ifeq ($(CONFIG),opt)
-  % for lib in filtered_libs:
-  % if 'Makefile' in lib.get('build_system', ['Makefile']):
-  % if lib.language == "csharp":
-  % if lib.build == "all":
-  	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP)"
-  	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP)
-  % endif
-  % endif
-  % endif
-  % endfor
-  endif
-
   cache.mk::
   	$(E) "[MAKE]    Generating $@"
   	$(Q) echo "$(CACHE_MK)" | tr , '\n' >$@
@@ -910,8 +868,6 @@
   install_c: install_not_supported_error
 
   install_cxx: install_not_supported_error
-
-  install_csharp: install_not_supported_error
 
   install-static: install_not_supported_error
 
@@ -1088,7 +1044,7 @@
   dep_error openssl_dep_error openssl_dep_message git_update stop \
   buildtests buildtests_c buildtests_cxx \
   test test_c test_cxx \
-  install install_c install_cxx install_csharp install-static install-certs \
+  install install_c install_cxx install-static install-certs \
   strip strip-shared strip-static \
   strip_c strip-shared_c strip-static_c \
   strip_cxx strip-shared_cxx strip-static_cxx \
