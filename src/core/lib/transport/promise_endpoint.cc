@@ -86,9 +86,8 @@ void PromiseEndpoint::ReadCallback(absl::Status status,
       // A further read is needed.
       // Set read args with number of bytes needed as hint.
       grpc_event_engine::experimental::EventEngine::Endpoint::ReadArgs
-          read_args;
-      read_args.read_hint_bytes =
-          static_cast<int64_t>(num_bytes_requested - read_buffer_.Length());
+          read_args = {static_cast<int64_t>(num_bytes_requested -
+                                            read_buffer_.Length())};
       // If `Read()` returns true immediately, the callback will not be
       // called. We still need to call our callback to pick up the result and
       // maybe do further reads.

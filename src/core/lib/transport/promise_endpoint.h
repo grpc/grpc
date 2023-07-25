@@ -107,8 +107,7 @@ class PromiseEndpoint {
       lock.Release();
       // Set read args with hinted bytes.
       grpc_event_engine::experimental::EventEngine::Endpoint::ReadArgs
-          read_args;
-      read_args.read_hint_bytes = num_bytes;
+          read_args = {static_cast<int64_t>(num_bytes)};
       // If `Read()` returns true immediately, the callback will not be
       // called. We still need to call our callback to pick up the result and
       // maybe do further reads.
@@ -158,8 +157,7 @@ class PromiseEndpoint {
       lock.Release();
       // Set read args with num_bytes as hint.
       grpc_event_engine::experimental::EventEngine::Endpoint::ReadArgs
-          read_args;
-      read_args.read_hint_bytes = num_bytes;
+          read_args = {static_cast<int64_t>(num_bytes)};
       // If `Read()` returns true immediately, the callback will not be
       // called. We still need to call our callback to pick up the result
       // and maybe do further reads.
