@@ -1,4 +1,4 @@
-FROM phusion/baseimage:master@sha256:65ea10d5f757e5e86272625f8675d437dd83d8db64bdb429e2354d58f5462750
+FROM phusion/baseimage:master@sha256:e757fe8c7adcb9f798c0eb9dfff31bbf7d91538a1002031d7cdf3e5bf9cf71fc
 
 RUN apt-get update -y && \
         apt-get install -y \
@@ -16,7 +16,7 @@ COPY . .
 RUN tools/bazel build -c dbg //src/python/grpcio_tests/tests_py3_only/interop:xds_interop_client
 RUN cp -rL /workdir/bazel-bin/src/python/grpcio_tests/tests_py3_only/interop/xds_interop_client* /artifacts/
 
-FROM phusion/baseimage:master@sha256:65ea10d5f757e5e86272625f8675d437dd83d8db64bdb429e2354d58f5462750
+FROM phusion/baseimage:master@sha256:e757fe8c7adcb9f798c0eb9dfff31bbf7d91538a1002031d7cdf3e5bf9cf71fc
 COPY --from=0 /artifacts ./
 
 ENV GRPC_VERBOSITY="DEBUG"
