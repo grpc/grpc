@@ -557,27 +557,13 @@
 
   # Setup address_sorting dependency
 
-  ADDRESS_SORTING_DEP = $(LIBDIR)/$(CONFIG)/libaddress_sorting.a
-  ADDRESS_SORTING_MERGE_OBJS = $(LIBADDRESS_SORTING_OBJS)
-  ADDRESS_SORTING_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libaddress_sorting.a
+  # TODO(jtattermusch): should the include be added elsewhere?
   CPPFLAGS := -Ithird_party/address_sorting/include $(CPPFLAGS)
 
   # Setup abseil dependency
 
   GRPC_ABSEIL_DEP = $(LIBDIR)/$(CONFIG)/libgrpc_abseil.a
   GRPC_ABSEIL_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libgrpc_abseil.a
-
-  # Setup re2 dependency
-
-  RE2_DEP = $(LIBDIR)/$(CONFIG)/libre2.a
-  RE2_MERGE_OBJS = $(LIBRE2_OBJS)
-  RE2_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libre2.a
-
-  # Setup upb dependency
-
-  UPB_DEP = $(LIBDIR)/$(CONFIG)/libupb.a
-  UPB_MERGE_OBJS = $(LIBUPB_OBJS)
-  UPB_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libupb.a
 
   # Setup boringssl dependency
 
