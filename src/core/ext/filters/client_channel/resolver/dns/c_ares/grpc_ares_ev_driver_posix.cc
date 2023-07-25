@@ -31,6 +31,7 @@
 
 #include <string.h>
 #include <sys/ioctl.h>
+#include <sys/uio.h>
 
 #include <ares.h>
 
@@ -98,12 +99,68 @@ class GrpcPolledFdPosix : public GrpcPolledFd {
 
 class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
  public:
+  ~GrpcPolledFdFactoryPosix() {
+    for (auto& fd : owned_fds_) {
+      close(fd);
+    }
+  }
+
   GrpcPolledFd* NewGrpcPolledFdLocked(
       ares_socket_t as, grpc_pollset_set* driver_pollset_set) override {
+    auto insert_result = owned_fds_.insert(as);
+    GPR_ASSERT(insert_result.second);
     return new GrpcPolledFdPosix(as, driver_pollset_set);
   }
 
-  void ConfigureAresChannelLocked(ares_channel /*channel*/) override {}
+  void ConfigureAresChannelLocked(ares_channel channel) override {
+    ares_set_socket_functions(channel, &kSockFuncs, this);
+  }
+
+ private:
+  /// Overridden socket API for c-ares
+  static ares_socket_t Socket(int af, int type, int protocol, void* /*user_data*/) {
+    return socket(af, type, protocol);
+  }
+
+  /// Overridden connect API for c-ares
+  static int Connect(ares_socket_t as, const struct sockaddr* target,
+                     ares_socklen_t target_len, void* /*user_data*/) {
+    return connect(as, target, target_len);
+  }
+
+  /// Overridden writev API for c-ares
+  static ares_ssize_t WriteV(ares_socket_t as, const struct iovec* iov,
+                            int iovec_count, void* /*user_data*/) {
+    return writev(as, iov, iovec_count);
+  }
+
+  /// Overridden recvfrom API for c-ares
+  static ares_ssize_t RecvFrom(ares_socket_t as, void* data, size_t data_len,
+                               int flags, struct sockaddr* from,
+                               ares_socklen_t* from_len, void* /*user_data*/) {
+    return recvfrom(as, data, data_len, flags, from, from_len);
+  }
+
+  /// Overridden close API for c-ares
+  static int Close(ares_socket_t as, void* user_data) {
+    GrpcPolledFdFactoryPosix* self = static_cast<GrpcPolledFdFactoryPosix*>(user_data);
+    if (self->owned_fds_.find(as) == self->owned_fds_.end()) {
+      // c-ares owns this fd, grpc has never seen it
+      return close(as);
+    }
+    return 0;
+  }
+
+  static constexpr struct ares_socket_functions kSockFuncs = {
+    &GrpcPolledFdFactoryPosix::Socket /* socket */,
+    &GrpcPolledFdFactoryPosix::Close/* close */,
+    &GrpcPolledFdFactoryPosix::Connect /* connect */,
+    &GrpcPolledFdFactoryPosix::RecvFrom /* recvfrom */,
+    &GrpcPolledFdFactoryPosix::WriteV /* writev */,
+  };
+
+  // fds that are used/owned by grpc - we (grpc) will close them rather than c-ares
+  std::set<ares_socket_t> owned_fds_;
 };
 
 std::unique_ptr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(Mutex* /* mu */) {
