@@ -692,8 +692,6 @@ grpc_cc_library(
         "//src/core:lib/gpr/posix/time.cc",
         "//src/core:lib/gpr/posix/tmpfile.cc",
         "//src/core:lib/gpr/string.cc",
-        "//src/core:lib/gpr/subprocess_posix.cc",
-        "//src/core:lib/gpr/subprocess_windows.cc",
         "//src/core:lib/gpr/sync.cc",
         "//src/core:lib/gpr/sync_abseil.cc",
         "//src/core:lib/gpr/time.cc",
@@ -719,7 +717,6 @@ grpc_cc_library(
     hdrs = [
         "//src/core:lib/gpr/alloc.h",
         "//src/core:lib/gpr/string.h",
-        "//src/core:lib/gpr/subprocess.h",
         "//src/core:lib/gpr/time_precise.h",
         "//src/core:lib/gpr/tmpfile.h",
         "//src/core:lib/gprpp/crash.h",
@@ -3978,6 +3975,22 @@ grpc_cc_library(
         "gpr_platform",
         "grpc++_public_hdrs",
         "grpc_public_hdrs",
+    ],
+)
+
+grpc_cc_library(
+    name = "subprocess",
+    srcs = [
+        "//src/core:lib/gpr/subprocess_posix.cc",
+        "//src/core:lib/gpr/subprocess_windows.cc",
+    ],
+    hdrs = [
+        "//src/core:lib/gpr/subprocess.h",
+    ],
+    external_deps = ["absl/strings"],
+    deps = [
+        "gpr",
+        "//src/core:strerror",
     ],
 )
 
