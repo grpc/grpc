@@ -12,7 +12,7 @@
 
 ### --------------------------------- Clusters ---------------------------------
 
-## The name of kube context to use.
+## The name of kube context to use (points to your GKE cluster).
 --kube_context=${KUBE_CONTEXT}
 
 ### ------------------------------- App images ---------------------------------
@@ -51,6 +51,7 @@
 
 ## Enable port forwarding in local dev.
 --debug_use_port_forwarding
+
 ## (convenience) Allow to set always known flags.
 --undefok=private_api_key_secret_name,gcp_ui_url
 
