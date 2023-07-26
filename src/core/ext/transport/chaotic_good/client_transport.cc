@@ -42,17 +42,21 @@
 namespace grpc_core {
 namespace chaotic_good {
 
-ClientTransport::ClientTransport(const ChannelArgs& channel_args,
-                                 PromiseEndpoint&& control_endpoint,
-                                 PromiseEndpoint&& data_endpoint) {
+ClientTransport::ClientTransport(
+    const ChannelArgs& channel_args,
+    std::unique_ptr<PromiseEndpoint> control_endpoint,
+    std::unique_ptr<PromiseEndpoint> data_endpoint)
+    : control_endpoint_(std::move(control_endpoint)),
+      data_endpoint_(std::move(data_endpoint)) {
   auto hpack_compressor = std::make_shared<HPackCompressor>();
   writer_ = MakeActivity(
       Loop(Seq(
           outgoing_frames_.Next(),
-          [hpack_compressor, &control_endpoint,
-           &data_endpoint](FrameInterface* frame) {
+          [hpack_compressor, this](ClientFrame client_frame) {
+            auto frame =
+                absl::get<ClientFragmentFrame>(std::move(client_frame));
             auto control_endpoint_buffer =
-                frame->Serialize(hpack_compressor.get());
+                frame.Serialize(hpack_compressor.get());
             FrameHeader frame_header =
                 FrameHeader::Parse(
                     reinterpret_cast<const uint8_t*>(grpc_slice_to_c_string(
@@ -71,8 +75,7 @@ ClientTransport::ClientTransport(const ChannelArgs& channel_args,
                 Slice slice(grpc_slice_from_cpp_string(message_padding));
                 // Append message payload to data_endpoint_buffer.
                 data_endpoint_buffer.Append(std::move(slice));
-                auto message = std::move(
-                    static_cast<ClientFragmentFrame*>(frame)->message);
+                auto message = std::move(frame.message);
                 // Append message payload to data_endpoint_buffer.
                 message->payload()->MoveFirstNBytesIntoSliceBuffer(
                     message->payload()->Length(), data_endpoint_buffer);
@@ -82,19 +85,21 @@ ClientTransport::ClientTransport(const ChannelArgs& channel_args,
                 // No data will be sent on data endpoint.
                 break;
             }
-            return Seq(
-                Join(control_endpoint.Write(std::move(control_endpoint_buffer)),
-                     data_endpoint.Write(std::move(data_endpoint_buffer))),
-                [](std::tuple<absl::StatusOr<SliceBuffer>,
-                              absl::StatusOr<SliceBuffer>>
-                       ret) -> LoopCtl<absl::Status> {
-                  if (!(std::get<0>(ret).status().ok() ||
-                        std::get<1>(ret).status().ok())) {
-                    // TODO(ladynana): better error handling when writes failed.
-                    return absl::InternalError("Endpoint Write failed.");
-                  }
-                  return Continue();
-                });
+            return Seq(Join(this->control_endpoint_->Write(
+                                std::move(control_endpoint_buffer)),
+                            this->data_endpoint_->Write(
+                                std::move(data_endpoint_buffer))),
+                       [](std::tuple<absl::StatusOr<SliceBuffer>,
+                                     absl::StatusOr<SliceBuffer>>
+                              ret) -> LoopCtl<absl::Status> {
+                         if (!(std::get<0>(ret).status().ok() ||
+                               std::get<1>(ret).status().ok())) {
+                           // TODO(ladynana): better error handling when writes
+                           // failed.
+                           return absl::InternalError("Endpoint Write failed.");
+                         }
+                         return Continue();
+                       });
           })),
       EventEngineWakeupScheduler(
           grpc_event_engine::experimental::CreateEventEngine()),

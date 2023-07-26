@@ -5853,6 +5853,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/time",
+        "absl/types:variant",
     ],
     language = "c++",
     deps = [
@@ -5868,7 +5869,6 @@ grpc_cc_library(
         "join",
         "loop",
         "mpsc",
-        "pipe",
         "seq",
         "slice",
         "slice_buffer",
