@@ -569,6 +569,7 @@ def _call_behavior(
                         details = (
                             "Calling application raised unprintable Exception!"
                         )
+                        _LOGGER.exception(traceback.format_exception(exception))
                     traceback.print_exc()
                     _LOGGER.exception(details)
                     _abort(
