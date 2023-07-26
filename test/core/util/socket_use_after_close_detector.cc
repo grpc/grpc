@@ -18,6 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "test/core/util/socket_use_after_close_detector.h"
+
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
@@ -49,7 +51,6 @@
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/socket_utils.h"
 #include "src/core/lib/resolver/server_address.h"
-#include "test/core/util/socket_use_after_close_detector.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
@@ -196,7 +197,7 @@ void OpenAndCloseSocketsStressLoop(int port, gpr_event* done_ev) {
 }
 #endif
 
-} // namespace
+}  // namespace
 
 namespace grpc_core {
 namespace testing {
@@ -213,5 +214,5 @@ SocketUseAfterCloseDetector::~SocketUseAfterCloseDetector() {
   delete thread_;
 }
 
-} // namespace testing
-} // namespace grpc_core
+}  // namespace testing
+}  // namespace grpc_core

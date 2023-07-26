@@ -63,8 +63,8 @@
 #include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "test/core/util/fake_udp_and_tcp_server.h"
-#include "test/core/util/socket_use_after_close_detector.h"
 #include "test/core/util/port.h"
+#include "test/core/util/socket_use_after_close_detector.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/subprocess.h"
 #include "test/cpp/util/test_config.h"
@@ -524,7 +524,8 @@ TEST(ResolverComponentTest, TestResolvesRelevantRecords) {
 }
 
 TEST(ResolverComponentTest, TestResolvesRelevantRecordsWithConcurrentFdStress) {
-  grpc_core::testing::SocketUseAfterCloseDetector socket_use_after_close_detector;
+  grpc_core::testing::SocketUseAfterCloseDetector
+      socket_use_after_close_detector;
   // Run the resolver test
   RunResolvesRelevantRecordsTest(ResultHandler::Create,
                                  grpc_core::ChannelArgs());

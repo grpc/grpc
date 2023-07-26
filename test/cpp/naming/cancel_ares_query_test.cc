@@ -33,6 +33,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/config/core_configuration.h"
@@ -53,11 +54,10 @@
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/cmdline.h"
 #include "test/core/util/fake_udp_and_tcp_server.h"
-#include "test/core/util/socket_use_after_close_detector.h"
 #include "test/core/util/port.h"
+#include "test/core/util/socket_use_after_close_detector.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/test_config.h"
-#include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 
 #ifdef GPR_WINDOWS
 #include "src/core/lib/iomgr/sockaddr_windows.h"
@@ -284,8 +284,7 @@ std::string kFakeName = "dont-care-since-wont-be-resolved.test.com:1234";
 void TestCancelDuringActiveQuery(
     grpc_status_code expected_status_code,
     absl::string_view expected_error_message_substring,
-    gpr_timespec rpc_deadline,
-    int dns_query_timeout_ms,
+    gpr_timespec rpc_deadline, int dns_query_timeout_ms,
     int fake_dns_server_port) {
   // Create a call that will try to use the fake DNS server
   std::string client_target =
@@ -369,7 +368,8 @@ void TestCancelDuringActiveQuery(
 
 TEST_F(CancelDuringAresQuery,
        TestHitDeadlineAndDestroyChannelDuringAresResolutionIsGraceful) {
-  grpc_core::testing::SocketUseAfterCloseDetector socket_use_after_close_detector;
+  grpc_core::testing::SocketUseAfterCloseDetector
+      socket_use_after_close_detector;
   grpc_core::testing::FakeUdpAndTcpServer fake_dns_server(
       grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
           kWaitForClientToSendFirstBytes,
@@ -379,14 +379,17 @@ TEST_F(CancelDuringAresQuery,
   // The RPC deadline should go off well before the DNS resolution
   // timeout fires.
   gpr_timespec rpc_deadline = grpc_timeout_milliseconds_to_deadline(100);
-  int dns_query_timeout_ms = -1; // don't set query timeout
-  TestCancelDuringActiveQuery(expected_status_code, expected_error_message_substring, rpc_deadline, dns_query_timeout_ms, fake_dns_server.port());
+  int dns_query_timeout_ms = -1;  // don't set query timeout
+  TestCancelDuringActiveQuery(expected_status_code,
+                              expected_error_message_substring, rpc_deadline,
+                              dns_query_timeout_ms, fake_dns_server.port());
 }
 
 TEST_F(
     CancelDuringAresQuery,
     TestHitDeadlineAndDestroyChannelDuringAresResolutionWithQueryTimeoutIsGraceful) {
-  grpc_core::testing::SocketUseAfterCloseDetector socket_use_after_close_detector;
+  grpc_core::testing::SocketUseAfterCloseDetector
+      socket_use_after_close_detector;
   grpc_core::testing::FakeUdpAndTcpServer fake_dns_server(
       grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
           kWaitForClientToSendFirstBytes,
@@ -404,13 +407,16 @@ TEST_F(
   // RPC's deadline expires.
   gpr_timespec rpc_deadline = grpc_timeout_seconds_to_deadline(10);
   int dns_query_timeout_ms = 1;
-  TestCancelDuringActiveQuery(expected_status_code, expected_error_message_substring, rpc_deadline, dns_query_timeout_ms, fake_dns_server.port());
+  TestCancelDuringActiveQuery(expected_status_code,
+                              expected_error_message_substring, rpc_deadline,
+                              dns_query_timeout_ms, fake_dns_server.port());
 }
 
 TEST_F(
     CancelDuringAresQuery,
     TestHitDeadlineAndDestroyChannelDuringAresResolutionWithZeroQueryTimeoutIsGraceful) {
-  grpc_core::testing::SocketUseAfterCloseDetector socket_use_after_close_detector;
+  grpc_core::testing::SocketUseAfterCloseDetector
+      socket_use_after_close_detector;
   grpc_core::testing::FakeUdpAndTcpServer fake_dns_server(
       grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
           kWaitForClientToSendFirstBytes,
@@ -420,14 +426,15 @@ TEST_F(
   // The RPC deadline should go off well before the DNS resolution
   // timeout fires.
   gpr_timespec rpc_deadline = grpc_timeout_milliseconds_to_deadline(100);
-  int dns_query_timeout_ms = 0; // disable query timeouts
-  TestCancelDuringActiveQuery(expected_status_code, expected_error_message_substring, rpc_deadline, dns_query_timeout_ms, fake_dns_server.port());
+  int dns_query_timeout_ms = 0;  // disable query timeouts
+  TestCancelDuringActiveQuery(expected_status_code,
+                              expected_error_message_substring, rpc_deadline,
+                              dns_query_timeout_ms, fake_dns_server.port());
 }
 
-TEST_F(
-    CancelDuringAresQuery,
-    TestQueryFailsBecauseTcpServerClosesSocket) {
-  grpc_core::testing::SocketUseAfterCloseDetector socket_use_after_close_detector;
+TEST_F(CancelDuringAresQuery, TestQueryFailsBecauseTcpServerClosesSocket) {
+  grpc_core::testing::SocketUseAfterCloseDetector
+      socket_use_after_close_detector;
   // Use a fake TCP server that immediately closes the socket and causes
   // c-ares to pick up a socket read error, while the previous socket
   // connect/writes succeeded. Meanwhile, force c-ares to only use TCP.
@@ -436,7 +443,8 @@ TEST_F(
   grpc_core::testing::FakeUdpAndTcpServer fake_dns_server(
       grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
           kWaitForClientToSendFirstBytes,
-      grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponReceivingBytesFromPeer);
+      grpc_core::testing::FakeUdpAndTcpServer::
+          CloseSocketUponReceivingBytesFromPeer);
   g_grpc_ares_test_only_force_tcp = true;
   grpc_status_code expected_status_code = GRPC_STATUS_UNAVAILABLE;
   std::string expected_error_message_substring;
@@ -450,8 +458,10 @@ TEST_F(
   // Don't really care about the deadline - we should quickly hit a DNS
   // resolution failure.
   gpr_timespec rpc_deadline = grpc_timeout_seconds_to_deadline(100);
-  int dns_query_timeout_ms = -1; // don't set query timeout
-  TestCancelDuringActiveQuery(expected_status_code, expected_error_message_substring, rpc_deadline, dns_query_timeout_ms, fake_dns_server.port());
+  int dns_query_timeout_ms = -1;  // don't set query timeout
+  TestCancelDuringActiveQuery(expected_status_code,
+                              expected_error_message_substring, rpc_deadline,
+                              dns_query_timeout_ms, fake_dns_server.port());
   g_grpc_ares_test_only_force_tcp = false;
 }
 
