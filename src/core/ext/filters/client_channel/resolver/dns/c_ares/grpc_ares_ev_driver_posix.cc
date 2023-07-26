@@ -28,8 +28,8 @@
 #include <unistd.h>
 
 #include <memory>
-#include <set>
 #include <string>
+#include <unordered_set>
 #include <utility>
 
 #include <ares.h>
@@ -193,7 +193,7 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
 
   // fds that are used/owned by grpc - we (grpc) will close them rather than
   // c-ares
-  std::set<ares_socket_t> owned_fds_;
+  std::unordered_set<ares_socket_t> owned_fds_;
 };
 
 std::unique_ptr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(Mutex* /* mu */) {
