@@ -368,8 +368,10 @@ grpc_cc_library(
     srcs = ["socket_use_after_close_detector.cc"],
     hdrs = ["socket_use_after_close_detector.h"],
     external_deps = [
-        "absl/status:statusor",
+        "absl/flags:flag",
+        "absl/memory",
         "absl/strings",
+        "absl/strings:str_format",
         "gtest",
     ],
     language = "C++",
@@ -377,8 +379,35 @@ grpc_cc_library(
         "grpc_test_util",
         "//:gpr",
         "//:grpc",
+        "//:parse_address",
+        "//:server_address",
         "//:sockaddr_utils",
-        "//src/core:resolved_address",
+        "//src/core:default_event_engine",
+        "//src/core:grpc_sockaddr",
+    ],
+)
+
+grpc_cc_library(
+    name = "socket_use_after_close_detector_unsecure",
+    srcs = ["socket_use_after_close_detector.cc"],
+    hdrs = ["socket_use_after_close_detector.h"],
+    external_deps = [
+        "absl/flags:flag",
+        "absl/memory",
+        "absl/strings",
+        "absl/strings:str_format",
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "grpc_test_util_unsecure",
+        "//:gpr",
+        "//:grpc",
+        "//:parse_address",
+        "//:server_address",
+        "//:sockaddr_utils",
+        "//src/core:default_event_engine",
+        "//src/core:grpc_sockaddr",
     ],
 )
 
