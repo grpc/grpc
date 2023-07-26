@@ -34,15 +34,15 @@ namespace experimental {
 class DNSServiceResolverImpl
     : public grpc_core::RefCounted<DNSServiceResolverImpl> {
   struct DNSServiceRequest {
-    EventEngine::DNSResolver::LookupHostnameCallback on_resolve_;
-    uint16_t port_;
-    std::vector<EventEngine::ResolvedAddress> result_;
-    bool has_ipv4_response_ = false;
-    bool has_ipv6_response_ = false;
+    EventEngine::DNSResolver::LookupHostnameCallback on_resolve;
+    uint16_t port;
+    std::vector<EventEngine::ResolvedAddress> result;
+    bool has_ipv4_response = false;
+    bool has_ipv6_response = false;
   };
 
  public:
-  DNSServiceResolverImpl(std::shared_ptr<CFEventEngine> engine)
+  explicit DNSServiceResolverImpl(std::shared_ptr<CFEventEngine> engine)
       : engine_(std::move((engine))) {}
   ~DNSServiceResolverImpl() override {
     GPR_ASSERT(requests_.empty());
@@ -75,10 +75,10 @@ class DNSServiceResolverImpl
 
 class DNSServiceResolver : public EventEngine::DNSResolver {
  public:
-  DNSServiceResolver(std::shared_ptr<CFEventEngine> engine) {
-    impl_ =
-        grpc_core::MakeRefCounted<DNSServiceResolverImpl>(std::move((engine)));
-  }
+  explicit DNSServiceResolver(std::shared_ptr<CFEventEngine> engine)
+      : engine_(std::move(engine)),
+        impl_(grpc_core::MakeRefCounted<DNSServiceResolverImpl>(
+            std::move((engine_)))) {}
 
   ~DNSServiceResolver() override { impl_->Shutdown(); }
 
@@ -90,17 +90,22 @@ class DNSServiceResolver : public EventEngine::DNSResolver {
 
   void LookupSRV(EventEngine::DNSResolver::LookupSRVCallback on_resolve,
                  absl::string_view /* name */) override {
-    on_resolve(absl::UnimplementedError(
-        "The DNS Service resolver does not support looking up SRV records"));
+    engine_->Run([on_resolve = std::move(on_resolve)]() mutable {
+      on_resolve(absl::UnimplementedError(
+          "The DNS Service resolver does not support looking up SRV records"));
+    });
   }
 
   void LookupTXT(EventEngine::DNSResolver::LookupTXTCallback on_resolve,
                  absl::string_view /* name */) override {
-    on_resolve(absl::UnimplementedError(
-        "The DNS Service resolver does not support looking up TXT records"));
+    engine_->Run([on_resolve = std::move(on_resolve)]() mutable {
+      on_resolve(absl::UnimplementedError(
+          "The DNS Service resolver does not support looking up TXT records"));
+    });
   }
 
  private:
+  std::shared_ptr<CFEventEngine> engine_;
   grpc_core::RefCountedPtr<DNSServiceResolverImpl> impl_;
 };
 

@@ -194,6 +194,7 @@ class EventEngineDNSTest : public EventEngineTest {
 
 EventEngineDNSTest::DNSServer EventEngineDNSTest::dns_server_;
 
+// TODO(hork): implement XFAIL for resolvers that don't support TXT or SRV
 #ifndef GRPC_IOS_EVENT_ENGINE_CLIENT
 
 TEST_F(EventEngineDNSTest, QueryNXHostname) {

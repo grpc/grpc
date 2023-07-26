@@ -94,7 +94,7 @@ std::vector<std::string> ResolvedAddressesToStrings(
 }
 }  // namespace
 
-TEST(CFEventEngineTest, CFEventEngineTest_TestCreateDNSResolver_Test) {
+TEST(CFEventEngineTest, TestCreateDNSResolver) {
   grpc_core::MemoryQuota memory_quota("cf_engine_test");
   auto cf_engine = std::make_shared<CFEventEngine>();
 
@@ -251,11 +251,15 @@ TEST(CFEventEngineTest, TestResolveCanceled) {
 
   dns_resolver->LookupHostname(
       [&resolve_signal](auto result) {
-        EXPECT_EQ(result.status().code(), absl::StatusCode::kCancelled);
+        // query may have already finished before canceling, only verity the
+        // code if status is not ok
+        if (!result.status().ok()) {
+          EXPECT_EQ(result.status().code(), absl::StatusCode::kCancelled);
+        }
 
         resolve_signal.Notify();
       },
-      "dont-care-since-wont-be-resolved.test.com", "443");
+      "dont-care-since-wont-be-resolved.localtest.me", "443");
 
   dns_resolver.reset();
   resolve_signal.WaitForNotification();
