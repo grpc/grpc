@@ -128,6 +128,7 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
   static ares_socket_t Socket(int af, int type, int protocol,
                               void* /*user_data*/) {
     int fd = socket(af, type, protocol);
+    if (fd < 0) return fd;
     /* Because we're using socket API overrides, c-ares won't
      * perform its typical configuration on the socket. See
      * https://github.com/c-ares/c-ares/blob/bad62225b7f6b278b92e8e85a255600b629ef517/src/lib/ares_process.c#L1018.
@@ -138,14 +139,17 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
      *   - disable nagle */
     grpc_error_handle err;
     err = grpc_set_socket_nonblocking(fd, true);
-    if (!err.ok()) return -1;
+    if (!err.ok()) goto error;
     err = grpc_set_socket_cloexec(fd, true);
-    if (!err.ok()) return -1;
+    if (!err.ok()) goto error;
     if (type == SOCK_STREAM) {
       err = grpc_set_socket_low_latency(fd, true);
-      if (!err.ok()) return -1;
+      if (!err.ok()) goto error;
     }
-    return 0;
+    return fd;
+  error:
+    close(fd);
+    return -1;
   }
 
   /// Overridden connect API for c-ares
