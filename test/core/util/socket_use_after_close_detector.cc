@@ -208,7 +208,7 @@ SocketUseAfterCloseDetector::SocketUseAfterCloseDetector() {
 }
 
 SocketUseAfterCloseDetector::~SocketUseAfterCloseDetector() {
-  gpr_event_set(&done_ev, reinterpret_cast<void*>(1));
+  gpr_event_set(&done_ev_, reinterpret_cast<void*>(1));
   thread_->join();
   delete thread_;
 }
