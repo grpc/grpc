@@ -364,24 +364,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "socket_use_after_close_detector",
-    srcs = ["socket_use_after_close_detector.cc"],
-    hdrs = ["socket_use_after_close_detector.h"],
-    external_deps = [
-        "absl/status:statusor",
-        "absl/strings",
-    ],
-    language = "C++",
-    deps = [
-        "grpc_test_util",
-        "//:gpr",
-        "//:grpc",
-        "//:sockaddr_utils",
-        "//src/core:resolved_address",
-    ],
-)
-
-grpc_cc_library(
     name = "build",
     srcs = ["build.cc"],
     hdrs = ["build.h"],
