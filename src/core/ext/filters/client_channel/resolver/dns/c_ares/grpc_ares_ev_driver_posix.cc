@@ -17,16 +17,18 @@
 //
 #include <grpc/support/port_platform.h>
 
+#include <ares_build.h>
+
 #include <memory>
 #include <set>
 #include <string>
 #include <utility>
 
-#include <ares_build.h>
-#include <grpc/support/log.h>
-
 #include "absl/base/thread_annotations.h"
 #include "absl/strings/str_cat.h"
+
+#include <grpc/support/log.h>
+
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -41,6 +43,7 @@
 #include <sys/socket.h>
 #include <sys/uio.h>
 #include <unistd.h>
+
 #include <ares.h>
 
 #include "src/core/lib/iomgr/ev_posix.h"
