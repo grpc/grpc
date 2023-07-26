@@ -35,6 +35,8 @@ namespace testing {
 // by watching them manifest as unexpected socket operation failures.
 //
 // Note: this will not give false positives but may give false negatives.
+// That said this is fairly reliable at finding use-after-close bugs on
+// platforms that quickly re-use fd handles.
 class SocketUseAfterCloseDetector {
  public:
   SocketUseAfterCloseDetector();
