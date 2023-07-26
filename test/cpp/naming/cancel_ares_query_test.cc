@@ -279,18 +279,17 @@ TEST_F(CancelDuringAresQuery, TestFdsAreDeletedFromPollsetSet) {
   grpc_pollset_set_destroy(fake_other_pollset_set);
 }
 
+std::string kFakeName = "dont-care-since-wont-be-resolved.test.com:1234";
+
 void TestCancelDuringActiveQuery(
     grpc_status_code expected_status_code,
     absl::string_view expected_error_message_substring,
-    int dns_query_timeout_ms,
     gpr_timespec rpc_deadline,
+    int dns_query_timeout_ms,
     int fake_dns_server_port) {
   // Create a call that will try to use the fake DNS server
-  std::string name = "dont-care-since-wont-be-resolved.test.com:1234";
   std::string client_target =
-      absl::StrFormat("dns://[::1]:%d/%s", fake_dns_server_port, name);
-  gpr_log(GPR_DEBUG, "TestCancelActiveDNSQuery. query timeout setting: %d",
-          query_timeout_setting);
+      absl::StrFormat("dns://[::1]:%d/%s", fake_dns_server_port, kFakeName);
   grpc_channel_args* client_args = nullptr;
   if (dns_query_timeout_ms >= 0) {
     grpc_arg arg;
@@ -396,10 +395,10 @@ TEST_F(
   std::string expected_error_message_substring;
   if (grpc_core::IsEventEngineDnsEnabled()) {
     expected_error_message_substring =
-        absl::StrCat("errors resolving ", name);
+        absl::StrCat("errors resolving ", kFakeName);
   } else {
     expected_error_message_substring =
-        absl::StrCat("DNS resolution failed for ", name);
+        absl::StrCat("DNS resolution failed for ", kFakeName);
   }
   // The DNS resolution timeout should fire well before the
   // RPC's deadline expires.
@@ -443,10 +442,10 @@ TEST_F(
   std::string expected_error_message_substring;
   if (grpc_core::IsEventEngineDnsEnabled()) {
     expected_error_message_substring =
-        absl::StrCat("errors resolving ", name);
+        absl::StrCat("errors resolving ", kFakeName);
   } else {
     expected_error_message_substring =
-        absl::StrCat("DNS resolution failed for ", name);
+        absl::StrCat("DNS resolution failed for ", kFakeName);
   }
   // Don't really care about the deadline - we should quickly hit a DNS
   // resolution failure.
