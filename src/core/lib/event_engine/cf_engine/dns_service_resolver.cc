@@ -40,15 +40,20 @@ void DNSServiceResolverImpl::LookupHostname(
   absl::string_view host;
   absl::string_view port_string;
   if (!grpc_core::SplitHostPort(name, &host, &port_string)) {
-    on_resolve(
-        absl::InvalidArgumentError(absl::StrCat("Unparseable name: ", name)));
+    engine_->Run([on_resolve = std::move(on_resolve),
+                  status = absl::InvalidArgumentError(
+                      absl::StrCat("Unparseable name: ", name))]() mutable {
+      on_resolve(status);
+    });
     return;
   }
   GPR_ASSERT(!host.empty());
   if (port_string.empty()) {
     if (default_port.empty()) {
-      on_resolve(absl::InvalidArgumentError(absl::StrFormat(
-          "No port in name %s or default_port argument", name)));
+      engine_->Run([on_resolve = std::move(on_resolve),
+                    status = absl::InvalidArgumentError(absl::StrFormat(
+                        "No port in name %s or default_port argument",
+                        name))]() mutable { on_resolve(std::move(status)); });
       return;
     }
     port_string = default_port;
@@ -60,8 +65,11 @@ void DNSServiceResolverImpl::LookupHostname(
   } else if (port_string == "https") {
     port = 443;
   } else if (!absl::SimpleAtoi(port_string, &port)) {
-    on_resolve(absl::InvalidArgumentError(
-        absl::StrCat("Failed to parse port in name: ", name)));
+    engine_->Run([on_resolve = std::move(on_resolve),
+                  status = absl::InvalidArgumentError(absl::StrCat(
+                      "Failed to parse port in name: ", name))]() mutable {
+      on_resolve(std::move(status));
+    });
     return;
   }
 
@@ -70,13 +78,16 @@ void DNSServiceResolverImpl::LookupHostname(
   grpc_resolved_address addr;
   const std::string hostport = grpc_core::JoinHostPort(host, port);
   if (grpc_parse_ipv4_hostport(hostport.c_str(), &addr,
-                               true /* log errors */) ||
+                               /*log_errors=*/false) ||
       grpc_parse_ipv6_hostport(hostport.c_str(), &addr,
-                               true /* log errors */)) {
+                               /*log_errors=*/false)) {
     // Early out if the target is an ipv4 or ipv6 literal.
     std::vector<EventEngine::ResolvedAddress> result;
     result.emplace_back(reinterpret_cast<sockaddr*>(addr.addr), addr.len);
-    on_resolve(std::move(result));
+    engine_->Run([on_resolve = std::move(on_resolve),
+                  result = std::move(result)]() mutable {
+      on_resolve(std::move(result));
+    });
     return;
   }
 
@@ -88,8 +99,10 @@ void DNSServiceResolverImpl::LookupHostname(
       &DNSServiceResolverImpl::ResolveCallback, this /* do not Ref */);
 
   if (error != kDNSServiceErr_NoError) {
-    on_resolve(absl::UnknownError(
-        absl::StrFormat("DNSServiceGetAddrInfo failed with error:%d", error)));
+    engine_->Run([on_resolve = std::move(on_resolve),
+                  status = absl::UnknownError(absl::StrFormat(
+                      "DNSServiceGetAddrInfo failed with error:%d",
+                      error))]() mutable { on_resolve(std::move(status)); });
     return;
   }
 
@@ -97,8 +110,10 @@ void DNSServiceResolverImpl::LookupHostname(
 
   error = DNSServiceSetDispatchQueue(sdRef, queue_);
   if (error != kDNSServiceErr_NoError) {
-    on_resolve(absl::UnknownError(absl::StrFormat(
-        "DNSServiceSetDispatchQueue failed with error:%d", error)));
+    engine_->Run([on_resolve = std::move(on_resolve),
+                  status = absl::UnknownError(absl::StrFormat(
+                      "DNSServiceSetDispatchQueue failed with error:%d",
+                      error))]() mutable { on_resolve(std::move(status)); });
     return;
   }
 
@@ -132,7 +147,7 @@ void DNSServiceResolverImpl::ResolveCallback(
 
   if (errorCode != kDNSServiceErr_NoError &&
       errorCode != kDNSServiceErr_NoSuchRecord) {
-    request.on_resolve_(absl::UnknownError(absl::StrFormat(
+    request.on_resolve(absl::UnknownError(absl::StrFormat(
         "address lookup failed for %s: errorCode: %d", hostname, errorCode)));
     that->requests_.erase(request_it);
     DNSServiceRefDeallocate(sdRef);
@@ -141,21 +156,23 @@ void DNSServiceResolverImpl::ResolveCallback(
 
   // set received ipv4 or ipv6 response, even for kDNSServiceErr_NoSuchRecord
   if (address->sa_family == AF_INET) {
-    request.has_ipv4_response_ = true;
+    request.has_ipv4_response = true;
   } else if (address->sa_family == AF_INET6) {
-    request.has_ipv6_response_ = true;
+    request.has_ipv6_response = true;
   }
 
   // collect results if there is no error (not kDNSServiceErr_NoSuchRecord)
   if (errorCode == kDNSServiceErr_NoError) {
-    request.result_.emplace_back(address, address->sa_len);
-    auto& resolved_address = request.result_.back();
+    request.result.emplace_back(address, address->sa_len);
+    auto& resolved_address = request.result.back();
     if (address->sa_family == AF_INET) {
-      ((struct sockaddr_in*)resolved_address.address())->sin_port =
-          htons(request.port_);
+      (const_cast<sockaddr_in*>(
+           reinterpret_cast<const sockaddr_in*>(resolved_address.address())))
+          ->sin_port = htons(request.port);
     } else if (address->sa_family == AF_INET6) {
-      ((struct sockaddr_in6*)resolved_address.address())->sin6_port =
-          htons(request.port_);
+      (const_cast<sockaddr_in6*>(
+           reinterpret_cast<const sockaddr_in6*>(resolved_address.address())))
+          ->sin6_port = htons(request.port);
     }
 
     GRPC_EVENT_ENGINE_DNS_TRACE(
@@ -166,13 +183,13 @@ void DNSServiceResolverImpl::ResolveCallback(
         context);
   }
 
-  if (!(flags & kDNSServiceFlagsMoreComing) && request.has_ipv4_response_ &&
-      request.has_ipv6_response_) {
-    if (request.result_.empty()) {
-      request.on_resolve_(absl::NotFoundError(absl::StrFormat(
+  if (!(flags & kDNSServiceFlagsMoreComing) && request.has_ipv4_response &&
+      request.has_ipv6_response) {
+    if (request.result.empty()) {
+      request.on_resolve(absl::NotFoundError(absl::StrFormat(
           "address lookup failed for %s: Domain name not found", hostname)));
     } else {
-      request.on_resolve_(std::move(request.result_));
+      request.on_resolve(std::move(request.result));
     }
     that->requests_.erase(request_it);
     DNSServiceRefDeallocate(sdRef);
@@ -191,7 +208,7 @@ void DNSServiceResolverImpl::Shutdown() {
           "DNSServiceResolverImpl::Shutdown sdRef: %p, this: %p", sdRef,
           thatPtr);
 
-      request.on_resolve_(
+      request.on_resolve(
           absl::CancelledError("DNSServiceResolverImpl::Shutdown"));
       DNSServiceRefDeallocate(static_cast<DNSServiceRef>(sdRef));
     }
