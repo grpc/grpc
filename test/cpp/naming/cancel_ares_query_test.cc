@@ -444,6 +444,7 @@ TEST_F(CancelDuringAresQuery, TestQueryFailsBecauseTcpServerClosesSocket) {
           kWaitForClientToSendFirstBytes,
       grpc_core::testing::FakeUdpAndTcpServer::
           CloseSocketUponReceivingBytesFromPeer);
+  // TODO(yijiem): support this test flag in the EE DNS resolver
   g_grpc_ares_test_only_force_tcp = true;
   grpc_status_code expected_status_code = GRPC_STATUS_UNAVAILABLE;
   std::string expected_error_message_substring;
