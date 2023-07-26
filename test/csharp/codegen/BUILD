@@ -75,3 +75,22 @@ grpc_sh_test(
     ],
     uses_polling = False,
 )
+
+grpc_sh_test(
+    name = "csharp_codegen_nullable_test",
+    size = "small",
+    srcs = ["csharp_codegen_nullable_test.sh"],
+    data = [
+        "nullable/proto/nullabletest.proto",
+        "//src/compiler:grpc_csharp_plugin",
+        "@com_google_protobuf//:protoc",
+    ],
+    tags = [
+        "no_windows",
+        "noasan",
+        "nomsan",
+        "notsan",
+        "noubsan",
+    ],
+    uses_polling = False,
+)

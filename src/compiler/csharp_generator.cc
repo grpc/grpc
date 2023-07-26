@@ -482,7 +482,8 @@ void GenerateServerClass(Printer* out, const ServiceDescriptor* service) {
   out->Print("\n");
 }
 
-void GenerateClientStub(Printer* out, const ServiceDescriptor* service) {
+void GenerateClientStub(Printer* out, const ServiceDescriptor* service,
+                        bool enable_nrt) {
   out->Print("/// <summary>Client for $servicename$</summary>\n", "servicename",
              GetServiceClassName(service));
   GenerateObsoleteAttribute(out, service->options().deprecated());
@@ -544,14 +545,15 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor* service) {
       GenerateGeneratedCodeAttribute(out);
       out->Print(
           "public virtual $response$ $methodname$($request$ request, "
-          "grpc::Metadata "
+          "grpc::Metadata$qmark$ "
           "headers = null, global::System.DateTime? deadline = null, "
           "global::System.Threading.CancellationToken "
           "cancellationToken = "
           "default(global::System.Threading.CancellationToken))\n",
           "methodname", method->name(), "request",
           GRPC_CUSTOM_CSHARP_GETCLASSNAME(method->input_type()), "response",
-          GRPC_CUSTOM_CSHARP_GETCLASSNAME(method->output_type()));
+          GRPC_CUSTOM_CSHARP_GETCLASSNAME(method->output_type()), "qmark",
+          enable_nrt ? "?" : "");
       out->Print("{\n");
       out->Indent();
       out->Print(
@@ -591,14 +593,14 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor* service) {
     GenerateGeneratedCodeAttribute(out);
     out->Print(
         "public virtual $returntype$ "
-        "$methodname$($request_maybe$grpc::Metadata "
+        "$methodname$($request_maybe$grpc::Metadata$qmark$ "
         "headers = null, global::System.DateTime? deadline = null, "
         "global::System.Threading.CancellationToken "
         "cancellationToken = "
         "default(global::System.Threading.CancellationToken))\n",
         "methodname", method_name, "request_maybe",
         GetMethodRequestParamMaybe(method), "returntype",
-        GetMethodReturnTypeClient(method));
+        GetMethodReturnTypeClient(method), "qmark", enable_nrt ? "?" : "");
     out->Print("{\n");
     out->Indent();
 
@@ -708,7 +710,8 @@ void GenerateBindServiceMethod(Printer* out, const ServiceDescriptor* service) {
 }
 
 void GenerateBindServiceWithBinderMethod(Printer* out,
-                                         const ServiceDescriptor* service) {
+                                         const ServiceDescriptor* service,
+                                         bool enable_nrt) {
   out->Print(
       "/// <summary>Register service method with a service "
       "binder with or without implementation. Useful when customizing the "
@@ -735,14 +738,15 @@ void GenerateBindServiceWithBinderMethod(Printer* out,
   for (int i = 0; i < service->method_count(); i++) {
     const MethodDescriptor* method = service->method(i);
     out->Print(
-        "serviceBinder.AddMethod($methodfield$, serviceImpl == null ? null : "
+        "serviceBinder.AddMethod($methodfield$, serviceImpl == null ? "
+        "null$nullforgiving$ : "
         "new $servermethodtype$<$inputtype$, $outputtype$>("
         "serviceImpl.$methodname$));\n",
         "methodfield", GetMethodFieldName(method), "servermethodtype",
         GetCSharpServerMethodType(method), "inputtype",
         GRPC_CUSTOM_CSHARP_GETCLASSNAME(method->input_type()), "outputtype",
         GRPC_CUSTOM_CSHARP_GETCLASSNAME(method->output_type()), "methodname",
-        method->name());
+        method->name(), "nullforgiving", enable_nrt ? "!" : "");
   }
 
   out->Outdent();
@@ -752,7 +756,7 @@ void GenerateBindServiceWithBinderMethod(Printer* out,
 
 void GenerateService(Printer* out, const ServiceDescriptor* service,
                      bool generate_client, bool generate_server,
-                     bool internal_access) {
+                     bool internal_access, bool enable_nrt) {
   GenerateDocCommentBody(out, service);
 
   GenerateObsoleteAttribute(out, service->options().deprecated());
@@ -776,11 +780,11 @@ void GenerateService(Printer* out, const ServiceDescriptor* service,
     GenerateServerClass(out, service);
   }
   if (generate_client) {
-    GenerateClientStub(out, service);
+    GenerateClientStub(out, service, enable_nrt);
   }
   if (generate_server) {
     GenerateBindServiceMethod(out, service);
-    GenerateBindServiceWithBinderMethod(out, service);
+    GenerateBindServiceWithBinderMethod(out, service, enable_nrt);
   }
 
   out->Outdent();
@@ -790,7 +794,8 @@ void GenerateService(Printer* out, const ServiceDescriptor* service,
 }  // anonymous namespace
 
 std::string GetServices(const FileDescriptor* file, bool generate_client,
-                        bool generate_server, bool internal_access) {
+                        bool generate_server, bool internal_access,
+                        bool enable_nrt) {
   std::string output;
   {
     // Scope the output stream so it closes and finalizes output to the string.
@@ -818,6 +823,9 @@ std::string GetServices(const FileDescriptor* file, bool generate_client,
       out.PrintRaw(leading_comments.c_str());
     }
 
+    if (enable_nrt) {
+      out.Print("#nullable enable\n");
+    }
     out.Print("#pragma warning disable 0414, 1591, 8981, 0612\n");
 
     out.Print("#region Designer generated code\n");
@@ -832,7 +840,7 @@ std::string GetServices(const FileDescriptor* file, bool generate_client,
     }
     for (int i = 0; i < file->service_count(); i++) {
       GenerateService(&out, file->service(i), generate_client, generate_server,
-                      internal_access);
+                      internal_access, enable_nrt);
     }
     if (file_namespace != "") {
       out.Outdent();
