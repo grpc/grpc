@@ -60,9 +60,10 @@ class ClientTransport {
     return ForEach(std::move(*call_args.client_to_server_messages),
                    [this, initial_frame](MessageHandle result) {
                      initial_frame->message = std::move(result);
-                     MpscSender<FrameInterface*> outgoing_frames =
-                         this->outgoing_frames_.MakeSender();
-                     return Seq(outgoing_frames.Send(initial_frame.get()), [] {
+                     auto outgoing_frames =
+                         std::make_shared<MpscSender<FrameInterface*>>(
+                             this->outgoing_frames_.MakeSender());
+                     return Seq(outgoing_frames->Send(initial_frame.get()), [] {
                        // TODO(ladynana): remove this sleep after figure out how
                        // to synchronize writer_ with outside activity.
                        absl::SleepFor(absl::Seconds(5));
