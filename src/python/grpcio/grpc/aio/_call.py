@@ -165,6 +165,7 @@ class AioRpcError(grpc.RpcError):
             ),
         )
 
+
 def _create_rpc_error(
     initial_metadata: Metadata, status: cygrpc.AioRpcStatus
 ) -> AioRpcError:
