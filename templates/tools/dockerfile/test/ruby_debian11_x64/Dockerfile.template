@@ -23,7 +23,6 @@
   <%include file="../../ccache.include"/>
   <%include file="../../run_tests_addons.include"/>
   <%include file="../../xds_interop_deps.include"/>
-  <%include file="../../passwordless_sudo.include"/>
 
   # Define the default command.
   CMD ["bash"]
