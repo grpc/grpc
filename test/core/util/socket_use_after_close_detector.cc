@@ -52,7 +52,6 @@
 #include "test/core/util/socket_use_after_close_detector.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
-#include "test/cpp/util/test_config.h"
 
 // TODO(unknown): pull in different headers when enabling this
 // test on windows. Also set BAD_SOCKET_RETURN_VAL
@@ -205,12 +204,13 @@ namespace testing {
 SocketUseAfterCloseDetector::SocketUseAfterCloseDetector() {
   int port = grpc_pick_unused_port_or_die();
   gpr_event_init(&done_ev_);
-  thread_(OpenAndCloseSocketsStressLoop, port, &done_ev_);
+  thread_ = new std::thread(OpenAndCloseSocketsStressLoop, port, &done_ev_);
 }
 
 SocketUseAfterCloseDetector::~SocketUseAfterCloseDetector() {
   gpr_event_set(&done_ev, reinterpret_cast<void*>(1));
-  thread_.join();
+  thread_->join();
+  delete thread_;
 }
 
 } // namespace testing

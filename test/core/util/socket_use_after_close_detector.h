@@ -36,12 +36,15 @@ namespace testing {
 //
 // Note: this will not give false positives but may give false negatives.
 class SocketUseAfterCloseDetector {
+ public:
+  SocketUseAfterCloseDetector();
+  ~SocketUseAfterCloseDetector();
  private:
-  std::thread thread_;
+  std::thread* thread_;
   gpr_event done_ev_;
 };
 
 }  // namespace testing
 }  // namespace grpc_core
 
-#endif GRPC_TEST_CORE_UTIL_SOCKET_USE_AFTER_CLOSE_DETECTOR_H
+#endif // GRPC_TEST_CORE_UTIL_SOCKET_USE_AFTER_CLOSE_DETECTOR_H
