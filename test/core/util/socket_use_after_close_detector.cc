@@ -71,7 +71,6 @@ void OpenAndCloseSocketsStressLoop(int port, gpr_event* done_ev) {
                            WSA_FLAG_OVERLAPPED);
       ASSERT_TRUE(s != BAD_SOCKET_RETURN_VAL)
           << "Failed to create TCP ipv6 socket";
-      gpr_log(GPR_DEBUG, "Opened socket: %d", s);
       char val = 1;
       ASSERT_TRUE(setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) !=
                   SOCKET_ERROR)
@@ -91,7 +90,6 @@ void OpenAndCloseSocketsStressLoop(int port, gpr_event* done_ev) {
     // Do a non-blocking accept followed by a close on all of those sockets.
     // Do this in a separate loop to try to induce a time window to hit races.
     for (size_t i = 0; i < sockets.size(); i++) {
-      gpr_log(GPR_DEBUG, "non-blocking accept then close on %d", sockets[i]);
       ASSERT_TRUE(accept(sockets[i], nullptr, nullptr) == INVALID_SOCKET)
           << "Accept on phony socket unexpectedly accepted actual connection.";
       ASSERT_TRUE(WSAGetLastError() == WSAEWOULDBLOCK)
@@ -148,7 +146,6 @@ void OpenAndCloseSocketsStressLoop(int port, gpr_event* done_ev) {
           << "Failed to set socket non-blocking";
       ASSERT_TRUE(s != BAD_SOCKET_RETURN_VAL)
           << "Failed to create TCP ipv6 socket";
-      gpr_log(GPR_DEBUG, "Opened fd: %d", s);
       ASSERT_TRUE(bind(s, (const sockaddr*)&addr, sizeof(addr)) == 0)
           << "Failed to bind socket " + std::to_string(s) +
                  " to [::1]:" + std::to_string(port) +
@@ -161,7 +158,6 @@ void OpenAndCloseSocketsStressLoop(int port, gpr_event* done_ev) {
     // Do a non-blocking accept followed by a close on all of those sockets.
     // Do this in a separate loop to try to induce a time window to hit races.
     for (size_t i = 0; i < sockets.size(); i++) {
-      gpr_log(GPR_DEBUG, "non-blocking accept then close on %d", sockets[i]);
       if (accept(sockets[i], nullptr, nullptr)) {
         // If e.g. a "shutdown" was called on this fd from another thread,
         // then this accept call should fail with an unexpected error.
