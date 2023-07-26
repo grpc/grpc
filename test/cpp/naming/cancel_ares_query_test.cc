@@ -53,6 +53,7 @@
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/cmdline.h"
 #include "test/core/util/fake_udp_and_tcp_server.h"
+#include "test/core/util/socket_use_after_close_detector.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/test_config.h"
@@ -413,18 +414,21 @@ void TestCancelDuringActiveQuery(
 
 TEST_F(CancelDuringAresQuery,
        TestHitDeadlineAndDestroyChannelDuringAresResolutionIsGraceful) {
+  grpc_core::testing::SocketUseAfterCloseDetector socket_use_after_close_detector;
   TestCancelDuringActiveQuery(NONE /* don't set query timeouts */);
 }
 
 TEST_F(
     CancelDuringAresQuery,
     TestHitDeadlineAndDestroyChannelDuringAresResolutionWithQueryTimeoutIsGraceful) {
+  grpc_core::testing::SocketUseAfterCloseDetector socket_use_after_close_detector;
   TestCancelDuringActiveQuery(SHORT /* set short query timeout */);
 }
 
 TEST_F(
     CancelDuringAresQuery,
     TestHitDeadlineAndDestroyChannelDuringAresResolutionWithZeroQueryTimeoutIsGraceful) {
+  grpc_core::testing::SocketUseAfterCloseDetector socket_use_after_close_detector;
   TestCancelDuringActiveQuery(ZERO /* disable query timeouts */);
 }
 
