@@ -57,6 +57,7 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/test_config.h"
+#include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 
 #ifdef GPR_WINDOWS
 #include "src/core/lib/iomgr/sockaddr_windows.h"
@@ -286,16 +287,11 @@ typedef enum {
 } cancellation_test_query_timeout_setting;
 
 void TestCancelDuringActiveQuery(
-    cancellation_test_query_timeout_setting query_timeout_setting) {
-  // Start up fake non responsive DNS server
-  grpc_core::testing::FakeUdpAndTcpServer fake_dns_server(
-      grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
-          kWaitForClientToSendFirstBytes,
-      grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
+    cancellation_test_query_timeout_setting query_timeout_setting, int fake_dns_server_port) {
   // Create a call that will try to use the fake DNS server
   std::string name = "dont-care-since-wont-be-resolved.test.com:1234";
   std::string client_target =
-      absl::StrFormat("dns://[::1]:%d/%s", fake_dns_server.port(), name);
+      absl::StrFormat("dns://[::1]:%d/%s", fake_dns_server_port, name);
   gpr_log(GPR_DEBUG, "TestCancelActiveDNSQuery. query timeout setting: %d",
           query_timeout_setting);
   grpc_channel_args* client_args = nullptr;
@@ -415,21 +411,46 @@ void TestCancelDuringActiveQuery(
 TEST_F(CancelDuringAresQuery,
        TestHitDeadlineAndDestroyChannelDuringAresResolutionIsGraceful) {
   grpc_core::testing::SocketUseAfterCloseDetector socket_use_after_close_detector;
-  TestCancelDuringActiveQuery(NONE /* don't set query timeouts */);
+  grpc_core::testing::FakeUdpAndTcpServer fake_dns_server(
+      grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
+          kWaitForClientToSendFirstBytes,
+      grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
+  TestCancelDuringActiveQuery(NONE /* don't set query timeouts */, fake_dns_server.port());
 }
 
 TEST_F(
     CancelDuringAresQuery,
     TestHitDeadlineAndDestroyChannelDuringAresResolutionWithQueryTimeoutIsGraceful) {
   grpc_core::testing::SocketUseAfterCloseDetector socket_use_after_close_detector;
-  TestCancelDuringActiveQuery(SHORT /* set short query timeout */);
+  grpc_core::testing::FakeUdpAndTcpServer fake_dns_server(
+      grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
+          kWaitForClientToSendFirstBytes,
+      grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
+  TestCancelDuringActiveQuery(SHORT /* set short query timeout */, fake_dns_server.port());
 }
 
 TEST_F(
     CancelDuringAresQuery,
     TestHitDeadlineAndDestroyChannelDuringAresResolutionWithZeroQueryTimeoutIsGraceful) {
   grpc_core::testing::SocketUseAfterCloseDetector socket_use_after_close_detector;
-  TestCancelDuringActiveQuery(ZERO /* disable query timeouts */);
+  grpc_core::testing::FakeUdpAndTcpServer fake_dns_server(
+      grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
+          kWaitForClientToSendFirstBytes,
+      grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
+  TestCancelDuringActiveQuery(ZERO /* disable query timeouts */, fake_dns_server.port());
+}
+
+TEST_F(
+    CancelDuringAresQuery,
+    TestQueryFailsBecauseTcpServerClosesSocket) {
+  grpc_core::testing::SocketUseAfterCloseDetector socket_use_after_close_detector;
+  grpc_core::testing::FakeUdpAndTcpServer fake_dns_server(
+      grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
+          kWaitForClientToSendFirstBytes,
+      grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponReceivingBytesFromPeer);
+  g_grpc_ares_test_only_force_tcp = true;
+  TestCancelDuringActiveQuery(ZERO /* disable query timeouts */, fake_dns_server.port());
+  g_grpc_ares_test_only_force_tcp = false;
 }
 
 }  // namespace
