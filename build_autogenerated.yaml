@@ -56,7 +56,6 @@ libs:
   - src/core/lib/gpr/alloc.h
   - src/core/lib/gpr/log_internal.h
   - src/core/lib/gpr/string.h
-  - src/core/lib/gpr/subprocess.h
   - src/core/lib/gpr/time_precise.h
   - src/core/lib/gpr/tmpfile.h
   - src/core/lib/gpr/useful.h
@@ -96,8 +95,6 @@ libs:
   - src/core/lib/gpr/posix/time.cc
   - src/core/lib/gpr/posix/tmpfile.cc
   - src/core/lib/gpr/string.cc
-  - src/core/lib/gpr/subprocess_posix.cc
-  - src/core/lib/gpr/subprocess_windows.cc
   - src/core/lib/gpr/sync.cc
   - src/core/lib/gpr/sync_abseil.cc
   - src/core/lib/gpr/time.cc
@@ -4856,6 +4853,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/lib/gpr/subprocess.h
   - test/core/end2end/cq_verifier.h
   - test/core/util/cmdline.h
   - test/core/util/evaluate_args_test_util.h
@@ -4870,6 +4868,8 @@ targets:
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
   src:
+  - src/core/lib/gpr/subprocess_posix.cc
+  - src/core/lib/gpr/subprocess_windows.cc
   - test/core/bad_ssl/bad_ssl_test.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/util/cmdline.cc
@@ -4893,6 +4893,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/lib/gpr/subprocess.h
   - test/core/end2end/cq_verifier.h
   - test/core/util/cmdline.h
   - test/core/util/evaluate_args_test_util.h
@@ -4907,6 +4908,8 @@ targets:
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
   src:
+  - src/core/lib/gpr/subprocess_posix.cc
+  - src/core/lib/gpr/subprocess_windows.cc
   - test/core/bad_ssl/bad_ssl_test.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/util/cmdline.cc
@@ -9501,9 +9504,12 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/lib/gpr/subprocess.h
   - test/core/http/httpcli_test_util.h
   - test/core/util/fake_udp_and_tcp_server.h
   src:
+  - src/core/lib/gpr/subprocess_posix.cc
+  - src/core/lib/gpr/subprocess_windows.cc
   - test/core/http/httpcli_test.cc
   - test/core/http/httpcli_test_util.cc
   - test/core/util/fake_udp_and_tcp_server.cc
@@ -9518,9 +9524,12 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/lib/gpr/subprocess.h
   - test/core/http/httpcli_test_util.h
   - test/core/util/fake_udp_and_tcp_server.h
   src:
+  - src/core/lib/gpr/subprocess_posix.cc
+  - src/core/lib/gpr/subprocess_windows.cc
   - test/core/http/httpcli_test_util.cc
   - test/core/http/httpscli_test.cc
   - test/core/util/fake_udp_and_tcp_server.cc
@@ -11319,6 +11328,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/lib/gpr/subprocess.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/test_suite/event_engine_test_framework.h
   - test/core/event_engine/test_suite/posix/oracle_event_engine_posix.h
@@ -11329,6 +11339,8 @@ targets:
   - test/core/util/fake_udp_and_tcp_server.h
   - test/cpp/util/get_grpc_test_runfile_dir.h
   src:
+  - src/core/lib/gpr/subprocess_posix.cc
+  - src/core/lib/gpr/subprocess_windows.cc
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/test_suite/event_engine_test_framework.cc
   - test/core/event_engine/test_suite/posix/oracle_event_engine_posix.cc

@@ -3987,10 +3987,14 @@ grpc_cc_library(
     hdrs = [
         "//src/core:lib/gpr/subprocess.h",
     ],
-    external_deps = ["absl/strings"],
+    external_deps = [
+        "absl/strings",
+        "absl/types:span",
+    ],
     deps = [
         "gpr",
         "//src/core:strerror",
+        "//src/core:tchar",
     ],
 )
 

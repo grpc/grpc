@@ -1537,8 +1537,6 @@ add_library(gpr
   src/core/lib/gpr/posix/time.cc
   src/core/lib/gpr/posix/tmpfile.cc
   src/core/lib/gpr/string.cc
-  src/core/lib/gpr/subprocess_posix.cc
-  src/core/lib/gpr/subprocess_windows.cc
   src/core/lib/gpr/sync.cc
   src/core/lib/gpr/sync_abseil.cc
   src/core/lib/gpr/time.cc
@@ -6575,6 +6573,8 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(bad_ssl_alpn_test
+    src/core/lib/gpr/subprocess_posix.cc
+    src/core/lib/gpr/subprocess_windows.cc
     test/core/bad_ssl/bad_ssl_test.cc
     test/core/end2end/cq_verifier.cc
     test/core/util/cmdline.cc
@@ -6625,6 +6625,8 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(bad_ssl_cert_test
+    src/core/lib/gpr/subprocess_posix.cc
+    src/core/lib/gpr/subprocess_windows.cc
     test/core/bad_ssl/bad_ssl_test.cc
     test/core/end2end/cq_verifier.cc
     test/core/util/cmdline.cc
@@ -14798,6 +14800,8 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(httpcli_test
+    src/core/lib/gpr/subprocess_posix.cc
+    src/core/lib/gpr/subprocess_windows.cc
     test/core/http/httpcli_test.cc
     test/core/http/httpcli_test_util.cc
     test/core/util/fake_udp_and_tcp_server.cc
@@ -14839,6 +14843,8 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(httpscli_test
+    src/core/lib/gpr/subprocess_posix.cc
+    src/core/lib/gpr/subprocess_windows.cc
     test/core/http/httpcli_test_util.cc
     test/core/http/httpscli_test.cc
     test/core/util/fake_udp_and_tcp_server.cc
@@ -18534,6 +18540,8 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
 
   add_executable(posix_event_engine_test
+    src/core/lib/gpr/subprocess_posix.cc
+    src/core/lib/gpr/subprocess_windows.cc
     test/core/event_engine/event_engine_test_utils.cc
     test/core/event_engine/test_suite/event_engine_test_framework.cc
     test/core/event_engine/test_suite/posix/oracle_event_engine_posix.cc
