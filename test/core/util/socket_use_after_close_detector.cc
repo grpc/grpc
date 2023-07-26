@@ -16,20 +16,22 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "test/core/util/socket_use_after_close_detector.h"
+
+#include <grpc/support/port_platform.h>
 
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
+#include <arpa/inet.h>
+#include <unistd.h>
 
 #include <algorithm>
 #include <string>
 #include <thread>
 #include <vector>
 
-#include <gmock/gmock.h>
+#include "gtest/gtest.h"
 
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
@@ -43,6 +45,7 @@
 #ifdef GPR_WINDOWS
 #include "src/core/lib/iomgr/socket_windows.h"
 #include "src/core/lib/iomgr/tcp_windows.h"
+
 #define BAD_SOCKET_RETURN_VAL INVALID_SOCKET
 #else
 #define BAD_SOCKET_RETURN_VAL (-1)
