@@ -32,6 +32,13 @@
   </Target>
 
   <Target Name="_gRPC_PrepareCompileOptions" AfterTargets="Protobuf_PrepareCompileOptions">
+
+    <PropertyGroup>
+      <!-- Enable nullabe reference types if enabled in the project and not been overridden
+           by setting gRPC_NullableReferenceTypes -->
+      <gRPC_NullableReferenceTypes Condition=" '$(gRPC_NullableReferenceTypes)' == '' and '$(Nullable)' == 'Enable' ">Enable</gRPC_NullableReferenceTypes>
+    </PropertyGroup>
+
     <ItemGroup Condition=" '$(Language)' == 'C#' ">
       <Protobuf_Compile Condition=" %(Protobuf_Compile.GrpcServices) != 'None' ">
         <GrpcPluginExe Condition=" '%(Protobuf_Compile.GrpcPluginExe)' == '' ">$(gRPC_PluginFullPath)</GrpcPluginExe>
@@ -44,6 +51,11 @@
       <Protobuf_Compile Condition=" '%(Protobuf_Compile.GrpcServices)' == 'Server' ">
         <_GrpcOutputOptions>%(Protobuf_Compile._GrpcOutputOptions);no_client</_GrpcOutputOptions>
       </Protobuf_Compile>
+
+      <Protobuf_Compile Condition=" '$(gRPC_NullableReferenceTypes)' == 'Enable' ">
+        <_GrpcOutputOptions>%(Protobuf_Compile._GrpcOutputOptions);nullable_reference_types</_GrpcOutputOptions>
+      </Protobuf_Compile>
+
     </ItemGroup>
   </Target>
 </Project>

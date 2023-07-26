@@ -266,9 +266,16 @@
   <!-- Extension point: Plugins massage metadata into recognized metadata
        values passed to the ProtoCompile task. -->
   <Target Name="Protobuf_PrepareCompileOptions" Condition=" '@(Protobuf_Compile)' != '' ">
+    <PropertyGroup>
+      <!-- Enable nullabe reference types if enabled in the project and not been overridden
+           by setting Protobuf_NullableReferenceTypes -->
+      <Protobuf_NullableReferenceTypes Condition=" '$(Protobuf_NullableReferenceTypes)' == '' and '$(Nullable)' == 'Enable' ">Enable</Protobuf_NullableReferenceTypes>
+    </PropertyGroup>
+
     <ItemGroup>
       <Protobuf_Compile>
         <_OutputOptions Condition=" '%(Protobuf_Compile.Access)' == 'Internal' ">%(Protobuf_Compile._OutputOptions);internal_access</_OutputOptions>
+        <_OutputOptions Condition=" '$(Protobuf_NullableReferenceTypes)' == 'Enable' ">%(Protobuf_Compile._OutputOptions);nullable_reference_types</_OutputOptions>
       </Protobuf_Compile>
     </ItemGroup>
   </Target>
