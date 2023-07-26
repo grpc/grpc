@@ -552,6 +552,7 @@ grpc_cc_library(
     ],
     visibility = ["@grpc:public"],
     deps = [
+        "channel_arg_names",
         "channel_stack_builder",
         "config",
         "exec_ctx",
@@ -624,6 +625,7 @@ grpc_cc_library(
         "@grpc:public",
     ],
     deps = [
+        "channel_arg_names",
         "channel_stack_builder",
         "config",
         "exec_ctx",
@@ -837,7 +839,10 @@ grpc_cc_library(
         "avoid_dep",
         "nofixdeps",
     ],
-    deps = ["gpr_public_hdrs"],
+    deps = [
+        "channel_arg_names",
+        "gpr_public_hdrs",
+    ],
 )
 
 grpc_cc_library(
@@ -858,6 +863,11 @@ grpc_cc_library(
         "grpc_public_hdrs",
         "//src/core:gpr_atm",
     ],
+)
+
+grpc_cc_library(
+    name = "channel_arg_names",
+    hdrs = ["include/grpc/impl/channel_arg_names.h"],
 )
 
 grpc_cc_library(
@@ -1258,6 +1268,7 @@ grpc_cc_library(
         "nofixdeps",
     ],
     deps = [
+        "channel_arg_names",
         "gpr",
     ],
 )
@@ -1496,6 +1507,7 @@ grpc_cc_library(
     public_hdrs = GRPC_PUBLIC_HDRS + GRPC_PUBLIC_EVENT_ENGINE_HDRS,
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
+        "channel_arg_names",
         "channel_stack_builder",
         "config",
         "config_vars",
@@ -1659,6 +1671,7 @@ grpc_cc_library(
     ],
     tags = ["nofixdeps"],
     deps = [
+        "channel_arg_names",
         "gpr",
         "gpr_platform",
         "grpc",
@@ -1772,6 +1785,7 @@ grpc_cc_library(
     public_hdrs = GRPC_PUBLIC_HDRS,
     visibility = ["@grpc:public"],
     deps = [
+        "channel_arg_names",
         "config",
         "debug_location",
         "exec_ctx",
@@ -1922,6 +1936,7 @@ grpc_cc_library(
     tags = ["nofixdeps"],
     visibility = ["@grpc:alt_grpc++_base_legacy"],
     deps = [
+        "channel_arg_names",
         "channel_stack_builder",
         "config",
         "exec_ctx",
@@ -1997,6 +2012,7 @@ grpc_cc_library(
     ],
     visibility = ["@grpc:alt_grpc++_base_unsecure_legacy"],
     deps = [
+        "channel_arg_names",
         "channel_stack_builder",
         "config",
         "exec_ctx",
@@ -3008,6 +3024,7 @@ grpc_cc_library(
     visibility = ["@grpc:client_channel"],
     deps = [
         "backoff",
+        "channel_arg_names",
         "channel_stack_builder",
         "config",
         "config_vars",
@@ -3110,6 +3127,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "backoff",
+        "channel_arg_names",
         "config",
         "config_vars",
         "debug_location",
@@ -3217,6 +3235,7 @@ grpc_cc_library(
     visibility = ["@grpc:public"],
     deps = [
         "alts_util",
+        "channel_arg_names",
         "debug_location",
         "exec_ctx",
         "gpr",
@@ -3479,6 +3498,7 @@ grpc_cc_library(
     language = "c++",
     visibility = ["@grpc:public"],
     deps = [
+        "channel_arg_names",
         "config_vars",
         "gpr",
         "grpc_base",
@@ -3523,6 +3543,7 @@ grpc_cc_library(
     language = "c++",
     visibility = ["@grpc:http"],
     deps = [
+        "channel_arg_names",
         "channel_stack_builder",
         "config",
         "gpr",
@@ -3912,6 +3933,7 @@ grpc_cc_library(
     language = "c++",
     visibility = ["@grpc:grpclb"],
     deps = [
+        "channel_arg_names",
         "chttp2_context_list_entry",
         "chttp2_frame",
         "chttp2_varint",
@@ -3943,7 +3965,10 @@ grpc_cc_library(
         "//src/core:init_internally",
         "//src/core:iomgr_fwd",
         "//src/core:iomgr_port",
+        "//src/core:match",
         "//src/core:memory_quota",
+        "//src/core:ping_abuse_policy",
+        "//src/core:ping_rate_policy",
         "//src/core:poll",
         "//src/core:ref_counted",
         "//src/core:resource_quota",
