@@ -24,46 +24,27 @@
 #include <fcntl.h>
 #include <string.h>
 
+#include <algorithm>
 #include <string>
 #include <thread>
 #include <vector>
 
 #include <gmock/gmock.h>
 
-#include "absl/flags/flag.h"
-#include "absl/memory/memory.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-
-#include <grpc/grpc.h>
-#include <grpc/impl/grpc_types.h>
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
-#include <grpc/support/time.h>
 
-#include "src/core/lib/address_utils/parse_address.h"
-#include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/event_engine/default_event_engine.h"
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/iomgr/iomgr.h"
-#include "src/core/lib/iomgr/resolve_address.h"
-#include "src/core/lib/iomgr/socket_utils.h"
-#include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/iomgr/sockaddr.h"
 #include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
 
 // TODO(unknown): pull in different headers when enabling this
 // test on windows. Also set BAD_SOCKET_RETURN_VAL
 // to INVALID_SOCKET on windows.
 #ifdef GPR_WINDOWS
-#include "src/core/lib/iomgr/sockaddr_windows.h"
 #include "src/core/lib/iomgr/socket_windows.h"
 #include "src/core/lib/iomgr/tcp_windows.h"
 #define BAD_SOCKET_RETURN_VAL INVALID_SOCKET
 #else
-#include "src/core/lib/iomgr/sockaddr_posix.h"
 #define BAD_SOCKET_RETURN_VAL (-1)
 #endif
 
