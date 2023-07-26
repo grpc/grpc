@@ -65,7 +65,13 @@
 - name: transport_supplies_client_latency
   default: false
 - name: event_engine_listener
-  default: false
+  default:
+    # not tested on iOS at all
+    ios: broken
+    posix: false
+    # TODO(hork): resolve when the listener end2end test flake rate reduces to
+    # a tolerable amount.
+    windows: broken
 - name: schedule_cancellation_over_write
   default: false
 - name: trace_record_callops
@@ -75,7 +81,7 @@
     # not tested on iOS at all
     ios: broken
     posix: false
-    # TODO(yijiem): resolve when the WindowsEventEngine DNS Resolver is 
+    # TODO(yijiem): resolve when the WindowsEventEngine DNS Resolver is
     # implemented
     windows: broken
 - name: work_stealing
