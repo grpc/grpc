@@ -25,7 +25,7 @@
 #include <string.h>
 
 // IWYU pragma: no_include <arpa/inet.h>
-// IWYU pragme: no_include <unistd.h>
+// IWYU pragma: no_include <unistd.h>
 
 #include <algorithm>
 #include <string>
