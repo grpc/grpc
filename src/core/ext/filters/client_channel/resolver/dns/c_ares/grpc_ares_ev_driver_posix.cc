@@ -17,12 +17,22 @@
 //
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/iomgr/port.h"
+
+#if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
+
 #include <ares_build.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <sys/uio.h>
+#include <unistd.h>
 
 #include <memory>
 #include <set>
 #include <string>
 #include <utility>
+
+#include <ares.h>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/strings/str_cat.h"
@@ -34,19 +44,8 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/iomgr_fwd.h"
-#include "src/core/lib/iomgr/port.h"
-
-#if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
-
-#include <sys/ioctl.h>
-#include <sys/socket.h>
-#include <sys/uio.h>
-#include <unistd.h>
-
-#include <ares.h>
-
 #include "src/core/lib/iomgr/ev_posix.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 
 namespace grpc_core {
