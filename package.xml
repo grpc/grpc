@@ -1430,7 +1430,6 @@
     <file baseinstalldir="/" name="src/core/lib/promise/arena_promise.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/cancel_callback.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/context.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/promise/detail/basic_join.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/detail/basic_seq.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/detail/promise_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/detail/promise_like.h" role="src" />
@@ -1455,7 +1454,6 @@
     <file baseinstalldir="/" name="src/core/lib/promise/sleep.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/trace.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/trace.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/promise/try_join.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/try_seq.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resolver/resolver.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resolver/resolver.h" role="src" />

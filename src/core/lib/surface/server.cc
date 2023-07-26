@@ -28,7 +28,6 @@
 #include <list>
 #include <new>
 #include <queue>
-#include <tuple>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -62,13 +61,11 @@
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/detail/basic_join.h"
 #include "src/core/lib/promise/detail/basic_seq.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
-#include "src/core/lib/promise/try_join.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -322,19 +319,18 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
       while (true) {
         NextPendingCall next_pending = pop_next_pending();
         if (next_pending.rc == nullptr) break;
-        auto mr = MatchResult(server(), request_queue_index, next_pending.rc);
         Match(
             next_pending.pending,
-            [&mr](CallData* calld) {
+            [&](CallData* calld) {
               if (!calld->MaybeActivate()) {
                 // Zombied Call
                 calld->KillZombie();
               } else {
-                calld->Publish(mr.cq_idx(), mr.TakeCall());
+                calld->Publish(request_queue_index, next_pending.rc);
               }
             },
-            [&mr](const std::shared_ptr<ActivityWaiter>& w) {
-              w->Finish(std::move(mr));
+            [&](const std::shared_ptr<ActivityWaiter>& w) {
+              w->Finish(server(), request_queue_index, next_pending.rc);
             });
       }
     }
@@ -430,8 +426,14 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
   struct ActivityWaiter {
     explicit ActivityWaiter(Waker waker) : waker(std::move(waker)) {}
     ~ActivityWaiter() { delete result.load(std::memory_order_acquire); }
-    void Finish(absl::StatusOr<MatchResult> r) {
-      result.store(new absl::StatusOr<MatchResult>(std::move(r)),
+    void Finish(absl::Status status) {
+      result.store(new absl::StatusOr<MatchResult>(std::move(status)),
+                   std::memory_order_release);
+      waker.Wakeup();
+    }
+    void Finish(Server* server, size_t cq_idx, RequestedCall* requested_call) {
+      result.store(new absl::StatusOr<MatchResult>(
+                       MatchResult(server, cq_idx, requested_call)),
                    std::memory_order_release);
       waker.Wakeup();
     }
@@ -1336,22 +1338,32 @@ ArenaPromise<ServerMetadataHandle> Server::ChannelData::MakeCallPromise(
     matcher = server->unregistered_request_matcher_.get();
   }
   return TrySeq(
-      TryJoin(matcher->MatchRequest(chand->cq_idx()),
-              std::move(maybe_read_first_message)),
-      [path = std::move(*path), host_ptr, deadline,
-       call_args = std::move(call_args)](
-          std::tuple<RequestMatcherInterface::MatchResult,
-                     NextResult<MessageHandle>>
-              match_result_and_payload) mutable {
-        auto& mr = std::get<0>(match_result_and_payload);
-        auto& payload = std::get<1>(match_result_and_payload);
+      std::move(maybe_read_first_message),
+      [matcher, chand](NextResult<MessageHandle> payload) {
+        return Map(
+            matcher->MatchRequest(chand->cq_idx()),
+            [payload = std::move(payload)](
+                absl::StatusOr<RequestMatcherInterface::MatchResult> mr) mutable
+            -> absl::StatusOr<std::pair<RequestMatcherInterface::MatchResult,
+                                        NextResult<MessageHandle>>> {
+              if (!mr.ok()) return mr.status();
+              return std::make_pair(std::move(*mr), std::move(payload));
+            });
+      },
+      [host_ptr, path = std::move(path), deadline,
+       call_args =
+           std::move(call_args)](std::pair<RequestMatcherInterface::MatchResult,
+                                           NextResult<MessageHandle>>
+                                     r) mutable {
+        auto& mr = r.first;
+        auto& payload = r.second;
         auto* rc = mr.TakeCall();
         auto* cq_for_new_request = mr.cq();
         switch (rc->type) {
           case RequestedCall::Type::BATCH_CALL:
             GPR_ASSERT(!payload.has_value());
             rc->data.batch.details->host = CSliceRef(host_ptr->c_slice());
-            rc->data.batch.details->method = CSliceRef(path.c_slice());
+            rc->data.batch.details->method = CSliceRef(path->c_slice());
             rc->data.batch.details->deadline =
                 deadline.as_timespec(GPR_CLOCK_MONOTONIC);
             break;
