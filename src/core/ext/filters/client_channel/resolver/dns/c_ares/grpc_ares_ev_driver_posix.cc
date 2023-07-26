@@ -121,35 +121,15 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
 
   void ConfigureAresChannelLocked(ares_channel channel) override {
     ares_set_socket_functions(channel, &kSockFuncs, this);
+    ares_set_socket_configure_callback(
+        channel, &GrpcPolledFdFactoryPosix::ConfigureSocket, nullptr);
   }
 
  private:
   /// Overridden socket API for c-ares
   static ares_socket_t Socket(int af, int type, int protocol,
                               void* /*user_data*/) {
-    int fd = socket(af, type, protocol);
-    if (fd < 0) return fd;
-    /* Because we're using socket API overrides, c-ares won't
-     * perform its typical configuration on the socket. See
-     * https://github.com/c-ares/c-ares/blob/bad62225b7f6b278b92e8e85a255600b629ef517/src/lib/ares_process.c#L1018.
-     * So we copy the default settings that c-ares would
-     * normally apply on posix platforms:
-     *   - non-blocking
-     *   - cloexec flag
-     *   - disable nagle */
-    grpc_error_handle err;
-    err = grpc_set_socket_nonblocking(fd, true);
-    if (!err.ok()) goto error;
-    err = grpc_set_socket_cloexec(fd, true);
-    if (!err.ok()) goto error;
-    if (type == SOCK_STREAM) {
-      err = grpc_set_socket_low_latency(fd, true);
-      if (!err.ok()) goto error;
-    }
-    return fd;
-  error:
-    close(fd);
-    return -1;
+    return socket(af, type, protocol);
   }
 
   /// Overridden connect API for c-ares
@@ -178,6 +158,27 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
     if (self->owned_fds_.find(as) == self->owned_fds_.end()) {
       // c-ares owns this fd, grpc has never seen it
       return close(as);
+    }
+    return 0;
+  }
+
+  /// Because we're using socket API overrides, c-ares won't
+  /// perform its typical configuration on the socket. See
+  /// https://github.com/c-ares/c-ares/blob/bad62225b7f6b278b92e8e85a255600b629ef517/src/lib/ares_process.c#L1018.
+  /// So we use the configure socket callback override and copy default
+  /// settings that c-ares would normally apply on posix platforms:
+  ///   - non-blocking
+  ///   - cloexec flag
+  ///   - disable nagle */
+  static int ConfigureSocket(ares_socket_t fd, int type, void* /*user_data*/) {
+    grpc_error_handle err;
+    err = grpc_set_socket_nonblocking(fd, true);
+    if (!err.ok()) return -1;
+    err = grpc_set_socket_cloexec(fd, true);
+    if (!err.ok()) return -1;
+    if (type == SOCK_STREAM) {
+      err = grpc_set_socket_low_latency(fd, true);
+      if (!err.ok()) return -1;
     }
     return 0;
   }
