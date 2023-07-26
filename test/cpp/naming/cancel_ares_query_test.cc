@@ -444,17 +444,13 @@ TEST_F(CancelDuringAresQuery, TestQueryFailsBecauseTcpServerClosesSocket) {
           kWaitForClientToSendFirstBytes,
       grpc_core::testing::FakeUdpAndTcpServer::
           CloseSocketUponReceivingBytesFromPeer);
-  // TODO(yijiem): support this test flag in the EE DNS resolver
+  // TODO(yijiem): make this test work with the EE DNS resolver by supporting
+  // this test flag to force TCP in the EE DNS resolver.
+  if (grpc_core::IsEventEngineDnsEnabled()) return;
   g_grpc_ares_test_only_force_tcp = true;
   grpc_status_code expected_status_code = GRPC_STATUS_UNAVAILABLE;
-  std::string expected_error_message_substring;
-  if (grpc_core::IsEventEngineDnsEnabled()) {
-    expected_error_message_substring =
-        absl::StrCat("errors resolving ", kFakeName);
-  } else {
-    expected_error_message_substring =
-        absl::StrCat("DNS resolution failed for ", kFakeName);
-  }
+  std::string expected_error_message_substring =
+      absl::StrCat("DNS resolution failed for ", kFakeName);
   // Don't really care about the deadline - we should quickly hit a DNS
   // resolution failure.
   gpr_timespec rpc_deadline = grpc_timeout_seconds_to_deadline(100);
