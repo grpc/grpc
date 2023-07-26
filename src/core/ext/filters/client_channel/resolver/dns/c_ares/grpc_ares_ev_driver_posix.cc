@@ -153,13 +153,13 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
 
   /// Overridden close API for c-ares
   static int Close(ares_socket_t as, void* user_data) {
-    GrpcPolledFdFactoryPosix* self =
-        static_cast<GrpcPolledFdFactoryPosix*>(user_data);
-    if (self->owned_fds_.find(as) == self->owned_fds_.end()) {
+//    GrpcPolledFdFactoryPosix* self =
+//        static_cast<GrpcPolledFdFactoryPosix*>(user_data);
+//    if (self->owned_fds_.find(as) == self->owned_fds_.end()) {
       // c-ares owns this fd, grpc has never seen it
       return close(as);
-    }
-    return 0;
+//    }
+//    return 0;
   }
 
   /// Because we're using socket API overrides, c-ares won't
