@@ -294,8 +294,7 @@ void TestCancelDuringActiveQuery(
     grpc_arg arg;
     arg.type = GRPC_ARG_INTEGER;
     arg.key = const_cast<char*>(GRPC_ARG_DNS_ARES_QUERY_TIMEOUT_MS);
-    arg.value.integer =
-        1;  // Set this shorter than the call deadline so that it goes off.
+    arg.value.integer = dns_query_timeout_ms;
     client_args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
   }
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
