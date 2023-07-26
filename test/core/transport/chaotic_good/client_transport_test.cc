@@ -33,6 +33,7 @@
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/detail/basic_join.h"
 #include "src/core/lib/promise/join.h"
+#include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
@@ -87,13 +88,14 @@ class ClientTransportTest : public ::testing::Test {
                 "test")),
         control_endpoint_(*control_endpoint_ptr_),
         data_endpoint_(*data_endpoint_ptr_),
-        control_promise_endpoint_(new PromiseEndpoint(
-            std::unique_ptr<MockEndpoint>(control_endpoint_ptr_),
-            SliceBuffer())),
-        data_promise_endpoint_(new PromiseEndpoint(
-            std::unique_ptr<MockEndpoint>(data_endpoint_ptr_), SliceBuffer())),
-        client_transport_(channel_args_, std::move(*control_promise_endpoint_),
-                          std::move(*data_promise_endpoint_)),
+        client_transport_(
+            channel_args_,
+            std::make_unique<PromiseEndpoint>(
+                std::unique_ptr<MockEndpoint>(control_endpoint_ptr_),
+                SliceBuffer()),
+            std::make_unique<PromiseEndpoint>(
+                std::unique_ptr<MockEndpoint>(data_endpoint_ptr_),
+                SliceBuffer())),
         arena_(MakeScopedArena(initial_arena_size, &memory_allocator_)),
         pipe_client_to_server_messages_(arena_.get()) {}
 
@@ -107,8 +109,6 @@ class ClientTransportTest : public ::testing::Test {
   MemoryAllocator memory_allocator_;
   MockEndpoint& control_endpoint_;
   MockEndpoint& data_endpoint_;
-  std::unique_ptr<PromiseEndpoint> control_promise_endpoint_;
-  std::unique_ptr<PromiseEndpoint> data_promise_endpoint_;
   ClientTransport client_transport_;
   ScopedArenaPtr arena_;
   Pipe<MessageHandle> pipe_client_to_server_messages_;
