@@ -106,7 +106,7 @@ class GrpcPolledFdPosix : public GrpcPolledFd {
 
 class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
  public:
-  ~GrpcPolledFdFactoryPosix() {
+  ~GrpcPolledFdFactoryPosix() override {
     for (auto& fd : owned_fds_) {
       close(fd);
     }
