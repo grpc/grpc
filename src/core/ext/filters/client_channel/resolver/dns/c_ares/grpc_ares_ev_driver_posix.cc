@@ -120,7 +120,25 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
   /// Overridden socket API for c-ares
   static ares_socket_t Socket(int af, int type, int protocol,
                               void* /*user_data*/) {
-    return socket(af, type, protocol);
+    int fd = socket(af, type, protocol);
+    /* Because we're using socket API overrides, c-ares won't
+     * perform its typical configuration on the socket. See
+     * https://github.com/c-ares/c-ares/blob/bad62225b7f6b278b92e8e85a255600b629ef517/src/lib/ares_process.c#L1018.
+     * So we copy the default settings that c-ares would
+     * normally apply on posix platforms:
+     *   - non-blocking
+     *   - cloexec flag
+     *   - disable nagle */
+    grpc_error_handle err;
+    err = grpc_set_socket_nonblocking(fd, true);
+    if (!err.ok()) return -1;
+    err = grpc_set_socket_cloexec(fd, true);
+    if (!err.ok()) return -1;
+    if (type == SOCK_STREAM) {
+      err = grpc_set_socket_low_latency(fd, true);
+      if (!err.ok()) return -1;
+    }
+    return 0;
   }
 
   /// Overridden connect API for c-ares
