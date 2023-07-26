@@ -3989,12 +3989,10 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/strings",
-        "absl/types:span",
     ],
     deps = [
         "gpr",
         "//src/core:strerror",
-        "//src/core:tchar",
     ],
 )
 
