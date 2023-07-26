@@ -107,5 +107,11 @@ TEST(PingAbusePolicy, IdleIncreasesTimeout) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
+  // hardcode expected defaults so we don't account for external configuration
+  grpc_core::Chttp2PingAbusePolicy::SetDefaults(
+      grpc_core::ChannelArgs()
+          .Set(GRPC_ARG_HTTP2_MAX_PING_STRIKES, 2)
+          .Set(GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS,
+               grpc_core::Duration::Minutes(5).millis()));
   return RUN_ALL_TESTS();
 }
