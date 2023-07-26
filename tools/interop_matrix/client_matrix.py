@@ -286,7 +286,7 @@ LANG_RELEASE_MATRIX = {
             ("v1.53.0", ReleaseInfo(runtimes=["go1.19"])),
             ("v1.54.1", ReleaseInfo(runtimes=["go1.19"])),
             ("v1.55.0", ReleaseInfo(runtimes=["go1.19"])),
-            ("v1.56.1", ReleaseInfo(runtimes=["go1.19"])),
+            ("v1.56.2", ReleaseInfo(runtimes=["go1.19"])),
             ("v1.57.0", ReleaseInfo(runtimes=["go1.19"])),
         ]
     ),
