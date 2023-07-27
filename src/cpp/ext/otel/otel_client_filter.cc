@@ -98,8 +98,10 @@ OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
       arena_allocated_(arena_allocated),
       start_time_(absl::Now()) {
   // TODO(yashykt): Figure out how to get this to work with absl::string_view
-  OTelPluginState().client.attempt.started->Add(
-      1, {{std::string(OTelMethodKey()), std::string(parent_->method_)}});
+  if (OTelPluginState().client.attempt.started != nullptr) {
+    OTelPluginState().client.attempt.started->Add(
+        1, {{std::string(OTelMethodKey()), std::string(parent_->method_)}});
+  }
 }
 
 void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::RecordSendMessage(
@@ -135,19 +137,27 @@ void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
   absl::InlinedVector<std::pair<std::string, std::string>, 2> attributes = {
       {std::string(OTelMethodKey()), std::string(parent_->method_)},
       {std::string(OTelStatusKey()), absl::StatusCodeToString(status.code())}};
-  OTelPluginState().client.attempt.duration->Record(
-      absl::ToDoubleSeconds(absl::Now() - start_time_), attributes,
-      opentelemetry::context::Context{});
-  OTelPluginState().client.attempt.sent_total_compressed_message_size->Record(
-      transport_stream_stats != nullptr
-          ? transport_stream_stats->outgoing.data_bytes
-          : 0,
-      attributes, opentelemetry::context::Context{});
-  OTelPluginState().client.attempt.rcvd_total_compressed_message_size->Record(
-      transport_stream_stats != nullptr
-          ? transport_stream_stats->incoming.data_bytes
-          : 0,
-      attributes, opentelemetry::context::Context{});
+  if (OTelPluginState().client.attempt.duration != nullptr) {
+    OTelPluginState().client.attempt.duration->Record(
+        absl::ToDoubleSeconds(absl::Now() - start_time_), attributes,
+        opentelemetry::context::Context{});
+  }
+  if (OTelPluginState().client.attempt.sent_total_compressed_message_size !=
+      nullptr) {
+    OTelPluginState().client.attempt.sent_total_compressed_message_size->Record(
+        transport_stream_stats != nullptr
+            ? transport_stream_stats->outgoing.data_bytes
+            : 0,
+        attributes, opentelemetry::context::Context{});
+  }
+  if (OTelPluginState().client.attempt.rcvd_total_compressed_message_size !=
+      nullptr) {
+    OTelPluginState().client.attempt.rcvd_total_compressed_message_size->Record(
+        transport_stream_stats != nullptr
+            ? transport_stream_stats->incoming.data_bytes
+            : 0,
+        attributes, opentelemetry::context::Context{});
+  }
 }
 
 void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::RecordCancel(
