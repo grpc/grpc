@@ -539,7 +539,9 @@ class CXXLanguage(Language):
                 "streaming_from_client",
                 "streaming_from_server",
             ]:
-                maybe_dashboard = [DASHBOARD] if rpc_type in ("unary", "streaming") else []
+                maybe_dashboard = (
+                    [DASHBOARD] if rpc_type in ("unary", "streaming") else []
+                )
                 for synchronicity in ["sync", "async"]:
                     yield _ping_pong_scenario(
                         "cpp_protobuf_%s_%s_ping_pong_%s"
@@ -550,7 +552,7 @@ class CXXLanguage(Language):
                         async_server_threads=1,
                         minimal_stack=not secure,
                         secure=secure,
-                        categories= maybe_dashboard,
+                        categories=maybe_dashboard,
                     )
 
                     for size in geometric_progression(
@@ -581,7 +583,11 @@ class CXXLanguage(Language):
                         # see b/198275705
                         maybe_scalable = [SWEEP]
 
-                    maybe_dashboard = [DASHBOARD] if rpc_type in ("unary", "streaming") else []
+                    maybe_dashboard = (
+                        [DASHBOARD]
+                        if rpc_type in ("unary", "streaming")
+                        else []
+                    )
                     yield _ping_pong_scenario(
                         "cpp_protobuf_%s_%s_qps_unconstrained_%s"
                         % (synchronicity, rpc_type, secstr),
@@ -593,7 +599,9 @@ class CXXLanguage(Language):
                         minimal_stack=not secure,
                         server_threads_per_cq=2,
                         client_threads_per_cq=2,
-                        categories=inproc_categories + maybe_scalable + maybe_dashboard,
+                        categories=inproc_categories
+                        + maybe_scalable
+                        + maybe_dashboard,
                     )
 
                     # TODO(vjpai): Re-enable this test. It has a lot of timeouts
