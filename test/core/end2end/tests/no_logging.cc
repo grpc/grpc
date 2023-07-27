@@ -142,7 +142,7 @@ CORE_END2END_TEST(NoLoggingTest, NoLoggingTest) {
 // TODO(hork): remove when the listener flake is identified
 #ifdef GPR_WINDOWS
   if (IsEventEngineListenerEnabled()) {
-    return;
+    GTEST_SKIP() << "not for windows + event engine listener";
   }
 #endif
   Verifier verifier;
