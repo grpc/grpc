@@ -29,6 +29,13 @@ namespace grpc_event_engine {
 namespace experimental {
 
 std::shared_ptr<ThreadPool> MakeThreadPool(size_t reserve_threads) {
+// TODO(hork): remove when the listener flake is identified
+#ifdef GPR_WINDOWS
+if (grpc_core::IsEventEngineListenerEnabled()) {
+  return std::make_shared<WorkStealingThreadPool>(
+        grpc_core::Clamp(gpr_cpu_num_cores(), 2u, 16u));
+}
+#endif
   if (grpc_core::IsWorkStealingEnabled()) {
     return std::make_shared<WorkStealingThreadPool>(
         grpc_core::Clamp(gpr_cpu_num_cores(), 2u, 16u));
