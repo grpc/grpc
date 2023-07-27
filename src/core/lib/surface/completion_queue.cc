@@ -43,7 +43,6 @@
 
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/stats_data.h"
-#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/spinlock.h"
 #include "src/core/lib/gprpp/atomic_utils.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -57,6 +56,10 @@
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/event_string.h"
+
+#ifdef GPR_WINDOWS
+#include "src/core/lib/experiments/experiments.h"
+#endif
 
 grpc_core::TraceFlag grpc_trace_operation_failures(false, "op_failure");
 grpc_core::DebugOnlyTraceFlag grpc_trace_pending_tags(false, "pending_tags");
