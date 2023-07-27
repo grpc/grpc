@@ -167,6 +167,11 @@ void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::RecordAnnotation(
   // Not implemented
 }
 
+void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::RecordAnnotation(
+    const Annotation& /*annotation*/) {
+  // Not implemented
+}
+
 //
 // OpenTelemetryCallTracer
 //
@@ -205,6 +210,11 @@ OpenTelemetryCallTracer::StartNewAttempt(bool is_transparent_retry) {
 
 void OpenTelemetryCallTracer::RecordAnnotation(
     absl::string_view /*annotation*/) {
+  // Not implemented
+}
+
+void OpenTelemetryCallTracer::RecordAnnotation(
+    const Annotation& /*annotation*/) {
   // Not implemented
 }
 

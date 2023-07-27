@@ -114,6 +114,10 @@ class OpenTelemetryServerCallTracer : public grpc_core::ServerCallTracer {
     // Not implemented
   }
 
+  void RecordAnnotation(const Annotation& /*annotation*/) override {
+    // Not implemented
+  }
+
  private:
   grpc_core::Slice path_;
   absl::string_view method_;
