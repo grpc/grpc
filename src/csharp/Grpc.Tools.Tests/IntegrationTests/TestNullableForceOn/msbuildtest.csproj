@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+     Note: common properties and targets for tests are imported from the
+     Directory.Build.props and Directory.Build.targets files in the parent directoty
+  -->
+
+  <PropertyGroup>
+    <Nullable>disable</Nullable>
+    <LangVersion>latest</LangVersion>
+
+    <!-- force nullable on in generated code -->
+    <gRPC_NullableReferenceTypes>enable</gRPC_NullableReferenceTypes>
+    <Protobuf_NullableReferenceTypes>enable</Protobuf_NullableReferenceTypes>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Protobuf Include="file.proto" GrpcServices="server" />
+  </ItemGroup>
+  
+</Project>
