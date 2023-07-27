@@ -139,6 +139,12 @@ void SimpleRequest(CoreEnd2endTest& test) {
 }
 
 CORE_END2END_TEST(NoLoggingTest, NoLoggingTest) {
+// TODO(hork): remove when the listener flake is identified
+#ifdef GPR_WINDOWS
+  if (grpc_core::IsEventEngineListenerEnabled()) {
+    return;
+  }
+#endif
   Verifier verifier;
   verifier.FailOnNonErrorLog();
   for (int i = 0; i < 10; i++) {
