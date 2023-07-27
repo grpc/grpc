@@ -13,6 +13,7 @@
 # limitations under the License.
 """Tests AioRpcError class."""
 
+import pickle
 import logging
 import unittest
 
@@ -50,6 +51,28 @@ class TestAioRpcError(unittest.TestCase):
         )
         self.assertEqual(
             aio_rpc_error.debug_error_string(), _TEST_DEBUG_ERROR_STRING
+        )
+
+    def test_pickle(self):
+        aio_rpc_error = AioRpcError(
+            grpc.StatusCode.CANCELLED,
+            initial_metadata=_TEST_INITIAL_METADATA,
+            trailing_metadata=_TEST_TRAILING_METADATA,
+            details="details",
+            debug_error_string=_TEST_DEBUG_ERROR_STRING,
+        )
+        dump_error = pickle.dumps(aio_rpc_error)
+        loaded_error = pickle.loads(dump_error)
+        self.assertEqual(loaded_error.code(), grpc.StatusCode.CANCELLED)
+        self.assertEqual(loaded_error.details(), "details")
+        self.assertEqual(
+            loaded_error.initial_metadata(), _TEST_INITIAL_METADATA
+        )
+        self.assertEqual(
+            loaded_error.trailing_metadata(), _TEST_TRAILING_METADATA
+        )
+        self.assertEqual(
+            loaded_error.debug_error_string(), _TEST_DEBUG_ERROR_STRING
         )
 
 
