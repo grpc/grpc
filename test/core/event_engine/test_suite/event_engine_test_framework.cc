@@ -18,19 +18,19 @@
 #include <grpc/event_engine/event_engine.h>
 
 absl::AnyInvocable<
-    std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>*
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine>()>*
     g_ee_factory = nullptr;
 
 absl::AnyInvocable<
-    std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>*
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine>()>*
     g_oracle_ee_factory = nullptr;
 
 void SetEventEngineFactories(
     absl::AnyInvocable<
-        std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>
+        std::shared_ptr<grpc_event_engine::experimental::EventEngine>()>
         factory,
     absl::AnyInvocable<
-        std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>
+        std::shared_ptr<grpc_event_engine::experimental::EventEngine>()>
         oracle_ee_factory) {
   testing::AddGlobalTestEnvironment(new EventEngineTestEnvironment(
       std::move(factory), std::move(oracle_ee_factory)));

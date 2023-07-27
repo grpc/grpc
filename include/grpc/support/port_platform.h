@@ -563,29 +563,6 @@ typedef unsigned __int64 uint64_t;
 #define GRPC_IF_NAMETOINDEX 1
 #endif
 
-#ifndef GRPC_MUST_USE_RESULT
-#if defined(__GNUC__) && !defined(__MINGW32__)
-#define GRPC_MUST_USE_RESULT __attribute__((warn_unused_result))
-#define GPR_ALIGN_STRUCT(n) __attribute__((aligned(n)))
-#else
-#define GRPC_MUST_USE_RESULT
-#define GPR_ALIGN_STRUCT(n)
-#endif
-#ifdef USE_STRICT_WARNING
-/* When building with USE_STRICT_WARNING (which -Werror), types with this
-   attribute will be treated as annotated with warn_unused_result, enforcing
-   returned values of this type should be used.
-   This is added in grpc::Status in mind to address the issue where it always
-   has this annotation internally but OSS doesn't, sometimes causing internal
-   build failure. To prevent this, this is added while not introducing
-   a breaking change to existing user code which may not use returned values
-   of grpc::Status. */
-#define GRPC_MUST_USE_RESULT_WHEN_USE_STRICT_WARNING GRPC_MUST_USE_RESULT
-#else
-#define GRPC_MUST_USE_RESULT_WHEN_USE_STRICT_WARNING
-#endif
-#endif
-
 #ifndef GRPC_UNUSED
 #if defined(__GNUC__) && !defined(__MINGW32__)
 #define GRPC_UNUSED __attribute__((unused))
@@ -611,6 +588,35 @@ typedef unsigned __int64 uint64_t;
 #endif
 #endif /* GPR_HAS_CPP_ATTRIBUTE */
 
+#if defined(__GNUC__) && !defined(__MINGW32__)
+#define GPR_ALIGN_STRUCT(n) __attribute__((aligned(n)))
+#else
+#define GPR_ALIGN_STRUCT(n)
+#endif
+
+#ifndef GRPC_MUST_USE_RESULT
+#if GPR_HAS_CPP_ATTRIBUTE(nodiscard)
+#define GRPC_MUST_USE_RESULT [[nodiscard]]
+#elif defined(__GNUC__) && !defined(__MINGW32__)
+#define GRPC_MUST_USE_RESULT __attribute__((warn_unused_result))
+#else
+#define GRPC_MUST_USE_RESULT
+#endif
+#ifdef USE_STRICT_WARNING
+/* When building with USE_STRICT_WARNING (which -Werror), types with this
+   attribute will be treated as annotated with warn_unused_result, enforcing
+   returned values of this type should be used.
+   This is added in grpc::Status in mind to address the issue where it always
+   has this annotation internally but OSS doesn't, sometimes causing internal
+   build failure. To prevent this, this is added while not introducing
+   a breaking change to existing user code which may not use returned values
+   of grpc::Status. */
+#define GRPC_MUST_USE_RESULT_WHEN_USE_STRICT_WARNING GRPC_MUST_USE_RESULT
+#else
+#define GRPC_MUST_USE_RESULT_WHEN_USE_STRICT_WARNING
+#endif
+#endif
+
 #ifndef GPR_HAS_ATTRIBUTE
 #ifdef __has_attribute
 #define GPR_HAS_ATTRIBUTE(a) __has_attribute(a)
@@ -625,7 +631,7 @@ typedef unsigned __int64 uint64_t;
 #define GPR_ATTRIBUTE_NORETURN
 #endif
 
-#if GPR_FORBID_UNREACHABLE_CODE
+#if defined(GPR_FORBID_UNREACHABLE_CODE) && GPR_FORBID_UNREACHABLE_CODE
 #define GPR_UNREACHABLE_CODE(STATEMENT)
 #else
 #ifdef __cplusplus
@@ -776,12 +782,12 @@ extern void gpr_unreachable_code(const char* reason, const char* file,
 
 #define GRPC_CALLBACK_API_NONEXPERIMENTAL
 
-/* clang 11 with msan miscompiles destruction of [[no_unique_address]] members
- * of zero size - for a repro see:
+/* clang 12 and lower with msan miscompiles destruction of [[no_unique_address]]
+ * members of zero size - for a repro see:
  * test/core/compiler_bugs/miscompile_with_no_unique_address_test.cc
  */
 #ifdef __clang__
-#if __clang__ && __clang_major__ <= 11 && __has_feature(memory_sanitizer)
+#if __clang__ && __clang_major__ <= 12 && __has_feature(memory_sanitizer)
 #undef GPR_NO_UNIQUE_ADDRESS
 #define GPR_NO_UNIQUE_ADDRESS
 #endif

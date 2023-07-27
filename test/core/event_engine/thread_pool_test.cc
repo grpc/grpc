@@ -12,117 +12,276 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/event_engine/thread_pool.h"
+#include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 
-#include <stdlib.h>
-
+#include <atomic>
 #include <chrono>
+#include <cmath>
+#include <functional>
 #include <thread>
 
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
 #include "gtest/gtest.h"
 
-#include <grpc/support/log.h>
+#include <grpc/grpc.h>
 
+#include "src/core/lib/event_engine/thread_pool/original_thread_pool.h"
+#include "src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h"
 #include "src/core/lib/gprpp/notification.h"
+#include "src/core/lib/gprpp/thd.h"
+#include "test/core/util/test_config.h"
 
 namespace grpc_event_engine {
 namespace experimental {
 
-TEST(ThreadPoolTest, CanRunClosure) {
-  ThreadPool p;
+template <typename T>
+class ThreadPoolTest : public testing::Test {};
+
+using ThreadPoolTypes =
+    ::testing::Types<OriginalThreadPool, WorkStealingThreadPool>;
+TYPED_TEST_SUITE(ThreadPoolTest, ThreadPoolTypes);
+
+TYPED_TEST(ThreadPoolTest, CanRunAnyInvocable) {
+  TypeParam p(8);
   grpc_core::Notification n;
   p.Run([&n] { n.Notify(); });
   n.WaitForNotification();
   p.Quiesce();
 }
 
-TEST(ThreadPoolTest, CanDestroyInsideClosure) {
-  auto p = std::make_shared<ThreadPool>();
+TYPED_TEST(ThreadPoolTest, CanDestroyInsideClosure) {
+  auto* p = new TypeParam(8);
   grpc_core::Notification n;
   p->Run([p, &n]() mutable {
-    std::this_thread::sleep_for(std::chrono::seconds(1));
     // This should delete the thread pool and not deadlock
     p->Quiesce();
-    p.reset();
+    delete p;
     n.Notify();
   });
-  // Make sure we're not keeping the thread pool alive from outside the loop
-  p.reset();
   n.WaitForNotification();
 }
 
-TEST(ThreadPoolTest, CanSurviveFork) {
-  ThreadPool p;
-  grpc_core::Notification n;
-  gpr_log(GPR_INFO, "run callback 1");
-  p.Run([&n, &p] {
+TYPED_TEST(ThreadPoolTest, CanSurviveFork) {
+  TypeParam p(8);
+  grpc_core::Notification inner_closure_ran;
+  p.Run([&inner_closure_ran, &p] {
     std::this_thread::sleep_for(std::chrono::seconds(1));
-    gpr_log(GPR_INFO, "run callback 2");
-    p.Run([&n] {
+    p.Run([&inner_closure_ran] {
       std::this_thread::sleep_for(std::chrono::seconds(1));
-      gpr_log(GPR_INFO, "notify");
-      n.Notify();
+      inner_closure_ran.Notify();
     });
   });
-  gpr_log(GPR_INFO, "prepare fork");
+  // simulate a fork and watch the child process
   p.PrepareFork();
-  gpr_log(GPR_INFO, "postfork child");
   p.PostforkChild();
-  n.WaitForNotification();
+  inner_closure_ran.WaitForNotification();
   grpc_core::Notification n2;
-  gpr_log(GPR_INFO, "run callback 3");
-  p.Run([&n2] {
-    gpr_log(GPR_INFO, "notify");
-    n2.Notify();
-  });
-  gpr_log(GPR_INFO, "wait for notification");
+  p.Run([&n2] { n2.Notify(); });
   n2.WaitForNotification();
   p.Quiesce();
+}
+
+TYPED_TEST(ThreadPoolTest, ForkStressTest) {
+  // Runs a large number of closures and multiple simulated fork events,
+  // ensuring that only some fixed number of closures are executed between fork
+  // events.
+  //
+  // Why: Python relies on fork support, and fork behaves poorly in the presence
+  // of threads, but non-deterministically. gRPC has had problems in this space.
+  // This test exercises a subset of the fork logic, the pieces we can control
+  // without an actual OS fork.
+  constexpr int expected_runcount = 1000;
+  constexpr absl::Duration fork_freqency{absl::Milliseconds(50)};
+  constexpr int num_closures_between_forks{100};
+  TypeParam pool(8);
+  std::atomic<int> runcount{0};
+  std::atomic<int> fork_count{0};
+  std::function<void()> inner_fn;
+  inner_fn = [&]() {
+    auto curr_runcount = runcount.load(std::memory_order_relaxed);
+    // exit when the right number of closures have run, with some flex for
+    // relaxed atomics.
+    if (curr_runcount >= expected_runcount) return;
+    if (fork_count.load(std::memory_order_relaxed) *
+            num_closures_between_forks <=
+        curr_runcount) {
+      // skip incrementing, and schedule again.
+      pool.Run(inner_fn);
+      return;
+    }
+    runcount.fetch_add(1, std::memory_order_relaxed);
+  };
+  for (int i = 0; i < expected_runcount; i++) {
+    pool.Run(inner_fn);
+  }
+  // simulate multiple forks at a fixed frequency
+  int curr_runcount = 0;
+  while (curr_runcount < expected_runcount) {
+    absl::SleepFor(fork_freqency);
+    curr_runcount = runcount.load(std::memory_order_relaxed);
+    int curr_forkcount = fork_count.load(std::memory_order_relaxed);
+    if (curr_forkcount * num_closures_between_forks > curr_runcount) {
+      continue;
+    }
+    pool.PrepareFork();
+    pool.PostforkChild();
+    fork_count.fetch_add(1);
+  }
+  ASSERT_GE(fork_count.load(), expected_runcount / num_closures_between_forks);
+  // owners are the local pool, and the copy inside `inner_fn`.
+  pool.Quiesce();
+}
+
+TYPED_TEST(ThreadPoolTest, StartQuiesceRaceStressTest) {
+  // Repeatedly race Start and Quiesce against each other to ensure thread
+  // safety.
+  constexpr int iter_count = 500;
+  struct ThdState {
+    std::unique_ptr<TypeParam> pool;
+    int i;
+  };
+  for (int i = 0; i < iter_count; i++) {
+    ThdState state{std::make_unique<TypeParam>(8), i};
+    state.pool->PrepareFork();
+    grpc_core::Thread t1(
+        "t1",
+        [](void* arg) {
+          ThdState* state = static_cast<ThdState*>(arg);
+          state->i % 2 == 0 ? state->pool->Quiesce()
+                            : state->pool->PostforkParent();
+        },
+        &state, nullptr,
+        grpc_core::Thread::Options().set_tracked(false).set_joinable(true));
+    grpc_core::Thread t2(
+        "t2",
+        [](void* arg) {
+          ThdState* state = static_cast<ThdState*>(arg);
+          state->i % 2 == 1 ? state->pool->Quiesce()
+                            : state->pool->PostforkParent();
+        },
+        &state, nullptr,
+        grpc_core::Thread::Options().set_tracked(false).set_joinable(true));
+    t1.Start();
+    t2.Start();
+    t1.Join();
+    t2.Join();
+  }
 }
 
 void ScheduleSelf(ThreadPool* p) {
   p->Run([p] { ScheduleSelf(p); });
 }
 
-// This can be re-enabled if/when the thread pool is changed to quiesce
-// pre-fork. For now, it cannot get stuck because callback execution is
-// effectively paused until after the post-fork reboot.
-TEST(ThreadPoolDeathTest, DISABLED_CanDetectStucknessAtFork) {
-  ASSERT_DEATH_IF_SUPPORTED(
-      [] {
-        gpr_set_log_verbosity(GPR_LOG_SEVERITY_ERROR);
-        ThreadPool p;
-        ScheduleSelf(&p);
-        std::thread terminator([] {
-          std::this_thread::sleep_for(std::chrono::seconds(10));
-          abort();
-        });
-        p.PrepareFork();
-      }(),
-      "Waiting for thread pool to idle before forking");
-}
-
-void ScheduleTwiceUntilZero(ThreadPool* p, int n) {
+void ScheduleTwiceUntilZero(ThreadPool* p, std::atomic<int>& runcount, int n) {
+  runcount.fetch_add(1);
   if (n == 0) return;
-  p->Run([p, n] {
-    ScheduleTwiceUntilZero(p, n - 1);
-    ScheduleTwiceUntilZero(p, n - 1);
+  p->Run([p, &runcount, n] {
+    ScheduleTwiceUntilZero(p, runcount, n - 1);
+    ScheduleTwiceUntilZero(p, runcount, n - 1);
   });
 }
 
-TEST(ThreadPoolTest, CanStartLotsOfClosures) {
-  ThreadPool p;
+TYPED_TEST(ThreadPoolTest, CanStartLotsOfClosures) {
+  // TODO(hork): this is nerfed due to the original thread pool taking eons to
+  // finish running 2M closures in some cases (usually < 10s, sometimes over
+  // 90s). Reset the branch factor to 20 when all thread pool runtimes
+  // stabilize.
+  TypeParam p(8);
+  std::atomic<int> runcount{0};
   // Our first thread pool implementation tried to create ~1M threads for this
   // test.
-  ScheduleTwiceUntilZero(&p, 20);
+  int branch_factor = 18;
+  ScheduleTwiceUntilZero(&p, runcount, branch_factor);
   p.Quiesce();
+  ASSERT_EQ(runcount.load(), pow(2, branch_factor + 1) - 1);
+}
+
+class WorkStealingThreadPoolTest : public ::testing::Test {};
+
+// TODO(hork): This is currently a pathological case for the original thread
+// pool, it gets wedged in ~3% of runs when new threads fail to start. When that
+// is fixed, or the implementation is deleted, make this a typed test again.
+TEST_F(WorkStealingThreadPoolTest, ScalesWhenBackloggedFromGlobalQueue) {
+  int pool_thread_count = 8;
+  WorkStealingThreadPool p(pool_thread_count);
+  grpc_core::Notification signal;
+  // Ensures the pool is saturated before signaling closures to continue.
+  std::atomic<int> waiters{0};
+  std::atomic<bool> signaled{false};
+  for (int i = 0; i < pool_thread_count; i++) {
+    p.Run([&]() {
+      waiters.fetch_add(1);
+      while (!signaled.load()) {
+        signal.WaitForNotification();
+      }
+    });
+  }
+  while (waiters.load() != pool_thread_count) {
+    absl::SleepFor(absl::Milliseconds(50));
+  }
+  p.Run([&]() {
+    signaled.store(true);
+    signal.Notify();
+  });
+  p.Quiesce();
+}
+
+// TODO(hork): This is currently a pathological case for the original thread
+// pool, it gets wedged in ~3% of runs when new threads fail to start. When that
+// is fixed, or the implementation is deleted, make this a typed test again.
+TEST_F(WorkStealingThreadPoolTest,
+       ScalesWhenBackloggedFromSingleThreadLocalQueue) {
+  int pool_thread_count = 8;
+  WorkStealingThreadPool p(pool_thread_count);
+  grpc_core::Notification signal;
+  // Ensures the pool is saturated before signaling closures to continue.
+  std::atomic<int> waiters{0};
+  std::atomic<bool> signaled{false};
+  p.Run([&]() {
+    for (int i = 0; i < pool_thread_count; i++) {
+      p.Run([&]() {
+        waiters.fetch_add(1);
+        while (!signaled.load()) {
+          signal.WaitForNotification();
+        }
+      });
+    }
+    while (waiters.load() != pool_thread_count) {
+      absl::SleepFor(absl::Milliseconds(50));
+    }
+    p.Run([&]() {
+      signaled.store(true);
+      signal.Notify();
+    });
+  });
+  p.Quiesce();
+}
+
+// TODO(hork): This is currently a pathological case for the original thread
+// pool, it takes around 50s to run. When that is fixed, or the implementation
+// is deleted, make this a typed test again.
+TEST_F(WorkStealingThreadPoolTest, QuiesceRaceStressTest) {
+  int cycle_count = 333;
+  int thread_count = 8;
+  int run_count = thread_count * 2;
+  for (int i = 0; i < cycle_count; i++) {
+    WorkStealingThreadPool p(thread_count);
+    for (int j = 0; j < run_count; j++) {
+      p.Run([]() {});
+    }
+    p.Quiesce();
+  }
 }
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
 int main(int argc, char** argv) {
-  gpr_log_verbosity_init();
   ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+  grpc::testing::TestEnvironment env(&argc, argv);
+  grpc_init();
+  auto result = RUN_ALL_TESTS();
+  grpc_shutdown();
+  return result;
 }

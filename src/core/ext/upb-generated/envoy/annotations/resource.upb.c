@@ -7,40 +7,47 @@
  * regenerated. */
 
 #include <stddef.h>
-#include "upb/msg_internal.h"
+#include "upb/collections/array_internal.h"
+#include "upb/message/internal.h"
+#include "upb/mini_table/enum_internal.h"
 #include "envoy/annotations/resource.upb.h"
 #include "google/protobuf/descriptor.upb.h"
 
-#include "upb/port_def.inc"
+// Must be last.
+#include "upb/port/def.inc"
 
-static const upb_MiniTable_Field envoy_annotations_ResourceAnnotation__fields[1] = {
-  {1, UPB_SIZE(0, 0), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+static const upb_MiniTableField envoy_annotations_ResourceAnnotation__fields[1] = {
+  {1, 0, 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
 };
 
-const upb_MiniTable envoy_annotations_ResourceAnnotation_msginit = {
+const upb_MiniTable envoy_annotations_ResourceAnnotation_msg_init = {
   NULL,
   &envoy_annotations_ResourceAnnotation__fields[0],
-  UPB_SIZE(8, 16), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 16), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x000000003f00000a, &upb_pss_1bt},
+  })
 };
 
 static const upb_MiniTable *messages_layout[1] = {
-  &envoy_annotations_ResourceAnnotation_msginit,
+  &envoy_annotations_ResourceAnnotation_msg_init,
 };
 
-extern const upb_MiniTable envoy_annotations_ResourceAnnotation_msginit;
-extern const upb_MiniTable google_protobuf_ServiceOptions_msginit;
-const upb_MiniTable_Extension envoy_annotations_resource_ext = {
-  {265073217, UPB_SIZE(0, 0), UPB_SIZE(0, 0), 0, 11, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsExtension | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
-  &google_protobuf_ServiceOptions_msginit,
-  {.submsg = &envoy_annotations_ResourceAnnotation_msginit},
+extern const upb_MiniTable envoy_annotations_ResourceAnnotation_msg_init;
+extern const upb_MiniTable google_protobuf_ServiceOptions_msg_init;
+const upb_MiniTableExtension envoy_annotations_resource_ext = {
+  {265073217, 0, 0, 0, 11, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsExtension | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
+  &google_protobuf_ServiceOptions_msg_init,
+  {.submsg = &envoy_annotations_ResourceAnnotation_msg_init},
 
 };
 
-static const upb_MiniTable_Extension *extensions_layout[1] = {
+static const upb_MiniTableExtension *extensions_layout[1] = {
   &envoy_annotations_resource_ext,
 };
 
-const upb_MiniTable_File envoy_annotations_resource_proto_upb_file_layout = {
+const upb_MiniTableFile envoy_annotations_resource_proto_upb_file_layout = {
   messages_layout,
   NULL,
   extensions_layout,
@@ -49,5 +56,5 @@ const upb_MiniTable_File envoy_annotations_resource_proto_upb_file_layout = {
   1,
 };
 
-#include "upb/port_undef.inc"
+#include "upb/port/undef.inc"
 

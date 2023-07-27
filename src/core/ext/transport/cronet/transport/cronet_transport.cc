@@ -37,6 +37,7 @@
 #include "absl/types/optional.h"
 #include "third_party/objective_c/Cronet/bidirectional_stream_c.h"
 
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
@@ -1462,6 +1463,7 @@ static void perform_op(grpc_transport* /*gt*/, grpc_transport_op* /*op*/) {}
 
 static const grpc_transport_vtable grpc_cronet_vtable = {
     sizeof(stream_obj),
+    false,
     "cronet_http",
     init_stream,
     nullptr,

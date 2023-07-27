@@ -14,18 +14,28 @@
 # limitations under the License.
 #
 
+# TODO(jtattermusch): Remove the hack to workaround protobuf bug. See https://github.com/protocolbuffers/protobuf/issues/12439
+# Hack: protobuf currently doesn't declare it's absl dependencies when protobuf.pc pkgconfig file is used.
+PROTOBUF_ABSL_DEPS = absl_absl_check absl_absl_log absl_algorithm absl_base absl_bind_front absl_bits absl_btree absl_cleanup absl_cord absl_core_headers absl_debugging absl_die_if_null absl_dynamic_annotations absl_flags absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_layout absl_log_initialize absl_log_severity absl_memory absl_node_hash_map absl_node_hash_set absl_optional absl_span absl_status absl_statusor absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant
+# TODO(jtattermusch): Remove the hack to workaround protobuf/utf8_range bug. See https://github.com/protocolbuffers/utf8_range/issues/20
+# Hack: utf8_range (which is protobuf's dependency) currently doesn't have a pkgconfig file, so we need to explicitly
+# tweak the list of libraries to link against to fix the build.
+PROTOBUF_UTF8_RANGE_LINK_LIBS = -lutf8_validity
+
 HOST_SYSTEM = $(shell uname | cut -f 1 -d_)
 SYSTEM ?= $(HOST_SYSTEM)
 CXX = g++
-CPPFLAGS += `pkg-config --cflags protobuf grpc`
+CPPFLAGS += `pkg-config --cflags protobuf grpc absl_flags absl_flags_parse`
 CXXFLAGS += -std=c++14
 ifeq ($(SYSTEM),Darwin)
-LDFLAGS += -L/usr/local/lib `pkg-config --libs --static protobuf grpc++`\
+LDFLAGS += -L/usr/local/lib `pkg-config --libs --static protobuf grpc++ absl_flags absl_flags_parse $(PROTOBUF_ABSL_DEPS)`\
+           $(PROTOBUF_UTF8_RANGE_LINK_LIBS) \
            -pthread\
            -lgrpc++_reflection\
            -ldl
 else
-LDFLAGS += -L/usr/local/lib `pkg-config --libs --static protobuf grpc++`\
+LDFLAGS += -L/usr/local/lib `pkg-config --libs --static protobuf grpc++ absl_flags absl_flags_parse $(PROTOBUF_ABSL_DEPS)`\
+           $(PROTOBUF_UTF8_RANGE_LINK_LIBS) \
            -pthread\
            -Wl,--no-as-needed -lgrpc++_reflection -Wl,--as-needed\
            -ldl
@@ -38,7 +48,7 @@ PROTOS_PATH = ../../protos
 
 vpath %.proto $(PROTOS_PATH)
 
-all: system-check greeter_client greeter_server greeter_async_client greeter_async_client2 greeter_async_server greeter_callback_client greeter_callback_server 
+all: system-check greeter_client greeter_server greeter_async_client greeter_async_client2 greeter_async_server greeter_callback_client greeter_callback_server
 
 greeter_client: helloworld.pb.o helloworld.grpc.pb.o greeter_client.o
 	$(CXX) $^ $(LDFLAGS) -o $@
@@ -70,14 +80,14 @@ greeter_callback_server: helloworld.pb.o helloworld.grpc.pb.o greeter_callback_s
 	$(PROTOC) -I $(PROTOS_PATH) --cpp_out=. $<
 
 clean:
-	rm -f *.o *.pb.cc *.pb.h greeter_client greeter_server greeter_async_client greeter_async_client2 greeter_async_server greeter_callback_client greeter_callback_server 
+	rm -f *.o *.pb.cc *.pb.h greeter_client greeter_server greeter_async_client greeter_async_client2 greeter_async_server greeter_callback_client greeter_callback_server
 
 
 # The following is to test your system and ensure a smoother experience.
 # They are by no means necessary to actually compile a grpc-enabled software.
 
 PROTOC_CMD = which $(PROTOC)
-PROTOC_CHECK_CMD = $(PROTOC) --version | grep -q libprotoc.3
+PROTOC_CHECK_CMD = $(PROTOC) --version | grep -q 'libprotoc.3\|libprotoc [0-9][0-9]\.'
 PLUGIN_CHECK_CMD = which $(GRPC_CPP_PLUGIN)
 HAS_PROTOC = $(shell $(PROTOC_CMD) > /dev/null && echo true || echo false)
 ifeq ($(HAS_PROTOC),true)
@@ -96,11 +106,11 @@ system-check:
 ifneq ($(HAS_VALID_PROTOC),true)
 	@echo " DEPENDENCY ERROR"
 	@echo
-	@echo "You don't have protoc 3.0.0 installed in your path."
-	@echo "Please install Google protocol buffers 3.0.0 and its compiler."
+	@echo "You don't have protoc 3.0.0 or newer installed in your path."
+	@echo "Please install an up-to-date version of Google protocol buffers."
 	@echo "You can find it here:"
 	@echo
-	@echo "   https://github.com/protocolbuffers/protobuf/releases/tag/v3.0.0"
+	@echo "   https://github.com/protocolbuffers/protobuf/releases"
 	@echo
 	@echo "Here is what I get when trying to evaluate your version of protoc:"
 	@echo

@@ -33,12 +33,13 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -54,6 +55,7 @@
 #include "test/core/util/fake_udp_and_tcp_server.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+#include "test/cpp/util/test_config.h"
 
 #ifdef GPR_WINDOWS
 #include "src/core/lib/iomgr/sockaddr_windows.h"
@@ -187,7 +189,9 @@ void TestCancelActiveDNSQuery(ArgsStruct* args) {
 class CancelDuringAresQuery : public ::testing::Test {
  protected:
   static void SetUpTestSuite() {
-    GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, "ares");
+    grpc_core::ConfigVars::Overrides overrides;
+    overrides.dns_resolver = "ares";
+    grpc_core::ConfigVars::SetOverrides(overrides);
     // Sanity check the time that it takes to run the test
     // including the teardown time (the teardown
     // part of the test involves cancelling the DNS query,
@@ -308,8 +312,13 @@ void TestCancelDuringActiveQuery(
     // The DNS resolution timeout should fire well before the
     // RPC's deadline expires.
     expected_status_code = GRPC_STATUS_UNAVAILABLE;
-    expected_error_message_substring =
-        absl::StrCat("DNS resolution failed for ", name);
+    if (grpc_core::IsEventEngineDnsEnabled()) {
+      expected_error_message_substring =
+          absl::StrCat("errors resolving ", name);
+    } else {
+      expected_error_message_substring =
+          absl::StrCat("DNS resolution failed for ", name);
+    }
     grpc_arg arg;
     arg.type = GRPC_ARG_INTEGER;
     arg.key = const_cast<char*>(GRPC_ARG_DNS_ARES_QUERY_TIMEOUT_MS);
@@ -422,8 +431,9 @@ TEST_F(
 }  // namespace
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
+  grpc::testing::InitTest(&argc, &argv, true);
+  grpc::testing::TestEnvironment env(&argc, argv);
   auto result = RUN_ALL_TESTS();
   return result;
 }

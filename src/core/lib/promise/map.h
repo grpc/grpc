@@ -23,8 +23,6 @@
 #include <type_traits>
 #include <utility>
 
-#include "absl/types/variant.h"
-
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/poll.h"
 
@@ -41,13 +39,20 @@ class Map {
   Map(Promise promise, Fn fn)
       : promise_(std::move(promise)), fn_(std::move(fn)) {}
 
+  Map(const Map&) = delete;
+  Map& operator=(const Map&) = delete;
+  // NOLINTNEXTLINE(performance-noexcept-move-constructor): clang6 bug
+  Map(Map&& other) = default;
+  // NOLINTNEXTLINE(performance-noexcept-move-constructor): clang6 bug
+  Map& operator=(Map&& other) = default;
+
   using PromiseResult = typename PromiseLike<Promise>::Result;
   using Result =
       RemoveCVRef<decltype(std::declval<Fn>()(std::declval<PromiseResult>()))>;
 
   Poll<Result> operator()() {
     Poll<PromiseResult> r = promise_();
-    if (auto* p = absl::get_if<kPollReadyIdx>(&r)) {
+    if (auto* p = r.value_if_ready()) {
       return fn_(std::move(*p));
     }
     return Pending();

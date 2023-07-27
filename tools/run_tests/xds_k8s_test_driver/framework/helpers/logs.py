@@ -21,7 +21,7 @@ from absl import logging
 
 def _ensure_flags_parsed() -> None:
     if not flags.FLAGS.is_parsed():
-        raise flags.UnparsedFlagAccessError('Must initialize absl flags first.')
+        raise flags.UnparsedFlagAccessError("Must initialize absl flags first.")
 
 
 @functools.lru_cache(None)
@@ -35,9 +35,9 @@ def log_get_root_dir() -> pathlib.Path:
 def log_dir_mkdir(name: str) -> pathlib.Path:
     """Creates and returns a subdir with the given name in the log folder."""
     if len(pathlib.Path(name).parts) != 1:
-        raise ValueError(f'Dir name must be a single component; got: {name}')
+        raise ValueError(f"Dir name must be a single component; got: {name}")
     if ".." in name:
-        raise ValueError(f'Dir name must not be above the log root.')
+        raise ValueError(f"Dir name must not be above the log root.")
     log_subdir = log_get_root_dir() / name
     if log_subdir.exists() and log_subdir.is_dir():
         logging.debug("Using existing log subdir: %s", log_subdir)

@@ -23,7 +23,8 @@
 
 #include <grpc/event_engine/event_engine.h>
 
-#include "src/core/lib/event_engine/executor/executor.h"
+#include "src/core/lib/event_engine/thread_pool/thread_pool.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_event_engine {
@@ -31,39 +32,47 @@ namespace experimental {
 
 class WinSocket {
  public:
+  struct OverlappedResult {
+    int wsa_error;
+    DWORD bytes_transferred;
+  };
+
   // State related to a Read or Write socket operation
   class OpState {
    public:
     explicit OpState(WinSocket* win_socket) noexcept;
     // Signal a result has returned
     // If a callback is already primed for notification, it will be executed via
-    // the WinSocket's Executor. Otherwise, a "pending iocp" flag will
+    // the WinSocket's ThreadPool. Otherwise, a "pending iocp" flag will
     // be set.
     void SetReady();
     // Set error results for a completed op
     void SetError(int wsa_error);
-    // Retrieve results of overlapped operation (via Winsock API)
+    // Set an OverlappedResult. Useful when WSARecv returns immediately.
+    void SetResult(OverlappedResult result);
+    // Retrieve the results of an overlapped operation (via Winsock API) and
+    // store them locally.
     void GetOverlappedResult();
+    // Retrieve the results of an overlapped operation (via Winsock API) and
+    // store them locally. This overload allows acceptance of connections on new
+    // sockets.
+    void GetOverlappedResult(SOCKET sock);
+    // Retrieve the cached result from GetOverlappedResult
+    const OverlappedResult& result() const { return result_; }
     // OVERLAPPED, needed for Winsock API calls
     LPOVERLAPPED overlapped() { return &overlapped_; }
-    // Data from the previous operation, set via GetOverlappedResult
-    DWORD bytes_transferred() const { return bytes_transferred_; }
-    // Previous error if set.
-    int wsa_error() const { return wsa_error_; }
-    EventEngine::Closure* closure() { return closure_; }
 
    private:
     friend class WinSocket;
 
     OVERLAPPED overlapped_;
     WinSocket* win_socket_ = nullptr;
-    EventEngine::Closure* closure_ = nullptr;
+    std::atomic<EventEngine::Closure*> closure_{nullptr};
     bool has_pending_iocp_ = false;
-    DWORD bytes_transferred_;
-    int wsa_error_;
+    OverlappedResult result_;
   };
 
-  WinSocket(SOCKET socket, Executor* executor) noexcept;
+  WinSocket(SOCKET socket, ThreadPool* thread_pool) noexcept;
   ~WinSocket();
   // Calling NotifyOnRead means either of two things:
   //  - The IOCP already completed in the background, and we need to call
@@ -71,14 +80,15 @@ class WinSocket {
   //  - The IOCP hasn't completed yet, and we're queuing it for later.
   void NotifyOnRead(EventEngine::Closure* on_read);
   void NotifyOnWrite(EventEngine::Closure* on_write);
-  void SetReadable();
-  void SetWritable();
-  // Schedule a shutdown of the socket operations. Will call the pending
-  // operations to abort them. We need to do that this way because of the
-  // various callsites of that function, which happens to be in various
-  // mutex hold states, and that'd be unsafe to call them directly.
-  void MaybeShutdown(absl::Status why);
   bool IsShutdown();
+  // Shutdown socket operations, but do not delete the WinSocket.
+  // Connections will be disconnected, and the socket will be closed.
+  // If the socket is managed by a shared_ptr (most should be), then the
+  // WinSocket will be deleted when the last outstanding overlapped event comes
+  // back.
+  void Shutdown();
+  void Shutdown(const grpc_core::DebugLocation& location,
+                absl::string_view reason);
 
   // Return the appropriate OpState for a given OVERLAPPED
   // Returns nullptr if the overlapped does not match either read or write ops.
@@ -87,14 +97,14 @@ class WinSocket {
   OpState* read_info() { return &read_info_; }
   OpState* write_info() { return &write_info_; }
   // Accessor method for underlying socket
-  SOCKET socket();
+  SOCKET raw_socket();
 
  private:
   void NotifyOnReady(OpState& info, EventEngine::Closure* closure);
 
   SOCKET socket_;
   std::atomic<bool> is_shutdown_{false};
-  Executor* executor_;
+  ThreadPool* thread_pool_;
   // These OpStates are effectively synchronized using their respective
   // OVERLAPPED structures and the Overlapped I/O APIs. For example, OpState
   // users should not attempt to read their bytes_transeferred until

@@ -451,7 +451,8 @@ PHP_METHOD(Call, startBatch) {
     op_num++;
   PHP_GRPC_HASH_FOREACH_END()
 
-  error = grpc_call_start_batch(call->wrapped, ops, op_num, call->wrapped,
+  grpc_call *wrapped = call->wrapped;
+  error = grpc_call_start_batch(wrapped, ops, op_num, wrapped,
                                 NULL);
   if (error != GRPC_CALL_OK) {
     zend_throw_exception(spl_ce_LogicException,
@@ -459,7 +460,7 @@ PHP_METHOD(Call, startBatch) {
                          (long)error TSRMLS_CC);
     goto cleanup;
   }
-  grpc_completion_queue_pluck(completion_queue, call->wrapped,
+  grpc_completion_queue_pluck(completion_queue, wrapped,
                               gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
   zval *recv_md;
   for (int i = 0; i < op_num; i++) {

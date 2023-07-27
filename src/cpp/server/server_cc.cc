@@ -33,6 +33,7 @@
 
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
@@ -247,18 +248,16 @@ void ServerInterface::RegisteredAsyncRequest::IssueRequest(
 ServerInterface::GenericAsyncRequest::GenericAsyncRequest(
     ServerInterface* server, GenericServerContext* context,
     internal::ServerAsyncStreamingInterface* stream, CompletionQueue* call_cq,
-    ServerCompletionQueue* notification_cq, void* tag, bool delete_on_finalize)
+    ServerCompletionQueue* notification_cq, void* tag, bool delete_on_finalize,
+    bool issue_request)
     : BaseAsyncRequest(server, context, stream, call_cq, notification_cq, tag,
                        delete_on_finalize) {
   grpc_call_details_init(&call_details_);
   GPR_ASSERT(notification_cq);
   GPR_ASSERT(call_cq);
-  // The following call_start_batch is internally-generated so no need for an
-  // explanatory log on failure.
-  GPR_ASSERT(grpc_server_request_call(server->server(), &call_, &call_details_,
-                                      context->client_metadata_.arr(),
-                                      call_cq->cq(), notification_cq->cq(),
-                                      this) == GRPC_CALL_OK);
+  if (issue_request) {
+    IssueRequest();
+  }
 }
 
 bool ServerInterface::GenericAsyncRequest::FinalizeResult(void** tag,
@@ -284,6 +283,15 @@ bool ServerInterface::GenericAsyncRequest::FinalizeResult(void** tag,
           internal::RpcMethod::BIDI_STREAMING,
           *server_->interceptor_creators()));
   return BaseAsyncRequest::FinalizeResult(tag, status);
+}
+
+void ServerInterface::GenericAsyncRequest::IssueRequest() {
+  // The following call_start_batch is internally-generated so no need for an
+  // explanatory log on failure.
+  GPR_ASSERT(grpc_server_request_call(server_->server(), &call_, &call_details_,
+                                      context_->client_metadata_.arr(),
+                                      call_cq_->cq(), notification_cq_->cq(),
+                                      this) == GRPC_CALL_OK);
 }
 
 namespace {
@@ -325,7 +333,11 @@ class Server::UnimplementedAsyncRequest final
   UnimplementedAsyncRequest(ServerInterface* server,
                             grpc::ServerCompletionQueue* cq)
       : GenericAsyncRequest(server, &server_context_, &generic_stream_, cq, cq,
-                            nullptr, false) {}
+                            /*tag=*/nullptr, /*delete_on_finalize=*/false,
+                            /*issue_request=*/false) {
+    // Issue request here instead of the base class to prevent race on vptr.
+    IssueRequest();
+  }
 
   bool FinalizeResult(void** tag, bool* status) override;
 

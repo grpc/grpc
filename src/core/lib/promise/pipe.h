@@ -25,7 +25,6 @@
 #include <type_traits>
 #include <utility>
 
-#include "absl/base/attributes.h"
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
@@ -39,7 +38,6 @@
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/interceptor_list.h"
-#include "src/core/lib/promise/intra_activity_waiter.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/seq.h"
@@ -160,9 +158,11 @@ class Center : public InterceptorList<T> {
       case ValueState::kClosed:
       case ValueState::kReadyClosed:
       case ValueState::kCancelled:
+      case ValueState::kWaitingForAckAndClosed:
         return false;
       case ValueState::kReady:
       case ValueState::kAcked:
+      case ValueState::kWaitingForAck:
         return on_empty_.pending();
       case ValueState::kEmpty:
         value_state_ = ValueState::kReady;
@@ -180,11 +180,14 @@ class Center : public InterceptorList<T> {
     GPR_DEBUG_ASSERT(refs_ != 0);
     switch (value_state_) {
       case ValueState::kClosed:
-      case ValueState::kReadyClosed:
+        return true;
       case ValueState::kCancelled:
         return false;
       case ValueState::kReady:
+      case ValueState::kReadyClosed:
       case ValueState::kEmpty:
+      case ValueState::kWaitingForAck:
+      case ValueState::kWaitingForAckAndClosed:
         return on_empty_.pending();
       case ValueState::kAcked:
         value_state_ = ValueState::kEmpty;
@@ -206,12 +209,14 @@ class Center : public InterceptorList<T> {
     switch (value_state_) {
       case ValueState::kEmpty:
       case ValueState::kAcked:
+      case ValueState::kWaitingForAck:
+      case ValueState::kWaitingForAckAndClosed:
         return on_full_.pending();
       case ValueState::kReadyClosed:
-        this->ResetInterceptorList();
-        value_state_ = ValueState::kClosed;
-        ABSL_FALLTHROUGH_INTENDED;
+        value_state_ = ValueState::kWaitingForAckAndClosed;
+        return std::move(value_);
       case ValueState::kReady:
+        value_state_ = ValueState::kWaitingForAck;
         return std::move(value_);
       case ValueState::kClosed:
       case ValueState::kCancelled:
@@ -220,18 +225,89 @@ class Center : public InterceptorList<T> {
     GPR_UNREACHABLE_CODE(return absl::nullopt);
   }
 
+  // Check if the pipe is closed for sending (if there is a value still queued
+  // but the pipe is closed, reports closed).
+  Poll<bool> PollClosedForSender() {
+    if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_INFO, "%s", DebugOpString("PollClosedForSender").c_str());
+    }
+    GPR_DEBUG_ASSERT(refs_ != 0);
+    switch (value_state_) {
+      case ValueState::kEmpty:
+      case ValueState::kAcked:
+      case ValueState::kReady:
+      case ValueState::kWaitingForAck:
+        return on_closed_.pending();
+      case ValueState::kWaitingForAckAndClosed:
+      case ValueState::kReadyClosed:
+      case ValueState::kClosed:
+        return false;
+      case ValueState::kCancelled:
+        return true;
+    }
+    GPR_UNREACHABLE_CODE(return true);
+  }
+
+  // Check if the pipe is closed for receiving (if there is a value still queued
+  // but the pipe is closed, reports open).
+  Poll<bool> PollClosedForReceiver() {
+    if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_INFO, "%s", DebugOpString("PollClosedForReceiver").c_str());
+    }
+    GPR_DEBUG_ASSERT(refs_ != 0);
+    switch (value_state_) {
+      case ValueState::kEmpty:
+      case ValueState::kAcked:
+      case ValueState::kReady:
+      case ValueState::kReadyClosed:
+      case ValueState::kWaitingForAck:
+      case ValueState::kWaitingForAckAndClosed:
+        return on_closed_.pending();
+      case ValueState::kClosed:
+        return false;
+      case ValueState::kCancelled:
+        return true;
+    }
+    GPR_UNREACHABLE_CODE(return true);
+  }
+
+  Poll<Empty> PollEmpty() {
+    if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_INFO, "%s", DebugOpString("PollEmpty").c_str());
+    }
+    GPR_DEBUG_ASSERT(refs_ != 0);
+    switch (value_state_) {
+      case ValueState::kReady:
+      case ValueState::kReadyClosed:
+        return on_empty_.pending();
+      case ValueState::kWaitingForAck:
+      case ValueState::kWaitingForAckAndClosed:
+      case ValueState::kAcked:
+      case ValueState::kEmpty:
+      case ValueState::kClosed:
+      case ValueState::kCancelled:
+        return Empty{};
+    }
+    GPR_UNREACHABLE_CODE(return Empty{});
+  }
+
   void AckNext() {
     if (grpc_trace_promise_primitives.enabled()) {
       gpr_log(GPR_INFO, "%s", DebugOpString("AckNext").c_str());
     }
     switch (value_state_) {
       case ValueState::kReady:
+      case ValueState::kWaitingForAck:
         value_state_ = ValueState::kAcked;
         on_empty_.Wake();
         break;
       case ValueState::kReadyClosed:
+      case ValueState::kWaitingForAckAndClosed:
         this->ResetInterceptorList();
         value_state_ = ValueState::kClosed;
+        on_closed_.Wake();
+        on_empty_.Wake();
+        on_full_.Wake();
         break;
       case ValueState::kClosed:
       case ValueState::kCancelled:
@@ -251,14 +327,22 @@ class Center : public InterceptorList<T> {
       case ValueState::kAcked:
         this->ResetInterceptorList();
         value_state_ = ValueState::kClosed;
+        on_empty_.Wake();
         on_full_.Wake();
+        on_closed_.Wake();
         break;
       case ValueState::kReady:
         value_state_ = ValueState::kReadyClosed;
+        on_closed_.Wake();
+        break;
+      case ValueState::kWaitingForAck:
+        value_state_ = ValueState::kWaitingForAckAndClosed;
+        on_closed_.Wake();
         break;
       case ValueState::kReadyClosed:
       case ValueState::kClosed:
       case ValueState::kCancelled:
+      case ValueState::kWaitingForAckAndClosed:
         break;
     }
   }
@@ -272,13 +356,15 @@ class Center : public InterceptorList<T> {
       case ValueState::kAcked:
       case ValueState::kReady:
       case ValueState::kReadyClosed:
+      case ValueState::kWaitingForAck:
+      case ValueState::kWaitingForAckAndClosed:
         this->ResetInterceptorList();
         value_state_ = ValueState::kCancelled;
+        on_empty_.Wake();
         on_full_.Wake();
+        on_closed_.Wake();
         break;
       case ValueState::kClosed:
-        value_state_ = ValueState::kCancelled;
-        break;
       case ValueState::kCancelled:
         break;
     }
@@ -291,8 +377,8 @@ class Center : public InterceptorList<T> {
 
   std::string DebugTag() {
     if (auto* activity = Activity::current()) {
-      return absl::StrCat(activity->DebugTag(), " PIPE[0x",
-                          reinterpret_cast<uintptr_t>(this), "]: ");
+      return absl::StrCat(activity->DebugTag(), " PIPE[0x", absl::Hex(this),
+                          "]: ");
     } else {
       return absl::StrCat("PIPE[0x", reinterpret_cast<uintptr_t>(this), "]: ");
     }
@@ -305,6 +391,8 @@ class Center : public InterceptorList<T> {
     kEmpty,
     // Value has been pushed but not acked, it's possible to receive.
     kReady,
+    // Value has been read and not acked, both send/receive blocked until ack.
+    kWaitingForAck,
     // Value has been received and acked, we can unblock senders and transition
     // to empty.
     kAcked,
@@ -313,6 +401,9 @@ class Center : public InterceptorList<T> {
     // Pipe is closed successfully, no more values can be sent
     // (but one value is queued and ready to be received)
     kReadyClosed,
+    // Pipe is closed successfully, no more values can be sent
+    // (but one value is queued and waiting to be acked)
+    kWaitingForAckAndClosed,
     // Pipe is closed unsuccessfully, no more values can be sent
     kCancelled,
   };
@@ -321,7 +412,8 @@ class Center : public InterceptorList<T> {
     return absl::StrCat(DebugTag(), op, " refs=", refs_,
                         " value_state=", ValueStateName(value_state_),
                         " on_empty=", on_empty_.DebugString().c_str(),
-                        " on_full=", on_full_.DebugString().c_str());
+                        " on_full=", on_full_.DebugString().c_str(),
+                        " on_closed=", on_closed_.DebugString().c_str());
   }
 
   static const char* ValueStateName(ValueState state) {
@@ -336,6 +428,10 @@ class Center : public InterceptorList<T> {
         return "Closed";
       case ValueState::kReadyClosed:
         return "ReadyClosed";
+      case ValueState::kWaitingForAck:
+        return "WaitingForAck";
+      case ValueState::kWaitingForAckAndClosed:
+        return "WaitingForAckAndClosed";
       case ValueState::kCancelled:
         return "Cancelled";
     }
@@ -349,6 +445,7 @@ class Center : public InterceptorList<T> {
   ValueState value_state_;
   IntraActivityWaiter on_empty_;
   IntraActivityWaiter on_full_;
+  IntraActivityWaiter on_closed_;
 
   // Make failure to destruct show up in ASAN builds.
 #ifndef NDEBUG
@@ -380,6 +477,13 @@ class PipeSender {
     }
   }
 
+  void CloseWithError() {
+    if (center_ != nullptr) {
+      center_->MarkCancelled();
+      center_.reset();
+    }
+  }
+
   void Swap(PipeSender<T>* other) { std::swap(center_, other->center_); }
 
   // Send a single message along the pipe.
@@ -388,11 +492,25 @@ class PipeSender {
   // receiver is either closed or able to receive another message.
   PushType Push(T value);
 
+  // Return a promise that resolves when the receiver is closed.
+  // The resolved value is a bool - true if the pipe was cancelled, false if it
+  // was closed successfully.
+  // Checks closed from the senders perspective: that is, if there is a value in
+  // the pipe but the pipe is closed, reports closed.
+  auto AwaitClosed() {
+    return [center = center_]() { return center->PollClosedForSender(); };
+  }
+
+  // Interject PromiseFactory f into the pipeline.
+  // f will be called with the current value traversing the pipe, and should
+  // return a value to replace it with.
+  // Interjects at the Push end of the pipe.
   template <typename Fn>
   void InterceptAndMap(Fn f, DebugLocation from = {}) {
     center_->PrependMap(std::move(f), from);
   }
 
+  // Per above, but calls cleanup_fn when the pipe is closed.
   template <typename Fn, typename OnHalfClose>
   void InterceptAndMap(Fn f, OnHalfClose cleanup_fn, DebugLocation from = {}) {
     center_->PrependMapWithCleanup(std::move(f), std::move(cleanup_fn), from);
@@ -409,6 +527,31 @@ class PipeSender {
 #endif
 };
 
+template <typename T>
+class PipeReceiver;
+
+namespace pipe_detail {
+
+// Implementation of PipeReceiver::Next promise.
+template <typename T>
+class Next {
+ public:
+  Next(const Next&) = delete;
+  Next& operator=(const Next&) = delete;
+  Next(Next&& other) noexcept = default;
+  Next& operator=(Next&& other) noexcept = default;
+
+  Poll<absl::optional<T>> operator()() { return center_->Next(); }
+
+ private:
+  friend class PipeReceiver<T>;
+  explicit Next(RefCountedPtr<Center<T>> center) : center_(std::move(center)) {}
+
+  RefCountedPtr<Center<T>> center_;
+};
+
+}  // namespace pipe_detail
+
 // Receive end of a Pipe.
 template <typename T>
 class PipeReceiver {
@@ -418,7 +561,7 @@ class PipeReceiver {
   PipeReceiver(PipeReceiver&& other) noexcept = default;
   PipeReceiver& operator=(PipeReceiver&& other) noexcept = default;
   ~PipeReceiver() {
-    if (center_ != nullptr) center_->MarkClosed();
+    if (center_ != nullptr) center_->MarkCancelled();
   }
 
   void Swap(PipeReceiver<T>* other) { std::swap(center_, other->center_); }
@@ -428,13 +571,62 @@ class PipeReceiver {
   // message was received, or no value if the other end of the pipe was closed.
   // Blocks the promise until the receiver is either closed or a message is
   // available.
-  auto Next();
+  auto Next() {
+    return Seq(
+        pipe_detail::Next<T>(center_->Ref()),
+        [center = center_->Ref()](absl::optional<T> value) {
+          bool open = value.has_value();
+          bool cancelled = center->cancelled();
+          return If(
+              open,
+              [center = std::move(center), value = std::move(value)]() mutable {
+                auto run = center->Run(std::move(value));
+                return Map(std::move(run),
+                           [center = std::move(center)](
+                               absl::optional<T> value) mutable {
+                             if (value.has_value()) {
+                               center->value() = std::move(*value);
+                               return NextResult<T>(std::move(center));
+                             } else {
+                               center->MarkCancelled();
+                               return NextResult<T>(true);
+                             }
+                           });
+              },
+              [cancelled]() { return NextResult<T>(cancelled); });
+        });
+  }
 
+  // Return a promise that resolves when the receiver is closed.
+  // The resolved value is a bool - true if the pipe was cancelled, false if it
+  // was closed successfully.
+  // Checks closed from the receivers perspective: that is, if there is a value
+  // in the pipe but the pipe is closed, reports open until that value is read.
+  auto AwaitClosed() {
+    return [center = center_]() { return center->PollClosedForReceiver(); };
+  }
+
+  auto AwaitEmpty() {
+    return [center = center_]() { return center->PollEmpty(); };
+  }
+
+  void CloseWithError() {
+    if (center_ != nullptr) {
+      center_->MarkCancelled();
+      center_.reset();
+    }
+  }
+
+  // Interject PromiseFactory f into the pipeline.
+  // f will be called with the current value traversing the pipe, and should
+  // return a value to replace it with.
+  // Interjects at the Next end of the pipe.
   template <typename Fn>
   void InterceptAndMap(Fn f, DebugLocation from = {}) {
     center_->AppendMap(std::move(f), from);
   }
 
+  // Per above, but calls cleanup_fn when the pipe is closed.
   template <typename Fn, typename OnHalfClose>
   void InterceptAndMapWithHalfClose(Fn f, OnHalfClose cleanup_fn,
                                     DebugLocation from = {}) {
@@ -459,15 +651,22 @@ template <typename T>
 class Push {
  public:
   Push(const Push&) = delete;
+
   Push& operator=(const Push&) = delete;
   Push(Push&& other) noexcept = default;
   Push& operator=(Push&& other) noexcept = default;
 
   Poll<bool> operator()() {
-    if (center_ == nullptr) return false;
+    if (center_ == nullptr) {
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_DEBUG, "%s Pipe push has a null center",
+                Activity::current()->DebugTag().c_str());
+      }
+      return false;
+    }
     if (auto* p = absl::get_if<T>(&state_)) {
       auto r = center_->Push(p);
-      if (auto* ok = absl::get_if<bool>(&r)) {
+      if (auto* ok = r.value_if_ready()) {
         state_.template emplace<AwaitingAck>();
         if (!*ok) return false;
       } else {
@@ -489,57 +688,12 @@ class Push {
   absl::variant<T, AwaitingAck> state_;
 };
 
-// Implementation of PipeReceiver::Next promise.
-template <typename T>
-class Next {
- public:
-  Next(const Next&) = delete;
-  Next& operator=(const Next&) = delete;
-  Next(Next&& other) noexcept = default;
-  Next& operator=(Next&& other) noexcept = default;
-
-  Poll<absl::optional<T>> operator()() { return center_->Next(); }
-
- private:
-  friend class PipeReceiver<T>;
-  explicit Next(RefCountedPtr<Center<T>> center) : center_(std::move(center)) {}
-
-  RefCountedPtr<Center<T>> center_;
-};
-
 }  // namespace pipe_detail
 
 template <typename T>
 pipe_detail::Push<T> PipeSender<T>::Push(T value) {
   return pipe_detail::Push<T>(center_ == nullptr ? nullptr : center_->Ref(),
                               std::move(value));
-}
-
-template <typename T>
-auto PipeReceiver<T>::Next() {
-  return Seq(
-      pipe_detail::Next<T>(center_->Ref()),
-      [center = center_->Ref()](absl::optional<T> value) {
-        bool open = value.has_value();
-        bool cancelled = center->cancelled();
-        return If(
-            open,
-            [center = std::move(center), value = std::move(value)]() mutable {
-              auto run_interceptors = center->Run(std::move(value));
-              return Map(std::move(run_interceptors),
-                         [center = std::move(center)](
-                             absl::optional<T> value) mutable {
-                           if (value.has_value()) {
-                             center->value() = std::move(*value);
-                             return NextResult<T>(std::move(center));
-                           } else {
-                             center->MarkCancelled();
-                             return NextResult<T>(true);
-                           }
-                         });
-            },
-            [cancelled]() { return NextResult<T>(cancelled); });
-      });
 }
 
 template <typename T>

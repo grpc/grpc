@@ -25,11 +25,11 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/credentials/tls/tls_credentials.h"
-#include "src/core/lib/security/security_connector/ssl_utils_config.h"
 #include "src/core/lib/security/security_connector/tls/tls_security_connector.h"
 #include "test/core/util/test_config.h"
 #include "test/core/util/tls_utils.h"
@@ -568,7 +568,9 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
-  GPR_GLOBAL_CONFIG_SET(grpc_default_ssl_roots_file_path, CA_CERT_PATH);
+  grpc_core::ConfigVars::Overrides overrides;
+  overrides.default_ssl_roots_file_path = CA_CERT_PATH;
+  grpc_core::ConfigVars::SetOverrides(overrides);
   ::testing::InitGoogleTest(&argc, argv);
   grpc_init();
   int ret = RUN_ALL_TESTS();

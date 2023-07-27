@@ -30,6 +30,8 @@
 #include <grpcpp/ext/server_load_reporting.h>
 #include <grpcpp/server_builder.h>
 
+#include "src/core/ext/filters/client_channel/backup_poller.h"
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/proto/grpc/lb/v1/load_reporter.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -200,5 +202,10 @@ TEST_F(ServerLoadReportingEnd2endTest, BasicReport) {
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
+  // Make the backup poller poll very frequently in order to pick up
+  // updates from all the subchannels's FDs.
+  grpc_core::ConfigVars::Overrides config_overrides;
+  config_overrides.client_channel_backup_poll_interval_ms = 1;
+  grpc_core::ConfigVars::SetOverrides(config_overrides);
   return RUN_ALL_TESTS();
 }

@@ -28,6 +28,7 @@
 #include "absl/base/attributes.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
 
 #include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
@@ -41,6 +42,7 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/slice/slice.h"
 
 static uint8_t* fill_header(uint8_t* out, uint32_t length, uint8_t flags) {
   *out++ = static_cast<uint8_t>(length >> 16);
@@ -229,7 +231,8 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
           parser->incoming_settings[id] = parser->value;
           if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
             gpr_log(GPR_INFO, "CHTTP2:%s:%s: got setting %s = %d",
-                    t->is_client ? "CLI" : "SVR", t->peer_string.c_str(),
+                    t->is_client ? "CLI" : "SVR",
+                    std::string(t->peer_string.as_string_view()).c_str(),
                     sp->name, parser->value);
           }
         } else if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {

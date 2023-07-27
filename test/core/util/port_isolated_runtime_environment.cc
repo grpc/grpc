@@ -54,7 +54,7 @@ static int grpc_pick_unused_port_or_die_impl(void) {
          (s_initial_offset + orig_counter_val) % (MAX_PORT - MIN_PORT + 1);
 }
 
-int grpc_pick_unused_port_or_die(void) {
+static int isolated_pick_unused_port_or_die(void) {
   while (true) {
     int port = grpc_pick_unused_port_or_die_impl();
     // 5985 cannot be bound on Windows RBE and results in
@@ -67,6 +67,13 @@ int grpc_pick_unused_port_or_die(void) {
   }
 }
 
-void grpc_recycle_unused_port(int port) { (void)port; }
+static void isolated_recycle_unused_port(int port) { (void)port; }
+
+// We don't actually use prev_fns for anything, but need to save it in order to
+// be able to call grpc_set_pick_port_functions() to override defaults for this
+// environment.
+static const auto prev_fns =
+    grpc_set_pick_port_functions(grpc_pick_port_functions{
+        isolated_pick_unused_port_or_die, isolated_recycle_unused_port});
 
 #endif  // GRPC_PORT_ISOLATED_RUNTIME

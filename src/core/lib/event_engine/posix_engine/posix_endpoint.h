@@ -472,12 +472,12 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
       grpc_event_engine::experimental::MemoryAllocator&& allocator,
       const PosixTcpOptions& options);
   ~PosixEndpointImpl() override;
-  void Read(
+  bool Read(
       absl::AnyInvocable<void(absl::Status)> on_read,
       grpc_event_engine::experimental::SliceBuffer* buffer,
       const grpc_event_engine::experimental::EventEngine::Endpoint::ReadArgs*
           args);
-  void Write(
+  bool Write(
       absl::AnyInvocable<void(absl::Status)> on_writable,
       grpc_event_engine::experimental::SliceBuffer* data,
       const grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs*
@@ -493,6 +493,8 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
 
   int GetWrappedFd() { return fd_; }
 
+  bool CanTrackErrors() const { return poller_->CanTrackErrors(); }
+
   void MaybeShutdown(
       absl::Status why,
       absl::AnyInvocable<void(absl::StatusOr<int> release_fd)> on_release_fd);
@@ -501,7 +503,9 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
   void UpdateRcvLowat() ABSL_EXCLUSIVE_LOCKS_REQUIRED(read_mu_);
   void HandleWrite(absl::Status status);
   void HandleError(absl::Status status);
-  void HandleRead(absl::Status status);
+  void HandleRead(absl::Status status) ABSL_NO_THREAD_SAFETY_ANALYSIS;
+  bool HandleReadLocked(absl::Status& status)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(read_mu_);
   void MaybeMakeReadSlices() ABSL_EXCLUSIVE_LOCKS_REQUIRED(read_mu_);
   bool TcpDoRead(absl::Status& status) ABSL_EXCLUSIVE_LOCKS_REQUIRED(read_mu_);
   void FinishEstimate();
@@ -608,20 +612,20 @@ class PosixEndpoint : public PosixEndpointWithFdSupport {
       : impl_(new PosixEndpointImpl(handle, on_shutdown, std::move(engine),
                                     std::move(allocator), options)) {}
 
-  void Read(
+  bool Read(
       absl::AnyInvocable<void(absl::Status)> on_read,
       grpc_event_engine::experimental::SliceBuffer* buffer,
       const grpc_event_engine::experimental::EventEngine::Endpoint::ReadArgs*
           args) override {
-    impl_->Read(std::move(on_read), buffer, args);
+    return impl_->Read(std::move(on_read), buffer, args);
   }
 
-  void Write(
+  bool Write(
       absl::AnyInvocable<void(absl::Status)> on_writable,
       grpc_event_engine::experimental::SliceBuffer* data,
       const grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs*
           args) override {
-    impl_->Write(std::move(on_writable), data, args);
+    return impl_->Write(std::move(on_writable), data, args);
   }
 
   const grpc_event_engine::experimental::EventEngine::ResolvedAddress&
@@ -634,6 +638,8 @@ class PosixEndpoint : public PosixEndpointWithFdSupport {
   }
 
   int GetWrappedFd() override { return impl_->GetWrappedFd(); }
+
+  bool CanTrackErrors() override { return impl_->CanTrackErrors(); }
 
   void Shutdown(absl::AnyInvocable<void(absl::StatusOr<int> release_fd)>
                     on_release_fd) override {
@@ -661,14 +667,14 @@ class PosixEndpoint : public PosixEndpointWithFdSupport {
  public:
   PosixEndpoint() = default;
 
-  void Read(absl::AnyInvocable<void(absl::Status)> /*on_read*/,
+  bool Read(absl::AnyInvocable<void(absl::Status)> /*on_read*/,
             grpc_event_engine::experimental::SliceBuffer* /*buffer*/,
             const grpc_event_engine::experimental::EventEngine::Endpoint::
                 ReadArgs* /*args*/) override {
     grpc_core::Crash("PosixEndpoint::Read not supported on this platform");
   }
 
-  void Write(absl::AnyInvocable<void(absl::Status)> /*on_writable*/,
+  bool Write(absl::AnyInvocable<void(absl::Status)> /*on_writable*/,
              grpc_event_engine::experimental::SliceBuffer* /*data*/,
              const grpc_event_engine::experimental::EventEngine::Endpoint::
                  WriteArgs* /*args*/) override {
@@ -689,6 +695,11 @@ class PosixEndpoint : public PosixEndpointWithFdSupport {
   int GetWrappedFd() override {
     grpc_core::Crash(
         "PosixEndpoint::GetWrappedFd not supported on this platform");
+  }
+
+  bool CanTrackErrors() override {
+    grpc_core::Crash(
+        "PosixEndpoint::CanTrackErrors not supported on this platform");
   }
 
   void Shutdown(absl::AnyInvocable<void(absl::StatusOr<int> release_fd)>

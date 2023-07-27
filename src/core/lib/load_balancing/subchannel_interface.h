@@ -97,6 +97,9 @@ class SubchannelInterface : public DualRefCounted<SubchannelInterface> {
   // Registers a new data watcher.
   virtual void AddDataWatcher(
       std::unique_ptr<DataWatcherInterface> watcher) = 0;
+
+  // Cancels a data watch.
+  virtual void CancelDataWatcher(DataWatcherInterface* watcher) = 0;
 };
 
 // A class that delegates to another subchannel, to be used in cases
@@ -124,6 +127,9 @@ class DelegatingSubchannel : public SubchannelInterface {
   void ResetBackoff() override { wrapped_subchannel_->ResetBackoff(); }
   void AddDataWatcher(std::unique_ptr<DataWatcherInterface> watcher) override {
     wrapped_subchannel_->AddDataWatcher(std::move(watcher));
+  }
+  void CancelDataWatcher(DataWatcherInterface* watcher) override {
+    wrapped_subchannel_->CancelDataWatcher(watcher);
   }
 
  private:

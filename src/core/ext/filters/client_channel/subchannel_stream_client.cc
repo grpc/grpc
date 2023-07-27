@@ -33,6 +33,7 @@
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/transport/error_utils.h"
 
@@ -42,6 +43,8 @@
 #define SUBCHANNEL_STREAM_RECONNECT_JITTER 0.2
 
 namespace grpc_core {
+
+using ::grpc_event_engine::experimental::EventEngine;
 
 //
 // SubchannelStreamClient
@@ -69,12 +72,11 @@ SubchannelStreamClient::SubchannelStreamClient(
               .set_multiplier(SUBCHANNEL_STREAM_RECONNECT_BACKOFF_MULTIPLIER)
               .set_jitter(SUBCHANNEL_STREAM_RECONNECT_JITTER)
               .set_max_backoff(Duration::Seconds(
-                  SUBCHANNEL_STREAM_RECONNECT_MAX_BACKOFF_SECONDS))) {
+                  SUBCHANNEL_STREAM_RECONNECT_MAX_BACKOFF_SECONDS))),
+      event_engine_(connected_subchannel_->args().GetObject<EventEngine>()) {
   if (GPR_UNLIKELY(tracer_ != nullptr)) {
     gpr_log(GPR_INFO, "%s %p: created SubchannelStreamClient", tracer_, this);
   }
-  GRPC_CLOSURE_INIT(&retry_timer_callback_, OnRetryTimer, this,
-                    grpc_schedule_on_exec_ctx);
   StartCall();
 }
 
@@ -94,8 +96,9 @@ void SubchannelStreamClient::Orphan() {
     MutexLock lock(&mu_);
     event_handler_.reset();
     call_state_.reset();
-    if (retry_timer_callback_pending_) {
-      grpc_timer_cancel(&retry_timer_);
+    if (retry_timer_handle_.has_value()) {
+      event_engine_->Cancel(*retry_timer_handle_);
+      retry_timer_handle_.reset();
     }
   }
   Unref(DEBUG_LOCATION, "orphan");
@@ -124,11 +127,10 @@ void SubchannelStreamClient::StartRetryTimerLocked() {
   if (event_handler_ != nullptr) {
     event_handler_->OnRetryTimerStartLocked(this);
   }
-  Timestamp next_try = retry_backoff_.NextAttemptTime();
+  const Duration timeout = retry_backoff_.NextAttemptTime() - Timestamp::Now();
   if (GPR_UNLIKELY(tracer_ != nullptr)) {
     gpr_log(GPR_INFO, "%s %p: SubchannelStreamClient health check call lost...",
             tracer_, this);
-    Duration timeout = next_try - Timestamp::Now();
     if (timeout > Duration::Zero()) {
       gpr_log(GPR_INFO, "%s %p: ... will retry in %" PRId64 "ms.", tracer_,
               this, timeout.millis());
@@ -136,28 +138,27 @@ void SubchannelStreamClient::StartRetryTimerLocked() {
       gpr_log(GPR_INFO, "%s %p: ... retrying immediately.", tracer_, this);
     }
   }
-  // Ref for callback, tracked manually.
-  Ref(DEBUG_LOCATION, "health_retry_timer").release();
-  retry_timer_callback_pending_ = true;
-  grpc_timer_init(&retry_timer_, next_try, &retry_timer_callback_);
+  retry_timer_handle_ = event_engine_->RunAfter(
+      timeout, [self = Ref(DEBUG_LOCATION, "health_retry_timer")]() mutable {
+        ApplicationCallbackExecCtx callback_exec_ctx;
+        ExecCtx exec_ctx;
+        self->OnRetryTimer();
+        self.reset(DEBUG_LOCATION, "health_retry_timer");
+      });
 }
 
-void SubchannelStreamClient::OnRetryTimer(void* arg, grpc_error_handle error) {
-  auto* self = static_cast<SubchannelStreamClient*>(arg);
-  {
-    MutexLock lock(&self->mu_);
-    self->retry_timer_callback_pending_ = false;
-    if (self->event_handler_ != nullptr && error.ok() &&
-        self->call_state_ == nullptr) {
-      if (GPR_UNLIKELY(self->tracer_ != nullptr)) {
-        gpr_log(GPR_INFO,
-                "%s %p: SubchannelStreamClient restarting health check call",
-                self->tracer_, self);
-      }
-      self->StartCallLocked();
+void SubchannelStreamClient::OnRetryTimer() {
+  MutexLock lock(&mu_);
+  if (event_handler_ != nullptr && retry_timer_handle_.has_value() &&
+      call_state_ == nullptr) {
+    if (GPR_UNLIKELY(tracer_ != nullptr)) {
+      gpr_log(GPR_INFO,
+              "%s %p: SubchannelStreamClient restarting health check call",
+              tracer_, this);
     }
+    StartCallLocked();
   }
-  self->Unref(DEBUG_LOCATION, "health_retry_timer");
+  retry_timer_handle_.reset();
 }
 
 //
@@ -242,7 +243,6 @@ void SubchannelStreamClient::CallState::StartCallLocked() {
   GPR_ASSERT(error.ok());
   payload_.send_initial_metadata.send_initial_metadata =
       &send_initial_metadata_;
-  payload_.send_initial_metadata.peer_string = nullptr;
   batch_.send_initial_metadata = true;
   // Add send_message op.
   send_message_.Append(Slice(
@@ -257,7 +257,6 @@ void SubchannelStreamClient::CallState::StartCallLocked() {
   payload_.recv_initial_metadata.recv_initial_metadata =
       &recv_initial_metadata_;
   payload_.recv_initial_metadata.trailing_metadata_available = nullptr;
-  payload_.recv_initial_metadata.peer_string = nullptr;
   // recv_initial_metadata_ready callback takes ref, handled manually.
   call_->Ref(DEBUG_LOCATION, "recv_initial_metadata_ready").release();
   payload_.recv_initial_metadata.recv_initial_metadata_ready =

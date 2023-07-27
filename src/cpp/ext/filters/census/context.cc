@@ -42,6 +42,11 @@ void GenerateServerContext(absl::string_view tracing, absl::string_view method,
   // Destruct the current CensusContext to free the Span memory before
   // overwriting it below.
   context->~CensusContext();
+  if (method.empty()) {
+    new (context) CensusContext(grpc::internal::OpenCensusRegistry::Get()
+                                    .PopulateTagMapWithConstantLabels({}));
+    return;
+  }
   SpanContext parent_ctx =
       opencensus::trace::propagation::FromGrpcTraceBinHeader(tracing);
   if (parent_ctx.IsValid()) {
@@ -62,6 +67,11 @@ void GenerateClientContext(absl::string_view method, CensusContext* ctxt,
   // Destruct the current CensusContext to free the Span memory before
   // overwriting it below.
   ctxt->~CensusContext();
+  if (method.empty()) {
+    new (ctxt) CensusContext(grpc::internal::OpenCensusRegistry::Get()
+                                 .PopulateTagMapWithConstantLabels({}));
+    return;
+  }
   if (parent_ctxt != nullptr) {
     SpanContext span_ctxt = parent_ctxt->Context();
     Span span = parent_ctxt->Span();

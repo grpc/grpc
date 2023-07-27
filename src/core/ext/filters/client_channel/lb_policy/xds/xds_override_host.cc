@@ -39,11 +39,10 @@
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 
-#include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/client_channel/lb_call_state_internal.h"
+#include "src/core/ext/filters/client_channel/client_channel_internal.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/stateful_session/stateful_session_filter.h"
 #include "src/core/ext/xds/xds_health_status.h"
@@ -66,6 +65,7 @@
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
+#include "src/core/lib/load_balancing/delegating_helper.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
@@ -95,12 +95,10 @@ struct PtrLessThan {
 };
 
 XdsHealthStatus GetAddressHealthStatus(const ServerAddress& address) {
-  auto attribute = address.GetAttribute(XdsEndpointHealthStatusAttribute::kKey);
-  if (attribute == nullptr) {
-    return XdsHealthStatus(XdsHealthStatus::HealthStatus::kUnknown);
-  }
-  return static_cast<const XdsEndpointHealthStatusAttribute*>(attribute)
-      ->status();
+  return XdsHealthStatus(static_cast<XdsHealthStatus::HealthStatus>(
+      address.args()
+          .GetInt(GRPC_ARG_XDS_HEALTH_STATUS)
+          .value_or(XdsHealthStatus::HealthStatus::kUnknown)));
 }
 
 //
@@ -215,27 +213,17 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
     XdsHealthStatusSet override_host_health_status_set_;
   };
 
-  class Helper : public ChannelControlHelper {
+  class Helper
+      : public ParentOwningDelegatingChannelControlHelper<XdsOverrideHostLb> {
    public:
     explicit Helper(RefCountedPtr<XdsOverrideHostLb> xds_override_host_policy)
-        : xds_override_host_policy_(std::move(xds_override_host_policy)) {}
-
-    ~Helper() override {
-      xds_override_host_policy_.reset(DEBUG_LOCATION, "Helper");
-    }
+        : ParentOwningDelegatingChannelControlHelper(
+              std::move(xds_override_host_policy)) {}
 
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
         ServerAddress address, const ChannelArgs& args) override;
     void UpdateState(grpc_connectivity_state state, const absl::Status& status,
                      RefCountedPtr<SubchannelPicker> picker) override;
-    void RequestReresolution() override;
-    absl::string_view GetAuthority() override;
-    grpc_event_engine::experimental::EventEngine* GetEventEngine() override;
-    void AddTraceEvent(TraceSeverity severity,
-                       absl::string_view message) override;
-
-   private:
-    RefCountedPtr<XdsOverrideHostLb> xds_override_host_policy_;
   };
 
   class SubchannelEntry {
@@ -319,7 +307,7 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
   OrphanablePtr<LoadBalancingPolicy> child_policy_;
 
   // Latest state and picker reported by the child policy.
-  grpc_connectivity_state state_ = GRPC_CHANNEL_IDLE;
+  grpc_connectivity_state state_ = GRPC_CHANNEL_CONNECTING;
   absl::Status status_;
   RefCountedPtr<SubchannelPicker> picker_;
   Mutex subchannel_map_mu_;
@@ -369,9 +357,12 @@ XdsOverrideHostLb::Picker::PickOverridenHost(absl::string_view override_host) {
 
 LoadBalancingPolicy::PickResult XdsOverrideHostLb::Picker::Pick(
     LoadBalancingPolicy::PickArgs args) {
-  auto* call_state = static_cast<LbCallStateInternal*>(args.call_state);
-  auto override_host = call_state->GetCallAttribute(XdsOverrideHostTypeName());
-  auto overridden_host_pick = PickOverridenHost(override_host);
+  auto* call_state = static_cast<ClientChannelLbCallState*>(args.call_state);
+  auto* override_host = static_cast<XdsOverrideHostAttribute*>(
+      call_state->GetCallAttribute(XdsOverrideHostAttribute::TypeName()));
+  auto overridden_host_pick =
+      PickOverridenHost(override_host != nullptr ? override_host->host_name()
+                                                 : absl::string_view());
   if (overridden_host_pick.has_value()) {
     return std::move(*overridden_host_pick);
   }
@@ -616,42 +607,20 @@ void XdsOverrideHostLb::OnSubchannelConnectivityStateChange(
 RefCountedPtr<SubchannelInterface> XdsOverrideHostLb::Helper::CreateSubchannel(
     ServerAddress address, const ChannelArgs& args) {
   auto subchannel =
-      xds_override_host_policy_->channel_control_helper()->CreateSubchannel(
-          address, args);
-  return xds_override_host_policy_->AdoptSubchannel(address, subchannel);
+      parent()->channel_control_helper()->CreateSubchannel(address, args);
+  return parent()->AdoptSubchannel(address, subchannel);
 }
 
 void XdsOverrideHostLb::Helper::UpdateState(
     grpc_connectivity_state state, const absl::Status& status,
     RefCountedPtr<SubchannelPicker> picker) {
-  if (xds_override_host_policy_->shutting_down_) return;
+  if (parent()->shutting_down_) return;
   // Save the state and picker.
-  xds_override_host_policy_->state_ = state;
-  xds_override_host_policy_->status_ = status;
-  xds_override_host_policy_->picker_ = std::move(picker);
+  parent()->state_ = state;
+  parent()->status_ = status;
+  parent()->picker_ = std::move(picker);
   // Wrap the picker and return it to the channel.
-  xds_override_host_policy_->MaybeUpdatePickerLocked();
-}
-
-void XdsOverrideHostLb::Helper::RequestReresolution() {
-  if (xds_override_host_policy_->shutting_down_) return;
-  xds_override_host_policy_->channel_control_helper()->RequestReresolution();
-}
-
-absl::string_view XdsOverrideHostLb::Helper::GetAuthority() {
-  return xds_override_host_policy_->channel_control_helper()->GetAuthority();
-}
-
-grpc_event_engine::experimental::EventEngine*
-XdsOverrideHostLb::Helper::GetEventEngine() {
-  return xds_override_host_policy_->channel_control_helper()->GetEventEngine();
-}
-
-void XdsOverrideHostLb::Helper::AddTraceEvent(TraceSeverity severity,
-                                              absl::string_view message) {
-  if (xds_override_host_policy_->shutting_down_) return;
-  xds_override_host_policy_->channel_control_helper()->AddTraceEvent(severity,
-                                                                     message);
+  parent()->MaybeUpdatePickerLocked();
 }
 
 //
@@ -740,15 +709,7 @@ class XdsOverrideHostLbFactory : public LoadBalancingPolicyFactory {
 
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
-    if (json.type() == Json::Type::JSON_NULL) {
-      // This policy was configured in the deprecated loadBalancingPolicy
-      // field or in the client API.
-      return absl::InvalidArgumentError(
-          "field:loadBalancingPolicy error:xds_override_host policy requires "
-          "configuration. Please use loadBalancingConfig field of service "
-          "config instead.");
-    }
-    return LoadRefCountedFromJson<XdsOverrideHostLbConfig>(
+    return LoadFromJson<RefCountedPtr<XdsOverrideHostLbConfig>>(
         json, JsonArgs(),
         "errors validating xds_override_host LB policy config");
   }
@@ -777,8 +738,8 @@ void XdsOverrideHostLbConfig::JsonPostLoad(const Json& json,
                                            ValidationErrors* errors) {
   {
     ValidationErrors::ScopedField field(errors, ".childPolicy");
-    auto it = json.object_value().find("childPolicy");
-    if (it == json.object_value().end()) {
+    auto it = json.object().find("childPolicy");
+    if (it == json.object().end()) {
       errors->AddError("field not present");
     } else {
       auto child_policy_config = CoreConfiguration::Get()
@@ -794,7 +755,7 @@ void XdsOverrideHostLbConfig::JsonPostLoad(const Json& json,
   {
     ValidationErrors::ScopedField field(errors, ".overrideHostStatus");
     auto host_status_list = LoadJsonObjectField<std::vector<std::string>>(
-        json.object_value(), args, "overrideHostStatus", errors,
+        json.object(), args, "overrideHostStatus", errors,
         /*required=*/false);
     if (host_status_list.has_value()) {
       for (size_t i = 0; i < host_status_list->size(); ++i) {

@@ -18,10 +18,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <type_traits>
-
-#include "absl/types/variant.h"
-
-#include "src/core/lib/promise/poll.h"
+#include <utility>
 
 namespace grpc_core {
 
@@ -42,12 +39,12 @@ class Race<Promise, Promises...> {
   Result operator()() {
     // Check our own promise.
     auto r = promise_();
-    if (absl::holds_alternative<Pending>(r)) {
+    if (r.pending()) {
       // Check the rest of them.
       return next_();
     }
     // Return the first ready result.
-    return std::move(absl::get<kPollReadyIdx>(std::move(r)));
+    return std::move(r.value());
   }
 
  private:

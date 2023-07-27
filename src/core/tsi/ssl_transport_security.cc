@@ -65,6 +65,7 @@
 
 // --- Constants. ---
 
+#define TSI_SSL_MAX_BIO_WRITE_ATTEMPTS 100
 #define TSI_SSL_MAX_PROTECTED_FRAME_SIZE_UPPER_BOUND 16384
 #define TSI_SSL_MAX_PROTECTED_FRAME_SIZE_LOWER_BOUND 1024
 #define TSI_SSL_HANDSHAKER_OUTGOING_BUFFER_INITIAL_SIZE 1024
@@ -1538,15 +1539,35 @@ static tsi_result ssl_handshaker_next(tsi_handshaker* self,
   // If there are received bytes, process them first.
   tsi_ssl_handshaker* impl = reinterpret_cast<tsi_ssl_handshaker*>(self);
   tsi_result status = TSI_OK;
-  size_t bytes_consumed = received_bytes_size;
   size_t bytes_written = 0;
   if (received_bytes_size > 0) {
-    status = ssl_handshaker_process_bytes_from_peer(impl, received_bytes,
-                                                    &bytes_consumed, error);
-    while (status == TSI_DRAIN_BUFFER) {
-      status = ssl_handshaker_write_output_buffer(self, &bytes_written, error);
-      if (status != TSI_OK) return status;
-      status = ssl_handshaker_do_handshake(impl, error);
+    unsigned char* remaining_bytes_to_write_to_openssl =
+        const_cast<unsigned char*>(received_bytes);
+    size_t remaining_bytes_to_write_to_openssl_size = received_bytes_size;
+    size_t number_bio_write_attempts = 0;
+    while (remaining_bytes_to_write_to_openssl_size > 0 &&
+           (status == TSI_OK || status == TSI_INCOMPLETE_DATA) &&
+           number_bio_write_attempts < TSI_SSL_MAX_BIO_WRITE_ATTEMPTS) {
+      ++number_bio_write_attempts;
+      // Try to write all of the remaining bytes to the BIO.
+      size_t bytes_written_to_openssl =
+          remaining_bytes_to_write_to_openssl_size;
+      status = ssl_handshaker_process_bytes_from_peer(
+          impl, remaining_bytes_to_write_to_openssl, &bytes_written_to_openssl,
+          error);
+      // As long as the BIO is full, drive the SSL handshake to consume bytes
+      // from the BIO. If the SSL handshake returns any bytes, write them to the
+      // peer.
+      while (status == TSI_DRAIN_BUFFER) {
+        status =
+            ssl_handshaker_write_output_buffer(self, &bytes_written, error);
+        if (status != TSI_OK) return status;
+        status = ssl_handshaker_do_handshake(impl, error);
+      }
+      // Move the pointer to the first byte not yet successfully written to the
+      // BIO.
+      remaining_bytes_to_write_to_openssl_size -= bytes_written_to_openssl;
+      remaining_bytes_to_write_to_openssl += bytes_written_to_openssl;
     }
   }
   if (status != TSI_OK) return status;
@@ -2060,7 +2081,8 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
       gpr_log(GPR_ERROR, "Failed to load CRL File from directory.");
     } else {
       X509_VERIFY_PARAM* param = X509_STORE_get0_param(cert_store);
-      X509_VERIFY_PARAM_set_flags(param, X509_V_FLAG_CRL_CHECK);
+      X509_VERIFY_PARAM_set_flags(
+          param, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
       gpr_log(GPR_INFO, "enabled client side CRL checking.");
     }
   }
@@ -2201,12 +2223,15 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
         STACK_OF(X509_NAME)* root_names = nullptr;
         result = ssl_ctx_load_verification_certs(
             impl->ssl_contexts[i], options->pem_client_root_certs,
-            strlen(options->pem_client_root_certs), &root_names);
+            strlen(options->pem_client_root_certs),
+            options->send_client_ca_list ? &root_names : nullptr);
         if (result != TSI_OK) {
           gpr_log(GPR_ERROR, "Invalid verification certs.");
           break;
         }
-        SSL_CTX_set_client_CA_list(impl->ssl_contexts[i], root_names);
+        if (options->send_client_ca_list) {
+          SSL_CTX_set_client_CA_list(impl->ssl_contexts[i], root_names);
+        }
       }
       switch (options->client_certificate_request) {
         case TSI_DONT_REQUEST_CLIENT_CERTIFICATE:
@@ -2244,7 +2269,8 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
           gpr_log(GPR_ERROR, "Failed to load CRL File from directory.");
         } else {
           X509_VERIFY_PARAM* param = X509_STORE_get0_param(cert_store);
-          X509_VERIFY_PARAM_set_flags(param, X509_V_FLAG_CRL_CHECK);
+          X509_VERIFY_PARAM_set_flags(
+              param, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
           gpr_log(GPR_INFO, "enabled server CRL checking.");
         }
       }

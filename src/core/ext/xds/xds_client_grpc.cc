@@ -30,6 +30,7 @@
 #include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -145,8 +146,10 @@ absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
     if (!bootstrap.ok()) return bootstrap.status();
     grpc_channel_args* xds_channel_args = args.GetPointer<grpc_channel_args>(
         GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_CLIENT_CHANNEL_ARGS);
-    return MakeRefCounted<GrpcXdsClient>(std::move(*bootstrap),
-                                         ChannelArgs::FromC(xds_channel_args));
+    auto channel_args = ChannelArgs::FromC(xds_channel_args);
+    return MakeRefCounted<GrpcXdsClient>(
+        std::move(*bootstrap), channel_args,
+        MakeOrphanable<GrpcXdsTransportFactory>(channel_args));
   }
   // Otherwise, use the global instance.
   MutexLock lock(g_mu);
@@ -165,16 +168,19 @@ absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
   auto bootstrap = GrpcXdsBootstrap::Create(*bootstrap_contents);
   if (!bootstrap.ok()) return bootstrap.status();
   // Instantiate XdsClient.
+  auto channel_args = ChannelArgs::FromC(g_channel_args);
   auto xds_client = MakeRefCounted<GrpcXdsClient>(
-      std::move(*bootstrap), ChannelArgs::FromC(g_channel_args));
+      std::move(*bootstrap), channel_args,
+      MakeOrphanable<GrpcXdsTransportFactory>(channel_args));
   g_xds_client = xds_client.get();
   return xds_client;
 }
 
-GrpcXdsClient::GrpcXdsClient(std::unique_ptr<GrpcXdsBootstrap> bootstrap,
-                             const ChannelArgs& args)
+GrpcXdsClient::GrpcXdsClient(
+    std::unique_ptr<GrpcXdsBootstrap> bootstrap, const ChannelArgs& args,
+    OrphanablePtr<XdsTransportFactory> transport_factory)
     : XdsClient(
-          std::move(bootstrap), MakeOrphanable<GrpcXdsTransportFactory>(args),
+          std::move(bootstrap), std::move(transport_factory),
           grpc_event_engine::experimental::GetDefaultEventEngine(),
           absl::StrCat("gRPC C-core ", GPR_PLATFORM_STRING,
                        GRPC_XDS_USER_AGENT_NAME_SUFFIX_STRING),
@@ -225,7 +231,6 @@ void SetXdsFallbackBootstrapConfig(const char* config) {
 grpc_slice grpc_dump_xds_configs(void) {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
-  grpc_error_handle error;
   auto xds_client = grpc_core::GrpcXdsClient::GetOrCreate(
       grpc_core::ChannelArgs(), "grpc_dump_xds_configs()");
   if (!xds_client.ok()) {

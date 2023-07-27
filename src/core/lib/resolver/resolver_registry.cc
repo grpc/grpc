@@ -22,6 +22,7 @@
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/ascii.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
@@ -39,8 +40,20 @@ void ResolverRegistry::Builder::SetDefaultPrefix(std::string default_prefix) {
   state_.default_prefix = std::move(default_prefix);
 }
 
+namespace {
+
+bool IsLowerCase(absl::string_view str) {
+  for (unsigned char c : str) {
+    if (absl::ascii_isalpha(c) && !absl::ascii_islower(c)) return false;
+  }
+  return true;
+}
+
+}  // namespace
+
 void ResolverRegistry::Builder::RegisterResolverFactory(
     std::unique_ptr<ResolverFactory> factory) {
+  GPR_ASSERT(IsLowerCase(factory->scheme()));
   auto p = state_.factories.emplace(factory->scheme(), std::move(factory));
   GPR_ASSERT(p.second);
 }

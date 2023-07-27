@@ -102,7 +102,7 @@ struct grpc_oauth2_pending_get_request_metadata
   grpc_polling_entity* pollent;
   grpc_core::ClientMetadataHandle md;
   struct grpc_oauth2_pending_get_request_metadata* next;
-  absl::StatusOr<grpc_core::ClientMetadataHandle> result;
+  absl::StatusOr<grpc_core::Slice> result;
 };
 
 // -- Oauth2 Token Fetcher credentials --

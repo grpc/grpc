@@ -31,7 +31,8 @@ namespace experimental {
 EventEngine::ResolvedAddress::ResolvedAddress(const sockaddr* address,
                                               socklen_t size)
     : size_(size) {
-  GPR_ASSERT(size <= sizeof(address_));
+  GPR_DEBUG_ASSERT(size >= 0);
+  GPR_ASSERT(static_cast<size_t>(size) <= sizeof(address_));
   memcpy(&address_, address, size);
 }
 

@@ -18,10 +18,12 @@ import unittest
 from google.protobuf.descriptor_pool import DescriptorPool
 import grpc
 from grpc_reflection.v1alpha import reflection
-from grpc_reflection.v1alpha.proto_reflection_descriptor_database import \
-    ProtoReflectionDescriptorDatabase
+from grpc_reflection.v1alpha.proto_reflection_descriptor_database import (
+    ProtoReflectionDescriptorDatabase,
+)
 
 from src.proto.grpc.testing import test_pb2
+
 # Needed to load the EmptyWithExtensions message
 from src.proto.grpc.testing.proto2 import empty2_extensions_pb2
 from tests.unit import test_common
@@ -36,7 +38,6 @@ _EMPTY_EXTENSIONS_SYMBOL_NAME = "grpc.testing.proto2.EmptyWithExtensions"
 
 
 class ReflectionClientTest(unittest.TestCase):
-
     def setUp(self):
         self._server = test_common.test_server()
         self._SERVICE_NAMES = (
@@ -61,22 +62,21 @@ class ReflectionClientTest(unittest.TestCase):
         self.assertCountEqual(self._SERVICE_NAMES, services)
 
     def testReflectionServiceName(self):
-        self.assertEqual(reflection.SERVICE_NAME,
-                         "grpc.reflection.v1alpha.ServerReflection")
+        self.assertEqual(
+            reflection.SERVICE_NAME, "grpc.reflection.v1alpha.ServerReflection"
+        )
 
     def testFindFile(self):
         file_name = _PROTO_FILE_NAME
         file_desc = self.desc_pool.FindFileByName(file_name)
         self.assertEqual(file_name, file_desc.name)
         self.assertEqual(_PROTO_PACKAGE_NAME, file_desc.package)
-        self.assertEqual("proto3", file_desc.syntax)
         self.assertIn("TestService", file_desc.services_by_name)
 
         file_name = _EMPTY_PROTO_FILE_NAME
         file_desc = self.desc_pool.FindFileByName(file_name)
         self.assertEqual(file_name, file_desc.name)
         self.assertEqual(_PROTO_PACKAGE_NAME, file_desc.package)
-        self.assertEqual("proto3", file_desc.syntax)
         self.assertIn("Empty", file_desc.message_types_by_name)
 
     def testFindFileError(self):
@@ -112,7 +112,8 @@ class ReflectionClientTest(unittest.TestCase):
         self.assertTrue(method_desc.full_name.endswith(method_name))
 
         empty_message_desc = self.desc_pool.FindMessageTypeByName(
-            _EMPTY_PROTO_SYMBOL_NAME)
+            _EMPTY_PROTO_SYMBOL_NAME
+        )
         self.assertEqual(empty_message_desc, method_desc.input_type)
         self.assertEqual(empty_message_desc, method_desc.output_type)
 

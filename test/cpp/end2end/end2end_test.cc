@@ -42,6 +42,7 @@
 #include <grpcpp/test/channel_test_peer.h>
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/iomgr/iomgr.h"
@@ -909,8 +910,7 @@ TEST_P(End2endTest, ReconnectChannel) {
   // It needs 2 pollset_works to reconnect the channel with polling engine
   // "poll"
 #ifdef GRPC_POSIX_SOCKET_EV
-  grpc_core::UniquePtr<char> poller = GPR_GLOBAL_CONFIG_GET(grpc_poll_strategy);
-  if (0 == strcmp(poller.get(), "poll")) {
+  if (grpc_core::ConfigVars::Get().PollStrategy() == "poll") {
     poller_slowdown_factor = 2;
   }
 #endif  // GRPC_POSIX_SOCKET_EV
@@ -1195,38 +1195,48 @@ TEST_P(End2endTest, CancelRpcBeforeStart) {
 }
 
 TEST_P(End2endTest, CancelRpcAfterStart) {
-  ResetStub();
-  EchoRequest request;
-  EchoResponse response;
-  ClientContext context;
-  request.set_message("hello");
-  request.mutable_param()->set_server_notify_client_when_started(true);
-  request.mutable_param()->set_skip_cancelled_check(true);
-  Status s;
-  std::thread echo_thread([this, &s, &context, &request, &response] {
-    s = stub_->Echo(&context, request, &response);
-    EXPECT_EQ(StatusCode::CANCELLED, s.error_code());
-  });
-  if (!GetParam().callback_server()) {
-    service_.ClientWaitUntilRpcStarted();
-  } else {
-    callback_service_.ClientWaitUntilRpcStarted();
-  }
+  for (int i = 0; i < 10; i++) {
+    ResetStub();
+    EchoRequest request;
+    EchoResponse response;
+    ClientContext context;
+    request.set_message("hello");
+    request.mutable_param()->set_server_notify_client_when_started(true);
+    request.mutable_param()->set_skip_cancelled_check(true);
+    Status s;
+    std::thread echo_thread([this, &s, &context, &request, &response] {
+      s = stub_->Echo(&context, request, &response);
+    });
+    if (!GetParam().callback_server()) {
+      service_.ClientWaitUntilRpcStarted();
+    } else {
+      callback_service_.ClientWaitUntilRpcStarted();
+    }
 
-  context.TryCancel();
+    context.TryCancel();
 
-  if (!GetParam().callback_server()) {
-    service_.SignalServerToContinue();
-  } else {
-    callback_service_.SignalServerToContinue();
-  }
+    if (!GetParam().callback_server()) {
+      service_.SignalServerToContinue();
+    } else {
+      callback_service_.SignalServerToContinue();
+    }
 
-  echo_thread.join();
-  EXPECT_EQ("", response.message());
-  EXPECT_EQ(grpc::StatusCode::CANCELLED, s.error_code());
-  if (GetParam().use_interceptors()) {
-    EXPECT_EQ(20, PhonyInterceptor::GetNumTimesCancel());
+    echo_thread.join();
+    // TODO(ctiller): improve test to not be flaky
+    //
+    // TryCancel is best effort, and it can happen that the cancellation is not
+    // acted upon before the server wakes up, sends a response, and the client
+    // reads that.
+    // For this reason, we try a few times here to see the cancellation result.
+    if (s.ok()) continue;
+    EXPECT_EQ("", response.message());
+    EXPECT_EQ(grpc::StatusCode::CANCELLED, s.error_code());
+    if (GetParam().use_interceptors()) {
+      EXPECT_EQ(20, PhonyInterceptor::GetNumTimesCancel());
+    }
+    return;
   }
+  GTEST_FAIL() << "Failed to get cancellation";
 }
 
 // Client cancels request stream after sending two messages
@@ -2246,8 +2256,10 @@ std::vector<TestScenario> CreateTestScenarios(bool use_proxy,
   std::vector<TestScenario> scenarios;
   std::vector<std::string> credentials_types;
 
-  GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms,
-                        kClientChannelBackupPollIntervalMs);
+  grpc_core::ConfigVars::Overrides overrides;
+  overrides.client_channel_backup_poll_interval_ms =
+      kClientChannelBackupPollIntervalMs;
+  grpc_core::ConfigVars::SetOverrides(overrides);
 #if TARGET_OS_IPHONE
   // Workaround Apple CFStream bug
   grpc_core::SetEnv("grpc_cfstream", "0");

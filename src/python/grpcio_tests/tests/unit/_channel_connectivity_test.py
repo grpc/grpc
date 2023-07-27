@@ -33,7 +33,6 @@ def _last_connectivity_is_not_ready(connectivities):
 
 
 class _Callback(object):
-
     def __init__(self):
         self._condition = threading.Condition()
         self._connectivities = []
@@ -58,16 +57,16 @@ class _Callback(object):
 
 
 class ChannelConnectivityTest(unittest.TestCase):
-
     def test_lonely_channel_connectivity(self):
         callback = _Callback()
 
-        channel = grpc.insecure_channel('localhost:12345')
+        channel = grpc.insecure_channel("localhost:12345")
         channel.subscribe(callback.update, try_to_connect=False)
         first_connectivities = callback.block_until_connectivities_satisfy(bool)
         channel.subscribe(callback.update, try_to_connect=True)
         second_connectivities = callback.block_until_connectivities_satisfy(
-            lambda connectivities: 2 <= len(connectivities))
+            lambda connectivities: 2 <= len(connectivities)
+        )
         # Wait for a connection that will never happen.
         time.sleep(test_constants.SHORT_TIMEOUT)
         third_connectivities = callback.connectivities()
@@ -78,8 +77,9 @@ class ChannelConnectivityTest(unittest.TestCase):
 
         channel.close()
 
-        self.assertSequenceEqual((grpc.ChannelConnectivity.IDLE,),
-                                 first_connectivities)
+        self.assertSequenceEqual(
+            (grpc.ChannelConnectivity.IDLE,), first_connectivities
+        )
         self.assertNotIn(grpc.ChannelConnectivity.READY, second_connectivities)
         self.assertNotIn(grpc.ChannelConnectivity.READY, third_connectivities)
         self.assertNotIn(grpc.ChannelConnectivity.READY, fourth_connectivities)
@@ -87,70 +87,88 @@ class ChannelConnectivityTest(unittest.TestCase):
 
     def test_immediately_connectable_channel_connectivity(self):
         recording_thread_pool = thread_pool.RecordingThreadPool(
-            max_workers=None)
-        server = grpc.server(recording_thread_pool,
-                             options=(('grpc.so_reuseport', 0),))
-        port = server.add_insecure_port('[::]:0')
+            max_workers=None
+        )
+        server = grpc.server(
+            recording_thread_pool, options=(("grpc.so_reuseport", 0),)
+        )
+        port = server.add_insecure_port("[::]:0")
         server.start()
         first_callback = _Callback()
         second_callback = _Callback()
 
-        channel = grpc.insecure_channel('localhost:{}'.format(port))
+        channel = grpc.insecure_channel("localhost:{}".format(port))
         channel.subscribe(first_callback.update, try_to_connect=False)
-        first_connectivities = first_callback.block_until_connectivities_satisfy(
-            bool)
+        first_connectivities = (
+            first_callback.block_until_connectivities_satisfy(bool)
+        )
         # Wait for a connection that will never happen because try_to_connect=True
         # has not yet been passed.
         time.sleep(test_constants.SHORT_TIMEOUT)
         second_connectivities = first_callback.connectivities()
         channel.subscribe(second_callback.update, try_to_connect=True)
-        third_connectivities = first_callback.block_until_connectivities_satisfy(
-            lambda connectivities: 2 <= len(connectivities))
-        fourth_connectivities = second_callback.block_until_connectivities_satisfy(
-            bool)
+        third_connectivities = (
+            first_callback.block_until_connectivities_satisfy(
+                lambda connectivities: 2 <= len(connectivities)
+            )
+        )
+        fourth_connectivities = (
+            second_callback.block_until_connectivities_satisfy(bool)
+        )
         # Wait for a connection that will happen (or may already have happened).
         first_callback.block_until_connectivities_satisfy(
-            _ready_in_connectivities)
+            _ready_in_connectivities
+        )
         second_callback.block_until_connectivities_satisfy(
-            _ready_in_connectivities)
+            _ready_in_connectivities
+        )
         channel.close()
         server.stop(None)
 
-        self.assertSequenceEqual((grpc.ChannelConnectivity.IDLE,),
-                                 first_connectivities)
-        self.assertSequenceEqual((grpc.ChannelConnectivity.IDLE,),
-                                 second_connectivities)
-        self.assertNotIn(grpc.ChannelConnectivity.TRANSIENT_FAILURE,
-                         third_connectivities)
-        self.assertNotIn(grpc.ChannelConnectivity.SHUTDOWN,
-                         third_connectivities)
-        self.assertNotIn(grpc.ChannelConnectivity.TRANSIENT_FAILURE,
-                         fourth_connectivities)
-        self.assertNotIn(grpc.ChannelConnectivity.SHUTDOWN,
-                         fourth_connectivities)
+        self.assertSequenceEqual(
+            (grpc.ChannelConnectivity.IDLE,), first_connectivities
+        )
+        self.assertSequenceEqual(
+            (grpc.ChannelConnectivity.IDLE,), second_connectivities
+        )
+        self.assertNotIn(
+            grpc.ChannelConnectivity.TRANSIENT_FAILURE, third_connectivities
+        )
+        self.assertNotIn(
+            grpc.ChannelConnectivity.SHUTDOWN, third_connectivities
+        )
+        self.assertNotIn(
+            grpc.ChannelConnectivity.TRANSIENT_FAILURE, fourth_connectivities
+        )
+        self.assertNotIn(
+            grpc.ChannelConnectivity.SHUTDOWN, fourth_connectivities
+        )
         self.assertFalse(recording_thread_pool.was_used())
 
     def test_reachable_then_unreachable_channel_connectivity(self):
         recording_thread_pool = thread_pool.RecordingThreadPool(
-            max_workers=None)
-        server = grpc.server(recording_thread_pool,
-                             options=(('grpc.so_reuseport', 0),))
-        port = server.add_insecure_port('[::]:0')
+            max_workers=None
+        )
+        server = grpc.server(
+            recording_thread_pool, options=(("grpc.so_reuseport", 0),)
+        )
+        port = server.add_insecure_port("[::]:0")
         server.start()
         callback = _Callback()
 
-        channel = grpc.insecure_channel('localhost:{}'.format(port))
+        channel = grpc.insecure_channel("localhost:{}".format(port))
         channel.subscribe(callback.update, try_to_connect=True)
         callback.block_until_connectivities_satisfy(_ready_in_connectivities)
         # Now take down the server and confirm that channel readiness is repudiated.
         server.stop(None)
         callback.block_until_connectivities_satisfy(
-            _last_connectivity_is_not_ready)
+            _last_connectivity_is_not_ready
+        )
         channel.unsubscribe(callback.update)
         channel.close()
         self.assertFalse(recording_thread_pool.was_used())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig()
     unittest.main(verbosity=2)

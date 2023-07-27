@@ -28,7 +28,6 @@
 #include <list>
 #include <new>
 #include <queue>
-#include <tuple>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -39,6 +38,8 @@
 #include "absl/types/variant.h"
 
 #include <grpc/byte_buffer.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
@@ -60,13 +61,11 @@
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/detail/basic_join.h"
 #include "src/core/lib/promise/detail/basic_seq.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
-#include "src/core/lib/promise/try_join.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -195,9 +194,35 @@ class Server::RequestMatcherInterface {
   virtual void RequestCallWithPossiblePublish(size_t request_queue_index,
                                               RequestedCall* call) = 0;
 
-  struct MatchResult {
-    size_t cq_idx;
-    RequestedCall* requested_call;
+  class MatchResult {
+   public:
+    MatchResult(Server* server, size_t cq_idx, RequestedCall* requested_call)
+        : server_(server), cq_idx_(cq_idx), requested_call_(requested_call) {}
+    ~MatchResult() {
+      if (requested_call_ != nullptr) {
+        server_->FailCall(cq_idx_, requested_call_, absl::CancelledError());
+      }
+    }
+
+    MatchResult(const MatchResult&) = delete;
+    MatchResult& operator=(const MatchResult&) = delete;
+
+    MatchResult(MatchResult&& other) noexcept
+        : server_(other.server_),
+          cq_idx_(other.cq_idx_),
+          requested_call_(std::exchange(other.requested_call_, nullptr)) {}
+
+    RequestedCall* TakeCall() {
+      return std::exchange(requested_call_, nullptr);
+    }
+
+    grpc_completion_queue* cq() const { return server_->cqs_[cq_idx_]; }
+    size_t cq_idx() const { return cq_idx_; }
+
+   private:
+    Server* server_;
+    size_t cq_idx_;
+    RequestedCall* requested_call_;
   };
 
   // This function is invoked on an incoming promise based RPC.
@@ -294,18 +319,19 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
       while (true) {
         NextPendingCall next_pending = pop_next_pending();
         if (next_pending.rc == nullptr) break;
-        auto mr = MatchResult{request_queue_index, next_pending.rc};
         Match(
             next_pending.pending,
-            [mr](CallData* calld) {
+            [&](CallData* calld) {
               if (!calld->MaybeActivate()) {
                 // Zombied Call
                 calld->KillZombie();
               } else {
-                calld->Publish(mr.cq_idx, mr.requested_call);
+                calld->Publish(request_queue_index, next_pending.rc);
               }
             },
-            [mr](const std::shared_ptr<ActivityWaiter>& w) { w->Finish(mr); });
+            [&](const std::shared_ptr<ActivityWaiter>& w) {
+              w->Finish(server(), request_queue_index, next_pending.rc);
+            });
       }
     }
   }
@@ -357,7 +383,7 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
       RequestedCall* rc =
           reinterpret_cast<RequestedCall*>(requests_per_cq_[cq_idx].TryPop());
       if (rc != nullptr) {
-        return Immediate(MatchResult{cq_idx, rc});
+        return Immediate(MatchResult(server(), cq_idx, rc));
       }
     }
     // No cq to take the request found; queue it on the slow list.
@@ -390,18 +416,24 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
         };
       }
     }
-    return Immediate(MatchResult{cq_idx, rc});
+    return Immediate(MatchResult(server(), cq_idx, rc));
   }
 
-  Server* server() const override { return server_; }
+  Server* server() const final { return server_; }
 
  private:
   Server* const server_;
   struct ActivityWaiter {
     explicit ActivityWaiter(Waker waker) : waker(std::move(waker)) {}
     ~ActivityWaiter() { delete result.load(std::memory_order_acquire); }
-    void Finish(absl::StatusOr<MatchResult> r) {
-      result.store(new absl::StatusOr<MatchResult>(std::move(r)),
+    void Finish(absl::Status status) {
+      result.store(new absl::StatusOr<MatchResult>(std::move(status)),
+                   std::memory_order_release);
+      waker.Wakeup();
+    }
+    void Finish(Server* server, size_t cq_idx, RequestedCall* requested_call) {
+      result.store(new absl::StatusOr<MatchResult>(
+                       MatchResult(server, cq_idx, requested_call)),
                    std::memory_order_release);
       waker.Wakeup();
     }
@@ -444,7 +476,7 @@ class Server::AllocatingRequestMatcherBase : public RequestMatcherInterface {
     Crash("unreachable");
   }
 
-  Server* server() const override { return server_; }
+  Server* server() const final { return server_; }
 
   // Supply the completion queue related to this request matcher
   grpc_completion_queue* cq() const { return cq_; }
@@ -501,7 +533,7 @@ class Server::AllocatingRequestMatcherBatch
       RequestedCall* rc = new RequestedCall(
           static_cast<void*>(call_info.tag), call_info.cq, call_info.call,
           call_info.initial_metadata, call_info.details);
-      return Immediate(MatchResult{cq_idx(), rc});
+      return Immediate(MatchResult(server(), cq_idx(), rc));
     } else {
       return Immediate(absl::InternalError("Server shutdown"));
     }
@@ -556,7 +588,7 @@ class Server::AllocatingRequestMatcherRegistered
           new RequestedCall(call_info.tag, call_info.cq, call_info.call,
                             call_info.initial_metadata, registered_method_,
                             call_info.deadline, call_info.optional_payload);
-      return Immediate(MatchResult{cq_idx(), rc});
+      return Immediate(MatchResult(server(), cq_idx(), rc));
     } else {
       return Immediate(absl::InternalError("Server shutdown"));
     }
@@ -1282,8 +1314,7 @@ ArenaPromise<ServerMetadataHandle> Server::ChannelData::MakeCallPromise(
           absl::InternalError("Missing :authority header"));
     };
   }
-  // TODO(ctiller): deadline handling
-  Timestamp deadline = Timestamp::InfFuture();
+  Timestamp deadline = GetContext<CallContext>()->deadline();
   // Find request matcher.
   RequestMatcherInterface* matcher;
   ChannelRegisteredMethod* rm =
@@ -1307,22 +1338,32 @@ ArenaPromise<ServerMetadataHandle> Server::ChannelData::MakeCallPromise(
     matcher = server->unregistered_request_matcher_.get();
   }
   return TrySeq(
-      TryJoin(matcher->MatchRequest(chand->cq_idx()),
-              std::move(maybe_read_first_message)),
-      [path = std::move(*path), host = std::move(*host_ptr), deadline, server,
-       call_args = std::move(call_args)](
-          std::tuple<RequestMatcherInterface::MatchResult,
-                     NextResult<MessageHandle>>
-              match_result_and_payload) mutable {
-        auto& mr = std::get<0>(match_result_and_payload);
-        auto& payload = std::get<1>(match_result_and_payload);
-        auto* rc = mr.requested_call;
-        auto* cq_for_new_request = server->cqs_[mr.cq_idx];
+      std::move(maybe_read_first_message),
+      [matcher, chand](NextResult<MessageHandle> payload) {
+        return Map(
+            matcher->MatchRequest(chand->cq_idx()),
+            [payload = std::move(payload)](
+                absl::StatusOr<RequestMatcherInterface::MatchResult> mr) mutable
+            -> absl::StatusOr<std::pair<RequestMatcherInterface::MatchResult,
+                                        NextResult<MessageHandle>>> {
+              if (!mr.ok()) return mr.status();
+              return std::make_pair(std::move(*mr), std::move(payload));
+            });
+      },
+      [host_ptr, path = std::move(path), deadline,
+       call_args =
+           std::move(call_args)](std::pair<RequestMatcherInterface::MatchResult,
+                                           NextResult<MessageHandle>>
+                                     r) mutable {
+        auto& mr = r.first;
+        auto& payload = r.second;
+        auto* rc = mr.TakeCall();
+        auto* cq_for_new_request = mr.cq();
         switch (rc->type) {
           case RequestedCall::Type::BATCH_CALL:
             GPR_ASSERT(!payload.has_value());
-            rc->data.batch.details->host = CSliceRef(host.c_slice());
-            rc->data.batch.details->method = CSliceRef(path.c_slice());
+            rc->data.batch.details->host = CSliceRef(host_ptr->c_slice());
+            rc->data.batch.details->method = CSliceRef(path->c_slice());
             rc->data.batch.details->deadline =
                 deadline.as_timespec(GPR_CLOCK_MONOTONIC);
             break;
@@ -1608,7 +1649,6 @@ void Server::CallData::RecvInitialMetadataReady(void* arg,
     // do nothing
   } else if (error.ok()) {
     // Pass the error reference to calld->recv_initial_metadata_error
-    grpc_error_handle src_error = error;
     error = absl::UnknownError("Missing :authority or :path");
     calld->recv_initial_metadata_error_ = error;
   }

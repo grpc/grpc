@@ -24,7 +24,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 # begin:google_only
-# load("//tools/build_defs/proto/cpp:cc_proto_library.bzl", "cc_proto_library")
+# load("@rules_cc//cc:defs.bzl", "cc_proto_library")
 # end:google_only
 
 load(
@@ -87,7 +87,9 @@ cc_test(
         ":benchmark_descriptor_sv_cc_proto",
         ":benchmark_descriptor_upb_proto",
         ":benchmark_descriptor_upb_proto_reflection",
+        "//:base",
         "//:descriptor_upb_proto",
+        "//:mem",
         "//:reflection",
         "@com_github_google_benchmark//:benchmark_main",
         "@com_google_absl//absl/container:flat_hash_set",
@@ -249,4 +251,5 @@ genrule(
     cmd = "size $$($$OSTYPE == 'linux-gnu' ? '--format=GNU -d' : '') $(SRCS) > $@",
     # "size" sometimes isn't available remotely.
     local = 1,
+    tags = ["no-remote-exec"],
 )

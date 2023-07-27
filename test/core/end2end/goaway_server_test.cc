@@ -34,6 +34,7 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
@@ -59,8 +60,6 @@
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
-
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static gpr_mu g_mu;
 static int g_resolve_port = -1;
@@ -187,12 +186,14 @@ static grpc_ares_request* my_dns_lookup_ares(
     error = GRPC_ERROR_CREATE("Forced Failure");
   } else {
     *addresses = std::make_unique<grpc_core::ServerAddressList>();
-    grpc_sockaddr_in sa;
-    memset(&sa, 0, sizeof(sa));
-    sa.sin_family = GRPC_AF_INET;
-    sa.sin_addr.s_addr = 0x100007f;
-    sa.sin_port = grpc_htons(static_cast<uint16_t>(g_resolve_port));
-    (*addresses)->emplace_back(&sa, sizeof(sa), grpc_core::ChannelArgs());
+    grpc_resolved_address address;
+    memset(&address, 0, sizeof(address));
+    auto* sa = reinterpret_cast<grpc_sockaddr_in*>(&address.addr);
+    sa->sin_family = GRPC_AF_INET;
+    sa->sin_addr.s_addr = 0x100007f;
+    sa->sin_port = grpc_htons(static_cast<uint16_t>(g_resolve_port));
+    address.len = sizeof(grpc_sockaddr_in);
+    (*addresses)->emplace_back(address, grpc_core::ChannelArgs());
     gpr_mu_unlock(&g_mu);
   }
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, error);
@@ -283,9 +284,9 @@ int main(int argc, char** argv) {
   op->flags = GRPC_INITIAL_METADATA_WAIT_FOR_READY;
   op->reserved = nullptr;
   op++;
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call1, ops,
-                                                   (size_t)(op - ops),
-                                                   tag(0x101), nullptr));
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_call_start_batch(call1, ops, (size_t)(op - ops),
+                                   grpc_core::CqVerifier::tag(0x101), nullptr));
   // and receive status to probe termination
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -296,9 +297,9 @@ int main(int argc, char** argv) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call1, ops,
-                                                   (size_t)(op - ops),
-                                                   tag(0x102), nullptr));
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_call_start_batch(call1, ops, (size_t)(op - ops),
+                                   grpc_core::CqVerifier::tag(0x102), nullptr));
 
   // bring a server up on the first port
   grpc_server* server1 = grpc_server_create(nullptr, nullptr);
@@ -314,20 +315,21 @@ int main(int argc, char** argv) {
   grpc_call* server_call1;
   GPR_ASSERT(GRPC_CALL_OK ==
              grpc_server_request_call(server1, &server_call1, &request_details1,
-                                      &request_metadata1, cq, cq, tag(0x301)));
+                                      &request_metadata1, cq, cq,
+                                      grpc_core::CqVerifier::tag(0x301)));
 
   set_resolve_port(port1);
 
   // first call should now start
-  cqv.Expect(tag(0x101), true);
-  cqv.Expect(tag(0x301), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(0x101), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(0x301), true);
   cqv.Verify();
 
   GPR_ASSERT(GRPC_CHANNEL_READY ==
              grpc_channel_check_connectivity_state(chan, 0));
   grpc_channel_watch_connectivity_state(chan, GRPC_CHANNEL_READY,
                                         gpr_inf_future(GPR_CLOCK_REALTIME), cq,
-                                        tag(0x9999));
+                                        grpc_core::CqVerifier::tag(0x9999));
 
   // listen for close on the server call to probe for finishing
   memset(ops, 0, sizeof(ops));
@@ -336,15 +338,16 @@ int main(int argc, char** argv) {
   op->data.recv_close_on_server.cancelled = &was_cancelled1;
   op->flags = 0;
   op++;
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(server_call1, ops,
-                                                   (size_t)(op - ops),
-                                                   tag(0x302), nullptr));
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_call_start_batch(server_call1, ops, (size_t)(op - ops),
+                                   grpc_core::CqVerifier::tag(0x302), nullptr));
 
   // shutdown first server:
   // we should see a connectivity change and then nothing
   set_resolve_port(-1);
-  grpc_server_shutdown_and_notify(server1, cq, tag(0xdead1));
-  cqv.Expect(tag(0x9999), true);
+  grpc_server_shutdown_and_notify(server1, cq,
+                                  grpc_core::CqVerifier::tag(0xdead1));
+  cqv.Expect(grpc_core::CqVerifier::tag(0x9999), true);
   cqv.Verify();
   cqv.VerifyEmpty();
 
@@ -361,9 +364,9 @@ int main(int argc, char** argv) {
   op->flags = GRPC_INITIAL_METADATA_WAIT_FOR_READY;
   op->reserved = nullptr;
   op++;
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call2, ops,
-                                                   (size_t)(op - ops),
-                                                   tag(0x201), nullptr));
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_call_start_batch(call2, ops, (size_t)(op - ops),
+                                   grpc_core::CqVerifier::tag(0x201), nullptr));
   // and receive status to probe termination
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -374,9 +377,9 @@ int main(int argc, char** argv) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call2, ops,
-                                                   (size_t)(op - ops),
-                                                   tag(0x202), nullptr));
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_call_start_batch(call2, ops, (size_t)(op - ops),
+                                   grpc_core::CqVerifier::tag(0x202), nullptr));
 
   // and bring up second server
   set_resolve_port(port2);
@@ -393,11 +396,12 @@ int main(int argc, char** argv) {
   grpc_call* server_call2;
   GPR_ASSERT(GRPC_CALL_OK ==
              grpc_server_request_call(server2, &server_call2, &request_details2,
-                                      &request_metadata2, cq, cq, tag(0x401)));
+                                      &request_metadata2, cq, cq,
+                                      grpc_core::CqVerifier::tag(0x401)));
 
   // second call should now start
-  cqv.Expect(tag(0x201), true);
-  cqv.Expect(tag(0x401), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(0x201), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(0x401), true);
   cqv.Verify();
 
   // listen for close on the server call to probe for finishing
@@ -407,24 +411,25 @@ int main(int argc, char** argv) {
   op->data.recv_close_on_server.cancelled = &was_cancelled2;
   op->flags = 0;
   op++;
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(server_call2, ops,
-                                                   (size_t)(op - ops),
-                                                   tag(0x402), nullptr));
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_call_start_batch(server_call2, ops, (size_t)(op - ops),
+                                   grpc_core::CqVerifier::tag(0x402), nullptr));
 
   // shutdown second server: we should see nothing
-  grpc_server_shutdown_and_notify(server2, cq, tag(0xdead2));
+  grpc_server_shutdown_and_notify(server2, cq,
+                                  grpc_core::CqVerifier::tag(0xdead2));
   cqv.VerifyEmpty();
 
   grpc_call_cancel(call1, nullptr);
   grpc_call_cancel(call2, nullptr);
 
   // now everything else should finish
-  cqv.Expect(tag(0x102), true);
-  cqv.Expect(tag(0x202), true);
-  cqv.Expect(tag(0x302), true);
-  cqv.Expect(tag(0x402), true);
-  cqv.Expect(tag(0xdead1), true);
-  cqv.Expect(tag(0xdead2), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(0x102), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(0x202), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(0x302), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(0x402), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(0xdead1), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(0xdead2), true);
   cqv.Verify();
 
   grpc_call_unref(call1);

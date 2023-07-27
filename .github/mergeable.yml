@@ -5,6 +5,9 @@ mergeable:
         - must_exclude:
             regex: '^disposition/DO NOT MERGE'
             message: 'Pull request marked not mergeable'
+        - must_exclude:
+            regex: '^disposition/Needs Internal Changes'
+            message: 'Pull request must be cherrypicked. Remove this label when ready to merge.'
         - or:
           - and:
             - must_include:

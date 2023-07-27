@@ -174,6 +174,9 @@ class CensusContext {
                          const ::opencensus::tags::TagMap& tags)
       : span_(::opencensus::trace::Span::StartSpan(name)), tags_(tags) {}
 
+  explicit CensusContext(const ::opencensus::tags::TagMap& tags)
+      : span_(::opencensus::trace::Span::BlankSpan()), tags_(tags) {}
+
   CensusContext(absl::string_view name, const ::opencensus::trace::Span* parent,
                 const ::opencensus::tags::TagMap& tags)
       : span_(::opencensus::trace::Span::StartSpan(name, parent)),

@@ -25,7 +25,6 @@ _EMPTY_METADATA = ()
 
 
 class _ServerDriver(object):
-
     def __init__(self, completion_queue, shutdown_tag):
         self._condition = threading.Condition()
         self._completion_queue = completion_queue
@@ -34,7 +33,6 @@ class _ServerDriver(object):
         self._saw_shutdown_tag = False
 
     def start(self):
-
         def in_thread():
             while True:
                 event = self._completion_queue.poll()
@@ -66,7 +64,6 @@ class _ServerDriver(object):
 
 
 class _QueueDriver(object):
-
     def __init__(self, condition, completion_queue, due):
         self._condition = condition
         self._completion_queue = completion_queue
@@ -75,7 +72,6 @@ class _QueueDriver(object):
         self._returned = False
 
     def start(self):
-
         def in_thread():
             while True:
                 event = self._completion_queue.poll()
@@ -110,53 +106,71 @@ class _QueueDriver(object):
 
 
 class ReadSomeButNotAllResponsesTest(unittest.TestCase):
-
     def testReadSomeButNotAllResponses(self):
         server_completion_queue = cygrpc.CompletionQueue()
-        server = cygrpc.Server([(
-            b'grpc.so_reuseport',
-            0,
-        )], False)
+        server = cygrpc.Server(
+            [
+                (
+                    b"grpc.so_reuseport",
+                    0,
+                )
+            ],
+            False,
+        )
         server.register_completion_queue(server_completion_queue)
-        port = server.add_http2_port(b'[::]:0')
+        port = server.add_http2_port(b"[::]:0")
         server.start()
-        channel = cygrpc.Channel('localhost:{}'.format(port).encode(), set(),
-                                 None)
+        channel = cygrpc.Channel(
+            "localhost:{}".format(port).encode(), set(), None
+        )
 
-        server_shutdown_tag = 'server_shutdown_tag'
-        server_driver = _ServerDriver(server_completion_queue,
-                                      server_shutdown_tag)
+        server_shutdown_tag = "server_shutdown_tag"
+        server_driver = _ServerDriver(
+            server_completion_queue, server_shutdown_tag
+        )
         server_driver.start()
 
         client_condition = threading.Condition()
         client_due = set()
 
         server_call_condition = threading.Condition()
-        server_send_initial_metadata_tag = 'server_send_initial_metadata_tag'
-        server_send_first_message_tag = 'server_send_first_message_tag'
-        server_send_second_message_tag = 'server_send_second_message_tag'
-        server_complete_rpc_tag = 'server_complete_rpc_tag'
-        server_call_due = set((
-            server_send_initial_metadata_tag,
-            server_send_first_message_tag,
-            server_send_second_message_tag,
-            server_complete_rpc_tag,
-        ))
+        server_send_initial_metadata_tag = "server_send_initial_metadata_tag"
+        server_send_first_message_tag = "server_send_first_message_tag"
+        server_send_second_message_tag = "server_send_second_message_tag"
+        server_complete_rpc_tag = "server_complete_rpc_tag"
+        server_call_due = set(
+            (
+                server_send_initial_metadata_tag,
+                server_send_first_message_tag,
+                server_send_second_message_tag,
+                server_complete_rpc_tag,
+            )
+        )
         server_call_completion_queue = cygrpc.CompletionQueue()
-        server_call_driver = _QueueDriver(server_call_condition,
-                                          server_call_completion_queue,
-                                          server_call_due)
+        server_call_driver = _QueueDriver(
+            server_call_condition, server_call_completion_queue, server_call_due
+        )
         server_call_driver.start()
 
-        server_rpc_tag = 'server_rpc_tag'
-        request_call_result = server.request_call(server_call_completion_queue,
-                                                  server_completion_queue,
-                                                  server_rpc_tag)
+        server_rpc_tag = "server_rpc_tag"
+        request_call_result = server.request_call(
+            server_call_completion_queue,
+            server_completion_queue,
+            server_rpc_tag,
+        )
 
-        client_receive_initial_metadata_tag = 'client_receive_initial_metadata_tag'
-        client_complete_rpc_tag = 'client_complete_rpc_tag'
+        client_receive_initial_metadata_tag = (
+            "client_receive_initial_metadata_tag"
+        )
+        client_complete_rpc_tag = "client_complete_rpc_tag"
         client_call = channel.segregated_call(
-            _EMPTY_FLAGS, b'/twinkies', None, None, _EMPTY_METADATA, None, (
+            _EMPTY_FLAGS,
+            b"/twinkies",
+            None,
+            None,
+            _EMPTY_METADATA,
+            None,
+            (
                 (
                     [
                         cygrpc.ReceiveInitialMetadataOperation(_EMPTY_FLAGS),
@@ -166,76 +180,111 @@ class ReadSomeButNotAllResponsesTest(unittest.TestCase):
                 (
                     [
                         cygrpc.SendInitialMetadataOperation(
-                            _EMPTY_METADATA, _EMPTY_FLAGS),
+                            _EMPTY_METADATA, _EMPTY_FLAGS
+                        ),
                         cygrpc.SendCloseFromClientOperation(_EMPTY_FLAGS),
                         cygrpc.ReceiveStatusOnClientOperation(_EMPTY_FLAGS),
                     ],
                     client_complete_rpc_tag,
                 ),
-            ))
-        client_receive_initial_metadata_event_future = test_utilities.SimpleFuture(
-            client_call.next_event)
+            ),
+        )
+        client_receive_initial_metadata_event_future = (
+            test_utilities.SimpleFuture(client_call.next_event)
+        )
 
         server_rpc_event = server_driver.first_event()
 
         with server_call_condition:
             server_send_initial_metadata_start_batch_result = (
-                server_rpc_event.call.start_server_batch([
-                    cygrpc.SendInitialMetadataOperation(_EMPTY_METADATA,
-                                                        _EMPTY_FLAGS),
-                ], server_send_initial_metadata_tag))
+                server_rpc_event.call.start_server_batch(
+                    [
+                        cygrpc.SendInitialMetadataOperation(
+                            _EMPTY_METADATA, _EMPTY_FLAGS
+                        ),
+                    ],
+                    server_send_initial_metadata_tag,
+                )
+            )
             server_send_first_message_start_batch_result = (
-                server_rpc_event.call.start_server_batch([
-                    cygrpc.SendMessageOperation(b'\x07', _EMPTY_FLAGS),
-                ], server_send_first_message_tag))
+                server_rpc_event.call.start_server_batch(
+                    [
+                        cygrpc.SendMessageOperation(b"\x07", _EMPTY_FLAGS),
+                    ],
+                    server_send_first_message_tag,
+                )
+            )
         server_send_initial_metadata_event = server_call_driver.event_with_tag(
-            server_send_initial_metadata_tag)
+            server_send_initial_metadata_tag
+        )
         server_send_first_message_event = server_call_driver.event_with_tag(
-            server_send_first_message_tag)
+            server_send_first_message_tag
+        )
         with server_call_condition:
             server_send_second_message_start_batch_result = (
-                server_rpc_event.call.start_server_batch([
-                    cygrpc.SendMessageOperation(b'\x07', _EMPTY_FLAGS),
-                ], server_send_second_message_tag))
+                server_rpc_event.call.start_server_batch(
+                    [
+                        cygrpc.SendMessageOperation(b"\x07", _EMPTY_FLAGS),
+                    ],
+                    server_send_second_message_tag,
+                )
+            )
             server_complete_rpc_start_batch_result = (
-                server_rpc_event.call.start_server_batch([
-                    cygrpc.ReceiveCloseOnServerOperation(_EMPTY_FLAGS),
-                    cygrpc.SendStatusFromServerOperation(
-                        (), cygrpc.StatusCode.ok, b'test details',
-                        _EMPTY_FLAGS),
-                ], server_complete_rpc_tag))
+                server_rpc_event.call.start_server_batch(
+                    [
+                        cygrpc.ReceiveCloseOnServerOperation(_EMPTY_FLAGS),
+                        cygrpc.SendStatusFromServerOperation(
+                            (),
+                            cygrpc.StatusCode.ok,
+                            b"test details",
+                            _EMPTY_FLAGS,
+                        ),
+                    ],
+                    server_complete_rpc_tag,
+                )
+            )
         server_send_second_message_event = server_call_driver.event_with_tag(
-            server_send_second_message_tag)
+            server_send_second_message_tag
+        )
         server_complete_rpc_event = server_call_driver.event_with_tag(
-            server_complete_rpc_tag)
+            server_complete_rpc_tag
+        )
         server_call_driver.events()
 
-        client_recieve_initial_metadata_event = client_receive_initial_metadata_event_future.result(
+        client_recieve_initial_metadata_event = (
+            client_receive_initial_metadata_event_future.result()
         )
 
-        client_receive_first_message_tag = 'client_receive_first_message_tag'
-        client_call.operate([
-            cygrpc.ReceiveMessageOperation(_EMPTY_FLAGS),
-        ], client_receive_first_message_tag)
+        client_receive_first_message_tag = "client_receive_first_message_tag"
+        client_call.operate(
+            [
+                cygrpc.ReceiveMessageOperation(_EMPTY_FLAGS),
+            ],
+            client_receive_first_message_tag,
+        )
         client_receive_first_message_event = client_call.next_event()
 
         client_call_cancel_result = client_call.cancel(
-            cygrpc.StatusCode.cancelled, 'Cancelled during test!')
+            cygrpc.StatusCode.cancelled, "Cancelled during test!"
+        )
         client_complete_rpc_event = client_call.next_event()
 
-        channel.close(cygrpc.StatusCode.unknown, 'Channel closed!')
+        channel.close(cygrpc.StatusCode.unknown, "Channel closed!")
         server.shutdown(server_completion_queue, server_shutdown_tag)
         server.cancel_all_calls()
         server_driver.events()
 
         self.assertEqual(cygrpc.CallError.ok, request_call_result)
-        self.assertEqual(cygrpc.CallError.ok,
-                         server_send_initial_metadata_start_batch_result)
+        self.assertEqual(
+            cygrpc.CallError.ok, server_send_initial_metadata_start_batch_result
+        )
         self.assertIs(server_rpc_tag, server_rpc_event.tag)
-        self.assertEqual(cygrpc.CompletionType.operation_complete,
-                         server_rpc_event.completion_type)
+        self.assertEqual(
+            cygrpc.CompletionType.operation_complete,
+            server_rpc_event.completion_type,
+        )
         self.assertIsInstance(server_rpc_event.call, cygrpc.Call)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main(verbosity=2)

@@ -35,6 +35,7 @@
 #include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
@@ -408,7 +409,7 @@ void complete_if_batch_end_locked(inproc_stream* s, grpc_error_handle error,
   int is_rtm = static_cast<int>(op == s->recv_trailing_md_op);
 
   if ((is_sm + is_stm + is_rim + is_rm + is_rtm) == 1) {
-    INPROC_LOG(GPR_INFO, "%s %p %p %s", msg, s, op,
+    INPROC_LOG(GPR_INFO, "%s %p %p %p %s", msg, s, op, op->on_complete,
                grpc_core::StatusToString(error).c_str());
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, op->on_complete, error);
   }
@@ -697,8 +698,9 @@ void op_state_machine_locked(inproc_stream* s, grpc_error_handle error) {
       s->to_read_initial_md_filled = false;
       grpc_core::ExecCtx::Run(
           DEBUG_LOCATION,
-          s->recv_initial_md_op->payload->recv_initial_metadata
-              .recv_initial_metadata_ready,
+          std::exchange(s->recv_initial_md_op->payload->recv_initial_metadata
+                            .recv_initial_metadata_ready,
+                        nullptr),
           absl::OkStatus());
       complete_if_batch_end_locked(
           s, absl::OkStatus(), s->recv_initial_md_op,
@@ -766,6 +768,8 @@ void op_state_machine_locked(inproc_stream* s, grpc_error_handle error) {
                        nullptr);
       s->to_read_trailing_md.Clear();
       s->to_read_trailing_md_filled = false;
+      s->recv_trailing_md_op->payload->recv_trailing_metadata
+          .recv_trailing_metadata->Set(grpc_core::GrpcStatusFromWire(), true);
 
       // We should schedule the recv_trailing_md_op completion if
       // 1. this stream is the client-side
@@ -906,8 +910,6 @@ bool cancel_stream_locked(inproc_stream* s, grpc_error_handle error) {
   return ret;
 }
 
-void do_nothing(void* /*arg*/, grpc_error_handle /*error*/) {}
-
 void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
                        grpc_transport_stream_op_batch* op) {
   INPROC_LOG(GPR_INFO, "perform_stream_op %p %p %p", gt, gs, op);
@@ -933,8 +935,8 @@ void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
   // completed).  This can go away once we move to a new C++ closure API
   // that provides the ability to create a barrier closure.
   if (on_complete == nullptr) {
-    on_complete = GRPC_CLOSURE_INIT(&op->handler_private.closure, do_nothing,
-                                    nullptr, grpc_schedule_on_exec_ctx);
+    on_complete = op->on_complete =
+        grpc_core::NewClosure([](grpc_error_handle) {});
   }
 
   if (op->cancel_stream) {
@@ -1177,13 +1179,18 @@ void set_pollset_set(grpc_transport* /*gt*/, grpc_stream* /*gs*/,
 
 grpc_endpoint* get_endpoint(grpc_transport* /*t*/) { return nullptr; }
 
-const grpc_transport_vtable inproc_vtable = {
-    sizeof(inproc_stream), "inproc",
-    init_stream,           nullptr,
-    set_pollset,           set_pollset_set,
-    perform_stream_op,     perform_transport_op,
-    destroy_stream,        destroy_transport,
-    get_endpoint};
+const grpc_transport_vtable inproc_vtable = {sizeof(inproc_stream),
+                                             true,
+                                             "inproc",
+                                             init_stream,
+                                             nullptr,
+                                             set_pollset,
+                                             set_pollset_set,
+                                             perform_stream_op,
+                                             perform_transport_op,
+                                             destroy_stream,
+                                             destroy_transport,
+                                             get_endpoint};
 
 //******************************************************************************
 // Main inproc transport functions

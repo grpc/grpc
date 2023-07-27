@@ -17,7 +17,6 @@
 #include <array>
 #include <memory>
 
-#include "absl/types/variant.h"
 #include "gtest/gtest.h"
 
 #include <grpc/event_engine/memory_allocator.h>
@@ -94,7 +93,7 @@ TEST_F(ArenaPromiseTest, AllocatedUniquePtrWorks) {
   ArenaPromise<Ptr> initial_promise(
       [x = std::move(x)]() mutable { return Poll<Ptr>(std::move(x)); });
   ArenaPromise<Ptr> p(std::move(initial_promise));
-  EXPECT_EQ(*absl::get<Ptr>(p()), 42);
+  EXPECT_EQ(*p().value(), 42);
 }
 
 }  // namespace grpc_core

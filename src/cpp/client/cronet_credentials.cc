@@ -16,10 +16,18 @@
 //
 //
 
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include <grpc/grpc.h>
 #include <grpc/grpc_cronet.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/support/channel_arguments.h>
+#include <grpcpp/support/client_interceptor.h>
+#include <grpcpp/support/config.h>
 
 #include "src/cpp/client/create_channel_internal.h"
 

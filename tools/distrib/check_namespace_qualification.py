@@ -25,27 +25,27 @@ import sys
 
 
 def load(fpath):
-    with open(fpath, 'r') as f:
+    with open(fpath, "r") as f:
         return f.readlines()
 
 
 def save(fpath, contents):
-    with open(fpath, 'w') as f:
+    with open(fpath, "w") as f:
         f.write(contents)
 
 
 class QualificationValidator(object):
-
     def __init__(self):
-        self.fully_qualified_re = re.compile(r'([ (<])::(grpc[A-Za-z_:])')
+        self.fully_qualified_re = re.compile(r"([ (<])::(grpc[A-Za-z_:])")
         self.using_re = re.compile(
-            r'(using +|using +[A-Za-z_]+ *= *|namespace [A-Za-z_]+ *= *)::')
-        self.define_re = re.compile(r'^#define')
+            r"(using +|using +[A-Za-z_]+ *= *|namespace [A-Za-z_]+ *= *)::"
+        )
+        self.define_re = re.compile(r"^#define")
 
     def check(self, fpath, fix):
         fcontents = load(fpath)
         failed = False
-        for (i, line) in enumerate(fcontents):
+        for i, line in enumerate(fcontents):
             if not self.fully_qualified_re.search(line):
                 continue
             # skip `using` statements
@@ -56,12 +56,12 @@ class QualificationValidator(object):
                 continue
             # fully-qualified namespace found, which may be unnecessary
             if fix:
-                fcontents[i] = self.fully_qualified_re.sub(r'\1\2', line)
+                fcontents[i] = self.fully_qualified_re.sub(r"\1\2", line)
             else:
                 print("Found in %s:%d - %s" % (fpath, i, line.strip()))
                 failed = True
         if fix:
-            save(fpath, ''.join(fcontents))
+            save(fpath, "".join(fcontents))
         return not failed
 
 
@@ -76,34 +76,38 @@ IGNORED_FILES = [
     # multi-line #define statements are not handled
     "src/core/lib/gprpp/global_config_env.h",
     "src/core/lib/profiling/timers.h",
-    "src/core/lib/gprpp/crash.h"
+    "src/core/lib/gprpp/crash.h",
 ]
 
 # find our home
-ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
+ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), "../.."))
 os.chdir(ROOT)
 
 # parse command line
 argp = argparse.ArgumentParser(
-    description='c++ namespace full qualification checker')
-argp.add_argument('-f', '--fix', default=False, action='store_true')
-argp.add_argument('--precommit', default=False, action='store_true')
+    description="c++ namespace full qualification checker"
+)
+argp.add_argument("-f", "--fix", default=False, action="store_true")
+argp.add_argument("--precommit", default=False, action="store_true")
 args = argp.parse_args()
 
 grep_filter = r"grep -E '^(include|src|test).*\.(h|cc)$'"
 if args.precommit:
-    git_command = 'git diff --name-only HEAD'
+    git_command = "git diff --name-only HEAD"
 else:
-    git_command = 'git ls-tree -r --name-only -r HEAD'
+    git_command = "git ls-tree -r --name-only -r HEAD"
 
-FILE_LIST_COMMAND = ' | '.join((git_command, grep_filter))
+FILE_LIST_COMMAND = " | ".join((git_command, grep_filter))
 
 # scan files
 ok = True
 filename_list = []
 try:
-    filename_list = subprocess.check_output(FILE_LIST_COMMAND,
-                                            shell=True).decode().splitlines()
+    filename_list = (
+        subprocess.check_output(FILE_LIST_COMMAND, shell=True)
+        .decode()
+        .splitlines()
+    )
     # Filter out non-existent files (ie, file removed or renamed)
     filename_list = (f for f in filename_list if os.path.isfile(f))
 except subprocess.CalledProcessError:
@@ -113,9 +117,13 @@ validator = QualificationValidator()
 
 for filename in filename_list:
     # Skip check for upb generated code and ignored files.
-    if (filename.endswith('.upb.h') or filename.endswith('.upb.c') or
-            filename.endswith('.upbdefs.h') or
-            filename.endswith('.upbdefs.c') or filename in IGNORED_FILES):
+    if (
+        filename.endswith(".upb.h")
+        or filename.endswith(".upb.c")
+        or filename.endswith(".upbdefs.h")
+        or filename.endswith(".upbdefs.c")
+        or filename in IGNORED_FILES
+    ):
         continue
     ok = validator.check(filename, args.fix) and ok
 

@@ -21,10 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/global_config_generic.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
-
-GPR_GLOBAL_CONFIG_DECLARE_INT32(grpc_client_channel_backup_poll_interval_ms);
 
 // Initializes backup polling.
 void grpc_client_channel_global_init_backup_polling();

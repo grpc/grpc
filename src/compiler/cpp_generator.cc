@@ -55,15 +55,6 @@ std::string FilenameIdentifier(const std::string& filename) {
   return result;
 }
 
-std::string EscapeVariableDelimiters(std::string&& mut_str) {
-  size_t index = 0;
-  while ((index = mut_str.find('$', index)) != std::string::npos) {
-    mut_str.replace(index, 1, "$$");
-    index += 2;
-  }
-  return mut_str;
-}
-
 }  // namespace
 
 template <class T, size_t N>
@@ -1341,8 +1332,7 @@ void PrintHeaderService(grpc_generator::Printer* printer,
                         std::map<std::string, std::string>* vars) {
   (*vars)["Service"] = service->name();
 
-  printer->Print(
-      EscapeVariableDelimiters(service->GetLeadingComments("//")).c_str());
+  printer->Print(service->GetLeadingComments("//").c_str());
   printer->Print(*vars,
                  "class $Service$ final {\n"
                  " public:\n");

@@ -16,6 +16,5 @@
 
 cd $(dirname $0)/../../../
 
-cd third_party/protobuf
 # use tools/bazel wrapper to make sure we use the right version of bazel
-../../tools/bazel query 'deps('$1')'
+tools/bazel query 'deps('$1')'

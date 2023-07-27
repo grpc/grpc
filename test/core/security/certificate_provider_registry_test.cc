@@ -31,10 +31,11 @@ namespace {
 
 class FakeCertificateProviderFactory1 : public CertificateProviderFactory {
  public:
-  const char* name() const override { return "fake1"; }
+  absl::string_view name() const override { return "fake1"; }
 
   RefCountedPtr<Config> CreateCertificateProviderConfig(
-      const Json& /*config_json*/, grpc_error_handle* /*error*/) override {
+      const Json& /*config_json*/, const JsonArgs& /*args*/,
+      ValidationErrors* /*errors*/) override {
     return nullptr;
   }
 
@@ -46,10 +47,11 @@ class FakeCertificateProviderFactory1 : public CertificateProviderFactory {
 
 class FakeCertificateProviderFactory2 : public CertificateProviderFactory {
  public:
-  const char* name() const override { return "fake2"; }
+  absl::string_view name() const override { return "fake2"; }
 
   RefCountedPtr<Config> CreateCertificateProviderConfig(
-      const Json& /*config_json*/, grpc_error_handle* /*error*/) override {
+      const Json& /*config_json*/, const JsonArgs& /*args*/,
+      ValidationErrors* /*errors*/) override {
     return nullptr;
   }
 

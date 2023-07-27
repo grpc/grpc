@@ -1,5 +1,4 @@
 //
-//
 // Copyright 2016 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -31,6 +30,7 @@
 #include "absl/strings/str_cat.h"
 
 #include <grpc/support/alloc.h>
+#include <grpc/support/json.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
@@ -39,6 +39,8 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_reader.h"
+#include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/security/credentials/call_creds_util.h"
 #include "src/core/lib/surface/api_trace.h"
@@ -139,12 +141,15 @@ grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
 }
 
 static char* redact_private_key(const char* json_key) {
-  auto json = Json::Parse(json_key);
-  if (!json.ok() || json->type() != Json::Type::OBJECT) {
+  auto json = grpc_core::JsonParse(json_key);
+  if (!json.ok() || json->type() != Json::Type::kObject) {
     return gpr_strdup("<Json failed to parse.>");
   }
-  (*json->mutable_object())["private_key"] = "<redacted>";
-  return gpr_strdup(json->Dump(/*indent=*/2).c_str());
+  Json::Object object = json->object();
+  object["private_key"] = Json::FromString("<redacted>");
+  return gpr_strdup(
+      grpc_core::JsonDump(Json::FromObject(std::move(object)), /*indent=*/2)
+          .c_str());
 }
 
 grpc_call_credentials* grpc_service_account_jwt_access_credentials_create(

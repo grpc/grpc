@@ -24,8 +24,9 @@ import helloworld_pb2_grpc
 
 
 def unary_call(stub: helloworld_pb2_grpc.GreeterStub, message: str):
-    response = stub.SayHello(helloworld_pb2.HelloRequest(name=message),
-                             timeout=3)
+    response = stub.SayHello(
+        helloworld_pb2.HelloRequest(name=message), timeout=3
+    )
     print(f"Greeter client received: {response.message}")
 
 
@@ -39,11 +40,11 @@ def health_check_call(stub: health_pb2_grpc.HealthStub):
 
 
 def run():
-    with grpc.insecure_channel('localhost:50051') as channel:
+    with grpc.insecure_channel("localhost:50051") as channel:
         stub = helloworld_pb2_grpc.GreeterStub(channel)
         health_stub = health_pb2_grpc.HealthStub(channel)
         # Should succeed
-        unary_call(stub, 'you')
+        unary_call(stub, "you")
 
         # Check health status every 1 second for 30 seconds
         for _ in range(30):
@@ -51,6 +52,6 @@ def run():
             sleep(1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig()
     run()

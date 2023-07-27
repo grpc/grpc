@@ -20,7 +20,7 @@ RPC, e.g. cancellation.
 
 from abc import ABCMeta
 from abc import abstractmethod
-from typing import AsyncIterable, Awaitable, Generic, Optional, Union
+from typing import Any, AsyncIterator, Generator, Generic, Optional, Union
 
 import grpc
 
@@ -30,7 +30,7 @@ from ._typing import EOFType
 from ._typing import RequestType
 from ._typing import ResponseType
 
-__all__ = 'RpcContext', 'Call', 'UnaryUnaryCall', 'UnaryStreamCall'
+__all__ = "RpcContext", "Call", "UnaryUnaryCall", "UnaryStreamCall"
 
 
 class RpcContext(metaclass=ABCMeta):
@@ -135,13 +135,13 @@ class Call(RpcContext, metaclass=ABCMeta):
         """
 
 
-class UnaryUnaryCall(Generic[RequestType, ResponseType],
-                     Call,
-                     metaclass=ABCMeta):
+class UnaryUnaryCall(
+    Generic[RequestType, ResponseType], Call, metaclass=ABCMeta
+):
     """The abstract base class of an unary-unary RPC on the client-side."""
 
     @abstractmethod
-    def __await__(self) -> Awaitable[ResponseType]:
+    def __await__(self) -> Generator[Any, None, ResponseType]:
         """Await the response message to be ready.
 
         Returns:
@@ -149,18 +149,17 @@ class UnaryUnaryCall(Generic[RequestType, ResponseType],
         """
 
 
-class UnaryStreamCall(Generic[RequestType, ResponseType],
-                      Call,
-                      metaclass=ABCMeta):
-
+class UnaryStreamCall(
+    Generic[RequestType, ResponseType], Call, metaclass=ABCMeta
+):
     @abstractmethod
-    def __aiter__(self) -> AsyncIterable[ResponseType]:
-        """Returns the async iterable representation that yields messages.
+    def __aiter__(self) -> AsyncIterator[ResponseType]:
+        """Returns the async iterator representation that yields messages.
 
         Under the hood, it is calling the "read" method.
 
         Returns:
-          An async iterable object that yields messages.
+          An async iterator object that yields messages.
         """
 
     @abstractmethod
@@ -176,10 +175,9 @@ class UnaryStreamCall(Generic[RequestType, ResponseType],
         """
 
 
-class StreamUnaryCall(Generic[RequestType, ResponseType],
-                      Call,
-                      metaclass=ABCMeta):
-
+class StreamUnaryCall(
+    Generic[RequestType, ResponseType], Call, metaclass=ABCMeta
+):
     @abstractmethod
     async def write(self, request: RequestType) -> None:
         """Writes one message to the stream.
@@ -197,7 +195,7 @@ class StreamUnaryCall(Generic[RequestType, ResponseType],
         """
 
     @abstractmethod
-    def __await__(self) -> Awaitable[ResponseType]:
+    def __await__(self) -> Generator[Any, None, ResponseType]:
         """Await the response message to be ready.
 
         Returns:
@@ -205,18 +203,17 @@ class StreamUnaryCall(Generic[RequestType, ResponseType],
         """
 
 
-class StreamStreamCall(Generic[RequestType, ResponseType],
-                       Call,
-                       metaclass=ABCMeta):
-
+class StreamStreamCall(
+    Generic[RequestType, ResponseType], Call, metaclass=ABCMeta
+):
     @abstractmethod
-    def __aiter__(self) -> AsyncIterable[ResponseType]:
-        """Returns the async iterable representation that yields messages.
+    def __aiter__(self) -> AsyncIterator[ResponseType]:
+        """Returns the async iterator representation that yields messages.
 
         Under the hood, it is calling the "read" method.
 
         Returns:
-          An async iterable object that yields messages.
+          An async iterator object that yields messages.
         """
 
     @abstractmethod

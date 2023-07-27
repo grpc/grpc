@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from grpc import _observability
 
 _INTERNAL_CALL_ERROR_MESSAGE_FORMAT = (
     'Internal gRPC call error %d. ' +
@@ -71,6 +72,23 @@ cdef class _CallState:
   def __cinit__(self):
     self.due = set()
 
+  cdef void maybe_delete_call_tracer(self) except *:
+    if not self.call_tracer_capsule:
+      return
+    _observability.delete_call_tracer(self.call_tracer_capsule)
+
+  cdef void maybe_set_client_call_tracer_on_call(self, bytes method_name) except *:
+    # TODO(xuanwn): use channel args to exclude those metrics.
+    for exclude_prefix in _observability._SERVICES_TO_EXCLUDE:
+      if exclude_prefix in method_name:
+        return
+    with _observability.get_plugin() as plugin:
+      if not (plugin and plugin.observability_enabled):
+        return
+      capsule = plugin.create_client_call_tracer(method_name)
+      capsule_ptr = cpython.PyCapsule_GetPointer(capsule, CLIENT_CALL_TRACER)
+      _set_call_tracer(self.c_call, capsule_ptr)
+      self.call_tracer_capsule = capsule
 
 cdef class _ChannelState:
 
@@ -230,6 +248,7 @@ cdef void _call(
       grpc_slice_unref(method_slice)
       if host_slice_ptr:
         grpc_slice_unref(host_slice)
+      call_state.maybe_set_client_call_tracer_on_call(method)
       if context is not None:
         set_census_context_on_call(call_state, context)
       if credentials is not None:
@@ -238,7 +257,9 @@ cdef void _call(
             call_state.c_call, c_call_credentials)
         grpc_call_credentials_release(c_call_credentials)
         if c_call_error != GRPC_CALL_OK:
-          grpc_call_unref(call_state.c_call)
+          #TODO(xuanwn): Expand the scope of nogil
+          with nogil:
+            grpc_call_unref(call_state.c_call)
           call_state.c_call = NULL
           _raise_call_error_no_metadata(c_call_error)
       started_tags = set()
@@ -248,7 +269,9 @@ cdef void _call(
           started_tags.add(tag)
         else:
           grpc_call_cancel(call_state.c_call, NULL)
-          grpc_call_unref(call_state.c_call)
+          #TODO(xuanwn): Expand the scope of nogil
+          with nogil:
+            grpc_call_unref(call_state.c_call)
           call_state.c_call = NULL
           _raise_call_error(c_call_error, metadata)
       else:
@@ -263,9 +286,10 @@ cdef void _process_integrated_call_tag(
   cdef _CallState call_state = state.integrated_call_states.pop(tag)
   call_state.due.remove(tag)
   if not call_state.due:
-    grpc_call_unref(call_state.c_call)
+    with nogil:
+      grpc_call_unref(call_state.c_call)
     call_state.c_call = NULL
-
+    call_state.maybe_delete_call_tracer()
 
 cdef class IntegratedCall:
 
@@ -303,8 +327,11 @@ cdef object _process_segregated_call_tag(
     grpc_completion_queue *c_completion_queue, _BatchOperationTag tag):
   call_state.due.remove(tag)
   if not call_state.due:
-    grpc_call_unref(call_state.c_call)
+    #TODO(xuanwn): Expand the scope of nogil
+    with nogil:
+      grpc_call_unref(call_state.c_call)
     call_state.c_call = NULL
+    call_state.maybe_delete_call_tracer()
     state.segregated_call_states.remove(call_state)
     _destroy_c_completion_queue(c_completion_queue)
     return True
@@ -331,7 +358,8 @@ cdef class SegregatedCall:
         self._channel_state, self._call_state, self._c_completion_queue, tag)
     def on_failure():
       self._call_state.due.clear()
-      grpc_call_unref(self._call_state.c_call)
+      with nogil:
+        grpc_call_unref(self._call_state.c_call)
       self._call_state.c_call = NULL
       self._channel_state.segregated_call_states.remove(self._call_state)
       _destroy_c_completion_queue(self._c_completion_queue)

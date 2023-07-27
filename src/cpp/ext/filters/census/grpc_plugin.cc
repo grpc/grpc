@@ -32,18 +32,19 @@
 #include <grpcpp/opencensus.h>
 #include <grpcpp/server_context.h>
 
+#include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/cpp/common/channel_filter.h"
-#include "src/cpp/ext/filters/census/channel_filter.h"
 #include "src/cpp/ext/filters/census/client_filter.h"
 #include "src/cpp/ext/filters/census/measures.h"
-#include "src/cpp/ext/filters/census/server_filter.h"
+#include "src/cpp/ext/filters/census/server_call_tracer.h"
 
 namespace grpc {
 
 void RegisterOpenCensusPlugin() {
+  grpc_core::ServerCallTracerFactory::RegisterGlobal(
+      new grpc::internal::OpenCensusServerCallTracerFactory);
   grpc_core::CoreConfiguration::RegisterBuilder(
       [](grpc_core::CoreConfiguration::Builder* builder) {
         builder->channel_init()->RegisterStage(
@@ -54,10 +55,6 @@ void RegisterOpenCensusPlugin() {
               return true;
             });
       });
-  RegisterChannelFilter<internal::OpenCensusChannelData,
-                        internal::OpenCensusServerCallData>(
-      "opencensus_server", GRPC_SERVER_CHANNEL, INT_MAX /* priority */,
-      nullptr /* condition function */);
 
   // Access measures to ensure they are initialized. Otherwise, creating a view
   // before the first RPC would cause an error.
@@ -72,6 +69,7 @@ void RegisterOpenCensusPlugin() {
   RpcClientTransparentRetriesPerCall();
   RpcClientRetryDelayPerCall();
   RpcClientTransportLatency();
+  internal::RpcClientApiLatency();
 
   RpcServerSentBytesPerRpc();
   RpcServerReceivedBytesPerRpc();
@@ -183,6 +181,8 @@ ABSL_CONST_INIT const absl::string_view kRpcServerStartedRpcsMeasureName =
 
 namespace internal {
 
+ABSL_CONST_INIT const absl::string_view kRpcClientApiLatencyMeasureName =
+    "grpc.io/client/api_latency";
 namespace {
 std::atomic<bool> g_open_census_stats_enabled(true);
 std::atomic<bool> g_open_census_tracing_enabled(true);
@@ -201,7 +201,7 @@ OpenCensusRegistry& OpenCensusRegistry::Get() {
     const ::opencensus::tags::TagMap& tag_map) {
   std::vector<std::pair<::opencensus::tags::TagKey, std::string>> tags =
       tag_map.tags();
-  for (const auto& label : constant_labels_) {
+  for (const auto& label : ConstantLabels()) {
     tags.emplace_back(label.tag_key, label.value);
   }
   return ::opencensus::tags::TagMap(std::move(tags));
@@ -209,9 +209,8 @@ OpenCensusRegistry& OpenCensusRegistry::Get() {
 
 void OpenCensusRegistry::PopulateCensusContextWithConstantAttributes(
     grpc::experimental::CensusContext* context) {
-  // We reuse the constant labels for the attributes
-  for (const auto& label : constant_labels_) {
-    context->AddSpanAttribute(label.key, label.value);
+  for (const auto& attribute : ConstantAttributes()) {
+    context->AddSpanAttribute(attribute.key, attribute.value);
   }
 }
 

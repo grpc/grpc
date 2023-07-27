@@ -34,7 +34,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
-#include "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -176,7 +176,7 @@ class ResolveAddressTest : public ::testing::Test {
   grpc_pollset_set* pollset_set_;
   // the default value of grpc_ares_test_only_inject_config, which might
   // be modified during a test
-  void (*default_inject_config_)(ares_channel channel) = nullptr;
+  void (*default_inject_config_)(ares_channel* channel) = nullptr;
 };
 
 }  // namespace
@@ -390,7 +390,7 @@ namespace {
 
 int g_fake_non_responsive_dns_server_port;
 
-void InjectNonResponsiveDNSServer(ares_channel channel) {
+void InjectNonResponsiveDNSServer(ares_channel* channel) {
   gpr_log(GPR_DEBUG,
           "Injecting broken nameserver list. Bad server address:|[::1]:%d|.",
           g_fake_non_responsive_dns_server_port);
@@ -403,7 +403,7 @@ void InjectNonResponsiveDNSServer(ares_channel channel) {
   dns_server_addrs[0].tcp_port = g_fake_non_responsive_dns_server_port;
   dns_server_addrs[0].udp_port = g_fake_non_responsive_dns_server_port;
   dns_server_addrs[0].next = nullptr;
-  ASSERT_EQ(ares_set_servers_ports(channel, dns_server_addrs), ARES_SUCCESS);
+  ASSERT_EQ(ares_set_servers_ports(*channel, dns_server_addrs), ARES_SUCCESS);
 }
 
 }  // namespace
@@ -548,7 +548,9 @@ int main(int argc, char** argv) {
   } else {
     GPR_ASSERT(0);
   }
-  GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, g_resolver_type);
+  grpc_core::ConfigVars::Overrides overrides;
+  overrides.dns_resolver = g_resolver_type;
+  grpc_core::ConfigVars::SetOverrides(overrides);
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(&argc, argv);
   const auto result = RUN_ALL_TESTS();

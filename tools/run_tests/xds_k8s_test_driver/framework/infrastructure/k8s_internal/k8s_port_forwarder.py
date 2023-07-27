@@ -25,15 +25,17 @@ class PortForwardingError(Exception):
 
 
 class PortForwarder:
-    PORT_FORWARD_LOCAL_ADDRESS: str = '127.0.0.1'
+    PORT_FORWARD_LOCAL_ADDRESS: str = "127.0.0.1"
 
-    def __init__(self,
-                 context: str,
-                 namespace: str,
-                 destination: str,
-                 remote_port: int,
-                 local_port: Optional[int] = None,
-                 local_address: Optional[str] = None):
+    def __init__(
+        self,
+        context: str,
+        namespace: str,
+        destination: str,
+        remote_port: int,
+        local_port: Optional[int] = None,
+        local_address: Optional[str] = None,
+    ):
         self.context = context
         self.namespace = namespace
         self.destination = destination
@@ -48,22 +50,36 @@ class PortForwarder:
         else:
             port_mapping = f":{self.remote_port}"
         cmd = [
-            "kubectl", "--context", self.context, "--namespace", self.namespace,
-            "port-forward", "--address", self.local_address, self.destination,
-            port_mapping
+            "kubectl",
+            "--context",
+            self.context,
+            "--namespace",
+            self.namespace,
+            "port-forward",
+            "--address",
+            self.local_address,
+            self.destination,
+            port_mapping,
         ]
-        self.subprocess = subprocess.Popen(cmd,
-                                           stdout=subprocess.PIPE,
-                                           stderr=subprocess.STDOUT,
-                                           universal_newlines=True)
+        logger.debug(
+            "Executing port forwarding subprocess cmd: %s", " ".join(cmd)
+        )
+        self.subprocess = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            universal_newlines=True,
+        )
         # Wait for stdout line indicating successful start.
         if self.local_port:
             local_port_expected = (
                 f"Forwarding from {self.local_address}:{self.local_port}"
-                f" -> {self.remote_port}")
+                f" -> {self.remote_port}"
+            )
         else:
             local_port_re = re.compile(
-                f"Forwarding from {self.local_address}:([0-9]+) -> {self.remote_port}"
+                f"Forwarding from {self.local_address}:([0-9]+) ->"
+                f" {self.remote_port}"
             )
         try:
             while True:
@@ -77,8 +93,9 @@ class PortForwarder:
                             for error in self.subprocess.stdout.readlines()
                         ]
                         raise PortForwardingError(
-                            'Error forwarding port, kubectl return '
-                            f'code {return_code}, output {errors}')
+                            "Error forwarding port, kubectl return "
+                            f"code {return_code}, output {errors}"
+                        )
                     # If there is no output, and the subprocess is not exiting,
                     # continue waiting for the log line.
                     continue
@@ -87,13 +104,13 @@ class PortForwarder:
                 if self.local_port:
                     if output != local_port_expected:
                         raise PortForwardingError(
-                            f'Error forwarding port, unexpected output {output}'
+                            f"Error forwarding port, unexpected output {output}"
                         )
                 else:
                     groups = local_port_re.search(output)
                     if groups is None:
                         raise PortForwardingError(
-                            f'Error forwarding port, unexpected output {output}'
+                            f"Error forwarding port, unexpected output {output}"
                         )
                     # Update local port to the randomly picked one
                     self.local_port = int(groups[1])
@@ -106,10 +123,11 @@ class PortForwarder:
 
     def close(self) -> None:
         if self.subprocess is not None:
-            logger.info('Shutting down port forwarding, pid %s',
-                        self.subprocess.pid)
+            logger.info(
+                "Shutting down port forwarding, pid %s", self.subprocess.pid
+            )
             self.subprocess.kill()
             stdout, _ = self.subprocess.communicate(timeout=5)
-            logger.info('Port forwarding stopped')
-            logger.debug('Port forwarding remaining stdout: %s', stdout)
+            logger.info("Port forwarding stopped")
+            logger.debug("Port forwarding remaining stdout: %s", stdout)
             self.subprocess = None

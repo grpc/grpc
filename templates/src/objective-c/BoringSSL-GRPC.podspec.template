@@ -69,7 +69,7 @@
 
   Pod::Spec.new do |s|
     s.name     = 'BoringSSL-GRPC'
-    version = '0.0.24'
+    version = '0.0.30'
     s.version  = version
     s.summary  = 'BoringSSL is a fork of OpenSSL that is designed to meet Google\'s needs.'
     # Adapted from the homepage:
@@ -109,10 +109,10 @@
       :commit => "${boringssl_commit}",
     }
 
-    s.ios.deployment_target = '9.0'
-    s.osx.deployment_target = '10.10'
-    s.tvos.deployment_target = '10.0'
-    s.watchos.deployment_target = '4.0'
+    s.ios.deployment_target = '10.0'
+    s.osx.deployment_target = '10.12'
+    s.tvos.deployment_target = '12.0'
+    s.watchos.deployment_target = '6.0'
 
     name = 'openssl_grpc'
 
@@ -132,11 +132,6 @@
     # because Cocoapods lets omit the pod name when including headers of static libraries, the
     # following lets users write `#include <openssl/ssl.h>`.
     s.header_dir = name
-
-    # The module map and umbrella header created automatically by Cocoapods don't work for C libraries
-    # like this one. The following file, and a correct umbrella header, are created on the fly by the
-    # `prepare_command` of this pod.
-    s.module_map = 'src/include/openssl/BoringSSL.modulemap'
 
     # We don't need to inhibit all warnings; only -Wno-shorten-64-to-32. But Cocoapods' linter doesn't
     # want that for some reason.
@@ -181,58 +176,13 @@
       ss.dependency "#{s.name}/Interface", version
     end
 
+    s.pod_target_xcconfig = {
+      # Do not let src/include/openssl/time.h override system API
+      'USE_HEADERMAP' => 'NO',
+    }
+
     s.prepare_command = <<-END_OF_COMMAND
       set -e
-      # Add a module map and an umbrella header
-      mkdir -p src/include/openssl
-      cat > src/include/openssl/umbrella.h <<EOF
-        #include "ssl.h"
-        #include "crypto.h"
-        #include "aes.h"
-        /* The following macros are defined by base.h. The latter is the first file included by the
-           other headers. */
-        #if defined(OPENSSL_ARM) || defined(OPENSSL_AARCH64)
-        #  include "arm_arch.h"
-        #endif
-        #include "asn1.h"
-        #include "asn1_mac.h"
-        #include "asn1t.h"
-        #include "blowfish.h"
-        #include "cast.h"
-        #include "chacha.h"
-        #include "cmac.h"
-        #include "conf.h"
-        #include "cpu.h"
-        #include "curve25519.h"
-        #include "des.h"
-        #include "dtls1.h"
-        #include "hkdf.h"
-        #include "md4.h"
-        #include "md5.h"
-        #include "obj_mac.h"
-        #include "objects.h"
-        #include "opensslv.h"
-        #include "ossl_typ.h"
-        #include "pkcs12.h"
-        #include "pkcs7.h"
-        #include "pkcs8.h"
-        #include "poly1305.h"
-        #include "rand.h"
-        #include "rc4.h"
-        #include "ripemd.h"
-        #include "safestack.h"
-        #include "srtp.h"
-        #include "x509.h"
-        #include "x509v3.h"
-      EOF
-      cat > src/include/openssl/BoringSSL.modulemap <<EOF
-        framework module openssl {
-          umbrella header "umbrella.h"
-          textual header "arm_arch.h"
-          export *
-          module * { export * }
-        }
-      EOF
 
       # To avoid symbol conflict with OpenSSL, gRPC needs to rename all the BoringSSL symbols with a
       # prefix. This is done with BoringSSL's BORINGSSL_PREFIX mechanism

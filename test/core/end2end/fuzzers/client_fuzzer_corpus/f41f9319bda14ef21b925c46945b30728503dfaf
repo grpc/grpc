@@ -1,2 +1,3 @@
-ð
-‘a‘‘‘NNN
+network_input {
+  single_read_bytes: "\xf0\x0a\x91\x61\x91\x91\x91\x4e\x4e\x4e"
+}

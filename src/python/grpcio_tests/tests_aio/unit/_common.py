@@ -24,21 +24,23 @@ from grpc.experimental import aio
 
 from tests.unit.framework.common import test_constants
 
-ADHOC_METHOD = '/test/AdHoc'
+ADHOC_METHOD = "/test/AdHoc"
 
 
 def seen_metadata(expected: Metadata, actual: Metadata):
     return not bool(set(tuple(expected)) - set(tuple(actual)))
 
 
-def seen_metadatum(expected_key: MetadataKey, expected_value: MetadataValue,
-                   actual: Metadata) -> bool:
+def seen_metadatum(
+    expected_key: MetadataKey, expected_value: MetadataValue, actual: Metadata
+) -> bool:
     obtained = actual[expected_key]
     return obtained == expected_value
 
 
-async def block_until_certain_state(channel: aio.Channel,
-                                    expected_state: grpc.ChannelConnectivity):
+async def block_until_certain_state(
+    channel: aio.Channel, expected_state: grpc.ChannelConnectivity
+):
     state = channel.get_state()
     while state != expected_state:
         await channel.wait_for_state_change(state)
@@ -67,15 +69,16 @@ def inject_callbacks(call: aio.Call):
 
     async def validation():
         await asyncio.wait_for(
-            asyncio.gather(first_callback_ran.wait(),
-                           second_callback_ran.wait()),
-            test_constants.SHORT_TIMEOUT)
+            asyncio.gather(
+                first_callback_ran.wait(), second_callback_ran.wait()
+            ),
+            test_constants.SHORT_TIMEOUT,
+        )
 
     return validation()
 
 
 class CountingRequestIterator:
-
     def __init__(self, request_iterator):
         self.request_cnt = 0
         self._request_iterator = request_iterator
@@ -90,7 +93,6 @@ class CountingRequestIterator:
 
 
 class CountingResponseIterator:
-
     def __init__(self, response_iterator):
         self.response_cnt = 0
         self._response_iterator = response_iterator
@@ -106,6 +108,7 @@ class CountingResponseIterator:
 
 class AdhocGenericHandler(grpc.GenericRpcHandler):
     """A generic handler to plugin testing server methods on the fly."""
+
     _handler: grpc.RpcMethodHandler
 
     def __init__(self):

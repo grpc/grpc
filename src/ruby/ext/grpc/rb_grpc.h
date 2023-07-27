@@ -70,8 +70,14 @@ gpr_timespec grpc_rb_time_timeval(VALUE time, int interval);
 
 void grpc_ruby_fork_guard();
 
-void grpc_ruby_init();
+/* To be called once and only once before entering code section that is
+ * definitely not fork-safe. Used in conjunction with GRPC.prefork
+ * to catch for-unsafe processes and raise errors. */
+void grpc_rb_fork_unsafe_begin();
 
-void grpc_ruby_shutdown();
+/* To be called once and only once after each grpc_rb_fork_unsafe_begin*/
+void grpc_rb_fork_unsafe_end();
+
+void grpc_ruby_init();
 
 #endif /* GRPC_RB_H_ */

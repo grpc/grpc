@@ -28,6 +28,7 @@ DIRS=(
     'src/python/grpcio_reflection/grpc_reflection'
     'src/python/grpcio_testing/grpc_testing'
     'src/python/grpcio_status/grpc_status'
+    'src/python/grpcio_observability/grpc_observability'
     'tools/run_tests/xds_k8s_test_driver/bin'
     'tools/run_tests/xds_k8s_test_driver/framework'
 )
@@ -46,7 +47,10 @@ PYTHON=$VIRTUALENV/bin/python
 $PYTHON -m pip install --upgrade pip==19.3.1
 
 # TODO(https://github.com/grpc/grpc/issues/23394): Update Pylint.
-$PYTHON -m pip install --upgrade astroid==2.3.3 pylint==2.2.2 "isort>=4.3.0,<5.0.0"
+$PYTHON -m pip install --upgrade astroid==2.3.3 \
+  pylint==2.2.2 \
+  toml==0.10.2 \
+  "isort>=4.3.0,<5.0.0"
 
 EXIT=0
 for dir in "${DIRS[@]}"; do

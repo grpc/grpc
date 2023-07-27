@@ -24,16 +24,20 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include <string>
+#include <memory>
 
+#include "absl/container/flat_hash_map.h"
+#include "absl/meta/type_traits.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/support/time.h>
 
+#include "src/core/ext/transport/chttp2/transport/context_list_entry.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/frame_goaway.h"
@@ -44,7 +48,8 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
-#include "src/core/ext/transport/chttp2/transport/stream_map.h"
+#include "src/core/ext/transport/chttp2/transport/ping_abuse_policy.h"
+#include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/debug/trace.h"
@@ -57,9 +62,9 @@
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/init_internally.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -68,9 +73,13 @@
 #include "src/core/lib/transport/transport_fwd.h"
 #include "src/core/lib/transport/transport_impl.h"
 
-namespace grpc_core {
-class ContextList;
-}
+// Flag that this closure barrier may be covering a write in a pollset, and so
+//   we should not complete this closure until we can prove that the write got
+//   scheduled
+#define CLOSURE_BARRIER_MAY_COVER_WRITE (1 << 0)
+// First bit of the reference count, stored in the high order bits (with the low
+//   bits being used for flags defined above)
+#define CLOSURE_BARRIER_FIRST_REF_BIT (1 << 16)
 
 // streams are kept in various linked lists depending on what things need to
 // happen to them... this enum labels each list
@@ -139,21 +148,14 @@ struct grpc_chttp2_ping_queue {
   grpc_closure_list lists[GRPC_CHTTP2_PCL_COUNT] = {};
   uint64_t inflight_id = 0;
 };
-struct grpc_chttp2_repeated_ping_policy {
-  int max_pings_without_data;
-  int max_ping_strikes;
-  grpc_core::Duration min_recv_ping_interval_without_data;
-};
+
 struct grpc_chttp2_repeated_ping_state {
   grpc_core::Timestamp last_ping_sent_time;
   int pings_before_data_required;
-  grpc_timer delayed_ping_timer;
-  bool is_delayed_ping_timer_set;
+  absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
+      delayed_ping_timer_handle;
 };
-struct grpc_chttp2_server_ping_recv_state {
-  grpc_core::Timestamp last_ping_recv_time;
-  int ping_strikes;
-};
+
 // deframer state for the overall http2 stream of bytes
 typedef enum {
   // prefix: one entry per http2 connection prefix byte
@@ -238,21 +240,7 @@ typedef enum {
   GRPC_CHTTP2_KEEPALIVE_STATE_DISABLED,
 } grpc_chttp2_keepalive_state;
 
-struct grpc_chttp2_transport
-// TODO(ctiller): #31319 fixed a crash on Linux & Mac whereby iomgr was
-// accessed after shutdown by chttp2. We've not seen similar behavior on
-// Windows afaik, but this fix has exposed another refcounting bug whereby
-// transports leak on Windows and prevent test shutdown.
-// This hack attempts to compromise between two things that are blocking our CI
-// from giving us a good quality signal, but are unlikely to be problems for
-// most customers. We should continue tracking down what's causing the failure,
-// but this gives us some runway to do so - and given that we're actively
-// working on removing the problematic code paths, it may be that effort brings
-// the result we need.
-#ifndef GPR_WINDOWS
-    : public grpc_core::KeepsGrpcInitialized
-#endif
-{
+struct grpc_chttp2_transport : public grpc_core::KeepsGrpcInitialized {
   grpc_chttp2_transport(const grpc_core::ChannelArgs& channel_args,
                         grpc_endpoint* ep, bool is_client);
   ~grpc_chttp2_transport();
@@ -260,7 +248,7 @@ struct grpc_chttp2_transport
   grpc_transport base;  // must be first
   grpc_core::RefCount refs;
   grpc_endpoint* ep;
-  std::string peer_string;
+  grpc_core::Slice peer_string;
 
   grpc_core::MemoryOwner memory_owner;
   const grpc_core::MemoryAllocator::Reservation self_reservation;
@@ -286,7 +274,7 @@ struct grpc_chttp2_transport
   grpc_chttp2_stream_list lists[STREAM_LIST_COUNT] = {};
 
   /// maps stream id to grpc_chttp2_stream objects
-  grpc_chttp2_stream_map stream_map;
+  absl::flat_hash_map<uint32_t, grpc_chttp2_stream*> stream_map;
 
   grpc_closure write_action_begin_locked;
   grpc_closure write_action;
@@ -350,8 +338,10 @@ struct grpc_chttp2_transport
 
   /// ping queues for various ping insertion points
   grpc_chttp2_ping_queue ping_queue = grpc_chttp2_ping_queue();
-  grpc_chttp2_repeated_ping_policy ping_policy;
-  grpc_chttp2_repeated_ping_state ping_state;
+  grpc_core::Chttp2PingAbusePolicy ping_abuse_policy;
+  grpc_core::Chttp2PingRatePolicy ping_rate_policy;
+  absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
+      delayed_ping_timer_handle;
   uint64_t ping_ctr = 0;  // unique id for pings
   grpc_closure retry_initiate_ping_locked;
 
@@ -359,7 +349,6 @@ struct grpc_chttp2_transport
   size_t ping_ack_count = 0;
   size_t ping_ack_capacity = 0;
   uint64_t* ping_acks = nullptr;
-  grpc_chttp2_server_ping_recv_state ping_recv_state;
 
   /// parser for headers
   grpc_core::HPackParser hpack_parser;
@@ -410,7 +399,6 @@ struct grpc_chttp2_transport
   grpc_closure finish_bdp_ping_locked;
 
   // if non-NULL, close the transport with this error when writes are finished
-  //
   grpc_error_handle close_transport_on_writes_finished;
 
   // a list of closures to run after writes are finished
@@ -426,25 +414,29 @@ struct grpc_chttp2_transport
   /// destructive cleanup closure
   grpc_closure destructive_reclaimer_locked;
 
-  // next bdp ping timer
-  bool have_next_bdp_ping_timer = false;
   /// If start_bdp_ping_locked has been called
   bool bdp_ping_started = false;
-  grpc_timer next_bdp_ping_timer;
+  // True if pings should be acked
+  bool ack_pings = true;
+  // next bdp ping timer handle
+  absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
+      next_bdp_ping_timer_handle;
 
   // keep-alive ping support
   /// Closure to initialize a keepalive ping
   grpc_closure init_keepalive_ping_locked;
   /// Closure to run when the keepalive ping is sent
   grpc_closure start_keepalive_ping_locked;
-  /// Cousure to run when the keepalive ping ack is received
+  /// Closure to run when the keepalive ping ack is received
   grpc_closure finish_keepalive_ping_locked;
-  /// Closrue to run when the keepalive ping timeouts
+  /// Closure to run when the keepalive ping timeouts
   grpc_closure keepalive_watchdog_fired_locked;
   /// timer to initiate ping events
-  grpc_timer keepalive_ping_timer;
+  absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
+      keepalive_ping_timer_handle;
   /// watchdog to kill the transport when waiting for the keepalive ping
-  grpc_timer keepalive_watchdog_timer;
+  absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
+      keepalive_watchdog_timer_handle;
   /// time duration in between pings
   grpc_core::Duration keepalive_time;
   /// grace period for a ping to complete before watchdog kicks in
@@ -455,6 +447,8 @@ struct grpc_chttp2_transport
   bool keepalive_ping_started = false;
   /// keep-alive state machine state
   grpc_chttp2_keepalive_state keepalive_state;
+  // Soft limit on max header size.
+  uint32_t max_header_list_size_soft_limit = 0;
   grpc_core::ContextList* cl = nullptr;
   grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode> channelz_socket;
   uint32_t num_messages_in_next_write = 0;
@@ -467,8 +461,13 @@ struct grpc_chttp2_transport
   bool reading_paused_on_pending_induced_frames = false;
   /// Based on channel args, preferred_rx_crypto_frame_sizes are advertised to
   /// the peer
-  ///
   bool enable_preferred_rx_crypto_frame_advertisement = false;
+  /// Set to non zero if closures associated with the transport may be
+  /// covering a write in a pollset. Such closures cannot be scheduled until
+  /// we can prove that the write got scheduled.
+  uint8_t closure_barrier_may_cover_write = CLOSURE_BARRIER_MAY_COVER_WRITE;
+
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine;
 };
 
 typedef enum {
@@ -677,8 +676,9 @@ void grpc_chttp2_act_on_flowctl_action(
 
 inline grpc_chttp2_stream* grpc_chttp2_parsing_lookup_stream(
     grpc_chttp2_transport* t, uint32_t id) {
-  return static_cast<grpc_chttp2_stream*>(
-      grpc_chttp2_stream_map_find(&t->stream_map, id));
+  auto it = t->stream_map.find(id);
+  if (it == t->stream_map.end()) return nullptr;
+  return it->second;
 }
 grpc_chttp2_stream* grpc_chttp2_parsing_accept_stream(grpc_chttp2_transport* t,
                                                       uint32_t id);
@@ -694,7 +694,8 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
                                        grpc_chttp2_stream* s,
                                        grpc_closure** pclosure,
                                        grpc_error_handle error,
-                                       const char* desc);
+                                       const char* desc,
+                                       grpc_core::DebugLocation whence = {});
 
 #define GRPC_HEADER_SIZE_IN_BYTES 5
 #define MAX_SIZE_T (~(size_t)0)
@@ -767,11 +768,9 @@ inline void grpc_chttp2_ref_transport(grpc_chttp2_transport* t) {
 
 void grpc_chttp2_ack_ping(grpc_chttp2_transport* t, uint64_t id);
 
-/// Add a new ping strike to ping_recv_state.ping_strikes. If
-/// ping_recv_state.ping_strikes > ping_policy.max_ping_strikes, it sends GOAWAY
-/// with error code ENHANCE_YOUR_CALM and additional debug data resembling
-/// "too_many_pings" followed by immediately closing the connection.
-void grpc_chttp2_add_ping_strike(grpc_chttp2_transport* t);
+/// Sends GOAWAY with error code ENHANCE_YOUR_CALM and additional debug data
+/// resembling "too_many_pings" followed by immediately closing the connection.
+void grpc_chttp2_exceeded_ping_strikes(grpc_chttp2_transport* t);
 
 /// Resets ping clock. Should be called when flushing window updates,
 /// initial/trailing metadata or data frames. For a server, it resets the number
@@ -802,8 +801,10 @@ void grpc_chttp2_fail_pending_writes(grpc_chttp2_transport* t,
 /// initialization
 void grpc_chttp2_config_default_keepalive_args(grpc_channel_args* args,
                                                bool is_client);
+void grpc_chttp2_config_default_keepalive_args(
+    const grpc_core::ChannelArgs& channel_args, bool is_client);
 
-void grpc_chttp2_retry_initiate_ping(void* tp, grpc_error_handle error);
+void grpc_chttp2_retry_initiate_ping(grpc_chttp2_transport* t);
 
 void schedule_bdp_ping_locked(grpc_chttp2_transport* t);
 

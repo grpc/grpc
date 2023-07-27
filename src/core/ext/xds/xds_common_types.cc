@@ -39,15 +39,18 @@
 #include "google/protobuf/struct.upb.h"
 #include "google/protobuf/struct.upbdefs.h"
 #include "google/protobuf/wrappers.upb.h"
-#include "upb/arena.h"
-#include "upb/json_encode.h"
-#include "upb/status.h"
+#include "upb/base/status.h"
+#include "upb/json/encode.h"
+#include "upb/mem/arena.h"
 #include "upb/upb.hpp"
 #include "xds/type/v3/typed_struct.upb.h"
+
+#include <grpc/support/json.h>
 
 #include "src/core/ext/xds/upb_utils.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_client.h"
+#include "src/core/lib/json/json_reader.h"
 
 namespace grpc_core {
 
@@ -430,7 +433,7 @@ absl::StatusOr<Json> ParseProtobufStructToJson(
   void* buf = upb_Arena_Malloc(context.arena, json_size + 1);
   upb_JsonEncode(resource, msg_def, context.symtab, 0,
                  reinterpret_cast<char*>(buf), json_size + 1, status.ptr());
-  auto json = Json::Parse(reinterpret_cast<char*>(buf));
+  auto json = JsonParse(reinterpret_cast<char*>(buf));
   if (!json.ok()) {
     // This should never happen.
     return absl::InternalError(
@@ -485,7 +488,7 @@ absl::optional<XdsExtension> ExtractXdsExtension(
         errors, absl::StrCat(".value[", extension.type, "]"));
     auto* protobuf_struct = xds_type_v3_TypedStruct_value(typed_struct);
     if (protobuf_struct == nullptr) {
-      extension.value = Json::Object();  // Default to empty object.
+      extension.value = Json::FromObject({});  // Default to empty object.
     } else {
       auto json = ParseProtobufStructToJson(context, protobuf_struct);
       if (!json.ok()) {

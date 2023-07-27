@@ -236,7 +236,8 @@ static void flush_read_staging_buffer(secure_endpoint* ep, uint8_t** cur,
 }
 
 static void call_read_cb(secure_endpoint* ep, grpc_error_handle error) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_secure_endpoint)) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_secure_endpoint) &&
+      gpr_should_log(GPR_LOG_SEVERITY_INFO)) {
     size_t i;
     for (i = 0; i < ep->read_buffer->count; i++) {
       char* data = grpc_dump_slice(ep->read_buffer->slices[i],
@@ -394,7 +395,8 @@ static void endpoint_write(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
 
     grpc_slice_buffer_reset_and_unref(&ep->output_buffer);
 
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_secure_endpoint)) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_secure_endpoint) &&
+        gpr_should_log(GPR_LOG_SEVERITY_INFO)) {
       for (i = 0; i < slices->count; i++) {
         char* data =
             grpc_dump_slice(slices->slices[i], GPR_DUMP_HEX | GPR_DUMP_ASCII);

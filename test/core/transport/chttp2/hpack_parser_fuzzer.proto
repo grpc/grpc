@@ -16,6 +16,8 @@ syntax = "proto3";
 
 package hpack_parser_fuzzer;
 
+import "test/core/util/fuzz_config_vars.proto";
+
 message Empty {}
 
 message Frame {
@@ -25,9 +27,10 @@ message Frame {
   int32 stop_buffering_after_segments = 4;
   int32 max_metadata_length = 5;
   repeated bytes parse = 6;
+  int32 absolute_max_metadata_length = 7;
 }
 
 message Msg {
   repeated Frame frames = 2;
+  grpc.testing.FuzzConfigVars config_vars = 3;
 }
-

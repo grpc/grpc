@@ -45,6 +45,7 @@
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/json.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
@@ -61,6 +62,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/polling_entity.h"
+#include "src/core/lib/json/json_reader.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/slice/b64.h"
 #include "src/core/lib/slice/slice.h"
@@ -113,7 +115,7 @@ static Json parse_json_part_from_jwt(const char* str, size_t len) {
     return Json();  // JSON null
   }
   absl::string_view string = grpc_core::StringViewFromSlice(slice);
-  auto json = Json::Parse(string);
+  auto json = grpc_core::JsonParse(string);
   grpc_core::CSliceUnref(slice);
   if (!json.ok()) {
     gpr_log(GPR_ERROR, "JSON parse error: %s",
@@ -124,20 +126,20 @@ static Json parse_json_part_from_jwt(const char* str, size_t len) {
 }
 
 static const char* validate_string_field(const Json& json, const char* key) {
-  if (json.type() != Json::Type::STRING) {
+  if (json.type() != Json::Type::kString) {
     gpr_log(GPR_ERROR, "Invalid %s field", key);
     return nullptr;
   }
-  return json.string_value().c_str();
+  return json.string().c_str();
 }
 
 static gpr_timespec validate_time_field(const Json& json, const char* key) {
   gpr_timespec result = gpr_time_0(GPR_CLOCK_REALTIME);
-  if (json.type() != Json::Type::NUMBER) {
+  if (json.type() != Json::Type::kNumber) {
     gpr_log(GPR_ERROR, "Invalid %s field", key);
     return result;
   }
-  result.tv_sec = strtol(json.string_value().c_str(), nullptr, 10);
+  result.tv_sec = strtol(json.string().c_str(), nullptr, 10);
   return result;
 }
 
@@ -159,13 +161,13 @@ static jose_header* jose_header_from_json(Json json) {
   const char* alg_value;
   Json::Object::const_iterator it;
   jose_header* h = grpc_core::Zalloc<jose_header>();
-  if (json.type() != Json::Type::OBJECT) {
+  if (json.type() != Json::Type::kObject) {
     gpr_log(GPR_ERROR, "JSON value is not an object");
     goto error;
   }
   // Check alg field.
-  it = json.object_value().find("alg");
-  if (it == json.object_value().end()) {
+  it = json.object().find("alg");
+  if (it == json.object().end()) {
     gpr_log(GPR_ERROR, "Missing alg field.");
     goto error;
   }
@@ -173,8 +175,8 @@ static jose_header* jose_header_from_json(Json json) {
   // Beware of this if we add HMAC support:
   // https://auth0.com/blog/2015/03/31/critical-vulnerabilities-in-json-web-token-libraries/
   //
-  alg_value = it->second.string_value().c_str();
-  if (it->second.type() != Json::Type::STRING ||
+  alg_value = it->second.string().c_str();
+  if (it->second.type() != Json::Type::kString ||
       strncmp(alg_value, "RS", 2) != 0 ||
       evp_md_from_alg(alg_value) == nullptr) {
     gpr_log(GPR_ERROR, "Invalid alg field");
@@ -182,14 +184,14 @@ static jose_header* jose_header_from_json(Json json) {
   }
   h->alg = alg_value;
   // Check typ field.
-  it = json.object_value().find("typ");
-  if (it != json.object_value().end()) {
+  it = json.object().find("typ");
+  if (it != json.object().end()) {
     h->typ = validate_string_field(it->second, "typ");
     if (h->typ == nullptr) goto error;
   }
   // Check kid field.
-  it = json.object_value().find("kid");
-  if (it != json.object_value().end()) {
+  it = json.object().find("kid");
+  if (it != json.object().end()) {
     h->kid = validate_string_field(it->second, "kid");
     if (h->kid == nullptr) goto error;
   }
@@ -269,7 +271,7 @@ grpc_jwt_claims* grpc_jwt_claims_from_json(Json json) {
   claims->exp = gpr_inf_future(GPR_CLOCK_REALTIME);
 
   // Per the spec, all fields are optional.
-  for (const auto& p : claims->json->object_value()) {
+  for (const auto& p : claims->json->object()) {
     if (p.first == "sub") {
       claims->sub = validate_string_field(p.second, "sub");
       if (claims->sub == nullptr) goto error;
@@ -435,8 +437,8 @@ static Json json_from_http(const grpc_http_response* response) {
             response->status);
     return Json();  // JSON null
   }
-  auto json =
-      Json::Parse(absl::string_view(response->body, response->body_length));
+  auto json = grpc_core::JsonParse(
+      absl::string_view(response->body, response->body_length));
   if (!json.ok()) {
     gpr_log(GPR_ERROR, "Invalid JSON found in response.");
     return Json();  // JSON null
@@ -445,8 +447,8 @@ static Json json_from_http(const grpc_http_response* response) {
 }
 
 static const Json* find_property_by_name(const Json& json, const char* name) {
-  auto it = json.object_value().find(name);
-  if (it == json.object_value().end()) {
+  auto it = json.object().find(name);
+  if (it == json.object().end()) {
     return nullptr;
   }
   return &it->second;
@@ -527,7 +529,7 @@ static EVP_PKEY* pkey_from_jwk(const Json& json, const char* kty) {
   BIGNUM* tmp_e = nullptr;
   Json::Object::const_iterator it;
 
-  GPR_ASSERT(json.type() == Json::Type::OBJECT);
+  GPR_ASSERT(json.type() == Json::Type::kObject);
   GPR_ASSERT(kty != nullptr);
   if (strcmp(kty, "RSA") != 0) {
     gpr_log(GPR_ERROR, "Unsupported key type %s.", kty);
@@ -538,15 +540,15 @@ static EVP_PKEY* pkey_from_jwk(const Json& json, const char* kty) {
     gpr_log(GPR_ERROR, "Could not create rsa key.");
     goto end;
   }
-  it = json.object_value().find("n");
-  if (it == json.object_value().end()) {
+  it = json.object().find("n");
+  if (it == json.object().end()) {
     gpr_log(GPR_ERROR, "Missing RSA public key field.");
     goto end;
   }
   tmp_n = bignum_from_base64(validate_string_field(it->second, "n"));
   if (tmp_n == nullptr) goto end;
-  it = json.object_value().find("e");
-  if (it == json.object_value().end()) {
+  it = json.object().find("e");
+  if (it == json.object().end()) {
     gpr_log(GPR_ERROR, "Missing RSA public key field.");
     goto end;
   }
@@ -579,30 +581,30 @@ static EVP_PKEY* find_verification_key(const Json& json, const char* header_alg,
     // { <kid1>: <x5091>, <kid2>: <x5092>, ... }
     const Json* cur = find_property_by_name(json, header_kid);
     if (cur == nullptr) return nullptr;
-    return extract_pkey_from_x509(cur->string_value().c_str());
+    return extract_pkey_from_x509(cur->string().c_str());
   }
-  if (jwt_keys->type() != Json::Type::ARRAY) {
+  if (jwt_keys->type() != Json::Type::kArray) {
     gpr_log(GPR_ERROR,
             "Unexpected value type of keys property in jwks key set.");
     return nullptr;
   }
   // Key format is specified in:
   // https://tools.ietf.org/html/rfc7518#section-6.
-  for (const Json& jkey : jwt_keys->array_value()) {
-    if (jkey.type() != Json::Type::OBJECT) continue;
+  for (const Json& jkey : jwt_keys->array()) {
+    if (jkey.type() != Json::Type::kObject) continue;
     const char* alg = nullptr;
-    auto it = jkey.object_value().find("alg");
-    if (it != jkey.object_value().end()) {
+    auto it = jkey.object().find("alg");
+    if (it != jkey.object().end()) {
       alg = validate_string_field(it->second, "alg");
     }
     const char* kid = nullptr;
-    it = jkey.object_value().find("kid");
-    if (it != jkey.object_value().end()) {
+    it = jkey.object().find("kid");
+    if (it != jkey.object().end()) {
       kid = validate_string_field(it->second, "kid");
     }
     const char* kty = nullptr;
-    it = jkey.object_value().find("kty");
-    if (it != jkey.object_value().end()) {
+    it = jkey.object().find("kty");
+    if (it != jkey.object().end()) {
       kty = validate_string_field(it->second, "kty");
     }
     if (alg != nullptr && kid != nullptr && kty != nullptr &&
@@ -656,7 +658,7 @@ static void on_keys_retrieved(void* user_data, grpc_error_handle /*error*/) {
   grpc_jwt_verifier_status status = GRPC_JWT_VERIFIER_GENERIC_ERROR;
   grpc_jwt_claims* claims = nullptr;
 
-  if (json.type() == Json::Type::JSON_NULL) {
+  if (json.type() == Json::Type::kNull) {
     status = GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR;
     goto end;
   }
@@ -702,7 +704,7 @@ static void on_openid_config_retrieved(void* user_data,
   char* path;
 
   // TODO(jboeuf): Cache the jwks_uri in order to avoid this hop next time.
-  if (json.type() == Json::Type::JSON_NULL) goto error;
+  if (json.type() == Json::Type::kNull) goto error;
   cur = find_property_by_name(json, "jwks_uri");
   if (cur == nullptr) {
     gpr_log(GPR_ERROR, "Could not find jwks_uri in openid config.");
@@ -894,7 +896,7 @@ void grpc_jwt_verifier_verify(grpc_jwt_verifier* verifier,
   dot = strchr(cur, '.');
   if (dot == nullptr) goto error;
   json = parse_json_part_from_jwt(cur, static_cast<size_t>(dot - cur));
-  if (json.type() == Json::Type::JSON_NULL) goto error;
+  if (json.type() == Json::Type::kNull) goto error;
   header = jose_header_from_json(std::move(json));
   if (header == nullptr) goto error;
 
@@ -902,7 +904,7 @@ void grpc_jwt_verifier_verify(grpc_jwt_verifier* verifier,
   dot = strchr(cur, '.');
   if (dot == nullptr) goto error;
   json = parse_json_part_from_jwt(cur, static_cast<size_t>(dot - cur));
-  if (json.type() == Json::Type::JSON_NULL) goto error;
+  if (json.type() == Json::Type::kNull) goto error;
   claims = grpc_jwt_claims_from_json(std::move(json));
   if (claims == nullptr) goto error;
 

@@ -18,13 +18,16 @@
 
 #include <inttypes.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <algorithm>
+#include <atomic>
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -41,6 +44,7 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
@@ -150,6 +154,10 @@ class RoundRobin : public LoadBalancingPolicy {
         absl::Status status_for_tf);
 
    private:
+    std::shared_ptr<WorkSerializer> work_serializer() const override {
+      return static_cast<RoundRobin*>(policy())->work_serializer();
+    }
+
     std::string CountersString() const {
       return absl::StrCat("num_subchannels=", num_subchannels(),
                           " num_ready=", num_ready_,
@@ -174,7 +182,7 @@ class RoundRobin : public LoadBalancingPolicy {
     // Using pointer value only, no ref held -- do not dereference!
     RoundRobin* parent_;
 
-    size_t last_picked_index_;
+    std::atomic<size_t> last_picked_index_;
     std::vector<RefCountedPtr<SubchannelInterface>> subchannels_;
   };
 
@@ -189,6 +197,8 @@ class RoundRobin : public LoadBalancingPolicy {
   RefCountedPtr<RoundRobinSubchannelList> latest_pending_subchannel_list_;
 
   bool shutdown_ = false;
+
+  absl::BitGen bit_gen_;
 };
 
 //
@@ -207,27 +217,26 @@ RoundRobin::Picker::Picker(RoundRobin* parent,
   }
   // For discussion on why we generate a random starting index for
   // the picker, see https://github.com/grpc/grpc-go/issues/2580.
-  // TODO(roth): rand(3) is not thread-safe.  This should be replaced with
-  // something better as part of https://github.com/grpc/grpc/issues/17891.
-  last_picked_index_ = rand() % subchannels_.size();
+  size_t index =
+      absl::Uniform<size_t>(parent->bit_gen_, 0, subchannels_.size());
+  last_picked_index_.store(index, std::memory_order_relaxed);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
     gpr_log(GPR_INFO,
             "[RR %p picker %p] created picker from subchannel_list=%p "
             "with %" PRIuPTR " READY subchannels; last_picked_index_=%" PRIuPTR,
-            parent_, this, subchannel_list, subchannels_.size(),
-            last_picked_index_);
+            parent_, this, subchannel_list, subchannels_.size(), index);
   }
 }
 
 RoundRobin::PickResult RoundRobin::Picker::Pick(PickArgs /*args*/) {
-  last_picked_index_ = (last_picked_index_ + 1) % subchannels_.size();
+  size_t index = last_picked_index_.fetch_add(1, std::memory_order_relaxed) %
+                 subchannels_.size();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
     gpr_log(GPR_INFO,
             "[RR %p picker %p] returning index %" PRIuPTR ", subchannel=%p",
-            parent_, this, last_picked_index_,
-            subchannels_[last_picked_index_].get());
+            parent_, this, index, subchannels_[index].get());
   }
-  return PickResult::Complete(subchannels_[last_picked_index_]);
+  return PickResult::Complete(subchannels_[index]);
 }
 
 //
@@ -289,7 +298,7 @@ absl::Status RoundRobin::UpdateLocked(UpdateArgs args) {
   }
   latest_pending_subchannel_list_ = MakeRefCounted<RoundRobinSubchannelList>(
       this, std::move(addresses), args.args);
-  latest_pending_subchannel_list_->StartWatchingLocked();
+  latest_pending_subchannel_list_->StartWatchingLocked(args.args);
   // If the new list is empty, immediately promote it to
   // subchannel_list_ and report TRANSIENT_FAILURE.
   if (latest_pending_subchannel_list_->num_subchannels() == 0) {
@@ -309,12 +318,9 @@ absl::Status RoundRobin::UpdateLocked(UpdateArgs args) {
     return status;
   }
   // Otherwise, if this is the initial update, immediately promote it to
-  // subchannel_list_ and report CONNECTING.
+  // subchannel_list_.
   if (subchannel_list_.get() == nullptr) {
     subchannel_list_ = std::move(latest_pending_subchannel_list_);
-    channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_CONNECTING, absl::Status(),
-        MakeRefCounted<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker")));
   }
   return absl::OkStatus();
 }

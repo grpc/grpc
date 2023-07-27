@@ -1,5 +1,3 @@
-//
-//
 // Copyright 2016 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,11 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
-//
 
 #include <stdint.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include <initializer_list>
@@ -25,9 +20,11 @@
 
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
+#include "absl/types/optional.h"
 
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
@@ -38,6 +35,7 @@
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -47,6 +45,8 @@
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/surface/event_string.h"
 #include "src/core/lib/transport/transport_fwd.h"
+#include "src/libfuzzer/libfuzzer_macro.h"
+#include "test/core/end2end/fuzzers/fuzzer_input.pb.h"
 #include "test/core/util/mock_endpoint.h"
 
 bool squelch = true;
@@ -58,8 +58,10 @@ static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static void dont_log(gpr_log_func_args* /*args*/) {}
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
-  if (squelch) gpr_set_log_function(dont_log);
+DEFINE_PROTO_FUZZER(const fuzzer_input::Msg& msg) {
+  if (squelch && !grpc_core::GetEnv("GRPC_TRACE_FUZZER").has_value()) {
+    gpr_set_log_function(dont_log);
+  }
   grpc_init();
   {
     grpc_core::ExecCtx exec_ctx;
@@ -127,13 +129,17 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     op->flags = 0;
     op->reserved = nullptr;
     op++;
-    grpc_call_error error =
-        grpc_call_start_batch(call, ops, (size_t)(op - ops), tag(1), nullptr);
+    grpc_call_error error = grpc_call_start_batch(
+        call, ops, static_cast<size_t>(op - ops), tag(1), nullptr);
     int requested_calls = 1;
     GPR_ASSERT(GRPC_CALL_OK == error);
 
-    grpc_mock_endpoint_put_read(
-        mock_endpoint, grpc_slice_from_copied_buffer((const char*)data, size));
+    if (msg.network_input().has_single_read_bytes()) {
+      grpc_mock_endpoint_put_read(
+          mock_endpoint, grpc_slice_from_copied_buffer(
+                             msg.network_input().single_read_bytes().data(),
+                             msg.network_input().single_read_bytes().size()));
+    }
 
     grpc_event ev;
     while (true) {
@@ -185,5 +191,4 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     }
   }
   grpc_shutdown();
-  return 0;
 }

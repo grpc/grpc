@@ -29,6 +29,7 @@
 
 #include "python/message.h"
 #include "python/protobuf.h"
+#include "upb/reflection/def.h"
 
 // -----------------------------------------------------------------------------
 // ExtensionDict
@@ -72,10 +73,10 @@ static PyObject* PyUpb_ExtensionDict_FindExtensionByNumber(PyObject* _self,
   const upb_DefPool* symtab = upb_FileDef_Pool(file);
   const upb_ExtensionRegistry* reg = upb_DefPool_ExtensionRegistry(symtab);
   int64_t number = PyLong_AsLong(arg);
-  const upb_MiniTable_Extension* ext =
-      (upb_MiniTable_Extension*)_upb_extreg_get(reg, l, number);
+  const upb_MiniTableExtension* ext =
+      (upb_MiniTableExtension*)upb_ExtensionRegistry_Lookup(reg, l, number);
   if (ext) {
-    const upb_FieldDef* f = _upb_DefPool_FindExtensionByMiniTable(symtab, ext);
+    const upb_FieldDef* f = upb_DefPool_FindExtensionByMiniTable(symtab, ext);
     return PyUpb_FieldDescriptor_Get(f);
   } else {
     Py_RETURN_NONE;
@@ -112,10 +113,10 @@ static int PyUpb_ExtensionDict_Contains(PyObject* _self, PyObject* key) {
   upb_Message* msg = PyUpb_Message_GetIfReified(self->msg);
   if (!msg) return 0;
   if (upb_FieldDef_IsRepeated(f)) {
-    upb_MessageValue val = upb_Message_Get(msg, f);
+    upb_MessageValue val = upb_Message_GetFieldByDef(msg, f);
     return upb_Array_Size(val.array_val) > 0;
   } else {
-    return upb_Message_Has(msg, f);
+    return upb_Message_HasFieldByDef(msg, f);
   }
 }
 

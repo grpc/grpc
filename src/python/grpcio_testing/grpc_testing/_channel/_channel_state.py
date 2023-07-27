@@ -20,24 +20,31 @@ from grpc_testing._channel import _rpc_state
 
 
 class State(_common.ChannelHandler):
-
     def __init__(self):
         self._condition = threading.Condition()
         self._rpc_states = collections.defaultdict(list)
 
-    def invoke_rpc(self, method_full_rpc_name, invocation_metadata, requests,
-                   requests_closed, timeout):
-        rpc_state = _rpc_state.State(invocation_metadata, requests,
-                                     requests_closed)
+    def invoke_rpc(
+        self,
+        method_full_rpc_name,
+        invocation_metadata,
+        requests,
+        requests_closed,
+        timeout,
+    ):
+        rpc_state = _rpc_state.State(
+            invocation_metadata, requests, requests_closed
+        )
         with self._condition:
             self._rpc_states[method_full_rpc_name].append(rpc_state)
             self._condition.notify_all()
         return rpc_state
 
     def take_rpc_state(self, method_descriptor):
-        method_full_rpc_name = '/{}/{}'.format(
+        method_full_rpc_name = "/{}/{}".format(
             method_descriptor.containing_service.full_name,
-            method_descriptor.name)
+            method_descriptor.name,
+        )
         with self._condition:
             while True:
                 method_rpc_states = self._rpc_states[method_full_rpc_name]

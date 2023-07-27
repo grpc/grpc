@@ -25,12 +25,19 @@
 
 load(
     "//bazel:build_defs.bzl",
+    "UPB_DEFAULT_COPTS",
     "UPB_DEFAULT_CPPOPTS",
 )
 load(
     "//bazel:upb_proto_library.bzl",
     "upb_proto_library",
     "upb_proto_reflection_library",
+)
+load(
+    "//upbc:bootstrap_compiler.bzl",
+    "bootstrap_cc_binary",
+    "bootstrap_cc_library",
+    "bootstrap_upb_proto_library",
 )
 
 licenses(["notice"])
@@ -54,10 +61,27 @@ upb_proto_reflection_library(
     deps = [":code_generator_request"],
 )
 
-upb_proto_library(
+bootstrap_upb_proto_library(
     name = "plugin_upb_proto",
+    base_dir = "",
+    google3_src_files = [
+        "net/proto2/compiler/proto/plugin.proto",
+        "net/proto2/compiler/proto/profile.proto",
+    ],
+    google3_src_rules = [
+        "//net/proto2/proto:descriptor_proto_source",
+        "//net/proto2/compiler/proto:plugin.proto",
+        "//net/proto2/compiler/proto:profile.proto",
+    ],
+    oss_src_files = ["google/protobuf/compiler/plugin.proto"],
+    oss_src_rules = [
+        "@com_google_protobuf//:descriptor_proto_srcs",
+        "@com_google_protobuf//src/google/protobuf/compiler:plugin_proto_src",
+    ],
+    oss_strip_prefix = "third_party/protobuf/github/bootstrap/src",
+    proto_lib_deps = ["@com_google_protobuf//:compiler_plugin_proto"],
     visibility = ["//:friends"],
-    deps = ["@com_google_protobuf//:compiler_plugin_proto"],
+    deps = ["//:descriptor_upb_proto"],
 )
 
 upb_proto_reflection_library(
@@ -66,33 +90,173 @@ upb_proto_reflection_library(
     deps = ["@com_google_protobuf//:compiler_plugin_proto"],
 )
 
-cc_library(
-    name = "common",
-    srcs = ["common.cc"],
-    hdrs = ["common.h"],
-    copts = UPB_DEFAULT_CPPOPTS,
+cc_binary(
+    name = "upbc_so",
+    srcs = ["upbc_so.c"],
+    copts = UPB_DEFAULT_COPTS,
+    linkshared = 1,
+    linkstatic = 1,
+    visibility = ["//visibility:public"],
     deps = [
-        "@com_google_absl//absl/strings",
-        "@com_google_protobuf//:protobuf",
+        "//:collections",
+        "//:mem",
+        "//:message",
+        "//:message_accessors",
+        "//:mini_table",
+        "//:port",
+        "//upbc:upbdev",
     ],
 )
 
-cc_binary(
+bootstrap_cc_library(
+    name = "common",
+    srcs = [
+        "common.cc",
+    ],
+    hdrs = [
+        "common.h",
+    ],
+    bootstrap_deps = [
+        "//:reflection",
+    ],
+    copts = UPB_DEFAULT_CPPOPTS,
+    visibility = ["//protos_generator:__pkg__"],
+    deps = [
+        "@com_google_absl//absl/strings",
+    ],
+)
+
+bootstrap_cc_library(
+    name = "file_layout",
+    srcs = [
+        "file_layout.cc",
+    ],
+    hdrs = [
+        "file_layout.h",
+    ],
+    bootstrap_deps = [
+        ":common",
+        "//:reflection",
+        "//:descriptor_upb_proto",
+    ],
+    copts = UPB_DEFAULT_CPPOPTS,
+    visibility = ["//protos_generator:__pkg__"],
+    deps = [
+        "//:mini_table",
+        "//:mini_table_internal",
+        "//:port",
+        "//:upb",
+        "@com_google_absl//absl/container:flat_hash_map",
+        "@com_google_absl//absl/strings",
+    ],
+)
+
+cc_library(
+    name = "keywords",
+    srcs = [
+        "keywords.cc",
+    ],
+    hdrs = [
+        "keywords.h",
+    ],
+    copts = UPB_DEFAULT_CPPOPTS,
+    visibility = ["//protos_generator:__pkg__"],
+)
+
+bootstrap_cc_library(
+    name = "plugin",
+    hdrs = [
+        "plugin.h",
+    ],
+    bootstrap_deps = [
+        ":plugin_upb_proto",
+        "//:descriptor_upb_proto",
+        "//:reflection",
+    ],
+    copts = UPB_DEFAULT_CPPOPTS,
+    visibility = ["//protos_generator:__pkg__"],
+    deps = [
+        "//:port",
+        "@com_google_absl//absl/container:flat_hash_set",
+        "@com_google_absl//absl/log:absl_check",
+        "@com_google_absl//absl/log:absl_log",
+        "@com_google_absl//absl/strings",
+    ],
+)
+
+bootstrap_cc_library(
+    name = "names",
+    srcs = [
+        "names.cc",
+    ],
+    hdrs = [
+        "names.h",
+    ],
+    bootstrap_deps = [
+        "//:reflection",
+    ],
+    copts = UPB_DEFAULT_CPPOPTS,
+    visibility = ["//protos_generator:__pkg__"],
+    deps = [
+        "@com_google_absl//absl/base:core_headers",
+        "@com_google_absl//absl/container:flat_hash_map",
+        "@com_google_absl//absl/strings",
+        "@com_google_protobuf//:protobuf",
+        "@com_google_protobuf//src/google/protobuf/compiler:code_generator",
+    ],
+)
+
+cc_library(
+    name = "upbdev",
+    srcs = [
+        "code_generator_request.c",
+        "code_generator_request.h",
+        "upbdev.c",
+    ],
+    hdrs = [
+        "upbdev.h",
+    ],
+    copts = UPB_DEFAULT_COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        ":code_generator_request_upb_proto",
+        ":code_generator_request_upb_proto_reflection",
+        ":plugin_upb_proto",
+        ":plugin_upb_proto_reflection",
+        "//:base",
+        "//:json",
+        "//:mem",
+        "//:mini_table",
+        "//:port",
+        "//:reflection",
+    ],
+)
+
+bootstrap_cc_binary(
     name = "protoc-gen-upb",
     srcs = ["protoc-gen-upb.cc"],
+    bootstrap_deps = [
+        ":common",
+        ":file_layout",
+        ":names",
+        ":plugin",
+        ":plugin_upb_proto",
+        "//:descriptor_upb_proto",
+        "//:reflection",
+    ],
     copts = UPB_DEFAULT_CPPOPTS,
     visibility = ["//visibility:public"],
     deps = [
-        ":common",
-        "//:mini_table",
+        "//:base",
+        "//:mem",
+        "//:mini_table_internal",
         "//:port",
-        "//:upb",
-        "@com_google_absl//absl/base:core_headers",
+        "//:wire_types",
         "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/container:flat_hash_set",
+        "@com_google_absl//absl/log:absl_check",
+        "@com_google_absl//absl/log:absl_log",
         "@com_google_absl//absl/strings",
-        "@com_google_protobuf//:protobuf",
-        "@com_google_protobuf//:protoc_lib",
     ],
 )
 
@@ -102,39 +266,40 @@ cc_binary(
         "protoc-gen-upbdefs.cc",
     ],
     copts = UPB_DEFAULT_CPPOPTS,
+    # To work around the following link error from ABSL:
+    # /usr/bin/x86_64-linux-gnu-ld: bazel-out/k8-opt-exec-2B5CBBC6-ST-c1776f9924ec/bin/external/com_google_absl/absl/time/libtime.a(duration.o): undefined reference to symbol 'floor@@GLIBC_2.2.5'
+    # /usr/bin/x86_64-linux-gnu-ld: /opt/manylinux/2014/x86_64/lib64/libm.so.6: error adding symbols: DSO missing from command line
+    # clang-14: error: linker command failed with exit code 1 (use -v to see invocation)
+    linkopts = ["-lm"],
     visibility = ["//visibility:public"],
     deps = [
         ":common",
-        "@com_google_absl//absl/base:core_headers",
-        "@com_google_absl//absl/container:flat_hash_map",
-        "@com_google_absl//absl/strings",
-        "@com_google_protobuf//:protobuf",
-        "@com_google_protobuf//:protoc_lib",
+        ":file_layout",
+        ":plugin",
+        "//:descriptor_upb_proto",
+        "//:reflection",
+        "//upb/util:def_to_proto",
     ],
 )
 
 cc_binary(
     name = "protoc-gen-upbdev",
     srcs = [
-        "code_generator_request.c",
-        "code_generator_request.h",
         "protoc-gen-upbdev.cc",
         "subprocess.cc",
         "subprocess.h",
     ],
     copts = UPB_DEFAULT_CPPOPTS,
+    target_compatible_with = select({
+        "@platforms//os:windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
     visibility = ["//visibility:public"],
     deps = [
-        ":code_generator_request_upb_proto",
-        ":code_generator_request_upb_proto_reflection",
         ":plugin_upb_proto",
-        ":plugin_upb_proto_reflection",
-        "//:json",
-        "//:mini_descriptor",
-        "//:mini_table",
+        ":upbdev",
         "//:port",
-        "//:reflection",
-        "//:upb",
+        "@com_google_absl//absl/log:absl_log",
         "@com_google_absl//absl/strings",
     ],
 )

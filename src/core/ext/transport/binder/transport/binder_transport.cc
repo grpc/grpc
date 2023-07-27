@@ -405,7 +405,7 @@ static void perform_stream_op_locked(void* stream_op,
           gbs->GetTxCode(), gbt->is_client);
       cancel_tx->SetSuffix(grpc_binder::Metadata{});
       cancel_tx->SetStatus(1);
-      absl::Status status = gbt->wire_writer->RpcCall(std::move(cancel_tx));
+      (void)gbt->wire_writer->RpcCall(std::move(cancel_tx));
     }
     cancel_stream_locked(gbt, gbs, op->payload->cancel_stream.cancel_error);
     if (op->on_complete != nullptr) {
@@ -694,6 +694,7 @@ static grpc_endpoint* get_endpoint(grpc_transport*) {
 
 // See grpc_transport_vtable declaration for meaning of each field
 static const grpc_transport_vtable vtable = {sizeof(grpc_binder_stream),
+                                             false,
                                              "binder",
                                              init_stream,
                                              nullptr,

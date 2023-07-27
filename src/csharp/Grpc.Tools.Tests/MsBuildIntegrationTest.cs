@@ -126,6 +126,61 @@ namespace Grpc.Tools.Tests
             TryRunMsBuild("TestProtoOutsideProject/project", expectedFiles.ToString());
         }
 
+        [Test]
+        public void TestCharactersInName()
+        {
+            // see https://github.com/grpc/grpc/issues/17661 - dot in name
+            // and https://github.com/grpc/grpc/issues/18698 - numbers in name
+            SetUpForTest(nameof(TestCharactersInName));
+
+            var expectedFiles = new ExpectedFilesBuilder();
+            expectedFiles.Add("protos/hello.world.proto", "HelloWorld.cs", "Hello.worldGrpc.cs");
+            expectedFiles.Add("protos/m_double_2d.proto", "MDouble2D.cs", "MDouble2dGrpc.cs");
+
+            TryRunMsBuild("TestCharactersInName", expectedFiles.ToString());
+        }
+
+        [Test]
+        public void TestExtraOptions()
+        {
+            // Test various extra options passed to protoc and plugin
+            // See https://github.com/grpc/grpc/issues/25950
+            // Tests setting AdditionalProtocArguments, OutputOptions and GrpcOutputOptions
+            SetUpForTest(nameof(TestExtraOptions));
+
+            var expectedFiles = new ExpectedFilesBuilder();
+            expectedFiles.Add("file.proto", "File.cs", "FileGrpc.cs");
+
+            TryRunMsBuild("TestExtraOptions", expectedFiles.ToString());
+        }
+
+        [Test]
+        public void TestGrpcServicesMetadata()
+        {
+            // Test different values for GrpcServices item metadata
+            SetUpForTest(nameof(TestGrpcServicesMetadata));
+
+            var expectedFiles = new ExpectedFilesBuilder();
+            expectedFiles.Add("messages.proto", "Messages.cs");
+            expectedFiles.Add("serveronly.proto", "Serveronly.cs", "ServeronlyGrpc.cs");
+            expectedFiles.Add("clientonly.proto", "Clientonly.cs", "ClientonlyGrpc.cs");
+            expectedFiles.Add("clientandserver.proto", "Clientandserver.cs", "ClientandserverGrpc.cs");
+
+            TryRunMsBuild("TestGrpcServicesMetadata", expectedFiles.ToString());
+        }
+
+        [Test]
+        public void TestSetOutputDirs()
+        {
+            // Test setting different GrpcOutputDir and OutputDir
+            SetUpForTest(nameof(TestSetOutputDirs));
+
+            var expectedFiles = new ExpectedFilesBuilder();
+            expectedFiles.Add("file.proto", "File.cs", "FileGrpc.cs");
+
+            TryRunMsBuild("TestSetOutputDirs", expectedFiles.ToString());
+        }
+
         /// <summary>
         /// Set up common paths for all the tests
         /// </summary>

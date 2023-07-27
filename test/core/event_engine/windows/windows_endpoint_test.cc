@@ -24,9 +24,10 @@
 #include <grpc/grpc.h>
 
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
-#include "src/core/lib/event_engine/thread_pool.h"
+#include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
 #include "src/core/lib/event_engine/windows/windows_endpoint.h"
+#include "src/core/lib/event_engine/windows/windows_engine.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "test/core/event_engine/windows/create_sockpair.h"
@@ -41,50 +42,54 @@ class WindowsEndpointTest : public testing::Test {};
 TEST_F(WindowsEndpointTest, BasicCommunication) {
   // TODO(hork): deduplicate against winsocket and iocp tests
   // Setup
-  ThreadPool executor;
-  IOCP iocp(&executor);
+  auto thread_pool = MakeThreadPool(8);
+  IOCP iocp(thread_pool.get());
   grpc_core::MemoryQuota quota("endpoint_test");
   SOCKET sockpair[2];
   CreateSockpair(sockpair, IOCP::GetDefaultSocketFlags());
   auto wrapped_client_socket = iocp.Watch(sockpair[0]);
   auto wrapped_server_socket = iocp.Watch(sockpair[1]);
   sockaddr_in loopback_addr = GetSomeIpv4LoopbackAddress();
+  auto engine = std::make_shared<WindowsEventEngine>();
   EventEngine::ResolvedAddress addr((sockaddr*)&loopback_addr,
                                     sizeof(loopback_addr));
   WindowsEndpoint client(addr, std::move(wrapped_client_socket),
                          quota.CreateMemoryAllocator("client"),
-                         ChannelArgsEndpointConfig(), &executor);
+                         ChannelArgsEndpointConfig(), thread_pool.get(),
+                         engine);
   WindowsEndpoint server(addr, std::move(wrapped_server_socket),
                          quota.CreateMemoryAllocator("server"),
-                         ChannelArgsEndpointConfig(), &executor);
+                         ChannelArgsEndpointConfig(), thread_pool.get(),
+                         engine);
   // Test
   std::string message = "0xDEADBEEF";
   grpc_core::Notification read_done;
   SliceBuffer read_buffer;
-  server.Read(
-      [&read_done, &message, &read_buffer](absl::Status status) {
-        ASSERT_EQ(read_buffer.Count(), 1);
+  EXPECT_FALSE(server.Read(
+      [&read_done, &message, &read_buffer](absl::Status) {
+        ASSERT_EQ(read_buffer.Count(), 1u);
         auto slice = read_buffer.TakeFirst();
         EXPECT_EQ(slice.as_string_view(), message);
         read_done.Notify();
       },
-      &read_buffer, nullptr);
+      &read_buffer, nullptr));
   grpc_core::Notification write_done;
   SliceBuffer write_buffer;
   write_buffer.Append(Slice::FromCopiedString(message));
-  client.Write([&write_done](absl::Status status) { write_done.Notify(); },
-               &write_buffer, nullptr);
+  EXPECT_FALSE(
+      client.Write([&write_done](absl::Status) { write_done.Notify(); },
+                   &write_buffer, nullptr));
   iocp.Work(5s, []() {});
   // Cleanup
   write_done.WaitForNotification();
   read_done.WaitForNotification();
-  executor.Quiesce();
+  thread_pool->Quiesce();
 }
 
 TEST_F(WindowsEndpointTest, Conversation) {
   // Setup
-  ThreadPool executor;
-  IOCP iocp(&executor);
+  auto thread_pool = MakeThreadPool(8);
+  IOCP iocp(thread_pool.get());
   grpc_core::MemoryQuota quota("endpoint_test");
   SOCKET sockpair[2];
   CreateSockpair(sockpair, IOCP::GetDefaultSocketFlags());
@@ -96,11 +101,11 @@ TEST_F(WindowsEndpointTest, Conversation) {
     AppState(const EventEngine::ResolvedAddress& addr,
              std::unique_ptr<WinSocket> client,
              std::unique_ptr<WinSocket> server, grpc_core::MemoryQuota& quota,
-             Executor& executor)
+             ThreadPool* thread_pool, std::shared_ptr<EventEngine> engine)
         : client(addr, std::move(client), quota.CreateMemoryAllocator("client"),
-                 ChannelArgsEndpointConfig(), &executor),
+                 ChannelArgsEndpointConfig(), thread_pool, engine),
           server(addr, std::move(server), quota.CreateMemoryAllocator("server"),
-                 ChannelArgsEndpointConfig(), &executor) {}
+                 ChannelArgsEndpointConfig(), thread_pool, engine) {}
     grpc_core::Notification done;
     WindowsEndpoint client;
     WindowsEndpoint server;
@@ -115,22 +120,23 @@ TEST_F(WindowsEndpointTest, Conversation) {
     // if exchange%2 == 0, client -> server
     // if exchange%2 == 1, server -> client
     // if exchange == messages.length, done
-    std::atomic<int> exchange{0};
+    std::atomic<size_t> exchange{0};
 
     // Initiates a Write and corresponding Read on two endpoints.
     void WriteAndQueueReader(WindowsEndpoint* writer, WindowsEndpoint* reader) {
       write_buffer.Clear();
       write_buffer.Append(Slice::FromCopiedString(messages[exchange]));
-      writer->Write([](absl::Status) {}, &write_buffer, /*args=*/nullptr);
+      EXPECT_FALSE(
+          writer->Write([](absl::Status) {}, &write_buffer, /*args=*/nullptr));
       auto cb = [this](absl::Status status) { ReadCB(status); };
       read_buffer.Clear();
-      reader->Read(cb, &read_buffer, /*args=*/nullptr);
+      EXPECT_FALSE(reader->Read(cb, &read_buffer, /*args=*/nullptr));
     }
 
     // Asserts that the received string matches, then queues the next Write/Read
     // pair
-    void ReadCB(absl::Status status) {
-      ASSERT_EQ(read_buffer.Count(), 1);
+    void ReadCB(absl::Status) {
+      ASSERT_EQ(read_buffer.Count(), 1u);
       ASSERT_EQ(read_buffer.TakeFirst().as_string_view(), messages[exchange]);
       if (++exchange == messages.size()) {
         done.Notify();
@@ -143,15 +149,17 @@ TEST_F(WindowsEndpointTest, Conversation) {
       }
     }
   };
+  auto engine = std::make_shared<WindowsEventEngine>();
   AppState state(addr, /*client=*/iocp.Watch(sockpair[0]),
-                 /*server=*/iocp.Watch(sockpair[1]), quota, executor);
+                 /*server=*/iocp.Watch(sockpair[1]), quota, thread_pool.get(),
+                 engine);
   state.WriteAndQueueReader(/*writer=*/&state.client, /*reader=*/&state.server);
   while (iocp.Work(100ms, []() {}) == Poller::WorkResult::kOk ||
          !state.done.HasBeenNotified()) {
   }
   // Cleanup
   state.done.WaitForNotification();
-  executor.Quiesce();
+  thread_pool->Quiesce();
 }
 
 }  // namespace experimental

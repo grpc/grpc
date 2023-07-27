@@ -20,6 +20,8 @@
 
 #include "src/core/lib/transport/timeout_encoding.h"
 
+#include <limits>
+
 #include "absl/base/attributes.h"
 
 #include <grpc/support/log.h>
@@ -30,7 +32,7 @@ namespace grpc_core {
 namespace {
 
 int64_t DivideRoundingUp(int64_t dividend, int64_t divisor) {
-  return (dividend + divisor - 1) / divisor;
+  return (dividend - 1 + divisor) / divisor;
 }
 
 constexpr int64_t kSecondsPerMinute = 60;
@@ -173,6 +175,9 @@ Timeout Timeout::FromMillis(int64_t millis) {
   } else if (millis < 100000) {
     int64_t value = DivideRoundingUp(millis, 100);
     if (value % 10 != 0) return Timeout(value, Unit::kHundredMilliseconds);
+  } else if (millis > std::numeric_limits<int64_t>::max() - 999) {
+    // prevent signed integer overflow.
+    return Timeout(kMaxHours, Unit::kHours);
   }
   return Timeout::FromSeconds(DivideRoundingUp(millis, 1000));
 }

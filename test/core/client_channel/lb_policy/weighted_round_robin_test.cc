@@ -27,7 +27,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
@@ -35,11 +34,11 @@
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
 #include "absl/types/span.h"
-#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
+#include <grpc/support/json.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
@@ -47,21 +46,28 @@
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "test/core/client_channel/lb_policy/lb_policy_test_lib.h"
-#include "test/core/event_engine/mock_event_engine.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
 namespace testing {
 namespace {
 
-using ::grpc_event_engine::experimental::EventEngine;
-using ::grpc_event_engine::experimental::MockEventEngine;
+BackendMetricData MakeBackendMetricData(double app_utilization, double qps,
+                                        double eps,
+                                        double cpu_utilization = 0) {
+  BackendMetricData b;
+  b.cpu_utilization = cpu_utilization;
+  b.application_utilization = app_utilization;
+  b.qps = qps;
+  b.eps = eps;
+  return b;
+}
 
-class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
+class WeightedRoundRobinTest : public TimeAwareLoadBalancingPolicyTest {
  protected:
   class ConfigBuilder {
    public:
@@ -71,30 +77,35 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
     }
 
     ConfigBuilder& SetEnableOobLoadReport(bool value) {
-      json_["enableOobLoadReport"] = value;
+      json_["enableOobLoadReport"] = Json::FromBool(value);
       return *this;
     }
     ConfigBuilder& SetOobReportingPeriod(Duration duration) {
-      json_["oobReportingPeriod"] = duration.ToJsonString();
+      json_["oobReportingPeriod"] = Json::FromString(duration.ToJsonString());
       return *this;
     }
     ConfigBuilder& SetBlackoutPeriod(Duration duration) {
-      json_["blackoutPeriod"] = duration.ToJsonString();
+      json_["blackoutPeriod"] = Json::FromString(duration.ToJsonString());
       return *this;
     }
     ConfigBuilder& SetWeightUpdatePeriod(Duration duration) {
-      json_["weightUpdatePeriod"] = duration.ToJsonString();
+      json_["weightUpdatePeriod"] = Json::FromString(duration.ToJsonString());
       return *this;
     }
     ConfigBuilder& SetWeightExpirationPeriod(Duration duration) {
-      json_["weightExpirationPeriod"] = duration.ToJsonString();
+      json_["weightExpirationPeriod"] =
+          Json::FromString(duration.ToJsonString());
+      return *this;
+    }
+    ConfigBuilder& SetErrorUtilizationPenalty(float value) {
+      json_["errorUtilizationPenalty"] = Json::FromNumber(value);
       return *this;
     }
 
     RefCountedPtr<LoadBalancingPolicy::Config> Build() {
-      Json config = Json::Array{
-          Json::Object{{"weighted_round_robin_experimental", json_}}};
-      gpr_log(GPR_INFO, "CONFIG: %s", config.Dump().c_str());
+      Json config = Json::FromArray({Json::FromObject(
+          {{"weighted_round_robin", Json::FromObject(json_)}})});
+      gpr_log(GPR_INFO, "CONFIG: %s", JsonDump(config).c_str());
       return MakeConfig(config);
     }
 
@@ -102,59 +113,8 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
     Json::Object json_;
   };
 
-  // A custom time cache for which InvalidateCache() is a no-op.  This
-  // ensures that when the timer callback instantiates its own ExecCtx
-  // and therefore its own ScopedTimeCache, it continues to see the time
-  // that we are injecting in the test.
-  class TestTimeCache final : public Timestamp::ScopedSource {
-   public:
-    TestTimeCache() : cached_time_(previous()->Now()) {}
-
-    Timestamp Now() override { return cached_time_; }
-    void InvalidateCache() override {}
-
-    void IncrementBy(Duration duration) { cached_time_ += duration; }
-
-   private:
-    Timestamp cached_time_;
-  };
-
   WeightedRoundRobinTest() {
-    mock_ee_ = std::make_shared<MockEventEngine>();
-    event_engine_ = mock_ee_;
-    auto capture = [this](std::chrono::duration<int64_t, std::nano> duration,
-                          absl::AnyInvocable<void()> callback) {
-      EXPECT_EQ(duration, expected_weight_update_interval_)
-          << "Expected: " << expected_weight_update_interval_.count() << "ns"
-          << "\n  Actual: " << duration.count() << "ns";
-      intptr_t key = next_key_++;
-      timer_callbacks_[key] = std::move(callback);
-      return EventEngine::TaskHandle{key, 0};
-    };
-    ON_CALL(*mock_ee_,
-            RunAfter(::testing::_, ::testing::A<absl::AnyInvocable<void()>>()))
-        .WillByDefault(capture);
-    auto cancel = [this](EventEngine::TaskHandle handle) {
-      auto it = timer_callbacks_.find(handle.keys[0]);
-      if (it == timer_callbacks_.end()) return false;
-      timer_callbacks_.erase(it);
-      return true;
-    };
-    ON_CALL(*mock_ee_, Cancel(::testing::_)).WillByDefault(cancel);
-    lb_policy_ = MakeLbPolicy("weighted_round_robin_experimental");
-  }
-
-  ~WeightedRoundRobinTest() override {
-    EXPECT_TRUE(timer_callbacks_.empty())
-        << "WARNING: Test did not run all timer callbacks";
-  }
-
-  void RunTimerCallback() {
-    ASSERT_EQ(timer_callbacks_.size(), 1UL);
-    auto it = timer_callbacks_.begin();
-    ASSERT_NE(it->second, nullptr);
-    std::move(it->second)();
-    timer_callbacks_.erase(it);
+    lb_policy_ = MakeLbPolicy("weighted_round_robin");
   }
 
   RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>
@@ -200,7 +160,7 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
   // Returns a human-readable string representing the number of picks
   // for each address.
   static std::string PickMapString(
-      std::map<absl::string_view, size_t> pick_map) {
+      const std::map<absl::string_view, size_t>& pick_map) {
     return absl::StrJoin(pick_map, ",", absl::PairFormatter("="));
   }
 
@@ -221,8 +181,7 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
       const std::vector<
           std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>>&
           subchannel_call_trackers,
-      const std::map<absl::string_view /*address*/,
-                     std::pair<double /*qps*/, double /*cpu_utilization*/>>&
+      const std::map<absl::string_view /*address*/, BackendMetricData>&
           backend_metrics) {
     for (size_t i = 0; i < picks.size(); ++i) {
       const auto& address = picks[i];
@@ -233,8 +192,11 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
         auto it = backend_metrics.find(address);
         if (it != backend_metrics.end()) {
           backend_metric_data.emplace();
-          backend_metric_data->qps = it->second.first;
-          backend_metric_data->cpu_utilization = it->second.second;
+          backend_metric_data->qps = it->second.qps;
+          backend_metric_data->eps = it->second.eps;
+          backend_metric_data->cpu_utilization = it->second.cpu_utilization;
+          backend_metric_data->application_utilization =
+              it->second.application_utilization;
         }
         FakeMetadata metadata({});
         FakeBackendMetricAccessor backend_metric_accessor(
@@ -247,24 +209,26 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
   }
 
   void ReportOobBackendMetrics(
-      std::map<absl::string_view /*address*/,
-               std::pair<double /*qps*/, double /*cpu_utilization*/>>
+      const std::map<absl::string_view /*address*/, BackendMetricData>&
           backend_metrics) {
     for (const auto& p : backend_metrics) {
       auto* subchannel = FindSubchannel(p.first);
       BackendMetricData backend_metric_data;
-      backend_metric_data.qps = p.second.first;
-      backend_metric_data.cpu_utilization = p.second.second;
+      backend_metric_data.qps = p.second.qps;
+      backend_metric_data.eps = p.second.eps;
+      backend_metric_data.cpu_utilization = p.second.cpu_utilization;
+      backend_metric_data.application_utilization =
+          p.second.application_utilization;
       subchannel->SendOobBackendMetricReport(backend_metric_data);
     }
   }
 
   void ExpectWeightedRoundRobinPicks(
       LoadBalancingPolicy::SubchannelPicker* picker,
-      std::map<absl::string_view /*address*/,
-               std::pair<double /*qps*/, double /*cpu_utilization*/>>
+      const std::map<absl::string_view /*address*/, BackendMetricData>&
           backend_metrics,
-      std::map<absl::string_view /*address*/, size_t /*num_picks*/> expected,
+      const std::map<absl::string_view /*address*/, size_t /*num_picks*/>&
+          expected,
       SourceLocation location = SourceLocation()) {
     std::vector<
         std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>>
@@ -284,11 +248,11 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
 
   bool WaitForWeightedRoundRobinPicks(
       RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>* picker,
-      std::map<absl::string_view /*address*/,
-               std::pair<double /*qps*/, double /*cpu_utilization*/>>
+      const std::map<absl::string_view /*address*/, BackendMetricData>&
           backend_metrics,
       std::map<absl::string_view /*address*/, size_t /*num_picks*/> expected,
       absl::Duration timeout = absl::Seconds(5),
+      bool run_timer_callbacks = true,
       SourceLocation location = SourceLocation()) {
     gpr_log(GPR_INFO, "==> WaitForWeightedRoundRobinPicks(): Expecting %s",
             PickMapString(expected).c_str());
@@ -345,7 +309,7 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
         EXPECT_NE(*picker, nullptr)
             << location.file() << ":" << location.line();
         if (*picker == nullptr) return false;
-      } else {
+      } else if (run_timer_callbacks) {
         gpr_log(GPR_INFO, "running timer callback...");
         RunTimerCallback();
       }
@@ -354,13 +318,17 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
     }
   }
 
+  void CheckExpectedTimerDuration(
+      grpc_event_engine::experimental::EventEngine::Duration duration)
+      override {
+    EXPECT_EQ(duration, expected_weight_update_interval_)
+        << "Expected: " << expected_weight_update_interval_.count() << "ns"
+        << "\n  Actual: " << duration.count() << "ns";
+  }
+
   OrphanablePtr<LoadBalancingPolicy> lb_policy_;
-  std::shared_ptr<MockEventEngine> mock_ee_;
-  std::map<intptr_t, absl::AnyInvocable<void()>> timer_callbacks_;
-  intptr_t next_key_ = 1;
-  EventEngine::Duration expected_weight_update_interval_ =
-      std::chrono::seconds(1);
-  TestTimeCache time_cache_;
+  grpc_event_engine::experimental::EventEngine::Duration
+      expected_weight_update_interval_ = std::chrono::seconds(1);
 };
 
 TEST_F(WeightedRoundRobinTest, Basic) {
@@ -372,16 +340,110 @@ TEST_F(WeightedRoundRobinTest, Basic) {
   // Address 0 gets weight 1, address 1 gets weight 3.
   // No utilization report from backend 2, so it gets the average weight 2.
   WaitForWeightedRoundRobinPicks(
-      &picker, {{kAddresses[0], {100, 0.9}}, {kAddresses[1], {100, 0.3}}},
+      &picker,
+      {{kAddresses[0], MakeBackendMetricData(/*app_utilization=*/0.9,
+                                             /*qps=*/100.0, /*eps=*/0.0)},
+       {kAddresses[1], MakeBackendMetricData(/*app_utilization=*/0.3,
+                                             /*qps=*/100.0, /*eps=*/0.0)}},
       {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 2}});
   // Now have backend 2 report utilization the same as backend 1, so its
   // weight will be the same.
   WaitForWeightedRoundRobinPicks(
       &picker,
-      {{kAddresses[0], {100, 0.9}},
-       {kAddresses[1], {100, 0.3}},
-       {kAddresses[2], {100, 0.3}}},
+      {{kAddresses[0], MakeBackendMetricData(/*app_utilization=*/0.9,
+                                             /*qps=*/100.0, /*eps=*/0.0)},
+       {kAddresses[1], MakeBackendMetricData(/*app_utilization=*/0.3,
+                                             /*qps=*/100.0, /*eps=*/0.0)},
+       {kAddresses[2], MakeBackendMetricData(/*app_utilization=*/0.3,
+                                             /*qps=*/100.0, /*eps=*/0.0)}},
       {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 3}});
+}
+
+TEST_F(WeightedRoundRobinTest, CpuUtilWithNoAppUtil) {
+  // Send address list to LB policy.
+  const std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
+  auto picker = SendInitialUpdateAndWaitForConnected(kAddresses);
+  ASSERT_NE(picker, nullptr);
+  // Address 0 gets weight 1, address 1 gets weight 3.
+  // No utilization report from backend 2, so it gets the average weight 2.
+  WaitForWeightedRoundRobinPicks(
+      &picker,
+      {{kAddresses[0], MakeBackendMetricData(/*app_utilization=*/0,
+                                             /*qps=*/100.0, /*eps=*/0.0,
+                                             /*cpu_utilization=*/0.9)},
+       {kAddresses[1],
+        MakeBackendMetricData(/*app_utilization=*/0,
+                              /*qps=*/100.0,
+                              /*eps=*/0.0, /*cpu_utilization=*/0.3)}},
+      {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 2}});
+  // Now have backend 2 report utilization the same as backend 1, so its
+  // weight will be the same.
+  WaitForWeightedRoundRobinPicks(
+      &picker,
+      {{kAddresses[0], MakeBackendMetricData(/*app_utilization=*/0,
+                                             /*qps=*/100.0, /*eps=*/0.0,
+                                             /*cpu_utilization=*/0.9)},
+       {kAddresses[1], MakeBackendMetricData(/*app_utilization=*/0,
+                                             /*qps=*/100.0, /*eps=*/0.0,
+                                             /*cpu_utilization=*/0.3)},
+       {kAddresses[2], MakeBackendMetricData(/*app_utilization=*/0,
+                                             /*qps=*/100.0, /*eps=*/0.0,
+                                             /*cpu_utilization=*/0.3)}},
+      {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 3}});
+}
+
+TEST_F(WeightedRoundRobinTest, AppUtilOverCpuUtil) {
+  // Send address list to LB policy.
+  const std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
+  auto picker = SendInitialUpdateAndWaitForConnected(kAddresses);
+  ASSERT_NE(picker, nullptr);
+  // Address 0 gets weight 1, address 1 gets weight 3.
+  // No utilization report from backend 2, so it gets the average weight 2.
+  WaitForWeightedRoundRobinPicks(
+      &picker,
+      {{kAddresses[0], MakeBackendMetricData(/*app_utilization=*/0.9,
+                                             /*qps=*/100.0, /*eps=*/0.0,
+                                             /*cpu_utilization=*/0.3)},
+       {kAddresses[1],
+        MakeBackendMetricData(/*app_utilization=*/0.3,
+                              /*qps=*/100.0,
+                              /*eps=*/0.0, /*cpu_utilization=*/0.4)}},
+      {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 2}});
+  // Now have backend 2 report utilization the same as backend 1, so its
+  // weight will be the same.
+  WaitForWeightedRoundRobinPicks(
+      &picker,
+      {{kAddresses[0], MakeBackendMetricData(/*app_utilization=*/0.9,
+                                             /*qps=*/100.0, /*eps=*/0.0,
+                                             /*cpu_utilization=*/0.2)},
+       {kAddresses[1], MakeBackendMetricData(/*app_utilization=*/0.3,
+                                             /*qps=*/100.0, /*eps=*/0.0,
+                                             /*cpu_utilization=*/0.6)},
+       {kAddresses[2], MakeBackendMetricData(/*app_utilization=*/0.3,
+                                             /*qps=*/100.0, /*eps=*/0.0,
+                                             /*cpu_utilization=*/0.5)}},
+      {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 3}});
+}
+
+TEST_F(WeightedRoundRobinTest, Eps) {
+  // Send address list to LB policy.
+  const std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
+  auto picker = SendInitialUpdateAndWaitForConnected(
+      kAddresses, ConfigBuilder().SetErrorUtilizationPenalty(1.0));
+  ASSERT_NE(picker, nullptr);
+  // Expected weights: 1/(0.1+0.5) : 1/(0.1+0.2) : 1/(0.1+0.1) = 1:2:3
+  WaitForWeightedRoundRobinPicks(
+      &picker,
+      {{kAddresses[0], MakeBackendMetricData(/*app_utilization=*/0.1,
+                                             /*qps=*/100.0, /*eps=*/50.0)},
+       {kAddresses[1], MakeBackendMetricData(/*app_utilization=*/0.1,
+                                             /*qps=*/100.0, /*eps=*/20.0)},
+       {kAddresses[2], MakeBackendMetricData(/*app_utilization=*/0.1,
+                                             /*qps=*/100.0, /*eps=*/10.0)}},
+      {{kAddresses[0], 1}, {kAddresses[1], 2}, {kAddresses[2], 3}});
 }
 
 TEST_F(WeightedRoundRobinTest, IgnoresDuplicateAddresses) {
@@ -397,15 +459,22 @@ TEST_F(WeightedRoundRobinTest, IgnoresDuplicateAddresses) {
   // Address 0 gets weight 1, address 1 gets weight 3.
   // No utilization report from backend 2, so it gets the average weight 2.
   WaitForWeightedRoundRobinPicks(
-      &picker, {{kAddresses[0], {100, 0.9}}, {kAddresses[1], {100, 0.3}}},
+      &picker,
+      {{kAddresses[0], MakeBackendMetricData(/*app_utilization=*/0.9,
+                                             /*qps=*/100.0, /*eps=*/0.0)},
+       {kAddresses[1], MakeBackendMetricData(/*app_utilization=*/0.3,
+                                             /*qps=*/100.0, /*eps=*/0.0)}},
       {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 2}});
   // Now have backend 2 report utilization the same as backend 1, so its
   // weight will be the same.
   WaitForWeightedRoundRobinPicks(
       &picker,
-      {{kAddresses[0], {100, 0.9}},
-       {kAddresses[1], {100, 0.3}},
-       {kAddresses[2], {100, 0.3}}},
+      {{kAddresses[0], MakeBackendMetricData(/*app_utilization=*/0.9,
+                                             /*qps=*/100.0, /*eps=*/0.0)},
+       {kAddresses[1], MakeBackendMetricData(/*app_utilization=*/0.3,
+                                             /*qps=*/100.0, /*eps=*/0.0)},
+       {kAddresses[2], MakeBackendMetricData(/*app_utilization=*/0.3,
+                                             /*qps=*/100.0, /*eps=*/0.0)}},
       {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 3}});
 }
 
@@ -431,15 +500,110 @@ TEST_F(WeightedRoundRobinTest, OobReporting) {
   // Address 0 gets weight 1, address 1 gets weight 3.
   // No utilization report from backend 2, so it gets the average weight 2.
   ReportOobBackendMetrics(
-      {{kAddresses[0], {100, 0.9}}, {kAddresses[1], {100, 0.3}}});
+      {{kAddresses[0], MakeBackendMetricData(/*app_utilization=*/0.9,
+                                             /*qps=*/100.0, /*eps=*/0.0)},
+       {kAddresses[1], MakeBackendMetricData(/*app_utilization=*/0.3,
+                                             /*qps=*/100.0, /*eps=*/0.0)}});
   WaitForWeightedRoundRobinPicks(
       &picker, {},
       {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 2}});
   // Now have backend 2 report utilization the same as backend 1, so its
   // weight will be the same.
-  ReportOobBackendMetrics({{kAddresses[0], {100, 0.9}},
-                           {kAddresses[1], {100, 0.3}},
-                           {kAddresses[2], {100, 0.3}}});
+  ReportOobBackendMetrics(
+      {{kAddresses[0], MakeBackendMetricData(/*app_utilization=*/0.9,
+                                             /*qps=*/100.0, /*eps=*/0.0)},
+       {kAddresses[1], MakeBackendMetricData(/*app_utilization=*/0.3,
+                                             /*qps=*/100.0, /*eps=*/0.0)},
+       {kAddresses[2], MakeBackendMetricData(/*app_utilization=*/0.3,
+                                             /*qps=*/100.0, /*eps=*/0.0)}});
+  WaitForWeightedRoundRobinPicks(
+      &picker, {},
+      {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 3}});
+  // Verify that OOB reporting interval is the default.
+  for (const auto& address : kAddresses) {
+    auto* subchannel = FindSubchannel(address);
+    ASSERT_NE(subchannel, nullptr);
+    subchannel->CheckOobReportingPeriod(Duration::Seconds(10));
+  }
+}
+
+TEST_F(WeightedRoundRobinTest, OobReportingCpuUtilWithNoAppUtil) {
+  // Send address list to LB policy.
+  const std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
+  auto picker = SendInitialUpdateAndWaitForConnected(
+      kAddresses, ConfigBuilder().SetEnableOobLoadReport(true));
+  ASSERT_NE(picker, nullptr);
+  // Address 0 gets weight 1, address 1 gets weight 3.
+  // No utilization report from backend 2, so it gets the average weight 2.
+  ReportOobBackendMetrics(
+      {{kAddresses[0], MakeBackendMetricData(/*app_utilization=*/0,
+                                             /*qps=*/100.0, /*eps=*/0.0,
+                                             /*cpu_utilization=*/0.9)},
+       {kAddresses[1], MakeBackendMetricData(/*app_utilization=*/0,
+                                             /*qps=*/100.0, /*eps=*/0.0,
+                                             /*cpu_utilization=*/0.3)}});
+  WaitForWeightedRoundRobinPicks(
+      &picker, {},
+      {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 2}});
+  // Now have backend 2 report utilization the same as backend 1, so its
+  // weight will be the same.
+  ReportOobBackendMetrics(
+      {{kAddresses[0], MakeBackendMetricData(/*app_utilization=*/0,
+                                             /*qps=*/100.0, /*eps=*/0.0,
+                                             /*cpu_utilization=*/0.9)},
+       {kAddresses[1],
+        MakeBackendMetricData(/*app_utilization=*/0,
+                              /*qps=*/100.0,
+                              /*eps=*/0.0, /*cpu_utilization=*/0.3)},
+       {kAddresses[2],
+        MakeBackendMetricData(/*app_utilization=*/0,
+                              /*qps=*/100.0,
+                              /*eps=*/0.0, /*cpu_utilization=*/0.3)}});
+  WaitForWeightedRoundRobinPicks(
+      &picker, {},
+      {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 3}});
+  // Verify that OOB reporting interval is the default.
+  for (const auto& address : kAddresses) {
+    auto* subchannel = FindSubchannel(address);
+    ASSERT_NE(subchannel, nullptr);
+    subchannel->CheckOobReportingPeriod(Duration::Seconds(10));
+  }
+}
+
+TEST_F(WeightedRoundRobinTest, OobReportingAppUtilOverCpuUtil) {
+  // Send address list to LB policy.
+  const std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
+  auto picker = SendInitialUpdateAndWaitForConnected(
+      kAddresses, ConfigBuilder().SetEnableOobLoadReport(true));
+  ASSERT_NE(picker, nullptr);
+  // Address 0 gets weight 1, address 1 gets weight 3.
+  // No utilization report from backend 2, so it gets the average weight 2.
+  ReportOobBackendMetrics(
+      {{kAddresses[0], MakeBackendMetricData(/*app_utilization=*/0.9,
+                                             /*qps=*/100.0, /*eps=*/0.0,
+                                             /*cpu_utilization=*/0.3)},
+       {kAddresses[1], MakeBackendMetricData(/*app_utilization=*/0.3,
+                                             /*qps=*/100.0, /*eps=*/0.0,
+                                             /*cpu_utilization=*/0.4)}});
+  WaitForWeightedRoundRobinPicks(
+      &picker, {},
+      {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 2}});
+  // Now have backend 2 report utilization the same as backend 1, so its
+  // weight will be the same.
+  ReportOobBackendMetrics(
+      {{kAddresses[0], MakeBackendMetricData(/*app_utilization=*/0.9,
+                                             /*qps=*/100.0, /*eps=*/0.0,
+                                             /*cpu_utilization=*/0.2)},
+       {kAddresses[1],
+        MakeBackendMetricData(/*app_utilization=*/0.3,
+                              /*qps=*/100.0,
+                              /*eps=*/0.0, /*cpu_utilization=*/0.6)},
+       {kAddresses[2],
+        MakeBackendMetricData(/*app_utilization=*/0.3,
+                              /*qps=*/100.0,
+                              /*eps=*/0.0, /*cpu_utilization=*/0.5)}});
   WaitForWeightedRoundRobinPicks(
       &picker, {},
       {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 3}});
@@ -459,9 +623,13 @@ TEST_F(WeightedRoundRobinTest, HonorsOobReportingPeriod) {
       ConfigBuilder().SetEnableOobLoadReport(true).SetOobReportingPeriod(
           Duration::Seconds(5)));
   ASSERT_NE(picker, nullptr);
-  ReportOobBackendMetrics({{kAddresses[0], {100, 0.9}},
-                           {kAddresses[1], {100, 0.3}},
-                           {kAddresses[2], {100, 0.3}}});
+  ReportOobBackendMetrics(
+      {{kAddresses[0], MakeBackendMetricData(/*app_utilization=*/0.9,
+                                             /*qps=*/100.0, /*eps=*/0.0)},
+       {kAddresses[1], MakeBackendMetricData(/*app_utilization=*/0.3,
+                                             /*qps=*/100.0, /*eps=*/0.0)},
+       {kAddresses[2], MakeBackendMetricData(/*app_utilization=*/0.3,
+                                             /*qps=*/100.0, /*eps=*/0.0)}});
   WaitForWeightedRoundRobinPicks(
       &picker, {},
       {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 3}});
@@ -481,9 +649,12 @@ TEST_F(WeightedRoundRobinTest, HonorsWeightUpdatePeriod) {
   ASSERT_NE(picker, nullptr);
   WaitForWeightedRoundRobinPicks(
       &picker,
-      {{kAddresses[0], {100, 0.9}},
-       {kAddresses[1], {100, 0.3}},
-       {kAddresses[2], {100, 0.3}}},
+      {{kAddresses[0], MakeBackendMetricData(/*app_utilization=*/0.9,
+                                             /*qps=*/100.0, /*eps=*/0.0)},
+       {kAddresses[1], MakeBackendMetricData(/*app_utilization=*/0.3,
+                                             /*qps=*/100.0, /*eps=*/0.0)},
+       {kAddresses[2], MakeBackendMetricData(/*app_utilization=*/0.3,
+                                             /*qps=*/100.0, /*eps=*/0.0)}},
       {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 3}});
 }
 
@@ -497,9 +668,12 @@ TEST_F(WeightedRoundRobinTest, WeightUpdatePeriodLowerBound) {
   ASSERT_NE(picker, nullptr);
   WaitForWeightedRoundRobinPicks(
       &picker,
-      {{kAddresses[0], {100, 0.9}},
-       {kAddresses[1], {100, 0.3}},
-       {kAddresses[2], {100, 0.3}}},
+      {{kAddresses[0], MakeBackendMetricData(/*app_utilization=*/0.9,
+                                             /*qps=*/100.0, /*eps=*/0.0)},
+       {kAddresses[1], MakeBackendMetricData(/*app_utilization=*/0.3,
+                                             /*qps=*/100.0, /*eps=*/0.0)},
+       {kAddresses[2], MakeBackendMetricData(/*app_utilization=*/0.3,
+                                             /*qps=*/100.0, /*eps=*/0.0)}},
       {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 3}});
 }
 
@@ -514,9 +688,12 @@ TEST_F(WeightedRoundRobinTest, WeightExpirationPeriod) {
   // All backends report weights.
   WaitForWeightedRoundRobinPicks(
       &picker,
-      {{kAddresses[0], {100, 0.9}},
-       {kAddresses[1], {100, 0.3}},
-       {kAddresses[2], {100, 0.3}}},
+      {{kAddresses[0], MakeBackendMetricData(/*app_utilization=*/0.9,
+                                             /*qps=*/100.0, /*eps=*/0.0)},
+       {kAddresses[1], MakeBackendMetricData(/*app_utilization=*/0.3,
+                                             /*qps=*/100.0, /*eps=*/0.0)},
+       {kAddresses[2], MakeBackendMetricData(/*app_utilization=*/0.3,
+                                             /*qps=*/100.0, /*eps=*/0.0)}},
       {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 3}});
   // Advance time to make weights stale and trigger the timer callback
   // to recompute weights.
@@ -539,9 +716,12 @@ TEST_F(WeightedRoundRobinTest, BlackoutPeriodAfterWeightExpiration) {
   // All backends report weights.
   WaitForWeightedRoundRobinPicks(
       &picker,
-      {{kAddresses[0], {100, 0.9}},
-       {kAddresses[1], {100, 0.3}},
-       {kAddresses[2], {100, 0.3}}},
+      {{kAddresses[0], MakeBackendMetricData(/*app_utilization=*/0.9,
+                                             /*qps=*/100.0, /*eps=*/0.0)},
+       {kAddresses[1], MakeBackendMetricData(/*app_utilization=*/0.3,
+                                             /*qps=*/100.0, /*eps=*/0.0)},
+       {kAddresses[2], MakeBackendMetricData(/*app_utilization=*/0.3,
+                                             /*qps=*/100.0, /*eps=*/0.0)}},
       {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 3}});
   // Advance time to make weights stale and trigger the timer callback
   // to recompute weights.
@@ -555,9 +735,12 @@ TEST_F(WeightedRoundRobinTest, BlackoutPeriodAfterWeightExpiration) {
   // because we're still in the blackout period.
   ExpectWeightedRoundRobinPicks(
       picker.get(),
-      {{kAddresses[0], {100, 0.3}},
-       {kAddresses[1], {100, 0.3}},
-       {kAddresses[2], {100, 0.9}}},
+      {{kAddresses[0], MakeBackendMetricData(/*app_utilization=*/0.3,
+                                             /*qps=*/100.0, /*eps=*/0.0)},
+       {kAddresses[1], MakeBackendMetricData(/*app_utilization=*/0.3,
+                                             /*qps=*/100.0, /*eps=*/0.0)},
+       {kAddresses[2], MakeBackendMetricData(/*app_utilization=*/0.9,
+                                             /*qps=*/100.0, /*eps=*/0.0)}},
       {{kAddresses[0], 3}, {kAddresses[1], 3}, {kAddresses[2], 3}});
   // Advance time past the blackout period.  This should cause the
   // weights to be used.
@@ -579,9 +762,12 @@ TEST_F(WeightedRoundRobinTest, BlackoutPeriodAfterDisconnect) {
   // All backends report weights.
   WaitForWeightedRoundRobinPicks(
       &picker,
-      {{kAddresses[0], {100, 0.9}},
-       {kAddresses[1], {100, 0.3}},
-       {kAddresses[2], {100, 0.3}}},
+      {{kAddresses[0], MakeBackendMetricData(/*app_utilization=*/0.9,
+                                             /*qps=*/100.0, /*eps=*/0.0)},
+       {kAddresses[1], MakeBackendMetricData(/*app_utilization=*/0.3,
+                                             /*qps=*/100.0, /*eps=*/0.0)},
+       {kAddresses[2], MakeBackendMetricData(/*app_utilization=*/0.3,
+                                             /*qps=*/100.0, /*eps=*/0.0)}},
       {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 3}});
   // Trigger disconnection and reconnection on address 2.
   auto* subchannel = FindSubchannel(kAddresses[2]);
@@ -596,9 +782,12 @@ TEST_F(WeightedRoundRobinTest, BlackoutPeriodAfterDisconnect) {
   picker = ExpectState(GRPC_CHANNEL_READY, absl::OkStatus());
   WaitForWeightedRoundRobinPicks(
       &picker,
-      {{kAddresses[0], {100, 0.9}},
-       {kAddresses[1], {100, 0.3}},
-       {kAddresses[2], {100, 0.3}}},
+      {{kAddresses[0], MakeBackendMetricData(/*app_utilization=*/0.9,
+                                             /*qps=*/100.0, /*eps=*/0.0)},
+       {kAddresses[1], MakeBackendMetricData(/*app_utilization=*/0.3,
+                                             /*qps=*/100.0, /*eps=*/0.0)},
+       {kAddresses[2], MakeBackendMetricData(/*app_utilization=*/0.3,
+                                             /*qps=*/100.0, /*eps=*/0.0)}},
       {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 2}});
   // Advance time to exceed the blackout period and trigger the timer
   // callback to recompute weights.
@@ -606,10 +795,71 @@ TEST_F(WeightedRoundRobinTest, BlackoutPeriodAfterDisconnect) {
   RunTimerCallback();
   ExpectWeightedRoundRobinPicks(
       picker.get(),
-      {{kAddresses[0], {100, 0.3}},
-       {kAddresses[1], {100, 0.3}},
-       {kAddresses[2], {100, 0.9}}},
+      {{kAddresses[0], MakeBackendMetricData(/*app_utilization=*/0.3,
+                                             /*qps=*/100.0, /*eps=*/0.0)},
+       {kAddresses[1], MakeBackendMetricData(/*app_utilization=*/0.3,
+                                             /*qps=*/100.0, /*eps=*/0.0)},
+       {kAddresses[2], MakeBackendMetricData(/*app_utilization=*/0.9,
+                                             /*qps=*/100.0, /*eps=*/0.0)}},
       {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 3}});
+}
+
+TEST_F(WeightedRoundRobinTest, BlackoutPeriodDoesNotGetResetAfterUpdate) {
+  // Send address list to LB policy.
+  const std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
+  auto config_builder =
+      ConfigBuilder().SetWeightExpirationPeriod(Duration::Seconds(2));
+  auto picker =
+      SendInitialUpdateAndWaitForConnected(kAddresses, config_builder);
+  ASSERT_NE(picker, nullptr);
+  // All backends report weights.
+  WaitForWeightedRoundRobinPicks(
+      &picker,
+      {{kAddresses[0], MakeBackendMetricData(/*app_utilization=*/0.9,
+                                             /*qps=*/100.0, /*eps=*/0.0)},
+       {kAddresses[1], MakeBackendMetricData(/*app_utilization=*/0.3,
+                                             /*qps=*/100.0, /*eps=*/0.0)},
+       {kAddresses[2], MakeBackendMetricData(/*app_utilization=*/0.3,
+                                             /*qps=*/100.0, /*eps=*/0.0)}},
+      {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 3}});
+  // Send a duplicate update with the same addresses and config.
+  EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, config_builder.Build()),
+                        lb_policy_.get()),
+            absl::OkStatus());
+  // Note that we have not advanced time, so if the update incorrectly
+  // triggers resetting the blackout period, none of the weights will
+  // actually be used.
+  picker = ExpectState(GRPC_CHANNEL_READY, absl::OkStatus());
+  WaitForWeightedRoundRobinPicks(
+      &picker,
+      {{kAddresses[0], MakeBackendMetricData(/*app_utilization=*/0.9,
+                                             /*qps=*/100.0, /*eps=*/0.0)},
+       {kAddresses[1], MakeBackendMetricData(/*app_utilization=*/0.3,
+                                             /*qps=*/100.0, /*eps=*/0.0)},
+       {kAddresses[2], MakeBackendMetricData(/*app_utilization=*/0.3,
+                                             /*qps=*/100.0, /*eps=*/0.0)}},
+      {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 3}},
+      /*timeout=*/absl::Seconds(5), /*run_timer_callbacks=*/false);
+}
+
+TEST_F(WeightedRoundRobinTest, ZeroErrorUtilPenalty) {
+  // Send address list to LB policy.
+  const std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
+  auto picker = SendInitialUpdateAndWaitForConnected(
+      kAddresses, ConfigBuilder().SetErrorUtilizationPenalty(0.0));
+  ASSERT_NE(picker, nullptr);
+  // Expected weights: 1:1:1
+  WaitForWeightedRoundRobinPicks(
+      &picker,
+      {{kAddresses[0], MakeBackendMetricData(/*app_utilization=*/0.1,
+                                             /*qps=*/100.0, /*eps=*/50.0)},
+       {kAddresses[1], MakeBackendMetricData(/*app_utilization=*/0.1,
+                                             /*qps=*/100.0, /*eps=*/20.0)},
+       {kAddresses[2], MakeBackendMetricData(/*app_utilization=*/0.1,
+                                             /*qps=*/100.0, /*eps=*/10.0)}},
+      {{kAddresses[0], 1}, {kAddresses[1], 1}, {kAddresses[2], 1}});
 }
 
 }  // namespace

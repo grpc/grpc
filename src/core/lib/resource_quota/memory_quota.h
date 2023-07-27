@@ -30,7 +30,6 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/container/flat_hash_set.h"
 #include "absl/strings/string_view.h"
-#include "absl/synchronization/mutex.h"
 #include "absl/types/optional.h"
 
 #include <grpc/event_engine/memory_allocator.h>
@@ -340,7 +339,7 @@ class BasicMemoryQuota final
     struct Shard {
       absl::flat_hash_set<GrpcMemoryAllocatorImpl*> allocators
           ABSL_GUARDED_BY(shard_mu);
-      absl::Mutex shard_mu;
+      Mutex shard_mu;
     };
 
     Shard& SelectShard(void* key) {
@@ -460,7 +459,7 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
   static constexpr size_t kMaxQuotaBufferSize = 1024 * 1024;
 
   // Primitive reservation function.
-  absl::optional<size_t> TryReserve(MemoryRequest request) GRPC_MUST_USE_RESULT;
+  GRPC_MUST_USE_RESULT absl::optional<size_t> TryReserve(MemoryRequest request);
   // This function may be invoked during a memory release operation.
   // It will try to return half of our free pool to the quota.
   void MaybeDonateBack();

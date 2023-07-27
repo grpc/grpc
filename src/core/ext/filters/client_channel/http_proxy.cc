@@ -20,25 +20,31 @@
 
 #include "src/core/ext/filters/client_channel/http_proxy.h"
 
+#include <stdint.h>
 #include <string.h>
 
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/ascii.h"
 #include "absl/strings/match.h"
+#include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 #include "absl/types/optional.h"
 
-#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/address_utils/parse_address.h"
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/env.h"
@@ -51,6 +57,31 @@
 
 namespace grpc_core {
 namespace {
+
+bool ServerInCIDRRange(absl::string_view server_host,
+                       absl::string_view no_proxy_entry) {
+  auto server_address = StringToSockaddr(server_host, 0);
+  if (!server_address.ok()) {
+    return false;
+  }
+  std::pair<absl::string_view, absl::string_view> possible_cidr =
+      absl::StrSplit(no_proxy_entry, absl::MaxSplits('/', 2),
+                     absl::SkipEmpty());
+  if (possible_cidr.first.empty() || possible_cidr.second.empty()) {
+    return false;
+  }
+  auto proxy_address = StringToSockaddr(possible_cidr.first, 0);
+  if (!proxy_address.ok()) {
+    return false;
+  }
+  uint32_t mask_bits = 0;
+  if (absl::SimpleAtoi(possible_cidr.second, &mask_bits)) {
+    grpc_sockaddr_mask_bits(&*proxy_address, mask_bits);
+    return grpc_sockaddr_match_subnet(&*server_address, &*proxy_address,
+                                      mask_bits);
+  }
+  return false;
+}
 
 ///
 /// Parses the 'https_proxy' env var (fallback on 'http_proxy') and returns the
@@ -76,7 +107,7 @@ absl::optional<std::string> GetHttpProxyServer(
   if (!uri_str.has_value()) uri_str = GetEnv("https_proxy");
   if (!uri_str.has_value()) uri_str = GetEnv("http_proxy");
   if (!uri_str.has_value()) return absl::nullopt;
-  // an emtpy value means "don't use proxy"
+  // an empty value means "don't use proxy"
   if (uri_str->empty()) return absl::nullopt;
   uri = URI::Parse(*uri_str);
   if (!uri.ok() || uri->authority().empty()) {
@@ -149,6 +180,11 @@ absl::optional<std::string> HttpProxyMapper::MapName(
             std::string(server_uri).c_str());
     return absl::nullopt;
   }
+  if (uri->scheme() == "vsock") {
+    gpr_log(GPR_INFO, "not using proxy for VSock '%s'",
+            std::string(server_uri).c_str());
+    return absl::nullopt;
+  }
   // Prefer using 'no_grpc_proxy'. Fallback on 'no_proxy' if it is not set.
   auto no_proxy_str = GetEnv("no_grpc_proxy");
   if (!no_proxy_str.has_value()) {
@@ -168,7 +204,9 @@ absl::optional<std::string> HttpProxyMapper::MapName(
       std::vector<absl::string_view> no_proxy_hosts =
           absl::StrSplit(*no_proxy_str, ',', absl::SkipEmpty());
       for (const auto& no_proxy_entry : no_proxy_hosts) {
-        if (absl::EndsWithIgnoreCase(server_host, no_proxy_entry)) {
+        auto entry = absl::StripAsciiWhitespace(no_proxy_entry);
+        if (absl::EndsWithIgnoreCase(server_host, entry) ||
+            ServerInCIDRRange(server_host, entry)) {
           gpr_log(GPR_INFO, "not using proxy for host in no_proxy list '%s'",
                   std::string(server_uri).c_str());
           use_proxy = false;

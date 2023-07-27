@@ -22,6 +22,7 @@
 
 #include <list>
 
+#include "absl/strings/numbers.h"
 #include "upb/upb.hpp"
 
 #include <grpc/byte_buffer.h>
@@ -29,6 +30,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/call.h"
@@ -40,6 +42,8 @@
 #define TSI_ALTS_INITIAL_BUFFER_SIZE 256
 
 const int kHandshakerClientOpNum = 4;
+const char kMaxConcurrentStreamsEnvironmentVariable[] =
+    "GRPC_ALTS_MAX_CONCURRENT_HANDSHAKES";
 
 struct alts_handshaker_client {
   const alts_handshaker_client_vtable* vtable;
@@ -419,7 +423,8 @@ HandshakeQueue* g_client_handshake_queue;
 HandshakeQueue* g_server_handshake_queue;
 
 void DoHandshakeQueuesInit(void) {
-  const size_t per_queue_max_outstanding_handshakes = 40;
+  const size_t per_queue_max_outstanding_handshakes =
+      MaxNumberOfConcurrentHandshakes();
   g_client_handshake_queue =
       new HandshakeQueue(per_queue_max_outstanding_handshakes);
   g_server_handshake_queue =
@@ -733,16 +738,14 @@ alts_handshaker_client* alts_grpc_handshaker_client_create(
   client->handshake_status_details = grpc_empty_slice();
   client->max_frame_size = max_frame_size;
   client->error = error;
-  grpc_slice slice = grpc_slice_from_copied_string(handshaker_service_url);
   client->call =
       strcmp(handshaker_service_url, ALTS_HANDSHAKER_SERVICE_URL_FOR_TESTING) ==
               0
           ? nullptr
           : grpc_channel_create_pollset_set_call(
                 channel, nullptr, GRPC_PROPAGATE_DEFAULTS, interested_parties,
-                grpc_slice_from_static_string(ALTS_SERVICE_METHOD), &slice,
+                grpc_slice_from_static_string(ALTS_SERVICE_METHOD), nullptr,
                 grpc_core::Timestamp::InfFuture(), nullptr);
-  grpc_core::CSliceUnref(slice);
   GRPC_CLOSURE_INIT(&client->on_handshaker_service_resp_recv, grpc_cb, client,
                     grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&client->on_status_received, on_status_received, client,
@@ -925,4 +928,18 @@ void alts_handshaker_client_destroy(alts_handshaker_client* c) {
         reinterpret_cast<alts_grpc_handshaker_client*>(c);
     alts_grpc_handshaker_client_unref(client);
   }
+}
+
+size_t MaxNumberOfConcurrentHandshakes() {
+  size_t max_concurrent_handshakes = 40;
+  absl::optional<std::string> env_var_max_concurrent_handshakes =
+      grpc_core::GetEnv(kMaxConcurrentStreamsEnvironmentVariable);
+  if (env_var_max_concurrent_handshakes.has_value()) {
+    size_t effective_max_concurrent_handshakes = 40;
+    if (absl::SimpleAtoi(*env_var_max_concurrent_handshakes,
+                         &effective_max_concurrent_handshakes)) {
+      max_concurrent_handshakes = effective_max_concurrent_handshakes;
+    }
+  }
+  return max_concurrent_handshakes;
 }

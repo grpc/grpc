@@ -16,7 +16,6 @@
 //
 //
 
-#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -24,6 +23,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
@@ -32,15 +32,12 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gprpp/global_config_generic.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/security/security_connector/ssl_utils_config.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
 #include "test/core/util/subprocess.h"
 #include "test/core/util/test_config.h"
-
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static void run_test(const char* target, size_t nops) {
   grpc_channel_credentials* ssl_creds =
@@ -101,10 +98,11 @@ static void run_test(const char* target, size_t nops) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, nops, tag(1), nullptr);
+  error = grpc_call_start_batch(c, ops, nops, grpc_core::CqVerifier::tag(1),
+                                nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(tag(1), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(1), true);
   cqv.Verify();
 
   GPR_ASSERT(status != GRPC_STATUS_OK);
@@ -139,7 +137,7 @@ int main(int argc, char** argv) {
     strcpy(root, ".");
   }
   if (argc == 2) {
-    GPR_GLOBAL_CONFIG_SET(grpc_default_ssl_roots_file_path, argv[1]);
+    grpc_core::SetEnv("GRPC_DEFAULT_SSL_ROOTS_FILE_PATH", argv[1]);
   }
   // figure out our test name
   tmp = lunder - 1;

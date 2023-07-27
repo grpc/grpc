@@ -14,47 +14,57 @@
 from absl import flags
 
 # GCP
-KUBE_CONTEXT = flags.DEFINE_string("kube_context",
-                                   default=None,
-                                   help="Kubectl context to use")
+KUBE_CONTEXT = flags.DEFINE_string(
+    "kube_context", default=None, help="Kubectl context to use"
+)
 SECONDARY_KUBE_CONTEXT = flags.DEFINE_string(
     "secondary_kube_context",
     default=None,
-    help="Secondary kubectl context to use for cluster in another region")
+    help="Secondary kubectl context to use for cluster in another region",
+)
 GCP_SERVICE_ACCOUNT = flags.DEFINE_string(
     "gcp_service_account",
     default=None,
-    help="GCP Service account for GKE workloads to impersonate")
+    help="GCP Service account for GKE workloads to impersonate",
+)
 TD_BOOTSTRAP_IMAGE = flags.DEFINE_string(
     "td_bootstrap_image",
     default=None,
-    help="Traffic Director gRPC Bootstrap Docker image")
+    help="Traffic Director gRPC Bootstrap Docker image",
+)
 
 # Test app
-SERVER_IMAGE = flags.DEFINE_string("server_image",
-                                   default=None,
-                                   help="Server Docker image name")
+SERVER_IMAGE = flags.DEFINE_string(
+    "server_image", default=None, help="Server Docker image name"
+)
 SERVER_IMAGE_CANONICAL = flags.DEFINE_string(
     "server_image_canonical",
     default=None,
-    help=("The canonical implementation of the xDS test server.\n"
-          "Can be used in tests where language-specific xDS test server"
-          "does not exist, or missing a feature required for the test."))
-CLIENT_IMAGE = flags.DEFINE_string("client_image",
-                                   default=None,
-                                   help="Client Docker image name")
+    help=(
+        "The canonical implementation of the xDS test server.\n"
+        "Can be used in tests where language-specific xDS test server"
+        "does not exist, or missing a feature required for the test."
+    ),
+)
+CLIENT_IMAGE = flags.DEFINE_string(
+    "client_image", default=None, help="Client Docker image name"
+)
 DEBUG_USE_PORT_FORWARDING = flags.DEFINE_bool(
     "debug_use_port_forwarding",
     default=False,
-    help="Development only: use kubectl port-forward to connect to test app")
+    help="Development only: use kubectl port-forward to connect to test app",
+)
 ENABLE_WORKLOAD_IDENTITY = flags.DEFINE_bool(
     "enable_workload_identity",
     default=True,
-    help="Enable the WorkloadIdentity feature")
+    help="Enable the WorkloadIdentity feature",
+)
 
-flags.mark_flags_as_required([
-    "kube_context",
-    "td_bootstrap_image",
-    "server_image",
-    "client_image",
-])
+flags.mark_flags_as_required(
+    [
+        "kube_context",
+        "td_bootstrap_image",
+        "server_image",
+        "client_image",
+    ]
+)

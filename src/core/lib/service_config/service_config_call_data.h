@@ -21,14 +21,14 @@
 
 #include <stddef.h>
 
-#include <map>
 #include <memory>
 #include <utility>
 
-#include "absl/strings/string_view.h"
-
+#include "src/core/lib/channel/context.h"
+#include "src/core/lib/gprpp/chunked_vector.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
+#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/service_config/service_config.h"
 #include "src/core/lib/service_config/service_config_parser.h"
 
@@ -38,43 +38,77 @@ namespace grpc_core {
 /// A pointer to this object is stored in the call_context
 /// GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA element, so that filters can
 /// easily access method and global parameters for the call.
+///
+/// Must be accessed when holding the call combiner (legacy filter) or from
+/// inside the activity (promise-based filter).
 class ServiceConfigCallData {
  public:
-  using CallAttributes = std::map<UniqueTypeName, absl::string_view>;
+  class CallAttributeInterface {
+   public:
+    virtual ~CallAttributeInterface() = default;
+    virtual UniqueTypeName type() const = 0;
+  };
 
-  ServiceConfigCallData() : method_configs_(nullptr) {}
+  ServiceConfigCallData(Arena* arena, grpc_call_context_element* call_context)
+      : call_attributes_(arena) {
+    call_context[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value = this;
+    call_context[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].destroy = Destroy;
+  }
 
-  ServiceConfigCallData(
+  virtual ~ServiceConfigCallData() = default;
+
+  void SetServiceConfig(
       RefCountedPtr<ServiceConfig> service_config,
-      const ServiceConfigParser::ParsedConfigVector* method_configs,
-      CallAttributes call_attributes)
-      : service_config_(std::move(service_config)),
-        method_configs_(method_configs),
-        call_attributes_(std::move(call_attributes)) {}
+      const ServiceConfigParser::ParsedConfigVector* method_configs) {
+    service_config_ = std::move(service_config);
+    method_configs_ = method_configs;
+  }
 
   ServiceConfig* service_config() { return service_config_.get(); }
 
   ServiceConfigParser::ParsedConfig* GetMethodParsedConfig(size_t index) const {
-    return method_configs_ != nullptr ? (*method_configs_)[index].get()
-                                      : nullptr;
+    if (method_configs_ == nullptr) return nullptr;
+    return (*method_configs_)[index].get();
   }
 
   ServiceConfigParser::ParsedConfig* GetGlobalParsedConfig(size_t index) const {
+    if (service_config_ == nullptr) return nullptr;
     return service_config_->GetGlobalParsedConfig(index);
   }
 
-  const CallAttributes& call_attributes() const { return call_attributes_; }
+  void SetCallAttribute(CallAttributeInterface* value) {
+    // Overwrite existing entry if we already have one for this type.
+    for (CallAttributeInterface*& attribute : call_attributes_) {
+      if (value->type() == attribute->type()) {
+        attribute = value;
+        return;
+      }
+    }
+    // Otherwise, add a new entry.
+    call_attributes_.EmplaceBack(value);
+  }
 
-  // Must be called when holding the call combiner (legacy filter) or from
-  // inside the activity (promise-based filter).
-  void SetCallAttribute(UniqueTypeName name, absl::string_view value) {
-    call_attributes_[name] = value;
+  template <typename A>
+  A* GetCallAttribute() const {
+    return static_cast<A*>(GetCallAttribute(A::TypeName()));
+  }
+
+  CallAttributeInterface* GetCallAttribute(UniqueTypeName type) const {
+    for (CallAttributeInterface* attribute : call_attributes_) {
+      if (attribute->type() == type) return attribute;
+    }
+    return nullptr;
   }
 
  private:
+  static void Destroy(void* ptr) {
+    auto* self = static_cast<ServiceConfigCallData*>(ptr);
+    self->~ServiceConfigCallData();
+  }
+
   RefCountedPtr<ServiceConfig> service_config_;
-  const ServiceConfigParser::ParsedConfigVector* method_configs_;
-  CallAttributes call_attributes_;
+  const ServiceConfigParser::ParsedConfigVector* method_configs_ = nullptr;
+  ChunkedVector<CallAttributeInterface*, 4> call_attributes_;
 };
 
 }  // namespace grpc_core

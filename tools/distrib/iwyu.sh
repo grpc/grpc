@@ -32,9 +32,11 @@ tools/distrib/gen_compilation_database.py \
   --dedup_targets \
   "//:*" \
   "//src/core/..." \
+  "//src/cpp/ext/otel/..." \
   "//src/compiler/..." \
   "//test/core/..." \
   "//test/cpp/..." \
+  "//fuzztest/..." \
   $MANUAL_TARGETS
 
 # run iwyu against the checked out codebase

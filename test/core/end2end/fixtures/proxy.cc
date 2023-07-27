@@ -24,6 +24,7 @@
 #include <utility>
 
 #include <grpc/byte_buffer.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
@@ -210,7 +211,7 @@ static void on_p2s_sent_message(void* arg, int success) {
   grpc_op op;
   grpc_call_error err;
 
-  grpc_byte_buffer_destroy(pc->c2p_msg);
+  grpc_byte_buffer_destroy(std::exchange(pc->c2p_msg, nullptr));
   if (!pc->proxy->shutdown && success) {
     op.op = GRPC_OP_RECV_MESSAGE;
     op.flags = 0;
