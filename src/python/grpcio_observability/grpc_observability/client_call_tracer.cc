@@ -289,7 +289,9 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::RecordEnd(
 
 void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
     RecordAnnotation(absl::string_view annotation) {
-  // If tracing is disabled, the following will be a no-op.
+  if (!context_.SpanContext().IsSampled()) {
+    return;
+  }
   context_.AddSpanAnnotation(annotation);
 }
 
