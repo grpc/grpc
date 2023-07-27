@@ -2620,7 +2620,6 @@ grpc_cc_library(
         "absl/strings",
         "absl/strings:str_format",
         "absl/types:optional",
-        "absl/types:variant",
     ],
     language = "c++",
     visibility = [
@@ -2630,7 +2629,6 @@ grpc_cc_library(
         "avl",
         "channel_stack_type",
         "dual_ref_counted",
-        "match",
         "ref_counted",
         "time",
         "useful",
