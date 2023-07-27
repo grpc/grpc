@@ -33,6 +33,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
+#include "channel_args.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -190,6 +191,9 @@ ChannelArgs ChannelArgs::Set(absl::string_view name, int value) const {
 }
 
 ChannelArgs ChannelArgs::Set(absl::string_view name, Value value) const {
+  if (const auto* p = args_.Lookup(name)) {
+    if (*p == value) return *this;  // already have this value for this key
+  }
   return ChannelArgs(args_.Add(std::string(name), std::move(value)));
 }
 
@@ -207,18 +211,17 @@ ChannelArgs ChannelArgs::Set(absl::string_view name, std::string value) const {
 }
 
 ChannelArgs ChannelArgs::Remove(absl::string_view name) const {
+  if (args_.Lookup(name) == nullptr) return *this;
   return ChannelArgs(args_.Remove(name));
 }
 
 ChannelArgs ChannelArgs::RemoveAllKeysWithPrefix(
     absl::string_view prefix) const {
-  ChannelArgs result;
-  args_.ForEach([&](const std::string& key, const Value& value) {
-    if (!absl::StartsWith(key, prefix)) {
-      result.args_ = result.args_.Add(key, value);
-    }
+  auto args = args_;
+  args_.ForEach([&args, prefix](const std::string& key, const Value& value) {
+    if (absl::StartsWith(key, prefix)) args.Remove(key);
   });
-  return result;
+  return ChannelArgs(std::move(args));
 }
 
 absl::optional<int> ChannelArgs::GetInt(absl::string_view name) const {
