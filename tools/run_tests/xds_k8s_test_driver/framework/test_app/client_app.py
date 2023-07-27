@@ -300,7 +300,7 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
         return subchannels
 
     class ChannelNotFound(framework.rpc.grpc.GrpcApp.NotFound):
-        """Channel not found"""
+        """Channel with expected status not found"""
 
         src: str
         dst: str
