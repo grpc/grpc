@@ -13,8 +13,8 @@
 # limitations under the License.
 """Tests AioRpcError class."""
 
-import pickle
 import logging
+import pickle
 import unittest
 
 import grpc
