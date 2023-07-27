@@ -5953,6 +5953,7 @@ grpc_cc_library(
         "grpc_promise_endpoint",
         "join",
         "loop",
+        "match",
         "mpsc",
         "seq",
         "slice",
