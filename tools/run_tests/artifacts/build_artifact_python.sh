@@ -81,6 +81,21 @@ then
   export GRPC_BUILD_OVERRIDE_BORING_SSL_ASM_PLATFORM="linux-arm"
 fi
 
+ancillary_package_dir=(
+  "src/python/grpcio_admin/"
+  "src/python/grpcio_channelz/"
+  "src/python/grpcio_csds/"
+  "src/python/grpcio_health_checking/"
+  "src/python/grpcio_reflection/"
+  "src/python/grpcio_status/"
+  "src/python/grpcio_testing/"
+)
+
+# Copy license to ancillary package directories so it will be distributed.
+for directory in "${ancillary_package_dir[@]}"; do
+  cp "LICENSE" "${directory}"
+done
+
 # Build the source distribution first because MANIFEST.in cannot override
 # exclusion of built shared objects among package resources (for some
 # inexplicable reason).

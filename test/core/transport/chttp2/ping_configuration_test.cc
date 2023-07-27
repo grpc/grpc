@@ -15,11 +15,14 @@
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
+#include "src/core/ext/transport/chttp2/transport/ping_abuse_policy.h"
+#include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/experiments/config.h"
@@ -57,7 +60,7 @@ TEST_F(ConfigurationTest, ClientKeepaliveDefaults) {
   EXPECT_EQ(t->keepalive_time, Duration::Infinity());
   EXPECT_EQ(t->keepalive_timeout, Duration::Seconds(20));
   EXPECT_EQ(t->keepalive_permit_without_calls, false);
-  EXPECT_EQ(t->ping_policy.max_pings_without_data, 2);
+  EXPECT_EQ(t->ping_rate_policy.TestOnlyMaxPingsWithoutData(), 2);
   grpc_transport_destroy(&t->base);
 }
 
@@ -72,7 +75,7 @@ TEST_F(ConfigurationTest, ClientKeepaliveExplicitArgs) {
   EXPECT_EQ(t->keepalive_time, Duration::Seconds(20));
   EXPECT_EQ(t->keepalive_timeout, Duration::Seconds(10));
   EXPECT_EQ(t->keepalive_permit_without_calls, true);
-  EXPECT_EQ(t->ping_policy.max_pings_without_data, 3);
+  EXPECT_EQ(t->ping_rate_policy.TestOnlyMaxPingsWithoutData(), 3);
   grpc_transport_destroy(&t->base);
 }
 
@@ -83,10 +86,11 @@ TEST_F(ConfigurationTest, ServerKeepaliveDefaults) {
   EXPECT_EQ(t->keepalive_time, Duration::Hours(2));
   EXPECT_EQ(t->keepalive_timeout, Duration::Seconds(20));
   EXPECT_EQ(t->keepalive_permit_without_calls, false);
-  EXPECT_EQ(t->ping_policy.max_pings_without_data, 2);
-  EXPECT_EQ(t->ping_policy.min_recv_ping_interval_without_data,
+  // Server never limits based on number of pings without data.
+  EXPECT_EQ(t->ping_rate_policy.TestOnlyMaxPingsWithoutData(), 0);
+  EXPECT_EQ(t->ping_abuse_policy.TestOnlyMinPingIntervalWithoutData(),
             Duration::Minutes(5));
-  EXPECT_EQ(t->ping_policy.max_ping_strikes, 2);
+  EXPECT_EQ(t->ping_abuse_policy.TestOnlyMaxPingStrikes(), 2);
   grpc_transport_destroy(&t->base);
 }
 
@@ -104,10 +108,11 @@ TEST_F(ConfigurationTest, ServerKeepaliveExplicitArgs) {
   EXPECT_EQ(t->keepalive_time, Duration::Seconds(20));
   EXPECT_EQ(t->keepalive_timeout, Duration::Seconds(10));
   EXPECT_EQ(t->keepalive_permit_without_calls, true);
-  EXPECT_EQ(t->ping_policy.max_pings_without_data, 3);
-  EXPECT_EQ(t->ping_policy.min_recv_ping_interval_without_data,
+  // Server never limits based on number of pings without data.
+  EXPECT_EQ(t->ping_rate_policy.TestOnlyMaxPingsWithoutData(), 0);
+  EXPECT_EQ(t->ping_abuse_policy.TestOnlyMinPingIntervalWithoutData(),
             Duration::Seconds(20));
-  EXPECT_EQ(t->ping_policy.max_ping_strikes, 0);
+  EXPECT_EQ(t->ping_abuse_policy.TestOnlyMaxPingStrikes(), 0);
   grpc_transport_destroy(&t->base);
 }
 
@@ -130,7 +135,7 @@ TEST_F(ConfigurationTest, ModifyClientDefaults) {
   EXPECT_EQ(t->keepalive_time, Duration::Seconds(20));
   EXPECT_EQ(t->keepalive_timeout, Duration::Seconds(10));
   EXPECT_EQ(t->keepalive_permit_without_calls, true);
-  EXPECT_EQ(t->ping_policy.max_pings_without_data, 3);
+  EXPECT_EQ(t->ping_rate_policy.TestOnlyMaxPingsWithoutData(), 3);
   grpc_transport_destroy(&t->base);
 }
 
@@ -155,10 +160,11 @@ TEST_F(ConfigurationTest, ModifyServerDefaults) {
   EXPECT_EQ(t->keepalive_time, Duration::Seconds(20));
   EXPECT_EQ(t->keepalive_timeout, Duration::Seconds(10));
   EXPECT_EQ(t->keepalive_permit_without_calls, true);
-  EXPECT_EQ(t->ping_policy.max_pings_without_data, 3);
-  EXPECT_EQ(t->ping_policy.min_recv_ping_interval_without_data,
+  // Server never limits based on number of pings without data.
+  EXPECT_EQ(t->ping_rate_policy.TestOnlyMaxPingsWithoutData(), 0);
+  EXPECT_EQ(t->ping_abuse_policy.TestOnlyMinPingIntervalWithoutData(),
             Duration::Seconds(20));
-  EXPECT_EQ(t->ping_policy.max_ping_strikes, 0);
+  EXPECT_EQ(t->ping_abuse_policy.TestOnlyMaxPingStrikes(), 0);
   grpc_transport_destroy(&t->base);
 }
 

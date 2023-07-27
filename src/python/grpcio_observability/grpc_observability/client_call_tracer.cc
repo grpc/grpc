@@ -56,8 +56,22 @@ void PythonOpenCensusCallTracer::GenerateContext() {}
 
 void PythonOpenCensusCallTracer::RecordAnnotation(
     absl::string_view annotation) {
-  // If tracing is disabled, the following will be a no-op.
+  if (!context_.SpanContext().IsSampled()) {
+    return;
+  }
   context_.AddSpanAnnotation(annotation);
+}
+
+void PythonOpenCensusCallTracer::RecordAnnotation(
+    const Annotation& annotation) {
+  if (!context_.SpanContext().IsSampled()) {
+    return;
+  }
+
+  switch (annotation.type()) {
+    default:
+      context_.AddSpanAnnotation(annotation.ToString());
+  }
 }
 
 PythonOpenCensusCallTracer::~PythonOpenCensusCallTracer() {
@@ -275,8 +289,22 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::RecordEnd(
 
 void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
     RecordAnnotation(absl::string_view annotation) {
-  // If tracing is disabled, the following will be a no-op.
+  if (!context_.SpanContext().IsSampled()) {
+    return;
+  }
   context_.AddSpanAnnotation(annotation);
+}
+
+void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
+    RecordAnnotation(const Annotation& annotation) {
+  if (!context_.SpanContext().IsSampled()) {
+    return;
+  }
+
+  switch (annotation.type()) {
+    default:
+      context_.AddSpanAnnotation(annotation.ToString());
+  }
 }
 
 }  // namespace grpc_observability
