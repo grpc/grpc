@@ -570,8 +570,12 @@ def _call_behavior(
                             "Calling application raised unprintable Exception!"
                         )
                         _LOGGER.exception(
-                            traceback.format_exception(exception)
-                        )  # pylint: disable=no-value-for-parameter
+                            traceback.format_exception(
+                                type(exception),
+                                exception,
+                                exception.__traceback__,
+                            )
+                        )
                     traceback.print_exc()
                     _LOGGER.exception(details)
                     _abort(
