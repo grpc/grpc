@@ -32,10 +32,7 @@ namespace grpc_core {
 template <class K, class V = void>
 class AVL {
  public:
-  AVL() {
-    fprintf(stderr, "%s: %zi %zi\n", __PRETTY_FUNCTION__, sizeof(Node),
-            sizeof(NodePtr));
-  }
+  AVL() {}
 
   AVL Add(K key, V value) const {
     return AVL(AddKey(root_, std::move(key), std::move(value)));
