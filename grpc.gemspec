@@ -1189,6 +1189,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/gpr/spinlock.h )
   s.files += %w( src/core/lib/gpr/string.cc )
   s.files += %w( src/core/lib/gpr/string.h )
+  s.files += %w( src/core/lib/gpr/subprocess.cc )
+  s.files += %w( src/core/lib/gpr/subprocess.h )
   s.files += %w( src/core/lib/gpr/sync.cc )
   s.files += %w( src/core/lib/gpr/sync_abseil.cc )
   s.files += %w( src/core/lib/gpr/time.cc )

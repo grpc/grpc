@@ -1183,6 +1183,8 @@ let package = Package(
         "src/core/lib/gpr/spinlock.h",
         "src/core/lib/gpr/string.cc",
         "src/core/lib/gpr/string.h",
+        "src/core/lib/gpr/subprocess.cc",
+        "src/core/lib/gpr/subprocess.h",
         "src/core/lib/gpr/sync.cc",
         "src/core/lib/gpr/sync_abseil.cc",
         "src/core/lib/gpr/time.cc",

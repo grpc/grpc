@@ -34,6 +34,16 @@ namespace grpc_core {
 class PluggableAuthExternalAccountCredentials final
     : public ExternalAccountCredentials {
  public:
+  struct ExecutableResponse {
+    bool success;
+    int version;
+    int expiration_time;
+    std::string token_type;
+    std::string subject_token;
+    std::string error_code;
+    std::string error_message;
+  };
+
   static RefCountedPtr<PluggableAuthExternalAccountCredentials> Create(
       Options options, std::vector<std::string> scopes,
       grpc_error_handle* error);
@@ -47,10 +57,14 @@ class PluggableAuthExternalAccountCredentials final
       HTTPRequestContext* ctx, const Options& options,
       std::function<void(std::string, grpc_error_handle)> cb) override;
 
+  void CreateExecutableResponse(std::string executable_output);
+  void FinishRetrieveSubjectToken(std::string token, grpc_error_handle error);
   // Fields of credential_source.executable
   std::string command_;
   int64_t executable_timeout_ms_;
   std::string output_file_path_ = "";
+
+  ExecutableResponse executable_response_;
 
   std::function<void(std::string, grpc_error_handle)> cb_ = nullptr;
 };

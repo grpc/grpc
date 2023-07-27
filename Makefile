@@ -859,6 +859,7 @@ LIBGPR_SRC = \
     src/core/lib/gpr/posix/time.cc \
     src/core/lib/gpr/posix/tmpfile.cc \
     src/core/lib/gpr/string.cc \
+    src/core/lib/gpr/subprocess.cc \
     src/core/lib/gpr/sync.cc \
     src/core/lib/gpr/sync_abseil.cc \
     src/core/lib/gpr/time.cc \
