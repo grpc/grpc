@@ -51,6 +51,7 @@ class CallTracerAnnotationInterface {
  public:
   // Enum associated with types of Annotations.
   enum class AnnotationType {
+    kMetadataSizes,
     kDoNotUse_MustBeLast,
   };
 

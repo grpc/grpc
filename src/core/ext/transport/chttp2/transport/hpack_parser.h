@@ -40,6 +40,7 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_parse_result.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser_table.h"
 #include "src/core/lib/backoff/random_early_detection.h"
+#include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_refcount.h"
@@ -99,7 +100,9 @@ class HPackParser {
   // Start throwing away any received headers after parsing them.
   void StopBufferingFrame() { metadata_buffer_ = nullptr; }
   // Parse one slice worth of data
-  grpc_error_handle Parse(const grpc_slice& slice, bool is_last);
+  grpc_error_handle Parse(
+      const grpc_slice& slice, bool is_last,
+      grpc_core::CallTracerAnnotationInterface* call_tracer);
   // Reset state ready for the next BeginFrame
   void FinishFrame();
 
@@ -117,6 +120,8 @@ class HPackParser {
   // Helper classes: see implementation
   class Parser;
   class Input;
+  class MetadataSizeEncoder;
+  class MetadataSizesAnnotation;
 
   // Helper to parse a string and turn it into a slice with appropriate memory
   // management characteristics
@@ -249,7 +254,9 @@ class HPackParser {
     absl::variant<const HPackTable::Memento*, Slice> key;
   };
 
-  grpc_error_handle ParseInput(Input input, bool is_last);
+  grpc_error_handle ParseInput(
+      Input input, bool is_last,
+      grpc_core::CallTracerAnnotationInterface* call_tracer);
   void ParseInputInner(Input* input);
   GPR_ATTRIBUTE_NOINLINE
   void HandleMetadataSoftSizeLimitExceeded(Input* input);

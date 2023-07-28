@@ -482,7 +482,7 @@ struct grpc_chttp2_stream {
                      const void* server_data, grpc_core::Arena* arena);
   ~grpc_chttp2_stream();
 
-  void* context;
+  void* context = nullptr;
   grpc_chttp2_transport* t;
   grpc_stream_refcount* refcount;
   // Reffer is a 0-len structure, simply reffing `t` and `refcount` in its ctor
