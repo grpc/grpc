@@ -18,10 +18,8 @@
 #include <grpc/support/port_platform.h>
 
 #include <stdint.h>
-#include <stdio.h>
 
 #include <initializer_list>
-#include <iostream>
 #include <memory>
 #include <type_traits>
 #include <utility>
@@ -59,10 +57,11 @@ class ClientTransport {
       stream_id = next_stream_id_++;
     }
     return Seq(
-        [stream_id, outgoing_frames = outgoing_frames_->MakeSender(),
+        [stream_id, outgoing_frames = outgoing_frames_.MakeSender(),
          client_initial_metadata =
              std::move(call_args.client_initial_metadata)]() mutable {
-          // TODO(ladynana): consider getting the first message here if it's available.
+          // TODO(ladynana): consider getting the first message here if it's
+          // available.
           ClientFragmentFrame frame;
           frame.stream_id = stream_id;
           frame.headers = std::move(client_initial_metadata);
@@ -70,18 +69,17 @@ class ClientTransport {
           return outgoing_frames.Send(ClientFrame(std::move(frame)));
         },
         ForEach(std::move(*call_args.client_to_server_messages),
-                [stream_id, outgoing_frames = outgoing_frames_->MakeSender()](
+                [stream_id, outgoing_frames = outgoing_frames_.MakeSender()](
                     MessageHandle result) mutable {
                   ClientFragmentFrame frame;
                   frame.stream_id = stream_id;
                   frame.message = std::move(result);
                   return Seq(
-                      outgoing_frames.Send(ClientFrame(std::move(frame))), [] {
-                        std::cout << "\n sent frame finish. ";
-                        fflush(stdout);
+                      outgoing_frames.Send(ClientFrame(std::move(frame))),
+                      []() -> absl::Status {
                         // TODO(ladynana): remove this sleep after figure out
                         // how to synchronize writer_ with outside activity.
-                        absl::SleepFor(absl::Seconds(10));
+                        absl::SleepFor(absl::Seconds(5));
                         return absl::OkStatus();
                       });
                 }));
@@ -90,8 +88,7 @@ class ClientTransport {
  private:
   // Max buffer is set to 4, so that for stream writes each time it will queue
   // at most 2 frames.
-  std::shared_ptr<MpscReceiver<ClientFrame>> outgoing_frames_ =
-      std::make_shared<MpscReceiver<ClientFrame>>(4);
+  MpscReceiver<ClientFrame> outgoing_frames_;
   Mutex mu_;
   uint32_t next_stream_id_ ABSL_GUARDED_BY(mu_) = 1;
   ActivityPtr writer_;
