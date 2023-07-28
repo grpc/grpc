@@ -82,13 +82,12 @@ ClientTransport::ClientTransport(
                                         std::move(*control_endpoint_buffer)),
                                     this->data_endpoint_->Write(
                                         std::move(*data_endpoint_buffer))),
-                               [](std::tuple<absl::StatusOr<SliceBuffer>,
-                                             absl::StatusOr<SliceBuffer>>
+                               [](std::tuple<absl::Status, absl::Status>
                                       ret) -> LoopCtl<absl::Status> {
                                  std::cout << "\n get next frame. ";
                                  fflush(stdout);
-                                 if (!(std::get<0>(ret).status().ok() ||
-                                       std::get<1>(ret).status().ok())) {
+                                 if (!(std::get<0>(ret).ok() ||
+                                       std::get<1>(ret).ok())) {
                                    // TODO(ladynana): better error handling when
                                    // writes failed.
                                    
@@ -101,7 +100,7 @@ ClientTransport::ClientTransport(
       }),
       EventEngineWakeupScheduler(
           grpc_event_engine::experimental::CreateEventEngine()),
-      [](absl::Status status) { return status; });
+      [](absl::Status status)->absl::Status { return status; });
 }
 
 }  // namespace chaotic_good
