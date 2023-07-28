@@ -50,7 +50,6 @@ bool IsForkEnabled() {
   static bool enabled = grpc_core::ConfigVars::Get().EnableForkSupport();
   return enabled;
 }
-
 }  // namespace
 
 Forkable::Forkable() { ManageForkable(this); }
