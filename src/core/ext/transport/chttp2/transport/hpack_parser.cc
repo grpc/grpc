@@ -1094,13 +1094,12 @@ class HPackParser::MetadataSizeEncoder {
 };
 
 class HPackParser::MetadataSizesAnnotation
-    : public grpc_core::CallTracerAnnotationInterface::Annotation {
+    : public CallTracerAnnotationInterface::Annotation {
  public:
   MetadataSizesAnnotation(grpc_metadata_batch* metadata_buffer,
                           uint64_t soft_limit, uint64_t hard_limit)
-      : grpc_core::CallTracerAnnotationInterface::Annotation(
-            grpc_core::CallTracerAnnotationInterface::AnnotationType::
-                kMetadataSizes),
+      : CallTracerAnnotationInterface::Annotation(
+            CallTracerAnnotationInterface::AnnotationType::kMetadataSizes),
         metadata_buffer_(metadata_buffer),
         soft_limit_(soft_limit),
         hard_limit_(hard_limit) {}
@@ -1146,7 +1145,7 @@ void HPackParser::BeginFrame(grpc_metadata_batch* metadata_buffer,
 
 grpc_error_handle HPackParser::Parse(
     const grpc_slice& slice, bool is_last,
-    grpc_core::CallTracerAnnotationInterface* call_tracer) {
+    CallTracerAnnotationInterface* call_tracer) {
   if (GPR_UNLIKELY(!unparsed_bytes_.empty())) {
     unparsed_bytes_.insert(unparsed_bytes_.end(), GRPC_SLICE_START_PTR(slice),
                            GRPC_SLICE_END_PTR(slice));
@@ -1166,8 +1165,7 @@ grpc_error_handle HPackParser::Parse(
 }
 
 grpc_error_handle HPackParser::ParseInput(
-    Input input, bool is_last,
-    grpc_core::CallTracerAnnotationInterface* call_tracer) {
+    Input input, bool is_last, CallTracerAnnotationInterface* call_tracer) {
   ParseInputInner(&input);
   if (is_last && is_boundary()) {
     if (state_.metadata_early_detection.Reject(state_.frame_length)) {
