@@ -128,7 +128,7 @@ void FuzzOneInput(const hpack_sync_fuzzer::Msg& msg) {
   for (size_t i = 0; i < encode_output.Count(); i++) {
     auto err =
         parser.Parse(encode_output.c_slice_at(i),
-                     i == (encode_output.Count() - 1, /*call_tracer=*/nullptr));
+                     i == (encode_output.Count() - 1), /*call_tracer=*/nullptr);
     if (!err.ok()) {
       seen_errors.push_back(std::make_pair(i, err));
       // If we get a connection error (i.e. not a stream error), stop parsing,
