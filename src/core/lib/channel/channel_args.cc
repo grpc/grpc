@@ -227,7 +227,7 @@ ChannelArgs ChannelArgs::Remove(absl::string_view name) const {
 ChannelArgs ChannelArgs::RemoveAllKeysWithPrefix(
     absl::string_view prefix) const {
   auto args = args_;
-  args_.ForEach([&](const RcStringValue& key, const Value& value) {
+  args_.ForEach([&](const RcStringValue& key, const Value&) {
     if (absl::StartsWith(key.as_string_view(), prefix)) args = args.Remove(key);
   });
   return ChannelArgs(std::move(args));
