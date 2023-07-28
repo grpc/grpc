@@ -1,4 +1,8 @@
 dl.field-list > dt {
     word-break: keep-all !important;
 }
-.sphinxsidebarwrapper {  overflow-y: scroll; }
+.sphinxsidebar {
+    overflow-y: scroll;
+    top: 0;
+    bottom: 0;
+}
