@@ -62,7 +62,7 @@ class ClientTransport {
         [stream_id, outgoing_frames = outgoing_frames_->MakeSender(),
          client_initial_metadata =
              std::move(call_args.client_initial_metadata)]() mutable {
-          // TODO(): consider getting the first message here if it's available.
+          // TODO(ladynana): consider getting the first message here if it's available.
           ClientFragmentFrame frame;
           frame.stream_id = stream_id;
           frame.headers = std::move(client_initial_metadata);
