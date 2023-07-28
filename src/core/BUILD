@@ -5858,7 +5858,6 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "activity",
-        "basic_join",
         "basic_seq",
         "channel_args",
         "chaotic_good_frame",
