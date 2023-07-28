@@ -6383,8 +6383,7 @@ target_link_libraries(avl_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::strings
-  absl::variant
+  gpr
 )
 
 

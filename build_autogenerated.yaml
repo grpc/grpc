@@ -4776,12 +4776,13 @@ targets:
   language: c++
   headers:
   - src/core/lib/avl/avl.h
-  - src/core/lib/gpr/useful.h
+  - src/core/lib/gprpp/atomic_utils.h
+  - src/core/lib/gprpp/ref_counted.h
+  - src/core/lib/gprpp/ref_counted_ptr.h
   src:
   - test/core/avl/avl_test.cc
   deps:
-  - absl/strings:strings
-  - absl/types:variant
+  - gpr
   uses_polling: false
 - name: aws_request_signer_test
   gtest: true

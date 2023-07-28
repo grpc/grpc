@@ -153,6 +153,18 @@ class AioRpcError(grpc.RpcError):
     def __str__(self) -> str:
         return self._repr()
 
+    def __reduce__(self):
+        return (
+            type(self),
+            (
+                self._code,
+                self._initial_metadata,
+                self._trailing_metadata,
+                self._details,
+                self._debug_error_string,
+            ),
+        )
+
 
 def _create_rpc_error(
     initial_metadata: Metadata, status: cygrpc.AioRpcStatus
