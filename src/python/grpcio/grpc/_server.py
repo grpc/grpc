@@ -1258,7 +1258,6 @@ def _start(state: _ServerState) -> None:
         state.server.start()
         state.stage = _ServerStage.STARTED
         _request_call(state)
-
         thread = threading.Thread(target=_serve, args=(state,))
         thread.daemon = True
         thread.start()
