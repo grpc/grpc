@@ -100,7 +100,7 @@ ClientTransport::ClientTransport(
       }),
       EventEngineWakeupScheduler(
           grpc_event_engine::experimental::CreateEventEngine()),
-      [](absl::Status status)->absl::Status { return status; });
+      [](absl::Status status) -> absl::Status { return status; });
 }
 
 }  // namespace chaotic_good
