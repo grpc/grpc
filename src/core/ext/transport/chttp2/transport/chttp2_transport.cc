@@ -45,6 +45,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/status.h>
@@ -62,6 +63,8 @@
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http_trace.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
+#include "src/core/ext/transport/chttp2/transport/ping_abuse_policy.h"
+#include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
 #include "src/core/ext/transport/chttp2/transport/varint.h"
 #include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -123,11 +126,6 @@ static grpc_core::Duration g_default_server_keepalive_timeout =
     grpc_core::Duration::Seconds(20);
 static bool g_default_client_keepalive_permit_without_calls = false;
 static bool g_default_server_keepalive_permit_without_calls = false;
-
-static grpc_core::Duration g_default_min_recv_ping_interval_without_data =
-    grpc_core::Duration::Minutes(5);
-static int g_default_max_pings_without_data = 2;
-static int g_default_max_ping_strikes = 2;
 
 #define MAX_CLIENT_STREAM_ID 0x7fffffffu
 grpc_core::TraceFlag grpc_keepalive_trace(false, "http_keepalive");
@@ -387,18 +385,6 @@ static void read_channel_args(grpc_chttp2_transport* t,
     t->hpack_compressor.SetMaxUsableSize(max_hpack_table_size);
   }
 
-  t->ping_policy.max_pings_without_data =
-      std::max(0, channel_args.GetInt(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA)
-                      .value_or(g_default_max_pings_without_data));
-  t->ping_policy.max_ping_strikes =
-      std::max(0, channel_args.GetInt(GRPC_ARG_HTTP2_MAX_PING_STRIKES)
-                      .value_or(g_default_max_ping_strikes));
-  t->ping_policy.min_recv_ping_interval_without_data =
-      std::max(grpc_core::Duration::Zero(),
-               channel_args
-                   .GetDurationFromIntMillis(
-                       GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS)
-                   .value_or(g_default_min_recv_ping_interval_without_data));
   t->write_buffer_size =
       std::max(0, channel_args.GetInt(GRPC_ARG_HTTP2_WRITE_BUFFER_SIZE)
                       .value_or(grpc_core::chttp2::kDefaultWindow));
@@ -586,6 +572,8 @@ grpc_chttp2_transport::grpc_chttp2_transport(
                     GRPC_CHANNEL_READY),
       is_client(is_client),
       next_stream_id(is_client ? 1 : 2),
+      ping_abuse_policy(channel_args),
+      ping_rate_policy(channel_args, is_client),
       flow_control(
           peer_string.as_string_view(),
           channel_args.GetBool(GRPC_ARG_HTTP2_BDP_PROBE).value_or(true),
@@ -627,13 +615,6 @@ grpc_chttp2_transport::grpc_chttp2_transport(
                        GRPC_CHTTP2_SETTINGS_GRPC_ALLOW_TRUE_BINARY_METADATA, 1);
 
   read_channel_args(this, channel_args, is_client);
-
-  // No pings allowed before receiving a header or data frame.
-  ping_state.pings_before_data_required = 0;
-  ping_state.last_ping_sent_time = grpc_core::Timestamp::InfPast();
-
-  ping_recv_state.last_ping_recv_time = grpc_core::Timestamp::InfPast();
-  ping_recv_state.ping_strikes = 0;
 
   grpc_core::ExecCtx exec_ctx;
   combiner->Run(
@@ -703,9 +684,9 @@ static void close_transport_locked(grpc_chttp2_transport* t,
     t->closed_with_error = error;
     connectivity_state_set(t, GRPC_CHANNEL_SHUTDOWN, absl::Status(),
                            "close_transport");
-    if (t->ping_state.delayed_ping_timer_handle.has_value()) {
-      if (t->event_engine->Cancel(*t->ping_state.delayed_ping_timer_handle)) {
-        t->ping_state.delayed_ping_timer_handle.reset();
+    if (t->delayed_ping_timer_handle.has_value()) {
+      if (t->event_engine->Cancel(*t->delayed_ping_timer_handle)) {
+        t->delayed_ping_timer_handle.reset();
       }
     }
     if (t->next_bdp_ping_timer_handle.has_value()) {
@@ -1711,8 +1692,8 @@ static void retry_initiate_ping_locked(
     grpc_core::RefCountedPtr<grpc_chttp2_transport> t,
     GRPC_UNUSED grpc_error_handle error) {
   GPR_DEBUG_ASSERT(error.ok());
-  GPR_ASSERT(t->ping_state.delayed_ping_timer_handle.has_value());
-  t->ping_state.delayed_ping_timer_handle.reset();
+  GPR_ASSERT(t->delayed_ping_timer_handle.has_value());
+  t->delayed_ping_timer_handle.reset();
   grpc_chttp2_initiate_write(t.get(),
                              GRPC_CHTTP2_INITIATE_WRITE_RETRY_SEND_PING);
 }
@@ -1859,29 +1840,24 @@ static void send_goaway(grpc_chttp2_transport* t, grpc_error_handle error,
   grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_GOAWAY_SENT);
 }
 
-void grpc_chttp2_add_ping_strike(grpc_chttp2_transport* t) {
-  if (++t->ping_recv_state.ping_strikes > t->ping_policy.max_ping_strikes &&
-      t->ping_policy.max_ping_strikes != 0) {
-    send_goaway(t,
-                grpc_error_set_int(GRPC_ERROR_CREATE("too_many_pings"),
-                                   grpc_core::StatusIntProperty::kHttp2Error,
-                                   GRPC_HTTP2_ENHANCE_YOUR_CALM),
-                /*immediate_disconnect_hint=*/true);
-    // The transport will be closed after the write is done
-    close_transport_locked(
-        t, grpc_error_set_int(GRPC_ERROR_CREATE("Too many pings"),
-                              grpc_core::StatusIntProperty::kRpcStatus,
-                              GRPC_STATUS_UNAVAILABLE));
-  }
+void grpc_chttp2_exceeded_ping_strikes(grpc_chttp2_transport* t) {
+  send_goaway(t,
+              grpc_error_set_int(GRPC_ERROR_CREATE("too_many_pings"),
+                                 grpc_core::StatusIntProperty::kHttp2Error,
+                                 GRPC_HTTP2_ENHANCE_YOUR_CALM),
+              /*immediate_disconnect_hint=*/true);
+  // The transport will be closed after the write is done
+  close_transport_locked(
+      t, grpc_error_set_int(GRPC_ERROR_CREATE("Too many pings"),
+                            grpc_core::StatusIntProperty::kRpcStatus,
+                            GRPC_STATUS_UNAVAILABLE));
 }
 
 void grpc_chttp2_reset_ping_clock(grpc_chttp2_transport* t) {
   if (!t->is_client) {
-    t->ping_recv_state.last_ping_recv_time = grpc_core::Timestamp::InfPast();
-    t->ping_recv_state.ping_strikes = 0;
+    t->ping_abuse_policy.ResetPingStrikes();
   }
-  t->ping_state.pings_before_data_required =
-      t->ping_policy.max_pings_without_data;
+  t->ping_rate_policy.ResetPingsBeforeDataRequired();
 }
 
 static void perform_transport_op_locked(void* stream_op,
@@ -2772,20 +2748,8 @@ void grpc_chttp2_config_default_keepalive_args(
         keepalive_permit_without_calls;
   }
 
-  g_default_max_ping_strikes =
-      std::max(0, channel_args.GetInt(GRPC_ARG_HTTP2_MAX_PING_STRIKES)
-                      .value_or(g_default_max_ping_strikes));
-
-  g_default_max_pings_without_data =
-      std::max(0, channel_args.GetInt(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA)
-                      .value_or(g_default_max_pings_without_data));
-
-  g_default_min_recv_ping_interval_without_data =
-      std::max(grpc_core::Duration::Zero(),
-               channel_args
-                   .GetDurationFromIntMillis(
-                       GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS)
-                   .value_or(g_default_min_recv_ping_interval_without_data));
+  grpc_core::Chttp2PingAbusePolicy::SetDefaults(channel_args);
+  grpc_core::Chttp2PingRatePolicy::SetDefaults(channel_args);
 }
 
 static void init_keepalive_ping(

@@ -221,17 +221,15 @@ def _python_config_generator(name, major, minor, bits, config_vars):
         + config_vars.venv_relative_python
         + config_vars.toolchain
     )
-    run = (
-        config_vars.shell
-        + config_vars.runner
-        + [
-            os.path.join(name, config_vars.venv_relative_python[0]),
-        ]
-    )
-    return PythonConfig(name, build, run)
+    # run: [tools/run_tests/helper_scripts/run_python.sh py37/bin/python]
+    python_path = os.path.join(name, config_vars.venv_relative_python[0])
+    run = config_vars.shell + config_vars.runner + [python_path]
+    return PythonConfig(name, build, run, python_path)
 
 
 def _pypy_config_generator(name, major, config_vars):
+    # Something like "py37/bin/python"
+    python_path = os.path.join(name, config_vars.venv_relative_python[0])
     return PythonConfig(
         name,
         config_vars.shell
@@ -241,9 +239,8 @@ def _pypy_config_generator(name, major, config_vars):
         + [name]
         + config_vars.venv_relative_python
         + config_vars.toolchain,
-        config_vars.shell
-        + config_vars.runner
-        + [os.path.join(name, config_vars.venv_relative_python[0])],
+        config_vars.shell + config_vars.runner + [python_path],
+        python_path,
     )
 
 
@@ -700,7 +697,9 @@ class Php7Language(object):
 
 
 class PythonConfig(
-    collections.namedtuple("PythonConfig", ["name", "build", "run"])
+    collections.namedtuple(
+        "PythonConfig", ["name", "build", "run", "python_path"]
+    )
 ):
     """Tuple of commands (named s.t. 'what it says on the tin' applies)"""
 
@@ -729,35 +728,53 @@ class PythonLanguage(object):
     def test_specs(self):
         # load list of known test suites
         jobs = []
-        for io_platform in self._TEST_SPECS_FILE:
-            test_cases = []
-            for tests_json_file_name in self._TEST_SPECS_FILE[io_platform]:
-                with open(tests_json_file_name) as tests_json_file:
-                    test_cases.extend(json.load(tests_json_file))
 
-            environment = dict(_FORCE_ENVIRON_FOR_WRAPPERS)
-            # TODO(https://github.com/grpc/grpc/issues/21401) Fork handlers is not
-            # designed for non-native IO manager. It has a side-effect that
-            # overrides threading settings in C-Core.
-            if io_platform != "native":
-                environment["GRPC_ENABLE_FORK_SUPPORT"] = "0"
-            for python_config in self.pythons:
-                jobs.extend(
-                    [
-                        self.config.job_spec(
-                            python_config.run
-                            + [self._TEST_COMMAND[io_platform]],
-                            timeout_seconds=8 * 60,
-                            environ=dict(
-                                GRPC_PYTHON_TESTRUNNER_FILTER=str(test_case),
-                                **environment,
-                            ),
-                            shortname="%s.%s.%s"
-                            % (python_config.name, io_platform, test_case),
-                        )
-                        for test_case in test_cases
-                    ]
+        # Run tests across all supported interpreters.
+        for python_config in self.pythons:
+            # Run non-io-manager-specific tests.
+            if os.name != "nt":
+                jobs.append(
+                    self.config.job_spec(
+                        [
+                            python_config.python_path,
+                            "tools/distrib/python/xds_protos/generated_file_import_test.py",
+                        ],
+                        timeout_seconds=60,
+                        environ=_FORCE_ENVIRON_FOR_WRAPPERS,
+                        shortname="f{python_config.name}.xds_protos",
+                    )
                 )
+
+            # Run main test suite across all support IO managers.
+            for io_platform in self._TEST_SPECS_FILE:
+                test_cases = []
+                for tests_json_file_name in self._TEST_SPECS_FILE[io_platform]:
+                    with open(tests_json_file_name) as tests_json_file:
+                        test_cases.extend(json.load(tests_json_file))
+
+                environment = dict(_FORCE_ENVIRON_FOR_WRAPPERS)
+                # TODO(https://github.com/grpc/grpc/issues/21401) Fork handlers is not
+                # designed for non-native IO manager. It has a side-effect that
+                # overrides threading settings in C-Core.
+                if io_platform != "native":
+                    environment["GRPC_ENABLE_FORK_SUPPORT"] = "0"
+                    jobs.extend(
+                        [
+                            self.config.job_spec(
+                                python_config.run
+                                + [self._TEST_COMMAND[io_platform]],
+                                timeout_seconds=8 * 60,
+                                environ=dict(
+                                    GRPC_PYTHON_TESTRUNNER_FILTER=str(
+                                        test_case
+                                    ),
+                                    **environment,
+                                ),
+                                shortname=f"{python_config.name}.{io_platform}.{test_case}",
+                            )
+                            for test_case in test_cases
+                        ]
+                    )
         return jobs
 
     def pre_build_steps(self):
@@ -835,6 +852,9 @@ class PythonLanguage(object):
             toolchain,
             runner,
         )
+
+        # TODO: Supported version range should be defined by a single
+        # source of truth.
         python37_config = _python_config_generator(
             name="py37",
             major="3",
@@ -863,6 +883,13 @@ class PythonLanguage(object):
             bits=bits,
             config_vars=config_vars,
         )
+        python311_config = _python_config_generator(
+            name="py311",
+            major="3",
+            minor="11",
+            bits=bits,
+            config_vars=config_vars,
+        )
         pypy27_config = _pypy_config_generator(
             name="pypy", major="2", config_vars=config_vars
         )
@@ -884,9 +911,10 @@ class PythonLanguage(object):
                 # for arm64 testing)
                 return (python39_config,)
             else:
+                # Default set tested on master. Test oldest and newest.
                 return (
                     python37_config,
-                    python38_config,
+                    python311_config,
                 )
         elif args.compiler == "python3.7":
             return (python37_config,)
@@ -896,6 +924,8 @@ class PythonLanguage(object):
             return (python39_config,)
         elif args.compiler == "python3.10":
             return (python310_config,)
+        elif args.compiler == "python3.11":
+            return (python311_config,)
         elif args.compiler == "pypy":
             return (pypy27_config,)
         elif args.compiler == "pypy3":
@@ -908,6 +938,7 @@ class PythonLanguage(object):
                 python38_config,
                 python39_config,
                 python310_config,
+                python311_config,
             )
         else:
             raise Exception("Compiler %s not supported." % args.compiler)
@@ -945,6 +976,7 @@ class RubyLanguage(object):
             "src/ruby/end2end/fork_test.rb",
             "src/ruby/end2end/simple_fork_test.rb",
             "src/ruby/end2end/prefork_without_using_grpc_test.rb",
+            "src/ruby/end2end/prefork_postfork_loop_test.rb",
             "src/ruby/end2end/secure_fork_test.rb",
             "src/ruby/end2end/bad_usage_fork_test.rb",
             "src/ruby/end2end/sig_handling_test.rb",
@@ -969,6 +1001,7 @@ class RubyLanguage(object):
                 "src/ruby/end2end/secure_fork_test.rb",
                 "src/ruby/end2end/bad_usage_fork_test.rb",
                 "src/ruby/end2end/prefork_without_using_grpc_test.rb",
+                "src/ruby/end2end/prefork_postfork_loop_test.rb",
             ]:
                 if platform_string() == "mac":
                     # Skip fork tests on mac, it's only supported on linux.
@@ -1676,11 +1709,14 @@ argp.add_argument(
         "gcc_musl",
         "clang6",
         "clang15",
+        # TODO: Automatically populate from supported version
         "python2.7",
         "python3.5",
         "python3.7",
         "python3.8",
         "python3.9",
+        "python3.10",
+        "python3.11",
         "pypy",
         "pypy3",
         "python_alpine",

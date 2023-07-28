@@ -48,6 +48,8 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
+#include "src/core/ext/transport/chttp2/transport/ping_abuse_policy.h"
+#include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/debug/trace.h"
@@ -146,21 +148,14 @@ struct grpc_chttp2_ping_queue {
   grpc_closure_list lists[GRPC_CHTTP2_PCL_COUNT] = {};
   uint64_t inflight_id = 0;
 };
-struct grpc_chttp2_repeated_ping_policy {
-  int max_pings_without_data;
-  int max_ping_strikes;
-  grpc_core::Duration min_recv_ping_interval_without_data;
-};
+
 struct grpc_chttp2_repeated_ping_state {
   grpc_core::Timestamp last_ping_sent_time;
   int pings_before_data_required;
   absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
       delayed_ping_timer_handle;
 };
-struct grpc_chttp2_server_ping_recv_state {
-  grpc_core::Timestamp last_ping_recv_time;
-  int ping_strikes;
-};
+
 // deframer state for the overall http2 stream of bytes
 typedef enum {
   // prefix: one entry per http2 connection prefix byte
@@ -356,8 +351,10 @@ struct grpc_chttp2_transport : public grpc_core::KeepsGrpcInitialized {
 
   /// ping queues for various ping insertion points
   grpc_chttp2_ping_queue ping_queue = grpc_chttp2_ping_queue();
-  grpc_chttp2_repeated_ping_policy ping_policy;
-  grpc_chttp2_repeated_ping_state ping_state;
+  grpc_core::Chttp2PingAbusePolicy ping_abuse_policy;
+  grpc_core::Chttp2PingRatePolicy ping_rate_policy;
+  absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
+      delayed_ping_timer_handle;
   uint64_t ping_ctr = 0;  // unique id for pings
   grpc_closure retry_initiate_ping_locked;
 
@@ -365,7 +362,6 @@ struct grpc_chttp2_transport : public grpc_core::KeepsGrpcInitialized {
   size_t ping_ack_count = 0;
   size_t ping_ack_capacity = 0;
   uint64_t* ping_acks = nullptr;
-  grpc_chttp2_server_ping_recv_state ping_recv_state;
 
   /// parser for headers
   grpc_core::HPackParser hpack_parser;
@@ -749,11 +745,9 @@ void grpc_chttp2_stream_unref(grpc_chttp2_stream* s);
 
 void grpc_chttp2_ack_ping(grpc_chttp2_transport* t, uint64_t id);
 
-/// Add a new ping strike to ping_recv_state.ping_strikes. If
-/// ping_recv_state.ping_strikes > ping_policy.max_ping_strikes, it sends GOAWAY
-/// with error code ENHANCE_YOUR_CALM and additional debug data resembling
-/// "too_many_pings" followed by immediately closing the connection.
-void grpc_chttp2_add_ping_strike(grpc_chttp2_transport* t);
+/// Sends GOAWAY with error code ENHANCE_YOUR_CALM and additional debug data
+/// resembling "too_many_pings" followed by immediately closing the connection.
+void grpc_chttp2_exceeded_ping_strikes(grpc_chttp2_transport* t);
 
 /// Resets ping clock. Should be called when flushing window updates,
 /// initial/trailing metadata or data frames. For a server, it resets the number

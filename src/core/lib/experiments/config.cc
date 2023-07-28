@@ -27,6 +27,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
+#include "absl/strings/strip.h"
 
 #include <grpc/support/log.h>
 
@@ -64,6 +65,19 @@ class TestExperiments {
         enabled_[i] = (*g_check_constraints_cb)(experiment_metadata[i]);
       } else {
         enabled_[i] = experiment_metadata[i].default_value;
+      }
+    }
+    // For each comma-separated experiment in the global config:
+    for (auto experiment : absl::StrSplit(ConfigVars::Get().Experiments(), ',',
+                                          absl::SkipWhitespace())) {
+      // Enable unless prefixed with '-' (=> disable).
+      bool enable = !absl::ConsumePrefix(&experiment, "-");
+      // See if we can find the experiment in the list in this binary.
+      for (size_t i = 0; i < num_experiments; i++) {
+        if (experiment == experiment_metadata[i].name) {
+          enabled_[i] = enable;
+          break;
+        }
       }
     }
   }
