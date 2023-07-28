@@ -36,7 +36,6 @@ namespace grpc_event_engine {
 namespace experimental {
 
 grpc_core::TraceFlag grpc_trace_fork(false, "fork");
-grpc_core::TraceFlag grpc_trace_fork_stacktrace(false, "fork_stacktrace");
 
 namespace {
 grpc_core::NoDestruct<grpc_core::Mutex> g_mu;
