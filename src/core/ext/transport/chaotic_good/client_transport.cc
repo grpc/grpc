@@ -55,61 +55,48 @@ ClientTransport::ClientTransport(
         return Seq(
             this->outgoing_frames_->Next(),
             [hpack_compressor, this](ClientFrame client_frame) {
-              return Match(
-                  client_frame,
-                  [hpack_compressor, this](ClientFragmentFrame frame) {
-                    auto control_endpoint_buffer =
-                        frame.Serialize(hpack_compressor.get());
+                auto control_endpoint_buffer = std::make_shared<SliceBuffer>();
+                auto data_endpoint_buffer = std::make_shared<SliceBuffer>();
+                MatchMutable(&client_frame,
+                [hpack_compressor, control_endpoint_buffer = control_endpoint_buffer.get(), data_endpoint_buffer = data_endpoint_buffer.get()](ClientFragmentFrame* frame) mutable{
+                    control_endpoint_buffer->Append(frame->Serialize(hpack_compressor.get()));
                     FrameHeader frame_header =
                         FrameHeader::Parse(
                             reinterpret_cast<const uint8_t*>(
                                 grpc_slice_to_c_string(
-                                    control_endpoint_buffer.c_slice_buffer()
+                                    control_endpoint_buffer->c_slice_buffer()
                                         ->slices[0])))
                             .value();
-                    SliceBuffer data_endpoint_buffer;
                     std::string message_padding(frame_header.message_padding,
                                                 '0');
                     Slice slice(grpc_slice_from_cpp_string(message_padding));
                     // Append message payload to data_endpoint_buffer.
-                    data_endpoint_buffer.Append(std::move(slice));
-                    auto message = std::move(frame.message);
+                    data_endpoint_buffer->Append(std::move(slice));
                     // Append message payload to data_endpoint_buffer.
-                    message->payload()->MoveFirstNBytesIntoSliceBuffer(
-                        message->payload()->Length(), data_endpoint_buffer);
-                    return Seq(Join(this->control_endpoint_->Write(
-                                        std::move(control_endpoint_buffer)),
+                    frame->message->payload()->MoveFirstNBytesIntoSliceBuffer(
+                        frame->message->payload()->Length(), *data_endpoint_buffer);
+                },[hpack_compressor, control_endpoint_buffer = control_endpoint_buffer.get()](CancelFrame* frame) mutable{
+                    control_endpoint_buffer->Append(frame->Serialize(hpack_compressor.get()));
+                });
+              return Seq(Join(this->control_endpoint_->Write(
+                                        std::move(*control_endpoint_buffer)),
                                     this->data_endpoint_->Write(
-                                        std::move(data_endpoint_buffer))),
+                                        std::move(*data_endpoint_buffer))),
                                [](std::tuple<absl::StatusOr<SliceBuffer>,
                                              absl::StatusOr<SliceBuffer>>
                                       ret) -> LoopCtl<absl::Status> {
+                                 std::cout << "\n get next frame. ";
+                                 fflush(stdout);
                                  if (!(std::get<0>(ret).status().ok() ||
                                        std::get<1>(ret).status().ok())) {
                                    // TODO(ladynana): better error handling when
                                    // writes failed.
+                                   
                                    return absl::InternalError(
                                        "Endpoint Write failed.");
                                  }
                                  return Continue();
                                });
-                  },
-                  [hpack_compressor, this](CancelFrame frame) {
-                    auto control_endpoint_buffer =
-                        frame.Serialize(hpack_compressor.get());
-                    return Seq(this->control_endpoint_->Write(
-                                   std::move(control_endpoint_buffer)),
-                               [](absl::StatusOr<SliceBuffer> ret)
-                                   -> LoopCtl<absl::Status> {
-                                 if (!ret.status().ok()) {
-                                   // TODO(ladynana): better error handling when
-                                   // writes failed.
-                                   return absl::InternalError(
-                                       "Endpoint Write failed.");
-                                 }
-                                 return Continue();
-                               });
-                  });
             });
       }),
       EventEngineWakeupScheduler(
