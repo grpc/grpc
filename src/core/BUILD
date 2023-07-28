@@ -1390,6 +1390,7 @@ grpc_cc_library(
         "//:config_vars",
         "//:gpr",
         "//:gpr_platform",
+        "//:grpc_trace",
     ],
 )
 
@@ -1746,6 +1747,7 @@ grpc_cc_library(
         "common_event_engine_closures",
         "event_engine_poller",
         "event_engine_time_util",
+        "forkable",
         "iomgr_port",
         "posix_event_engine_closure",
         "posix_event_engine_event_poller",

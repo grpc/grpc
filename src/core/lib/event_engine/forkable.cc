@@ -35,6 +35,9 @@
 namespace grpc_event_engine {
 namespace experimental {
 
+grpc_core::TraceFlag grpc_trace_fork(false, "fork");
+grpc_core::TraceFlag grpc_trace_fork_stacktrace(false, "fork_stacktrace");
+
 namespace {
 grpc_core::NoDestruct<grpc_core::Mutex> g_mu;
 bool g_registered ABSL_GUARDED_BY(g_mu){false};
@@ -47,6 +50,7 @@ bool IsForkEnabled() {
   static bool enabled = grpc_core::ConfigVars::Get().EnableForkSupport();
   return enabled;
 }
+
 }  // namespace
 
 Forkable::Forkable() { ManageForkable(this); }
@@ -58,41 +62,52 @@ void RegisterForkHandlers() {
     grpc_core::MutexLock lock(g_mu.get());
     if (!std::exchange(g_registered, true)) {
 #ifdef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
+      GRPC_FORK_TRACE_LOG_STRING("RegisterForkHandlers");
       pthread_atfork(PrepareFork, PostforkParent, PostforkChild);
 #endif
     }
   }
-};
+}
 
 void PrepareFork() {
   if (IsForkEnabled()) {
+    GRPC_FORK_TRACE_LOG_STRING("PrepareFork");
     grpc_core::MutexLock lock(g_mu.get());
     for (auto forkable_iter = g_forkables->rbegin();
          forkable_iter != g_forkables->rend(); ++forkable_iter) {
       (*forkable_iter)->PrepareFork();
     }
+    GRPC_FORK_TRACE_LOG_STRING("PrepareFork finished");
   }
 }
+
 void PostforkParent() {
   if (IsForkEnabled()) {
+    GRPC_FORK_TRACE_LOG_STRING("PostforkParent");
     grpc_core::MutexLock lock(g_mu.get());
     for (auto* forkable : *g_forkables) {
+      GRPC_FORK_TRACE_LOG("Calling PostforkParent for forkable::%p", forkable);
       forkable->PostforkParent();
     }
+    GRPC_FORK_TRACE_LOG_STRING("PostforkParent finished");
   }
 }
 
 void PostforkChild() {
   if (IsForkEnabled()) {
+    GRPC_FORK_TRACE_LOG_STRING("PostforkChild");
     grpc_core::MutexLock lock(g_mu.get());
     for (auto* forkable : *g_forkables) {
+      GRPC_FORK_TRACE_LOG("Calling PostforkChild for forkable::%p", forkable);
       forkable->PostforkChild();
     }
+    GRPC_FORK_TRACE_LOG_STRING("PostforkChild finished");
   }
 }
 
 void ManageForkable(Forkable* forkable) {
   if (IsForkEnabled()) {
+    GRPC_FORK_TRACE_LOG("Manage forkable::%p", forkable);
     grpc_core::MutexLock lock(g_mu.get());
     g_forkables->push_back(forkable);
   }
@@ -100,6 +115,7 @@ void ManageForkable(Forkable* forkable) {
 
 void StopManagingForkable(Forkable* forkable) {
   if (IsForkEnabled()) {
+    GRPC_FORK_TRACE_LOG("Stop managing forkable::%p", forkable);
     grpc_core::MutexLock lock(g_mu.get());
     auto iter = std::find(g_forkables->begin(), g_forkables->end(), forkable);
     GPR_ASSERT(iter != g_forkables->end());

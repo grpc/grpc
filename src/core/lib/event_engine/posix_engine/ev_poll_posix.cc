@@ -829,6 +829,12 @@ void PollPoller::Shutdown() {
   Unref();
 }
 
+void PollPoller::PrepareFork() { Kick(); }
+// TODO(vigneshbabu): implement
+void PollPoller::PostforkParent() {}
+// TODO(vigneshbabu): implement
+void PollPoller::PostforkChild() {}
+
 PollPoller* MakePollPoller(Scheduler* scheduler, bool use_phony_poll) {
   static bool kPollPollerSupported = InitPollPollerPosix();
   if (kPollPollerSupported) {
@@ -873,6 +879,16 @@ void PollPoller::Kick() { grpc_core::Crash("unimplemented"); }
 PollPoller* MakePollPoller(Scheduler* /*scheduler*/,
                            bool /* use_phony_poll */) {
   return nullptr;
+}
+
+void PollPoller::PrepareFork() {
+  grpc_core::Crash("unimplemented");
+}
+void PollPoller::PostforkParent() {
+  grpc_core::Crash("unimplemented");
+}
+void PollPoller::PostforkChild() {
+  grpc_core::Crash("unimplemented");
 }
 
 void PollPoller::KickExternal(bool /*ext*/) {
