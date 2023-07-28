@@ -5347,6 +5347,16 @@ targets:
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
+- name: call_tracer_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/channel/call_tracer_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: cancel_after_accept_test
   gtest: true
   build: test

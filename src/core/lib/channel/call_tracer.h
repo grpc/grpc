@@ -30,6 +30,7 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/context.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -57,6 +58,10 @@ class CallTracerAnnotationInterface {
   virtual std::string TraceId() = 0;
   virtual std::string SpanId() = 0;
   virtual bool IsSampled() = 0;
+  // Indicates whether this tracer is a delegating tracer or not.
+  // `DelegatingClientCallTracer`, `DelegatingClientCallAttemptTracer` and
+  // `DelegatingServerCallTracer` are the only delegating call tracers.
+  virtual bool IsDelegatingTracer() { return false; }
 };
 
 // The base class for CallAttemptTracer and ServerCallTracer.
@@ -160,6 +165,14 @@ class ServerCallTracerFactory {
 };
 
 void RegisterServerCallTracerFilter(CoreConfiguration::Builder* builder);
+
+// Convenience functions to add call tracers to a call context. Allows setting
+// multiple call tracers to a single call.
+void AddClientCallTracerToContext(grpc_call_context_element* call_context,
+                                  ClientCallTracer* tracer);
+
+void AddServerCallTracerToContext(grpc_call_context_element* call_context,
+                                  ServerCallTracer* tracer);
 
 }  // namespace grpc_core
 
