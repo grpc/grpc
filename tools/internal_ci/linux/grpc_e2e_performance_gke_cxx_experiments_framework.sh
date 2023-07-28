@@ -17,7 +17,7 @@ set -ex
 # Purpose: Run the C++ "dashboard" benchmarks for a set of gRPC-core experiments.
 #
 # To run the benchmarks, add your experiment to the set below.
-GRPC_EXPERIMENTS=("event_engine_listener")
+GRPC_EXPERIMENTS=("event_engine_listener" "work_stealing")
 
 # Enter the gRPC repo root.
 cd "$(dirname "$0")/../../.."
@@ -49,8 +49,8 @@ if [[ "${KOKORO_BUILD_INITIATOR%%-*}" == kokoro ]]; then
 fi
 # Use the "official" BQ tables so that the measurements will show up in the
 # "official" public dashboard.
-BIGQUERY_TABLE_8CORE=e2e_benchmarks.ci_cxx_experiment_results_8core
-BIGQUERY_TABLE_32CORE=e2e_benchmarks.ci_cxx_experiment_results_32core
+BIGQUERY_TABLE_8CORE=e2e_benchmark_cxx_experiments.results_8core
+BIGQUERY_TABLE_32CORE=e2e_benchmark_cxx_experiments.results_32core
 # END differentiate experimental configuration from master configuration.
 CLOUD_LOGGING_URL="https://source.cloud.google.com/results/invocations/${KOKORO_BUILD_ID}"
 PREBUILT_IMAGE_PREFIX="gcr.io/grpc-testing/e2etest/prebuilt/cxx_experiment/${LOAD_TEST_PREFIX}"
@@ -87,34 +87,35 @@ declare -a loadtest_files=()
 buildConfigs() {
     local -r pool="$1"
     local -r table="$2"
-    shift 2
-    for experiment in "${GRPC_EXPERIMENTS[@]}"; do
-        tools/run_tests/performance/loadtest_config.py "$@" \
-            -t ./tools/run_tests/performance/templates/loadtest_template_prebuilt_cxx_experimenst.yaml \
-            -s driver_pool="${DRIVER_POOL}" -s driver_image= \
-            -s client_pool="${pool}" -s server_pool="${pool}" \
-            -s big_query_table="${table}.${experiment}" -s timeout_seconds=900 \
-            -s prebuilt_image_prefix="${PREBUILT_IMAGE_PREFIX}" \
-            -s prebuilt_image_tag="${UNIQUE_IDENTIFIER}" \
-            -s grpc_experiment="${experiment}" \
-            -a ci_buildNumber="${KOKORO_BUILD_NUMBER}" \
-            -a ci_buildUrl="${CLOUD_LOGGING_URL}" \
-            -a ci_jobName="${KOKORO_JOB_NAME}" \
-            -a ci_gitCommit="${GRPC_COMMIT}" \
-            -a ci_gitCommit_core="${GRPC_CORE_COMMIT}" \
-            -a ci_gitActualCommit="${KOKORO_GIT_COMMIT}" \
-            --prefix="${LOAD_TEST_PREFIX}" -u "${UNIQUE_IDENTIFIER}" -u "${pool}" \
-            -a pool="${pool}" --category=psm \
-            --allow_client_language=c++ --allow_server_language=c++ \
-            --allow_server_language=node \
-            -o "loadtest_with_prebuilt_workers_${pool}_${experiment}.yaml"
+    local -r experiment="$3"
+    shift 3
+    tools/run_tests/performance/loadtest_config.py "$@" \
+        -t ./tools/run_tests/performance/templates/loadtest_template_prebuilt_all_languages.yaml \
+        -s driver_pool="${DRIVER_POOL}" -s driver_image= \
+        -s client_pool="${pool}" -s server_pool="${pool}" \
+        -s big_query_table="${table}_${experiment}" -s timeout_seconds=900 \
+        -s prebuilt_image_prefix="${PREBUILT_IMAGE_PREFIX}" \
+        -s prebuilt_image_tag="${UNIQUE_IDENTIFIER}" \
+        -s grpc_experiment="${experiment}" \
+        -a ci_buildNumber="${KOKORO_BUILD_NUMBER}" \
+        -a ci_buildUrl="${CLOUD_LOGGING_URL}" \
+        -a ci_jobName="${KOKORO_JOB_NAME}" \
+        -a ci_gitCommit="${GRPC_COMMIT}" \
+        -a ci_gitCommit_core="${GRPC_CORE_COMMIT}" \
+        -a ci_gitActualCommit="${KOKORO_GIT_COMMIT}" \
+        --prefix="${LOAD_TEST_PREFIX}" -u "${UNIQUE_IDENTIFIER}" -u "${pool}" \
+        -a pool="${pool}" --category=dashboard \
+        --allow_client_language=c++ --allow_server_language=c++ \
+        --allow_server_language=node \
+        -o "loadtest_with_prebuilt_workers_${pool}_${experiment}.yaml"
 
-        loadtest_files+=(-i "loadtest_with_prebuilt_workers_${pool}_${experiment}.yaml")
-    done
+    loadtest_files+=(-i "loadtest_with_prebuilt_workers_${pool}_${experiment}.yaml")
 }
 
-buildConfigs "${WORKER_POOL_8CORE}" "${BIGQUERY_TABLE_8CORE}" -l c++
-buildConfigs "${WORKER_POOL_32CORE}" "${BIGQUERY_TABLE_32CORE}" -l c++
+for experiment in "${GRPC_EXPERIMENTS[@]}"; do
+    buildConfigs "${WORKER_POOL_8CORE}" "${BIGQUERY_TABLE_8CORE}" "${experiment}" -l c++
+    buildConfigs "${WORKER_POOL_32CORE}" "${BIGQUERY_TABLE_32CORE}" "${experiment}" -l c++
+done
 
 # Delete prebuilt images on exit.
 deleteImages() {

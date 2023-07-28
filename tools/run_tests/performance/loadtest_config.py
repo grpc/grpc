@@ -462,7 +462,15 @@ def main() -> None:
     )
     argp.add_argument(
         "--category",
-        choices=["all", "inproc", "scalable", "smoketest", "sweep", "psm"],
+        choices=[
+            "all",
+            "inproc",
+            "scalable",
+            "smoketest",
+            "sweep",
+            "psm",
+            "dashboard",
+        ],
         default="all",
         help="Select a category of tests to run.",
     )
@@ -529,6 +537,7 @@ def main() -> None:
         "DRIVER_PORT": "${DRIVER_PORT}",
         "KILL_AFTER": "${KILL_AFTER}",
         "POD_TIMEOUT": "${POD_TIMEOUT}",
+        "grpc_experiment": "",
     }
 
     # The user can override the ignored variables above by passing them in as

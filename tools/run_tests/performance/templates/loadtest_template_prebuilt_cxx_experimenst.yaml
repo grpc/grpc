@@ -43,6 +43,7 @@ spec:
     - args:
       - -c
       - |
+        GRPC_EXPERIMENTS="${grpc_experiment}" \
         timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
             /source/code/bazel-bin/test/cpp/qps/qps_worker \
             --driver_port="${DRIVER_PORT}" --server_port=10010
