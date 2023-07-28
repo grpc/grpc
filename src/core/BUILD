@@ -1360,8 +1360,10 @@ grpc_cc_library(
         "lib/avl/avl.h",
     ],
     deps = [
+        "ref_counted",
         "useful",
         "//:gpr_platform",
+        "//:ref_counted_ptr",
     ],
 )
 

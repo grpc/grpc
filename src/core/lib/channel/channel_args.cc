@@ -200,6 +200,9 @@ ChannelArgs ChannelArgs::Set(absl::string_view name, int value) const {
 }
 
 ChannelArgs ChannelArgs::Set(absl::string_view name, Value value) const {
+  if (const auto* p = args_.Lookup(name)) {
+    if (*p == value) return *this;  // already have this value for this key
+  }
   return ChannelArgs(args_.Add(RcStringValue(name), std::move(value)));
 }
 
@@ -217,18 +220,17 @@ ChannelArgs ChannelArgs::Set(absl::string_view name, std::string value) const {
 }
 
 ChannelArgs ChannelArgs::Remove(absl::string_view name) const {
+  if (args_.Lookup(name) == nullptr) return *this;
   return ChannelArgs(args_.Remove(name));
 }
 
 ChannelArgs ChannelArgs::RemoveAllKeysWithPrefix(
     absl::string_view prefix) const {
-  ChannelArgs result;
+  auto args = args_;
   args_.ForEach([&](const RcStringValue& key, const Value& value) {
-    if (!absl::StartsWith(key.as_string_view(), prefix)) {
-      result.args_ = result.args_.Add(key, value);
-    }
+    if (absl::StartsWith(key.as_string_view(), prefix)) args = args.Remove(key);
   });
-  return result;
+  return ChannelArgs(std::move(args));
 }
 
 absl::optional<int> ChannelArgs::GetInt(absl::string_view name) const {
