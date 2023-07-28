@@ -552,7 +552,7 @@ class CXXLanguage(Language):
                         async_server_threads=1,
                         minimal_stack=not secure,
                         secure=secure,
-                        categories=maybe_dashboard,
+                        categories=list(DEFAULT_CATEGORIES) + maybe_dashboard,
                     )
 
                     for size in geometric_progression(
