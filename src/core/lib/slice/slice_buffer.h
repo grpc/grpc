@@ -132,6 +132,9 @@ class SliceBuffer {
   /// Concatenate all slices and return the resulting string.
   std::string JoinIntoString() const;
 
+  /// Concatenate all slices and return the resulting slice.
+  Slice JoinIntoSlice() const;
+
   // Return a copy of the slice buffer
   SliceBuffer Copy() const {
     SliceBuffer copy;

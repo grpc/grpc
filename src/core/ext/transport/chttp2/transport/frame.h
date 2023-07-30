@@ -64,7 +64,6 @@ struct Http2SettingsFrame {
 };
 
 struct Http2PingFrame {
-  uint32_t stream_id = 0;
   bool ack = false;
   uint64_t opaque = 0;
 };

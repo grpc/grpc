@@ -219,9 +219,22 @@ class SerializeHeaderAndPayload {
   MutableSlice extra_bytes_;
 };
 
+absl::Status StripPadding(SliceBuffer& payload) {
+  if (payload.Length() < 1) {
+    return absl::InternalError("padding flag set but no padding byte");
+  }
+  uint8_t padding_bytes;
+  payload.MoveFirstNBytesIntoBuffer(1, &padding_bytes);
+  if (payload.Length() < padding_bytes) {
+    return absl::InternalError("padding flag set but not enough padding bytes");
+  }
+  payload.RemoveLastNBytes(padding_bytes);
+  return absl::OkStatus();
+}
+
 absl::StatusOr<Http2DataFrame> ParseDataFrame(const Http2FrameHeader& hdr,
                                               SliceBuffer& payload) {
-  if (hdr.flags & ~kFlagEndStream) {
+  if (hdr.flags & ~(kFlagEndStream | kFlagPadded)) {
     return absl::InternalError(
         absl::StrCat("unsupported data flags: ", hdr.ToString()));
   }
@@ -231,13 +244,19 @@ absl::StatusOr<Http2DataFrame> ParseDataFrame(const Http2FrameHeader& hdr,
         absl::StrCat("invalid stream id: ", hdr.ToString()));
   }
 
+  if (hdr.flags & kFlagPadded) {
+    auto s = StripPadding(payload);
+    if (!s.ok()) return s;
+  }
+
   return Http2DataFrame{hdr.stream_id, ExtractFlag(hdr.flags, kFlagEndStream),
                         std::move(payload)};
 }
 
 absl::StatusOr<Http2HeaderFrame> ParseHeaderFrame(const Http2FrameHeader& hdr,
                                                   SliceBuffer& payload) {
-  if (hdr.flags & ~(kFlagEndHeaders | kFlagEndStream | kFlagPriority)) {
+  if (hdr.flags &
+      ~(kFlagEndHeaders | kFlagEndStream | kFlagPriority | kFlagPadded)) {
     return absl::InternalError(
         absl::StrCat("unsupported header flags: ", hdr.ToString()));
   }
@@ -253,6 +272,11 @@ absl::StatusOr<Http2HeaderFrame> ParseHeaderFrame(const Http2FrameHeader& hdr,
           absl::StrCat("invalid priority payload: ", hdr.ToString()));
     }
     payload.RemoveFirstNBytes(5);
+  }
+
+  if (hdr.flags & kFlagPadded) {
+    auto s = StripPadding(payload);
+    if (!s.ok()) return s;
   }
 
   return Http2HeaderFrame{
@@ -293,6 +317,102 @@ absl::StatusOr<Http2RstStreamFrame> ParseRstStreamFrame(
   payload.CopyToBuffer(buffer);
 
   return Http2RstStreamFrame{hdr.stream_id, Read4b(buffer)};
+}
+
+absl::StatusOr<Http2SettingsFrame> ParseSettingsFrame(
+    const Http2FrameHeader& hdr, SliceBuffer& payload) {
+  if (hdr.flags == kFlagAck) return Http2SettingsFrame{true, {}};
+  if (hdr.flags != 0) return absl::InternalError("invalid settings flags");
+
+  if (payload.Length() % 6 != 0) {
+    return absl::InternalError(
+        absl::StrCat("invalid settings payload: ", hdr.ToString(),
+                     " -- settings must be multiples of 6 bytes, got ",
+                     payload.Length(), " bytes"));
+  }
+
+  Http2SettingsFrame frame{false, {}};
+  while (payload.Length() != 0) {
+    uint8_t buffer[6];
+    payload.MoveFirstNBytesIntoBuffer(6, buffer);
+    frame.settings.push_back({
+        Read2b(buffer),
+        Read4b(buffer + 2),
+    });
+  }
+  return std::move(frame);
+}
+
+absl::StatusOr<Http2PingFrame> ParsePingFrame(const Http2FrameHeader& hdr,
+                                              SliceBuffer& payload) {
+  if (payload.Length() != 8) {
+    return absl::InternalError(
+        absl::StrCat("invalid ping payload: ", hdr.ToString()));
+  }
+
+  if (hdr.stream_id != 0) {
+    return absl::InternalError(
+        absl::StrCat("invalid ping stream id: ", hdr.ToString()));
+  }
+
+  bool ack;
+  switch (hdr.flags) {
+    case 0:
+      ack = false;
+      break;
+    case kFlagAck:
+      ack = true;
+      break;
+    default:
+      return absl::InternalError(
+          absl::StrCat("invalid ping flags: ", hdr.ToString()));
+  }
+
+  uint8_t buffer[8];
+  payload.CopyToBuffer(buffer);
+
+  return Http2PingFrame{ack, Read8b(buffer)};
+}
+
+absl::StatusOr<Http2GoawayFrame> ParseGoawayFrame(const Http2FrameHeader& hdr,
+                                                  SliceBuffer& payload) {
+  if (payload.Length() < 8) {
+    return absl::InternalError(
+        absl::StrCat("invalid goaway payload: ", hdr.ToString(),
+                     " -- must be at least 8 bytes"));
+  }
+
+  if (hdr.stream_id != 0) {
+    return absl::InternalError(
+        absl::StrCat("invalid goaway stream id: ", hdr.ToString()));
+  }
+
+  if (hdr.flags != 0) {
+    return absl::InternalError(
+        absl::StrCat("invalid goaway flags: ", hdr.ToString()));
+  }
+
+  uint8_t buffer[8];
+  payload.MoveFirstNBytesIntoBuffer(8, buffer);
+  return Http2GoawayFrame{Read4b(buffer), Read4b(buffer + 4),
+                          payload.JoinIntoSlice()};
+}
+
+absl::StatusOr<Http2WindowUpdateFrame> ParseWindowUpdateFrame(
+    const Http2FrameHeader& hdr, SliceBuffer& payload) {
+  if (payload.Length() != 4) {
+    return absl::InternalError(
+        absl::StrCat("invalid window update payload: ", hdr.ToString()));
+  }
+
+  if (hdr.flags != 0) {
+    return absl::InternalError(
+        absl::StrCat("invalid window update flags: ", hdr.ToString()));
+  }
+
+  uint8_t buffer[4];
+  payload.CopyToBuffer(buffer);
+  return Http2WindowUpdateFrame{hdr.stream_id, Read4b(buffer)};
 }
 
 }  // namespace

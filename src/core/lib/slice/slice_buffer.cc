@@ -76,6 +76,21 @@ std::string SliceBuffer::JoinIntoString() const {
   return result;
 }
 
+Slice SliceBuffer::JoinIntoSlice() const {
+  if (slice_buffer_.count == 0) return Slice();
+  if (slice_buffer_.count == 1) return RefSlice(0);
+  grpc_slice slice = grpc_slice_malloc(slice_buffer_.length);
+  size_t ofs = 0;
+  for (size_t i = 0; i < slice_buffer_.count; i++) {
+    memcpy(GRPC_SLICE_START_PTR(slice) + ofs,
+           GRPC_SLICE_START_PTR(slice_buffer_.slices[i]),
+           GRPC_SLICE_LENGTH(slice_buffer_.slices[i]));
+    ofs += GRPC_SLICE_LENGTH(slice_buffer_.slices[i]);
+  }
+  GPR_ASSERT(ofs == slice_buffer_.length);
+  return Slice(slice);
+}
+
 }  // namespace grpc_core
 
 // grow a buffer; requires GRPC_SLICE_BUFFER_INLINE_ELEMENTS > 1
