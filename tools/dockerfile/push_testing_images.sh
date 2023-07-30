@@ -67,6 +67,22 @@ ALL_DOCKERFILE_DIRS=(
 
 CHECK_FAILED=""
 
+if [ "${CHECK_MODE}" != "" ]
+then
+  # Check that there are no stale .current_version files (for which the corresponding
+  # dockerfile_dir doesn't exist anymore).
+  for CURRENTVERSION_FILE in $(find tools/ third_party/rake-compiler-dock -name '*.current_version')
+  do
+    DOCKERFILE_DIR="$(echo ${CURRENTVERSION_FILE} | sed 's/.current_version$//')"
+    if [ ! -e "${DOCKERFILE_DIR}/Dockerfile" ]
+    then
+       echo "Found that ${DOCKERFILE_DIR} has '.current_version' file but there is no corresponding Dockerfile."
+       echo "Should the ${CURRENTVERSION_FILE} file be deleted?"
+       CHECK_FAILED=true
+    fi
+  done
+fi
+
 for DOCKERFILE_DIR in "${ALL_DOCKERFILE_DIRS[@]}"
 do
   # Generate image name based on Dockerfile checksum. That works well as long
@@ -86,6 +102,7 @@ do
 
   if [ "${LOCAL_ONLY_MODE}" == "" ]
   then
+    # value obtained here corresponds to the "RepoDigests" from "docker image inspect", but without the need to actually pull the image
     DOCKER_IMAGE_DIGEST_REMOTE=$(gcloud artifacts docker images describe "${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}" --format=json | jq -r '.image_summary.digest')
 
     if [ "${DOCKER_IMAGE_DIGEST_REMOTE}" != "" ]
@@ -130,11 +147,23 @@ do
   # if the .current_version file doesn't exist or it doesn't contain the right SHA checksum,
   # it is out of date and we will need to rebuild the docker image locally.
   LOCAL_BUILD_REQUIRED=""
-  grep "^${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}@sha256:.*" ${DOCKERFILE_DIR}.current_version >/dev/null || LOCAL_BUILD_REQUIRED=true
+  grep "^${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}@sha256:.*$" ${DOCKERFILE_DIR}.current_version >/dev/null || LOCAL_BUILD_REQUIRED=true
+
+  # If the current version file has contains SHA checksum, but not the remote image digest,
+  # it means the locally-built image hasn't been pushed to artifact registry yet.
+  DIGEST_MISSING_IN_CURRENT_VERSION_FILE=""
+  grep "^${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}$" ${DOCKERFILE_DIR}.current_version >/dev/null && DIGEST_MISSING_IN_CURRENT_VERSION_FILE=true
 
   if [ "${LOCAL_BUILD_REQUIRED}" == "" ]
   then
     echo "Dockerfile for ${DOCKER_IMAGE_NAME} hasn't changed. Will skip 'docker build'."
+    continue
+  fi
+
+  if [ "${CHECK_MODE}" != "" ] && [ "${DIGEST_MISSING_IN_CURRENT_VERSION_FILE}" != "" ]
+  then
+    echo "CHECK FAILED: Dockerfile for ${DOCKER_IMAGE_NAME} has changed and was built locally, but looks like it hasn't been pushed."
+    CHECK_FAILED=true
     continue
   fi
 
@@ -162,22 +191,22 @@ do
     docker tag ${DOCKERHUB_ORGANIZATION}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} ${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}
   fi
 
-  DOCKER_IMAGE_DIGEST_LOCAL=$(docker image inspect "${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}" | jq -e -r '.[0].Id')
-
-  # update info on what we consider to be the current version of the docker image (which will be used to run tests)
-  echo -n "${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}@${DOCKER_IMAGE_DIGEST_LOCAL}" >${DOCKERFILE_DIR}.current_version
+  # After building the docker image locally, we don't know the image's RepoDigest (which is distinct from image's "Id" digest) yet
+  # so we can only update the .current_version file with the image tag (which will be enough for running tests under docker locally).
+  # The .current_version file will be updated with both tag and SHA256 repo digest later, once we actually push it.
+  # See b/278226801 for context.
+  echo -n "${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}" >${DOCKERFILE_DIR}.current_version
 
   if [ "${SKIP_UPLOAD}" == "" ] && [ "${LOCAL_ONLY_MODE}" == "" ]
   then
     docker push ${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}
+
+    # After successful push, the image's RepoDigest info will become available in "docker image inspect",
+    # so we update the .current_version file with the repo digest.
+    DOCKER_IMAGE_DIGEST_REMOTE=$(docker image inspect "${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}" | jq -e -r ".[0].RepoDigests[] | select(contains(\"${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}@\"))" | sed 's/^.*@sha256:/sha256:/')
+    echo -n "${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}@${DOCKER_IMAGE_DIGEST_REMOTE}" >${DOCKERFILE_DIR}.current_version
   fi
 done
-
-if [ "${CHECK_MODE}" != "" ]
-then
-  # TODO(jtattermusch): check there are no extra current_version files (for which there isn't a corresponding Dockerfile)
-  true
-fi
 
 if [ "${CHECK_FAILED}" != "" ]
 then

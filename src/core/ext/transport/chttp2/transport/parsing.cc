@@ -47,11 +47,11 @@
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http_trace.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
+#include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -510,8 +510,7 @@ static grpc_error_handle init_data_frame_parser(grpc_chttp2_transport* t) {
   if (bdp_est) {
     if (t->bdp_ping_blocked) {
       t->bdp_ping_blocked = false;
-      GRPC_CHTTP2_REF_TRANSPORT(t, "bdp_ping");
-      schedule_bdp_ping_locked(t);
+      schedule_bdp_ping_locked(t->Ref());
     }
     bdp_est->AddIncomingBytes(t->incoming_frame_size);
   }
@@ -549,7 +548,7 @@ error_handler:
     t->incoming_stream = s;
     t->parser = grpc_chttp2_transport::Parser{
         "data", grpc_chttp2_data_parser_parse, nullptr};
-    t->ping_state.last_ping_sent_time = grpc_core::Timestamp::InfPast();
+    t->ping_rate_policy.ReceivedDataFrame();
     return absl::OkStatus();
   } else if (s != nullptr) {
     // handle stream errors by closing the stream
@@ -588,7 +587,7 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
                                  ? HPackParser::Priority::Included
                                  : HPackParser::Priority::None;
 
-  t->ping_state.last_ping_sent_time = grpc_core::Timestamp::InfPast();
+  t->ping_rate_policy.ReceivedDataFrame();
 
   // could be a new grpc_chttp2_stream or an existing grpc_chttp2_stream
   s = grpc_chttp2_parsing_lookup_stream(t, t->incoming_stream_id);
@@ -841,7 +840,7 @@ static const maybe_complete_func_type maybe_complete_funcs[] = {
 
 static void force_client_rst_stream(void* sp, grpc_error_handle /*error*/) {
   grpc_chttp2_stream* s = static_cast<grpc_chttp2_stream*>(sp);
-  grpc_chttp2_transport* t = s->t;
+  grpc_chttp2_transport* t = s->t.get();
   if (!s->write_closed) {
     grpc_chttp2_add_rst_stream_to_next_write(t, s->id, GRPC_HTTP2_NO_ERROR,
                                              &s->stats.outgoing);

@@ -33,10 +33,12 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/json.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
@@ -183,6 +185,8 @@ TEST_F(OutlierDetectionTest, Basic) {
   absl::Status status = ApplyUpdate(
       BuildUpdate({kAddressUri}, ConfigBuilder().Build()), lb_policy_.get());
   EXPECT_TRUE(status.ok()) << status;
+  // LB policy should have reported CONNECTING state.
+  ExpectConnectingUpdate();
   // LB policy should have created a subchannel for the address.
   auto* subchannel = FindSubchannel(kAddressUri);
   ASSERT_NE(subchannel, nullptr);
@@ -191,8 +195,6 @@ TEST_F(OutlierDetectionTest, Basic) {
   EXPECT_TRUE(subchannel->ConnectionRequested());
   // This causes the subchannel to start to connect, so it reports CONNECTING.
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
-  // LB policy should have reported CONNECTING state.
-  ExpectConnectingUpdate();
   // When the subchannel becomes connected, it reports READY.
   subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
   // The LB policy will report CONNECTING some number of times (doesn't
@@ -229,6 +231,8 @@ TEST_F(OutlierDetectionTest, FailurePercentage) {
   time_cache_.IncrementBy(Duration::Seconds(10));
   RunTimerCallback();
   gpr_log(GPR_INFO, "### ejection complete");
+  // Expect a re-resolution request.
+  ExpectReresolutionRequest();
   // Expect a picker update.
   std::vector<absl::string_view> remaining_addresses;
   for (const auto& addr : kAddresses) {
@@ -251,8 +255,10 @@ TEST_F(OutlierDetectionTest, DoesNotWorkWithPickFirst) {
                       .Build()),
       lb_policy_.get());
   EXPECT_TRUE(status.ok()) << status;
-  // LB policy should have created a subchannel for the first address.
-  auto* subchannel = FindSubchannel(kAddresses[0]);
+  // LB policy should have created a subchannel for the first address with
+  // the GRPC_ARG_INHIBIT_HEALTH_CHECKING channel arg.
+  auto* subchannel = FindSubchannel(
+      kAddresses[0], ChannelArgs().Set(GRPC_ARG_INHIBIT_HEALTH_CHECKING, true));
   ASSERT_NE(subchannel, nullptr);
   // When the LB policy receives the subchannel's initial connectivity
   // state notification (IDLE), it will request a connection.

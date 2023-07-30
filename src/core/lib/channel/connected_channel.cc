@@ -39,6 +39,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/channel/call_finalization.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -597,7 +598,9 @@ ArenaPromise<ServerMetadataHandle> MakeServerCallPromise(
     bool sent_initial_metadata = false;
     bool sent_trailing_metadata = false;
   };
-  auto* call_data = GetContext<Arena>()->ManagedNew<CallData>();
+  auto* call_data = GetContext<Arena>()->New<CallData>();
+  GetContext<CallFinalization>()->Add(
+      [call_data](const grpc_call_final_info*) { call_data->~CallData(); });
 
   party->Spawn(
       "set_polling_entity", call_data->polling_entity_latch.Wait(),

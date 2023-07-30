@@ -563,29 +563,6 @@ typedef unsigned __int64 uint64_t;
 #define GRPC_IF_NAMETOINDEX 1
 #endif
 
-#ifndef GRPC_MUST_USE_RESULT
-#if defined(__GNUC__) && !defined(__MINGW32__)
-#define GRPC_MUST_USE_RESULT __attribute__((warn_unused_result))
-#define GPR_ALIGN_STRUCT(n) __attribute__((aligned(n)))
-#else
-#define GRPC_MUST_USE_RESULT
-#define GPR_ALIGN_STRUCT(n)
-#endif
-#ifdef USE_STRICT_WARNING
-/* When building with USE_STRICT_WARNING (which -Werror), types with this
-   attribute will be treated as annotated with warn_unused_result, enforcing
-   returned values of this type should be used.
-   This is added in grpc::Status in mind to address the issue where it always
-   has this annotation internally but OSS doesn't, sometimes causing internal
-   build failure. To prevent this, this is added while not introducing
-   a breaking change to existing user code which may not use returned values
-   of grpc::Status. */
-#define GRPC_MUST_USE_RESULT_WHEN_USE_STRICT_WARNING GRPC_MUST_USE_RESULT
-#else
-#define GRPC_MUST_USE_RESULT_WHEN_USE_STRICT_WARNING
-#endif
-#endif
-
 #ifndef GRPC_UNUSED
 #if defined(__GNUC__) && !defined(__MINGW32__)
 #define GRPC_UNUSED __attribute__((unused))
@@ -610,6 +587,35 @@ typedef unsigned __int64 uint64_t;
 #define GPR_HAS_CPP_ATTRIBUTE(a) 0
 #endif
 #endif /* GPR_HAS_CPP_ATTRIBUTE */
+
+#if defined(__GNUC__) && !defined(__MINGW32__)
+#define GPR_ALIGN_STRUCT(n) __attribute__((aligned(n)))
+#else
+#define GPR_ALIGN_STRUCT(n)
+#endif
+
+#ifndef GRPC_MUST_USE_RESULT
+#if GPR_HAS_CPP_ATTRIBUTE(nodiscard)
+#define GRPC_MUST_USE_RESULT [[nodiscard]]
+#elif defined(__GNUC__) && !defined(__MINGW32__)
+#define GRPC_MUST_USE_RESULT __attribute__((warn_unused_result))
+#else
+#define GRPC_MUST_USE_RESULT
+#endif
+#ifdef USE_STRICT_WARNING
+/* When building with USE_STRICT_WARNING (which -Werror), types with this
+   attribute will be treated as annotated with warn_unused_result, enforcing
+   returned values of this type should be used.
+   This is added in grpc::Status in mind to address the issue where it always
+   has this annotation internally but OSS doesn't, sometimes causing internal
+   build failure. To prevent this, this is added while not introducing
+   a breaking change to existing user code which may not use returned values
+   of grpc::Status. */
+#define GRPC_MUST_USE_RESULT_WHEN_USE_STRICT_WARNING GRPC_MUST_USE_RESULT
+#else
+#define GRPC_MUST_USE_RESULT_WHEN_USE_STRICT_WARNING
+#endif
+#endif
 
 #ifndef GPR_HAS_ATTRIBUTE
 #ifdef __has_attribute
