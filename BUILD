@@ -3720,6 +3720,9 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "chttp2_frame",
+    srcs = [
+        "//src/core:ext/transport/chttp2/transport/frame.cc",
+    ],
     hdrs = [
         "//src/core:ext/transport/chttp2/transport/frame.h",
     ],
@@ -3730,6 +3733,7 @@ grpc_cc_library(
     ],
     deps = [
         "gpr",
+        "//src/core:match",
         "//src/core:slice",
         "//src/core:slice_buffer",
     ],
