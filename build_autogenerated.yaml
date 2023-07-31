@@ -3179,6 +3179,7 @@ libs:
   language: c++
   public_headers: []
   headers:
+  - src/core/lib/gpr/subprocess.h
   - test/core/end2end/data/ssl_test_data.h
   - test/core/util/cmdline.h
   - test/core/util/evaluate_args_test_util.h
@@ -3198,6 +3199,8 @@ libs:
   - test/cpp/util/subprocess.h
   - test/cpp/util/test_credentials_provider.h
   src:
+  - src/core/lib/gpr/subprocess_posix.cc
+  - src/core/lib/gpr/subprocess_windows.cc
   - test/core/end2end/data/client_certs.cc
   - test/core/end2end/data/server1_cert.cc
   - test/core/end2end/data/server1_key.cc
@@ -4336,6 +4339,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/lib/gpr/subprocess.h
   - test/core/util/cmdline.h
   - test/core/util/evaluate_args_test_util.h
   - test/core/util/fuzzer_util.h
@@ -4352,6 +4356,8 @@ targets:
   - test/cpp/util/string_ref_helper.h
   - test/cpp/util/subprocess.h
   src:
+  - src/core/lib/gpr/subprocess_posix.cc
+  - src/core/lib/gpr/subprocess_windows.cc
   - test/core/util/cmdline.cc
   - test/core/util/fuzzer_util.cc
   - test/core/util/grpc_profiler.cc
@@ -9508,12 +9514,9 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/gpr/subprocess.h
   - test/core/http/httpcli_test_util.h
   - test/core/util/fake_udp_and_tcp_server.h
   src:
-  - src/core/lib/gpr/subprocess_posix.cc
-  - src/core/lib/gpr/subprocess_windows.cc
   - test/core/http/httpcli_test.cc
   - test/core/http/httpcli_test_util.cc
   - test/core/util/fake_udp_and_tcp_server.cc
@@ -9528,12 +9531,9 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/gpr/subprocess.h
   - test/core/http/httpcli_test_util.h
   - test/core/util/fake_udp_and_tcp_server.h
   src:
-  - src/core/lib/gpr/subprocess_posix.cc
-  - src/core/lib/gpr/subprocess_windows.cc
   - test/core/http/httpcli_test_util.cc
   - test/core/http/httpscli_test.cc
   - test/core/util/fake_udp_and_tcp_server.cc
@@ -11397,7 +11397,6 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/gpr/subprocess.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/test_suite/event_engine_test_framework.h
   - test/core/event_engine/test_suite/posix/oracle_event_engine_posix.h
@@ -11408,8 +11407,6 @@ targets:
   - test/core/util/fake_udp_and_tcp_server.h
   - test/cpp/util/get_grpc_test_runfile_dir.h
   src:
-  - src/core/lib/gpr/subprocess_posix.cc
-  - src/core/lib/gpr/subprocess_windows.cc
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/test_suite/event_engine_test_framework.cc
   - test/core/event_engine/test_suite/posix/oracle_event_engine_posix.cc
