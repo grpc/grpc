@@ -357,16 +357,18 @@ static void read_channel_args(grpc_chttp2_transport* t,
       channel_args.GetDurationFromIntMillis(GRPC_ARG_KEEPALIVE_TIMEOUT_MS)
           .value_or(t->is_client ? g_default_client_keepalive_timeout
                                  : g_default_server_keepalive_timeout));
-  if (!t->is_client || grpc_core::IsKeepaliveFixEnabled()) {
+  if (t->is_client) {
     t->keepalive_permit_without_calls =
         channel_args.GetBool(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS)
-            .value_or(t->is_client
+            .value_or(grpc_core::IsKeepaliveFixEnabled()
                           ? g_default_client_keepalive_permit_without_calls
-                          : g_default_server_keepalive_permit_without_calls);
+                          : false);
   } else {
     t->keepalive_permit_without_calls =
         channel_args.GetBool(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS)
-            .value_or(false);
+            .value_or(grpc_core::IsKeepaliveServerFixEnabled()
+                          ? g_default_server_keepalive_permit_without_calls
+                          : false);
   }
 
   // Only send the prefered rx frame size http2 setting if we are instructed
