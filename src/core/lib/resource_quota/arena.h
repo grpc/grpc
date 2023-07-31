@@ -52,6 +52,7 @@ namespace grpc_core {
 
 namespace arena_detail {
 
+#ifndef GRPC_ARENA_POOLED_ALLOCATIONS_USE_MALLOC
 struct PoolAndSize {
   size_t alloc_size;
   size_t pool_index;
@@ -113,16 +114,19 @@ PoolAndSize ChoosePoolForAllocationSize(
     size_t n, absl::integer_sequence<size_t, kBucketSizes...>) {
   return ChoosePoolForAllocationSizeImpl<0, kBucketSizes...>::Fn(n);
 }
+#endif
 
 }  // namespace arena_detail
 
 class Arena {
+#ifndef GRPC_ARENA_POOLED_ALLOCATIONS_USE_MALLOC
   // Selected pool sizes.
   // How to tune: see tools/codegen/core/optimize_arena_pool_sizes.py
   using PoolSizes = absl::integer_sequence<size_t, 80, 304, 528, 1024>;
   struct FreePoolNode {
     FreePoolNode* next;
   };
+#endif
 
  public:
   // Create an arena, with \a initial_size bytes in the first allocated buffer.
@@ -372,9 +376,11 @@ class Arena {
 
   void* AllocZone(size_t size);
 
+#ifndef GRPC_ARENA_POOLED_ALLOCATIONS_USE_MALLOC
   void* AllocPooled(size_t obj_size, size_t alloc_size,
                     std::atomic<FreePoolNode*>* head);
   static void FreePooled(void* p, std::atomic<FreePoolNode*>* head);
+#endif
 
   void TracePoolAlloc(size_t size, void* ptr) {
     (void)size;
