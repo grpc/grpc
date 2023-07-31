@@ -6377,15 +6377,18 @@ targets:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/transport/chaotic_good/client_transport_test.cc
   deps:
-  - grpc
+  - grpc_test_util
   uses_polling: false
 - name: cmdline_test
   gtest: true
