@@ -186,7 +186,8 @@ namespace testing {
 SocketUseAfterCloseDetector::SocketUseAfterCloseDetector() {
   int port = grpc_pick_unused_port_or_die();
   gpr_event_init(&done_ev_);
-  thread_ = std::make_unique<std::thread>(OpenAndCloseSocketsStressLoop, port, &done_ev_);
+  thread_ = std::make_unique<std::thread>(OpenAndCloseSocketsStressLoop, port,
+                                          &done_ev_);
 }
 
 SocketUseAfterCloseDetector::~SocketUseAfterCloseDetector() {
