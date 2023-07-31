@@ -78,6 +78,9 @@ RUN python3 -m pip install six==1.16.0
 RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-client==1.12.8 oauth2client==4.1.0
 
 
+# Some cxx tests depend on the twisted package
+RUN python3 -m pip install twisted
+
 #=================
 # C++ dependencies
 RUN apt-get update && apt-get -y install libc++-dev clang && apt-get clean
@@ -104,6 +107,12 @@ RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/downloa
 
 
 RUN mkdir /var/local/jenkins
+
+#=================
+# Setup git to access working directory across docker boundary
+
+RUN git config --global --add safe.directory /var/local/jenkins/grpc
+RUN git config --global protocol.file.allow always
 
 
 # Install openssl 1.0.2 from source

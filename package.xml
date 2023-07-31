@@ -48,6 +48,7 @@
     <file baseinstalldir="/" name="include/grpc/grpc_posix.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/grpc_security.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/grpc_security_constants.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/channel_arg_names.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/atm.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/atm_gcc_atomic.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/atm_gcc_sync.h" role="src" />
@@ -297,6 +298,10 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/huffsyms.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/parsing.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/ping_abuse_policy.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/ping_abuse_policy.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/ping_rate_policy.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/ping_rate_policy.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/stream_lists.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/varint.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/varint.h" role="src" />
@@ -1425,7 +1430,6 @@
     <file baseinstalldir="/" name="src/core/lib/promise/arena_promise.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/cancel_callback.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/context.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/promise/detail/basic_join.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/detail/basic_seq.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/detail/promise_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/detail/promise_like.h" role="src" />
@@ -1450,7 +1454,6 @@
     <file baseinstalldir="/" name="src/core/lib/promise/sleep.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/trace.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/trace.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/promise/try_join.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/try_seq.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resolver/resolver.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resolver/resolver.h" role="src" />

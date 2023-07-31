@@ -118,6 +118,8 @@ CORE_SOURCE_FILES = [
     'src/core/ext/transport/chttp2/transport/http_trace.cc',
     'src/core/ext/transport/chttp2/transport/huffsyms.cc',
     'src/core/ext/transport/chttp2/transport/parsing.cc',
+    'src/core/ext/transport/chttp2/transport/ping_abuse_policy.cc',
+    'src/core/ext/transport/chttp2/transport/ping_rate_policy.cc',
     'src/core/ext/transport/chttp2/transport/stream_lists.cc',
     'src/core/ext/transport/chttp2/transport/varint.cc',
     'src/core/ext/transport/chttp2/transport/writing.cc',

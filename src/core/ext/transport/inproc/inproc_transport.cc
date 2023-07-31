@@ -35,6 +35,7 @@
 #include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>

@@ -30,7 +30,7 @@
 #include "absl/strings/strip.h"
 #include "absl/types/optional.h"
 
-#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/resolver/polling_resolver.h"
