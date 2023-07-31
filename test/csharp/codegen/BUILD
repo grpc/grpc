@@ -81,7 +81,8 @@ grpc_sh_test(
     size = "small",
     srcs = ["csharp_codegen_nullable_test.sh"],
     data = [
-        "nullable/proto/nullabletest.proto",
+        "nullable/expected/HelloworldGrpc.cs",
+        "nullable/proto/helloworld.proto",
         "//src/compiler:grpc_csharp_plugin",
         "@com_google_protobuf//:protoc",
     ],

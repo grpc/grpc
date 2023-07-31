@@ -43,7 +43,7 @@ class CSharpGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
     bool generate_client = true;
     bool generate_server = true;
     bool internal_access = false;
-    bool enable_nrt = false;  // null reference types
+    bool enable_nrt = false;
     std::string base_namespace = "";
 
     // the suffix that will get appended to the name generated from the name
@@ -63,7 +63,8 @@ class CSharpGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
         // The option may be removed or file names generated may change
         // in the future.
         base_namespace = options[i].second;
-      } else if (options[i].first == "nullable_reference_types") {
+      } else if (options[i].first == "enable_nrt") {
+        // enable null reference types
         enable_nrt = true;
       } else {
         *error = "Unknown generator option: " + options[i].first;
