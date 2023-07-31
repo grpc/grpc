@@ -1,6 +1,7 @@
-FROM phusion/baseimage:master@sha256:e757fe8c7adcb9f798c0eb9dfff31bbf7d91538a1002031d7cdf3e5bf9cf71fc
+FROM python:3.9-slim
 
 RUN apt-get update -y && \
+	apt-get upgrade -y && \
         apt-get install -y \
             build-essential \
             clang \
@@ -16,13 +17,13 @@ COPY . .
 RUN tools/bazel build -c dbg //src/python/grpcio_tests/tests_py3_only/interop:xds_interop_server
 RUN cp -rL /workdir/bazel-bin/src/python/grpcio_tests/tests_py3_only/interop/xds_interop_server* /artifacts/
 
-FROM phusion/baseimage:master@sha256:e757fe8c7adcb9f798c0eb9dfff31bbf7d91538a1002031d7cdf3e5bf9cf71fc
+FROM python:3.9-slim
+
+RUN apt-get update -y && apt-get upgrade -y
+
 COPY --from=0 /artifacts ./
 
 ENV GRPC_VERBOSITY="DEBUG"
 ENV GRPC_TRACE="xds_client,xds_resolver,xds_cluster_manager_lb,cds_lb,xds_cluster_resolver_lb,priority_lb,xds_cluster_impl_lb,weighted_target_lb"
-
-RUN apt-get update -y && apt-get install -y python3
-RUN ln -s /usr/bin/python3 /usr/bin/python
 
 ENTRYPOINT ["/xds_interop_server"]
