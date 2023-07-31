@@ -35,8 +35,9 @@
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/detail/basic_seq.h"
 #include "src/core/lib/promise/event_engine_wakeup_scheduler.h"
-#include "src/core/lib/promise/join.h"
 #include "src/core/lib/promise/loop.h"
+#include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/try_join.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -95,15 +96,16 @@ ClientTransport::ClientTransport(
       },
       // Write buffers to their corresponding endpoints concurrently.
       [this](std::tuple<SliceBuffer, SliceBuffer> ret) {
-        return Join(this->control_endpoint_->Write(std::move(std::get<0>(ret))),
-                    this->data_endpoint_->Write(std::move(std::get<1>(ret))));
+        return TryJoin(
+            this->control_endpoint_->Write(std::move(std::get<0>(ret))),
+            this->data_endpoint_->Write(std::move(std::get<1>(ret))));
       },
       // Finish writes and return Status.
-      [](std::tuple<absl::Status, absl::Status> ret) -> LoopCtl<absl::Status> {
-        if (!(std::get<0>(ret).ok() || std::get<1>(ret).ok())) {
-          // TODO(ladynana): better error handling when
-          // writes failed.
-          return absl::InternalError("Endpoint Write failed.");
+      [](absl::StatusOr<std::tuple<Empty, Empty>> ret)
+          -> LoopCtl<absl::Status> {
+        // Writes failed, return failure status.
+        if (!ret.ok()) {
+          return ret.status();
         }
         return Continue();
       }));
