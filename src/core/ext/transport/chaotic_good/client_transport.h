@@ -31,7 +31,6 @@
 #include "absl/types/variant.h"
 
 #include "src/core/ext/transport/chaotic_good/frame.h"
-#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/for_each.h"
@@ -45,8 +44,7 @@ namespace chaotic_good {
 
 class ClientTransport {
  public:
-  ClientTransport(const ChannelArgs& channel_args,
-                  std::unique_ptr<PromiseEndpoint> control_endpoint_,
+  ClientTransport(std::unique_ptr<PromiseEndpoint> control_endpoint_,
                   std::unique_ptr<PromiseEndpoint> data_endpoint_);
   ~ClientTransport() {
     if (writer_ != nullptr) {

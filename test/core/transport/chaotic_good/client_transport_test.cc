@@ -80,8 +80,7 @@ class MockEndpoint
 class ClientTransportTest : public ::testing::Test {
  public:
   ClientTransportTest()
-      : channel_args_(ChannelArgs()),
-        control_endpoint_ptr_(new StrictMock<MockEndpoint>()),
+      : control_endpoint_ptr_(new StrictMock<MockEndpoint>()),
         data_endpoint_ptr_(new StrictMock<MockEndpoint>()),
         memory_allocator_(
             ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
@@ -89,7 +88,6 @@ class ClientTransportTest : public ::testing::Test {
         control_endpoint_(*control_endpoint_ptr_),
         data_endpoint_(*data_endpoint_ptr_),
         client_transport_(
-            channel_args_,
             std::make_unique<PromiseEndpoint>(
                 std::unique_ptr<MockEndpoint>(control_endpoint_ptr_),
                 SliceBuffer()),
@@ -100,7 +98,6 @@ class ClientTransportTest : public ::testing::Test {
         pipe_client_to_server_messages_(arena_.get()) {}
 
  private:
-  const ChannelArgs channel_args_;
   MockEndpoint* control_endpoint_ptr_;
   MockEndpoint* data_endpoint_ptr_;
   size_t initial_arena_size = 1024;
