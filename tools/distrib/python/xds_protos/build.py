@@ -19,19 +19,27 @@ import os
 from grpc_tools import protoc
 import pkg_resources
 
+
+def localize_path(p):
+    return os.path.join(*p.split("/"))
+
+
 # We might not want to compile all the protos
-EXCLUDE_PROTO_PACKAGES_LIST = [
-    # Requires extra dependency to Prometheus protos
-    "envoy/service/metrics/v2",
-    "envoy/service/metrics/v3",
-    "envoy/service/metrics/v4alpha",
-]
+EXCLUDE_PROTO_PACKAGES_LIST = tuple(
+    localize_path(p)
+    for p in (
+        # Requires extra dependency to Prometheus protos
+        "envoy/service/metrics/v2",
+        "envoy/service/metrics/v3",
+        "envoy/service/metrics/v4alpha",
+    )
+)
 
 # Compute the pathes
 WORK_DIR = os.path.dirname(os.path.abspath(__file__))
 GRPC_ROOT = os.path.abspath(os.path.join(WORK_DIR, "..", "..", "..", ".."))
-XDS_PROTO_ROOT = os.path.join(GRPC_ROOT, "third_party", "envoy-api")
-UDPA_PROTO_ROOT = os.path.join(GRPC_ROOT, "third_party", "udpa")
+ENVOY_API_PROTO_ROOT = os.path.join(GRPC_ROOT, "third_party", "envoy-api")
+XDS_PROTO_ROOT = os.path.join(GRPC_ROOT, "third_party", "xds")
 GOOGLEAPIS_ROOT = os.path.join(GRPC_ROOT, "third_party", "googleapis")
 VALIDATE_ROOT = os.path.join(GRPC_ROOT, "third_party", "protoc-gen-validate")
 OPENCENSUS_PROTO_ROOT = os.path.join(
@@ -43,6 +51,7 @@ OPENTELEMETRY_PROTO_ROOT = os.path.join(
 WELL_KNOWN_PROTOS_INCLUDE = pkg_resources.resource_filename(
     "grpc_tools", "_proto"
 )
+
 OUTPUT_PATH = WORK_DIR
 
 # Prepare the test file generation
@@ -79,8 +88,8 @@ def add_test_import(
 # Prepare Protoc command
 COMPILE_PROTO_ONLY = [
     "grpc_tools.protoc",
+    "--proto_path={}".format(ENVOY_API_PROTO_ROOT),
     "--proto_path={}".format(XDS_PROTO_ROOT),
-    "--proto_path={}".format(UDPA_PROTO_ROOT),
     "--proto_path={}".format(GOOGLEAPIS_ROOT),
     "--proto_path={}".format(VALIDATE_ROOT),
     "--proto_path={}".format(WELL_KNOWN_PROTOS_INCLUDE),
@@ -131,8 +140,8 @@ def create_init_file(path: str, package_path: str = "") -> None:
 
 def main():
     # Compile xDS protos
+    compile_protos(ENVOY_API_PROTO_ROOT)
     compile_protos(XDS_PROTO_ROOT)
-    compile_protos(UDPA_PROTO_ROOT)
     # We don't want to compile the entire GCP surface API, just the essential ones
     compile_protos(GOOGLEAPIS_ROOT, os.path.join("google", "api"))
     compile_protos(GOOGLEAPIS_ROOT, os.path.join("google", "rpc"))

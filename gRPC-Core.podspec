@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.57.0-dev'
+  version = '1.58.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -126,6 +126,7 @@ Pod::Spec.new do |s|
                       'include/grpc/grpc_posix.h',
                       'include/grpc/grpc_security.h',
                       'include/grpc/grpc_security_constants.h',
+                      'include/grpc/impl/channel_arg_names.h',
                       'include/grpc/impl/codegen/atm.h',
                       'include/grpc/impl/codegen/atm_gcc_atomic.h',
                       'include/grpc/impl/codegen/atm_gcc_sync.h',
@@ -410,6 +411,10 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/huffsyms.h',
                       'src/core/ext/transport/chttp2/transport/internal.h',
                       'src/core/ext/transport/chttp2/transport/parsing.cc',
+                      'src/core/ext/transport/chttp2/transport/ping_abuse_policy.cc',
+                      'src/core/ext/transport/chttp2/transport/ping_abuse_policy.h',
+                      'src/core/ext/transport/chttp2/transport/ping_rate_policy.cc',
+                      'src/core/ext/transport/chttp2/transport/ping_rate_policy.h',
                       'src/core/ext/transport/chttp2/transport/stream_lists.cc',
                       'src/core/ext/transport/chttp2/transport/varint.cc',
                       'src/core/ext/transport/chttp2/transport/varint.h',
@@ -1538,7 +1543,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/promise/arena_promise.h',
                       'src/core/lib/promise/cancel_callback.h',
                       'src/core/lib/promise/context.h',
-                      'src/core/lib/promise/detail/basic_join.h',
                       'src/core/lib/promise/detail/basic_seq.h',
                       'src/core/lib/promise/detail/promise_factory.h',
                       'src/core/lib/promise/detail/promise_like.h',
@@ -1563,7 +1567,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/promise/sleep.h',
                       'src/core/lib/promise/trace.cc',
                       'src/core/lib/promise/trace.h',
-                      'src/core/lib/promise/try_join.h',
                       'src/core/lib/promise/try_seq.h',
                       'src/core/lib/resolver/resolver.cc',
                       'src/core/lib/resolver/resolver.h',
@@ -2158,6 +2161,8 @@ Pod::Spec.new do |s|
                               'src/core/ext/transport/chttp2/transport/http_trace.h',
                               'src/core/ext/transport/chttp2/transport/huffsyms.h',
                               'src/core/ext/transport/chttp2/transport/internal.h',
+                              'src/core/ext/transport/chttp2/transport/ping_abuse_policy.h',
+                              'src/core/ext/transport/chttp2/transport/ping_rate_policy.h',
                               'src/core/ext/transport/chttp2/transport/varint.h',
                               'src/core/ext/transport/inproc/inproc_transport.h',
                               'src/core/ext/upb-generated/envoy/admin/v3/certs.upb.h',
@@ -2726,7 +2731,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/promise/arena_promise.h',
                               'src/core/lib/promise/cancel_callback.h',
                               'src/core/lib/promise/context.h',
-                              'src/core/lib/promise/detail/basic_join.h',
                               'src/core/lib/promise/detail/basic_seq.h',
                               'src/core/lib/promise/detail/promise_factory.h',
                               'src/core/lib/promise/detail/promise_like.h',
@@ -2748,7 +2752,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/promise/seq.h',
                               'src/core/lib/promise/sleep.h',
                               'src/core/lib/promise/trace.h',
-                              'src/core/lib/promise/try_join.h',
                               'src/core/lib/promise/try_seq.h',
                               'src/core/lib/resolver/resolver.h',
                               'src/core/lib/resolver/resolver_factory.h',

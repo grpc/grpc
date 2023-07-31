@@ -30,6 +30,7 @@
 #include "absl/strings/str_split.h"
 
 #include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>

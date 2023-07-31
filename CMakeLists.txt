@@ -25,13 +25,13 @@
 cmake_minimum_required(VERSION 3.8)
 
 set(PACKAGE_NAME          "grpc")
-set(PACKAGE_VERSION       "1.57.0-dev")
+set(PACKAGE_VERSION       "1.58.0-dev")
 set(gRPC_CORE_VERSION     "34.0.0")
 set(gRPC_CORE_SOVERSION   "34")
-set(gRPC_CPP_VERSION      "1.57.0-dev")
-set(gRPC_CPP_SOVERSION    "1.57")
-set(gRPC_CSHARP_VERSION   "2.57.0-dev")
-set(gRPC_CSHARP_SOVERSION "2.57")
+set(gRPC_CPP_VERSION      "1.58.0-dev")
+set(gRPC_CPP_SOVERSION    "1.58")
+set(gRPC_CSHARP_VERSION   "2.58.0-dev")
+set(gRPC_CSHARP_SOVERSION "2.58")
 set(PACKAGE_STRING        "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME       "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT     "https://github.com/grpc/grpc/issues/")
@@ -299,7 +299,7 @@ endif()
 if (gRPC_XDS_USER_AGENT_IS_CSHARP)
   # The value of the defines needs to contain quotes.
   # See https://github.com/grpc/grpc/blob/fbf32836a418cc84f58786700273b65cb9174e1d/src/core/ext/xds/xds_api.cc#L854
-  add_definitions("-DGRPC_XDS_USER_AGENT_NAME_SUFFIX=\"csharp\"" "-DGRPC_XDS_USER_AGENT_VERSION_SUFFIX=\"2.57.0-dev\"")
+  add_definitions("-DGRPC_XDS_USER_AGENT_NAME_SUFFIX=\"csharp\"" "-DGRPC_XDS_USER_AGENT_VERSION_SUFFIX=\"2.58.0-dev\"")
 endif()
 
 if(UNIX AND NOT HAIKU)
@@ -1136,8 +1136,10 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx periodic_update_test)
   add_dependencies(buildtests_cxx pick_first_test)
   add_dependencies(buildtests_cxx pid_controller_test)
+  add_dependencies(buildtests_cxx ping_abuse_policy_test)
   add_dependencies(buildtests_cxx ping_configuration_test)
   add_dependencies(buildtests_cxx ping_pong_streaming_test)
+  add_dependencies(buildtests_cxx ping_rate_policy_test)
   add_dependencies(buildtests_cxx ping_test)
   add_dependencies(buildtests_cxx pipe_test)
   add_dependencies(buildtests_cxx poll_test)
@@ -1781,6 +1783,8 @@ add_library(grpc
   src/core/ext/transport/chttp2/transport/http_trace.cc
   src/core/ext/transport/chttp2/transport/huffsyms.cc
   src/core/ext/transport/chttp2/transport/parsing.cc
+  src/core/ext/transport/chttp2/transport/ping_abuse_policy.cc
+  src/core/ext/transport/chttp2/transport/ping_rate_policy.cc
   src/core/ext/transport/chttp2/transport/stream_lists.cc
   src/core/ext/transport/chttp2/transport/varint.cc
   src/core/ext/transport/chttp2/transport/writing.cc
@@ -2529,6 +2533,7 @@ foreach(_hdr
   include/grpc/grpc_posix.h
   include/grpc/grpc_security.h
   include/grpc/grpc_security_constants.h
+  include/grpc/impl/channel_arg_names.h
   include/grpc/impl/codegen/atm.h
   include/grpc/impl/codegen/atm_gcc_atomic.h
   include/grpc/impl/codegen/atm_gcc_sync.h
@@ -2807,6 +2812,8 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/transport/http_trace.cc
   src/core/ext/transport/chttp2/transport/huffsyms.cc
   src/core/ext/transport/chttp2/transport/parsing.cc
+  src/core/ext/transport/chttp2/transport/ping_abuse_policy.cc
+  src/core/ext/transport/chttp2/transport/ping_rate_policy.cc
   src/core/ext/transport/chttp2/transport/stream_lists.cc
   src/core/ext/transport/chttp2/transport/varint.cc
   src/core/ext/transport/chttp2/transport/writing.cc
@@ -3175,6 +3182,7 @@ foreach(_hdr
   include/grpc/grpc_posix.h
   include/grpc/grpc_security.h
   include/grpc/grpc_security_constants.h
+  include/grpc/impl/channel_arg_names.h
   include/grpc/impl/codegen/atm.h
   include/grpc/impl/codegen/atm_gcc_atomic.h
   include/grpc/impl/codegen/atm_gcc_sync.h
@@ -4694,6 +4702,7 @@ foreach(_hdr
   include/grpc/grpc_posix.h
   include/grpc/grpc_security.h
   include/grpc/grpc_security_constants.h
+  include/grpc/impl/channel_arg_names.h
   include/grpc/impl/codegen/atm.h
   include/grpc/impl/codegen/atm_gcc_atomic.h
   include/grpc/impl/codegen/atm_gcc_sync.h
@@ -6374,8 +6383,7 @@ target_link_libraries(avl_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::strings
-  absl::variant
+  gpr
 )
 
 
@@ -11310,6 +11318,8 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(experiments_tag_test
+  src/core/lib/experiments/config.cc
+  src/core/lib/experiments/experiments.cc
   test/core/experiments/experiments_tag_test.cc
   test/core/experiments/fixtures/experiments.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -11340,7 +11350,8 @@ target_link_libraries(experiments_tag_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
+  absl::statusor
+  gpr
 )
 
 
@@ -11348,6 +11359,8 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(experiments_test
+  src/core/lib/experiments/config.cc
+  src/core/lib/experiments/experiments.cc
   test/core/experiments/experiments_test.cc
   test/core/experiments/fixtures/experiments.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -11378,7 +11391,7 @@ target_link_libraries(experiments_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
+  gpr
 )
 
 
@@ -18222,6 +18235,55 @@ target_link_libraries(pid_controller_test
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(ping_abuse_policy_test
+  test/core/transport/chttp2/ping_abuse_policy_test.cc
+  test/core/util/cmdline.cc
+  test/core/util/fuzzer_util.cc
+  test/core/util/grpc_profiler.cc
+  test/core/util/histogram.cc
+  test/core/util/mock_endpoint.cc
+  test/core/util/parse_hexstring.cc
+  test/core/util/passthru_endpoint.cc
+  test/core/util/resolve_localhost_ip46.cc
+  test/core/util/slice_splitter.cc
+  test/core/util/subprocess_posix.cc
+  test/core/util/subprocess_windows.cc
+  test/core/util/tracer_util.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+target_compile_features(ping_abuse_policy_test PUBLIC cxx_std_14)
+target_include_directories(ping_abuse_policy_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(ping_abuse_policy_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(ping_configuration_test
   test/core/transport/chttp2/ping_configuration_test.cc
   test/core/util/cmdline.cc
@@ -18312,6 +18374,55 @@ target_link_libraries(ping_pong_streaming_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_authorization_provider
   grpc_unsecure
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(ping_rate_policy_test
+  test/core/transport/chttp2/ping_rate_policy_test.cc
+  test/core/util/cmdline.cc
+  test/core/util/fuzzer_util.cc
+  test/core/util/grpc_profiler.cc
+  test/core/util/histogram.cc
+  test/core/util/mock_endpoint.cc
+  test/core/util/parse_hexstring.cc
+  test/core/util/passthru_endpoint.cc
+  test/core/util/resolve_localhost_ip46.cc
+  test/core/util/slice_splitter.cc
+  test/core/util/subprocess_posix.cc
+  test/core/util/subprocess_windows.cc
+  test/core/util/tracer_util.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+target_compile_features(ping_rate_policy_test PUBLIC cxx_std_14)
+target_include_directories(ping_rate_policy_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(ping_rate_policy_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
 

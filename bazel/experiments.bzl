@@ -21,14 +21,10 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
-            "cancel_ares_query_test": [
-                "event_engine_dns",
-            ],
             "census_test": [
                 "transport_supplies_client_latency",
             ],
             "core_end2end_test": [
-                "event_engine_client",
                 "event_engine_listener",
                 "promise_based_client_call",
                 "promise_based_server_call",
@@ -41,9 +37,6 @@ EXPERIMENTS = {
             "endpoint_test": [
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
-            ],
-            "event_engine_client_test": [
-                "event_engine_client",
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",
@@ -58,9 +51,6 @@ EXPERIMENTS = {
             ],
             "logging_test": [
                 "promise_based_server_call",
-            ],
-            "resolver_component_tests_runner_invoker": [
-                "event_engine_dns",
             ],
             "resource_quota_test": [
                 "free_large_allocator",
@@ -78,14 +68,10 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
-            "cancel_ares_query_test": [
-                "event_engine_dns",
-            ],
             "census_test": [
                 "transport_supplies_client_latency",
             ],
             "core_end2end_test": [
-                "event_engine_client",
                 "event_engine_listener",
                 "promise_based_client_call",
                 "promise_based_server_call",
@@ -98,9 +84,6 @@ EXPERIMENTS = {
             "endpoint_test": [
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
-            ],
-            "event_engine_client_test": [
-                "event_engine_client",
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",
@@ -115,9 +98,6 @@ EXPERIMENTS = {
             ],
             "logging_test": [
                 "promise_based_server_call",
-            ],
-            "resolver_component_tests_runner_invoker": [
-                "event_engine_dns",
             ],
             "resource_quota_test": [
                 "free_large_allocator",
