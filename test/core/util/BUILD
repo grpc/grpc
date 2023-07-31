@@ -364,34 +364,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "socket_use_after_close_detector",
-    srcs = ["socket_use_after_close_detector.cc"],
-    hdrs = ["socket_use_after_close_detector.h"],
-    external_deps = ["gtest"],
-    language = "C++",
-    deps = [
-        "grpc_test_util",
-        "//:gpr",
-        "//:grpc",
-        "//src/core:grpc_sockaddr",
-    ],
-)
-
-grpc_cc_library(
-    name = "socket_use_after_close_detector_unsecure",
-    srcs = ["socket_use_after_close_detector.cc"],
-    hdrs = ["socket_use_after_close_detector.h"],
-    external_deps = ["gtest"],
-    language = "C++",
-    deps = [
-        "grpc_test_util_unsecure",
-        "//:gpr",
-        "//:grpc",
-        "//src/core:grpc_sockaddr",
-    ],
-)
-
-grpc_cc_library(
     name = "build",
     srcs = ["build.cc"],
     hdrs = ["build.h"],
