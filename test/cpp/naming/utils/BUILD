@@ -27,6 +27,7 @@ licenses(["notice"])
 grpc_py_binary(
     name = "dns_server",
     testonly = True,
+    python_version = "PY3",
     srcs = ["dns_server.py"],
     external_deps = [
         "twisted",
@@ -37,6 +38,7 @@ grpc_py_binary(
 grpc_py_binary(
     name = "dns_resolver",
     testonly = True,
+    python_version = "PY3",
     srcs = ["dns_resolver.py"],
     external_deps = [
         "twisted",
@@ -46,11 +48,13 @@ grpc_py_binary(
 grpc_py_binary(
     name = "tcp_connect",
     testonly = True,
+    python_version = "PY3",
     srcs = ["tcp_connect.py"],
 )
 
 grpc_py_binary(
     name = "health_check",
     testonly = True,
+    python_version = "PY3",
     srcs = ["health_check.py"],
 )
