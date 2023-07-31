@@ -49,11 +49,31 @@ namespace grpc_core {
 // The base class for all tracer implementations.
 class CallTracerAnnotationInterface {
  public:
+  // Enum associated with types of Annotations.
+  enum class AnnotationType {
+    kDoNotUse_MustBeLast,
+  };
+
+  // Base class to define a new type of annotation.
+  class Annotation {
+   public:
+    explicit Annotation(AnnotationType type) : type_(type) {}
+    AnnotationType type() const { return type_; }
+    virtual std::string ToString() const = 0;
+
+   protected:
+    ~Annotation() {}
+
+   private:
+    const AnnotationType type_;
+  };
+
   virtual ~CallTracerAnnotationInterface() {}
   // Records an annotation on the call attempt.
   // TODO(yashykt): If needed, extend this to attach attributes with
   // annotations.
   virtual void RecordAnnotation(absl::string_view annotation) = 0;
+  virtual void RecordAnnotation(const Annotation& annotation) = 0;
   virtual std::string TraceId() = 0;
   virtual std::string SpanId() = 0;
   virtual bool IsSampled() = 0;

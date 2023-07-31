@@ -157,7 +157,21 @@ class OpenCensusServerCallTracer : public grpc_core::ServerCallTracer {
   void RecordEnd(const grpc_call_final_info* final_info) override;
 
   void RecordAnnotation(absl::string_view annotation) override {
+    if (!context_.Span().IsRecording()) {
+      return;
+    }
     context_.AddSpanAnnotation(annotation, {});
+  }
+
+  void RecordAnnotation(const Annotation& annotation) override {
+    if (!context_.Span().IsRecording()) {
+      return;
+    }
+
+    switch (annotation.type()) {
+      default:
+        context_.AddSpanAnnotation(annotation.ToString(), {});
+    }
   }
 
  private:
