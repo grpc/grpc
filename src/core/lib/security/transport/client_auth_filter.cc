@@ -198,7 +198,9 @@ ArenaPromise<ServerMetadataHandle> ClientAuthFilter::MakeCallPromise(
   }
   return TrySeq(args_.security_connector->CheckCallHost(
                     host->as_string_view(), args_.auth_context.get()),
-                GetCallCredsMetadata(std::move(call_args)),
+      [this, call_args = std::move(call_args)]() mutable {
+        return GetCallCredsMetadata(std::move(call_args));
+      },
                 next_promise_factory);
 }
 
