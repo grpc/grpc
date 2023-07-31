@@ -537,7 +537,6 @@ def main() -> None:
         "DRIVER_PORT": "${DRIVER_PORT}",
         "KILL_AFTER": "${KILL_AFTER}",
         "POD_TIMEOUT": "${POD_TIMEOUT}",
-        "grpc_experiment": "",
     }
 
     # The user can override the ignored variables above by passing them in as

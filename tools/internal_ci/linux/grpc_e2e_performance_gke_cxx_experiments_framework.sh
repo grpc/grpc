@@ -90,7 +90,7 @@ buildConfigs() {
     local -r experiment="$3"
     shift 3
     tools/run_tests/performance/loadtest_config.py "$@" \
-        -t ./tools/run_tests/performance/templates/loadtest_template_prebuilt_all_languages.yaml \
+        -t ./tools/run_tests/performance/templates/loadtest_template_prebuilt_cxx_experiments.yaml \
         -s driver_pool="${DRIVER_POOL}" -s driver_image= \
         -s client_pool="${pool}" -s server_pool="${pool}" \
         -s big_query_table="${table}_${experiment}" -s timeout_seconds=900 \
