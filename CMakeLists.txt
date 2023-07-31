@@ -18160,8 +18160,6 @@ add_executable(ping_abuse_policy_test
   test/core/util/passthru_endpoint.cc
   test/core/util/resolve_localhost_ip46.cc
   test/core/util/slice_splitter.cc
-  test/core/util/subprocess_posix.cc
-  test/core/util/subprocess_windows.cc
   test/core/util/tracer_util.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -18304,8 +18302,6 @@ add_executable(ping_rate_policy_test
   test/core/util/passthru_endpoint.cc
   test/core/util/resolve_localhost_ip46.cc
   test/core/util/slice_splitter.cc
-  test/core/util/subprocess_posix.cc
-  test/core/util/subprocess_windows.cc
   test/core/util/tracer_util.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
