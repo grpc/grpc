@@ -94,23 +94,23 @@ ClientTransport::ClientTransport(
             std::move(control_endpoint_buffer),
             std::move(control_endpoint_buffer));
       },
-      // Write buffers to their corresponding endpoints concurrently.
+      // Write buffers to corresponding endpoints concurrently.
       [this](std::tuple<SliceBuffer, SliceBuffer> ret) {
         return TryJoin(
             this->control_endpoint_->Write(std::move(std::get<0>(ret))),
             this->data_endpoint_->Write(std::move(std::get<1>(ret))));
       },
-      // Finish writes and return Status.
+      // Finish writes and return status.
       [](absl::StatusOr<std::tuple<Empty, Empty>> ret)
           -> LoopCtl<absl::Status> {
-        // Writes failed, return failure status.
+        // If writes failed, return failure status.
         if (!ret.ok()) {
           return ret.status();
         }
         return Continue();
       }));
   writer_ = MakeActivity(
-      // Continuously write next outgoing_frames to the endpoints.
+      // Continuously write next outgoing frames to promise endpoints.
       std::move(write_loop), EventEngineWakeupScheduler(event_engine_),
       [](absl::Status status) {
         GPR_ASSERT(status.code() == absl::StatusCode::kCancelled);
