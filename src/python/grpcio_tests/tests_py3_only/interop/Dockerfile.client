@@ -1,12 +1,6 @@
 FROM python:3.9-slim
 
-RUN apt-get update -y && \
-	apt-get upgrade -y && \
-        apt-get install -y \
-            build-essential \
-            clang \
-            python3 \
-            python3-dev
+RUN apt-get update -y && apt-get upgrade -y && apt-get install -y build-essential clang
 
 WORKDIR /workdir
 
@@ -19,9 +13,9 @@ RUN cp -rL /workdir/bazel-bin/src/python/grpcio_tests/tests_py3_only/interop/xds
 
 FROM python:3.9-slim
 
-RUN apt-get update -y && apt-get upgrade -y
-
 COPY --from=0 /artifacts ./
+
+RUN apt-get update -y && apt-get upgrade -y
 
 ENV GRPC_VERBOSITY="DEBUG"
 ENV GRPC_TRACE="xds_client,xds_resolver,xds_cluster_manager_lb,cds_lb,xds_cluster_resolver_lb,priority_lb,xds_cluster_impl_lb,weighted_target_lb,ring_hash_lb,outlier_detection_lb"
