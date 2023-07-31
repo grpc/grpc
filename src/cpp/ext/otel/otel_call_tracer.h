@@ -85,6 +85,7 @@ class OpenTelemetryCallTracer : public grpc_core::ClientCallTracer {
     void RecordCancel(grpc_error_handle cancel_error) override;
     void RecordEnd(const gpr_timespec& /*latency*/) override;
     void RecordAnnotation(absl::string_view /*annotation*/) override;
+    void RecordAnnotation(const Annotation& /*annotation*/) override;
 
    private:
     const OpenTelemetryCallTracer* parent_;
@@ -115,6 +116,7 @@ class OpenTelemetryCallTracer : public grpc_core::ClientCallTracer {
   OpenTelemetryCallAttemptTracer* StartNewAttempt(
       bool is_transparent_retry) override;
   void RecordAnnotation(absl::string_view /*annotation*/) override;
+  void RecordAnnotation(const Annotation& /*annotation*/) override;
 
  private:
   // Client method.

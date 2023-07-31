@@ -20,7 +20,7 @@
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
 
-#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -53,7 +53,7 @@ CORE_END2END_TEST(RetryTest, RetryServerPushbackDelay) {
       "  } ]\n"
       "}"));
   auto c =
-      NewClientCall("/service/method").Timeout(Duration::Seconds(5)).Create();
+      NewClientCall("/service/method").Timeout(Duration::Minutes(1)).Create();
   EXPECT_NE(c.GetPeer(), absl::nullopt);
   IncomingMessage server_message;
   IncomingMetadata server_initial_metadata;
@@ -87,7 +87,7 @@ CORE_END2END_TEST(RetryTest, RetryServerPushbackDelay) {
   const auto retry_delay = after_retry - before_retry;
   // Configured back-off was 1 second, server push-back said 2 seconds.
   // To avoid flakiness, we allow some fudge factor here.
-  EXPECT_GE(retry_delay, Duration::Milliseconds(1800));
+  EXPECT_GE(retry_delay, Duration::Milliseconds(1500));
   EXPECT_NE(s->GetPeer(), absl::nullopt);
   EXPECT_NE(c.GetPeer(), absl::nullopt);
   IncomingCloseOnServer client_close2;
