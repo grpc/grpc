@@ -104,9 +104,9 @@ class ClientTransportTest : public ::testing::Test {
   MockEndpoint* control_endpoint_ptr_;
   MockEndpoint* data_endpoint_ptr_;
   size_t initial_arena_size = 1024;
+  MemoryAllocator memory_allocator_;
 
  protected:
-  MemoryAllocator memory_allocator_;
   MockEndpoint& control_endpoint_;
   MockEndpoint& data_endpoint_;
   ClientTransport client_transport_;
