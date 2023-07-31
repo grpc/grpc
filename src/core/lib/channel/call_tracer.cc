@@ -35,6 +35,7 @@ namespace grpc_core {
 //
 
 namespace {
+
 ServerCallTracerFactory* g_server_call_tracer_factory_ = nullptr;
 
 const char* kServerCallTracerFactoryChannelArgName =
@@ -130,6 +131,11 @@ class DelegatingClientCallTracer : public ClientCallTracer {
         tracer->RecordAnnotation(annotation);
       }
     }
+    void RecordAnnotation(const Annotation& annotation) override {
+      for (auto* tracer : tracers_) {
+        tracer->RecordAnnotation(annotation);
+      }
+    }
     std::string TraceId() override { return tracers_[0]->TraceId(); }
     std::string SpanId() override { return tracers_[0]->SpanId(); }
     bool IsSampled() override { return tracers_[0]->IsSampled(); }
@@ -154,6 +160,11 @@ class DelegatingClientCallTracer : public ClientCallTracer {
   }
 
   void RecordAnnotation(absl::string_view annotation) override {
+    for (auto* tracer : tracers_) {
+      tracer->RecordAnnotation(annotation);
+    }
+  }
+  void RecordAnnotation(const Annotation& annotation) override {
     for (auto* tracer : tracers_) {
       tracer->RecordAnnotation(annotation);
     }
@@ -231,6 +242,11 @@ class DelegatingServerCallTracer : public ServerCallTracer {
     }
   }
   void RecordAnnotation(absl::string_view annotation) override {
+    for (auto* tracer : tracers_) {
+      tracer->RecordAnnotation(annotation);
+    }
+  }
+  void RecordAnnotation(const Annotation& annotation) override {
     for (auto* tracer : tracers_) {
       tracer->RecordAnnotation(annotation);
     }

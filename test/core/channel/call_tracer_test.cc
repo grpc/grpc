@@ -65,6 +65,7 @@ class FakeClientCallTracer : public ClientCallTracer {
     void RecordAnnotation(absl::string_view annotation) override {
       annotation_logger_->push_back(std::string(annotation));
     }
+    void RecordAnnotation(const Annotation& annotation) override {}
     std::string TraceId() override { return ""; }
     std::string SpanId() override { return ""; }
     bool IsSampled() override { return false; }
@@ -83,6 +84,7 @@ class FakeClientCallTracer : public ClientCallTracer {
   void RecordAnnotation(absl::string_view annotation) override {
     annotation_logger_->push_back(std::string(annotation));
   }
+  void RecordAnnotation(const Annotation& annotation) override {}
   std::string TraceId() override { return ""; }
   std::string SpanId() override { return ""; }
   bool IsSampled() override { return false; }
@@ -115,6 +117,7 @@ class FakeServerCallTracer : public ServerCallTracer {
   void RecordAnnotation(absl::string_view annotation) override {
     annotation_logger_->push_back(std::string(annotation));
   }
+  void RecordAnnotation(const Annotation& annotation) override {}
   std::string TraceId() override { return ""; }
   std::string SpanId() override { return ""; }
   bool IsSampled() override { return false; }
