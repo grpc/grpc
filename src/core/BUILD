@@ -5859,7 +5859,6 @@ grpc_cc_library(
     deps = [
         "activity",
         "basic_seq",
-        "channel_args",
         "chaotic_good_frame",
         "chaotic_good_frame_header",
         "event_engine_wakeup_scheduler",
