@@ -53,7 +53,7 @@
       </Protobuf_Compile>
 
       <Protobuf_Compile Condition=" '$(gRPC_NullableReferenceTypes)' == 'Enable' ">
-        <_GrpcOutputOptions>%(Protobuf_Compile._GrpcOutputOptions);nullable_reference_types</_GrpcOutputOptions>
+        <_GrpcOutputOptions>%(Protobuf_Compile._GrpcOutputOptions);enable_nrt</_GrpcOutputOptions>
       </Protobuf_Compile>
 
     </ItemGroup>

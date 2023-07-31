@@ -5,7 +5,7 @@
                 "${TEST_OUT_DIR}/obj/Debug/netstandard2.0"
             ],
             "--csharp_opt": [
-                "nullable_reference_types"
+                "enable_nrt"
             ],
             "--plugin": [
                 "protoc-gen-grpc=dummy-plugin-not-used"
@@ -14,7 +14,7 @@
                 "${TEST_OUT_DIR}/obj/Debug/netstandard2.0"
             ],
             "--grpc_opt": [
-                "no_client,nullable_reference_types"
+                "no_client,enable_nrt"
             ],
             "--proto_path": [
                 "../../../Grpc.Tools/build/native/include",

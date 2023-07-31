@@ -8,6 +8,8 @@
   <PropertyGroup>
     <Nullable>disable</Nullable>
     <LangVersion>latest</LangVersion>
+    <!-- for these tests assume protoc supports the enable_nrt option -->
+    <Protobuf_EnableNRT_Supported>true</Protobuf_EnableNRT_Supported>
 
     <!-- force nullable on in generated code -->
     <gRPC_NullableReferenceTypes>enable</gRPC_NullableReferenceTypes>

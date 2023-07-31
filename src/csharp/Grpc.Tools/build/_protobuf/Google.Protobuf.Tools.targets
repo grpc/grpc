@@ -9,6 +9,9 @@
     <!-- Allow assembly file to be specified externally for testing by setting property _Protobuf_MsBuildAssembly -->
     <_Protobuf_MsBuildAssembly Condition=" '$(_Protobuf_MsBuildAssembly)' == '' and '$(MSBuildRuntimeType)' == 'Core' ">netstandard1.3\Protobuf.MSBuild.dll</_Protobuf_MsBuildAssembly>
     <_Protobuf_MsBuildAssembly Condition=" '$(_Protobuf_MsBuildAssembly)' == '' and '$(MSBuildRuntimeType)' != 'Core' ">net45\Protobuf.MSBuild.dll</_Protobuf_MsBuildAssembly>
+    
+    <!-- TODO(tonydnewell) change when protoc supports enable_nrt option -->
+    <Protobuf_EnableNRT_Supported Condition=" '$(Protobuf_EnableNRT_Supported)' == '' ">false</Protobuf_EnableNRT_Supported>
   </PropertyGroup>
 
   <UsingTask AssemblyFile="$(_Protobuf_MsBuildAssembly)" TaskName="Grpc.Tools.ProtoToolsPlatform" />
@@ -266,16 +269,17 @@
   <!-- Extension point: Plugins massage metadata into recognized metadata
        values passed to the ProtoCompile task. -->
   <Target Name="Protobuf_PrepareCompileOptions" Condition=" '@(Protobuf_Compile)' != '' ">
-    <PropertyGroup>
+
+    <PropertyGroup Condition=" $(Protobuf_EnableNRT_Supported) == 'true' " >
       <!-- Enable nullabe reference types if enabled in the project and not been overridden
            by setting Protobuf_NullableReferenceTypes -->
       <Protobuf_NullableReferenceTypes Condition=" '$(Protobuf_NullableReferenceTypes)' == '' and '$(Nullable)' == 'Enable' ">Enable</Protobuf_NullableReferenceTypes>
     </PropertyGroup>
-
-    <ItemGroup>
+    
+      <ItemGroup>
       <Protobuf_Compile>
         <_OutputOptions Condition=" '%(Protobuf_Compile.Access)' == 'Internal' ">%(Protobuf_Compile._OutputOptions);internal_access</_OutputOptions>
-        <_OutputOptions Condition=" '$(Protobuf_NullableReferenceTypes)' == 'Enable' ">%(Protobuf_Compile._OutputOptions);nullable_reference_types</_OutputOptions>
+        <_OutputOptions Condition=" '$(Protobuf_NullableReferenceTypes)' == 'Enable' ">%(Protobuf_Compile._OutputOptions);enable_nrt</_OutputOptions>
       </Protobuf_Compile>
     </ItemGroup>
   </Target>

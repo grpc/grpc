@@ -8,6 +8,8 @@
   <PropertyGroup>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
+    <!-- for these tests assume protoc supports the enable_nrt option -->
+    <Protobuf_EnableNRT_Supported>true</Protobuf_EnableNRT_Supported>
   </PropertyGroup>
 
   <ItemGroup>
