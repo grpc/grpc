@@ -180,7 +180,7 @@ main() {
     "remove_neg_test"
     "round_robin_test"
   )
-  if [[ "${TESTING_VERSION}" == "master" ]]; then
+  if [[ "${TESTING_VERSION}" =~ "master" ]]; then
       test_suites+=('bootstrap_generator_test')
   fi
   for test in "${test_suites[@]}"; do
