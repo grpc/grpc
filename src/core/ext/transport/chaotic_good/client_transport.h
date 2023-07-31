@@ -48,6 +48,11 @@ class ClientTransport {
   ClientTransport(const ChannelArgs& channel_args,
                   std::unique_ptr<PromiseEndpoint> control_endpoint_,
                   std::unique_ptr<PromiseEndpoint> data_endpoint_);
+  ~ClientTransport() {
+    if (writer_ != nullptr) {
+      writer_.reset();
+    }
+  }
   auto AddStream(CallArgs call_args) {
     // At this point, the connection is set up.
     // Start sending data frames.
