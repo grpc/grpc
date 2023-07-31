@@ -2227,6 +2227,10 @@ class PromiseBasedCall : public Call,
     }
   }
 
+  void set_failed_before_recv_message() {
+    failed_before_recv_message_.store(true, std::memory_order_relaxed);
+  }
+
  private:
   union CompletionInfo {
     static constexpr uint32_t kOpFailed = 0x8000'0000u;
@@ -2600,7 +2604,7 @@ void PromiseBasedCall::StartRecvMessage(
                     "finishes: received end-of-stream with error",
                     DebugTag().c_str());
           }
-          failed_before_recv_message_.store(true);
+          set_failed_before_recv_message();
           FailCompletion(completion);
           if (cancel_on_error) CancelWithError(absl::CancelledError());
           *recv_message_ = nullptr;
@@ -3244,11 +3248,13 @@ void ServerPromiseBasedCall::Finish(ServerMetadataHandle result) {
       channelz_node->RecordCallFailed();
     }
   }
+  bool was_cancelled = result->get(GrpcCallWasCancelled()).value_or(true);
   if (recv_close_op_cancel_state_.CompleteCallWithCancelledSetTo(
-          result->get(GrpcCallWasCancelled()).value_or(true))) {
+          was_cancelled)) {
     FinishOpOnCompletion(&recv_close_completion_,
                          PendingOp::kReceiveCloseOnServer);
   }
+  if (was_cancelled) set_failed_before_recv_message();
   if (server_initial_metadata_ != nullptr) {
     server_initial_metadata_->Close();
   }
@@ -3324,7 +3330,10 @@ void ServerPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
             [this,
              completion = AddOpToCompletion(
                  completion, PendingOp::kSendInitialMetadata)](bool r) mutable {
-              if (!r) FailCompletion(completion);
+              if (!r) {
+                set_failed_before_recv_message();
+                FailCompletion(completion);
+              }
               FinishOpOnCompletion(&completion,
                                    PendingOp::kSendInitialMetadata);
             });
@@ -3374,7 +3383,10 @@ void ServerPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
             [this, completion = AddOpToCompletion(
                        completion, PendingOp::kSendStatusFromServer)](
                 bool ok) mutable {
-              if (!ok) FailCompletion(completion);
+              if (!ok) {
+                set_failed_before_recv_message();
+                FailCompletion(completion);
+              }
               FinishOpOnCompletion(&completion,
                                    PendingOp::kSendStatusFromServer);
             });
