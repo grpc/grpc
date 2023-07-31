@@ -1,5 +1,4 @@
-#!/usr/bin/env bash
-# Copyright 2021 gRPC authors.
+# Copyright 2023 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,13 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -ex
+# AUTO-GENERATED FROM `$REPO_ROOT/templates/tools/distrib/python/grpcio_tools/grpc_version.py.template`!!!
 
-# change to grpc repo root
-cd $(dirname $0)/../../..
-
-source tools/internal_ci/helper_scripts/prepare_build_linux_rc
-
-export DOCKERFILE_DIR=tools/dockerfile/test/php73_zts_debian11_x64
-export DOCKER_RUN_SCRIPT=tools/internal_ci/linux/grpc_xds_v3_php_test_in_docker.sh
-exec tools/run_tests/dockerize/build_and_run_docker.sh
+VERSION = '1.58.0.dev0'
+PROTOBUF_VERSION = '3.23.4'

@@ -23,6 +23,7 @@
   <%include file="../../compile_python_37.include"/>
   <%include file="../../compile_python_38.include"/>
   <%include file="../../compile_python_310.include"/>
+  <%include file="../../compile_python_311.include"/>
 
   # 3.9 is the default python3 version on debian11
   RUN apt-get update && apt-get install -y python3.9 python3.9-dev python3-pip
@@ -34,3 +35,8 @@
 
   <%include file="../../cmake.include"/>
   <%include file="../../ccache.include"/>
+
+  # Fix dubious ownerhsip issue.
+  RUN git config --global --add safe.directory '*' && ${'\\'}
+  	git config --global protocol.file.allow always
+  

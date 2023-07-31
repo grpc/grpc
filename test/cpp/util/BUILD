@@ -423,3 +423,19 @@ grpc_cc_test(
         ":test_util",
     ],
 )
+
+grpc_cc_library(
+    name = "get_grpc_test_runfile_dir",
+    srcs = [
+        "get_grpc_test_runfile_dir.cc",
+    ],
+    hdrs = [
+        "get_grpc_test_runfile_dir.h",
+    ],
+    external_deps = [
+        "absl/types:optional",
+    ],
+    deps = [
+        "//src/core:env",
+    ],
+)

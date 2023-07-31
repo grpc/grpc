@@ -155,7 +155,8 @@ bool CFEventEngine::CancelConnectInternal(ConnectionHandle handle,
 
 bool CFEventEngine::IsWorkerThread() { grpc_core::Crash("unimplemented"); }
 
-std::unique_ptr<EventEngine::DNSResolver> CFEventEngine::GetDNSResolver(
+absl::StatusOr<std::unique_ptr<EventEngine::DNSResolver>>
+CFEventEngine::GetDNSResolver(
     const DNSResolver::ResolverOptions& /* options */) {
   grpc_core::Crash("unimplemented");
 }

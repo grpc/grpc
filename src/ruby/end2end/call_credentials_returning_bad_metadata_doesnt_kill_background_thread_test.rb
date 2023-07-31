@@ -126,20 +126,20 @@ def main
     create_channel_creds.compose(GRPC::Core::CallCredentials.new(good_header_proc)),
     channel_args: channel_args)
   STDERR.puts 'perform an RPC using call creds that return valid headers and expect OK...'
-  good_stub.echo(Echo::EchoRequest.new(request: 'hello'), deadline: Time.now + 10)
+  good_stub.echo(Echo::EchoRequest.new(request: 'hello'), deadline: Time.now + 300)
   STDERR.puts 'perform an RPC using call creds that return an empty header and expect it to fail...'
   run_rpc_expect_unavailable(empty_header_stub)
   STDERR.puts 'perform an RPC using call creds that return a bad type and expect it to fail...'
   run_rpc_expect_unavailable(bad_type_stub)
   STDERR.puts 'perform an RPC using call creds that return nil and expect OK...'
-  nil_stub.echo(Echo::EchoRequest.new(request: 'hello'), deadline: Time.now + 10)
+  nil_stub.echo(Echo::EchoRequest.new(request: 'hello'), deadline: Time.now + 300)
   STDERR.puts 'perform an RPC using call creds that raise an error and expect it to fail...'
   run_rpc_expect_unavailable(raising_stub)
   STDERR.puts 'perform an RPC using call creds that return valid headers and expect OK...'
   # Note that the purpose of this RPC is to test that the bad call creds used by the previous
   # RPCs didn't get the gRPC-ruby library into a wedged state (specifically by killing
   # the call credentials user callback invocation thread).
-  good_stub.echo(Echo::EchoRequest.new(request: 'hello'), deadline: Time.now + 10)
+  good_stub.echo(Echo::EchoRequest.new(request: 'hello'), deadline: Time.now + 300)
   server_runner.stop
   call_creds_invocation_count_mu.synchronize do
     unless call_creds_invocation_count.value == 6

@@ -17,50 +17,155 @@
 """Dictionary of tags to experiments so we know when to test different experiments."""
 
 EXPERIMENTS = {
-    "dbg": {
+    "windows": {
+        "dbg": {
+        },
+        "off": {
+            "census_test": [
+                "transport_supplies_client_latency",
+            ],
+            "core_end2end_test": [
+                "event_engine_listener",
+                "promise_based_client_call",
+                "promise_based_server_call",
+                "unique_metadata_strings",
+                "work_stealing",
+            ],
+            "cpp_end2end_test": [
+                "promise_based_server_call",
+            ],
+            "endpoint_test": [
+                "tcp_frame_size_tuning",
+                "tcp_rcv_lowat",
+            ],
+            "event_engine_listener_test": [
+                "event_engine_listener",
+            ],
+            "flow_control_test": [
+                "peer_state_based_framing",
+                "tcp_frame_size_tuning",
+                "tcp_rcv_lowat",
+            ],
+            "lame_client_test": [
+                "promise_based_client_call",
+            ],
+            "logging_test": [
+                "promise_based_server_call",
+            ],
+            "resource_quota_test": [
+                "free_large_allocator",
+                "memory_pressure_controller",
+                "unconstrained_max_quota_buffer_size",
+            ],
+            "xds_end2end_test": [
+                "promise_based_server_call",
+            ],
+        },
+        "on": {
+        },
     },
-    "off": {
-        "census_test": [
-            "transport_supplies_client_latency",
-        ],
-        "core_end2end_test": [
-            "event_engine_client",
-            "event_engine_listener",
-            "promise_based_client_call",
-            "promise_based_server_call",
-            "unique_metadata_strings",
-            "work_stealing",
-        ],
-        "cpp_end2end_test": [
-            "promise_based_server_call",
-        ],
-        "endpoint_test": [
-            "tcp_frame_size_tuning",
-            "tcp_rcv_lowat",
-        ],
-        "event_engine_client_test": [
-            "event_engine_client",
-        ],
-        "event_engine_listener_test": [
-            "event_engine_listener",
-        ],
-        "flow_control_test": [
-            "peer_state_based_framing",
-            "tcp_frame_size_tuning",
-            "tcp_rcv_lowat",
-        ],
-        "lame_client_test": [
-            "promise_based_client_call",
-        ],
-        "resource_quota_test": [
-            "free_large_allocator",
-            "memory_pressure_controller",
-            "unconstrained_max_quota_buffer_size",
-        ],
-        "xds_end2end_test": [
-            "promise_based_server_call",
-        ],
+    "ios": {
+        "dbg": {
+        },
+        "off": {
+            "census_test": [
+                "transport_supplies_client_latency",
+            ],
+            "core_end2end_test": [
+                "event_engine_listener",
+                "promise_based_client_call",
+                "promise_based_server_call",
+                "unique_metadata_strings",
+                "work_stealing",
+            ],
+            "cpp_end2end_test": [
+                "promise_based_server_call",
+            ],
+            "endpoint_test": [
+                "tcp_frame_size_tuning",
+                "tcp_rcv_lowat",
+            ],
+            "event_engine_listener_test": [
+                "event_engine_listener",
+            ],
+            "flow_control_test": [
+                "peer_state_based_framing",
+                "tcp_frame_size_tuning",
+                "tcp_rcv_lowat",
+            ],
+            "lame_client_test": [
+                "promise_based_client_call",
+            ],
+            "logging_test": [
+                "promise_based_server_call",
+            ],
+            "resource_quota_test": [
+                "free_large_allocator",
+                "memory_pressure_controller",
+                "unconstrained_max_quota_buffer_size",
+            ],
+            "xds_end2end_test": [
+                "promise_based_server_call",
+            ],
+        },
+        "on": {
+        },
     },
-    "on": {
+    "posix": {
+        "dbg": {
+        },
+        "off": {
+            "cancel_ares_query_test": [
+                "event_engine_dns",
+            ],
+            "census_test": [
+                "transport_supplies_client_latency",
+            ],
+            "core_end2end_test": [
+                "event_engine_client",
+                "event_engine_listener",
+                "promise_based_client_call",
+                "promise_based_server_call",
+                "unique_metadata_strings",
+                "work_stealing",
+            ],
+            "cpp_end2end_test": [
+                "promise_based_server_call",
+            ],
+            "endpoint_test": [
+                "tcp_frame_size_tuning",
+                "tcp_rcv_lowat",
+            ],
+            "event_engine_client_test": [
+                "event_engine_client",
+            ],
+            "event_engine_listener_test": [
+                "event_engine_listener",
+            ],
+            "flow_control_test": [
+                "peer_state_based_framing",
+                "tcp_frame_size_tuning",
+                "tcp_rcv_lowat",
+            ],
+            "lame_client_test": [
+                "promise_based_client_call",
+            ],
+            "logging_test": [
+                "promise_based_server_call",
+            ],
+            "resolver_component_tests_runner_invoker": [
+                "event_engine_dns",
+            ],
+            "resource_quota_test": [
+                "free_large_allocator",
+                "memory_pressure_controller",
+                "unconstrained_max_quota_buffer_size",
+            ],
+            "xds_end2end_test": [
+                "promise_based_server_call",
+            ],
+        },
+        "on": {
+        },
     },
 }
