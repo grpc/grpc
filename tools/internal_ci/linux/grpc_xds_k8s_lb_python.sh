@@ -183,6 +183,9 @@ main() {
     "remove_neg_test"
     "round_robin_test"
   )
+  if [[ "${TESTING_VERSION}" =~ "master" ]]; then
+      test_suites+=('bootstrap_generator_test')
+  fi
   for test in "${test_suites[@]}"; do
     run_test $test || (( ++failed_tests ))
   done
