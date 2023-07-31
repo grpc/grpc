@@ -45,7 +45,7 @@
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 
-// #define GRPC_ARENA_POOLED_ALLOCATIONS_USE_MALLOC
+#define GRPC_ARENA_POOLED_ALLOCATIONS_USE_MALLOC
 // #define GRPC_ARENA_TRACE_POOLED_ALLOCATIONS
 
 namespace grpc_core {
