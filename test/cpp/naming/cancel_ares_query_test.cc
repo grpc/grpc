@@ -374,14 +374,13 @@ TEST_F(CancelDuringAresQuery,
           kWaitForClientToSendFirstBytes,
       grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
   grpc_status_code expected_status_code = GRPC_STATUS_DEADLINE_EXCEEDED;
-  std::string expected_error_message_substring = "";
   // The RPC deadline should go off well before the DNS resolution
   // timeout fires.
   gpr_timespec rpc_deadline = grpc_timeout_milliseconds_to_deadline(100);
   int dns_query_timeout_ms = -1;  // don't set query timeout
-  TestCancelDuringActiveQuery(expected_status_code,
-                              expected_error_message_substring, rpc_deadline,
-                              dns_query_timeout_ms, fake_dns_server.port());
+  TestCancelDuringActiveQuery(
+      expected_status_code, "" /* expected error message substring */,
+      rpc_deadline, dns_query_timeout_ms, fake_dns_server.port());
 }
 
 TEST_F(
@@ -421,14 +420,13 @@ TEST_F(
           kWaitForClientToSendFirstBytes,
       grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
   grpc_status_code expected_status_code = GRPC_STATUS_DEADLINE_EXCEEDED;
-  std::string expected_error_message_substring = "";
   // The RPC deadline should go off well before the DNS resolution
   // timeout fires.
   gpr_timespec rpc_deadline = grpc_timeout_milliseconds_to_deadline(100);
   int dns_query_timeout_ms = 0;  // disable query timeouts
-  TestCancelDuringActiveQuery(expected_status_code,
-                              expected_error_message_substring, rpc_deadline,
-                              dns_query_timeout_ms, fake_dns_server.port());
+  TestCancelDuringActiveQuery(
+      expected_status_code, "" /* expected error message substring */,
+      rpc_deadline, dns_query_timeout_ms, fake_dns_server.port());
 }
 
 TEST_F(CancelDuringAresQuery, TestQueryFailsBecauseTcpServerClosesSocket) {
