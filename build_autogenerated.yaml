@@ -7983,11 +7983,14 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/lib/debug/trace.h
   - src/core/lib/event_engine/forkable.h
   src:
+  - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/forkable.cc
   - test/core/event_engine/forkable_test.cc
   deps:
+  - absl/status:statusor
   - gpr
 - name: format_request_test
   gtest: true
