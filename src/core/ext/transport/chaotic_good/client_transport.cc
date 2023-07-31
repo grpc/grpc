@@ -16,6 +16,8 @@
 
 #include "src/core/ext/transport/chaotic_good/client_transport.h"
 
+#include <stdlib.h>
+
 #include <memory>
 #include <string>
 #include <tuple>
@@ -45,15 +47,17 @@ namespace chaotic_good {
 
 ClientTransport::ClientTransport(
     std::unique_ptr<PromiseEndpoint> control_endpoint,
-    std::unique_ptr<PromiseEndpoint> data_endpoint)
+    std::unique_ptr<PromiseEndpoint> data_endpoint,
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine)
     : outgoing_frames_(MpscReceiver<ClientFrame>(4)),
       control_endpoint_(std::move(control_endpoint)),
-      data_endpoint_(std::move(data_endpoint)) {
+      data_endpoint_(std::move(data_endpoint)),
+      event_engine_(event_engine) {
   auto hpack_compressor = std::make_shared<HPackCompressor>();
   auto write_loop = Loop(Seq(
-      // Get next outgoing_frame.
+      // Get next outgoing frame.
       this->outgoing_frames_.Next(),
-      // Construct data buffers that need to be sent to the endpoints.
+      // Construct data buffers that will be sent to the endpoints.
       [hpack_compressor](ClientFrame client_frame) {
         SliceBuffer control_endpoint_buffer;
         SliceBuffer data_endpoint_buffer;
@@ -63,20 +67,21 @@ ClientTransport::ClientTransport(
              &data_endpoint_buffer](ClientFragmentFrame* frame) mutable {
               control_endpoint_buffer.Append(
                   frame->Serialize(hpack_compressor.get()));
-              if(frame->message != nullptr){
-                 char* header_string = grpc_slice_to_c_string(
-                          control_endpoint_buffer.c_slice_buffer()->slices[0]);
-                 auto frame_header= FrameHeader::Parse(
-                      reinterpret_cast<const uint8_t*>(header_string))
-                      .value();
+              if (frame->message != nullptr) {
+                char* header_string = grpc_slice_to_c_string(
+                    control_endpoint_buffer.c_slice_buffer()->slices[0]);
+                auto frame_header =
+                    FrameHeader::Parse(
+                        reinterpret_cast<const uint8_t*>(header_string))
+                        .value();
                 free(header_string);
-              std::string message_padding(frame_header.message_padding, '0');
-              Slice slice(grpc_slice_from_cpp_string(message_padding));
-              // Append message payload to data_endpoint_buffer.
-              data_endpoint_buffer.Append(std::move(slice));
-              // Append message payload to data_endpoint_buffer.
-              frame->message->payload()->MoveFirstNBytesIntoSliceBuffer(
-                  frame->message->payload()->Length(), data_endpoint_buffer);
+                std::string message_padding(frame_header.message_padding, '0');
+                Slice slice(grpc_slice_from_cpp_string(message_padding));
+                // Append message payload to data_endpoint_buffer.
+                data_endpoint_buffer.Append(std::move(slice));
+                // Append message payload to data_endpoint_buffer.
+                frame->message->payload()->MoveFirstNBytesIntoSliceBuffer(
+                    frame->message->payload()->Length(), data_endpoint_buffer);
               }
             },
             [hpack_compressor,
@@ -88,12 +93,12 @@ ClientTransport::ClientTransport(
             std::move(control_endpoint_buffer),
             std::move(control_endpoint_buffer));
       },
-      // Write buffer to its corresponding endpoint concurrently.
+      // Write buffers to their corresponding endpoints concurrently.
       [this](std::tuple<SliceBuffer, SliceBuffer> ret) {
         return Join(this->control_endpoint_->Write(std::move(std::get<0>(ret))),
                     this->data_endpoint_->Write(std::move(std::get<1>(ret))));
       },
-      // Finish writes and return.
+      // Finish writes and return Status.
       [](std::tuple<absl::Status, absl::Status> ret) -> LoopCtl<absl::Status> {
         if (!(std::get<0>(ret).ok() || std::get<1>(ret).ok())) {
           // TODO(ladynana): better error handling when
@@ -104,9 +109,7 @@ ClientTransport::ClientTransport(
       }));
   writer_ = MakeActivity(
       // Continuously write next outgoing_frames to the endpoints.
-      std::move(write_loop),
-      EventEngineWakeupScheduler(
-          grpc_event_engine::experimental::CreateEventEngine()),
+      std::move(write_loop), EventEngineWakeupScheduler(event_engine_),
       [](absl::Status status) {
         GPR_ASSERT(status.code() == absl::StatusCode::kCancelled);
       });

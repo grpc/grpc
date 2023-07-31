@@ -5852,7 +5852,6 @@ grpc_cc_library(
         "absl/base:core_headers",
         "absl/status",
         "absl/status:statusor",
-        "absl/time",
         "absl/types:variant",
     ],
     language = "c++",

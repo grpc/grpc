@@ -30,6 +30,7 @@
 #include <grpc/grpc.h>
 
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/detail/basic_join.h"
 #include "src/core/lib/promise/join.h"
@@ -40,6 +41,7 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/promise/test_wakeup_schedulers.h"
 
 using testing::MockFunction;
@@ -87,13 +89,24 @@ class ClientTransportTest : public ::testing::Test {
                 "test")),
         control_endpoint_(*control_endpoint_ptr_),
         data_endpoint_(*data_endpoint_ptr_),
+        event_engine_(std::make_shared<
+                      grpc_event_engine::experimental::FuzzingEventEngine>(
+            []() {
+              grpc_timer_manager_set_threading(false);
+              grpc_event_engine::experimental::FuzzingEventEngine::Options
+                  options;
+              return options;
+            }(),
+            fuzzing_event_engine::Actions())),
         client_transport_(
             std::make_unique<PromiseEndpoint>(
                 std::unique_ptr<MockEndpoint>(control_endpoint_ptr_),
                 SliceBuffer()),
             std::make_unique<PromiseEndpoint>(
                 std::unique_ptr<MockEndpoint>(data_endpoint_ptr_),
-                SliceBuffer())),
+                SliceBuffer()),
+            std::static_pointer_cast<
+                grpc_event_engine::experimental::EventEngine>(event_engine_)),
         arena_(MakeScopedArena(initial_arena_size, &memory_allocator_)),
         pipe_client_to_server_messages_(arena_.get()) {}
 
@@ -106,6 +119,8 @@ class ClientTransportTest : public ::testing::Test {
  protected:
   MockEndpoint& control_endpoint_;
   MockEndpoint& data_endpoint_;
+  std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
+      event_engine_;
   ClientTransport client_transport_;
   ScopedArenaPtr arena_;
   Pipe<MessageHandle> pipe_client_to_server_messages_;
@@ -124,8 +139,9 @@ TEST_F(ClientTransportTest, AddOneStream) {
   EXPECT_CALL(control_endpoint_, Write).WillOnce(Return(true));
   EXPECT_CALL(data_endpoint_, Write).WillOnce(Return(true));
   auto activity = MakeActivity(
-      Seq(  // Concurrently: send message into the pipe, and receive from the
-            // pipe.
+      Seq(
+          // Concurrently: send message into the pipe, and receive from the
+          // pipe.
           Join(Seq(pipe_client_to_server_messages_.sender.Push(
                        std::move(message)),
                    [this] {
@@ -135,12 +151,16 @@ TEST_F(ClientTransportTest, AddOneStream) {
                Seq(client_transport_.AddStream(std::move(args)),
                    [] { return absl::OkStatus(); })),
           // Once complete, verify successful sending and the received value.
-          []() {
-            // TODO(ladynana): verify results.
+          [](const std::tuple<absl::Status, absl::Status>& ret) {
+            EXPECT_TRUE(std::get<0>(ret).ok());
+            EXPECT_TRUE(std::get<1>(ret).ok());
             return absl::OkStatus();
           }),
       InlineWakeupScheduler(),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
+  // Wait until ClientTransport's internal activities to finish.
+  event_engine_->TickUntilIdle();
+  event_engine_->UnsetGlobalHooks();
 }
 
 }  // namespace testing

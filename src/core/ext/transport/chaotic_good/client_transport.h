@@ -19,16 +19,15 @@
 
 #include <stdint.h>
 
-#include <initializer_list>
 #include <memory>
 #include <type_traits>
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
-#include "absl/time/clock.h"
-#include "absl/time/time.h"
 #include "absl/types/variant.h"
+
+#include <grpc/event_engine/event_engine.h>
 
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -44,8 +43,10 @@ namespace chaotic_good {
 
 class ClientTransport {
  public:
-  ClientTransport(std::unique_ptr<PromiseEndpoint> control_endpoint_,
-                  std::unique_ptr<PromiseEndpoint> data_endpoint_);
+  ClientTransport(std::unique_ptr<PromiseEndpoint> control_endpoint,
+                  std::unique_ptr<PromiseEndpoint> data_endpoint,
+                  std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+                      event_engine);
   ~ClientTransport() {
     if (writer_ != nullptr) {
       writer_.reset();
@@ -60,6 +61,7 @@ class ClientTransport {
       stream_id = next_stream_id_++;
     }
     return Seq(
+        // Send first data frame with client intial metadata.
         [stream_id, outgoing_frames = outgoing_frames_.MakeSender(),
          client_initial_metadata =
              std::move(call_args.client_initial_metadata)]() mutable {
@@ -71,6 +73,7 @@ class ClientTransport {
           frame.end_of_stream = false;
           return outgoing_frames.Send(ClientFrame(std::move(frame)));
         },
+        // Continuously send data frame with client to server messages.
         ForEach(std::move(*call_args.client_to_server_messages),
                 [stream_id, outgoing_frames = outgoing_frames_.MakeSender()](
                     MessageHandle result) mutable {
@@ -79,10 +82,11 @@ class ClientTransport {
                   frame.message = std::move(result);
                   return Seq(
                       outgoing_frames.Send(ClientFrame(std::move(frame))),
-                      []() -> absl::Status {
-                        // TODO(ladynana): remove this sleep after figure out
-                        // how to synchronize writer_ with outside activity.
-                        absl::SleepFor(absl::Seconds(5));
+                      [](bool success) -> absl::Status {
+                        if (!success) {
+                          return absl::InternalError(
+                              "Send frame to outgoing_frames failed.");
+                        }
                         return absl::OkStatus();
                       });
                 }));
@@ -98,6 +102,8 @@ class ClientTransport {
   ActivityPtr reader_;
   std::unique_ptr<PromiseEndpoint> control_endpoint_;
   std::unique_ptr<PromiseEndpoint> data_endpoint_;
+  // Use to synchronize writer_ and reader_ activity with outside activities;
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
 };
 
 }  // namespace chaotic_good
