@@ -28,6 +28,7 @@
 // IWYU pragma: no_include <unistd.h>
 
 #include <algorithm>
+#include <memory>
 #include <string>
 #include <thread>
 #include <vector>
@@ -185,13 +186,12 @@ namespace testing {
 SocketUseAfterCloseDetector::SocketUseAfterCloseDetector() {
   int port = grpc_pick_unused_port_or_die();
   gpr_event_init(&done_ev_);
-  thread_ = new std::thread(OpenAndCloseSocketsStressLoop, port, &done_ev_);
+  thread_ = std::make_unique<std::thread>(OpenAndCloseSocketsStressLoop, port, &done_ev_);
 }
 
 SocketUseAfterCloseDetector::~SocketUseAfterCloseDetector() {
   gpr_event_set(&done_ev_, reinterpret_cast<void*>(1));
   thread_->join();
-  delete thread_;
 }
 
 }  // namespace testing

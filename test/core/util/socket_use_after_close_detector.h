@@ -21,6 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <memory>
 #include <thread>
 
 #include <grpc/support/sync_generic.h>
@@ -35,15 +36,17 @@ namespace testing {
 // by watching them manifest as unexpected socket operation failures.
 //
 // Note: this will not give false positives but may give false negatives.
-// That said this is fairly reliable at finding use-after-close bugs on
-// platforms that quickly re-use fd handles.
+// That said this seems to be fairly reliable at finding use-after-close
+// bugs, at least on linux, because of fd handles being quickly reused.
+// For example this was able to catch the use-after-close bug from
+// https://github.com/grpc/grpc/pull/33871 "almost every time".
 class SocketUseAfterCloseDetector {
  public:
   SocketUseAfterCloseDetector();
   ~SocketUseAfterCloseDetector();
 
  private:
-  std::thread* thread_;
+  std::unique_ptr<std::thread> thread_;
   gpr_event done_ev_;
 };
 
