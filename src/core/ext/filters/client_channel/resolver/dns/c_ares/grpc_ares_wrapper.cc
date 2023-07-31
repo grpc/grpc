@@ -24,7 +24,7 @@
 
 #include "absl/strings/string_view.h"
 
-#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/sockaddr.h"
@@ -515,6 +515,8 @@ static void noop_inject_channel_config(ares_channel* /*channel*/) {}
 void (*grpc_ares_test_only_inject_config)(ares_channel* channel) =
     noop_inject_channel_config;
 
+bool g_grpc_ares_test_only_force_tcp = false;
+
 grpc_error_handle grpc_ares_ev_driver_create_locked(
     grpc_ares_ev_driver** ev_driver, grpc_pollset_set* pollset_set,
     int query_timeout_ms, grpc_ares_request* request)
@@ -523,6 +525,9 @@ grpc_error_handle grpc_ares_ev_driver_create_locked(
   ares_options opts;
   memset(&opts, 0, sizeof(opts));
   opts.flags |= ARES_FLAG_STAYOPEN;
+  if (g_grpc_ares_test_only_force_tcp) {
+    opts.flags |= ARES_FLAG_USEVC;
+  }
   int status = ares_init_options(&(*ev_driver)->channel, &opts, ARES_OPT_FLAGS);
   grpc_ares_test_only_inject_config(&(*ev_driver)->channel);
   GRPC_CARES_TRACE_LOG("request:%p grpc_ares_ev_driver_create_locked", request);

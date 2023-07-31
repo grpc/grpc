@@ -205,6 +205,7 @@ class BootstrapGeneratorServerTest(
             maintenance_port=self.server_maintenance_port,
             xds_host=self.server_xds_host,
             xds_port=self.server_xds_port,
+            bootstrap_version=version,
         )
 
         # Load backends.

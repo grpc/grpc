@@ -99,6 +99,7 @@ void SimpleRequestBody(CoreEnd2endTest& test) {
 }
 
 CORE_END2END_TEST(CoreEnd2endTest, SimpleRequest) {
+  // TODO(vigneshbabu): re-enable these before release
   SKIP_IF_USES_EVENT_ENGINE_LISTENER();
   SimpleRequestBody(*this);
 }

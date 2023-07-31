@@ -37,10 +37,11 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
+#include <grpc/impl/channel_arg_names.h>
+
 #define XXH_INLINE_ALL
 #include "xxhash.h"
 
-#include <grpc/grpc.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/log.h>
 

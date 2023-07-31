@@ -114,6 +114,10 @@ class OpenTelemetryServerCallTracer : public grpc_core::ServerCallTracer {
     // Not implemented
   }
 
+  void RecordAnnotation(const Annotation& /*annotation*/) override {
+    // Not implemented
+  }
+
  private:
   grpc_core::Slice path_;
   absl::string_view method_;
@@ -130,8 +134,10 @@ void OpenTelemetryServerCallTracer::RecordReceivedInitialMetadata(
   }
   method_ = absl::StripPrefix(path_.as_string_view(), "/");
   // TODO(yashykt): Figure out how to get this to work with absl::string_view
-  OTelPluginState().server.call.started->Add(
-      1, {{std::string(OTelMethodKey()), std::string(method_)}});
+  if (OTelPluginState().server.call.started != nullptr) {
+    OTelPluginState().server.call.started->Add(
+        1, {{std::string(OTelMethodKey()), std::string(method_)}});
+  }
 }
 
 void OpenTelemetryServerCallTracer::RecordSendTrailingMetadata(
@@ -148,15 +154,23 @@ void OpenTelemetryServerCallTracer::RecordEnd(
       {std::string(OTelStatusKey()),
        absl::StatusCodeToString(
            static_cast<absl::StatusCode>(final_info->final_status))}};
-  OTelPluginState().server.call.duration->Record(
-      absl::ToDoubleSeconds(elapsed_time_), attributes,
-      opentelemetry::context::Context{});
-  OTelPluginState().server.call.sent_total_compressed_message_size->Record(
-      final_info->stats.transport_stream_stats.outgoing.data_bytes, attributes,
-      opentelemetry::context::Context{});
-  OTelPluginState().server.call.rcvd_total_compressed_message_size->Record(
-      final_info->stats.transport_stream_stats.incoming.data_bytes, attributes,
-      opentelemetry::context::Context{});
+  if (OTelPluginState().server.call.duration != nullptr) {
+    OTelPluginState().server.call.duration->Record(
+        absl::ToDoubleSeconds(elapsed_time_), attributes,
+        opentelemetry::context::Context{});
+  }
+  if (OTelPluginState().server.call.sent_total_compressed_message_size !=
+      nullptr) {
+    OTelPluginState().server.call.sent_total_compressed_message_size->Record(
+        final_info->stats.transport_stream_stats.outgoing.data_bytes,
+        attributes, opentelemetry::context::Context{});
+  }
+  if (OTelPluginState().server.call.rcvd_total_compressed_message_size !=
+      nullptr) {
+    OTelPluginState().server.call.rcvd_total_compressed_message_size->Record(
+        final_info->stats.transport_stream_stats.incoming.data_bytes,
+        attributes, opentelemetry::context::Context{});
+  }
 }
 
 }  // namespace
