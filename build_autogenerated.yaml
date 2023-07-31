@@ -4782,6 +4782,7 @@ targets:
   src:
   - test/core/avl/avl_test.cc
   deps:
+  - absl/hash:hash
   - gpr
   uses_polling: false
 - name: aws_request_signer_test
