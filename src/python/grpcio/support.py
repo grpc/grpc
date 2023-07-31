@@ -41,7 +41,7 @@ if sys.version_info[0] == 2:
 elif sys.version_info[0] == 3:
     PYTHON_REPRESENTATION = "python3"
 else:
-    raise NotImplementedError("Unsupported Python version: %s" % sys.version)
+    raise NotImplementedError(f"Unsupported Python version: {sys.version}")
 
 C_CHECKS = {
     C_PYTHON_DEV: C_PYTHON_DEV_ERROR_MESSAGE.replace(
@@ -67,9 +67,7 @@ def _expect_compile(compiler, source_string, error_message):
     if _compile(compiler, source_string) is not None:
         sys.stderr.write(error_message)
         raise commands.CommandError(
-            "Diagnostics found a compilation environment issue:\n{}".format(
-                error_message
-            )
+            f"Diagnostics found a compilation environment issue:\n{error_message}"
         )
 
 

@@ -106,7 +106,7 @@ def create_phony_channel():
     """Creating phony channels is a workaround for retries"""
     host, port, sock = get_socket(sock_options=(socket.SO_REUSEADDR,))
     sock.close()
-    return grpc.insecure_channel("{}:{}".format(host, port))
+    return grpc.insecure_channel(f"{host}:{port}")
 
 
 def perform_unary_unary_call(channel, wait_for_ready=None):
@@ -221,7 +221,7 @@ class MetadataFlagsTest(unittest.TestCase):
         host, port, sock = get_socket(sock_options=(socket.SO_REUSEADDR,))
         sock.close()
 
-        addr = "{}:{}".format(host, port)
+        addr = f"{host}:{port}"
         wg = test_common.WaitGroup(len(_ALL_CALL_CASES))
 
         def wait_for_transient_failure(channel_connectivity):

@@ -562,9 +562,7 @@ def _call_behavior(
                     )
                 elif exception not in state.rpc_errors:
                     try:
-                        details = "Exception calling application: {}".format(
-                            exception
-                        )
+                        details = f"Exception calling application: {exception}"
                     except Exception:  # pylint: disable=broad-except
                         details = (
                             "Calling application raised unprintable Exception!"
@@ -599,7 +597,7 @@ def _take_response_from_response_iterator(
                     b"RPC Aborted",
                 )
             elif exception not in state.rpc_errors:
-                details = "Exception iterating responses: {}".format(exception)
+                details = f"Exception iterating responses: {exception}"
                 _LOGGER.exception(details)
                 _abort(
                     state,
@@ -1010,7 +1008,7 @@ def _handle_call(
                 rpc_event, generic_handlers, interceptor_pipeline
             )
         except Exception as exception:  # pylint: disable=broad-except
-            details = "Exception servicing handler: {}".format(exception)
+            details = f"Exception servicing handler: {exception}"
             _LOGGER.exception(details)
             return (
                 _reject_rpc(

@@ -31,9 +31,7 @@ def _dump_streams(name, streams):
     for stream_name, stream in zip(("STDOUT", "STDERR"), streams):
         stream.seek(0)
         sys.stderr.write(
-            "{} {}:\n{}\n".format(
-                name, stream_name, stream.read().decode("ascii")
-            )
+            f"{name} {stream_name}:\n{stream.read().decode('ascii')}\n"
         )
         stream.close()
     sys.stderr.flush()
@@ -122,11 +120,11 @@ class ForkInteropTest(unittest.TestCase):
                 # Timeout
                 self._streams[0].seek(0)
                 sys.stderr.write(
-                    "Server STDOUT:\n{}\n".format(self._streams[0].read())
+                    f"Server STDOUT:\n{self._streams[0].read()}\n"
                 )
                 self._streams[1].seek(0)
                 sys.stderr.write(
-                    "Server STDERR:\n{}\n".format(self._streams[1].read())
+                    f"Server STDERR:\n{self._streams[1].read()}\n"
                 )
                 sys.stderr.flush()
                 raise Exception("Failed to get port from server.")
@@ -189,7 +187,7 @@ class ForkInteropTest(unittest.TestCase):
             "-ex",
             "echo attaching",
             "-ex",
-            "attach {}".format(pid),
+            f"attach {pid}",
             "-ex",
             "echo print_backtrace",
             "-ex",

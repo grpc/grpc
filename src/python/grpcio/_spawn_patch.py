@@ -49,7 +49,7 @@ def _commandfile_spawn(self, command):
             # "line in command file contains 131071 or more characters" error
             # (can happen for extra long link commands)
             command_file.write(" \n".join(escaped_args))
-        modified_command = command[:1] + ["@{}".format(command_filename)]
+        modified_command = command[:1] + [f"@{command_filename}"]
         try:
             _classic_spawn(self, modified_command)
         finally:

@@ -41,11 +41,11 @@ def _get_max_rss():
 
 def _pretty_print_bytes(x):
     if x > 1024 * 1024 * 1024:
-        return "%.2f GiB" % (x / 1024.0 / 1024 / 1024)
+        return f"{x / 1024.0 / 1024 / 1024:.2f} GiB"
     elif x > 1024 * 1024:
-        return "%.2f MiB" % (x / 1024.0 / 1024)
+        return f"{x / 1024.0 / 1024:.2f} MiB"
     elif x > 1024:
-        return "%.2f KiB" % (x / 1024.0)
+        return f"{x / 1024.0:.2f} KiB"
     else:
         return "%d B" % x
 

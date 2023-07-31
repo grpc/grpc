@@ -105,7 +105,7 @@ def deserialize(
 
 
 def fully_qualified_method(group: str, method: str) -> str:
-    return "/{}/{}".format(group, method)
+    return f"/{group}/{method}"
 
 
 def _wait_once(

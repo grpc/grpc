@@ -173,14 +173,10 @@ class Runner(object):
                 result.stopTestRun()
                 stdout_pipe.write_bypass(result_out.getvalue())
                 stdout_pipe.write_bypass(
-                    "\ninterrupted stdout:\n{}\n".format(
-                        stdout_pipe.output().decode()
-                    )
+                    f"\ninterrupted stdout:\n{stdout_pipe.output().decode()}\n"
                 )
                 stderr_pipe.write_bypass(
-                    "\ninterrupted stderr:\n{}\n".format(
-                        stderr_pipe.output().decode()
-                    )
+                    f"\ninterrupted stderr:\n{stderr_pipe.output().decode()}\n"
                 )
                 os._exit(1)
 
@@ -207,7 +203,7 @@ class Runner(object):
                     break
             else:
                 sys.stdout.write(
-                    "Running       {}\n".format(augmented_case.case.id())
+                    f"Running       {augmented_case.case.id()}\n"
                 )
                 sys.stdout.flush()
                 if self._dedicated_threads:

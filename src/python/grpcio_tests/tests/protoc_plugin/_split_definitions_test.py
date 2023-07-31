@@ -107,15 +107,13 @@ def _protoc(
 ):
     args = [
         "",
-        "--proto_path={}".format(proto_path),
+        f"--proto_path={proto_path}",
     ]
     if python_out is not None:
-        args.append("--python_out={}".format(python_out))
+        args.append(f"--python_out={python_out}")
     if grpc_python_out is not None:
         args.append(
-            "--grpc_python_out={}:{}".format(
-                grpc_python_out_flag, grpc_python_out
-            )
+            f"--grpc_python_out={grpc_python_out_flag}:{grpc_python_out}"
         )
     args.extend(absolute_proto_file_names)
     return protoc.main(args)
@@ -308,7 +306,7 @@ class _Test(unittest.TestCase, metaclass=abc.ABCMeta):
             )
             port = server.add_insecure_port("[::]:0")
             server.start()
-            channel = grpc.insecure_channel("localhost:{}".format(port))
+            channel = grpc.insecure_channel(f"localhost:{port}")
             stub = services_module.TestServiceStub(channel)
             response = stub.Call(self._messages_pb2.Request())
             self.assertEqual(self._messages_pb2.Response(), response)
@@ -318,9 +316,7 @@ class _Test(unittest.TestCase, metaclass=abc.ABCMeta):
 def _create_test_case_class(split_proto, protoc_style):
     attributes = {}
 
-    name = "{}{}".format(
-        "SplitProto" if split_proto else "SameProto", protoc_style.name()
-    )
+    name = f"{'SplitProto' if split_proto else 'SameProto'}{protoc_style.name()}"
     attributes["NAME"] = name
 
     if split_proto:
@@ -351,7 +347,7 @@ def _create_test_case_class(split_proto, protoc_style):
 
     attributes["__module__"] = _Test.__module__
 
-    return type("{}Test".format(name), (_Test,), attributes)
+    return type(f"{name}Test", (_Test,), attributes)
 
 
 def _create_test_case_classes():
@@ -373,9 +369,9 @@ class WellKnownTypesTest(unittest.TestCase):
         args = [
             "grpc_tools.protoc",
             "--proto_path=protos",
-            "--proto_path={}".format(well_known_protos_include),
-            "--python_out={}".format(out_dir),
-            "--grpc_python_out={}".format(out_dir),
+            f"--proto_path={well_known_protos_include}",
+            f"--python_out={out_dir}",
+            f"--grpc_python_out={out_dir}",
             "protos/invocation_testing/compiler.proto",
         ]
         rc = protoc.main(args)

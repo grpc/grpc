@@ -104,7 +104,7 @@ def _create_server(config: control_pb2.ServerConfig) -> Tuple[aio.Server, int]:
         server.add_generic_rpc_handlers((handler,))
     else:
         raise NotImplementedError(
-            "Unsupported server type {}".format(config.server_type)
+            f"Unsupported server type {config.server_type}"
         )
 
     if config.HasField("security_params"):  # Use SSL
@@ -112,10 +112,10 @@ def _create_server(config: control_pb2.ServerConfig) -> Tuple[aio.Server, int]:
             ((resources.private_key(), resources.certificate_chain()),)
         )
         port = server.add_secure_port(
-            "[::]:{}".format(config.port), server_creds
+            f"[::]:{config.port}", server_creds
         )
     else:
-        port = server.add_insecure_port("[::]:{}".format(config.port))
+        port = server.add_insecure_port(f"[::]:{config.port}")
 
     return server, port
 

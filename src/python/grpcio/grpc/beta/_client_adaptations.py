@@ -969,7 +969,7 @@ class _DynamicStub(face.DynamicStub):
             return self._generic_stub.stream_stream(self._group, attr)
         else:
             raise AttributeError(
-                '_DynamicStub object has no attribute "%s"!' % attr
+                f'_DynamicStub object has no attribute "{attr}"!'
             )
 
     def __enter__(self):

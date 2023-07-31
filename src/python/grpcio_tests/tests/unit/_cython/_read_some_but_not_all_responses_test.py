@@ -121,7 +121,7 @@ class ReadSomeButNotAllResponsesTest(unittest.TestCase):
         port = server.add_http2_port(b"[::]:0")
         server.start()
         channel = cygrpc.Channel(
-            "localhost:{}".format(port).encode(), set(), None
+            f"localhost:{port}".encode(), set(), None
         )
 
         server_shutdown_tag = "server_shutdown_tag"

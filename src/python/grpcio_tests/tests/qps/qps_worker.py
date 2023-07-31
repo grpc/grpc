@@ -30,7 +30,7 @@ def run_worker_server(driver_port, server_port):
     worker_service_pb2_grpc.add_WorkerServiceServicer_to_server(
         servicer, server
     )
-    server.add_insecure_port("[::]:{}".format(driver_port))
+    server.add_insecure_port(f"[::]:{driver_port}")
     server.start()
     servicer.wait_for_quit()
     server.stop(0)

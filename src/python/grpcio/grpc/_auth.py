@@ -24,7 +24,7 @@ def _sign_request(
     token: Optional[str],
     error: Optional[Exception],
 ):
-    metadata = (("authorization", "Bearer {}".format(token)),)
+    metadata = (("authorization", f"Bearer {token}"),)
     callback(metadata, error)
 
 

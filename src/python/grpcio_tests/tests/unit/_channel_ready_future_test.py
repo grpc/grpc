@@ -70,7 +70,7 @@ class ChannelReadyFutureTest(unittest.TestCase):
         )
         port = server.add_insecure_port("[::]:0")
         server.start()
-        channel = grpc.insecure_channel("localhost:{}".format(port))
+        channel = grpc.insecure_channel(f"localhost:{port}")
         callback = _Callback()
 
         ready_future = grpc.channel_ready_future(channel)

@@ -474,7 +474,7 @@ def parse_rpc_arg(rpc_arg: str) -> Sequence[str]:
     methods = rpc_arg.split(",")
     if set(methods) - set(_SUPPORTED_METHODS):
         raise ValueError(
-            "--rpc supported methods: {}".format(", ".join(_SUPPORTED_METHODS))
+            f"--rpc supported methods: {', '.join(_SUPPORTED_METHODS)}"
         )
     return methods
 

@@ -189,7 +189,7 @@ class State(_common.ChannelRpcHandler):
                     self._condition.wait()
                 else:
                     raise ValueError(
-                        "Status code unexpectedly {}!".format(self._code)
+                        f"Status code unexpectedly {self._code}!"
                     )
 
     def is_active(self):

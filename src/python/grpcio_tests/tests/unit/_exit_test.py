@@ -67,7 +67,7 @@ def _process_wait_with_timeout(process, timeout=WAIT_CHECK_DEFAULT_TIMEOUT):
     while (process.poll() is None) and (datetime.datetime.now() < deadline):
         time.sleep(WAIT_CHECK_INTERVAL.total_seconds())
     if process.returncode is None:
-        raise RuntimeError("Process failed to exit within %s" % timeout)
+        raise RuntimeError(f"Process failed to exit within {timeout}")
 
 
 def interrupt_and_wait(process):

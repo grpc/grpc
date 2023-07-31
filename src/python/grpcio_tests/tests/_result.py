@@ -308,7 +308,7 @@ class TerminalResult(CoverageResult):
         """See unittest.TestResult.addError."""
         super(TerminalResult, self).addError(test, err)
         self.out.write(
-            _Colors.FAIL + "ERROR         {}\n".format(test.id()) + _Colors.END
+            _Colors.FAIL + f"ERROR         {test.id()}\n" + _Colors.END
         )
         self.out.flush()
 
@@ -316,7 +316,7 @@ class TerminalResult(CoverageResult):
         """See unittest.TestResult.addFailure."""
         super(TerminalResult, self).addFailure(test, err)
         self.out.write(
-            _Colors.FAIL + "FAILURE       {}\n".format(test.id()) + _Colors.END
+            _Colors.FAIL + f"FAILURE       {test.id()}\n" + _Colors.END
         )
         self.out.flush()
 
@@ -324,7 +324,7 @@ class TerminalResult(CoverageResult):
         """See unittest.TestResult.addSuccess."""
         super(TerminalResult, self).addSuccess(test)
         self.out.write(
-            _Colors.OK + "SUCCESS       {}\n".format(test.id()) + _Colors.END
+            _Colors.OK + f"SUCCESS       {test.id()}\n" + _Colors.END
         )
         self.out.flush()
 
@@ -332,7 +332,7 @@ class TerminalResult(CoverageResult):
         """See unittest.TestResult.addSkip."""
         super(TerminalResult, self).addSkip(test, reason)
         self.out.write(
-            _Colors.INFO + "SKIP          {}\n".format(test.id()) + _Colors.END
+            _Colors.INFO + f"SKIP          {test.id()}\n" + _Colors.END
         )
         self.out.flush()
 
@@ -340,7 +340,7 @@ class TerminalResult(CoverageResult):
         """See unittest.TestResult.addExpectedFailure."""
         super(TerminalResult, self).addExpectedFailure(test, err)
         self.out.write(
-            _Colors.INFO + "FAILURE_OK    {}\n".format(test.id()) + _Colors.END
+            _Colors.INFO + f"FAILURE_OK    {test.id()}\n" + _Colors.END
         )
         self.out.flush()
 
@@ -348,7 +348,7 @@ class TerminalResult(CoverageResult):
         """See unittest.TestResult.addUnexpectedSuccess."""
         super(TerminalResult, self).addUnexpectedSuccess(test)
         self.out.write(
-            _Colors.INFO + "UNEXPECTED_OK {}\n".format(test.id()) + _Colors.END
+            _Colors.INFO + f"UNEXPECTED_OK {test.id()}\n" + _Colors.END
         )
         self.out.flush()
 

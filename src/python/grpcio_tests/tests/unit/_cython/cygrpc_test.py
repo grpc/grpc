@@ -141,13 +141,13 @@ class ServerClientMixin(object):
                 ),
             )
             self.client_channel = cygrpc.Channel(
-                "localhost:{}".format(self.port).encode(),
+                f"localhost:{self.port}".encode(),
                 client_channel_arguments,
                 client_credentials,
             )
         else:
             self.client_channel = cygrpc.Channel(
-                "localhost:{}".format(self.port).encode(), set(), None
+                f"localhost:{self.port}".encode(), set(), None
             )
         if host_override:
             self.host_argument = None  # default host
@@ -188,7 +188,7 @@ class ServerClientMixin(object):
                 self.assertIs(tag, event.tag)
             except Exception as error:
                 raise Exception(
-                    "Error in '{}': {}".format(description, error.message)
+                    f"Error in '{description}': {error.message}"
                 )
             return event
 

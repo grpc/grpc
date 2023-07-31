@@ -73,9 +73,7 @@ def get_socket(
             sock.close()
             continue
     raise RuntimeError(
-        "Failed to bind to {} with sock_options {}".format(
-            bind_address, sock_options
-        )
+        f"Failed to bind to {bind_address} with sock_options {sock_options}"
     )
 
 

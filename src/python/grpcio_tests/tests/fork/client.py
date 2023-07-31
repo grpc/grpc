@@ -61,7 +61,7 @@ def _test_case_from_arg(test_case_arg):
         if test_case_arg == test_case.value:
             return test_case
     else:
-        raise ValueError('No test case "%s"!' % test_case_arg)
+        raise ValueError(f'No test case "{test_case_arg}"!')
 
 
 def test_fork():

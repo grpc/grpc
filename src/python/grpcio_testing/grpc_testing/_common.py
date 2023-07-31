@@ -40,9 +40,7 @@ def rpc_names(service_descriptors):
     rpc_names_to_descriptors = {}
     for service_descriptor in service_descriptors:
         for method_descriptor in service_descriptor.methods_by_name.values():
-            rpc_name = "/{}/{}".format(
-                service_descriptor.full_name, method_descriptor.name
-            )
+            rpc_name = f"/{service_descriptor.full_name}/{method_descriptor.name}"
             rpc_names_to_descriptors[rpc_name] = method_descriptor
     return rpc_names_to_descriptors
 

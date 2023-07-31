@@ -61,7 +61,7 @@ class Metadata(abc.Mapping):
         try:
             return self._metadata[key][0]
         except (ValueError, IndexError) as e:
-            raise KeyError("{0!r}".format(key)) from e
+            raise KeyError(f"{key!r}") from e
 
     def __setitem__(self, key: MetadataKey, value: MetadataValue) -> None:
         """Calling metadata[<key>] = <value>
@@ -117,4 +117,4 @@ class Metadata(abc.Mapping):
 
     def __repr__(self) -> str:
         view = tuple(self)
-        return "{0}({1!r})".format(self.__class__.__name__, view)
+        return f"{self.__class__.__name__}({view!r})"

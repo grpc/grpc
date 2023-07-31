@@ -64,7 +64,7 @@ PACKAGE_DIRECTORIES = {
 
 INSTALL_REQUIRES = (
     "protobuf>=4.21.6",
-    "grpcio>={version}".format(version=grpc_version.VERSION),
+    f"grpcio>={grpc_version.VERSION}",
 )
 
 try:
@@ -72,7 +72,7 @@ try:
 
     # we are in the build environment, otherwise the above import fails
     SETUP_REQUIRES = (
-        "grpcio-tools=={version}".format(version=grpc_version.VERSION),
+        f"grpcio-tools=={grpc_version.VERSION}",
     )
     COMMAND_CLASS = {
         # Run preprocess from the repository *before* doing any packaging!

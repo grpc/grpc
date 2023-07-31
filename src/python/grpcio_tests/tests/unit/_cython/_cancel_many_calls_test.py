@@ -164,7 +164,7 @@ class CancelManyCallsTest(unittest.TestCase):
         port = server.add_http2_port(b"[::]:0")
         server.start()
         channel = cygrpc.Channel(
-            "localhost:{}".format(port).encode(), None, None
+            f"localhost:{port}".encode(), None, None
         )
 
         state = _State()
@@ -184,7 +184,7 @@ class CancelManyCallsTest(unittest.TestCase):
         with client_condition:
             client_calls = []
             for index in range(test_constants.RPC_CONCURRENCY):
-                tag = "client_complete_call_{0:04d}_tag".format(index)
+                tag = f"client_complete_call_{index:04d}_tag"
                 client_call = channel.integrated_call(
                     _EMPTY_FLAGS,
                     b"/twinkies",

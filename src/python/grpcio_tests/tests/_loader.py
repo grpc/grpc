@@ -40,7 +40,7 @@ def _relativize_to_sys_path(path):
             if not relative.endswith(os.path.sep):
                 relative += os.path.sep
             return relative
-    raise AssertionError("Failed to relativize {} to sys.path.".format(path))
+    raise AssertionError(f"Failed to relativize {path} to sys.path.")
 
 
 def _relative_path_to_module_prefix(path):
@@ -140,5 +140,5 @@ def iterate_suite_cases(suite):
             yield item
         else:
             raise ValueError(
-                "unexpected suite item of type {}".format(type(item))
+                f"unexpected suite item of type {type(item)}"
             )

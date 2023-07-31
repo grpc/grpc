@@ -138,7 +138,7 @@ class WorkerServer(worker_service_pb2_grpc.WorkerServiceServicer):
             server.add_generic_rpc_handlers((handler,))
         else:
             raise Exception(
-                "Unsupported server type {}".format(config.server_type)
+                f"Unsupported server type {config.server_type}"
             )
 
         if self._server_port is not None and config.port == 0:
@@ -151,10 +151,10 @@ class WorkerServer(worker_service_pb2_grpc.WorkerServiceServicer):
                 ((resources.private_key(), resources.certificate_chain()),)
             )
             port = server.add_secure_port(
-                "[::]:{}".format(server_port), server_creds
+                f"[::]:{server_port}", server_creds
             )
         else:
-            port = server.add_insecure_port("[::]:{}".format(server_port))
+            port = server.add_insecure_port(f"[::]:{server_port}")
 
         return (server, port)
 
@@ -225,7 +225,7 @@ class WorkerServer(worker_service_pb2_grpc.WorkerServiceServicer):
                 raise Exception("Async streaming client not supported")
         else:
             raise Exception(
-                "Unsupported client type {}".format(config.client_type)
+                f"Unsupported client type {config.client_type}"
             )
 
         # In multi-channel tests, we split the load across all channels

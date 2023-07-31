@@ -43,7 +43,7 @@ def xds_channel_server_without_xds(server_fallback_creds):
     port = server.add_secure_port("localhost:0", server_creds)
     server.start()
     try:
-        yield "localhost:{}".format(port)
+        yield f"localhost:{port}"
     finally:
         server.stop(None)
 

@@ -47,7 +47,7 @@ from ._typing import ResponseType
 from ._typing import SerializingFunction
 from ._utils import _timeout_to_deadline
 
-_USER_AGENT = "grpc-python-asyncio/{}".format(_grpcio_metadata.__version__)
+_USER_AGENT = f"grpc-python-asyncio/{_grpcio_metadata.__version__}"
 
 if sys.version_info[1] < 7:
 
@@ -357,11 +357,11 @@ class Channel(_base_channel.Channel):
                     self._stream_stream_interceptors.append(interceptor)
                 else:
                     raise ValueError(
-                        "Interceptor {} must be ".format(interceptor)
-                        + "{} or ".format(UnaryUnaryClientInterceptor.__name__)
-                        + "{} or ".format(UnaryStreamClientInterceptor.__name__)
-                        + "{} or ".format(StreamUnaryClientInterceptor.__name__)
-                        + "{}. ".format(StreamStreamClientInterceptor.__name__)
+                        f"Interceptor {interceptor} must be "
+                        + f"{UnaryUnaryClientInterceptor.__name__} or "
+                        + f"{UnaryStreamClientInterceptor.__name__} or "
+                        + f"{StreamUnaryClientInterceptor.__name__} or "
+                        + f"{StreamStreamClientInterceptor.__name__}. "
                     )
 
         self._loop = cygrpc.get_working_loop()

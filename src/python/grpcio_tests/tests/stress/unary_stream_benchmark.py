@@ -76,9 +76,9 @@ try:
         finally:
             server_process.terminate()
             server_process.wait()
-            sys.stdout.write("stdout: {}".format(server_process.stdout.read()))
+            sys.stdout.write(f"stdout: {server_process.stdout.read()}")
             sys.stdout.flush()
-            sys.stdout.write("stderr: {}".format(server_process.stderr.read()))
+            sys.stdout.write(f"stderr: {server_process.stderr.read()}")
             sys.stdout.flush()
 
     def profile(message_size, response_count):
@@ -86,7 +86,7 @@ try:
             message_size=message_size, response_count=response_count
         )
         with grpc.insecure_channel(
-            "[::]:{}".format(_PORT), options=_GRPC_CHANNEL_OPTIONS
+            f"[::]:{_PORT}", options=_GRPC_CHANNEL_OPTIONS
         ) as channel:
             stub = (
                 unary_stream_benchmark_pb2_grpc.UnaryStreamBenchmarkServiceStub(
@@ -104,7 +104,7 @@ try:
         with _running_server():
             for i in range(1000):
                 latency = profile(_MESSAGE_SIZE, 1024)
-                sys.stdout.write("{}\n".format(latency.total_seconds()))
+                sys.stdout.write(f"{latency.total_seconds()}\n")
                 sys.stdout.flush()
 
     if __name__ == "__main__":

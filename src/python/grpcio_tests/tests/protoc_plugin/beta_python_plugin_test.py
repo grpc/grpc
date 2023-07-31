@@ -322,9 +322,9 @@ class PythonPluginTest(unittest.TestCase):
     def _protoc(self):
         args = [
             "",
-            "--proto_path={}".format(self._proto_path),
-            "--python_out={}".format(self._python_out),
-            "--grpc_python_out=grpc_1_0:{}".format(self._python_out),
+            f"--proto_path={self._proto_path}",
+            f"--python_out={self._python_out}",
+            f"--grpc_python_out=grpc_1_0:{self._python_out}",
         ] + list(self._proto_file_names)
         protoc_exit_code = protoc.main(args)
         self.assertEqual(0, protoc_exit_code)

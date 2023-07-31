@@ -82,7 +82,7 @@ class TestTypeMetadata(unittest.TestCase):
 
     def test_repr(self):
         metadata = Metadata(*self._DEFAULT_DATA)
-        expected = "Metadata({0!r})".format(self._DEFAULT_DATA)
+        expected = f"Metadata({self._DEFAULT_DATA!r})"
         self.assertEqual(repr(metadata), expected)
 
     def test_set(self):

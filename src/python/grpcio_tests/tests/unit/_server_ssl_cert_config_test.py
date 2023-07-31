@@ -78,7 +78,7 @@ Call = collections.namedtuple("Call", ["did_raise", "returned_cert_config"])
 
 
 def _create_channel(port, credentials):
-    return grpc.secure_channel("localhost:{}".format(port), credentials)
+    return grpc.secure_channel(f"localhost:{port}", credentials)
 
 
 def _create_client_stub(channel, expect_success):
@@ -224,8 +224,8 @@ class _ServerSSLCertReloadTest(unittest.TestCase, metaclass=abc.ABCMeta):
         self.assertGreaterEqual(len(actual_calls), 1)
         self.assertFalse(actual_calls[0].did_raise)
         for i, call in enumerate(actual_calls):
-            self.assertFalse(call.did_raise, "i= {}".format(i))
-            self.assertIsNone(call.returned_cert_config, "i= {}".format(i))
+            self.assertFalse(call.did_raise, f"i= {i}")
+            self.assertIsNone(call.returned_cert_config, f"i= {i}")
 
         # should work again...
         self.cert_config_fetcher.reset()
@@ -255,8 +255,8 @@ class _ServerSSLCertReloadTest(unittest.TestCase, metaclass=abc.ABCMeta):
         actual_calls = self.cert_config_fetcher.getCalls()
         self.assertGreaterEqual(len(actual_calls), 1)
         for i, call in enumerate(actual_calls):
-            self.assertFalse(call.did_raise, "i= {}".format(i))
-            self.assertIsNone(call.returned_cert_config, "i= {}".format(i))
+            self.assertFalse(call.did_raise, f"i= {i}")
+            self.assertIsNone(call.returned_cert_config, f"i= {i}")
 
         # should work again...
         self.cert_config_fetcher.reset()
@@ -325,9 +325,9 @@ class _ServerSSLCertReloadTest(unittest.TestCase, metaclass=abc.ABCMeta):
         self.assertGreaterEqual(len(actual_calls), 1)
         self.assertFalse(actual_calls[0].did_raise)
         for i, call in enumerate(actual_calls):
-            self.assertFalse(call.did_raise, "i= {}".format(i))
+            self.assertFalse(call.did_raise, f"i= {i}")
             self.assertEqual(
-                call.returned_cert_config, cert_config, "i= {}".format(i)
+                call.returned_cert_config, cert_config, f"i= {i}"
             )
 
         # now should work again...
@@ -356,8 +356,8 @@ class _ServerSSLCertReloadTest(unittest.TestCase, metaclass=abc.ABCMeta):
         actual_calls = self.cert_config_fetcher.getCalls()
         self.assertGreaterEqual(len(actual_calls), 1)
         for i, call in enumerate(actual_calls):
-            self.assertFalse(call.did_raise, "i= {}".format(i))
-            self.assertIsNone(call.returned_cert_config, "i= {}".format(i))
+            self.assertFalse(call.did_raise, f"i= {i}")
+            self.assertIsNone(call.returned_cert_config, f"i= {i}")
 
         # here client should reject server...
         self.cert_config_fetcher.reset()
@@ -371,8 +371,8 @@ class _ServerSSLCertReloadTest(unittest.TestCase, metaclass=abc.ABCMeta):
         actual_calls = self.cert_config_fetcher.getCalls()
         self.assertGreaterEqual(len(actual_calls), 1)
         for i, call in enumerate(actual_calls):
-            self.assertFalse(call.did_raise, "i= {}".format(i))
-            self.assertIsNone(call.returned_cert_config, "i= {}".format(i))
+            self.assertFalse(call.did_raise, f"i= {i}")
+            self.assertIsNone(call.returned_cert_config, f"i= {i}")
 
         # persistent clients should continue to work
         self.cert_config_fetcher.reset()
@@ -490,9 +490,9 @@ class ServerSSLCertReloadTestCertConfigReuse(_ServerSSLCertReloadTest):
         self.assertGreaterEqual(len(actual_calls), 1)
         self.assertFalse(actual_calls[0].did_raise)
         for i, call in enumerate(actual_calls):
-            self.assertFalse(call.did_raise, "i= {}".format(i))
+            self.assertFalse(call.did_raise, f"i= {i}")
             self.assertEqual(
-                call.returned_cert_config, self.cert_config_A, "i= {}".format(i)
+                call.returned_cert_config, self.cert_config_A, f"i= {i}"
             )
 
         # succeed again with A
@@ -540,9 +540,9 @@ class ServerSSLCertReloadTestCertConfigReuse(_ServerSSLCertReloadTest):
         self.assertGreaterEqual(len(actual_calls), 1)
         self.assertFalse(actual_calls[0].did_raise)
         for i, call in enumerate(actual_calls):
-            self.assertFalse(call.did_raise, "i= {}".format(i))
+            self.assertFalse(call.did_raise, f"i= {i}")
             self.assertEqual(
-                call.returned_cert_config, self.cert_config_B, "i= {}".format(i)
+                call.returned_cert_config, self.cert_config_B, f"i= {i}"
             )
 
         # succeed again with B

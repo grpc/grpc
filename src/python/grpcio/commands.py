@@ -61,7 +61,7 @@ def _get_grpc_custom_bdist(decorated_basename, target_bdist_basename):
 
     decorated_path = decorated_basename + GRPC_CUSTOM_BDIST_EXT
     try:
-        url = BINARIES_REPOSITORY + "/{target}".format(target=decorated_path)
+        url = BINARIES_REPOSITORY + f"/{decorated_path}"
         bdist_data = request.urlopen(url).read()
     except IOError as error:
         raise CommandError(
@@ -76,9 +76,7 @@ def _get_grpc_custom_bdist(decorated_basename, target_bdist_basename):
             bdist_file.write(bdist_data)
     except IOError as error:
         raise CommandError(
-            "{}\n\nCould not write grpcio bdist: {}".format(
-                traceback.format_exc(), error.message
-            )
+            f"{traceback.format_exc()}\n\nCould not write grpcio bdist: {error.message}"
         )
     return bdist_path
 
@@ -128,7 +126,7 @@ class BuildProjectMetadata(setuptools.Command):
             os.path.join(PYTHON_STEM, "grpc/_grpcio_metadata.py"), "w"
         ) as module_file:
             module_file.write(
-                '__version__ = """{}"""'.format(self.distribution.get_version())
+                f'__version__ = ""\"{self.distribution.get_version()}"""'
             )
 
 
@@ -144,7 +142,7 @@ def _poison_extensions(extensions, message):
     """Includes a file that will always fail to compile in all extensions."""
     poison_filename = os.path.join(PYTHON_STEM, "poison.c")
     with open(poison_filename, "w") as poison:
-        poison.write("#error {}".format(message))
+        poison.write(f"#error {message}")
     for extension in extensions:
         extension.sources = [poison_filename]
 
@@ -315,7 +313,7 @@ class BuildExt(build_ext.build_ext):
             formatted_exception = traceback.format_exc()
             support.diagnose_build_ext_error(self, error, formatted_exception)
             raise CommandError(
-                "Failed `build_ext` step:\n{}".format(formatted_exception)
+                f"Failed `build_ext` step:\n{formatted_exception}"
             )
 
 
@@ -379,9 +377,9 @@ class Clean(setuptools.Command):
             for path in abs_paths:
                 if not str(path).startswith(Clean._CURRENT_DIRECTORY):
                     raise ValueError(
-                        "Cowardly refusing to delete {}.".format(path)
+                        f"Cowardly refusing to delete {path}."
                     )
-                print("Removing {}".format(os.path.relpath(path)))
+                print(f"Removing {os.path.relpath(path)}")
                 if os.path.isfile(path):
                     os.remove(str(path))
                 else:

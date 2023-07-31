@@ -44,14 +44,14 @@ _TRAILING_METADATA_KEY = "x-grpc-test-echo-trailing-bin"
 def _expect_status_code(call, expected_code):
     if call.code() != expected_code:
         raise ValueError(
-            "expected code %s, got %s" % (expected_code, call.code())
+            f"expected code {expected_code}, got {call.code()}"
         )
 
 
 def _expect_status_details(call, expected_details):
     if call.details() != expected_details:
         raise ValueError(
-            "expected message %s, got %s" % (expected_details, call.details())
+            f"expected message {expected_details}, got {call.details()}"
         )
 
 
@@ -63,8 +63,7 @@ def _validate_status_code_and_details(call, expected_code, expected_details):
 def _validate_payload_type_and_length(response, expected_type, expected_length):
     if response.payload.type is not expected_type:
         raise ValueError(
-            "expected payload type %s, got %s"
-            % (expected_type, type(response.payload.type))
+            f"expected payload type {expected_type}, got {type(response.payload.type)}"
         )
     elif len(response.payload.body) != expected_length:
         raise ValueError(
@@ -96,7 +95,7 @@ def _empty_unary(stub):
     response = stub.EmptyCall(empty_pb2.Empty())
     if not isinstance(response, empty_pb2.Empty):
         raise TypeError(
-            'response is of type "%s", not empty_pb2.Empty!' % type(response)
+            f'response is of type "{type(response)}", not empty_pb2.Empty!'
         )
 
 
@@ -401,8 +400,7 @@ def _compute_engine_creds(stub, args):
     response = _large_unary_common_behavior(stub, True, True, None)
     if args.default_service_account != response.username:
         raise ValueError(
-            "expected username %s, got %s"
-            % (args.default_service_account, response.username)
+            f"expected username {args.default_service_account}, got {response.username}"
         )
 
 
@@ -412,7 +410,7 @@ def _oauth2_auth_token(stub, args):
     response = _large_unary_common_behavior(stub, True, True, None)
     if wanted_email != response.username:
         raise ValueError(
-            "expected username %s, got %s" % (wanted_email, response.username)
+            f"expected username {wanted_email}, got {response.username}"
         )
     if args.oauth_scope.find(response.oauth_scope) == -1:
         raise ValueError(
@@ -428,7 +426,7 @@ def _jwt_token_creds(stub, args):
     response = _large_unary_common_behavior(stub, True, False, None)
     if wanted_email != response.username:
         raise ValueError(
-            "expected username %s, got %s" % (wanted_email, response.username)
+            f"expected username {wanted_email}, got {response.username}"
         )
 
 
@@ -447,7 +445,7 @@ def _per_rpc_creds(stub, args):
     response = _large_unary_common_behavior(stub, True, False, call_credentials)
     if wanted_email != response.username:
         raise ValueError(
-            "expected username %s, got %s" % (wanted_email, response.username)
+            f"expected username {wanted_email}, got {response.username}"
         )
 
 
@@ -530,5 +528,5 @@ class TestCase(enum.Enum):
             _special_status_message(stub, args)
         else:
             raise NotImplementedError(
-                'Test case "%s" not implemented!' % self.name
+                f'Test case "{self.name}" not implemented!'
             )

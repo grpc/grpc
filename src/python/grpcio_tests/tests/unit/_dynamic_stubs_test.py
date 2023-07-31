@@ -78,9 +78,7 @@ def _run_in_subprocess(test_case):
     sys.path.pop(0)
     if not error_queue.empty():
         raise error_queue.get()
-    assert proc.exitcode == 0, "Process exited with code {}".format(
-        proc.exitcode
-    )
+    assert proc.exitcode == 0, f"Process exited with code {proc.exitcode}"
 
 
 def _assert_unimplemented(msg_substr):
@@ -91,9 +89,7 @@ def _assert_unimplemented(msg_substr):
             "tests/unit/data/foo/bar.proto"
         )
     except NotImplementedError as e:
-        assert msg_substr in str(e), "{} was not in '{}'".format(
-            msg_substr, str(e)
-        )
+        assert msg_substr in str(e), f"{msg_substr} was not in '{str(e)}'"
     else:
         assert False, "Did not raise NotImplementedError"
 

@@ -39,6 +39,6 @@ class MetricsServer(metrics_pb2_grpc.MetricsServiceServicer):
 
     def GetGauge(self, request, context):
         if request.name != GAUGE_NAME:
-            raise Exception("Gauge {} does not exist".format(request.name))
+            raise Exception(f"Gauge {request.name} does not exist")
         qps = self._get_qps()
         return metrics_pb2.GaugeResponse(name=GAUGE_NAME, long_value=qps)

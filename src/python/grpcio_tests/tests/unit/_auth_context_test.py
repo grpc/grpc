@@ -111,7 +111,7 @@ class AuthContextTest(unittest.TestCase):
             root_certificates=_TEST_ROOT_CERTIFICATES
         )
         channel = grpc.secure_channel(
-            "localhost:{}".format(port),
+            f"localhost:{port}",
             channel_creds,
             options=_PROPERTY_OPTIONS,
         )
@@ -156,7 +156,7 @@ class AuthContextTest(unittest.TestCase):
             certificate_chain=_CERTIFICATE_CHAIN,
         )
         channel = grpc.secure_channel(
-            "localhost:{}".format(port),
+            f"localhost:{port}",
             channel_creds,
             options=_PROPERTY_OPTIONS,
         )
@@ -178,7 +178,7 @@ class AuthContextTest(unittest.TestCase):
         self, channel_creds, channel_options, port, expect_ssl_session_reused
     ):
         channel = grpc.secure_channel(
-            "localhost:{}".format(port), channel_creds, options=channel_options
+            f"localhost:{port}", channel_creds, options=channel_options
         )
         response = channel.unary_unary(_UNARY_UNARY)(_REQUEST)
         auth_data = pickle.loads(response)

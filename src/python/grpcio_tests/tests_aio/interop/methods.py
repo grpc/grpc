@@ -46,7 +46,7 @@ async def _expect_status_code(
     code = await call.code()
     if code != expected_code:
         raise ValueError(
-            "expected code %s, got %s" % (expected_code, await call.code())
+            f"expected code {expected_code}, got {await call.code()}"
         )
 
 
@@ -54,8 +54,7 @@ async def _expect_status_details(call: aio.Call, expected_details: str) -> None:
     details = await call.details()
     if details != expected_details:
         raise ValueError(
-            "expected message %s, got %s"
-            % (expected_details, await call.details())
+            f"expected message {expected_details}, got {await call.details()}"
         )
 
 
@@ -75,8 +74,7 @@ def _validate_payload_type_and_length(
 ) -> None:
     if response.payload.type is not expected_type:
         raise ValueError(
-            "expected payload type %s, got %s"
-            % (expected_type, type(response.payload.type))
+            f"expected payload type {expected_type}, got {type(response.payload.type)}"
         )
     elif len(response.payload.body) != expected_length:
         raise ValueError(
@@ -108,7 +106,7 @@ async def _empty_unary(stub: test_pb2_grpc.TestServiceStub) -> None:
     response = await stub.EmptyCall(empty_pb2.Empty())
     if not isinstance(response, empty_pb2.Empty):
         raise TypeError(
-            'response is of type "%s", not empty_pb2.Empty!' % type(response)
+            f'response is of type "{type(response)}", not empty_pb2.Empty!'
         )
 
 
@@ -379,8 +377,7 @@ async def _compute_engine_creds(
     response = await _large_unary_common_behavior(stub, True, True, None)
     if args.default_service_account != response.username:
         raise ValueError(
-            "expected username %s, got %s"
-            % (args.default_service_account, response.username)
+            f"expected username {args.default_service_account}, got {response.username}"
         )
 
 
@@ -392,7 +389,7 @@ async def _oauth2_auth_token(
     response = await _large_unary_common_behavior(stub, True, True, None)
     if wanted_email != response.username:
         raise ValueError(
-            "expected username %s, got %s" % (wanted_email, response.username)
+            f"expected username {wanted_email}, got {response.username}"
         )
     if args.oauth_scope.find(response.oauth_scope) == -1:
         raise ValueError(
@@ -408,7 +405,7 @@ async def _jwt_token_creds(stub: test_pb2_grpc.TestServiceStub):
     response = await _large_unary_common_behavior(stub, True, False, None)
     if wanted_email != response.username:
         raise ValueError(
-            "expected username %s, got %s" % (wanted_email, response.username)
+            f"expected username {wanted_email}, got {response.username}"
         )
 
 
@@ -431,7 +428,7 @@ async def _per_rpc_creds(
     )
     if wanted_email != response.username:
         raise ValueError(
-            "expected username %s, got %s" % (wanted_email, response.username)
+            f"expected username {wanted_email}, got {response.username}"
         )
 
 

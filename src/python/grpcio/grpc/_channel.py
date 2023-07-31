@@ -52,7 +52,7 @@ import grpc.experimental  # pytype: disable=pyi-error
 
 _LOGGER = logging.getLogger(__name__)
 
-_USER_AGENT = "grpc-python/{}".format(_grpcio_metadata.__version__)
+_USER_AGENT = f"grpc-python/{_grpcio_metadata.__version__}"
 
 _EMPTY_FLAGS = 0
 
@@ -113,9 +113,7 @@ def _deadline(timeout: Optional[float]) -> Optional[float]:
 def _unknown_code_details(
     unknown_cygrpc_code: Optional[grpc.StatusCode], details: Optional[str]
 ) -> str:
-    return 'Server sent unknown code {} and details "{}"'.format(
-        unknown_cygrpc_code, details
-    )
+    return f'Server sent unknown code {unknown_cygrpc_code} and details "{details}"'
 
 
 class _RPCState(object):
@@ -353,7 +351,7 @@ def _rpc_state_string(class_name: str, rpc_state: _RPCState) -> str:
     """Calculates error string for RPC."""
     with rpc_state.condition:
         if rpc_state.code is None:
-            return "<{} object>".format(class_name)
+            return f"<{class_name} object>"
         elif rpc_state.code is grpc.StatusCode.OK:
             return _OK_RENDEZVOUS_REPR_FORMAT.format(
                 class_name, rpc_state.code, rpc_state.details

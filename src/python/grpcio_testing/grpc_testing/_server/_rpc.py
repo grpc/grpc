@@ -93,7 +93,7 @@ class Rpc(object):
                 _LOGGER.exception("Exception calling application!")
                 self._abort(
                     grpc.StatusCode.UNKNOWN,
-                    "Exception calling application: {}".format(exception),
+                    f"Exception calling application: {exception}",
                 )
 
     def extrinsic_abort(self):

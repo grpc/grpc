@@ -82,7 +82,7 @@ if contextvars_supported():
                 # test is still valuable as a test of concurrent runs of the
                 # metadata credentials code path.
                 raise AssertionError(
-                    "{} != {}".format(test_var.get(), _EXPECTED_VALUE)
+                    f"{test_var.get()} != {_EXPECTED_VALUE}"
                 )
             callback((), None)
 
@@ -106,7 +106,7 @@ class ContextVarsPropagationTest(unittest.TestCase):
     def test_propagation_to_auth_plugin(self):
         set_up_expected_context()
         with _server() as port:
-            target = "localhost:{}".format(port)
+            target = f"localhost:{port}"
             local_credentials = grpc.local_channel_credentials()
             test_call_credentials = TestCallCredentials()
             call_credentials = grpc.metadata_call_credentials(
@@ -126,7 +126,7 @@ class ContextVarsPropagationTest(unittest.TestCase):
 
         set_up_expected_context()
         with _server() as port:
-            target = "localhost:{}".format(port)
+            target = f"localhost:{port}"
             local_credentials = grpc.local_channel_credentials()
             test_call_credentials = TestCallCredentials()
             call_credentials = grpc.metadata_call_credentials(

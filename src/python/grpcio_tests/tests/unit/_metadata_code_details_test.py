@@ -206,7 +206,7 @@ class MetadataCodeDetailsTest(unittest.TestCase):
         port = self._server.add_insecure_port("[::]:0")
         self._server.start()
 
-        self._channel = grpc.insecure_channel("localhost:{}".format(port))
+        self._channel = grpc.insecure_channel(f"localhost:{port}")
         self._unary_unary = self._channel.unary_unary(
             "/".join(
                 (
@@ -827,7 +827,7 @@ class InspectContextTest(unittest.TestCase):
         port = self._server.add_insecure_port("[::]:0")
         self._server.start()
 
-        self._channel = grpc.insecure_channel("localhost:{}".format(port))
+        self._channel = grpc.insecure_channel(f"localhost:{port}")
         self._unary_unary = self._channel.unary_unary(
             "/".join(
                 (

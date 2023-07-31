@@ -53,9 +53,7 @@ class TestRunner(threading.Thread):
                 traceback.print_exc()
                 self._exception_queue.put(
                     Exception(
-                        "An exception occurred during test {}".format(
-                            test_case
-                        ),
+                        f"An exception occurred during test {test_case}",
                         e,
                     )
                 )

@@ -47,7 +47,7 @@ class ReconnectTest(unittest.TestCase):
         )
         options = (("grpc.so_reuseport", 1),)
         with bound_socket() as (host, port):
-            addr = "{}:{}".format(host, port)
+            addr = f"{host}:{port}"
             server = grpc.server(server_pool, (handler,), options=options)
             server.add_insecure_port(addr)
             server.start()

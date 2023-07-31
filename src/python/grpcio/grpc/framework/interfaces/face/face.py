@@ -47,10 +47,7 @@ class NoSuchMethodError(Exception):
         self.method = method
 
     def __repr__(self):
-        return "face.NoSuchMethodError(%s, %s)" % (
-            self.group,
-            self.method,
-        )
+        return f"face.NoSuchMethodError({self.group}, {self.method})"
 
 
 class Abortion(
@@ -113,11 +110,7 @@ class AbortionError(Exception, metaclass=abc.ABCMeta):
         self.details = details
 
     def __str__(self):
-        return '%s(code=%s, details="%s")' % (
-            self.__class__.__name__,
-            self.code,
-            self.details,
-        )
+        return f'{self.__class__.__name__}(code={self.code}, details="{self.details}")'
 
 
 class CancellationError(AbortionError):

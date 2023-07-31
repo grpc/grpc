@@ -434,9 +434,7 @@ class TestStreamUnaryClientInterceptor(AioTestBase):
         # Test cancelation before making any write or after doing at least 1
         for num_writes_before_cancel in (0, 1):
             with self.subTest(
-                name="Num writes before cancel: {}".format(
-                    num_writes_before_cancel
-                )
+                name=f"Num writes before cancel: {num_writes_before_cancel}"
             ):
                 channel = aio.insecure_channel(
                     UNREACHABLE_TARGET,
