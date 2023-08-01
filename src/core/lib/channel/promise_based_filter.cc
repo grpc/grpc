@@ -302,6 +302,9 @@ BaseCallData::Flusher::~Flusher() {
     gpr_log(GPR_INFO, "FLUSHER:forward batch: %s",
             grpc_transport_stream_op_batch_string(release_[0], false).c_str());
   }
+  if (call_->call_context_ != nullptr && call_->call_context_->traced()) {
+    release_[0]->is_traced = true;
+  }
   grpc_call_next_op(call_->elem(), release_[0]);
   GRPC_CALL_STACK_UNREF(call_->call_stack(), "flusher");
 }
