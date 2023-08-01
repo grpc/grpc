@@ -535,7 +535,7 @@ class Server::AllocatingRequestMatcherBatch
           call_info.initial_metadata, call_info.details);
       return Immediate(MatchResult(server(), cq_idx(), rc));
     } else {
-      return Immediate(absl::InternalError("Server shutdown"));
+      return Immediate(absl::CancelledError("Server shutdown"));
     }
   }
 
@@ -590,7 +590,7 @@ class Server::AllocatingRequestMatcherRegistered
                             call_info.deadline, call_info.optional_payload);
       return Immediate(MatchResult(server(), cq_idx(), rc));
     } else {
-      return Immediate(absl::InternalError("Server shutdown"));
+      return Immediate(absl::CancelledError("Server shutdown"));
     }
   }
 
@@ -1293,11 +1293,6 @@ ArenaPromise<ServerMetadataHandle> Server::ChannelData::MakeCallPromise(
     grpc_channel_element* elem, CallArgs call_args, NextPromiseFactory) {
   auto* chand = static_cast<Server::ChannelData*>(elem->channel_data);
   auto* server = chand->server_.get();
-  if (server->ShutdownCalled()) {
-    return [] {
-      return ServerMetadataFromStatus(absl::InternalError("Server shutdown"));
-    };
-  }
   absl::optional<Slice> path =
       call_args.client_initial_metadata->Take(HttpPathMetadata());
   if (!path.has_value()) {

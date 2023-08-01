@@ -21,6 +21,7 @@
 #include "test/core/event_engine/test_suite/event_engine_test_framework.h"
 #include "test/core/event_engine/test_suite/posix/oracle_event_engine_posix.h"
 #include "test/core/event_engine/test_suite/tests/client_test.h"
+#include "test/core/event_engine/test_suite/tests/dns_test.h"
 #include "test/core/event_engine/test_suite/tests/timer_test.h"
 #include "test/core/util/test_config.h"
 
@@ -37,8 +38,7 @@ int main(int argc, char** argv) {
   SetEventEngineFactories(factory, oracle_factory);
   grpc_event_engine::experimental::InitTimerTests();
   grpc_event_engine::experimental::InitClientTests();
-  // TODO(vigneshbabu): remove when the experiment is over
-  grpc_core::ForceEnableExperiment("event_engine_client", true);
+  grpc_event_engine::experimental::InitDNSTests();
   // TODO(ctiller): EventEngine temporarily needs grpc to be initialized first
   // until we clear out the iomgr shutdown code.
   grpc_init();

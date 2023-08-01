@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 # Copyright 2022 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -320,7 +319,11 @@ def main() -> None:
     )
     processed_data["testDurationSeconds"] = float(end_time) - float(start_time)
 
-    logging.debug(json.dumps(processed_data, sort_keys=True, indent=4))
+    logging.debug(
+        "%s: %s",
+        args.export_file_name,
+        json.dumps(processed_data, sort_keys=True, indent=4),
+    )
 
     with open(args.export_file_name, "w", encoding="utf8") as export_file:
         json.dump(processed_data, export_file, sort_keys=True, indent=4)
