@@ -325,7 +325,7 @@ PHP_METHOD(Channel, __construct) {
   char *target;
   php_grpc_int target_length;
   zval *args_array = NULL;
-  grpc_channel_args args;
+  grpc_channel_args args = {0};
   HashTable *array_hash;
   wrapped_grpc_channel_credentials *creds = NULL;
   php_grpc_zend_resource *rsrc;

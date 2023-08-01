@@ -68,7 +68,7 @@ PHP_METHOD(Server, __construct) {
   wrapped_grpc_server *server =
     PHP_GRPC_GET_WRAPPED_OBJECT(wrapped_grpc_server, getThis());
   zval *args_array = NULL;
-  grpc_channel_args args;
+  grpc_channel_args args = {0};
 
   /* "|a" == 1 optional array */
   if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|a", &args_array) ==
