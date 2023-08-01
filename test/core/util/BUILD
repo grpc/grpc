@@ -365,6 +365,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "socket_use_after_close_detector",
+    testonly = True,
     srcs = ["socket_use_after_close_detector.cc"],
     hdrs = ["socket_use_after_close_detector.h"],
     external_deps = ["gtest"],
@@ -379,6 +380,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "socket_use_after_close_detector_unsecure",
+    testonly = True,
     srcs = ["socket_use_after_close_detector.cc"],
     hdrs = ["socket_use_after_close_detector.h"],
     external_deps = ["gtest"],
