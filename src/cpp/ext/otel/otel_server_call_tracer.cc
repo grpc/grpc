@@ -121,6 +121,7 @@ class OpenTelemetryServerCallTracer : public grpc_core::ServerCallTracer {
  private:
   grpc_core::Slice path_;
   absl::string_view method_;
+  std::string authority_;
   absl::Time start_time_;
   absl::Duration elapsed_time_;
 };
@@ -133,10 +134,16 @@ void OpenTelemetryServerCallTracer::RecordReceivedInitialMetadata(
     path_ = path->Ref();
   }
   method_ = absl::StripPrefix(path_.as_string_view(), "/");
+  const auto* authority =
+      recv_initial_metadata->get_pointer(grpc_core::HttpAuthorityMetadata());
+  if (authority != nullptr) {
+    authority_ = std::string(authority->as_string_view());
+  }
   // TODO(yashykt): Figure out how to get this to work with absl::string_view
   if (OTelPluginState().server.call.started != nullptr) {
     OTelPluginState().server.call.started->Add(
-        1, {{std::string(OTelMethodKey()), std::string(method_)}});
+        1, {{std::string(OTelMethodKey()), std::string(method_)},
+            {std::string(OTelAuthorityKey()), authority_}});
   }
 }
 
@@ -153,7 +160,8 @@ void OpenTelemetryServerCallTracer::RecordEnd(
       {std::string(OTelMethodKey()), std::string(method_)},
       {std::string(OTelStatusKey()),
        absl::StatusCodeToString(
-           static_cast<absl::StatusCode>(final_info->final_status))}};
+           static_cast<absl::StatusCode>(final_info->final_status))},
+      {std::string(OTelAuthorityKey()), authority_}};
   if (OTelPluginState().server.call.duration != nullptr) {
     OTelPluginState().server.call.duration->Record(
         absl::ToDoubleSeconds(elapsed_time_), attributes,
