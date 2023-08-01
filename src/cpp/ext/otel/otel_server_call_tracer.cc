@@ -136,6 +136,10 @@ void OpenTelemetryServerCallTracer::RecordReceivedInitialMetadata(
   method_ = absl::StripPrefix(path_.as_string_view(), "/");
   const auto* authority =
       recv_initial_metadata->get_pointer(grpc_core::HttpAuthorityMetadata());
+  // Override with host metadata if authority is absent.
+  if (authority == nullptr) {
+    authority = recv_initial_metadata->get_pointer(grpc_core::HostMetadata());
+  }
   if (authority != nullptr) {
     authority_ = std::string(authority->as_string_view());
   }
