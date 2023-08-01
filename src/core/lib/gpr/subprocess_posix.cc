@@ -115,7 +115,7 @@ gpr_subprocess* gpr_subprocess_create_with_envp(int argc, const char** argv,
         gpr_malloc((static_cast<size_t>(envc) + 1) * sizeof(char*)));
     memcpy(envp_args, envp, static_cast<size_t>(envc) * sizeof(char*));
     envp_args[envc] = nullptr;
-    execvpe(exec_args[0], exec_args, envp_args);
+    execve(exec_args[0], exec_args, envp_args);
     // if we reach here, an error has occurred
     gpr_log(GPR_ERROR, "execvpe '%s' failed: %s", exec_args[0],
             grpc_core::StrError(errno).c_str());
@@ -174,7 +174,7 @@ bool gpr_subprocess_communicate(gpr_subprocess* p, std::string& input_data,
         input_pos += n;
       }
 
-      if (input_pos == (int)input_data.size()) {
+      if (input_pos == static_cast<int>(input_data.size())) {
         // We're done writing.  Close.
         close(p->child_stdin_);
         p->child_stdin_ = -1;
@@ -186,7 +186,7 @@ bool gpr_subprocess_communicate(gpr_subprocess* p, std::string& input_data,
       int n = read(p->child_stdout_, buffer, sizeof(buffer));
 
       if (n > 0) {
-        output_data->append(buffer, (size_t)n);
+        output_data->append(buffer, static_cast<size_t>(n));
       } else {
         // We're done reading.  Close.
         close(p->child_stdout_);
