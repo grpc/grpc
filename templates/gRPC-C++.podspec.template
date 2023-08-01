@@ -35,7 +35,11 @@
     return "abseil/" + label[5:].replace(":", "/")
 
   def lib_and_transitive_deps(lib):
-    return list(sorted(set({lib} | set(lib_maps[lib].transitive_deps))))
+    transitive_deps = []
+    lib_metadata = lib_maps.get(lib, None)
+    if lib_metadata:
+      transitive_deps = lib_metadata.transitive_deps
+    return list(sorted(set({lib} | set(transitive_deps))))
 
   def non_abseil_lib_and_transitive_deps(lib):
     return [l for l in lib_and_transitive_deps(lib) if not is_absl_lib(l)]
@@ -47,17 +51,20 @@
     absl_specs = set()
     for lib_name in lib_and_transitive_deps(lib):
       if is_absl_lib(lib_name): continue
-      for dep in lib_maps[lib_name].deps:
-        if is_absl_lib(dep):
-          absl_specs.add(get_absl_spec_name(dep))
+      lib_metadata = lib_maps.get(lib_name, None)
+      if lib_metadata:
+        for dep in lib_metadata.deps:
+          if is_absl_lib(dep):
+            absl_specs.add(get_absl_spec_name(dep))
     return list(sorted(absl_specs))
 
   def list_lib_files(lib, fields):
     files = set()
     for lib_name in non_abseil_lib_and_transitive_deps(lib):
-      lib = lib_maps[lib_name]
-      for field in fields:
-        files.update(lib.get(field, []))
+      lib_metadata = lib_maps.get(lib_name, None)
+      if lib_metadata:
+        for field in fields:
+          files.update(lib_metadata.get(field, []))
     return list(sorted(files))
 
   def filter_grpcpp(files):

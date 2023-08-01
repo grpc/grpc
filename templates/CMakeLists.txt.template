@@ -49,7 +49,11 @@
       return lib_map[lib_name].cmake_target
 
   def lib_and_transitive_deps(lib):
-    return list(sorted(set({lib} | set(lib_map[lib].transitive_deps))))
+    transitive_deps = []
+    lib_metadata = lib_map.get(lib, None)
+    if lib_metadata:
+      transitive_deps = lib_metadata.transitive_deps
+    return list(sorted(set({lib} | set(transitive_deps))))
 
   def list_abseil_pkg_targets(lib):
     # This returns a list of abseil pkg targets which the given lib and
@@ -58,9 +62,11 @@
     absl_specs = set()
     for lib_name in lib_and_transitive_deps(lib):
       if is_absl_lib(lib_name): continue
-      for dep in lib_map[lib_name].deps:
-        if is_absl_lib(dep):
-          absl_specs.add(get_absl_dep(dep).replace("::", "_"))
+      lib_metadata = lib_map.get(lib_name, None)
+      if lib_metadata:
+        for dep in lib_metadata.deps:
+          if is_absl_lib(dep):
+            absl_specs.add(get_absl_dep(dep).replace("::", "_"))
     return list(sorted(absl_specs))
 
   def is_shared_only_lib(lib_name):
