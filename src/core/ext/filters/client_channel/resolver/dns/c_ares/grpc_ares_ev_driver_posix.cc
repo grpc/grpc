@@ -21,7 +21,8 @@
 
 #if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
 
-#include <ares_build.h>
+// IWYU pragma: no_include <ares_build.h>
+
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/uio.h>
