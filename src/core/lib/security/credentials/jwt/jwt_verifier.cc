@@ -523,7 +523,12 @@ static int RSA_set0_key(RSA* r, BIGNUM* n, BIGNUM* e, BIGNUM* d) {
 #endif  // OPENSSL_VERSION_NUMBER < 0x10100000L
 
 static EVP_PKEY* pkey_from_jwk(const Json& json, const char* kty) {
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
   RSA* rsa = nullptr;
+#else
+  EVP_PKEY_CTX* ctx = nullptr;
+  OSSL_PARAM params[3] = {};
+#endif
   EVP_PKEY* result = nullptr;
   BIGNUM* tmp_n = nullptr;
   BIGNUM* tmp_e = nullptr;
@@ -535,11 +540,13 @@ static EVP_PKEY* pkey_from_jwk(const Json& json, const char* kty) {
     gpr_log(GPR_ERROR, "Unsupported key type %s.", kty);
     goto end;
   }
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
   rsa = RSA_new();
   if (rsa == nullptr) {
     gpr_log(GPR_ERROR, "Could not create rsa key.");
     goto end;
   }
+#endif
   it = json.object().find("n");
   if (it == json.object().end()) {
     gpr_log(GPR_ERROR, "Missing RSA public key field.");
@@ -547,6 +554,9 @@ static EVP_PKEY* pkey_from_jwk(const Json& json, const char* kty) {
   }
   tmp_n = bignum_from_base64(validate_string_field(it->second, "n"));
   if (tmp_n == nullptr) goto end;
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+  params[0] = OSSL_PARAM_BN("n", tmp_n, sizeof(tmp_n));
+#endif
   it = json.object().find("e");
   if (it == json.object().end()) {
     gpr_log(GPR_ERROR, "Missing RSA public key field.");
@@ -554,6 +564,7 @@ static EVP_PKEY* pkey_from_jwk(const Json& json, const char* kty) {
   }
   tmp_e = bignum_from_base64(validate_string_field(it->second, "e"));
   if (tmp_e == nullptr) goto end;
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
   if (!RSA_set0_key(rsa, tmp_n, tmp_e, nullptr)) {
     gpr_log(GPR_ERROR, "Cannot set RSA key from inputs.");
     goto end;
@@ -563,9 +574,29 @@ static EVP_PKEY* pkey_from_jwk(const Json& json, const char* kty) {
   tmp_e = nullptr;
   result = EVP_PKEY_new();
   EVP_PKEY_set1_RSA(result, rsa);  // uprefs rsa.
+#else
+  params[1] = OSSL_PARAM_BN("e", tmp_e, sizeof(tmp_e));
+  params[2] = OSSL_PARAM_END;
+
+  ctx = EVP_PKEY_CTX_new_from_name(nullptr, "RSA", nullptr);
+  if (ctx == nullptr) {
+    gpr_log(GPR_ERROR, "Could not create rsa key.");
+    goto end;
+  }
+  if (EVP_PKEY_fromdata_init(ctx) <= 0) {
+    gpr_log(GPR_ERROR, "Could not create rsa key.");
+    goto end;
+  }
+  if (EVP_PKEY_fromdata(ctx, &result, EVP_PKEY_KEYPAIR, params) <= 0) {
+    gpr_log(GPR_ERROR, "Cannot set RSA key from inputs.");
+    goto end;
+  }
+#endif
 
 end:
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
   RSA_free(rsa);
+#endif
   BN_free(tmp_n);
   BN_free(tmp_e);
   return result;
