@@ -90,7 +90,7 @@
 
       make_rule_deps = []
 
-      collapsed_deps = collapse_absl_deps(lib.get('deps', []))
+      collapsed_deps = collapse_absl_deps(lib.get('transitive_deps', []))
 
       # depend on static libraries
       for dep in collapsed_deps:
@@ -109,7 +109,7 @@
     def get_merge_objs_for_deps(lib):
       """Get list of merge objs for all deps of a given library."""
       result = []
-      collapsed_deps = collapse_absl_deps(lib.get('deps', []))
+      collapsed_deps = collapse_absl_deps(lib.get('transitive_deps', []))
 
       for dep in collapsed_deps:
           result.append(get_objs_expression(dep))
@@ -121,7 +121,7 @@
       """Generate make rule dependency list given library, when built as shared."""
       make_rule_deps = []
 
-      collapsed_deps = collapse_absl_deps(lib.get('deps', []))
+      collapsed_deps = collapse_absl_deps(lib.get('transitive_deps', []))
 
       # depend of obj files of this library itself
       make_rule_deps.append(get_objs_expression(lib.name))
@@ -137,7 +137,7 @@
       """Generate list of libraries to link given library, when built as shared."""
       result = []
 
-      collapsed_deps = collapse_absl_deps(lib.get('deps', []))
+      collapsed_deps = collapse_absl_deps(lib.get('transitive_deps', []))
 
       # depend of obj files of this library itself
       result.append(get_objs_expression(lib.name))
@@ -948,7 +948,7 @@
   % endif
 
   ## If the library requires OpenSSL, let's add some restrictions.
-  % if 'libssl' in lib.get('deps', []):
+  % if 'libssl' in lib.get('transitive_deps', []):
   ifeq ($(NO_SECURE),true)
 
   # You can't build secure libraries if you don't have OpenSSL.
@@ -982,7 +982,7 @@
     if lib.get('LDFLAGS', None):
       ldflags += ' ' + lib['LDFLAGS']
 
-    if 'libssl' in lib.get('deps', []):
+    if 'libssl' in lib.get('transitive_deps', []):
       for src in lib.src:
         sources_that_need_openssl.add(src)
     else:
@@ -1009,20 +1009,20 @@
   endif
   endif
   % endif
-  % if 'libssl' in lib.get('deps', []):
+  % if 'libssl' in lib.get('transitive_deps', []):
   ## If the lib was secure, we have to close the Makefile's ifeq that tested
   ## the presence of OpenSSL.
 
   endif  # corresponds to the "ifeq ($(NO_SECURE),true)" above
   % endif
 
-  % if 'libssl' in lib.get('deps', []):
+  % if 'libssl' in lib.get('transitive_deps', []):
   ifneq ($(NO_SECURE),true)
   % endif
   ifneq ($(NO_DEPS),true)
   -include $(LIB${lib.name.upper()}_OBJS:.o=.dep)
   endif
-  % if 'libssl' in lib.get('deps', []):
+  % if 'libssl' in lib.get('transitive_deps', []):
   endif
   % endif
   # end of build recipe for library "${lib.name}"
