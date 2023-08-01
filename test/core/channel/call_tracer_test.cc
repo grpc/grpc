@@ -80,7 +80,8 @@ class FakeClientCallTracer : public ClientCallTracer {
       : annotation_logger_(annotation_logger) {}
   ~FakeClientCallTracer() override {}
   CallAttemptTracer* StartNewAttempt(bool /*is_transparent_retry*/) override {
-    return new FakeClientCallAttemptTracer(annotation_logger_);
+    return GetContext<Arena>()->ManagedNew<FakeClientCallAttemptTracer>(
+        annotation_logger_);
   }
 
   void RecordAnnotation(absl::string_view annotation) override {
