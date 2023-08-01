@@ -105,8 +105,7 @@ class GrpcPolledFdWindows {
                       int socket_type)
       : mu_(mu),
         read_buf_(grpc_empty_slice()),
-        write_buf_(grpc_empty_slice()),
-        tcp_write_state_(WRITE_IDLE),
+        write_state_(WRITE_IDLE),
         name_(absl::StrFormat("c-ares socket: %" PRIdPTR, as)),
         gotten_into_driver_list_(false),
         address_family_(address_family),
@@ -200,16 +199,16 @@ class GrpcPolledFdWindows {
     } else {
       GPR_ASSERT(socket_type_ == SOCK_STREAM);
       GRPC_CARES_TRACE_LOG(
-          "fd:|%s| RegisterForOnWriteableLocked called tcp_write_state_: %d",
-          GetName(), tcp_write_state_);
+          "fd:|%s| RegisterForOnWriteableLocked called write_state_: %d",
+          GetName(), write_state_);
     }
     GPR_ASSERT(write_closure_ == nullptr);
     write_closure_ = write_closure;
-    if (connect_done_) {
-      ContinueRegisterForOnWriteableLocked();
-    } else {
+    if (!connect_done_) {
       GPR_ASSERT(pending_continue_register_for_on_writeable_locked_ == false);
       pending_continue_register_for_on_writeable_locked_ = true;
+    } else if ({
+      ContinueRegisterForOnWriteableLocked();
     }
   }
 
@@ -224,29 +223,17 @@ class GrpcPolledFdWindows {
           GRPC_WSA_ERROR(wsa_connect_error_, "connect"));
       return;
     }
-    if (socket_type_ == SOCK_DGRAM) {
-      ScheduleAndNullWriteClosure(absl::OkStatus());
-    } else {
-      GPR_ASSERT(socket_type_ == SOCK_STREAM);
-      int wsa_error_code = 0;
-      switch (tcp_write_state_) {
-        case WRITE_IDLE:
-          ScheduleAndNullWriteClosure(absl::OkStatus());
-          break;
-        case WRITE_REQUESTED:
-          tcp_write_state_ = WRITE_PENDING;
-          if (SendWriteBuf(nullptr, &winsocket_->write_info.overlapped,
-                           &wsa_error_code) != 0) {
-            ScheduleAndNullWriteClosure(
-                GRPC_WSA_ERROR(wsa_error_code, "WSASend (overlapped)"));
-          } else {
-            grpc_socket_notify_on_write(winsocket_, &outer_write_closure_);
-          }
-          break;
-        case WRITE_PENDING:
-        case WRITE_WAITING_FOR_VERIFICATION_UPON_RETRY:
-          abort();
-      }
+    switch (write_state_) {
+      case WRITE_IDLE:
+        ScheduleAndNullWriteClosure(absl::OkStatus());
+        break;
+      case WRITE_PENDING:
+        // Wait until c-ares successfully writes on the fd
+        // in SendV (worst case via our c-ares backup timer poller).
+        // Ideally, we should do an async WSASend, but doing so would
+        // complicate this code a lot. So instead of proper async
+        // notifications, take a timer-based busy loop approach to
+        // async writes.
     }
   }
 
@@ -308,21 +295,20 @@ class GrpcPolledFdWindows {
     return out;
   }
 
-  int SendWriteBuf(LPDWORD bytes_sent_ptr, LPWSAOVERLAPPED overlapped,
+  int SendWriteBuf(grpc_slice write_buf, LPDWORD bytes_sent_ptr,
                    int* wsa_error_code) {
     WSABUF buf;
-    buf.len = GRPC_SLICE_LENGTH(write_buf_);
-    buf.buf = (char*)GRPC_SLICE_START_PTR(write_buf_);
+    buf.len = GRPC_SLICE_LENGTH(write_buf);
+    buf.buf = (char*)GRPC_SLICE_START_PTR(write_buf);
     DWORD flags = 0;
     int out = WSASend(grpc_winsocket_wrapped_socket(winsocket_), &buf, 1,
-                      bytes_sent_ptr, flags, overlapped, nullptr);
+                      bytes_sent_ptr, flags, nullptr, nullptr);
     *wsa_error_code = WSAGetLastError();
     GRPC_CARES_TRACE_LOG(
         "fd:|%s| SendWriteBuf WSASend buf.len:%d *bytes_sent_ptr:%d "
-        "overlapped:%p "
         "return:%d *wsa_error_code:%d",
         GetName(), buf.len, bytes_sent_ptr != nullptr ? *bytes_sent_ptr : 0,
-        overlapped, out, *wsa_error_code);
+        out, *wsa_error_code);
     return out;
   }
 
@@ -339,84 +325,32 @@ class GrpcPolledFdWindows {
       wsa_error_ctx->SetWSAError(wsa_connect_error_);
       return -1;
     }
-    switch (socket_type_) {
-      case SOCK_DGRAM:
-        return SendVUDP(wsa_error_ctx, iov, iov_count);
-      case SOCK_STREAM:
-        return SendVTCP(wsa_error_ctx, iov, iov_count);
-      default:
-        abort();
-    }
+    return SendV(wsa_error_ctx, iov, iov_count);
   }
 
-  ares_ssize_t SendVUDP(WSAErrorContext* wsa_error_ctx, const struct iovec* iov,
-                        int iov_count) {
+  ares_ssize_t SendV(WSAErrorContext* wsa_error_ctx, const struct iovec* iov,
+                     int iov_count) {
     // c-ares doesn't handle retryable errors on writes of UDP sockets.
     // Therefore, the sendv handler for UDP sockets must only attempt
     // to write everything inline.
-    GRPC_CARES_TRACE_LOG("fd:|%s| SendVUDP called", GetName());
-    GPR_ASSERT(GRPC_SLICE_LENGTH(write_buf_) == 0);
-    CSliceUnref(write_buf_);
-    write_buf_ = FlattenIovec(iov, iov_count);
+    GRPC_CARES_TRACE_LOG("fd:|%s| SendV called", GetName());
+    grpc_slice write_buf = FlattenIovec(iov, iov_count);
     DWORD bytes_sent = 0;
     int wsa_error_code = 0;
-    if (SendWriteBuf(&bytes_sent, nullptr, &wsa_error_code) != 0) {
-      CSliceUnref(write_buf_);
-      write_buf_ = grpc_empty_slice();
+    int send_result = SendWriteBuf(write_buf, &bytes_sent, &wsa_error_code);
+    CSliceUnref(write_buf);
+    if (send_result != 0) {
       wsa_error_ctx->SetWSAError(wsa_error_code);
       char* msg = gpr_format_message(wsa_error_code);
+      write_state_ = WRITE_PENDING;
       GRPC_CARES_TRACE_LOG(
-          "fd:|%s| SendVUDP SendWriteBuf error code:%d msg:|%s|", GetName(),
+          "fd:|%s| SendV SendWriteBuf error code:%d msg:|%s|", GetName(),
           wsa_error_code, msg);
       gpr_free(msg);
       return -1;
     }
-    write_buf_ = grpc_slice_sub_no_ref(write_buf_, bytes_sent,
-                                       GRPC_SLICE_LENGTH(write_buf_));
+    write_state_ = WRITE_IDLE;
     return bytes_sent;
-  }
-
-  ares_ssize_t SendVTCP(WSAErrorContext* wsa_error_ctx, const struct iovec* iov,
-                        int iov_count) {
-    // The "sendv" handler on TCP sockets buffers up write
-    // requests and returns an artificial WSAEWOULDBLOCK. Writing that buffer
-    // out in the background, and making further send progress in general, will
-    // happen as long as c-ares continues to show interest in writeability on
-    // this fd.
-    GRPC_CARES_TRACE_LOG("fd:|%s| SendVTCP called tcp_write_state_:%d",
-                         GetName(), tcp_write_state_);
-    switch (tcp_write_state_) {
-      case WRITE_IDLE:
-        tcp_write_state_ = WRITE_REQUESTED;
-        GPR_ASSERT(GRPC_SLICE_LENGTH(write_buf_) == 0);
-        CSliceUnref(write_buf_);
-        write_buf_ = FlattenIovec(iov, iov_count);
-        wsa_error_ctx->SetWSAError(WSAEWOULDBLOCK);
-        return -1;
-      case WRITE_REQUESTED:
-      case WRITE_PENDING:
-        wsa_error_ctx->SetWSAError(WSAEWOULDBLOCK);
-        return -1;
-      case WRITE_WAITING_FOR_VERIFICATION_UPON_RETRY:
-        // c-ares is retrying a send on data that we previously returned
-        // WSAEWOULDBLOCK for, but then subsequently wrote out in the
-        // background. Right now, we assume that c-ares is retrying the same
-        // send again. If c-ares still needs to send even more data, we'll get
-        // to it eventually.
-        grpc_slice currently_attempted = FlattenIovec(iov, iov_count);
-        GPR_ASSERT(GRPC_SLICE_LENGTH(currently_attempted) >=
-                   GRPC_SLICE_LENGTH(write_buf_));
-        ares_ssize_t total_sent = 0;
-        for (size_t i = 0; i < GRPC_SLICE_LENGTH(write_buf_); i++) {
-          GPR_ASSERT(GRPC_SLICE_START_PTR(currently_attempted)[i] ==
-                     GRPC_SLICE_START_PTR(write_buf_)[i]);
-          total_sent++;
-        }
-        CSliceUnref(currently_attempted);
-        tcp_write_state_ = WRITE_IDLE;
-        return total_sent;
-    }
-    abort();
   }
 
   static void OnTcpConnect(void* arg, grpc_error_handle error) {
@@ -611,40 +545,6 @@ class GrpcPolledFdWindows {
     ScheduleAndNullReadClosure(error);
   }
 
-  static void OnIocpWriteable(void* arg, grpc_error_handle error) {
-    GrpcPolledFdWindows* polled_fd = static_cast<GrpcPolledFdWindows*>(arg);
-    MutexLock lock(polled_fd->mu_);
-    polled_fd->OnIocpWriteableLocked(error);
-  }
-
-  void OnIocpWriteableLocked(grpc_error_handle error) {
-    GRPC_CARES_TRACE_LOG("OnIocpWriteableInner. fd:|%s|", GetName());
-    GPR_ASSERT(socket_type_ == SOCK_STREAM);
-    if (error.ok()) {
-      if (winsocket_->write_info.wsa_error != 0) {
-        error = GRPC_WSA_ERROR(winsocket_->write_info.wsa_error,
-                               "OnIocpWriteableInner");
-        GRPC_CARES_TRACE_LOG(
-            "fd:|%s| OnIocpWriteableInner. winsocket_->write_info.wsa_error "
-            "code:|%d| msg:|%s|",
-            GetName(), winsocket_->write_info.wsa_error,
-            StatusToString(error).c_str());
-      }
-    }
-    GPR_ASSERT(tcp_write_state_ == WRITE_PENDING);
-    if (error.ok()) {
-      tcp_write_state_ = WRITE_WAITING_FOR_VERIFICATION_UPON_RETRY;
-      write_buf_ = grpc_slice_sub_no_ref(
-          write_buf_, 0, winsocket_->write_info.bytes_transferred);
-      GRPC_CARES_TRACE_LOG("fd:|%s| OnIocpWriteableInner. bytes transferred:%d",
-                           GetName(), winsocket_->write_info.bytes_transferred);
-    } else {
-      CSliceUnref(write_buf_);
-      write_buf_ = grpc_empty_slice();
-    }
-    ScheduleAndNullWriteClosure(error);
-  }
-
   bool gotten_into_driver_list() const { return gotten_into_driver_list_; }
   void set_gotten_into_driver_list() { gotten_into_driver_list_ = true; }
 
@@ -654,14 +554,11 @@ class GrpcPolledFdWindows {
   ares_socklen_t recv_from_source_addr_len_;
   grpc_slice read_buf_;
   bool read_buf_has_data_ = false;
-  grpc_slice write_buf_;
   grpc_closure* read_closure_ = nullptr;
   grpc_closure* write_closure_ = nullptr;
   grpc_closure outer_read_closure_;
-  grpc_closure outer_write_closure_;
   grpc_winsocket* winsocket_;
-  // tcp_write_state_ is only used on TCP GrpcPolledFds
-  WriteState tcp_write_state_;
+  WriteState write_state_;
   const std::string name_;
   bool gotten_into_driver_list_;
   int address_family_;
