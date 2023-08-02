@@ -203,7 +203,7 @@ class GrpcPolledFdWindows {
       }
       GPR_ASSERT(pending_continue_register_for_on_writeable_locked_ == false);
       pending_continue_register_for_on_writeable_locked_ = true;
-    } else if {
+    } else {
       ContinueRegisterForOnWriteableLocked();
     }
   }
@@ -249,7 +249,7 @@ class GrpcPolledFdWindows {
       //      but pace ourselves to not burn CPU.
       GPR_ASSERT(!have_schedule_write_closure_after_delay_);
       have_schedule_write_closure_after_delay_ = true;
-      grpc_timer_init(schedule_write_closure_after_delay_,
+      grpc_timer_init(&schedule_write_closure_after_delay_,
                       Timestamp::Now() + Duration::Seconds(1),
                       &on_schedule_write_closure_after_delay_);
     }
@@ -677,14 +677,14 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
       auto it = self->sockets_.find(s);
       GPR_ASSERT(it != self->sockets_.end());
       self->sockets_.erase(it);
-      self->inactive_polled_fds.insert(std::move(it->second));
+      self->inactive_polled_fds_.insert(std::move(it->second));
     };
     auto polled_fd = std::make_unique<GrpcPolledFdWindows>(
         s, self->mu_, af, type, std::move(on_shutdown_locked));
     GRPC_CARES_TRACE_LOG(
         "fd:|%s| created with params af:%d type:%d protocol:%d",
         polled_fd->GetName(), af, type, protocol);
-    auto insert_result = sockets_.insert(s, std::move(polled_fd));
+    auto insert_result = self->sockets_.insert(s, std::move(polled_fd));
     GPR_ASSERT(insert_result->second);
     return s;
   }
