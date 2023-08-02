@@ -611,8 +611,6 @@ class GrpcPolledFdWindowsWrapper : public GrpcPolledFd {
   explicit GrpcPolledFdWindowsWrapper(GrpcPolledFdWindows* wrapped)
       : wrapped_(wrapped) {}
 
-  ~GrpcPolledFdWindowsWrapper() {}
-
   void RegisterForOnReadableLocked(grpc_closure* read_closure) override {
     wrapped_->RegisterForOnReadableLocked(read_closure);
   }
