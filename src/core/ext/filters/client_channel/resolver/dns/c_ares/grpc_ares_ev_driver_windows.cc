@@ -47,9 +47,9 @@
 #include "src/core/lib/iomgr/sockaddr_windows.h"
 #include "src/core/lib/iomgr/socket_windows.h"
 #include "src/core/lib/iomgr/tcp_windows.h"
+#include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/iomgr/timer.h"
 
 // TODO(apolcyn): remove this hack after fixing upstream.
 // Our grpc/c-ares code on Windows uses the ares_set_socket_functions API,
