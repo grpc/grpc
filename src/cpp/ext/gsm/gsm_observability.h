@@ -37,8 +37,9 @@ class GsmObservability {};
 
 class GsmCustomObservabilityBuilder {
  public:
-  // TODO(): Should this take the sdk MeterProvider? Benefit - Can explicitly
-  // set histogram bucket boundaries, but in the long run?
+  // TODO(yashykt): Should this take the SDK or the API MeterProvider? Benefit
+  // of SDK MeterProvider - Can explicitly set histogram bucket boundaries, but
+  // in the next iteration of the API, we would have it there as well.
   GsmCustomObservabilityBuilder& SetMeterProvider(
       std::shared_ptr<opentelemetry::sdk::metrics::MeterProvider>
           meter_provider);
