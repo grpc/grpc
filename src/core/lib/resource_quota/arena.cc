@@ -121,7 +121,6 @@ void Arena::ManagedNewObject::Link(std::atomic<ManagedNewObject*>* head) {
   }
 }
 
-#ifndef GRPC_ARENA_POOLED_ALLOCATIONS_USE_MALLOC
 void* Arena::AllocPooled(size_t obj_size, size_t alloc_size,
                          std::atomic<FreePoolNode*>* head) {
   // ABA mitigation:
@@ -178,6 +177,5 @@ void Arena::FreePooled(void* p, std::atomic<FreePoolNode*>* head) {
       node->next, node, std::memory_order_acq_rel, std::memory_order_relaxed)) {
   }
 }
-#endif
 
 }  // namespace grpc_core
