@@ -99,7 +99,6 @@ class GrpcPolledFdWindows {
       : mu_(mu),
         read_buf_(grpc_empty_slice()),
         name_(absl::StrFormat("c-ares socket: %" PRIdPTR, as)),
-        gotten_into_driver_list_(false),
         address_family_(address_family),
         socket_type_(socket_type) {
     // Closure Initialization
@@ -252,6 +251,8 @@ class GrpcPolledFdWindows {
   bool IsFdStillReadableLocked() { return read_buf_has_data_; }
 
   void ShutdownLocked(grpc_error_handle /* error */) {
+    if (shutdown_called_) return;
+    shutdown_called_ = true;
     if (have_schedule_write_closure_after_delay_) {
       grpc_timer_cancel(&schedule_write_closure_after_delay_);
     }
@@ -559,9 +560,6 @@ class GrpcPolledFdWindows {
     ScheduleAndNullReadClosure(error);
   }
 
-  bool gotten_into_driver_list() const { return gotten_into_driver_list_; }
-  void set_gotten_into_driver_list() { gotten_into_driver_list_ = true; }
-
  private:
   Mutex* mu_;
   char recv_from_source_addr_[200];
@@ -577,7 +575,7 @@ class GrpcPolledFdWindows {
   grpc_closure on_schedule_write_closure_after_delay_;
   bool have_schedule_write_closure_after_delay_ = false;
   const std::string name_;
-  bool gotten_into_driver_list_;
+  bool shutdown_called_ = false;
   int address_family_;
   int socket_type_;
   // State related to TCP connection setup:
@@ -592,154 +590,9 @@ class GrpcPolledFdWindows {
   bool pending_continue_register_for_on_writeable_locked_ = false;
 };
 
-struct SockToPolledFdEntry {
-  SockToPolledFdEntry(SOCKET s, GrpcPolledFdWindows* fd)
-      : socket(s), polled_fd(fd) {}
-  SOCKET socket;
-  GrpcPolledFdWindows* polled_fd;
-  SockToPolledFdEntry* next = nullptr;
-};
-
-// A SockToPolledFdMap can make ares_socket_t types (SOCKET's on windows)
-// to GrpcPolledFdWindow's, and is used to find the appropriate
-// GrpcPolledFdWindows to handle a virtual socket call when c-ares makes that
-// socket call on the ares_socket_t type. Instances are owned by and one-to-one
-// with a GrpcPolledFdWindows factory and event driver
-class SockToPolledFdMap {
- public:
-  explicit SockToPolledFdMap(Mutex* mu) : mu_(mu) {}
-
-  ~SockToPolledFdMap() { GPR_ASSERT(head_ == nullptr); }
-
-  void AddNewSocket(SOCKET s, GrpcPolledFdWindows* polled_fd) {
-    SockToPolledFdEntry* new_node = new SockToPolledFdEntry(s, polled_fd);
-    new_node->next = head_;
-    head_ = new_node;
-  }
-
-  GrpcPolledFdWindows* LookupPolledFd(SOCKET s) {
-    for (SockToPolledFdEntry* node = head_; node != nullptr;
-         node = node->next) {
-      if (node->socket == s) {
-        GPR_ASSERT(node->polled_fd != nullptr);
-        return node->polled_fd;
-      }
-    }
-    abort();
-  }
-
-  void RemoveEntry(SOCKET s) {
-    GPR_ASSERT(head_ != nullptr);
-    SockToPolledFdEntry** prev = &head_;
-    for (SockToPolledFdEntry* node = head_; node != nullptr;
-         node = node->next) {
-      if (node->socket == s) {
-        *prev = node->next;
-        delete node;
-        return;
-      }
-      prev = &node->next;
-    }
-    abort();
-  }
-
-  // These virtual socket functions are called from within the c-ares
-  // library. These methods generally dispatch those socket calls to the
-  // appropriate methods. The virtual "socket" and "close" methods are
-  // special and instead create/add and remove/destroy GrpcPolledFdWindows
-  // objects.
-  //
-  static ares_socket_t Socket(int af, int type, int protocol, void* user_data) {
-    if (type != SOCK_DGRAM && type != SOCK_STREAM) {
-      GRPC_CARES_TRACE_LOG("Socket called with invalid socket type:%d", type);
-      return INVALID_SOCKET;
-    }
-    SockToPolledFdMap* map = static_cast<SockToPolledFdMap*>(user_data);
-    SOCKET s = WSASocket(af, type, protocol, nullptr, 0,
-                         grpc_get_default_wsa_socket_flags());
-    if (s == INVALID_SOCKET) {
-      GRPC_CARES_TRACE_LOG(
-          "WSASocket failed with params af:%d type:%d protocol:%d", af, type,
-          protocol);
-      return s;
-    }
-    grpc_error_handle error = grpc_tcp_set_non_block(s);
-    if (!error.ok()) {
-      GRPC_CARES_TRACE_LOG("WSAIoctl failed with error: %s",
-                           StatusToString(error).c_str());
-      return INVALID_SOCKET;
-    }
-    GrpcPolledFdWindows* polled_fd =
-        new GrpcPolledFdWindows(s, map->mu_, af, type);
-    GRPC_CARES_TRACE_LOG(
-        "fd:|%s| created with params af:%d type:%d protocol:%d",
-        polled_fd->GetName(), af, type, protocol);
-    map->AddNewSocket(s, polled_fd);
-    return s;
-  }
-
-  static int Connect(ares_socket_t as, const struct sockaddr* target,
-                     ares_socklen_t target_len, void* user_data) {
-    WSAErrorContext wsa_error_ctx;
-    SockToPolledFdMap* map = static_cast<SockToPolledFdMap*>(user_data);
-    GrpcPolledFdWindows* polled_fd = map->LookupPolledFd(as);
-    return polled_fd->Connect(&wsa_error_ctx, target, target_len);
-  }
-
-  static ares_ssize_t SendV(ares_socket_t as, const struct iovec* iov,
-                            int iovec_count, void* user_data) {
-    WSAErrorContext wsa_error_ctx;
-    SockToPolledFdMap* map = static_cast<SockToPolledFdMap*>(user_data);
-    GrpcPolledFdWindows* polled_fd = map->LookupPolledFd(as);
-    return polled_fd->SendV(&wsa_error_ctx, iov, iovec_count);
-  }
-
-  static ares_ssize_t RecvFrom(ares_socket_t as, void* data, size_t data_len,
-                               int flags, struct sockaddr* from,
-                               ares_socklen_t* from_len, void* user_data) {
-    WSAErrorContext wsa_error_ctx;
-    SockToPolledFdMap* map = static_cast<SockToPolledFdMap*>(user_data);
-    GrpcPolledFdWindows* polled_fd = map->LookupPolledFd(as);
-    return polled_fd->RecvFrom(&wsa_error_ctx, data, data_len, flags, from,
-                               from_len);
-  }
-
-  static int CloseSocket(SOCKET s, void* user_data) {
-    SockToPolledFdMap* map = static_cast<SockToPolledFdMap*>(user_data);
-    GrpcPolledFdWindows* polled_fd = map->LookupPolledFd(s);
-    map->RemoveEntry(s);
-    // See https://github.com/grpc/grpc/pull/20284, this trace log is
-    // intentionally placed to attempt to trigger a crash in case of a
-    // use after free on polled_fd.
-    GRPC_CARES_TRACE_LOG("CloseSocket called for socket: %s",
-                         polled_fd->GetName());
-    // If a gRPC polled fd has not made it in to the driver's list yet, then
-    // the driver has not and will never see this socket.
-    if (!polled_fd->gotten_into_driver_list()) {
-      polled_fd->ShutdownLocked(GRPC_ERROR_CREATE(
-          "Shut down c-ares fd before without it ever having made it into the "
-          "driver's list"));
-      delete polled_fd;
-    }
-    return 0;
-  }
-
- private:
-  Mutex* mu_;
-  SockToPolledFdEntry* head_ = nullptr;
-};
-
-const struct ares_socket_functions custom_ares_sock_funcs = {
-    &SockToPolledFdMap::Socket /* socket */,
-    &SockToPolledFdMap::CloseSocket /* close */,
-    &SockToPolledFdMap::Connect /* connect */,
-    &SockToPolledFdMap::RecvFrom /* recvfrom */,
-    &SockToPolledFdMap::SendV /* sendv */,
-};
-
 // A thin wrapper over a GrpcPolledFdWindows object but with a shorter
 // lifetime. This object releases it's GrpcPolledFdWindows upon destruction,
-// so that c-ares can close it via usual socket teardown.
+// so that c-ares can still still safely reference the fd if needed afterwards.
 class GrpcPolledFdWindowsWrapper : public GrpcPolledFd {
  public:
   explicit GrpcPolledFdWindowsWrapper(GrpcPolledFdWindows* wrapped)
@@ -777,22 +630,105 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
  public:
   explicit GrpcPolledFdFactoryWindows(Mutex* mu) : sock_to_polled_fd_map_(mu) {}
 
+  ~GrpcPolledFdFactoryWindows() override {
+    // Shut down any sockets that have not been shut down already - particularly
+    // those that were never registered for readable/writable notifications with
+    // grpc. Note that at this point, the c-ares channel has beend destroyed and
+    // there are no pending readable/writable callbacks on these sockets. So its
+    // safe to destroy them immediately after shutdown.
+    for (auto& it : sockets_) {
+      it->second->ShutdownLocked();
+    }
+  }
+
   GrpcPolledFd* NewGrpcPolledFdLocked(
       ares_socket_t as, grpc_pollset_set* /* driver_pollset_set */) override {
-    GrpcPolledFdWindows* polled_fd = sock_to_polled_fd_map_.LookupPolledFd(as);
-    // Set a flag so that the virtual socket "close" method knows it
-    asdvasdv// doesn't need to call ShutdownLocked, since now the driver will.
-    polled_fd->set_gotten_into_driver_list();
+    auto it = sockets_.find(as);
+    GPR_ASSERT(it != sockets_.end());
+    GrpcPolledFdWindows* polled_fd = it->second.get();
     return new GrpcPolledFdWindowsWrapper(polled_fd);
   }
 
   void ConfigureAresChannelLocked(ares_channel channel) override {
-    ares_set_socket_functions(channel, &custom_ares_sock_funcs,
-                              &sock_to_polled_fd_map_);
+    ares_set_socket_functions(channel, &kCustomSockFuncs, this);
   }
 
  private:
-  SockToPolledFdMap sock_to_polled_fd_map_;
+  // These virtual socket functions are called from within the c-ares
+  // library. These methods generally dispatch those socket calls to the
+  // appropriate methods. The virtual "socket" and "close" methods are
+  // special and instead create/add and remove/destroy GrpcPolledFdWindows
+  // objects.
+  //
+  static ares_socket_t Socket(int af, int type, int protocol, void* user_data) {
+    if (type != SOCK_DGRAM && type != SOCK_STREAM) {
+      GRPC_CARES_TRACE_LOG("Socket called with invalid socket type:%d", type);
+      return INVALID_SOCKET;
+    }
+    GrpcPolledFdFactoryWindows* self = static_cast<GrpcPolledFdFactoryWindows*>(user_data);
+    SOCKET s = WSASocket(af, type, protocol, nullptr, 0,
+                         grpc_get_default_wsa_socket_flags());
+    if (s == INVALID_SOCKET) {
+      GRPC_CARES_TRACE_LOG(
+          "WSASocket failed with params af:%d type:%d protocol:%d", af, type,
+          protocol);
+      return s;
+    }
+    grpc_error_handle error = grpc_tcp_set_non_block(s);
+    if (!error.ok()) {
+      GRPC_CARES_TRACE_LOG("WSAIoctl failed with error: %s",
+                           StatusToString(error).c_str());
+      return INVALID_SOCKET;
+    }
+    auto polled_fd = std::make_unique<GrpcPolledFdWindows>(
+        s, map->mu_, af, type);
+    GRPC_CARES_TRACE_LOG(
+        "fd:|%s| created with params af:%d type:%d protocol:%d",
+        polled_fd->GetName(), af, type, protocol);
+    sockets_.insert(s, std::move(polled_fd));
+    return s;
+  }
+
+  static int Connect(ares_socket_t as, const struct sockaddr* target,
+                     ares_socklen_t target_len, void* user_data) {
+    WSAErrorContext wsa_error_ctx;
+    GrpcPolledFdFactoryWindows* self = static_cast<GrpcPolledFdFactoryWindows*>(user_data);
+    auto it = self->sockets_.find(as);
+    GPR_ASSERT(it != self->sockets_.end());
+    return it->second->Connect(&wsa_error_ctx, target, target_len);
+  }
+
+  static ares_ssize_t SendV(ares_socket_t as, const struct iovec* iov,
+                            int iovec_count, void* user_data) {
+    WSAErrorContext wsa_error_ctx;
+    GrpcPolledFdFactoryWindows* self = static_cast<GrpcPolledFdFactoryWindows*>(user_data);
+    auto it = self->sockets_.find(as);
+    GPR_ASSERT(it != self->sockets_.end());
+    return it->second->SendV(&wsa_error_ctx, iov, iovec_count);
+  }
+
+  static ares_ssize_t RecvFrom(ares_socket_t as, void* data, size_t data_len,
+                               int flags, struct sockaddr* from,
+                               ares_socklen_t* from_len, void* user_data) {
+    WSAErrorContext wsa_error_ctx;
+    GrpcPolledFdFactoryWindows* self = static_cast<GrpcPolledFdFactoryWindows*>(user_data);
+    auto it = self->sockets_.find(as);
+    GPR_ASSERT(it != self->sockets_.end());
+    return it->second->RecvFrom(&wsa_error_ctx, data, data_len, flags, from,
+                                from_len);
+  }
+
+  static int CloseSocket(SOCKET s, void* user_data) {}
+
+  const struct ares_socket_functions kCustomSockFuncs = {
+    &GrpcPolledFdFactoryWindows::Socket /* socket */,
+    &GrpcPolledFdFactoryWindows::CloseSocket /* close */,
+    &GrpcPolledFdFactoryWindows::Connect /* connect */,
+    &GrpcPolledFdFactoryWindows::RecvFrom /* recvfrom */,
+    &GrpcPolledFdFactoryWindows::SendV /* sendv */,
+  };
+
+  std::map<SOCKET, std::unique_ptr<GrpcPolledFdWindows>> sockets_;
 };
 
 std::unique_ptr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(Mutex* mu) {
