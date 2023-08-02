@@ -22,7 +22,6 @@
 
 #include "src/core/lib/event_engine/cf_engine/cf_engine.h"
 #include "src/core/lib/event_engine/cf_engine/cfstream_endpoint.h"
-#include "src/core/lib/event_engine/cf_engine/dns_service_resolver.h"
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
@@ -157,14 +156,9 @@ bool CFEventEngine::CancelConnectInternal(ConnectionHandle handle,
 bool CFEventEngine::IsWorkerThread() { grpc_core::Crash("unimplemented"); }
 
 absl::StatusOr<std::unique_ptr<EventEngine::DNSResolver>>
-CFEventEngine::GetDNSResolver(const DNSResolver::ResolverOptions& options) {
-  if (!options.dns_server.empty()) {
-    return absl::InvalidArgumentError(
-        "CFEventEngine does not support custom DNS servers");
-  }
-
-  return std::make_unique<DNSServiceResolver>(
-      std::static_pointer_cast<CFEventEngine>(shared_from_this()));
+CFEventEngine::GetDNSResolver(
+    const DNSResolver::ResolverOptions& /* options */) {
+  grpc_core::Crash("unimplemented");
 }
 
 void CFEventEngine::Run(EventEngine::Closure* closure) {
