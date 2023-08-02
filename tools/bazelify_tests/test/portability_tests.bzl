@@ -72,6 +72,7 @@ def generate_run_tests_portability_tests(name):
             )
             test_names.append(test_name)
 
+    # TODO(jtattermusch): Reintroduce the test once it passes.
     # Python on alpine
     #grpc_run_tests_py_test(
     #    name = "runtests_python_linux_dbg_alpine",

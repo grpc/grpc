@@ -24,6 +24,10 @@ export ARCHIVE_FORMAT=tar
 mkdir -p "${ARCHIVES_DIR}"
 rm -rf "${ARCHIVES_DIR}"/*
 
+# TODO(jtattermusch): This script is currently only tested on linux.
+# Nothing prevents it from working on other systems in principle,
+# but more work is needed.
+
 # HACK: To be able to collect all grpc source files as an archive
 # we need to break from bazel's "sandbox" to be able to read files
 # from the original bazel workspace (which in our case is the grpc repository root)

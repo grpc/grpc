@@ -59,6 +59,7 @@ grpc_run_tests_py_test(
     docker_image_version = "tools/dockerfile/test/cxx_debian11_x64.current_version",
 )
 
+# TODO(jtattermusch): Reintroduce ruby tests once they pass.
 # # Ruby
 # grpc_run_tests_py_test(
 #     name = "runtests_ruby_linux_dbg",
@@ -101,6 +102,7 @@ grpc_run_tests_py_test(
     docker_image_version = "tools/dockerfile/test/php7_debian11_x64.current_version",
 )
 
+# TODO(jtattermusch): Reintroduce python tests once they pass.
 # # Python
 # grpc_run_tests_py_test(
 #     name = "runtests_python_linux_opt",

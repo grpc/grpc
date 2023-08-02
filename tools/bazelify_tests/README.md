@@ -23,8 +23,9 @@ There are two ways the test targets can run under a docker container:
 
 * When running on RBE, all actions run under a docker container by definition.
 * When running locally, bazel will start a docker container for each action when [docker sandbox](https://bazel.build/remote/sandbox) is used.
+  (Note that the docker sandbox currently [doesn't work on windows](https://github.com/bazelbuild/bazel/issues/19101))
 
-In both cases, the docker image which is used for any given action is determined by action's `exec_properties` and can be specified as a default
+In both cases, the docker image which is used for any given action is determined by the action's `exec_properties` and can be specified as a default
 (e.g. by RBE toolchain or by setting `--experimental_docker_image` flag) or explicitly for each action. For most tests in this directory,
 the test rules actually configure the `exec_properties` for you, based on selecting one of the gRPC's testing docker images.
 
