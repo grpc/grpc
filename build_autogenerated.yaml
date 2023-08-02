@@ -687,6 +687,7 @@ libs:
   - src/core/lib/event_engine/cf_engine/cf_engine.h
   - src/core/lib/event_engine/cf_engine/cfstream_endpoint.h
   - src/core/lib/event_engine/cf_engine/cftype_unique_ref.h
+  - src/core/lib/event_engine/cf_engine/dns_service_resolver.h
   - src/core/lib/event_engine/channel_args_endpoint_config.h
   - src/core/lib/event_engine/common_closures.h
   - src/core/lib/event_engine/default_event_engine.h
@@ -1501,6 +1502,7 @@ libs:
   - src/core/lib/event_engine/ares_resolver.cc
   - src/core/lib/event_engine/cf_engine/cf_engine.cc
   - src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc
+  - src/core/lib/event_engine/cf_engine/dns_service_resolver.cc
   - src/core/lib/event_engine/channel_args_endpoint_config.cc
   - src/core/lib/event_engine/default_event_engine.cc
   - src/core/lib/event_engine/default_event_engine_factory.cc
@@ -2084,6 +2086,7 @@ libs:
   - src/core/lib/event_engine/cf_engine/cf_engine.h
   - src/core/lib/event_engine/cf_engine/cfstream_endpoint.h
   - src/core/lib/event_engine/cf_engine/cftype_unique_ref.h
+  - src/core/lib/event_engine/cf_engine/dns_service_resolver.h
   - src/core/lib/event_engine/channel_args_endpoint_config.h
   - src/core/lib/event_engine/common_closures.h
   - src/core/lib/event_engine/default_event_engine.h
@@ -2505,6 +2508,7 @@ libs:
   - src/core/lib/event_engine/ares_resolver.cc
   - src/core/lib/event_engine/cf_engine/cf_engine.cc
   - src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc
+  - src/core/lib/event_engine/cf_engine/dns_service_resolver.cc
   - src/core/lib/event_engine/channel_args_endpoint_config.cc
   - src/core/lib/event_engine/default_event_engine.cc
   - src/core/lib/event_engine/default_event_engine_factory.cc
@@ -3592,6 +3596,7 @@ libs:
   - src/core/lib/event_engine/cf_engine/cf_engine.h
   - src/core/lib/event_engine/cf_engine/cfstream_endpoint.h
   - src/core/lib/event_engine/cf_engine/cftype_unique_ref.h
+  - src/core/lib/event_engine/cf_engine/dns_service_resolver.h
   - src/core/lib/event_engine/channel_args_endpoint_config.h
   - src/core/lib/event_engine/common_closures.h
   - src/core/lib/event_engine/default_event_engine.h
@@ -3892,6 +3897,7 @@ libs:
   - src/core/lib/event_engine/ares_resolver.cc
   - src/core/lib/event_engine/cf_engine/cf_engine.cc
   - src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc
+  - src/core/lib/event_engine/cf_engine/dns_service_resolver.cc
   - src/core/lib/event_engine/channel_args_endpoint_config.cc
   - src/core/lib/event_engine/default_event_engine.cc
   - src/core/lib/event_engine/default_event_engine_factory.cc
@@ -4776,12 +4782,13 @@ targets:
   language: c++
   headers:
   - src/core/lib/avl/avl.h
-  - src/core/lib/gpr/useful.h
+  - src/core/lib/gprpp/atomic_utils.h
+  - src/core/lib/gprpp/ref_counted.h
+  - src/core/lib/gprpp/ref_counted_ptr.h
   src:
   - test/core/avl/avl_test.cc
   deps:
-  - absl/strings:strings
-  - absl/types:variant
+  - gpr
   uses_polling: false
 - name: aws_request_signer_test
   gtest: true
@@ -5494,9 +5501,11 @@ targets:
   headers:
   - test/core/end2end/cq_verifier.h
   - test/core/util/fake_udp_and_tcp_server.h
+  - test/core/util/socket_use_after_close_detector.h
   src:
   - test/core/end2end/cq_verifier.cc
   - test/core/util/fake_udp_and_tcp_server.cc
+  - test/core/util/socket_use_after_close_detector.cc
   - test/cpp/naming/cancel_ares_query_test.cc
   deps:
   - grpc++_test_config
@@ -5879,17 +5888,23 @@ targets:
   - test/core/event_engine/test_suite/event_engine_test_framework.h
   - test/core/event_engine/test_suite/posix/oracle_event_engine_posix.h
   - test/core/event_engine/test_suite/tests/client_test.h
+  - test/core/event_engine/test_suite/tests/dns_test.h
   - test/core/event_engine/test_suite/tests/timer_test.h
+  - test/core/util/fake_udp_and_tcp_server.h
+  - test/cpp/util/get_grpc_test_runfile_dir.h
   src:
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/test_suite/cf_event_engine_test.cc
   - test/core/event_engine/test_suite/event_engine_test_framework.cc
   - test/core/event_engine/test_suite/posix/oracle_event_engine_posix.cc
   - test/core/event_engine/test_suite/tests/client_test.cc
+  - test/core/event_engine/test_suite/tests/dns_test.cc
   - test/core/event_engine/test_suite/tests/timer_test.cc
+  - test/core/util/fake_udp_and_tcp_server.cc
+  - test/cpp/util/get_grpc_test_runfile_dir.cc
   deps:
   - grpc_unsecure
-  - grpc_test_util
+  - grpc++_test_util
   platforms:
   - linux
   - posix
@@ -7075,9 +7090,7 @@ targets:
   - src/core/lib/event_engine/channel_args_endpoint_config.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/dual_ref_counted.h
-  - src/core/lib/gprpp/match.h
   - src/core/lib/gprpp/orphanable.h
-  - src/core/lib/gprpp/overload.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
   - src/core/lib/gprpp/time.h
@@ -8113,6 +8126,7 @@ targets:
   - src/core/lib/event_engine/cf_engine/cf_engine.h
   - src/core/lib/event_engine/cf_engine/cfstream_endpoint.h
   - src/core/lib/event_engine/cf_engine/cftype_unique_ref.h
+  - src/core/lib/event_engine/cf_engine/dns_service_resolver.h
   - src/core/lib/event_engine/channel_args_endpoint_config.h
   - src/core/lib/event_engine/common_closures.h
   - src/core/lib/event_engine/default_event_engine.h
@@ -8395,6 +8409,7 @@ targets:
   - src/core/lib/event_engine/ares_resolver.cc
   - src/core/lib/event_engine/cf_engine/cf_engine.cc
   - src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc
+  - src/core/lib/event_engine/cf_engine/dns_service_resolver.cc
   - src/core/lib/event_engine/channel_args_endpoint_config.cc
   - src/core/lib/event_engine/default_event_engine.cc
   - src/core/lib/event_engine/default_event_engine_factory.cc

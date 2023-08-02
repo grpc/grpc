@@ -15,15 +15,10 @@
 
 # Use to patch schema of existing scenario results tables (after adding fields).
 
-from __future__ import print_function
-
 import argparse
-import calendar
 import json
 import os
 import sys
-import time
-import uuid
 
 gcp_utils_dir = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "../../gcp/utils")

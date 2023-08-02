@@ -48,7 +48,9 @@
 #include "src/core/ext/transport/chttp2/transport/http_trace.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
+#include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channelz.h"
+#include "src/core/lib/channel/context.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/status_helper.h"
@@ -510,8 +512,7 @@ static grpc_error_handle init_data_frame_parser(grpc_chttp2_transport* t) {
   if (bdp_est) {
     if (t->bdp_ping_blocked) {
       t->bdp_ping_blocked = false;
-      GRPC_CHTTP2_REF_TRANSPORT(t, "bdp_ping");
-      schedule_bdp_ping_locked(t);
+      schedule_bdp_ping_locked(t->Ref());
     }
     bdp_est->AddIncomingBytes(t->incoming_frame_size);
   }
@@ -841,7 +842,7 @@ static const maybe_complete_func_type maybe_complete_funcs[] = {
 
 static void force_client_rst_stream(void* sp, grpc_error_handle /*error*/) {
   grpc_chttp2_stream* s = static_cast<grpc_chttp2_stream*>(sp);
-  grpc_chttp2_transport* t = s->t;
+  grpc_chttp2_transport* t = s->t.get();
   if (!s->write_closed) {
     grpc_chttp2_add_rst_stream_to_next_write(t, s->id, GRPC_HTTP2_NO_ERROR,
                                              &s->stats.outgoing);
@@ -857,10 +858,18 @@ grpc_error_handle grpc_chttp2_header_parser_parse(void* hpack_parser,
                                                   const grpc_slice& slice,
                                                   int is_last) {
   auto* parser = static_cast<grpc_core::HPackParser*>(hpack_parser);
+  grpc_core::CallTracerAnnotationInterface* call_tracer = nullptr;
   if (s != nullptr) {
     s->stats.incoming.header_bytes += GRPC_SLICE_LENGTH(slice);
+
+    if (s->context != nullptr) {
+      call_tracer = static_cast<grpc_core::CallTracerAnnotationInterface*>(
+          static_cast<grpc_call_context_element*>(
+              s->context)[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE]
+              .value);
+    }
   }
-  grpc_error_handle error = parser->Parse(slice, is_last != 0);
+  grpc_error_handle error = parser->Parse(slice, is_last != 0, call_tracer);
   if (!error.ok()) {
     return error;
   }

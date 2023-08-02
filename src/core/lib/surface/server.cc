@@ -522,21 +522,14 @@ class Server::AllocatingRequestMatcherBatch
 
   ArenaPromise<absl::StatusOr<MatchResult>> MatchRequest(
       size_t /*start_request_queue_index*/) override {
-    const bool still_running = server()->ShutdownRefOnRequest();
-    auto cleanup_ref =
-        absl::MakeCleanup([this] { server()->ShutdownUnrefOnRequest(); });
-    if (still_running) {
-      BatchCallAllocation call_info = allocator_();
-      GPR_ASSERT(server()->ValidateServerRequest(
-                     cq(), static_cast<void*>(call_info.tag), nullptr,
-                     nullptr) == GRPC_CALL_OK);
-      RequestedCall* rc = new RequestedCall(
-          static_cast<void*>(call_info.tag), call_info.cq, call_info.call,
-          call_info.initial_metadata, call_info.details);
-      return Immediate(MatchResult(server(), cq_idx(), rc));
-    } else {
-      return Immediate(absl::InternalError("Server shutdown"));
-    }
+    BatchCallAllocation call_info = allocator_();
+    GPR_ASSERT(server()->ValidateServerRequest(
+                   cq(), static_cast<void*>(call_info.tag), nullptr, nullptr) ==
+               GRPC_CALL_OK);
+    RequestedCall* rc = new RequestedCall(
+        static_cast<void*>(call_info.tag), call_info.cq, call_info.call,
+        call_info.initial_metadata, call_info.details);
+    return Immediate(MatchResult(server(), cq_idx(), rc));
   }
 
  private:
@@ -576,22 +569,14 @@ class Server::AllocatingRequestMatcherRegistered
 
   ArenaPromise<absl::StatusOr<MatchResult>> MatchRequest(
       size_t /*start_request_queue_index*/) override {
-    const bool still_running = server()->ShutdownRefOnRequest();
-    auto cleanup_ref =
-        absl::MakeCleanup([this] { server()->ShutdownUnrefOnRequest(); });
-    if (still_running) {
-      RegisteredCallAllocation call_info = allocator_();
-      GPR_ASSERT(server()->ValidateServerRequest(
-                     cq(), call_info.tag, call_info.optional_payload,
-                     registered_method_) == GRPC_CALL_OK);
-      RequestedCall* rc =
-          new RequestedCall(call_info.tag, call_info.cq, call_info.call,
-                            call_info.initial_metadata, registered_method_,
-                            call_info.deadline, call_info.optional_payload);
-      return Immediate(MatchResult(server(), cq_idx(), rc));
-    } else {
-      return Immediate(absl::InternalError("Server shutdown"));
-    }
+    RegisteredCallAllocation call_info = allocator_();
+    GPR_ASSERT(server()->ValidateServerRequest(
+                   cq(), call_info.tag, call_info.optional_payload,
+                   registered_method_) == GRPC_CALL_OK);
+    RequestedCall* rc = new RequestedCall(
+        call_info.tag, call_info.cq, call_info.call, call_info.initial_metadata,
+        registered_method_, call_info.deadline, call_info.optional_payload);
+    return Immediate(MatchResult(server(), cq_idx(), rc));
   }
 
  private:
@@ -1289,17 +1274,24 @@ void Server::ChannelData::AcceptStream(void* arg, grpc_transport* /*transport*/,
   }
 }
 
+namespace {
+auto CancelledDueToServerShutdown() {
+  return [] {
+    return ServerMetadataFromStatus(absl::CancelledError("Server shutdown"));
+  };
+}
+}  // namespace
+
 ArenaPromise<ServerMetadataHandle> Server::ChannelData::MakeCallPromise(
     grpc_channel_element* elem, CallArgs call_args, NextPromiseFactory) {
   auto* chand = static_cast<Server::ChannelData*>(elem->channel_data);
   auto* server = chand->server_.get();
-  if (server->ShutdownCalled()) {
-    return [] {
-      return ServerMetadataFromStatus(absl::InternalError("Server shutdown"));
-    };
-  }
   absl::optional<Slice> path =
       call_args.client_initial_metadata->Take(HttpPathMetadata());
+  if (server->ShutdownCalled()) return CancelledDueToServerShutdown();
+  auto cleanup_ref =
+      absl::MakeCleanup([server] { server->ShutdownUnrefOnRequest(); });
+  if (!server->ShutdownRefOnRequest()) return CancelledDueToServerShutdown();
   if (!path.has_value()) {
     return [] {
       return ServerMetadataFromStatus(
@@ -1339,9 +1331,13 @@ ArenaPromise<ServerMetadataHandle> Server::ChannelData::MakeCallPromise(
   }
   return TrySeq(
       std::move(maybe_read_first_message),
-      [matcher, chand](NextResult<MessageHandle> payload) {
+      [cleanup_ref = std::move(cleanup_ref), matcher,
+       chand](NextResult<MessageHandle> payload) mutable {
         return Map(
-            matcher->MatchRequest(chand->cq_idx()),
+            [cleanup_ref = std::move(cleanup_ref),
+             mr = matcher->MatchRequest(chand->cq_idx())]() mutable {
+              return mr();
+            },
             [payload = std::move(payload)](
                 absl::StatusOr<RequestMatcherInterface::MatchResult> mr) mutable
             -> absl::StatusOr<std::pair<RequestMatcherInterface::MatchResult,
