@@ -193,6 +193,10 @@ class GrpcPolledFdWindows {
     GPR_ASSERT(write_closure_ == nullptr);
     write_closure_ = write_closure;
     if (!connect_done_) {
+      if (need_async_connect_notification_) {
+        need_async_connect_notification_ = false;
+        grpc_socket_notify_on_write(winsocket_, &on_tcp_connect_locked_);
+      }
       GPR_ASSERT(pending_continue_register_for_on_writeable_locked_ == false);
       pending_continue_register_for_on_writeable_locked_ = true;
     } else if ({
@@ -507,7 +511,8 @@ class GrpcPolledFdWindows {
         return -1;
       }
     }
-    grpc_socket_notify_on_write(winsocket_, &on_tcp_connect_locked_);
+    GPR_ASSERT(!need_async_connect_notification_);
+    need_async_connect_notification_ = true;
     return out;
   }
 
@@ -575,6 +580,8 @@ class GrpcPolledFdWindows {
   bool gotten_into_driver_list_;
   int address_family_;
   int socket_type_;
+  // State related to TCP connection setup:
+  bool need_async_connect_notification_ = false;
   grpc_closure on_tcp_connect_locked_;
   bool connect_done_ = false;
   int wsa_connect_error_ = 0;
@@ -712,8 +719,8 @@ class SockToPolledFdMap {
       polled_fd->ShutdownLocked(GRPC_ERROR_CREATE(
           "Shut down c-ares fd before without it ever having made it into the "
           "driver's list"));
+      delete polled_fd;
     }
-    delete polled_fd;
     return 0;
   }
 
