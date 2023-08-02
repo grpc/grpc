@@ -187,10 +187,13 @@ class ServerCallTracerFactory {
 void RegisterServerCallTracerFilter(CoreConfiguration::Builder* builder);
 
 // Convenience functions to add call tracers to a call context. Allows setting
-// multiple call tracers to a single call.
+// multiple call tracers to a single call. It is only valid to add client call
+// tracers before the client_channel filter sees the send_initial_metadata op.
 void AddClientCallTracerToContext(grpc_call_context_element* call_context,
                                   ClientCallTracer* tracer);
 
+// TODO(yashykt): We want server call tracers to be registered through the
+// ServerCallTracerFactory, which has yet to be made into a list.
 void AddServerCallTracerToContext(grpc_call_context_element* call_context,
                                   ServerCallTracer* tracer);
 
