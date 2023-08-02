@@ -72,17 +72,16 @@ def generate_run_tests_portability_tests(name):
             )
             test_names.append(test_name)
 
-    # TODO(jtattermusch): Reintroduce the test once it passes.
     # Python on alpine
-    #grpc_run_tests_py_test(
-    #    name = "runtests_python_linux_dbg_alpine",
-    #    args = [
-    #        "-l python -c dbg --compiler python_alpine",
-    #    ],
-    #    docker_image_version = "tools/dockerfile/test/python_alpine_x64.current_version",
-    #    size = "enormous",
-    #)
-    #test_names.append("runtests_python_linux_dbg_alpine")
+    grpc_run_tests_py_test(
+        name = "runtests_python_linux_dbg_alpine",
+        args = [
+            "-l python -c dbg --compiler python_alpine",
+        ],
+        docker_image_version = "tools/dockerfile/test/python_alpine_x64.current_version",
+        size = "enormous",
+    )
+    test_names.append("runtests_python_linux_dbg_alpine")
 
     # Generate test suite that allows easily running all portability tests.
     native.test_suite(
