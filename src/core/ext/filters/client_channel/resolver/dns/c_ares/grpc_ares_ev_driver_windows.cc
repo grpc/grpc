@@ -252,10 +252,9 @@ class GrpcPolledFdWindows {
       //      but pace ourselves to not burn CPU.
       GPR_ASSERT(!have_schedule_write_closure_after_delay_);
       have_schedule_write_closure_after_delay_ = true;
-      grpc_timer_init(
-          schedule_write_closure_after_delay_,
-          Timestamp::Now() + Duration::Seconds(1),
-          &on_schedule_write_closure_after_delay_);
+      grpc_timer_init(schedule_write_closure_after_delay_,
+                      Timestamp::Now() + Duration::Seconds(1),
+                      &on_schedule_write_closure_after_delay_);
     }
   }
 
