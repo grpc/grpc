@@ -4000,6 +4000,26 @@ grpc_cc_library(
     ],
 )
 
+grpc_cc_library(
+    name = "subprocess",
+    srcs = [
+        "//src/core:lib/gpr/subprocess_posix.cc",
+        "//src/core:lib/gpr/subprocess_windows.cc",
+    ],
+    hdrs = [
+        "//src/core:lib/gpr/subprocess.h",
+    ],
+    external_deps = [
+        "absl/strings",
+        "absl/types:span",
+    ],
+    deps = [
+        "gpr",
+        "//src/core:strerror",
+        "//src/core:tchar",
+    ],
+)
+
 # TODO(yashykt): Remove the UPB definitions from here once they are no longer needed
 ### UPB Targets
 

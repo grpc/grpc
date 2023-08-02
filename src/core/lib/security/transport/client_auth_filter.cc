@@ -196,10 +196,13 @@ ArenaPromise<ServerMetadataHandle> ClientAuthFilter::MakeCallPromise(
   if (host == nullptr) {
     return next_promise_factory(std::move(call_args));
   }
-  return TrySeq(args_.security_connector->CheckCallHost(
-                    host->as_string_view(), args_.auth_context.get()),
-                GetCallCredsMetadata(std::move(call_args)),
-                next_promise_factory);
+  return TrySeq(
+      args_.security_connector->CheckCallHost(host->as_string_view(),
+                                              args_.auth_context.get()),
+      [this, call_args = std::move(call_args)]() mutable {
+        return GetCallCredsMetadata(std::move(call_args));
+      },
+      next_promise_factory);
 }
 
 absl::StatusOr<ClientAuthFilter> ClientAuthFilter::Create(

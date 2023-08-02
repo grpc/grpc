@@ -1075,8 +1075,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc )
   s.files += %w( src/core/lib/event_engine/cf_engine/cfstream_endpoint.h )
   s.files += %w( src/core/lib/event_engine/cf_engine/cftype_unique_ref.h )
-  s.files += %w( src/core/lib/event_engine/cf_engine/dns_service_resolver.cc )
-  s.files += %w( src/core/lib/event_engine/cf_engine/dns_service_resolver.h )
   s.files += %w( src/core/lib/event_engine/channel_args_endpoint_config.cc )
   s.files += %w( src/core/lib/event_engine/channel_args_endpoint_config.h )
   s.files += %w( src/core/lib/event_engine/common_closures.h )

@@ -341,7 +341,6 @@ grpc_objc_testing_library(
         "//src/core:cf_event_engine",
         "//test/core/event_engine/test_suite/posix:oracle_event_engine_posix",
         "//test/core/event_engine/test_suite/tests:client",
-        "//test/core/event_engine/test_suite/tests:dns",
         "//test/core/event_engine/test_suite/tests:timer",
     ],
 )
