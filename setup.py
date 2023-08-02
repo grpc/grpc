@@ -454,6 +454,10 @@ else:
         ("GRPC_ENABLE_FORK_SUPPORT", 1),
     )
 
+# Fix for multiprocessing support on Apple devices.
+# TODO(vigneshbabu): Remove this once the poll poller gets fork support.
+DEFINE_MACROS += (("GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER", 1),)
+
 # Fix for Cython build issue in aarch64.
 # It's required to define this macro before include <inttypes.h>.
 # <inttypes.h> was included in core/lib/channel/call_tracer.h.
