@@ -22,6 +22,9 @@
 
 #include <string.h>
 
+#include <map>
+#include <memory>
+
 #include <ares.h>
 
 #include "absl/strings/str_format.h"
@@ -112,8 +115,8 @@ class GrpcPolledFdWindows {
                       &GrpcPolledFdWindows::OnTcpConnect, this,
                       grpc_schedule_on_exec_ctx);
     GRPC_CLOSURE_INIT(&on_schedule_write_closure_after_delay_,
-                      &GrpcPolledFdWindows::OnScheduleWriteClosureAfterDelay, this,
-                      grpc_schedule_on_exec_ctx);
+                      &GrpcPolledFdWindows::OnScheduleWriteClosureAfterDelay,
+                      this, grpc_schedule_on_exec_ctx);
     winsocket_ = grpc_winsocket_create(as, name_.c_str());
   }
 
@@ -187,8 +190,10 @@ class GrpcPolledFdWindows {
   }
 
   void RegisterForOnWriteableLocked(grpc_closure* write_closure) {
-    GRPC_CARES_TRACE_LOG("fd:|%s| RegisterForOnWriteableLocked called connect_done_: %d last_wsa_send_result_: %d",
-          GetName(), connect_done_ last_wsa_send_result_);
+    GRPC_CARES_TRACE_LOG(
+        "fd:|%s| RegisterForOnWriteableLocked called connect_done_: %d "
+        "last_wsa_send_result_: %d",
+        GetName(), connect_done_ last_wsa_send_result_);
     GPR_ASSERT(write_closure_ == nullptr);
     write_closure_ = write_closure;
     if (!connect_done_) {
@@ -203,9 +208,9 @@ class GrpcPolledFdWindows {
     }
   }
 
-  static void OnScheduleWriteClosureAfterDelay(void* arg, grpc_error_handle /*error*/) {
-    GrpcPolledFdWindows* self =
-        static_cast<GrpcPolledFdWindows*>(arg);
+  static void OnScheduleWriteClosureAfterDelay(void* arg,
+                                               grpc_error_handle /*error*/) {
+    GrpcPolledFdWindows* self = static_cast<GrpcPolledFdWindows*>(arg);
     MutexLock lock(self->mu_);
     GRPC_CARES_TRACE_LOG(
         "fd:|%s| OnScheduleWriteClosureAfterDelay"
@@ -229,16 +234,19 @@ class GrpcPolledFdWindows {
     if (last_wsa_send_result_ == 0) {
       ScheduleAndNullWriteClosure(absl::OkStatus());
     } else {
-      // If the last write attempt on this socket failed, that means either of two things:
-      // 1) C-ares considers the error non-retryable:
-      //      In this case, c-ares will not try to use this socket anymore and close it etc.
-      // 2) C-ares considers the error retryable (e.g. WSAEWOULDBLOCK on a TCP socket):
-      //      In this case, we simply spoof a "writable" notification 1 second from now.
-      //      c-ares will retry a synchronous / non-blocking write in the subsequent call
-      //      to ares_process_fd. Note that ideally, we'd use an async WSA send operation in
-      //      this case, but the machinery involved in that would be much more complex and
-      //      is probably not worth having. Instead just take a busy-poll approach on the
-      //      write, but pace ourselves to not burn CPU.
+      // If the last write attempt on this socket failed, that means either of
+      // two things: 1) C-ares considers the error non-retryable:
+      //      In this case, c-ares will not try to use this socket anymore and
+      //      close it etc.
+      // 2) C-ares considers the error retryable (e.g. WSAEWOULDBLOCK on a TCP
+      // socket):
+      //      In this case, we simply spoof a "writable" notification 1 second
+      //      from now. c-ares will retry a synchronous / non-blocking write in
+      //      the subsequent call to ares_process_fd. Note that ideally, we'd
+      //      use an async WSA send operation in this case, but the machinery
+      //      involved in that would be much more complex and is probably not
+      //      worth having. Instead just take a busy-poll approach on the write,
+      //      but pace ourselves to not burn CPU.
       GPR_ASSERT(!have_schedule_write_closure_after_delay_);
       have_schedule_write_closure_after_delay_ = true;
       grpc_timer_init(
@@ -353,14 +361,14 @@ class GrpcPolledFdWindows {
     grpc_slice write_buf = FlattenIovec(iov, iov_count);
     DWORD bytes_sent = 0;
     int wsa_error_code = 0;
-    last_wsa_send_result_ = SendWriteBuf(write_buf, &bytes_sent, &wsa_error_code);
+    last_wsa_send_result_ =
+        SendWriteBuf(write_buf, &bytes_sent, &wsa_error_code);
     CSliceUnref(write_buf);
     if (last_wsa_send_result_ != 0) {
       wsa_error_ctx->SetWSAError(wsa_error_code);
       char* msg = gpr_format_message(wsa_error_code);
-      GRPC_CARES_TRACE_LOG(
-          "fd:|%s| SendV SendWriteBuf error code:%d msg:|%s|", GetName(),
-          wsa_error_code, msg);
+      GRPC_CARES_TRACE_LOG("fd:|%s| SendV SendWriteBuf error code:%d msg:|%s|",
+                           GetName(), wsa_error_code, msg);
       gpr_free(msg);
       return -1;
     }
@@ -665,7 +673,8 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
       GRPC_CARES_TRACE_LOG("Socket called with invalid socket type:%d", type);
       return INVALID_SOCKET;
     }
-    GrpcPolledFdFactoryWindows* self = static_cast<GrpcPolledFdFactoryWindows*>(user_data);
+    GrpcPolledFdFactoryWindows* self =
+        static_cast<GrpcPolledFdFactoryWindows*>(user_data);
     SOCKET s = WSASocket(af, type, protocol, nullptr, 0,
                          grpc_get_default_wsa_socket_flags());
     if (s == INVALID_SOCKET) {
@@ -680,8 +689,8 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
                            StatusToString(error).c_str());
       return INVALID_SOCKET;
     }
-    auto polled_fd = std::make_unique<GrpcPolledFdWindows>(
-        s, map->mu_, af, type);
+    auto polled_fd =
+        std::make_unique<GrpcPolledFdWindows>(s, map->mu_, af, type);
     GRPC_CARES_TRACE_LOG(
         "fd:|%s| created with params af:%d type:%d protocol:%d",
         polled_fd->GetName(), af, type, protocol);
@@ -692,7 +701,8 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
   static int Connect(ares_socket_t as, const struct sockaddr* target,
                      ares_socklen_t target_len, void* user_data) {
     WSAErrorContext wsa_error_ctx;
-    GrpcPolledFdFactoryWindows* self = static_cast<GrpcPolledFdFactoryWindows*>(user_data);
+    GrpcPolledFdFactoryWindows* self =
+        static_cast<GrpcPolledFdFactoryWindows*>(user_data);
     auto it = self->sockets_.find(as);
     GPR_ASSERT(it != self->sockets_.end());
     return it->second->Connect(&wsa_error_ctx, target, target_len);
@@ -701,7 +711,8 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
   static ares_ssize_t SendV(ares_socket_t as, const struct iovec* iov,
                             int iovec_count, void* user_data) {
     WSAErrorContext wsa_error_ctx;
-    GrpcPolledFdFactoryWindows* self = static_cast<GrpcPolledFdFactoryWindows*>(user_data);
+    GrpcPolledFdFactoryWindows* self =
+        static_cast<GrpcPolledFdFactoryWindows*>(user_data);
     auto it = self->sockets_.find(as);
     GPR_ASSERT(it != self->sockets_.end());
     return it->second->SendV(&wsa_error_ctx, iov, iovec_count);
@@ -711,7 +722,8 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
                                int flags, struct sockaddr* from,
                                ares_socklen_t* from_len, void* user_data) {
     WSAErrorContext wsa_error_ctx;
-    GrpcPolledFdFactoryWindows* self = static_cast<GrpcPolledFdFactoryWindows*>(user_data);
+    GrpcPolledFdFactoryWindows* self =
+        static_cast<GrpcPolledFdFactoryWindows*>(user_data);
     auto it = self->sockets_.find(as);
     GPR_ASSERT(it != self->sockets_.end());
     return it->second->RecvFrom(&wsa_error_ctx, data, data_len, flags, from,
@@ -721,11 +733,11 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
   static int CloseSocket(SOCKET s, void* user_data) {}
 
   const struct ares_socket_functions kCustomSockFuncs = {
-    &GrpcPolledFdFactoryWindows::Socket /* socket */,
-    &GrpcPolledFdFactoryWindows::CloseSocket /* close */,
-    &GrpcPolledFdFactoryWindows::Connect /* connect */,
-    &GrpcPolledFdFactoryWindows::RecvFrom /* recvfrom */,
-    &GrpcPolledFdFactoryWindows::SendV /* sendv */,
+      &GrpcPolledFdFactoryWindows::Socket /* socket */,
+      &GrpcPolledFdFactoryWindows::CloseSocket /* close */,
+      &GrpcPolledFdFactoryWindows::Connect /* connect */,
+      &GrpcPolledFdFactoryWindows::RecvFrom /* recvfrom */,
+      &GrpcPolledFdFactoryWindows::SendV /* sendv */,
   };
 
   std::map<SOCKET, std::unique_ptr<GrpcPolledFdWindows>> sockets_;
