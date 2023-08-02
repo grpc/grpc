@@ -78,7 +78,7 @@ git submodule --quiet foreach 'git_commit="$(git rev-parse HEAD)"; mkdir -p ${AR
 popd >/dev/null
 
 # Extract grpc
-mkdir -p grpc
+mkdir grpc
 tar -xopf "${ARCHIVES_DIR}/grpc/${GRPC_GIT_COMMIT_FROM_STABLE_STATUS}.${ARCHIVE_FORMAT}" -C grpc
 
 # apply the patch
