@@ -207,7 +207,7 @@ class UnaryStreamMultiCallable(
             call = InterceptedUnaryStreamCall(
                 self._interceptors,
                 request,
-                deadline,
+                timeout,
                 metadata,
                 credentials,
                 wait_for_ready,
@@ -253,7 +253,7 @@ class StreamUnaryMultiCallable(
             call = InterceptedStreamUnaryCall(
                 self._interceptors,
                 request_iterator,
-                deadline,
+                timeout,
                 metadata,
                 credentials,
                 wait_for_ready,
@@ -299,7 +299,7 @@ class StreamStreamMultiCallable(
             call = InterceptedStreamStreamCall(
                 self._interceptors,
                 request_iterator,
-                deadline,
+                timeout,
                 metadata,
                 credentials,
                 wait_for_ready,
