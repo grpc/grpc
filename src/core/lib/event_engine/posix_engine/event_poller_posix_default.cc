@@ -23,8 +23,6 @@
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/iomgr/port.h"
 
-#include <iostream>
-
 namespace grpc_event_engine {
 namespace experimental {
 
@@ -44,17 +42,14 @@ PosixEventPoller* MakeDefaultPoller(Scheduler* scheduler) {
   for (auto it = strings.begin(); it != strings.end() && poller == nullptr;
        it++) {
     if (PollStrategyMatches(*it, "epoll1")) {
-      std::cerr << "make epoll1 poller" << std::endl;
       poller = MakeEpoll1Poller(scheduler);
     }
     if (poller == nullptr && PollStrategyMatches(*it, "poll")) {
       // If epoll1 fails and if poll strategy matches "poll", use Poll poller
-      std::cerr << "make poll poller" << std::endl;
       poller = MakePollPoller(scheduler, /*use_phony_poll=*/false);
     } else if (poller == nullptr && PollStrategyMatches(*it, "none")) {
       // If epoll1 fails and if poll strategy matches "none", use phony poll
       // poller.
-      std::cerr << "make phony poll poller" << std::endl;
       poller = MakePollPoller(scheduler, /*use_phony_poll=*/true);
     }
   }
