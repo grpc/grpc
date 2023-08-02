@@ -305,7 +305,9 @@ class CLanguage(object):
                 print("should never reach here.")
                 sys.exit(1)
 
-            self._cmake_configure_extra_args = []
+            self._cmake_configure_extra_args = list(
+                self.args.cmake_configure_extra_args
+            )
             self._cmake_generator_windows = cmake_generator
             # required to pass as cmake "-A" configuration for VS builds (but not for Ninja)
             self._cmake_architecture_windows = (
@@ -329,7 +331,11 @@ class CLanguage(object):
             (
                 self._docker_distro,
                 self._cmake_configure_extra_args,
-            ) = self._compiler_options(self.args.use_docker, self.args.compiler)
+            ) = self._compiler_options(
+                self.args.use_docker,
+                self.args.compiler,
+                self.args.cmake_configure_extra_args,
+            )
 
             if self.args.arch == "x86":
                 # disable boringssl asm optimizations when on x86
@@ -544,8 +550,14 @@ class CLanguage(object):
             "-DCMAKE_CXX_COMPILER=clang++%s" % version_suffix,
         ]
 
-    def _compiler_options(self, use_docker, compiler):
+    def _compiler_options(
+        self, use_docker, compiler, cmake_configure_extra_args
+    ):
         """Returns docker distro and cmake configure args to use for given compiler."""
+        if cmake_configure_extra_args:
+            # only allow specifying extra cmake args for "vanilla" compiler
+            _check_compiler(compiler, ["default", "cmake"])
+            return ("nonexistent_docker_distro", cmake_configure_extra_args)
         if not use_docker and not _is_use_docker_child():
             # if not running under docker, we cannot ensure the right compiler version will be used,
             # so we only allow the non-specific choices.
@@ -1823,6 +1835,12 @@ argp.add_argument(
     type=str,
     nargs="?",
     help="Upload test results to a specified BQ table.",
+)
+argp.add_argument(
+    "--cmake_configure_extra_args",
+    default=[],
+    nargs="+",
+    help="Extra arguments that will be passed to the cmake configure command. Only works for C/C++.",
 )
 args = argp.parse_args()
 
