@@ -254,7 +254,7 @@ class GrpcPolledFdWindows {
       have_schedule_write_closure_after_delay_ = true;
       grpc_timer_init(
           schedule_write_closure_after_delay_,
-          grpc_core::Timestamp::Now() + grpc_core::Duration::Seconds(1),
+          Timestamp::Now() + Duration::Seconds(1),
           &on_schedule_write_closure_after_delay_);
     }
   }
