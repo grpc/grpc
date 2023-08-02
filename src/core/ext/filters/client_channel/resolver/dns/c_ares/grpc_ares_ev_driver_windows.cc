@@ -206,7 +206,7 @@ class GrpcPolledFdWindows {
       }
       GPR_ASSERT(pending_continue_register_for_on_writeable_locked_ == false);
       pending_continue_register_for_on_writeable_locked_ = true;
-    } else if ({
+    } else if {
       ContinueRegisterForOnWriteableLocked();
     }
   }
