@@ -111,14 +111,14 @@ PoolAndSize ChoosePoolForAllocationSize(
   return ChoosePoolForAllocationSizeImpl<0, kBucketSizes...>::Fn(n);
 }
 #else
-template <typename T>
-struct Delete {
-  static void Run(T* t) { delete t; }
+template <typename T, typename A, typename B>
+struct IfArray {
+  using Result = A;
 };
 
-template <typename T>
-struct Delete<T[]> {
-  static void Run(T* t) { delete[] t; }
+template <typename T, typename A, typename B>
+struct IfArray<T[], A, B> {
+  using Result = B;
 };
 #endif
 
@@ -292,7 +292,27 @@ class Arena {
       // by setting the arena to nullptr.
       // This is a transitional hack and should be removed once promise based
       // filter is removed.
-      if (delete_) arena_detail::Delete<T>::Run(p);
+      if (delete_) delete p;
+    }
+
+    bool has_freelist() const { return delete_; }
+
+   private:
+    bool delete_ = true;
+  };
+
+  class ArrayPooledDeleter {
+   public:
+    ArrayPooledDeleter() = default;
+    explicit ArrayPooledDeleter(std::nullptr_t) : delete_(false) {}
+    template <typename T>
+    void operator()(T* p) {
+      // TODO(ctiller): promise based filter hijacks ownership of some pointers
+      // to make them appear as PoolPtr without really transferring ownership,
+      // by setting the arena to nullptr.
+      // This is a transitional hack and should be removed once promise based
+      // filter is removed.
+      if (delete_) delete[] p;
     }
 
     bool has_freelist() const { return delete_; }
@@ -302,7 +322,9 @@ class Arena {
   };
 
   template <typename T>
-  using PoolPtr = std::unique_ptr<T, PooledDeleter>;
+  using PoolPtr =
+      std::unique_ptr<T, typename arena_detail::IfArray<
+                             T, PooledDeleter, ArrayPooledDeleter>::Result>;
 
   // Make a unique_ptr to T that is allocated from the arena.
   // When the pointer is released, the memory may be reused for other
@@ -324,7 +346,7 @@ class Arena {
   //          arena size.
   template <typename T>
   PoolPtr<T[]> MakePooledArray(size_t n) {
-    return PoolPtr<T[]>(new T[n], PooledDeleter());
+    return PoolPtr<T[]>(new T[n], ArrayPooledDeleter());
   }
 
   // Like MakePooled, but with manual memory management.
