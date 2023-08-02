@@ -337,11 +337,6 @@ class CLanguage(object):
                 self.args.cmake_configure_extra_args,
             )
 
-            if self.args.arch == "x86":
-                # disable boringssl asm optimizations when on x86
-                # see https://github.com/grpc/grpc/blob/b5b8578b3f8b4a9ce61ed6677e19d546e43c5c68/tools/run_tests/artifacts/artifact_targets.py#L253
-                self._cmake_configure_extra_args.append("-DOPENSSL_NO_ASM=ON")
-
     def test_specs(self):
         out = []
         binaries = get_c_tests(self.args.travis, self.test_lang)
