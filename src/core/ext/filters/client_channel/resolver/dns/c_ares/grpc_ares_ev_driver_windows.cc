@@ -684,7 +684,7 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
     GRPC_CARES_TRACE_LOG(
         "fd:|%s| created with params af:%d type:%d protocol:%d",
         polled_fd->GetName(), af, type, protocol);
-    auto insert_result = self->sockets_.insert(s, std::move(polled_fd));
+    auto insert_result = self->sockets_.insert({s, std::move(polled_fd)});
     GPR_ASSERT(insert_result->second);
     return s;
   }
