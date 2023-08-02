@@ -262,7 +262,7 @@ class GrpcPolledFdWindows {
   bool IsFdStillReadableLocked() { return read_buf_has_data_; }
 
   void ShutdownLocked(grpc_error_handle /* error */) {
-    GPR_ASSERT(!shutdown_called_) return;
+    GPR_ASSERT(!shutdown_called_);
     shutdown_called_ = true;
     if (have_schedule_write_closure_after_delay_) {
       grpc_timer_cancel(&schedule_write_closure_after_delay_);
