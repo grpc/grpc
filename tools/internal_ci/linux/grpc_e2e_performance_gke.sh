@@ -46,13 +46,16 @@ gcloud container clusters get-credentials benchmarks-prod2 \
 # Set up environment variables.
 LOAD_TEST_PREFIX="${KOKORO_BUILD_INITIATOR}"
 # BEGIN differentiate experimental configuration from master configuration.
-if [[ "${KOKORO_BUILD_INITIATOR%%-*}" == kokoro ]]; then
-    LOAD_TEST_PREFIX=kokoro
+if [[ "${KOKORO_BUILD_INITIATOR%%-*}" == kokoro && "${KOKORO_GITHUB_COMMIT_URL%/*}" == "https://github.com/grpc/grpc/commit" ]]; then
+    # Use "official" BQ tables only for builds initiated by Kokoro and running
+    # from grpc/grpc. These results show up in the "official" public dashboard.
+    BIGQUERY_TABLE_8CORE=e2e_benchmarks.ci_master_results_8core
+    BIGQUERY_TABLE_32CORE=e2e_benchmarks.ci_master_results_32core
+else
+    # Use experimental BQ tables otherwise.
+    BIGQUERY_TABLE_8CORE=e2e_benchmarks.experimental_results
+    BIGQUERY_TABLE_32CORE=e2e_benchmarks.experimental_results_32core
 fi
-# Use the "official" BQ tables so that the measurements will show up in the
-# "official" public dashboard.
-BIGQUERY_TABLE_8CORE=e2e_benchmarks.ci_master_results_8core
-BIGQUERY_TABLE_32CORE=e2e_benchmarks.ci_master_results_32core
 # END differentiate experimental configuration from master configuration.
 CLOUD_LOGGING_URL="https://source.cloud.google.com/results/invocations/${KOKORO_BUILD_ID}"
 PREBUILT_IMAGE_PREFIX="gcr.io/grpc-testing/e2etest/prebuilt/${LOAD_TEST_PREFIX}"
