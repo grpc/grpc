@@ -49,6 +49,7 @@
 #include "src/core/lib/iomgr/tcp_windows.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/iomgr/timer.h"
 
 // TODO(apolcyn): remove this hack after fixing upstream.
 // Our grpc/c-ares code on Windows uses the ares_set_socket_functions API,
@@ -111,9 +112,6 @@ class GrpcPolledFdWindows {
     GRPC_CLOSURE_INIT(&outer_read_closure_,
                       &GrpcPolledFdWindows::OnIocpReadable, this,
                       grpc_schedule_on_exec_ctx);
-    GRPC_CLOSURE_INIT(&outer_write_closure_,
-                      &GrpcPolledFdWindows::OnIocpWriteable, this,
-                      grpc_schedule_on_exec_ctx);
     GRPC_CLOSURE_INIT(&on_tcp_connect_locked_,
                       &GrpcPolledFdWindows::OnTcpConnect, this,
                       grpc_schedule_on_exec_ctx);
@@ -125,7 +123,6 @@ class GrpcPolledFdWindows {
 
   ~GrpcPolledFdWindows() {
     CSliceUnref(read_buf_);
-    CSliceUnref(write_buf_);
     GPR_ASSERT(read_closure_ == nullptr);
     GPR_ASSERT(write_closure_ == nullptr);
     grpc_winsocket_destroy(winsocket_);
@@ -196,7 +193,7 @@ class GrpcPolledFdWindows {
     GRPC_CARES_TRACE_LOG(
         "fd:|%s| RegisterForOnWriteableLocked called connect_done_: %d "
         "last_wsa_send_result_: %d",
-        GetName(), connect_done_ last_wsa_send_result_);
+        GetName(), connect_done_, last_wsa_send_result_);
     GPR_ASSERT(write_closure_ == nullptr);
     write_closure_ = write_closure;
     if (!connect_done_) {
@@ -218,9 +215,9 @@ class GrpcPolledFdWindows {
     GRPC_CARES_TRACE_LOG(
         "fd:|%s| OnScheduleWriteClosureAfterDelay"
         "last_wsa_send_result_:%d",
-        GetName(), last_wsa_send_result_);
-    have_schedule_write_closure_after_delay_ = false;
-    self->ScheduleandNullWriteClosure(absl::OkStatus());
+        self->GetName(), self->last_wsa_send_result_);
+    self->have_schedule_write_closure_after_delay_ = false;
+    self->ScheduleAndNullWriteClosure(absl::OkStatus());
   }
 
   void ContinueRegisterForOnWriteableLocked() {
@@ -352,15 +349,6 @@ class GrpcPolledFdWindows {
       wsa_error_ctx->SetWSAError(wsa_connect_error_);
       return -1;
     }
-    return SendV(wsa_error_ctx, iov, iov_count);
-  }
-
-  ares_ssize_t SendV(WSAErrorContext* wsa_error_ctx, const struct iovec* iov,
-                     int iov_count) {
-    // c-ares doesn't handle retryable errors on writes of UDP sockets.
-    // Therefore, the sendv handler for UDP sockets must only attempt
-    // to write everything inline.
-    GRPC_CARES_TRACE_LOG("fd:|%s| SendV called", GetName());
     grpc_slice write_buf = FlattenIovec(iov, iov_count);
     DWORD bytes_sent = 0;
     int wsa_error_code = 0;
@@ -573,7 +561,6 @@ class GrpcPolledFdWindows {
 
  private:
   Mutex* mu_;
-  GrpcPolledFdFactoryWindows* factory_;
   char recv_from_source_addr_[200];
   ares_socklen_t recv_from_source_addr_len_;
   grpc_slice read_buf_;
@@ -600,6 +587,7 @@ class GrpcPolledFdWindows {
   // registrations with the following state.
   bool pending_continue_register_for_on_readable_locked_ = false;
   bool pending_continue_register_for_on_writeable_locked_ = false;
+  std::function<void()> on_shutdown_locked_;
 };
 
 // A thin wrapper over a GrpcPolledFdWindows object but with a shorter
@@ -685,14 +673,14 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
     // the point that we call shutdown, we're guaranteed that c-ares has no more
     // interest in the fd, so the mapping can't be needed anymore. We still keep
     // ownership though.
-    auto on_shutdown_locked = [self]() {
+    auto on_shutdown_locked = [self, s]() {
       auto it = self->sockets_.find(s);
       GPR_ASSERT(it != self->sockets_.end());
       self->sockets_.erase(it);
       self->inactive_polled_fds.insert(std::move(it->second));
     };
     auto polled_fd = std::make_unique<GrpcPolledFdWindows>(
-        s, map->mu_, af, type, std::move(on_shutdown_locked));
+        s, self->mu_, af, type, std::move(on_shutdown_locked));
     GRPC_CARES_TRACE_LOG(
         "fd:|%s| created with params af:%d type:%d protocol:%d",
         polled_fd->GetName(), af, type, protocol);
