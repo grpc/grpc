@@ -940,7 +940,6 @@ void DonePublishedShutdown(void* /*done_arg*/, grpc_cq_completion* storage) {
 //       connection is NOT closed until the server is done with all those calls.
 //    -- Once there are no more calls in progress, the channel is closed.
 void Server::ShutdownAndNotify(grpc_completion_queue* cq, void* tag) {
-  Notification* await_requests = nullptr;
   ChannelBroadcaster broadcaster;
   {
     // Wait for startup to be finished.  Locks mu_global.
@@ -966,12 +965,7 @@ void Server::ShutdownAndNotify(grpc_completion_queue* cq, void* tag) {
       MutexLock lock(&mu_call_);
       KillPendingWorkLocked(GRPC_ERROR_CREATE("Server Shutdown"));
     }
-    await_requests = ShutdownUnrefOnShutdownCall();
-  }
-  // We expect no new requests but there can still be requests in-flight.
-  // Wait for them to complete before proceeding.
-  if (await_requests != nullptr) {
-    await_requests->WaitForNotification();
+    ShutdownUnrefOnShutdownCall();
   }
   StopListening();
   broadcaster.BroadcastShutdown(/*send_goaway=*/true, absl::OkStatus());
