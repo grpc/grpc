@@ -94,18 +94,10 @@ class WSAErrorContext {
 // library to wait for an async read.
 class GrpcPolledFdWindows {
  public:
-  enum WriteState {
-    WRITE_IDLE,
-    WRITE_REQUESTED,
-    WRITE_PENDING,
-    WRITE_WAITING_FOR_VERIFICATION_UPON_RETRY,
-  };
-
   GrpcPolledFdWindows(ares_socket_t as, Mutex* mu, int address_family,
                       int socket_type)
       : mu_(mu),
         read_buf_(grpc_empty_slice()),
-        write_state_(WRITE_IDLE),
         name_(absl::StrFormat("c-ares socket: %" PRIdPTR, as)),
         gotten_into_driver_list_(false),
         address_family_(address_family),
@@ -119,6 +111,9 @@ class GrpcPolledFdWindows {
                       grpc_schedule_on_exec_ctx);
     GRPC_CLOSURE_INIT(&on_tcp_connect_locked_,
                       &GrpcPolledFdWindows::OnTcpConnect, this,
+                      grpc_schedule_on_exec_ctx);
+    GRPC_CLOSURE_INIT(&on_schedule_write_closure_after_delay_,
+                      &GrpcPolledFdWindows::OnScheduleWriteClosureAfterDelay, this,
                       grpc_schedule_on_exec_ctx);
     winsocket_ = grpc_winsocket_create(as, name_.c_str());
   }
@@ -193,15 +188,8 @@ class GrpcPolledFdWindows {
   }
 
   void RegisterForOnWriteableLocked(grpc_closure* write_closure) {
-    if (socket_type_ == SOCK_DGRAM) {
-      GRPC_CARES_TRACE_LOG("fd:|%s| RegisterForOnWriteableLocked called",
-                           GetName());
-    } else {
-      GPR_ASSERT(socket_type_ == SOCK_STREAM);
-      GRPC_CARES_TRACE_LOG(
-          "fd:|%s| RegisterForOnWriteableLocked called write_state_: %d",
-          GetName(), write_state_);
-    }
+    GRPC_CARES_TRACE_LOG("fd:|%s| RegisterForOnWriteableLocked called connect_done_: %d last_wsa_send_result_: %d",
+          GetName(), connect_done_ last_wsa_send_result_);
     GPR_ASSERT(write_closure_ == nullptr);
     write_closure_ = write_closure;
     if (!connect_done_) {
@@ -212,34 +200,57 @@ class GrpcPolledFdWindows {
     }
   }
 
+  static void OnScheduleWriteClosureAfterDelay(void* arg, grpc_error_handle /*error*/) {
+    GrpcPolledFdWindows* self =
+        static_cast<GrpcPolledFdWindows*>(arg);
+    MutexLock lock(self->mu_);
+    GRPC_CARES_TRACE_LOG(
+        "fd:|%s| OnScheduleWriteClosureAfterDelay"
+        "last_wsa_send_result_:%d",
+        GetName(), last_wsa_send_result_);
+    have_schedule_write_closure_after_delay_ = false;
+    self->ScheduleandNullWriteClosure(absl::OkStatus());
+  }
+
   void ContinueRegisterForOnWriteableLocked() {
     GRPC_CARES_TRACE_LOG(
         "fd:|%s| ContinueRegisterForOnWriteableLocked "
-        "wsa_connect_error_:%d",
-        GetName(), wsa_connect_error_);
+        "wsa_connect_error_:%d last_wsa_send_result_:%d",
+        GetName(), wsa_connect_error_, last_wsa_send_result_);
     GPR_ASSERT(connect_done_);
     if (wsa_connect_error_ != 0) {
       ScheduleAndNullWriteClosure(
           GRPC_WSA_ERROR(wsa_connect_error_, "connect"));
       return;
     }
-    switch (write_state_) {
-      case WRITE_IDLE:
-        ScheduleAndNullWriteClosure(absl::OkStatus());
-        break;
-      case WRITE_PENDING:
-        // Wait until c-ares successfully writes on the fd
-        // in SendV (worst case via our c-ares backup timer poller).
-        // Ideally, we should do an async WSASend, but doing so would
-        // complicate this code a lot. So instead of proper async
-        // notifications, take a timer-based busy loop approach to
-        // async writes.
+    if (last_wsa_send_result_ == 0) {
+      ScheduleAndNullWriteClosure(absl::OkStatus());
+    } else {
+      // If the last write attempt on this socket failed, that means either of two things:
+      // 1) C-ares considers the error non-retryable:
+      //      In this case, c-ares will not try to use this socket anymore and close it etc.
+      // 2) C-ares considers the error retryable (e.g. WSAEWOULDBLOCK on a TCP socket):
+      //      In this case, we simply spoof a "writable" notification 1 second from now.
+      //      c-ares will retry a synchronous / non-blocking write in the subsequent call
+      //      to ares_process_fd. Note that ideally, we'd use an async WSA send operation in
+      //      this case, but the machinery involved in that would be much more complex and
+      //      is probably not worth having. Instead just take a busy-poll approach on the
+      //      write, but pace ourselves to not burn CPU.
+      GPR_ASSERT(!have_schedule_write_closure_after_delay_);
+      have_schedule_write_closure_after_delay_ = true;
+      grpc_timer_init(
+          schedule_write_closure_after_delay_,
+          grpc_core::Timestamp::Now() + grpc_core::Duration::Seconds(1),
+          &on_schedule_write_closure_after_delay_);
     }
   }
 
   bool IsFdStillReadableLocked() { return read_buf_has_data_; }
 
   void ShutdownLocked(grpc_error_handle /* error */) {
+    if (have_schedule_write_closure_after_delay_) {
+      grpc_timer_cancel(&schedule_write_closure_after_delay_);
+    }
     grpc_winsocket_shutdown(winsocket_);
   }
 
@@ -301,15 +312,15 @@ class GrpcPolledFdWindows {
     buf.len = GRPC_SLICE_LENGTH(write_buf);
     buf.buf = (char*)GRPC_SLICE_START_PTR(write_buf);
     DWORD flags = 0;
-    int out = WSASend(grpc_winsocket_wrapped_socket(winsocket_), &buf, 1,
+    int ret = WSASend(grpc_winsocket_wrapped_socket(winsocket_), &buf, 1,
                       bytes_sent_ptr, flags, nullptr, nullptr);
     *wsa_error_code = WSAGetLastError();
     GRPC_CARES_TRACE_LOG(
         "fd:|%s| SendWriteBuf WSASend buf.len:%d *bytes_sent_ptr:%d "
         "return:%d *wsa_error_code:%d",
         GetName(), buf.len, bytes_sent_ptr != nullptr ? *bytes_sent_ptr : 0,
-        out, *wsa_error_code);
-    return out;
+        last_wsa_send_result_, *wsa_error_code);
+    return ret;
   }
 
   ares_ssize_t SendV(WSAErrorContext* wsa_error_ctx, const struct iovec* iov,
@@ -337,19 +348,17 @@ class GrpcPolledFdWindows {
     grpc_slice write_buf = FlattenIovec(iov, iov_count);
     DWORD bytes_sent = 0;
     int wsa_error_code = 0;
-    int send_result = SendWriteBuf(write_buf, &bytes_sent, &wsa_error_code);
+    last_wsa_send_result_ = SendWriteBuf(write_buf, &bytes_sent, &wsa_error_code);
     CSliceUnref(write_buf);
-    if (send_result != 0) {
+    if (last_wsa_send_result_ != 0) {
       wsa_error_ctx->SetWSAError(wsa_error_code);
       char* msg = gpr_format_message(wsa_error_code);
-      write_state_ = WRITE_PENDING;
       GRPC_CARES_TRACE_LOG(
           "fd:|%s| SendV SendWriteBuf error code:%d msg:|%s|", GetName(),
           wsa_error_code, msg);
       gpr_free(msg);
       return -1;
     }
-    write_state_ = WRITE_IDLE;
     return bytes_sent;
   }
 
@@ -558,7 +567,10 @@ class GrpcPolledFdWindows {
   grpc_closure* write_closure_ = nullptr;
   grpc_closure outer_read_closure_;
   grpc_winsocket* winsocket_;
-  WriteState write_state_;
+  int last_wsa_send_result_ = 0;
+  grpc_timer schedule_write_closure_after_delay_;
+  grpc_closure on_schedule_write_closure_after_delay_;
+  bool have_schedule_write_closure_after_delay_ = false;
   const std::string name_;
   bool gotten_into_driver_list_;
   int address_family_;
@@ -762,7 +774,7 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
       ares_socket_t as, grpc_pollset_set* /* driver_pollset_set */) override {
     GrpcPolledFdWindows* polled_fd = sock_to_polled_fd_map_.LookupPolledFd(as);
     // Set a flag so that the virtual socket "close" method knows it
-    // doesn't need to call ShutdownLocked, since now the driver will.
+    asdvasdv// doesn't need to call ShutdownLocked, since now the driver will.
     polled_fd->set_gotten_into_driver_list();
     return new GrpcPolledFdWindowsWrapper(polled_fd);
   }
