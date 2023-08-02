@@ -24,6 +24,7 @@
 
 #include <map>
 #include <memory>
+#include <function>
 
 #include <ares.h>
 
@@ -98,12 +99,13 @@ class WSAErrorContext {
 class GrpcPolledFdWindows {
  public:
   GrpcPolledFdWindows(ares_socket_t as, Mutex* mu, int address_family,
-                      int socket_type)
+                      int socket_type, std::function<void()> on_shutdown_locked)
       : mu_(mu),
         read_buf_(grpc_empty_slice()),
         name_(absl::StrFormat("c-ares socket: %" PRIdPTR, as)),
         address_family_(address_family),
-        socket_type_(socket_type) {
+        socket_type_(socket_type),
+        on_shutdown_locked_(std::move(on_shutdown_locked)) {
     // Closure Initialization
     GRPC_CLOSURE_INIT(&outer_read_closure_,
                       &GrpcPolledFdWindows::OnIocpReadable, this,
@@ -259,11 +261,12 @@ class GrpcPolledFdWindows {
   bool IsFdStillReadableLocked() { return read_buf_has_data_; }
 
   void ShutdownLocked(grpc_error_handle /* error */) {
-    if (shutdown_called_) return;
+    GPR_ASSERT(!shutdown_called_) return;
     shutdown_called_ = true;
     if (have_schedule_write_closure_after_delay_) {
       grpc_timer_cancel(&schedule_write_closure_after_delay_);
     }
+    on_shutdown_locked_();
     grpc_winsocket_shutdown(winsocket_);
   }
 
@@ -570,6 +573,7 @@ class GrpcPolledFdWindows {
 
  private:
   Mutex* mu_;
+  GrpcPolledFdFactoryWindows* factory_;
   char recv_from_source_addr_[200];
   ares_socklen_t recv_from_source_addr_len_;
   grpc_slice read_buf_;
@@ -636,18 +640,7 @@ class GrpcPolledFdWindowsWrapper : public GrpcPolledFd {
 
 class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
  public:
-  explicit GrpcPolledFdFactoryWindows(Mutex* mu) : sock_to_polled_fd_map_(mu) {}
-
-  ~GrpcPolledFdFactoryWindows() override {
-    // Shut down any sockets that have not been shut down already - particularly
-    // those that were never registered for readable/writable notifications with
-    // grpc. Note that at this point, the c-ares channel has beend destroyed and
-    // there are no pending readable/writable callbacks on these sockets. So its
-    // safe to destroy them immediately after shutdown.
-    for (auto& it : sockets_) {
-      it->second->ShutdownLocked();
-    }
-  }
+  explicit GrpcPolledFdFactoryWindows(Mutex* mu) : mu_(mu) {}
 
   GrpcPolledFd* NewGrpcPolledFdLocked(
       ares_socket_t as, grpc_pollset_set* /* driver_pollset_set */) override {
@@ -689,12 +682,18 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
                            StatusToString(error).c_str());
       return INVALID_SOCKET;
     }
+    // grpc_winsocket_shutdown calls closesocket which would invalidate our
+    // socket -> polled_fd mapping if we left the entry in. Also note that at the
+    // point that we call shutdown, we're guaranteed that c-ares has no more
+    // interest in the fd, so the mapping can't be needed anymore.
+    auto on_shutdown_locked = [self]() { self->sockets_.erase(s); }
     auto polled_fd =
-        std::make_unique<GrpcPolledFdWindows>(s, map->mu_, af, type);
+        std::make_unique<GrpcPolledFdWindows>(s, map->mu_, af, type, std::move(on_shutdown_locked));
     GRPC_CARES_TRACE_LOG(
         "fd:|%s| created with params af:%d type:%d protocol:%d",
         polled_fd->GetName(), af, type, protocol);
-    sockets_.insert(s, std::move(polled_fd));
+    auto insert_result = sockets_.insert(s, std::move(polled_fd));
+    GPR_ASSERT(insert_result->second);
     return s;
   }
 
@@ -741,6 +740,7 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
   };
 
   std::map<SOCKET, std::unique_ptr<GrpcPolledFdWindows>> sockets_;
+  Mutex* mu_;
 };
 
 std::unique_ptr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(Mutex* mu) {
