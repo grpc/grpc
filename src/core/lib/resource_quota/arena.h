@@ -110,6 +110,16 @@ PoolAndSize ChoosePoolForAllocationSize(
     size_t n, absl::integer_sequence<size_t, kBucketSizes...>) {
   return ChoosePoolForAllocationSizeImpl<0, kBucketSizes...>::Fn(n);
 }
+#else
+template <typename T>
+struct Delete {
+  static void Run(T* t) { delete t; }
+};
+
+template <typename T>
+struct Delete<T[]> {
+  static void Run(T* t) { delete[] t; }
+};
 #endif
 
 }  // namespace arena_detail
@@ -282,7 +292,7 @@ class Arena {
       // by setting the arena to nullptr.
       // This is a transitional hack and should be removed once promise based
       // filter is removed.
-      if (delete_) delete p;
+      if (delete_) arena_detail::Delete<T>::Run(p);
     }
 
     bool has_freelist() const { return delete_; }
