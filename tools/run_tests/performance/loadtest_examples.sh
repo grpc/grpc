@@ -38,12 +38,16 @@ example_file() {
         echo "cxx${suffix}"
         return
     fi
-    if [[ "${scenario#python_asyncio_}" != "${scenario}" ]]; then
-        echo "python_asyncio${suffix}"
+    if [[ "${scenario#node_purejs_}" != "${scenario}" ]]; then
+        echo "node_purejs${suffix}"
         return
     fi
     if [[ "${scenario#php7_protobuf_c_}" != "${scenario}" ]]; then
         echo "php7_protobuf_c${suffix}"
+        return
+    fi
+    if [[ "${scenario#python_asyncio_}" != "${scenario}" ]]; then
+        echo "python_asyncio${suffix}"
         return
     fi
     echo "${scenario%%_*}${suffix}"
@@ -55,12 +59,16 @@ example_language() {
         echo "c++"
         return
     fi
-    if [[ "${filename#python_asyncio_}" != "${filename}" ]]; then
-        echo "python_asyncio"
+    if [[ "${filename#node_purejs_}" != "${filename}" ]]; then
+        echo "node_purejs"
         return
     fi
     if [[ "${filename#php7_protobuf_c_}" != "${filename}" ]]; then
         echo "php7_protobuf_c"
+        return
+    fi
+    if [[ "${filename#python_asyncio_}" != "${filename}" ]]; then
+        echo "python_asyncio"
         return
     fi
     echo "${filename%%_*}"
@@ -72,7 +80,7 @@ scenarios=(
     "dotnet_protobuf_async_unary_ping_pong"
     "go_generic_sync_streaming_ping_pong_secure"
     "java_generic_async_streaming_ping_pong_secure"
-    "node_to_node_generic_async_streaming_ping_pong_secure"
+    "node_purejs_to_node_generic_async_streaming_ping_pong_secure"
     "php7_protobuf_php_extension_to_cpp_protobuf_sync_unary_ping_pong"
     "php7_protobuf_c_extension_to_cpp_protobuf_sync_unary_ping_pong"
     "python_generic_sync_streaming_ping_pong"
@@ -84,7 +92,7 @@ psm_scenarios=(
     "cpp_protobuf_async_unary_5000rpcs_1KB_psm"
     "go_protobuf_async_unary_5000rpcs_1KB_psm"
     "java_protobuf_async_unary_5000rpcs_1KB_psm"
-    "node_to_node_protobuf_async_unary_5000rpcs_1KB_psm"
+    "node_purejs_to_node_protobuf_async_unary_5000rpcs_1KB_psm"
     "php7_protobuf_php_extension_to_cpp_protobuf_async_unary_5000rpcs_1KB_psm"
     "php7_protobuf_c_extension_to_cpp_protobuf_async_unary_5000rpcs_1KB_psm"
     "python_protobuf_async_unary_5000rpcs_1KB_psm"
