@@ -22,9 +22,10 @@
 
 #include <string.h>
 
+#include <function>
 #include <map>
 #include <memory>
-#include <function>
+#include <unordered_set>
 
 #include <ares.h>
 
@@ -683,12 +684,18 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
       return INVALID_SOCKET;
     }
     // grpc_winsocket_shutdown calls closesocket which would invalidate our
-    // socket -> polled_fd mapping if we left the entry in. Also note that at the
-    // point that we call shutdown, we're guaranteed that c-ares has no more
-    // interest in the fd, so the mapping can't be needed anymore.
-    auto on_shutdown_locked = [self]() { self->sockets_.erase(s); }
-    auto polled_fd =
-        std::make_unique<GrpcPolledFdWindows>(s, map->mu_, af, type, std::move(on_shutdown_locked));
+    // socket -> polled_fd mapping if we left the entry in. Also note that at
+    // the point that we call shutdown, we're guaranteed that c-ares has no more
+    // interest in the fd, so the mapping can't be needed anymore. We still keep
+    // ownership though.
+    auto on_shutdown_locked = [self]() {
+      auto it = self->sockets_.find(s);
+      GPR_ASSERT(it != self->sockets_.end());
+      self->sockets_.erase(it);
+      self->inactive_polled_fds.insert(std::move(it->second));
+    };
+    auto polled_fd = std::make_unique<GrpcPolledFdWindows>(
+        s, map->mu_, af, type, std::move(on_shutdown_locked));
     GRPC_CARES_TRACE_LOG(
         "fd:|%s| created with params af:%d type:%d protocol:%d",
         polled_fd->GetName(), af, type, protocol);
@@ -739,8 +746,9 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
       &GrpcPolledFdFactoryWindows::SendV /* sendv */,
   };
 
-  std::map<SOCKET, std::unique_ptr<GrpcPolledFdWindows>> sockets_;
   Mutex* mu_;
+  std::map<SOCKET, std::unique_ptr<GrpcPolledFdWindows>> sockets_;
+  std::unordered_set<std::unique_ptr<GrpcPolledFdWindows>> inactive_polled_fds_;
 };
 
 std::unique_ptr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(Mutex* mu) {
