@@ -1930,6 +1930,9 @@ void FilterStackCall::ContextSet(grpc_context_index elem, void* value,
 
 namespace {
 bool ValidateMetadata(size_t count, grpc_metadata* metadata) {
+  if (count > INT_MAX) {
+    return false;
+  }
   for (size_t i = 0; i < count; i++) {
     grpc_metadata* md = &metadata[i];
     if (!GRPC_LOG_IF_ERROR("validate_metadata",
@@ -3289,9 +3292,16 @@ grpc_call_error ServerPromiseBasedCall::ValidateBatch(const grpc_op* ops,
           return GRPC_CALL_ERROR_INVALID_FLAGS;
         }
         break;
+      case GRPC_OP_SEND_STATUS_FROM_SERVER:
+        if (op.flags != 0) return GRPC_CALL_ERROR_INVALID_FLAGS;
+        if (!ValidateMetadata(
+                op.data.send_status_from_server.trailing_metadata_count,
+                op.data.send_status_from_server.trailing_metadata)) {
+          return GRPC_CALL_ERROR_INVALID_METADATA;
+        }
+        break;
       case GRPC_OP_RECV_MESSAGE:
       case GRPC_OP_RECV_CLOSE_ON_SERVER:
-      case GRPC_OP_SEND_STATUS_FROM_SERVER:
         if (op.flags != 0) return GRPC_CALL_ERROR_INVALID_FLAGS;
         break;
       case GRPC_OP_RECV_INITIAL_METADATA:
