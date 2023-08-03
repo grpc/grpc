@@ -100,7 +100,7 @@ class WSAErrorContext {
 // from c-ares and are used with the grpc windows poller, and it, e.g.,
 // manufactures virtual socket error codes when it e.g. needs to tell the c-ares
 // library to wait for an async read.
-class GrpcPolledFdWindows {
+class GrpcPolledFdWindows : public GrpcPolledFd {
  public:
   GrpcPolledFdWindows(ares_socket_t as, Mutex* mu, int address_family,
                       int socket_type, std::function<void()> on_shutdown_locked)
@@ -123,7 +123,7 @@ class GrpcPolledFdWindows {
     winsocket_ = grpc_winsocket_create(as, name_.c_str());
   }
 
-  ~GrpcPolledFdWindows() {
+  ~GrpcPolledFdWindows() override {
     GRPC_CARES_TRACE_LOG("fd:|%s| ~GrpcPolledFdWindows shutdown_called_: %d ",
                          GetName(), shutdown_called_);
     CSliceUnref(read_buf_);
@@ -148,7 +148,7 @@ class GrpcPolledFdWindows {
     write_closure_ = nullptr;
   }
 
-  void RegisterForOnReadableLocked(grpc_closure* read_closure) {
+  void RegisterForOnReadableLocked(grpc_closure* read_closure) override {
     GPR_ASSERT(read_closure_ == nullptr);
     read_closure_ = read_closure;
     GPR_ASSERT(GRPC_SLICE_LENGTH(read_buf_) == 0);
@@ -199,7 +199,7 @@ class GrpcPolledFdWindows {
     grpc_socket_notify_on_read(winsocket_, &outer_read_closure_);
   }
 
-  void RegisterForOnWriteableLocked(grpc_closure* write_closure) {
+  void RegisterForOnWriteableLocked(grpc_closure* write_closure) override {
     GRPC_CARES_TRACE_LOG(
         "fd:|%s| RegisterForOnWriteableLocked called connect_done_: %d "
         "last_wsa_send_result_: %d",
@@ -262,9 +262,9 @@ class GrpcPolledFdWindows {
     }
   }
 
-  bool IsFdStillReadableLocked() { return read_buf_has_data_; }
+  bool IsFdStillReadableLocked() override { return read_buf_has_data_; }
 
-  void ShutdownLocked(grpc_error_handle /* error */) {
+  void ShutdownLocked(grpc_error_handle /* error */) override {
     GPR_ASSERT(!shutdown_called_);
     shutdown_called_ = true;
     if (have_schedule_write_closure_after_delay_) {
@@ -274,11 +274,11 @@ class GrpcPolledFdWindows {
     grpc_winsocket_shutdown(winsocket_);
   }
 
-  ares_socket_t GetWrappedAresSocketLocked() {
+  ares_socket_t GetWrappedAresSocketLocked() override {
     return grpc_winsocket_wrapped_socket(winsocket_);
   }
 
-  const char* GetName() const { return name_.c_str(); }
+  const char* GetName() const override { return name_.c_str(); }
 
   ares_ssize_t RecvFrom(WSAErrorContext* wsa_error_ctx, void* data,
                         ares_socket_t data_len, int /* flags */,
@@ -515,8 +515,7 @@ class GrpcPolledFdWindows {
         return -1;
       }
     }
-    GPR_ASSERT(!need_async_connect_notification_);
-    need_async_connect_notification_ = true;
+    // RegisterForOnWriteable will register for an async notification
     return out;
   }
 
@@ -602,7 +601,7 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
     // was never seen by the grpc ares wrapper code, i.e. if we never
     // initiated I/O polling for them.
     for (auto& it : sockets_) {
-      delete it->second;
+      delete it.second;
     }
   }
 
@@ -651,8 +650,7 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
       // reused.
       self->sockets_.erase(s);
     };
-    auto polled_fd = new GrpcPolledFdWindows >
-                     (s, self->mu_, af, type, std::move(on_shutdown_locked));
+    auto polled_fd = new GrpcPolledFdWindows(s, self->mu_, af, type, std::move(on_shutdown_locked));
     GRPC_CARES_TRACE_LOG(
         "fd:|%s| created with params af:%d type:%d protocol:%d",
         polled_fd->GetName(), af, type, protocol);
