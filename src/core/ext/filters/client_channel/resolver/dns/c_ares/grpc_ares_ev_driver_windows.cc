@@ -130,9 +130,8 @@ class GrpcPolledFdWindows {
   }
 
   ~GrpcPolledFdWindows() {
-    GRPC_CARES_TRACE_LOG(
-        "fd:|%s| ~GrpcPolledFdWindows shutdown_called_: %d ", GetName(),
-        shutdown_called_);
+    GRPC_CARES_TRACE_LOG("fd:|%s| ~GrpcPolledFdWindows shutdown_called_: %d ",
+                         GetName(), shutdown_called_);
     CSliceUnref(read_buf_);
     GPR_ASSERT(read_closure_ == nullptr);
     GPR_ASSERT(write_closure_ == nullptr);
@@ -446,7 +445,6 @@ class GrpcPolledFdWindows {
   int ConnectUDP(WSAErrorContext* wsa_error_ctx, const struct sockaddr* target,
                  ares_socklen_t target_len) {
     GRPC_CARES_TRACE_LOG("fd:%s ConnectUDP", GetName());
-    GPR_ASSERT(connect_state_ == STARTING);
     GPR_ASSERT(wsa_connect_error_ == 0);
     SOCKET s = grpc_winsocket_wrapped_socket(winsocket_);
     int out =
@@ -720,7 +718,7 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
   std::map<SOCKET, GrpcPolledFdWindows*> sockets_;
 };
 
-} // namespace
+}  // namespace
 
 std::unique_ptr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(Mutex* mu) {
   return std::make_unique<GrpcPolledFdFactoryWindows>(mu);
