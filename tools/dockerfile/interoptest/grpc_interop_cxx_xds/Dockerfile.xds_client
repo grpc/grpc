@@ -14,7 +14,7 @@
 
 # Dockerfile for building //test/cpp/interop:xds_interop_client
 
-FROM debian:11
+FROM phusion/baseimage:master@sha256:e757fe8c7adcb9f798c0eb9dfff31bbf7d91538a1002031d7cdf3e5bf9cf71fc
 
 RUN apt-get update -y && \
     apt-get install -y \
@@ -32,7 +32,7 @@ COPY . .
 RUN tools/bazel build //test/cpp/interop:xds_interop_client
 RUN cp -rL /workdir/bazel-bin/test/cpp/interop/xds_interop_client /artifacts/
 
-FROM gcr.io/distroless/cc-debian11@sha256:b53fbf5f81f4a120a489fedff2092e6fcbeacf7863fce3e45d99cc58dc230ccc
+FROM phusion/baseimage:master@sha256:e757fe8c7adcb9f798c0eb9dfff31bbf7d91538a1002031d7cdf3e5bf9cf71fc
 COPY --from=0 /artifacts ./
 
 ENV GRPC_VERBOSITY="DEBUG"
