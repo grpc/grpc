@@ -63,9 +63,7 @@ ABSL_FLAG(std::string, extra_args, "",
           "Comma-separated list of opaque command args to plumb through to "
           "the binary pointed at by --test_bin_name");
 
-namespace grpc {
-
-namespace testing {
+namespace {
 
 int InvokeResolverComponentTestsRunner(
     std::string test_runner_bin_path, const std::string& test_bin_path,
@@ -87,14 +85,17 @@ int InvokeResolverComponentTestsRunner(
   return status;
 }
 
-}  // namespace testing
-
-}  // namespace grpc
+}  // namespace
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
   grpc_init();
+  GPR_ASSERT(!absl::GetFlag(FLAGS_test_bin_name).empty());
+  std::string full_test_bin_name = absl::GetFlag(FLAGS_test_bin_name);
+#ifdef GPR_WINDOWS
+  full_test_bin_name = full_test_bin_name + ".exe";
+#endif
   GPR_ASSERT(!absl::GetFlag(FLAGS_test_bin_name).empty());
   std::string my_bin = argv[0];
   int status;
@@ -113,8 +114,7 @@ int main(int argc, char** argv) {
     // sure that we're using bazel's test environment.
     status = grpc::testing::InvokeResolverComponentTestsRunner(
         bin_dir + "/resolver_component_tests_runner",
-        bin_dir + "/" + absl::GetFlag(FLAGS_test_bin_name),
-        bin_dir + "/utils/dns_server",
+        bin_dir + "/" + full_test_bin_name, bin_dir + "/utils/dns_server",
         bin_dir + "/resolver_test_record_groups.yaml",
         bin_dir + "/utils/dns_resolver", bin_dir + "/utils/tcp_connect");
   } else {
@@ -124,7 +124,7 @@ int main(int argc, char** argv) {
     // Invoke the .sh and .py scripts directly where they are in source code.
     status = grpc::testing::InvokeResolverComponentTestsRunner(
         "test/cpp/naming/resolver_component_tests_runner.py",
-        bin_dir + "/" + absl::GetFlag(FLAGS_test_bin_name),
+        bin_dir + "/" + full_test_bin_name,
         "test/cpp/naming/utils/dns_server.py",
         "test/cpp/naming/resolver_test_record_groups.yaml",
         "test/cpp/naming/utils/dns_resolver.py",
