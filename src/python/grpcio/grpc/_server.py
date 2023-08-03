@@ -41,6 +41,7 @@ from grpc import _common  # pytype: disable=pyi-error
 from grpc import _compression  # pytype: disable=pyi-error
 from grpc import _interceptor  # pytype: disable=pyi-error
 from grpc._cython import cygrpc
+from grpc._cython.cygrpc import AbortError
 from grpc._typing import ArityAgnosticMethodHandler
 from grpc._typing import ChannelArgumentType
 from grpc._typing import DeserializingFunction
@@ -401,7 +402,7 @@ class _Context(grpc.ServicerContext):
             self._state.code = code
             self._state.details = _common.encode(details)
             self._state.aborted = True
-            raise Exception()
+            raise AbortError()
 
     def abort_with_status(self, status: grpc.Status) -> None:
         self._state.trailing_metadata = status.trailing_metadata
@@ -554,6 +555,17 @@ def _call_behavior(
         except Exception as exception:  # pylint: disable=broad-except
             with state.condition:
                 if state.aborted:
+                    if not isinstance(exception, AbortError):
+                        try:
+                            details = (
+                                f"Exception happened while abort: {exception}"
+                            )
+                        except Exception:  # pylint: disable=broad-except
+                            details = (
+                                "Calling abort raised unprintable Exception!"
+                            )
+                            traceback.print_exc()
+                        _LOGGER.exception(details)
                     _abort(
                         state,
                         rpc_event.call,
