@@ -64,8 +64,8 @@ Http2FrameHeader ParseHeader(uint8_t b0, uint8_t b1, uint8_t b2, uint8_t b3,
   return Http2FrameHeader::Parse(temp);
 }
 
-template <typename T, typename... I>
-T ParseFrame(I... i) {
+template <typename... I>
+Http2Frame ParseFrame(I... i) {
   SliceBuffer buffer;
   buffer.Append(Slice::FromCopiedBuffer(ByteVec(i...)));
   uint8_t hdr[9];
@@ -75,8 +75,7 @@ T ParseFrame(I... i) {
       << "frame_hdr=" << frame_hdr.ToString();
   auto r = ParseFramePayload(frame_hdr, std::move(buffer));
   EXPECT_TRUE(r.ok()) << r.status();
-  EXPECT_TRUE(absl::holds_alternative<T>(r.value()));
-  return std::move(absl::get<T>(r.value()));
+  return std::move(r.value());
 }
 
 template <typename... I>
@@ -164,77 +163,75 @@ TEST(Frame, Serialization) {
 }
 
 TEST(Frame, Parse) {
-  EXPECT_EQ(ParseFrame<Http2DataFrame>(0, 0, 5, 0, 0, 0, 0, 0, 1, 'h', 'e', 'l',
-                                       'l', 'o'),
-            (Http2DataFrame{1, false, SliceBufferFromString("hello")}));
-  EXPECT_EQ(ParseFrame<Http2DataFrame>(0, 0, 4, 0, 1, 0x98, 0x38, 0x18, 0x22,
-                                       'k', 'i', 'd', 's'),
-            (Http2DataFrame{0x98381822, true, SliceBufferFromString("kids")}));
   EXPECT_EQ(
-      ParseFrame<Http2HeaderFrame>(0, 0, 5, 1, 0, 0, 0, 0, 1, 'h', 'e', 'l',
-                                   'l', 'o'),
-      (Http2HeaderFrame{1, false, false, SliceBufferFromString("hello")}));
-  EXPECT_EQ(ParseFrame<Http2HeaderFrame>(0, 0, 4, 1, 4, 0x98, 0x38, 0x18, 0x22,
-                                         'k', 'i', 'd', 's'),
-            (Http2HeaderFrame{0x98381822, true, false,
-                              SliceBufferFromString("kids")}));
-  EXPECT_EQ(ParseFrame<Http2HeaderFrame>(0, 0, 4, 1, 1, 0x98, 0x38, 0x18, 0x22,
-                                         'k', 'i', 'd', 's'),
-            (Http2HeaderFrame{0x98381822, false, true,
-                              SliceBufferFromString("kids")}));
-  EXPECT_EQ(ParseFrame<Http2ContinuationFrame>(0, 0, 5, 9, 0, 0, 0, 0, 1, 'h',
-                                               'e', 'l', 'l', 'o'),
-            (Http2ContinuationFrame{1, false, SliceBufferFromString("hello")}));
-  EXPECT_EQ(ParseFrame<Http2ContinuationFrame>(0, 0, 5, 9, 4, 0, 0, 0, 1, 'h',
-                                               'e', 'l', 'l', 'o'),
-            (Http2ContinuationFrame{1, true, SliceBufferFromString("hello")}));
+      ParseFrame(0, 0, 5, 0, 0, 0, 0, 0, 1, 'h', 'e', 'l', 'l', 'o'),
+      Http2Frame(Http2DataFrame{1, false, SliceBufferFromString("hello")}));
   EXPECT_EQ(
-      ParseFrame<Http2RstStreamFrame>(0, 0, 4, 3, 0, 0, 0, 0, 1, 0, 0, 0, 0x0a),
-      (Http2RstStreamFrame{1, GRPC_HTTP2_CONNECT_ERROR}));
-  EXPECT_EQ(ParseFrame<Http2SettingsFrame>(0, 0, 0, 4, 0, 0, 0, 0, 0),
-            (Http2SettingsFrame{}));
-  EXPECT_EQ(ParseFrame<Http2SettingsFrame>(0, 0, 6, 4, 0, 0, 0, 0, 0, 0x12,
-                                           0x34, 0x9a, 0xbc, 0xde, 0xf0),
-            (Http2SettingsFrame{false, {{0x1234, 0x9abcdef0}}}));
-  EXPECT_EQ(ParseFrame<Http2SettingsFrame>(0, 0, 12, 4, 0, 0, 0, 0, 0, 0x12,
-                                           0x34, 0x9a, 0xbc, 0xde, 0xf0, 0x43,
-                                           0x21, 0x12, 0x34, 0x56, 0x78),
-            (Http2SettingsFrame{false,
-                                {{0x1234, 0x9abcdef0}, {0x4321, 0x12345678}}}));
-  EXPECT_EQ(ParseFrame<Http2SettingsFrame>(0, 0, 0, 4, 1, 0, 0, 0, 0),
-            (Http2SettingsFrame{true, {}}));
-  EXPECT_EQ(ParseFrame<Http2PingFrame>(0, 0, 8, 6, 0, 0, 0, 0, 0, 0x12, 0x34,
-                                       0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0),
-            (Http2PingFrame{false, 0x123456789abcdef0}));
-  EXPECT_EQ(ParseFrame<Http2PingFrame>(0, 0, 8, 6, 1, 0, 0, 0, 0, 0x12, 0x34,
-                                       0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0),
-            (Http2PingFrame{true, 0x123456789abcdef0}));
-  EXPECT_EQ(ParseFrame<Http2GoawayFrame>(0, 0, 13, 7, 0, 0, 0, 0, 0, 0x12, 0x34,
-                                         0x56, 0x78, 0, 0, 0, 0x0b, 'h', 'e',
-                                         'l', 'l', 'o'),
-            (Http2GoawayFrame{0x12345678, GRPC_HTTP2_ENHANCE_YOUR_CALM,
-                              Slice::FromCopiedString("hello")}));
-  EXPECT_EQ(ParseFrame<Http2WindowUpdateFrame>(0, 0, 4, 8, 0, 0, 0, 0, 1, 0x12,
-                                               0x34, 0x56, 0x78),
-            (Http2WindowUpdateFrame{1, 0x12345678}));
+      ParseFrame(0, 0, 4, 0, 1, 0x98, 0x38, 0x18, 0x22, 'k', 'i', 'd', 's'),
+      Http2Frame(
+          Http2DataFrame{0x98381822, true, SliceBufferFromString("kids")}));
+  EXPECT_EQ(ParseFrame(0, 0, 5, 1, 0, 0, 0, 0, 1, 'h', 'e', 'l', 'l', 'o'),
+            Http2Frame(Http2HeaderFrame{1, false, false,
+                                        SliceBufferFromString("hello")}));
+  EXPECT_EQ(
+      ParseFrame(0, 0, 4, 1, 4, 0x98, 0x38, 0x18, 0x22, 'k', 'i', 'd', 's'),
+      Http2Frame(Http2HeaderFrame{0x98381822, true, false,
+                                  SliceBufferFromString("kids")}));
+  EXPECT_EQ(
+      ParseFrame(0, 0, 4, 1, 1, 0x98, 0x38, 0x18, 0x22, 'k', 'i', 'd', 's'),
+      Http2Frame(Http2HeaderFrame{0x98381822, false, true,
+                                  SliceBufferFromString("kids")}));
+  EXPECT_EQ(ParseFrame(0, 0, 5, 9, 0, 0, 0, 0, 1, 'h', 'e', 'l', 'l', 'o'),
+            Http2Frame(Http2ContinuationFrame{1, false,
+                                              SliceBufferFromString("hello")}));
+  EXPECT_EQ(ParseFrame(0, 0, 5, 9, 4, 0, 0, 0, 1, 'h', 'e', 'l', 'l', 'o'),
+            Http2Frame(Http2ContinuationFrame{1, true,
+                                              SliceBufferFromString("hello")}));
+  EXPECT_EQ(ParseFrame(0, 0, 4, 3, 0, 0, 0, 0, 1, 0, 0, 0, 0x0a),
+            Http2Frame(Http2RstStreamFrame{1, GRPC_HTTP2_CONNECT_ERROR}));
+  EXPECT_EQ(ParseFrame(0, 0, 0, 4, 0, 0, 0, 0, 0),
+            Http2Frame(Http2SettingsFrame{}));
+  EXPECT_EQ(
+      ParseFrame(0, 0, 6, 4, 0, 0, 0, 0, 0, 0x12, 0x34, 0x9a, 0xbc, 0xde, 0xf0),
+      Http2Frame(Http2SettingsFrame{false, {{0x1234, 0x9abcdef0}}}));
+  EXPECT_EQ(ParseFrame(0, 0, 12, 4, 0, 0, 0, 0, 0, 0x12, 0x34, 0x9a, 0xbc, 0xde,
+                       0xf0, 0x43, 0x21, 0x12, 0x34, 0x56, 0x78),
+            Http2Frame(Http2SettingsFrame{
+                false, {{0x1234, 0x9abcdef0}, {0x4321, 0x12345678}}}));
+  EXPECT_EQ(ParseFrame(0, 0, 0, 4, 1, 0, 0, 0, 0),
+            Http2Frame(Http2SettingsFrame{true, {}}));
+  EXPECT_EQ(ParseFrame(0, 0, 8, 6, 0, 0, 0, 0, 0, 0x12, 0x34, 0x56, 0x78, 0x9a,
+                       0xbc, 0xde, 0xf0),
+            Http2Frame(Http2PingFrame{false, 0x123456789abcdef0}));
+  EXPECT_EQ(ParseFrame(0, 0, 8, 6, 1, 0, 0, 0, 0, 0x12, 0x34, 0x56, 0x78, 0x9a,
+                       0xbc, 0xde, 0xf0),
+            Http2Frame(Http2PingFrame{true, 0x123456789abcdef0}));
+  EXPECT_EQ(
+      ParseFrame(0, 0, 13, 7, 0, 0, 0, 0, 0, 0x12, 0x34, 0x56, 0x78, 0, 0, 0,
+                 0x0b, 'h', 'e', 'l', 'l', 'o'),
+      Http2Frame(Http2GoawayFrame{0x12345678, GRPC_HTTP2_ENHANCE_YOUR_CALM,
+                                  Slice::FromCopiedString("hello")}));
+  EXPECT_EQ(ParseFrame(0, 0, 4, 8, 0, 0, 0, 0, 1, 0x12, 0x34, 0x56, 0x78),
+            Http2Frame(Http2WindowUpdateFrame{1, 0x12345678}));
 }
 
 TEST(Frame, ParsePadded) {
-  EXPECT_EQ(ParseFrame<Http2DataFrame>(0, 0, 9, 0, 8, 0, 0, 0, 1, 3, 'h', 'e',
-                                       'l', 'l', 'o', 1, 2, 3),
-            (Http2DataFrame{1, false, SliceBufferFromString("hello")}));
   EXPECT_EQ(
-      ParseFrame<Http2HeaderFrame>(0, 0, 8, 1, 8, 0, 0, 0, 1, 2, 'h', 'e', 'l',
-                                   'l', 'o', 1, 2),
-      (Http2HeaderFrame{1, false, false, SliceBufferFromString("hello")}));
+      ParseFrame(0, 0, 9, 0, 8, 0, 0, 0, 1, 3, 'h', 'e', 'l', 'l', 'o', 1, 2,
+                 3),
+      Http2Frame(Http2DataFrame{1, false, SliceBufferFromString("hello")}));
   EXPECT_EQ(
-      ParseFrame<Http2HeaderFrame>(0, 0, 10, 1, 32, 0, 0, 0, 1, 1, 2, 3, 4, 5,
-                                   'h', 'e', 'l', 'l', 'o'),
-      (Http2HeaderFrame{1, false, false, SliceBufferFromString("hello")}));
-  EXPECT_EQ(
-      ParseFrame<Http2HeaderFrame>(0, 0, 13, 1, 40, 0, 0, 0, 1, 2, 1, 2, 3, 4,
-                                   5, 'h', 'e', 'l', 'l', 'o', 1, 2),
-      (Http2HeaderFrame{1, false, false, SliceBufferFromString("hello")}));
+      ParseFrame(0, 0, 8, 1, 8, 0, 0, 0, 1, 2, 'h', 'e', 'l', 'l', 'o', 1, 2),
+      Http2Frame(
+          Http2HeaderFrame{1, false, false, SliceBufferFromString("hello")}));
+  EXPECT_EQ(ParseFrame(0, 0, 10, 1, 32, 0, 0, 0, 1, 1, 2, 3, 4, 5, 'h', 'e',
+                       'l', 'l', 'o'),
+            Http2Frame(Http2HeaderFrame{1, false, false,
+                                        SliceBufferFromString("hello")}));
+  EXPECT_EQ(ParseFrame(0, 0, 13, 1, 40, 0, 0, 0, 1, 2, 1, 2, 3, 4, 5, 'h', 'e',
+                       'l', 'l', 'o', 1, 2),
+            Http2Frame(Http2HeaderFrame{1, false, false,
+                                        SliceBufferFromString("hello")}));
 }
 
 TEST(Frame, ParseRejects) {

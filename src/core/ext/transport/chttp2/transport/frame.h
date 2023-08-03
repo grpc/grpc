@@ -138,7 +138,9 @@ struct Http2FrameHeader {
   }
 };
 
-struct Http2UnknownFrame {};
+struct Http2UnknownFrame {
+  bool operator==(const Http2UnknownFrame& other) const { return true; }
+};
 
 using Http2Frame =
     absl::variant<Http2DataFrame, Http2HeaderFrame, Http2ContinuationFrame,
