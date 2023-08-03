@@ -159,7 +159,6 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//:subprocess",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
     ],
@@ -179,7 +178,6 @@ grpc_cc_binary(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//:subprocess",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
     ],
