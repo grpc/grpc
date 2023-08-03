@@ -554,7 +554,7 @@ static EVP_PKEY* pkey_from_jwk(const Json& json, const char* kty) {
   }
   tmp_n = bignum_from_base64(validate_string_field(it->second, "n"));
   if (tmp_n == nullptr) goto end;
-#elif OPENSSL_VERSION_NUMBER >= 0x30000000L
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
   params[0] = OSSL_PARAM_BN("n", tmp_n, sizeof(tmp_n));
 #endif
   it = json.object().find("e");
