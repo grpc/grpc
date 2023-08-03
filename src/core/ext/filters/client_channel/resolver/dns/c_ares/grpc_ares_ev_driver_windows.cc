@@ -668,12 +668,13 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
                            StatusToString(error).c_str());
       return INVALID_SOCKET;
     }
-    // grpc_winsocket_shutdown calls closesocket which would invalidate our
-    // socket -> polled_fd mapping if we left the entry in. Also note that at
-    // the point that we call shutdown, we're guaranteed that c-ares has no more
-    // interest in the fd, so the mapping can't be needed anymore. We still keep
-    // ownership though.
     auto on_shutdown_locked = [self, s]() {
+      // grpc_winsocket_shutdown calls closesocket which invalidates our
+      // socket -> polled_fd mapping because the socket handle can be henceforth
+      // reused. Also note that at the point that we call shutdown, we're
+      // guaranteed that c-ares has no more interest in the fd, so the mapping
+      // won't be used anymore. We still keep ownership for later destruction
+      // though.
       auto it = self->sockets_.find(s);
       GPR_ASSERT(it != self->sockets_.end());
       self->sockets_.erase(it);
@@ -685,7 +686,7 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
         "fd:|%s| created with params af:%d type:%d protocol:%d",
         polled_fd->GetName(), af, type, protocol);
     auto insert_result = self->sockets_.insert({s, std::move(polled_fd)});
-    GPR_ASSERT(insert_result->second);
+    GPR_ASSERT(insert_result.second);
     return s;
   }
 
