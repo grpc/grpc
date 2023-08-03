@@ -112,7 +112,7 @@ int main(int argc, char** argv) {
     // Invoke bazel's executeable links to the .sh and .py scripts (don't use
     // the .sh and .py suffixes) to make
     // sure that we're using bazel's test environment.
-    status = grpc::testing::InvokeResolverComponentTestsRunner(
+    status = InvokeResolverComponentTestsRunner(
         bin_dir + "/resolver_component_tests_runner",
         bin_dir + "/" + full_test_bin_name, bin_dir + "/utils/dns_server",
         bin_dir + "/resolver_test_record_groups.yaml",
@@ -122,7 +122,7 @@ int main(int argc, char** argv) {
     // correct build config (asan/tsan/dbg, etc.).
     std::string const bin_dir = my_bin.substr(0, my_bin.rfind('/'));
     // Invoke the .sh and .py scripts directly where they are in source code.
-    status = grpc::testing::InvokeResolverComponentTestsRunner(
+    status = InvokeResolverComponentTestsRunner(
         "test/cpp/naming/resolver_component_tests_runner.py",
         bin_dir + "/" + full_test_bin_name,
         "test/cpp/naming/utils/dns_server.py",
