@@ -27,7 +27,8 @@ COPY . .
 RUN tools/bazel build //test/cpp/interop:xds_interop_server
 RUN cp -rL /workdir/bazel-bin/test/cpp/interop/xds_interop_server /artifacts/
 
-FROM gcr.io/distroless/cc-debian11@sha256:b53fbf5f81f4a120a489fedff2092e6fcbeacf7863fce3e45d99cc58dc230ccc
+FROM python:3.9-slim-bullseye
+
 COPY --from=0 /artifacts ./
 
 ENV GRPC_VERBOSITY="DEBUG"

@@ -15,9 +15,10 @@ FROM python:3.9-slim-bullseye
 
 COPY --from=0 /artifacts ./
 
-RUN apt-get update -y && apt-get upgrade -y
-
 ENV GRPC_VERBOSITY="DEBUG"
 ENV GRPC_TRACE="xds_client,xds_resolver,xds_cluster_manager_lb,cds_lb,xds_cluster_resolver_lb,priority_lb,xds_cluster_impl_lb,weighted_target_lb"
+
+RUN apt-get update -y && apt-get install -y python3
+RUN ln -s /usr/bin/python3 /usr/bin/python
 
 ENTRYPOINT ["/xds_interop_server"]
