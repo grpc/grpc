@@ -72,7 +72,7 @@ int InvokeResolverComponentTestsRunner(
     const std::string& dns_resolver_bin_path,
     const std::string& tcp_connect_bin_path) {
   int dns_server_port = grpc_pick_unused_port_or_die();
-  SubProcess* test_driver = new SubProcess(
+  grpc::SubProcess* test_driver = new grpc;:SubProcess(
       {std::move(test_runner_bin_path), "--test_bin_path=" + test_bin_path,
        "--dns_server_bin_path=" + dns_server_bin_path,
        "--records_config_path=" + records_config_path,
