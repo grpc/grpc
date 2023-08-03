@@ -1,6 +1,0 @@
-bazel-bin
-bazel-grpc
-bazel-out
-build
-.cache
-.git
