@@ -61,7 +61,6 @@ def grpc_bad_ssl_tests():
                 "//test/core/util:grpc_test_util_base",
                 "//:gpr",
                 "//:grpc",
-                "//:subprocess",
                 "//test/core/end2end:cq_verifier",
             ],
             tags = ["no_windows"],

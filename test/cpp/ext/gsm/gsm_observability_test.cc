@@ -1,5 +1,6 @@
 //
-// Copyright 2015 gRPC authors.
+//
+// Copyright 2023 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,26 +14,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
+//
 
-#ifndef GRPC_TEST_CORE_HTTP_HTTPCLI_TEST_UTIL_H
-#define GRPC_TEST_CORE_HTTP_HTTPCLI_TEST_UTIL_H
+#include "src/cpp/ext/gsm/gsm_observability.h"
 
-#include <grpc/support/port_platform.h>
+#include "gtest/gtest.h"
 
-#include "test/core/util/subprocess.h"
+#include "test/core/util/test_config.h"
 
-namespace grpc_core {
+namespace grpc {
 namespace testing {
+namespace {
 
-struct HttpRequestTestServer {
-  gpr_subprocess* server;
-  int port;
-};
+TEST(GsmCustomObservabilityBuilderTest, Basic) {
+  EXPECT_EQ(
+      internal::GsmCustomObservabilityBuilder().BuildAndRegister().status(),
+      absl::UnimplementedError("Not Implemented"));
+}
 
-HttpRequestTestServer StartHttpRequestTestServer(int argc, char** argv,
-                                                 bool use_ssl);
-
+}  // namespace
 }  // namespace testing
-}  // namespace grpc_core
+}  // namespace grpc
 
-#endif  // GRPC_TEST_CORE_HTTP_HTTPCLI_TEST_UTIL_H
+int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(&argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}
