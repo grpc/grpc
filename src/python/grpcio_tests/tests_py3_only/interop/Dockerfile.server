@@ -1,6 +1,6 @@
-FROM python:3.9-slim
+FROM python:3.9-slim-bullseye
 
-RUN apt-get update -y && apt-get upgrade -y && apt-get install -y build-essential clang
+RUN apt-get update -y && apt-get upgrade -y && apt-get install -y build-essential clang curl
 
 WORKDIR /workdir
 
@@ -11,7 +11,7 @@ COPY . .
 RUN tools/bazel build -c dbg //src/python/grpcio_tests/tests_py3_only/interop:xds_interop_server
 RUN cp -rL /workdir/bazel-bin/src/python/grpcio_tests/tests_py3_only/interop/xds_interop_server* /artifacts/
 
-FROM python:3.9-slim
+FROM python:3.9-slim-bullseye
 
 COPY --from=0 /artifacts ./
 
