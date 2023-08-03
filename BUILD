@@ -2030,6 +2030,7 @@ grpc_cc_library(
         "//src/core:channel_args",
         "//src/core:channel_init",
         "//src/core:closure",
+        "//src/core:default_event_engine",
         "//src/core:error",
         "//src/core:gpr_atm",
         "//src/core:gpr_manual_constructor",
