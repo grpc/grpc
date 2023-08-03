@@ -122,9 +122,18 @@ class GrpcPolledFdWindows {
   }
 
   ~GrpcPolledFdWindows() {
+    GRPC_CARES_TRACE_LOG(
+        "fd:|%s| ~GrpcPolledFdWindows shutdown_called_: %d " GetName(),
+        shutdown_called_);
     CSliceUnref(read_buf_);
     GPR_ASSERT(read_closure_ == nullptr);
     GPR_ASSERT(write_closure_ == nullptr);
+    GPR_ASSERT(!have_schedule_write_closure_after_delay_);
+    if (!shutdown_called_) {
+      // This can happen if the socket was never seen by grpc ares wrapper
+      // code, i.e. if we never started I/O polling on it.
+      grpc_winsocket_shutdown(winsocket_);
+    }
     grpc_winsocket_destroy(winsocket_);
   }
 
@@ -590,50 +599,24 @@ class GrpcPolledFdWindows {
   std::function<void()> on_shutdown_locked_;
 };
 
-// A thin wrapper over a GrpcPolledFdWindows object but with a shorter
-// lifetime. This object releases it's GrpcPolledFdWindows upon destruction,
-// so that c-ares can still still safely reference the fd if needed afterwards.
-class GrpcPolledFdWindowsWrapper : public GrpcPolledFd {
- public:
-  explicit GrpcPolledFdWindowsWrapper(GrpcPolledFdWindows* wrapped)
-      : wrapped_(wrapped) {}
-
-  void RegisterForOnReadableLocked(grpc_closure* read_closure) override {
-    wrapped_->RegisterForOnReadableLocked(read_closure);
-  }
-
-  void RegisterForOnWriteableLocked(grpc_closure* write_closure) override {
-    wrapped_->RegisterForOnWriteableLocked(write_closure);
-  }
-
-  bool IsFdStillReadableLocked() override {
-    return wrapped_->IsFdStillReadableLocked();
-  }
-
-  void ShutdownLocked(grpc_error_handle error) override {
-    wrapped_->ShutdownLocked(error);
-  }
-
-  ares_socket_t GetWrappedAresSocketLocked() override {
-    return wrapped_->GetWrappedAresSocketLocked();
-  }
-
-  const char* GetName() const override { return wrapped_->GetName(); }
-
- private:
-  GrpcPolledFdWindows* const wrapped_;
-};
-
 class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
  public:
   explicit GrpcPolledFdFactoryWindows(Mutex* mu) : mu_(mu) {}
+
+  ~GrpcPolledFdFactoryWindows() override {
+    // We might still have a socket -> polled fd mappings if the socket
+    // was never seen by the grpc ares wrapper code, i.e. if we never
+    // initiated I/O polling for them.
+    for (auto& it : sockets_) {
+      delete it->second;
+    }
+  }
 
   GrpcPolledFd* NewGrpcPolledFdLocked(
       ares_socket_t as, grpc_pollset_set* /* driver_pollset_set */) override {
     auto it = sockets_.find(as);
     GPR_ASSERT(it != sockets_.end());
-    GrpcPolledFdWindows* polled_fd = it->second.get();
-    return new GrpcPolledFdWindowsWrapper(polled_fd);
+    return it->second;
   }
 
   void ConfigureAresChannelLocked(ares_channel channel) override {
@@ -671,21 +654,15 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
     auto on_shutdown_locked = [self, s]() {
       // grpc_winsocket_shutdown calls closesocket which invalidates our
       // socket -> polled_fd mapping because the socket handle can be henceforth
-      // reused. Also note that at the point that we call shutdown, we're
-      // guaranteed that c-ares has no more interest in the fd, so the mapping
-      // won't be used anymore. We still keep ownership for later destruction
-      // though.
-      auto it = self->sockets_.find(s);
-      GPR_ASSERT(it != self->sockets_.end());
-      self->sockets_.erase(it);
-      self->inactive_polled_fds_.insert(std::move(it->second));
+      // reused.
+      self->sockets_.erase(s);
     };
-    auto polled_fd = std::make_unique<GrpcPolledFdWindows>(
+    auto polled_fd = new GrpcPolledFdWindows>(
         s, self->mu_, af, type, std::move(on_shutdown_locked));
     GRPC_CARES_TRACE_LOG(
         "fd:|%s| created with params af:%d type:%d protocol:%d",
         polled_fd->GetName(), af, type, protocol);
-    auto insert_result = self->sockets_.insert({s, std::move(polled_fd)});
+    auto insert_result = self->sockets_.insert({s, polled_fd});
     GPR_ASSERT(insert_result.second);
     return s;
   }
@@ -733,8 +710,7 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
   };
 
   Mutex* mu_;
-  std::map<SOCKET, std::unique_ptr<GrpcPolledFdWindows>> sockets_;
-  std::unordered_set<std::unique_ptr<GrpcPolledFdWindows>> inactive_polled_fds_;
+  std::map<SOCKET, GrpcPolledFdWindows*> sockets_;
 };
 
 std::unique_ptr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(Mutex* mu) {
