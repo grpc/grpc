@@ -263,7 +263,9 @@ def _extract_public_headers(bazel_rule: BuildMetadata) -> List[str]:
 def _extract_nonpublic_headers(bazel_rule: BuildMetadata) -> List[str]:
     """Gets list of non-public headers from a bazel rule"""
     result = []
-    for dep in list(bazel_rule["hdrs"] + bazel_rule["textual_hdrs"]):
+    for dep in list(
+        bazel_rule["hdrs"] + bazel_rule["textual_hdrs"] + bazel_rule["srcs"]
+    ):
         if not dep.startswith("//:include/") and _has_header_suffix(dep):
             source_file_maybe = _try_extract_source_file_path(dep)
             if source_file_maybe:
