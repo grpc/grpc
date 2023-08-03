@@ -650,7 +650,8 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
       // reused.
       self->sockets_.erase(s);
     };
-    auto polled_fd = new GrpcPolledFdWindows(s, self->mu_, af, type, std::move(on_shutdown_locked));
+    auto polled_fd = new GrpcPolledFdWindows(s, self->mu_, af, type,
+                                             std::move(on_shutdown_locked));
     GRPC_CARES_TRACE_LOG(
         "fd:|%s| created with params af:%d type:%d protocol:%d",
         polled_fd->GetName(), af, type, protocol);
