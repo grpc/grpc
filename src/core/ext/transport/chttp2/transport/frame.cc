@@ -151,7 +151,7 @@ class SerializeHeaderAndPayload {
   void operator()(Http2ContinuationFrame& frame) {
     auto hdr = extra_bytes_.TakeFirst(kFrameHeaderSize);
     Http2FrameHeader{
-        static_cast<uint32_t>(frame.payload.Length()), kFrameTypeHeader,
+        static_cast<uint32_t>(frame.payload.Length()), kFrameTypeContinuation,
         static_cast<uint8_t>(MaybeFlag(frame.end_headers, kFlagEndHeaders)),
         frame.stream_id}
         .Serialize(hdr.begin());
@@ -271,7 +271,8 @@ absl::StatusOr<Http2HeaderFrame> ParseHeaderFrame(const Http2FrameHeader& hdr,
       return absl::InternalError(
           absl::StrCat("invalid priority payload: ", hdr.ToString()));
     }
-    payload.RemoveFirstNBytes(5);
+    uint8_t trash[5];
+    payload.MoveFirstNBytesIntoBuffer(5, trash);
   }
 
   if (hdr.flags & kFlagPadded) {
@@ -426,6 +427,34 @@ void Http2FrameHeader::Serialize(uint8_t* output) {
 
 Http2FrameHeader Http2FrameHeader::Parse(const uint8_t* input) {
   return Http2FrameHeader{Read3b(input), input[3], input[4], Read4b(input + 5)};
+}
+
+namespace {
+std::string Http2FrameTypeString(uint8_t frame_type) {
+  switch (frame_type) {
+    case kFrameTypeData:
+      return "DATA";
+    case kFrameTypeHeader:
+      return "HEADER";
+    case kFrameTypeContinuation:
+      return "CONTINUATION";
+    case kFrameTypeRstStream:
+      return "RST_STREAM";
+    case kFrameTypeSettings:
+      return "SETTINGS";
+    case kFrameTypeGoaway:
+      return "GOAWAY";
+    case kFrameTypeWindowUpdate:
+      return "WINDOW_UPDATE";
+  }
+  return absl::StrCat("UNKNOWN(", frame_type, ")");
+}
+}  // namespace
+
+std::string Http2FrameHeader::ToString() const {
+  return absl::StrCat("H2HDR{type:", Http2FrameTypeString(type),
+                      ", flags:", flags, ", stream_id:", stream_id,
+                      ", length:", length, "}");
 }
 
 void Serialize(absl::Span<Http2Frame> frames, SliceBuffer& out) {
