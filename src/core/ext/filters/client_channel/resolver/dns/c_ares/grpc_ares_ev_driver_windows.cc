@@ -391,7 +391,9 @@ class GrpcPolledFdWindows {
     GPR_ASSERT(!connect_done_);
     connect_done_ = true;
     GPR_ASSERT(wsa_connect_error_ == 0);
-    if (error.ok()) {
+    if (!error.ok() || shutdown_called_) {
+      wsa_connect_error_ = WSA_OPERATION_ABORTED;
+    } else {
       DWORD transferred_bytes = 0;
       DWORD flags;
       BOOL wsa_success =
@@ -408,10 +410,6 @@ class GrpcPolledFdWindows {
             GetName(), wsa_connect_error_, msg);
         gpr_free(msg);
       }
-    } else {
-      // Spoof up an error code that will cause any future c-ares operations on
-      // this fd to abort.
-      wsa_connect_error_ = WSA_OPERATION_ABORTED;
     }
     if (pending_continue_register_for_on_readable_locked_) {
       ContinueRegisterForOnReadableLocked();
