@@ -13,7 +13,7 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_package")
-load("//tools/bazelify_tests:build_defs.bzl", "grpc_run_tests_py_test")
+load("//tools/bazelify_tests:build_defs.bzl", "grpc_run_tests_py_test", "grpc_build_artifact_task")
 load(":portability_tests.bzl", "generate_run_tests_portability_tests")
 
 licenses(["notice"])
@@ -21,6 +21,12 @@ licenses(["notice"])
 grpc_package(name = "tools/bazelify_tests/test")
 
 generate_run_tests_portability_tests(name = "portability_tests_linux")
+
+grpc_build_artifact_task(
+    name = "artifact_protoc_linux_x64",
+    build_script = "build_artifact_protoc.sh",
+    docker_image_version = "tools/dockerfile/grpc_artifact_centos6_x64.current_version",
+)
 
 # C/C++
 grpc_run_tests_py_test(

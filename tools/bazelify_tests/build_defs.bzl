@@ -101,3 +101,66 @@ def grpc_run_tests_py_test(name, args = [], data = [], size = "medium", timeout 
     native.sh_test(
         **test_args
     )
+
+def grpc_build_artifact_task(name, srcs = [], timeout = None, tags = [], exec_compatible_with = [], flaky = None, docker_image_version = None, build_script = None):
+    """Execute an run_tests.py-harness style test under bazel.
+
+    Args:
+        name: The name of the test.
+        args: The args to supply to the test binary.
+        data: Data dependencies.
+        size: The size of the test.
+        timeout: The test timeout.
+        tags: The tags for the test.
+        exec_compatible_with: A list of constraint values that must be
+            satisifed for the platform.
+        exec_properties: A dictionary of strings that will be added to the
+            exec_properties of a platform selected for this target.
+        flaky: Whether this test is flaky.
+    """
+
+    out_archive_name = str(name + ".tar.gz")
+
+    outs = [
+        out_archive_name,
+    ]
+
+    srcs = [
+        "//tools/bazelify_tests:grpc_build_artifact_task.sh",
+        "//tools/bazelify_tests:grpc_repo_archive_with_submodules.tar.gz",
+        build_script,
+    ] + srcs
+
+    cmd = "$(location //tools/bazelify_tests:grpc_build_artifact_task.sh) $(location //tools/bazelify_tests:grpc_repo_archive_with_submodules.tar.gz) $(location " + out_archive_name + ") $(location " + build_script + ") 1>&2"
+
+    # TODO: figure out how to use .currentversion files as input for configuring attributes
+    # TODO: use rbe_exec_properties helpers
+
+    exec_properties = {
+        "dockerNetwork": "standard",  # look into deactivating network for some actions
+        "label:workload": "misc",  # always use a dedicated "misc" pool for running bazelified tests
+        "label:machine_size": "misc_large",  # needed to override the default value of "small".
+    }
+    if docker_image_version:
+        image_spec = DOCKERIMAGE_CURRENT_VERSIONS.get(docker_image_version, None)
+        if not image_spec:
+            fail("Version info for docker image '%s' not found in dockerimage_current_versions.bzl" % docker_image_version)
+        exec_properties["container-image"] = image_spec
+
+    # TODO: check that test can only run under docker sandbox or remotely
+
+    genrule_args = {
+        "name": name,
+        "cmd": cmd,
+        "srcs": srcs,
+        "tags": tags,
+        "flaky": flaky,
+        "timeout": timeout,
+        "exec_compatible_with": exec_compatible_with,
+        "exec_properties": exec_properties,
+        "outs": outs,
+    }
+
+    native.genrule(
+        **genrule_args
+    )
