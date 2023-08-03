@@ -18,7 +18,6 @@
 
 #include <signal.h>
 #include <string.h>
-#include <unistd.h>
 
 #include <string>
 #include <thread>
@@ -68,14 +67,13 @@ namespace grpc {
 
 namespace testing {
 
-void InvokeResolverComponentTestsRunner(
+int InvokeResolverComponentTestsRunner(
     std::string test_runner_bin_path, const std::string& test_bin_path,
     const std::string& dns_server_bin_path,
     const std::string& records_config_path,
     const std::string& dns_resolver_bin_path,
     const std::string& tcp_connect_bin_path) {
   int dns_server_port = grpc_pick_unused_port_or_die();
-
   SubProcess* test_driver = new SubProcess(
       {std::move(test_runner_bin_path), "--test_bin_path=" + test_bin_path,
        "--dns_server_bin_path=" + dns_server_bin_path,
@@ -84,32 +82,9 @@ void InvokeResolverComponentTestsRunner(
        "--dns_resolver_bin_path=" + dns_resolver_bin_path,
        "--tcp_connect_bin_path=" + tcp_connect_bin_path,
        "--extra_args=" + absl::GetFlag(FLAGS_extra_args)});
-  gpr_mu test_driver_mu;
-  gpr_mu_init(&test_driver_mu);
-  gpr_cv test_driver_cv;
-  gpr_cv_init(&test_driver_cv);
   int status = test_driver->Join();
-  if (WIFEXITED(status)) {
-    if (WEXITSTATUS(status)) {
-      grpc_core::Crash(absl::StrFormat(
-          "Resolver component test test-runner exited with code %d",
-          WEXITSTATUS(status)));
-    }
-  } else if (WIFSIGNALED(status)) {
-    grpc_core::Crash(absl::StrFormat(
-        "Resolver component test test-runner ended from signal %d",
-        WTERMSIG(status)));
-  } else {
-    grpc_core::Crash(absl::StrFormat(
-        "Resolver component test test-runner ended with unknown status %d",
-        status));
-  }
-  gpr_mu_lock(&test_driver_mu);
-  gpr_cv_signal(&test_driver_cv);
-  gpr_mu_unlock(&test_driver_mu);
   delete test_driver;
-  gpr_mu_destroy(&test_driver_mu);
-  gpr_cv_destroy(&test_driver_cv);
+  return status;
 }
 
 }  // namespace testing
@@ -122,6 +97,7 @@ int main(int argc, char** argv) {
   grpc_init();
   GPR_ASSERT(!absl::GetFlag(FLAGS_test_bin_name).empty());
   std::string my_bin = argv[0];
+  int status;
   if (absl::GetFlag(FLAGS_running_under_bazel)) {
     GPR_ASSERT(!absl::GetFlag(FLAGS_grpc_test_directory_relative_to_test_srcdir)
                     .empty());
@@ -135,7 +111,7 @@ int main(int argc, char** argv) {
     // Invoke bazel's executeable links to the .sh and .py scripts (don't use
     // the .sh and .py suffixes) to make
     // sure that we're using bazel's test environment.
-    grpc::testing::InvokeResolverComponentTestsRunner(
+    status = grpc::testing::InvokeResolverComponentTestsRunner(
         bin_dir + "/resolver_component_tests_runner",
         bin_dir + "/" + absl::GetFlag(FLAGS_test_bin_name),
         bin_dir + "/utils/dns_server",
@@ -146,7 +122,7 @@ int main(int argc, char** argv) {
     // correct build config (asan/tsan/dbg, etc.).
     std::string const bin_dir = my_bin.substr(0, my_bin.rfind('/'));
     // Invoke the .sh and .py scripts directly where they are in source code.
-    grpc::testing::InvokeResolverComponentTestsRunner(
+    status = grpc::testing::InvokeResolverComponentTestsRunner(
         "test/cpp/naming/resolver_component_tests_runner.py",
         bin_dir + "/" + absl::GetFlag(FLAGS_test_bin_name),
         "test/cpp/naming/utils/dns_server.py",
@@ -155,5 +131,5 @@ int main(int argc, char** argv) {
         "test/cpp/naming/utils/tcp_connect.py");
   }
   grpc_shutdown();
-  return 0;
+  return status;
 }
