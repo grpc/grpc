@@ -1266,6 +1266,8 @@ void Server::ShutdownInternal(gpr_timespec deadline) {
   // shutdown. We should force a shutdown now by cancelling all inflight calls
   if (status == grpc::CompletionQueue::NextStatus::TIMEOUT) {
     grpc_server_cancel_all_calls(server_);
+    status =
+        shutdown_cq.AsyncNext(&tag, &ok, gpr_inf_future(GPR_CLOCK_MONOTONIC));
   }
   // Else in case of SHUTDOWN or GOT_EVENT, it means that the server has
   // successfully shutdown

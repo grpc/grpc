@@ -51,6 +51,7 @@ class CallTracerAnnotationInterface {
  public:
   // Enum associated with types of Annotations.
   enum class AnnotationType {
+    kMetadataSizes,
     kDoNotUse_MustBeLast,
   };
 
@@ -60,9 +61,7 @@ class CallTracerAnnotationInterface {
     explicit Annotation(AnnotationType type) : type_(type) {}
     AnnotationType type() const { return type_; }
     virtual std::string ToString() const = 0;
-
-   protected:
-    ~Annotation() {}
+    virtual ~Annotation() = default;
 
    private:
     const AnnotationType type_;

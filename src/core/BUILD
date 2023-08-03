@@ -1124,10 +1124,6 @@ grpc_cc_library(
     hdrs = [
         "lib/resource_quota/arena.h",
     ],
-    external_deps = [
-        "absl/meta:type_traits",
-        "absl/utility",
-    ],
     visibility = [
         "@grpc:alt_grpc_base_legacy",
     ],

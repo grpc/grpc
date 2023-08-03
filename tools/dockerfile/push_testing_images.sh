@@ -208,6 +208,15 @@ do
   fi
 done
 
+if [ "${CHECK_MODE}" != "" ]
+then
+    # Check that dockerimage_current_versions.bzl is up to date.
+    CHECK_MODE="${CHECK_MODE}" tools/bazelify_tests/generate_dockerimage_current_versions_bzl.sh || CHECK_FAILED=true
+else
+    # Regenerate dockerimage_current_versions.bzl
+    tools/bazelify_tests/generate_dockerimage_current_versions_bzl.sh
+fi
+
 if [ "${CHECK_FAILED}" != "" ]
 then
   echo "ERROR: Some checks have failed."
