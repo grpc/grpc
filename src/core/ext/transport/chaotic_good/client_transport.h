@@ -16,19 +16,16 @@
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_CLIENT_TRANSPORT_H
 
 #include <grpc/support/port_platform.h>
-
 #include <stdint.h>
-
+#include <grpc/event_engine/event_engine.h>
 #include <memory>
 #include <type_traits>
 #include <utility>
+#include <initializer_list>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
 #include "absl/types/variant.h"
-
-#include <grpc/event_engine/event_engine.h>
-
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/promise/activity.h"
