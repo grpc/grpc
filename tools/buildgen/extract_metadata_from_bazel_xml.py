@@ -662,6 +662,19 @@ def _patch_grpc_proto_library_rules(bazel_rules):
             bazel_rule["deps"].append("//external:protobuf")
 
 
+def _patch_descriptor_upb_proto_library(bazel_rules):
+    # The upb's descriptor_upb_proto library doesn't reference the generated descriptor.proto
+    # sources explicitly, so we add them manually.
+    bazel_rule = bazel_rules.get("@upb//:descriptor_upb_proto", None)
+    if bazel_rule:
+        bazel_rule["srcs"].append(
+            ":src/core/ext/upb-generated/google/protobuf/descriptor.upb.c"
+        )
+        bazel_rule["hdrs"].append(
+            ":src/core/ext/upb-generated/google/protobuf/descriptor.upb.h"
+        )
+
+
 def _generate_build_metadata(
     build_extra_metadata: BuildDict, bazel_rules: BuildDict
 ) -> BuildDict:
@@ -1066,6 +1079,11 @@ _BUILD_EXTRA_METADATA = {
         "build": "all",
         "_RENAME": "upb_textformat_lib",
     },
+    "@upb//:descriptor_upb_proto": {
+        "language": "c",
+        "build": "all",
+        "_RENAME": "upb_descriptor_lib",
+    },
     "@utf8_range//:utf8_range": {
         "language": "c",
         "build": "all",
@@ -1308,6 +1326,9 @@ _expand_upb_proto_library_rules(bazel_rules)
 
 # Step 1.6: Add explicit protobuf dependency to grpc_proto_library rules
 _patch_grpc_proto_library_rules(bazel_rules)
+
+# Step 1.7: Make sure upb descriptor.proto library uses the pre-generated sources.
+_patch_descriptor_upb_proto_library(bazel_rules)
 
 # Step 2: Extract the known bazel cc_test tests. While most tests
 # will be buildable with other build systems just fine, some of these tests
