@@ -266,6 +266,11 @@ absl::StatusOr<Http2HeaderFrame> ParseHeaderFrame(const Http2FrameHeader& hdr,
         absl::StrCat("invalid stream id: ", hdr.ToString()));
   }
 
+  if (hdr.flags & kFlagPadded) {
+    auto s = StripPadding(payload);
+    if (!s.ok()) return s;
+  }
+
   if (hdr.flags & kFlagPriority) {
     if (payload.Length() < 5) {
       return absl::InternalError(
@@ -273,11 +278,6 @@ absl::StatusOr<Http2HeaderFrame> ParseHeaderFrame(const Http2FrameHeader& hdr,
     }
     uint8_t trash[5];
     payload.MoveFirstNBytesIntoBuffer(5, trash);
-  }
-
-  if (hdr.flags & kFlagPadded) {
-    auto s = StripPadding(payload);
-    if (!s.ok()) return s;
   }
 
   return Http2HeaderFrame{
@@ -314,6 +314,11 @@ absl::StatusOr<Http2RstStreamFrame> ParseRstStreamFrame(
         absl::StrCat("invalid rst stream payload: ", hdr.ToString()));
   }
 
+  if (hdr.stream_id == 0) {
+    return absl::InternalError(
+        absl::StrCat("invalid stream id: ", hdr.ToString()));
+  }
+
   uint8_t buffer[4];
   payload.CopyToBuffer(buffer);
 
@@ -322,14 +327,20 @@ absl::StatusOr<Http2RstStreamFrame> ParseRstStreamFrame(
 
 absl::StatusOr<Http2SettingsFrame> ParseSettingsFrame(
     const Http2FrameHeader& hdr, SliceBuffer& payload) {
+  if (hdr.stream_id != 0) {
+    return absl::InternalError(
+        absl::StrCat("invalid stream id: ", hdr.ToString()));
+  }
   if (hdr.flags == kFlagAck) return Http2SettingsFrame{true, {}};
-  if (hdr.flags != 0) return absl::InternalError("invalid settings flags");
+  if (hdr.flags != 0) {
+    return absl::InternalError(
+        absl::StrCat("invalid settings flags: ", hdr.ToString()));
+  }
 
   if (payload.Length() % 6 != 0) {
     return absl::InternalError(
         absl::StrCat("invalid settings payload: ", hdr.ToString(),
-                     " -- settings must be multiples of 6 bytes, got ",
-                     payload.Length(), " bytes"));
+                     " -- settings must be multiples of 6 bytes long"));
   }
 
   Http2SettingsFrame frame{false, {}};
@@ -403,7 +414,8 @@ absl::StatusOr<Http2WindowUpdateFrame> ParseWindowUpdateFrame(
     const Http2FrameHeader& hdr, SliceBuffer& payload) {
   if (payload.Length() != 4) {
     return absl::InternalError(
-        absl::StrCat("invalid window update payload: ", hdr.ToString()));
+        absl::StrCat("invalid window update payload: ", hdr.ToString(),
+                     " -- must be 4 bytes"));
   }
 
   if (hdr.flags != 0) {
@@ -446,6 +458,8 @@ std::string Http2FrameTypeString(uint8_t frame_type) {
       return "GOAWAY";
     case kFrameTypeWindowUpdate:
       return "WINDOW_UPDATE";
+    case kFrameTypePing:
+      return "PING";
   }
   return absl::StrCat("UNKNOWN(", frame_type, ")");
 }

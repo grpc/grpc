@@ -16,12 +16,17 @@
 
 #include <initializer_list>
 
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 #include "src/core/lib/transport/http2_errors.h"
 
 namespace grpc_core {
 namespace {
+
+MATCHER_P2(StatusIs, code, message, "") {
+  return arg.code() == code && arg.message() == message;
+}
 
 void DoTheseThings(std::initializer_list<int>) {}
 
@@ -72,6 +77,18 @@ T ParseFrame(I... i) {
   EXPECT_TRUE(r.ok()) << r.status();
   EXPECT_TRUE(absl::holds_alternative<T>(r.value()));
   return std::move(absl::get<T>(r.value()));
+}
+
+template <typename... I>
+absl::Status ValidateFrame(I... i) {
+  SliceBuffer buffer;
+  buffer.Append(Slice::FromCopiedBuffer(ByteVec(i...)));
+  uint8_t hdr[9];
+  buffer.MoveFirstNBytesIntoBuffer(9, hdr);
+  auto frame_hdr = Http2FrameHeader::Parse(hdr);
+  EXPECT_EQ(frame_hdr.length, buffer.Length())
+      << "frame_hdr=" << frame_hdr.ToString();
+  return ParseFramePayload(frame_hdr, std::move(buffer)).status();
 }
 
 TEST(Header, Serialization) {
@@ -200,6 +217,238 @@ TEST(Frame, Parse) {
   EXPECT_EQ(ParseFrame<Http2WindowUpdateFrame>(0, 0, 4, 8, 0, 0, 0, 0, 1, 0x12,
                                                0x34, 0x56, 0x78),
             (Http2WindowUpdateFrame{1, 0x12345678}));
+}
+
+TEST(Frame, ParsePadded) {
+  EXPECT_EQ(ParseFrame<Http2DataFrame>(0, 0, 9, 0, 8, 0, 0, 0, 1, 3, 'h', 'e',
+                                       'l', 'l', 'o', 1, 2, 3),
+            (Http2DataFrame{1, false, SliceBufferFromString("hello")}));
+  EXPECT_EQ(
+      ParseFrame<Http2HeaderFrame>(0, 0, 8, 1, 8, 0, 0, 0, 1, 2, 'h', 'e', 'l',
+                                   'l', 'o', 1, 2),
+      (Http2HeaderFrame{1, false, false, SliceBufferFromString("hello")}));
+  EXPECT_EQ(
+      ParseFrame<Http2HeaderFrame>(0, 0, 10, 1, 32, 0, 0, 0, 1, 1, 2, 3, 4, 5,
+                                   'h', 'e', 'l', 'l', 'o'),
+      (Http2HeaderFrame{1, false, false, SliceBufferFromString("hello")}));
+  EXPECT_EQ(
+      ParseFrame<Http2HeaderFrame>(0, 0, 13, 1, 40, 0, 0, 0, 1, 2, 1, 2, 3, 4,
+                                   5, 'h', 'e', 'l', 'l', 'o', 1, 2),
+      (Http2HeaderFrame{1, false, false, SliceBufferFromString("hello")}));
+}
+
+TEST(Frame, ParseRejects) {
+  EXPECT_THAT(
+      ValidateFrame(0, 0, 0, 0, 2, 0, 0, 0, 1),
+      StatusIs(
+          absl::StatusCode::kInternal,
+          "unsupported data flags: {DATA: flags=2, stream_id=1, length=0}"));
+  EXPECT_THAT(
+      ValidateFrame(0, 0, 0, 0, 4, 0, 0, 0, 10),
+      StatusIs(
+          absl::StatusCode::kInternal,
+          "unsupported data flags: {DATA: flags=4, stream_id=10, length=0}"));
+  EXPECT_THAT(
+      ValidateFrame(0, 0, 0, 0, 16, 0, 0, 0, 1),
+      StatusIs(
+          absl::StatusCode::kInternal,
+          "unsupported data flags: {DATA: flags=16, stream_id=1, length=0}"));
+  EXPECT_THAT(
+      ValidateFrame(0, 0, 0, 0, 32, 0, 0, 0, 1),
+      StatusIs(
+          absl::StatusCode::kInternal,
+          "unsupported data flags: {DATA: flags=32, stream_id=1, length=0}"));
+  EXPECT_THAT(
+      ValidateFrame(0, 0, 0, 0, 64, 0, 0, 0, 1),
+      StatusIs(
+          absl::StatusCode::kInternal,
+          "unsupported data flags: {DATA: flags=64, stream_id=1, length=0}"));
+  EXPECT_THAT(
+      ValidateFrame(0, 0, 0, 0, 128, 0, 0, 0, 1),
+      StatusIs(
+          absl::StatusCode::kInternal,
+          "unsupported data flags: {DATA: flags=128, stream_id=1, length=0}"));
+  EXPECT_THAT(
+      ValidateFrame(0, 0, 0, 0, 255, 0, 0, 0, 1),
+      StatusIs(
+          absl::StatusCode::kInternal,
+          "unsupported data flags: {DATA: flags=255, stream_id=1, length=0}"));
+  EXPECT_THAT(ValidateFrame(0, 0, 0, 0, 0, 0, 0, 0, 0),
+              StatusIs(absl::StatusCode::kInternal,
+                       "invalid stream id: {DATA: flags=0, "
+                       "stream_id=0, length=0}"));
+  EXPECT_THAT(ValidateFrame(0, 0, 0, 1, 2, 0, 0, 0, 1),
+              StatusIs(absl::StatusCode::kInternal,
+                       "unsupported header flags: {HEADER: flags=2, "
+                       "stream_id=1, length=0}"));
+  EXPECT_THAT(ValidateFrame(0, 0, 0, 1, 16, 0, 0, 0, 1),
+              StatusIs(absl::StatusCode::kInternal,
+                       "unsupported header flags: {HEADER: flags=16, "
+                       "stream_id=1, length=0}"));
+  EXPECT_THAT(ValidateFrame(0, 0, 0, 1, 64, 0, 0, 0, 1),
+              StatusIs(absl::StatusCode::kInternal,
+                       "unsupported header flags: {HEADER: flags=64, "
+                       "stream_id=1, length=0}"));
+  EXPECT_THAT(ValidateFrame(0, 0, 0, 1, 128, 0, 0, 0, 1),
+              StatusIs(absl::StatusCode::kInternal,
+                       "unsupported header flags: {HEADER: flags=128, "
+                       "stream_id=1, length=0}"));
+  EXPECT_THAT(ValidateFrame(0, 0, 0, 1, 255, 0, 0, 0, 1),
+              StatusIs(absl::StatusCode::kInternal,
+                       "unsupported header flags: {HEADER: flags=255, "
+                       "stream_id=1, length=0}"));
+  EXPECT_THAT(ValidateFrame(0, 0, 0, 1, 0, 0, 0, 0, 0),
+              StatusIs(absl::StatusCode::kInternal,
+                       "invalid stream id: {HEADER: flags=0, "
+                       "stream_id=0, length=0}"));
+  EXPECT_THAT(ValidateFrame(0, 0, 0, 9, 255, 0, 0, 0, 1),
+              StatusIs(absl::StatusCode::kInternal,
+                       "unsupported header flags: {CONTINUATION: flags=255, "
+                       "stream_id=1, length=0}"));
+  EXPECT_THAT(ValidateFrame(0, 0, 0, 9, 0, 0, 0, 0, 0),
+              StatusIs(absl::StatusCode::kInternal,
+                       "invalid stream id: {CONTINUATION: flags=0, "
+                       "stream_id=0, length=0}"));
+  EXPECT_THAT(ValidateFrame(0, 0, 4, 3, 255, 0, 0, 0, 1, 100, 100, 100, 100),
+              StatusIs(absl::StatusCode::kInternal,
+                       "unsupported rst stream flags: {RST_STREAM: flags=255, "
+                       "stream_id=1, length=4}"));
+  EXPECT_THAT(ValidateFrame(0, 0, 4, 3, 2, 0, 0, 0, 1, 100, 100, 100, 100),
+              StatusIs(absl::StatusCode::kInternal,
+                       "unsupported rst stream flags: {RST_STREAM: flags=2, "
+                       "stream_id=1, length=4}"));
+  EXPECT_THAT(ValidateFrame(0, 0, 3, 3, 0, 0, 0, 0, 1, 100, 100, 100),
+              StatusIs(absl::StatusCode::kInternal,
+                       "invalid rst stream payload: {RST_STREAM: flags=0, "
+                       "stream_id=1, length=3}"));
+  EXPECT_THAT(ValidateFrame(0, 0, 4, 3, 0, 0, 0, 0, 0, 100, 100, 100, 100),
+              StatusIs(absl::StatusCode::kInternal,
+                       "invalid stream id: {RST_STREAM: flags=0, "
+                       "stream_id=0, length=4}"));
+  EXPECT_THAT(ValidateFrame(0, 0, 0, 4, 244, 0, 0, 0, 0),
+              StatusIs(absl::StatusCode::kInternal,
+                       "invalid settings flags: {SETTINGS: flags=244, "
+                       "stream_id=0, length=0}"));
+  EXPECT_THAT(ValidateFrame(0, 0, 1, 4, 0, 0, 0, 0, 0, 1),
+              StatusIs(absl::StatusCode::kInternal,
+                       "invalid settings payload: {SETTINGS: flags=0, "
+                       "stream_id=0, length=1} -- settings must be multiples "
+                       "of 6 bytes long"));
+  EXPECT_THAT(ValidateFrame(0, 0, 2, 4, 0, 0, 0, 0, 0, 1, 1),
+              StatusIs(absl::StatusCode::kInternal,
+                       "invalid settings payload: {SETTINGS: flags=0, "
+                       "stream_id=0, length=2} -- settings must be multiples "
+                       "of 6 bytes long"));
+  EXPECT_THAT(ValidateFrame(0, 0, 3, 4, 0, 0, 0, 0, 0, 1, 1, 1),
+              StatusIs(absl::StatusCode::kInternal,
+                       "invalid settings payload: {SETTINGS: flags=0, "
+                       "stream_id=0, length=3} -- settings must be multiples "
+                       "of 6 bytes long"));
+  EXPECT_THAT(ValidateFrame(0, 0, 4, 4, 0, 0, 0, 0, 0, 1, 1, 1, 1),
+              StatusIs(absl::StatusCode::kInternal,
+                       "invalid settings payload: {SETTINGS: flags=0, "
+                       "stream_id=0, length=4} -- settings must be multiples "
+                       "of 6 bytes long"));
+  EXPECT_THAT(ValidateFrame(0, 0, 5, 4, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1),
+              StatusIs(absl::StatusCode::kInternal,
+                       "invalid settings payload: {SETTINGS: flags=0, "
+                       "stream_id=0, length=5} -- settings must be multiples "
+                       "of 6 bytes long"));
+  EXPECT_THAT(ValidateFrame(0, 0, 7, 4, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1),
+              StatusIs(absl::StatusCode::kInternal,
+                       "invalid settings payload: {SETTINGS: flags=0, "
+                       "stream_id=0, length=7} -- settings must be multiples "
+                       "of 6 bytes long"));
+  EXPECT_THAT(ValidateFrame(0, 0, 0, 4, 0, 0, 0, 0, 1),
+              StatusIs(absl::StatusCode::kInternal,
+                       "invalid stream id: {SETTINGS: flags=0, "
+                       "stream_id=1, length=0}"));
+  EXPECT_THAT(ValidateFrame(0, 0, 0, 6, 0, 0, 0, 0, 0),
+              StatusIs(absl::StatusCode::kInternal,
+                       "invalid ping payload: {PING: flags=0, "
+                       "stream_id=0, length=0}"));
+  EXPECT_THAT(ValidateFrame(0, 0, 8, 6, 0, 0, 0, 0, 1, 1, 2, 3, 4, 5, 6, 7, 8),
+              StatusIs(absl::StatusCode::kInternal,
+                       "invalid ping stream id: {PING: flags=0, "
+                       "stream_id=1, length=8}"));
+  EXPECT_THAT(ValidateFrame(0, 0, 8, 6, 2, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8),
+              StatusIs(absl::StatusCode::kInternal,
+                       "invalid ping flags: {PING: flags=2, "
+                       "stream_id=0, length=8}"));
+  EXPECT_THAT(
+      ValidateFrame(0, 0, 8, 6, 255, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8),
+      StatusIs(absl::StatusCode::kInternal,
+               "invalid ping flags: {PING: flags=255, "
+               "stream_id=0, length=8}"));
+  EXPECT_THAT(ValidateFrame(0, 0, 0, 7, 0, 0, 0, 0, 0),
+              StatusIs(absl::StatusCode::kInternal,
+                       "invalid goaway payload: {GOAWAY: flags=0, "
+                       "stream_id=0, length=0} -- must be at least 8 bytes"));
+  EXPECT_THAT(ValidateFrame(0, 0, 1, 7, 0, 0, 0, 0, 0, 1),
+              StatusIs(absl::StatusCode::kInternal,
+                       "invalid goaway payload: {GOAWAY: flags=0, "
+                       "stream_id=0, length=1} -- must be at least 8 bytes"));
+  EXPECT_THAT(ValidateFrame(0, 0, 2, 7, 0, 0, 0, 0, 0, 1, 1),
+              StatusIs(absl::StatusCode::kInternal,
+                       "invalid goaway payload: {GOAWAY: flags=0, "
+                       "stream_id=0, length=2} -- must be at least 8 bytes"));
+  EXPECT_THAT(ValidateFrame(0, 0, 3, 7, 0, 0, 0, 0, 0, 1, 1, 1),
+              StatusIs(absl::StatusCode::kInternal,
+                       "invalid goaway payload: {GOAWAY: flags=0, "
+                       "stream_id=0, length=3} -- must be at least 8 bytes"));
+  EXPECT_THAT(ValidateFrame(0, 0, 4, 7, 0, 0, 0, 0, 0, 1, 1, 1, 1),
+              StatusIs(absl::StatusCode::kInternal,
+                       "invalid goaway payload: {GOAWAY: flags=0, "
+                       "stream_id=0, length=4} -- must be at least 8 bytes"));
+  EXPECT_THAT(ValidateFrame(0, 0, 5, 7, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1),
+              StatusIs(absl::StatusCode::kInternal,
+                       "invalid goaway payload: {GOAWAY: flags=0, "
+                       "stream_id=0, length=5} -- must be at least 8 bytes"));
+  EXPECT_THAT(ValidateFrame(0, 0, 6, 7, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1),
+              StatusIs(absl::StatusCode::kInternal,
+                       "invalid goaway payload: {GOAWAY: flags=0, "
+                       "stream_id=0, length=6} -- must be at least 8 bytes"));
+  EXPECT_THAT(ValidateFrame(0, 0, 7, 7, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1),
+              StatusIs(absl::StatusCode::kInternal,
+                       "invalid goaway payload: {GOAWAY: flags=0, "
+                       "stream_id=0, length=7} -- must be at least 8 bytes"));
+  EXPECT_THAT(ValidateFrame(0, 0, 8, 7, 0, 0, 0, 0, 1, 1, 2, 3, 4, 5, 6, 7, 8),
+              StatusIs(absl::StatusCode::kInternal,
+                       "invalid goaway stream id: {GOAWAY: flags=0, "
+                       "stream_id=1, length=8}"));
+  EXPECT_THAT(ValidateFrame(0, 0, 8, 7, 1, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8),
+              StatusIs(absl::StatusCode::kInternal,
+                       "invalid goaway flags: {GOAWAY: flags=1, "
+                       "stream_id=0, length=8}"));
+  EXPECT_THAT(
+      ValidateFrame(0, 0, 8, 7, 255, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8),
+      StatusIs(absl::StatusCode::kInternal,
+               "invalid goaway flags: {GOAWAY: flags=255, "
+               "stream_id=0, length=8}"));
+  EXPECT_THAT(ValidateFrame(0, 0, 0, 8, 0, 0, 0, 0, 0),
+              StatusIs(absl::StatusCode::kInternal,
+                       "invalid window update payload: {WINDOW_UPDATE: "
+                       "flags=0, stream_id=0, length=0} -- must be 4 bytes"));
+  EXPECT_THAT(ValidateFrame(0, 0, 1, 8, 0, 0, 0, 0, 0, 1),
+              StatusIs(absl::StatusCode::kInternal,
+                       "invalid window update payload: {WINDOW_UPDATE: "
+                       "flags=0, stream_id=0, length=1} -- must be 4 bytes"));
+  EXPECT_THAT(ValidateFrame(0, 0, 2, 8, 0, 0, 0, 0, 0, 1, 1),
+              StatusIs(absl::StatusCode::kInternal,
+                       "invalid window update payload: {WINDOW_UPDATE: "
+                       "flags=0, stream_id=0, length=2} -- must be 4 bytes"));
+  EXPECT_THAT(ValidateFrame(0, 0, 3, 8, 0, 0, 0, 0, 0, 1, 1, 1),
+              StatusIs(absl::StatusCode::kInternal,
+                       "invalid window update payload: {WINDOW_UPDATE: "
+                       "flags=0, stream_id=0, length=3} -- must be 4 bytes"));
+  EXPECT_THAT(ValidateFrame(0, 0, 5, 8, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1),
+              StatusIs(absl::StatusCode::kInternal,
+                       "invalid window update payload: {WINDOW_UPDATE: "
+                       "flags=0, stream_id=0, length=5} -- must be 4 bytes"));
+  EXPECT_THAT(ValidateFrame(0, 0, 4, 8, 1, 0, 0, 0, 0, 1, 1, 1, 1),
+              StatusIs(absl::StatusCode::kInternal,
+                       "invalid window update flags: {WINDOW_UPDATE: flags=1, "
+                       "stream_id=0, length=4}"));
 }
 
 }  // namespace
