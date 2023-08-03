@@ -37,4 +37,4 @@ bazel --version
 
 python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path bazel_rbe
 
-call bazel_rbe/bazel_wrapper.bat --bazelrc=tools/remote_build/windows.bazelrc --output_user_root=T:\_bazel_output test %BAZEL_FLAGS% -- //test/core/end2end/... || exit /b 1
+call bazel_rbe/bazel_wrapper.bat --bazelrc=tools/remote_build/windows.bazelrc --output_user_root=T:\_bazel_output test %BAZEL_FLAGS% -- //test/core/... || exit /b 1
