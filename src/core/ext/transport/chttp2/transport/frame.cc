@@ -418,7 +418,7 @@ absl::StatusOr<Http2WindowUpdateFrame> ParseWindowUpdateFrame(
 
 }  // namespace
 
-void Http2FrameHeader::Serialize(uint8_t* output) {
+void Http2FrameHeader::Serialize(uint8_t* output) const {
   Write3b(length, output);
   output[3] = type;
   output[4] = flags;
@@ -452,9 +452,8 @@ std::string Http2FrameTypeString(uint8_t frame_type) {
 }  // namespace
 
 std::string Http2FrameHeader::ToString() const {
-  return absl::StrCat("H2HDR{type:", Http2FrameTypeString(type),
-                      ", flags:", flags, ", stream_id:", stream_id,
-                      ", length:", length, "}");
+  return absl::StrCat("{", Http2FrameTypeString(type), ": flags=", flags,
+                      ", stream_id=", stream_id, ", length=", length, "}");
 }
 
 void Serialize(absl::Span<Http2Frame> frames, SliceBuffer& out) {
@@ -472,7 +471,7 @@ void Serialize(absl::Span<Http2Frame> frames, SliceBuffer& out) {
 }
 
 absl::StatusOr<Http2Frame> ParseFramePayload(const Http2FrameHeader& hdr,
-                                             SliceBuffer& payload) {
+                                             SliceBuffer payload) {
   GPR_ASSERT(payload.Length() == hdr.length);
   switch (hdr.type) {
     case kFrameTypeData:

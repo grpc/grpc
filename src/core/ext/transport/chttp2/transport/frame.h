@@ -34,6 +34,11 @@ struct Http2DataFrame {
   uint32_t stream_id = 0;
   bool end_stream = false;
   SliceBuffer payload;
+
+  bool operator==(const Http2DataFrame& other) const {
+    return stream_id == other.stream_id && end_stream == other.end_stream &&
+           payload.JoinIntoString() == other.payload.JoinIntoString();
+  }
 };
 
 struct Http2HeaderFrame {
@@ -41,42 +46,79 @@ struct Http2HeaderFrame {
   bool end_headers = false;
   bool end_stream = false;
   SliceBuffer payload;
+
+  bool operator==(const Http2HeaderFrame& other) const {
+    return stream_id == other.stream_id && end_headers == other.end_headers &&
+           end_stream == other.end_stream &&
+           payload.JoinIntoString() == other.payload.JoinIntoString();
+  }
 };
 
 struct Http2ContinuationFrame {
   uint32_t stream_id = 0;
   bool end_headers = false;
   SliceBuffer payload;
+
+  bool operator==(const Http2ContinuationFrame& other) const {
+    return stream_id == other.stream_id && end_headers == other.end_headers &&
+           payload.JoinIntoString() == other.payload.JoinIntoString();
+  }
 };
 
 struct Http2RstStreamFrame {
   uint32_t stream_id = 0;
   uint32_t error_code = 0;
+
+  bool operator==(const Http2RstStreamFrame& other) const {
+    return stream_id == other.stream_id && error_code == other.error_code;
+  }
 };
 
 struct Http2SettingsFrame {
   struct Setting {
     uint16_t id;
     uint32_t value;
+
+    bool operator==(const Setting& other) const {
+      return id == other.id && value == other.value;
+    }
   };
   bool ack = false;
   std::vector<Setting> settings;
+
+  bool operator==(const Http2SettingsFrame& other) const {
+    return ack == other.ack && settings == other.settings;
+  }
 };
 
 struct Http2PingFrame {
   bool ack = false;
   uint64_t opaque = 0;
+
+  bool operator==(const Http2PingFrame& other) const {
+    return ack == other.ack && opaque == other.opaque;
+  }
 };
 
 struct Http2GoawayFrame {
   uint32_t last_stream_id = 0;
   uint32_t error_code = 0;
   Slice debug_data;
+
+  bool operator==(const Http2GoawayFrame& other) const {
+    return last_stream_id == other.last_stream_id &&
+           error_code == other.error_code &&
+           debug_data.as_string_view() == other.debug_data.as_string_view();
+  }
 };
 
 struct Http2WindowUpdateFrame {
   uint32_t stream_id;
   uint32_t increment;
+
+  bool operator==(const Http2WindowUpdateFrame& other) const {
+    return stream_id == other.stream_id && increment == other.increment;
+  }
 };
 
 struct Http2FrameHeader {
@@ -85,10 +127,15 @@ struct Http2FrameHeader {
   uint8_t flags;
   uint32_t stream_id;
   // Serialize header to 9 byte long buffer output
-  void Serialize(uint8_t* output);
+  void Serialize(uint8_t* output) const;
   // Parse header from 9 byte long buffer input
   static Http2FrameHeader Parse(const uint8_t* input);
   std::string ToString() const;
+
+  bool operator==(const Http2FrameHeader& other) const {
+    return length == other.length && type == other.type &&
+           flags == other.flags && stream_id == other.stream_id;
+  }
 };
 
 struct Http2UnknownFrame {};
@@ -99,7 +146,7 @@ using Http2Frame =
                   Http2GoawayFrame, Http2WindowUpdateFrame, Http2UnknownFrame>;
 
 absl::StatusOr<Http2Frame> ParseFramePayload(const Http2FrameHeader& hdr,
-                                             SliceBuffer& payload);
+                                             SliceBuffer payload);
 
 // Serialize frame to out, leaves frames in an unknown state (may move things
 // out of frames)
