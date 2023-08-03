@@ -683,13 +683,34 @@ void tsi_test_frame_protector_fixture_destroy(
 std::string GenerateSelfSignedCertificate(
     const SelfSignedCertificateOptions& options) {
   // Generate an RSA keypair.
-  RSA* rsa = RSA_new();
+
   BIGNUM* bignum = BN_new();
   GPR_ASSERT(BN_set_word(bignum, RSA_F4));
+  BIGNUM* n = BN_new();
+  GPR_ASSERT(BN_set_word(n, 2048));
+  EVP_PKEY* key = EVP_PKEY_new();
+
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
+  RSA* rsa = RSA_new();
+  rsa = RSA_new();
   GPR_ASSERT(
       RSA_generate_key_ex(rsa, /*key_size=*/2048, bignum, /*cb=*/nullptr));
-  EVP_PKEY* key = EVP_PKEY_new();
   GPR_ASSERT(EVP_PKEY_assign_RSA(key, rsa));
+#else
+  EVP_PKEY_CTX* ctx = nullptr;
+  OSSL_PARAM params[3] = {};
+  params[0] = OSSL_PARAM_BN("n", n, sizeof(n));
+  params[1] = OSSL_PARAM_BN("e", bignum, sizeof(bignum));
+  params[2] = OSSL_PARAM_END;
+  ctx = EVP_PKEY_CTX_new_from_name(NULL, "RSA", NULL);
+  GPR_ASSERT(ctx != nullptr);
+  EVP_PKEY_keygen_init(ctx);
+  EVP_PKEY_CTX_set_params(ctx, params);
+  EVP_PKEY_generate(ctx, &key);
+  BN_free(n);
+  EVP_PKEY_CTX_free(ctx);
+#endif
+
   // Create the X509 object.
   X509* x509 = X509_new();
   GPR_ASSERT(X509_set_version(x509, X509_VERSION_3));
@@ -732,7 +753,13 @@ std::string GenerateSelfSignedCertificate(
   GPR_ASSERT(PEM_write_bio_X509(bio, x509));
   const uint8_t* data = nullptr;
   size_t len = 0;
+
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
   GPR_ASSERT(BIO_mem_contents(bio, &data, &len));
+#else
+  size_t len_to_read = BIO_pending(bio);
+  GPR_ASSERT(BIO_read_ex(bio, &data, len_to_read, &len))
+#endif
   std::string pem = std::string(reinterpret_cast<const char*>(data), len);
   // Cleanup all of the OpenSSL objects and return the PEM-encoded cert.
   EVP_PKEY_free(key);
