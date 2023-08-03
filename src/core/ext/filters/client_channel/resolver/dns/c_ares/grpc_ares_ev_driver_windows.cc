@@ -102,12 +102,6 @@ class WSAErrorContext {
 // library to wait for an async read.
 class GrpcPolledFdWindows {
  public:
-  enum ConnectState {
-    STARTING,
-    AWAITING_ASYNC_NOTIFICATION,
-    DONE,
-  };
-
   GrpcPolledFdWindows(ares_socket_t as, Mutex* mu, int address_family,
                       int socket_type, std::function<void()> on_shutdown_locked)
       : mu_(mu),
@@ -161,7 +155,7 @@ class GrpcPolledFdWindows {
     CSliceUnref(read_buf_);
     GPR_ASSERT(!read_buf_has_data_);
     read_buf_ = GRPC_SLICE_MALLOC(4192);
-    if (connect_state_ == DONE) {
+    if (connect_done_) {
       ContinueRegisterForOnReadableLocked();
     } else {
       GPR_ASSERT(pending_continue_register_for_on_readable_locked_ == false);
@@ -174,7 +168,7 @@ class GrpcPolledFdWindows {
         "fd:|%s| ContinueRegisterForOnReadableLocked "
         "wsa_connect_error_:%d",
         GetName(), wsa_connect_error_);
-    GPR_ASSERT(connect_state_ == DONE);
+    GPR_ASSERT(connect_done_);
     if (wsa_connect_error_ != 0) {
       ScheduleAndNullReadClosure(GRPC_WSA_ERROR(wsa_connect_error_, "connect"));
       return;
@@ -207,20 +201,17 @@ class GrpcPolledFdWindows {
 
   void RegisterForOnWriteableLocked(grpc_closure* write_closure) {
     GRPC_CARES_TRACE_LOG(
-        "fd:|%s| RegisterForOnWriteableLocked called connect_state_: %d "
+        "fd:|%s| RegisterForOnWriteableLocked called connect_done_: %d "
         "last_wsa_send_result_: %d",
-        GetName(), connect_state_, last_wsa_send_result_);
+        GetName(), connect_done_, last_wsa_send_result_);
     GPR_ASSERT(write_closure_ == nullptr);
     write_closure_ = write_closure;
-    if (connect_state_ == STARTING) {
-      connect_state_ = AWAITING_ASYNC_NOTIFICATION;
+    if (!connect_done_) {
       GPR_ASSERT(!pending_continue_register_for_on_writeable_locked_);
       pending_continue_register_for_on_writeable_locked_ = true;
       grpc_socket_notify_on_write(winsocket_, &on_tcp_connect_locked_);
-    } else if (connect_state_ == DONE) {
-      ContinueRegisterForOnWriteableLocked();
     } else {
-      GPR_ASSERT(0);
+      ContinueRegisterForOnWriteableLocked();
     }
   }
 
@@ -241,7 +232,7 @@ class GrpcPolledFdWindows {
         "fd:|%s| ContinueRegisterForOnWriteableLocked "
         "wsa_connect_error_:%d last_wsa_send_result_:%d",
         GetName(), wsa_connect_error_, last_wsa_send_result_);
-    GPR_ASSERT(connect_state_ == DONE);
+    GPR_ASSERT(connect_done_);
     if (wsa_connect_error_ != 0) {
       ScheduleAndNullWriteClosure(
           GRPC_WSA_ERROR(wsa_connect_error_, "connect"));
@@ -355,9 +346,9 @@ class GrpcPolledFdWindows {
   ares_ssize_t SendV(WSAErrorContext* wsa_error_ctx, const struct iovec* iov,
                      int iov_count) {
     GRPC_CARES_TRACE_LOG(
-        "fd:|%s| SendV called connect_state_:%d wsa_connect_error_:%d",
-        GetName(), connect_state_, wsa_connect_error_);
-    if (connect_state_ != DONE) {
+        "fd:|%s| SendV called connect_done_:%d wsa_connect_error_:%d",
+        GetName(), connect_done_, wsa_connect_error_);
+    if (!connect_done_) {
       wsa_error_ctx->SetWSAError(WSAEWOULDBLOCK);
       return -1;
     }
@@ -397,8 +388,8 @@ class GrpcPolledFdWindows {
         GetName(), StatusToString(error).c_str(),
         pending_continue_register_for_on_readable_locked_,
         pending_continue_register_for_on_writeable_locked_);
-    GPR_ASSERT(connect_state_ == AWAITING_ASYNC_NOTIFICATION);
-    connect_state_ = DONE;
+    GPR_ASSERT(!connect_done_);
+    connect_done_ = true;
     GPR_ASSERT(wsa_connect_error_ == 0);
     if (error.ok()) {
       DWORD transferred_bytes = 0;
@@ -451,7 +442,7 @@ class GrpcPolledFdWindows {
         WSAConnect(s, target, target_len, nullptr, nullptr, nullptr, nullptr);
     wsa_connect_error_ = WSAGetLastError();
     wsa_error_ctx->SetWSAError(wsa_connect_error_);
-    connect_state_ = DONE;
+    connect_done_ = true;
     char* msg = gpr_format_message(wsa_connect_error_);
     GRPC_CARES_TRACE_LOG("fd:%s WSAConnect error code:|%d| msg:|%s|", GetName(),
                          wsa_connect_error_, msg);
@@ -478,7 +469,7 @@ class GrpcPolledFdWindows {
           "msg:|%s|",
           GetName(), wsa_last_error, msg);
       gpr_free(msg);
-      connect_state_ = DONE;
+      connect_done_ = true;
       wsa_connect_error_ = wsa_last_error;
       return -1;
     }
@@ -499,7 +490,7 @@ class GrpcPolledFdWindows {
       GRPC_CARES_TRACE_LOG("fd:%s bind error code:%d msg:|%s|", GetName(),
                            wsa_last_error, msg);
       gpr_free(msg);
-      connect_state_ = DONE;
+      connect_done_ = true;
       wsa_connect_error_ = wsa_last_error;
       return -1;
     }
@@ -521,7 +512,7 @@ class GrpcPolledFdWindows {
       } else {
         // By returning a non-retryable error to c-ares at this point,
         // we're aborting the possibility of any future operations on this fd.
-        connect_state_ = DONE;
+        connect_done_ = true;
         wsa_connect_error_ = wsa_last_error;
         return -1;
       }
@@ -594,7 +585,7 @@ class GrpcPolledFdWindows {
   int socket_type_;
   // State related to TCP connection setup:
   grpc_closure on_tcp_connect_locked_;
-  ConnectState connect_state_ = STARTING;
+  bool connect_done_ = false;
   int wsa_connect_error_ = 0;
   // We don't run register_for_{readable,writeable} logic until
   // a socket is connected. In the interim, we queue readable/writeable
