@@ -138,9 +138,7 @@ class Server : public InternallyRefCounted<Server>,
   }
 
   void set_config_fetcher(
-      std::unique_ptr<grpc_server_config_fetcher> config_fetcher) {
-    config_fetcher_ = std::move(config_fetcher);
-  }
+      std::unique_ptr<grpc_server_config_fetcher> config_fetcher);
 
   bool HasOpenConnections() ABSL_LOCKS_EXCLUDED(mu_global_);
 
@@ -509,5 +507,14 @@ struct grpc_server_config_fetcher {
   virtual void CancelWatch(WatcherInterface* watcher) = 0;
   virtual grpc_pollset_set* interested_parties() = 0;
 };
+
+namespace grpc_core {
+
+inline void Server::set_config_fetcher(
+    std::unique_ptr<grpc_server_config_fetcher> config_fetcher) {
+  config_fetcher_ = std::move(config_fetcher);
+}
+
+}  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_LIB_SURFACE_SERVER_H
