@@ -8122,10 +8122,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/event_engine/test_suite/event_engine_test_framework.cc
     test/core/event_engine/test_suite/posix/oracle_event_engine_posix.cc
     test/core/event_engine/test_suite/tests/client_test.cc
-    test/core/event_engine/test_suite/tests/dns_test.cc
     test/core/event_engine/test_suite/tests/timer_test.cc
-    test/core/util/fake_udp_and_tcp_server.cc
-    test/cpp/util/get_grpc_test_runfile_dir.cc
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
@@ -8155,7 +8152,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_ZLIB_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_unsecure
-    grpc++_test_util
+    grpc_test_util
   )
 
 
