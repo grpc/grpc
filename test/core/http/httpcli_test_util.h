@@ -19,7 +19,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gpr/subprocess.h"
+#include "test/core/util/subprocess.h"
 
 namespace grpc_core {
 namespace testing {
