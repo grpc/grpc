@@ -204,6 +204,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_str_format
   absl_str_format_internal
   absl_strerror
+  absl_string_view
   absl_strings
   absl_strings_internal
   absl_symbolize
