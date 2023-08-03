@@ -1659,12 +1659,8 @@ class GoLanguage(Language):
 
 
 class NodeLanguage(Language):
-    def __init__(self, node_purejs=False):
-        super().__init__()
-        self.node_purejs = node_purejs
-
     def worker_cmdline(self):
-        fixture = "native_js" if self.node_purejs else "native_native"
+        fixture = "native_js"
         return [
             "tools/run_tests/performance/run_worker_node.sh",
             fixture,
@@ -1672,20 +1668,14 @@ class NodeLanguage(Language):
         ]
 
     def worker_port_offset(self):
-        if self.node_purejs:
-            return 1100
-        return 1000
+        return 1100
 
     def scenarios(self):
-        node_implementation = "node_purejs" if self.node_purejs else "node"
-
         yield _ping_pong_scenario(
-            "%s_to_node_protobuf_async_unary_5000rpcs_1KB_psm"
-            % (node_implementation),
+            "node_to_node_protobuf_async_unary_5000rpcs_1KB_psm",
             rpc_type="UNARY",
             client_type="ASYNC_CLIENT",
             server_type="ASYNC_SERVER",
-            server_language="node",
             req_size=1024,
             resp_size=1024,
             outstanding=5000,
@@ -1701,12 +1691,10 @@ class NodeLanguage(Language):
             smoketest_categories = ([SMOKETEST] if secure else []) + [SCALABLE]
 
             yield _ping_pong_scenario(
-                "%s_to_node_generic_async_streaming_ping_pong_%s"
-                % (node_implementation, secstr),
+                "node_to_node_generic_async_streaming_ping_pong_%s" % secstr,
                 rpc_type="STREAMING",
                 client_type="ASYNC_CLIENT",
                 server_type="ASYNC_GENERIC_SERVER",
-                server_language="node",
                 use_generic_payload=True,
                 async_server_threads=1,
                 secure=secure,
@@ -1714,59 +1702,52 @@ class NodeLanguage(Language):
             )
 
             yield _ping_pong_scenario(
-                "%s_to_node_protobuf_async_streaming_ping_pong_%s"
-                % (node_implementation, secstr),
+                "node_to_node_protobuf_async_streaming_ping_pong_%s" % secstr,
                 rpc_type="STREAMING",
                 client_type="ASYNC_CLIENT",
                 server_type="ASYNC_SERVER",
-                server_language="node",
                 async_server_threads=1,
                 secure=secure,
             )
 
             yield _ping_pong_scenario(
-                "%s_to_node_protobuf_async_unary_ping_pong_%s"
-                % (node_implementation, secstr),
+                "node_to_node_protobuf_async_unary_ping_pong_%s" % secstr,
                 rpc_type="UNARY",
                 client_type="ASYNC_CLIENT",
                 server_type="ASYNC_SERVER",
-                server_language="node",
                 async_server_threads=1,
                 secure=secure,
                 categories=smoketest_categories,
             )
 
             yield _ping_pong_scenario(
-                "%s_to_node_protobuf_async_unary_qps_unconstrained_%s"
-                % (node_implementation, secstr),
+                "node_to_node_protobuf_async_unary_qps_unconstrained_%s"
+                % secstr,
                 rpc_type="UNARY",
                 client_type="ASYNC_CLIENT",
                 server_type="ASYNC_SERVER",
-                server_language="node",
                 unconstrained_client="async",
                 secure=secure,
                 categories=smoketest_categories + [SCALABLE],
             )
 
             yield _ping_pong_scenario(
-                "%s_to_node_protobuf_async_streaming_qps_unconstrained_%s"
-                % (node_implementation, secstr),
+                "node_to_node_protobuf_async_streaming_qps_unconstrained_%s"
+                % secstr,
                 rpc_type="STREAMING",
                 client_type="ASYNC_CLIENT",
                 server_type="ASYNC_SERVER",
-                server_language="node",
                 unconstrained_client="async",
                 secure=secure,
                 categories=[SCALABLE],
             )
 
             yield _ping_pong_scenario(
-                "%s_to_node_generic_async_streaming_qps_unconstrained_%s"
-                % (node_implementation, secstr),
+                "node_to_node_generic_async_streaming_qps_unconstrained_%s"
+                % secstr,
                 rpc_type="STREAMING",
                 client_type="ASYNC_CLIENT",
                 server_type="ASYNC_GENERIC_SERVER",
-                server_language="node",
                 unconstrained_client="async",
                 use_generic_payload=True,
                 secure=secure,
@@ -1776,8 +1757,6 @@ class NodeLanguage(Language):
             # TODO(murgatroid99): add scenarios node vs C++
 
     def __str__(self):
-        if self.node_purejs:
-            return "node_purejs"
         return "node"
 
 
@@ -1792,6 +1771,5 @@ LANGUAGES = {
     "python": PythonLanguage(),
     "python_asyncio": PythonAsyncIOLanguage(),
     "go": GoLanguage(),
-    "node": NodeLanguage(),
-    "node_purejs": NodeLanguage(node_purejs=True),
+    "node": NodeLanguage(),  # 'node' means 'node_purejs'.
 }
