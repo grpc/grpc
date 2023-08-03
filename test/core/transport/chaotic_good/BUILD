@@ -94,6 +94,7 @@ grpc_cc_test(
         "//:ref_counted_ptr",
         "//src/core:activity",
         "//src/core:arena",
+        "//src/core:basic_join",
         "//src/core:chaotic_good_client_transport",
         "//src/core:join",
         "//src/core:memory_quota",
@@ -103,6 +104,7 @@ grpc_cc_test(
         "//src/core:slice",
         "//src/core:slice_buffer",
         "//test/core/event_engine/fuzzing_event_engine",
+        "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto",
         "//test/core/promise:test_wakeup_schedulers",
     ],
 )

@@ -19,6 +19,7 @@
 #include <stdio.h>
 
 #include <memory>
+#include <tuple>
 
 #include "absl/functional/any_invocable.h"
 #include "gmock/gmock.h"
@@ -32,6 +33,7 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/detail/basic_join.h"
 #include "src/core/lib/promise/join.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/seq.h"
@@ -41,6 +43,7 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
+#include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/promise/test_wakeup_schedulers.h"
 
 using testing::MockFunction;
