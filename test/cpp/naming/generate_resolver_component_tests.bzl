@@ -42,7 +42,6 @@ def generate_resolver_component_tests():
                 "//:gpr",
                 "//test/cpp/util:test_config",
             ],
-            tags = ["no_windows"],
         )
 
         # meant to be invoked only through the top-level shell script driver
@@ -65,7 +64,6 @@ def generate_resolver_component_tests():
                 "//src/core:ares_resolver",
                 "//test/cpp/util:test_config",
             ],
-            tags = ["no_windows"],
         )
         grpc_cc_test(
             name = "resolver_component_tests_runner_invoker%s" % unsecure_build_config_suffix,
@@ -98,5 +96,5 @@ def generate_resolver_component_tests():
             # The test is highly flaky on AWS workers that we use for running ARM64 tests.
             # The "no_arm64" tag can be used to skip it.
             # (see https://github.com/grpc/grpc/issues/25289).
-            tags = ["no_windows", "no_mac", "no_arm64", "resolver_component_tests_runner_invoker"],
+            tags = ["no_mac", "no_arm64", "resolver_component_tests_runner_invoker"],
         )
