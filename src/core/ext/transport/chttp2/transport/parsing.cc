@@ -48,7 +48,9 @@
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
 #include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
+#include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channelz.h"
+#include "src/core/lib/channel/context.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/status_helper.h"
@@ -856,10 +858,18 @@ grpc_error_handle grpc_chttp2_header_parser_parse(void* hpack_parser,
                                                   const grpc_slice& slice,
                                                   int is_last) {
   auto* parser = static_cast<grpc_core::HPackParser*>(hpack_parser);
+  grpc_core::CallTracerAnnotationInterface* call_tracer = nullptr;
   if (s != nullptr) {
     s->stats.incoming.header_bytes += GRPC_SLICE_LENGTH(slice);
+
+    if (s->context != nullptr) {
+      call_tracer = static_cast<grpc_core::CallTracerAnnotationInterface*>(
+          static_cast<grpc_call_context_element*>(
+              s->context)[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE]
+              .value);
+    }
   }
-  grpc_error_handle error = parser->Parse(slice, is_last != 0);
+  grpc_error_handle error = parser->Parse(slice, is_last != 0, call_tracer);
   if (!error.ok()) {
     return error;
   }

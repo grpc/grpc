@@ -533,11 +533,11 @@ def grpc_test_only_deps():
     if "com_github_yaml_pyyaml" not in native.existing_rules():
         http_archive(
             name = "com_github_yaml_pyyaml",
-            sha256 = "6b4314b1b2051ddb9d4fcd1634e1fa9c1bb4012954273c9ff3ef689f6ec6c93e",
-            strip_prefix = "pyyaml-3.12",
+            sha256 = "e34d97db6d846f5e2ad51417fd646e7ce6a3a70726ccea2a857e0580a7155f39",
+            strip_prefix = "pyyaml-6.0.1",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/yaml/pyyaml/archive/3.12.zip",
-                "https://github.com/yaml/pyyaml/archive/3.12.zip",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/yaml/pyyaml/archive/6.0.1.zip",
+                "https://github.com/yaml/pyyaml/archive/6.0.1.zip",
             ],
             build_file = "@com_github_grpc_grpc//third_party:yaml.BUILD",
         )

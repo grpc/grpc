@@ -61,7 +61,7 @@
 - name: free_large_allocator
   default: false
 - name: promise_based_server_call
-  default: false
+  default: true
 - name: transport_supplies_client_latency
   default: false
 - name: event_engine_listener
@@ -79,7 +79,7 @@
     # implemented
     windows: broken
 - name: work_stealing
-  default: false
+  default: debug
 - name: client_privacy
   default: false
 - name: canary_client_privacy
@@ -89,4 +89,6 @@
 - name: unique_metadata_strings
   default: false
 - name: keepalive_fix
+  default: false
+- name: keepalive_server_fix
   default: false

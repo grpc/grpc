@@ -175,6 +175,7 @@ int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(&argc, argv);
   grpc_core::ForceEnableExperiment("keepalive_fix", true);
+  grpc_core::ForceEnableExperiment("keepalive_server_fix", true);
   grpc_init();
   auto ret = RUN_ALL_TESTS();
   grpc_shutdown();
