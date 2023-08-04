@@ -1079,11 +1079,6 @@ _BUILD_EXTRA_METADATA = {
         "build": "all",
         "_RENAME": "upb_textformat_lib",
     },
-    "@upb//:descriptor_upb_proto": {
-        "language": "c",
-        "build": "all",
-        "_RENAME": "upb_descriptor_lib",
-    },
     "@utf8_range//:utf8_range": {
         "language": "c",
         "build": "all",
