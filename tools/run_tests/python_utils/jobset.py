@@ -319,10 +319,11 @@ class Job(object):
             cmdline = ["time", "-p"] + cmdline
         else:
             measure_cpu_costs = False
+        print(self._logfile)
         try_start = lambda: subprocess.Popen(
             args=cmdline,
             stderr=subprocess.STDOUT,
-            stdout=subprocess.STDOUT,
+            stdout=self._logfile,
             cwd=self._spec.cwd,
             shell=self._spec.shell,
             env=env,
