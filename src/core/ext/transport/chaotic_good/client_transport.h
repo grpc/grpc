@@ -18,8 +18,10 @@
 #include <grpc/support/port_platform.h>
 
 #include <stdint.h>
+#include <stdio.h>
 
 #include <initializer_list>  // IWYU pragma: keep
+#include <iostream>
 #include <memory>
 #include <type_traits>
 #include <utility>
@@ -35,6 +37,7 @@
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/mpsc.h"
+#include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/promise_endpoint.h"
@@ -62,26 +65,23 @@ class ClientTransport {
       MutexLock lock(&mu_);
       stream_id = next_stream_id_++;
     }
+    bool initial_frame = true;
     return Seq(
-        // Send first data frame with client intial metadata.
-        [stream_id, outgoing_frames = outgoing_frames_.MakeSender(),
-         client_initial_metadata =
-             std::move(call_args.client_initial_metadata)]() mutable {
-          // TODO(ladynana): consider getting the first message here if it's
-          // available.
-          ClientFragmentFrame frame;
-          frame.stream_id = stream_id;
-          frame.headers = std::move(client_initial_metadata);
-          frame.end_of_stream = false;
-          return outgoing_frames.Send(ClientFrame(std::move(frame)));
-        },
         // Continuously send data frame with client to server messages.
         ForEach(std::move(*call_args.client_to_server_messages),
-                [stream_id, outgoing_frames = outgoing_frames_.MakeSender()](
+                [stream_id, &initial_frame,
+                 client_initial_metadata =
+                     std::move(call_args.client_initial_metadata),
+                 outgoing_frames = outgoing_frames_.MakeSender()](
                     MessageHandle result) mutable {
                   ClientFragmentFrame frame;
                   frame.stream_id = stream_id;
                   frame.message = std::move(result);
+                  if (initial_frame) {
+                    // Send initial frame with client intial metadata.
+                    frame.headers = std::move(client_initial_metadata);
+                    initial_frame = false;
+                  }
                   return Seq(
                       outgoing_frames.Send(ClientFrame(std::move(frame))),
                       [](bool success) -> absl::Status {
