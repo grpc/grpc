@@ -697,19 +697,25 @@ std::string GenerateSelfSignedCertificate(
       RSA_generate_key_ex(rsa, /*key_size=*/2048, bignum, /*cb=*/nullptr));
   GPR_ASSERT(EVP_PKEY_assign_RSA(key, rsa));
 #else
-  EVP_PKEY_CTX* ctx = nullptr;
-  OSSL_PARAM params[3] = {};
-  params[0] = OSSL_PARAM_BN("n", n, sizeof(n));
-  params[1] = OSSL_PARAM_BN("e", bignum, sizeof(bignum));
-  params[2] = OSSL_PARAM_END;
-  ctx = EVP_PKEY_CTX_new_from_name(NULL, "RSA", NULL);
-  GPR_ASSERT(ctx != nullptr);
-  EVP_PKEY_keygen_init(ctx);
-  EVP_PKEY_CTX_set_params(ctx, params);
-  EVP_PKEY_generate(ctx, &key);
-  BN_free(n);
-  EVP_PKEY_CTX_free(ctx);
+  // EVP_PKEY_CTX* ctx = nullptr;
+  // OSSL_PARAM params[3] = {};
+  // params[0] = OSSL_PARAM_BN("n", n, sizeof(n));
+  // params[1] = OSSL_PARAM_BN("e", bignum, sizeof(bignum));
+  // params[2] = OSSL_PARAM_END;
+  // ctx = EVP_PKEY_CTX_new_from_name(NULL, "RSA", NULL);
+  // GPR_ASSERT(ctx != nullptr);
+  // GPR_ASSERT(EVP_PKEY_keygen_init(ctx));
+  // GPR_ASSERT(EVP_PKEY_CTX_set_params(ctx, params));
+  // int out = EVP_PKEY_generate(ctx, &key);
+  // if (out != 1) {
+  //   // gpr_log(GPR_ERROR, "%i", out);
+  //   std::cerr << out << std::endl;
+  // }
+  // GPR_ASSERT(out == 1);
+  // EVP_PKEY_CTX_free(ctx);
+  key = EVP_RSA_gen(2048);
 #endif
+  BN_free(n);
 
   // Create the X509 object.
   X509* x509 = X509_new();
@@ -758,7 +764,7 @@ std::string GenerateSelfSignedCertificate(
   GPR_ASSERT(BIO_mem_contents(bio, &data, &len));
 #else
   size_t len_to_read = BIO_pending(bio);
-  GPR_ASSERT(BIO_read_ex(bio, &data, len_to_read, &len))
+  GPR_ASSERT(BIO_read_ex(bio, data, len_to_read, &len));
 #endif
   std::string pem = std::string(reinterpret_cast<const char*>(data), len);
   // Cleanup all of the OpenSSL objects and return the PEM-encoded cert.

@@ -561,7 +561,7 @@ class CLanguage(object):
         elif compiler == "gcc7":
             return ("gcc_7", [])
         elif compiler == "gcc10.2":
-            return ("debian11", []
+            return ("debian11", [])
         elif compiler == "gcc10.2_openssl102":
             return (
                 "debian11_openssl102",

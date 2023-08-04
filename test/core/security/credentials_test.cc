@@ -1297,7 +1297,12 @@ void validate_jwt_encode_and_sign_params(const grpc_auth_json_key* json_key,
                                          gpr_timespec token_lifetime) {
   GPR_ASSERT(grpc_auth_json_key_is_valid(json_key));
   GPR_ASSERT(json_key->private_key != nullptr);
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
   GPR_ASSERT(RSA_check_key(json_key->private_key));
+#else
+  EVP_PKEY_CTX* ctx = EVP_PKEY_CTX_new(json_key->private_key, NULL);
+  GPR_ASSERT(EVP_PKEY_private_check(ctx));
+#endif
   GPR_ASSERT(json_key->type != nullptr &&
              strcmp(json_key->type, "service_account") == 0);
   GPR_ASSERT(json_key->private_key_id != nullptr &&
