@@ -18,10 +18,8 @@
 #include <grpc/support/port_platform.h>
 
 #include <stdint.h>
-#include <stdio.h>
 
 #include <initializer_list>  // IWYU pragma: keep
-#include <iostream>
 #include <memory>
 #include <type_traits>
 #include <utility>

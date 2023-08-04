@@ -49,6 +49,7 @@
 using testing::MockFunction;
 using testing::Return;
 using testing::StrictMock;
+using testing::WithArgs;
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -126,6 +127,10 @@ class ClientTransportTest : public ::testing::Test {
   ClientTransport client_transport_;
   ScopedArenaPtr arena_;
   Pipe<MessageHandle> pipe_client_to_server_messages_;
+
+  const absl::Status kDummyErrorStatus =
+      absl::ErrnoToStatus(5566, "just an error");
+  static constexpr size_t kDummyRequestSize = 5566u;
 };
 
 TEST_F(ClientTransportTest, AddOneStream) {
@@ -151,7 +156,54 @@ TEST_F(ClientTransportTest, AddOneStream) {
                      return absl::OkStatus();
                    }),
                Seq(client_transport_.AddStream(std::move(args)),
-                   [] { return absl::OkStatus(); })),
+                   [](const absl::Status& status) { return status; })),
+          // Once complete, verify successful sending and the received value.
+          [](const std::tuple<absl::Status, absl::Status>& ret) {
+            EXPECT_TRUE(std::get<0>(ret).ok());
+            EXPECT_TRUE(std::get<1>(ret).ok());
+            return absl::OkStatus();
+          }),
+      InlineWakeupScheduler(),
+      [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
+  // Wait until ClientTransport's internal activities to finish.
+  event_engine_->TickUntilIdle();
+  event_engine_->UnsetGlobalHooks();
+}
+
+TEST_F(ClientTransportTest, AddOneStreamFailed) {
+  SliceBuffer buffer;
+  buffer.Append(Slice::FromCopiedString("test add stream."));
+  auto message = arena_->MakePooled<Message>(std::move(buffer), 0);
+  ClientMetadataHandle md;
+  auto args = CallArgs{
+      std::move(md), ClientInitialMetadataOutstandingToken::Empty(), nullptr,
+      nullptr,       &pipe_client_to_server_messages_.receiver,      nullptr};
+  StrictMock<MockFunction<void(absl::Status)>> on_done;
+  EXPECT_CALL(on_done, Call(absl::OkStatus()));
+  EXPECT_CALL(control_endpoint_, Write)
+      .WillOnce(
+          WithArgs<0>([this](absl::AnyInvocable<void(absl::Status)> on_write) {
+            on_write(this->kDummyErrorStatus);
+            return false;
+          }));
+  EXPECT_CALL(data_endpoint_, Write)
+      .WillOnce(
+          WithArgs<0>([this](absl::AnyInvocable<void(absl::Status)> on_write) {
+            on_write(this->kDummyErrorStatus);
+            return false;
+          }));
+  auto activity = MakeActivity(
+      Seq(
+          // Concurrently: send message into the pipe, and receive from the
+          // pipe.
+          Join(Seq(pipe_client_to_server_messages_.sender.Push(
+                       std::move(message)),
+                   [this] {
+                     this->pipe_client_to_server_messages_.sender.Close();
+                     return absl::OkStatus();
+                   }),
+               Seq(client_transport_.AddStream(std::move(args)),
+                   [](const absl::Status& status) { return status; })),
           // Once complete, verify successful sending and the received value.
           [](const std::tuple<absl::Status, absl::Status>& ret) {
             EXPECT_TRUE(std::get<0>(ret).ok());

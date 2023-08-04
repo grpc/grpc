@@ -6402,7 +6402,6 @@ targets:
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/join.h
   - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/try_join.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
