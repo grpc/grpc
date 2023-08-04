@@ -19,6 +19,19 @@ grpc_package(name = "test/core/channel")
 licenses(["notice"])
 
 grpc_cc_test(
+    name = "call_tracer_test",
+    srcs = ["call_tracer_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "channel_args_test",
     srcs = ["channel_args_test.cc"],
     external_deps = ["gtest"],

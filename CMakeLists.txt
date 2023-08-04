@@ -862,6 +862,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx call_creds_test)
   add_dependencies(buildtests_cxx call_finalization_test)
   add_dependencies(buildtests_cxx call_host_override_test)
+  add_dependencies(buildtests_cxx call_tracer_test)
   add_dependencies(buildtests_cxx cancel_after_accept_test)
   add_dependencies(buildtests_cxx cancel_after_client_done_test)
   add_dependencies(buildtests_cxx cancel_after_invoke_test)
@@ -7469,6 +7470,43 @@ target_link_libraries(call_host_override_test
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(call_tracer_test
+  test/core/channel/call_tracer_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+target_compile_features(call_tracer_test PUBLIC cxx_std_14)
+target_include_directories(call_tracer_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(call_tracer_test
+  ${_gRPC_BASELIB_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ZLIB_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(cancel_after_accept_test
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
@@ -12232,6 +12270,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(forkable_test
+  src/core/lib/debug/trace.cc
   src/core/lib/event_engine/forkable.cc
   test/core/event_engine/forkable_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -12262,6 +12301,7 @@ target_link_libraries(forkable_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::statusor
   gpr
 )
 
