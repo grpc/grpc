@@ -53,24 +53,23 @@ ClientTransport::ClientTransport(
     : outgoing_frames_(MpscReceiver<ClientFrame>(4)),
       control_endpoint_(std::move(control_endpoint)),
       data_endpoint_(std::move(data_endpoint)),
+      control_endpoint_write_buffer_(SliceBuffer()),
+      data_endpoint_write_buffer_(SliceBuffer()),
       event_engine_(event_engine) {
   auto hpack_compressor = std::make_shared<HPackCompressor>();
   auto write_loop = Loop(Seq(
       // Get next outgoing frame.
       this->outgoing_frames_.Next(),
       // Construct data buffers that will be sent to the endpoints.
-      [hpack_compressor](ClientFrame client_frame) {
-        SliceBuffer control_endpoint_buffer;
-        SliceBuffer data_endpoint_buffer;
+      [hpack_compressor, this](ClientFrame client_frame) {
         MatchMutable(
             &client_frame,
-            [hpack_compressor, &control_endpoint_buffer,
-             &data_endpoint_buffer](ClientFragmentFrame* frame) mutable {
-              control_endpoint_buffer.Append(
+            [hpack_compressor, this](ClientFragmentFrame* frame) mutable {
+              control_endpoint_write_buffer_.Append(
                   frame->Serialize(hpack_compressor.get()));
               if (frame->message != nullptr) {
                 char* header_string = grpc_slice_to_c_string(
-                    control_endpoint_buffer.c_slice_buffer()->slices[0]);
+                    control_endpoint_write_buffer_.c_slice_buffer()->slices[0]);
                 auto frame_header =
                     FrameHeader::Parse(
                         reinterpret_cast<const uint8_t*>(header_string))
@@ -79,26 +78,25 @@ ClientTransport::ClientTransport(
                 std::string message_padding(frame_header.message_padding, '0');
                 Slice slice(grpc_slice_from_cpp_string(message_padding));
                 // Append message payload to data_endpoint_buffer.
-                data_endpoint_buffer.Append(std::move(slice));
+                data_endpoint_write_buffer_.Append(std::move(slice));
                 // Append message payload to data_endpoint_buffer.
                 frame->message->payload()->MoveFirstNBytesIntoSliceBuffer(
-                    frame->message->payload()->Length(), data_endpoint_buffer);
+                    frame->message->payload()->Length(),
+                    data_endpoint_write_buffer_);
               }
             },
-            [hpack_compressor,
-             &control_endpoint_buffer](CancelFrame* frame) mutable {
-              control_endpoint_buffer.Append(
+            [hpack_compressor, this](CancelFrame* frame) mutable {
+              control_endpoint_write_buffer_.Append(
                   frame->Serialize(hpack_compressor.get()));
             });
-        return std::make_tuple<SliceBuffer, SliceBuffer>(
-            std::move(control_endpoint_buffer),
-            std::move(data_endpoint_buffer));
+        return absl::OkStatus();
       },
       // Write buffers to corresponding endpoints concurrently.
-      [this](std::tuple<SliceBuffer, SliceBuffer> ret) {
-        return TryJoin(
-            this->control_endpoint_->Write(std::move(std::get<0>(ret))),
-            this->data_endpoint_->Write(std::move(std::get<1>(ret))));
+      [this]() {
+        return TryJoin(this->control_endpoint_->Write(
+                           std::move(control_endpoint_write_buffer_)),
+                       this->data_endpoint_->Write(
+                           std::move(data_endpoint_write_buffer_)));
       },
       // Finish writes and return status.
       [](absl::StatusOr<std::tuple<Empty, Empty>> ret)

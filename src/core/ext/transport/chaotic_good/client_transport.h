@@ -36,6 +36,7 @@
 #include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/mpsc.h"
 #include "src/core/lib/promise/seq.h"
+#include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/lib/transport/transport.h"
 
@@ -103,6 +104,8 @@ class ClientTransport {
   ActivityPtr reader_;
   std::unique_ptr<PromiseEndpoint> control_endpoint_;
   std::unique_ptr<PromiseEndpoint> data_endpoint_;
+  SliceBuffer control_endpoint_write_buffer_;
+  SliceBuffer data_endpoint_write_buffer_;
   // Use to synchronize writer_ and reader_ activity with outside activities;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
 };
