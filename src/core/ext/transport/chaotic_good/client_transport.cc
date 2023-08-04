@@ -35,9 +35,8 @@
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/detail/basic_seq.h"
 #include "src/core/lib/promise/event_engine_wakeup_scheduler.h"
+#include "src/core/lib/promise/join.h"
 #include "src/core/lib/promise/loop.h"
-#include "src/core/lib/promise/poll.h"
-#include "src/core/lib/promise/try_join.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -93,17 +92,16 @@ ClientTransport::ClientTransport(
       },
       // Write buffers to corresponding endpoints concurrently.
       [this]() {
-        return TryJoin(this->control_endpoint_->Write(
-                           std::move(control_endpoint_write_buffer_)),
-                       this->data_endpoint_->Write(
-                           std::move(data_endpoint_write_buffer_)));
+        return Join(this->control_endpoint_->Write(
+                        std::move(control_endpoint_write_buffer_)),
+                    this->data_endpoint_->Write(
+                        std::move(data_endpoint_write_buffer_)));
       },
       // Finish writes and return status.
-      [](absl::StatusOr<std::tuple<Empty, Empty>> ret)
-          -> LoopCtl<absl::Status> {
+      [](std::tuple<absl::Status, absl::Status> ret) -> LoopCtl<absl::Status> {
         // If writes failed, return failure status.
-        if (!ret.ok()) {
-          return ret.status();
+        if (!(std::get<0>(ret).ok() || std::get<1>(ret).ok())) {
+          return absl::InternalError("Promise endpoint writes failed.");
         }
         return Continue();
       }));
@@ -111,7 +109,8 @@ ClientTransport::ClientTransport(
       // Continuously write next outgoing frames to promise endpoints.
       std::move(write_loop), EventEngineWakeupScheduler(event_engine_),
       [](absl::Status status) {
-        GPR_ASSERT(status.code() != absl::StatusCode::kOk);
+        GPR_ASSERT(status.code() == absl::StatusCode::kCancelled ||
+                   status.code() == absl::StatusCode::kInternal);
       });
 }
 
