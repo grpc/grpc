@@ -150,7 +150,7 @@ static int g_ssl_ex_verified_root_cert_index = -1;
 static const char kSslEnginePrefix[] = "engine:";
 #endif
 #if OPENSSL_VERSION_NUMBER >= 0x30000000
-static const char kSslEcCurveName[] = "NID_X9_62_prime256v1";
+static const int kSslEcCurveNames[] = {NID_X9_62_prime256v1};
 #endif
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000
@@ -802,7 +802,7 @@ static tsi_result populate_ssl_context(
     SSL_CTX_set_options(context, SSL_OP_SINGLE_ECDH_USE);
     EC_KEY_free(ecdh);
 #else
-    if (!SSL_CTX_set1_groups(context, kSslEcCurveName, 1)) {
+    if (!SSL_CTX_set1_groups(context, kSslEcCurveNames, 1)) {
       gpr_log(GPR_ERROR, "Could not set ephemeral ECDH key.");
       return TSI_INTERNAL_ERROR;
     }

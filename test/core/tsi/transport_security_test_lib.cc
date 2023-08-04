@@ -25,7 +25,6 @@
 #include <openssl/asn1.h>
 #include <openssl/bio.h>
 #include <openssl/bn.h>
-#include <openssl/digest.h>
 #include <openssl/evp.h>
 #include <openssl/pem.h>
 #include <openssl/rsa.h>
@@ -763,8 +762,9 @@ std::string GenerateSelfSignedCertificate(
 #if OPENSSL_VERSION_NUMBER < 0x30000000L
   GPR_ASSERT(BIO_mem_contents(bio, &data, &len));
 #else
-  size_t len_to_read = BIO_pending(bio);
-  GPR_ASSERT(BIO_read_ex(bio, data, len_to_read, &len));
+  len = BIO_get_mem_data(bio, &data);
+  // GPR_ASSERT(BIO_read_ex(bio, data, len_to_read, &len));
+  // const uint8_t* data2 = nullptr;
 #endif
   std::string pem = std::string(reinterpret_cast<const char*>(data), len);
   // Cleanup all of the OpenSSL objects and return the PEM-encoded cert.
