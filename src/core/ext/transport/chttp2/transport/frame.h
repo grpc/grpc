@@ -31,6 +31,27 @@
 
 namespace grpc_core {
 
+///////////////////////////////////////////////////////////////////////////////
+// Frame types
+//
+// Define structs for each kind of frame that chttp2 reasons about.
+//
+// Each struct gets the members defined by the HTTP/2 spec for that frame type
+// *that the semantic layers of chttp2 neead to reason about*.
+//
+// That means, for instance, that we drop padding and prioritization data from
+// these structs, as they are handled by the HTTP/2 framing layer and are
+// meaningless to the semantic layers above.
+//
+// If a frame type is associated with a stream, it has a stream_id member.
+// If that frame type is only used at the channel layer it does not.
+//
+// Instead of carrying bitfields of flags like the wire format, we instead
+// declare a bool per flag to make producing/consuming code easier to write.
+//
+// Equality operators are defined for use in unit tests.
+
+// DATA frame
 struct Http2DataFrame {
   uint32_t stream_id = 0;
   bool end_stream = false;
@@ -42,6 +63,7 @@ struct Http2DataFrame {
   }
 };
 
+// HEADER frame
 struct Http2HeaderFrame {
   uint32_t stream_id = 0;
   bool end_headers = false;
@@ -55,6 +77,7 @@ struct Http2HeaderFrame {
   }
 };
 
+// CONTINUATION frame
 struct Http2ContinuationFrame {
   uint32_t stream_id = 0;
   bool end_headers = false;
@@ -66,6 +89,7 @@ struct Http2ContinuationFrame {
   }
 };
 
+// RST_STREAM frame
 struct Http2RstStreamFrame {
   uint32_t stream_id = 0;
   uint32_t error_code = 0;
@@ -75,6 +99,7 @@ struct Http2RstStreamFrame {
   }
 };
 
+// SETTINGS frame
 struct Http2SettingsFrame {
   struct Setting {
     uint16_t id;
@@ -92,6 +117,7 @@ struct Http2SettingsFrame {
   }
 };
 
+// PING frame
 struct Http2PingFrame {
   bool ack = false;
   uint64_t opaque = 0;
@@ -101,6 +127,7 @@ struct Http2PingFrame {
   }
 };
 
+// GOAWAY frame
 struct Http2GoawayFrame {
   uint32_t last_stream_id = 0;
   uint32_t error_code = 0;
@@ -113,6 +140,7 @@ struct Http2GoawayFrame {
   }
 };
 
+// WINDOW_UPDATE frame
 struct Http2WindowUpdateFrame {
   uint32_t stream_id;
   uint32_t increment;
@@ -122,12 +150,35 @@ struct Http2WindowUpdateFrame {
   }
 };
 
+// Type of frame was unknown (and should be ignored)
+struct Http2UnknownFrame {
+  bool operator==(const Http2UnknownFrame& other) const { return true; }
+};
+
+///////////////////////////////////////////////////////////////////////////////
+// Frame variant
+//
+// A union of all the frame types above, so that we may pass around an
+// arbitrary frame between layers as appropriate.
+using Http2Frame =
+    absl::variant<Http2DataFrame, Http2HeaderFrame, Http2ContinuationFrame,
+                  Http2RstStreamFrame, Http2SettingsFrame, Http2PingFrame,
+                  Http2GoawayFrame, Http2WindowUpdateFrame, Http2UnknownFrame>;
+
+///////////////////////////////////////////////////////////////////////////////
+// Frame header
+//
+// Define a struct for the frame header.
+// Parsing this type is the first step in parsing a frame.
+// No validation on the header is done during parsing - the fields should be
+// instead interpreted by the frame type parser.
 struct Http2FrameHeader {
   uint32_t length;
   uint8_t type;
   uint8_t flags;
   uint32_t stream_id;
   // Serialize header to 9 byte long buffer output
+  // Crashes if length > 16777215 (as this is unencodable)
   void Serialize(uint8_t* output) const;
   // Parse header from 9 byte long buffer input
   static Http2FrameHeader Parse(const uint8_t* input);
@@ -139,20 +190,21 @@ struct Http2FrameHeader {
   }
 };
 
-struct Http2UnknownFrame {
-  bool operator==(const Http2UnknownFrame& other) const { return true; }
-};
+///////////////////////////////////////////////////////////////////////////////
+// Parsing & serialization
 
-using Http2Frame =
-    absl::variant<Http2DataFrame, Http2HeaderFrame, Http2ContinuationFrame,
-                  Http2RstStreamFrame, Http2SettingsFrame, Http2PingFrame,
-                  Http2GoawayFrame, Http2WindowUpdateFrame, Http2UnknownFrame>;
-
+// Given a frame header and a payload, parse the payload into a frame and
+// return it.
+// If this function returns an error, that should be considered a connection
+// error.
+// If a frame should simply be ignored, this function returns a
+// Http2UnknownFrame.
+// It is expected that hdr.length == payload.Length().
 absl::StatusOr<Http2Frame> ParseFramePayload(const Http2FrameHeader& hdr,
                                              SliceBuffer payload);
 
-// Serialize frame to out, leaves frames in an unknown state (may move things
-// out of frames)
+// Serialize frame and append to out, leaves frames in an unknown state (may
+// move things out of frames)
 void Serialize(absl::Span<Http2Frame> frames, SliceBuffer& out);
 
 }  // namespace grpc_core
