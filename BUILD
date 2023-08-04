@@ -1577,7 +1577,6 @@ grpc_cc_library(
         "//src/core:memory_quota",
         "//src/core:metadata_compression_traits",
         "//src/core:no_destruct",
-        "//src/core:notification",
         "//src/core:packed_table",
         "//src/core:per_cpu",
         "//src/core:pipe",

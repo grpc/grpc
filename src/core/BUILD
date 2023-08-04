@@ -1124,10 +1124,6 @@ grpc_cc_library(
     hdrs = [
         "lib/resource_quota/arena.h",
     ],
-    external_deps = [
-        "absl/meta:type_traits",
-        "absl/utility",
-    ],
     visibility = [
         "@grpc:alt_grpc_base_legacy",
     ],
@@ -1390,6 +1386,7 @@ grpc_cc_library(
         "//:config_vars",
         "//:gpr",
         "//:gpr_platform",
+        "//:grpc_trace",
     ],
 )
 
@@ -1746,6 +1743,7 @@ grpc_cc_library(
         "common_event_engine_closures",
         "event_engine_poller",
         "event_engine_time_util",
+        "forkable",
         "iomgr_port",
         "posix_event_engine_closure",
         "posix_event_engine_event_poller",

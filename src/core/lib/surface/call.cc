@@ -1930,6 +1930,9 @@ void FilterStackCall::ContextSet(grpc_context_index elem, void* value,
 
 namespace {
 bool ValidateMetadata(size_t count, grpc_metadata* metadata) {
+  if (count > INT_MAX) {
+    return false;
+  }
   for (size_t i = 0; i < count; i++) {
     grpc_metadata* md = &metadata[i];
     if (!GRPC_LOG_IF_ERROR("validate_metadata",
@@ -2236,6 +2239,10 @@ class PromiseBasedCall : public Call,
     if (1 == sends_queued_.fetch_sub(1, std::memory_order_relaxed)) {
       waiting_for_queued_sends_.Wake();
     }
+  }
+
+  void set_failed_before_recv_message() {
+    failed_before_recv_message_.store(true, std::memory_order_relaxed);
   }
 
  private:
@@ -2614,7 +2621,7 @@ void PromiseBasedCall::StartRecvMessage(
                     "finishes: received end-of-stream with error",
                     DebugTag().c_str());
           }
-          failed_before_recv_message_.store(true);
+          set_failed_before_recv_message();
           FailCompletion(completion);
           if (cancel_on_error) CancelWithError(absl::CancelledError());
           *recv_message_ = nullptr;
@@ -3286,11 +3293,13 @@ void ServerPromiseBasedCall::Finish(ServerMetadataHandle result) {
       channelz_node->RecordCallFailed();
     }
   }
+  bool was_cancelled = result->get(GrpcCallWasCancelled()).value_or(true);
   if (recv_close_op_cancel_state_.CompleteCallWithCancelledSetTo(
-          result->get(GrpcCallWasCancelled()).value_or(true))) {
+          was_cancelled)) {
     FinishOpOnCompletion(&recv_close_completion_,
                          PendingOp::kReceiveCloseOnServer);
   }
+  if (was_cancelled) set_failed_before_recv_message();
   if (server_initial_metadata_ != nullptr) {
     server_initial_metadata_->Close();
   }
@@ -3325,9 +3334,16 @@ grpc_call_error ServerPromiseBasedCall::ValidateBatch(const grpc_op* ops,
           return GRPC_CALL_ERROR_INVALID_FLAGS;
         }
         break;
+      case GRPC_OP_SEND_STATUS_FROM_SERVER:
+        if (op.flags != 0) return GRPC_CALL_ERROR_INVALID_FLAGS;
+        if (!ValidateMetadata(
+                op.data.send_status_from_server.trailing_metadata_count,
+                op.data.send_status_from_server.trailing_metadata)) {
+          return GRPC_CALL_ERROR_INVALID_METADATA;
+        }
+        break;
       case GRPC_OP_RECV_MESSAGE:
       case GRPC_OP_RECV_CLOSE_ON_SERVER:
-      case GRPC_OP_SEND_STATUS_FROM_SERVER:
         if (op.flags != 0) return GRPC_CALL_ERROR_INVALID_FLAGS;
         break;
       case GRPC_OP_RECV_INITIAL_METADATA:
@@ -3366,7 +3382,10 @@ void ServerPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
             [this,
              completion = AddOpToCompletion(
                  completion, PendingOp::kSendInitialMetadata)](bool r) mutable {
-              if (!r) FailCompletion(completion);
+              if (!r) {
+                set_failed_before_recv_message();
+                FailCompletion(completion);
+              }
               FinishOpOnCompletion(&completion,
                                    PendingOp::kSendInitialMetadata);
             });
@@ -3416,7 +3435,10 @@ void ServerPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
             [this, completion = AddOpToCompletion(
                        completion, PendingOp::kSendStatusFromServer)](
                 bool ok) mutable {
-              if (!ok) FailCompletion(completion);
+              if (!ok) {
+                set_failed_before_recv_message();
+                FailCompletion(completion);
+              }
               FinishOpOnCompletion(&completion,
                                    PendingOp::kSendStatusFromServer);
             });

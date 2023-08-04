@@ -119,8 +119,7 @@ class EventEngineEndpointWrapper {
     read_buffer->~SliceBuffer();
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
       size_t i;
-      gpr_log(GPR_INFO, "TCP: %p READ (peer=%s) error=%s", eeep_->wrapper,
-              std::string(eeep_->wrapper->PeerAddress()).c_str(),
+      gpr_log(GPR_INFO, "TCP: %p READ error=%s", eeep_->wrapper,
               status.ToString().c_str());
       if (gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
         for (i = 0; i < pending_read_buffer_->count; i++) {

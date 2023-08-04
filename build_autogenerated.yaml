@@ -5496,9 +5496,11 @@ targets:
   headers:
   - test/core/end2end/cq_verifier.h
   - test/core/util/fake_udp_and_tcp_server.h
+  - test/core/util/socket_use_after_close_detector.h
   src:
   - test/core/end2end/cq_verifier.cc
   - test/core/util/fake_udp_and_tcp_server.cc
+  - test/core/util/socket_use_after_close_detector.cc
   - test/cpp/naming/cancel_ares_query_test.cc
   deps:
   - grpc++_test_config
@@ -7985,11 +7987,14 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/lib/debug/trace.h
   - src/core/lib/event_engine/forkable.h
   src:
+  - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/forkable.cc
   - test/core/event_engine/forkable_test.cc
   deps:
+  - absl/status:statusor
   - gpr
 - name: format_request_test
   gtest: true

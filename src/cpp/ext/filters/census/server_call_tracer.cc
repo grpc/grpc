@@ -169,6 +169,13 @@ class OpenCensusServerCallTracer : public grpc_core::ServerCallTracer {
     }
 
     switch (annotation.type()) {
+      case AnnotationType::kMetadataSizes:
+        // This annotation is expensive to create. We should only create it if
+        // the call is being sampled, not just recorded.
+        if (IsSampled()) {
+          context_.AddSpanAnnotation(annotation.ToString(), {});
+        }
+        break;
       default:
         context_.AddSpanAnnotation(annotation.ToString(), {});
     }
