@@ -19,7 +19,7 @@
 
 #include <stdint.h>
 
-#include <initializer_list>
+#include <initializer_list>  // IWYU pragma: keep
 #include <memory>
 #include <type_traits>
 #include <utility>

@@ -92,7 +92,7 @@ ClientTransport::ClientTransport(
             });
         return std::make_tuple<SliceBuffer, SliceBuffer>(
             std::move(control_endpoint_buffer),
-            std::move(control_endpoint_buffer));
+            std::move(data_endpoint_buffer));
       },
       // Write buffers to corresponding endpoints concurrently.
       [this](std::tuple<SliceBuffer, SliceBuffer> ret) {
