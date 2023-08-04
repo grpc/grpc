@@ -1092,7 +1092,6 @@
       'type': 'static_library',
       'dependencies': [
         'upb_collections_lib',
-        'upb_descriptor_lib',
         'upb',
         'z',
         'absl/algorithm:container',
@@ -1601,23 +1600,14 @@
       ],
     },
     {
-      'target_name': 'upb_descriptor_lib',
-      'type': 'static_library',
-      'dependencies': [
-      ],
-      'sources': [
-        'src/core/ext/upb-generated/google/protobuf/descriptor.upb.c',
-      ],
-    },
-    {
       'target_name': 'upb_json_lib',
       'type': 'static_library',
       'dependencies': [
         'upb_collections_lib',
-        'upb_descriptor_lib',
         'upb',
       ],
       'sources': [
+        'src/core/ext/upb-generated/google/protobuf/descriptor.upb.c',
         'third_party/upb/upb/json/decode.c',
         'third_party/upb/upb/json/encode.c',
         'third_party/upb/upb/message/accessors.c',
@@ -1644,10 +1634,10 @@
       'type': 'static_library',
       'dependencies': [
         'upb_collections_lib',
-        'upb_descriptor_lib',
         'upb',
       ],
       'sources': [
+        'src/core/ext/upb-generated/google/protobuf/descriptor.upb.c',
         'third_party/upb/upb/message/accessors.c',
         'third_party/upb/upb/reflection/def_builder.c',
         'third_party/upb/upb/reflection/def_pool.c',
@@ -1938,7 +1928,6 @@
       'type': 'static_library',
       'dependencies': [
         're2',
-        'upb_descriptor_lib',
         'upb',
         'z',
         'absl/cleanup:cleanup',
@@ -1956,6 +1945,7 @@
       ],
       'sources': [
         'src/core/ext/upb-generated/google/protobuf/any.upb.c',
+        'src/core/ext/upb-generated/google/protobuf/descriptor.upb.c',
         'src/core/ext/upb-generated/google/rpc/status.upb.c',
         'src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c',
         'src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c',

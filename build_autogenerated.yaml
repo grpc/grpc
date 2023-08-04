@@ -2749,7 +2749,6 @@ libs:
   - src/core/tsi/transport_security_grpc.cc
   deps:
   - upb_collections_lib
-  - upb_descriptor_lib
   - upb
   - z
   - absl/algorithm:container
@@ -3034,20 +3033,12 @@ libs:
   - third_party/upb/upb/mini_table/encode.c
   - third_party/upb/upb/mini_table/extension_registry.c
   deps: []
-- name: upb_descriptor_lib
-  build: all
-  language: c
-  public_headers: []
-  headers:
-  - src/core/ext/upb-generated/google/protobuf/descriptor.upb.h
-  src:
-  - src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
-  deps: []
 - name: upb_json_lib
   build: all
   language: c
   public_headers: []
   headers:
+  - src/core/ext/upb-generated/google/protobuf/descriptor.upb.h
   - third_party/upb/upb/def.h
   - third_party/upb/upb/def.hpp
   - third_party/upb/upb/json/decode.h
@@ -3091,6 +3082,7 @@ libs:
   - third_party/upb/upb/reflection/service_def.h
   - third_party/upb/upb/reflection/service_def_internal.h
   src:
+  - src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
   - third_party/upb/upb/json/decode.c
   - third_party/upb/upb/json/encode.c
   - third_party/upb/upb/message/accessors.c
@@ -3112,13 +3104,13 @@ libs:
   - third_party/upb/upb/reflection/service_def.c
   deps:
   - upb_collections_lib
-  - upb_descriptor_lib
   - upb
 - name: upb_textformat_lib
   build: all
   language: c
   public_headers: []
   headers:
+  - src/core/ext/upb-generated/google/protobuf/descriptor.upb.h
   - third_party/upb/upb/def.h
   - third_party/upb/upb/def.hpp
   - third_party/upb/upb/message/accessors.h
@@ -3160,6 +3152,7 @@ libs:
   - third_party/upb/upb/text/encode.h
   - third_party/upb/upb/text_encode.h
   src:
+  - src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
   - third_party/upb/upb/message/accessors.c
   - third_party/upb/upb/reflection/def_builder.c
   - third_party/upb/upb/reflection/def_pool.c
@@ -3180,7 +3173,6 @@ libs:
   - third_party/upb/upb/text/encode.c
   deps:
   - upb_collections_lib
-  - upb_descriptor_lib
   - upb
 - name: utf8_range_lib
   build: all
@@ -4024,6 +4016,7 @@ libs:
   headers:
   - src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h
   - src/core/ext/upb-generated/google/protobuf/any.upb.h
+  - src/core/ext/upb-generated/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-generated/google/rpc/status.upb.h
   - src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.h
   - src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.h
@@ -4328,6 +4321,7 @@ libs:
   - src/core/tsi/transport_security_interface.h
   src:
   - src/core/ext/upb-generated/google/protobuf/any.upb.c
+  - src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
   - src/core/ext/upb-generated/google/rpc/status.upb.c
   - src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
   - src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c
@@ -4586,7 +4580,6 @@ libs:
   - src/core/tsi/transport_security_grpc.cc
   deps:
   - re2
-  - upb_descriptor_lib
   - upb
   - z
   - absl/cleanup:cleanup
@@ -6639,6 +6632,7 @@ targets:
   language: c++
   headers:
   - src/core/ext/upb-generated/google/protobuf/any.upb.h
+  - src/core/ext/upb-generated/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-generated/google/rpc/status.upb.h
   - src/core/lib/debug/trace.h
   - src/core/lib/experiments/config.h
@@ -6686,6 +6680,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.h
   src:
   - src/core/ext/upb-generated/google/protobuf/any.upb.c
+  - src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
   - src/core/ext/upb-generated/google/rpc/status.upb.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/memory_allocator.cc
@@ -6713,7 +6708,6 @@ targets:
   - test/core/gprpp/chunked_vector_test.cc
   deps:
   - gtest
-  - upb_descriptor_lib
   - upb
   - absl/container:flat_hash_set
   - absl/functional:function_ref
@@ -7881,6 +7875,7 @@ targets:
   language: c++
   headers:
   - src/core/ext/upb-generated/google/protobuf/any.upb.h
+  - src/core/ext/upb-generated/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-generated/google/rpc/status.upb.h
   - src/core/lib/debug/trace.h
   - src/core/lib/gpr/spinlock.h
@@ -7912,6 +7907,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.h
   src:
   - src/core/ext/upb-generated/google/protobuf/any.upb.c
+  - src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
   - src/core/ext/upb-generated/google/rpc/status.upb.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/gprpp/status_helper.cc
@@ -7930,7 +7926,6 @@ targets:
   - test/core/promise/exec_ctx_wakeup_scheduler_test.cc
   deps:
   - gtest
-  - upb_descriptor_lib
   - upb
   - absl/hash:hash
   - absl/meta:type_traits
@@ -8363,6 +8358,7 @@ targets:
   - src/core/ext/transport/chttp2/transport/flow_control.h
   - src/core/ext/transport/chttp2/transport/http2_settings.h
   - src/core/ext/upb-generated/google/protobuf/any.upb.h
+  - src/core/ext/upb-generated/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-generated/google/rpc/status.upb.h
   - src/core/lib/debug/trace.h
   - src/core/lib/experiments/config.h
@@ -8413,6 +8409,7 @@ targets:
   - src/core/ext/transport/chttp2/transport/flow_control.cc
   - src/core/ext/transport/chttp2/transport/http2_settings.cc
   - src/core/ext/upb-generated/google/protobuf/any.upb.c
+  - src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
   - src/core/ext/upb-generated/google/rpc/status.upb.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/memory_allocator.cc
@@ -8441,7 +8438,6 @@ targets:
   - test/core/transport/chttp2/flow_control_test.cc
   deps:
   - gtest
-  - upb_descriptor_lib
   - upb
   - absl/container:flat_hash_set
   - absl/functional:function_ref
@@ -8456,6 +8452,7 @@ targets:
   language: c++
   headers:
   - src/core/ext/upb-generated/google/protobuf/any.upb.h
+  - src/core/ext/upb-generated/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-generated/google/rpc/status.upb.h
   - src/core/lib/debug/trace.h
   - src/core/lib/experiments/config.h
@@ -8511,6 +8508,7 @@ targets:
   - test/core/promise/test_wakeup_schedulers.h
   src:
   - src/core/ext/upb-generated/google/protobuf/any.upb.c
+  - src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
   - src/core/ext/upb-generated/google/rpc/status.upb.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/memory_allocator.cc
@@ -8539,7 +8537,6 @@ targets:
   - test/core/promise/for_each_test.cc
   deps:
   - gtest
-  - upb_descriptor_lib
   - upb
   - absl/container:flat_hash_set
   - absl/functional:function_ref
@@ -8664,6 +8661,7 @@ targets:
   - src/core/ext/transport/chttp2/transport/huffsyms.h
   - src/core/ext/transport/chttp2/transport/varint.h
   - src/core/ext/upb-generated/google/protobuf/any.upb.h
+  - src/core/ext/upb-generated/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-generated/google/rpc/status.upb.h
   - src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.h
   - src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.h
@@ -8950,6 +8948,7 @@ targets:
   - src/core/ext/transport/chttp2/transport/huffsyms.cc
   - src/core/ext/transport/chttp2/transport/varint.cc
   - src/core/ext/upb-generated/google/protobuf/any.upb.c
+  - src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
   - src/core/ext/upb-generated/google/rpc/status.upb.c
   - src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
   - src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c
@@ -9180,7 +9179,6 @@ targets:
   - test/core/transport/chaotic_good/frame_test.cc
   deps:
   - gtest
-  - upb_descriptor_lib
   - upb
   - z
   - absl/cleanup:cleanup
@@ -10366,6 +10364,7 @@ targets:
   language: c++
   headers:
   - src/core/ext/upb-generated/google/protobuf/any.upb.h
+  - src/core/ext/upb-generated/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-generated/google/rpc/status.upb.h
   - src/core/lib/debug/trace.h
   - src/core/lib/experiments/config.h
@@ -10415,6 +10414,7 @@ targets:
   - test/core/promise/test_context.h
   src:
   - src/core/ext/upb-generated/google/protobuf/any.upb.c
+  - src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
   - src/core/ext/upb-generated/google/rpc/status.upb.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/memory_allocator.cc
@@ -10443,7 +10443,6 @@ targets:
   - test/core/promise/interceptor_list_test.cc
   deps:
   - gtest
-  - upb_descriptor_lib
   - upb
   - absl/container:flat_hash_set
   - absl/functional:function_ref
@@ -10906,6 +10905,7 @@ targets:
   language: c++
   headers:
   - src/core/ext/upb-generated/google/protobuf/any.upb.h
+  - src/core/ext/upb-generated/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-generated/google/rpc/status.upb.h
   - src/core/lib/debug/trace.h
   - src/core/lib/experiments/config.h
@@ -10962,6 +10962,7 @@ targets:
   - test/core/promise/test_wakeup_schedulers.h
   src:
   - src/core/ext/upb-generated/google/protobuf/any.upb.c
+  - src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
   - src/core/ext/upb-generated/google/rpc/status.upb.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/memory_allocator.cc
@@ -10990,7 +10991,6 @@ targets:
   - test/core/promise/map_pipe_test.cc
   deps:
   - gtest
-  - upb_descriptor_lib
   - upb
   - absl/container:flat_hash_set
   - absl/functional:function_ref
@@ -11814,6 +11814,7 @@ targets:
   language: c++
   headers:
   - src/core/ext/upb-generated/google/protobuf/any.upb.h
+  - src/core/ext/upb-generated/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-generated/google/rpc/status.upb.h
   - src/core/lib/debug/trace.h
   - src/core/lib/gpr/spinlock.h
@@ -11835,6 +11836,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.h
   src:
   - src/core/ext/upb-generated/google/protobuf/any.upb.c
+  - src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
   - src/core/ext/upb-generated/google/rpc/status.upb.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/gprpp/status_helper.cc
@@ -11853,7 +11855,6 @@ targets:
   - test/core/resource_quota/periodic_update_test.cc
   deps:
   - gtest
-  - upb_descriptor_lib
   - upb
   - absl/functional:function_ref
   - absl/hash:hash
