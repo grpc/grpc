@@ -16,10 +16,17 @@
 
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 
+#include <stddef.h>
+
 #include <cstdint>
+#include <utility>
+
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+
+#include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/match.h"
 
 namespace grpc_core {
 

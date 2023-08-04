@@ -14,8 +14,11 @@
 
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 
+#include <algorithm>
 #include <initializer_list>
+#include <utility>
 
+#include "absl/status/status.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
