@@ -5932,6 +5932,7 @@ grpc_cc_library(
         "loop",
         "match",
         "mpsc",
+        "pipe",
         "poll",
         "seq",
         "slice",

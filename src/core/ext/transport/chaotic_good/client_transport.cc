@@ -111,7 +111,7 @@ ClientTransport::ClientTransport(
       // Continuously write next outgoing frames to promise endpoints.
       std::move(write_loop), EventEngineWakeupScheduler(event_engine_),
       [](absl::Status status) {
-        GPR_ASSERT(status.code() == absl::StatusCode::kCancelled);
+        GPR_ASSERT(status.code() != absl::StatusCode::kOk);
       });
 }
 
