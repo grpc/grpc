@@ -68,7 +68,6 @@ grpc_cc_library(
     hdrs = ["httpcli_test_util.h"],
     deps = [
         "//:gpr",
-        "//:subprocess",
         "//test/core/end2end:ssl_test_data",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
@@ -91,7 +90,6 @@ grpc_cc_test(
         ":httpcli_test_util",
         "//:gpr",
         "//:grpc",
-        "//:subprocess",
         "//test/core/end2end:ssl_test_data",
         "//test/core/util:fake_udp_and_tcp_server",
         "//test/core/util:grpc_test_util",
@@ -105,7 +103,6 @@ grpc_cc_test(
     data = [
         "python_wrapper.sh",
         "test_server.py",
-        "//:subprocess",
         "//src/core/tsi/test_creds:ca.pem",
         "//src/core/tsi/test_creds:server1.key",
         "//src/core/tsi/test_creds:server1.pem",

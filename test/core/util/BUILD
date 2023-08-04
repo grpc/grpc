@@ -59,6 +59,8 @@ grpc_cc_library(
         "passthru_endpoint.cc",
         "resolve_localhost_ip46.cc",
         "slice_splitter.cc",
+        "subprocess_posix.cc",
+        "subprocess_windows.cc",
         "tracer_util.cc",
     ],
     hdrs = [
@@ -73,6 +75,7 @@ grpc_cc_library(
         "passthru_endpoint.h",
         "resolve_localhost_ip46.h",
         "slice_splitter.h",
+        "subprocess.h",
         "tracer_util.h",
     ],
     external_deps = [

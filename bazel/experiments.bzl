@@ -27,11 +27,7 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "event_engine_listener",
                 "promise_based_client_call",
-                "promise_based_server_call",
                 "unique_metadata_strings",
-            ],
-            "cpp_end2end_test": [
-                "promise_based_server_call",
             ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
@@ -48,21 +44,25 @@ EXPERIMENTS = {
             "lame_client_test": [
                 "promise_based_client_call",
             ],
-            "logging_test": [
-                "promise_based_server_call",
-            ],
             "resource_quota_test": [
                 "free_large_allocator",
                 "memory_pressure_controller",
                 "unconstrained_max_quota_buffer_size",
             ],
-            "xds_end2end_test": [
-                "promise_based_server_call",
-            ],
         },
         "on": {
             "core_end2end_test": [
+                "promise_based_server_call",
                 "work_stealing",
+            ],
+            "cpp_end2end_test": [
+                "promise_based_server_call",
+            ],
+            "logging_test": [
+                "promise_based_server_call",
+            ],
+            "xds_end2end_test": [
+                "promise_based_server_call",
             ],
         },
     },
@@ -76,11 +76,7 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "event_engine_listener",
                 "promise_based_client_call",
-                "promise_based_server_call",
                 "unique_metadata_strings",
-            ],
-            "cpp_end2end_test": [
-                "promise_based_server_call",
             ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
@@ -97,21 +93,25 @@ EXPERIMENTS = {
             "lame_client_test": [
                 "promise_based_client_call",
             ],
-            "logging_test": [
-                "promise_based_server_call",
-            ],
             "resource_quota_test": [
                 "free_large_allocator",
                 "memory_pressure_controller",
                 "unconstrained_max_quota_buffer_size",
             ],
-            "xds_end2end_test": [
-                "promise_based_server_call",
-            ],
         },
         "on": {
             "core_end2end_test": [
+                "promise_based_server_call",
                 "work_stealing",
+            ],
+            "cpp_end2end_test": [
+                "promise_based_server_call",
+            ],
+            "logging_test": [
+                "promise_based_server_call",
+            ],
+            "xds_end2end_test": [
+                "promise_based_server_call",
             ],
         },
     },
@@ -129,11 +129,7 @@ EXPERIMENTS = {
                 "event_engine_client",
                 "event_engine_listener",
                 "promise_based_client_call",
-                "promise_based_server_call",
                 "unique_metadata_strings",
-            ],
-            "cpp_end2end_test": [
-                "promise_based_server_call",
             ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
@@ -153,9 +149,6 @@ EXPERIMENTS = {
             "lame_client_test": [
                 "promise_based_client_call",
             ],
-            "logging_test": [
-                "promise_based_server_call",
-            ],
             "resolver_component_tests_runner_invoker": [
                 "event_engine_dns",
             ],
@@ -164,13 +157,20 @@ EXPERIMENTS = {
                 "memory_pressure_controller",
                 "unconstrained_max_quota_buffer_size",
             ],
-            "xds_end2end_test": [
-                "promise_based_server_call",
-            ],
         },
         "on": {
             "core_end2end_test": [
+                "promise_based_server_call",
                 "work_stealing",
+            ],
+            "cpp_end2end_test": [
+                "promise_based_server_call",
+            ],
+            "logging_test": [
+                "promise_based_server_call",
+            ],
+            "xds_end2end_test": [
+                "promise_based_server_call",
             ],
         },
     },
