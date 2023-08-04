@@ -2356,7 +2356,7 @@ class PromiseBasedCall : public Call,
   CompletionInfo completion_info_[6];
   grpc_call_stats final_stats_{};
   Slice final_message_;
-  grpc_status_code final_status_;
+  grpc_status_code final_status_ = GRPC_STATUS_UNKNOWN;
   CallFinalization finalization_;
   // Current deadline.
   Mutex deadline_mu_;
