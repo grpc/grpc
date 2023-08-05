@@ -44,7 +44,7 @@ struct TrySeqTraitsWithSfinae {
   static auto CallFactory(Next* next, T&& value) {
     return next->Make(std::forward<T>(value));
   }
-  static bool IsOk(const absl::StatusOr<T>& status) { return true; }
+  static bool IsOk(const T&) { return true; }
   template <typename R>
   static R ReturnValue(T&&) {
     abort();
