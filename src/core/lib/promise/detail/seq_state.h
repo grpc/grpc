@@ -79,7 +79,7 @@ struct SeqState<Traits, P, F0> {
     Construct(&prior.next_factory, std::move(other.prior.next_factory));
   }
   SeqState& operator=(SeqState&& other) = delete;
-  Poll<Result> Poll() {
+  Poll<Result> PollOnce() {
     switch (state) {
       case State::kState0: {
         auto result = prior.current_promise();
@@ -189,7 +189,7 @@ struct SeqState<Traits, P, F0, F1> {
     Construct(&prior.next_factory, std::move(other.prior.next_factory));
   }
   SeqState& operator=(SeqState&& other) = delete;
-  Poll<Result> Poll() {
+  Poll<Result> PollOnce() {
     switch (state) {
       case State::kState0: {
         auto result = prior.prior.current_promise();
@@ -341,7 +341,7 @@ struct SeqState<Traits, P, F0, F1, F2> {
     Construct(&prior.next_factory, std::move(other.prior.next_factory));
   }
   SeqState& operator=(SeqState&& other) = delete;
-  Poll<Result> Poll() {
+  Poll<Result> PollOnce() {
     switch (state) {
       case State::kState0: {
         auto result = prior.prior.prior.current_promise();
@@ -535,7 +535,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3> {
     Construct(&prior.next_factory, std::move(other.prior.next_factory));
   }
   SeqState& operator=(SeqState&& other) = delete;
-  Poll<Result> Poll() {
+  Poll<Result> PollOnce() {
     switch (state) {
       case State::kState0: {
         auto result = prior.prior.prior.prior.current_promise();
@@ -781,7 +781,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4> {
     Construct(&prior.next_factory, std::move(other.prior.next_factory));
   }
   SeqState& operator=(SeqState&& other) = delete;
-  Poll<Result> Poll() {
+  Poll<Result> PollOnce() {
     switch (state) {
       case State::kState0: {
         auto result = prior.prior.prior.prior.prior.current_promise();
@@ -1076,7 +1076,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5> {
     Construct(&prior.next_factory, std::move(other.prior.next_factory));
   }
   SeqState& operator=(SeqState&& other) = delete;
-  Poll<Result> Poll() {
+  Poll<Result> PollOnce() {
     switch (state) {
       case State::kState0: {
         auto result = prior.prior.prior.prior.prior.prior.current_promise();
@@ -1420,7 +1420,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6> {
     Construct(&prior.next_factory, std::move(other.prior.next_factory));
   }
   SeqState& operator=(SeqState&& other) = delete;
-  Poll<Result> Poll() {
+  Poll<Result> PollOnce() {
     switch (state) {
       case State::kState0: {
         auto result =
@@ -1815,7 +1815,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7> {
     Construct(&prior.next_factory, std::move(other.prior.next_factory));
   }
   SeqState& operator=(SeqState&& other) = delete;
-  Poll<Result> Poll() {
+  Poll<Result> PollOnce() {
     switch (state) {
       case State::kState0: {
         auto result =

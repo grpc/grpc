@@ -138,7 +138,7 @@ class TrySeq {
   explicit TrySeq(P&& promise, Fs&&... factories)
       : state_(std::forward<P>(promise), std::forward<Fs>(factories)...) {}
 
-  auto operator()() { return state_.Poll(); }
+  auto operator()() { return state_.PollOnce(); }
 
  private:
   SeqState<TrySeqTraits, P, Fs...> state_;
