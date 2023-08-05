@@ -649,6 +649,21 @@ class NamedTests
 
   end
 
+  def special_status_message
+    code = GRPC::Core::StatusCodes::UNKNOWN
+    message = "\t\ntest with whitespace\r\nand Unicode BMP ☺ and non-BMP 😈\t\n"
+    req = SimpleRequest.new(
+      response_status: EchoStatus.new(code: code, message: message))
+    begin
+      resp = @stub.unary_call(req)
+    rescue GRPC::Unknown => e
+      if e.details.force_encoding("UTF-8") != message
+        fail AssertionError,
+          "Expected message #{message}. Received: #{e.details}"
+      end
+    end
+  end
+
   def all
     all_methods = NamedTests.instance_methods(false).map(&:to_s)
     all_methods.each do |m|
