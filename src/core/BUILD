@@ -665,10 +665,6 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "basic_seq",
-    external_deps = [
-        "absl/meta:type_traits",
-        "absl/utility",
-    ],
     language = "c++",
     public_hdrs = [
         "lib/promise/detail/basic_seq.h",
@@ -676,9 +672,6 @@ grpc_cc_library(
     deps = [
         "construct_destruct",
         "poll",
-        "promise_factory",
-        "promise_like",
-        "switch",
         "//:gpr_platform",
     ],
 )
@@ -690,8 +683,11 @@ grpc_cc_library(
         "lib/promise/detail/seq_state.h",
     ],
     deps = [
+        "construct_destruct",
+        "poll",
         "promise_factory",
         "promise_like",
+        "//:gpr",
     ],
 )
 
@@ -1094,7 +1090,6 @@ grpc_cc_library(
     ],
     deps = [
         "activity",
-        "basic_seq",
         "event_engine_memory_allocator",
         "exec_ctx_wakeup_scheduler",
         "experiments",

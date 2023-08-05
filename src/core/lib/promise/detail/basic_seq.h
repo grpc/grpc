@@ -17,19 +17,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <array>
-#include <cassert>
-#include <new>
-#include <tuple>
-#include <utility>
-
-#include "absl/meta/type_traits.h"
-#include "absl/utility/utility.h"
-
 #include "src/core/lib/gprpp/construct_destruct.h"
-#include "src/core/lib/promise/detail/promise_factory.h"
-#include "src/core/lib/promise/detail/promise_like.h"
-#include "src/core/lib/promise/detail/switch.h"
 #include "src/core/lib/promise/poll.h"
 
 namespace grpc_core {
