@@ -37,13 +37,13 @@ struct SeqState<Traits, P, F0> {
   using PromiseResultTraits1 = Traits<PromiseResult1>;
   using Result = typename PromiseResultTraits1::WrappedType;
   struct Running0 {
-    Promise0 current_promise;
+    GPR_NO_UNIQUE_ADDRESS Promise0 current_promise;
     GPR_NO_UNIQUE_ADDRESS NextFactory0 next_factory;
   };
   union {
-    Running0 prior;
-    Promise1 current_promise;
-  } GPR_NO_UNIQUE_ADDRESS;
+    GPR_NO_UNIQUE_ADDRESS Running0 prior;
+    GPR_NO_UNIQUE_ADDRESS Promise1 current_promise;
+  };
   enum class State : uint8_t { kState0, kState1 };
   GPR_NO_UNIQUE_ADDRESS State state = State::kState0;
 
@@ -132,20 +132,20 @@ struct SeqState<Traits, P, F0, F1> {
   using PromiseResultTraits2 = Traits<PromiseResult2>;
   using Result = typename PromiseResultTraits2::WrappedType;
   struct Running0 {
-    Promise0 current_promise;
+    GPR_NO_UNIQUE_ADDRESS Promise0 current_promise;
     GPR_NO_UNIQUE_ADDRESS NextFactory0 next_factory;
   };
   struct Running1 {
     union {
-      Running0 prior;
-      Promise1 current_promise;
-    } GPR_NO_UNIQUE_ADDRESS;
+      GPR_NO_UNIQUE_ADDRESS Running0 prior;
+      GPR_NO_UNIQUE_ADDRESS Promise1 current_promise;
+    };
     GPR_NO_UNIQUE_ADDRESS NextFactory1 next_factory;
   };
   union {
-    Running1 prior;
-    Promise2 current_promise;
-  } GPR_NO_UNIQUE_ADDRESS;
+    GPR_NO_UNIQUE_ADDRESS Running1 prior;
+    GPR_NO_UNIQUE_ADDRESS Promise2 current_promise;
+  };
   enum class State : uint8_t { kState0, kState1, kState2 };
   GPR_NO_UNIQUE_ADDRESS State state = State::kState0;
 
@@ -270,27 +270,27 @@ struct SeqState<Traits, P, F0, F1, F2> {
   using PromiseResultTraits3 = Traits<PromiseResult3>;
   using Result = typename PromiseResultTraits3::WrappedType;
   struct Running0 {
-    Promise0 current_promise;
+    GPR_NO_UNIQUE_ADDRESS Promise0 current_promise;
     GPR_NO_UNIQUE_ADDRESS NextFactory0 next_factory;
   };
   struct Running1 {
     union {
-      Running0 prior;
-      Promise1 current_promise;
-    } GPR_NO_UNIQUE_ADDRESS;
+      GPR_NO_UNIQUE_ADDRESS Running0 prior;
+      GPR_NO_UNIQUE_ADDRESS Promise1 current_promise;
+    };
     GPR_NO_UNIQUE_ADDRESS NextFactory1 next_factory;
   };
   struct Running2 {
     union {
-      Running1 prior;
-      Promise2 current_promise;
-    } GPR_NO_UNIQUE_ADDRESS;
+      GPR_NO_UNIQUE_ADDRESS Running1 prior;
+      GPR_NO_UNIQUE_ADDRESS Promise2 current_promise;
+    };
     GPR_NO_UNIQUE_ADDRESS NextFactory2 next_factory;
   };
   union {
-    Running2 prior;
-    Promise3 current_promise;
-  } GPR_NO_UNIQUE_ADDRESS;
+    GPR_NO_UNIQUE_ADDRESS Running2 prior;
+    GPR_NO_UNIQUE_ADDRESS Promise3 current_promise;
+  };
   enum class State : uint8_t { kState0, kState1, kState2, kState3 };
   GPR_NO_UNIQUE_ADDRESS State state = State::kState0;
 
@@ -452,34 +452,34 @@ struct SeqState<Traits, P, F0, F1, F2, F3> {
   using PromiseResultTraits4 = Traits<PromiseResult4>;
   using Result = typename PromiseResultTraits4::WrappedType;
   struct Running0 {
-    Promise0 current_promise;
+    GPR_NO_UNIQUE_ADDRESS Promise0 current_promise;
     GPR_NO_UNIQUE_ADDRESS NextFactory0 next_factory;
   };
   struct Running1 {
     union {
-      Running0 prior;
-      Promise1 current_promise;
-    } GPR_NO_UNIQUE_ADDRESS;
+      GPR_NO_UNIQUE_ADDRESS Running0 prior;
+      GPR_NO_UNIQUE_ADDRESS Promise1 current_promise;
+    };
     GPR_NO_UNIQUE_ADDRESS NextFactory1 next_factory;
   };
   struct Running2 {
     union {
-      Running1 prior;
-      Promise2 current_promise;
-    } GPR_NO_UNIQUE_ADDRESS;
+      GPR_NO_UNIQUE_ADDRESS Running1 prior;
+      GPR_NO_UNIQUE_ADDRESS Promise2 current_promise;
+    };
     GPR_NO_UNIQUE_ADDRESS NextFactory2 next_factory;
   };
   struct Running3 {
     union {
-      Running2 prior;
-      Promise3 current_promise;
-    } GPR_NO_UNIQUE_ADDRESS;
+      GPR_NO_UNIQUE_ADDRESS Running2 prior;
+      GPR_NO_UNIQUE_ADDRESS Promise3 current_promise;
+    };
     GPR_NO_UNIQUE_ADDRESS NextFactory3 next_factory;
   };
   union {
-    Running3 prior;
-    Promise4 current_promise;
-  } GPR_NO_UNIQUE_ADDRESS;
+    GPR_NO_UNIQUE_ADDRESS Running3 prior;
+    GPR_NO_UNIQUE_ADDRESS Promise4 current_promise;
+  };
   enum class State : uint8_t { kState0, kState1, kState2, kState3, kState4 };
   GPR_NO_UNIQUE_ADDRESS State state = State::kState0;
 
@@ -678,41 +678,41 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4> {
   using PromiseResultTraits5 = Traits<PromiseResult5>;
   using Result = typename PromiseResultTraits5::WrappedType;
   struct Running0 {
-    Promise0 current_promise;
+    GPR_NO_UNIQUE_ADDRESS Promise0 current_promise;
     GPR_NO_UNIQUE_ADDRESS NextFactory0 next_factory;
   };
   struct Running1 {
     union {
-      Running0 prior;
-      Promise1 current_promise;
-    } GPR_NO_UNIQUE_ADDRESS;
+      GPR_NO_UNIQUE_ADDRESS Running0 prior;
+      GPR_NO_UNIQUE_ADDRESS Promise1 current_promise;
+    };
     GPR_NO_UNIQUE_ADDRESS NextFactory1 next_factory;
   };
   struct Running2 {
     union {
-      Running1 prior;
-      Promise2 current_promise;
-    } GPR_NO_UNIQUE_ADDRESS;
+      GPR_NO_UNIQUE_ADDRESS Running1 prior;
+      GPR_NO_UNIQUE_ADDRESS Promise2 current_promise;
+    };
     GPR_NO_UNIQUE_ADDRESS NextFactory2 next_factory;
   };
   struct Running3 {
     union {
-      Running2 prior;
-      Promise3 current_promise;
-    } GPR_NO_UNIQUE_ADDRESS;
+      GPR_NO_UNIQUE_ADDRESS Running2 prior;
+      GPR_NO_UNIQUE_ADDRESS Promise3 current_promise;
+    };
     GPR_NO_UNIQUE_ADDRESS NextFactory3 next_factory;
   };
   struct Running4 {
     union {
-      Running3 prior;
-      Promise4 current_promise;
-    } GPR_NO_UNIQUE_ADDRESS;
+      GPR_NO_UNIQUE_ADDRESS Running3 prior;
+      GPR_NO_UNIQUE_ADDRESS Promise4 current_promise;
+    };
     GPR_NO_UNIQUE_ADDRESS NextFactory4 next_factory;
   };
   union {
-    Running4 prior;
-    Promise5 current_promise;
-  } GPR_NO_UNIQUE_ADDRESS;
+    GPR_NO_UNIQUE_ADDRESS Running4 prior;
+    GPR_NO_UNIQUE_ADDRESS Promise5 current_promise;
+  };
   enum class State : uint8_t {
     kState0,
     kState1,
@@ -959,48 +959,48 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5> {
   using PromiseResultTraits6 = Traits<PromiseResult6>;
   using Result = typename PromiseResultTraits6::WrappedType;
   struct Running0 {
-    Promise0 current_promise;
+    GPR_NO_UNIQUE_ADDRESS Promise0 current_promise;
     GPR_NO_UNIQUE_ADDRESS NextFactory0 next_factory;
   };
   struct Running1 {
     union {
-      Running0 prior;
-      Promise1 current_promise;
-    } GPR_NO_UNIQUE_ADDRESS;
+      GPR_NO_UNIQUE_ADDRESS Running0 prior;
+      GPR_NO_UNIQUE_ADDRESS Promise1 current_promise;
+    };
     GPR_NO_UNIQUE_ADDRESS NextFactory1 next_factory;
   };
   struct Running2 {
     union {
-      Running1 prior;
-      Promise2 current_promise;
-    } GPR_NO_UNIQUE_ADDRESS;
+      GPR_NO_UNIQUE_ADDRESS Running1 prior;
+      GPR_NO_UNIQUE_ADDRESS Promise2 current_promise;
+    };
     GPR_NO_UNIQUE_ADDRESS NextFactory2 next_factory;
   };
   struct Running3 {
     union {
-      Running2 prior;
-      Promise3 current_promise;
-    } GPR_NO_UNIQUE_ADDRESS;
+      GPR_NO_UNIQUE_ADDRESS Running2 prior;
+      GPR_NO_UNIQUE_ADDRESS Promise3 current_promise;
+    };
     GPR_NO_UNIQUE_ADDRESS NextFactory3 next_factory;
   };
   struct Running4 {
     union {
-      Running3 prior;
-      Promise4 current_promise;
-    } GPR_NO_UNIQUE_ADDRESS;
+      GPR_NO_UNIQUE_ADDRESS Running3 prior;
+      GPR_NO_UNIQUE_ADDRESS Promise4 current_promise;
+    };
     GPR_NO_UNIQUE_ADDRESS NextFactory4 next_factory;
   };
   struct Running5 {
     union {
-      Running4 prior;
-      Promise5 current_promise;
-    } GPR_NO_UNIQUE_ADDRESS;
+      GPR_NO_UNIQUE_ADDRESS Running4 prior;
+      GPR_NO_UNIQUE_ADDRESS Promise5 current_promise;
+    };
     GPR_NO_UNIQUE_ADDRESS NextFactory5 next_factory;
   };
   union {
-    Running5 prior;
-    Promise6 current_promise;
-  } GPR_NO_UNIQUE_ADDRESS;
+    GPR_NO_UNIQUE_ADDRESS Running5 prior;
+    GPR_NO_UNIQUE_ADDRESS Promise6 current_promise;
+  };
   enum class State : uint8_t {
     kState0,
     kState1,
@@ -1292,55 +1292,55 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6> {
   using PromiseResultTraits7 = Traits<PromiseResult7>;
   using Result = typename PromiseResultTraits7::WrappedType;
   struct Running0 {
-    Promise0 current_promise;
+    GPR_NO_UNIQUE_ADDRESS Promise0 current_promise;
     GPR_NO_UNIQUE_ADDRESS NextFactory0 next_factory;
   };
   struct Running1 {
     union {
-      Running0 prior;
-      Promise1 current_promise;
-    } GPR_NO_UNIQUE_ADDRESS;
+      GPR_NO_UNIQUE_ADDRESS Running0 prior;
+      GPR_NO_UNIQUE_ADDRESS Promise1 current_promise;
+    };
     GPR_NO_UNIQUE_ADDRESS NextFactory1 next_factory;
   };
   struct Running2 {
     union {
-      Running1 prior;
-      Promise2 current_promise;
-    } GPR_NO_UNIQUE_ADDRESS;
+      GPR_NO_UNIQUE_ADDRESS Running1 prior;
+      GPR_NO_UNIQUE_ADDRESS Promise2 current_promise;
+    };
     GPR_NO_UNIQUE_ADDRESS NextFactory2 next_factory;
   };
   struct Running3 {
     union {
-      Running2 prior;
-      Promise3 current_promise;
-    } GPR_NO_UNIQUE_ADDRESS;
+      GPR_NO_UNIQUE_ADDRESS Running2 prior;
+      GPR_NO_UNIQUE_ADDRESS Promise3 current_promise;
+    };
     GPR_NO_UNIQUE_ADDRESS NextFactory3 next_factory;
   };
   struct Running4 {
     union {
-      Running3 prior;
-      Promise4 current_promise;
-    } GPR_NO_UNIQUE_ADDRESS;
+      GPR_NO_UNIQUE_ADDRESS Running3 prior;
+      GPR_NO_UNIQUE_ADDRESS Promise4 current_promise;
+    };
     GPR_NO_UNIQUE_ADDRESS NextFactory4 next_factory;
   };
   struct Running5 {
     union {
-      Running4 prior;
-      Promise5 current_promise;
-    } GPR_NO_UNIQUE_ADDRESS;
+      GPR_NO_UNIQUE_ADDRESS Running4 prior;
+      GPR_NO_UNIQUE_ADDRESS Promise5 current_promise;
+    };
     GPR_NO_UNIQUE_ADDRESS NextFactory5 next_factory;
   };
   struct Running6 {
     union {
-      Running5 prior;
-      Promise6 current_promise;
-    } GPR_NO_UNIQUE_ADDRESS;
+      GPR_NO_UNIQUE_ADDRESS Running5 prior;
+      GPR_NO_UNIQUE_ADDRESS Promise6 current_promise;
+    };
     GPR_NO_UNIQUE_ADDRESS NextFactory6 next_factory;
   };
   union {
-    Running6 prior;
-    Promise7 current_promise;
-  } GPR_NO_UNIQUE_ADDRESS;
+    GPR_NO_UNIQUE_ADDRESS Running6 prior;
+    GPR_NO_UNIQUE_ADDRESS Promise7 current_promise;
+  };
   enum class State : uint8_t {
     kState0,
     kState1,
@@ -1677,62 +1677,62 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7> {
   using PromiseResultTraits8 = Traits<PromiseResult8>;
   using Result = typename PromiseResultTraits8::WrappedType;
   struct Running0 {
-    Promise0 current_promise;
+    GPR_NO_UNIQUE_ADDRESS Promise0 current_promise;
     GPR_NO_UNIQUE_ADDRESS NextFactory0 next_factory;
   };
   struct Running1 {
     union {
-      Running0 prior;
-      Promise1 current_promise;
-    } GPR_NO_UNIQUE_ADDRESS;
+      GPR_NO_UNIQUE_ADDRESS Running0 prior;
+      GPR_NO_UNIQUE_ADDRESS Promise1 current_promise;
+    };
     GPR_NO_UNIQUE_ADDRESS NextFactory1 next_factory;
   };
   struct Running2 {
     union {
-      Running1 prior;
-      Promise2 current_promise;
-    } GPR_NO_UNIQUE_ADDRESS;
+      GPR_NO_UNIQUE_ADDRESS Running1 prior;
+      GPR_NO_UNIQUE_ADDRESS Promise2 current_promise;
+    };
     GPR_NO_UNIQUE_ADDRESS NextFactory2 next_factory;
   };
   struct Running3 {
     union {
-      Running2 prior;
-      Promise3 current_promise;
-    } GPR_NO_UNIQUE_ADDRESS;
+      GPR_NO_UNIQUE_ADDRESS Running2 prior;
+      GPR_NO_UNIQUE_ADDRESS Promise3 current_promise;
+    };
     GPR_NO_UNIQUE_ADDRESS NextFactory3 next_factory;
   };
   struct Running4 {
     union {
-      Running3 prior;
-      Promise4 current_promise;
-    } GPR_NO_UNIQUE_ADDRESS;
+      GPR_NO_UNIQUE_ADDRESS Running3 prior;
+      GPR_NO_UNIQUE_ADDRESS Promise4 current_promise;
+    };
     GPR_NO_UNIQUE_ADDRESS NextFactory4 next_factory;
   };
   struct Running5 {
     union {
-      Running4 prior;
-      Promise5 current_promise;
-    } GPR_NO_UNIQUE_ADDRESS;
+      GPR_NO_UNIQUE_ADDRESS Running4 prior;
+      GPR_NO_UNIQUE_ADDRESS Promise5 current_promise;
+    };
     GPR_NO_UNIQUE_ADDRESS NextFactory5 next_factory;
   };
   struct Running6 {
     union {
-      Running5 prior;
-      Promise6 current_promise;
-    } GPR_NO_UNIQUE_ADDRESS;
+      GPR_NO_UNIQUE_ADDRESS Running5 prior;
+      GPR_NO_UNIQUE_ADDRESS Promise6 current_promise;
+    };
     GPR_NO_UNIQUE_ADDRESS NextFactory6 next_factory;
   };
   struct Running7 {
     union {
-      Running6 prior;
-      Promise7 current_promise;
-    } GPR_NO_UNIQUE_ADDRESS;
+      GPR_NO_UNIQUE_ADDRESS Running6 prior;
+      GPR_NO_UNIQUE_ADDRESS Promise7 current_promise;
+    };
     GPR_NO_UNIQUE_ADDRESS NextFactory7 next_factory;
   };
   union {
-    Running7 prior;
-    Promise8 current_promise;
-  } GPR_NO_UNIQUE_ADDRESS;
+    GPR_NO_UNIQUE_ADDRESS Running7 prior;
+    GPR_NO_UNIQUE_ADDRESS Promise8 current_promise;
+  };
   enum class State : uint8_t {
     kState0,
     kState1,
