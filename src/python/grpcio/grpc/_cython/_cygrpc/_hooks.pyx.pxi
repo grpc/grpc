@@ -31,5 +31,8 @@ cdef class CensusContext:
 def set_census_context_on_call(_CallState call_state, CensusContext census_ctx):
   pass
 
+def set_census_context_on_call_aio(GrpcCallWrapper call_state, CensusContext census_ctx):
+  pass
+
 def get_deadline_from_context():
   return None
