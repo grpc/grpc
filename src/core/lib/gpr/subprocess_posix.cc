@@ -51,28 +51,10 @@ gpr_subprocess* gpr_subprocess_create(int argc, const char** argv) {
   gpr_subprocess* r;
   int pid;
   char** exec_args;
-  int stdin_pipe[2];
-  int stdout_pipe[2];
-  int stderr_pipe[2];
-  int p0 = pipe(stdin_pipe);
-  int p1 = pipe(stdout_pipe);
-  int p2 = pipe(stderr_pipe);
-  GPR_ASSERT(p0 != -1);
-  GPR_ASSERT(p1 != -1);
-  GPR_ASSERT(p2 != -1);
   pid = fork();
   if (pid == -1) {
     return nullptr;
   } else if (pid == 0) {
-    dup2(stdin_pipe[0], STDIN_FILENO);
-    dup2(stdout_pipe[1], STDOUT_FILENO);
-    dup2(stderr_pipe[1], STDERR_FILENO);
-    close(stdin_pipe[0]);
-    close(stdin_pipe[1]);
-    close(stdout_pipe[0]);
-    close(stdout_pipe[1]);
-    close(stderr_pipe[0]);
-    close(stderr_pipe[1]);
     exec_args = static_cast<char**>(
         gpr_malloc((static_cast<size_t>(argc) + 1) * sizeof(char*)));
     memcpy(exec_args, argv, static_cast<size_t>(argc) * sizeof(char*));
@@ -85,12 +67,8 @@ gpr_subprocess* gpr_subprocess_create(int argc, const char** argv) {
   } else {
     r = grpc_core::Zalloc<gpr_subprocess>();
     r->pid = pid;
-    close(stdin_pipe[0]);
-    close(stdout_pipe[1]);
-    close(stderr_pipe[1]);
-    r->child_stdin_ = stdin_pipe[1];
-    r->child_stdout_ = stdout_pipe[0];
-    r->child_stderr_ = stderr_pipe[0];
+    r->child_stdin_ = -1;
+    r->child_stdout_ = -1;
     return r;
   }
 }
