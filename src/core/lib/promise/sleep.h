@@ -38,17 +38,12 @@ class Sleep final {
 
   Sleep(const Sleep&) = delete;
   Sleep& operator=(const Sleep&) = delete;
-  Sleep(Sleep&& other) noexcept : deadline_(other.deadline_) {
-    // Promises can be moved only until they're polled, and since we only create
-    // the closure when first polled we can assume it's nullptr here.
-    GPR_DEBUG_ASSERT(other.closure_ == nullptr);
-  };
+  Sleep(Sleep&& other) noexcept
+      : deadline_(other.deadline_),
+        closure_(std::exchange(other.closure_, nullptr)) {}
   Sleep& operator=(Sleep&& other) noexcept {
-    // Promises can be moved only until they're polled, and since we only create
-    // the closure when first polled we can assume it's nullptr here.
-    GPR_DEBUG_ASSERT(closure_ == nullptr);
-    GPR_DEBUG_ASSERT(other.closure_ == nullptr);
     deadline_ = other.deadline_;
+    std::swap(closure_, other.closure_);
     return *this;
   };
 
