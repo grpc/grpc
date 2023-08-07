@@ -100,7 +100,7 @@ EXTERNAL_DEPS = {
     "opentelemetry/metrics/sync_instruments.h": "otel/api",
     "opentelemetry/nostd/shared_ptr.h": "otel/api",
     "opentelemetry/nostd/unique_ptr.h": "otel/api",
-    "sdk/include/opentelemetry/sdk/metrics/meter_provider.h": "otel/sdk/src/metrics",
+    "opentelemetry/sdk/metrics/meter_provider.h": "otel/sdk/src/metrics",
     "ares.h": "cares",
     "fuzztest/fuzztest.h": ["fuzztest", "fuzztest_main"],
     "google/api/monitored_resource.pb.h": (
@@ -379,6 +379,7 @@ for dirname in [
     "",
     "src/core",
     "src/cpp/ext/gcp",
+    "src/cpp/ext/gsm",
     "src/cpp/ext/otel",
     "test/core/backoff",
     "test/core/experiments",

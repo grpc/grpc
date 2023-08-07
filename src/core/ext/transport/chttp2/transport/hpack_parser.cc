@@ -44,6 +44,7 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parse_result.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser_table.h"
+#include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/debug/trace.h"
@@ -1069,6 +1070,55 @@ Slice HPackParser::String::Take() {
   GPR_UNREACHABLE_CODE(return Slice());
 }
 
+class HPackParser::MetadataSizeEncoder {
+ public:
+  explicit MetadataSizeEncoder(std::string& summary) : summary_(summary) {}
+
+  void Encode(const Slice& key, const Slice& value) {
+    AddToSummary(key.as_string_view(), value.size());
+  }
+
+  template <typename Key, typename Value>
+  void Encode(Key, const Value& value) {
+    AddToSummary(Key::key(), EncodedSizeOfKey(Key(), value));
+  }
+
+ private:
+  void AddToSummary(absl::string_view key,
+                    size_t value_length) GPR_ATTRIBUTE_NOINLINE {
+    absl::StrAppend(&summary_, key, ":",
+                    hpack_constants::SizeForEntry(key.size(), value_length),
+                    ",");
+  }
+  std::string& summary_;
+};
+
+class HPackParser::MetadataSizesAnnotation
+    : public CallTracerAnnotationInterface::Annotation {
+ public:
+  MetadataSizesAnnotation(grpc_metadata_batch* metadata_buffer,
+                          uint64_t soft_limit, uint64_t hard_limit)
+      : CallTracerAnnotationInterface::Annotation(
+            CallTracerAnnotationInterface::AnnotationType::kMetadataSizes),
+        metadata_buffer_(metadata_buffer),
+        soft_limit_(soft_limit),
+        hard_limit_(hard_limit) {}
+
+  std::string ToString() const override {
+    std::string metadata_annotation =
+        absl::StrCat("gRPC metadata soft_limit:", soft_limit_,
+                     ",hard_limit:", hard_limit_, ",");
+    MetadataSizeEncoder encoder(metadata_annotation);
+    metadata_buffer_->Encode(&encoder);
+    return metadata_annotation;
+  }
+
+ private:
+  grpc_metadata_batch* metadata_buffer_;
+  uint64_t soft_limit_;
+  uint64_t hard_limit_;
+};
+
 // PUBLIC INTERFACE
 
 HPackParser::HPackParser() = default;
@@ -1093,7 +1143,9 @@ void HPackParser::BeginFrame(grpc_metadata_batch* metadata_buffer,
   log_info_ = log_info;
 }
 
-grpc_error_handle HPackParser::Parse(const grpc_slice& slice, bool is_last) {
+grpc_error_handle HPackParser::Parse(
+    const grpc_slice& slice, bool is_last,
+    CallTracerAnnotationInterface* call_tracer) {
   if (GPR_UNLIKELY(!unparsed_bytes_.empty())) {
     unparsed_bytes_.insert(unparsed_bytes_.end(), GRPC_SLICE_START_PTR(slice),
                            GRPC_SLICE_END_PTR(slice));
@@ -1105,20 +1157,27 @@ grpc_error_handle HPackParser::Parse(const grpc_slice& slice, bool is_last) {
     std::vector<uint8_t> buffer = std::move(unparsed_bytes_);
     return ParseInput(Input(nullptr, buffer.data(),
                             buffer.data() + buffer.size(), state_.frame_error),
-                      is_last);
+                      is_last, call_tracer);
   }
   return ParseInput(Input(slice.refcount, GRPC_SLICE_START_PTR(slice),
                           GRPC_SLICE_END_PTR(slice), state_.frame_error),
-                    is_last);
+                    is_last, call_tracer);
 }
 
-grpc_error_handle HPackParser::ParseInput(Input input, bool is_last) {
+grpc_error_handle HPackParser::ParseInput(
+    Input input, bool is_last, CallTracerAnnotationInterface* call_tracer) {
   ParseInputInner(&input);
   if (is_last && is_boundary()) {
     if (state_.metadata_early_detection.Reject(state_.frame_length)) {
       HandleMetadataSoftSizeLimitExceeded(&input);
     }
     global_stats().IncrementHttp2MetadataSize(state_.frame_length);
+    if (call_tracer != nullptr && metadata_buffer_ != nullptr) {
+      MetadataSizesAnnotation metadata_sizes_annotation(
+          metadata_buffer_, state_.metadata_early_detection.soft_limit(),
+          state_.metadata_early_detection.hard_limit());
+      call_tracer->RecordAnnotation(metadata_sizes_annotation);
+    }
     if (!state_.frame_error.connection_error() &&
         (input.eof_error() || state_.parse_state != ParseState::kTop)) {
       state_.frame_error = HpackParseResult::IncompleteHeaderAtBoundaryError();

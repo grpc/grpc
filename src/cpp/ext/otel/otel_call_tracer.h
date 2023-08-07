@@ -40,6 +40,7 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/cpp/ext/otel/otel_client_filter.h"
 
 namespace grpc {
 namespace internal {
@@ -48,7 +49,7 @@ class OpenTelemetryCallTracer : public grpc_core::ClientCallTracer {
  public:
   class OpenTelemetryCallAttemptTracer : public CallAttemptTracer {
    public:
-    OpenTelemetryCallAttemptTracer(OpenTelemetryCallTracer* parent,
+    OpenTelemetryCallAttemptTracer(const OpenTelemetryCallTracer* parent,
                                    bool arena_allocated);
 
     std::string TraceId() override {
@@ -85,6 +86,7 @@ class OpenTelemetryCallTracer : public grpc_core::ClientCallTracer {
     void RecordCancel(grpc_error_handle cancel_error) override;
     void RecordEnd(const gpr_timespec& /*latency*/) override;
     void RecordAnnotation(absl::string_view /*annotation*/) override;
+    void RecordAnnotation(const Annotation& /*annotation*/) override;
 
    private:
     const OpenTelemetryCallTracer* parent_;
@@ -93,7 +95,8 @@ class OpenTelemetryCallTracer : public grpc_core::ClientCallTracer {
     absl::Time start_time_;
   };
 
-  explicit OpenTelemetryCallTracer(grpc_core::Slice path,
+  explicit OpenTelemetryCallTracer(OpenTelemetryClientFilter* parent,
+                                   grpc_core::Slice path,
                                    grpc_core::Arena* arena);
   ~OpenTelemetryCallTracer() override;
 
@@ -115,8 +118,10 @@ class OpenTelemetryCallTracer : public grpc_core::ClientCallTracer {
   OpenTelemetryCallAttemptTracer* StartNewAttempt(
       bool is_transparent_retry) override;
   void RecordAnnotation(absl::string_view /*annotation*/) override;
+  void RecordAnnotation(const Annotation& /*annotation*/) override;
 
  private:
+  const OpenTelemetryClientFilter* parent_;
   // Client method.
   grpc_core::Slice path_;
   absl::string_view method_;

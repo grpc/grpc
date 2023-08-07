@@ -33,12 +33,14 @@
 #include "absl/strings/strip.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
+#include "absl/types/optional.h"
 #include "opentelemetry/context/context.h"
 #include "opentelemetry/metrics/sync_instruments.h"
 
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -63,9 +65,9 @@ const grpc_channel_filter OpenTelemetryClientFilter::kFilter =
         "otel_client");
 
 absl::StatusOr<OpenTelemetryClientFilter> OpenTelemetryClientFilter::Create(
-    const grpc_core::ChannelArgs& /*args*/,
-    ChannelFilter::Args /*filter_args*/) {
-  return OpenTelemetryClientFilter();
+    const grpc_core::ChannelArgs& args, ChannelFilter::Args /*filter_args*/) {
+  return OpenTelemetryClientFilter(
+      args.GetOwnedString(GRPC_ARG_SERVER_URI).value_or(""));
 }
 
 grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle>
@@ -75,10 +77,11 @@ OpenTelemetryClientFilter::MakeCallPromise(
   auto* path = call_args.client_initial_metadata->get_pointer(
       grpc_core::HttpPathMetadata());
   auto* call_context = grpc_core::GetContext<grpc_call_context_element>();
-  auto* tracer = grpc_core::GetContext<grpc_core::Arena>()
-                     ->ManagedNew<OpenTelemetryCallTracer>(
-                         path != nullptr ? path->Ref() : grpc_core::Slice(),
-                         grpc_core::GetContext<grpc_core::Arena>());
+  auto* tracer =
+      grpc_core::GetContext<grpc_core::Arena>()
+          ->ManagedNew<OpenTelemetryCallTracer>(
+              this, path != nullptr ? path->Ref() : grpc_core::Slice(),
+              grpc_core::GetContext<grpc_core::Arena>());
   GPR_DEBUG_ASSERT(
       call_context[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE].value ==
       nullptr);
@@ -92,14 +95,17 @@ OpenTelemetryClientFilter::MakeCallPromise(
 //
 
 OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
-    OpenTelemetryCallAttemptTracer(OpenTelemetryCallTracer* parent,
+    OpenTelemetryCallAttemptTracer(const OpenTelemetryCallTracer* parent,
                                    bool arena_allocated)
     : parent_(parent),
       arena_allocated_(arena_allocated),
       start_time_(absl::Now()) {
   // TODO(yashykt): Figure out how to get this to work with absl::string_view
-  OTelPluginState().client.attempt.started->Add(
-      1, {{std::string(OTelMethodKey()), std::string(parent_->method_)}});
+  if (OTelPluginState().client.attempt.started != nullptr) {
+    OTelPluginState().client.attempt.started->Add(
+        1, {{std::string(OTelMethodKey()), std::string(parent_->method_)},
+            {std::string(OTelTargetKey()), parent_->parent_->target()}});
+  }
 }
 
 void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::RecordSendMessage(
@@ -134,20 +140,29 @@ void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
         const grpc_transport_stream_stats* transport_stream_stats) {
   absl::InlinedVector<std::pair<std::string, std::string>, 2> attributes = {
       {std::string(OTelMethodKey()), std::string(parent_->method_)},
-      {std::string(OTelStatusKey()), absl::StatusCodeToString(status.code())}};
-  OTelPluginState().client.attempt.duration->Record(
-      absl::ToDoubleSeconds(absl::Now() - start_time_), attributes,
-      opentelemetry::context::Context{});
-  OTelPluginState().client.attempt.sent_total_compressed_message_size->Record(
-      transport_stream_stats != nullptr
-          ? transport_stream_stats->outgoing.data_bytes
-          : 0,
-      attributes, opentelemetry::context::Context{});
-  OTelPluginState().client.attempt.rcvd_total_compressed_message_size->Record(
-      transport_stream_stats != nullptr
-          ? transport_stream_stats->incoming.data_bytes
-          : 0,
-      attributes, opentelemetry::context::Context{});
+      {std::string(OTelStatusKey()), absl::StatusCodeToString(status.code())},
+      {std::string(OTelTargetKey()), parent_->parent_->target()}};
+  if (OTelPluginState().client.attempt.duration != nullptr) {
+    OTelPluginState().client.attempt.duration->Record(
+        absl::ToDoubleSeconds(absl::Now() - start_time_), attributes,
+        opentelemetry::context::Context{});
+  }
+  if (OTelPluginState().client.attempt.sent_total_compressed_message_size !=
+      nullptr) {
+    OTelPluginState().client.attempt.sent_total_compressed_message_size->Record(
+        transport_stream_stats != nullptr
+            ? transport_stream_stats->outgoing.data_bytes
+            : 0,
+        attributes, opentelemetry::context::Context{});
+  }
+  if (OTelPluginState().client.attempt.rcvd_total_compressed_message_size !=
+      nullptr) {
+    OTelPluginState().client.attempt.rcvd_total_compressed_message_size->Record(
+        transport_stream_stats != nullptr
+            ? transport_stream_stats->incoming.data_bytes
+            : 0,
+        attributes, opentelemetry::context::Context{});
+  }
 }
 
 void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::RecordCancel(
@@ -167,13 +182,20 @@ void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::RecordAnnotation(
   // Not implemented
 }
 
+void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::RecordAnnotation(
+    const Annotation& /*annotation*/) {
+  // Not implemented
+}
+
 //
 // OpenTelemetryCallTracer
 //
 
-OpenTelemetryCallTracer::OpenTelemetryCallTracer(grpc_core::Slice path,
-                                                 grpc_core::Arena* arena)
-    : path_(std::move(path)),
+OpenTelemetryCallTracer::OpenTelemetryCallTracer(
+    OpenTelemetryClientFilter* parent, grpc_core::Slice path,
+    grpc_core::Arena* arena)
+    : parent_(parent),
+      path_(std::move(path)),
       method_(absl::StripPrefix(path_.as_string_view(), "/")),
       arena_(arena) {}
 
@@ -205,6 +227,11 @@ OpenTelemetryCallTracer::StartNewAttempt(bool is_transparent_retry) {
 
 void OpenTelemetryCallTracer::RecordAnnotation(
     absl::string_view /*annotation*/) {
+  // Not implemented
+}
+
+void OpenTelemetryCallTracer::RecordAnnotation(
+    const Annotation& /*annotation*/) {
   // Not implemented
 }
 

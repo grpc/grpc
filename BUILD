@@ -1577,7 +1577,6 @@ grpc_cc_library(
         "//src/core:memory_quota",
         "//src/core:metadata_compression_traits",
         "//src/core:no_destruct",
-        "//src/core:notification",
         "//src/core:packed_table",
         "//src/core:per_cpu",
         "//src/core:pipe",
@@ -3998,6 +3997,26 @@ grpc_cc_library(
         "gpr_platform",
         "grpc++_public_hdrs",
         "grpc_public_hdrs",
+    ],
+)
+
+grpc_cc_library(
+    name = "subprocess",
+    srcs = [
+        "//src/core:lib/gpr/subprocess_posix.cc",
+        "//src/core:lib/gpr/subprocess_windows.cc",
+    ],
+    hdrs = [
+        "//src/core:lib/gpr/subprocess.h",
+    ],
+    external_deps = [
+        "absl/strings",
+        "absl/types:span",
+    ],
+    deps = [
+        "gpr",
+        "//src/core:strerror",
+        "//src/core:tchar",
     ],
 )
 

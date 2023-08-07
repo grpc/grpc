@@ -288,6 +288,7 @@ CORE_END2END_TEST(PerCallCredsTest,
 
 CORE_END2END_TEST(PerCallCredsTest,
                   RequestResponseWithPayloadAndDeletedInsecureCallCreds) {
+  // TODO(vigneshbabu): re-enable these before release
   SKIP_IF_USES_EVENT_ENGINE_CLIENT();
   TestRequestResponseWithPayloadAndDeletedCallCreds(*this, false);
 }
@@ -304,6 +305,7 @@ CORE_END2END_TEST(PerCallCredsOnInsecureTest,
 
 CORE_END2END_TEST(PerCallCredsOnInsecureTest,
                   RequestResponseWithPayloadAndDeletedInsecureCallCreds) {
+  // TODO(vigneshbabu): re-enable these before release
   SKIP_IF_USES_EVENT_ENGINE_CLIENT();
   TestRequestResponseWithPayloadAndDeletedCallCreds(*this, false);
 }
