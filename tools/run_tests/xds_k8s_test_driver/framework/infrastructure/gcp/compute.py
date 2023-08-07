@@ -432,10 +432,11 @@ class ComputeV1(
                         for unhealthy_backend in unhealthy
                     ]
                 )
-            except Exception as e:  # noqa pylint: disable=broad-except
+            except Exception as error:  # noqa pylint: disable=broad-except
                 logger.debug(
-                    "Couldn't load backend health info,"
-                    f" plain list name will be printed instead. Error: {e!r}"
+                    "Couldn't load backend health info, plain list name"
+                    "will be printed instead. Error: %r",
+                    error,
                 )
 
             retry_err.add_note(
