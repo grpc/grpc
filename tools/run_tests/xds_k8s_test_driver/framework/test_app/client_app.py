@@ -19,6 +19,7 @@ import functools
 import logging
 from typing import Iterable, List, Optional
 
+import framework.errors
 from framework.helpers import retryers
 import framework.rpc
 from framework.rpc import grpc_channelz
@@ -128,7 +129,18 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
         Raises:
             GrpcApp.NotFound: If the channel never transitioned to READY.
         """
-        return self.wait_for_server_channel_state(_ChannelzChannelState.READY)
+        try:
+            return self.wait_for_server_channel_state(
+                _ChannelzChannelState.READY
+            )
+        except retryers.RetryError as retry_err:
+            if isinstance(retry_err.exception(), self.ChannelNotFound):
+                retry_err.add_note(
+                    framework.errors.FrameworkError.note_blanket_error(
+                        "The client couldn't connect to the server."
+                    )
+                )
+            raise
 
     def get_active_server_channel_socket(self) -> _ChannelzSocket:
         channel = self.find_server_channel_with_state(
@@ -207,7 +219,7 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
 
     def find_server_channel_with_state(
         self,
-        state: _ChannelzChannelState,
+        expected_state: _ChannelzChannelState,
         *,
         rpc_deadline: Optional[_timedelta] = None,
         check_subchannel=True,
@@ -216,25 +228,28 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
         if rpc_deadline is not None:
             rpc_params["deadline_sec"] = rpc_deadline.total_seconds()
 
-        for channel in self.get_server_channels(**rpc_params):
+        expected_state_name: str = _ChannelzChannelState.Name(expected_state)
+        target: str = self.server_target
+
+        for channel in self.get_server_channels(target, **rpc_params):
             channel_state: _ChannelzChannelState = channel.data.state.state
             logger.info(
                 "[%s] Server channel: %s",
                 self.hostname,
                 _ChannelzServiceClient.channel_repr(channel),
             )
-            if channel_state is state:
+            if channel_state is expected_state:
                 if check_subchannel:
                     # When requested, check if the channel has at least
                     # one subchannel in the requested state.
                     try:
                         subchannel = self.find_subchannel_with_state(
-                            channel, state, **rpc_params
+                            channel, expected_state, **rpc_params
                         )
                         logger.info(
                             "[%s] Found subchannel in state %s: %s",
                             self.hostname,
-                            _ChannelzChannelState.Name(state),
+                            expected_state_name,
                             _ChannelzServiceClient.subchannel_repr(subchannel),
                         )
                     except self.NotFound as e:
@@ -243,15 +258,18 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
                         continue
                 return channel
 
-        raise self.NotFound(
-            f"[{self.hostname}] Client has no "
-            f"{_ChannelzChannelState.Name(state)} channel with the server"
+        raise self.ChannelNotFound(
+            f"[{self.hostname}] Client has no"
+            f" {expected_state_name} channel with server {target}",
+            src=self.hostname,
+            dst=target,
+            expected_state=expected_state,
         )
 
-    def get_server_channels(self, **kwargs) -> Iterable[_ChannelzChannel]:
-        return self.channelz.find_channels_for_target(
-            self.server_target, **kwargs
-        )
+    def get_server_channels(
+        self, server_target: str, **kwargs
+    ) -> Iterable[_ChannelzChannel]:
+        return self.channelz.find_channels_for_target(server_target, **kwargs)
 
     def find_subchannel_with_state(
         self, channel: _ChannelzChannel, state: _ChannelzChannelState, **kwargs
@@ -280,3 +298,24 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
                 if subchannel.data.state.state is state:
                     subchannels.append(subchannel)
         return subchannels
+
+    class ChannelNotFound(framework.rpc.grpc.GrpcApp.NotFound):
+        """Channel with expected status not found"""
+
+        src: str
+        dst: str
+        expected_state: object
+
+        def __init__(
+            self,
+            message: str,
+            *,
+            src: str,
+            dst: str,
+            expected_state: _ChannelzChannelState,
+            **kwargs,
+        ):
+            self.src = src
+            self.dst = dst
+            self.expected_state = expected_state
+            super().__init__(message, src, dst, expected_state, **kwargs)
