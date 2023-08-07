@@ -46,6 +46,7 @@
 #include "src/proto/grpc/testing/test.grpc.pb.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/interop/rpc_behavior_lb_policy.h"
+#include "test/cpp/interop/xds_stats_watcher.h"
 #include "test/cpp/util/test_config.h"
 
 ABSL_FLAG(bool, fail_on_failed_rpc, false,
@@ -75,6 +76,7 @@ using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::Status;
+using grpc::testing::AsyncClientCall;
 using grpc::testing::ClientConfigureRequest;
 using grpc::testing::ClientConfigureRequest_RpcType_Name;
 using grpc::testing::ClientConfigureResponse;
@@ -86,25 +88,13 @@ using grpc::testing::LoadBalancerStatsResponse;
 using grpc::testing::LoadBalancerStatsService;
 using grpc::testing::SimpleRequest;
 using grpc::testing::SimpleResponse;
+using grpc::testing::StatsWatchers;
 using grpc::testing::TestService;
+using grpc::testing::XdsStatsWatcher;
 using grpc::testing::XdsUpdateClientConfigureService;
 
-class XdsStatsWatcher;
-
-struct StatsWatchers {
-  // Unique ID for each outgoing RPC
-  int global_request_id = 0;
-  // Unique ID for each outgoing RPC by RPC method type
-  std::map<int, int> global_request_id_by_type;
-  // Stores a set of watchers that should be notified upon outgoing RPC
-  // completion
-  std::set<XdsStatsWatcher*> watchers;
-  // Global watcher for accumululated stats.
-  XdsStatsWatcher* global_watcher;
-  // Mutex for global_request_id and watchers
-  std::mutex mu;
-};
-// Whether at least one RPC has succeeded, indicating xDS resolution completed.
+// Whether at least one RPC has succeeded, indicating xDS resolution
+// completed.
 std::atomic<bool> one_rpc_succeeded(false);
 // RPC configuration detailing how RPC should be sent.
 struct RpcConfig {
@@ -117,135 +107,6 @@ struct RpcConfigurationsQueue {
   std::deque<std::vector<RpcConfig>> rpc_configs_queue;
   // Mutex for rpc_configs_queue
   std::mutex mu_rpc_configs_queue;
-};
-struct AsyncClientCall {
-  Empty empty_response;
-  SimpleResponse simple_response;
-  ClientContext context;
-  Status status;
-  int saved_request_id;
-  ClientConfigureRequest::RpcType rpc_type;
-  std::unique_ptr<ClientAsyncResponseReader<Empty>> empty_response_reader;
-  std::unique_ptr<ClientAsyncResponseReader<SimpleResponse>>
-      simple_response_reader;
-};
-
-/// Records the remote peer distribution for a given range of RPCs.
-class XdsStatsWatcher {
- public:
-  XdsStatsWatcher(int start_id, int end_id)
-      : start_id_(start_id), end_id_(end_id), rpcs_needed_(end_id - start_id) {}
-
-  // Upon the completion of an RPC, we will look at the request_id, the
-  // rpc_type, and the peer the RPC was sent to in order to count
-  // this RPC into the right stats bin.
-  void RpcCompleted(AsyncClientCall* call, const std::string& peer) {
-    // We count RPCs for global watcher or if the request_id falls into the
-    // watcher's interested range of request ids.
-    if ((start_id_ == 0 && end_id_ == 0) ||
-        (start_id_ <= call->saved_request_id &&
-         call->saved_request_id < end_id_)) {
-      {
-        std::lock_guard<std::mutex> lock(m_);
-        if (peer.empty()) {
-          no_remote_peer_++;
-          ++no_remote_peer_by_type_[call->rpc_type];
-        } else {
-          // RPC is counted into both per-peer bin and per-method-per-peer bin.
-          rpcs_by_peer_[peer]++;
-          rpcs_by_type_[call->rpc_type][peer]++;
-        }
-        rpcs_needed_--;
-        // Report accumulated stats.
-        auto& stats_per_method = *accumulated_stats_.mutable_stats_per_method();
-        auto& method_stat =
-            stats_per_method[ClientConfigureRequest_RpcType_Name(
-                call->rpc_type)];
-        auto& result = *method_stat.mutable_result();
-        grpc_status_code code =
-            static_cast<grpc_status_code>(call->status.error_code());
-        auto& num_rpcs = result[code];
-        ++num_rpcs;
-        auto rpcs_started = method_stat.rpcs_started();
-        method_stat.set_rpcs_started(++rpcs_started);
-      }
-      cv_.notify_one();
-    }
-  }
-
-  void WaitForRpcStatsResponse(LoadBalancerStatsResponse* response,
-                               int timeout_sec) {
-    std::unique_lock<std::mutex> lock(m_);
-    cv_.wait_for(lock, std::chrono::seconds(timeout_sec),
-                 [this] { return rpcs_needed_ == 0; });
-    response->mutable_rpcs_by_peer()->insert(rpcs_by_peer_.begin(),
-                                             rpcs_by_peer_.end());
-    auto& response_rpcs_by_method = *response->mutable_rpcs_by_method();
-    for (const auto& rpc_by_type : rpcs_by_type_) {
-      std::string method_name;
-      if (rpc_by_type.first == ClientConfigureRequest::EMPTY_CALL) {
-        method_name = "EmptyCall";
-      } else if (rpc_by_type.first == ClientConfigureRequest::UNARY_CALL) {
-        method_name = "UnaryCall";
-      } else {
-        GPR_ASSERT(0);
-      }
-      // TODO(@donnadionne): When the test runner changes to accept EMPTY_CALL
-      // and UNARY_CALL we will just use the name of the enum instead of the
-      // method_name variable.
-      auto& response_rpc_by_method = response_rpcs_by_method[method_name];
-      auto& response_rpcs_by_peer =
-          *response_rpc_by_method.mutable_rpcs_by_peer();
-      for (const auto& rpc_by_peer : rpc_by_type.second) {
-        auto& response_rpc_by_peer = response_rpcs_by_peer[rpc_by_peer.first];
-        response_rpc_by_peer = rpc_by_peer.second;
-      }
-    }
-    response->set_num_failures(no_remote_peer_ + rpcs_needed_);
-  }
-
-  void GetCurrentRpcStats(LoadBalancerAccumulatedStatsResponse* response,
-                          StatsWatchers* stats_watchers) {
-    std::unique_lock<std::mutex> lock(m_);
-    response->CopyFrom(accumulated_stats_);
-    // TODO(@donnadionne): delete deprecated stats below when the test is no
-    // longer using them.
-    auto& response_rpcs_started_by_method =
-        *response->mutable_num_rpcs_started_by_method();
-    auto& response_rpcs_succeeded_by_method =
-        *response->mutable_num_rpcs_succeeded_by_method();
-    auto& response_rpcs_failed_by_method =
-        *response->mutable_num_rpcs_failed_by_method();
-    for (const auto& rpc_by_type : rpcs_by_type_) {
-      auto total_succeeded = 0;
-      for (const auto& rpc_by_peer : rpc_by_type.second) {
-        total_succeeded += rpc_by_peer.second;
-      }
-      response_rpcs_succeeded_by_method[ClientConfigureRequest_RpcType_Name(
-          rpc_by_type.first)] = total_succeeded;
-      response_rpcs_started_by_method[ClientConfigureRequest_RpcType_Name(
-          rpc_by_type.first)] =
-          stats_watchers->global_request_id_by_type[rpc_by_type.first];
-      response_rpcs_failed_by_method[ClientConfigureRequest_RpcType_Name(
-          rpc_by_type.first)] = no_remote_peer_by_type_[rpc_by_type.first];
-    }
-  }
-
- private:
-  int start_id_;
-  int end_id_;
-  int rpcs_needed_;
-  int no_remote_peer_ = 0;
-  std::map<int, int> no_remote_peer_by_type_;
-  // A map of stats keyed by peer name.
-  std::map<std::string, int> rpcs_by_peer_;
-  // A two-level map of stats keyed at top level by RPC method and second level
-  // by peer name.
-  std::map<int, std::map<std::string, int>> rpcs_by_type_;
-  // Storing accumulated stats in the response proto format.
-  LoadBalancerAccumulatedStatsResponse accumulated_stats_;
-  std::mutex m_;
-  std::condition_variable cv_;
 };
 
 class TestClient {
