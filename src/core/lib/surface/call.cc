@@ -108,7 +108,7 @@
 #include "src/core/lib/transport/transport.h"
 
 grpc_core::TraceFlag grpc_call_error_trace(false, "call_error");
-grpc_core::TraceFlag grpc_compression_trace(false, "compression");
+grpc_core::TraceFlag grpc_compression_trace(true, "compression");
 grpc_core::TraceFlag grpc_call_trace(false, "call");
 grpc_core::DebugOnlyTraceFlag grpc_call_refcount_trace(false, "call_refcount");
 
