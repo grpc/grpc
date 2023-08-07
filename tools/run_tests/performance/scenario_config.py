@@ -1660,7 +1660,7 @@ class GoLanguage(Language):
 
 class NodeLanguage(Language):
     def worker_cmdline(self):
-        fixture = "native_js"
+        fixture = "js_js"
         return [
             "tools/run_tests/performance/run_worker_node.sh",
             fixture,
