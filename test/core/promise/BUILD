@@ -32,7 +32,7 @@ grpc_cc_library(
     testonly = True,
     hdrs = ["test_context.h"],
     visibility = ["//test/core:__subpackages__"],
-    deps = ["//src/core:context"],
+    deps = ["//src/core:context", "//:grpc",],
 )
 
 grpc_cc_test(

@@ -443,6 +443,7 @@ grpc_cc_library(
         "fuzz_config_vars_proto",
         "//:config_vars",
         "//:gpr_platform",
+        "//:grpc",
     ],
 )
 
@@ -454,6 +455,7 @@ grpc_cc_library(
     deps = [
         "//:gpr_platform",
         "//src/core:experiments",
+        "//:grpc",
     ],
 )
 

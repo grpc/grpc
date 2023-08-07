@@ -26,6 +26,7 @@ grpc_cc_library(
     deps = [
         "//:gpr",
         "//src/core:experiments",
+        "//:grpc",
     ],
 )
 
