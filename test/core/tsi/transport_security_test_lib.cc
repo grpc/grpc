@@ -682,12 +682,13 @@ void tsi_test_frame_protector_fixture_destroy(
 std::string GenerateSelfSignedCertificate(
     const SelfSignedCertificateOptions& options) {
   // Generate an RSA keypair.
-
   BIGNUM* bignum = BN_new();
   GPR_ASSERT(BN_set_word(bignum, RSA_F4));
   BIGNUM* n = BN_new();
   GPR_ASSERT(BN_set_word(n, 2048));
   EVP_PKEY* key = EVP_PKEY_new();
+  // Create the X509 object.
+  X509* x509 = X509_new();
 
 #if OPENSSL_VERSION_NUMBER < 0x30000000L
   RSA* rsa = RSA_new();
@@ -695,30 +696,11 @@ std::string GenerateSelfSignedCertificate(
   GPR_ASSERT(
       RSA_generate_key_ex(rsa, /*key_size=*/2048, bignum, /*cb=*/nullptr));
   GPR_ASSERT(EVP_PKEY_assign_RSA(key, rsa));
+  GPR_ASSERT(X509_set_version(x509, 2));  // TODO(gtcooke94) make a const
 #else
-  // EVP_PKEY_CTX* ctx = nullptr;
-  // OSSL_PARAM params[3] = {};
-  // params[0] = OSSL_PARAM_BN("n", n, sizeof(n));
-  // params[1] = OSSL_PARAM_BN("e", bignum, sizeof(bignum));
-  // params[2] = OSSL_PARAM_END;
-  // ctx = EVP_PKEY_CTX_new_from_name(NULL, "RSA", NULL);
-  // GPR_ASSERT(ctx != nullptr);
-  // GPR_ASSERT(EVP_PKEY_keygen_init(ctx));
-  // GPR_ASSERT(EVP_PKEY_CTX_set_params(ctx, params));
-  // int out = EVP_PKEY_generate(ctx, &key);
-  // if (out != 1) {
-  //   // gpr_log(GPR_ERROR, "%i", out);
-  //   std::cerr << out << std::endl;
-  // }
-  // GPR_ASSERT(out == 1);
-  // EVP_PKEY_CTX_free(ctx);
   key = EVP_RSA_gen(2048);
-#endif
-  BN_free(n);
-
-  // Create the X509 object.
-  X509* x509 = X509_new();
   GPR_ASSERT(X509_set_version(x509, X509_VERSION_3));
+#endif
   // Set the not_before/after fields to infinite past/future. The value for
   // infinite future is from RFC 5280 Section 4.1.2.5.1.
   ASN1_UTCTIME* infinite_past = ASN1_UTCTIME_new();
@@ -759,12 +741,10 @@ std::string GenerateSelfSignedCertificate(
   const uint8_t* data = nullptr;
   size_t len = 0;
 
-#if OPENSSL_VERSION_NUMBER < 0x30000000L
+#if OPENSSL_IS_BORINGSSL
   GPR_ASSERT(BIO_mem_contents(bio, &data, &len));
 #else
   len = BIO_get_mem_data(bio, &data);
-  // GPR_ASSERT(BIO_read_ex(bio, data, len_to_read, &len));
-  // const uint8_t* data2 = nullptr;
 #endif
   std::string pem = std::string(reinterpret_cast<const char*>(data), len);
   // Cleanup all of the OpenSSL objects and return the PEM-encoded cert.
@@ -772,5 +752,6 @@ std::string GenerateSelfSignedCertificate(
   X509_free(x509);
   BIO_free(bio);
   BN_free(bignum);
+  BN_free(n);
   return pem;
 }

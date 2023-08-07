@@ -1226,37 +1226,39 @@ TEST(SslTransportSecurityTest, MainTest) {
     // Set the TLS version to be used in the tests.
     test_tls_version = tls_versions[i];
     for (bool send_client_ca_list : {true, false}) {
-      // test_send_client_ca_list = send_client_ca_list;
-      // ssl_tsi_test_do_handshake_tiny_handshake_buffer();
-      // ssl_tsi_test_do_handshake_small_handshake_buffer();
-      // ssl_tsi_test_do_handshake();
-      // ssl_tsi_test_do_handshake_with_root_store();
+      test_send_client_ca_list = send_client_ca_list;
+      ssl_tsi_test_do_handshake_tiny_handshake_buffer();
+      ssl_tsi_test_do_handshake_small_handshake_buffer();
+      ssl_tsi_test_do_handshake();
+      ssl_tsi_test_do_handshake_with_root_store();
       ssl_tsi_test_do_handshake_with_large_server_handshake_messages(
           trust_bundle);
-      // ssl_tsi_test_do_handshake_with_client_authentication();
-      // ssl_tsi_test_do_handshake_with_client_authentication_and_root_store();
-      // ssl_tsi_test_do_handshake_with_server_name_indication_exact_domain();
-      // ssl_tsi_test_do_handshake_with_server_name_indication_wild_star_domain();
-      // ssl_tsi_test_do_handshake_with_wrong_server_name_indication();
-      // ssl_tsi_test_do_handshake_with_bad_server_cert();
-      // ssl_tsi_test_do_handshake_with_bad_client_cert();
+      ssl_tsi_test_do_handshake_with_client_authentication();
+      ssl_tsi_test_do_handshake_with_client_authentication_and_root_store();
+      ssl_tsi_test_do_handshake_with_server_name_indication_exact_domain();
+      ssl_tsi_test_do_handshake_with_server_name_indication_wild_star_domain();
+      ssl_tsi_test_do_handshake_with_wrong_server_name_indication();
+      ssl_tsi_test_do_handshake_with_bad_server_cert();
+      ssl_tsi_test_do_handshake_with_bad_client_cert();
 #ifdef OPENSSL_IS_BORINGSSL
       // BoringSSL and OpenSSL have different behaviors on mismatched ALPN.
       ssl_tsi_test_do_handshake_alpn_client_no_server();
       ssl_tsi_test_do_handshake_alpn_client_server_mismatch();
+      // These tests fail with openssl3 and openssl111 currently but not
+      // boringssl
+      ssl_tsi_test_do_handshake_session_cache();
+      ssl_tsi_test_do_round_trip_for_all_configs();
+      ssl_tsi_test_do_round_trip_with_error_on_stack();
+      ssl_tsi_test_do_round_trip_odd_buffer_size();
 #endif
-      // ssl_tsi_test_do_handshake_alpn_server_no_client();
-      // ssl_tsi_test_do_handshake_alpn_client_server_ok();
-      // ssl_tsi_test_do_handshake_session_cache();
-      // ssl_tsi_test_do_round_trip_for_all_configs();
-      // ssl_tsi_test_do_round_trip_with_error_on_stack();
-      // ssl_tsi_test_do_round_trip_odd_buffer_size();
-      // ssl_tsi_test_handshaker_factory_internals();
-      // ssl_tsi_test_duplicate_root_certificates();
-      // ssl_tsi_test_extract_x509_subject_names();
-      // ssl_tsi_test_extract_cert_chain();
-      // ssl_tsi_test_do_handshake_with_custom_bio_pair();
-      // ssl_tsi_test_do_handshake_with_intermediate_ca();
+      ssl_tsi_test_do_handshake_alpn_server_no_client();
+      ssl_tsi_test_do_handshake_alpn_client_server_ok();
+      ssl_tsi_test_handshaker_factory_internals();
+      ssl_tsi_test_duplicate_root_certificates();
+      ssl_tsi_test_extract_x509_subject_names();
+      ssl_tsi_test_extract_cert_chain();
+      ssl_tsi_test_do_handshake_with_custom_bio_pair();
+      ssl_tsi_test_do_handshake_with_intermediate_ca();
     }
   }
   grpc_shutdown();

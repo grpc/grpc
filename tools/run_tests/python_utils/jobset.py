@@ -305,7 +305,7 @@ class Job(object):
             # macOS: a series of quick os.unlink invocation might cause OS
             # error during the creation of temporary file. By using
             # NamedTemporaryFile, we defer the removal of file and directory.
-            self._logfile = open("/tmp/temp.log", "w+")
+            self._logfile = tempfile.NamedTemporaryFile()
         env = dict(os.environ)
         env.update(self._spec.environ)
         env.update(self._add_env)
@@ -319,7 +319,6 @@ class Job(object):
             cmdline = ["time", "-p"] + cmdline
         else:
             measure_cpu_costs = False
-        print(self._spec.logfilename)
         try_start = lambda: subprocess.Popen(
             args=cmdline,
             stderr=subprocess.STDOUT,

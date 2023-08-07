@@ -512,11 +512,6 @@ class CLanguage(object):
                 + self._cmake_configure_extra_args
             ]
         else:
-            print([
-                ["tools/run_tests/helper_scripts/build_cxx.sh"]
-                + self._cmake_configure_extra_args
-            ]
-)
             return [
                 ["tools/run_tests/helper_scripts/build_cxx.sh"]
                 + self._cmake_configure_extra_args
@@ -1496,7 +1491,6 @@ def _build_and_run(
     check_cancelled, newline_on_success, xml_report=None, build_only=False
 ):
     """Do one pass of building & running tests."""
-    print(build_steps)
     # build latest sequentially
     num_failures, resultset = jobset.run(
         build_steps,
