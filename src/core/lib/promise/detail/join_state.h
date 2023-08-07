@@ -33,14 +33,16 @@ struct JoinState;
 
 template <class Traits, typename P0,typename P1>
 struct JoinState<Traits, P0,P1> {
+  template <typename T>
+  using UnwrappedType = decltype(Traits::Unwrapped(std::declval<T>()));
   using Promise0 = PromiseLike<P0>;
-  using Result0 = typename Promise0::Result;
+  using Result0 = UnwrappedType<typename Promise0::Result>;
   union {
     GPR_NO_UNIQUE_ADDRESS Promise0 promise0;
     GPR_NO_UNIQUE_ADDRESS Result0 result0;
   };
   using Promise1 = PromiseLike<P1>;
-  using Result1 = typename Promise1::Result;
+  using Result1 = UnwrappedType<typename Promise1::Result>;
   union {
     GPR_NO_UNIQUE_ADDRESS Promise1 promise1;
     GPR_NO_UNIQUE_ADDRESS Result1 result1;
@@ -81,7 +83,8 @@ struct JoinState<Traits, P0,P1> {
       Destruct(&promise1);
     }
   }
-  using Result = std::tuple<Result0,Result1>;
+  using Result = typename Traits::template ResultType<std::tuple<
+      Result0,Result1>>;
   Poll<Result> PollOnce() {
     if (!ready.is_set(0)) {
       auto poll = promise0();
@@ -89,9 +92,9 @@ struct JoinState<Traits, P0,P1> {
         if (Traits::IsOk(*p)) {
           ready.set(0);
           Destruct(&promise0);
-          Construct(Traits::Unwrapped(&result0), std::move(*p));
+          Construct(&result0, Traits::Unwrapped(std::move(*p)));
         } else {
-          return Traits::IntoStatus(std::move(*p));
+          return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
     }
@@ -101,14 +104,14 @@ struct JoinState<Traits, P0,P1> {
         if (Traits::IsOk(*p)) {
           ready.set(1);
           Destruct(&promise1);
-          Construct(Traits::Unwrapped(&result1), std::move(*p));
+          Construct(&result1, Traits::Unwrapped(std::move(*p)));
         } else {
-          return Traits::IntoStatus(std::move(*p));
+          return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
     }
     if (ready.all()) {
-      return Result{std::move(result0),std::move(result1)};
+      return Result{std::make_tuple(std::move(result0),std::move(result1))};
     }
     return Pending{};
   }
@@ -117,20 +120,22 @@ struct JoinState<Traits, P0,P1> {
 
 template <class Traits, typename P0,typename P1,typename P2>
 struct JoinState<Traits, P0,P1,P2> {
+  template <typename T>
+  using UnwrappedType = decltype(Traits::Unwrapped(std::declval<T>()));
   using Promise0 = PromiseLike<P0>;
-  using Result0 = typename Promise0::Result;
+  using Result0 = UnwrappedType<typename Promise0::Result>;
   union {
     GPR_NO_UNIQUE_ADDRESS Promise0 promise0;
     GPR_NO_UNIQUE_ADDRESS Result0 result0;
   };
   using Promise1 = PromiseLike<P1>;
-  using Result1 = typename Promise1::Result;
+  using Result1 = UnwrappedType<typename Promise1::Result>;
   union {
     GPR_NO_UNIQUE_ADDRESS Promise1 promise1;
     GPR_NO_UNIQUE_ADDRESS Result1 result1;
   };
   using Promise2 = PromiseLike<P2>;
-  using Result2 = typename Promise2::Result;
+  using Result2 = UnwrappedType<typename Promise2::Result>;
   union {
     GPR_NO_UNIQUE_ADDRESS Promise2 promise2;
     GPR_NO_UNIQUE_ADDRESS Result2 result2;
@@ -183,7 +188,8 @@ struct JoinState<Traits, P0,P1,P2> {
       Destruct(&promise2);
     }
   }
-  using Result = std::tuple<Result0,Result1,Result2>;
+  using Result = typename Traits::template ResultType<std::tuple<
+      Result0,Result1,Result2>>;
   Poll<Result> PollOnce() {
     if (!ready.is_set(0)) {
       auto poll = promise0();
@@ -191,9 +197,9 @@ struct JoinState<Traits, P0,P1,P2> {
         if (Traits::IsOk(*p)) {
           ready.set(0);
           Destruct(&promise0);
-          Construct(Traits::Unwrapped(&result0), std::move(*p));
+          Construct(&result0, Traits::Unwrapped(std::move(*p)));
         } else {
-          return Traits::IntoStatus(std::move(*p));
+          return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
     }
@@ -203,9 +209,9 @@ struct JoinState<Traits, P0,P1,P2> {
         if (Traits::IsOk(*p)) {
           ready.set(1);
           Destruct(&promise1);
-          Construct(Traits::Unwrapped(&result1), std::move(*p));
+          Construct(&result1, Traits::Unwrapped(std::move(*p)));
         } else {
-          return Traits::IntoStatus(std::move(*p));
+          return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
     }
@@ -215,14 +221,14 @@ struct JoinState<Traits, P0,P1,P2> {
         if (Traits::IsOk(*p)) {
           ready.set(2);
           Destruct(&promise2);
-          Construct(Traits::Unwrapped(&result2), std::move(*p));
+          Construct(&result2, Traits::Unwrapped(std::move(*p)));
         } else {
-          return Traits::IntoStatus(std::move(*p));
+          return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
     }
     if (ready.all()) {
-      return Result{std::move(result0),std::move(result1),std::move(result2)};
+      return Result{std::make_tuple(std::move(result0),std::move(result1),std::move(result2))};
     }
     return Pending{};
   }
@@ -231,26 +237,28 @@ struct JoinState<Traits, P0,P1,P2> {
 
 template <class Traits, typename P0,typename P1,typename P2,typename P3>
 struct JoinState<Traits, P0,P1,P2,P3> {
+  template <typename T>
+  using UnwrappedType = decltype(Traits::Unwrapped(std::declval<T>()));
   using Promise0 = PromiseLike<P0>;
-  using Result0 = typename Promise0::Result;
+  using Result0 = UnwrappedType<typename Promise0::Result>;
   union {
     GPR_NO_UNIQUE_ADDRESS Promise0 promise0;
     GPR_NO_UNIQUE_ADDRESS Result0 result0;
   };
   using Promise1 = PromiseLike<P1>;
-  using Result1 = typename Promise1::Result;
+  using Result1 = UnwrappedType<typename Promise1::Result>;
   union {
     GPR_NO_UNIQUE_ADDRESS Promise1 promise1;
     GPR_NO_UNIQUE_ADDRESS Result1 result1;
   };
   using Promise2 = PromiseLike<P2>;
-  using Result2 = typename Promise2::Result;
+  using Result2 = UnwrappedType<typename Promise2::Result>;
   union {
     GPR_NO_UNIQUE_ADDRESS Promise2 promise2;
     GPR_NO_UNIQUE_ADDRESS Result2 result2;
   };
   using Promise3 = PromiseLike<P3>;
-  using Result3 = typename Promise3::Result;
+  using Result3 = UnwrappedType<typename Promise3::Result>;
   union {
     GPR_NO_UNIQUE_ADDRESS Promise3 promise3;
     GPR_NO_UNIQUE_ADDRESS Result3 result3;
@@ -315,7 +323,8 @@ struct JoinState<Traits, P0,P1,P2,P3> {
       Destruct(&promise3);
     }
   }
-  using Result = std::tuple<Result0,Result1,Result2,Result3>;
+  using Result = typename Traits::template ResultType<std::tuple<
+      Result0,Result1,Result2,Result3>>;
   Poll<Result> PollOnce() {
     if (!ready.is_set(0)) {
       auto poll = promise0();
@@ -323,9 +332,9 @@ struct JoinState<Traits, P0,P1,P2,P3> {
         if (Traits::IsOk(*p)) {
           ready.set(0);
           Destruct(&promise0);
-          Construct(Traits::Unwrapped(&result0), std::move(*p));
+          Construct(&result0, Traits::Unwrapped(std::move(*p)));
         } else {
-          return Traits::IntoStatus(std::move(*p));
+          return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
     }
@@ -335,9 +344,9 @@ struct JoinState<Traits, P0,P1,P2,P3> {
         if (Traits::IsOk(*p)) {
           ready.set(1);
           Destruct(&promise1);
-          Construct(Traits::Unwrapped(&result1), std::move(*p));
+          Construct(&result1, Traits::Unwrapped(std::move(*p)));
         } else {
-          return Traits::IntoStatus(std::move(*p));
+          return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
     }
@@ -347,9 +356,9 @@ struct JoinState<Traits, P0,P1,P2,P3> {
         if (Traits::IsOk(*p)) {
           ready.set(2);
           Destruct(&promise2);
-          Construct(Traits::Unwrapped(&result2), std::move(*p));
+          Construct(&result2, Traits::Unwrapped(std::move(*p)));
         } else {
-          return Traits::IntoStatus(std::move(*p));
+          return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
     }
@@ -359,14 +368,14 @@ struct JoinState<Traits, P0,P1,P2,P3> {
         if (Traits::IsOk(*p)) {
           ready.set(3);
           Destruct(&promise3);
-          Construct(Traits::Unwrapped(&result3), std::move(*p));
+          Construct(&result3, Traits::Unwrapped(std::move(*p)));
         } else {
-          return Traits::IntoStatus(std::move(*p));
+          return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
     }
     if (ready.all()) {
-      return Result{std::move(result0),std::move(result1),std::move(result2),std::move(result3)};
+      return Result{std::make_tuple(std::move(result0),std::move(result1),std::move(result2),std::move(result3))};
     }
     return Pending{};
   }

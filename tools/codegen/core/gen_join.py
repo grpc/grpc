@@ -20,9 +20,11 @@ import sys
 join_state = Template("""
 template <class Traits, ${",".join(f"typename P{i}" for i in range(0,n))}>
 struct JoinState<Traits, ${",".join(f"P{i}" for i in range(0,n))}> {
+  template <typename T>
+  using UnwrappedType = decltype(Traits::Unwrapped(std::declval<T>()));
 % for i in range(0,n):
   using Promise${i} = PromiseLike<P${i}>;
-  using Result${i} = typename Promise${i}::Result;
+  using Result${i} = UnwrappedType<typename Promise${i}::Result>;
   union {
     GPR_NO_UNIQUE_ADDRESS Promise${i} promise${i};
     GPR_NO_UNIQUE_ADDRESS Result${i} result${i};
@@ -60,7 +62,8 @@ struct JoinState<Traits, ${",".join(f"P{i}" for i in range(0,n))}> {
     }
 % endfor
   }
-  using Result = std::tuple<${",".join(f"Result{i}" for i in range(0,n))}>;
+  using Result = typename Traits::template ResultType<std::tuple<
+      ${",".join(f"Result{i}" for i in range(0,n))}>>;
   Poll<Result> PollOnce() {
 % for i in range(0,n):
     if (!ready.is_set(${i})) {
@@ -69,15 +72,15 @@ struct JoinState<Traits, ${",".join(f"P{i}" for i in range(0,n))}> {
         if (Traits::IsOk(*p)) {
           ready.set(${i});
           Destruct(&promise${i});
-          Construct(Traits::Unwrapped(&result${i}), std::move(*p));
+          Construct(&result${i}, Traits::Unwrapped(std::move(*p)));
         } else {
-          return Traits::IntoStatus(std::move(*p));
+          return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
     }
 % endfor
     if (ready.all()) {
-      return Result{${",".join(f"std::move(result{i})" for i in range(0,n))}};
+      return Result{std::make_tuple(${",".join(f"std::move(result{i})" for i in range(0,n))})};
     }
     return Pending{};
   }

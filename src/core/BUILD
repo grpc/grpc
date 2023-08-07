@@ -607,11 +607,10 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "basic_join",
-    external_deps = ["absl/utility"],
+    name = "join_state",
     language = "c++",
     public_hdrs = [
-        "lib/promise/detail/basic_join.h",
+        "lib/promise/detail/join_state.h",
     ],
     deps = [
         "bitset",
@@ -630,7 +629,8 @@ grpc_cc_library(
         "lib/promise/join.h",
     ],
     deps = [
-        "basic_join",
+        "join_state",
+        "map",
         "//:gpr_platform",
     ],
 )
@@ -647,7 +647,8 @@ grpc_cc_library(
         "lib/promise/try_join.h",
     ],
     deps = [
-        "basic_join",
+        "join_state",
+        "map",
         "poll",
         "promise_status",
         "//:gpr_platform",
