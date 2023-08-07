@@ -63,11 +63,10 @@ class ClientTransport {
       MutexLock lock(&mu_);
       stream_id = next_stream_id_++;
     }
-    bool initial_frame = true;
     return Seq(
         // Continuously send data frame with client to server messages.
         ForEach(std::move(*call_args.client_to_server_messages),
-                [stream_id, &initial_frame,
+                [stream_id, initial_frame = true,
                  client_initial_metadata =
                      std::move(call_args.client_initial_metadata),
                  outgoing_frames = outgoing_frames_.MakeSender()](

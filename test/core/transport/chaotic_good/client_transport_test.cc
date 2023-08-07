@@ -170,7 +170,7 @@ TEST_F(ClientTransportTest, AddOneStream) {
   event_engine_->UnsetGlobalHooks();
 }
 
-TEST_F(ClientTransportTest, AddOneStreamFailed) {
+TEST_F(ClientTransportTest, AddOneStreamWithEEFailed) {
   SliceBuffer buffer;
   buffer.Append(Slice::FromCopiedString("test add stream."));
   auto message = arena_->MakePooled<Message>(std::move(buffer), 0);
@@ -206,6 +206,8 @@ TEST_F(ClientTransportTest, AddOneStreamFailed) {
                    [](const absl::Status& status) { return status; })),
           // Once complete, verify successful sending and the received value.
           [](const std::tuple<absl::Status, absl::Status>& ret) {
+            // TODO(ladynana): change these expectations to errors after the
+            // writer activity closes transport for EE failures.
             EXPECT_TRUE(std::get<0>(ret).ok());
             EXPECT_TRUE(std::get<1>(ret).ok());
             return absl::OkStatus();
