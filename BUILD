@@ -694,7 +694,6 @@ grpc_cc_library(
         "//src/core:lib/gpr/posix/time.cc",
         "//src/core:lib/gpr/posix/tmpfile.cc",
         "//src/core:lib/gpr/string.cc",
-        "//src/core:lib/gpr/subprocess.cc",
         "//src/core:lib/gpr/sync.cc",
         "//src/core:lib/gpr/sync_abseil.cc",
         "//src/core:lib/gpr/time.cc",
@@ -720,7 +719,6 @@ grpc_cc_library(
     hdrs = [
         "//src/core:lib/gpr/alloc.h",
         "//src/core:lib/gpr/string.h",
-        "//src/core:lib/gpr/subprocess.h",
         "//src/core:lib/gpr/time_precise.h",
         "//src/core:lib/gpr/tmpfile.h",
         "//src/core:lib/gprpp/crash.h",

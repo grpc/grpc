@@ -35,7 +35,8 @@ gpr_subprocess* gpr_subprocess_create_with_envp(int argc, const char** argv,
 
 // communicate to the subprocess via stdin, stdout and stderr
 bool gpr_subprocess_communicate(gpr_subprocess* p, std::string& input_data,
-                                std::string* output_data, std::string* error);
+                                std::string* output_data,
+                                std::string* stderr_data, std::string* error);
 /// if subprocess has not been joined, kill it
 void gpr_subprocess_destroy(gpr_subprocess* p);
 /// returns exit status; can be called at most once

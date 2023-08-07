@@ -178,6 +178,8 @@ const char test_signed_jwt_token_type2[] =
     "urn:ietf:params:oauth:token-type:jwt";
 const char test_signed_jwt_path_prefix[] = "test_sign_jwt";
 
+const char pluggable_auth_file_path_prefix[] = "pluggable_auth";
+
 const char test_service_url[] = "https://foo.com/foo.v1";
 const char test_service_url_no_service_name[] = "https://foo.com/";
 const char other_test_service_url_no_service_name[] = "https://bar.com/";
@@ -1092,6 +1094,17 @@ char* write_tmp_jwt_file(const char* jwt_contents) {
   GPR_ASSERT(fwrite(jwt_contents, 1, jwt_length, tmp) == jwt_length);
   fclose(tmp);
   return path;
+}
+
+char* write_file(const char* path_prefix, const char* contents) {
+  char* filename;
+  FILE* fl = gpr_tmpfile(path_prefix, &filename);
+  GPR_ASSERT(fl != nullptr);
+  GPR_ASSERT(filename != nullptr);
+  size_t file_len = strlen(contents);
+  GPR_ASSERT(fwrite(contents, 1, file_len, fl) == file_len);
+  fclose(fl);
+  return filename;
 }
 
 TEST(CredentialsTest, TestStsCredsSuccess) {
@@ -3906,6 +3919,788 @@ TEST(
   grpc_error_get_str(error, StatusStrProperty::kDescription, &actual_error);
   GPR_ASSERT(strcmp(actual_error.c_str(), expected_error.c_str()) == 0);
 }
+
+#ifndef GPR_WINDOWS
+
+char* get_pluggable_auth_executable_file_contents_for_output_file(
+    int32_t expiration_time, const char* output_file_filename) {
+  std::string executable_file_contents = absl::StrFormat(
+      "#!/bin/bash\n\necho \"{\\\"version\\\": 1,\\\"success\\\": "
+      "\"true\",\\\"token_type\\\": "
+      "\\\"urn:ietf:params:oauth:token-type:saml2\\\",\\\"saml_response\\\":"
+      "\\\"test_subject_token\\\",\\\"expiration_time\\\":%d}\" > %s",
+      expiration_time, output_file_filename);
+  return gpr_strdup(executable_file_contents.c_str());
+}
+
+char* get_pluggable_auth_executable_file_contents(int32_t expiration_time) {
+  std::string executable_file_contents = absl::StrFormat(
+      "#!/bin/bash\n\necho \"{\\\"version\\\": 1,\\\"success\\\": "
+      "\"true\",\\\"token_type\\\": "
+      "\\\"urn:ietf:params:oauth:token-type:saml2\\\",\\\"saml_response\\\":"
+      "\\\"test_subject_token\\\",\\\"expiration_time\\\":%d}\"",
+      expiration_time);
+  return gpr_strdup(executable_file_contents.c_str());
+}
+
+char* get_pluggable_auth_executable_file_contents_for_id_token(
+    int32_t expiration_time) {
+  std::string executable_file_contents = absl::StrFormat(
+      "#!/bin/bash\n\necho \"{\\\"version\\\": 1,\\\"success\\\": "
+      "\"true\",\\\"token_type\\\": "
+      "\\\"urn:ietf:params:oauth:token-type:jwt\\\",\\\"id_token\\\":"
+      "\\\"test_subject_token\\\",\\\"expiration_time\\\":%d}\"",
+      expiration_time);
+  return gpr_strdup(executable_file_contents.c_str());
+}
+
+Json get_valid_pluggable_auth_credential_source(const char* filename) {
+  auto credential_source = JsonParse(
+      absl::StrFormat("{\"executable\":{\"command\":\"%s\"}}", filename));
+  GPR_ASSERT(credential_source.ok());
+  return *credential_source;
+}
+
+Json get_valid_pluggable_auth_credential_source_with_output_file(
+    const char* executable_filename, const char* output_file_filename) {
+  auto credential_source = JsonParse(absl::StrFormat(
+      "{\"executable\":{\"command\":\"%s\", \"output_file\":\"%s\"}}",
+      executable_filename, output_file_filename));
+  GPR_ASSERT(credential_source.ok());
+  return *credential_source;
+}
+
+TEST(CredentialsTest, TestPluggableAuthExecutableSuccess) {
+  ExecCtx exec_ctx;
+  char* executable_file_contents = get_pluggable_auth_executable_file_contents(
+      gpr_time_to_millis(gpr_inf_future(GPR_CLOCK_REALTIME)));
+  char* filename =
+      write_file(pluggable_auth_file_path_prefix, executable_file_contents);
+  auto credential_source = get_valid_pluggable_auth_credential_source(filename);
+  TestExternalAccountCredentials::ServiceAccountImpersonation
+      service_account_impersonation;
+  service_account_impersonation.token_lifetime_seconds = 3600;
+  ExternalAccountCredentials::Options options = {
+      "external_account",                 // type;
+      "audience",                         // audience;
+      "subject_token_type",               // subject_token_type;
+      "",                                 // service_account_impersonation_url;
+      service_account_impersonation,      // service_account_impersonation;
+      "https://foo.com:5555/token",       // token_url;
+      "https://foo.com:5555/token_info",  // token_info_url;
+      credential_source,                  // credential_source;
+      "quota_project_id",                 // quota_project_id;
+      "client_id",                        // client_id;
+      "client_secret",                    // client_secret;
+      "",                                 // workforce_pool_user_project;
+  };
+  grpc_error_handle error;
+  auto creds =
+      PluggableAuthExternalAccountCredentials::Create(options, {}, &error);
+  SetEnv("GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES", "1");
+  chmod(filename, ALLPERMS);
+  GPR_ASSERT(creds != nullptr);
+  auto state = RequestMetadataState::NewInstance(
+      absl::OkStatus(), "authorization: Bearer token_exchange_access_token");
+  HttpRequest::SetOverride(httpcli_get_should_not_be_called,
+                           external_account_creds_httpcli_post_success,
+                           httpcli_put_should_not_be_called);
+  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
+  HttpRequest::SetOverride(nullptr, nullptr, nullptr);
+  UnsetEnv("GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES");
+}
+
+TEST(CredentialsTest, TestPluggableAuthExecutableSuccessIdToken) {
+  ExecCtx exec_ctx;
+  char* executable_file_contents =
+      get_pluggable_auth_executable_file_contents_for_id_token(
+          gpr_time_to_millis(gpr_inf_future(GPR_CLOCK_REALTIME)));
+  char* filename =
+      write_file(pluggable_auth_file_path_prefix, executable_file_contents);
+  auto credential_source = get_valid_pluggable_auth_credential_source(filename);
+  TestExternalAccountCredentials::ServiceAccountImpersonation
+      service_account_impersonation;
+  service_account_impersonation.token_lifetime_seconds = 3600;
+  ExternalAccountCredentials::Options options = {
+      "external_account",                 // type;
+      "audience",                         // audience;
+      "subject_token_type",               // subject_token_type;
+      "",                                 // service_account_impersonation_url;
+      service_account_impersonation,      // service_account_impersonation;
+      "https://foo.com:5555/token",       // token_url;
+      "https://foo.com:5555/token_info",  // token_info_url;
+      credential_source,                  // credential_source;
+      "quota_project_id",                 // quota_project_id;
+      "client_id",                        // client_id;
+      "client_secret",                    // client_secret;
+      "",                                 // workforce_pool_user_project;
+  };
+  grpc_error_handle error;
+  auto creds =
+      PluggableAuthExternalAccountCredentials::Create(options, {}, &error);
+  SetEnv("GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES", "1");
+  chmod(filename, ALLPERMS);
+  GPR_ASSERT(creds != nullptr);
+  auto state = RequestMetadataState::NewInstance(
+      absl::OkStatus(), "authorization: Bearer token_exchange_access_token");
+  HttpRequest::SetOverride(httpcli_get_should_not_be_called,
+                           external_account_creds_httpcli_post_success,
+                           httpcli_put_should_not_be_called);
+  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
+  HttpRequest::SetOverride(nullptr, nullptr, nullptr);
+  UnsetEnv("GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES");
+}
+
+char* get_pluggable_auth_cached_executable_contents(int32_t expiration_time) {
+  std::string cached_executable_response_file_contents = absl::StrFormat(
+      "{\"version\": 1,\"success\": "
+      "true,\"token_type\":\"urn:ietf:params:oauth:token-type:saml2\","
+      "\"saml_response\":\"test_subject_token\",\"expiration_time\":%d}",
+      expiration_time);
+  return gpr_strdup(cached_executable_response_file_contents.c_str());
+}
+
+TEST(CredentialsTest, TestPluggableAuthSuccessCachedExecutableResponse) {
+  ExecCtx exec_ctx;
+  char* cached_response_contents =
+      get_pluggable_auth_cached_executable_contents(
+          gpr_time_to_millis(gpr_inf_future(GPR_CLOCK_REALTIME)));
+  char* cached_output_file_filename =
+      write_file(pluggable_auth_file_path_prefix, cached_response_contents);
+  auto credential_source =
+      get_valid_pluggable_auth_credential_source_with_output_file(
+          "invalid executable", cached_output_file_filename);
+  TestExternalAccountCredentials::ServiceAccountImpersonation
+      service_account_impersonation;
+  service_account_impersonation.token_lifetime_seconds = 3600;
+  ExternalAccountCredentials::Options options = {
+      "external_account",                 // type;
+      "audience",                         // audience;
+      "subject_token_type",               // subject_token_type;
+      "",                                 // service_account_impersonation_url;
+      service_account_impersonation,      // service_account_impersonation;
+      "https://foo.com:5555/token",       // token_url;
+      "https://foo.com:5555/token_info",  // token_info_url;
+      credential_source,                  // credential_source;
+      "quota_project_id",                 // quota_project_id;
+      "client_id",                        // client_id;
+      "client_secret",                    // client_secret;
+      "",                                 // workforce_pool_user_project;
+  };
+  grpc_error_handle error;
+  auto creds =
+      PluggableAuthExternalAccountCredentials::Create(options, {}, &error);
+  SetEnv("GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES", "1");
+  GPR_ASSERT(creds != nullptr);
+  auto state = RequestMetadataState::NewInstance(
+      absl::OkStatus(), "authorization: Bearer token_exchange_access_token");
+  HttpRequest::SetOverride(httpcli_get_should_not_be_called,
+                           external_account_creds_httpcli_post_success,
+                           httpcli_put_should_not_be_called);
+  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
+  HttpRequest::SetOverride(nullptr, nullptr, nullptr);
+  UnsetEnv("GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES");
+}
+
+TEST(CredentialsTest,
+     TestPluggableAuthSuccessWithExpiredCachedExecutableResponse) {
+  ExecCtx exec_ctx;
+  char* cached_response_contents =
+      get_pluggable_auth_cached_executable_contents(
+          gpr_time_to_millis(gpr_inf_past(GPR_CLOCK_REALTIME)));
+  char* cached_output_file_filename =
+      write_file(pluggable_auth_file_path_prefix, cached_response_contents);
+  char* executable_file_contents =
+      get_pluggable_auth_executable_file_contents_for_output_file(
+          gpr_time_to_millis(gpr_inf_future(GPR_CLOCK_REALTIME)),
+          cached_output_file_filename);
+  char* executable_file_filename =
+      write_file(pluggable_auth_file_path_prefix, executable_file_contents);
+  auto credential_source =
+      get_valid_pluggable_auth_credential_source_with_output_file(
+          executable_file_filename, cached_output_file_filename);
+  TestExternalAccountCredentials::ServiceAccountImpersonation
+      service_account_impersonation;
+  service_account_impersonation.token_lifetime_seconds = 3600;
+  ExternalAccountCredentials::Options options = {
+      "external_account",                 // type;
+      "audience",                         // audience;
+      "subject_token_type",               // subject_token_type;
+      "",                                 // service_account_impersonation_url;
+      service_account_impersonation,      // service_account_impersonation;
+      "https://foo.com:5555/token",       // token_url;
+      "https://foo.com:5555/token_info",  // token_info_url;
+      credential_source,                  // credential_source;
+      "quota_project_id",                 // quota_project_id;
+      "client_id",                        // client_id;
+      "client_secret",                    // client_secret;
+      "",                                 // workforce_pool_user_project;
+  };
+  grpc_error_handle error;
+  auto creds =
+      PluggableAuthExternalAccountCredentials::Create(options, {}, &error);
+  SetEnv("GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES", "1");
+  chmod(executable_file_filename, ALLPERMS);
+  GPR_ASSERT(creds != nullptr);
+  auto state = RequestMetadataState::NewInstance(
+      absl::OkStatus(), "authorization: Bearer token_exchange_access_token");
+  HttpRequest::SetOverride(httpcli_get_should_not_be_called,
+                           external_account_creds_httpcli_post_success,
+                           httpcli_put_should_not_be_called);
+  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
+  HttpRequest::SetOverride(nullptr, nullptr, nullptr);
+  UnsetEnv("GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES");
+}
+
+TEST(CredentialsTest,
+     TestPluggableAuthSuccessWithCachedExecutableErrorResponse) {
+  ExecCtx exec_ctx;
+  const char* cached_response_contents =
+      "{\"version\":1, \"success\":false, \"code\":\"E404\", "
+      "\"message\":\"Error message\"}";
+  char* cached_output_file_filename =
+      write_file(pluggable_auth_file_path_prefix, cached_response_contents);
+  char* executable_file_contents =
+      get_pluggable_auth_executable_file_contents_for_output_file(
+          gpr_time_to_millis(gpr_inf_future(GPR_CLOCK_REALTIME)),
+          cached_output_file_filename);
+  char* executable_file_filename =
+      write_file(pluggable_auth_file_path_prefix, executable_file_contents);
+  auto credential_source =
+      get_valid_pluggable_auth_credential_source_with_output_file(
+          executable_file_filename, cached_output_file_filename);
+  TestExternalAccountCredentials::ServiceAccountImpersonation
+      service_account_impersonation;
+  service_account_impersonation.token_lifetime_seconds = 3600;
+  ExternalAccountCredentials::Options options = {
+      "external_account",                 // type;
+      "audience",                         // audience;
+      "subject_token_type",               // subject_token_type;
+      "",                                 // service_account_impersonation_url;
+      service_account_impersonation,      // service_account_impersonation;
+      "https://foo.com:5555/token",       // token_url;
+      "https://foo.com:5555/token_info",  // token_info_url;
+      credential_source,                  // credential_source;
+      "quota_project_id",                 // quota_project_id;
+      "client_id",                        // client_id;
+      "client_secret",                    // client_secret;
+      "",                                 // workforce_pool_user_project;
+  };
+  grpc_error_handle error;
+  auto creds =
+      PluggableAuthExternalAccountCredentials::Create(options, {}, &error);
+  SetEnv("GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES", "1");
+  chmod(executable_file_filename, ALLPERMS);
+  GPR_ASSERT(creds != nullptr);
+  auto state = RequestMetadataState::NewInstance(
+      absl::OkStatus(), "authorization: Bearer token_exchange_access_token");
+  HttpRequest::SetOverride(httpcli_get_should_not_be_called,
+                           external_account_creds_httpcli_post_success,
+                           httpcli_put_should_not_be_called);
+  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
+  HttpRequest::SetOverride(nullptr, nullptr, nullptr);
+  UnsetEnv("GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES");
+}
+
+TEST(CredentialsTest,
+     TestPluggableAuthSuccessWithBlankCachedExecutableOutputFile) {
+  ExecCtx exec_ctx;
+  const char* cached_response_contents = "";
+  char* cached_output_file_filename =
+      write_file(pluggable_auth_file_path_prefix, cached_response_contents);
+  char* executable_file_contents =
+      get_pluggable_auth_executable_file_contents_for_output_file(
+          gpr_time_to_millis(gpr_inf_future(GPR_CLOCK_REALTIME)),
+          cached_output_file_filename);
+  char* executable_file_filename =
+      write_file(pluggable_auth_file_path_prefix, executable_file_contents);
+  auto credential_source =
+      get_valid_pluggable_auth_credential_source_with_output_file(
+          executable_file_filename, cached_output_file_filename);
+  TestExternalAccountCredentials::ServiceAccountImpersonation
+      service_account_impersonation;
+  service_account_impersonation.token_lifetime_seconds = 3600;
+  ExternalAccountCredentials::Options options = {
+      "external_account",                 // type;
+      "audience",                         // audience;
+      "subject_token_type",               // subject_token_type;
+      "",                                 // service_account_impersonation_url;
+      service_account_impersonation,      // service_account_impersonation;
+      "https://foo.com:5555/token",       // token_url;
+      "https://foo.com:5555/token_info",  // token_info_url;
+      credential_source,                  // credential_source;
+      "quota_project_id",                 // quota_project_id;
+      "client_id",                        // client_id;
+      "client_secret",                    // client_secret;
+      "",                                 // workforce_pool_user_project;
+  };
+  grpc_error_handle error;
+  auto creds =
+      PluggableAuthExternalAccountCredentials::Create(options, {}, &error);
+  SetEnv("GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES", "1");
+  chmod(executable_file_filename, ALLPERMS);
+  GPR_ASSERT(creds != nullptr);
+  auto state = RequestMetadataState::NewInstance(
+      absl::OkStatus(), "authorization: Bearer token_exchange_access_token");
+  HttpRequest::SetOverride(httpcli_get_should_not_be_called,
+                           external_account_creds_httpcli_post_success,
+                           httpcli_put_should_not_be_called);
+  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
+  HttpRequest::SetOverride(nullptr, nullptr, nullptr);
+  UnsetEnv("GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES");
+}
+
+TEST(CredentialsTest,
+     TestPluggableAuthFailureWithInvalidCachedOutputFileCodeNotPresent) {
+  ExecCtx exec_ctx;
+  const char* cached_response_contents = "{\"version\":1, \"success\":false}";
+  char* cached_output_file_filename =
+      write_file(pluggable_auth_file_path_prefix, cached_response_contents);
+  char* executable_file_contents =
+      get_pluggable_auth_executable_file_contents_for_output_file(
+          gpr_time_to_millis(gpr_inf_future(GPR_CLOCK_REALTIME)),
+          cached_output_file_filename);
+  char* executable_file_filename =
+      write_file(pluggable_auth_file_path_prefix, executable_file_contents);
+  auto credential_source =
+      get_valid_pluggable_auth_credential_source_with_output_file(
+          executable_file_filename, cached_output_file_filename);
+  TestExternalAccountCredentials::ServiceAccountImpersonation
+      service_account_impersonation;
+  service_account_impersonation.token_lifetime_seconds = 3600;
+  ExternalAccountCredentials::Options options = {
+      "external_account",                 // type;
+      "audience",                         // audience;
+      "subject_token_type",               // subject_token_type;
+      "",                                 // service_account_impersonation_url;
+      service_account_impersonation,      // service_account_impersonation;
+      "https://foo.com:5555/token",       // token_url;
+      "https://foo.com:5555/token_info",  // token_info_url;
+      credential_source,                  // credential_source;
+      "quota_project_id",                 // quota_project_id;
+      "client_id",                        // client_id;
+      "client_secret",                    // client_secret;
+      "",                                 // workforce_pool_user_project;
+  };
+  grpc_error_handle error;
+  auto creds =
+      PluggableAuthExternalAccountCredentials::Create(options, {}, &error);
+  SetEnv("GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES", "1");
+  chmod(executable_file_filename, ALLPERMS);
+  GPR_ASSERT(creds != nullptr);
+  error = GRPC_ERROR_CREATE(
+      "The executable response must contain the `code` field when "
+      "unsuccessful.");
+  grpc_error_handle expected_error = GRPC_ERROR_CREATE_REFERENCING(
+      "Error occurred when fetching oauth2 token.", &error, 1);
+  auto state = RequestMetadataState::NewInstance(expected_error, {});
+  HttpRequest::SetOverride(httpcli_get_should_not_be_called,
+                           httpcli_post_should_not_be_called,
+                           httpcli_put_should_not_be_called);
+  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
+  HttpRequest::SetOverride(nullptr, nullptr, nullptr);
+  UnsetEnv("GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES");
+}
+
+TEST(CredentialsTest,
+     TestPluggableAuthFailureWithInvalidCachedOutputFileMessageNotPresent) {
+  ExecCtx exec_ctx;
+  const char* cached_response_contents =
+      "{\"version\":1, \"success\":false, \"code\":\"E404\"}";
+  char* cached_output_file_filename =
+      write_file(pluggable_auth_file_path_prefix, cached_response_contents);
+  char* executable_file_contents =
+      get_pluggable_auth_executable_file_contents_for_output_file(
+          gpr_time_to_millis(gpr_inf_future(GPR_CLOCK_REALTIME)),
+          cached_output_file_filename);
+  char* executable_file_filename =
+      write_file(pluggable_auth_file_path_prefix, executable_file_contents);
+  auto credential_source =
+      get_valid_pluggable_auth_credential_source_with_output_file(
+          executable_file_filename, cached_output_file_filename);
+  TestExternalAccountCredentials::ServiceAccountImpersonation
+      service_account_impersonation;
+  service_account_impersonation.token_lifetime_seconds = 3600;
+  ExternalAccountCredentials::Options options = {
+      "external_account",                 // type;
+      "audience",                         // audience;
+      "subject_token_type",               // subject_token_type;
+      "",                                 // service_account_impersonation_url;
+      service_account_impersonation,      // service_account_impersonation;
+      "https://foo.com:5555/token",       // token_url;
+      "https://foo.com:5555/token_info",  // token_info_url;
+      credential_source,                  // credential_source;
+      "quota_project_id",                 // quota_project_id;
+      "client_id",                        // client_id;
+      "client_secret",                    // client_secret;
+      "",                                 // workforce_pool_user_project;
+  };
+  grpc_error_handle error;
+  auto creds =
+      PluggableAuthExternalAccountCredentials::Create(options, {}, &error);
+  SetEnv("GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES", "1");
+  chmod(executable_file_filename, ALLPERMS);
+  GPR_ASSERT(creds != nullptr);
+  error = GRPC_ERROR_CREATE(
+      "The executable response must contain the `message` field when "
+      "unsuccessful.");
+  grpc_error_handle expected_error = GRPC_ERROR_CREATE_REFERENCING(
+      "Error occurred when fetching oauth2 token.", &error, 1);
+  auto state = RequestMetadataState::NewInstance(expected_error, {});
+  HttpRequest::SetOverride(httpcli_get_should_not_be_called,
+                           httpcli_post_should_not_be_called,
+                           httpcli_put_should_not_be_called);
+  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
+  HttpRequest::SetOverride(nullptr, nullptr, nullptr);
+  UnsetEnv("GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES");
+}
+
+TEST(
+    CredentialsTest,
+    TestPluggableAuthFailureWithInvalidCachedOutputFileSuccessFieldNotPresent) {
+  ExecCtx exec_ctx;
+  const char* cached_response_contents =
+      "{\"version\":1, \"code\":\"E404\", \"message\":\"Error Message\"}";
+  char* cached_output_file_filename =
+      write_file(pluggable_auth_file_path_prefix, cached_response_contents);
+  char* executable_file_contents =
+      get_pluggable_auth_executable_file_contents_for_output_file(
+          gpr_time_to_millis(gpr_inf_future(GPR_CLOCK_REALTIME)),
+          cached_output_file_filename);
+  char* executable_file_filename =
+      write_file(pluggable_auth_file_path_prefix, executable_file_contents);
+  auto credential_source =
+      get_valid_pluggable_auth_credential_source_with_output_file(
+          executable_file_filename, cached_output_file_filename);
+  TestExternalAccountCredentials::ServiceAccountImpersonation
+      service_account_impersonation;
+  service_account_impersonation.token_lifetime_seconds = 3600;
+  ExternalAccountCredentials::Options options = {
+      "external_account",                 // type;
+      "audience",                         // audience;
+      "subject_token_type",               // subject_token_type;
+      "",                                 // service_account_impersonation_url;
+      service_account_impersonation,      // service_account_impersonation;
+      "https://foo.com:5555/token",       // token_url;
+      "https://foo.com:5555/token_info",  // token_info_url;
+      credential_source,                  // credential_source;
+      "quota_project_id",                 // quota_project_id;
+      "client_id",                        // client_id;
+      "client_secret",                    // client_secret;
+      "",                                 // workforce_pool_user_project;
+  };
+  grpc_error_handle error;
+  auto creds =
+      PluggableAuthExternalAccountCredentials::Create(options, {}, &error);
+  SetEnv("GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES", "1");
+  chmod(executable_file_filename, ALLPERMS);
+  GPR_ASSERT(creds != nullptr);
+  error = GRPC_ERROR_CREATE(
+      "The executable response must contain the `success` field.");
+  grpc_error_handle expected_error = GRPC_ERROR_CREATE_REFERENCING(
+      "Error occurred when fetching oauth2 token.", &error, 1);
+  auto state = RequestMetadataState::NewInstance(expected_error, {});
+  HttpRequest::SetOverride(httpcli_get_should_not_be_called,
+                           httpcli_post_should_not_be_called,
+                           httpcli_put_should_not_be_called);
+  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
+  HttpRequest::SetOverride(nullptr, nullptr, nullptr);
+  UnsetEnv("GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES");
+}
+
+TEST(
+    CredentialsTest,
+    TestPluggableAuthFailureWithInvalidCachedOutputFileVersionFieldNotPresent) {
+  ExecCtx exec_ctx;
+  const char* cached_response_contents =
+      "{\"success\":false, \"code\":\"E404\", \"message\":\"Error Message\"}";
+  char* cached_output_file_filename =
+      write_file(pluggable_auth_file_path_prefix, cached_response_contents);
+  char* executable_file_contents =
+      get_pluggable_auth_executable_file_contents_for_output_file(
+          gpr_time_to_millis(gpr_inf_future(GPR_CLOCK_REALTIME)),
+          cached_output_file_filename);
+  char* executable_file_filename =
+      write_file(pluggable_auth_file_path_prefix, executable_file_contents);
+  auto credential_source =
+      get_valid_pluggable_auth_credential_source_with_output_file(
+          executable_file_filename, cached_output_file_filename);
+  TestExternalAccountCredentials::ServiceAccountImpersonation
+      service_account_impersonation;
+  service_account_impersonation.token_lifetime_seconds = 3600;
+  ExternalAccountCredentials::Options options = {
+      "external_account",                 // type;
+      "audience",                         // audience;
+      "subject_token_type",               // subject_token_type;
+      "",                                 // service_account_impersonation_url;
+      service_account_impersonation,      // service_account_impersonation;
+      "https://foo.com:5555/token",       // token_url;
+      "https://foo.com:5555/token_info",  // token_info_url;
+      credential_source,                  // credential_source;
+      "quota_project_id",                 // quota_project_id;
+      "client_id",                        // client_id;
+      "client_secret",                    // client_secret;
+      "",                                 // workforce_pool_user_project;
+  };
+  grpc_error_handle error;
+  auto creds =
+      PluggableAuthExternalAccountCredentials::Create(options, {}, &error);
+  SetEnv("GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES", "1");
+  chmod(executable_file_filename, ALLPERMS);
+  GPR_ASSERT(creds != nullptr);
+  error = GRPC_ERROR_CREATE(
+      "The executable response must contain the `version` field.");
+  grpc_error_handle expected_error = GRPC_ERROR_CREATE_REFERENCING(
+      "Error occurred when fetching oauth2 token.", &error, 1);
+  auto state = RequestMetadataState::NewInstance(expected_error, {});
+  HttpRequest::SetOverride(httpcli_get_should_not_be_called,
+                           httpcli_post_should_not_be_called,
+                           httpcli_put_should_not_be_called);
+  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
+  HttpRequest::SetOverride(nullptr, nullptr, nullptr);
+  UnsetEnv("GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES");
+}
+
+TEST(
+    CredentialsTest,
+    TestPluggableAuthFailureWithInvalidCachedOutputFileTokenTypeFieldNotPresent) {
+  ExecCtx exec_ctx;
+  const char* cached_response_contents = "{\"version\":1, \"success\": true}";
+  char* cached_output_file_filename =
+      write_file(pluggable_auth_file_path_prefix, cached_response_contents);
+  char* executable_file_contents =
+      get_pluggable_auth_executable_file_contents_for_output_file(
+          gpr_time_to_millis(gpr_inf_future(GPR_CLOCK_REALTIME)),
+          cached_output_file_filename);
+  char* executable_file_filename =
+      write_file(pluggable_auth_file_path_prefix, executable_file_contents);
+  auto credential_source =
+      get_valid_pluggable_auth_credential_source_with_output_file(
+          executable_file_filename, cached_output_file_filename);
+  TestExternalAccountCredentials::ServiceAccountImpersonation
+      service_account_impersonation;
+  service_account_impersonation.token_lifetime_seconds = 3600;
+  ExternalAccountCredentials::Options options = {
+      "external_account",                 // type;
+      "audience",                         // audience;
+      "subject_token_type",               // subject_token_type;
+      "",                                 // service_account_impersonation_url;
+      service_account_impersonation,      // service_account_impersonation;
+      "https://foo.com:5555/token",       // token_url;
+      "https://foo.com:5555/token_info",  // token_info_url;
+      credential_source,                  // credential_source;
+      "quota_project_id",                 // quota_project_id;
+      "client_id",                        // client_id;
+      "client_secret",                    // client_secret;
+      "",                                 // workforce_pool_user_project;
+  };
+  grpc_error_handle error;
+  auto creds =
+      PluggableAuthExternalAccountCredentials::Create(options, {}, &error);
+  SetEnv("GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES", "1");
+  chmod(executable_file_filename, ALLPERMS);
+  GPR_ASSERT(creds != nullptr);
+  error = GRPC_ERROR_CREATE(
+      "The executable response must contain the `token_type` field.");
+  grpc_error_handle expected_error = GRPC_ERROR_CREATE_REFERENCING(
+      "Error occurred when fetching oauth2 token.", &error, 1);
+  auto state = RequestMetadataState::NewInstance(expected_error, {});
+  HttpRequest::SetOverride(httpcli_get_should_not_be_called,
+                           httpcli_post_should_not_be_called,
+                           httpcli_put_should_not_be_called);
+  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
+  HttpRequest::SetOverride(nullptr, nullptr, nullptr);
+  UnsetEnv("GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES");
+}
+
+TEST(
+    CredentialsTest,
+    TestPluggableAuthFailureWithInvalidCachedOutputFileExpirationTimeFieldNotPresent) {
+  ExecCtx exec_ctx;
+  const char* cached_response_contents =
+      "{\"version\":1, \"success\": true, "
+      "\"token_type\":\"urn:ietf:params:oauth:token-type:saml2\"}";
+  char* cached_output_file_filename =
+      write_file(pluggable_auth_file_path_prefix, cached_response_contents);
+  char* executable_file_contents =
+      get_pluggable_auth_executable_file_contents_for_output_file(
+          gpr_time_to_millis(gpr_inf_future(GPR_CLOCK_REALTIME)),
+          cached_output_file_filename);
+  char* executable_file_filename =
+      write_file(pluggable_auth_file_path_prefix, executable_file_contents);
+  auto credential_source =
+      get_valid_pluggable_auth_credential_source_with_output_file(
+          executable_file_filename, cached_output_file_filename);
+  TestExternalAccountCredentials::ServiceAccountImpersonation
+      service_account_impersonation;
+  service_account_impersonation.token_lifetime_seconds = 3600;
+  ExternalAccountCredentials::Options options = {
+      "external_account",                 // type;
+      "audience",                         // audience;
+      "subject_token_type",               // subject_token_type;
+      "",                                 // service_account_impersonation_url;
+      service_account_impersonation,      // service_account_impersonation;
+      "https://foo.com:5555/token",       // token_url;
+      "https://foo.com:5555/token_info",  // token_info_url;
+      credential_source,                  // credential_source;
+      "quota_project_id",                 // quota_project_id;
+      "client_id",                        // client_id;
+      "client_secret",                    // client_secret;
+      "",                                 // workforce_pool_user_project;
+  };
+  grpc_error_handle error;
+  auto creds =
+      PluggableAuthExternalAccountCredentials::Create(options, {}, &error);
+  SetEnv("GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES", "1");
+  chmod(executable_file_filename, ALLPERMS);
+  GPR_ASSERT(creds != nullptr);
+  error = GRPC_ERROR_CREATE(
+      "The executable response must contain the `expiration_time` field "
+      "for successful responses when an output_file has been specified in "
+      "the configuration.");
+  grpc_error_handle expected_error = GRPC_ERROR_CREATE_REFERENCING(
+      "Error occurred when fetching oauth2 token.", &error, 1);
+  auto state = RequestMetadataState::NewInstance(expected_error, {});
+  HttpRequest::SetOverride(httpcli_get_should_not_be_called,
+                           httpcli_post_should_not_be_called,
+                           httpcli_put_should_not_be_called);
+  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
+  HttpRequest::SetOverride(nullptr, nullptr, nullptr);
+  UnsetEnv("GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES");
+}
+
+TEST(CredentialsTest,
+     TestPluggableAuthFailureWithInvalidCachedOutputFileInvalidExpirationTime) {
+  ExecCtx exec_ctx;
+  const char* cached_response_contents =
+      "{\"version\":1, \"success\": true, "
+      "\"token_type\":\"urn:ietf:params:oauth:token-type:saml2\", "
+      "\"expiration_time\":\"abcd\"}";
+  char* cached_output_file_filename =
+      write_file(pluggable_auth_file_path_prefix, cached_response_contents);
+  char* executable_file_contents =
+      get_pluggable_auth_executable_file_contents_for_output_file(
+          gpr_time_to_millis(gpr_inf_future(GPR_CLOCK_REALTIME)),
+          cached_output_file_filename);
+  char* executable_file_filename =
+      write_file(pluggable_auth_file_path_prefix, executable_file_contents);
+  auto credential_source =
+      get_valid_pluggable_auth_credential_source_with_output_file(
+          executable_file_filename, cached_output_file_filename);
+  TestExternalAccountCredentials::ServiceAccountImpersonation
+      service_account_impersonation;
+  service_account_impersonation.token_lifetime_seconds = 3600;
+  ExternalAccountCredentials::Options options = {
+      "external_account",                 // type;
+      "audience",                         // audience;
+      "subject_token_type",               // subject_token_type;
+      "",                                 // service_account_impersonation_url;
+      service_account_impersonation,      // service_account_impersonation;
+      "https://foo.com:5555/token",       // token_url;
+      "https://foo.com:5555/token_info",  // token_info_url;
+      credential_source,                  // credential_source;
+      "quota_project_id",                 // quota_project_id;
+      "client_id",                        // client_id;
+      "client_secret",                    // client_secret;
+      "",                                 // workforce_pool_user_project;
+  };
+  grpc_error_handle error;
+  auto creds =
+      PluggableAuthExternalAccountCredentials::Create(options, {}, &error);
+  SetEnv("GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES", "1");
+  chmod(executable_file_filename, ALLPERMS);
+  GPR_ASSERT(creds != nullptr);
+  error = GRPC_ERROR_CREATE(
+      "The executable response contains an invalid value for "
+      "`expiration_time`.");
+  grpc_error_handle expected_error = GRPC_ERROR_CREATE_REFERENCING(
+      "Error occurred when fetching oauth2 token.", &error, 1);
+  auto state = RequestMetadataState::NewInstance(expected_error, {});
+  HttpRequest::SetOverride(httpcli_get_should_not_be_called,
+                           httpcli_post_should_not_be_called,
+                           httpcli_put_should_not_be_called);
+  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
+  HttpRequest::SetOverride(nullptr, nullptr, nullptr);
+  UnsetEnv("GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES");
+}
+
+TEST(CredentialsTest,
+     TestPluggableAuthFailureWithInvalidExecutableOutputInvalidTokenType) {
+  ExecCtx exec_ctx;
+  const char* executable_file_contents =
+      "#!/bin/bash\n\necho \"{\\\"version\\\": 1,\\\"success\\\": "
+      "\"true\",\\\"token_type\\\": "
+      "\\\"urn:ietf:params:oauth:token-type:saml2\\\",\\\"id_token\\\":"
+      "\\\"test_subject_token\\\"}\"";
+  char* executable_file_filename =
+      write_file(pluggable_auth_file_path_prefix, executable_file_contents);
+  auto credential_source =
+      get_valid_pluggable_auth_credential_source(executable_file_filename);
+  TestExternalAccountCredentials::ServiceAccountImpersonation
+      service_account_impersonation;
+  service_account_impersonation.token_lifetime_seconds = 3600;
+  ExternalAccountCredentials::Options options = {
+      "external_account",                 // type;
+      "audience",                         // audience;
+      "subject_token_type",               // subject_token_type;
+      "",                                 // service_account_impersonation_url;
+      service_account_impersonation,      // service_account_impersonation;
+      "https://foo.com:5555/token",       // token_url;
+      "https://foo.com:5555/token_info",  // token_info_url;
+      credential_source,                  // credential_source;
+      "quota_project_id",                 // quota_project_id;
+      "client_id",                        // client_id;
+      "client_secret",                    // client_secret;
+      "",                                 // workforce_pool_user_project;
+  };
+  grpc_error_handle error;
+  auto creds =
+      PluggableAuthExternalAccountCredentials::Create(options, {}, &error);
+  SetEnv("GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES", "1");
+  chmod(executable_file_filename, ALLPERMS);
+  GPR_ASSERT(creds != nullptr);
+  error =
+      GRPC_ERROR_CREATE("The executable response must contain a valid token.");
+  grpc_error_handle expected_error = GRPC_ERROR_CREATE_REFERENCING(
+      "Error occurred when fetching oauth2 token.", &error, 1);
+  auto state = RequestMetadataState::NewInstance(expected_error, {});
+  HttpRequest::SetOverride(httpcli_get_should_not_be_called,
+                           httpcli_post_should_not_be_called,
+                           httpcli_put_should_not_be_called);
+  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
+  HttpRequest::SetOverride(nullptr, nullptr, nullptr);
+  UnsetEnv("GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES");
+}
+
+#endif  // GPR_WINDOWS
 
 TEST(CredentialsTest, TestInsecureCredentialsCompareSuccess) {
   auto insecure_creds_1 = grpc_insecure_credentials_create();

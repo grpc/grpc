@@ -56,7 +56,6 @@ libs:
   - src/core/lib/gpr/alloc.h
   - src/core/lib/gpr/log_internal.h
   - src/core/lib/gpr/string.h
-  - src/core/lib/gpr/subprocess.h
   - src/core/lib/gpr/time_precise.h
   - src/core/lib/gpr/tmpfile.h
   - src/core/lib/gpr/useful.h
@@ -96,7 +95,6 @@ libs:
   - src/core/lib/gpr/posix/time.cc
   - src/core/lib/gpr/posix/tmpfile.cc
   - src/core/lib/gpr/string.cc
-  - src/core/lib/gpr/subprocess.cc
   - src/core/lib/gpr/sync.cc
   - src/core/lib/gpr/sync_abseil.cc
   - src/core/lib/gpr/time.cc
@@ -740,6 +738,7 @@ libs:
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
   - src/core/lib/gpr/spinlock.h
+  - src/core/lib/gpr/subprocess.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/chunked_vector.h
@@ -1547,6 +1546,8 @@ libs:
   - src/core/lib/event_engine/work_queue/basic_work_queue.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
+  - src/core/lib/gpr/subprocess_posix.cc
+  - src/core/lib/gpr/subprocess_windows.cc
   - src/core/lib/gprpp/load_file.cc
   - src/core/lib/gprpp/per_cpu.cc
   - src/core/lib/gprpp/status_helper.cc
@@ -3183,7 +3184,6 @@ libs:
   language: c++
   public_headers: []
   headers:
-  - src/core/lib/gpr/subprocess.h
   - test/core/end2end/data/ssl_test_data.h
   - test/core/util/cmdline.h
   - test/core/util/evaluate_args_test_util.h
@@ -3203,8 +3203,6 @@ libs:
   - test/cpp/util/subprocess.h
   - test/cpp/util/test_credentials_provider.h
   src:
-  - src/core/lib/gpr/subprocess_posix.cc
-  - src/core/lib/gpr/subprocess_windows.cc
   - test/core/end2end/data/client_certs.cc
   - test/core/end2end/data/server1_cert.cc
   - test/core/end2end/data/server1_key.cc
@@ -4869,7 +4867,6 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/gpr/subprocess.h
   - test/core/end2end/cq_verifier.h
   - test/core/util/cmdline.h
   - test/core/util/evaluate_args_test_util.h
@@ -4884,8 +4881,6 @@ targets:
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
   src:
-  - src/core/lib/gpr/subprocess_posix.cc
-  - src/core/lib/gpr/subprocess_windows.cc
   - test/core/bad_ssl/bad_ssl_test.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/util/cmdline.cc
@@ -4909,7 +4904,6 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/gpr/subprocess.h
   - test/core/end2end/cq_verifier.h
   - test/core/util/cmdline.h
   - test/core/util/evaluate_args_test_util.h
@@ -4924,8 +4918,6 @@ targets:
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
   src:
-  - src/core/lib/gpr/subprocess_posix.cc
-  - src/core/lib/gpr/subprocess_windows.cc
   - test/core/bad_ssl/bad_ssl_test.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/util/cmdline.cc
