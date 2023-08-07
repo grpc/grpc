@@ -16733,6 +16733,7 @@ targets:
   headers:
   - src/cpp/server/csds/csds.h
   - test/cpp/interop/rpc_behavior_lb_policy.h
+  - test/cpp/interop/xds_stats_watcher.h
   src:
   - src/proto/grpc/testing/empty.proto
   - src/proto/grpc/testing/messages.proto
@@ -16745,6 +16746,7 @@ targets:
   - src/cpp/server/csds/csds.cc
   - test/cpp/interop/rpc_behavior_lb_policy.cc
   - test/cpp/interop/xds_interop_client.cc
+  - test/cpp/interop/xds_stats_watcher.cc
   deps:
   - grpc++_reflection
   - grpcpp_channelz

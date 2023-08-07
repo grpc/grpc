@@ -29351,6 +29351,7 @@ add_executable(xds_interop_client
   src/cpp/server/csds/csds.cc
   test/cpp/interop/rpc_behavior_lb_policy.cc
   test/cpp/interop/xds_interop_client.cc
+  test/cpp/interop/xds_stats_watcher.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
