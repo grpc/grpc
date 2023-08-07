@@ -231,6 +231,7 @@ class Call : public CppImplOf<Call, grpc_call> {
   void PrepareOutgoingInitialMetadata(const grpc_op& op,
                                       grpc_metadata_batch& md);
   void NoteLastMessageFlags(uint32_t flags) {
+    gpr_log(GPR_ERROR, "NoteLastMessageFlags: %x", flags);
     test_only_last_message_flags_ = flags;
   }
   grpc_compression_algorithm incoming_compression_algorithm() const {
