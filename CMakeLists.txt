@@ -15680,7 +15680,6 @@ target_link_libraries(join_test
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::type_traits
-  absl::utility
   gpr
 )
 

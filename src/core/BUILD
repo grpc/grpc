@@ -617,6 +617,7 @@ grpc_cc_library(
         "construct_destruct",
         "poll",
         "promise_like",
+        "//:gpr",
         "//:gpr_platform",
     ],
 )
@@ -650,7 +651,6 @@ grpc_cc_library(
         "join_state",
         "map",
         "poll",
-        "promise_status",
         "//:gpr_platform",
     ],
 )
