@@ -101,6 +101,8 @@ ClientTransport::ClientTransport(
       [](std::tuple<absl::Status, absl::Status> ret) -> LoopCtl<absl::Status> {
         // If writes failed, return failure status.
         if (!(std::get<0>(ret).ok() || std::get<1>(ret).ok())) {
+          // TODO(ladynana): handle the promise endpoint write failures with
+          // closing the transport.
           return absl::InternalError("Promise endpoint writes failed.");
         }
         return Continue();
