@@ -23,7 +23,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 
-#include "src/core/lib/promise/detail/basic_join.h"
+#include "src/core/lib/promise/detail/join_state.h"
 #include "src/core/lib/promise/detail/status.h"
 #include "src/core/lib/promise/poll.h"
 
@@ -43,25 +43,7 @@ T IntoResult(absl::StatusOr<T>* status) {
 inline Empty IntoResult(absl::Status*) { return Empty{}; }
 
 // Traits object to pass to BasicJoin
-struct TryJoinTraits {
-  template <typename T>
-  using ResultType =
-      decltype(IntoResult(std::declval<absl::remove_reference_t<T>*>()));
-  template <typename T, typename F>
-  static auto OnResult(T result, F kontinue)
-      -> decltype(kontinue(IntoResult(&result))) {
-    using Result =
-        typename PollTraits<decltype(kontinue(IntoResult(&result)))>::Type;
-    if (!result.ok()) {
-      return Result(IntoStatus(&result));
-    }
-    return kontinue(IntoResult(&result));
-  }
-  template <typename T>
-  static absl::StatusOr<T> Wrap(T x) {
-    return absl::StatusOr<T>(std::move(x));
-  }
-};
+struct TryJoinTraits {};
 
 // Implementation of TryJoin combinator.
 template <typename... Promises>
