@@ -73,7 +73,7 @@ class XdsStatsWatcher {
   // Upon the completion of an RPC, we will look at the request_id, the
   // rpc_type, and the peer the RPC was sent to in order to count
   // this RPC into the right stats bin.
-  void RpcCompleted(AsyncClientCallResult* call, const std::string& peer);
+  void RpcCompleted(const AsyncClientCallResult& call, const std::string& peer);
 
   void WaitForRpcStatsResponse(LoadBalancerStatsResponse* response,
                                int timeout_sec);

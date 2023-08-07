@@ -252,6 +252,15 @@ grpc_cc_library(
     ],
 )
 
+grpc_cc_test(
+    name = "xds_stats_watcher_test",
+    srcs = [
+        "xds_stats_watcher_test.cc",
+    ],
+    external_deps = ["gtest"],
+    deps = [":xds_stats_watcher"]
+)
+
 grpc_cc_binary(
     name = "xds_interop_client",
     srcs = [

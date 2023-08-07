@@ -206,7 +206,7 @@ class TestClient {
                               metadata_hostname->second.length())
                 : call->result.simple_response.hostname();
         for (auto watcher : stats_watchers_->watchers) {
-          watcher->RpcCompleted(&call->result, hostname);
+          watcher->RpcCompleted(call->result, hostname);
         }
       }
 

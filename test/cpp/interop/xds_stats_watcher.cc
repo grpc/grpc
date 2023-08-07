@@ -22,31 +22,30 @@ namespace testing {
 XdsStatsWatcher::XdsStatsWatcher(int start_id, int end_id)
     : start_id_(start_id), end_id_(end_id), rpcs_needed_(end_id - start_id) {}
 
-void XdsStatsWatcher::RpcCompleted(AsyncClientCallResult* call,
+void XdsStatsWatcher::RpcCompleted(const AsyncClientCallResult& call,
                                    const std::string& peer) {
   // We count RPCs for global watcher or if the request_id falls into the
   // watcher's interested range of request ids.
   if ((start_id_ == 0 && end_id_ == 0) ||
-      (start_id_ <= call->saved_request_id &&
-       call->saved_request_id < end_id_)) {
+      (start_id_ <= call.saved_request_id && call.saved_request_id < end_id_)) {
     {
       std::lock_guard<std::mutex> lock(m_);
       if (peer.empty()) {
         no_remote_peer_++;
-        ++no_remote_peer_by_type_[call->rpc_type];
+        ++no_remote_peer_by_type_[call.rpc_type];
       } else {
         // RPC is counted into both per-peer bin and per-method-per-peer bin.
         rpcs_by_peer_[peer]++;
-        rpcs_by_type_[call->rpc_type][peer]++;
+        rpcs_by_type_[call.rpc_type][peer]++;
       }
       rpcs_needed_--;
       // Report accumulated stats.
       auto& stats_per_method = *accumulated_stats_.mutable_stats_per_method();
       auto& method_stat =
-          stats_per_method[ClientConfigureRequest_RpcType_Name(call->rpc_type)];
+          stats_per_method[ClientConfigureRequest_RpcType_Name(call.rpc_type)];
       auto& result = *method_stat.mutable_result();
       grpc_status_code code =
-          static_cast<grpc_status_code>(call->status.error_code());
+          static_cast<grpc_status_code>(call.status.error_code());
       auto& num_rpcs = result[code];
       ++num_rpcs;
       auto rpcs_started = method_stat.rpcs_started();
