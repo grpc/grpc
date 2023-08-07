@@ -88,7 +88,8 @@ RUN \curl -sSL https://get.rvm.io | bash -s stable
 
 # Install Ruby 2.7
 RUN apt-get update && apt-get install -y procps && apt-get clean
-RUN /bin/bash -l -c "rvm install ruby-2.7"
+# "--disable-binary" is a workaround for https://github.com/rvm/rvm/issues/4975
+RUN /bin/bash -l -c "rvm install ruby-2.7 --disable-binary"
 RUN /bin/bash -l -c "rvm use --default ruby-2.7"
 RUN /bin/bash -l -c "echo 'gem: --no-document' > ~/.gemrc"
 RUN /bin/bash -l -c "echo 'export PATH=/usr/local/rvm/bin:$PATH' >> ~/.bashrc"
@@ -120,6 +121,13 @@ RUN mkdir /var/local/jenkins
 
 # Required by XDS interop test harness.
 RUN python3 -m pip install virtualenv==16.7.9
+
+# Passwordless sudo for all users
+# Bazel docker sandbox and bazel RBE run scripts under docker
+# as a regular user, but sometimes we need to be
+# able to do something with root privileges.
+RUN apt-get update && apt-get install -y sudo && apt-get clean
+RUN echo 'ALL ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
 
 # Define the default command.
