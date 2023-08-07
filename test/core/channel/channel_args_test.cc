@@ -353,8 +353,8 @@ TEST(ChannelArgsTest, TestGetChannelArgsDebugInfo) {
 
   ChannelArgs a;
   ChannelArgs b = a.Set("integer_test", 42);
-  ChannelArgs c = b.Set("string_test", "bar");
-  ChannelArgs d = c.Set("ptr_test", ChannelArgs::Pointer(ptr, &malloc_vtable));
+  ChannelArgs c = b.Set("ptr_test", ChannelArgs::Pointer(ptr, &malloc_vtable));
+  ChannelArgs d = c.Set("string_test", "bar");
 
   std::vector<std::vector<std::string>>> channel_args = d.GetChannelArgsDebugInfo();
   EXPECT_EQ(channel_args.size(), 3);
@@ -362,7 +362,7 @@ TEST(ChannelArgsTest, TestGetChannelArgsDebugInfo) {
   EXPECT_EQ(channel_args[1].size(), 2);
   EXPECT_EQ(channel_args[2].size(), 2);
   EXPECT_EQ(channel_args[0][1],"42");
-  EXPECT_EQ(channel_args[1][1],"bar");
+  EXPECT_EQ(channel_args[2][1],"bar");
   
   ChannelArgs e = d.Set("integer_test", 92);
   channel_args = e.GetChannelArgsDebugInfo();
