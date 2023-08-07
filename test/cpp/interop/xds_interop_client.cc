@@ -69,8 +69,6 @@ ABSL_FLAG(
     "If true, XdsCredentials are used, InsecureChannelCredentials otherwise");
 
 using grpc::Channel;
-using grpc::ClientAsyncResponseReader;
-using grpc::ClientContext;
 using grpc::CompletionQueue;
 using grpc::Server;
 using grpc::ServerBuilder;
@@ -78,7 +76,6 @@ using grpc::ServerContext;
 using grpc::Status;
 using grpc::testing::AsyncClientCall;
 using grpc::testing::ClientConfigureRequest;
-using grpc::testing::ClientConfigureRequest_RpcType_Name;
 using grpc::testing::ClientConfigureResponse;
 using grpc::testing::Empty;
 using grpc::testing::LoadBalancerAccumulatedStatsRequest;
