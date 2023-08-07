@@ -127,6 +127,9 @@ class Server : public InternallyRefCounted<Server>,
 
   const ChannelArgs& channel_args() const { return channel_args_; }
   channelz::ServerNode* channelz_node() const { return channelz_node_.get(); }
+  std::vector<std::vector<std::string>> GetChannelArgsDebugInfo() const {
+    return channel_args_.GetChannelArgsDebugInfo();
+  }
 
   // Do not call this before Start(). Returns the pollsets. The
   // vector itself is immutable, but the pollsets inside are mutable. The
