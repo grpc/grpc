@@ -89,9 +89,6 @@ class GrpcApp:
     class NotFound(framework.errors.FrameworkError):
         """Requested resource not found"""
 
-        def __init__(self, message, *args, **kwargs):
-            super().__init__(message, *args, **kwargs)
-
     def __init__(self, rpc_host):
         self.rpc_host = rpc_host
         # Cache gRPC channels per port
