@@ -361,7 +361,6 @@ grpc_cc_test(
         "//:ref_counted_ptr",
         "//src/core:activity",
         "//src/core:arena",
-        "//src/core:basic_join",
         "//src/core:basic_seq",
         "//src/core:event_engine_memory_allocator",
         "//src/core:for_each",

@@ -17,6 +17,10 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdlib.h>
+
+#include <tuple>
+
 #include "absl/meta/type_traits.h"
 
 #include "src/core/lib/promise/detail/join_state.h"
@@ -70,7 +74,7 @@ promise_detail::Join<Promise...> Join(Promise... promises) {
 
 template <typename F>
 auto Join(F promise) {
-  return Map(promise, promise_detail::WrapInTuple{});
+  return Map(std::move(promise), promise_detail::WrapInTuple{});
 }
 
 }  // namespace grpc_core

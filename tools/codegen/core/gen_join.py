@@ -99,6 +99,10 @@ front_matter = """
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/gprpp/bitset.h"
+#include <grpc/support/log.h>
+#include <tuple>
+#include <type_traits>
+#include <utility>
 
 namespace grpc_core {
 namespace promise_detail {
@@ -139,6 +143,6 @@ copyright = [line[2:].rstrip() for line in copyright]
 with open("src/core/lib/promise/detail/join_state.h", "w") as f:
     put_banner([f], copyright)
     print(front_matter, file=f)
-    for n in range(2, 5):
+    for n in range(2, 10):
         print(join_state.render(n=n), file=f)
     print(end_matter, file=f)
