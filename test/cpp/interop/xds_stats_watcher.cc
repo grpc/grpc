@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <map>
-
 #include "test/cpp/interop/xds_stats_watcher.h"
+
+#include <map>
 
 namespace grpc {
 namespace testing {

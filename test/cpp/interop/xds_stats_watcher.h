@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_TEST_CPP_INTEROP_XDS_INTEROP_CLIENT_LIB_H
-#define GRPC_TEST_CPP_INTEROP_XDS_INTEROP_CLIENT_LIB_H
+#ifndef GRPC_TEST_CPP_INTEROP_XDS_STATS_WATCHER_H
+#define GRPC_TEST_CPP_INTEROP_XDS_STATS_WATCHER_H
 
 #include <atomic>
 #include <chrono>
@@ -105,4 +105,4 @@ class XdsStatsWatcher {
 }  // namespace testing
 }  // namespace grpc
 
-#endif  // GRPC_TEST_CPP_INTEROP_XDS_INTEROP_CLIENT_LIB_H
+#endif  // GRPC_TEST_CPP_INTEROP_XDS_STATS_WATCHER_H
