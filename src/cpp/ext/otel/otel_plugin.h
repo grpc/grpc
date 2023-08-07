@@ -65,6 +65,8 @@ const struct OTelPluginState& OTelPluginState();
 // Tags
 absl::string_view OTelMethodKey();
 absl::string_view OTelStatusKey();
+absl::string_view OTelTargetKey();
+absl::string_view OTelAuthorityKey();
 
 // Metrics
 absl::string_view OTelClientAttemptStartedInstrumentName();
