@@ -389,6 +389,10 @@ class ChannelArgs {
 
     std::string ToString() const;
 
+    std::vector<std::vector<std::string>> GetChannelArgsDebugInfo() const {
+      return channel_args_.GetChannelArgsDebugInfo();
+    }
+
     grpc_arg MakeCArg(const char* name) const;
 
     bool operator<(const Value& rhs) const { return rep_ < rhs.rep_; }
