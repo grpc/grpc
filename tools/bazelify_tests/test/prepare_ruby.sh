@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# make sure /usr/local/rvm is writable by ruby when running under docker as non-root
 sudo chown -R "$(id -u)" /usr/local/rvm
 
-# see https://stackoverflow.com/questions/64653051/make-usr-bin-mkdir-command-not-found-during-gem-install-nokogiri-in-ubuntu
-sudo ln -s /bin/mkdir /usr/bin/mkdir
