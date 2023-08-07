@@ -22,7 +22,7 @@ namespace testing {
 XdsStatsWatcher::XdsStatsWatcher(int start_id, int end_id)
     : start_id_(start_id), end_id_(end_id), rpcs_needed_(end_id - start_id) {}
 
-void XdsStatsWatcher::RpcCompleted(AsyncClientCall* call,
+void XdsStatsWatcher::RpcCompleted(AsyncClientCallResult* call,
                                    const std::string& peer) {
   // We count RPCs for global watcher or if the request_id falls into the
   // watcher's interested range of request ids.

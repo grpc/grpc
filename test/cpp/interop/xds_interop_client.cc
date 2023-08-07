@@ -69,12 +69,14 @@ ABSL_FLAG(
     "If true, XdsCredentials are used, InsecureChannelCredentials otherwise");
 
 using grpc::Channel;
+using grpc::ClientAsyncResponseReader;
+using grpc::ClientContext;
 using grpc::CompletionQueue;
 using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::Status;
-using grpc::testing::AsyncClientCall;
+using grpc::testing::AsyncClientCallResult;
 using grpc::testing::ClientConfigureRequest;
 using grpc::testing::ClientConfigureResponse;
 using grpc::testing::Empty;
@@ -89,6 +91,15 @@ using grpc::testing::StatsWatchers;
 using grpc::testing::TestService;
 using grpc::testing::XdsStatsWatcher;
 using grpc::testing::XdsUpdateClientConfigureService;
+
+struct AsyncClientCall {
+  ClientContext context;
+  std::unique_ptr<ClientAsyncResponseReader<Empty>> empty_response_reader;
+  std::unique_ptr<ClientAsyncResponseReader<SimpleResponse>>
+      simple_response_reader;
+
+  AsyncClientCallResult result;
+};
 
 // Whether at least one RPC has succeeded, indicating xDS resolution
 // completed.
@@ -136,13 +147,13 @@ class TestClient {
       }
     }
     call->context.set_deadline(deadline);
-    call->saved_request_id = saved_request_id;
-    call->rpc_type = ClientConfigureRequest::UNARY_CALL;
+    call->result.saved_request_id = saved_request_id;
+    call->result.rpc_type = ClientConfigureRequest::UNARY_CALL;
     call->simple_response_reader = stub_->PrepareAsyncUnaryCall(
         &call->context, SimpleRequest::default_instance(), &cq_);
     call->simple_response_reader->StartCall();
-    call->simple_response_reader->Finish(&call->simple_response, &call->status,
-                                         call);
+    call->simple_response_reader->Finish(&call->result.simple_response,
+                                         &call->result.status, call);
   }
 
   void AsyncEmptyCall(const RpcConfig& config) {
@@ -169,13 +180,13 @@ class TestClient {
       }
     }
     call->context.set_deadline(deadline);
-    call->saved_request_id = saved_request_id;
-    call->rpc_type = ClientConfigureRequest::EMPTY_CALL;
+    call->result.saved_request_id = saved_request_id;
+    call->result.rpc_type = ClientConfigureRequest::EMPTY_CALL;
     call->empty_response_reader = stub_->PrepareAsyncEmptyCall(
         &call->context, Empty::default_instance(), &cq_);
     call->empty_response_reader->StartCall();
-    call->empty_response_reader->Finish(&call->empty_response, &call->status,
-                                        call);
+    call->empty_response_reader->Finish(&call->result.empty_response,
+                                        &call->result.status, call);
   }
 
   void AsyncCompleteRpc() {
@@ -193,17 +204,17 @@ class TestClient {
             metadata_hostname != call->context.GetServerInitialMetadata().end()
                 ? std::string(metadata_hostname->second.data(),
                               metadata_hostname->second.length())
-                : call->simple_response.hostname();
+                : call->result.simple_response.hostname();
         for (auto watcher : stats_watchers_->watchers) {
-          watcher->RpcCompleted(call, hostname);
+          watcher->RpcCompleted(&call->result, hostname);
         }
       }
 
       if (!RpcStatusCheckSuccess(call)) {
         if (absl::GetFlag(FLAGS_print_response) ||
             absl::GetFlag(FLAGS_fail_on_failed_rpc)) {
-          std::cout << "RPC failed: " << call->status.error_code() << ": "
-                    << call->status.error_message() << std::endl;
+          std::cout << "RPC failed: " << call->result.status.error_code()
+                    << ": " << call->result.status.error_message() << std::endl;
         }
         if (absl::GetFlag(FLAGS_fail_on_failed_rpc) &&
             one_rpc_succeeded.load()) {
@@ -218,7 +229,7 @@ class TestClient {
                       call->context.GetServerInitialMetadata().end()
                   ? std::string(metadata_hostname->second.data(),
                                 metadata_hostname->second.length())
-                  : call->simple_response.hostname();
+                  : call->result.simple_response.hostname();
           std::cout << "Greeting: Hello world, this is " << hostname
                     << ", from " << call->context.peer() << std::endl;
         }
@@ -235,7 +246,8 @@ class TestClient {
     grpc_status_code code;
     GPR_ASSERT(grpc_status_code_from_string(
         absl::GetFlag(FLAGS_expect_status).c_str(), &code));
-    return code == static_cast<grpc_status_code>(call->status.error_code());
+    return code ==
+           static_cast<grpc_status_code>(call->result.status.error_code());
   }
 
   std::unique_ptr<TestService::Stub> stub_;

@@ -43,16 +43,12 @@ namespace testing {
 
 class XdsStatsWatcher;
 
-struct AsyncClientCall {
+struct AsyncClientCallResult {
   Empty empty_response;
   SimpleResponse simple_response;
-  ClientContext context;
   Status status;
   int saved_request_id;
   ClientConfigureRequest::RpcType rpc_type;
-  std::unique_ptr<ClientAsyncResponseReader<Empty>> empty_response_reader;
-  std::unique_ptr<ClientAsyncResponseReader<SimpleResponse>>
-      simple_response_reader;
 };
 
 struct StatsWatchers {
@@ -77,7 +73,7 @@ class XdsStatsWatcher {
   // Upon the completion of an RPC, we will look at the request_id, the
   // rpc_type, and the peer the RPC was sent to in order to count
   // this RPC into the right stats bin.
-  void RpcCompleted(AsyncClientCall* call, const std::string& peer);
+  void RpcCompleted(AsyncClientCallResult* call, const std::string& peer);
 
   void WaitForRpcStatsResponse(LoadBalancerStatsResponse* response,
                                int timeout_sec);
