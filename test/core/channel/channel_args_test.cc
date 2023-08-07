@@ -340,6 +340,40 @@ TEST(GrpcChannelArgsTest, TestServerCreateWithArgs) {
   grpc_server_destroy(s);
 }
 
+TEST(ChannelArgsTest, TestGetChannelArgsDebugInfo) {
+  const grpc_arg_pointer_vtable malloc_vtable = {
+      // copy
+      [](void* p) { return p; },
+      // destroy
+      [](void*) {},
+      // equal
+      [](void* p1, void* p2) { return QsortCompare(p1, p2); },
+  };
+  void* ptr = gpr_malloc(42);
+
+  ChannelArgs a;
+  ChannelArgs b = a.Set("integer_test", 42);
+  ChannelArgs c = b.Set("string_test", "bar");
+  ChannelArgs d = c.Set("ptr_test", ChannelArgs::Pointer(ptr, &malloc_vtable));
+
+  std::vector<std::vector<std::string>>> channel_args = d.GetChannelArgsDebugInfo();
+  EXPECT_EQ(channel_args.size(), 3);
+  EXPECT_EQ(channel_args[0].size(), 2);
+  EXPECT_EQ(channel_args[1].size(), 2);
+  EXPECT_EQ(channel_args[2].size(), 2);
+  EXPECT_EQ(channel_args[0][1],"42");
+  EXPECT_EQ(channel_args[1][1],"bar");
+  
+  ChannelArgs e = d.Set("integer_test", 92);
+  channel_args = e.GetChannelArgsDebugInfo();
+  EXPECT_EQ(channel_args.size(), 3);
+  EXPECT_EQ(channel_args[0].size(), 2);
+  EXPECT_EQ(channel_args[0][1],"92");
+
+  gpr_free(ptr);
+}
+
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(&argc, argv);

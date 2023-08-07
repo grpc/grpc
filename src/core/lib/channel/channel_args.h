@@ -556,6 +556,11 @@ class ChannelArgs {
 
   bool WantMinimalStack() const;
   std::string ToString() const;
+
+  // This function returns the current state of channel arguments.
+  // Each row in this vector will contain 2 strings
+  // 1. Channel argument name
+  // 2. Channel argument value. This could be int, pointer or string. 
   std::vector<std::vector<std::string>> GetChannelArgsDebugInfo() const;
 
  private:
