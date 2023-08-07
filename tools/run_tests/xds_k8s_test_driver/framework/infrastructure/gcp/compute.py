@@ -407,27 +407,36 @@ class ComputeV1(
         try:
             retryer(self._retry_backends_health, backend_service, pending)
         except retryers.RetryError as retry_err:
-            unhealthy_backends: str
-            unhealthy_backends = ",".join([backend.name for backend in pending])
+            unhealthy_backends: str = ",".join(
+                [backend.name for backend in pending]
+            )
 
             # Attempt to load backend health info for better debug info.
             try:
                 unhealthy = []
+                # Everything left in pending was unhealthy on the last retry.
                 for backend in pending:
-                    unhealthy.append(
-                        self.get_backend_service_backend_health(
-                            backend_service, backend
-                        )
+                    # It's possible the health status has changed since we
+                    # gave up retrying, but this should be very rare.
+                    health_status = self.get_backend_service_backend_health(
+                        backend_service,
+                        backend,
                     )
+                    unhealthy.append(health_status)
+
+                # Override the plain list of unhealthy backend name with
+                # the one showing the latest backend statuses.
                 unhealthy_backends = "\n".join(
                     [
                         self.resource_pretty_format(unhealthy_backend)
                         for unhealthy_backend in unhealthy
                     ]
                 )
-
             except Exception as e:  # noqa pylint: disable=broad-except
-                logger.debug(f"Couldn't load backend health info, {e!r}")
+                logger.debug(
+                    "Couldn't load backend health info,"
+                    f" plain list name will be printed instead. Error: {e!r}"
+                )
 
             retry_err.add_note(
                 framework.errors.FrameworkError.note_blanket_error_info_below(
