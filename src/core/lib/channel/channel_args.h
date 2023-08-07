@@ -556,6 +556,7 @@ class ChannelArgs {
 
   bool WantMinimalStack() const;
   std::string ToString() const;
+  std::vector<std::vector<std::string>> GetChannelArgsDebugInfo() const;
 
  private:
   explicit ChannelArgs(AVL<RcStringValue, Value> args);

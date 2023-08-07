@@ -1015,6 +1015,11 @@ void Server::Orphan() {
   Unref();
 }
 
+std::vector<std::vector<std::string>> Server::GetChannelArgsDebugInfo()
+const {
+  return channel_args_.GetChannelArgsDebugInfo();
+}
+
 grpc_call_error Server::ValidateServerRequest(
     grpc_completion_queue* cq_for_notification, void* tag,
     grpc_byte_buffer** optional_payload, RegisteredMethod* rm) {
