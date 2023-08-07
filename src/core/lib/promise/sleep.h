@@ -18,11 +18,11 @@
 #include <grpc/support/port_platform.h>
 
 #include <atomic>
+#include <utility>
 
 #include "absl/status/status.h"
 
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/promise/activity.h"
