@@ -38,10 +38,15 @@ class FrameworkError(Exception):
 
     @classmethod
     def note_blanket_error(cls, reason: str) -> str:
-        return (
-            f"Important!!! This is a blanket error, just indicating {reason}."
-            f" Further investigation must be done to determine the root cause."
-        )
+        return f"""
+Reason: {reason}
+{'#' * 80}
+# IMPORTANT: This is not a root cause. This is an indication that
+# _something_ -- literally _anything_ -- has gone wrong in the xDS flow.
+# It is _your_ responsibility to look through the interop client and/or
+# server logs to determine what exactly went wrong.
+{'#' * 80}
+"""
 
     @classmethod
     def note_blanket_error_info_below(
@@ -49,5 +54,5 @@ class FrameworkError(Exception):
     ) -> str:
         return (
             f"{cls.note_blanket_error(reason)}"
-            f" Please inspect the information below:\n{info_below}"
+            f"# Please inspect the information below:\n{info_below}"
         )

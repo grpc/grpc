@@ -440,8 +440,8 @@ class ComputeV1(
 
             retry_err.add_note(
                 framework.errors.FrameworkError.note_blanket_error_info_below(
-                    "one or several NEGs (Network Endpoint Groups) didn't"
-                    " report HEALTHY status within expected timeout",
+                    "One or several NEGs (Network Endpoint Groups) didn't"
+                    " report HEALTHY status within expected timeout.",
                     info_below=(
                         f"Timeout {timeout} (h:mm:ss) waiting for backend"
                         f" service '{backend_service.name}' to report all NEGs"

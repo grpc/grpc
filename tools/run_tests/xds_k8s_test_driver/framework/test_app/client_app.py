@@ -137,7 +137,7 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
             if isinstance(retry_err.exception(), self.ChannelNotFound):
                 retry_err.add_note(
                     framework.errors.FrameworkError.note_blanket_error(
-                        "the client couldn't connect to the server"
+                        "The client couldn't connect to the server."
                     )
                 )
             raise

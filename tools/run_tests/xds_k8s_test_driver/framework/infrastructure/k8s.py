@@ -417,7 +417,7 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
             retryer(self.get_service, name)
         except retryers.RetryError as retry_err:
             framework.errors.FrameworkError.note_blanket_error_info_below(
-                "a k8s service wasn't assigned a NEG (Network Endpoint Group)",
+                "A k8s service wasn't assigned a NEG (Network Endpoint Group).",
                 info_below=(
                     f"Timeout {timeout} (h:mm:ss) waiting for service {name}"
                     f" to report NEG status. Last service status:\n"
@@ -476,8 +476,8 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
             retryer(self.get_deployment, name)
         except retryers.RetryError as retry_err:
             framework.errors.FrameworkError.note_blanket_error_info_below(
-                "the deployment didn't report one or several pods available"
-                " (ready for at least minReadySeconds)",
+                "The deployment didn't report one or several pods available"
+                " (ready for at least minReadySeconds).",
                 info_below=(
                     f"Timeout {timeout} (h:mm:ss) waiting for deployment {name}"
                     f" to report {count} replicas available. Last status:\n"
@@ -505,7 +505,7 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
         except retryers.RetryError as retry_err:
             result = retry_err.result(default=[])
             framework.errors.FrameworkError.note_blanket_error_info_below(
-                "the deployment was unable to initialize one or several pods",
+                "The deployment was unable to initialize one or several pods.",
                 info_below=(
                     f"Timeout {timeout} (h:mm:ss) waiting for pod count"
                     f" {count}, got: {len(result)}. Pod statuses:\n"
@@ -557,7 +557,7 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
         except retryers.RetryError as retry_err:
             retry_err.add_note(
                 framework.errors.FrameworkError.note_blanket_error_info_below(
-                    "the pod didn't start within expected timeout",
+                    "The pod didn't start within expected timeout.",
                     info_below=(
                         f"Timeout {timeout} (h:mm:ss) waiting for pod"
                         f" {pod_name} to start. Pod status:\n"
