@@ -13,7 +13,7 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_package")
-load("//tools/bazelify_tests:build_defs.bzl", "grpc_run_tests_py_test")
+load("//tools/bazelify_tests:build_defs.bzl", "grpc_run_bazel_distribtest_test", "grpc_run_cpp_distribtest_test", "grpc_run_tests_py_test")
 load(":portability_tests.bzl", "generate_run_tests_portability_tests")
 
 licenses(["notice"])
@@ -150,10 +150,98 @@ test_suite(
     ],
 )
 
+grpc_run_cpp_distribtest_test(
+    name = "cpp_distribtest_cmake_linux",
+    size = "enormous",
+    args = ["test/distrib/cpp/run_distrib_test_cmake.sh"],
+    docker_image_version = "tools/dockerfile/distribtest/cpp_debian10_x64.current_version",
+)
+
+grpc_run_cpp_distribtest_test(
+    name = "cpp_distribtest_cmake_as_submodule_linux",
+    size = "enormous",
+    args = ["test/distrib/cpp/run_distrib_test_cmake_as_submodule.sh"],
+    docker_image_version = "tools/dockerfile/distribtest/cpp_debian10_x64.current_version",
+)
+
+grpc_run_cpp_distribtest_test(
+    name = "cpp_distribtest_cmake_as_externalproject_linux",
+    size = "enormous",
+    args = ["test/distrib/cpp/run_distrib_test_cmake_as_externalproject.sh"],
+    docker_image_version = "tools/dockerfile/distribtest/cpp_debian10_x64.current_version",
+)
+
+grpc_run_cpp_distribtest_test(
+    name = "cpp_distribtest_cmake_fetchcontent_linux",
+    size = "enormous",
+    args = ["test/distrib/cpp/run_distrib_test_cmake_fetchcontent.sh"],
+    docker_image_version = "tools/dockerfile/distribtest/cpp_debian10_x64.current_version",
+)
+
+grpc_run_cpp_distribtest_test(
+    name = "cpp_distribtest_cmake_module_install_linux",
+    size = "enormous",
+    args = ["test/distrib/cpp/run_distrib_test_cmake_module_install.sh"],
+    docker_image_version = "tools/dockerfile/distribtest/cpp_debian10_x64.current_version",
+)
+
+grpc_run_cpp_distribtest_test(
+    name = "cpp_distribtest_cmake_pkgconfig_linux",
+    size = "enormous",
+    args = ["test/distrib/cpp/run_distrib_test_cmake_pkgconfig.sh"],
+    docker_image_version = "tools/dockerfile/distribtest/cpp_debian10_x64.current_version",
+)
+
+grpc_run_cpp_distribtest_test(
+    name = "cpp_distribtest_cmake_aarch64_cross_linux",
+    size = "enormous",
+    args = ["test/distrib/cpp/run_distrib_test_cmake_aarch64_cross.sh"],
+    docker_image_version = "tools/dockerfile/distribtest/cpp_debian10_aarch64_cross_x64.current_version",
+)
+
+test_suite(
+    name = "cpp_distribtests_linux",
+    tests = [
+        ":cpp_distribtest_cmake_aarch64_cross_linux",
+        ":cpp_distribtest_cmake_as_externalproject_linux",
+        ":cpp_distribtest_cmake_as_submodule_linux",
+        ":cpp_distribtest_cmake_fetchcontent_linux",
+        ":cpp_distribtest_cmake_linux",
+        ":cpp_distribtest_cmake_module_install_linux",
+        ":cpp_distribtest_cmake_pkgconfig_linux",
+    ],
+)
+
+# TODO: load supported versions from //bazel/supported_versions.txt
+grpc_run_bazel_distribtest_test(
+    name = "bazel_distribtest_5.4.1",
+    size = "enormous",
+    args = ["5.4.1"],
+    docker_image_version = "tools/dockerfile/test/bazel.current_version",
+)
+
+# TODO: load supported versions from //bazel/supported_versions.txt
+grpc_run_bazel_distribtest_test(
+    name = "bazel_distribtest_6.1.2",
+    size = "enormous",
+    args = ["6.1.2"],
+    docker_image_version = "tools/dockerfile/test/bazel.current_version",
+)
+
+test_suite(
+    name = "bazel_distribtests_linux",
+    tests = [
+        ":bazel_distribtest_5.4.1",
+        ":bazel_distribtest_6.1.2",
+    ],
+)
+
 test_suite(
     name = "all_tests_linux",
     tests = [
         ":basic_tests_linux",
+        ":bazel_distribtests_linux",
+        ":cpp_distribtests_linux",
         ":portability_tests_linux",
     ],
 )
