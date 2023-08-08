@@ -16514,6 +16514,7 @@ targets:
   headers:
   - src/cpp/server/csds/csds.h
   - test/cpp/interop/rpc_behavior_lb_policy.h
+  - test/cpp/interop/xds_stats_watcher.h
   src:
   - src/proto/grpc/testing/empty.proto
   - src/proto/grpc/testing/messages.proto
@@ -16526,6 +16527,7 @@ targets:
   - src/cpp/server/csds/csds.cc
   - test/cpp/interop/rpc_behavior_lb_policy.cc
   - test/cpp/interop/xds_interop_client.cc
+  - test/cpp/interop/xds_stats_watcher.cc
   deps:
   - grpc++_reflection
   - grpcpp_channelz
@@ -17077,6 +17079,32 @@ targets:
   - linux
   - posix
   - mac
+- name: xds_stats_watcher_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/cpp/server/csds/csds.h
+  - test/cpp/interop/rpc_behavior_lb_policy.h
+  - test/cpp/interop/xds_stats_watcher.h
+  src:
+  - src/proto/grpc/testing/empty.proto
+  - src/proto/grpc/testing/messages.proto
+  - src/proto/grpc/testing/test.proto
+  - src/proto/grpc/testing/xds/v3/base.proto
+  - src/proto/grpc/testing/xds/v3/config_dump.proto
+  - src/proto/grpc/testing/xds/v3/csds.proto
+  - src/proto/grpc/testing/xds/v3/percent.proto
+  - src/cpp/server/admin/admin_services.cc
+  - src/cpp/server/csds/csds.cc
+  - test/cpp/interop/rpc_behavior_lb_policy.cc
+  - test/cpp/interop/xds_stats_watcher.cc
+  - test/cpp/interop/xds_stats_watcher_test.cc
+  deps:
+  - grpc++_reflection
+  - grpcpp_channelz
+  - grpc_test_util
+  - grpc++_test_config
 - name: xds_wrr_end2end_test
   gtest: true
   build: test
