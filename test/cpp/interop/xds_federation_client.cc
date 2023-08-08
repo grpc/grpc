@@ -56,9 +56,14 @@ ABSL_FLAG(
 ABSL_FLAG(int32_t, soak_min_time_ms_between_rpcs, 0,
           "The minimum time in milliseconds between consecutive RPCs in a soak "
           "test (rpc_soak or channel_soak), useful for limiting QPS");
-ABSL_FLAG(int32_t, soak_request_size, 271828, "The request size in a soak RPC");
-ABSL_FLAG(int32_t, soak_response_size, 314159,
-          "The response size in a soak RPC");
+ABSL_FLAG(
+    int32_t, soak_request_size, 271828,
+    "The request size in a soak RPC. "
+    "The default value is set based on the interop large unary test case.");
+ABSL_FLAG(
+    int32_t, soak_response_size, 314159,
+    "The response size in a soak RPCi. "
+    "The default value is set based on the interop large unary test case.");
 ABSL_FLAG(std::string, test_case, "rpc_soak",
           "Configure different test cases. Valid options are: "
           "rpc_soak: sends --soak_iterations large_unary RPCs; "
@@ -104,7 +109,7 @@ int main(int argc, char** argv) {
             absl::GetFlag(FLAGS_soak_min_time_ms_between_rpcs),
             absl::GetFlag(FLAGS_soak_overall_timeout_seconds),
             absl::GetFlag(FLAGS_soak_request_size),
-      absl::GetFlag(FLAGS_soak_response_size));
+            absl::GetFlag(FLAGS_soak_response_size));
       } else if (test_case == "channel_soak") {
         client.DoChannelSoakTest(
             uris[i], absl::GetFlag(FLAGS_soak_iterations),
@@ -113,7 +118,7 @@ int main(int argc, char** argv) {
             absl::GetFlag(FLAGS_soak_min_time_ms_between_rpcs),
             absl::GetFlag(FLAGS_soak_overall_timeout_seconds),
             absl::GetFlag(FLAGS_soak_request_size),
-      absl::GetFlag(FLAGS_soak_response_size));
+            absl::GetFlag(FLAGS_soak_response_size));
       } else {
         gpr_log(GPR_ERROR,
                 "Invalid test case, must be either rpc_soak or channel_soak");
