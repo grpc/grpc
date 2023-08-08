@@ -59,6 +59,8 @@ const std::vector<int> response_stream_sizes = {31415, 9, 2653, 58979};
 const int kNumResponseMessages = 2000;
 const int kResponseMessageSize = 1030;
 const int kReceiveDelayMilliSeconds = 20;
+const int kLargeRequestSize = 271828;
+const int kLargeResponseSize = 314159;
 
 void NoopChecks(const InteropClientContextInspector& /*inspector*/,
                 const SimpleRequest* /*request*/,

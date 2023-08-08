@@ -88,15 +88,15 @@ class InteropClient {
                          int64_t max_acceptable_per_iteration_latency_ms,
                          int32_t soak_min_time_ms_between_rpcs,
                          int32_t overall_timeout_seconds,
-                         int32_t request_size = kLargeRequestSize,
-                         int32_t response_size = kLargeResponseSize);
+                         int32_t request_size,
+                         int32_t response_size);
   bool DoRpcSoakTest(const std::string& server_uri, int32_t soak_iterations,
                      int32_t max_failures,
                      int64_t max_acceptable_per_iteration_latency_ms,
                      int32_t soak_min_time_ms_between_rpcs,
                      int32_t overall_timeout_seconds,
-                     int32_t request_size = kLargeRequestSize,
-                     int32_t response_size = kLargeResponseSize);
+                     int32_t request_size,
+                     int32_t response_size);
   bool DoLongLivedChannelTest(int32_t soak_iterations,
                               int32_t iteration_interval);
 
@@ -168,9 +168,6 @@ class InteropClient {
   bool do_not_abort_on_transient_failures_;
   // Load Orca metrics captured by the custom LB policy.
   LoadReportTracker load_report_tracker_;
-
-  static constexpr int kLargeRequestSize = 271828;
-  static constexpr int kLargeResponseSize = 314159;
 };
 
 }  // namespace testing
