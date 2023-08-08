@@ -42,7 +42,7 @@ struct JoinTraits {
     return x;
   }
   template <typename R, typename T>
-  static R EarlyReturn(T x) {
+  static R EarlyReturn(T) {
     abort();
   }
 };
