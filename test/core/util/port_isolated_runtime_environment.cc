@@ -33,6 +33,8 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
+// See the following PR for an explanation of MAX_PORT choice:
+// https://github.com/grpc/grpc/pull/34012
 #define MIN_PORT 1025
 #define MAX_PORT 4096
 
