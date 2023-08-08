@@ -59,8 +59,6 @@ const std::vector<int> response_stream_sizes = {31415, 9, 2653, 58979};
 const int kNumResponseMessages = 2000;
 const int kResponseMessageSize = 1030;
 const int kReceiveDelayMilliSeconds = 20;
-const int kLargeRequestSize = 271828;
-const int kLargeResponseSize = 314159;
 
 void NoopChecks(const InteropClientContextInspector& /*inspector*/,
                 const SimpleRequest* /*request*/,
@@ -1185,7 +1183,8 @@ bool InteropClient::DoCustomMetadata() {
 std::tuple<bool, int32_t, std::string, std::string>
 InteropClient::PerformOneSoakTestIteration(
     const bool reset_channel,
-    const int32_t max_acceptable_per_iteration_latency_ms) {
+    const int32_t max_acceptable_per_iteration_latency_ms,
+    const int32_t request_size, const int32_t response_size) {
   gpr_timespec start = gpr_now(GPR_CLOCK_MONOTONIC);
   SimpleRequest request;
   SimpleResponse response;
@@ -1194,9 +1193,9 @@ InteropClient::PerformOneSoakTestIteration(
   // debugging easier when looking at failure results.
   ClientContext context;
   InteropClientContextInspector inspector(context);
-  request.set_response_size(kLargeResponseSize);
-  std::string payload(kLargeRequestSize, '\0');
-  request.mutable_payload()->set_body(payload.c_str(), kLargeRequestSize);
+  request.set_response_size(response_size);
+  std::string payload(request_size, '\0');
+  request.mutable_payload()->set_body(payload.c_str(), request_size);
   if (reset_channel) {
     serviceStub_.ResetChannel();
   }
@@ -1222,7 +1221,8 @@ void InteropClient::PerformSoakTest(
     const int32_t soak_iterations, const int32_t max_failures,
     const int32_t max_acceptable_per_iteration_latency_ms,
     const int32_t min_time_ms_between_rpcs,
-    const int32_t overall_timeout_seconds) {
+    const int32_t overall_timeout_seconds, const int32_t request_size,
+    const int32_t response_size) {
   std::vector<std::tuple<bool, int32_t, std::string, std::string>> results;
   grpc_histogram* latencies_ms_histogram = grpc_histogram_create(
       1 /* resolution */,
@@ -1240,7 +1240,8 @@ void InteropClient::PerformSoakTest(
         gpr_now(GPR_CLOCK_MONOTONIC),
         gpr_time_from_millis(min_time_ms_between_rpcs, GPR_TIMESPAN));
     auto result = PerformOneSoakTestIteration(
-        reset_channel_per_iteration, max_acceptable_per_iteration_latency_ms);
+        reset_channel_per_iteration, max_acceptable_per_iteration_latency_ms,
+        request_size, response_size);
     bool success = std::get<0>(result);
     int32_t elapsed_ms = std::get<1>(result);
     std::string debug_string = std::get<2>(result);
@@ -1318,13 +1319,15 @@ void InteropClient::PerformSoakTest(
 bool InteropClient::DoRpcSoakTest(
     const std::string& server_uri, int32_t soak_iterations,
     int32_t max_failures, int64_t max_acceptable_per_iteration_latency_ms,
-    int32_t soak_min_time_ms_between_rpcs, int32_t overall_timeout_seconds) {
+    int32_t soak_min_time_ms_between_rpcs, int32_t overall_timeout_seconds,
+    int32_t request_size, int32_t response_size) {
   gpr_log(GPR_DEBUG, "Sending %d RPCs...", soak_iterations);
   GPR_ASSERT(soak_iterations > 0);
   PerformSoakTest(server_uri, false /* reset channel per iteration */,
                   soak_iterations, max_failures,
                   max_acceptable_per_iteration_latency_ms,
-                  soak_min_time_ms_between_rpcs, overall_timeout_seconds);
+                  soak_min_time_ms_between_rpcs, overall_timeout_seconds,
+                  request_size, response_size);
   gpr_log(GPR_DEBUG, "rpc_soak test done.");
   return true;
 }
@@ -1332,14 +1335,16 @@ bool InteropClient::DoRpcSoakTest(
 bool InteropClient::DoChannelSoakTest(
     const std::string& server_uri, int32_t soak_iterations,
     int32_t max_failures, int64_t max_acceptable_per_iteration_latency_ms,
-    int32_t soak_min_time_ms_between_rpcs, int32_t overall_timeout_seconds) {
+    int32_t soak_min_time_ms_between_rpcs, int32_t overall_timeout_seconds,
+    int32_t request_size, int32_t response_size) {
   gpr_log(GPR_DEBUG, "Sending %d RPCs, tearing down the channel each time...",
           soak_iterations);
   GPR_ASSERT(soak_iterations > 0);
   PerformSoakTest(server_uri, true /* reset channel per iteration */,
                   soak_iterations, max_failures,
                   max_acceptable_per_iteration_latency_ms,
-                  soak_min_time_ms_between_rpcs, overall_timeout_seconds);
+                  soak_min_time_ms_between_rpcs, overall_timeout_seconds,
+                  request_size, response_size);
   gpr_log(GPR_DEBUG, "channel_soak test done.");
   return true;
 }
