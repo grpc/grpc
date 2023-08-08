@@ -2777,7 +2777,6 @@ libs:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   - test/cpp/microbenchmarks/fullstack_context_mutators.h
   - test/cpp/microbenchmarks/fullstack_fixtures.h
@@ -2796,8 +2795,6 @@ libs:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   - test/cpp/microbenchmarks/helpers.cc
   deps:
@@ -3186,6 +3183,7 @@ libs:
   language: c++
   public_headers: []
   headers:
+  - src/core/lib/gpr/subprocess.h
   - test/core/end2end/data/ssl_test_data.h
   - test/core/util/cmdline.h
   - test/core/util/evaluate_args_test_util.h
@@ -3198,7 +3196,6 @@ libs:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   - test/cpp/util/byte_buffer_proto_helper.h
   - test/cpp/util/create_test_channel.h
@@ -3206,6 +3203,8 @@ libs:
   - test/cpp/util/subprocess.h
   - test/cpp/util/test_credentials_provider.h
   src:
+  - src/core/lib/gpr/subprocess_posix.cc
+  - src/core/lib/gpr/subprocess_windows.cc
   - test/core/end2end/data/client_certs.cc
   - test/core/end2end/data/server1_cert.cc
   - test/core/end2end/data/server1_key.cc
@@ -3219,8 +3218,6 @@ libs:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   - test/cpp/util/byte_buffer_proto_helper.cc
   - test/cpp/util/create_test_channel.cc
@@ -4204,7 +4201,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/iomgr/fd_conservation_posix_test.cc
@@ -4217,8 +4213,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -4280,7 +4274,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/iomgr/timer_list_test.cc
@@ -4293,8 +4286,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -4355,6 +4346,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/lib/gpr/subprocess.h
   - test/core/util/cmdline.h
   - test/core/util/evaluate_args_test_util.h
   - test/core/util/fuzzer_util.h
@@ -4366,12 +4358,13 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   - test/cpp/util/byte_buffer_proto_helper.h
   - test/cpp/util/string_ref_helper.h
   - test/cpp/util/subprocess.h
   src:
+  - src/core/lib/gpr/subprocess_posix.cc
+  - src/core/lib/gpr/subprocess_windows.cc
   - test/core/util/cmdline.cc
   - test/core/util/fuzzer_util.cc
   - test/core/util/grpc_profiler.cc
@@ -4381,8 +4374,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   - test/cpp/naming/address_sorting_test.cc
   - test/cpp/util/byte_buffer_proto_helper.cc
@@ -4430,7 +4421,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/util/cmdline.cc
@@ -4442,8 +4432,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   - test/cpp/common/alarm_test.cc
   deps:
@@ -4589,7 +4577,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/security/alts_security_connector_test.cc
@@ -4602,8 +4589,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -4702,7 +4687,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/security/auth_context_test.cc
@@ -4715,8 +4699,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -4747,7 +4729,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/security/authorization_matchers_test.cc
@@ -4760,8 +4741,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -4807,7 +4786,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/security/aws_request_signer_test.cc
@@ -4820,8 +4798,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -4896,6 +4872,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/lib/gpr/subprocess.h
   - test/core/end2end/cq_verifier.h
   - test/core/util/cmdline.h
   - test/core/util/evaluate_args_test_util.h
@@ -4908,9 +4885,10 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
+  - src/core/lib/gpr/subprocess_posix.cc
+  - src/core/lib/gpr/subprocess_windows.cc
   - test/core/bad_ssl/bad_ssl_test.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/util/cmdline.cc
@@ -4922,8 +4900,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -4936,6 +4912,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/lib/gpr/subprocess.h
   - test/core/end2end/cq_verifier.h
   - test/core/util/cmdline.h
   - test/core/util/evaluate_args_test_util.h
@@ -4948,9 +4925,10 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
+  - src/core/lib/gpr/subprocess_posix.cc
+  - src/core/lib/gpr/subprocess_windows.cc
   - test/core/bad_ssl/bad_ssl_test.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/util/cmdline.cc
@@ -4962,8 +4940,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -5237,7 +5213,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/iomgr/buffer_list_test.cc
@@ -5250,8 +5225,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -5751,7 +5724,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - src/core/ext/upb-generated/envoy/annotations/deprecation.upb.c
@@ -5853,8 +5825,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -5967,7 +5937,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/security/channel_creds_registry_test.cc
@@ -5980,8 +5949,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -6071,7 +6038,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/security/check_gcp_environment_linux_test.cc
@@ -6084,8 +6050,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -6105,7 +6069,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/security/check_gcp_environment_windows_test.cc
@@ -6118,8 +6081,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -6423,7 +6384,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/util/cmdline.cc
@@ -6436,8 +6396,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -6481,7 +6439,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/iomgr/combiner_test.cc
@@ -6494,8 +6451,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -6618,7 +6573,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/transport/connectivity_state_test.cc
@@ -6631,8 +6585,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -7128,7 +7080,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/iomgr/endpoint_pair_test.cc
@@ -7142,8 +7093,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -7187,7 +7136,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/iomgr/endpoint_tests.cc
@@ -7201,8 +7149,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -7223,7 +7169,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/transport/error_utils_test.cc
@@ -7236,8 +7181,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -7257,7 +7200,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/security/evaluate_args_test.cc
@@ -7270,8 +7212,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -7574,7 +7514,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/iomgr/fd_posix_test.cc
@@ -7587,8 +7526,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -8028,7 +7965,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/end2end/data/client_certs.cc
@@ -8045,8 +7981,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -8750,7 +8684,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/security/grpc_alts_credentials_options_test.cc
@@ -8763,8 +8696,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -8794,7 +8725,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/security/grpc_authorization_engine_test.cc
@@ -8808,8 +8738,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -8829,7 +8757,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/security/grpc_authorization_policy_provider_test.cc
@@ -8842,8 +8769,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_authorization_provider
@@ -8977,7 +8902,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/iomgr/grpc_ipv6_loopback_available_test.cc
@@ -8990,8 +8914,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -9051,7 +8973,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/security/grpc_tls_certificate_distributor_test.cc
@@ -9064,8 +8985,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -9085,7 +9004,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/security/grpc_tls_certificate_provider_test.cc
@@ -9098,8 +9016,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -9119,7 +9035,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/security/grpc_tls_certificate_verifier_test.cc
@@ -9132,8 +9047,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -9153,7 +9066,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/security/grpc_tls_credentials_options_comparator_test.cc
@@ -9166,8 +9078,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -9187,7 +9097,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/security/grpc_tls_credentials_options_test.cc
@@ -9200,8 +9109,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -9444,7 +9351,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/util/cmdline.cc
@@ -9457,8 +9363,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -9489,7 +9393,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/transport/chttp2/hpack_encoder_test.cc
@@ -9502,8 +9405,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -9524,7 +9425,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/transport/chttp2/hpack_parser_table_test.cc
@@ -9537,8 +9437,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -9559,7 +9457,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/transport/chttp2/hpack_parser_test.cc
@@ -9572,8 +9469,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -9762,7 +9657,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/security/insecure_security_connector_test.cc
@@ -9775,8 +9669,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -10038,7 +9930,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/security/json_token_test.cc
@@ -10051,8 +9942,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -10073,7 +9962,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/security/jwt_verifier_test.cc
@@ -10086,8 +9974,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -10433,7 +10319,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/matchers/matchers_test.cc
@@ -10446,8 +10331,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -10646,7 +10529,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/compression/message_compress_test.cc
@@ -10659,8 +10541,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -10690,7 +10570,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/transport/metadata_map_test.cc
@@ -10703,8 +10582,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -11109,7 +10986,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/end2end/data/client_certs.cc
@@ -11126,8 +11002,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -11267,7 +11141,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/transport/pid_controller_test.cc
@@ -11280,8 +11153,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -11301,7 +11172,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/transport/chttp2/ping_abuse_policy_test.cc
@@ -11314,8 +11184,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -11336,7 +11204,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/transport/chttp2/ping_configuration_test.cc
@@ -11349,8 +11216,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -11406,7 +11271,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/transport/chttp2/ping_rate_policy_test.cc
@@ -11419,8 +11283,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -11880,7 +11742,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/security/rbac_translator_test.cc
@@ -11893,8 +11754,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_authorization_provider
@@ -12051,7 +11910,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/iomgr/resolve_address_posix_test.cc
@@ -12064,8 +11922,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - absl/flags:parse
@@ -12093,7 +11949,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/iomgr/resolve_address_test.cc
@@ -12107,8 +11962,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -12129,7 +11982,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/iomgr/resolve_address_posix_test.cc
@@ -12142,8 +11994,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - absl/flags:parse
@@ -12171,7 +12021,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/iomgr/resolve_address_test.cc
@@ -12185,8 +12034,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -13541,7 +13388,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/iomgr/endpoint_tests.cc
@@ -13555,8 +13401,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -13576,7 +13420,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/security/security_connector_test.cc
@@ -13589,8 +13432,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -13653,7 +13494,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - src/proto/grpc/testing/echo.proto
@@ -13669,8 +13509,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   - test/cpp/server/server_builder_test.cc
   deps:
@@ -13696,7 +13534,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - src/proto/grpc/testing/echo.proto
@@ -13712,8 +13549,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   - test/cpp/server/server_builder_with_socket_mutator_test.cc
   deps:
@@ -13856,7 +13691,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - src/proto/grpc/testing/echo.proto
@@ -13872,8 +13706,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   - test/cpp/server/server_request_call_test.cc
   deps:
@@ -13983,7 +13815,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/transport/chttp2/settings_timeout_test.cc
@@ -13996,8 +13827,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -14290,7 +14119,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/iomgr/socket_utils_test.cc
@@ -14303,8 +14131,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -14349,7 +14175,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/security/ssl_credentials_test.cc
@@ -14362,8 +14187,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -14458,7 +14281,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/transport/status_conversion_test.cc
@@ -14471,8 +14293,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -14514,7 +14334,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/end2end/cq_verifier.cc
@@ -14528,8 +14347,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -14616,7 +14433,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/end2end/cq_verifier.cc
@@ -14630,8 +14446,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -14682,7 +14496,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/security/system_roots_test.cc
@@ -14695,8 +14508,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -14733,7 +14544,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/iomgr/tcp_client_posix_test.cc
@@ -14746,8 +14556,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -14786,7 +14594,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/iomgr/endpoint_tests.cc
@@ -14800,8 +14607,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -14824,7 +14629,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/iomgr/tcp_server_posix_test.cc
@@ -14837,8 +14641,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -15024,7 +14826,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/iomgr/load_file_test.cc
@@ -15037,8 +14838,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -15059,7 +14858,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/iomgr/timer_heap_test.cc
@@ -15072,8 +14870,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -15094,7 +14890,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/security/credentials_test.cc
@@ -15107,8 +14902,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -15308,7 +15101,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/transport/timeout_encoding_test.cc
@@ -15321,8 +15113,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -15389,7 +15179,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/security/tls_security_connector_test.cc
@@ -15402,8 +15191,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
@@ -16114,7 +15901,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - src/proto/grpc/testing/echo.proto
@@ -16130,8 +15916,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   - test/cpp/performance/writes_per_rpc_test.cc
   deps:
@@ -16473,7 +16257,6 @@ targets:
   - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   src:
   - test/core/security/xds_credentials_test.cc
@@ -16486,8 +16269,6 @@ targets:
   - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
