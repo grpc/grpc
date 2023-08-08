@@ -774,7 +774,6 @@ void RbacConfig::RbacPolicy::Rules::AuditLogger::JsonPostLoad(
 
 Rbac RbacConfig::RbacPolicy::Rules::TakeAsRbac() {
   Rbac rbac;
-  rbac.name = "";
   rbac.action = static_cast<Rbac::Action>(action);
   rbac.audit_condition = audit_condition;
   for (auto& p : policies) {
