@@ -67,6 +67,8 @@ _timedelta = datetime.timedelta
 RpcTypeUnaryCall = "UNARY_CALL"
 RpcTypeEmptyCall = "EMPTY_CALL"
 
+_first_error_printed: bool = False
+
 
 def _split_camel(s: str, delimiter: str = "-") -> str:
     """Turn camel case name to snake-case-like name."""
@@ -465,13 +467,24 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
         # Execute the child class provided validation logic
         self.xds_config_validate(DumpedXdsConfig(self._xds_json_config))
 
+    def _print_error_list(self, flavour, errors):
+        for test, err in errors:
+            logging.error("%s: %s" % (flavour, self.__class__.__name__))
+            logging.error("%s" % err)
+
     def run(self, result: unittest.TestResult = None) -> None:
         """Abort this test case if CSDS check is failed.
 
         This prevents the test runner to waste time on RPC distribution test,
         and yields clearer signal.
         """
+        global _first_error_printed
+
         if result.failures or result.errors:
+            if not _first_error_printed:
+                self._print_error_list("ERROR", result.errors)
+                self._print_error_list("FAIL", result.failures)
+                _first_error_printed = True
             logging.info("Aborting %s", self.__class__.__name__)
         else:
             super().run(result)
