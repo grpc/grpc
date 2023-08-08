@@ -23,7 +23,7 @@ grpc_package(
 )
 
 exports_files([
-    "grpc_run_tests_py_test.sh",
+    "grpc_run_tests_harness_test.sh",
     "grpc_run_bazel_distribtest_test.sh",
     "grpc_run_cpp_distribtest_test.sh",
 ])

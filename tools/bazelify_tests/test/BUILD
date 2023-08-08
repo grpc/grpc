@@ -13,7 +13,7 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_package")
-load("//tools/bazelify_tests:build_defs.bzl", "grpc_run_bazel_distribtest_test", "grpc_run_cpp_distribtest_test", "grpc_run_tests_py_test")
+load("//tools/bazelify_tests:build_defs.bzl", "grpc_run_bazel_distribtest_test", "grpc_run_cpp_distribtest_test", "grpc_run_tests_harness_test")
 load(":portability_tests.bzl", "generate_run_tests_portability_tests")
 
 licenses(["notice"])
@@ -23,7 +23,7 @@ grpc_package(name = "tools/bazelify_tests/test")
 generate_run_tests_portability_tests(name = "portability_tests_linux")
 
 # C/C++
-grpc_run_tests_py_test(
+grpc_run_tests_harness_test(
     name = "runtests_c_linux_dbg",
     size = "enormous",
     args = [
@@ -32,7 +32,7 @@ grpc_run_tests_py_test(
     docker_image_version = "tools/dockerfile/test/cxx_debian11_x64.current_version",
 )
 
-grpc_run_tests_py_test(
+grpc_run_tests_harness_test(
     name = "runtests_c_linux_opt",
     size = "enormous",
     args = [
@@ -41,7 +41,7 @@ grpc_run_tests_py_test(
     docker_image_version = "tools/dockerfile/test/cxx_debian11_x64.current_version",
 )
 
-grpc_run_tests_py_test(
+grpc_run_tests_harness_test(
     name = "runtests_cpp_linux_dbg_build_only",
     size = "enormous",
     args = [
@@ -50,7 +50,7 @@ grpc_run_tests_py_test(
     docker_image_version = "tools/dockerfile/test/cxx_debian11_x64.current_version",
 )
 
-grpc_run_tests_py_test(
+grpc_run_tests_harness_test(
     name = "runtests_cpp_linux_opt_build_only",
     size = "enormous",
     args = [
@@ -61,7 +61,7 @@ grpc_run_tests_py_test(
 
 # TODO(jtattermusch): Reintroduce ruby tests once they pass.
 # # Ruby
-# grpc_run_tests_py_test(
+# grpc_run_tests_harness_test(
 #     name = "runtests_ruby_linux_dbg",
 #     size = "enormous",
 #     args = [
@@ -72,7 +72,7 @@ grpc_run_tests_py_test(
 #     use_login_shell = True,  # ruby's docker image uses RVM which wierdly requires login shell
 # )
 
-# grpc_run_tests_py_test(
+# grpc_run_tests_harness_test(
 #     name = "runtests_ruby_linux_opt",
 #     size = "enormous",
 #     args = [
@@ -84,7 +84,7 @@ grpc_run_tests_py_test(
 # )
 
 # PHP
-grpc_run_tests_py_test(
+grpc_run_tests_harness_test(
     name = "runtests_php_linux_dbg",
     size = "enormous",
     args = [
@@ -93,7 +93,7 @@ grpc_run_tests_py_test(
     docker_image_version = "tools/dockerfile/test/php7_debian11_x64.current_version",
 )
 
-grpc_run_tests_py_test(
+grpc_run_tests_harness_test(
     name = "runtests_php_linux_opt",
     size = "enormous",
     args = [
@@ -104,7 +104,7 @@ grpc_run_tests_py_test(
 
 # TODO(jtattermusch): Reintroduce python tests once they pass.
 # # Python
-# grpc_run_tests_py_test(
+# grpc_run_tests_harness_test(
 #     name = "runtests_python_linux_opt",
 #     size = "enormous",
 #     args = [
@@ -114,7 +114,7 @@ grpc_run_tests_py_test(
 # )
 
 # C#
-grpc_run_tests_py_test(
+grpc_run_tests_harness_test(
     name = "runtests_csharp_linux_dbg",
     size = "enormous",
     args = [
@@ -123,7 +123,7 @@ grpc_run_tests_py_test(
     docker_image_version = "tools/dockerfile/test/csharp_debian11_x64.current_version",
 )
 
-grpc_run_tests_py_test(
+grpc_run_tests_harness_test(
     name = "runtests_csharp_linux_opt",
     size = "enormous",
     args = [

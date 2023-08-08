@@ -63,8 +63,7 @@ def _dockerized_sh_test(name, srcs = [], args = [], data = [], size = "medium", 
         **test_args
     )
 
-# TODO(jtattermusch): rename to grpc_run_tests_harness_test
-def grpc_run_tests_py_test(name, args = [], data = [], size = "medium", timeout = None, tags = [], exec_compatible_with = [], flaky = None, docker_image_version = None, use_login_shell = None, prepare_script = None, docker_run_as_root = False):
+def grpc_run_tests_harness_test(name, args = [], data = [], size = "medium", timeout = None, tags = [], exec_compatible_with = [], flaky = None, docker_image_version = None, use_login_shell = None, prepare_script = None):
     """Execute an run_tests.py-harness style test under bazel.
 
     Args:
@@ -91,7 +90,7 @@ def grpc_run_tests_py_test(name, args = [], data = [], size = "medium", timeout 
     ] + args
 
     srcs = [
-        "//tools/bazelify_tests:grpc_run_tests_py_test.sh",
+        "//tools/bazelify_tests:grpc_run_tests_harness_test.sh",
     ]
 
     env = {}
@@ -111,7 +110,7 @@ def grpc_run_tests_py_test(name, args = [], data = [], size = "medium", timeout 
     # TODO(jtattermusch): find a cleaner way to toggle ccache for builds.
     env["GRPC_BUILD_ENABLE_CCACHE"] = "true"
 
-    _dockerized_sh_test(name = name, srcs = srcs, args = args, data = data, size = size, timeout = timeout, tags = tags, exec_compatible_with = exec_compatible_with, flaky = flaky, docker_image_version = docker_image_version, env = env, docker_run_as_root = docker_run_as_root)
+    _dockerized_sh_test(name = name, srcs = srcs, args = args, data = data, size = size, timeout = timeout, tags = tags, exec_compatible_with = exec_compatible_with, flaky = flaky, docker_image_version = docker_image_version, env = env)
 
 def grpc_run_bazel_distribtest_test(name, args = [], data = [], size = "medium", timeout = None, tags = [], exec_compatible_with = [], flaky = None, docker_image_version = None):
     """Execute bazel distribtest under bazel (an entire bazel build/test will run in a container as a single bazel action)
