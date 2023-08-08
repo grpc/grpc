@@ -1302,6 +1302,7 @@ void validate_jwt_encode_and_sign_params(const grpc_auth_json_key* json_key,
 #else
   EVP_PKEY_CTX* ctx = EVP_PKEY_CTX_new(json_key->private_key, NULL);
   GPR_ASSERT(EVP_PKEY_private_check(ctx));
+  EVP_PKEY_CTX_free(ctx);
 #endif
   GPR_ASSERT(json_key->type != nullptr &&
              strcmp(json_key->type, "service_account") == 0);

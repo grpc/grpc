@@ -596,6 +596,8 @@ static EVP_PKEY* pkey_from_jwk(const Json& json, const char* kty) {
 end:
 #if OPENSSL_VERSION_NUMBER < 0x30000000L
   RSA_free(rsa);
+#else
+  EVP_PKEY_CTX_free(ctx);
 #endif
   BN_free(tmp_n);
   BN_free(tmp_e);
