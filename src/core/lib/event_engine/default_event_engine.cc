@@ -97,7 +97,8 @@ namespace {
 grpc_core::ChannelArgs EnsureEventEngineInChannelArgs(
     grpc_core::ChannelArgs args) {
   if (args.ContainsObject<EventEngine>()) return args;
-  return args.SetObject<EventEngine>(GetDefaultEventEngine());
+  grpc_core::SourceLocation location; // Init it
+  return args.SetObject<EventEngine>(GetDefaultEventEngine(), location);
 }
 }  // namespace
 

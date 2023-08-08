@@ -142,26 +142,26 @@ bool ChannelArgs::WantMinimalStack() const {
 ChannelArgs::ChannelArgs(AVL<RcStringValue, Value> args)
     : args_(std::move(args)) {}
 
-ChannelArgs ChannelArgs::Set(grpc_arg arg) const {
+ChannelArgs ChannelArgs::Set(grpc_arg arg, grpc_core::SourceLocation location) const {
   switch (arg.type) {
     case GRPC_ARG_INTEGER:
-      return Set(arg.key, arg.value.integer);
+      return Set(arg.key, arg.value.integer, location);
     case GRPC_ARG_STRING:
-      if (arg.value.string != nullptr) return Set(arg.key, arg.value.string);
-      return Set(arg.key, "");
+      if (arg.value.string != nullptr) return Set(arg.key, arg.value.string, location);
+      return Set(arg.key, "", location);
     case GRPC_ARG_POINTER:
       return Set(arg.key,
                  Pointer(arg.value.pointer.vtable->copy(arg.value.pointer.p),
-                         arg.value.pointer.vtable));
+                         arg.value.pointer.vtable), location);
   }
   GPR_UNREACHABLE_CODE(return ChannelArgs());
 }
 
-ChannelArgs ChannelArgs::FromC(const grpc_channel_args* args) {
+ChannelArgs ChannelArgs::FromC(const grpc_channel_args* args, grpc_core::SourceLocation location) { // Check
   ChannelArgs result;
   if (args != nullptr) {
     for (size_t i = 0; i < args->num_args; i++) {
-      result = result.Set(args->args[i]);
+      result = result.Set(args->args[i], location);
     }
   }
   return result;
@@ -191,32 +191,32 @@ ChannelArgs::CPtr ChannelArgs::ToC() const {
       grpc_channel_args_copy_and_add(nullptr, c_args.data(), c_args.size())));
 }
 
-ChannelArgs ChannelArgs::Set(absl::string_view name, Pointer value) const {
-  return Set(name, Value(std::move(value)));
+ChannelArgs ChannelArgs::Set(absl::string_view name, Pointer value, grpc_core::SourceLocation location) const {
+  return Set(name, Value(std::move(value), location));
 }
 
-ChannelArgs ChannelArgs::Set(absl::string_view name, int value) const {
-  return Set(name, Value(value));
+ChannelArgs ChannelArgs::Set(absl::string_view name, int value, grpc_core::SourceLocation location) const {
+  return Set(name, Value(value, location));
 }
 
 ChannelArgs ChannelArgs::Set(absl::string_view name, Value value) const {
   if (const auto* p = args_.Lookup(name)) {
     if (*p == value) return *this;  // already have this value for this key
   }
-  return ChannelArgs(args_.Add(RcStringValue(name), std::move(value)));
+  return ChannelArgs(args_.Add(RcStringValue(name), std::move(value))); // Think what to do here
 }
 
 ChannelArgs ChannelArgs::Set(absl::string_view name,
-                             absl::string_view value) const {
-  return Set(name, std::string(value));
+                             absl::string_view value, grpc_core::SourceLocation location) const {
+  return Set(name, std::string(value), location);
 }
 
-ChannelArgs ChannelArgs::Set(absl::string_view name, const char* value) const {
-  return Set(name, std::string(value));
+ChannelArgs ChannelArgs::Set(absl::string_view name, const char* value, grpc_core::SourceLocation location) const {
+  return Set(name, std::string(value), location);
 }
 
-ChannelArgs ChannelArgs::Set(absl::string_view name, std::string value) const {
-  return Set(name, Value(std::move(value)));
+ChannelArgs ChannelArgs::Set(absl::string_view name, std::string value, grpc_core::SourceLocation location) const {
+  return Set(name, Value(std::move(value), location));
 }
 
 ChannelArgs ChannelArgs::Remove(absl::string_view name) const {
@@ -651,12 +651,12 @@ grpc_arg grpc_channel_arg_pointer_create(
   return arg;
 }
 
-std::string grpc_channel_args_string(const grpc_channel_args* args) {
-  return grpc_core::ChannelArgs::FromC(args).ToString();
+std::string grpc_channel_args_string(const grpc_channel_args* args, grpc_core::SourceLocation location) {
+  return grpc_core::ChannelArgs::FromC(args, location).ToString();
 }
 
 namespace grpc_core {
-ChannelArgs ChannelArgsBuiltinPrecondition(const grpc_channel_args* src) {
+ChannelArgs ChannelArgsBuiltinPrecondition(const grpc_channel_args* src, grpc_core::SourceLocation location) {
   if (src == nullptr) return ChannelArgs();
   ChannelArgs output;
   std::map<absl::string_view, std::vector<absl::string_view>>
@@ -678,17 +678,18 @@ ChannelArgs ChannelArgsBuiltinPrecondition(const grpc_channel_args* src) {
       continue;
     }
     if (!output.Contains(key)) {
-      output = output.Set(src->args[i]);
+      output = output.Set(src->args[i], location);
     } else {
       // Traditional grpc_channel_args_find behavior was to pick the first
       // value.
       // For compatibility with existing users, we will do the same here.
     }
   }
+  // location proper
   // Concatenate the concatenated values.
   for (const auto& concatenated_value : concatenated_values) {
     output = output.Set(concatenated_value.first,
-                        absl::StrJoin(concatenated_value.second, " "));
+                        absl::StrJoin(concatenated_value.second, " "), location);
   }
   return output;
 }
