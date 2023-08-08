@@ -212,7 +212,7 @@ test_suite(
     ],
 )
 
-# TODO: load supported versions from //bazel/supported_versions.txt
+# TODO(jtattermusch): load supported versions from //bazel/supported_versions.txt
 grpc_run_bazel_distribtest_test(
     name = "bazel_distribtest_5.4.1",
     size = "enormous",
@@ -220,7 +220,7 @@ grpc_run_bazel_distribtest_test(
     docker_image_version = "tools/dockerfile/test/bazel.current_version",
 )
 
-# TODO: load supported versions from //bazel/supported_versions.txt
+# TODO(jtattermusch): load supported versions from //bazel/supported_versions.txt
 grpc_run_bazel_distribtest_test(
     name = "bazel_distribtest_6.1.2",
     size = "enormous",
