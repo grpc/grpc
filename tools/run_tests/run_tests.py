@@ -571,9 +571,9 @@ class CLanguage(object):
                     "-DgRPC_SSL_PROVIDER=package",
                 ],
             )
-        elif compiler == 'gcc10.2_openssl305':
+        elif compiler == "gcc10.2_openssl305":
             return (
-                "debian11_openssl305", 
+                "debian11_openssl305",
                 [
                     "-DgRPC_SSL_PROVIDER=package",
                 ],
