@@ -222,10 +222,12 @@ TEST(ChannelArgsTest, TestGetChannelArgsDebugInfo) {
   void* ptr = gpr_malloc(42);
   ChannelArgs channel_args_1;
   ChannelArgs channel_args_2 = channel_args_1.Set("integer_test", 42);
-  ChannelArgs channel_args_3 = channel_args_2.Set("ptr_test", ChannelArgs::Pointer(ptr, &malloc_vtable));
+  ChannelArgs channel_args_3 = channel_args_2.Set(
+    "ptr_test", ChannelArgs::Pointer(ptr, &malloc_vtable));
   ChannelArgs channel_args_4 = channel_args_3.Set("string_test", "bar");
 
-  std::vector<std::vector<std::string>>> channel_args_str = channel_args_4.GetChannelArgsDebugInfo();
+  std::vector<std::vector<std::string>> channel_args_str = 
+    channel_args_4.GetChannelArgsDebugInfo();
   EXPECT_EQ(channel_args_str.size(), 3);
   EXPECT_EQ(channel_args_str[0].size(), 2);
   EXPECT_EQ(channel_args_str[1].size(), 2);
