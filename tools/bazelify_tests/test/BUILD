@@ -150,13 +150,12 @@ test_suite(
     ],
 )
 
-# TODO(jtattermusch): Reintroduce the test once it passes.
-# grpc_run_cpp_distribtest_test(
-#     name = "cpp_distribtest_cmake_linux",
-#     size = "enormous",
-#     args = ["test/distrib/cpp/run_distrib_test_cmake.sh"],
-#     docker_image_version = "tools/dockerfile/distribtest/cpp_debian10_x64.current_version",
-# )
+grpc_run_cpp_distribtest_test(
+    name = "cpp_distribtest_cmake_linux",
+    size = "enormous",
+    args = ["test/distrib/cpp/run_distrib_test_cmake.sh"],
+    docker_image_version = "tools/dockerfile/distribtest/cpp_debian10_x64.current_version",
+)
 
 grpc_run_cpp_distribtest_test(
     name = "cpp_distribtest_cmake_as_submodule_linux",
@@ -186,13 +185,12 @@ grpc_run_cpp_distribtest_test(
     docker_image_version = "tools/dockerfile/distribtest/cpp_debian10_x64.current_version",
 )
 
-# TODO(jtattermusch): Reintroduce the test once it passes.
-# grpc_run_cpp_distribtest_test(
-#     name = "cpp_distribtest_cmake_pkgconfig_linux",
-#     size = "enormous",
-#     args = ["test/distrib/cpp/run_distrib_test_cmake_pkgconfig.sh"],
-#     docker_image_version = "tools/dockerfile/distribtest/cpp_debian10_x64.current_version",
-# )
+grpc_run_cpp_distribtest_test(
+    name = "cpp_distribtest_cmake_pkgconfig_linux",
+    size = "enormous",
+    args = ["test/distrib/cpp/run_distrib_test_cmake_pkgconfig.sh"],
+    docker_image_version = "tools/dockerfile/distribtest/cpp_debian10_x64.current_version",
+)
 
 grpc_run_cpp_distribtest_test(
     name = "cpp_distribtest_cmake_aarch64_cross_linux",
@@ -208,9 +206,9 @@ test_suite(
         ":cpp_distribtest_cmake_as_externalproject_linux",
         ":cpp_distribtest_cmake_as_submodule_linux",
         ":cpp_distribtest_cmake_fetchcontent_linux",
-        #":cpp_distribtest_cmake_linux",
+        ":cpp_distribtest_cmake_linux",
         ":cpp_distribtest_cmake_module_install_linux",
-        #":cpp_distribtest_cmake_pkgconfig_linux",
+        ":cpp_distribtest_cmake_pkgconfig_linux",
     ],
 )
 
