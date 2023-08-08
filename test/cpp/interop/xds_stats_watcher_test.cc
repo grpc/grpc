@@ -73,7 +73,7 @@ TEST(XdsStatsWatcherTest, WaitForRpcStatsResponse) {
             expected.DebugString());
 }
 
-TEST(XdsStatsWatcherTest, WaitForRpcStatsResponse_IgnoresMetadata) {
+TEST(XdsStatsWatcherTest, WaitForRpcStatsResponseIgnoresMetadata) {
   XdsStatsWatcher watcher(0, 3, {});
   // RPC had metadata - but watcher should ignore it
   watcher.RpcCompleted(BuildCallResult(0), "peer1",
