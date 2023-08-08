@@ -258,7 +258,7 @@ grpc_cc_test(
         "xds_stats_watcher_test.cc",
     ],
     external_deps = ["gtest"],
-    deps = [":xds_stats_watcher"]
+    deps = [":xds_stats_watcher"],
 )
 
 grpc_cc_binary(
