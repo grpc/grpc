@@ -179,7 +179,7 @@ struct Rbac {
 
   std::string ToString() const;
 
-  // The authorization policy name or the HTTP RBAC filter name.
+  // The authorization policy name or empty string in xDS case.
   std::string name;
 
   Action action;
