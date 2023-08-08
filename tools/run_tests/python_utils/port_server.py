@@ -48,7 +48,7 @@ if args.logfile is not None:
     sys.stdin.close()
     sys.stderr.close()
     sys.stdout.close()
-    sys.stderr = open(args.logfile, "w")
+    sys.stderr = open(args.logfile, "w", buffering=1)
     sys.stdout = sys.stderr
 
 print("port server running on port %d" % args.port)
@@ -224,6 +224,7 @@ class Handler(BaseHTTPRequestHandler):
             self.end_headers()
             p = allocate_port(self)
             self.log_message("allocated port %d" % p)
+            self.log_message("in_use=%d", len(in_use))
             self.wfile.write(str(p).encode("ascii"))
         elif self.path[0:6] == "/drop/":
             self.send_response(200)
@@ -239,6 +240,7 @@ class Handler(BaseHTTPRequestHandler):
                 k = "unknown"
             mu.release()
             self.log_message("drop %s port %d" % (k, p))
+            self.log_message("in_use=%d", len(in_use))
         elif self.path == "/version_number":
             # fetch a version string and the current process pid
             self.send_response(200)
