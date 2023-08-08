@@ -42,6 +42,7 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/transport/transport.h"
 
 extern grpc_core::TraceFlag grpc_retry_trace;
