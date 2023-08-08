@@ -36,6 +36,9 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/promise/for_each.h"
+#include "src/core/lib/promise/loop.h"
+#include "src/core/lib/promise/party.h"
 #include "src/core/lib/service_config/service_config.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
 #include "src/core/lib/uri/uri_parser.h"
@@ -139,6 +142,51 @@ const RetryMethodConfig* RetryFilter::GetRetryPolicy(
   if (svc_cfg_call_data == nullptr) return nullptr;
   return static_cast<const RetryMethodConfig*>(
       svc_cfg_call_data->GetMethodParsedConfig(service_config_parser_index_));
+}
+
+namespace {
+class MessageForwarder {
+ public:
+  void Push(MessageHandle msg) { messages_.emplace_back(std::move(msg)); }
+
+  class Listener {
+   public:
+    auto Next() {
+      return []() -> Poll<absl::optional<MessageHandle>> { abort(); };
+    }
+  };
+
+ private:
+  std::vector<MessageHandle> messages_;
+};
+}  // namespace
+
+ArenaPromise<ServerMetadataHandle> RetryFilter::MakeCallPromise(
+    CallArgs call_args, NextPromiseFactory) {
+  auto* party = static_cast<Party*>(Activity::current());
+  return Loop(
+      [this, committed = false, message_forwarder = MessageForwarder(),
+       initial_metadata = std::move(call_args.client_initial_metadata)]() {
+        CallArgs child_call_args{};
+        auto child_call = client_channel()->CreateLoadBalancedCallPromise(
+            std::move(child_call_args),
+            []() { Crash("on_commit not implemented"); }, false);
+        return Seq(
+            TryJoin(ForEach(MessageForwarder::Listener(),
+                            [](MessageHandle msg) {
+                              client_to_server_messages->Push(std::move(msg));
+                            }),
+                    Seq(child_call_receive_initial_metadata->Next(),
+                        [&committed](ServerMetadataHandle md) mutable {
+                          committed = true;
+                        }),
+                    ForEach(child_call_receive_messages,
+                            [](MessageHandle msg) {
+                              server_to_client_messages->Push(std::move(msg));
+                            }),
+                    std::move(child_call)),
+            [](ServerMetadataHandle result) {});
+      });
 }
 
 const grpc_channel_filter RetryFilter::kVtable = {
