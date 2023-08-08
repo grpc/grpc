@@ -152,7 +152,7 @@ struct Http2WindowUpdateFrame {
 
 // Type of frame was unknown (and should be ignored)
 struct Http2UnknownFrame {
-  bool operator==(const Http2UnknownFrame& other) const { return true; }
+  bool operator==(const Http2UnknownFrame&) const { return true; }
 };
 
 ///////////////////////////////////////////////////////////////////////////////
