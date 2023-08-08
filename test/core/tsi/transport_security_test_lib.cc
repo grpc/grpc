@@ -692,7 +692,6 @@ std::string GenerateSelfSignedCertificate(
 
 #if OPENSSL_VERSION_NUMBER < 0x30000000L
   RSA* rsa = RSA_new();
-  rsa = RSA_new();
   GPR_ASSERT(
       RSA_generate_key_ex(rsa, /*key_size=*/2048, bignum, /*cb=*/nullptr));
   GPR_ASSERT(EVP_PKEY_assign_RSA(key, rsa));
