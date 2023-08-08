@@ -210,7 +210,6 @@ TEST(ChannelArgsTest, GetNonOwningEventEngine) {
 }
 
 TEST(ChannelArgsTest, TestGetChannelArgsDebugInfo) {
-/*
   const grpc_arg_pointer_vtable malloc_vtable = {
       // copy
       [](void* p) { return p; },
@@ -240,7 +239,6 @@ TEST(ChannelArgsTest, TestGetChannelArgsDebugInfo) {
   EXPECT_EQ(channel_args_str[0].size(), 2);
   EXPECT_EQ(channel_args_str[0][1],"92");
   gpr_free(ptr);
-*/
 }
 
 }  // namespace grpc_core
