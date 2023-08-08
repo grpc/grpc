@@ -111,7 +111,8 @@ class ClientTransportTest : public ::testing::Test {
             std::static_pointer_cast<
                 grpc_event_engine::experimental::EventEngine>(event_engine_)),
         arena_(MakeScopedArena(initial_arena_size, &memory_allocator_)),
-        pipe_client_to_server_messages_(arena_.get()) {}
+        pipe_client_to_server_messages_(arena_.get()),
+        pipe_client_to_server_messages_second_(arena_.get()) {}
 
  private:
   MockEndpoint* control_endpoint_ptr_;
@@ -127,6 +128,8 @@ class ClientTransportTest : public ::testing::Test {
   ClientTransport client_transport_;
   ScopedArenaPtr arena_;
   Pipe<MessageHandle> pipe_client_to_server_messages_;
+  // Added for mutliple AddStream test.
+  Pipe<MessageHandle> pipe_client_to_server_messages_second_;
 
   const absl::Status kDummyErrorStatus =
       absl::ErrnoToStatus(5566, "just an error");
@@ -251,6 +254,64 @@ TEST_F(ClientTransportTest, AddOneStreamMultipleMessages) {
           [](const std::tuple<absl::Status, absl::Status>& ret) {
             EXPECT_TRUE(std::get<0>(ret).ok());
             EXPECT_TRUE(std::get<1>(ret).ok());
+            return absl::OkStatus();
+          }),
+      InlineWakeupScheduler(),
+      [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
+  // Wait until ClientTransport's internal activities to finish.
+  event_engine_->TickUntilIdle();
+  event_engine_->UnsetGlobalHooks();
+}
+
+TEST_F(ClientTransportTest, AddMultipleStreams) {
+  SliceBuffer buffer;
+  buffer.Append(Slice::FromCopiedString("test add stream."));
+  auto message = arena_->MakePooled<Message>(std::move(buffer), 0);
+  ClientMetadataHandle md;
+  auto first_stream_args = CallArgs{
+      std::move(md), ClientInitialMetadataOutstandingToken::Empty(), nullptr,
+      nullptr,       &pipe_client_to_server_messages_.receiver,      nullptr};
+  auto second_stream_args = CallArgs{
+      std::move(md), ClientInitialMetadataOutstandingToken::Empty(),   nullptr,
+      nullptr,       &pipe_client_to_server_messages_second_.receiver, nullptr};
+  StrictMock<MockFunction<void(absl::Status)>> on_done;
+  EXPECT_CALL(on_done, Call(absl::OkStatus()));
+  EXPECT_CALL(control_endpoint_, Write).Times(2).WillRepeatedly(Return(true));
+  EXPECT_CALL(data_endpoint_, Write).Times(2).WillRepeatedly(Return(true));
+  auto activity = MakeActivity(
+      Seq(
+          // Concurrently: send message into the pipe, and receive from the
+          // pipe.
+          Join(
+              // Send message to first stream pipe.
+              Seq(pipe_client_to_server_messages_.sender.Push(
+                      std::move(message)),
+                  [this] {
+                    pipe_client_to_server_messages_.sender.Close();
+                    return absl::OkStatus();
+                  }),
+              // Send message to second stream pipe.
+              Seq(pipe_client_to_server_messages_second_.sender.Push(
+                      std::move(message)),
+                  [this] {
+                    pipe_client_to_server_messages_second_.sender.Close();
+                    return absl::OkStatus();
+                  }),
+              // Receive message from first stream pipe.
+              Seq(client_transport_.AddStream(std::move(first_stream_args)),
+                  [](const absl::Status& status) { return status; }),
+              // Receive message from second stream pipe.
+              Seq(client_transport_.AddStream(std::move(second_stream_args)),
+                  [](const absl::Status& status) { return status; })),
+          // Once complete, verify successful sending and the received value.
+          [](const std::tuple<absl::Status, absl::Status, absl::Status,
+                              absl::Status>& ret) {
+            // TODO(ladynana): change these expectations to errors after the
+            // writer activity closes transport for EE failures.
+            EXPECT_TRUE(std::get<0>(ret).ok());
+            EXPECT_TRUE(std::get<1>(ret).ok());
+            EXPECT_TRUE(std::get<2>(ret).ok());
+            EXPECT_TRUE(std::get<3>(ret).ok());
             return absl::OkStatus();
           }),
       InlineWakeupScheduler(),
