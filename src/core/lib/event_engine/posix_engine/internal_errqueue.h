@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_INTERNAL_ERRQUEUE_H
-#define GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_INTERNAL_ERRQUEUE_H
+#ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_INTERNAL_ERRQUEUE_H
+#define GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_INTERNAL_ERRQUEUE_H
 
 #include <grpc/support/port_platform.h>
 
@@ -28,10 +28,10 @@
 #ifdef GRPC_LINUX_ERRQUEUE
 #include <linux/errqueue.h>  // IWYU pragma: keep
 #include <sys/socket.h>
-#endif /* GRPC_LINUX_ERRQUEUE */
+#endif  // GRPC_LINUX_ERRQUEUE
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
 #ifdef GRPC_LINUX_ERRQUEUE
 
@@ -72,31 +72,31 @@ constexpr uint32_t kTimestampingRecordingOptions =
 // Netlink attribute types used for TCP opt stats.
 enum TCPOptStats {
   TCP_NLA_PAD,
-  TCP_NLA_BUSY,           /* Time (usec) busy sending data. */
-  TCP_NLA_RWND_LIMITED,   /* Time (usec) limited by receive window. */
-  TCP_NLA_SNDBUF_LIMITED, /* Time (usec) limited by send buffer. */
-  TCP_NLA_DATA_SEGS_OUT,  /* Data pkts sent including retransmission. */
-  TCP_NLA_TOTAL_RETRANS,  /* Data pkts retransmitted. */
-  TCP_NLA_PACING_RATE,    /* Pacing rate in Bps. */
-  TCP_NLA_DELIVERY_RATE,  /* Delivery rate in Bps. */
-  TCP_NLA_SND_CWND,       /* Sending congestion window. */
-  TCP_NLA_REORDERING,     /* Reordering metric. */
-  TCP_NLA_MIN_RTT,        /* minimum RTT. */
-  TCP_NLA_RECUR_RETRANS,  /* Recurring retransmits for the current pkt. */
-  TCP_NLA_DELIVERY_RATE_APP_LMT, /* Delivery rate application limited? */
-  TCP_NLA_SNDQ_SIZE,             /* Data (bytes) pending in send queue */
-  TCP_NLA_CA_STATE,              /* ca_state of socket */
-  TCP_NLA_SND_SSTHRESH,          /* Slow start size threshold */
-  TCP_NLA_DELIVERED,             /* Data pkts delivered incl. out-of-order */
-  TCP_NLA_DELIVERED_CE,          /* Like above but only ones w/ CE marks */
-  TCP_NLA_BYTES_SENT,            /* Data bytes sent including retransmission */
-  TCP_NLA_BYTES_RETRANS,         /* Data bytes retransmitted */
-  TCP_NLA_DSACK_DUPS,            /* DSACK blocks received */
-  TCP_NLA_REORD_SEEN,            /* reordering events seen */
-  TCP_NLA_SRTT,                  /* smoothed RTT in usecs */
+  TCP_NLA_BUSY,                   // Time (usec) busy sending data.
+  TCP_NLA_RWND_LIMITED,           // Time (usec) limited by receive window.
+  TCP_NLA_SNDBUF_LIMITED,         // Time (usec) limited by send buffer.
+  TCP_NLA_DATA_SEGS_OUT,          // Data pkts sent including retransmission.
+  TCP_NLA_TOTAL_RETRANS,          // Data pkts retransmitted.
+  TCP_NLA_PACING_RATE,            // Pacing rate in Bps.
+  TCP_NLA_DELIVERY_RATE,          // Delivery rate in Bps.
+  TCP_NLA_SND_CWND,               // Sending congestion window.
+  TCP_NLA_REORDERING,             // Reordering metric.
+  TCP_NLA_MIN_RTT,                // minimum RTT.
+  TCP_NLA_RECUR_RETRANS,          // Recurring retransmits for the current pkt.
+  TCP_NLA_DELIVERY_RATE_APP_LMT,  // Delivery rate application limited?
+  TCP_NLA_SNDQ_SIZE,              // Data (bytes) pending in send queue
+  TCP_NLA_CA_STATE,               // ca_state of socket
+  TCP_NLA_SND_SSTHRESH,           // Slow start size threshold
+  TCP_NLA_DELIVERED,              // Data pkts delivered incl. out-of-order
+  TCP_NLA_DELIVERED_CE,           // Like above but only ones w/ CE marks
+  TCP_NLA_BYTES_SENT,             // Data bytes sent including retransmission
+  TCP_NLA_BYTES_RETRANS,          // Data bytes retransmitted
+  TCP_NLA_DSACK_DUPS,             // DSACK blocks received
+  TCP_NLA_REORD_SEEN,             // reordering events seen
+  TCP_NLA_SRTT,                   // smoothed RTT in usecs
 };
 
-/* tcp_info from from linux/tcp.h */
+// tcp_info from from linux/tcp.h
 struct tcp_info {
   uint8_t tcpi_state;
   uint8_t tcpi_ca_state;
@@ -115,12 +115,12 @@ struct tcp_info {
   uint32_t tcpi_lost;
   uint32_t tcpi_retrans;
   uint32_t tcpi_fackets;
-  /* Times. */
+  // Times.
   uint32_t tcpi_last_data_sent;
-  uint32_t tcpi_last_ack_sent; /* Not remembered, sorry. */
+  uint32_t tcpi_last_ack_sent;  // Not remembered, sorry.
   uint32_t tcpi_last_data_recv;
   uint32_t tcpi_last_ack_recv;
-  /* Metrics. */
+  // Metrics.
   uint32_t tcpi_pmtu;
   uint32_t tcpi_rcv_ssthresh;
   uint32_t tcpi_rtt;
@@ -134,29 +134,29 @@ struct tcp_info {
   uint32_t tcpi_total_retrans;
   uint64_t tcpi_pacing_rate;
   uint64_t tcpi_max_pacing_rate;
-  uint64_t tcpi_bytes_acked;    /* RFC4898 tcpEStatsAppHCThruOctetsAcked */
-  uint64_t tcpi_bytes_received; /* RFC4898 tcpEStatsAppHCThruOctetsReceived */
+  uint64_t tcpi_bytes_acked;     // RFC4898 tcpEStatsAppHCThruOctetsAcked
+  uint64_t tcpi_bytes_received;  // RFC4898 tcpEStatsAppHCThruOctetsReceived
 
-  uint32_t tcpi_segs_out; /* RFC4898 tcpEStatsPerfSegsOut */
-  uint32_t tcpi_segs_in;  /* RFC4898 tcpEStatsPerfSegsIn */
+  uint32_t tcpi_segs_out;  // RFC4898 tcpEStatsPerfSegsOut
+  uint32_t tcpi_segs_in;   // RFC4898 tcpEStatsPerfSegsIn
   uint32_t tcpi_notsent_bytes;
   uint32_t tcpi_min_rtt;
 
-  uint32_t tcpi_data_segs_in;  /* RFC4898 tcpEStatsDataSegsIn */
-  uint32_t tcpi_data_segs_out; /* RFC4898 tcpEStatsDataSegsOut */
+  uint32_t tcpi_data_segs_in;   // RFC4898 tcpEStatsDataSegsIn
+  uint32_t tcpi_data_segs_out;  // RFC4898 tcpEStatsDataSegsOut
 
   uint64_t tcpi_delivery_rate;
-  uint64_t tcpi_busy_time;      /* Time (usec) busy sending data */
-  uint64_t tcpi_rwnd_limited;   /* Time (usec) limited by receive window */
-  uint64_t tcpi_sndbuf_limited; /* Time (usec) limited by send buffer */
+  uint64_t tcpi_busy_time;       // Time (usec) busy sending data
+  uint64_t tcpi_rwnd_limited;    // Time (usec) limited by receive window
+  uint64_t tcpi_sndbuf_limited;  // Time (usec) limited by send buffer
 
   uint32_t tcpi_delivered;
   uint32_t tcpi_delivered_ce;
-  uint64_t tcpi_bytes_sent;    /* RFC4898 tcpEStatsPerfHCDataOctetsOut */
-  uint64_t tcpi_bytes_retrans; /* RFC4898 tcpEStatsPerfOctetsRetrans */
-  uint32_t tcpi_dsack_dups;    /* RFC4898 tcpEStatsStackDSACKDups */
-  uint32_t tcpi_reord_seen;    /* reordering events seen */
-  socklen_t length;            /* Length of struct returned by kernel */
+  uint64_t tcpi_bytes_sent;     // RFC4898 tcpEStatsPerfHCDataOctetsOut
+  uint64_t tcpi_bytes_retrans;  // RFC4898 tcpEStatsPerfOctetsRetrans
+  uint32_t tcpi_dsack_dups;     // RFC4898 tcpEStatsStackDSACKDups
+  uint32_t tcpi_reord_seen;     // reordering events seen
+  socklen_t length;             // Length of struct returned by kernel
 };
 
 #ifndef TCP_INFO
@@ -165,15 +165,15 @@ struct tcp_info {
 
 int GetSocketTcpInfo(tcp_info* info, int fd);
 
-#endif /* GRPC_LINUX_ERRQUEUE */
+#endif  // GRPC_LINUX_ERRQUEUE
 
 // Returns true if kernel is capable of supporting errqueue and timestamping.
 // Currently allowing only linux kernels above 4.0.0
 bool KernelSupportsErrqueue();
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif /* GRPC_POSIX_SOCKET_TCP */
+#endif  // GRPC_POSIX_SOCKET_TCP
 
-#endif /* GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_INTERNAL_ERRQUEUE_H */
+#endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_INTERNAL_ERRQUEUE_H

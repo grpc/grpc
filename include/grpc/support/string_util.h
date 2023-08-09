@@ -21,7 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/impl/codegen/gpr_types.h>
+#include <grpc/support/time.h>
 
 #ifdef __cplusplus
 extern "C" {

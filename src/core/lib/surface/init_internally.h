@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_SURFACE_INIT_INTERNALLY_H
-#define GRPC_CORE_LIB_SURFACE_INIT_INTERNALLY_H
+#ifndef GRPC_SRC_CORE_LIB_SURFACE_INIT_INTERNALLY_H
+#define GRPC_SRC_CORE_LIB_SURFACE_INIT_INTERNALLY_H
 
 namespace grpc_core {
 
@@ -22,7 +22,16 @@ namespace grpc_core {
 // Avoids a build dependency cycle between grpc and grpc_base (and friends).
 extern void (*InitInternally)();
 extern void (*ShutdownInternally)();
+extern bool (*IsInitializedInternally)();
+
+class KeepsGrpcInitialized {
+ public:
+  KeepsGrpcInitialized() { InitInternally(); }
+  ~KeepsGrpcInitialized() { ShutdownInternally(); }
+  KeepsGrpcInitialized(const KeepsGrpcInitialized&) = delete;
+  KeepsGrpcInitialized& operator=(const KeepsGrpcInitialized&) = delete;
+};
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_SURFACE_INIT_INTERNALLY_H
+#endif  // GRPC_SRC_CORE_LIB_SURFACE_INIT_INTERNALLY_H

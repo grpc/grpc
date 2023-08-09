@@ -1,7 +1,13 @@
 name: PR AutoFix
 on: [push]
+permissions: {}
 jobs:
   PRAutoFix:
+    permissions:
+      actions: write # to cancel/stop running workflows (styfle/cancel-workflow-action)
+      contents: write # to create branch (peter-evans/create-pull-request)
+      pull-requests: write # to create a PR (peter-evans/create-pull-request)
+
     runs-on: ubuntu-latest
     steps:
       # Cache bazel build
@@ -78,9 +84,9 @@ jobs:
           git fetch --no-tags --prune --progress --no-recurse-submodules --depth=1 upstream master
       # Run the things!
       - name: clang-tidy fixes
-        run: ${{ github.workspace }}/tools/distrib/clang_tidy_code.sh --fix --only-changed || true
+        run: ANDROID_NDK_HOME= ${{ github.workspace }}/tools/distrib/clang_tidy_code.sh --fix --only-changed || true
       - name: Run sanitize
-        run: ${{ github.workspace }}/tools/distrib/sanitize.sh
+        run: ANDROID_NDK_HOME= ${{ github.workspace }}/tools/distrib/sanitize.sh
       # Report back with a PR if things are broken
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v3

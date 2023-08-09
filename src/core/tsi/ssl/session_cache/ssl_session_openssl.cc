@@ -1,30 +1,33 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/tsi/ssl/session_cache/ssl_session.h"
 
 #ifndef OPENSSL_IS_BORINGSSL
 
 #include "absl/memory/memory.h"
+
+#include "src/core/lib/slice/slice.h"
 
 // OpenSSL invalidates SSL_SESSION on SSL destruction making it pointless
 // to cache sessions. The workaround is to serialize (relatively expensive)
@@ -49,7 +52,9 @@ class OpenSslCachedSession : public SslCachedSession {
     serialized_session_ = slice;
   }
 
-  virtual ~OpenSslCachedSession() { grpc_slice_unref(serialized_session_); }
+  virtual ~OpenSslCachedSession() {
+    grpc_core::CSliceUnref(serialized_session_);
+  }
 
   SslSessionPtr CopySession() const override {
     const unsigned char* data = GRPC_SLICE_START_PTR(serialized_session_);
@@ -69,9 +74,9 @@ class OpenSslCachedSession : public SslCachedSession {
 
 std::unique_ptr<SslCachedSession> SslCachedSession::Create(
     SslSessionPtr session) {
-  return absl::make_unique<OpenSslCachedSession>(std::move(session));
+  return std::make_unique<OpenSslCachedSession>(std::move(session));
 }
 
 }  // namespace tsi
 
-#endif /* OPENSSL_IS_BORINGSSL */
+#endif  // OPENSSL_IS_BORINGSSL

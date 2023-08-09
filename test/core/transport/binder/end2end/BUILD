@@ -68,6 +68,7 @@ grpc_cc_library(
         "//:grpc++_base",
         "//:grpc++_binder",
         "//:grpc_base",
+        "//src/core:channel_args",
     ],
 )
 

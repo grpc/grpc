@@ -6,8 +6,9 @@
     <Protobuf_Generator Condition=" '$(Protobuf_Generator)' == '' and '$(Language)' == 'C#' ">CSharp</Protobuf_Generator>
     <!-- Configuration is passing the smoke test. -->
     <Protobuf_ProjectSupported Condition=" '$(Protobuf_Generator)' != '' ">true</Protobuf_ProjectSupported>
-    <_Protobuf_MsBuildAssembly Condition=" '$(MSBuildRuntimeType)' == 'Core' ">netstandard1.3\Protobuf.MSBuild.dll</_Protobuf_MsBuildAssembly>
-    <_Protobuf_MsBuildAssembly Condition=" '$(MSBuildRuntimeType)' != 'Core' ">net45\Protobuf.MSBuild.dll</_Protobuf_MsBuildAssembly>
+    <!-- Allow assembly file to be specified externally for testing by setting property _Protobuf_MsBuildAssembly -->
+    <_Protobuf_MsBuildAssembly Condition=" '$(_Protobuf_MsBuildAssembly)' == '' and '$(MSBuildRuntimeType)' == 'Core' ">netstandard1.3\Protobuf.MSBuild.dll</_Protobuf_MsBuildAssembly>
+    <_Protobuf_MsBuildAssembly Condition=" '$(_Protobuf_MsBuildAssembly)' == '' and '$(MSBuildRuntimeType)' != 'Core' ">net45\Protobuf.MSBuild.dll</_Protobuf_MsBuildAssembly>
   </PropertyGroup>
 
   <UsingTask AssemblyFile="$(_Protobuf_MsBuildAssembly)" TaskName="Grpc.Tools.ProtoToolsPlatform" />
@@ -109,7 +110,6 @@
 
   <!-- Do proto compilation by default in a C# project. In other types, the user invoke
        Protobuf_Compile directly where required. -->
-  <!-- TODO(kkm): Do shared compile in outer multitarget project? -->
   <Target Name="_Protobuf_Compile_BeforeCsCompile"
           BeforeTargets="BeforeCompile"
           DependsOnTargets="Protobuf_Compile"
@@ -149,8 +149,12 @@
       <!-- Remove files not for compile. -->
       <Protobuf_Compile Remove="@(Protobuf_Compile)" Condition=" '%(ProtoCompile)' != 'true' " />
       <!-- Ensure invariant Source=%(Identity). -->
+      <!-- Need to Unescape otherwise errors with characters such as '@' in paths 
+          See https://github.com/grpc/grpc/issues/30746
+          and https://github.com/dotnet/msbuild/issues/8104
+      -->
       <Protobuf_Compile>
-        <Source>%(Identity)</Source>
+        <Source>$([MSBuild]::Unescape(%(Identity)))</Source>
       </Protobuf_Compile>
     </ItemGroup>
   </Target>
@@ -190,7 +194,10 @@
     <ItemGroup>
       <_Protobuf_CodeCompile Include="@(Protobuf_ExpectedOutputs->Distinct())"
          Condition=" '%(Source)' != '' and '@(Protobuf_Compile->WithMetadataValue('CompileOutputs', 'true'))' != '' " />
-      <Compile Include="@(_Protobuf_CodeCompile)" />
+      <!-- Adding Distinct() is just a precaution as the CSC compiler complains if there are 
+           duplicate source files
+      -->
+      <Compile Include="@(_Protobuf_CodeCompile->Distinct())" />
     </ItemGroup>
   </Target>
 
@@ -198,9 +205,13 @@
   <Target Name="_Protobuf_EnforceInvariants">
     <!-- Enforce Source=Identity on proto files. The 'Source' metadata is used as a common
          key to match dependencies/expected outputs in the lists for up-to-date checks. -->
+    <!--  Need to Unescape otherwise errors with characters such as '@' in paths 
+          See https://github.com/grpc/grpc/issues/30746
+          and https://github.com/dotnet/msbuild/issues/8104
+      -->
     <ItemGroup>
       <Protobuf_Compile>
-        <Source>%(Identity)</Source>
+        <Source>$([MSBuild]::Unescape(%(Identity)))</Source>
       </Protobuf_Compile>
     </ItemGroup>
 

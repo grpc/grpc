@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -31,19 +31,19 @@ static void maybe_copy_error_msg(const char* src, char** dst) {
   }
 }
 
-/* Perform input santity check. */
+// Perform input santity check.
 static grpc_status_code unseal_check(alts_crypter* c, const unsigned char* data,
                                      size_t /*data_allocated_size*/,
                                      size_t data_size, size_t* output_size,
                                      char** error_details) {
-  /* Do common input sanity check. */
+  // Do common input sanity check.
   grpc_status_code status = input_sanity_check(
       reinterpret_cast<const alts_record_protocol_crypter*>(c), data,
       output_size, error_details);
   if (status != GRPC_STATUS_OK) {
     return status;
   }
-  /* Do unseal-specific input check. */
+  // Do unseal-specific input check.
   size_t num_overhead_bytes =
       alts_crypter_num_overhead_bytes(reinterpret_cast<const alts_crypter*>(c));
   if (num_overhead_bytes > data_size) {
@@ -62,7 +62,7 @@ static grpc_status_code alts_unseal_crypter_process_in_place(
   if (status != GRPC_STATUS_OK) {
     return status;
   }
-  /* Do AEAD decryption. */
+  // Do AEAD decryption.
   alts_record_protocol_crypter* rp_crypter =
       reinterpret_cast<alts_record_protocol_crypter*>(c);
   status = gsec_aead_crypter_decrypt(
@@ -73,7 +73,7 @@ static grpc_status_code alts_unseal_crypter_process_in_place(
   if (status != GRPC_STATUS_OK) {
     return status;
   }
-  /* Increment the crypter counter. */
+  // Increment the crypter counter.
   return increment_counter(rp_crypter, error_details);
 }
 

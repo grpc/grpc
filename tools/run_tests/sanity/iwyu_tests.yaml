@@ -1,0 +1,2 @@
+- script: tools/distrib/iwyu.sh
+  cpu_cost: 1000

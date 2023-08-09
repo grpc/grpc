@@ -17,11 +17,7 @@
 # See cmake_externalproject/CMakeLists.txt for all-in-one cmake build
 # that automatically builds all the dependencies before building route_guide.
 
-cmake_minimum_required(VERSION 3.5.1)
-
-if (NOT DEFINED CMAKE_CXX_STANDARD)
-  set (CMAKE_CXX_STANDARD 14)
-endif()
+cmake_minimum_required(VERSION 3.8)
 
 if(MSVC)
   add_definitions(-D_WIN32_WINNT=0x600)
@@ -99,7 +95,7 @@ else()
 
   # Find Protobuf installation
   # Looks for protobuf-config.cmake file installed by Protobuf's cmake installation.
-  set(protobuf_MODULE_COMPATIBLE TRUE)
+  option(protobuf_MODULE_COMPATIBLE TRUE)
   find_package(Protobuf CONFIG REQUIRED)
   message(STATUS "Using protobuf ${Protobuf_VERSION}")
 

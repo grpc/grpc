@@ -31,7 +31,6 @@ static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 static void dont_log(gpr_log_func_args* /*args*/) {}
 
 DEFINE_PROTO_FUZZER(const binder_transport_fuzzer::Input& input) {
-  grpc_test_only_set_slice_hash_seed(0);
   if (squelch) gpr_set_log_function(dont_log);
   grpc_init();
   {
@@ -46,7 +45,7 @@ DEFINE_PROTO_FUZZER(const binder_transport_fuzzer::Input& input) {
     grpc_server_register_method(server, "/reg", nullptr, {}, 0);
     grpc_server_start(server);
     grpc_transport* server_transport = grpc_create_binder_transport_server(
-        absl::make_unique<grpc_binder::fuzzing::BinderForFuzzing>(
+        std::make_unique<grpc_binder::fuzzing::BinderForFuzzing>(
             input.incoming_parcels()),
         std::make_shared<
             grpc::experimental::binder::UntrustedSecurityPolicy>());
@@ -94,7 +93,7 @@ DEFINE_PROTO_FUZZER(const binder_transport_fuzzer::Input& input) {
     grpc_server_shutdown_and_notify(server, cq, tag(0xdead));
     grpc_server_cancel_all_calls(server);
     grpc_core::Timestamp deadline =
-        grpc_core::ExecCtx::Get()->Now() + grpc_core::Duration::Seconds(5);
+        grpc_core::Timestamp::Now() + grpc_core::Duration::Seconds(5);
     for (int i = 0; i <= requested_calls; i++) {
       // A single grpc_completion_queue_next might not be sufficient for getting
       // the tag from shutdown, because we might potentially get blocked by
@@ -110,7 +109,7 @@ DEFINE_PROTO_FUZZER(const binder_transport_fuzzer::Input& input) {
                                         nullptr);
         grpc_core::ExecCtx::Get()->InvalidateNow();
       } while (ev.type != GRPC_OP_COMPLETE &&
-               grpc_core::ExecCtx::Get()->Now() < deadline);
+               grpc_core::Timestamp::Now() < deadline);
       GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
     }
     grpc_completion_queue_shutdown(cq);
@@ -120,7 +119,7 @@ DEFINE_PROTO_FUZZER(const binder_transport_fuzzer::Input& input) {
                                         nullptr);
         grpc_core::ExecCtx::Get()->InvalidateNow();
       } while (ev.type != GRPC_QUEUE_SHUTDOWN &&
-               grpc_core::ExecCtx::Get()->Now() < deadline);
+               grpc_core::Timestamp::Now() < deadline);
       GPR_ASSERT(ev.type == GRPC_QUEUE_SHUTDOWN);
     }
     grpc_server_destroy(server);

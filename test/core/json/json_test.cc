@@ -18,17 +18,21 @@
 
 #include <string.h>
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
+#include <map>
+#include <string>
+#include <utility>
 
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/json/json_reader.h"
+#include "src/core/lib/json/json_writer.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
@@ -55,19 +59,20 @@ void ValidateArray(const Json::Array& actual, const Json::Array& expected) {
 void ValidateValue(const Json& actual, const Json& expected) {
   ASSERT_EQ(actual.type(), expected.type());
   switch (expected.type()) {
-    case Json::Type::JSON_NULL:
-    case Json::Type::JSON_TRUE:
-    case Json::Type::JSON_FALSE:
+    case Json::Type::kNull:
       break;
-    case Json::Type::STRING:
-    case Json::Type::NUMBER:
-      EXPECT_EQ(actual.string_value(), expected.string_value());
+    case Json::Type::kBoolean:
+      EXPECT_EQ(actual.boolean(), expected.boolean());
       break;
-    case Json::Type::OBJECT:
-      ValidateObject(actual.object_value(), expected.object_value());
+    case Json::Type::kString:
+    case Json::Type::kNumber:
+      EXPECT_EQ(actual.string(), expected.string());
       break;
-    case Json::Type::ARRAY:
-      ValidateArray(actual.array_value(), expected.array_value());
+    case Json::Type::kObject:
+      ValidateObject(actual.object(), expected.object());
+      break;
+    case Json::Type::kArray:
+      ValidateArray(actual.array(), expected.array());
       break;
   }
 }
@@ -75,46 +80,47 @@ void ValidateValue(const Json& actual, const Json& expected) {
 void RunSuccessTest(const char* input, const Json& expected,
                     const char* expected_output) {
   gpr_log(GPR_INFO, "parsing string \"%s\" - should succeed", input);
-  auto json = Json::Parse(input);
+  auto json = JsonParse(input);
   ASSERT_TRUE(json.ok()) << json.status();
   ValidateValue(*json, expected);
-  std::string output = json->Dump();
+  std::string output = JsonDump(*json);
   EXPECT_EQ(output, expected_output);
 }
 
 TEST(Json, Whitespace) {
-  RunSuccessTest(" 0 ", 0, "0");
-  RunSuccessTest(" 1 ", 1, "1");
-  RunSuccessTest(" \"    \" ", "    ", "\"    \"");
-  RunSuccessTest(" \"a\" ", "a", "\"a\"");
-  RunSuccessTest(" true ", true, "true");
+  RunSuccessTest(" 0 ", Json::FromNumber(0), "0");
+  RunSuccessTest(" 1 ", Json::FromNumber(1), "1");
+  RunSuccessTest(" \"    \" ", Json::FromString("    "), "\"    \"");
+  RunSuccessTest(" \"a\" ", Json::FromString("a"), "\"a\"");
+  RunSuccessTest(" true ", Json::FromBool(true), "true");
 }
 
 TEST(Json, Utf16) {
-  RunSuccessTest("\"\\u0020\\\\\\u0010\\u000a\\u000D\"", " \\\u0010\n\r",
-                 "\" \\\\\\u0010\\n\\r\"");
+  RunSuccessTest("\"\\u0020\\\\\\u0010\\u000a\\u000D\"",
+                 Json::FromString(" \\\u0010\n\r"), "\" \\\\\\u0010\\n\\r\"");
 }
 
 MATCHER(ContainsInvalidUtf8,
         absl::StrCat(negation ? "Contains" : "Does not contain",
                      " invalid UTF-8 characters.")) {
-  auto json = Json::Parse(arg);
+  auto json = JsonParse(arg);
   return json.status().code() == absl::StatusCode::kInvalidArgument &&
          absl::StrContains(json.status().message(), "JSON parsing failed");
 }
 
 TEST(Json, Utf8) {
-  RunSuccessTest("\"ßâñć௵⇒\"", "ßâñć௵⇒",
+  RunSuccessTest("\"ßâñć௵⇒\"", Json::FromString("ßâñć௵⇒"),
                  "\"\\u00df\\u00e2\\u00f1\\u0107\\u0bf5\\u21d2\"");
-  RunSuccessTest("\"\\u00df\\u00e2\\u00f1\\u0107\\u0bf5\\u21d2\"", "ßâñć௵⇒",
+  RunSuccessTest("\"\\u00df\\u00e2\\u00f1\\u0107\\u0bf5\\u21d2\"",
+                 Json::FromString("ßâñć௵⇒"),
                  "\"\\u00df\\u00e2\\u00f1\\u0107\\u0bf5\\u21d2\"");
   // Testing UTF-8 character "𝄞", U+11D1E.
-  RunSuccessTest("\"\xf0\x9d\x84\x9e\"", "\xf0\x9d\x84\x9e",
+  RunSuccessTest("\"\xf0\x9d\x84\x9e\"", Json::FromString("\xf0\x9d\x84\x9e"),
                  "\"\\ud834\\udd1e\"");
-  RunSuccessTest("\"\\ud834\\udd1e\"", "\xf0\x9d\x84\x9e",
+  RunSuccessTest("\"\\ud834\\udd1e\"", Json::FromString("\xf0\x9d\x84\x9e"),
                  "\"\\ud834\\udd1e\"");
   RunSuccessTest("{\"\\ud834\\udd1e\":0}",
-                 Json::Object{{"\xf0\x9d\x84\x9e", 0}},
+                 Json::FromObject({{"\xf0\x9d\x84\x9e", Json::FromNumber(0)}}),
                  "{\"\\ud834\\udd1e\":0}");
 
   /// For UTF-8 characters with length of 1 byte, the range of it is [0x00,
@@ -143,60 +149,60 @@ TEST(Json, Utf8) {
 
 TEST(Json, NestedEmptyContainers) {
   RunSuccessTest(" [ [ ] , { } , [ ] ] ",
-                 Json::Array{
-                     Json::Array(),
-                     Json::Object(),
-                     Json::Array(),
-                 },
+                 Json::FromArray({
+                     Json::FromArray({}),
+                     Json::FromObject({}),
+                     Json::FromArray({}),
+                 }),
                  "[[],{},[]]");
 }
 
 TEST(Json, EscapesAndControlCharactersInKeyStrings) {
   RunSuccessTest(" { \"\\u007f\x7f\\n\\r\\\"\\f\\b\\\\a , b\": 1, \"\": 0 } ",
-                 Json::Object{
-                     {"\u007f\u007f\n\r\"\f\b\\a , b", 1},
-                     {"", 0},
-                 },
+                 Json::FromObject({
+                     {"\u007f\u007f\n\r\"\f\b\\a , b", Json::FromNumber(1)},
+                     {"", Json::FromNumber(0)},
+                 }),
                  "{\"\":0,\"\\u007f\\u007f\\n\\r\\\"\\f\\b\\\\a , b\":1}");
 }
 
 TEST(Json, WriterCutsOffInvalidUtf8) {
-  EXPECT_EQ(Json("abc\xf0\x9d\x24").Dump(), "\"abc\"");
-  EXPECT_EQ(Json("\xff").Dump(), "\"\"");
+  EXPECT_EQ(JsonDump(Json::FromString("abc\xf0\x9d\x24")), "\"abc\"");
+  EXPECT_EQ(JsonDump(Json::FromString("\xff")), "\"\"");
 }
 
 TEST(Json, ValidNumbers) {
   RunSuccessTest("[0, 42 , 0.0123, 123.456]",
-                 Json::Array{
-                     0,
-                     42,
-                     Json("0.0123", /*is_number=*/true),
-                     Json("123.456", /*is_number=*/true),
-                 },
+                 Json::FromArray({
+                     Json::FromNumber(0),
+                     Json::FromNumber(42),
+                     Json::FromNumber("0.0123"),
+                     Json::FromNumber("123.456"),
+                 }),
                  "[0,42,0.0123,123.456]");
   RunSuccessTest("[1e4,-53.235e-31, 0.3e+3]",
-                 Json::Array{
-                     Json("1e4", /*is_number=*/true),
-                     Json("-53.235e-31", /*is_number=*/true),
-                     Json("0.3e+3", /*is_number=*/true),
-                 },
+                 Json::FromArray({
+                     Json::FromNumber("1e4"),
+                     Json::FromNumber("-53.235e-31"),
+                     Json::FromNumber("0.3e+3"),
+                 }),
                  "[1e4,-53.235e-31,0.3e+3]");
 }
 
 TEST(Json, Keywords) {
   RunSuccessTest("[true, false, null]",
-                 Json::Array{
-                     Json(true),
-                     Json(false),
+                 Json::FromArray({
+                     Json::FromBool(true),
+                     Json::FromBool(false),
                      Json(),
-                 },
+                 }),
                  "[true,false,null]");
 }
 
 void RunParseFailureTest(const char* input) {
   gpr_log(GPR_INFO, "parsing string \"%s\" - should fail", input);
-  auto json = Json::Parse(input);
-  EXPECT_FALSE(json.ok());
+  auto json = JsonParse(input);
+  EXPECT_FALSE(json.ok()) << "input: \"" << input << "\"";
 }
 
 TEST(Json, InvalidInput) {
@@ -207,6 +213,10 @@ TEST(Json, InvalidInput) {
   RunParseFailureTest("fals");
   RunParseFailureTest("0,0 ");
   RunParseFailureTest("\"foo\",[]");
+  RunParseFailureTest("{\"field\": {},}");
+  RunParseFailureTest("[{},]");
+  RunParseFailureTest("{\"field\": [],}");
+  RunParseFailureTest("[[],]");
 }
 
 TEST(Json, UnterminatedString) { RunParseFailureTest("\"\\x"); }
@@ -287,30 +297,35 @@ TEST(Json, Equality) {
   // Null.
   EXPECT_EQ(Json(), Json());
   // Numbers.
-  EXPECT_EQ(Json(1), Json(1));
-  EXPECT_NE(Json(1), Json(2));
-  EXPECT_EQ(Json(1), Json("1", /*is_number=*/true));
-  EXPECT_EQ(Json("-5e5", /*is_number=*/true), Json("-5e5", /*is_number=*/true));
+  EXPECT_EQ(Json::FromNumber(1), Json::FromNumber(1));
+  EXPECT_NE(Json::FromNumber(1), Json::FromNumber(2));
+  EXPECT_EQ(Json::FromNumber(1), Json::FromNumber("1"));
+  EXPECT_EQ(Json::FromNumber("-5e5"), Json::FromNumber("-5e5"));
   // Booleans.
-  EXPECT_EQ(Json(true), Json(true));
-  EXPECT_EQ(Json(false), Json(false));
-  EXPECT_NE(Json(true), Json(false));
+  EXPECT_EQ(Json::FromBool(true), Json::FromBool(true));
+  EXPECT_EQ(Json::FromBool(false), Json::FromBool(false));
+  EXPECT_NE(Json::FromBool(true), Json::FromBool(false));
   // Strings.
-  EXPECT_EQ(Json("foo"), Json("foo"));
-  EXPECT_NE(Json("foo"), Json("bar"));
+  EXPECT_EQ(Json::FromString("foo"), Json::FromString("foo"));
+  EXPECT_NE(Json::FromString("foo"), Json::FromString("bar"));
   // Arrays.
-  EXPECT_EQ(Json(Json::Array{"foo"}), Json(Json::Array{"foo"}));
-  EXPECT_NE(Json(Json::Array{"foo"}), Json(Json::Array{"bar"}));
+  EXPECT_EQ(Json::FromArray({Json::FromString("foo")}),
+            Json::FromArray({Json::FromString("foo")}));
+  EXPECT_NE(Json::FromArray({Json::FromString("foo")}),
+            Json::FromArray({Json::FromString("bar")}));
   // Objects.
-  EXPECT_EQ(Json(Json::Object{{"foo", 1}}), Json(Json::Object{{"foo", 1}}));
-  EXPECT_NE(Json(Json::Object{{"foo", 1}}), Json(Json::Object{{"foo", 2}}));
-  EXPECT_NE(Json(Json::Object{{"foo", 1}}), Json(Json::Object{{"bar", 1}}));
+  EXPECT_EQ(Json::FromObject({{"foo", Json::FromNumber(1)}}),
+            Json::FromObject({{"foo", Json::FromNumber(1)}}));
+  EXPECT_NE(Json::FromObject({{"foo", Json::FromNumber(1)}}),
+            Json::FromObject({{"foo", Json::FromNumber(2)}}));
+  EXPECT_NE(Json::FromObject({{"foo", Json::FromNumber(1)}}),
+            Json::FromObject({{"bar", Json::FromNumber(1)}}));
   // Differing types.
-  EXPECT_NE(Json(1), Json("foo"));
-  EXPECT_NE(Json(1), Json(true));
-  EXPECT_NE(Json(1), Json(Json::Array{}));
-  EXPECT_NE(Json(1), Json(Json::Object{}));
-  EXPECT_NE(Json(1), Json());
+  EXPECT_NE(Json::FromNumber(1), Json::FromString("foo"));
+  EXPECT_NE(Json::FromNumber(1), Json::FromBool(true));
+  EXPECT_NE(Json::FromNumber(1), Json::FromArray({}));
+  EXPECT_NE(Json::FromNumber(1), Json::FromObject({}));
+  EXPECT_NE(Json::FromNumber(1), Json());
 }
 
 }  // namespace grpc_core

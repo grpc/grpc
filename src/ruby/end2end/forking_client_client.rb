@@ -37,7 +37,7 @@ def main
   end
 
   begin
-    Timeout.timeout(10) do
+    Timeout.timeout(120) do
       Process.wait(p)
     end
   rescue Timeout::Error

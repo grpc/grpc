@@ -27,19 +27,15 @@
 #include "absl/memory/memory.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_join.h"
-#include "absl/synchronization/notification.h"
 
 #include <grpc/grpc.h>
 #include <grpcpp/security/binder_security_policy.h>
 
 #include "src/core/ext/transport/binder/transport/binder_stream.h"
+#include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "test/core/transport/binder/mock_objects.h"
 #include "test/core/util/test_config.h"
-
-static auto* g_memory_allocator = new grpc_core::MemoryAllocator(
-    grpc_core::ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
-        "test"));
 
 namespace grpc_binder {
 namespace {
@@ -51,14 +47,12 @@ using ::testing::Return;
 class BinderTransportTest : public ::testing::Test {
  public:
   BinderTransportTest()
-      : arena_(grpc_core::Arena::Create(/* initial_size = */ 1,
-                                        g_memory_allocator)),
-        transport_(grpc_create_binder_transport_client(
-            absl::make_unique<NiceMock<MockBinder>>(),
+      : transport_(grpc_create_binder_transport_client(
+            std::make_unique<NiceMock<MockBinder>>(),
             std::make_shared<
                 grpc::experimental::binder::UntrustedSecurityPolicy>())) {
     auto* gbt = reinterpret_cast<grpc_binder_transport*>(transport_);
-    gbt->wire_writer = absl::make_unique<MockWireWriter>();
+    gbt->wire_writer = std::make_unique<MockWireWriter>();
     GRPC_STREAM_REF_INIT(&ref_, 1, nullptr, nullptr, "phony ref");
   }
 
@@ -101,7 +95,12 @@ class BinderTransportTest : public ::testing::Test {
   static void TearDownTestSuite() { grpc_shutdown(); }
 
  protected:
-  grpc_core::Arena* arena_;
+  grpc_core::MemoryAllocator memory_allocator_ =
+      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
+                                     ->memory_quota()
+                                     ->CreateMemoryAllocator("test"));
+  grpc_core::Arena* arena_ =
+      grpc_core::Arena::Create(/* initial_size = */ 1, &memory_allocator_);
   grpc_transport* transport_;
   grpc_stream_refcount ref_;
   std::vector<grpc_binder_stream*> stream_buffer_;
@@ -111,7 +110,7 @@ void MockCallback(void* arg, grpc_error_handle error);
 
 class MockGrpcClosure {
  public:
-  explicit MockGrpcClosure(absl::Notification* notification = nullptr)
+  explicit MockGrpcClosure(grpc_core::Notification* notification = nullptr)
       : notification_(notification) {
     GRPC_CLOSURE_INIT(&closure_, MockCallback, this, nullptr);
   }
@@ -119,7 +118,7 @@ class MockGrpcClosure {
   grpc_closure* GetGrpcClosure() { return &closure_; }
   MOCK_METHOD(void, Callback, (grpc_error_handle), ());
 
-  absl::Notification* notification_;
+  grpc_core::Notification* notification_;
 
  private:
   grpc_closure closure_;
@@ -178,7 +177,7 @@ MATCHER_P4(TransactionMatches, flag, method_ref, initial_metadata, message_data,
 
 // Matches with grpc_error having error message containing |msg|.
 MATCHER_P(GrpcErrorMessageContains, msg, "") {
-  return absl::StrContains(grpc_error_std_string(arg), msg);
+  return absl::StrContains(grpc_core::StatusToString(arg), msg);
 }
 
 namespace {
@@ -193,6 +192,7 @@ class MetadataEncoder {
   void Encode(Which, const typename Which::ValueType& value) {
     metadata_.emplace_back(
         std::string(Which::key()),
+        // NOLINTNEXTLINE(google-readability-casting)
         std::string(grpc_core::Slice(Which::Encode(value)).as_string_view()));
   }
 
@@ -234,8 +234,12 @@ struct MakeSendInitialMetadata {
   }
   ~MakeSendInitialMetadata() {}
 
+  grpc_core::MemoryAllocator memory_allocator =
+      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
+                                     ->memory_quota()
+                                     ->CreateMemoryAllocator("test"));
   grpc_core::ScopedArenaPtr arena =
-      grpc_core::MakeScopedArena(1024, g_memory_allocator);
+      grpc_core::MakeScopedArena(1024, &memory_allocator);
   grpc_metadata_batch grpc_initial_metadata{arena.get()};
 };
 
@@ -261,8 +265,12 @@ struct MakeSendTrailingMetadata {
         &grpc_trailing_metadata;
   }
 
+  grpc_core::MemoryAllocator memory_allocator =
+      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
+                                     ->memory_quota()
+                                     ->CreateMemoryAllocator("test"));
   grpc_core::ScopedArenaPtr arena =
-      grpc_core::MakeScopedArena(1024, g_memory_allocator);
+      grpc_core::MakeScopedArena(1024, &memory_allocator);
   grpc_metadata_batch grpc_trailing_metadata{arena.get()};
 };
 
@@ -285,10 +293,14 @@ struct MakeRecvInitialMetadata {
   ~MakeRecvInitialMetadata() {}
 
   MockGrpcClosure ready;
+  grpc_core::MemoryAllocator memory_allocator =
+      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
+                                     ->memory_quota()
+                                     ->CreateMemoryAllocator("test"));
   grpc_core::ScopedArenaPtr arena =
-      grpc_core::MakeScopedArena(1024, g_memory_allocator);
+      grpc_core::MakeScopedArena(1024, &memory_allocator);
   grpc_metadata_batch grpc_initial_metadata{arena.get()};
-  absl::Notification notification;
+  grpc_core::Notification notification;
 };
 
 struct MakeRecvMessage {
@@ -306,7 +318,7 @@ struct MakeRecvMessage {
   }
 
   MockGrpcClosure ready;
-  absl::Notification notification;
+  grpc_core::Notification notification;
   absl::optional<grpc_core::SliceBuffer> grpc_message;
 };
 
@@ -329,10 +341,14 @@ struct MakeRecvTrailingMetadata {
   ~MakeRecvTrailingMetadata() {}
 
   MockGrpcClosure ready;
+  grpc_core::MemoryAllocator memory_allocator =
+      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
+                                     ->memory_quota()
+                                     ->CreateMemoryAllocator("test"));
   grpc_core::ScopedArenaPtr arena =
-      grpc_core::MakeScopedArena(1024, g_memory_allocator);
+      grpc_core::MakeScopedArena(1024, &memory_allocator);
   grpc_metadata_batch grpc_trailing_metadata{arena.get()};
-  absl::Notification notification;
+  grpc_core::Notification notification;
 };
 
 const Metadata kDefaultMetadata = {
@@ -701,7 +717,7 @@ TEST_F(BinderTransportTest, WireWriterRpcCallErrorPropagates) {
   EXPECT_CALL(GetWireWriter(), RpcCall)
       .WillOnce(Return(absl::OkStatus()))
       .WillOnce(Return(absl::InternalError("WireWriter::RpcCall failed")));
-  EXPECT_CALL(mock_on_complete1, Callback(GRPC_ERROR_NONE));
+  EXPECT_CALL(mock_on_complete1, Callback(absl::OkStatus()));
   EXPECT_CALL(mock_on_complete2,
               Callback(GrpcErrorMessageContains("WireWriter::RpcCall failed")));
 

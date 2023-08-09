@@ -28,7 +28,13 @@ spec:
       - name: ${deployment_name}
         image: ${image_name}
         imagePullPolicy: Always
-        restartPolicy: Never
+        startupProbe:
+          tcpSocket:
+            port: ${test_port}
+          periodSeconds: 3
+          ## Extend the number of probes well beyond the duration of the test
+          ## driver waiting for the container to start.
+          failureThreshold: 1000
         args:
           - "--port=${test_port}"
         ports:
@@ -59,7 +65,11 @@ spec:
             % if xds_server_uri:
             - "--xds-server-uri=${xds_server_uri}"
             % endif
+            % if bootstrap_version=="v0.11.0" or bootstrap_version=="v0.12.0":
+            - "--node-metadata-experimental=app=${namespace_name}-${deployment_name}"
+            % else:
             - "--node-metadata=app=${namespace_name}-${deployment_name}"
+            % endif
           resources:
             limits:
               cpu: 100m

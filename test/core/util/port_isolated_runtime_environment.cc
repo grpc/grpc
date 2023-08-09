@@ -1,33 +1,34 @@
-/*
- *
- * Copyright 2017 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2017 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #if defined(GRPC_PORT_ISOLATED_RUNTIME)
 
-/* When individual tests run in an isolated runtime environment (e.g. each test
- * runs in a separate container) the framework takes a round-robin pick of a
- * port within certain range. There is no need to recycle ports.
- */
+// When individual tests run in an isolated runtime environment (e.g. each test
+// runs in a separate container) the framework takes a round-robin pick of a
+// port within certain range. There is no need to recycle ports.
+//
 #include <stdlib.h>
 
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/port.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -53,7 +54,7 @@ static int grpc_pick_unused_port_or_die_impl(void) {
          (s_initial_offset + orig_counter_val) % (MAX_PORT - MIN_PORT + 1);
 }
 
-int grpc_pick_unused_port_or_die(void) {
+static int isolated_pick_unused_port_or_die(void) {
   while (true) {
     int port = grpc_pick_unused_port_or_die_impl();
     // 5985 cannot be bound on Windows RBE and results in
@@ -66,6 +67,13 @@ int grpc_pick_unused_port_or_die(void) {
   }
 }
 
-void grpc_recycle_unused_port(int port) { (void)port; }
+static void isolated_recycle_unused_port(int port) { (void)port; }
 
-#endif /* GRPC_PORT_ISOLATED_RUNTIME */
+// We don't actually use prev_fns for anything, but need to save it in order to
+// be able to call grpc_set_pick_port_functions() to override defaults for this
+// environment.
+static const auto prev_fns =
+    grpc_set_pick_port_functions(grpc_pick_port_functions{
+        isolated_pick_unused_port_or_die, isolated_recycle_unused_port});
+
+#endif  // GRPC_PORT_ISOLATED_RUNTIME

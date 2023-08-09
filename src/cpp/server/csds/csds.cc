@@ -27,7 +27,7 @@
 #include "absl/status/statusor.h"
 
 #include <grpc/slice.h>
-#include <grpcpp/support/config.h>
+#include <grpcpp/support/interceptor.h>
 #include <grpcpp/support/slice.h>
 
 namespace grpc {
@@ -66,7 +66,8 @@ Status ClientStatusDiscoveryService::StreamClientStatus(
         stream->Write(response);
         continue;
       }
-      return Status(StatusCode(s.status().raw_code()), s.status().ToString());
+      return Status(static_cast<StatusCode>(s.status().raw_code()),
+                    s.status().ToString());
     }
     *response.add_config() = std::move(s.value());
     stream->Write(response);
@@ -83,7 +84,8 @@ Status ClientStatusDiscoveryService::FetchClientStatus(
       // If the xDS client is not initialized, return empty response
       return Status::OK;
     }
-    return Status(StatusCode(s.status().raw_code()), s.status().ToString());
+    return Status(static_cast<StatusCode>(s.status().raw_code()),
+                  s.status().ToString());
   }
   *response->add_config() = std::move(s.value());
   return Status::OK;

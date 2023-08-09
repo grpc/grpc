@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 #include <grpc/support/port_platform.h>
 
 #include <unistd.h>
@@ -45,6 +45,7 @@
 #include <grpcpp/server_context.h>
 
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_writer.h"
 #include "src/cpp/server/channelz/channelz_service.h"
 #include "src/proto/grpc/channelz/channelz.pb.h"
 #include "test/core/util/test_config.h"
@@ -329,7 +330,7 @@ class ChannelzSampler final {
           gpr_log(GPR_ERROR,
                   "GetServers RPC with GetServersRequest.server_start_id=%d, "
                   "failed: %s",
-                  int(server_start_id),
+                  static_cast<int>(server_start_id),
                   get_servers_context.debug_error_string().c_str());
         }
         GPR_ASSERT(0);
@@ -385,7 +386,7 @@ class ChannelzSampler final {
         gpr_log(GPR_ERROR,
                 "GetTopChannels RPC with "
                 "GetTopChannelsRequest.channel_start_id=%d failed: %s",
-                int(channel_start_id),
+                static_cast<int>(channel_start_id),
                 get_top_channels_context.debug_error_string().c_str());
         GPR_ASSERT(0);
       }
@@ -471,7 +472,7 @@ class ChannelzSampler final {
     std::string type = "Channel";
     std::string description;
     ::google::protobuf::TextFormat::PrintToString(channel.data(), &description);
-    grpc_core::Json description_json = grpc_core::Json(description);
+    grpc_core::Json description_json = grpc_core::Json::FromString(description);
     StoreEntityInJson(id, type, description_json);
   }
 
@@ -482,7 +483,7 @@ class ChannelzSampler final {
     std::string description;
     ::google::protobuf::TextFormat::PrintToString(subchannel.data(),
                                                   &description);
-    grpc_core::Json description_json = grpc_core::Json(description);
+    grpc_core::Json description_json = grpc_core::Json::FromString(description);
     StoreEntityInJson(id, type, description_json);
   }
 
@@ -492,7 +493,7 @@ class ChannelzSampler final {
     std::string type = "Server";
     std::string description;
     ::google::protobuf::TextFormat::PrintToString(server.data(), &description);
-    grpc_core::Json description_json = grpc_core::Json(description);
+    grpc_core::Json description_json = grpc_core::Json::FromString(description);
     StoreEntityInJson(id, type, description_json);
   }
 
@@ -502,7 +503,7 @@ class ChannelzSampler final {
     std::string type = "Socket";
     std::string description;
     ::google::protobuf::TextFormat::PrintToString(socket.data(), &description);
-    grpc_core::Json description_json = grpc_core::Json(description);
+    grpc_core::Json description_json = grpc_core::Json::FromString(description);
     StoreEntityInJson(id, type, description_json);
   }
 
@@ -522,18 +523,21 @@ class ChannelzSampler final {
     const time_t time_ago = ago.tv_sec;
     ss << std::put_time(std::localtime(&time_ago), "%F %T");
     start = ss.str();
-    grpc_core::Json obj =
-        grpc_core::Json::Object{{"Task", absl::StrFormat("%s_ID%s", type, id)},
-                                {"Start", start},
-                                {"Finish", finish},
-                                {"ID", id},
-                                {"Type", type},
-                                {"Description", description}};
-    json_.mutable_array()->push_back(obj);
+    grpc_core::Json obj = grpc_core::Json::FromObject(
+        {{"Task",
+          grpc_core::Json::FromString(absl::StrFormat("%s_ID%s", type, id))},
+         {"Start", grpc_core::Json::FromString(start)},
+         {"Finish", grpc_core::Json::FromString(finish)},
+         {"ID", grpc_core::Json::FromString(id)},
+         {"Type", grpc_core::Json::FromString(type)},
+         {"Description", description}});
+    json_.push_back(obj);
   }
 
   // Dump data in json
-  std::string DumpJson() { return json_.Dump(); }
+  std::string DumpJson() {
+    return grpc_core::JsonDump(grpc_core::Json::FromArray(json_));
+  }
 
   // Check if one entity has been recorded
   bool CheckID(int64_t id) {
@@ -556,7 +560,7 @@ class ChannelzSampler final {
   std::vector<grpc::channelz::v1::Subchannel> all_subchannels_;
   std::vector<grpc::channelz::v1::Socket> all_sockets_;
   std::unordered_set<int64_t> id_set_;
-  grpc_core::Json json_;
+  grpc_core::Json::Array json_;
   int64_t rpc_timeout_seconds_;
   gpr_timespec now_;
 };

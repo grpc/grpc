@@ -1,34 +1,33 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/surface/init.h"
 
 #include <limits.h>
-#include <stdint.h>
 
 #include "absl/base/thread_annotations.h"
 
 #include <grpc/fork.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
@@ -38,7 +37,6 @@
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/forkable.h"
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
 #include "src/core/lib/experiments/config.h"
@@ -53,12 +51,12 @@
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/security/transport/auth_filters.h"
 #include "src/core/lib/surface/api_trace.h"
-#include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/surface/init_internally.h"
 
-/* (generated) built in registry of plugins */
-extern void grpc_register_built_in_plugins(void);
+// Remnants of the old plugin system
+void grpc_resolver_dns_ares_init(void);
+void grpc_resolver_dns_ares_shutdown(void);
 
 #define MAX_PLUGINS 128
 
@@ -83,7 +81,7 @@ static bool maybe_prepend_client_auth_filter(
 static bool maybe_prepend_server_auth_filter(
     grpc_core::ChannelStackBuilder* builder) {
   if (builder->channel_args().Contains(GRPC_SERVER_CREDENTIALS_ARG)) {
-    builder->PrependFilter(&grpc_server_auth_filter);
+    builder->PrependFilter(&grpc_core::ServerAuthFilter::kFilter);
   }
   return true;
 }
@@ -120,10 +118,12 @@ void RegisterSecurityFilters(CoreConfiguration::Builder* builder) {
 static void do_basic_init(void) {
   grpc_core::InitInternally = grpc_init;
   grpc_core::ShutdownInternally = grpc_shutdown;
+  grpc_core::IsInitializedInternally = []() {
+    return grpc_is_initialized() != 0;
+  };
   gpr_log_verbosity_init();
   g_init_mu = new grpc_core::Mutex();
   g_shutting_down_cv = new grpc_core::CondVar();
-  grpc_register_built_in_plugins();
   gpr_time_init();
   grpc_core::PrintExperimentsList();
   grpc_core::Fork::GlobalInit();
@@ -131,23 +131,6 @@ static void do_basic_init(void) {
   grpc_fork_handlers_auto_register();
   grpc_tracer_init();
   grpc_client_channel_global_init_backup_polling();
-}
-
-typedef struct grpc_plugin {
-  void (*init)();
-  void (*destroy)();
-} grpc_plugin;
-
-static grpc_plugin g_all_of_the_plugins[MAX_PLUGINS];
-static int g_number_of_plugins = 0;
-
-void grpc_register_plugin(void (*init)(void), void (*destroy)(void)) {
-  GRPC_API_TRACE("grpc_register_plugin(init=%p, destroy=%p)", 2,
-                 ((void*)(intptr_t)init, (void*)(intptr_t)destroy));
-  GPR_ASSERT(g_number_of_plugins != MAX_PLUGINS);
-  g_all_of_the_plugins[g_number_of_plugins].init = init;
-  g_all_of_the_plugins[g_number_of_plugins].destroy = destroy;
-  g_number_of_plugins++;
 }
 
 void grpc_init(void) {
@@ -160,11 +143,7 @@ void grpc_init(void) {
       g_shutting_down_cv->SignalAll();
     }
     grpc_iomgr_init();
-    for (int i = 0; i < g_number_of_plugins; i++) {
-      if (g_all_of_the_plugins[i].init != nullptr) {
-        g_all_of_the_plugins[i].init();
-      }
-    }
+    grpc_resolver_dns_ares_init();
     grpc_iomgr_start();
   }
 
@@ -173,19 +152,11 @@ void grpc_init(void) {
 
 void grpc_shutdown_internal_locked(void)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(g_init_mu) {
-  int i;
   {
     grpc_core::ExecCtx exec_ctx(0);
     grpc_iomgr_shutdown_background_closure();
-    {
-      grpc_timer_manager_set_threading(false);  // shutdown timer_manager thread
-      for (i = g_number_of_plugins; i >= 0; i--) {
-        if (g_all_of_the_plugins[i].destroy != nullptr) {
-          g_all_of_the_plugins[i].destroy();
-        }
-      }
-    }
-    grpc_event_engine::experimental::ResetDefaultEventEngine();
+    grpc_timer_manager_set_threading(false);  // shutdown timer_manager thread
+    grpc_resolver_dns_ares_shutdown();
     grpc_iomgr_shutdown();
   }
   g_shutting_down = false;
@@ -211,11 +182,12 @@ void grpc_shutdown(void) {
     grpc_core::ApplicationCallbackExecCtx* acec =
         grpc_core::ApplicationCallbackExecCtx::Get();
     if (!grpc_iomgr_is_any_background_poller_thread() &&
-        !grpc_event_engine::posix_engine::TimerManager::
+        !grpc_event_engine::experimental::TimerManager::
             IsTimerManagerThread() &&
         (acec == nullptr ||
          (acec->Flags() & GRPC_APP_CALLBACK_EXEC_CTX_FLAG_IS_INTERNAL_THREAD) ==
-             0)) {
+             0) &&
+        grpc_core::ExecCtx::Get() == nullptr) {
       // just run clean-up when this is called on non-executor thread.
       gpr_log(GPR_DEBUG, "grpc_shutdown starts clean-up now");
       g_shutting_down = true;

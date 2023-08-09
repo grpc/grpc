@@ -27,10 +27,14 @@
 
 #include "upb/util/compare.h"
 
-#include <setjmp.h>
-#include <stdbool.h>
+#include <stdlib.h>
 
-#include "upb/port_def.inc"
+#include "upb/upb.h"
+#include "upb/wire/eps_copy_input_stream.h"
+#include "upb/wire/reader.h"
+#include "upb/wire/types.h"
+// Must be last.
+#include "upb/port/def.inc"
 
 struct upb_UnknownFields;
 typedef struct upb_UnknownFields upb_UnknownFields;
@@ -53,13 +57,20 @@ struct upb_UnknownFields {
 };
 
 typedef struct {
-  const char* end;
+  upb_EpsCopyInputStream stream;
   upb_Arena* arena;
   upb_UnknownField* tmp;
   size_t tmp_size;
   int depth;
+  upb_UnknownCompareResult status;
   jmp_buf err;
 } upb_UnknownField_Context;
+
+UPB_NORETURN static void upb_UnknownFields_OutOfMemory(
+    upb_UnknownField_Context* ctx) {
+  ctx->status = kUpb_UnknownCompareResult_OutOfMemory;
+  UPB_LONGJMP(ctx->err, 1);
+}
 
 static void upb_UnknownFields_Grow(upb_UnknownField_Context* ctx,
                                    upb_UnknownField** base,
@@ -70,29 +81,10 @@ static void upb_UnknownFields_Grow(upb_UnknownField_Context* ctx,
 
   *base = upb_Arena_Realloc(ctx->arena, *base, old * sizeof(**base),
                             new * sizeof(**base));
-  if (!*base) UPB_LONGJMP(ctx->err, kUpb_UnknownCompareResult_OutOfMemory);
+  if (!*base) upb_UnknownFields_OutOfMemory(ctx);
 
   *ptr = *base + old;
   *end = *base + new;
-}
-
-static const char* upb_UnknownFields_ParseVarint(const char* ptr,
-                                                 const char* limit,
-                                                 uint64_t* val) {
-  uint8_t byte;
-  int bitpos = 0;
-  *val = 0;
-
-  do {
-    // Unknown field data must be valid.
-    UPB_ASSERT(bitpos < 70 && ptr < limit);
-    byte = *ptr;
-    *val |= (uint64_t)(byte & 0x7F) << bitpos;
-    ptr++;
-    bitpos += 7;
-  } while (byte & 0x80);
-
-  return ptr;
 }
 
 // We have to implement our own sort here, since qsort() is not an in-order
@@ -151,11 +143,11 @@ static upb_UnknownFields* upb_UnknownFields_DoBuild(
   const char* ptr = *buf;
   uint32_t last_tag = 0;
   bool sorted = true;
-  while (ptr < ctx->end) {
-    uint64_t tag;
-    ptr = upb_UnknownFields_ParseVarint(ptr, ctx->end, &tag);
+  while (!upb_EpsCopyInputStream_IsDone(&ctx->stream, &ptr)) {
+    uint32_t tag;
+    ptr = upb_WireReader_ReadTag(ptr, &tag);
     UPB_ASSERT(tag <= UINT32_MAX);
-    int wire_type = tag & 7;
+    int wire_type = upb_WireReader_GetWireType(tag);
     if (wire_type == kUpb_WireType_EndGroup) break;
     if (tag < last_tag) sorted = false;
     last_tag = tag;
@@ -169,30 +161,28 @@ static upb_UnknownFields* upb_UnknownFields_DoBuild(
 
     switch (wire_type) {
       case kUpb_WireType_Varint:
-        ptr = upb_UnknownFields_ParseVarint(ptr, ctx->end, &field->data.varint);
+        ptr = upb_WireReader_ReadVarint(ptr, &field->data.varint);
         break;
       case kUpb_WireType_64Bit:
-        UPB_ASSERT(ctx->end - ptr >= 8);
-        memcpy(&field->data.uint64, ptr, 8);
-        ptr += 8;
+        ptr = upb_WireReader_ReadFixed64(ptr, &field->data.uint64);
         break;
       case kUpb_WireType_32Bit:
-        UPB_ASSERT(ctx->end - ptr >= 4);
-        memcpy(&field->data.uint32, ptr, 4);
-        ptr += 4;
+        ptr = upb_WireReader_ReadFixed32(ptr, &field->data.uint32);
         break;
       case kUpb_WireType_Delimited: {
-        uint64_t size;
-        ptr = upb_UnknownFields_ParseVarint(ptr, ctx->end, &size);
-        UPB_ASSERT(ctx->end - ptr >= size);
-        field->data.delimited.data = ptr;
+        int size;
+        ptr = upb_WireReader_ReadSize(ptr, &size);
+        const char* s_ptr = ptr;
+        ptr = upb_EpsCopyInputStream_ReadStringAliased(&ctx->stream, &s_ptr,
+                                                       size);
+        field->data.delimited.data = s_ptr;
         field->data.delimited.size = size;
-        ptr += size;
         break;
       }
       case kUpb_WireType_StartGroup:
         if (--ctx->depth == 0) {
-          UPB_LONGJMP(ctx->err, kUpb_UnknownCompareResult_MaxDepthExceeded);
+          ctx->status = kUpb_UnknownCompareResult_MaxDepthExceeded;
+          UPB_LONGJMP(ctx->err, 1);
         }
         field->data.group = upb_UnknownFields_DoBuild(ctx, &ptr);
         ctx->depth++;
@@ -204,7 +194,7 @@ static upb_UnknownFields* upb_UnknownFields_DoBuild(
 
   *buf = ptr;
   upb_UnknownFields* ret = upb_Arena_Malloc(ctx->arena, sizeof(*ret));
-  if (!ret) UPB_LONGJMP(ctx->err, kUpb_UnknownCompareResult_OutOfMemory);
+  if (!ret) upb_UnknownFields_OutOfMemory(ctx);
   ret->fields = arr_base;
   ret->size = arr_ptr - arr_base;
   ret->capacity = arr_end - arr_base;
@@ -216,11 +206,12 @@ static upb_UnknownFields* upb_UnknownFields_DoBuild(
 
 // Builds a upb_UnknownFields data structure from the binary data in buf.
 static upb_UnknownFields* upb_UnknownFields_Build(upb_UnknownField_Context* ctx,
-                                                  const char* buf,
+                                                  const char* ptr,
                                                   size_t size) {
-  ctx->end = buf + size;
-  upb_UnknownFields* fields = upb_UnknownFields_DoBuild(ctx, &buf);
-  UPB_ASSERT(buf == ctx->end);
+  upb_EpsCopyInputStream_Init(&ctx->stream, &ptr, size, true);
+  upb_UnknownFields* fields = upb_UnknownFields_DoBuild(ctx, &ptr);
+  UPB_ASSERT(upb_EpsCopyInputStream_IsDone(&ctx->stream, &ptr) &&
+             !upb_EpsCopyInputStream_IsError(&ctx->stream));
   return fields;
 }
 
@@ -260,6 +251,40 @@ static bool upb_UnknownFields_IsEqual(const upb_UnknownFields* uf1,
   return true;
 }
 
+static upb_UnknownCompareResult upb_UnknownField_DoCompare(
+    upb_UnknownField_Context* ctx, const char* buf1, size_t size1,
+    const char* buf2, size_t size2) {
+  upb_UnknownCompareResult ret;
+  // First build both unknown fields into a sorted data structure (similar
+  // to the UnknownFieldSet in C++).
+  upb_UnknownFields* uf1 = upb_UnknownFields_Build(ctx, buf1, size1);
+  upb_UnknownFields* uf2 = upb_UnknownFields_Build(ctx, buf2, size2);
+
+  // Now perform the equality check on the sorted structures.
+  if (upb_UnknownFields_IsEqual(uf1, uf2)) {
+    ret = kUpb_UnknownCompareResult_Equal;
+  } else {
+    ret = kUpb_UnknownCompareResult_NotEqual;
+  }
+  return ret;
+}
+
+static upb_UnknownCompareResult upb_UnknownField_Compare(
+    upb_UnknownField_Context* const ctx, const char* const buf1,
+    const size_t size1, const char* const buf2, const size_t size2) {
+  upb_UnknownCompareResult ret;
+  if (UPB_SETJMP(ctx->err) == 0) {
+    ret = upb_UnknownField_DoCompare(ctx, buf1, size1, buf2, size2);
+  } else {
+    ret = ctx->status;
+    UPB_ASSERT(ret != kUpb_UnknownCompareResult_Equal);
+  }
+
+  upb_Arena_Free(ctx->arena);
+  free(ctx->tmp);
+  return ret;
+}
+
 upb_UnknownCompareResult upb_Message_UnknownFieldsAreEqual(const char* buf1,
                                                            size_t size1,
                                                            const char* buf2,
@@ -274,27 +299,10 @@ upb_UnknownCompareResult upb_Message_UnknownFieldsAreEqual(const char* buf1,
       .depth = max_depth,
       .tmp = NULL,
       .tmp_size = 0,
+      .status = kUpb_UnknownCompareResult_Equal,
   };
 
   if (!ctx.arena) return kUpb_UnknownCompareResult_OutOfMemory;
 
-  int ret = UPB_SETJMP(ctx.err);
-
-  if (UPB_LIKELY(ret == 0)) {
-    // First build both unknown fields into a sorted data structure (similar
-    // to the UnknownFieldSet in C++).
-    upb_UnknownFields* uf1 = upb_UnknownFields_Build(&ctx, buf1, size1);
-    upb_UnknownFields* uf2 = upb_UnknownFields_Build(&ctx, buf2, size2);
-
-    // Now perform the equality check on the sorted structures.
-    if (upb_UnknownFields_IsEqual(uf1, uf2)) {
-      ret = kUpb_UnknownCompareResult_Equal;
-    } else {
-      ret = kUpb_UnknownCompareResult_NotEqual;
-    }
-  }
-
-  upb_Arena_Free(ctx.arena);
-  free(ctx.tmp);
-  return ret;
+  return upb_UnknownField_Compare(&ctx, buf1, size1, buf2, size2);
 }

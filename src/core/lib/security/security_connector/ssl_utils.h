@@ -1,23 +1,23 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-#ifndef GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_SSL_UTILS_H
-#define GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_SSL_UTILS_H
+#ifndef GRPC_SRC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_SSL_UTILS_H
+#define GRPC_SRC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_SSL_UTILS_H
 
 #include <grpc/support/port_platform.h>
 
@@ -41,44 +41,44 @@
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
 
-/* --- Util --- */
+// --- Util ---
 
-/* Check ALPN information returned from SSL handshakes. */
+// Check ALPN information returned from SSL handshakes.
 grpc_error_handle grpc_ssl_check_alpn(const tsi_peer* peer);
 
-/* Check peer name information returned from SSL handshakes. */
+// Check peer name information returned from SSL handshakes.
 grpc_error_handle grpc_ssl_check_peer_name(absl::string_view peer_name,
                                            const tsi_peer* peer);
-/* Compare targer_name information extracted from SSL security connectors. */
+// Compare targer_name information extracted from SSL security connectors.
 int grpc_ssl_cmp_target_name(absl::string_view target_name,
                              absl::string_view other_target_name,
                              absl::string_view overridden_target_name,
                              absl::string_view other_overridden_target_name);
 
 namespace grpc_core {
-/* Check the host that will be set for a call is acceptable.*/
+// Check the host that will be set for a call is acceptable.
 absl::Status SslCheckCallHost(absl::string_view host,
                               absl::string_view target_name,
                               absl::string_view overridden_target_name,
                               grpc_auth_context* auth_context);
 }  // namespace grpc_core
 
-/* Return HTTP2-compliant cipher suites that gRPC accepts by default. */
+// Return HTTP2-compliant cipher suites that gRPC accepts by default.
 const char* grpc_get_ssl_cipher_suites(void);
 
-/* Map from grpc_ssl_client_certificate_request_type to
- * tsi_client_certificate_request_type. */
+// Map from grpc_ssl_client_certificate_request_type to
+// tsi_client_certificate_request_type.
 tsi_client_certificate_request_type
 grpc_get_tsi_client_certificate_request_type(
     grpc_ssl_client_certificate_request_type grpc_request_type);
 
-/* Map grpc_tls_version to tsi_tls_version. */
+// Map grpc_tls_version to tsi_tls_version.
 tsi_tls_version grpc_get_tsi_tls_version(grpc_tls_version tls_version);
 
-/* Return an array of strings containing alpn protocols. */
+// Return an array of strings containing alpn protocols.
 const char** grpc_fill_alpn_protocol_strings(size_t* num_alpn_protocols);
 
-/* Initialize TSI SSL server/client handshaker factory. */
+// Initialize TSI SSL server/client handshaker factory.
 grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
     tsi_ssl_pem_key_cert_pair* key_cert_pair, const char* pem_root_certs,
     bool skip_server_certificate_verification, tsi_tls_version min_tls_version,
@@ -93,13 +93,13 @@ grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
     grpc_ssl_client_certificate_request_type client_certificate_request,
     tsi_tls_version min_tls_version, tsi_tls_version max_tls_version,
     tsi::TlsSessionKeyLoggerCache::TlsSessionKeyLogger* tls_session_key_logger,
-    const char* crl_directory,
+    const char* crl_directory, bool send_client_ca_list,
     tsi_ssl_server_handshaker_factory** handshaker_factory);
 
-/* Free the memory occupied by key cert pairs. */
+// Free the memory occupied by key cert pairs.
 void grpc_tsi_ssl_pem_key_cert_pairs_destroy(tsi_ssl_pem_key_cert_pair* kp,
                                              size_t num_key_cert_pairs);
-/* Exposed for testing only. */
+// Exposed for testing only.
 grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
     const tsi_peer* peer, const char* transport_security_type);
 tsi_peer grpc_shallow_peer_from_ssl_auth_context(
@@ -108,7 +108,7 @@ void grpc_shallow_peer_destruct(tsi_peer* peer);
 int grpc_ssl_host_matches_name(const tsi_peer* peer,
                                absl::string_view peer_name);
 
-/* --- Default SSL Root Store. --- */
+// --- Default SSL Root Store. ---
 namespace grpc_core {
 
 // The class implements default SSL root store.
@@ -184,4 +184,4 @@ using PemKeyCertPairList = std::vector<PemKeyCertPair>;
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_SSL_UTILS_H
+#endif  // GRPC_SRC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_SSL_UTILS_H

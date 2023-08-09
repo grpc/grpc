@@ -18,6 +18,7 @@
 
 #include "test/core/util/resolve_localhost_ip46.h"
 
+#include <memory>
 #include <vector>
 
 #include "absl/status/statusor.h"

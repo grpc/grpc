@@ -12,26 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_GPRPP_SORTED_PACK_H
-#define GRPC_CORE_LIB_GPRPP_SORTED_PACK_H
+#ifndef GRPC_SRC_CORE_LIB_GPRPP_SORTED_PACK_H
+#define GRPC_SRC_CORE_LIB_GPRPP_SORTED_PACK_H
 
 #include <grpc/support/port_platform.h>
 
 #include <type_traits>
 
+#include "src/core/lib/gprpp/type_list.h"
+
 namespace grpc_core {
 
 namespace sorted_pack_detail {
-
-// A list of types
-template <typename... A>
-struct Typelist {
-  template <template <typename...> class T>
-  using Instantiate = T<A...>;
-
-  template <typename C>
-  using PushFront = Typelist<C, A...>;
-};
 
 // Find the smallest element of Args, and the rest of the elements
 template <template <typename, typename> class Cmp, typename Args>
@@ -89,10 +81,9 @@ template <template <typename...> class T,
           template <typename, typename> class Cmp, typename... Args>
 struct WithSortedPack {
   using Type = typename sorted_pack_detail::Sorted<
-      Cmp,
-      sorted_pack_detail::Typelist<Args...>>::Result::template Instantiate<T>;
+      Cmp, Typelist<Args...>>::Result::template Instantiate<T>;
 };
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_GPRPP_SORTED_PACK_H
+#endif  // GRPC_SRC_CORE_LIB_GPRPP_SORTED_PACK_H

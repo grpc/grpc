@@ -65,10 +65,19 @@ describe GRPC::ActiveCall do
 
   describe 'restricted view methods' do
     before(:each) do
-      call = make_test_call
-      ActiveCall.client_invoke(call)
-      @client_call = ActiveCall.new(call, @pass_through,
+      @call = make_test_call
+      ActiveCall.client_invoke(@call)
+      @client_call = ActiveCall.new(@call, @pass_through,
                                     @pass_through, deadline)
+    end
+
+    after(:each) do
+      # terminate the RPC that was started in before(:each)
+      recvd_rpc = @received_rpcs_queue.pop
+      recvd_call = recvd_rpc.call
+      recvd_call.run_batch(CallOps::SEND_INITIAL_METADATA => nil)
+      @call.run_batch(CallOps::RECV_INITIAL_METADATA => nil)
+      send_and_receive_close_and_status(@call, recvd_call)
     end
 
     describe '#multi_req_view' do

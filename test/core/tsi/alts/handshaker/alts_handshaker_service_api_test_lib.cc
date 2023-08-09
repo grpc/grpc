@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.h"
 
@@ -43,9 +43,9 @@ bool grpc_gcp_handshaker_resp_set_peer_rpc_versions(
 
 grpc_gcp_HandshakerReq* grpc_gcp_handshaker_req_decode(grpc_slice slice,
                                                        upb_Arena* arena) {
-  size_t buf_size = GPR_SLICE_LENGTH(slice);
+  size_t buf_size = GRPC_SLICE_LENGTH(slice);
   void* buf = upb_Arena_Malloc(arena, buf_size);
-  memcpy(buf, reinterpret_cast<const char*>(GPR_SLICE_START_PTR(slice)),
+  memcpy(buf, reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(slice)),
          buf_size);
   grpc_gcp_HandshakerReq* resp = grpc_gcp_HandshakerReq_parse(
       reinterpret_cast<char*>(buf), buf_size, arena);
@@ -56,7 +56,7 @@ grpc_gcp_HandshakerReq* grpc_gcp_handshaker_req_decode(grpc_slice slice,
   return resp;
 }
 
-/* Check equality of a pair of grpc_gcp_identity fields. */
+// Check equality of a pair of grpc_gcp_identity fields.
 static bool handshaker_identity_equals(const grpc_gcp_Identity* l_id,
                                        const grpc_gcp_Identity* r_id) {
   if ((grpc_gcp_Identity_has_service_account(l_id) !=
@@ -101,7 +101,7 @@ static bool handshaker_rpc_versions_equals(
           grpc_gcp_RpcProtocolVersions_Version_minor(r_minver));
 }
 
-/* Check equality of a pair of ALTS handshake responses. */
+// Check equality of a pair of ALTS handshake responses.
 bool grpc_gcp_handshaker_resp_equals(const grpc_gcp_HandshakerResp* l_resp,
                                      const grpc_gcp_HandshakerResp* r_resp) {
   return upb_StringView_IsEqual(grpc_gcp_HandshakerResp_out_frames(l_resp),
@@ -116,7 +116,7 @@ bool grpc_gcp_handshaker_resp_equals(const grpc_gcp_HandshakerResp* l_resp,
              grpc_gcp_HandshakerResp_status(r_resp));
 }
 
-/* This method checks equality of two handshaker response results. */
+// This method checks equality of two handshaker response results.
 bool grpc_gcp_handshaker_resp_result_equals(
     const grpc_gcp_HandshakerResult* l_result,
     const grpc_gcp_HandshakerResult* r_result) {
@@ -147,7 +147,7 @@ bool grpc_gcp_handshaker_resp_result_equals(
              grpc_gcp_HandshakerResult_peer_rpc_versions(r_result));
 }
 
-/* This method checks equality of two handshaker response statuses. */
+// This method checks equality of two handshaker response statuses.
 bool grpc_gcp_handshaker_resp_status_equals(
     const grpc_gcp_HandshakerStatus* l_status,
     const grpc_gcp_HandshakerStatus* r_status) {

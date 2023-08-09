@@ -25,7 +25,7 @@
 
 """Bazel support functions related to CMake support."""
 
-def generated_file_staleness_test(name, outs, generated_pattern, **kwargs):
+def staleness_test(name, outs, generated_pattern, target_files = None, tags = [], **kwargs):
     """Tests that checked-in file(s) match the contents of generated file(s).
 
     The resulting test will verify that all output files exist and have the
@@ -38,11 +38,14 @@ def generated_file_staleness_test(name, outs, generated_pattern, **kwargs):
       generated_pattern: the pattern for transforming each "out" file into a
         generated file.  For example, if generated_pattern="generated/%s" then
         a file foo.txt will look for generated file generated/foo.txt.
+      target_files: A glob representing all of the files that should be
+      covered by this rule.  Files in this glob but not generated will
+      be deleted.  (Not currently implemented in OSS).
       **kwargs: Additional keyword arguments to pass through to py_test().
     """
 
     script_name = name + ".py"
-    script_src = ":staleness_test.py"
+    script_src = Label("//cmake:staleness_test.py")
 
     # Filter out non-existing rules so Blaze doesn't error out before we even
     # run the test.
@@ -57,7 +60,7 @@ def generated_file_staleness_test(name, outs, generated_pattern, **kwargs):
         outs = [script_name],
         srcs = [script_src],
         testonly = 1,
-        cmd = "cat $(location " + script_src + ") > $@; " +
+        cmd = "cp $< $@; " +
               "sed -i.bak -e 's|INSERT_FILE_LIST_HERE|" + "\\\n  ".join(file_list) + "|' $@",
     )
 
@@ -67,7 +70,8 @@ def generated_file_staleness_test(name, outs, generated_pattern, **kwargs):
         data = existing_outs + [generated_pattern % file for file in outs],
         python_version = "PY3",
         deps = [
-            ":staleness_test_lib",
+            Label("//cmake:staleness_test_lib"),
         ],
+        tags = ["staleness_test"] + tags,
         **kwargs
     )

@@ -14,8 +14,12 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_XDS_XDS_CHANNEL_ARGS_H
-#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_XDS_XDS_CHANNEL_ARGS_H
+#ifndef GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_XDS_XDS_CHANNEL_ARGS_H
+#define GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_XDS_XDS_CHANNEL_ARGS_H
+
+#include <grpc/support/port_platform.h>
+
+#include "src/core/lib/resolver/server_address.h"
 
 // Channel arg indicating the xDS cluster name.
 // Set by xds_cluster_impl LB policy and used by GoogleDefaultCredentials.
@@ -26,4 +30,8 @@
 #define GRPC_ARG_XDS_LOGICAL_DNS_CLUSTER_FAKE_RESOLVER_RESPONSE_GENERATOR \
   "grpc.TEST_ONLY.xds_logical_dns_cluster_fake_resolver_response_generator"
 
-#endif  // GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_XDS_XDS_CHANNEL_ARGS_H
+// Channel arg for encoding xDS locality weight.
+#define GRPC_ARG_XDS_LOCALITY_WEIGHT \
+  GRPC_ARG_NO_SUBCHANNEL_PREFIX "xds_locality_weight"
+
+#endif  // GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_XDS_XDS_CHANNEL_ARGS_H

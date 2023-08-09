@@ -19,7 +19,10 @@ cd "$(dirname "$0")"
 
 cp -r "$EXTERNAL_GIT_ROOT"/input_artifacts/grpc-*.tgz .
 
-find . -regex ".*/grpc-[0-9].*.tgz" | cut -b3- | \
-    MAKEFLAGS=-j xargs pecl install
+# get name of the PHP package archive to test (we don't know
+# the exact version string in advance)
+GRPC_PEAR_PACKAGE_NAME=$(find . -regex '.*/grpc-[0-9].*.tgz' | sed 's|./||')
+
+MAKEFLAGS=-j8 pecl install "${GRPC_PEAR_PACKAGE_NAME}"
 
 php -d extension=grpc.so -d max_execution_time=300 distribtest.php

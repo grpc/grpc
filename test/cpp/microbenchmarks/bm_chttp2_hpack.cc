@@ -1,22 +1,22 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-/* Microbenchmarks around CHTTP2 HPACK operations */
+// Microbenchmarks around CHTTP2 HPACK operations
 
 #include <string.h>
 
@@ -31,6 +31,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -40,10 +41,6 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
-
-static auto* g_memory_allocator = new grpc_core::MemoryAllocator(
-    grpc_core::ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
-        "test"));
 
 static grpc_slice MakeSlice(const std::vector<uint8_t>& bytes) {
   grpc_slice s = grpc_slice_malloc(bytes.size());
@@ -59,23 +56,23 @@ static grpc_slice MakeSlice(const std::vector<uint8_t>& bytes) {
 //
 
 static void BM_HpackEncoderInitDestroy(benchmark::State& state) {
-  TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
   for (auto _ : state) {
     grpc_core::HPackCompressor c;
     grpc_core::ExecCtx::Get()->Flush();
   }
-
-  track_counters.Finish(state);
 }
 BENCHMARK(BM_HpackEncoderInitDestroy);
 
 static void BM_HpackEncoderEncodeDeadline(benchmark::State& state) {
-  TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
-  grpc_core::Timestamp saved_now = grpc_core::ExecCtx::Get()->Now();
+  grpc_core::Timestamp saved_now = grpc_core::Timestamp::Now();
 
-  auto arena = grpc_core::MakeScopedArena(1024, g_memory_allocator);
+  grpc_core::MemoryAllocator memory_allocator =
+      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
+                                     ->memory_quota()
+                                     ->CreateMemoryAllocator("test"));
+  auto arena = grpc_core::MakeScopedArena(1024, &memory_allocator);
   grpc_metadata_batch b(arena.get());
   b.Set(grpc_core::GrpcTimeoutMetadata(),
         saved_now + grpc_core::Duration::Seconds(30));
@@ -91,34 +88,27 @@ static void BM_HpackEncoderEncodeDeadline(benchmark::State& state) {
             static_cast<uint32_t>(state.iterations()),
             true,
             false,
-            static_cast<size_t>(1024),
+            size_t{1024},
             &stats,
         },
         b, &outbuf);
-    grpc_slice_buffer_reset_and_unref_internal(&outbuf);
+    grpc_slice_buffer_reset_and_unref(&outbuf);
     grpc_core::ExecCtx::Get()->Flush();
   }
-  grpc_slice_buffer_destroy_internal(&outbuf);
-
-  std::ostringstream label;
-  label << "framing_bytes/iter:"
-        << (static_cast<double>(stats.framing_bytes) /
-            static_cast<double>(state.iterations()))
-        << " header_bytes/iter:"
-        << (static_cast<double>(stats.header_bytes) /
-            static_cast<double>(state.iterations()));
-  track_counters.AddLabel(label.str());
-  track_counters.Finish(state);
+  grpc_slice_buffer_destroy(&outbuf);
 }
 BENCHMARK(BM_HpackEncoderEncodeDeadline);
 
 template <class Fixture>
 static void BM_HpackEncoderEncodeHeader(benchmark::State& state) {
-  TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
   static bool logged_representative_output = false;
 
-  auto arena = grpc_core::MakeScopedArena(1024, g_memory_allocator);
+  grpc_core::MemoryAllocator memory_allocator =
+      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
+                                     ->memory_quota()
+                                     ->CreateMemoryAllocator("test"));
+  auto arena = grpc_core::MakeScopedArena(1024, &memory_allocator);
   grpc_metadata_batch b(arena.get());
   Fixture::Prepare(&b);
 
@@ -146,20 +136,10 @@ static void BM_HpackEncoderEncodeHeader(benchmark::State& state) {
         gpr_free(s);
       }
     }
-    grpc_slice_buffer_reset_and_unref_internal(&outbuf);
+    grpc_slice_buffer_reset_and_unref(&outbuf);
     grpc_core::ExecCtx::Get()->Flush();
   }
-  grpc_slice_buffer_destroy_internal(&outbuf);
-
-  std::ostringstream label;
-  label << "framing_bytes/iter:"
-        << (static_cast<double>(stats.framing_bytes) /
-            static_cast<double>(state.iterations()))
-        << " header_bytes/iter:"
-        << (static_cast<double>(stats.header_bytes) /
-            static_cast<double>(state.iterations()));
-  track_counters.AddLabel(label.str());
-  track_counters.Finish(state);
+  grpc_slice_buffer_destroy(&outbuf);
 }
 
 namespace hpack_encoder_fixtures {
@@ -346,37 +326,39 @@ BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
 //
 
 static void BM_HpackParserInitDestroy(benchmark::State& state) {
-  TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
   for (auto _ : state) {
     { grpc_core::HPackParser(); }
     grpc_core::ExecCtx::Get()->Flush();
   }
-
-  track_counters.Finish(state);
 }
 BENCHMARK(BM_HpackParserInitDestroy);
 
 template <class Fixture>
 static void BM_HpackParserParseHeader(benchmark::State& state) {
-  TrackCounters track_counters;
   std::vector<grpc_slice> init_slices = Fixture::GetInitSlices();
   std::vector<grpc_slice> benchmark_slices = Fixture::GetBenchmarkSlices();
   grpc_core::ExecCtx exec_ctx;
   grpc_core::HPackParser p;
   const int kArenaSize = 4096 * 4096;
-  auto* arena = grpc_core::Arena::Create(kArenaSize, g_memory_allocator);
+  grpc_core::MemoryAllocator memory_allocator =
+      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
+                                     ->memory_quota()
+                                     ->CreateMemoryAllocator("test"));
+  auto* arena = grpc_core::Arena::Create(kArenaSize, &memory_allocator);
   grpc_core::ManualConstructor<grpc_metadata_batch> b;
   b.Init(arena);
   p.BeginFrame(&*b, std::numeric_limits<uint32_t>::max(),
+               std::numeric_limits<uint32_t>::max(),
                grpc_core::HPackParser::Boundary::None,
                grpc_core::HPackParser::Priority::None,
                grpc_core::HPackParser::LogInfo{
                    1, grpc_core::HPackParser::LogInfo::kHeaders, false});
   auto parse_vec = [&p](const std::vector<grpc_slice>& slices) {
     for (size_t i = 0; i < slices.size(); ++i) {
-      auto error = p.Parse(slices[i], i == slices.size() - 1);
-      GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+      auto error =
+          p.Parse(slices[i], i == slices.size() - 1, /*call_tracer=*/nullptr);
+      GPR_ASSERT(error.ok());
     }
   };
   parse_vec(init_slices);
@@ -388,9 +370,10 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
     if (0 == (state.iterations() & 0xfff)) {
       b.Destroy();
       arena->Destroy();
-      arena = grpc_core::Arena::Create(kArenaSize, g_memory_allocator);
+      arena = grpc_core::Arena::Create(kArenaSize, &memory_allocator);
       b.Init(arena);
       p.BeginFrame(&*b, std::numeric_limits<uint32_t>::max(),
+                   std::numeric_limits<uint32_t>::max(),
                    grpc_core::HPackParser::Boundary::None,
                    grpc_core::HPackParser::Priority::None,
                    grpc_core::HPackParser::LogInfo{
@@ -402,8 +385,6 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
   for (auto slice : init_slices) grpc_slice_unref(slice);
   for (auto slice : benchmark_slices) grpc_slice_unref(slice);
   arena->Destroy();
-
-  track_counters.Finish(state);
 }
 
 namespace hpack_parser_fixtures {
@@ -418,7 +399,11 @@ class FromEncoderFixture {
   static std::vector<grpc_slice> Generate(int iteration) {
     grpc_core::ExecCtx exec_ctx;
 
-    auto arena = grpc_core::MakeScopedArena(1024, g_memory_allocator);
+    grpc_core::MemoryAllocator memory_allocator =
+        grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
+                                       ->memory_quota()
+                                       ->CreateMemoryAllocator("test"));
+    auto arena = grpc_core::MakeScopedArena(1024, &memory_allocator);
     grpc_metadata_batch b(arena.get());
     EncoderFixture::Prepare(&b);
 
@@ -442,13 +427,13 @@ class FromEncoderFixture {
           b, &outbuf);
       if (i == iteration) {
         for (size_t s = 0; s < outbuf.count; s++) {
-          out.push_back(grpc_slice_ref_internal(outbuf.slices[s]));
+          out.push_back(grpc_slice_ref(outbuf.slices[s]));
         }
         done = true;
       }
-      grpc_slice_buffer_reset_and_unref_internal(&outbuf);
+      grpc_slice_buffer_reset_and_unref(&outbuf);
       grpc_core::ExecCtx::Get()->Flush();
-      grpc_slice_buffer_destroy_internal(&outbuf);
+      grpc_slice_buffer_destroy(&outbuf);
       i++;
     }
     // Remove the HTTP header.

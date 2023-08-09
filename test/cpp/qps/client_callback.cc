@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <list>
 #include <memory>
@@ -34,6 +34,7 @@
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
 #include "test/cpp/qps/client.h"
 #include "test/cpp/qps/usage_timer.h"
@@ -41,9 +42,9 @@
 namespace grpc {
 namespace testing {
 
-/**
- * Maintains context info per RPC
- */
+///
+/// Maintains context info per RPC
+///
 struct CallbackClientRpcContext {
   explicit CallbackClientRpcContext(BenchmarkService::Stub* stub)
       : alarm_(nullptr), stub_(stub) {}
@@ -79,12 +80,12 @@ class CallbackClient
 
   ~CallbackClient() override {}
 
-  /**
-   * The main thread of the benchmark will be waiting on DestroyMultithreading.
-   * Increment the rpcs_done_ variable to signify that the Callback RPC
-   * after thread completion is done. When the last outstanding rpc increments
-   * the counter it should also signal the main thread's conditional variable.
-   */
+  ///
+  /// The main thread of the benchmark will be waiting on DestroyMultithreading.
+  /// Increment the rpcs_done_ variable to signify that the Callback RPC
+  /// after thread completion is done. When the last outstanding rpc increments
+  /// the counter it should also signal the main thread's conditional variable.
+  ///
   void NotifyMainThreadOfThreadCompletion() {
     std::lock_guard<std::mutex> l(shutdown_mu_);
     rpcs_done_++;
@@ -130,9 +131,9 @@ class CallbackClient
     return num_threads;
   }
 
-  /**
-   * Wait until all outstanding Callback RPCs are done
-   */
+  ///
+  /// Wait until all outstanding Callback RPCs are done
+  ///
   void DestroyMultithreading() final {
     std::unique_lock<std::mutex> l(shutdown_mu_);
     while (rpcs_done_ != total_outstanding_rpcs_) {
@@ -174,7 +175,7 @@ class CallbackUnaryClient final : public CallbackClient {
       // Start an alarm callback to run the internal callback after
       // next_issue_time
       if (ctx_[vector_idx]->alarm_ == nullptr) {
-        ctx_[vector_idx]->alarm_ = absl::make_unique<Alarm>();
+        ctx_[vector_idx]->alarm_ = std::make_unique<Alarm>();
       }
       ctx_[vector_idx]->alarm_->Set(next_issue_time,
                                     [this, t, vector_idx](bool /*ok*/) {
@@ -203,7 +204,7 @@ class CallbackUnaryClient final : public CallbackClient {
             NotifyMainThreadOfThreadCompletion();
           } else {
             // Reallocate ctx for next RPC
-            ctx_[vector_idx] = absl::make_unique<CallbackClientRpcContext>(
+            ctx_[vector_idx] = std::make_unique<CallbackClientRpcContext>(
                 ctx_[vector_idx]->stub_);
             // Schedule a new RPC
             ScheduleRpc(t, vector_idx);
@@ -309,7 +310,7 @@ class CallbackStreamingPingPongReactor final
       client_->NotifyMainThreadOfThreadCompletion();
       return;
     }
-    ctx_ = absl::make_unique<CallbackClientRpcContext>(ctx_->stub_);
+    ctx_ = std::make_unique<CallbackClientRpcContext>(ctx_->stub_);
     ScheduleRpc();
   }
 
@@ -319,7 +320,7 @@ class CallbackStreamingPingPongReactor final
       // Start an alarm callback to run the internal callback after
       // next_issue_time
       if (ctx_->alarm_ == nullptr) {
-        ctx_->alarm_ = absl::make_unique<Alarm>();
+        ctx_->alarm_ = std::make_unique<Alarm>();
       }
       ctx_->alarm_->Set(next_issue_time,
                         [this](bool /*ok*/) { StartNewRpc(); });

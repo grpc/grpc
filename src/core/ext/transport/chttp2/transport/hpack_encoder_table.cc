@@ -23,6 +23,8 @@
 namespace grpc_core {
 
 uint32_t HPackEncoderTable::AllocateIndex(size_t element_size) {
+  GPR_DEBUG_ASSERT(element_size >= 32);
+
   uint32_t new_index = tail_remote_index_ + table_elems_ + 1;
   GPR_DEBUG_ASSERT(element_size <= MaxEntrySize());
 
@@ -60,7 +62,8 @@ bool HPackEncoderTable::SetMaxSize(uint32_t max_table_size) {
       hpack_constants::EntriesForBytes(max_table_size);
   // TODO(ctiller): integrate with ResourceQuota to rebuild smaller when we can.
   if (max_table_elems > elem_size_.size()) {
-    Rebuild(std::max(max_table_elems, 2 * elem_size_.size()));
+    Rebuild(static_cast<uint32_t>(
+        std::max(max_table_elems, 2 * elem_size_.size())));
   }
   return true;
 }

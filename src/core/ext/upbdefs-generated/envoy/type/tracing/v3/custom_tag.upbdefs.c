@@ -6,7 +6,7 @@
  * Do not edit -- your changes will be discarded when the file is
  * regenerated. */
 
-#include "upb/def.h"
+#include "upb/reflection/def.h"
 #include "envoy/type/tracing/v3/custom_tag.upbdefs.h"
 #include "envoy/type/tracing/v3/custom_tag.upb.h"
 

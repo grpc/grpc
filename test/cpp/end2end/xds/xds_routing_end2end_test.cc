@@ -21,16 +21,15 @@
 #include <gtest/gtest.h>
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
+#include "src/core/lib/config/config_vars.h"
 #include "src/proto/grpc/testing/xds/v3/fault.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/router.grpc.pb.h"
-#include "test/cpp/end2end/xds/no_op_http_filter.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 
 namespace grpc {
 namespace testing {
 namespace {
 
-using ::envoy::extensions::filters::http::fault::v3::HTTPFault;
 using std::chrono::system_clock;
 
 using LdsTest = XdsEnd2endTest;
@@ -38,9 +37,10 @@ using LdsTest = XdsEnd2endTest;
 INSTANTIATE_TEST_SUITE_P(XdsTest, LdsTest, ::testing::Values(XdsTestType()),
                          &XdsTestType::Name);
 
-// Tests that LDS client should send a NACK if there is no API listener in the
-// Listener in the LDS response.
-TEST_P(LdsTest, NoApiListener) {
+// Testing just one example of an invalid resource here.
+// Unit tests for XdsListenerResourceType have exhaustive tests for all
+// of the invalid cases.
+TEST_P(LdsTest, NacksInvalidListener) {
   auto listener = default_listener_;
   listener.clear_api_listener();
   balancer_->ads_service()->SetLdsResource(listener);
@@ -51,408 +51,33 @@ TEST_P(LdsTest, NoApiListener) {
       ::testing::HasSubstr("Listener has neither address nor ApiListener"));
 }
 
-// Tests that LDS client should send a NACK if the route_specifier in the
-// http_connection_manager is neither inlined route_config nor RDS.
-TEST_P(LdsTest, WrongRouteSpecifier) {
-  auto listener = default_listener_;
-  HttpConnectionManager http_connection_manager;
-  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
-      &http_connection_manager);
-  http_connection_manager.mutable_scoped_routes();
-  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
-      http_connection_manager);
-  balancer_->ads_service()->SetLdsResource(listener);
-  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
-      response_state->error_message,
-      ::testing::HasSubstr(
-          "HttpConnectionManager neither has inlined route_config nor RDS."));
-}
-
-// Tests that LDS client should send a NACK if the rds message in the
-// http_connection_manager is missing the config_source field.
-TEST_P(LdsTest, RdsMissingConfigSource) {
-  auto listener = default_listener_;
-  HttpConnectionManager http_connection_manager;
-  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
-      &http_connection_manager);
-  http_connection_manager.mutable_rds()->set_route_config_name(
-      kDefaultRouteConfigurationName);
-  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
-      http_connection_manager);
-  balancer_->ads_service()->SetLdsResource(listener);
-  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr(
-                  "HttpConnectionManager missing config_source for RDS."));
-}
-
-// Tests that LDS client should send a NACK if the rds message in the
-// http_connection_manager has a config_source field that does not specify
-// ADS or SELF.
-TEST_P(LdsTest, RdsConfigSourceDoesNotSpecifyAdsOrSelf) {
-  auto listener = default_listener_;
-  HttpConnectionManager http_connection_manager;
-  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
-      &http_connection_manager);
-  auto* rds = http_connection_manager.mutable_rds();
+// Tests that we go into TRANSIENT_FAILURE if the Listener is not an API
+// listener.
+TEST_P(LdsTest, NotAnApiListener) {
+  Listener listener = default_server_listener_;
+  listener.set_name(kServerName);
+  auto hcm = ServerHcmAccessor().Unpack(listener);
+  auto* rds = hcm.mutable_rds();
   rds->set_route_config_name(kDefaultRouteConfigurationName);
-  rds->mutable_config_source()->set_path("/foo/bar");
-  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
-      http_connection_manager);
+  rds->mutable_config_source()->mutable_self();
+  ServerHcmAccessor().Pack(hcm, &listener);
   balancer_->ads_service()->SetLdsResource(listener);
-  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("HttpConnectionManager ConfigSource for "
-                                   "RDS does not specify ADS or SELF."));
-}
-
-// Tests that LDS client accepts the rds message in the
-// http_connection_manager with a config_source field that specifies ADS.
-TEST_P(LdsTest, AcceptsRdsConfigSourceOfTypeAds) {
-  CreateAndStartBackends(1);
-  auto listener = default_listener_;
-  HttpConnectionManager http_connection_manager;
-  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
-      &http_connection_manager);
-  auto* rds = http_connection_manager.mutable_rds();
-  rds->set_route_config_name(kDefaultRouteConfigurationName);
-  rds->mutable_config_source()->mutable_ads();
-  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
-      http_connection_manager);
-  SetListenerAndRouteConfiguration(balancer_.get(), listener,
-                                   default_route_config_);
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForAllBackends(DEBUG_LOCATION);
-  auto response_state = balancer_->ads_service()->lds_response_state();
-  ASSERT_TRUE(response_state.has_value());
-  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
-}
-
-// Tests that we NACK non-terminal filters at the end of the list.
-TEST_P(LdsTest, NacksNonTerminalHttpFilterAtEndOfList) {
-  auto listener = default_listener_;
-  HttpConnectionManager http_connection_manager;
-  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
-      &http_connection_manager);
-  auto* filter = http_connection_manager.mutable_http_filters(0);
-  filter->set_name("unknown");
-  filter->mutable_typed_config()->set_type_url(
-      "custom/grpc.testing.client_only_http_filter");
-  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
-      http_connection_manager);
-  SetListenerAndRouteConfiguration(balancer_.get(), listener,
-                                   default_route_config_);
-  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr(
-                  "non-terminal filter for config type grpc.testing"
-                  ".client_only_http_filter is the last filter in the chain"));
-}
-
-// Test that we NACK terminal filters that are not at the end of the list.
-TEST_P(LdsTest, NacksTerminalFilterBeforeEndOfList) {
-  auto listener = default_listener_;
-  HttpConnectionManager http_connection_manager;
-  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
-      &http_connection_manager);
-  // The default_listener_ has a terminal router filter by default. Add an
-  // additional filter.
-  auto* filter = http_connection_manager.add_http_filters();
-  filter->set_name("grpc.testing.terminal_http_filter");
-  filter->mutable_typed_config()->set_type_url(
-      "custom/grpc.testing.terminal_http_filter");
-  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
-      http_connection_manager);
-  SetListenerAndRouteConfiguration(balancer_.get(), listener,
-                                   default_route_config_);
-  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
-      response_state->error_message,
-      ::testing::HasSubstr(
-          "terminal filter for config type envoy.extensions.filters.http"
-          ".router.v3.Router must be the last filter in the chain"));
-}
-
-// Test that we NACK empty filter names.
-TEST_P(LdsTest, RejectsEmptyHttpFilterName) {
-  auto listener = default_listener_;
-  HttpConnectionManager http_connection_manager;
-  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
-      &http_connection_manager);
-  *http_connection_manager.add_http_filters() =
-      http_connection_manager.http_filters(0);
-  auto* filter = http_connection_manager.mutable_http_filters(0);
-  filter->Clear();
-  filter->mutable_typed_config()->PackFrom(Listener());
-  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
-      http_connection_manager);
-  SetListenerAndRouteConfiguration(balancer_.get(), listener,
-                                   default_route_config_);
-  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("empty filter name at index 0"));
-}
-
-// Test that we NACK duplicate HTTP filter names.
-TEST_P(LdsTest, RejectsDuplicateHttpFilterName) {
-  auto listener = default_listener_;
-  HttpConnectionManager http_connection_manager;
-  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
-      &http_connection_manager);
-  *http_connection_manager.add_http_filters() =
-      http_connection_manager.http_filters(0);
-  http_connection_manager.mutable_http_filters(0)
-      ->mutable_typed_config()
-      ->PackFrom(HTTPFault());
-  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
-      http_connection_manager);
-  SetListenerAndRouteConfiguration(balancer_.get(), listener,
-                                   default_route_config_);
-  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("duplicate HTTP filter name: router"));
-}
-
-// Test that we NACK unknown filter types.
-TEST_P(LdsTest, RejectsUnknownHttpFilterType) {
-  auto listener = default_listener_;
-  HttpConnectionManager http_connection_manager;
-  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
-      &http_connection_manager);
-  *http_connection_manager.add_http_filters() =
-      http_connection_manager.http_filters(0);
-  auto* filter = http_connection_manager.mutable_http_filters(0);
-  filter->set_name("unknown");
-  filter->mutable_typed_config()->PackFrom(Listener());
-  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
-      http_connection_manager);
-  SetListenerAndRouteConfiguration(balancer_.get(), listener,
-                                   default_route_config_);
-  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("no filter registered for config type "
-                                   "envoy.config.listener.v3.Listener"));
-}
-
-// Test that we ignore optional unknown filter types.
-TEST_P(LdsTest, IgnoresOptionalUnknownHttpFilterType) {
-  CreateAndStartBackends(1);
-  auto listener = default_listener_;
-  HttpConnectionManager http_connection_manager;
-  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
-      &http_connection_manager);
-  *http_connection_manager.add_http_filters() =
-      http_connection_manager.http_filters(0);
-  auto* filter = http_connection_manager.mutable_http_filters(0);
-  filter->set_name("unknown");
-  filter->mutable_typed_config()->PackFrom(Listener());
-  filter->set_is_optional(true);
-  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
-      http_connection_manager);
-  SetListenerAndRouteConfiguration(balancer_.get(), listener,
-                                   default_route_config_);
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForAllBackends(DEBUG_LOCATION);
-  auto response_state = balancer_->ads_service()->lds_response_state();
-  ASSERT_TRUE(response_state.has_value());
-  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
-}
-
-// Test that we NACK filters without configs.
-TEST_P(LdsTest, RejectsHttpFilterWithoutConfig) {
-  auto listener = default_listener_;
-  HttpConnectionManager http_connection_manager;
-  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
-      &http_connection_manager);
-  *http_connection_manager.add_http_filters() =
-      http_connection_manager.http_filters(0);
-  auto* filter = http_connection_manager.mutable_http_filters(0);
-  filter->Clear();
-  filter->set_name("unknown");
-  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
-      http_connection_manager);
-  SetListenerAndRouteConfiguration(balancer_.get(), listener,
-                                   default_route_config_);
-  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr(
-                  "no filter config specified for filter name unknown"));
-}
-
-// Test that we ignore optional filters without configs.
-TEST_P(LdsTest, IgnoresOptionalHttpFilterWithoutConfig) {
-  CreateAndStartBackends(1);
-  auto listener = default_listener_;
-  HttpConnectionManager http_connection_manager;
-  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
-      &http_connection_manager);
-  *http_connection_manager.add_http_filters() =
-      http_connection_manager.http_filters(0);
-  auto* filter = http_connection_manager.mutable_http_filters(0);
-  filter->Clear();
-  filter->set_name("unknown");
-  filter->set_is_optional(true);
-  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
-      http_connection_manager);
-  SetListenerAndRouteConfiguration(balancer_.get(), listener,
-                                   default_route_config_);
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForAllBackends(DEBUG_LOCATION);
-  auto response_state = balancer_->ads_service()->lds_response_state();
-  ASSERT_TRUE(response_state.has_value());
-  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
-}
-
-// Test that we NACK unparseable filter configs.
-TEST_P(LdsTest, RejectsUnparseableHttpFilterType) {
-  auto listener = default_listener_;
-  HttpConnectionManager http_connection_manager;
-  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
-      &http_connection_manager);
-  *http_connection_manager.add_http_filters() =
-      http_connection_manager.http_filters(0);
-  auto* filter = http_connection_manager.mutable_http_filters(0);
-  filter->set_name("unknown");
-  filter->mutable_typed_config()->PackFrom(listener);
-  filter->mutable_typed_config()->set_type_url(
-      "type.googleapis.com/envoy.extensions.filters.http.fault.v3.HTTPFault");
-  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
-      http_connection_manager);
-  SetListenerAndRouteConfiguration(balancer_.get(), listener,
-                                   default_route_config_);
-  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
-      response_state->error_message,
-      ::testing::HasSubstr(
-          "filter config for type "
-          "envoy.extensions.filters.http.fault.v3.HTTPFault failed to parse"));
-}
-
-// Test that we NACK HTTP filters unsupported on client-side.
-TEST_P(LdsTest, RejectsHttpFiltersNotSupportedOnClients) {
-  auto listener = default_listener_;
-  HttpConnectionManager http_connection_manager;
-  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
-      &http_connection_manager);
-  *http_connection_manager.add_http_filters() =
-      http_connection_manager.http_filters(0);
-  auto* filter = http_connection_manager.mutable_http_filters(0);
-  filter->set_name("grpc.testing.server_only_http_filter");
-  filter->mutable_typed_config()->set_type_url(
-      "custom/grpc.testing.server_only_http_filter");
-  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
-      http_connection_manager);
-  SetListenerAndRouteConfiguration(balancer_.get(), listener,
-                                   default_route_config_);
-  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
-      response_state->error_message,
-      ::testing::HasSubstr("Filter grpc.testing.server_only_http_filter is not "
-                           "supported on clients"));
-}
-
-// Test that we ignore optional HTTP filters unsupported on client-side.
-TEST_P(LdsTest, IgnoresOptionalHttpFiltersNotSupportedOnClients) {
-  CreateAndStartBackends(1);
-  auto listener = default_listener_;
-  HttpConnectionManager http_connection_manager;
-  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
-      &http_connection_manager);
-  *http_connection_manager.add_http_filters() =
-      http_connection_manager.http_filters(0);
-  auto* filter = http_connection_manager.mutable_http_filters(0);
-  filter->set_name("grpc.testing.server_only_http_filter");
-  filter->mutable_typed_config()->set_type_url(
-      "custom/grpc.testing.server_only_http_filter");
-  filter->set_is_optional(true);
-  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
-      http_connection_manager);
-  SetListenerAndRouteConfiguration(balancer_.get(), listener,
-                                   default_route_config_);
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForAllBackends(DEBUG_LOCATION);
-  auto response_state = balancer_->ads_service()->lds_response_state();
-  ASSERT_TRUE(response_state.has_value());
-  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
-}
-
-// Test that we NACK non-zero xff_num_trusted_hops
-TEST_P(LdsTest, RejectsNonZeroXffNumTrusterHops) {
-  auto listener = default_listener_;
-  HttpConnectionManager http_connection_manager;
-  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
-      &http_connection_manager);
-  http_connection_manager.set_xff_num_trusted_hops(1);
-  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
-      http_connection_manager);
-  SetListenerAndRouteConfiguration(balancer_.get(), listener,
-                                   default_route_config_);
-  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("'xff_num_trusted_hops' must be zero"));
-}
-
-// Test that we NACK non-empty original_ip_detection_extensions
-TEST_P(LdsTest, RejectsNonEmptyOriginalIpDetectionExtensions) {
-  auto listener = default_listener_;
-  HttpConnectionManager http_connection_manager;
-  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
-      &http_connection_manager);
-  http_connection_manager.add_original_ip_detection_extensions();
-  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
-      http_connection_manager);
-  SetListenerAndRouteConfiguration(balancer_.get(), listener,
-                                   default_route_config_);
-  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
-      response_state->error_message,
-      ::testing::HasSubstr("'original_ip_detection_extensions' must be empty"));
-}
-
-using LdsV2Test = XdsEnd2endTest;
-
-INSTANTIATE_TEST_SUITE_P(XdsTest, LdsV2Test,
-                         ::testing::Values(XdsTestType().set_use_v2()),
-                         &XdsTestType::Name);
-
-// Tests that we ignore the HTTP filter list in v2.
-// TODO(roth): The test framework is not set up to allow us to test
-// the server sending v2 resources when the client requests v3, so this
-// just tests a pure v2 setup.  When we have time, fix this.
-TEST_P(LdsV2Test, IgnoresHttpFilters) {
-  CreateAndStartBackends(1);
-  auto listener = default_listener_;
-  HttpConnectionManager http_connection_manager;
-  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
-      &http_connection_manager);
-  auto* filter = http_connection_manager.add_http_filters();
-  filter->set_name("unknown");
-  filter->mutable_typed_config()->PackFrom(Listener());
-  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
-      http_connection_manager);
-  SetListenerAndRouteConfiguration(balancer_.get(), listener,
-                                   default_route_config_);
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  CheckRpcSendOk(DEBUG_LOCATION);
+  // RPCs should fail.
+  CheckRpcSendFailure(
+      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+      absl::StrCat(kServerName, ": UNAVAILABLE: not an API listener"));
+  // We should have ACKed the LDS resource.
+  const auto deadline =
+      absl::Now() + (absl::Seconds(30) * grpc_test_slowdown_factor());
+  while (true) {
+    ASSERT_LT(absl::Now(), deadline) << "timed out waiting for LDS ACK";
+    auto response_state = balancer_->ads_service()->lds_response_state();
+    if (response_state.has_value()) {
+      EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
+      break;
+    }
+    absl::SleepFor(absl::Seconds(1) * grpc_test_slowdown_factor());
+  }
 }
 
 class LdsDeletionTest : public XdsEnd2endTest {
@@ -502,11 +127,13 @@ TEST_P(LdsDeletionTest, ListenerDeletionIgnored) {
   EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
   // Unset LDS resource and wait for client to ACK the update.
   balancer_->ads_service()->UnsetResource(kLdsTypeUrl, kServerName);
-  const auto deadline = absl::Now() + absl::Seconds(30);
+  const auto deadline =
+      absl::Now() + (absl::Seconds(30) * grpc_test_slowdown_factor());
   while (true) {
     ASSERT_LT(absl::Now(), deadline) << "timed out waiting for LDS ACK";
     response_state = balancer_->ads_service()->lds_response_state();
     if (response_state.has_value()) break;
+    absl::SleepFor(absl::Seconds(1) * grpc_test_slowdown_factor());
   }
   EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
   // Make sure we can still send RPCs.
@@ -533,17 +160,251 @@ TEST_P(LdsDeletionTest, ListenerDeletionIgnored) {
   WaitForAllBackends(DEBUG_LOCATION, 1, 2);
 }
 
+using LdsRdsInteractionTest = XdsEnd2endTest;
+
+INSTANTIATE_TEST_SUITE_P(
+    XdsTest, LdsRdsInteractionTest,
+    ::testing::Values(XdsTestType().set_enable_rds_testing()),
+    &XdsTestType::Name);
+
+TEST_P(LdsRdsInteractionTest, SwitchFromRdsToInlineRouteConfig) {
+  CreateAndStartBackends(2);
+  // Bring up client pointing to backend 0 and wait for it to connect.
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  WaitForBackend(DEBUG_LOCATION, 0);
+  // RDS should have been ACKed.
+  auto response_state = balancer_->ads_service()->rds_response_state();
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
+  // Now recreate the LDS resource with an inline route config pointing to a
+  // different CDS and EDS resource, pointing to backend 1, and make sure
+  // the client uses it.
+  const char* kNewClusterName = "new_cluster_name";
+  const char* kNewEdsResourceName = "new_eds_resource_name";
+  auto cluster = default_cluster_;
+  cluster.set_name(kNewClusterName);
+  cluster.mutable_eds_cluster_config()->set_service_name(kNewEdsResourceName);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends(1, 2)}});
+  balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args, kNewEdsResourceName));
+  RouteConfiguration new_route_config = default_route_config_;
+  new_route_config.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
+      ->mutable_route()
+      ->set_cluster(kNewClusterName);
+  Listener listener = default_listener_;
+  HttpConnectionManager http_connection_manager =
+      ClientHcmAccessor().Unpack(listener);
+  *http_connection_manager.mutable_route_config() = new_route_config;
+  ClientHcmAccessor().Pack(http_connection_manager, &listener);
+  balancer_->ads_service()->SetLdsResource(listener);
+  // Wait for client to start using backend 1.
+  WaitForBackend(DEBUG_LOCATION, 1);
+  // Send an update to the original RDS resource, which the client
+  // should no longer be subscribed to.  We need this RouteConfig to be
+  // different than the original one so that the update does not get
+  // squelched by XdsClient, so we add a second domain to the vhost that
+  // will not actually be used.
+  new_route_config = default_route_config_;
+  new_route_config.mutable_virtual_hosts(0)->add_domains("foo.example.com");
+  balancer_->ads_service()->SetRdsResource(new_route_config);
+  // Wait for RDS ACK to know that the client saw the change.
+  // TODO(roth): The client does not actually ACK here, it just sends an
+  // unsubscription request, but our fake xDS server is incorrectly treating
+  // that as an ACK.  When we have time, fix the behavior of the fake
+  // xDS server, and then change this test to ensure that there is no RDS
+  // ACK within the 30-second timeout period.
+  const auto deadline =
+      absl::Now() + (absl::Seconds(30) * grpc_test_slowdown_factor());
+  while (true) {
+    ASSERT_LT(absl::Now(), deadline) << "timed out waiting for RDS ACK";
+    response_state = balancer_->ads_service()->rds_response_state();
+    if (response_state.has_value()) break;
+    absl::SleepFor(absl::Seconds(1) * grpc_test_slowdown_factor());
+  }
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
+  // Make sure RPCs are still going to backend 1.  This shows that the
+  // client did not replace its route config with the one from the RDS
+  // resource that it should no longer be using.
+  ResetBackendCounters();
+  CheckRpcSendOk(DEBUG_LOCATION);
+  EXPECT_EQ(0, backends_[0]->backend_service()->request_count());
+  EXPECT_EQ(1, backends_[1]->backend_service()->request_count());
+}
+
+TEST_P(LdsRdsInteractionTest, SwitchFromInlineRouteConfigToRds) {
+  CreateAndStartBackends(2);
+  // Create an LDS resource with an inline RouteConfig pointing to a
+  // different CDS and EDS resource, sending traffic to backend 0.
+  const char* kNewClusterName = "new_cluster_name";
+  const char* kNewEdsResourceName = "new_eds_resource_name";
+  auto cluster = default_cluster_;
+  cluster.set_name(kNewClusterName);
+  cluster.mutable_eds_cluster_config()->set_service_name(kNewEdsResourceName);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
+  balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args, kNewEdsResourceName));
+  RouteConfiguration route_config = default_route_config_;
+  route_config.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
+      ->mutable_route()
+      ->set_cluster(kNewClusterName);
+  Listener listener = default_listener_;
+  HttpConnectionManager http_connection_manager =
+      ClientHcmAccessor().Unpack(listener);
+  *http_connection_manager.mutable_route_config() = route_config;
+  ClientHcmAccessor().Pack(http_connection_manager, &listener);
+  balancer_->ads_service()->SetLdsResource(listener);
+  // Start the client and make sure traffic goes to backend 0.
+  WaitForBackend(DEBUG_LOCATION, 0);
+  // RDS should not have been ACKed, because the RouteConfig was inlined.
+  ASSERT_FALSE(balancer_->ads_service()->rds_response_state().has_value());
+  // Change the LDS resource to point to an RDS resource.  The LDS resource
+  // configures the fault injection filter with a config that fails all RPCs.
+  // However, the RDS resource has a typed_per_filter_config override that
+  // disables the fault injection filter.  The RDS resource points to a
+  // new cluster that sends traffic to backend 1.
+  args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends(1, 2)}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  route_config = default_route_config_;
+  auto* config_map = route_config.mutable_virtual_hosts(0)
+                         ->mutable_routes(0)
+                         ->mutable_typed_per_filter_config();
+  (*config_map)["envoy.fault"].PackFrom(
+      envoy::extensions::filters::http::fault::v3::HTTPFault());
+  envoy::extensions::filters::http::fault::v3::HTTPFault http_fault;
+  auto* abort_percentage = http_fault.mutable_abort()->mutable_percentage();
+  abort_percentage->set_numerator(100);
+  abort_percentage->set_denominator(abort_percentage->HUNDRED);
+  http_fault.mutable_abort()->set_grpc_status(
+      static_cast<uint32_t>(StatusCode::ABORTED));
+  listener = default_listener_;
+  http_connection_manager = ClientHcmAccessor().Unpack(listener);
+  *http_connection_manager.add_http_filters() =
+      http_connection_manager.http_filters(0);
+  auto* filter = http_connection_manager.mutable_http_filters(0);
+  filter->set_name("envoy.fault");
+  filter->mutable_typed_config()->PackFrom(http_fault);
+  ClientHcmAccessor().Pack(http_connection_manager, &listener);
+  SetListenerAndRouteConfiguration(balancer_.get(), std::move(listener),
+                                   route_config);
+  // Wait for traffic to switch to backend 1.  There should be no RPC
+  // failures here; if there are, that indicates that the client started
+  // using the new LDS resource before it saw the new RDS resource.
+  WaitForBackend(DEBUG_LOCATION, 1);
+}
+
+TEST_P(LdsRdsInteractionTest, HcmConfigUpdatedWithoutRdsChange) {
+  CreateAndStartBackends(1);
+  // Bring up client pointing to backend 0 and wait for it to connect.
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  WaitForBackend(DEBUG_LOCATION, 0);
+  // LDS should have been ACKed.
+  auto response_state = balancer_->ads_service()->lds_response_state();
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
+  // Now update the LDS resource to add the fault injection filter with
+  // a config that fails all RPCs.
+  envoy::extensions::filters::http::fault::v3::HTTPFault http_fault;
+  auto* abort_percentage = http_fault.mutable_abort()->mutable_percentage();
+  abort_percentage->set_numerator(100);
+  abort_percentage->set_denominator(abort_percentage->HUNDRED);
+  http_fault.mutable_abort()->set_grpc_status(
+      static_cast<uint32_t>(StatusCode::ABORTED));
+  Listener listener = default_listener_;
+  HttpConnectionManager http_connection_manager =
+      ClientHcmAccessor().Unpack(listener);
+  *http_connection_manager.add_http_filters() =
+      http_connection_manager.http_filters(0);
+  auto* filter = http_connection_manager.mutable_http_filters(0);
+  filter->set_name("envoy.fault");
+  filter->mutable_typed_config()->PackFrom(http_fault);
+  ClientHcmAccessor().Pack(http_connection_manager, &listener);
+  SetListenerAndRouteConfiguration(balancer_.get(), std::move(listener),
+                                   default_route_config_);
+  // Wait for the LDS update to be ACKed.
+  const auto deadline =
+      absl::Now() + (absl::Seconds(30) * grpc_test_slowdown_factor());
+  while (true) {
+    ASSERT_LT(absl::Now(), deadline) << "timed out waiting for LDS ACK";
+    response_state = balancer_->ads_service()->lds_response_state();
+    if (response_state.has_value()) break;
+    absl::SleepFor(absl::Seconds(1) * grpc_test_slowdown_factor());
+  }
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
+  // Now RPCs should fail with ABORTED status.
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::ABORTED, "Fault injected");
+}
+
+TEST_P(LdsRdsInteractionTest, LdsUpdateChangesHcmConfigAndRdsResourceName) {
+  CreateAndStartBackends(2);
+  // Bring up client pointing to backend 0 and wait for it to connect.
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  WaitForBackend(DEBUG_LOCATION, 0);
+  // Change the LDS resource to point to an RDS resource.  The LDS resource
+  // configures the fault injection filter with a config that fails all RPCs.
+  // However, the RDS resource has a typed_per_filter_config override that
+  // disables the fault injection filter.  The RDS resource points to a
+  // new cluster that sends traffic to backend 1.
+  const char* kNewClusterName = "new_cluster_name";
+  const char* kNewEdsResourceName = "new_eds_resource_name";
+  auto cluster = default_cluster_;
+  cluster.set_name(kNewClusterName);
+  cluster.mutable_eds_cluster_config()->set_service_name(kNewEdsResourceName);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends(1, 2)}});
+  balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args, kNewEdsResourceName));
+  RouteConfiguration route_config = default_route_config_;
+  route_config.set_name("new_route_config");
+  route_config.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
+      ->mutable_route()
+      ->set_cluster(kNewClusterName);
+  auto* config_map = route_config.mutable_virtual_hosts(0)
+                         ->mutable_routes(0)
+                         ->mutable_typed_per_filter_config();
+  (*config_map)["envoy.fault"].PackFrom(
+      envoy::extensions::filters::http::fault::v3::HTTPFault());
+  envoy::extensions::filters::http::fault::v3::HTTPFault http_fault;
+  auto* abort_percentage = http_fault.mutable_abort()->mutable_percentage();
+  abort_percentage->set_numerator(100);
+  abort_percentage->set_denominator(abort_percentage->HUNDRED);
+  http_fault.mutable_abort()->set_grpc_status(
+      static_cast<uint32_t>(StatusCode::ABORTED));
+  Listener listener = default_listener_;
+  HttpConnectionManager http_connection_manager =
+      ClientHcmAccessor().Unpack(listener);
+  *http_connection_manager.add_http_filters() =
+      http_connection_manager.http_filters(0);
+  auto* filter = http_connection_manager.mutable_http_filters(0);
+  filter->set_name("envoy.fault");
+  filter->mutable_typed_config()->PackFrom(http_fault);
+  ClientHcmAccessor().Pack(http_connection_manager, &listener);
+  SetListenerAndRouteConfiguration(balancer_.get(), std::move(listener),
+                                   route_config);
+  // Wait for traffic to switch to backend 1.  There should be no RPC
+  // failures here; if there are, that indicates that the client started
+  // using the new LDS resource before it saw the new RDS resource.
+  WaitForBackend(DEBUG_LOCATION, 1);
+}
+
 using LdsRdsTest = XdsEnd2endTest;
 
 // Test with and without RDS.
-// Also test with v2 and RDS to ensure that we handle those cases.
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, LdsRdsTest,
-    ::testing::Values(XdsTestType(), XdsTestType().set_enable_rds_testing(),
-                      XdsTestType().set_enable_rds_testing().set_use_v2()),
+    ::testing::Values(XdsTestType(), XdsTestType().set_enable_rds_testing()),
     &XdsTestType::Name);
 
-MATCHER_P2(AdjustedClockInRange, t1, t2, "equals time") {
+MATCHER_P2(AdjustedClockInRange, t1, t2,
+           absl::StrFormat("time between %s and %s", t1.ToString().c_str(),
+                           t2.ToString().c_str())) {
   gpr_cycle_counter cycle_now = gpr_get_cycle_counter();
   grpc_core::Timestamp cycle_time =
       grpc_core::Timestamp::FromCycleCounterRoundDown(cycle_now);
@@ -554,33 +415,6 @@ MATCHER_P2(AdjustedClockInRange, t1, t2, "equals time") {
   ok &= ::testing::ExplainMatchResult(::testing::Ge(t1), now, result_listener);
   ok &= ::testing::ExplainMatchResult(::testing::Lt(t2), now, result_listener);
   return ok;
-}
-
-// Tests that XdsClient sends an ACK for the RouteConfiguration, whether or
-// not it was inlined into the LDS response.
-TEST_P(LdsRdsTest, Vanilla) {
-  (void)SendRpc();
-  auto response_state = RouteConfigurationResponseState(balancer_.get());
-  ASSERT_TRUE(response_state.has_value());
-  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
-  // Make sure we actually used the RPC service for the right version of xDS.
-  EXPECT_EQ(balancer_->ads_service()->seen_v2_client(), GetParam().use_v2());
-  EXPECT_NE(balancer_->ads_service()->seen_v3_client(), GetParam().use_v2());
-}
-
-TEST_P(LdsRdsTest, DefaultRouteSpecifiesSlashPrefix) {
-  CreateAndStartBackends(1);
-  RouteConfiguration route_config = default_route_config_;
-  route_config.mutable_virtual_hosts(0)
-      ->mutable_routes(0)
-      ->mutable_match()
-      ->set_prefix("/");
-  SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
-                                   route_config);
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // We need to wait for all backends to come online.
-  WaitForAllBackends(DEBUG_LOCATION);
 }
 
 // Tests that LDS client ACKs but fails if matching domain can't be found in
@@ -635,165 +469,59 @@ TEST_P(LdsRdsTest, ChooseLastRoute) {
   EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
-// Tests that LDS client should ignore route which has query_parameters.
-TEST_P(LdsRdsTest, RouteMatchHasQueryParameters) {
+TEST_P(LdsRdsTest, NoMatchingRoute) {
   RouteConfiguration route_config = default_route_config_;
-  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
-  route1->mutable_match()->add_query_parameters();
+  route_config.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
+      ->mutable_match()
+      ->set_prefix("/unknown/method");
   SetRouteConfiguration(balancer_.get(), route_config);
-  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("No valid routes specified."));
-}
-
-// Tests that LDS client should send a ACK if route match has a prefix
-// that is either empty or a single slash
-TEST_P(LdsRdsTest, RouteMatchHasValidPrefixEmptyOrSingleSlash) {
-  RouteConfiguration route_config = default_route_config_;
-  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  route1->mutable_match()->set_prefix("");
-  auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
-  default_route->mutable_match()->set_prefix("/");
-  default_route->mutable_route()->set_cluster(kDefaultClusterName);
-  SetRouteConfiguration(balancer_.get(), route_config);
-  (void)SendRpc();
-  const auto response_state = RouteConfigurationResponseState(balancer_.get());
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                      "No matching route found in xDS route config");
+  // Do a bit of polling, to allow the ACK to get to the ADS server.
+  channel_->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100));
+  auto response_state = RouteConfigurationResponseState(balancer_.get());
   ASSERT_TRUE(response_state.has_value());
   EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
-// Tests that LDS client should ignore route which has a path
-// prefix string does not start with "/".
-TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixNoLeadingSlash) {
+TEST_P(LdsRdsTest, EmptyRouteList) {
   RouteConfiguration route_config = default_route_config_;
-  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  route1->mutable_match()->set_prefix("grpc.testing.EchoTest1Service/");
+  route_config.mutable_virtual_hosts(0)->clear_routes();
   SetRouteConfiguration(balancer_.get(), route_config);
-  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("No valid routes specified."));
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                      "No matching route found in xDS route config");
+  // Do a bit of polling, to allow the ACK to get to the ADS server.
+  channel_->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100));
+  auto response_state = RouteConfigurationResponseState(balancer_.get());
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
-// Tests that LDS client should ignore route which has a prefix
-// string with more than 2 slashes.
-TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixExtraContent) {
+// Testing just one example of an invalid resource here.
+// Unit tests for XdsRouteConfigResourceType have exhaustive tests for all
+// of the invalid cases.
+TEST_P(LdsRdsTest, NacksInvalidRouteConfig) {
   RouteConfiguration route_config = default_route_config_;
-  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/Echo1/");
+  route_config.mutable_virtual_hosts(0)->mutable_routes(0)->clear_match();
   SetRouteConfiguration(balancer_.get(), route_config);
   const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("No valid routes specified."));
-}
-
-// Tests that LDS client should ignore route which has a prefix
-// string "//".
-TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixDoubleSlash) {
-  RouteConfiguration route_config = default_route_config_;
-  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  route1->mutable_match()->set_prefix("//");
-  SetRouteConfiguration(balancer_.get(), route_config);
-  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("No valid routes specified."));
-}
-
-// Tests that LDS client should ignore route which has path
-// but it's empty.
-TEST_P(LdsRdsTest, RouteMatchHasInvalidPathEmptyPath) {
-  RouteConfiguration route_config = default_route_config_;
-  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  route1->mutable_match()->set_path("");
-  SetRouteConfiguration(balancer_.get(), route_config);
-  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("No valid routes specified."));
-}
-
-// Tests that LDS client should ignore route which has path
-// string does not start with "/".
-TEST_P(LdsRdsTest, RouteMatchHasInvalidPathNoLeadingSlash) {
-  RouteConfiguration route_config = default_route_config_;
-  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  route1->mutable_match()->set_path("grpc.testing.EchoTest1Service/Echo1");
-  SetRouteConfiguration(balancer_.get(), route_config);
-  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("No valid routes specified."));
-}
-
-// Tests that LDS client should ignore route which has path
-// string that has too many slashes; for example, ends with "/".
-TEST_P(LdsRdsTest, RouteMatchHasInvalidPathTooManySlashes) {
-  RouteConfiguration route_config = default_route_config_;
-  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  route1->mutable_match()->set_path("/grpc.testing.EchoTest1Service/Echo1/");
-  SetRouteConfiguration(balancer_.get(), route_config);
-  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("No valid routes specified."));
-}
-
-// Tests that LDS client should ignore route which has path
-// string that has only 1 slash: missing "/" between service and method.
-TEST_P(LdsRdsTest, RouteMatchHasInvalidPathOnlyOneSlash) {
-  RouteConfiguration route_config = default_route_config_;
-  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  route1->mutable_match()->set_path("/grpc.testing.EchoTest1Service.Echo1");
-  SetRouteConfiguration(balancer_.get(), route_config);
-  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("No valid routes specified."));
-}
-
-// Tests that LDS client should ignore route which has path
-// string that is missing service.
-TEST_P(LdsRdsTest, RouteMatchHasInvalidPathMissingService) {
-  RouteConfiguration route_config = default_route_config_;
-  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  route1->mutable_match()->set_path("//Echo1");
-  SetRouteConfiguration(balancer_.get(), route_config);
-  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("No valid routes specified."));
-}
-
-// Tests that LDS client should ignore route which has path
-// string that is missing method.
-TEST_P(LdsRdsTest, RouteMatchHasInvalidPathMissingMethod) {
-  RouteConfiguration route_config = default_route_config_;
-  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  route1->mutable_match()->set_path("/grpc.testing.EchoTest1Service/");
-  SetRouteConfiguration(balancer_.get(), route_config);
-  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("No valid routes specified."));
-}
-
-// Test that LDS client should reject route which has invalid path regex.
-TEST_P(LdsRdsTest, RouteMatchHasInvalidPathRegex) {
-  const char* kNewCluster1Name = "new_cluster_1";
-  RouteConfiguration route_config = default_route_config_;
-  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  route1->mutable_match()->mutable_safe_regex()->set_regex("a[z-a]");
-  route1->mutable_route()->set_cluster(kNewCluster1Name);
-  SetRouteConfiguration(balancer_.get(), route_config);
-  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr(
-                  "path matcher: Invalid regex string specified in matcher."));
+  EXPECT_EQ(
+      response_state->error_message,
+      absl::StrCat(
+          "xDS response validation errors: [resource index 0: ",
+          GetParam().enable_rds_testing()
+              ? "route_config_name: INVALID_ARGUMENT: "
+                "errors validating RouteConfiguration resource: ["
+                "field:"
+              : "server.example.com: INVALID_ARGUMENT: "
+                "errors validating ApiListener: ["
+                "field:api_listener.api_listener.value["
+                "envoy.extensions.filters.network.http_connection_manager.v3"
+                ".HttpConnectionManager].route_config.",
+          "virtual_hosts[0].routes[0].match "
+          "error:field not present]]"));
 }
 
 // Tests that LDS client should fail RPCs with UNAVAILABLE status code if the
@@ -811,158 +539,6 @@ TEST_P(LdsRdsTest, MatchingRouteHasNoRouteAction) {
   SetRouteConfiguration(balancer_.get(), route_config);
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
                       "Matching route has inappropriate action");
-}
-
-TEST_P(LdsRdsTest, RouteActionClusterHasEmptyClusterName) {
-  RouteConfiguration route_config = default_route_config_;
-  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
-  route1->mutable_route()->set_cluster("");
-  auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
-  default_route->mutable_match()->set_prefix("");
-  default_route->mutable_route()->set_cluster(kDefaultClusterName);
-  SetRouteConfiguration(balancer_.get(), route_config);
-  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
-      response_state->error_message,
-      ::testing::HasSubstr("RouteAction cluster contains empty cluster name."));
-}
-
-TEST_P(LdsRdsTest, RouteActionWeightedTargetHasIncorrectTotalWeightSet) {
-  const size_t kWeight75 = 75;
-  const char* kNewCluster1Name = "new_cluster_1";
-  RouteConfiguration route_config = default_route_config_;
-  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
-  auto* weighted_cluster1 =
-      route1->mutable_route()->mutable_weighted_clusters()->add_clusters();
-  weighted_cluster1->set_name(kNewCluster1Name);
-  weighted_cluster1->mutable_weight()->set_value(kWeight75);
-  route1->mutable_route()
-      ->mutable_weighted_clusters()
-      ->mutable_total_weight()
-      ->set_value(kWeight75 + 1);
-  auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
-  default_route->mutable_match()->set_prefix("");
-  default_route->mutable_route()->set_cluster(kDefaultClusterName);
-  SetRouteConfiguration(balancer_.get(), route_config);
-  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr(
-                  "RouteAction weighted_cluster has incorrect total weight"));
-}
-
-TEST_P(LdsRdsTest, RouteActionWeightedClusterHasZeroTotalWeight) {
-  const char* kNewCluster1Name = "new_cluster_1";
-  RouteConfiguration route_config = default_route_config_;
-  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
-  auto* weighted_cluster1 =
-      route1->mutable_route()->mutable_weighted_clusters()->add_clusters();
-  weighted_cluster1->set_name(kNewCluster1Name);
-  weighted_cluster1->mutable_weight()->set_value(0);
-  route1->mutable_route()
-      ->mutable_weighted_clusters()
-      ->mutable_total_weight()
-      ->set_value(0);
-  auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
-  default_route->mutable_match()->set_prefix("");
-  default_route->mutable_route()->set_cluster(kDefaultClusterName);
-  SetRouteConfiguration(balancer_.get(), route_config);
-  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
-      response_state->error_message,
-      ::testing::HasSubstr(
-          "RouteAction weighted_cluster has no valid clusters specified."));
-}
-
-TEST_P(LdsRdsTest, RouteActionWeightedTargetClusterHasEmptyClusterName) {
-  const size_t kWeight75 = 75;
-  RouteConfiguration route_config = default_route_config_;
-  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
-  auto* weighted_cluster1 =
-      route1->mutable_route()->mutable_weighted_clusters()->add_clusters();
-  weighted_cluster1->set_name("");
-  weighted_cluster1->mutable_weight()->set_value(kWeight75);
-  route1->mutable_route()
-      ->mutable_weighted_clusters()
-      ->mutable_total_weight()
-      ->set_value(kWeight75);
-  auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
-  default_route->mutable_match()->set_prefix("");
-  default_route->mutable_route()->set_cluster(kDefaultClusterName);
-  SetRouteConfiguration(balancer_.get(), route_config);
-  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("RouteAction weighted_cluster cluster "
-                                   "contains empty cluster name."));
-}
-
-TEST_P(LdsRdsTest, RouteActionWeightedTargetClusterHasNoWeight) {
-  const size_t kWeight75 = 75;
-  const char* kNewCluster1Name = "new_cluster_1";
-  RouteConfiguration route_config = default_route_config_;
-  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
-  auto* weighted_cluster1 =
-      route1->mutable_route()->mutable_weighted_clusters()->add_clusters();
-  weighted_cluster1->set_name(kNewCluster1Name);
-  route1->mutable_route()
-      ->mutable_weighted_clusters()
-      ->mutable_total_weight()
-      ->set_value(kWeight75);
-  auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
-  default_route->mutable_match()->set_prefix("");
-  default_route->mutable_route()->set_cluster(kDefaultClusterName);
-  SetRouteConfiguration(balancer_.get(), route_config);
-  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr(
-                  "RouteAction weighted_cluster cluster missing weight"));
-}
-
-TEST_P(LdsRdsTest, RouteHeaderMatchInvalidRegex) {
-  const char* kNewCluster1Name = "new_cluster_1";
-  RouteConfiguration route_config = default_route_config_;
-  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
-  auto* header_matcher1 = route1->mutable_match()->add_headers();
-  header_matcher1->set_name("header1");
-  header_matcher1->mutable_safe_regex_match()->set_regex("a[z-a]");
-  route1->mutable_route()->set_cluster(kNewCluster1Name);
-  SetRouteConfiguration(balancer_.get(), route_config);
-  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
-      response_state->error_message,
-      ::testing::HasSubstr(
-          "header matcher: Invalid regex string specified in matcher."));
-}
-
-TEST_P(LdsRdsTest, RouteHeaderMatchInvalidRange) {
-  const char* kNewCluster1Name = "new_cluster_1";
-  RouteConfiguration route_config = default_route_config_;
-  auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
-  auto* header_matcher1 = route1->mutable_match()->add_headers();
-  header_matcher1->set_name("header1");
-  header_matcher1->mutable_range_match()->set_start(1001);
-  header_matcher1->mutable_range_match()->set_end(1000);
-  route1->mutable_route()->set_cluster(kNewCluster1Name);
-  SetRouteConfiguration(balancer_.get(), route_config);
-  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
-      response_state->error_message,
-      ::testing::HasSubstr(
-          "header matcher: Invalid range specifier specified: end cannot be "
-          "smaller than start."));
 }
 
 // Tests that LDS client should choose the default route (with no matching
@@ -1379,10 +955,6 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedCluster) {
       route1->mutable_route()->mutable_weighted_clusters()->add_clusters();
   weighted_cluster3->set_name(kNotUsedClusterName);
   weighted_cluster3->mutable_weight()->set_value(0);
-  route1->mutable_route()
-      ->mutable_weighted_clusters()
-      ->mutable_total_weight()
-      ->set_value(kWeight75 + kWeight25);
   auto* default_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
@@ -1409,6 +981,88 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedCluster) {
               ::testing::DoubleNear(kWeight75Percent, kErrorTolerance));
   EXPECT_THAT(static_cast<double>(weight_25_request_count) / kNumEcho1Rpcs,
               ::testing::DoubleNear(kWeight25Percent, kErrorTolerance));
+}
+
+TEST_P(LdsRdsTest, XdsRoutingWeightedClusterNoIntegerOverflow) {
+  CreateAndStartBackends(3);
+  const char* kNewCluster1Name = "new_cluster_1";
+  const char* kNewEdsService1Name = "new_eds_service_name_1";
+  const char* kNewCluster2Name = "new_cluster_2";
+  const char* kNewEdsService2Name = "new_eds_service_name_2";
+  const size_t kNumEchoRpcs = 10;  // RPCs that will go to a fixed backend.
+  const uint32_t kWeight1 = std::numeric_limits<uint32_t>::max() / 3;
+  const uint32_t kWeight2 = std::numeric_limits<uint32_t>::max() - kWeight1;
+  const double kErrorTolerance = 0.05;
+  const double kWeight1Percent =
+      static_cast<double>(kWeight1) / std::numeric_limits<uint32_t>::max();
+  const double kWeight2Percent =
+      static_cast<double>(kWeight2) / std::numeric_limits<uint32_t>::max();
+  const size_t kNumEcho1Rpcs =
+      ComputeIdealNumRpcs(kWeight2Percent, kErrorTolerance);
+  // Populate new EDS resources.
+  EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  });
+  EdsResourceArgs args1({
+      {"locality0", CreateEndpointsForBackends(1, 2)},
+  });
+  EdsResourceArgs args2({
+      {"locality0", CreateEndpointsForBackends(2, 3)},
+  });
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args1, kNewEdsService1Name));
+  balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args2, kNewEdsService2Name));
+  // Populate new CDS resources.
+  Cluster new_cluster1 = default_cluster_;
+  new_cluster1.set_name(kNewCluster1Name);
+  new_cluster1.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsService1Name);
+  balancer_->ads_service()->SetCdsResource(new_cluster1);
+  Cluster new_cluster2 = default_cluster_;
+  new_cluster2.set_name(kNewCluster2Name);
+  new_cluster2.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsService2Name);
+  balancer_->ads_service()->SetCdsResource(new_cluster2);
+  // Populating Route Configurations for LDS.
+  RouteConfiguration new_route_config = default_route_config_;
+  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
+  auto* weighted_cluster1 =
+      route1->mutable_route()->mutable_weighted_clusters()->add_clusters();
+  weighted_cluster1->set_name(kNewCluster1Name);
+  weighted_cluster1->mutable_weight()->set_value(kWeight1);
+  auto* weighted_cluster2 =
+      route1->mutable_route()->mutable_weighted_clusters()->add_clusters();
+  weighted_cluster2->set_name(kNewCluster2Name);
+  weighted_cluster2->mutable_weight()->set_value(kWeight2);
+  auto* default_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
+  default_route->mutable_match()->set_prefix("");
+  default_route->mutable_route()->set_cluster(kDefaultClusterName);
+  SetRouteConfiguration(balancer_.get(), new_route_config);
+  WaitForAllBackends(DEBUG_LOCATION, 0, 1);
+  WaitForAllBackends(DEBUG_LOCATION, 1, 3, /*check_status=*/nullptr,
+                     WaitForBackendOptions(),
+                     RpcOptions().set_rpc_service(SERVICE_ECHO1));
+  CheckRpcSendOk(DEBUG_LOCATION, kNumEchoRpcs);
+  CheckRpcSendOk(DEBUG_LOCATION, kNumEcho1Rpcs,
+                 RpcOptions().set_rpc_service(SERVICE_ECHO1));
+  // Make sure RPCs all go to the correct backend.
+  EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
+  EXPECT_EQ(0, backends_[0]->backend_service1()->request_count());
+  EXPECT_EQ(0, backends_[1]->backend_service()->request_count());
+  const int weight1_request_count =
+      backends_[1]->backend_service1()->request_count();
+  EXPECT_EQ(0, backends_[2]->backend_service()->request_count());
+  const int weight2_request_count =
+      backends_[2]->backend_service1()->request_count();
+  gpr_log(GPR_INFO, "target1 received %d rpcs and target2 received %d rpcs",
+          weight1_request_count, weight2_request_count);
+  EXPECT_THAT(static_cast<double>(weight1_request_count) / kNumEcho1Rpcs,
+              ::testing::DoubleNear(kWeight1Percent, kErrorTolerance));
+  EXPECT_THAT(static_cast<double>(weight2_request_count) / kNumEcho1Rpcs,
+              ::testing::DoubleNear(kWeight2Percent, kErrorTolerance));
 }
 
 TEST_P(LdsRdsTest, RouteActionWeightedTargetDefaultRoute) {
@@ -1462,10 +1116,6 @@ TEST_P(LdsRdsTest, RouteActionWeightedTargetDefaultRoute) {
       route1->mutable_route()->mutable_weighted_clusters()->add_clusters();
   weighted_cluster2->set_name(kNewCluster2Name);
   weighted_cluster2->mutable_weight()->set_value(kWeight25);
-  route1->mutable_route()
-      ->mutable_weighted_clusters()
-      ->mutable_total_weight()
-      ->set_value(kWeight75 + kWeight25);
   SetRouteConfiguration(balancer_.get(), new_route_config);
   WaitForAllBackends(DEBUG_LOCATION, 1, 3);
   CheckRpcSendOk(DEBUG_LOCATION, kNumEchoRpcs);
@@ -1551,10 +1201,6 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateWeights) {
       route1->mutable_route()->mutable_weighted_clusters()->add_clusters();
   weighted_cluster2->set_name(kNewCluster2Name);
   weighted_cluster2->mutable_weight()->set_value(kWeight25);
-  route1->mutable_route()
-      ->mutable_weighted_clusters()
-      ->mutable_total_weight()
-      ->set_value(kWeight75 + kWeight25);
   auto* default_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
@@ -1691,10 +1337,6 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
       route1->mutable_route()->mutable_weighted_clusters()->add_clusters();
   weighted_cluster2->set_name(kDefaultClusterName);
   weighted_cluster2->mutable_weight()->set_value(kWeight25);
-  route1->mutable_route()
-      ->mutable_weighted_clusters()
-      ->mutable_total_weight()
-      ->set_value(kWeight75 + kWeight25);
   auto* default_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
@@ -1834,14 +1476,9 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClustersWithPickingDelays) {
                RpcOptions().set_wait_for_ready(true).set_timeout_ms(0));
   // Send a non-wait_for_ready RPC, which should fail.  This tells us
   // that the client has received the update and attempted to connect.
-  constexpr char kErrorMessageRegex[] =
-      "connections to all backends failing; last error: "
-      "(UNKNOWN: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
-      "Failed to connect to remote host: Connection refused|"
-      "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
-      "Failed to connect to remote host: FD shutdown)";
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-                      kErrorMessageRegex);
+                      MakeConnectionFailureRegex(
+                          "connections to all backends failing; last error: "));
   // Now create a new cluster, pointing to backend 1.
   const char* kNewClusterName = "new_cluster";
   const char* kNewEdsServiceName = "new_eds_service_name";
@@ -1867,8 +1504,10 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClustersWithPickingDelays) {
       [&](const RpcResult& result) {
         if (!result.status.ok()) {
           EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
-          EXPECT_THAT(result.status.error_message(),
-                      ::testing::MatchesRegex(kErrorMessageRegex));
+          EXPECT_THAT(
+              result.status.error_message(),
+              ::testing::MatchesRegex(MakeConnectionFailureRegex(
+                  "connections to all backends failing; last error: ")));
         }
       },
       WaitForBackendOptions().set_reset_counters(false));
@@ -2346,55 +1985,6 @@ TEST_P(LdsRdsTest,
   EXPECT_EQ(1, backends_[0]->backend_service()->request_count());
 }
 
-TEST_P(LdsRdsTest, XdsRetryPolicyInvalidNumRetriesZero) {
-  CreateAndStartBackends(1);
-  // Populate new EDS resources.
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  });
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Construct route config to set retry policy.
-  RouteConfiguration new_route_config = default_route_config_;
-  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  auto* retry_policy = route1->mutable_route()->mutable_retry_policy();
-  retry_policy->set_retry_on("deadline-exceeded");
-  // Setting num_retries to zero is not valid.
-  retry_policy->mutable_num_retries()->set_value(0);
-  SetRouteConfiguration(balancer_.get(), new_route_config);
-  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
-      response_state->error_message,
-      ::testing::HasSubstr(
-          "RouteAction RetryPolicy num_retries set to invalid value 0."));
-}
-
-TEST_P(LdsRdsTest, XdsRetryPolicyRetryBackOffMissingBaseInterval) {
-  CreateAndStartBackends(1);
-  // Populate new EDS resources.
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  });
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Construct route config to set retry policy.
-  RouteConfiguration new_route_config = default_route_config_;
-  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  auto* retry_policy = route1->mutable_route()->mutable_retry_policy();
-  retry_policy->set_retry_on("deadline-exceeded");
-  retry_policy->mutable_num_retries()->set_value(1);
-  // RetryBackoff is there but base interval is missing.
-  SetProtoDuration(
-      grpc_core::Duration::Milliseconds(250),
-      retry_policy->mutable_retry_back_off()->mutable_max_interval());
-  SetRouteConfiguration(balancer_.get(), new_route_config);
-  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
-      response_state->error_message,
-      ::testing::HasSubstr(
-          "RouteAction RetryPolicy RetryBackoff missing base interval."));
-}
-
 TEST_P(LdsRdsTest, XdsRoutingHeadersMatching) {
   CreateAndStartBackends(2);
   const char* kNewClusterName = "new_cluster";
@@ -2805,372 +2395,6 @@ TEST_P(LdsRdsTest, XdsRoutingChangeRoutesWithoutChangingClusters) {
   EXPECT_EQ(1, backends_[1]->backend_service2()->request_count());
 }
 
-// Test that we NACK unknown filter types in VirtualHost.
-TEST_P(LdsRdsTest, RejectsUnknownHttpFilterTypeInVirtualHost) {
-  if (GetParam().use_v2()) return;  // Filters supported in v3 only.
-  RouteConfiguration route_config = default_route_config_;
-  auto* per_filter_config =
-      route_config.mutable_virtual_hosts(0)->mutable_typed_per_filter_config();
-  (*per_filter_config)["unknown"].PackFrom(Listener());
-  SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
-                                   route_config);
-  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("no filter registered for config type "
-                                   "envoy.config.listener.v3.Listener"));
-}
-
-// Test that we ignore optional unknown filter types in VirtualHost.
-TEST_P(LdsRdsTest, IgnoresOptionalUnknownHttpFilterTypeInVirtualHost) {
-  CreateAndStartBackends(1);
-  if (GetParam().use_v2()) return;  // Filters supported in v3 only.
-  RouteConfiguration route_config = default_route_config_;
-  auto* per_filter_config =
-      route_config.mutable_virtual_hosts(0)->mutable_typed_per_filter_config();
-  ::envoy::config::route::v3::FilterConfig filter_config;
-  filter_config.mutable_config()->PackFrom(Listener());
-  filter_config.set_is_optional(true);
-  (*per_filter_config)["unknown"].PackFrom(filter_config);
-  SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
-                                   route_config);
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForAllBackends(DEBUG_LOCATION);
-  auto response_state = RouteConfigurationResponseState(balancer_.get());
-  ASSERT_TRUE(response_state.has_value());
-  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
-}
-
-// Test that we NACK filters without configs in VirtualHost.
-TEST_P(LdsRdsTest, RejectsHttpFilterWithoutConfigInVirtualHost) {
-  if (GetParam().use_v2()) return;  // Filters supported in v3 only.
-  RouteConfiguration route_config = default_route_config_;
-  auto* per_filter_config =
-      route_config.mutable_virtual_hosts(0)->mutable_typed_per_filter_config();
-  (*per_filter_config)["unknown"];
-  SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
-                                   route_config);
-  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr(
-                  "no filter config specified for filter name unknown"));
-}
-
-// Test that we NACK filters without configs in FilterConfig in VirtualHost.
-TEST_P(LdsRdsTest, RejectsHttpFilterWithoutConfigInFilterConfigInVirtualHost) {
-  if (GetParam().use_v2()) return;  // Filters supported in v3 only.
-  RouteConfiguration route_config = default_route_config_;
-  auto* per_filter_config =
-      route_config.mutable_virtual_hosts(0)->mutable_typed_per_filter_config();
-  (*per_filter_config)["unknown"].PackFrom(
-      ::envoy::config::route::v3::FilterConfig());
-  SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
-                                   route_config);
-  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr(
-                  "no filter config specified for filter name unknown"));
-}
-
-// Test that we ignore optional filters without configs in VirtualHost.
-TEST_P(LdsRdsTest, IgnoresOptionalHttpFilterWithoutConfigInVirtualHost) {
-  if (GetParam().use_v2()) return;  // Filters supported in v3 only.
-  CreateAndStartBackends(1);
-  RouteConfiguration route_config = default_route_config_;
-  auto* per_filter_config =
-      route_config.mutable_virtual_hosts(0)->mutable_typed_per_filter_config();
-  ::envoy::config::route::v3::FilterConfig filter_config;
-  filter_config.set_is_optional(true);
-  (*per_filter_config)["unknown"].PackFrom(filter_config);
-  SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
-                                   route_config);
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends()},
-  });
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForAllBackends(DEBUG_LOCATION);
-  auto response_state = RouteConfigurationResponseState(balancer_.get());
-  ASSERT_TRUE(response_state.has_value());
-  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
-}
-
-// Test that we NACK unparseable filter types in VirtualHost.
-TEST_P(LdsRdsTest, RejectsUnparseableHttpFilterTypeInVirtualHost) {
-  if (GetParam().use_v2()) return;  // Filters supported in v3 only.
-  RouteConfiguration route_config = default_route_config_;
-  auto* per_filter_config =
-      route_config.mutable_virtual_hosts(0)->mutable_typed_per_filter_config();
-  (*per_filter_config)["unknown"].PackFrom(
-      envoy::extensions::filters::http::router::v3::Router());
-  SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
-                                   route_config);
-  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
-      response_state->error_message,
-      ::testing::HasSubstr("router filter does not support config override"));
-}
-
-// Test that we NACK unknown filter types in Route.
-TEST_P(LdsRdsTest, RejectsUnknownHttpFilterTypeInRoute) {
-  if (GetParam().use_v2()) return;  // Filters supported in v3 only.
-  RouteConfiguration route_config = default_route_config_;
-  auto* per_filter_config = route_config.mutable_virtual_hosts(0)
-                                ->mutable_routes(0)
-                                ->mutable_typed_per_filter_config();
-  (*per_filter_config)["unknown"].PackFrom(Listener());
-  SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
-                                   route_config);
-  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("no filter registered for config type "
-                                   "envoy.config.listener.v3.Listener"));
-}
-
-// Test that we ignore optional unknown filter types in Route.
-TEST_P(LdsRdsTest, IgnoresOptionalUnknownHttpFilterTypeInRoute) {
-  if (GetParam().use_v2()) return;  // Filters supported in v3 only.
-  CreateAndStartBackends(1);
-  RouteConfiguration route_config = default_route_config_;
-  auto* per_filter_config = route_config.mutable_virtual_hosts(0)
-                                ->mutable_routes(0)
-                                ->mutable_typed_per_filter_config();
-  ::envoy::config::route::v3::FilterConfig filter_config;
-  filter_config.mutable_config()->PackFrom(Listener());
-  filter_config.set_is_optional(true);
-  (*per_filter_config)["unknown"].PackFrom(filter_config);
-  SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
-                                   route_config);
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForAllBackends(DEBUG_LOCATION);
-  auto response_state = RouteConfigurationResponseState(balancer_.get());
-  ASSERT_TRUE(response_state.has_value());
-  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
-}
-
-// Test that we NACK filters without configs in Route.
-TEST_P(LdsRdsTest, RejectsHttpFilterWithoutConfigInRoute) {
-  if (GetParam().use_v2()) return;  // Filters supported in v3 only.
-  RouteConfiguration route_config = default_route_config_;
-  auto* per_filter_config = route_config.mutable_virtual_hosts(0)
-                                ->mutable_routes(0)
-                                ->mutable_typed_per_filter_config();
-  (*per_filter_config)["unknown"];
-  SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
-                                   route_config);
-  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr(
-                  "no filter config specified for filter name unknown"));
-}
-
-// Test that we NACK filters without configs in FilterConfig in Route.
-TEST_P(LdsRdsTest, RejectsHttpFilterWithoutConfigInFilterConfigInRoute) {
-  if (GetParam().use_v2()) return;  // Filters supported in v3 only.
-  RouteConfiguration route_config = default_route_config_;
-  auto* per_filter_config = route_config.mutable_virtual_hosts(0)
-                                ->mutable_routes(0)
-                                ->mutable_typed_per_filter_config();
-  (*per_filter_config)["unknown"].PackFrom(
-      ::envoy::config::route::v3::FilterConfig());
-  SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
-                                   route_config);
-  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr(
-                  "no filter config specified for filter name unknown"));
-}
-
-// Test that we ignore optional filters without configs in Route.
-TEST_P(LdsRdsTest, IgnoresOptionalHttpFilterWithoutConfigInRoute) {
-  if (GetParam().use_v2()) return;  // Filters supported in v3 only.
-  CreateAndStartBackends(1);
-  RouteConfiguration route_config = default_route_config_;
-  auto* per_filter_config = route_config.mutable_virtual_hosts(0)
-                                ->mutable_routes(0)
-                                ->mutable_typed_per_filter_config();
-  ::envoy::config::route::v3::FilterConfig filter_config;
-  filter_config.set_is_optional(true);
-  (*per_filter_config)["unknown"].PackFrom(filter_config);
-  SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
-                                   route_config);
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForAllBackends(DEBUG_LOCATION);
-  auto response_state = RouteConfigurationResponseState(balancer_.get());
-  ASSERT_TRUE(response_state.has_value());
-  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
-}
-
-// Test that we NACK unparseable filter types in Route.
-TEST_P(LdsRdsTest, RejectsUnparseableHttpFilterTypeInRoute) {
-  if (GetParam().use_v2()) return;  // Filters supported in v3 only.
-  RouteConfiguration route_config = default_route_config_;
-  auto* per_filter_config = route_config.mutable_virtual_hosts(0)
-                                ->mutable_routes(0)
-                                ->mutable_typed_per_filter_config();
-  (*per_filter_config)["unknown"].PackFrom(
-      envoy::extensions::filters::http::router::v3::Router());
-  SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
-                                   route_config);
-  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
-      response_state->error_message,
-      ::testing::HasSubstr("router filter does not support config override"));
-}
-
-// Test that we NACK unknown filter types in ClusterWeight.
-TEST_P(LdsRdsTest, RejectsUnknownHttpFilterTypeInClusterWeight) {
-  if (GetParam().use_v2()) return;  // Filters supported in v3 only.
-  RouteConfiguration route_config = default_route_config_;
-  auto* cluster_weight = route_config.mutable_virtual_hosts(0)
-                             ->mutable_routes(0)
-                             ->mutable_route()
-                             ->mutable_weighted_clusters()
-                             ->add_clusters();
-  cluster_weight->set_name(kDefaultClusterName);
-  cluster_weight->mutable_weight()->set_value(100);
-  auto* per_filter_config = cluster_weight->mutable_typed_per_filter_config();
-  (*per_filter_config)["unknown"].PackFrom(Listener());
-  SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
-                                   route_config);
-  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("no filter registered for config type "
-                                   "envoy.config.listener.v3.Listener"));
-}
-
-// Test that we ignore optional unknown filter types in ClusterWeight.
-TEST_P(LdsRdsTest, IgnoresOptionalUnknownHttpFilterTypeInClusterWeight) {
-  if (GetParam().use_v2()) return;  // Filters supported in v3 only.
-  CreateAndStartBackends(1);
-  RouteConfiguration route_config = default_route_config_;
-  auto* cluster_weight = route_config.mutable_virtual_hosts(0)
-                             ->mutable_routes(0)
-                             ->mutable_route()
-                             ->mutable_weighted_clusters()
-                             ->add_clusters();
-  cluster_weight->set_name(kDefaultClusterName);
-  cluster_weight->mutable_weight()->set_value(100);
-  auto* per_filter_config = cluster_weight->mutable_typed_per_filter_config();
-  ::envoy::config::route::v3::FilterConfig filter_config;
-  filter_config.mutable_config()->PackFrom(Listener());
-  filter_config.set_is_optional(true);
-  (*per_filter_config)["unknown"].PackFrom(filter_config);
-  SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
-                                   route_config);
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForAllBackends(DEBUG_LOCATION);
-  auto response_state = RouteConfigurationResponseState(balancer_.get());
-  ASSERT_TRUE(response_state.has_value());
-  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
-}
-
-// Test that we NACK filters without configs in ClusterWeight.
-TEST_P(LdsRdsTest, RejectsHttpFilterWithoutConfigInClusterWeight) {
-  if (GetParam().use_v2()) return;  // Filters supported in v3 only.
-  RouteConfiguration route_config = default_route_config_;
-  auto* cluster_weight = route_config.mutable_virtual_hosts(0)
-                             ->mutable_routes(0)
-                             ->mutable_route()
-                             ->mutable_weighted_clusters()
-                             ->add_clusters();
-  cluster_weight->set_name(kDefaultClusterName);
-  cluster_weight->mutable_weight()->set_value(100);
-  auto* per_filter_config = cluster_weight->mutable_typed_per_filter_config();
-  (*per_filter_config)["unknown"];
-  SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
-                                   route_config);
-  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr(
-                  "no filter config specified for filter name unknown"));
-}
-
-// Test that we NACK filters without configs in FilterConfig in ClusterWeight.
-TEST_P(LdsRdsTest,
-       RejectsHttpFilterWithoutConfigInFilterConfigInClusterWeight) {
-  if (GetParam().use_v2()) return;  // Filters supported in v3 only.
-  RouteConfiguration route_config = default_route_config_;
-  auto* cluster_weight = route_config.mutable_virtual_hosts(0)
-                             ->mutable_routes(0)
-                             ->mutable_route()
-                             ->mutable_weighted_clusters()
-                             ->add_clusters();
-  cluster_weight->set_name(kDefaultClusterName);
-  cluster_weight->mutable_weight()->set_value(100);
-  auto* per_filter_config = cluster_weight->mutable_typed_per_filter_config();
-  (*per_filter_config)["unknown"].PackFrom(
-      ::envoy::config::route::v3::FilterConfig());
-  SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
-                                   route_config);
-  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr(
-                  "no filter config specified for filter name unknown"));
-}
-
-// Test that we ignore optional filters without configs in ClusterWeight.
-TEST_P(LdsRdsTest, IgnoresOptionalHttpFilterWithoutConfigInClusterWeight) {
-  if (GetParam().use_v2()) return;  // Filters supported in v3 only.
-  CreateAndStartBackends(1);
-  RouteConfiguration route_config = default_route_config_;
-  auto* cluster_weight = route_config.mutable_virtual_hosts(0)
-                             ->mutable_routes(0)
-                             ->mutable_route()
-                             ->mutable_weighted_clusters()
-                             ->add_clusters();
-  cluster_weight->set_name(kDefaultClusterName);
-  cluster_weight->mutable_weight()->set_value(100);
-  auto* per_filter_config = cluster_weight->mutable_typed_per_filter_config();
-  ::envoy::config::route::v3::FilterConfig filter_config;
-  filter_config.set_is_optional(true);
-  (*per_filter_config)["unknown"].PackFrom(filter_config);
-  SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
-                                   route_config);
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForAllBackends(DEBUG_LOCATION);
-  auto response_state = RouteConfigurationResponseState(balancer_.get());
-  ASSERT_TRUE(response_state.has_value());
-  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
-}
-
-// Test that we NACK unparseable filter types in ClusterWeight.
-TEST_P(LdsRdsTest, RejectsUnparseableHttpFilterTypeInClusterWeight) {
-  if (GetParam().use_v2()) return;  // Filters supported in v3 only.
-  RouteConfiguration route_config = default_route_config_;
-  auto* cluster_weight = route_config.mutable_virtual_hosts(0)
-                             ->mutable_routes(0)
-                             ->mutable_route()
-                             ->mutable_weighted_clusters()
-                             ->add_clusters();
-  cluster_weight->set_name(kDefaultClusterName);
-  cluster_weight->mutable_weight()->set_value(100);
-  auto* per_filter_config = cluster_weight->mutable_typed_per_filter_config();
-  (*per_filter_config)["unknown"].PackFrom(
-      envoy::extensions::filters::http::router::v3::Router());
-  SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
-                                   route_config);
-  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
-      response_state->error_message,
-      ::testing::HasSubstr("router filter does not support config override"));
-}
-
 }  // namespace
 }  // namespace testing
 }  // namespace grpc
@@ -3180,30 +2404,14 @@ int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   // Make the backup poller poll very frequently in order to pick up
   // updates from all the subchannels's FDs.
-  GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
+  grpc_core::ConfigVars::Overrides overrides;
+  overrides.client_channel_backup_poll_interval_ms = 1;
+  grpc_core::ConfigVars::SetOverrides(overrides);
 #if TARGET_OS_IPHONE
   // Workaround Apple CFStream bug
   grpc_core::SetEnv("grpc_cfstream", "0");
 #endif
   grpc_init();
-  grpc_core::XdsHttpFilterRegistry::RegisterFilter(
-      absl::make_unique<grpc::testing::NoOpHttpFilter>(
-          "grpc.testing.client_only_http_filter",
-          /* supported_on_clients = */ true, /* supported_on_servers = */ false,
-          /* is_terminal_filter */ false),
-      {"grpc.testing.client_only_http_filter"});
-  grpc_core::XdsHttpFilterRegistry::RegisterFilter(
-      absl::make_unique<grpc::testing::NoOpHttpFilter>(
-          "grpc.testing.server_only_http_filter",
-          /* supported_on_clients = */ false, /* supported_on_servers = */ true,
-          /* is_terminal_filter */ false),
-      {"grpc.testing.server_only_http_filter"});
-  grpc_core::XdsHttpFilterRegistry::RegisterFilter(
-      absl::make_unique<grpc::testing::NoOpHttpFilter>(
-          "grpc.testing.terminal_http_filter",
-          /* supported_on_clients = */ true, /* supported_on_servers = */ true,
-          /* is_terminal_filter */ true),
-      {"grpc.testing.terminal_http_filter"});
   const auto result = RUN_ALL_TESTS();
   grpc_shutdown();
   return result;

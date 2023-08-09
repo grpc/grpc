@@ -24,6 +24,12 @@ import "google/protobuf/wrappers.proto";
 
 // [#next-free-field: 7]
 message SocketAddress {
+  enum Protocol {
+    TCP = 0;
+    UDP = 1;
+  }
+  Protocol protocol = 1;
+
   // The address for this socket. :ref:`Listeners <config_listeners>` will bind
   // to the address. An empty address is not allowed. Specify ``0.0.0.0`` or ``::``
   // to bind to any address. [#comment:TODO(zuercher) reinstate when implemented:

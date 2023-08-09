@@ -14,7 +14,7 @@ number:
 - remove `ServerBuilder::SetMaxMessageSize()` method from
   `include/grpc++/server_builder.h` (commit `6980362`)
 - remove `ClientContext::set_fail_fast()` method from
-  `include/grpc++/impl/codegen/client_context.h` (commit `9477724`)
+  `include/grpc++/client_context.h` (commit `9477724`)
 - remove directory `include/grpc++` and all headers in it
   (commit `eb06572`)
 - make all `Request` and `Mark` methods in `grpc::Service` take a

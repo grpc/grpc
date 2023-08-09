@@ -18,15 +18,19 @@
 
 #include <atomic>
 #include <chrono>
-#include <cstdint>
+#include <initializer_list>
 #include <limits>
 #include <string>
 #include <utility>
 
 #include "absl/strings/str_format.h"
 
-#include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
+
+#include "src/core/lib/gprpp/no_destruct.h"
+
+// IWYU pragma: no_include <ratio>
 
 namespace grpc_core {
 
@@ -35,26 +39,39 @@ namespace {
 std::atomic<int64_t> g_process_epoch_seconds;
 std::atomic<gpr_cycle_counter> g_process_epoch_cycles;
 
+class GprNowTimeSource final : public Timestamp::Source {
+ public:
+  Timestamp Now() override {
+    return Timestamp::FromTimespecRoundDown(gpr_now(GPR_CLOCK_MONOTONIC));
+  }
+};
+
 GPR_ATTRIBUTE_NOINLINE std::pair<int64_t, gpr_cycle_counter> InitTime() {
   gpr_cycle_counter cycles_start = 0;
   gpr_cycle_counter cycles_end = 0;
   int64_t process_epoch_seconds = 0;
 
   // Check the current time... if we end up with zero, try again after 100ms.
-  // If it doesn't advance after sleeping for 1100ms, crash the process.
-  for (int i = 0; i < 11; i++) {
+  // If it doesn't advance after sleeping for 2100ms, crash the process.
+  for (int i = 0; i < 21; i++) {
     cycles_start = gpr_get_cycle_counter();
     gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
     cycles_end = gpr_get_cycle_counter();
-    process_epoch_seconds = now.tv_sec - 1;
-    if (process_epoch_seconds != 0) {
+    process_epoch_seconds = now.tv_sec;
+    if (process_epoch_seconds > 1) {
       break;
     }
+    gpr_log(GPR_INFO,
+            "gpr_now(GPR_CLOCK_MONOTONIC) returns a very small number: "
+            "sleeping for 100ms");
     gpr_sleep_until(gpr_time_add(now, gpr_time_from_millis(100, GPR_TIMESPAN)));
   }
 
-  // Time does not seem to be increasing from zero...
-  GPR_ASSERT(process_epoch_seconds != 0);
+  // Check time has increased past 1 second.
+  GPR_ASSERT(process_epoch_seconds > 1);
+  // Fake the epoch to always return >=1 second from our monotonic clock (to
+  // avoid bugs elsewhere)
+  process_epoch_seconds -= 1;
   int64_t expected = 0;
   gpr_cycle_counter process_epoch_cycles = (cycles_start + cycles_end) / 2;
   GPR_ASSERT(process_epoch_cycles != 0);
@@ -133,6 +150,17 @@ int64_t TimespanToMillisRoundDown(gpr_timespec ts) {
 
 }  // namespace
 
+thread_local Timestamp::Source* Timestamp::thread_local_time_source_{
+    NoDestructSingleton<GprNowTimeSource>::Get()};
+
+Timestamp ScopedTimeCache::Now() {
+  if (!cached_time_.has_value()) {
+    previous()->InvalidateCache();
+    cached_time_ = previous()->Now();
+  }
+  return cached_time_.value();
+}
+
 Timestamp Timestamp::FromTimespecRoundUp(gpr_timespec ts) {
   return FromMillisecondsAfterProcessEpoch(TimespanToMillisRoundUp(gpr_time_sub(
       gpr_convert_clock_type(ts, GPR_CLOCK_MONOTONIC), StartTime())));
@@ -201,6 +229,7 @@ Duration::operator grpc_event_engine::experimental::EventEngine::Duration()
 void TestOnlySetProcessEpoch(gpr_timespec epoch) {
   g_process_epoch_seconds.store(
       gpr_convert_clock_type(epoch, GPR_CLOCK_MONOTONIC).tv_sec);
+  g_process_epoch_cycles.store(gpr_get_cycle_counter());
 }
 
 std::ostream& operator<<(std::ostream& out, Timestamp timestamp) {

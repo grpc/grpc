@@ -20,7 +20,9 @@
 #include "absl/utility/utility.h"
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 
 // defined in tcp_client.cc
 extern grpc_tcp_client_vtable* grpc_tcp_client_impl;
@@ -101,7 +103,7 @@ ConnectionAttemptInjector::~ConnectionAttemptInjector() {
 std::unique_ptr<ConnectionAttemptInjector::Hold>
 ConnectionAttemptInjector::AddHold(int port, bool intercept_completion) {
   grpc_core::MutexLock lock(&mu_);
-  auto hold = absl::make_unique<Hold>(this, port, intercept_completion);
+  auto hold = std::make_unique<Hold>(this, port, intercept_completion);
   holds_.push_back(hold.get());
   return hold;
 }
@@ -129,7 +131,7 @@ void ConnectionAttemptInjector::HandleConnection(
           closure = GRPC_CLOSURE_INIT(&hold->on_complete_, Hold::OnComplete,
                                       hold, nullptr);
         }
-        hold->queued_attempt_ = absl::make_unique<QueuedAttempt>(
+        hold->queued_attempt_ = std::make_unique<QueuedAttempt>(
             closure, ep, interested_parties, config, addr, deadline);
         hold->start_cv_.Signal();
         holds_.erase(it);
@@ -191,17 +193,19 @@ ConnectionAttemptInjector::InjectedDelay::InjectedDelay(
     grpc_pollset_set* interested_parties, const EndpointConfig& config,
     const grpc_resolved_address* addr, grpc_core::Timestamp deadline)
     : attempt_(closure, ep, interested_parties, config, addr, deadline) {
-  GRPC_CLOSURE_INIT(&timer_callback_, TimerCallback, this, nullptr);
-  grpc_core::Timestamp now = grpc_core::ExecCtx::Get()->Now();
+  grpc_core::Timestamp now = grpc_core::Timestamp::Now();
   duration = std::min(duration, deadline - now);
-  grpc_timer_init(&timer_, now + duration, &timer_callback_);
+  grpc_event_engine::experimental::GetDefaultEventEngine()->RunAfter(
+      duration, [this] {
+        grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+        grpc_core::ExecCtx exec_ctx;
+        TimerCallback();
+      });
 }
 
-void ConnectionAttemptInjector::InjectedDelay::TimerCallback(
-    void* arg, grpc_error_handle /*error*/) {
-  auto* self = static_cast<InjectedDelay*>(arg);
-  self->attempt_.Resume();
-  delete self;
+void ConnectionAttemptInjector::InjectedDelay::TimerCallback() {
+  attempt_.Resume();
+  delete this;
 }
 
 //
@@ -270,7 +274,7 @@ void ConnectionAttemptInjector::Hold::OnComplete(void* arg,
     self->original_on_complete_ = nullptr;
     self->complete_cv_.Signal();
   }
-  grpc_core::Closure::Run(DEBUG_LOCATION, on_complete, GRPC_ERROR_REF(error));
+  grpc_core::Closure::Run(DEBUG_LOCATION, on_complete, error);
 }
 
 }  // namespace testing

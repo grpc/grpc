@@ -11,13 +11,12 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef GRPC_CORE_LIB_EVENT_ENGINE_POLLER_H
-#define GRPC_CORE_LIB_EVENT_ENGINE_POLLER_H
+#ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_POLLER_H
+#define GRPC_SRC_CORE_LIB_EVENT_ENGINE_POLLER_H
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/container/inlined_vector.h"
-#include "absl/types/variant.h"
+#include "absl/functional/function_ref.h"
 
 #include <grpc/event_engine/event_engine.h>
 
@@ -30,20 +29,29 @@ namespace experimental {
 // Work(...).
 class Poller {
  public:
-  // This initial vector size may need to be tuned
-  using Events = absl::InlinedVector<EventEngine::Closure*, 5>;
-  struct DeadlineExceeded {};
-  struct Kicked {};
-  using WorkResult = absl::variant<Events, DeadlineExceeded, Kicked>;
+  enum class WorkResult { kOk, kDeadlineExceeded, kKicked };
 
   virtual ~Poller() = default;
-  // Poll once for events, returning a collection of Closures to be executed.
+  // Poll once for events and process received events. The callback function
+  // "schedule_poll_again" is expected to be run synchronously prior to
+  // processing received events. The callback's responsibility primarily is to
+  // schedule Poller::Work asynchronously again. This would ensure that the next
+  // polling cycle would run as quickly as possible to ensure continuous
+  // polling.
   //
   // Returns:
-  //  * absl::AbortedError if it was Kicked.
-  //  * absl::DeadlineExceeded if timeout occurred
-  //  * A collection of closures to execute, otherwise
-  virtual WorkResult Work(EventEngine::Duration timeout) = 0;
+  //  * Poller::WorkResult::kKicked if it was Kicked. A poller that was Kicked
+  //  may still process some events and if so, it may have run the
+  //  schedule_poll_again callback function synchronously. When the poller
+  //  returns Poller::WorkResult::kKicked it's up to the user to determine
+  //  if the schedule_poll_again callback has run or not.
+  //  * Poller::WorkResult::kDeadlineExceeded if timeout occurred. The
+  //  schedule_poll_again callback is not run in this case.
+  //  * Poller::WorkResult::kOk, otherwise indicating that the
+  //  schedule_poll_again callback function was run synchronously before some
+  //  events were processed.
+  virtual WorkResult Work(EventEngine::Duration timeout,
+                          absl::FunctionRef<void()> schedule_poll_again) = 0;
   // Trigger the threads executing Work(..) to break out as soon as possible.
   virtual void Kick() = 0;
 };
@@ -51,4 +59,4 @@ class Poller {
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_CORE_LIB_EVENT_ENGINE_POLLER_H
+#endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_POLLER_H

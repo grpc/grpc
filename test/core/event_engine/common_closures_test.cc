@@ -16,44 +16,42 @@
 
 #include "src/core/lib/event_engine/common_closures.h"
 
-#include <gtest/gtest.h>
+#include "absl/functional/any_invocable.h"
+#include "gtest/gtest.h"
 
-#include "src/core/lib/event_engine/promise.h"
-#include "test/core/util/test_config.h"
+#include "src/core/lib/gprpp/notification.h"
 
 using ::grpc_event_engine::experimental::AnyInvocableClosure;
-using ::grpc_event_engine::experimental::Promise;
 using ::grpc_event_engine::experimental::SelfDeletingClosure;
 
 class AnyInvocableClosureTest : public testing::Test {};
 
 TEST_F(AnyInvocableClosureTest, CallsItsFunction) {
-  Promise<bool> promise;
-  AnyInvocableClosure closure([&promise] { promise.Set(true); });
+  grpc_core::Notification signal;
+  AnyInvocableClosure closure([&signal] { signal.Notify(); });
   closure.Run();
-  ASSERT_TRUE(promise.Get());
+  signal.WaitForNotification();
 }
 
 class SelfDeletingClosureTest : public testing::Test {};
 
 TEST_F(SelfDeletingClosureTest, CallsItsFunction) {
-  Promise<bool> promise;
-  auto* closure =
-      SelfDeletingClosure::Create([&promise] { promise.Set(true); });
+  grpc_core::Notification signal;
+  auto* closure = SelfDeletingClosure::Create([&signal] { signal.Notify(); });
   closure->Run();
-  ASSERT_TRUE(promise.Get());
+  signal.WaitForNotification();
   // ASAN should catch if this closure is not deleted
 }
 
 TEST_F(SelfDeletingClosureTest, CallsItsFunctionAndIsDestroyed) {
-  Promise<bool> fn_called;
-  Promise<bool> destroyed;
+  grpc_core::Notification fn_called;
+  grpc_core::Notification destroyed;
   auto* closure =
-      SelfDeletingClosure::Create([&fn_called] { fn_called.Set(true); },
-                                  [&destroyed] { destroyed.Set(true); });
+      SelfDeletingClosure::Create([&fn_called] { fn_called.Notify(); },
+                                  [&destroyed] { destroyed.Notify(); });
   closure->Run();
-  ASSERT_TRUE(fn_called.Get());
-  ASSERT_TRUE(destroyed.Get());
+  fn_called.WaitForNotification();
+  destroyed.WaitForNotification();
 }
 
 int main(int argc, char** argv) {

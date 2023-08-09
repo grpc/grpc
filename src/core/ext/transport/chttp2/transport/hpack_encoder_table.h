@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_ENCODER_TABLE_H
-#define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_ENCODER_TABLE_H
+#ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_ENCODER_TABLE_H
+#define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_ENCODER_TABLE_H
 
 #include <grpc/support/port_platform.h>
 
@@ -50,6 +50,8 @@ class HPackEncoderTable {
   uint32_t max_size() const { return max_table_size_; }
   // Get the current table size
   uint32_t test_only_table_size() const { return table_size_; }
+  // Get the number of entries in the table
+  uint32_t test_only_table_elems() const { return table_elems_; }
 
   // Convert an element index into a dynamic index
   uint32_t DynamicIndex(uint32_t index) const {
@@ -77,4 +79,4 @@ class HPackEncoderTable {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_ENCODER_TABLE_H
+#endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_ENCODER_TABLE_H

@@ -1,8 +1,8 @@
 gRPC C++ - Building from source
 ===========================
 
-This document has detailed instructions on how to build gRPC C++ from source. Note that it only covers the build of gRPC itself and is mostly meant for gRPC C++ contributors and/or power users.
-Other should follow the user instructions. See the [How to use](https://github.com/grpc/grpc/tree/master/src/cpp#to-start-using-grpc-c) instructions for guidance on how to add gRPC as a dependency to a C++ application (there are several ways and system wide installation is often not the best choice).
+This document has detailed instructions on how to build gRPC C++ from source. Note that it only covers the build of gRPC itself and is meant for gRPC C++ contributors and/or power users. 
+Other should follow the user instructions. See the [How to use](https://github.com/grpc/grpc/tree/master/src/cpp#to-start-using-grpc-c) instructions for guidance on how to add gRPC as a dependency to a C++ application (there are several ways and system-wide installation is often not the best choice).
 
 # Pre-requisites
 
@@ -55,7 +55,7 @@ installed by `brew` is being used:
 ## Windows
 
 To prepare for cmake + Microsoft Visual C++ compiler build
-- Install Visual Studio 2017 or later (Visual C++ compiler will be used).
+- Install Visual Studio 2019 or later (Visual C++ compiler will be used).
 - Install [Git](https://git-scm.com/).
 - Install [CMake](https://cmake.org/download/).
 - Install [nasm](https://www.nasm.us/) and add it to `PATH` (`choco install nasm`) - *required by boringssl*
@@ -88,14 +88,14 @@ with something else than `bazel` (e.g. `cmake`).
 
 # Build from source
 
-In the C++ world, there's no "standard" build system that would work for in all supported use cases and on all supported platforms.
+In the C++ world, there's no "standard" build system that would work for all supported use cases and on all supported platforms.
 Therefore, gRPC supports several major build systems, which should satisfy most users. Depending on your needs
 we recommend building using `bazel` or `cmake`.
 
 ## Building with bazel (recommended)
 
-Bazel is the primary build system for gRPC C++ and if you're comfortable with using bazel, we can certainly recommend it.
-Using bazel will give you the best developer experience as well as faster and cleaner builds.
+Bazel is the primary build system for gRPC C++. If you're comfortable using bazel, we can certainly recommend it.
+Using bazel will give you the best developer experience in addition to faster and cleaner builds.
 
 You'll need `bazel` version `1.0.0` or higher to build gRPC.
 See [Installing Bazel](https://docs.bazel.build/versions/master/install.html) for instructions how to install bazel on your system.
@@ -112,14 +112,14 @@ $ bazel build :all
 $ bazel test --config=dbg //test/...
 ```
 
-NOTE: If you are gRPC maintainer and you have access to our test cluster, you should use the our [gRPC's Remote Execution environment](tools/remote_build/README.md)
+NOTE: If you are a gRPC maintainer and you have access to our test cluster, you should use our [gRPC's Remote Execution environment](tools/remote_build/README.md)
 to get significant improvement to the build and test speed (and a bunch of other very useful features).
 
 ## Building with CMake
 
 ### Linux/Unix, Using Make
 
-Run from grpc directory after cloning the repo with --recursive or updating submodules.
+Run from the grpc directory after cloning the repo with --recursive or updating submodules.
 ```
 $ mkdir -p cmake/build
 $ cd cmake/build
@@ -129,18 +129,18 @@ $ make
 
 If you want to build shared libraries (`.so` files), run `cmake` with `-DBUILD_SHARED_LIBS=ON`.
 
-### Windows, Using Visual Studio 2015 or 2017
+### Windows, Using Visual Studio 2019 or later
 
 When using the "Visual Studio" generator,
 cmake will generate a solution (`grpc.sln`) that contains a VS project for
-every target defined in `CMakeLists.txt` (+ few extra convenience projects
+every target defined in `CMakeLists.txt` (+ a few extra convenience projects
 added automatically by cmake). After opening the solution with Visual Studio
 you will be able to browse and build the code.
 ```
 > @rem Run from grpc directory after cloning the repo with --recursive or updating submodules.
 > md .build
 > cd .build
-> cmake .. -G "Visual Studio 14 2015"
+> cmake .. -G "Visual Studio 16 2019"
 > cmake --build . --config Release
 ```
 

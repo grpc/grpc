@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #ifndef GRPCPP_SECURITY_SERVER_CREDENTIALS_H
 #define GRPCPP_SECURITY_SERVER_CREDENTIALS_H
@@ -23,6 +23,7 @@
 #include <vector>
 
 #include <grpc/grpc_security_constants.h>
+#include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/security/auth_metadata_processor.h>
 #include <grpcpp/security/tls_credentials_options.h>
 #include <grpcpp/support/config.h>
@@ -64,20 +65,9 @@ struct SslServerCredentialsOptions {
 std::shared_ptr<ServerCredentials> XdsServerCredentials(
     const std::shared_ptr<ServerCredentials>& fallback_credentials);
 
-namespace experimental {
-GRPC_DEPRECATED(
-    "Use grpc::XdsServerCredentials instead. The experimental version will be "
-    "deleted after the 1.41 release.")
-std::shared_ptr<ServerCredentials> XdsServerCredentials(
-    const std::shared_ptr<ServerCredentials>& fallback_credentials);
-}  // namespace experimental
-
 /// Wrapper around \a grpc_server_credentials, a way to authenticate a server.
-class ServerCredentials : private grpc::GrpcLibraryCodegen {
+class ServerCredentials : private grpc::internal::GrpcLibrary {
  public:
-  ServerCredentials();
-  ~ServerCredentials() override;
-
   /// This method is not thread-safe and has to be called before the server is
   /// started. The last call to this function wins.
   virtual void SetAuthMetadataProcessor(

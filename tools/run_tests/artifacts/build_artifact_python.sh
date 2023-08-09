@@ -37,7 +37,7 @@ then
   # Any installation step is a potential source of breakages,
   # so we are trying to perform as few download-and-install operations
   # as possible.
-  "${PYTHON}" -m pip install --upgrade cython
+  "${PYTHON}" -m pip install --upgrade 'cython<3.0.0rc1'
 fi
 
 # Allow build_ext to build C/C++ files in parallel
@@ -80,6 +80,21 @@ then
   # since we're crosscompiling, we need to explicitly choose the right platform for boringssl assembly optimizations
   export GRPC_BUILD_OVERRIDE_BORING_SSL_ASM_PLATFORM="linux-arm"
 fi
+
+ancillary_package_dir=(
+  "src/python/grpcio_admin/"
+  "src/python/grpcio_channelz/"
+  "src/python/grpcio_csds/"
+  "src/python/grpcio_health_checking/"
+  "src/python/grpcio_reflection/"
+  "src/python/grpcio_status/"
+  "src/python/grpcio_testing/"
+)
+
+# Copy license to ancillary package directories so it will be distributed.
+for directory in "${ancillary_package_dir[@]}"; do
+  cp "LICENSE" "${directory}"
+done
 
 # Build the source distribution first because MANIFEST.in cannot override
 # exclusion of built shared objects among package resources (for some
@@ -135,19 +150,33 @@ ${SETARCH_CMD} "${PYTHON}" tools/distrib/python/grpcio_tools/setup.py bdist_whee
 # the artifacts output dir.
 if [ "$GRPC_SKIP_TWINE_CHECK" == "" ]
 then
-  # Ensure the generated artifacts are valid.
-  # TODO(jtattermusch): avoid the need for always re-installing virtualenv and twine
+  # Install virtualenv if it isn't already available.
+  # TODO(jtattermusch): cleanup the virtualenv version fallback logic.
   "${PYTHON}" -m pip install virtualenv
-  "${PYTHON}" -m virtualenv venv || { "${PYTHON}" -m pip install virtualenv==16.7.9 && "${PYTHON}" -m virtualenv venv; }
+  "${PYTHON}" -m virtualenv venv || { "${PYTHON}" -m pip install virtualenv==20.0.23 && "${PYTHON}" -m virtualenv venv; }
+  # Ensure the generated artifacts are valid using "twine check"
   venv/bin/python -m pip install "twine<=2.0"
   venv/bin/python -m twine check dist/* tools/distrib/python/grpcio_tools/dist/*
   rm -rf venv/
 fi
 
+assert_is_universal_wheel()  {
+  WHL="$1"
+  TMPDIR=$(mktemp -d)
+  unzip "$WHL" -d "$TMPDIR"
+  SO=$(find "$TMPDIR" -name '*.so' | head -n1)
+  if ! file "$SO" | grep "Mach-O universal binary with 2 architectures"; then
+    echo "$WHL is not universal2. Found the following:" >/dev/stderr
+    file "$SO" >/dev/stderr
+    exit 1
+  fi
+}
+
 fix_faulty_universal2_wheel() {
   WHL="$1"
-  if echo "$WHL" | grep "universal2"; then
-    UPDATED_NAME="${WHL//universal2/x86_64}"
+  assert_is_universal_wheel "$WHL"
+  if echo "$WHL" | grep "x86_64"; then
+    UPDATED_NAME="${WHL//x86_64/universal2}"
     mv "$WHL" "$UPDATED_NAME"
   fi
 }
@@ -205,6 +234,12 @@ then
   # through setup.py, but we can optimize it with "bdist_wheel" command, which
   # skips the wheel building step.
 
+  # Build grpcio_reflection source distribution
+  ${SETARCH_CMD} "${PYTHON}" tools/distrib/python/xds_protos/build.py
+  ${SETARCH_CMD} "${PYTHON}" tools/distrib/python/xds_protos/setup.py \
+      sdist bdist_wheel install
+  cp -r tools/distrib/python/xds_protos/dist/* "$ARTIFACT_DIR"
+
   # Build grpcio_testing source distribution
   ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_testing/setup.py preprocess \
       sdist bdist_wheel
@@ -230,6 +265,9 @@ then
       preprocess sdist bdist_wheel
   cp -r src/python/grpcio_status/dist/* "$ARTIFACT_DIR"
 
+  # Install xds-protos as a dependency of grpcio-csds
+  "${PYTHON}" -m pip install xds-protos --no-index --find-links "file://$ARTIFACT_DIR/"
+
   # Build grpcio_csds source distribution
   ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_csds/setup.py \
       sdist bdist_wheel
@@ -237,7 +275,6 @@ then
 
   # Build grpcio_admin source distribution and it needs the cutting-edge version
   # of Channelz and CSDS to be installed.
-  "${PYTHON}" -m pip install --upgrade xds-protos==0.0.8
   "${PYTHON}" -m pip install grpcio-channelz --no-index --find-links "file://$ARTIFACT_DIR/"
   "${PYTHON}" -m pip install grpcio-csds --no-index --find-links "file://$ARTIFACT_DIR/"
   ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_admin/setup.py \

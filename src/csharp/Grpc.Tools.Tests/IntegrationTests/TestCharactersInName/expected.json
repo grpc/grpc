@@ -1,0 +1,55 @@
+{
+    "Files": {
+        "protos/hello.world.proto": {
+            "--csharp_out": [
+                "${TEST_OUT_DIR}/obj/Debug/netstandard2.0/protos"
+            ],
+            "--plugin": [
+                "protoc-gen-grpc=dummy-plugin-not-used"
+            ],
+            "--grpc_out": [
+                "${TEST_OUT_DIR}/obj/Debug/netstandard2.0/protos"
+            ],
+            "--proto_path": [
+                "../../../Grpc.Tools/build/native/include",
+                "."
+            ],
+            "--dependency_out": [
+                "REGEX:${TEST_OUT_DIR}/obj/Debug/netstandard2.0/.*_hello.world.protodep"
+            ],
+            "--error_format": [
+                "msvs"
+            ],
+            "protofile": [
+                "protos/hello.world.proto"
+            ]
+        },
+        "protos/m_double_2d.proto": {
+            "--csharp_out": [
+                "${TEST_OUT_DIR}/obj/Debug/netstandard2.0/protos"
+            ],
+            "--plugin": [
+                "protoc-gen-grpc=dummy-plugin-not-used"
+            ],
+            "--grpc_out": [
+                "${TEST_OUT_DIR}/obj/Debug/netstandard2.0/protos"
+            ],
+            "--proto_path": [
+                "../../../Grpc.Tools/build/native/include",
+                "."
+            ],
+            "--dependency_out": [
+                "REGEX:${TEST_OUT_DIR}/obj/Debug/netstandard2.0/.*_m_double_2d.protodep"
+            ],
+            "--error_format": [
+                "msvs"
+            ],
+            "protofile": [
+                "protos/m_double_2d.proto"
+            ]
+        }
+    },
+    "Metadata": {
+        "timestamp": "IGNORE:"
+    }
+}

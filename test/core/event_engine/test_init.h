@@ -11,12 +11,12 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include <grpc/support/port_platform.h>
-
 #ifndef GRPC_TEST_CORE_EVENT_ENGINE_TEST_INIT_H
 #define GRPC_TEST_CORE_EVENT_ENGINE_TEST_INIT_H
+#include <grpc/support/port_platform.h>
 
-#include <grpc/event_engine/event_engine.h>
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_event_engine {
 namespace experimental {

@@ -1,383 +1,230 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-#include <stdint.h>
 #include <stdio.h>
-#include <string.h>
 
-#include <grpc/byte_buffer.h>
-#include <grpc/grpc.h>
-#include <grpc/impl/codegen/propagation_bits.h>
-#include <grpc/slice.h>
+#include <string>
+
+#include "absl/strings/string_view.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
-#include <grpc/support/log.h>
 
-#include "test/core/end2end/cq_verifier.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gprpp/time.h"
 #include "test/core/end2end/end2end_tests.h"
-#include "test/core/util/test_config.h"
 
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
+namespace grpc_core {
+namespace {
 
-static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
-                                            const char* test_name,
-                                            grpc_channel_args* client_args,
-                                            grpc_channel_args* server_args) {
-  grpc_end2end_test_fixture f;
-  gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
-  f = config.create_fixture(client_args, server_args);
-  config.init_server(&f, server_args);
-  config.init_client(&f, client_args);
-  return f;
-}
-
-static gpr_timespec n_seconds_from_now(int n) {
-  return grpc_timeout_seconds_to_deadline(n);
-}
-
-static gpr_timespec five_seconds_from_now(void) {
-  return n_seconds_from_now(5);
-}
-
-static void drain_cq(grpc_completion_queue* cq) {
-  grpc_event ev;
-  do {
-    ev = grpc_completion_queue_next(cq, five_seconds_from_now(), nullptr);
-  } while (ev.type != GRPC_QUEUE_SHUTDOWN);
-}
-
-static void shutdown_server(grpc_end2end_test_fixture* f) {
-  if (!f->server) return;
-  grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
-  grpc_event ev;
-  do {
-    ev = grpc_completion_queue_next(f->cq, grpc_timeout_seconds_to_deadline(5),
-                                    nullptr);
-  } while (ev.type != GRPC_OP_COMPLETE || ev.tag != tag(1000));
-  grpc_server_destroy(f->server);
-  f->server = nullptr;
-}
-
-static void shutdown_client(grpc_end2end_test_fixture* f) {
-  if (!f->client) return;
-  grpc_channel_destroy(f->client);
-  f->client = nullptr;
-}
-
-static void end_test(grpc_end2end_test_fixture* f) {
-  shutdown_server(f);
-  shutdown_client(f);
-
-  grpc_completion_queue_shutdown(f->cq);
-  drain_cq(f->cq);
-  grpc_completion_queue_destroy(f->cq);
-}
-
-// Request with a large amount of metadata.
-static void test_request_with_large_metadata(grpc_end2end_test_config config) {
-  grpc_call* c;
-  grpc_call* s;
-  grpc_slice request_payload_slice =
-      grpc_slice_from_copied_string("hello world");
-  grpc_byte_buffer* request_payload =
-      grpc_raw_byte_buffer_create(&request_payload_slice, 1);
-  grpc_metadata meta;
-  const size_t large_size = 64 * 1024;
-  grpc_arg arg;
-  arg.type = GRPC_ARG_INTEGER;
-  arg.key = const_cast<char*>(GRPC_ARG_MAX_METADATA_SIZE);
-  arg.value.integer = static_cast<int>(large_size) + 1024;
-  grpc_channel_args args = {1, &arg};
-  grpc_end2end_test_fixture f =
-      begin_test(config, "test_request_with_large_metadata", &args, &args);
-  grpc_core::CqVerifier cqv(f.cq);
-  grpc_op ops[6];
-  grpc_op* op;
-  grpc_metadata_array initial_metadata_recv;
-  grpc_metadata_array trailing_metadata_recv;
-  grpc_metadata_array request_metadata_recv;
-  grpc_byte_buffer* request_payload_recv = nullptr;
-  grpc_call_details call_details;
-  grpc_status_code status;
-  grpc_call_error error;
-  grpc_slice details;
-  int was_cancelled = 2;
-
-  gpr_timespec deadline = five_seconds_from_now();
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
-  GPR_ASSERT(c);
-
-  meta.key = grpc_slice_from_static_string("key");
-  meta.value = grpc_slice_malloc(large_size);
-  memset(GRPC_SLICE_START_PTR(meta.value), 'a', large_size);
-
-  grpc_metadata_array_init(&initial_metadata_recv);
-  grpc_metadata_array_init(&trailing_metadata_recv);
-  grpc_metadata_array_init(&request_metadata_recv);
-  grpc_call_details_init(&call_details);
-
-  memset(ops, 0, sizeof(ops));
-  // Client: send request.
-  op = ops;
-  op->op = GRPC_OP_SEND_INITIAL_METADATA;
-  op->data.send_initial_metadata.count = 1;
-  op->data.send_initial_metadata.metadata = &meta;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  op->op = GRPC_OP_SEND_MESSAGE;
-  op->data.send_message.send_message = request_payload;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
-  op->data.recv_status_on_client.status = &status;
-  op->data.recv_status_on_client.status_details = &details;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
-  GPR_ASSERT(GRPC_CALL_OK == error);
-
-  error =
-      grpc_server_request_call(f.server, &s, &call_details,
-                               &request_metadata_recv, f.cq, f.cq, tag(101));
-  GPR_ASSERT(GRPC_CALL_OK == error);
-
-  cqv.Expect(tag(101), true);
-  cqv.Verify();
-
-  memset(ops, 0, sizeof(ops));
-  // Server: send initial metadata and receive request.
-  op = ops;
-  op->op = GRPC_OP_SEND_INITIAL_METADATA;
-  op->data.send_initial_metadata.count = 0;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message.recv_message = &request_payload_recv;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
-                                nullptr);
-  GPR_ASSERT(GRPC_CALL_OK == error);
-
-  cqv.Expect(tag(102), true);
-  cqv.Verify();
-
-  memset(ops, 0, sizeof(ops));
-  // Server: receive close and send status.  This should trigger
-  // completion of request on client.
-  op = ops;
-  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
-  op->data.recv_close_on_server.cancelled = &was_cancelled;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
-  op->data.send_status_from_server.trailing_metadata_count = 0;
-  op->data.send_status_from_server.status = GRPC_STATUS_OK;
-  grpc_slice status_details = grpc_slice_from_static_string("xyz");
-  op->data.send_status_from_server.status_details = &status_details;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(103),
-                                nullptr);
-  GPR_ASSERT(GRPC_CALL_OK == error);
-
-  cqv.Expect(tag(103), true);
-  cqv.Expect(tag(1), true);
-  cqv.Verify();
-
-  GPR_ASSERT(status == GRPC_STATUS_OK);
-  GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
-  GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
-  GPR_ASSERT(was_cancelled == 0);
-  GPR_ASSERT(byte_buffer_eq_string(request_payload_recv, "hello world"));
-  GPR_ASSERT(contains_metadata_slices(&request_metadata_recv,
-                                      grpc_slice_from_static_string("key"),
-                                      meta.value));
-
-  grpc_slice_unref(details);
-  grpc_metadata_array_destroy(&initial_metadata_recv);
-  grpc_metadata_array_destroy(&trailing_metadata_recv);
-  grpc_metadata_array_destroy(&request_metadata_recv);
-  grpc_call_details_destroy(&call_details);
-
-  grpc_call_unref(c);
-  grpc_call_unref(s);
-
-  grpc_byte_buffer_destroy(request_payload);
-  grpc_byte_buffer_destroy(request_payload_recv);
-
-  grpc_slice_unref(meta.value);
-
-  end_test(&f);
-  config.tear_down_data(&f);
-}
-
-// Server responds with metadata larger than what the client accepts.
-static void test_request_with_bad_large_metadata_response(
-    grpc_end2end_test_config config) {
-  grpc_call* c;
-  grpc_call* s;
-  grpc_metadata meta;
-  const size_t large_size = 64 * 1024;
-  grpc_arg arg;
-  arg.type = GRPC_ARG_INTEGER;
-  arg.key = const_cast<char*>(GRPC_ARG_MAX_METADATA_SIZE);
-  arg.value.integer = 1024;
-  grpc_channel_args args = {1, &arg};
-  grpc_end2end_test_fixture f = begin_test(
-      config, "test_request_with_bad_large_metadata_response", &args, &args);
-  grpc_core::CqVerifier cqv(f.cq);
-  grpc_op ops[6];
-  grpc_op* op;
-  grpc_metadata_array initial_metadata_recv;
-  grpc_metadata_array trailing_metadata_recv;
-  grpc_metadata_array request_metadata_recv;
-  grpc_call_details call_details;
-  grpc_status_code status;
-  grpc_call_error error;
-  grpc_slice details;
-  int was_cancelled = 2;
-
-  gpr_timespec deadline = five_seconds_from_now();
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
-  GPR_ASSERT(c);
-
-  meta.key = grpc_slice_from_static_string("key");
-  meta.value = grpc_slice_malloc(large_size);
-  memset(GRPC_SLICE_START_PTR(meta.value), 'a', large_size);
-
-  grpc_metadata_array_init(&initial_metadata_recv);
-  grpc_metadata_array_init(&trailing_metadata_recv);
-  grpc_metadata_array_init(&request_metadata_recv);
-  grpc_call_details_init(&call_details);
-
-  memset(ops, 0, sizeof(ops));
-  // Client: send request.
-  op = ops;
-  op->op = GRPC_OP_SEND_INITIAL_METADATA;
-  op->data.send_initial_metadata.count = 0;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
-  op->data.recv_status_on_client.status = &status;
-  op->data.recv_status_on_client.status_details = &details;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
-  GPR_ASSERT(GRPC_CALL_OK == error);
-
-  error =
-      grpc_server_request_call(f.server, &s, &call_details,
-                               &request_metadata_recv, f.cq, f.cq, tag(101));
-  GPR_ASSERT(GRPC_CALL_OK == error);
-
-  cqv.Expect(tag(101), true);
-  cqv.Verify();
-
-  memset(ops, 0, sizeof(ops));
-  // Server: send large initial metadata
-  op = ops;
-  op->op = GRPC_OP_SEND_INITIAL_METADATA;
-  op->data.send_initial_metadata.count = 1;
-  op->data.send_initial_metadata.metadata = &meta;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
-  op->data.recv_close_on_server.cancelled = &was_cancelled;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
-  op->data.send_status_from_server.trailing_metadata_count = 0;
-  op->data.send_status_from_server.status = GRPC_STATUS_OK;
-  grpc_slice status_details = grpc_slice_from_static_string("xyz");
-  op->data.send_status_from_server.status_details = &status_details;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
-                                nullptr);
-  GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(tag(102), true);
-  cqv.Expect(tag(1), true);
-  cqv.Verify();
-
-  GPR_ASSERT(status == GRPC_STATUS_RESOURCE_EXHAUSTED);
-  GPR_ASSERT(0 == grpc_slice_str_cmp(
-                      details, "received initial metadata size exceeds limit"));
-  GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
-
-  grpc_slice_unref(details);
-  grpc_metadata_array_destroy(&initial_metadata_recv);
-  grpc_metadata_array_destroy(&trailing_metadata_recv);
-  grpc_metadata_array_destroy(&request_metadata_recv);
-  grpc_call_details_destroy(&call_details);
-
-  grpc_call_unref(c);
-  grpc_call_unref(s);
-
-  grpc_slice_unref(meta.value);
-
-  end_test(&f);
-  config.tear_down_data(&f);
-}
-
-void large_metadata(grpc_end2end_test_config config) {
-  test_request_with_large_metadata(config);
-  // TODO(yashykt): Maybe add checks for metadata size in inproc transport too.
-  if (strcmp(config.name, "inproc") != 0) {
-    test_request_with_bad_large_metadata_response(config);
+class LargeMetadataTest {
+ public:
+  LargeMetadataTest(Http2SingleHopTest& test, const ChannelArgs& args)
+      : test_(test) {
+    test_.InitClient(args);
+    test_.InitServer(args);
   }
+
+  int PerformRequests(size_t metadata_size, int count) {
+    int num_requests_accepted = 0;
+    for (int i = 0; i < count; ++i) {
+      auto status = PerformOneRequest(metadata_size);
+      if (status.status() == GRPC_STATUS_RESOURCE_EXHAUSTED) {
+        EXPECT_THAT(status.message(),
+                    ::testing::StartsWith("received metadata size exceeds"));
+      } else {
+        num_requests_accepted++;
+        EXPECT_EQ(status.status(), GRPC_STATUS_OK);
+        EXPECT_EQ(status.message(), "xyz");
+      }
+    }
+    return num_requests_accepted;
+  }
+
+ private:
+  CoreEnd2endTest::IncomingStatusOnClient PerformOneRequest(
+      const size_t metadata_size) {
+    auto c = test_.NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
+    CoreEnd2endTest::IncomingMetadata server_initial_metadata;
+    CoreEnd2endTest::IncomingStatusOnClient server_status;
+    c.NewBatch(1)
+        .SendInitialMetadata({})
+        .SendCloseFromClient()
+        .RecvInitialMetadata(server_initial_metadata)
+        .RecvStatusOnClient(server_status);
+    auto s = test_.RequestCall(101);
+    test_.Expect(101, true);
+    test_.Step();
+    // Server: send metadata of size `metadata_size`.
+    CoreEnd2endTest::IncomingCloseOnServer client_close;
+    s.NewBatch(102)
+        .SendInitialMetadata({{"key", std::string(metadata_size, 'a')}})
+        .RecvCloseOnServer(client_close)
+        .SendStatusFromServer(GRPC_STATUS_OK, "xyz", {});
+    test_.Expect(102, true);
+    test_.Expect(1, true);
+    test_.Step();
+    return server_status;
+  }
+
+  Http2SingleHopTest& test_;
+};
+
+// Server responds with metadata under soft limit of what client accepts. No
+// requests should be rejected.
+CORE_END2END_TEST(Http2SingleHopTest, RequestWithLargeMetadataUnderSoftLimit) {
+  const size_t soft_limit = 32 * 1024;
+  const size_t hard_limit = 45 * 1024;
+  const size_t metadata_size = soft_limit;
+  LargeMetadataTest test(
+      *this, ChannelArgs()
+                 .Set(GRPC_ARG_MAX_METADATA_SIZE, soft_limit + 1024)
+                 .Set(GRPC_ARG_ABSOLUTE_MAX_METADATA_SIZE, hard_limit + 1024));
+  EXPECT_EQ(test.PerformRequests(metadata_size, 100), 100);
 }
 
-void large_metadata_pre_init(void) {}
+// Server responds with metadata between soft and hard limits of what client
+// accepts. Some requests should be rejected.
+CORE_END2END_TEST(Http2SingleHopTest,
+                  RequestWithLargeMetadataBetweenSoftAndHardLimits) {
+  const size_t soft_limit = 32 * 1024;
+  const size_t hard_limit = 45 * 1024;
+  const size_t metadata_size = (soft_limit + hard_limit) / 2;
+  LargeMetadataTest test(
+      *this, ChannelArgs()
+                 .Set(GRPC_ARG_MAX_METADATA_SIZE, soft_limit + 1024)
+                 .Set(GRPC_ARG_ABSOLUTE_MAX_METADATA_SIZE, hard_limit + 1024));
+  EXPECT_THAT(test.PerformRequests(metadata_size, 100),
+              ::testing::AllOf(::testing::Ge(5), ::testing::Le(95)));
+}
+
+// Server responds with metadata above hard limit of what the client accepts.
+// All requests should be rejected.
+CORE_END2END_TEST(Http2SingleHopTest, RequestWithLargeMetadataAboveHardLimit) {
+  const size_t soft_limit = 32 * 1024;
+  const size_t hard_limit = 45 * 1024;
+  const size_t metadata_size = hard_limit * 3 / 2;
+  LargeMetadataTest test(
+      *this, ChannelArgs()
+                 .Set(GRPC_ARG_MAX_METADATA_SIZE, soft_limit + 1024)
+                 .Set(GRPC_ARG_ABSOLUTE_MAX_METADATA_SIZE, hard_limit + 1024));
+  EXPECT_EQ(test.PerformRequests(metadata_size, 100), 0);
+}
+
+// Set soft limit higher than hard limit. All requests above hard limit should
+// be rejected, all requests below hard limit should be accepted (soft limit
+// should not be respected).
+CORE_END2END_TEST(Http2SingleHopTest,
+                  RequestWithLargeMetadataSoftLimitAboveHardLimit) {
+  const size_t soft_limit = 64 * 1024;
+  const size_t hard_limit = 32 * 1024;
+  const size_t metadata_size_below_hard_limit = hard_limit;
+  const size_t metadata_size_above_hard_limit = hard_limit * 2;
+  LargeMetadataTest test(
+      *this, ChannelArgs()
+                 .Set(GRPC_ARG_MAX_METADATA_SIZE, soft_limit + 1024)
+                 .Set(GRPC_ARG_ABSOLUTE_MAX_METADATA_SIZE, hard_limit + 1024));
+  // Send 50 requests below hard limit. Should be accepted.
+  EXPECT_EQ(test.PerformRequests(metadata_size_below_hard_limit, 50), 50);
+  // Send 50 requests above hard limit. Should be rejected.
+  EXPECT_EQ(test.PerformRequests(metadata_size_above_hard_limit, 50), 0);
+}
+
+// Set soft limit * 1.25 higher than default hard limit and do not set hard
+// limit. Soft limit * 1.25 should be used as hard limit.
+CORE_END2END_TEST(Http2SingleHopTest,
+                  RequestWithLargeMetadataSoftLimitOverridesDefaultHard) {
+  const size_t soft_limit = 64 * 1024;
+  const size_t metadata_size_below_soft_limit = soft_limit;
+  const size_t metadata_size_above_hard_limit = soft_limit * 1.5;
+  const size_t metadata_size_between_limits =
+      (soft_limit + soft_limit * 1.25) / 2;
+  LargeMetadataTest test(
+      *this, ChannelArgs().Set(GRPC_ARG_MAX_METADATA_SIZE, soft_limit + 1024));
+  // Send 50 requests below soft limit. Should be accepted.
+  EXPECT_EQ(test.PerformRequests(metadata_size_below_soft_limit, 50), 50);
+  // Send 100 requests between soft and hard limits. Some should be rejected.
+  EXPECT_THAT(test.PerformRequests(metadata_size_between_limits, 100),
+              ::testing::AllOf(::testing::Ge(5), ::testing::Le(95)));
+  // Send 50 requests above hard limit. Should be rejected.
+  EXPECT_EQ(test.PerformRequests(metadata_size_above_hard_limit, 50), 0);
+}
+
+// Set hard limit * 0.8 higher than default soft limit and do not set soft
+// limit. Hard limit * 0.8 should be used as soft limit.
+CORE_END2END_TEST(Http2SingleHopTest,
+                  RequestWithLargeMetadataHardLimitOverridsDefaultSoft) {
+  const size_t hard_limit = 45 * 1024;
+  const size_t metadata_size_below_soft_limit = hard_limit * 0.5;
+  const size_t metadata_size_above_hard_limit = hard_limit * 1.5;
+  const size_t metadata_size_between_limits =
+      (hard_limit * 0.8 + hard_limit) / 2;
+  LargeMetadataTest test(*this,
+                         ChannelArgs().Set(GRPC_ARG_ABSOLUTE_MAX_METADATA_SIZE,
+                                           hard_limit + 1024));
+  // Send 50 requests below soft limit. Should be accepted.
+  EXPECT_EQ(test.PerformRequests(metadata_size_below_soft_limit, 50), 50);
+  // Send 100 requests between soft and hard limits. Some should be rejected.
+  EXPECT_THAT(test.PerformRequests(metadata_size_between_limits, 100),
+              ::testing::AllOf(::testing::Ge(5), ::testing::Le(95)));
+  // Send 50 requests above hard limit. Should be rejected.
+  EXPECT_EQ(test.PerformRequests(metadata_size_above_hard_limit, 50), 0);
+}
+
+// Set hard limit lower than default hard limit and ensure new limit is
+// respected. Default soft limit is not respected since hard limit is lower than
+// soft limit.
+CORE_END2END_TEST(Http2SingleHopTest,
+                  RequestWithLargeMetadataHardLimitBelowDefaultHard) {
+  const size_t hard_limit = 4 * 1024;
+  const size_t metadata_size_below_hard_limit = hard_limit;
+  const size_t metadata_size_above_hard_limit = hard_limit * 2;
+  LargeMetadataTest test(*this,
+                         ChannelArgs().Set(GRPC_ARG_ABSOLUTE_MAX_METADATA_SIZE,
+                                           hard_limit + 1024));
+  // Send 50 requests below hard limit. Should be accepted.
+  EXPECT_EQ(test.PerformRequests(metadata_size_below_hard_limit, 50), 50);
+  // Send 50 requests above hard limit. Should be rejected.
+  EXPECT_EQ(test.PerformRequests(metadata_size_above_hard_limit, 50), 0);
+}
+
+// Set soft limit lower than default soft limit and ensure new limit is
+// respected. Hard limit should be default hard since this is greater than 2 *
+// soft limit.
+CORE_END2END_TEST(Http2SingleHopTest,
+                  RequestWithLargeMetadataSoftLimitBelowDefaultSoft) {
+  const size_t soft_limit = 1 * 1024;
+  const size_t metadata_size_below_soft_limit = soft_limit;
+  // greater than 2 * soft, less than default hard
+  const size_t metadata_size_between_limits = 10 * 1024;
+  const size_t metadata_size_above_hard_limit = 75 * 1024;
+  LargeMetadataTest test(
+      *this, ChannelArgs().Set(GRPC_ARG_MAX_METADATA_SIZE, soft_limit + 1024));
+  // Send 50 requests below soft limit. Should be accepted.
+  EXPECT_EQ(test.PerformRequests(metadata_size_below_soft_limit, 50), 50);
+  // Send 100 requests between soft and hard limits. Some should be rejected.
+  EXPECT_THAT(test.PerformRequests(metadata_size_between_limits, 100),
+              ::testing::AllOf(::testing::Ge(1), ::testing::Le(99)));
+  // Send 50 requests above hard limit. Should be rejected.
+  EXPECT_EQ(test.PerformRequests(metadata_size_above_hard_limit, 50), 0);
+}
+
+}  // namespace
+}  // namespace grpc_core

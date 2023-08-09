@@ -1,37 +1,34 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "src/core/lib/iomgr/port.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 
-#include <grpc/support/sync.h>
-
-#include "src/core/lib/gprpp/sync.h"
-#include "test/core/util/test_config.h"
-#if defined(GRPC_TEST_PICK_PORT)
-
-#include <stdio.h>
+#include <utility>
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/sync.h>
 
+#include "src/core/lib/gprpp/sync.h"
 #include "test/core/util/port.h"
 #include "test/core/util/port_server_client.h"
 
@@ -48,8 +45,8 @@ static int free_chosen_port_locked(int port) {
   size_t i;
   int found = 0;
   size_t found_at = 0;
-  /* Find the port and erase it from the list, then tell the server it can be
-     freed. */
+  // Find the port and erase it from the list, then tell the server it can be
+  // freed.
   for (i = 0; i < num_chosen_ports; i++) {
     if (chosen_ports[i] == port) {
       GPR_ASSERT(found == 0);
@@ -98,7 +95,7 @@ static int grpc_pick_unused_port_impl(void) {
 }
 
 static int grpc_pick_unused_port_or_die_impl(void) {
-  int port = grpc_pick_unused_port();
+  int port = grpc_pick_unused_port_impl();
   if (port == 0) {
     fprintf(stderr,
             "gRPC tests require a helper port server to allocate ports used \n"
@@ -116,27 +113,25 @@ static void grpc_recycle_unused_port_impl(int port) {
   GPR_ASSERT(free_chosen_port_locked(port));
 }
 
-static grpc_pick_port_functions g_pick_port_functions = {
-    grpc_pick_unused_port_impl, grpc_pick_unused_port_or_die_impl,
-    grpc_recycle_unused_port_impl};
-
-int grpc_pick_unused_port(void) {
-  return g_pick_port_functions.pick_unused_port_fn();
+namespace {
+grpc_pick_port_functions& functions() {
+  static grpc_pick_port_functions* functions = new grpc_pick_port_functions{
+      grpc_pick_unused_port_or_die_impl, grpc_recycle_unused_port_impl};
+  return *functions;
 }
+}  // namespace
 
 int grpc_pick_unused_port_or_die(void) {
-  return g_pick_port_functions.pick_unused_port_or_die_fn();
+  return functions().pick_unused_port_or_die_fn();
 }
 
 void grpc_recycle_unused_port(int port) {
-  g_pick_port_functions.recycle_unused_port_fn(port);
+  functions().recycle_unused_port_fn(port);
 }
 
-void grpc_set_pick_port_functions(grpc_pick_port_functions functions) {
-  GPR_ASSERT(functions.pick_unused_port_fn != nullptr);
-  GPR_ASSERT(functions.pick_unused_port_or_die_fn != nullptr);
-  GPR_ASSERT(functions.recycle_unused_port_fn != nullptr);
-  g_pick_port_functions = functions;
+grpc_pick_port_functions grpc_set_pick_port_functions(
+    grpc_pick_port_functions new_functions) {
+  GPR_ASSERT(new_functions.pick_unused_port_or_die_fn != nullptr);
+  GPR_ASSERT(new_functions.recycle_unused_port_fn != nullptr);
+  return std::exchange(functions(), new_functions);
 }
-
-#endif /* GRPC_TEST_PICK_PORT */

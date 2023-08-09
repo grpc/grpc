@@ -26,6 +26,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/transport/binder/wire_format/binder_android.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_binder {
@@ -70,7 +71,7 @@ ndk_util::binder_status_t f_onTransact(ndk_util::AIBinder* binder,
   TransactionReceiver::OnTransactCb* callback = user_data->callback;
   // Wrap the parcel in a ReadableParcel.
   std::unique_ptr<ReadableParcel> output =
-      absl::make_unique<ReadableParcelAndroid>(in);
+      std::make_unique<ReadableParcelAndroid>(in);
   // The lock should be released "after" the callback finishes.
   absl::Status status =
       (*callback)(code, output.get(), ndk_util::AIBinder_getCallingUid());
@@ -217,8 +218,8 @@ absl::Status BinderAndroid::Transact(BinderTransportTxCode tx_code) {
 std::unique_ptr<TransactionReceiver> BinderAndroid::ConstructTxReceiver(
     grpc_core::RefCountedPtr<WireReader> wire_reader_ref,
     TransactionReceiver::OnTransactCb transact_cb) const {
-  return absl::make_unique<TransactionReceiverAndroid>(wire_reader_ref,
-                                                       transact_cb);
+  return std::make_unique<TransactionReceiverAndroid>(wire_reader_ref,
+                                                      transact_cb);
 }
 
 int32_t WritableParcelAndroid::GetDataSize() const {
@@ -282,7 +283,7 @@ absl::Status ReadableParcelAndroid::ReadBinder(std::unique_ptr<Binder>* data) {
     *data = nullptr;
     return absl::InternalError("AParcel_readStrongBinder failed");
   }
-  *data = absl::make_unique<BinderAndroid>(ndk_util::SpAIBinder(binder));
+  *data = std::make_unique<BinderAndroid>(ndk_util::SpAIBinder(binder));
   return absl::OkStatus();
 }
 

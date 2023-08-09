@@ -18,599 +18,887 @@
 
 #include "src/core/ext/filters/rbac/rbac_service_config_parser.h"
 
-#include <stdint.h>
-
+#include <cstdint>
 #include <map>
+#include <memory>
 #include <string>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
 
+#include <grpc/grpc_audit_logging.h>
+
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/json/json_util.h"
+#include "src/core/lib/json/json_args.h"
+#include "src/core/lib/json/json_object_loader.h"
 #include "src/core/lib/matchers/matchers.h"
-#include "src/core/lib/transport/error_utils.h"
+#include "src/core/lib/security/authorization/audit_logging.h"
 
 namespace grpc_core {
 
 namespace {
 
-std::string ParseRegexMatcher(const Json::Object& regex_matcher_json,
-                              std::vector<grpc_error_handle>* error_list) {
-  std::string regex;
-  ParseJsonObjectField(regex_matcher_json, "regex", &regex, error_list);
-  return regex;
-}
+using experimental::AuditLoggerFactory;
+using experimental::AuditLoggerRegistry;
 
-absl::StatusOr<HeaderMatcher> ParseHeaderMatcher(
-    const Json::Object& header_matcher_json,
-    std::vector<grpc_error_handle>* error_list) {
-  std::string name;
-  ParseJsonObjectField(header_matcher_json, "name", &name, error_list);
-  std::string match;
-  HeaderMatcher::Type type = HeaderMatcher::Type();
-  const Json::Object* inner_json;
-  int64_t start = 0;
-  int64_t end = 0;
-  bool present_match = false;
-  bool invert_match = false;
-  ParseJsonObjectField(header_matcher_json, "invertMatch", &invert_match,
-                       error_list, /*required=*/false);
-  if (ParseJsonObjectField(header_matcher_json, "exactMatch", &match,
-                           error_list, /*required=*/false)) {
-    type = HeaderMatcher::Type::kExact;
-  } else if (ParseJsonObjectField(header_matcher_json, "safeRegexMatch",
-                                  &inner_json, error_list,
-                                  /*required=*/false)) {
-    type = HeaderMatcher::Type::kSafeRegex;
-    std::vector<grpc_error_handle> safe_regex_matcher_error_list;
-    match = ParseRegexMatcher(*inner_json, &safe_regex_matcher_error_list);
-    if (!safe_regex_matcher_error_list.empty()) {
-      error_list->push_back(GRPC_ERROR_CREATE_FROM_VECTOR(
-          "safeRegexMatch", &safe_regex_matcher_error_list));
-    }
-  } else if (ParseJsonObjectField(header_matcher_json, "rangeMatch",
-                                  &inner_json, error_list,
-                                  /*required=*/false)) {
-    type = HeaderMatcher::Type::kRange;
-    std::vector<grpc_error_handle> range_error_list;
-    ParseJsonObjectField(*inner_json, "start", &start, &range_error_list);
-    ParseJsonObjectField(*inner_json, "end", &end, &range_error_list);
-    if (!range_error_list.empty()) {
-      error_list->push_back(
-          GRPC_ERROR_CREATE_FROM_VECTOR("rangeMatch", &range_error_list));
-    }
-  } else if (ParseJsonObjectField(header_matcher_json, "presentMatch",
-                                  &present_match, error_list,
-                                  /*required=*/false)) {
-    type = HeaderMatcher::Type::kPresent;
-  } else if (ParseJsonObjectField(header_matcher_json, "prefixMatch", &match,
-                                  error_list, /*required=*/false)) {
-    type = HeaderMatcher::Type::kPrefix;
-  } else if (ParseJsonObjectField(header_matcher_json, "suffixMatch", &match,
-                                  error_list, /*required=*/false)) {
-    type = HeaderMatcher::Type::kSuffix;
-  } else if (ParseJsonObjectField(header_matcher_json, "containsMatch", &match,
-                                  error_list, /*required=*/false)) {
-    type = HeaderMatcher::Type::kContains;
-  } else {
-    return absl::InvalidArgumentError("No valid matcher found");
-  }
-  return HeaderMatcher::Create(name, type, match, start, end, present_match,
-                               invert_match);
-}
+// RbacConfig: one or more RbacPolicy structs
+struct RbacConfig {
+  // RbacPolicy: optional Rules
+  struct RbacPolicy {
+    // Rules: an action, plus a map of policy names to Policy structs
+    struct Rules {
+      // Policy: a list of Permissions and a list of Principals
+      struct Policy {
+        // CidrRange: represents an IP range
+        struct CidrRange {
+          Rbac::CidrRange cidr_range;
 
-absl::StatusOr<StringMatcher> ParseStringMatcher(
-    const Json::Object& string_matcher_json,
-    std::vector<grpc_error_handle>* error_list) {
-  std::string match;
-  StringMatcher::Type type = StringMatcher::Type();
-  const Json::Object* inner_json;
-  bool ignore_case = false;
-  ParseJsonObjectField(string_matcher_json, "ignoreCase", &ignore_case,
-                       error_list, /*required=*/false);
-  if (ParseJsonObjectField(string_matcher_json, "exact", &match, error_list,
-                           /*required=*/false)) {
-    type = StringMatcher::Type::kExact;
-  } else if (ParseJsonObjectField(string_matcher_json, "prefix", &match,
-                                  error_list, /*required=*/false)) {
-    type = StringMatcher::Type::kPrefix;
-  } else if (ParseJsonObjectField(string_matcher_json, "suffix", &match,
-                                  error_list, /*required=*/false)) {
-    type = StringMatcher::Type::kSuffix;
-  } else if (ParseJsonObjectField(string_matcher_json, "safeRegex", &inner_json,
-                                  error_list, /*required=*/false)) {
-    type = StringMatcher::Type::kSafeRegex;
-    std::vector<grpc_error_handle> safe_regex_matcher_error_list;
-    match = ParseRegexMatcher(*inner_json, &safe_regex_matcher_error_list);
-    if (!safe_regex_matcher_error_list.empty()) {
-      error_list->push_back(GRPC_ERROR_CREATE_FROM_VECTOR(
-          "safeRegex", &safe_regex_matcher_error_list));
-    }
-  } else if (ParseJsonObjectField(string_matcher_json, "contains", &match,
-                                  error_list, /*required=*/false)) {
-    type = StringMatcher::Type::kContains;
-  } else {
-    return absl::InvalidArgumentError("No valid matcher found");
-  }
-  return StringMatcher::Create(type, match, ignore_case);
-}
+          static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+          void JsonPostLoad(const Json& json, const JsonArgs& args,
+                            ValidationErrors* errors);
+        };
 
-absl::StatusOr<StringMatcher> ParsePathMatcher(
-    const Json::Object& path_matcher_json,
-    std::vector<grpc_error_handle>* error_list) {
-  const Json::Object* string_matcher_json;
-  if (ParseJsonObjectField(path_matcher_json, "path", &string_matcher_json,
-                           error_list)) {
-    std::vector<grpc_error_handle> sub_error_list;
-    auto matcher = ParseStringMatcher(*string_matcher_json, &sub_error_list);
-    if (!sub_error_list.empty()) {
-      error_list->push_back(
-          GRPC_ERROR_CREATE_FROM_VECTOR("path", &sub_error_list));
-    }
-    return matcher;
-  }
-  return absl::InvalidArgumentError("No path found");
-}
+        // SafeRegexMatch: a regex matcher
+        struct SafeRegexMatch {
+          std::string regex;
 
-Rbac::CidrRange ParseCidrRange(const Json::Object& cidr_range_json,
-                               std::vector<grpc_error_handle>* error_list) {
-  std::string address_prefix;
-  ParseJsonObjectField(cidr_range_json, "addressPrefix", &address_prefix,
-                       error_list);
-  const Json::Object* uint32_json;
-  uint32_t prefix_len = 0;  // default value
-  if (ParseJsonObjectField(cidr_range_json, "prefixLen", &uint32_json,
-                           error_list, /*required=*/false)) {
-    std::vector<grpc_error_handle> sub_error_list;
-    ParseJsonObjectField(*uint32_json, "value", &prefix_len, &sub_error_list);
-    if (!sub_error_list.empty()) {
-      error_list->push_back(
-          GRPC_ERROR_CREATE_FROM_VECTOR("prefixLen", &sub_error_list));
-    }
-  }
-  return Rbac::CidrRange(std::move(address_prefix), prefix_len);
-}
+          static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+        };
 
-Rbac::Permission ParsePermission(const Json::Object& permission_json,
-                                 std::vector<grpc_error_handle>* error_list) {
-  auto parse_permission_set = [](const Json::Object& permission_set_json,
-                                 std::vector<grpc_error_handle>* error_list) {
-    const Json::Array* rules_json;
-    std::vector<std::unique_ptr<Rbac::Permission>> permissions;
-    if (ParseJsonObjectField(permission_set_json, "rules", &rules_json,
-                             error_list)) {
-      for (size_t i = 0; i < rules_json->size(); ++i) {
-        const Json::Object* permission_json;
-        if (!ExtractJsonType((*rules_json)[i],
-                             absl::StrFormat("rules[%d]", i).c_str(),
-                             &permission_json, error_list)) {
-          continue;
-        }
-        std::vector<grpc_error_handle> permission_error_list;
-        permissions.emplace_back(absl::make_unique<Rbac::Permission>(
-            ParsePermission(*permission_json, &permission_error_list)));
-        if (!permission_error_list.empty()) {
-          error_list->push_back(GRPC_ERROR_CREATE_FROM_VECTOR_AND_CPP_STRING(
-              absl::StrFormat("rules[%d]", i), &permission_error_list));
-        }
-      }
-    }
-    return permissions;
+        // HeaderMatch: a matcher for HTTP headers
+        struct HeaderMatch {
+          // RangeMatch: matches a range of numerical values
+          struct RangeMatch {
+            int64_t start;
+            int64_t end;
+
+            static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+          };
+
+          HeaderMatcher matcher;
+
+          static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+          void JsonPostLoad(const Json& json, const JsonArgs& args,
+                            ValidationErrors* errors);
+        };
+
+        // StringMatch: a matcher for strings
+        struct StringMatch {
+          StringMatcher matcher;
+
+          static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+          void JsonPostLoad(const Json& json, const JsonArgs& args,
+                            ValidationErrors* errors);
+        };
+
+        // PathMatch: a matcher for paths
+        struct PathMatch {
+          StringMatch path;
+
+          static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+        };
+
+        // Metadata: a matcher for Envoy metadata (not really applicable
+        // to gRPC; we use only the invert field for proper match semantics)
+        struct Metadata {
+          bool invert = false;
+
+          static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+        };
+
+        // Permission: a matcher for request attributes
+        struct Permission {
+          // PermissionList: a list used for "and" and "or" matchers
+          struct PermissionList {
+            std::vector<Permission> rules;
+
+            PermissionList() = default;
+            PermissionList(const PermissionList&) = delete;
+            PermissionList& operator=(const PermissionList&) = delete;
+            PermissionList(PermissionList&&) = default;
+            PermissionList& operator=(PermissionList&&) = default;
+
+            static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+          };
+
+          std::unique_ptr<Rbac::Permission> permission;
+
+          Permission() = default;
+          Permission(const Permission&) = delete;
+          Permission& operator=(const Permission&) = delete;
+          Permission(Permission&&) = default;
+          Permission& operator=(Permission&&) = default;
+
+          static std::vector<std::unique_ptr<Rbac::Permission>>
+          MakeRbacPermissionList(std::vector<Permission> permission_list);
+          static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+          void JsonPostLoad(const Json& json, const JsonArgs& args,
+                            ValidationErrors* errors);
+        };
+
+        // Principal: a matcher for client identity
+        struct Principal {
+          // PrincipalList: a list used for "and" and "or" matchers
+          struct PrincipalList {
+            std::vector<Principal> ids;
+
+            PrincipalList() = default;
+            PrincipalList(const PrincipalList&) = delete;
+            PrincipalList& operator=(const PrincipalList&) = delete;
+            PrincipalList(PrincipalList&&) = default;
+            PrincipalList& operator=(PrincipalList&&) = default;
+
+            static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+          };
+
+          struct Authenticated {
+            absl::optional<StringMatch> principal_name;
+
+            static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+          };
+
+          std::unique_ptr<Rbac::Principal> principal;
+
+          Principal() = default;
+          Principal(const Principal&) = delete;
+          Principal& operator=(const Principal&) = delete;
+          Principal(Principal&&) = default;
+          Principal& operator=(Principal&&) = default;
+
+          static std::vector<std::unique_ptr<Rbac::Principal>>
+          MakeRbacPrincipalList(std::vector<Principal> principal_list);
+          static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+          void JsonPostLoad(const Json& json, const JsonArgs& args,
+                            ValidationErrors* errors);
+        };
+
+        std::vector<Permission> permissions;
+        std::vector<Principal> principals;
+
+        Policy() = default;
+        Policy(const Policy&) = delete;
+        Policy& operator=(const Policy&) = delete;
+        Policy(Policy&&) = default;
+        Policy& operator=(Policy&&) = default;
+
+        Rbac::Policy TakeAsRbacPolicy();
+        static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+      };
+
+      // AuditLogger: the name of logger and its config in json
+      struct AuditLogger {
+        std::string name;
+        Json::Object config;
+
+        AuditLogger() = default;
+        AuditLogger(const AuditLogger&) = delete;
+        AuditLogger& operator=(const AuditLogger&) = delete;
+        AuditLogger(AuditLogger&&) = default;
+        AuditLogger& operator=(AuditLogger&&) = default;
+
+        static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+        void JsonPostLoad(const Json&, const JsonArgs&,
+                          ValidationErrors* errors);
+      };
+
+      int action;
+      std::map<std::string, Policy> policies;
+      // Defaults to kNone since its json field is optional.
+      Rbac::AuditCondition audit_condition = Rbac::AuditCondition::kNone;
+      std::vector<std::unique_ptr<AuditLoggerFactory::Config>> logger_configs;
+
+      Rules() {}
+      Rules(const Rules&) = delete;
+      Rules& operator=(const Rules&) = delete;
+      Rules(Rules&&) = default;
+      Rules& operator=(Rules&&) = default;
+
+      Rbac TakeAsRbac();
+      static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+      void JsonPostLoad(const Json&, const JsonArgs&, ValidationErrors* errors);
+    };
+
+    absl::optional<Rules> rules;
+
+    Rbac TakeAsRbac();
+    static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
   };
-  Rbac::Permission permission;
-  const Json::Object* inner_json;
-  bool any;
-  int port;
-  if (ParseJsonObjectField(permission_json, "andRules", &inner_json, error_list,
-                           /*required=*/false)) {
-    std::vector<grpc_error_handle> and_rules_error_list;
-    permission = Rbac::Permission::MakeAndPermission(
-        parse_permission_set(*inner_json, &and_rules_error_list));
-    if (!and_rules_error_list.empty()) {
-      error_list->push_back(
-          GRPC_ERROR_CREATE_FROM_VECTOR("andRules", &and_rules_error_list));
-    }
-  } else if (ParseJsonObjectField(permission_json, "orRules", &inner_json,
-                                  error_list, /*required=*/false)) {
-    std::vector<grpc_error_handle> or_rules_error_list;
-    permission = Rbac::Permission::MakeOrPermission(
-        parse_permission_set(*inner_json, &or_rules_error_list));
-    if (!or_rules_error_list.empty()) {
-      error_list->push_back(
-          GRPC_ERROR_CREATE_FROM_VECTOR("orRules", &or_rules_error_list));
-    }
-  } else if (ParseJsonObjectField(permission_json, "any", &any, error_list,
-                                  /*required=*/false) &&
-             any) {
-    permission = Rbac::Permission::MakeAnyPermission();
-  } else if (ParseJsonObjectField(permission_json, "header", &inner_json,
-                                  error_list,
-                                  /*required=*/false)) {
-    std::vector<grpc_error_handle> header_error_list;
-    auto matcher = ParseHeaderMatcher(*inner_json, &header_error_list);
-    if (matcher.ok()) {
-      permission = Rbac::Permission::MakeHeaderPermission(*matcher);
-    } else {
-      header_error_list.push_back(absl_status_to_grpc_error(matcher.status()));
-    }
-    if (!header_error_list.empty()) {
-      error_list->push_back(
-          GRPC_ERROR_CREATE_FROM_VECTOR("header", &header_error_list));
-    }
-  } else if (ParseJsonObjectField(permission_json, "urlPath", &inner_json,
-                                  error_list,
-                                  /*required=*/false)) {
-    std::vector<grpc_error_handle> url_path_error_list;
-    auto matcher = ParsePathMatcher(*inner_json, &url_path_error_list);
-    if (matcher.ok()) {
-      permission = Rbac::Permission::MakePathPermission(*matcher);
-    } else {
-      url_path_error_list.push_back(
-          absl_status_to_grpc_error(matcher.status()));
-    }
-    if (!url_path_error_list.empty()) {
-      error_list->push_back(
-          GRPC_ERROR_CREATE_FROM_VECTOR("urlPath", &url_path_error_list));
-    }
-  } else if (ParseJsonObjectField(permission_json, "destinationIp", &inner_json,
-                                  error_list, /*required=*/false)) {
-    std::vector<grpc_error_handle> destination_ip_error_list;
-    permission = Rbac::Permission::MakeDestIpPermission(
-        ParseCidrRange(*inner_json, &destination_ip_error_list));
-    if (!destination_ip_error_list.empty()) {
-      error_list->push_back(GRPC_ERROR_CREATE_FROM_VECTOR(
-          "destinationIp", &destination_ip_error_list));
-    }
-  } else if (ParseJsonObjectField(permission_json, "destinationPort", &port,
-                                  error_list, /*required=*/false)) {
-    permission = Rbac::Permission::MakeDestPortPermission(port);
-  } else if (ParseJsonObjectField(permission_json, "metadata", &inner_json,
-                                  error_list, /*required=*/false)) {
-    std::vector<grpc_error_handle> metadata_error_list;
-    bool invert = false;
-    ParseJsonObjectField(*inner_json, "invert", &invert, &metadata_error_list,
-                         /*required=*/false);
-    if (metadata_error_list.empty()) {
-      permission = Rbac::Permission::MakeMetadataPermission(invert);
-    } else {
-      error_list->push_back(
-          GRPC_ERROR_CREATE_FROM_VECTOR("metadata", &metadata_error_list));
-    }
-  } else if (ParseJsonObjectField(permission_json, "notRule", &inner_json,
-                                  error_list, /*required=*/false)) {
-    std::vector<grpc_error_handle> not_rule_error_list;
-    permission = Rbac::Permission::MakeNotPermission(
-        ParsePermission(*inner_json, &not_rule_error_list));
-    if (!not_rule_error_list.empty()) {
-      error_list->push_back(
-          GRPC_ERROR_CREATE_FROM_VECTOR("notRule", &not_rule_error_list));
-    }
-  } else if (ParseJsonObjectField(permission_json, "requestedServerName",
-                                  &inner_json, error_list,
-                                  /*required=*/false)) {
-    std::vector<grpc_error_handle> req_server_name_error_list;
-    auto matcher = ParseStringMatcher(*inner_json, &req_server_name_error_list);
-    if (matcher.ok()) {
-      permission = Rbac::Permission::MakeReqServerNamePermission(*matcher);
-    } else {
-      req_server_name_error_list.push_back(
-          absl_status_to_grpc_error(matcher.status()));
-    }
-    if (!req_server_name_error_list.empty()) {
-      error_list->push_back(GRPC_ERROR_CREATE_FROM_VECTOR(
-          "requestedServerName", &req_server_name_error_list));
-    }
-  } else {
-    error_list->push_back(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("No valid rule found"));
-  }
-  return permission;
+
+  std::vector<RbacPolicy> rbac_policies;
+
+  std::vector<Rbac> TakeAsRbacList();
+  static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+};
+
+//
+// RbacConfig::RbacPolicy::Rules::Policy::CidrRange
+//
+
+const JsonLoaderInterface*
+RbacConfig::RbacPolicy::Rules::Policy::CidrRange::JsonLoader(const JsonArgs&) {
+  // All fields handled in JsonPostLoad().
+  static const auto* loader = JsonObjectLoader<CidrRange>().Finish();
+  return loader;
 }
 
-Rbac::Principal ParsePrincipal(const Json::Object& principal_json,
-                               std::vector<grpc_error_handle>* error_list) {
-  auto parse_principal_set = [](const Json::Object& principal_set_json,
-                                std::vector<grpc_error_handle>* error_list) {
-    const Json::Array* rules_json;
-    std::vector<std::unique_ptr<Rbac::Principal>> principals;
-    if (ParseJsonObjectField(principal_set_json, "ids", &rules_json,
-                             error_list)) {
-      for (size_t i = 0; i < rules_json->size(); ++i) {
-        const Json::Object* principal_json;
-        if (!ExtractJsonType((*rules_json)[i],
-                             absl::StrFormat("ids[%d]", i).c_str(),
-                             &principal_json, error_list)) {
-          continue;
-        }
-        std::vector<grpc_error_handle> principal_error_list;
-        principals.emplace_back(absl::make_unique<Rbac::Principal>(
-            ParsePrincipal(*principal_json, &principal_error_list)));
-        if (!principal_error_list.empty()) {
-          error_list->push_back(GRPC_ERROR_CREATE_FROM_VECTOR_AND_CPP_STRING(
-              absl::StrFormat("ids[%d]", i), &principal_error_list));
-        }
-      }
+void RbacConfig::RbacPolicy::Rules::Policy::CidrRange::JsonPostLoad(
+    const Json& json, const JsonArgs& args, ValidationErrors* errors) {
+  auto address_prefix = LoadJsonObjectField<std::string>(
+      json.object(), args, "addressPrefix", errors);
+  auto prefix_len =
+      LoadJsonObjectField<uint32_t>(json.object(), args, "prefixLen", errors,
+                                    /*required=*/false);
+  cidr_range =
+      Rbac::CidrRange(address_prefix.value_or(""), prefix_len.value_or(0));
+}
+
+//
+// RbacConfig::RbacPolicy::Rules::Policy::SafeRegexMatch
+//
+
+const JsonLoaderInterface*
+RbacConfig::RbacPolicy::Rules::Policy::SafeRegexMatch::JsonLoader(
+    const JsonArgs&) {
+  static const auto* loader = JsonObjectLoader<SafeRegexMatch>()
+                                  .Field("regex", &SafeRegexMatch::regex)
+                                  .Finish();
+  return loader;
+}
+
+//
+// RbacConfig::RbacPolicy::Rules::Policy::HeaderMatch::RangeMatch
+//
+
+const JsonLoaderInterface*
+RbacConfig::RbacPolicy::Rules::Policy::HeaderMatch::RangeMatch::JsonLoader(
+    const JsonArgs&) {
+  static const auto* loader = JsonObjectLoader<RangeMatch>()
+                                  .Field("start", &RangeMatch::start)
+                                  .Field("end", &RangeMatch::end)
+                                  .Finish();
+  return loader;
+}
+
+//
+// RbacConfig::RbacPolicy::Rules::Policy::HeaderMatch
+//
+
+const JsonLoaderInterface*
+RbacConfig::RbacPolicy::Rules::Policy::HeaderMatch::JsonLoader(
+    const JsonArgs&) {
+  // All fields handled in JsonPostLoad().
+  static const auto* loader = JsonObjectLoader<HeaderMatch>().Finish();
+  return loader;
+}
+
+void RbacConfig::RbacPolicy::Rules::Policy::HeaderMatch::JsonPostLoad(
+    const Json& json, const JsonArgs& args, ValidationErrors* errors) {
+  const size_t original_error_size = errors->size();
+  std::string name =
+      LoadJsonObjectField<std::string>(json.object(), args, "name", errors)
+          .value_or("");
+  bool invert_match =
+      LoadJsonObjectField<bool>(json.object(), args, "invertMatch", errors,
+                                /*required=*/false)
+          .value_or(false);
+  auto set_header_matcher = [&](absl::StatusOr<HeaderMatcher> header_matcher) {
+    if (header_matcher.ok()) {
+      matcher = *header_matcher;
+    } else {
+      errors->AddError(header_matcher.status().message());
     }
-    return principals;
   };
-  Rbac::Principal principal;
-  const Json::Object* inner_json;
-  bool any;
-  if (ParseJsonObjectField(principal_json, "andIds", &inner_json, error_list,
-                           /*required=*/false)) {
-    std::vector<grpc_error_handle> and_rules_error_list;
-    principal = Rbac::Principal::MakeAndPrincipal(
-        parse_principal_set(*inner_json, &and_rules_error_list));
-    if (!and_rules_error_list.empty()) {
-      error_list->push_back(
-          GRPC_ERROR_CREATE_FROM_VECTOR("andIds", &and_rules_error_list));
+  auto check_match = [&](absl::string_view field_name,
+                         HeaderMatcher::Type type) {
+    auto match = LoadJsonObjectField<std::string>(json.object(), args,
+                                                  field_name, errors,
+                                                  /*required=*/false);
+    if (match.has_value()) {
+      set_header_matcher(
+          HeaderMatcher::Create(name, type, *match, 0, 0, false, invert_match));
+      return true;
     }
-  } else if (ParseJsonObjectField(principal_json, "orIds", &inner_json,
-                                  error_list, /*required=*/false)) {
-    std::vector<grpc_error_handle> or_rules_error_list;
-    principal = Rbac::Principal::MakeOrPrincipal(
-        parse_principal_set(*inner_json, &or_rules_error_list));
-    if (!or_rules_error_list.empty()) {
-      error_list->push_back(
-          GRPC_ERROR_CREATE_FROM_VECTOR("orIds", &or_rules_error_list));
-    }
-  } else if (ParseJsonObjectField(principal_json, "any", &any, error_list,
-                                  /*required=*/false) &&
-             any) {
-    principal = Rbac::Principal::MakeAnyPrincipal();
-  } else if (ParseJsonObjectField(principal_json, "authenticated", &inner_json,
-                                  error_list, /*required=*/false)) {
-    std::vector<grpc_error_handle> authenticated_error_list;
-    const Json::Object* principal_name_json;
-    if (ParseJsonObjectField(*inner_json, "principalName", &principal_name_json,
-                             &authenticated_error_list, /*required=*/false)) {
-      std::vector<grpc_error_handle> principal_name_error_list;
-      auto matcher =
-          ParseStringMatcher(*principal_name_json, &principal_name_error_list);
-      if (matcher.ok()) {
-        principal = Rbac::Principal::MakeAuthenticatedPrincipal(*matcher);
-      } else {
-        principal_name_error_list.push_back(
-            absl_status_to_grpc_error(matcher.status()));
-      }
-      if (!principal_name_error_list.empty()) {
-        authenticated_error_list.push_back(GRPC_ERROR_CREATE_FROM_VECTOR(
-            "principalName", &principal_name_error_list));
-      }
-    } else if (authenticated_error_list.empty()) {
-      // No principalName found. Match for all users.
-      principal = Rbac::Principal::MakeAnyPrincipal();
-    } else {
-      error_list->push_back(GRPC_ERROR_CREATE_FROM_VECTOR(
-          "authenticated", &authenticated_error_list));
-    }
-  } else if (ParseJsonObjectField(principal_json, "sourceIp", &inner_json,
-                                  error_list, /*required=*/false)) {
-    std::vector<grpc_error_handle> source_ip_error_list;
-    principal = Rbac::Principal::MakeSourceIpPrincipal(
-        ParseCidrRange(*inner_json, &source_ip_error_list));
-    if (!source_ip_error_list.empty()) {
-      error_list->push_back(
-          GRPC_ERROR_CREATE_FROM_VECTOR("sourceIp", &source_ip_error_list));
-    }
-  } else if (ParseJsonObjectField(principal_json, "directRemoteIp", &inner_json,
-                                  error_list, /*required=*/false)) {
-    std::vector<grpc_error_handle> direct_remote_ip_error_list;
-    principal = Rbac::Principal::MakeDirectRemoteIpPrincipal(
-        ParseCidrRange(*inner_json, &direct_remote_ip_error_list));
-    if (!direct_remote_ip_error_list.empty()) {
-      error_list->push_back(GRPC_ERROR_CREATE_FROM_VECTOR(
-          "directRemoteIp", &direct_remote_ip_error_list));
-    }
-  } else if (ParseJsonObjectField(principal_json, "remoteIp", &inner_json,
-                                  error_list, /*required=*/false)) {
-    std::vector<grpc_error_handle> remote_ip_error_list;
-    principal = Rbac::Principal::MakeRemoteIpPrincipal(
-        ParseCidrRange(*inner_json, &remote_ip_error_list));
-    if (!remote_ip_error_list.empty()) {
-      error_list->push_back(
-          GRPC_ERROR_CREATE_FROM_VECTOR("remoteIp", &remote_ip_error_list));
-    }
-  } else if (ParseJsonObjectField(principal_json, "header", &inner_json,
-                                  error_list,
-                                  /*required=*/false)) {
-    std::vector<grpc_error_handle> header_error_list;
-    auto matcher = ParseHeaderMatcher(*inner_json, &header_error_list);
-    if (matcher.ok()) {
-      principal = Rbac::Principal::MakeHeaderPrincipal(*matcher);
-    } else {
-      header_error_list.push_back(absl_status_to_grpc_error(matcher.status()));
-    }
-    if (!header_error_list.empty()) {
-      error_list->push_back(
-          GRPC_ERROR_CREATE_FROM_VECTOR("header", &header_error_list));
-    }
-  } else if (ParseJsonObjectField(principal_json, "urlPath", &inner_json,
-                                  error_list,
-                                  /*required=*/false)) {
-    std::vector<grpc_error_handle> url_path_error_list;
-    auto matcher = ParsePathMatcher(*inner_json, &url_path_error_list);
-    if (matcher.ok()) {
-      principal = Rbac::Principal::MakePathPrincipal(*matcher);
-    } else {
-      url_path_error_list.push_back(
-          absl_status_to_grpc_error(matcher.status()));
-    }
-    if (!url_path_error_list.empty()) {
-      error_list->push_back(
-          GRPC_ERROR_CREATE_FROM_VECTOR("urlPath", &url_path_error_list));
-    }
-  } else if (ParseJsonObjectField(principal_json, "metadata", &inner_json,
-                                  error_list, /*required=*/false)) {
-    std::vector<grpc_error_handle> metadata_error_list;
-    bool invert = false;
-    ParseJsonObjectField(*inner_json, "invert", &invert, &metadata_error_list,
-                         /*required=*/false);
-    if (metadata_error_list.empty()) {
-      principal = Rbac::Principal::MakeMetadataPrincipal(invert);
-    } else {
-      error_list->push_back(
-          GRPC_ERROR_CREATE_FROM_VECTOR("metadata", &metadata_error_list));
-    }
-  } else if (ParseJsonObjectField(principal_json, "notId", &inner_json,
-                                  error_list, /*required=*/false)) {
-    std::vector<grpc_error_handle> not_rule_error_list;
-    principal = Rbac::Principal::MakeNotPrincipal(
-        ParsePrincipal(*inner_json, &not_rule_error_list));
-    if (!not_rule_error_list.empty()) {
-      error_list->push_back(
-          GRPC_ERROR_CREATE_FROM_VECTOR("notId", &not_rule_error_list));
-    }
-  } else {
-    error_list->push_back(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("No valid id found"));
+    return false;
+  };
+  if (check_match("exactMatch", HeaderMatcher::Type::kExact) ||
+      check_match("prefixMatch", HeaderMatcher::Type::kPrefix) ||
+      check_match("suffixMatch", HeaderMatcher::Type::kSuffix) ||
+      check_match("containsMatch", HeaderMatcher::Type::kContains)) {
+    return;
   }
-  return principal;
+  auto present_match =
+      LoadJsonObjectField<bool>(json.object(), args, "presentMatch", errors,
+                                /*required=*/false);
+  if (present_match.has_value()) {
+    set_header_matcher(
+        HeaderMatcher::Create(name, HeaderMatcher::Type::kPresent, "", 0, 0,
+                              *present_match, invert_match));
+    return;
+  }
+  auto regex_match = LoadJsonObjectField<SafeRegexMatch>(
+      json.object(), args, "safeRegexMatch", errors,
+      /*required=*/false);
+  if (regex_match.has_value()) {
+    set_header_matcher(
+        HeaderMatcher::Create(name, HeaderMatcher::Type::kSafeRegex,
+                              regex_match->regex, 0, 0, false, invert_match));
+    return;
+  }
+  auto range_match =
+      LoadJsonObjectField<RangeMatch>(json.object(), args, "rangeMatch", errors,
+                                      /*required=*/false);
+  if (range_match.has_value()) {
+    set_header_matcher(HeaderMatcher::Create(name, HeaderMatcher::Type::kRange,
+                                             "", range_match->start,
+                                             range_match->end, invert_match));
+    return;
+  }
+  if (errors->size() == original_error_size) {
+    errors->AddError("no valid matcher found");
+  }
 }
 
-Rbac::Policy ParsePolicy(const Json::Object& policy_json,
-                         std::vector<grpc_error_handle>* error_list) {
-  Rbac::Policy policy;
-  const Json::Array* permissions_json_array;
+//
+// RbacConfig::RbacPolicy::Rules::Policy::StringMatch
+//
+
+const JsonLoaderInterface*
+RbacConfig::RbacPolicy::Rules::Policy::StringMatch::JsonLoader(
+    const JsonArgs&) {
+  // All fields handled in JsonPostLoad().
+  static const auto* loader = JsonObjectLoader<StringMatch>().Finish();
+  return loader;
+}
+
+void RbacConfig::RbacPolicy::Rules::Policy::StringMatch::JsonPostLoad(
+    const Json& json, const JsonArgs& args, ValidationErrors* errors) {
+  const size_t original_error_size = errors->size();
+  bool ignore_case =
+      LoadJsonObjectField<bool>(json.object(), args, "ignoreCase", errors,
+                                /*required=*/false)
+          .value_or(false);
+  auto set_string_matcher = [&](absl::StatusOr<StringMatcher> string_matcher) {
+    if (string_matcher.ok()) {
+      matcher = *string_matcher;
+    } else {
+      errors->AddError(string_matcher.status().message());
+    }
+  };
+  auto check_match = [&](absl::string_view field_name,
+                         StringMatcher::Type type) {
+    auto match = LoadJsonObjectField<std::string>(json.object(), args,
+                                                  field_name, errors,
+                                                  /*required=*/false);
+    if (match.has_value()) {
+      set_string_matcher(StringMatcher::Create(type, *match, ignore_case));
+      return true;
+    }
+    return false;
+  };
+  if (check_match("exact", StringMatcher::Type::kExact) ||
+      check_match("prefix", StringMatcher::Type::kPrefix) ||
+      check_match("suffix", StringMatcher::Type::kSuffix) ||
+      check_match("contains", StringMatcher::Type::kContains)) {
+    return;
+  }
+  auto regex_match = LoadJsonObjectField<SafeRegexMatch>(json.object(), args,
+                                                         "safeRegex", errors,
+                                                         /*required=*/false);
+  if (regex_match.has_value()) {
+    set_string_matcher(StringMatcher::Create(StringMatcher::Type::kSafeRegex,
+                                             regex_match->regex, ignore_case));
+    return;
+  }
+  if (errors->size() == original_error_size) {
+    errors->AddError("no valid matcher found");
+  }
+}
+
+//
+// RbacConfig::RbacPolicy::Rules::Policy::PathMatch
+//
+
+const JsonLoaderInterface*
+RbacConfig::RbacPolicy::Rules::Policy::PathMatch::JsonLoader(const JsonArgs&) {
+  static const auto* loader =
+      JsonObjectLoader<PathMatch>().Field("path", &PathMatch::path).Finish();
+  return loader;
+}
+
+//
+// RbacConfig::RbacPolicy::Rules::Policy::Metadata
+//
+
+const JsonLoaderInterface*
+RbacConfig::RbacPolicy::Rules::Policy::Metadata::JsonLoader(const JsonArgs&) {
+  static const auto* loader = JsonObjectLoader<Metadata>()
+                                  .OptionalField("invert", &Metadata::invert)
+                                  .Finish();
+  return loader;
+}
+
+//
+// RbacConfig::RbacPolicy::Rules::Policy::Permission::PermissionList
+//
+
+const JsonLoaderInterface*
+RbacConfig::RbacPolicy::Rules::Policy::Permission::PermissionList::JsonLoader(
+    const JsonArgs&) {
+  static const auto* loader = JsonObjectLoader<PermissionList>()
+                                  .Field("rules", &PermissionList::rules)
+                                  .Finish();
+  return loader;
+}
+
+//
+// RbacConfig::RbacPolicy::Rules::Policy::Permission
+//
+
+std::vector<std::unique_ptr<Rbac::Permission>>
+RbacConfig::RbacPolicy::Rules::Policy::Permission::MakeRbacPermissionList(
+    std::vector<Permission> permission_list) {
   std::vector<std::unique_ptr<Rbac::Permission>> permissions;
-  if (ParseJsonObjectField(policy_json, "permissions", &permissions_json_array,
-                           error_list)) {
-    for (size_t i = 0; i < permissions_json_array->size(); ++i) {
-      const Json::Object* permission_json;
-      if (!ExtractJsonType((*permissions_json_array)[i],
-                           absl::StrFormat("permissions[%d]", i),
-                           &permission_json, error_list)) {
-        continue;
-      }
-      std::vector<grpc_error_handle> permission_error_list;
-      permissions.emplace_back(absl::make_unique<Rbac::Permission>(
-          ParsePermission(*permission_json, &permission_error_list)));
-      if (!permission_error_list.empty()) {
-        error_list->push_back(GRPC_ERROR_CREATE_FROM_VECTOR_AND_CPP_STRING(
-            absl::StrFormat("permissions[%d]", i), &permission_error_list));
-      }
-    }
+  permissions.reserve(permission_list.size());
+  for (auto& rule : permission_list) {
+    permissions.emplace_back(std::move(rule.permission));
   }
-  const Json::Array* principals_json_array;
+  return permissions;
+}
+
+const JsonLoaderInterface*
+RbacConfig::RbacPolicy::Rules::Policy::Permission::JsonLoader(const JsonArgs&) {
+  // All fields handled in JsonPostLoad().
+  static const auto* loader = JsonObjectLoader<Permission>().Finish();
+  return loader;
+}
+
+void RbacConfig::RbacPolicy::Rules::Policy::Permission::JsonPostLoad(
+    const Json& json, const JsonArgs& args, ValidationErrors* errors) {
+  const size_t original_error_size = errors->size();
+  auto any = LoadJsonObjectField<bool>(json.object(), args, "any", errors,
+                                       /*required=*/false);
+  if (any.has_value()) {
+    permission = std::make_unique<Rbac::Permission>(
+        Rbac::Permission::MakeAnyPermission());
+    return;
+  }
+  auto header =
+      LoadJsonObjectField<HeaderMatch>(json.object(), args, "header", errors,
+                                       /*required=*/false);
+  if (header.has_value()) {
+    permission = std::make_unique<Rbac::Permission>(
+        Rbac::Permission::MakeHeaderPermission(std::move(header->matcher)));
+    return;
+  }
+  auto url_path =
+      LoadJsonObjectField<PathMatch>(json.object(), args, "urlPath", errors,
+                                     /*required=*/false);
+  if (url_path.has_value()) {
+    permission = std::make_unique<Rbac::Permission>(
+        Rbac::Permission::MakePathPermission(url_path->path.matcher));
+    return;
+  }
+  auto destination_ip = LoadJsonObjectField<CidrRange>(json.object(), args,
+                                                       "destinationIp", errors,
+                                                       /*required=*/false);
+  if (destination_ip.has_value()) {
+    permission = std::make_unique<Rbac::Permission>(
+        Rbac::Permission::MakeDestIpPermission(
+            std::move(destination_ip->cidr_range)));
+    return;
+  }
+  auto destination_port = LoadJsonObjectField<uint32_t>(
+      json.object(), args, "destinationPort", errors,
+      /*required=*/false);
+  if (destination_port.has_value()) {
+    permission = std::make_unique<Rbac::Permission>(
+        Rbac::Permission::MakeDestPortPermission(*destination_port));
+    return;
+  }
+  auto metadata =
+      LoadJsonObjectField<Metadata>(json.object(), args, "metadata", errors,
+                                    /*required=*/false);
+  if (metadata.has_value()) {
+    permission = std::make_unique<Rbac::Permission>(
+        Rbac::Permission::MakeMetadataPermission(metadata->invert));
+    return;
+  }
+  auto requested_server_name = LoadJsonObjectField<StringMatch>(
+      json.object(), args, "requestedServerName", errors,
+      /*required=*/false);
+  if (requested_server_name.has_value()) {
+    permission = std::make_unique<Rbac::Permission>(
+        Rbac::Permission::MakeReqServerNamePermission(
+            std::move(requested_server_name->matcher)));
+    return;
+  }
+  auto rules = LoadJsonObjectField<PermissionList>(json.object(), args,
+                                                   "andRules", errors,
+                                                   /*required=*/false);
+  if (rules.has_value()) {
+    permission =
+        std::make_unique<Rbac::Permission>(Rbac::Permission::MakeAndPermission(
+            MakeRbacPermissionList(std::move(rules->rules))));
+    return;
+  }
+  rules = LoadJsonObjectField<PermissionList>(json.object(), args, "orRules",
+                                              errors,
+                                              /*required=*/false);
+  if (rules.has_value()) {
+    permission =
+        std::make_unique<Rbac::Permission>(Rbac::Permission::MakeOrPermission(
+            MakeRbacPermissionList(std::move(rules->rules))));
+    return;
+  }
+  auto not_rule =
+      LoadJsonObjectField<Permission>(json.object(), args, "notRule", errors,
+                                      /*required=*/false);
+  if (not_rule.has_value()) {
+    permission = std::make_unique<Rbac::Permission>(
+        Rbac::Permission::MakeNotPermission(std::move(*not_rule->permission)));
+    return;
+  }
+  if (errors->size() == original_error_size) {
+    errors->AddError("no valid rule found");
+  }
+}
+
+//
+// RbacConfig::RbacPolicy::Rules::Policy::Principal::PrincipalList
+//
+
+const JsonLoaderInterface*
+RbacConfig::RbacPolicy::Rules::Policy::Principal::PrincipalList::JsonLoader(
+    const JsonArgs&) {
+  static const auto* loader = JsonObjectLoader<PrincipalList>()
+                                  .Field("ids", &PrincipalList::ids)
+                                  .Finish();
+  return loader;
+}
+
+//
+// RbacConfig::RbacPolicy::Rules::Policy::Principal::Authenticated
+//
+
+const JsonLoaderInterface*
+RbacConfig::RbacPolicy::Rules::Policy::Principal::Authenticated::JsonLoader(
+    const JsonArgs&) {
+  static const auto* loader =
+      JsonObjectLoader<Authenticated>()
+          .OptionalField("principalName", &Authenticated::principal_name)
+          .Finish();
+  return loader;
+}
+
+//
+// RbacConfig::RbacPolicy::Rules::Policy::Principal
+//
+
+std::vector<std::unique_ptr<Rbac::Principal>>
+RbacConfig::RbacPolicy::Rules::Policy::Principal::MakeRbacPrincipalList(
+    std::vector<Principal> principal_list) {
   std::vector<std::unique_ptr<Rbac::Principal>> principals;
-  if (ParseJsonObjectField(policy_json, "principals", &principals_json_array,
-                           error_list)) {
-    for (size_t i = 0; i < principals_json_array->size(); ++i) {
-      const Json::Object* principal_json;
-      if (!ExtractJsonType((*principals_json_array)[i],
-                           absl::StrFormat("principals[%d]", i),
-                           &principal_json, error_list)) {
-        continue;
-      }
-      std::vector<grpc_error_handle> principal_error_list;
-      principals.emplace_back(absl::make_unique<Rbac::Principal>(
-          ParsePrincipal(*principal_json, &principal_error_list)));
-      if (!principal_error_list.empty()) {
-        error_list->push_back(GRPC_ERROR_CREATE_FROM_VECTOR_AND_CPP_STRING(
-            absl::StrFormat("principals[%d]", i), &principal_error_list));
-      }
-    }
+  principals.reserve(principal_list.size());
+  for (auto& id : principal_list) {
+    principals.emplace_back(std::move(id.principal));
   }
-  policy.permissions =
-      Rbac::Permission::MakeOrPermission(std::move(permissions));
-  policy.principals = Rbac::Principal::MakeOrPrincipal(std::move(principals));
+  return principals;
+}
+
+const JsonLoaderInterface*
+RbacConfig::RbacPolicy::Rules::Policy::Principal::JsonLoader(const JsonArgs&) {
+  // All fields handled in JsonPostLoad().
+  static const auto* loader = JsonObjectLoader<Principal>().Finish();
+  return loader;
+}
+
+void RbacConfig::RbacPolicy::Rules::Policy::Principal::JsonPostLoad(
+    const Json& json, const JsonArgs& args, ValidationErrors* errors) {
+  const size_t original_error_size = errors->size();
+  auto any = LoadJsonObjectField<bool>(json.object(), args, "any", errors,
+                                       /*required=*/false);
+  if (any.has_value()) {
+    principal =
+        std::make_unique<Rbac::Principal>(Rbac::Principal::MakeAnyPrincipal());
+    return;
+  }
+  auto authenticated = LoadJsonObjectField<Authenticated>(
+      json.object(), args, "authenticated", errors,
+      /*required=*/false);
+  if (authenticated.has_value()) {
+    if (authenticated->principal_name.has_value()) {
+      principal = std::make_unique<Rbac::Principal>(
+          Rbac::Principal::MakeAuthenticatedPrincipal(
+              std::move(authenticated->principal_name->matcher)));
+    } else {
+      // No principalName found. Match for all users.
+      principal = std::make_unique<Rbac::Principal>(
+          Rbac::Principal::MakeAnyPrincipal());
+    }
+    return;
+  }
+  auto cidr_range =
+      LoadJsonObjectField<CidrRange>(json.object(), args, "sourceIp", errors,
+                                     /*required=*/false);
+  if (cidr_range.has_value()) {
+    principal = std::make_unique<Rbac::Principal>(
+        Rbac::Principal::MakeSourceIpPrincipal(
+            std::move(cidr_range->cidr_range)));
+    return;
+  }
+  cidr_range = LoadJsonObjectField<CidrRange>(json.object(), args,
+                                              "directRemoteIp", errors,
+                                              /*required=*/false);
+  if (cidr_range.has_value()) {
+    principal = std::make_unique<Rbac::Principal>(
+        Rbac::Principal::MakeDirectRemoteIpPrincipal(
+            std::move(cidr_range->cidr_range)));
+    return;
+  }
+  cidr_range =
+      LoadJsonObjectField<CidrRange>(json.object(), args, "remoteIp", errors,
+                                     /*required=*/false);
+  if (cidr_range.has_value()) {
+    principal = std::make_unique<Rbac::Principal>(
+        Rbac::Principal::MakeRemoteIpPrincipal(
+            std::move(cidr_range->cidr_range)));
+    return;
+  }
+  auto header =
+      LoadJsonObjectField<HeaderMatch>(json.object(), args, "header", errors,
+                                       /*required=*/false);
+  if (header.has_value()) {
+    principal = std::make_unique<Rbac::Principal>(
+        Rbac::Principal::MakeHeaderPrincipal(std::move(header->matcher)));
+    return;
+  }
+  auto url_path =
+      LoadJsonObjectField<PathMatch>(json.object(), args, "urlPath", errors,
+                                     /*required=*/false);
+  if (url_path.has_value()) {
+    principal = std::make_unique<Rbac::Principal>(
+        Rbac::Principal::MakePathPrincipal(std::move(url_path->path.matcher)));
+    return;
+  }
+  auto metadata =
+      LoadJsonObjectField<Metadata>(json.object(), args, "metadata", errors,
+                                    /*required=*/false);
+  if (metadata.has_value()) {
+    principal = std::make_unique<Rbac::Principal>(
+        Rbac::Principal::MakeMetadataPrincipal(metadata->invert));
+    return;
+  }
+  auto ids =
+      LoadJsonObjectField<PrincipalList>(json.object(), args, "andIds", errors,
+                                         /*required=*/false);
+  if (ids.has_value()) {
+    principal =
+        std::make_unique<Rbac::Principal>(Rbac::Principal::MakeAndPrincipal(
+            MakeRbacPrincipalList(std::move(ids->ids))));
+    return;
+  }
+  ids = LoadJsonObjectField<PrincipalList>(json.object(), args, "orIds", errors,
+                                           /*required=*/false);
+  if (ids.has_value()) {
+    principal =
+        std::make_unique<Rbac::Principal>(Rbac::Principal::MakeOrPrincipal(
+            MakeRbacPrincipalList(std::move(ids->ids))));
+    return;
+  }
+  auto not_rule =
+      LoadJsonObjectField<Principal>(json.object(), args, "notId", errors,
+                                     /*required=*/false);
+  if (not_rule.has_value()) {
+    principal = std::make_unique<Rbac::Principal>(
+        Rbac::Principal::MakeNotPrincipal(std::move(*not_rule->principal)));
+    return;
+  }
+  if (errors->size() == original_error_size) {
+    errors->AddError("no valid id found");
+  }
+}
+
+//
+// RbacConfig::RbacPolicy::Rules::Policy
+//
+
+Rbac::Policy RbacConfig::RbacPolicy::Rules::Policy::TakeAsRbacPolicy() {
+  Rbac::Policy policy;
+  policy.permissions = Rbac::Permission::MakeOrPermission(
+      Permission::MakeRbacPermissionList(std::move(permissions)));
+  policy.principals = Rbac::Principal::MakeOrPrincipal(
+      Principal::MakeRbacPrincipalList(std::move(principals)));
   return policy;
 }
 
-Rbac ParseRbac(const Json::Object& rbac_json,
-               std::vector<grpc_error_handle>* error_list) {
+const JsonLoaderInterface* RbacConfig::RbacPolicy::Rules::Policy::JsonLoader(
+    const JsonArgs&) {
+  static const auto* loader = JsonObjectLoader<Policy>()
+                                  .Field("permissions", &Policy::permissions)
+                                  .Field("principals", &Policy::principals)
+                                  .Finish();
+  return loader;
+}
+
+//
+// RbacConfig::RbacPolicy::Rules::AuditLogger
+//
+
+const JsonLoaderInterface*
+RbacConfig::RbacPolicy::Rules::AuditLogger::JsonLoader(const JsonArgs&) {
+  // All fields handled in JsonPostLoad().
+  static const auto* loader = JsonObjectLoader<AuditLogger>().Finish();
+  return loader;
+}
+
+void RbacConfig::RbacPolicy::Rules::AuditLogger::JsonPostLoad(
+    const Json& json, const JsonArgs& args, ValidationErrors* errors) {
+  // Should have exactly one field as the logger name.
+  if (json.object().size() != 1) {
+    errors->AddError("audit logger should have exactly one field");
+    return;
+  }
+  name = json.object().begin()->first;
+  auto config_or =
+      LoadJsonObjectField<Json::Object>(json.object(), args, name, errors);
+  if (config_or.has_value()) {
+    config = std::move(*config_or);
+  }
+}
+
+//
+// RbacConfig::RbacPolicy::Rules
+//
+
+Rbac RbacConfig::RbacPolicy::Rules::TakeAsRbac() {
   Rbac rbac;
-  const Json::Object* rules_json;
-  if (!ParseJsonObjectField(rbac_json, "rules", &rules_json, error_list,
-                            /*required=*/false)) {
-    // No enforcing to be applied. An empty deny policy with an empty map is
-    // equivalent to no enforcing.
-    return Rbac(Rbac::Action::kDeny, {});
-  }
-  int action;
-  if (ParseJsonObjectField(*rules_json, "action", &action, error_list)) {
-    if (action > 1) {
-      error_list->push_back(
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Unknown action"));
-    }
-  }
   rbac.action = static_cast<Rbac::Action>(action);
-  const Json::Object* policies_json;
-  if (ParseJsonObjectField(*rules_json, "policies", &policies_json, error_list,
-                           /*required=*/false)) {
-    for (const auto& entry : *policies_json) {
-      std::vector<grpc_error_handle> policy_error_list;
-      rbac.policies.emplace(
-          entry.first,
-          ParsePolicy(entry.second.object_value(), &policy_error_list));
-      if (!policy_error_list.empty()) {
-        error_list->push_back(GRPC_ERROR_CREATE_FROM_VECTOR_AND_CPP_STRING(
-            absl::StrFormat("policies key:'%s'", entry.first.c_str()),
-            &policy_error_list));
-      }
-    }
+  rbac.audit_condition = audit_condition;
+  for (auto& p : policies) {
+    rbac.policies.emplace(p.first, p.second.TakeAsRbacPolicy());
   }
+  rbac.logger_configs = std::move(logger_configs);
   return rbac;
 }
 
-std::vector<Rbac> ParseRbacArray(const Json::Array& policies_json_array,
-                                 std::vector<grpc_error_handle>* error_list) {
-  std::vector<Rbac> policies;
-  for (size_t i = 0; i < policies_json_array.size(); ++i) {
-    const Json::Object* rbac_json;
-    if (!ExtractJsonType(policies_json_array[i],
-                         absl::StrFormat("rbacPolicy[%d]", i), &rbac_json,
-                         error_list)) {
-      continue;
-    }
-    std::vector<grpc_error_handle> rbac_policy_error_list;
-    policies.emplace_back(ParseRbac(*rbac_json, &rbac_policy_error_list));
-    if (!rbac_policy_error_list.empty()) {
-      error_list->push_back(GRPC_ERROR_CREATE_FROM_VECTOR_AND_CPP_STRING(
-          absl::StrFormat("rbacPolicy[%d]", i), &rbac_policy_error_list));
+const JsonLoaderInterface* RbacConfig::RbacPolicy::Rules::JsonLoader(
+    const JsonArgs&) {
+  // Audit logger configs handled in post load.
+  static const auto* loader = JsonObjectLoader<Rules>()
+                                  .Field("action", &Rules::action)
+                                  .OptionalField("policies", &Rules::policies)
+                                  .Finish();
+  return loader;
+}
+
+void RbacConfig::RbacPolicy::Rules::JsonPostLoad(const Json& json,
+                                                 const JsonArgs& args,
+                                                 ValidationErrors* errors) {
+  // Validate action field.
+  auto rbac_action = static_cast<Rbac::Action>(action);
+  if (rbac_action != Rbac::Action::kAllow &&
+      rbac_action != Rbac::Action::kDeny) {
+    ValidationErrors::ScopedField field(errors, ".action");
+    errors->AddError("unknown action");
+  }
+  // Parse and validate audit_condition field.
+  auto condition = LoadJsonObjectField<int>(json.object(), args,
+                                            "audit_condition", errors, false);
+  if (condition.has_value()) {
+    switch (*condition) {
+      case static_cast<int>(Rbac::AuditCondition::kNone):
+      case static_cast<int>(Rbac::AuditCondition::kOnAllow):
+      case static_cast<int>(Rbac::AuditCondition::kOnDeny):
+      case static_cast<int>(Rbac::AuditCondition::kOnDenyAndAllow):
+        audit_condition = static_cast<Rbac::AuditCondition>(*condition);
+        break;
+      default: {
+        ValidationErrors::ScopedField field(errors, ".audit_condition");
+        errors->AddError("unknown audit condition");
+      }
     }
   }
-  return policies;
+  // Parse and validate audit logger configs.
+  auto configs = LoadJsonObjectField<std::vector<AuditLogger>>(
+      json.object(), args, "audit_loggers", errors, false);
+  if (configs.has_value()) {
+    for (size_t i = 0; i < configs->size(); ++i) {
+      auto& logger = (*configs)[i];
+      auto config = AuditLoggerRegistry::ParseConfig(
+          logger.name, Json::FromObject(std::move(logger.config)));
+      if (!config.ok()) {
+        ValidationErrors::ScopedField field(
+            errors, absl::StrCat(".audit_loggers[", i, "]"));
+        errors->AddError(config.status().message());
+        continue;
+      }
+      logger_configs.push_back(std::move(*config));
+    }
+  }
+}
+
+//
+// RbacConfig::RbacPolicy
+//
+
+Rbac RbacConfig::RbacPolicy::TakeAsRbac() {
+  if (!rules.has_value()) {
+    // No enforcing to be applied. An empty deny policy with an empty map
+    // is equivalent to no enforcing.
+    return Rbac("", Rbac::Action::kDeny, {});
+  }
+  return rules->TakeAsRbac();
+}
+
+const JsonLoaderInterface* RbacConfig::RbacPolicy::JsonLoader(const JsonArgs&) {
+  static const auto* loader = JsonObjectLoader<RbacPolicy>()
+                                  .OptionalField("rules", &RbacPolicy::rules)
+                                  .Finish();
+  return loader;
+}
+
+//
+// RbacConfig
+//
+
+std::vector<Rbac> RbacConfig::TakeAsRbacList() {
+  std::vector<Rbac> rbac_list;
+  rbac_list.reserve(rbac_policies.size());
+  for (auto& rbac_policy : rbac_policies) {
+    rbac_list.emplace_back(rbac_policy.TakeAsRbac());
+  }
+  return rbac_list;
+}
+
+const JsonLoaderInterface* RbacConfig::JsonLoader(const JsonArgs&) {
+  static const auto* loader =
+      JsonObjectLoader<RbacConfig>()
+          .Field("rbacPolicy", &RbacConfig::rbac_policies)
+          .Finish();
+  return loader;
 }
 
 }  // namespace
 
-absl::StatusOr<std::unique_ptr<ServiceConfigParser::ParsedConfig>>
+std::unique_ptr<ServiceConfigParser::ParsedConfig>
 RbacServiceConfigParser::ParsePerMethodParams(const ChannelArgs& args,
-                                              const Json& json) {
+                                              const Json& json,
+                                              ValidationErrors* errors) {
   // Only parse rbac policy if the channel arg is present
   if (!args.GetBool(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG).value_or(false)) {
     return nullptr;
   }
-  std::vector<Rbac> rbac_policies;
-  std::vector<grpc_error_handle> error_list;
-  const Json::Array* policies_json_array;
-  if (ParseJsonObjectField(json.object_value(), "rbacPolicy",
-                           &policies_json_array, &error_list)) {
-    rbac_policies = ParseRbacArray(*policies_json_array, &error_list);
-  }
-  grpc_error_handle error =
-      GRPC_ERROR_CREATE_FROM_VECTOR("Rbac parser", &error_list);
-  if (!GRPC_ERROR_IS_NONE(error)) {
-    absl::Status status = absl::InvalidArgumentError(
-        absl::StrCat("error parsing RBAC method parameters: ",
-                     grpc_error_std_string(error)));
-    GRPC_ERROR_UNREF(error);
-    return status;
-  }
+  auto rbac_config = LoadFromJson<RbacConfig>(json, JsonArgs(), errors);
+  std::vector<Rbac> rbac_policies = rbac_config.TakeAsRbacList();
   if (rbac_policies.empty()) return nullptr;
-  return absl::make_unique<RbacMethodParsedConfig>(std::move(rbac_policies));
+  return std::make_unique<RbacMethodParsedConfig>(std::move(rbac_policies));
 }
 
 void RbacServiceConfigParser::Register(CoreConfiguration::Builder* builder) {
   builder->service_config_parser()->RegisterParser(
-      absl::make_unique<RbacServiceConfigParser>());
+      std::make_unique<RbacServiceConfigParser>());
 }
 
 size_t RbacServiceConfigParser::ParserIndex() {

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM silkeh/clang:13
+FROM silkeh/clang:15-bullseye
 
 #=================
 # Basic C core dependencies
@@ -52,10 +52,6 @@ RUN apt-get update && apt-get install -y \
   wget \
   zip \
   && apt-get clean
-
-#=================
-# C++ dependencies
-RUN apt-get update && apt-get -y install libc++-dev clang && apt-get clean
 
 
 # Install Python 3.7 from source (and installed as a default python3)
@@ -99,11 +95,14 @@ RUN python3 -m pip install --upgrade --ignore-installed PyYAML==5.4.1 --user
 # Install prerequisites for the clang-tidy script
 RUN apt-get update && apt-get install -y jq git
 
+# Install prerequisites for the iwyu script
+RUN apt-get update && apt-get install -y jq git cmake zlib1g-dev libtinfo-dev libclang-15-dev && apt-get clean
+
 #========================
 # Bazel installation
 
 # Must be in sync with tools/bazel
-ENV BAZEL_VERSION 5.3.0
+ENV BAZEL_VERSION 6.1.2
 
 # The correct bazel version is already preinstalled, no need to use //tools/bazel wrapper.
 ENV DISABLE_BAZEL_WRAPPER 1
@@ -126,6 +125,12 @@ RUN BAZEL_ARCH_SUFFIX="$(uname -m | sed s/aarch64/arm64/)" \
 RUN wget https://github.com/bazelbuild/buildtools/releases/download/0.29.0/buildifier
 RUN chmod +x buildifier
 RUN mv buildifier /usr/local/bin
+
+#=================
+# Setup git to access working directory across docker boundary
+
+RUN git config --global --add safe.directory /var/local/jenkins/grpc
+RUN git config --global protocol.file.allow always
 
 
 # Define the default command.

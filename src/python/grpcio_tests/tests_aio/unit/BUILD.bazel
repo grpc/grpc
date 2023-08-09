@@ -79,7 +79,6 @@ _FLAKY_TESTS = [
             "//src/python/grpcio/grpc:grpcio",
             "//src/python/grpcio_tests/tests/unit:resources",
             "//src/python/grpcio_tests/tests/unit/framework/common",
-            "@six",
         ],
     )
     for test_file_name in GRPC_ASYNC_TESTS

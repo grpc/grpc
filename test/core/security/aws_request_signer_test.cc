@@ -66,7 +66,7 @@ const char* kBotoTestDate = "Mon, 09 Sep 2011 23:36:00 GMT";
 // AWS official example from the developer doc.
 // https://docs.aws.amazon.com/general/latest/gr/sigv4_signing.html
 TEST(GrpcAwsRequestSignerTest, AWSOfficialExample) {
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   grpc_core::AwsRequestSigner signer(
       "AKIDEXAMPLE", "wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY", "", "GET",
       "https://iam.amazonaws.com/?Action=ListUsers&Version=2010-05-08",
@@ -74,7 +74,7 @@ TEST(GrpcAwsRequestSignerTest, AWSOfficialExample) {
       {{"content-type", "application/x-www-form-urlencoded; charset=utf-8"},
        {"x-amz-date", "20150830T123600Z"}},
       &error);
-  EXPECT_EQ(error, GRPC_ERROR_NONE);
+  EXPECT_EQ(error, absl::OkStatus());
   EXPECT_EQ(signer.GetSignedRequestHeaders()["Authorization"],
             "AWS4-HMAC-SHA256 "
             "Credential=AKIDEXAMPLE/20150830/us-east-1/iam/aws4_request, "
@@ -84,13 +84,13 @@ TEST(GrpcAwsRequestSignerTest, AWSOfficialExample) {
 }
 
 TEST(GrpcAwsRequestSignerTest, GetDescribeRegions) {
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   grpc_core::AwsRequestSigner signer(
       kAmzTestAccessKeyId, kAmzTestSecretAccessKey, kAmzTestToken, "GET",
       "https://"
       "ec2.us-east-2.amazonaws.com?Action=DescribeRegions&Version=2013-10-15",
       "us-east-2", "", {{"x-amz-date", kAmzTestDate}}, &error);
-  EXPECT_EQ(error, GRPC_ERROR_NONE);
+  EXPECT_EQ(error, absl::OkStatus());
   EXPECT_EQ(
       signer.GetSignedRequestHeaders()["Authorization"],
       "AWS4-HMAC-SHA256 "
@@ -101,13 +101,13 @@ TEST(GrpcAwsRequestSignerTest, GetDescribeRegions) {
 }
 
 TEST(GrpcAwsRequestSignerTest, PostGetCallerIdentity) {
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   grpc_core::AwsRequestSigner signer(
       kAmzTestAccessKeyId, kAmzTestSecretAccessKey, kAmzTestToken, "POST",
       "https://"
       "sts.us-east-2.amazonaws.com?Action=GetCallerIdentity&Version=2011-06-15",
       "us-east-2", "", {{"x-amz-date", kAmzTestDate}}, &error);
-  EXPECT_EQ(error, GRPC_ERROR_NONE);
+  EXPECT_EQ(error, absl::OkStatus());
   EXPECT_EQ(
       signer.GetSignedRequestHeaders()["Authorization"],
       "AWS4-HMAC-SHA256 "
@@ -118,13 +118,13 @@ TEST(GrpcAwsRequestSignerTest, PostGetCallerIdentity) {
 }
 
 TEST(GrpcAwsRequestSignerTest, PostGetCallerIdentityNoToken) {
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   grpc_core::AwsRequestSigner signer(
       kAmzTestAccessKeyId, kAmzTestSecretAccessKey, "", "POST",
       "https://"
       "sts.us-east-2.amazonaws.com?Action=GetCallerIdentity&Version=2011-06-15",
       "us-east-2", "", {{"x-amz-date", kAmzTestDate}}, &error);
-  EXPECT_EQ(error, GRPC_ERROR_NONE);
+  EXPECT_EQ(error, absl::OkStatus());
   EXPECT_EQ(
       signer.GetSignedRequestHeaders()["Authorization"],
       "AWS4-HMAC-SHA256 "
@@ -135,12 +135,12 @@ TEST(GrpcAwsRequestSignerTest, PostGetCallerIdentityNoToken) {
 }
 
 TEST(GrpcAwsRequestSignerTest, GetHost) {
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   grpc_core::AwsRequestSigner signer(kBotoTestAccessKeyId,
                                      kBotoTestSecretAccessKey, kBotoTestToken,
                                      "GET", "https://host.foo.com", "us-east-1",
                                      "", {{"date", kBotoTestDate}}, &error);
-  EXPECT_EQ(error, GRPC_ERROR_NONE);
+  EXPECT_EQ(error, absl::OkStatus());
   EXPECT_EQ(signer.GetSignedRequestHeaders()["Authorization"],
             "AWS4-HMAC-SHA256 "
             "Credential=AKIDEXAMPLE/20110909/us-east-1/host/aws4_request, "
@@ -150,12 +150,12 @@ TEST(GrpcAwsRequestSignerTest, GetHost) {
 }
 
 TEST(GrpcAwsRequestSignerTest, GetHostDuplicateQueryParam) {
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   grpc_core::AwsRequestSigner signer(
       kBotoTestAccessKeyId, kBotoTestSecretAccessKey, kBotoTestToken, "GET",
       "https://host.foo.com/?foo=Zoo&foo=aha", "us-east-1", "",
       {{"date", kBotoTestDate}}, &error);
-  EXPECT_EQ(error, GRPC_ERROR_NONE);
+  EXPECT_EQ(error, absl::OkStatus());
   EXPECT_EQ(signer.GetSignedRequestHeaders()["Authorization"],
             "AWS4-HMAC-SHA256 "
             "Credential=AKIDEXAMPLE/20110909/us-east-1/host/aws4_request, "
@@ -165,12 +165,12 @@ TEST(GrpcAwsRequestSignerTest, GetHostDuplicateQueryParam) {
 }
 
 TEST(GrpcAwsRequestSignerTest, PostWithUpperCaseHeaderKey) {
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   grpc_core::AwsRequestSigner signer(
       kBotoTestAccessKeyId, kBotoTestSecretAccessKey, kBotoTestToken, "POST",
       "https://host.foo.com/", "us-east-1", "",
       {{"date", kBotoTestDate}, {"ZOO", "zoobar"}}, &error);
-  EXPECT_EQ(error, GRPC_ERROR_NONE);
+  EXPECT_EQ(error, absl::OkStatus());
   EXPECT_EQ(signer.GetSignedRequestHeaders()["Authorization"],
             "AWS4-HMAC-SHA256 "
             "Credential=AKIDEXAMPLE/20110909/us-east-1/host/aws4_request, "
@@ -180,12 +180,12 @@ TEST(GrpcAwsRequestSignerTest, PostWithUpperCaseHeaderKey) {
 }
 
 TEST(GrpcAwsRequestSignerTest, PostWithUpperCaseHeaderValue) {
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   grpc_core::AwsRequestSigner signer(
       kBotoTestAccessKeyId, kBotoTestSecretAccessKey, kBotoTestToken, "POST",
       "https://host.foo.com/", "us-east-1", "",
       {{"date", kBotoTestDate}, {"zoo", "ZOOBAR"}}, &error);
-  EXPECT_EQ(error, GRPC_ERROR_NONE);
+  EXPECT_EQ(error, absl::OkStatus());
   EXPECT_EQ(signer.GetSignedRequestHeaders()["Authorization"],
             "AWS4-HMAC-SHA256 "
             "Credential=AKIDEXAMPLE/20110909/us-east-1/host/aws4_request, "
@@ -195,12 +195,12 @@ TEST(GrpcAwsRequestSignerTest, PostWithUpperCaseHeaderValue) {
 }
 
 TEST(GrpcAwsRequestSignerTest, SignPostWithHeader) {
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   grpc_core::AwsRequestSigner signer(
       kBotoTestAccessKeyId, kBotoTestSecretAccessKey, kBotoTestToken, "POST",
       "https://host.foo.com/", "us-east-1", "",
       {{"date", kBotoTestDate}, {"p", "phfft"}}, &error);
-  EXPECT_EQ(error, GRPC_ERROR_NONE);
+  EXPECT_EQ(error, absl::OkStatus());
   EXPECT_EQ(signer.GetSignedRequestHeaders()["Authorization"],
             "AWS4-HMAC-SHA256 "
             "Credential=AKIDEXAMPLE/20110909/us-east-1/host/aws4_request, "
@@ -210,14 +210,14 @@ TEST(GrpcAwsRequestSignerTest, SignPostWithHeader) {
 }
 
 TEST(GrpcAwsRequestSignerTest, PostWithBodyNoCustomHeaders) {
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   grpc_core::AwsRequestSigner signer(
       kBotoTestAccessKeyId, kBotoTestSecretAccessKey, kBotoTestToken, "POST",
       "https://host.foo.com/", "us-east-1", "foo=bar",
       {{"date", kBotoTestDate},
        {"Content-Type", "application/x-www-form-urlencoded"}},
       &error);
-  EXPECT_EQ(error, GRPC_ERROR_NONE);
+  EXPECT_EQ(error, absl::OkStatus());
   EXPECT_EQ(signer.GetSignedRequestHeaders()["Authorization"],
             "AWS4-HMAC-SHA256 "
             "Credential=AKIDEXAMPLE/20110909/us-east-1/host/aws4_request, "
@@ -227,12 +227,12 @@ TEST(GrpcAwsRequestSignerTest, PostWithBodyNoCustomHeaders) {
 }
 
 TEST(GrpcAwsRequestSignerTest, SignPostWithQueryString) {
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   grpc_core::AwsRequestSigner signer(
       kBotoTestAccessKeyId, kBotoTestSecretAccessKey, kBotoTestToken, "POST",
       "https://host.foo.com/?foo=bar", "us-east-1", "",
       {{"date", kBotoTestDate}}, &error);
-  EXPECT_EQ(error, GRPC_ERROR_NONE);
+  EXPECT_EQ(error, absl::OkStatus());
   EXPECT_EQ(signer.GetSignedRequestHeaders()["Authorization"],
             "AWS4-HMAC-SHA256 "
             "Credential=AKIDEXAMPLE/20110909/us-east-1/host/aws4_request, "
@@ -242,29 +242,29 @@ TEST(GrpcAwsRequestSignerTest, SignPostWithQueryString) {
 }
 
 TEST(GrpcAwsRequestSignerTest, InvalidUrl) {
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   grpc_core::AwsRequestSigner signer("access_key_id", "secret_access_key",
                                      "token", "POST", "invalid_url",
                                      "us-east-1", "", {}, &error);
   std::string actual_error_description;
-  GPR_ASSERT(grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION,
+  GPR_ASSERT(grpc_error_get_str(error,
+                                grpc_core::StatusStrProperty::kDescription,
                                 &actual_error_description));
   EXPECT_EQ(actual_error_description, "Invalid Aws request url.");
-  GRPC_ERROR_UNREF(error);
 }
 
 TEST(GrpcAwsRequestSignerTest, DuplicateRequestDate) {
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   grpc_core::AwsRequestSigner signer(
       "access_key_id", "secret_access_key", "token", "POST", "invalid_url",
       "us-east-1", "", {{"date", kBotoTestDate}, {"x-amz-date", kAmzTestDate}},
       &error);
   std::string actual_error_description;
-  GPR_ASSERT(grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION,
+  GPR_ASSERT(grpc_error_get_str(error,
+                                grpc_core::StatusStrProperty::kDescription,
                                 &actual_error_description));
   EXPECT_EQ(actual_error_description,
             "Only one of {date, x-amz-date} can be specified, not both.");
-  GRPC_ERROR_UNREF(error);
 }
 
 }  // namespace testing

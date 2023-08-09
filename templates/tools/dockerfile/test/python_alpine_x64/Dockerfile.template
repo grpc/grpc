@@ -14,7 +14,7 @@
   # See the License for the specific language governing permissions and
   # limitations under the License.
 
-  FROM alpine:3.11
+  FROM alpine:3.15
 
   # Install Git and basic packages.
   RUN apk update && apk add \
@@ -38,14 +38,12 @@
     wget \
     zip
 
-  RUN ln -s /usr/bin/pip3 /usr/bin/pip
   RUN ln -s /usr/bin/python3 /usr/bin/python
 
   # Install Python packages from PyPI
   RUN python3 -m pip install --upgrade pip==19.3.1
-  RUN python3 -m pip install virtualenv
-  RUN python3 -m pip install futures==3.1.1 enum34==1.1.10 protobuf==3.5.2.post1 six==1.16.0
 
   <%include file="../../gcp_api_libraries.include"/>
-
   <%include file="../../ccache.include"/>
+  <%include file="../../run_tests_addons.include"/>
+  <%include file="../../git-jenkins.include"/>

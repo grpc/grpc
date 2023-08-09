@@ -20,15 +20,16 @@
 
 #include <grpc/event_engine/event_engine.h>
 
-#include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/event_engine/default_event_engine.h"  // IWYU pragma: keep
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/poll.h"
 
 namespace grpc_core {
 
-using ::grpc_event_engine::experimental::GetDefaultEventEngine;
+using ::grpc_event_engine::experimental::EventEngine;
 
 Sleep::Sleep(Timestamp deadline) : deadline_(deadline) {}
 
@@ -40,8 +41,9 @@ Poll<absl::Status> Sleep::operator()() {
   // Invalidate now so that we see a fresh version of the time.
   // TODO(ctiller): the following can be safely removed when we remove ExecCtx.
   ExecCtx::Get()->InvalidateNow();
+  const auto now = Timestamp::Now();
   // If the deadline is earlier than now we can just return.
-  if (deadline_ <= ExecCtx::Get()->Now()) return absl::OkStatus();
+  if (deadline_ <= now) return absl::OkStatus();
   if (closure_ == nullptr) {
     // TODO(ctiller): it's likely we'll want a pool of closures - probably per
     // cpu? - to avoid allocating/deallocating on fast paths.
@@ -53,8 +55,8 @@ Poll<absl::Status> Sleep::operator()() {
 
 Sleep::ActiveClosure::ActiveClosure(Timestamp deadline)
     : waker_(Activity::current()->MakeOwningWaker()),
-      timer_handle_(GetDefaultEventEngine()->RunAfter(
-          deadline - ExecCtx::Get()->Now(), this)) {}
+      timer_handle_(GetContext<EventEngine>()->RunAfter(
+          deadline - Timestamp::Now(), this)) {}
 
 void Sleep::ActiveClosure::Run() {
   ApplicationCallbackExecCtx callback_exec_ctx;
@@ -71,7 +73,7 @@ void Sleep::ActiveClosure::Cancel() {
   // If we cancel correctly then we must own both refs still and can simply
   // delete without unreffing twice, otherwise try unreffing since this may be
   // the last owned ref.
-  if (GetDefaultEventEngine()->Cancel(timer_handle_) || Unref()) {
+  if (HasRun() || GetContext<EventEngine>()->Cancel(timer_handle_) || Unref()) {
     delete this;
   }
 }

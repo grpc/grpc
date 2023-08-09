@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_GPRPP_TIME_H
-#define GRPC_CORE_LIB_GPRPP_TIME_H
+#ifndef GRPC_SRC_CORE_LIB_GPRPP_TIME_H
+#define GRPC_SRC_CORE_LIB_GPRPP_TIME_H
 
 #include <grpc/support/port_platform.h>
 
@@ -23,12 +23,37 @@
 #include <ostream>
 #include <string>
 
+#include "absl/types/optional.h"
+
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gpr/useful.h"
+
+#define GRPC_LOG_EVERY_N_SEC(n, severity, format, ...)          \
+  do {                                                          \
+    static std::atomic<uint64_t> prev{0};                       \
+    uint64_t now = grpc_core::Timestamp::FromTimespecRoundDown( \
+                       gpr_now(GPR_CLOCK_MONOTONIC))            \
+                       .milliseconds_after_process_epoch();     \
+    if (prev == 0 || now - prev > (n)*1000) {                   \
+      prev = now;                                               \
+      gpr_log(severity, format, __VA_ARGS__);                   \
+    }                                                           \
+  } while (0)
+
+#define GRPC_LOG_EVERY_N_SEC_DELAYED(n, severity, format, ...)  \
+  do {                                                          \
+    static std::atomic<uint64_t> prev{0};                       \
+    uint64_t now = grpc_core::Timestamp::FromTimespecRoundDown( \
+                       gpr_now(GPR_CLOCK_MONOTONIC))            \
+                       .milliseconds_after_process_epoch();     \
+    uint64_t prev_tsamp = prev.exchange(now);                   \
+    if (now - prev_tsamp > (n)*1000) {                          \
+      gpr_log(severity, format, __VA_ARGS__);                   \
+    }                                                           \
+  } while (0)
 
 namespace grpc_core {
 
@@ -61,6 +86,35 @@ class Duration;
 // Timestamp represents a discrete point in time.
 class Timestamp {
  public:
+  // Base interface for time providers.
+  class Source {
+   public:
+    // Return the current time.
+    virtual Timestamp Now() = 0;
+    virtual void InvalidateCache() {}
+
+   protected:
+    // We don't delete through this interface, so non-virtual dtor is fine.
+    ~Source() = default;
+  };
+
+  class ScopedSource : public Source {
+   public:
+    ScopedSource() : previous_(thread_local_time_source_) {
+      thread_local_time_source_ = this;
+    }
+    ScopedSource(const ScopedSource&) = delete;
+    ScopedSource& operator=(const ScopedSource&) = delete;
+    void InvalidateCache() override { previous_->InvalidateCache(); }
+
+   protected:
+    ~ScopedSource() { thread_local_time_source_ = previous_; }
+    Source* previous() const { return previous_; }
+
+   private:
+    Source* const previous_;
+  };
+
   constexpr Timestamp() = default;
   // Constructs a Timestamp from a gpr_timespec.
   static Timestamp FromTimespecRoundDown(gpr_timespec t);
@@ -69,6 +123,8 @@ class Timestamp {
   // Construct a Timestamp from a gpr_cycle_counter.
   static Timestamp FromCycleCounterRoundUp(gpr_cycle_counter c);
   static Timestamp FromCycleCounterRoundDown(gpr_cycle_counter c);
+
+  static Timestamp Now() { return thread_local_time_source_->Now(); }
 
   static constexpr Timestamp FromMillisecondsAfterProcessEpoch(int64_t millis) {
     return Timestamp(millis);
@@ -116,6 +172,21 @@ class Timestamp {
   explicit constexpr Timestamp(int64_t millis) : millis_(millis) {}
 
   int64_t millis_ = 0;
+  static thread_local Timestamp::Source* thread_local_time_source_;
+};
+
+class ScopedTimeCache final : public Timestamp::ScopedSource {
+ public:
+  Timestamp Now() override;
+
+  void InvalidateCache() override {
+    cached_time_ = absl::nullopt;
+    Timestamp::ScopedSource::InvalidateCache();
+  }
+  void TestOnlySetNow(Timestamp now) { cached_time_ = now; }
+
+ private:
+  absl::optional<Timestamp> cached_time_;
 };
 
 // Duration represents a span of time.
@@ -304,4 +375,4 @@ std::ostream& operator<<(std::ostream& out, Duration duration);
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_GPRPP_TIME_H
+#endif  // GRPC_SRC_CORE_LIB_GPRPP_TIME_H

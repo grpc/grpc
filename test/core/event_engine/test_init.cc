@@ -17,8 +17,6 @@
 
 #include "absl/strings/str_cat.h"
 
-#include <grpc/support/log.h>
-
 namespace grpc_event_engine {
 namespace experimental {
 

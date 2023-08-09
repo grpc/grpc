@@ -1,56 +1,62 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-#include <memory.h>
-#include <stdio.h>
+#include <string.h>
 
+#include <algorithm>
 #include <atomic>
 #include <string>
-
-#include <gtest/gtest.h>
+#include <vector>
 
 #include "absl/strings/str_cat.h"
+#include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/time.h>
 
-#include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/channel/channel_args_preconditioning.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/iomgr/iomgr.h"
-#include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
+#include "src/core/lib/iomgr/pollset.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/tcp_server.h"
-#include "src/core/lib/resource_quota/api.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-/* TODO(yashykt): When our macos testing infrastructure becomes good enough, we
- * wouldn't need to reduce the number of threads on MacOS */
+// TODO(yashykt): When our macos testing infrastructure becomes good enough, we
+// wouldn't need to reduce the number of threads on MacOS
 #ifdef __APPLE__
 #define NUM_THREADS 10
 #else
 #define NUM_THREADS 100
-#endif /* __APPLE */
+#endif  // __APPLE
 
 #define NUM_OUTER_LOOPS 10
 #define NUM_INNER_LOOPS 10
@@ -87,7 +93,7 @@ void create_loop_destroy(void* addr) {
           grpc_timeout_milliseconds_to_deadline(POLL_MILLIS);
       ASSERT_EQ(grpc_completion_queue_next(cq, poll_time, nullptr).type,
                 GRPC_OP_COMPLETE);
-      /* check that the watcher from "watch state" was free'd */
+      // check that the watcher from "watch state" was free'd
       ASSERT_EQ(grpc_channel_num_external_connectivity_watchers(chan), 0);
     }
     grpc_channel_destroy(chan);
@@ -122,8 +128,7 @@ static void on_connect(void* vargs, grpc_endpoint* tcp,
                        grpc_tcp_server_acceptor* acceptor) {
   gpr_free(acceptor);
   struct ServerThreadArgs* args = static_cast<struct ServerThreadArgs*>(vargs);
-  grpc_endpoint_shutdown(tcp,
-                         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Connected"));
+  grpc_endpoint_shutdown(tcp, GRPC_ERROR_CREATE("Connected"));
   grpc_endpoint_destroy(tcp);
   gpr_mu_lock(args->mu);
   GRPC_LOG_IF_ERROR("pollset_kick",
@@ -145,22 +150,23 @@ void bad_server_thread(void* vargs) {
   grpc_error_handle error = grpc_tcp_server_create(
       nullptr,
       grpc_event_engine::experimental::ChannelArgsEndpointConfig(channel_args),
-      &s);
-  ASSERT_TRUE(GRPC_ERROR_IS_NONE(error));
+      on_connect, args, &s);
+  ASSERT_TRUE(error.ok());
   memset(&resolved_addr, 0, sizeof(resolved_addr));
   addr->sa_family = GRPC_AF_INET;
+  resolved_addr.len = sizeof(grpc_sockaddr_in);
   error = grpc_tcp_server_add_port(s, &resolved_addr, &port);
   ASSERT_TRUE(GRPC_LOG_IF_ERROR("grpc_tcp_server_add_port", error));
   ASSERT_GT(port, 0);
   args->addr = absl::StrCat("localhost:", port);
 
-  grpc_tcp_server_start(s, &args->pollset, on_connect, args);
+  grpc_tcp_server_start(s, &args->pollset);
   gpr_event_set(&args->ready, reinterpret_cast<void*>(1));
 
   gpr_mu_lock(args->mu);
   while (!args->stop.load(std::memory_order_acquire)) {
-    grpc_core::Timestamp deadline = grpc_core::ExecCtx::Get()->Now() +
-                                    grpc_core::Duration::Milliseconds(100);
+    grpc_core::Timestamp deadline =
+        grpc_core::Timestamp::Now() + grpc_core::Duration::Milliseconds(100);
 
     grpc_pollset_worker* worker = nullptr;
     if (!GRPC_LOG_IF_ERROR(
@@ -185,7 +191,7 @@ static void done_pollset_shutdown(void* pollset, grpc_error_handle /*error*/) {
 TEST(ConcurrentConnectivityTest, RunConcurrentConnectivityTest) {
   struct ServerThreadArgs args;
 
-  /* First round, no server */
+  // First round, no server
   {
     gpr_log(GPR_DEBUG, "Wave 1");
     grpc_core::Thread threads[NUM_THREADS];
@@ -200,7 +206,7 @@ TEST(ConcurrentConnectivityTest, RunConcurrentConnectivityTest) {
     }
   }
 
-  /* Second round, actual grpc server */
+  // Second round, actual grpc server
   {
     gpr_log(GPR_DEBUG, "Wave 2");
     int port = grpc_pick_unused_port_or_die();
@@ -232,7 +238,7 @@ TEST(ConcurrentConnectivityTest, RunConcurrentConnectivityTest) {
     grpc_completion_queue_destroy(args.cq);
   }
 
-  /* Third round, bogus tcp server */
+  // Third round, bogus tcp server
   {
     gpr_log(GPR_DEBUG, "Wave 3");
     auto* pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
@@ -286,7 +292,7 @@ void watches_with_short_timeouts(void* addr) {
       grpc_event ev = grpc_completion_queue_next(cq, poll_time, nullptr);
       ASSERT_EQ(ev.type, GRPC_OP_COMPLETE);
       ASSERT_EQ(ev.success, false);
-      /* check that the watcher from "watch state" was free'd */
+      // check that the watcher from "watch state" was free'd
       ASSERT_EQ(grpc_channel_num_external_connectivity_watchers(chan), 0);
     }
     grpc_channel_destroy(chan);

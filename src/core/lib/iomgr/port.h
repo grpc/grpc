@@ -1,30 +1,30 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
-#ifndef GRPC_CORE_LIB_IOMGR_PORT_H
-#define GRPC_CORE_LIB_IOMGR_PORT_H
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
+#ifndef GRPC_SRC_CORE_LIB_IOMGR_PORT_H
+#define GRPC_SRC_CORE_LIB_IOMGR_PORT_H
 
 #include <grpc/support/port_platform.h>
 
 // IWYU pragma: no_include <features.h>
 // IWYU pragma: no_include <linux/version.h>
 
-/* This needs to be separate from the other conditions because it needs to
- * apply to custom sockets too */
+// This needs to be separate from the other conditions because it needs to
+// apply to custom sockets too
 #ifdef GPR_WINDOWS
 #define GRPC_ARES_RESOLVE_LOCALHOST_MANUALLY 1
 #endif
@@ -37,6 +37,11 @@
 #define GRPC_HAVE_IP_PKTINFO 1
 #define GRPC_HAVE_MSG_NOSIGNAL 1
 #define GRPC_HAVE_UNIX_SOCKET 1
+#if defined(LINUX_VERSION_CODE) && defined(__GLIBC_PREREQ)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 9, 0) && __GLIBC_PREREQ(2, 18)
+#define GRPC_HAVE_VSOCK 1
+#endif
+#endif
 #define GRPC_LINUX_EVENTFD 1
 #define GRPC_POSIX_SOCKET 1
 #define GRPC_POSIX_SOCKETUTILS 1
@@ -48,14 +53,19 @@
 #define GRPC_HAVE_IP_PKTINFO 1
 #define GRPC_HAVE_MSG_NOSIGNAL 1
 #define GRPC_HAVE_UNIX_SOCKET 1
-/* Linux has TCP_INQ support since 4.18, but it is safe to set
-   the socket option on older kernels. */
+// Linux has TCP_INQ support since 4.18, but it is safe to set
+// the socket option on older kernels.
 #define GRPC_HAVE_TCP_INQ 1
 #ifdef LINUX_VERSION_CODE
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 0, 0)
 #define GRPC_LINUX_ERRQUEUE 1
-#endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(4, 0, 0) */
-#endif /* LINUX_VERSION_CODE */
+#endif  // LINUX_VERSION_CODE >= KERNEL_VERSION(4, 0, 0)
+#endif  // LINUX_VERSION_CODE
+#if defined(LINUX_VERSION_CODE) && defined(__GLIBC_PREREQ)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 9, 0) && __GLIBC_PREREQ(2, 18)
+#define GRPC_HAVE_VSOCK 1
+#endif
+#endif
 #define GRPC_LINUX_MULTIPOLL_WITH_EPOLL 1
 #define GRPC_POSIX_FORK 1
 #define GRPC_POSIX_HOST_NAME_MAX 1
@@ -73,12 +83,12 @@
 #define GRPC_LINUX_SOCKETUTILS 1
 #endif
 #if !(__GLIBC_PREREQ(2, 18))
-/*
- * TCP_USER_TIMEOUT wasn't imported to glibc until 2.18. Use Linux system
- * header instead.
- */
+//
+// TCP_USER_TIMEOUT wasn't imported to glibc until 2.18. Use Linux system
+// header instead.
+//
 #define GRPC_LINUX_TCP_H 1
-#endif /* __GLIBC_PREREQ(2, 17) */
+#endif  // __GLIBC_PREREQ(2, 17)
 #endif
 #ifndef __GLIBC__
 #define GRPC_LINUX_EPOLL 1
@@ -235,4 +245,4 @@
 #define GRPC_GETHOSTNAME_FALLBACK 1
 #endif
 
-#endif /* GRPC_CORE_LIB_IOMGR_PORT_H */
+#endif  // GRPC_SRC_CORE_LIB_IOMGR_PORT_H

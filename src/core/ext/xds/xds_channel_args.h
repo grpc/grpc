@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_XDS_XDS_CHANNEL_ARGS_H
-#define GRPC_CORE_EXT_XDS_XDS_CHANNEL_ARGS_H
+#ifndef GRPC_SRC_CORE_EXT_XDS_XDS_CHANNEL_ARGS_H
+#define GRPC_SRC_CORE_EXT_XDS_XDS_CHANNEL_ARGS_H
 
 // Specifies channel args for the xDS client.
 // Used only when GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_BOOTSTRAP_CONFIG
@@ -29,4 +29,4 @@
 #define GRPC_ARG_XDS_RESOURCE_DOES_NOT_EXIST_TIMEOUT_MS \
   "grpc.xds_resource_does_not_exist_timeout_ms"
 
-#endif /* GRPC_CORE_EXT_XDS_XDS_CHANNEL_ARGS_H */
+#endif  // GRPC_SRC_CORE_EXT_XDS_XDS_CHANNEL_ARGS_H

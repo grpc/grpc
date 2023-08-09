@@ -20,29 +20,65 @@
 #include <map>
 #include <utility>
 
-#include "absl/memory/memory.h"
+#include <grpc/support/log.h>
+
+#include "src/core/lib/security/authorization/audit_logging.h"
+#include "src/core/lib/security/authorization/authorization_engine.h"
 
 namespace grpc_core {
 
+using experimental::AuditContext;
+using experimental::AuditLoggerRegistry;
+
+namespace {
+
+using Decision = AuthorizationEngine::Decision;
+
+bool ShouldLog(const Decision& decision,
+               const Rbac::AuditCondition& condition) {
+  return condition == Rbac::AuditCondition::kOnDenyAndAllow ||
+         (decision.type == Decision::Type::kAllow &&
+          condition == Rbac::AuditCondition::kOnAllow) ||
+         (decision.type == Decision::Type::kDeny &&
+          condition == Rbac::AuditCondition::kOnDeny);
+}
+
+}  // namespace
+
 GrpcAuthorizationEngine::GrpcAuthorizationEngine(Rbac policy)
-    : action_(policy.action) {
+    : name_(std::move(policy.name)),
+      action_(policy.action),
+      audit_condition_(policy.audit_condition) {
   for (auto& sub_policy : policy.policies) {
     Policy policy;
     policy.name = sub_policy.first;
-    policy.matcher = absl::make_unique<PolicyAuthorizationMatcher>(
+    policy.matcher = std::make_unique<PolicyAuthorizationMatcher>(
         std::move(sub_policy.second));
     policies_.push_back(std::move(policy));
+  }
+  for (auto& logger_config : policy.logger_configs) {
+    auto logger =
+        AuditLoggerRegistry::CreateAuditLogger(std::move(logger_config));
+    GPR_ASSERT(logger != nullptr);
+    audit_loggers_.push_back(std::move(logger));
   }
 }
 
 GrpcAuthorizationEngine::GrpcAuthorizationEngine(
     GrpcAuthorizationEngine&& other) noexcept
-    : action_(other.action_), policies_(std::move(other.policies_)) {}
+    : name_(std::move(other.name_)),
+      action_(other.action_),
+      policies_(std::move(other.policies_)),
+      audit_condition_(other.audit_condition_),
+      audit_loggers_(std::move(other.audit_loggers_)) {}
 
 GrpcAuthorizationEngine& GrpcAuthorizationEngine::operator=(
     GrpcAuthorizationEngine&& other) noexcept {
+  name_ = std::move(other.name_);
   action_ = other.action_;
   policies_ = std::move(other.policies_);
+  audit_condition_ = other.audit_condition_;
+  audit_loggers_ = std::move(other.audit_loggers_);
   return *this;
 }
 
@@ -60,6 +96,13 @@ AuthorizationEngine::Decision GrpcAuthorizationEngine::Evaluate(
   decision.type = (matches == (action_ == Rbac::Action::kAllow))
                       ? Decision::Type::kAllow
                       : Decision::Type::kDeny;
+  if (ShouldLog(decision, audit_condition_)) {
+    for (auto& logger : audit_loggers_) {
+      logger->Log(AuditContext(args.GetPath(), args.GetSpiffeId(), name_,
+                               decision.matching_policy_name,
+                               decision.type == Decision::Type::kAllow));
+    }
+  }
   return decision;
 }
 

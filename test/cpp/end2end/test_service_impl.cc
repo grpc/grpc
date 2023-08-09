@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "test/cpp/end2end/test_service_impl.h"
 
@@ -23,13 +23,13 @@
 
 #include <gtest/gtest.h>
 
-#include "absl/synchronization/notification.h"
-
 #include <grpc/support/log.h>
 #include <grpcpp/alarm.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/server_context.h>
 
+#include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/gprpp/notification.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/util/string_ref_helper.h"
 
@@ -637,7 +637,7 @@ CallbackTestServiceImpl::BidiStream(CallbackServerContext* context) {
     bool setup_done_{false};
     std::thread finish_thread_;
     bool client_try_cancel_ = false;
-    absl::Notification cancel_notification_;
+    grpc_core::Notification cancel_notification_;
   };
 
   return new Reactor(context);

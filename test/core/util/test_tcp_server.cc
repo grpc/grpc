@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "test/core/util/test_tcp_server.h"
 
@@ -44,7 +44,9 @@
 
 static void on_server_destroyed(void* data, grpc_error_handle /*error*/) {
   test_tcp_server* server = static_cast<test_tcp_server*>(data);
+  gpr_mu_lock(server->mu);
   server->shutdown = true;
+  gpr_mu_unlock(server->mu);
 }
 
 void test_tcp_server_init(test_tcp_server* server,
@@ -79,15 +81,14 @@ void test_tcp_server_start(test_tcp_server* server, int port) {
   grpc_error_handle error = grpc_tcp_server_create(
       &server->shutdown_complete,
       grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
-      &server->tcp_server);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+      server->on_connect, server->cb_data, &server->tcp_server);
+  GPR_ASSERT(error.ok());
   error =
       grpc_tcp_server_add_port(server->tcp_server, &resolved_addr, &port_added);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  GPR_ASSERT(error.ok());
   GPR_ASSERT(port_added == port);
 
-  grpc_tcp_server_start(server->tcp_server, &server->pollset,
-                        server->on_connect, server->cb_data);
+  grpc_tcp_server_start(server->tcp_server, &server->pollset);
   gpr_log(GPR_INFO, "test tcp server listening on 0.0.0.0:%d", port);
 }
 
@@ -117,10 +118,14 @@ void test_tcp_server_destroy(test_tcp_server* server) {
   shutdown_deadline = gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                                    gpr_time_from_seconds(5, GPR_TIMESPAN));
   grpc_core::ExecCtx::Get()->Flush();
+  gpr_mu_lock(server->mu);
   while (!server->shutdown &&
          gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), shutdown_deadline) < 0) {
-    test_tcp_server_poll(server, 1000);
+    gpr_mu_unlock(server->mu);
+    test_tcp_server_poll(server, 100);
+    gpr_mu_lock(server->mu);
   }
+  gpr_mu_unlock(server->mu);
   grpc_pollset_shutdown(server->pollset[0],
                         GRPC_CLOSURE_CREATE(finish_pollset, server->pollset[0],
                                             grpc_schedule_on_exec_ctx));

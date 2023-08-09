@@ -73,20 +73,20 @@ then
     sleep 3
   done
   [[ "$gpg_recv_keys_success" == 1 ]] || exit 1
+  # fix .rvm directory ownership on kokoro monterey image
+  sudo chown -R "${USER}" ~/.rvm
   rvm get stable # Per https://stackoverflow.com/questions/65477613/rvm-where-is-ruby-3-0-0
   # stop echoing bash commands temporarily to prevent rvm from polluting the logs
   set +x
   source $HOME/.rvm/scripts/rvm
 
-  for RUBY_VERSION in 2.5.0 2.7.0 3.0.0 3.1.0; do
-    echo "Installing ruby-${RUBY_VERSION}"
-    time rvm install "ruby-${RUBY_VERSION}"
-  done;
+  RUBY_VERSION=3.2.0
+  echo "Installing ruby-${RUBY_VERSION}"
+  time rvm install "ruby-${RUBY_VERSION}"
   echo "Setting default ruby version."
-  rvm use 2.7.0 --default
-  echo "Installing cocoapods."
-  time gem install cocoapods --version 1.3.1 --no-document
+  rvm use "$RUBY_VERSION" --default
   echo "Updating osx-ssl-certs."
+  gem install bundler -v 2.4
   rvm osx-ssl-certs status all
   rvm osx-ssl-certs update all
 
@@ -98,7 +98,8 @@ if [ "${PREPARE_BUILD_INSTALL_DEPS_OBJC}" == "true" ]
 then
   # cocoapods
   export LANG=en_US.UTF-8
-  time gem install cocoapods --version 1.7.2 --no-document
+  # use "sudo" to avoid permission error on kokoro monterey image
+  time sudo gem install cocoapods --version 1.11.3 --no-document --user-install
   # pre-fetch cocoapods master repo's most recent commit only
   mkdir -p ~/.cocoapods/repos
   time git clone --depth 1 https://github.com/CocoaPods/Specs.git ~/.cocoapods/repos/master
@@ -187,24 +188,16 @@ fi
 
 if [ "${PREPARE_BUILD_INSTALL_DEPS_PHP}" == "true" ]
 then
-  # It's required to update homebrew because it won't work with the default version Kokoro has.
-  # This can be fragile though because the future version of brew can break - consider pinning
-  # the formulas if that happens (see https://github.com/grpc/grpc/pull/24837).
-  brew update || true
-  # macos mojave support for php7.3 brew formula removed MacOS Mojave support here: https://github.com/Homebrew/homebrew-core/commit/d8496609d310a233bfb46272ec7948845f32d7c5#diff-df64282b6e4230b6f35468dfbbd500fcd62b0f93b01b2b161e92f512b7feb1a3
-  # so we need earlier version of the formulata than that. See https://github.com/grpc/grpc/pull/24837 for an example of pinning homebrew formulas to a specific commit.
-  (cd /usr/local/Homebrew/Library/Taps/homebrew/homebrew-core; git checkout 10b1944581fbbdc216057fd70e89dbbe3d04161e)
-  brew config
+  # php7.4 should already be installed on kokoro monterey image, so this should be instantaneous.
+  time brew install php@7.4 || true
+  export LDFLAGS="-L/usr/local/opt/php@7.4/lib ${LDFLAGS}"
+  export CPPFLAGS="-I/usr/local/opt/php@7.4/include ${CPPFLAGS}"
+  export PATH="/usr/local/opt/php@7.4/bin:/usr/local/opt/php@7.4/sbin:${PATH}"
 
-  brew install php@7.3 || true
-  export LDFLAGS="-L/usr/local/opt/php@7.3/lib ${LDFLAGS}"
-  export CPPFLAGS="-I/usr/local/opt/php@7.3/include ${CPPFLAGS}"
-  export PATH="/usr/local/opt/php@7.3/bin:/usr/local/opt/php@7.3/sbin:${PATH}"
-
-  # the exit code from "brew install php@7.3" is useless
+  # the exit code from "brew install php@7.4" is useless
   # so instead we check if PHP was indeed installed successfully.
   # Failing early is better than cryptic errors later in the build process.
-  /usr/local/opt/php@7.3/bin/php --version
+  /usr/local/opt/php@7.4/bin/php --version
 
   # Workaround for https://github.com/Homebrew/homebrew-core/issues/41081
   mkdir -p /usr/local/lib/php/pecl

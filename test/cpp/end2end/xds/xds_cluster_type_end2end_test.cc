@@ -27,6 +27,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/proto/grpc/testing/xds/v3/aggregate_cluster.grpc.pb.h"
@@ -63,8 +64,7 @@ class ClusterTypeTest : public XdsEnd2endTest {
       GPR_ASSERT(lb_uri.ok());
       grpc_resolved_address address;
       GPR_ASSERT(grpc_parse_uri(*lb_uri, &address));
-      addresses.emplace_back(address.addr, address.len,
-                             grpc_core::ChannelArgs());
+      addresses.emplace_back(address, grpc_core::ChannelArgs());
     }
     return addresses;
   }
@@ -106,175 +106,6 @@ TEST_P(LogicalDNSClusterTest, Basic) {
   }
   // RPCs should succeed.
   CheckRpcSendOk(DEBUG_LOCATION);
-}
-
-TEST_P(LogicalDNSClusterTest, MissingLoadAssignment) {
-  // Create Logical DNS Cluster
-  auto cluster = default_cluster_;
-  cluster.set_type(Cluster::LOGICAL_DNS);
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr(
-                  "load_assignment not present for LOGICAL_DNS cluster"));
-}
-
-TEST_P(LogicalDNSClusterTest, MissingLocalities) {
-  // Create Logical DNS Cluster
-  auto cluster = default_cluster_;
-  cluster.set_type(Cluster::LOGICAL_DNS);
-  cluster.mutable_load_assignment();
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
-      response_state->error_message,
-      ::testing::HasSubstr("load_assignment for LOGICAL_DNS cluster must have "
-                           "exactly one locality, found 0"));
-}
-
-TEST_P(LogicalDNSClusterTest, MultipleLocalities) {
-  // Create Logical DNS Cluster
-  auto cluster = default_cluster_;
-  cluster.set_type(Cluster::LOGICAL_DNS);
-  auto* load_assignment = cluster.mutable_load_assignment();
-  load_assignment->add_endpoints();
-  load_assignment->add_endpoints();
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
-      response_state->error_message,
-      ::testing::HasSubstr("load_assignment for LOGICAL_DNS cluster must have "
-                           "exactly one locality, found 2"));
-}
-
-TEST_P(LogicalDNSClusterTest, MissingEndpoints) {
-  // Create Logical DNS Cluster
-  auto cluster = default_cluster_;
-  cluster.set_type(Cluster::LOGICAL_DNS);
-  cluster.mutable_load_assignment()->add_endpoints();
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr(
-                  "locality for LOGICAL_DNS cluster must have exactly one "
-                  "endpoint, found 0"));
-}
-
-TEST_P(LogicalDNSClusterTest, MultipleEndpoints) {
-  // Create Logical DNS Cluster
-  auto cluster = default_cluster_;
-  cluster.set_type(Cluster::LOGICAL_DNS);
-  auto* locality = cluster.mutable_load_assignment()->add_endpoints();
-  locality->add_lb_endpoints();
-  locality->add_lb_endpoints();
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr(
-                  "locality for LOGICAL_DNS cluster must have exactly one "
-                  "endpoint, found 2"));
-}
-
-TEST_P(LogicalDNSClusterTest, EmptyEndpoint) {
-  // Create Logical DNS Cluster
-  auto cluster = default_cluster_;
-  cluster.set_type(Cluster::LOGICAL_DNS);
-  cluster.mutable_load_assignment()->add_endpoints()->add_lb_endpoints();
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("LbEndpoint endpoint field not set"));
-}
-
-TEST_P(LogicalDNSClusterTest, EndpointMissingAddress) {
-  // Create Logical DNS Cluster
-  auto cluster = default_cluster_;
-  cluster.set_type(Cluster::LOGICAL_DNS);
-  cluster.mutable_load_assignment()
-      ->add_endpoints()
-      ->add_lb_endpoints()
-      ->mutable_endpoint();
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("Endpoint address field not set"));
-}
-
-TEST_P(LogicalDNSClusterTest, AddressMissingSocketAddress) {
-  // Create Logical DNS Cluster
-  auto cluster = default_cluster_;
-  cluster.set_type(Cluster::LOGICAL_DNS);
-  cluster.mutable_load_assignment()
-      ->add_endpoints()
-      ->add_lb_endpoints()
-      ->mutable_endpoint()
-      ->mutable_address();
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("Address socket_address field not set"));
-}
-
-TEST_P(LogicalDNSClusterTest, SocketAddressHasResolverName) {
-  // Create Logical DNS Cluster
-  auto cluster = default_cluster_;
-  cluster.set_type(Cluster::LOGICAL_DNS);
-  cluster.mutable_load_assignment()
-      ->add_endpoints()
-      ->add_lb_endpoints()
-      ->mutable_endpoint()
-      ->mutable_address()
-      ->mutable_socket_address()
-      ->set_resolver_name("foo");
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("LOGICAL_DNS clusters must NOT have a "
-                                   "custom resolver name set"));
-}
-
-TEST_P(LogicalDNSClusterTest, SocketAddressMissingAddress) {
-  // Create Logical DNS Cluster
-  auto cluster = default_cluster_;
-  cluster.set_type(Cluster::LOGICAL_DNS);
-  cluster.mutable_load_assignment()
-      ->add_endpoints()
-      ->add_lb_endpoints()
-      ->mutable_endpoint()
-      ->mutable_address()
-      ->mutable_socket_address();
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("SocketAddress address field not set"));
-}
-
-TEST_P(LogicalDNSClusterTest, SocketAddressMissingPort) {
-  // Create Logical DNS Cluster
-  auto cluster = default_cluster_;
-  cluster.set_type(Cluster::LOGICAL_DNS);
-  cluster.mutable_load_assignment()
-      ->add_endpoints()
-      ->add_lb_endpoints()
-      ->mutable_endpoint()
-      ->mutable_address()
-      ->mutable_socket_address()
-      ->set_address(kServerName);
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("SocketAddress port_value field not set"));
 }
 
 //
@@ -449,8 +280,7 @@ TEST_P(AggregateClusterTest, FallBackWithConnectivityChurn) {
   channel_->GetState(/*try_to_connect=*/true);
   // Wait for backend 0 connection attempt to start, then fail it.
   hold0->Wait();
-  hold0->Fail(
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING("injected connection failure"));
+  hold0->Fail(GRPC_ERROR_CREATE("injected connection failure"));
   // The channel should trigger a connection attempt for backend 1 now,
   // but we've added a hold for that, so it will not complete yet.
   // Meanwhile, the channel will also start a second attempt for backend
@@ -720,6 +550,58 @@ TEST_P(AggregateClusterTest, MultipleClustersWithSameLocalities) {
   WaitForBackend(DEBUG_LOCATION, 1);
 }
 
+// This tests a bug seen in the wild where the cds LB policy was
+// incorrectly modifying its copy of the XdsClusterResource for the root
+// cluster when generating the child policy config, so when we later
+// received an update for one of the underlying clusters, we were no
+// longer able to generate a valid child policy config.
+TEST_P(AggregateClusterTest, UpdateOfChildCluster) {
+  CreateAndStartBackends(2);
+  const char* kNewCluster1Name = "new_cluster_1";
+  const char* kNewEdsService1Name = "new_eds_service_name_1";
+  const char* kNewEdsService2Name = "new_eds_service_name_2";
+  // Populate new EDS resources.
+  EdsResourceArgs args1({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  });
+  EdsResourceArgs args2({
+      {"locality0", CreateEndpointsForBackends(1, 2)},
+  });
+  balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args1, kNewEdsService1Name));
+  balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args2, kNewEdsService2Name));
+  // Populate new CDS resources.
+  Cluster new_cluster1 = default_cluster_;
+  new_cluster1.set_name(kNewCluster1Name);
+  new_cluster1.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsService1Name);
+  balancer_->ads_service()->SetCdsResource(new_cluster1);
+  // Create Aggregate Cluster
+  auto cluster = default_cluster_;
+  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  custom_cluster->set_name("envoy.clusters.aggregate");
+  ClusterConfig cluster_config;
+  cluster_config.add_clusters(kNewCluster1Name);
+  custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  // Wait for traffic to go to backend 0.
+  WaitForBackend(DEBUG_LOCATION, 0);
+  auto response_state = balancer_->ads_service()->cds_response_state();
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
+  // Now reconfigure the underlying cluster to point to a different EDS
+  // resource containing backend 1.
+  new_cluster1.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsService2Name);
+  balancer_->ads_service()->SetCdsResource(new_cluster1);
+  // Wait for traffic to go to backend 1.
+  WaitForBackend(DEBUG_LOCATION, 1);
+  response_state = balancer_->ads_service()->cds_response_state();
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
+}
+
 TEST_P(AggregateClusterTest, RecursionDepthJustBelowMax) {
   // Populate EDS resource.
   CreateAndStartBackends(1);
@@ -781,7 +663,9 @@ int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   // Make the backup poller poll very frequently in order to pick up
   // updates from all the subchannels's FDs.
-  GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
+  grpc_core::ConfigVars::Overrides overrides;
+  overrides.client_channel_backup_poll_interval_ms = 1;
+  grpc_core::ConfigVars::SetOverrides(overrides);
 #if TARGET_OS_IPHONE
   // Workaround Apple CFStream bug
   grpc_core::SetEnv("grpc_cfstream", "0");

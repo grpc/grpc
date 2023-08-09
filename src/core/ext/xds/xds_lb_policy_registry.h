@@ -14,19 +14,19 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_XDS_XDS_LB_POLICY_REGISTRY_H
-#define GRPC_CORE_EXT_XDS_XDS_LB_POLICY_REGISTRY_H
+#ifndef GRPC_SRC_CORE_EXT_XDS_XDS_LB_POLICY_REGISTRY_H
+#define GRPC_SRC_CORE_EXT_XDS_XDS_LB_POLICY_REGISTRY_H
 
 #include <grpc/support/port_platform.h>
 
 #include <map>
 #include <memory>
 
-#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "envoy/config/cluster/v3/cluster.upb.h"
 
 #include "src/core/ext/xds/xds_resource_type.h"
+#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/json/json.h"
 
 namespace grpc_core {
@@ -37,29 +37,28 @@ class XdsLbPolicyRegistry {
  public:
   class ConfigFactory {
    public:
-    virtual ~ConfigFactory() {}
-    virtual absl::StatusOr<Json::Object> ConvertXdsLbPolicyConfig(
+    virtual ~ConfigFactory() = default;
+    virtual Json::Object ConvertXdsLbPolicyConfig(
+        const XdsLbPolicyRegistry* registry,
         const XdsResourceType::DecodeContext& context,
-        absl::string_view configuration, int recursion_depth) = 0;
-
+        absl::string_view configuration, ValidationErrors* errors,
+        int recursion_depth) = 0;
     virtual absl::string_view type() = 0;
   };
+
+  XdsLbPolicyRegistry();
 
   // Converts an xDS cluster load balancing policy message to gRPC's JSON
   // format. An error is returned if none of the lb policies in the list are
   // supported, or if a supported lb policy configuration conversion fails. \a
   // recursion_depth indicates the current depth of the tree if lb_policy
   // configuration recursively holds other lb policies.
-  static absl::StatusOr<Json::Array> ConvertXdsLbPolicyConfig(
+  Json::Array ConvertXdsLbPolicyConfig(
       const XdsResourceType::DecodeContext& context,
       const envoy_config_cluster_v3_LoadBalancingPolicy* lb_policy,
-      int recursion_depth = 0);
+      ValidationErrors* errors, int recursion_depth = 0) const;
 
  private:
-  XdsLbPolicyRegistry();
-
-  static XdsLbPolicyRegistry* Get();
-
   // A map of config factories that goes from the type of the lb policy config
   // to the config factory.
   std::map<absl::string_view /* Owned by ConfigFactory */,
@@ -69,4 +68,4 @@ class XdsLbPolicyRegistry {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_XDS_XDS_LB_POLICY_REGISTRY_H
+#endif  // GRPC_SRC_CORE_EXT_XDS_XDS_LB_POLICY_REGISTRY_H

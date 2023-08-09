@@ -12,53 +12,108 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
-load("//test/core/util:grpc_fuzzer.bzl", "grpc_proto_fuzzer")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])
 
 grpc_package(name = "test/core/filters")
 
+grpc_cc_library(
+    name = "filter_test",
+    testonly = 1,
+    srcs = ["filter_test.cc"],
+    hdrs = ["filter_test.h"],
+    external_deps = [
+        "absl/memory",
+        "absl/strings",
+        "absl/strings:str_format",
+        "absl/types:optional",
+        "absl/types:variant",
+        "gtest",
+    ],
+    language = "c++",
+    tags = ["nofixdeps"],  # until event engine tests are under fixbuilddeps
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:ref_counted_ptr",
+        "//src/core:activity",
+        "//src/core:arena",
+        "//src/core:arena_promise",
+        "//src/core:basic_seq",
+        "//src/core:context",
+        "//src/core:memory_quota",
+        "//src/core:pipe",
+        "//src/core:poll",
+        "//src/core:resource_quota",
+        "//src/core:slice",
+        "//src/core:slice_buffer",
+        "//test/core/event_engine/fuzzing_event_engine",
+    ],
+)
+
+grpc_cc_test(
+    name = "filter_test_test",
+    srcs = ["filter_test_test.cc"],
+    external_deps = ["gtest"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "filter_test",
+        "//:grpc_unsecure",
+        "//src/core:activity",
+        "//src/core:arena_promise",
+        "//src/core:map",
+        "//src/core:pipe",
+        "//src/core:poll",
+        "//src/core:seq",
+        "//src/core:slice",
+    ],
+)
+
 grpc_cc_test(
     name = "client_auth_filter_test",
     srcs = ["client_auth_filter_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/types:optional",
+        "gtest",
+    ],
     language = "c++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "filter_test",
         "//:grpc",
+        "//:grpc_public_hdrs",
         "//:grpc_security_base",
-        "//test/core/promise:test_context",
+        "//:promise",
+        "//:ref_counted_ptr",
+        "//src/core:arena_promise",
+        "//src/core:channel_args",
+        "//src/core:grpc_fake_credentials",
+        "//src/core:unique_type_name",
+        "//src/core:useful",
     ],
 )
 
 grpc_cc_test(
     name = "client_authority_filter_test",
     srcs = ["client_authority_filter_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/status",
+        "absl/strings",
+        "absl/types:optional",
+        "gtest",
+    ],
     language = "c++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "filter_test",
         "//:grpc",
-        "//:grpc_client_authority_filter",
-        "//test/core/promise:test_context",
-    ],
-)
-
-grpc_proto_fuzzer(
-    name = "filter_fuzzer",
-    srcs = ["filter_fuzzer.cc"],
-    corpus = "filter_fuzzer_corpus",
-    language = "C++",
-    proto = "filter_fuzzer.proto",
-    tags = ["no_windows"],
-    uses_polling = False,
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/end2end:ssl_test_data",
-        "//test/core/util:grpc_test_util",
+        "//src/core:grpc_client_authority_filter",
     ],
 )

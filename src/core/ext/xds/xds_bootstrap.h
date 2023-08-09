@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_XDS_XDS_BOOTSTRAP_H
-#define GRPC_CORE_EXT_XDS_XDS_BOOTSTRAP_H
+#ifndef GRPC_SRC_CORE_EXT_XDS_XDS_BOOTSTRAP_H
+#define GRPC_SRC_CORE_EXT_XDS_XDS_BOOTSTRAP_H
 
 #include <grpc/support/port_platform.h>
 
@@ -46,7 +46,6 @@ class XdsBootstrap {
     virtual ~XdsServer() = default;
 
     virtual const std::string& server_uri() const = 0;
-    virtual bool ShouldUseV3() const = 0;
     virtual bool IgnoreResourceDeletion() const = 0;
 
     virtual bool Equals(const XdsServer& other) const = 0;
@@ -86,4 +85,4 @@ class XdsBootstrap {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_XDS_XDS_BOOTSTRAP_H
+#endif  // GRPC_SRC_CORE_EXT_XDS_XDS_BOOTSTRAP_H

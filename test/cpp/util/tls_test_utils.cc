@@ -22,7 +22,6 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-using ::grpc::experimental::ExternalCertificateVerifier;
 using ::grpc::experimental::TlsCustomVerificationCheckRequest;
 
 namespace grpc {
@@ -93,6 +92,18 @@ void AsyncCertificateVerifier::WorkerThread(void* arg) {
     }
     request.callback(return_status);
   }
+}
+
+bool VerifiedRootCertSubjectVerifier::Verify(
+    TlsCustomVerificationCheckRequest* request,
+    std::function<void(grpc::Status)>, grpc::Status* sync_status) {
+  if (request->verified_root_cert_subject() != expected_subject_) {
+    *sync_status = grpc::Status(grpc::StatusCode::UNAUTHENTICATED,
+                                "VerifiedRootCertSubjectVerifier failed");
+  } else {
+    *sync_status = grpc::Status::OK;
+  }
+  return true;
 }
 
 }  // namespace testing

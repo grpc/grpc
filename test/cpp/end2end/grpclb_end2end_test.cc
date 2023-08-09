@@ -36,7 +36,7 @@
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
-#include <grpcpp/impl/codegen/sync.h>
+#include <grpcpp/impl/sync.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
@@ -46,6 +46,8 @@
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/config_vars.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/sockaddr.h"
@@ -100,8 +102,8 @@ constexpr char kDefaultServiceConfig[] =
 using BackendService = CountedService<TestServiceImpl>;
 using BalancerService = CountedService<LoadBalancer::Service>;
 
-const char g_kCallCredsMdKey[] = "Balancer should not ...";
-const char g_kCallCredsMdValue[] = "... receive me";
+const char g_kCallCredsMdKey[] = "call-creds";
+const char g_kCallCredsMdValue[] = "should not be received by balancer";
 
 // A test user agent string sent by the client only to the grpclb loadbalancer.
 // The backend should not see this user-agent string.
@@ -371,10 +373,12 @@ class GrpclbEnd2endTest : public ::testing::Test {
         client_load_reporting_interval_seconds_(
             client_load_reporting_interval_seconds) {}
 
-  static void SetUpTestCase() {
+  static void SetUpTestSuite() {
     // Make the backup poller poll very frequently in order to pick up
     // updates from all the subchannels's FDs.
-    GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
+    grpc_core::ConfigVars::Overrides overrides;
+    overrides.client_channel_backup_poll_interval_ms = 1;
+    grpc_core::ConfigVars::SetOverrides(overrides);
 #if TARGET_OS_IPHONE
     // Workaround Apple CFStream bug
     grpc_core::SetEnv("grpc_cfstream", "0");
@@ -382,7 +386,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
     grpc_init();
   }
 
-  static void TearDownTestCase() { grpc_shutdown(); }
+  static void TearDownTestSuite() { grpc_shutdown(); }
 
   void SetUp() override {
     bool localhost_resolves_to_ipv4 = false;
@@ -562,9 +566,8 @@ class GrpclbEnd2endTest : public ::testing::Test {
       grpc_resolved_address address;
       GPR_ASSERT(grpc_parse_uri(*lb_uri, &address));
       addresses.emplace_back(
-          address.addr, address.len,
-          grpc_core::ChannelArgs().Set(GRPC_ARG_DEFAULT_AUTHORITY,
-                                       addr.balancer_name));
+          address, grpc_core::ChannelArgs().Set(GRPC_ARG_DEFAULT_AUTHORITY,
+                                                addr.balancer_name));
     }
     return addresses;
   }
@@ -708,7 +711,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
       // by ServerThread::Serve from firing before the wait below is hit.
       grpc::internal::MutexLock lock(&mu);
       grpc::internal::CondVar cond;
-      thread_ = absl::make_unique<std::thread>(
+      thread_ = std::make_unique<std::thread>(
           std::bind(&ServerThread::Serve, this, server_host, &mu, &cond));
       cond.Wait(&mu);
       gpr_log(GPR_INFO, "%s server startup complete", type_.c_str());
@@ -1015,19 +1018,6 @@ TEST_F(SingleBalancerTest, SecureNaming) {
   EXPECT_EQ("grpclb", channel_->GetLoadBalancingPolicyName());
 }
 
-TEST_F(SingleBalancerTest, SecureNamingDeathTest) {
-  GTEST_FLAG_SET(death_test_style, "threadsafe");
-  // Make sure that we blow up (via abort() from the security connector) when
-  // the name from the balancer doesn't match expectations.
-  ASSERT_DEATH_IF_SUPPORTED(
-      {
-        ResetStub(0, kApplicationTargetName_ + ";lb");
-        SetNextResolution({AddressData{balancers_[0]->port_, "woops"}});
-        channel_->WaitForConnected(grpc_timeout_seconds_to_deadline(1));
-      },
-      "");
-}
-
 TEST_F(SingleBalancerTest, InitiallyEmptyServerlist) {
   SetNextResolutionAllBalancers();
   const int kServerlistDelayMs = 500 * grpc_test_slowdown_factor();
@@ -1252,7 +1242,7 @@ TEST_F(SingleBalancerTest, FallbackUpdate) {
 }
 
 TEST_F(SingleBalancerTest,
-       FallbackAfterStartup_LoseContactWithBalancerThenBackends) {
+       FallbackAfterStartupLoseContactWithBalancerThenBackends) {
   // First two backends are fallback, last two are pointed to by balancer.
   const size_t kNumFallbackBackends = 2;
   const size_t kNumBalancerBackends = backends_.size() - kNumFallbackBackends;
@@ -1305,7 +1295,7 @@ TEST_F(SingleBalancerTest,
 }
 
 TEST_F(SingleBalancerTest,
-       FallbackAfterStartup_LoseContactWithBackendsThenBalancer) {
+       FallbackAfterStartupLoseContactWithBackendsThenBalancer) {
   // First two backends are fallback, last two are pointed to by balancer.
   const size_t kNumFallbackBackends = 2;
   const size_t kNumBalancerBackends = backends_.size() - kNumFallbackBackends;
@@ -1388,7 +1378,7 @@ TEST_F(SingleBalancerTest, FallbackEarlyWhenBalancerCallFails) {
                  /* wait_for_ready */ false);
 }
 
-TEST_F(SingleBalancerTest, FallbackControlledByBalancer_BeforeFirstServerlist) {
+TEST_F(SingleBalancerTest, FallbackControlledByBalancerBeforeFirstServerlist) {
   const int kFallbackTimeoutMs = 10000 * grpc_test_slowdown_factor();
   ResetStub(kFallbackTimeoutMs);
   // Return one balancer and one fallback backend.
@@ -1407,7 +1397,7 @@ TEST_F(SingleBalancerTest, FallbackControlledByBalancer_BeforeFirstServerlist) {
                  /* wait_for_ready */ false);
 }
 
-TEST_F(SingleBalancerTest, FallbackControlledByBalancer_AfterFirstServerlist) {
+TEST_F(SingleBalancerTest, FallbackControlledByBalancerAfterFirstServerlist) {
   // Return one balancer and one fallback backend (backend 0).
   std::vector<AddressData> balancer_addresses;
   balancer_addresses.emplace_back(AddressData{balancers_[0]->port_, ""});
@@ -1471,6 +1461,23 @@ TEST_F(SingleBalancerTest, ServiceNameFromLbPolicyConfig) {
   // We need to wait for all backends to come online.
   WaitForAllBackends();
   EXPECT_EQ(balancers_[0]->service_.service_names().back(), "test_service");
+}
+
+// This death test is kept separate from the rest to ensure that it's run before
+// any others. See https://github.com/grpc/grpc/pull/32269 for details.
+using SingleBalancerDeathTest = SingleBalancerTest;
+
+TEST_F(SingleBalancerDeathTest, SecureNaming) {
+  GTEST_FLAG_SET(death_test_style, "threadsafe");
+  // Make sure that we blow up (via abort() from the security connector) when
+  // the name from the balancer doesn't match expectations.
+  ASSERT_DEATH_IF_SUPPORTED(
+      {
+        ResetStub(0, kApplicationTargetName_ + ";lb");
+        SetNextResolution({AddressData{balancers_[0]->port_, "woops"}});
+        channel_->WaitForConnected(grpc_timeout_seconds_to_deadline(1));
+      },
+      "");
 }
 
 class UpdatesTest : public GrpclbEnd2endTest {

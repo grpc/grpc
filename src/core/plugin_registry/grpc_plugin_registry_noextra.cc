@@ -21,8 +21,6 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/surface/builtins.h"
 
-void grpc_register_extra_plugins(void) {}
-
 namespace grpc_core {
-void RegisterExtraFilters(CoreConfiguration::Builder* /* builder */){}
+void RegisterExtraFilters(CoreConfiguration::Builder* /* builder */) {}
 }  // namespace grpc_core

@@ -164,7 +164,7 @@ class BinderServerListener : public Server::ListenerInterface {
   ~BinderServerListener() override {
     ExecCtx::Get()->Flush();
     if (on_destroy_done_) {
-      ExecCtx::Run(DEBUG_LOCATION, on_destroy_done_, GRPC_ERROR_NONE);
+      ExecCtx::Run(DEBUG_LOCATION, on_destroy_done_, absl::OkStatus());
       ExecCtx::Get()->Flush();
     }
     grpc_remove_endpoint_binder(addr_);
@@ -174,7 +174,7 @@ class BinderServerListener : public Server::ListenerInterface {
   absl::Status OnSetupTransport(transaction_code_t code,
                                 grpc_binder::ReadableParcel* parcel, int uid) {
     ExecCtx exec_ctx;
-    if (grpc_binder::BinderTransportTxCode(code) !=
+    if (static_cast<grpc_binder::BinderTransportTxCode>(code) !=
         grpc_binder::BinderTransportTxCode::SETUP_TRANSPORT) {
       return absl::InvalidArgumentError("Not a SETUP_TRANSPORT request");
     }

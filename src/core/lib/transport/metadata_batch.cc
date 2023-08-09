@@ -24,7 +24,6 @@
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/transport/timeout_encoding.h"
 
 namespace grpc_core {
@@ -64,7 +63,7 @@ absl::optional<absl::string_view> UnknownMap::GetStringValue(
 }  // namespace metadata_detail
 
 ContentTypeMetadata::MementoType ContentTypeMetadata::ParseMemento(
-    Slice value, MetadataParseErrorFn on_error) {
+    Slice value, bool, MetadataParseErrorFn on_error) {
   auto out = kInvalid;
   auto value_string = value.as_string_view();
   if (value_string == "application/grpc") {
@@ -94,7 +93,7 @@ StaticSlice ContentTypeMetadata::Encode(ValueType x) {
       return StaticSlice::FromStaticString("unrepresentable value"));
 }
 
-const char* ContentTypeMetadata::DisplayValue(MementoType content_type) {
+const char* ContentTypeMetadata::DisplayValue(ValueType content_type) {
   switch (content_type) {
     case ValueType::kApplicationGrpc:
       return "application/grpc";
@@ -106,7 +105,7 @@ const char* ContentTypeMetadata::DisplayValue(MementoType content_type) {
 }
 
 GrpcTimeoutMetadata::MementoType GrpcTimeoutMetadata::ParseMemento(
-    Slice value, MetadataParseErrorFn on_error) {
+    Slice value, bool, MetadataParseErrorFn on_error) {
   auto timeout = ParseTimeout(value);
   if (!timeout.has_value()) {
     on_error("invalid value", value);
@@ -120,15 +119,15 @@ GrpcTimeoutMetadata::ValueType GrpcTimeoutMetadata::MementoToValue(
   if (timeout == Duration::Infinity()) {
     return Timestamp::InfFuture();
   }
-  return ExecCtx::Get()->Now() + timeout;
+  return Timestamp::Now() + timeout;
 }
 
 Slice GrpcTimeoutMetadata::Encode(ValueType x) {
-  return Timeout::FromDuration(x - ExecCtx::Get()->Now()).Encode();
+  return Timeout::FromDuration(x - Timestamp::Now()).Encode();
 }
 
 TeMetadata::MementoType TeMetadata::ParseMemento(
-    Slice value, MetadataParseErrorFn on_error) {
+    Slice value, bool, MetadataParseErrorFn on_error) {
   auto out = kInvalid;
   if (value == "trailers") {
     out = kTrailers;
@@ -138,7 +137,7 @@ TeMetadata::MementoType TeMetadata::ParseMemento(
   return out;
 }
 
-const char* TeMetadata::DisplayValue(MementoType te) {
+const char* TeMetadata::DisplayValue(ValueType te) {
   switch (te) {
     case ValueType::kTrailers:
       return "trailers";
@@ -169,7 +168,18 @@ StaticSlice HttpSchemeMetadata::Encode(ValueType x) {
   }
 }
 
-const char* HttpSchemeMetadata::DisplayValue(MementoType content_type) {
+size_t EncodedSizeOfKey(HttpSchemeMetadata, HttpSchemeMetadata::ValueType x) {
+  switch (x) {
+    case HttpSchemeMetadata::kHttp:
+      return 4;
+    case HttpSchemeMetadata::kHttps:
+      return 5;
+    default:
+      return 0;
+  }
+}
+
+const char* HttpSchemeMetadata::DisplayValue(ValueType content_type) {
   switch (content_type) {
     case kHttp:
       return "http";
@@ -181,7 +191,7 @@ const char* HttpSchemeMetadata::DisplayValue(MementoType content_type) {
 }
 
 HttpMethodMetadata::MementoType HttpMethodMetadata::ParseMemento(
-    Slice value, MetadataParseErrorFn on_error) {
+    Slice value, bool, MetadataParseErrorFn on_error) {
   auto out = kInvalid;
   auto value_string = value.as_string_view();
   if (value_string == "POST") {
@@ -205,11 +215,14 @@ StaticSlice HttpMethodMetadata::Encode(ValueType x) {
     case kGet:
       return StaticSlice::FromStaticString("GET");
     default:
-      abort();
+      // TODO(ctiller): this should be an abort, we should split up the debug
+      // string generation from the encode string generation so that debug
+      // strings can always succeed and encode strings can crash.
+      return StaticSlice::FromStaticString("<<INVALID METHOD>>");
   }
 }
 
-const char* HttpMethodMetadata::DisplayValue(MementoType content_type) {
+const char* HttpMethodMetadata::DisplayValue(ValueType content_type) {
   switch (content_type) {
     case kPost:
       return "POST";
@@ -223,7 +236,7 @@ const char* HttpMethodMetadata::DisplayValue(MementoType content_type) {
 }
 
 CompressionAlgorithmBasedMetadata::MementoType
-CompressionAlgorithmBasedMetadata::ParseMemento(Slice value,
+CompressionAlgorithmBasedMetadata::ParseMemento(Slice value, bool,
                                                 MetadataParseErrorFn on_error) {
   auto algorithm = ParseCompressionAlgorithm(value.as_string_view());
   if (!algorithm.has_value()) {
@@ -234,7 +247,7 @@ CompressionAlgorithmBasedMetadata::ParseMemento(Slice value,
 }
 
 Duration GrpcRetryPushbackMsMetadata::ParseMemento(
-    Slice value, MetadataParseErrorFn on_error) {
+    Slice value, bool, MetadataParseErrorFn on_error) {
   int64_t out;
   if (!absl::SimpleAtoi(value.as_string_view(), &out)) {
     on_error("not an integer", value);
@@ -251,12 +264,12 @@ Slice LbCostBinMetadata::Encode(const ValueType& x) {
   return Slice(std::move(slice));
 }
 
-std::string LbCostBinMetadata::DisplayValue(MementoType x) {
+std::string LbCostBinMetadata::DisplayValue(ValueType x) {
   return absl::StrCat(x.name, ":", x.cost);
 }
 
 LbCostBinMetadata::MementoType LbCostBinMetadata::ParseMemento(
-    Slice value, MetadataParseErrorFn on_error) {
+    Slice value, bool, MetadataParseErrorFn on_error) {
   if (value.length() < sizeof(double)) {
     on_error("too short", value);
     return {0, ""};
@@ -279,7 +292,10 @@ std::string GrpcStreamNetworkState::DisplayValue(ValueType x) {
   GPR_UNREACHABLE_CODE(return "unknown value");
 }
 
-std::string PeerString::DisplayValue(ValueType x) { return std::string(x); }
+std::string PeerString::DisplayValue(const ValueType& x) {
+  return std::string(x.as_string_view());
+}
+
 const std::string& GrpcStatusContext::DisplayValue(const std::string& x) {
   return x;
 }

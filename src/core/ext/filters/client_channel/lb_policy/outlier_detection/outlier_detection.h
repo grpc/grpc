@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_OUTLIER_DETECTION_OUTLIER_DETECTION_H
-#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_OUTLIER_DETECTION_OUTLIER_DETECTION_H
+#ifndef GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_OUTLIER_DETECTION_OUTLIER_DETECTION_H
+#define GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_OUTLIER_DETECTION_OUTLIER_DETECTION_H
 
 #include <grpc/support/port_platform.h>
 
@@ -24,10 +24,13 @@
 #include "absl/types/optional.h"
 
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/gprpp/validation_errors.h"
+#include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_args.h"
+#include "src/core/lib/json/json_object_loader.h"
+#include "src/core/lib/resolver/server_address.h"
 
 namespace grpc_core {
-
-bool XdsOutlierDetectionEnabled();
 
 struct OutlierDetectionConfig {
   Duration interval = Duration::Seconds(10);
@@ -36,9 +39,11 @@ struct OutlierDetectionConfig {
   uint32_t max_ejection_percent = 10;
   struct SuccessRateEjection {
     uint32_t stdev_factor = 1900;
-    uint32_t enforcement_percentage = 0;
+    uint32_t enforcement_percentage = 100;
     uint32_t minimum_hosts = 5;
     uint32_t request_volume = 100;
+
+    SuccessRateEjection() {}
 
     bool operator==(const SuccessRateEjection& other) const {
       return stdev_factor == other.stdev_factor &&
@@ -46,12 +51,17 @@ struct OutlierDetectionConfig {
              minimum_hosts == other.minimum_hosts &&
              request_volume == other.request_volume;
     }
+
+    static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+    void JsonPostLoad(const Json&, const JsonArgs&, ValidationErrors* errors);
   };
   struct FailurePercentageEjection {
     uint32_t threshold = 85;
-    uint32_t enforcement_percentage = 0;
+    uint32_t enforcement_percentage = 100;
     uint32_t minimum_hosts = 5;
     uint32_t request_volume = 50;
+
+    FailurePercentageEjection() {}
 
     bool operator==(const FailurePercentageEjection& other) const {
       return threshold == other.threshold &&
@@ -59,6 +69,9 @@ struct OutlierDetectionConfig {
              minimum_hosts == other.minimum_hosts &&
              request_volume == other.request_volume;
     }
+
+    static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+    void JsonPostLoad(const Json&, const JsonArgs&, ValidationErrors* errors);
   };
   absl::optional<SuccessRateEjection> success_rate_ejection;
   absl::optional<FailurePercentageEjection> failure_percentage_ejection;
@@ -71,8 +84,18 @@ struct OutlierDetectionConfig {
            success_rate_ejection == other.success_rate_ejection &&
            failure_percentage_ejection == other.failure_percentage_ejection;
   }
+
+  static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+  void JsonPostLoad(const Json& json, const JsonArgs&,
+                    ValidationErrors* errors);
 };
+
+// TODO(roth): This is a horrible hack used to disable outlier detection
+// when used with the pick_first policy.  Remove this as part of
+// implementing the dualstack backend design.
+#define GRPC_ARG_OUTLIER_DETECTION_DISABLE \
+  GRPC_ARG_NO_SUBCHANNEL_PREFIX "outlier_detection_disable"
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_OUTLIER_DETECTION_OUTLIER_DETECTION_H
+#endif  // GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_OUTLIER_DETECTION_OUTLIER_DETECTION_H

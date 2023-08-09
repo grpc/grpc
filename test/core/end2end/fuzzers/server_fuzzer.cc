@@ -1,23 +1,20 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
-#include <stddef.h>
 #include <stdint.h>
+
+#include <string>
 
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
@@ -35,9 +32,10 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/resource_quota/api.h"
-#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/transport_fwd.h"
+#include "src/libfuzzer/libfuzzer_macro.h"
+#include "test/core/end2end/fuzzers/fuzzer_input.pb.h"
 #include "test/core/util/mock_endpoint.h"
 
 bool squelch = true;
@@ -49,8 +47,7 @@ static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static void dont_log(gpr_log_func_args* /*args*/) {}
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
-  grpc_test_only_set_slice_hash_seed(0);
+DEFINE_PROTO_FUZZER(const fuzzer_input::Msg& msg) {
   if (squelch) gpr_set_log_function(dont_log);
   grpc_init();
   {
@@ -59,8 +56,12 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     grpc_resource_quota* resource_quota =
         grpc_resource_quota_create("context_list_test");
     grpc_endpoint* mock_endpoint = grpc_mock_endpoint_create(discard_write);
-    grpc_mock_endpoint_put_read(
-        mock_endpoint, grpc_slice_from_copied_buffer((const char*)data, size));
+    if (msg.network_input().has_single_read_bytes()) {
+      grpc_mock_endpoint_put_read(
+          mock_endpoint, grpc_slice_from_copied_buffer(
+                             msg.network_input().single_read_bytes().data(),
+                             msg.network_input().single_read_bytes().size()));
+    }
     grpc_server* server = grpc_server_create(nullptr, nullptr);
     grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
     grpc_server_register_completion_queue(server, cq, nullptr);
@@ -116,7 +117,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     grpc_server_shutdown_and_notify(server, cq, tag(0xdead));
     grpc_server_cancel_all_calls(server);
     grpc_core::Timestamp deadline =
-        grpc_core::ExecCtx::Get()->Now() + grpc_core::Duration::Seconds(5);
+        grpc_core::Timestamp::Now() + grpc_core::Duration::Seconds(5);
     for (int i = 0; i <= requested_calls; i++) {
       // A single grpc_completion_queue_next might not be sufficient for getting
       // the tag from shutdown, because we might potentially get blocked by
@@ -132,7 +133,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
                                         nullptr);
         grpc_core::ExecCtx::Get()->InvalidateNow();
       } while (ev.type != GRPC_OP_COMPLETE &&
-               grpc_core::ExecCtx::Get()->Now() < deadline);
+               grpc_core::Timestamp::Now() < deadline);
       GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
     }
     grpc_completion_queue_shutdown(cq);
@@ -142,12 +143,11 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
                                         nullptr);
         grpc_core::ExecCtx::Get()->InvalidateNow();
       } while (ev.type != GRPC_QUEUE_SHUTDOWN &&
-               grpc_core::ExecCtx::Get()->Now() < deadline);
+               grpc_core::Timestamp::Now() < deadline);
       GPR_ASSERT(ev.type == GRPC_QUEUE_SHUTDOWN);
     }
     grpc_server_destroy(server);
     grpc_completion_queue_destroy(cq);
   }
   grpc_shutdown();
-  return 0;
 }

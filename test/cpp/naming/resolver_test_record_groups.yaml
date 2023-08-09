@@ -403,7 +403,7 @@ resolver_component_tests:
   - {address: '1.2.3.4:443', is_balancer: false}
   do_ordered_address_comparison: false
   expected_chosen_service_config: null
-  expected_service_config_error: 'field:clientLanguage error:should be of type array'
+  expected_service_config_error: 'clientLanguage error:is not an array'
   expected_lb_policy: null
   enable_srv_queries: true
   enable_txt_queries: true
@@ -419,7 +419,7 @@ resolver_component_tests:
   - {address: '1.2.3.4:443', is_balancer: false}
   do_ordered_address_comparison: false
   expected_chosen_service_config: null
-  expected_service_config_error: 'field:percentage error:should be of type number'
+  expected_service_config_error: 'percentage error:failed to parse number'
   expected_lb_policy: null
   enable_srv_queries: true
   enable_txt_queries: true
@@ -429,13 +429,13 @@ resolver_component_tests:
     ipv4-svc_cfg_bad_percentage:
     - {TTL: '2100', data: 1.2.3.4, type: A}
     _grpc_config.ipv4-svc_cfg_bad_percentage:
-    - {TTL: '2100', data: 'grpc_config=[{"percentage":"0","serviceConfig":{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"GoService"}],"waitForReady":true}]}},{"clientLanguage":["c++"],"serviceConfig":{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"CppService"}],"waitForReady":true}]}}]',
+    - {TTL: '2100', data: 'grpc_config=[{"percentage":"arst","serviceConfig":{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"GoService"}],"waitForReady":true}]}},{"clientLanguage":["c++"],"serviceConfig":{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"CppService"}],"waitForReady":true}]}}]',
       type: TXT}
 - expected_addrs:
   - {address: '1.2.3.4:443', is_balancer: false}
   do_ordered_address_comparison: false
   expected_chosen_service_config: null
-  expected_service_config_error: 'field:waitForReady error:Type should be true/false'
+  expected_service_config_error: 'field:methodConfig[0].waitForReady error:is not a boolean'
   expected_lb_policy: null
   enable_srv_queries: true
   enable_txt_queries: true
@@ -465,7 +465,7 @@ resolver_component_tests:
   - {address: '1.2.3.4:443', is_balancer: false}
   do_ordered_address_comparison: false
   expected_chosen_service_config: null
-  expected_service_config_error: 'field:loadBalancingPolicy error:type should be string'
+  expected_service_config_error: 'field:loadBalancingPolicy error:is not a string'
   expected_lb_policy: null
   enable_srv_queries: true
   enable_txt_queries: true

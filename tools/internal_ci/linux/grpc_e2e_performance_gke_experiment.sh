@@ -19,6 +19,22 @@ cd "$(dirname "$0")/../../.."
 
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
+
+# Environment variables to select repos and branches for various repos.
+# You can edit these lines if you want to run from a fork.
+GRPC_CORE_REPO=grpc/grpc
+GRPC_CORE_GITREF=master
+GRPC_DOTNET_REPO=grpc/grpc-dotnet
+GRPC_DOTNET_GITREF=master
+GRPC_GO_REPO=grpc/grpc-go
+GRPC_GO_GITREF=master
+GRPC_JAVA_REPO=grpc/grpc-java
+GRPC_JAVA_GITREF=master
+GRPC_NODE_REPO=grpc/grpc-node
+GRPC_NODE_GITREF=master
+TEST_INFRA_REPO=grpc/test-infra
+TEST_INFRA_GITREF=master
+
 # This is to ensure we can push and pull images from gcr.io. We do not
 # necessarily need it to run load tests, but will need it when we employ
 # pre-built images in the optimization.
@@ -43,16 +59,18 @@ PREBUILT_IMAGE_PREFIX="gcr.io/grpc-testing/e2etest/prebuilt/${LOAD_TEST_PREFIX}"
 UNIQUE_IDENTIFIER="$(date +%Y%m%d%H%M%S)"
 ROOT_DIRECTORY_OF_DOCKERFILES="../test-infra/containers/pre_built_workers/"
 # Head of the workspace checked out by Kokoro.
-GRPC_GITREF="$(git show --format="%H" --no-patch)"
+GRPC_COMMIT="$(git show --format="%H" --no-patch)"
 # Prebuilt workers for core languages are always built from grpc/grpc.
 if [[ "${KOKORO_GITHUB_COMMIT_URL%/*}" == "https://github.com/grpc/grpc/commit" ]]; then
-    GRPC_CORE_GITREF="${KOKORO_GIT_COMMIT}"
+    GRPC_CORE_COMMIT="${KOKORO_GIT_COMMIT}"
 else
-    GRPC_CORE_GITREF="$(git ls-remote https://github.com/grpc/grpc.git master | cut -f1)"
+    GRPC_CORE_COMMIT="$(git ls-remote -h "https://github.com/${GRPC_CORE_REPO}.git" "${GRPC_CORE_GITREF}" | cut -f1)"
 fi
-GRPC_DOTNET_GITREF="$(git ls-remote https://github.com/grpc/grpc-dotnet.git master | cut -f1)"
-GRPC_GO_GITREF="$(git ls-remote https://github.com/grpc/grpc-go.git master | cut -f1)"
-GRPC_JAVA_GITREF="$(git ls-remote https://github.com/grpc/grpc-java.git master | cut -f1)"
+
+GRPC_DOTNET_COMMIT="$(git ls-remote "https://github.com/${GRPC_DOTNET_REPO}.git" "${GRPC_DOTNET_GITREF}" | cut -f1)"
+GRPC_GO_COMMIT="$(git ls-remote "https://github.com/${GRPC_GO_REPO}.git" "${GRPC_GO_GITREF}" | cut -f1)"
+GRPC_JAVA_COMMIT="$(git ls-remote "https://github.com/${GRPC_JAVA_REPO}.git" "${GRPC_JAVA_GITREF}" | cut -f1)"
+GRPC_NODE_COMMIT="$(git ls-remote "https://github.com/${GRPC_NODE_REPO}.git" "${GRPC_NODE_GITREF}" | cut -f1)"
 # Kokoro jobs run on dedicated pools.
 DRIVER_POOL=drivers-ci
 WORKER_POOL_8CORE=workers-c2-8core-ci
@@ -61,18 +79,12 @@ WORKER_POOL_32CORE=workers-c2-30core-ci
 # Prefix for log URLs in cnsviewer.
 LOG_URL_PREFIX="http://cnsviewer/placer/prod/home/kokoro-dedicated/build_artifacts/${KOKORO_BUILD_ARTIFACTS_SUBDIR}/github/grpc/"
 
-# Update go version.
-TEST_INFRA_GOVERSION=go1.17.1
-go get "golang.org/dl/${TEST_INFRA_GOVERSION}"
-"${TEST_INFRA_GOVERSION}" download
-
 # Clone test-infra repository and build all tools.
-pushd ..
-git clone https://github.com/grpc/test-infra.git
-cd test-infra
-# Tools are built from HEAD.
-git checkout --detach
-make GOCMD="${TEST_INFRA_GOVERSION}" all-tools
+mkdir ../test-infra
+pushd ../test-infra
+git clone "https://github.com/${TEST_INFRA_REPO}.git" .
+git checkout "${TEST_INFRA_GITREF}"
+make all-tools
 popd
 
 # Build test configurations.
@@ -90,9 +102,11 @@ buildConfigs() {
         -a ci_buildNumber="${KOKORO_BUILD_NUMBER}" \
         -a ci_buildUrl="${CLOUD_LOGGING_URL}" \
         -a ci_jobName="${KOKORO_JOB_NAME}" \
-        -a ci_gitCommit="${GRPC_GITREF}" \
-        -a ci_gitCommit_go="${GRPC_GO_GITREF}" \
-        -a ci_gitCommit_java="${GRPC_JAVA_GITREF}" \
+        -a ci_gitCommit="${GRPC_COMMIT}" \
+        -a ci_gitCommit_core="${GRPC_CORE_COMMIT}" \
+        -a ci_gitCommit_dotnet="${GRPC_DOTNET_COMMIT}" \
+        -a ci_gitCommit_go="${GRPC_GO_COMMIT}" \
+        -a ci_gitCommit_java="${GRPC_JAVA_COMMIT}" \
         -a ci_gitActualCommit="${KOKORO_GIT_COMMIT}" \
         --prefix="${LOAD_TEST_PREFIX}" -u "${UNIQUE_IDENTIFIER}" -u "${pool}" \
         -a pool="${pool}" --category=scalable \
@@ -100,8 +114,45 @@ buildConfigs() {
         -o "loadtest_with_prebuilt_workers_${pool}.yaml"
 }
 
-buildConfigs "${WORKER_POOL_8CORE}" "${BIGQUERY_TABLE_8CORE}" -l c++ -l dotnet -l go -l java -l php7 -l php7_protobuf_c -l python -l ruby
-buildConfigs "${WORKER_POOL_32CORE}" "${BIGQUERY_TABLE_32CORE}" -l c++ -l dotnet -l go -l java
+# Add languages
+declare -a configLangArgs8core=()
+declare -a configLangArgs32core=()
+declare -a runnerLangArgs=()
+
+# c++
+configLangArgs8core+=( -l c++ )
+configLangArgs32core+=( -l c++ )
+runnerLangArgs+=( -l "cxx:${GRPC_CORE_REPO}:${GRPC_CORE_COMMIT}" )
+
+# dotnet
+configLangArgs8core+=( -l dotnet )
+configLangArgs32core+=( -l dotnet )
+runnerLangArgs+=( -l "dotnet:${GRPC_DOTNET_REPO}:${GRPC_DOTNET_COMMIT}" )
+
+# go
+configLangArgs8core+=( -l go )
+configLangArgs32core+=( -l go )
+runnerLangArgs+=( -l "go:${GRPC_GO_REPO}:${GRPC_GO_COMMIT}" )
+
+# java
+configLangArgs8core+=( -l java )
+configLangArgs32core+=( -l java )
+runnerLangArgs+=( -l "java:${GRPC_JAVA_REPO}:${GRPC_JAVA_COMMIT}" )
+
+# node
+configLangArgs8core+=( -l node )  # 8-core only.
+runnerLangArgs+=( -l "node:${GRPC_NODE_REPO}:${GRPC_NODE_COMMIT}" )
+
+# python
+configLangArgs8core+=( -l python )  # 8-core only.
+runnerLangArgs+=( -l "python:${GRPC_CORE_REPO}:${GRPC_CORE_COMMIT}" )
+
+# ruby
+configLangArgs8core+=( -l ruby )  # 8-core only.
+runnerLangArgs+=( -l "ruby:${GRPC_CORE_REPO}:${GRPC_CORE_COMMIT}" )
+
+buildConfigs "${WORKER_POOL_8CORE}" "${BIGQUERY_TABLE_8CORE}" "${configLangArgs8core[@]}"
+buildConfigs "${WORKER_POOL_32CORE}" "${BIGQUERY_TABLE_32CORE}" "${configLangArgs32core[@]}"
 
 # Delete prebuilt images on exit.
 deleteImages() {
@@ -113,14 +164,7 @@ deleteImages() {
 trap deleteImages EXIT
 
 # Build and push prebuilt images for running tests.
-time ../test-infra/bin/prepare_prebuilt_workers \
-    -l "cxx:${GRPC_CORE_GITREF}" \
-    -l "dotnet:${GRPC_DOTNET_GITREF}" \
-    -l "go:${GRPC_GO_GITREF}" \
-    -l "java:${GRPC_JAVA_GITREF}" \
-    -l "php7:${GRPC_CORE_GITREF}" \
-    -l "python:${GRPC_CORE_GITREF}" \
-    -l "ruby:${GRPC_CORE_GITREF}" \
+time ../test-infra/bin/prepare_prebuilt_workers "${runnerLangArgs[@]}" \
     -p "${PREBUILT_IMAGE_PREFIX}" \
     -t "${UNIQUE_IDENTIFIER}" \
     -r "${ROOT_DIRECTORY_OF_DOCKERFILES}"

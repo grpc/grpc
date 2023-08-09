@@ -20,37 +20,12 @@ package envoy.config.endpoint.v3;
 
 import "src/proto/grpc/testing/xds/v3/address.proto";
 import "src/proto/grpc/testing/xds/v3/base.proto";
+import "src/proto/grpc/testing/xds/v3/health_check.proto";
 import "src/proto/grpc/testing/xds/v3/percent.proto";
 
 import "google/protobuf/wrappers.proto";
 
 // [#protodoc-title: Endpoints]
-
-// Endpoint health status.
-enum HealthStatus {
-  // The health status is not known. This is interpreted by Envoy as *HEALTHY*.
-  UNKNOWN = 0;
-
-  // Healthy.
-  HEALTHY = 1;
-
-  // Unhealthy.
-  UNHEALTHY = 2;
-
-  // Connection draining in progress. E.g.,
-  // `<https://aws.amazon.com/blogs/aws/elb-connection-draining-remove-instances-from-service-with-care/>`_
-  // or
-  // `<https://cloud.google.com/compute/docs/load-balancing/enabling-connection-draining>`_.
-  // This is interpreted by Envoy as *UNHEALTHY*.
-  DRAINING = 3;
-
-  // Health check timed out. This is part of HDS and is interpreted by Envoy as
-  // *UNHEALTHY*.
-  TIMEOUT = 4;
-
-  // Degraded.
-  DEGRADED = 5;
-}
 
 // Upstream host identifier.
 message Endpoint {
@@ -75,7 +50,7 @@ message LbEndpoint {
   }
 
   // Optional health status when known and supplied by EDS server.
-  HealthStatus health_status = 2;
+  core.v3.HealthStatus health_status = 2;
 
   // The optional load balancing weight of the upstream host; at least 1.
   // Envoy uses the load balancing weight in some of the built in load

@@ -12,34 +12,69 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_SLICE_SLICE_REFCOUNT_H
-#define GRPC_CORE_LIB_SLICE_SLICE_REFCOUNT_H
+#ifndef GRPC_SRC_CORE_LIB_SLICE_SLICE_REFCOUNT_H
+#define GRPC_SRC_CORE_LIB_SLICE_SLICE_REFCOUNT_H
 
 #include <grpc/support/port_platform.h>
 
-#include <stdint.h>
+#include <inttypes.h>
+#include <stddef.h>
 
-#include <grpc/slice.h>
+#include <atomic>
 
-#include "src/core/lib/slice/slice_refcount_base.h"
+#include <grpc/support/log.h>
 
-namespace grpc_core {
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/debug_location.h"
 
-extern uint32_t g_hash_seed;
+extern grpc_core::DebugOnlyTraceFlag grpc_slice_refcount_trace;
 
-}  // namespace grpc_core
+// grpc_slice_refcount : A reference count for grpc_slice.
+struct grpc_slice_refcount {
+ public:
+  typedef void (*DestroyerFn)(grpc_slice_refcount*);
 
-inline const grpc_slice& grpc_slice_ref_internal(const grpc_slice& slice) {
-  if (reinterpret_cast<uintptr_t>(slice.refcount) > 1) {
-    slice.refcount->Ref();
+  static grpc_slice_refcount* NoopRefcount() {
+    return reinterpret_cast<grpc_slice_refcount*>(1);
   }
-  return slice;
-}
 
-inline void grpc_slice_unref_internal(const grpc_slice& slice) {
-  if (reinterpret_cast<uintptr_t>(slice.refcount) > 1) {
-    slice.refcount->Unref();
+  grpc_slice_refcount() = default;
+
+  // Regular constructor for grpc_slice_refcount.
+  //
+  // Parameters:
+  //  1. DestroyerFn destroyer_fn
+  //  Called when the refcount goes to 0, with 'this' as parameter.
+  explicit grpc_slice_refcount(DestroyerFn destroyer_fn)
+      : destroyer_fn_(destroyer_fn) {}
+
+  void Ref(grpc_core::DebugLocation location) {
+    auto prev_refs = ref_.fetch_add(1, std::memory_order_relaxed);
+    if (grpc_slice_refcount_trace.enabled()) {
+      gpr_log(location.file(), location.line(), GPR_LOG_SEVERITY_INFO,
+              "REF %p %" PRIdPTR "->%" PRIdPTR, this, prev_refs, prev_refs + 1);
+    }
   }
-}
+  void Unref(grpc_core::DebugLocation location) {
+    auto prev_refs = ref_.fetch_sub(1, std::memory_order_acq_rel);
+    if (grpc_slice_refcount_trace.enabled()) {
+      gpr_log(location.file(), location.line(), GPR_LOG_SEVERITY_INFO,
+              "UNREF %p %" PRIdPTR "->%" PRIdPTR, this, prev_refs,
+              prev_refs - 1);
+    }
+    if (prev_refs == 1) {
+      destroyer_fn_(this);
+    }
+  }
 
-#endif /* GRPC_CORE_LIB_SLICE_SLICE_REFCOUNT_H */
+  // Is this the only instance?
+  // For this to be useful the caller needs to ensure that if this is the only
+  // instance, no other instance could be created during this call.
+  bool IsUnique() const { return ref_.load(std::memory_order_relaxed) == 1; }
+
+ private:
+  std::atomic<size_t> ref_{1};
+  DestroyerFn destroyer_fn_ = nullptr;
+};
+
+#endif  // GRPC_SRC_CORE_LIB_SLICE_SLICE_REFCOUNT_H

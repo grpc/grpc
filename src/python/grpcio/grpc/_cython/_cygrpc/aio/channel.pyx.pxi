@@ -44,9 +44,11 @@ cdef class AioChannel:
             grpc_channel_credentials_release(creds)
         else:
             self._is_secure = True
+            creds = <grpc_channel_credentials *> credentials.c()
             self.channel = grpc_channel_create(<char *>target,
-                <grpc_channel_credentials *> credentials.c(),
+                creds,
                 channel_args.c_args())
+            grpc_channel_credentials_release(creds)
 
     def __dealloc__(self):
         shutdown_grpc_aio()

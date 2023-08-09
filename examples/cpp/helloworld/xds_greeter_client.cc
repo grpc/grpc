@@ -80,10 +80,10 @@ class GreeterClient {
 int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
   GreeterClient greeter(grpc::CreateChannel(
-      absl::GetFlag(FLAGS_target), absl::GetFlag(FLAGS_secure)
-                                       ? grpc::experimental::XdsCredentials(
-                                             grpc::InsecureChannelCredentials())
-                                       : grpc::InsecureChannelCredentials()));
+      absl::GetFlag(FLAGS_target),
+      absl::GetFlag(FLAGS_secure)
+          ? grpc::XdsCredentials(grpc::InsecureChannelCredentials())
+          : grpc::InsecureChannelCredentials()));
   std::string user("world");
   std::string reply = greeter.SayHello(user);
   std::cout << "Greeter received: " << reply << std::endl;

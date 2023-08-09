@@ -21,6 +21,7 @@ package envoy.config.route.v3;
 import "src/proto/grpc/testing/xds/v3/base.proto";
 import "src/proto/grpc/testing/xds/v3/extension.proto";
 import "src/proto/grpc/testing/xds/v3/regex.proto";
+import "src/proto/grpc/testing/xds/v3/string.proto";
 import "src/proto/grpc/testing/xds/v3/percent.proto";
 import "src/proto/grpc/testing/xds/v3/range.proto";
 
@@ -188,6 +189,8 @@ message RouteMatch {
     // on :path, etc. The issue with that is it is unclear how to generically deal with query string
     // stripping. This needs more thought.]
     type.matcher.v3.RegexMatcher safe_regex = 10;
+
+    string path_separated_prefix = 14;
   }
 
   // Indicates that prefix/path matching should be case insensitive. The default
@@ -426,6 +429,10 @@ message HeaderMatcher {
     //
     // * The suffix *abcd* matches the value *xyzabcd*, but not for *xyzbcd*.
     string suffix_match = 10;
+
+    string contains_match = 12;
+
+    type.matcher.v3.StringMatcher string_match = 13;
   }
 
   // If specified, the match result will be inverted before checking. Defaults to false.

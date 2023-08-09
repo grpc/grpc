@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/* Benchmark ChannelArgs comparison performance between grpc_channel_args and
- * grpc_core::ChannelArgs */
+// Benchmark ChannelArgs comparison performance between grpc_channel_args and
+// grpc_core::ChannelArgs
 
 #include <random>
 

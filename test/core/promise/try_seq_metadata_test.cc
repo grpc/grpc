@@ -14,7 +14,6 @@
 
 #include <memory>
 
-#include "absl/types/variant.h"
 #include "gtest/gtest.h"
 
 #include <grpc/event_engine/memory_allocator.h>
@@ -30,15 +29,14 @@
 
 namespace grpc_core {
 
-static auto* g_memory_allocator = new MemoryAllocator(
-    ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
-
 struct TestMap : public MetadataMap<TestMap, GrpcStatusMetadata> {
   using MetadataMap<TestMap, GrpcStatusMetadata>::MetadataMap;
 };
 
 TEST(PromiseTest, SucceedAndThenFail) {
-  auto arena = MakeScopedArena(1024, g_memory_allocator);
+  MemoryAllocator memory_allocator = MemoryAllocator(
+      ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
+  auto arena = MakeScopedArena(1024, &memory_allocator);
   Poll<TestMap> r = TrySeq(
       [&arena] {
         TestMap m(arena.get());
@@ -50,8 +48,7 @@ TEST(PromiseTest, SucceedAndThenFail) {
         m.Set(GrpcStatusMetadata(), GRPC_STATUS_UNAVAILABLE);
         return m;
       })();
-  EXPECT_EQ(absl::get<TestMap>(r).get(GrpcStatusMetadata()),
-            GRPC_STATUS_UNAVAILABLE);
+  EXPECT_EQ(r.value().get(GrpcStatusMetadata()), GRPC_STATUS_UNAVAILABLE);
 }
 
 }  // namespace grpc_core

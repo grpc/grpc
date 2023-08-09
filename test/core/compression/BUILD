@@ -14,7 +14,6 @@
 
 load(
     "//bazel:grpc_build_system.bzl",
-    "grpc_cc_library",
     "grpc_cc_test",
     "grpc_package",
 )
@@ -24,15 +23,6 @@ grpc_package(name = "test/core/compression")
 
 licenses(["notice"])
 
-grpc_cc_library(
-    name = "args_utils",
-    testonly = 1,
-    srcs = ["args_utils.cc"],
-    hdrs = ["args_utils.h"],
-    visibility = ["//visibility:public"],
-    deps = ["//:grpc"],
-)
-
 grpc_cc_test(
     name = "compression_test",
     srcs = ["compression_test.cc"],
@@ -41,9 +31,9 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        ":args_utils",
         "//:gpr",
         "//:grpc",
+        "//src/core:channel_args",
         "//test/core/util:grpc_test_util",
     ],
 )

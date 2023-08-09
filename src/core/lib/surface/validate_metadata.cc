@@ -1,64 +1,38 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/surface/validate_metadata.h"
 
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/grpc.h>
 
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/bitset.h"
-#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/slice/slice_internal.h"
 
-static grpc_error_handle conforms_to(const grpc_slice& slice,
-                                     const grpc_core::BitSet<256>& legal_bits,
-                                     const char* err_desc) {
-  const uint8_t* p = GRPC_SLICE_START_PTR(slice);
-  const uint8_t* e = GRPC_SLICE_END_PTR(slice);
-  for (; p != e; p++) {
-    if (!legal_bits.is_set(*p)) {
-      size_t len;
-      grpc_core::UniquePtr<char> ptr(gpr_dump_return_len(
-          reinterpret_cast<const char*> GRPC_SLICE_START_PTR(slice),
-          GRPC_SLICE_LENGTH(slice), GPR_DUMP_HEX | GPR_DUMP_ASCII, &len));
-      grpc_error_handle error = grpc_error_set_str(
-          grpc_error_set_int(GRPC_ERROR_CREATE_FROM_COPIED_STRING(err_desc),
-                             GRPC_ERROR_INT_OFFSET,
-                             p - GRPC_SLICE_START_PTR(slice)),
-          GRPC_ERROR_STR_RAW_BYTES, absl::string_view(ptr.get(), len));
-      return error;
-    }
-  }
-  return GRPC_ERROR_NONE;
-}
-
-static int error2int(grpc_error_handle error) {
-  int r = (GRPC_ERROR_IS_NONE(error));
-  GRPC_ERROR_UNREF(error);
-  return r;
-}
+namespace grpc_core {
 
 namespace {
-class LegalHeaderKeyBits : public grpc_core::BitSet<256> {
+class LegalHeaderKeyBits : public BitSet<256> {
  public:
   constexpr LegalHeaderKeyBits() {
     for (int i = 'a'; i <= 'z'; i++) set(i);
@@ -69,22 +43,62 @@ class LegalHeaderKeyBits : public grpc_core::BitSet<256> {
   }
 };
 constexpr LegalHeaderKeyBits g_legal_header_key_bits;
+
+ValidateMetadataResult ConformsTo(absl::string_view x,
+                                  const BitSet<256>& legal_bits,
+                                  ValidateMetadataResult error) {
+  for (uint8_t c : x) {
+    if (!legal_bits.is_set(c)) {
+      return error;
+    }
+  }
+  return ValidateMetadataResult::kOk;
+}
+
+absl::Status UpgradeToStatus(ValidateMetadataResult result) {
+  if (result == ValidateMetadataResult::kOk) return absl::OkStatus();
+  return absl::InternalError(ValidateMetadataResultToString(result));
+}
+
 }  // namespace
 
+ValidateMetadataResult ValidateHeaderKeyIsLegal(absl::string_view key) {
+  if (key.empty()) {
+    return ValidateMetadataResult::kCannotBeZeroLength;
+  }
+  if (key.size() > UINT32_MAX) {
+    return ValidateMetadataResult::kTooLong;
+  }
+  return ConformsTo(key, g_legal_header_key_bits,
+                    ValidateMetadataResult::kIllegalHeaderKey);
+}
+
+const char* ValidateMetadataResultToString(ValidateMetadataResult result) {
+  switch (result) {
+    case ValidateMetadataResult::kOk:
+      return "Ok";
+    case ValidateMetadataResult::kCannotBeZeroLength:
+      return "Metadata keys cannot be zero length";
+    case ValidateMetadataResult::kTooLong:
+      return "Metadata keys cannot be larger than UINT32_MAX";
+    case ValidateMetadataResult::kIllegalHeaderKey:
+      return "Illegal header key";
+    case ValidateMetadataResult::kIllegalHeaderValue:
+      return "Illegal header value";
+  }
+  GPR_UNREACHABLE_CODE(return "Unknown");
+}
+
+}  // namespace grpc_core
+
+static int error2int(grpc_error_handle error) {
+  int r = (error.ok());
+  return r;
+}
+
 grpc_error_handle grpc_validate_header_key_is_legal(const grpc_slice& slice) {
-  if (GRPC_SLICE_LENGTH(slice) == 0) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Metadata keys cannot be zero length");
-  }
-  if (GRPC_SLICE_LENGTH(slice) > UINT32_MAX) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Metadata keys cannot be larger than UINT32_MAX");
-  }
-  if (GRPC_SLICE_START_PTR(slice)[0] == ':') {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Metadata keys cannot start with :");
-  }
-  return conforms_to(slice, g_legal_header_key_bits, "Illegal header key");
+  return grpc_core::UpgradeToStatus(grpc_core::ValidateHeaderKeyIsLegal(
+      grpc_core::StringViewFromSlice(slice)));
 }
 
 int grpc_header_key_is_legal(grpc_slice slice) {
@@ -105,8 +119,9 @@ constexpr LegalHeaderNonBinValueBits g_legal_header_non_bin_value_bits;
 
 grpc_error_handle grpc_validate_header_nonbin_value_is_legal(
     const grpc_slice& slice) {
-  return conforms_to(slice, g_legal_header_non_bin_value_bits,
-                     "Illegal header value");
+  return grpc_core::UpgradeToStatus(grpc_core::ConformsTo(
+      grpc_core::StringViewFromSlice(slice), g_legal_header_non_bin_value_bits,
+      grpc_core::ValidateMetadataResult::kIllegalHeaderValue));
 }
 
 int grpc_header_nonbin_value_is_legal(grpc_slice slice) {

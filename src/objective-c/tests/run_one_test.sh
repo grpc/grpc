@@ -22,7 +22,7 @@ cd $(dirname $0)
 
 BAZEL=../../../tools/bazel
 
-INTEROP=../../../bazel-out/darwin-fastbuild/bin/test/cpp/interop/interop_server
+INTEROP=../../../bazel-bin/test/cpp/interop/interop_server
 
 [ -d Tests.xcworkspace ] || {
     ./build_tests.sh
@@ -45,21 +45,7 @@ TLS_PORT=$(curl localhost:32766/get)
 $INTEROP --port=$PLAIN_PORT --max_send_message_size=8388608 &
 $INTEROP --port=$TLS_PORT --max_send_message_size=8388608 --use_tls &
 
-# Create loopback aliases for iOS performance tests
-if [ $SCHEME == PerfTests ] || [ $SCHEME == PerfTestsPosix ]; then
-for ((i=2;i<11;i++))
-do
-    sudo ifconfig lo0 alias 127.0.0.$i up
-done
-fi
-
 function finish {
-    if [ $SCHEME == PerfTests ] || [ $SCHEME == PerfTestsPosix ]; then
-    for ((i=2;i<11;i++))
-    do
-        sudo ifconfig lo0 -alias 127.0.0.$i
-    done
-    fi
     kill -9 `jobs -p`
     echo "EXIT TIME:  $(date)"
 }
@@ -68,14 +54,18 @@ trap finish EXIT
 set -o pipefail  # preserve xcodebuild exit code when piping output
 
 if [ -z $PLATFORM ]; then
-DESTINATION='name=iPhone 8'
+DESTINATION='platform=iOS Simulator,name=iPhone 11'
 elif [ $PLATFORM == ios ]; then
-DESTINATION='name=iPhone 8'
+DESTINATION='platform=iOS Simulator,name=iPhone 11'
 elif [ $PLATFORM == macos ]; then
 DESTINATION='platform=macOS'
 elif [ $PLATFORM == tvos ]; then
 DESTINATION='platform=tvOS Simulator,name=Apple TV'
 fi
+
+XCODEBUILD_FLAGS="
+  IPHONEOS_DEPLOYMENT_TARGET=10
+"
 
 XCODEBUILD_FILTER_OUTPUT_SCRIPT="./xcodebuild_filter_output.sh"
 
@@ -89,4 +79,6 @@ time xcodebuild \
     -scheme $SCHEME \
     -destination "${DESTINATION}" \
     GCC_PREPROCESSOR_DEFINITIONS='$GCC_PREPROCESSOR_DEFINITIONS'" $TEST_DEFS" \
-    test | "${XCODEBUILD_FILTER_OUTPUT_SCRIPT}"
+    test \
+    "${XCODEBUILD_FLAGS}" \
+    | "${XCODEBUILD_FILTER_OUTPUT_SCRIPT}"

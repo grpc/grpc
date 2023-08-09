@@ -23,107 +23,99 @@
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
-#include "absl/status/status.h"
+#include "absl/types/variant.h"
 #include "envoy/extensions/filters/http/router/v3/router.upb.h"
 #include "envoy/extensions/filters/http/router/v3/router.upbdefs.h"
 
+#include <grpc/support/log.h>
+
+#include "src/core/ext/xds/xds_cluster.h"
 #include "src/core/ext/xds/xds_http_fault_filter.h"
 #include "src/core/ext/xds/xds_http_rbac_filter.h"
+#include "src/core/ext/xds/xds_http_stateful_session_filter.h"
 
 namespace grpc_core {
 
-const char* kXdsHttpRouterFilterConfigName =
-    "envoy.extensions.filters.http.router.v3.Router";
+//
+// XdsHttpRouterFilter
+//
 
-namespace {
+absl::string_view XdsHttpRouterFilter::ConfigProtoName() const {
+  return "envoy.extensions.filters.http.router.v3.Router";
+}
 
-class XdsHttpRouterFilter : public XdsHttpFilterImpl {
- public:
-  void PopulateSymtab(upb_DefPool* symtab) const override {
-    envoy_extensions_filters_http_router_v3_Router_getmsgdef(symtab);
+absl::string_view XdsHttpRouterFilter::OverrideConfigProtoName() const {
+  return "";
+}
+
+void XdsHttpRouterFilter::PopulateSymtab(upb_DefPool* symtab) const {
+  envoy_extensions_filters_http_router_v3_Router_getmsgdef(symtab);
+}
+
+absl::optional<XdsHttpFilterImpl::FilterConfig>
+XdsHttpRouterFilter::GenerateFilterConfig(
+    const XdsResourceType::DecodeContext& context, XdsExtension extension,
+    ValidationErrors* errors) const {
+  absl::string_view* serialized_filter_config =
+      absl::get_if<absl::string_view>(&extension.value);
+  if (serialized_filter_config == nullptr) {
+    errors->AddError("could not parse router filter config");
+    return absl::nullopt;
   }
+  if (envoy_extensions_filters_http_router_v3_Router_parse(
+          serialized_filter_config->data(), serialized_filter_config->size(),
+          context.arena) == nullptr) {
+    errors->AddError("could not parse router filter config");
+    return absl::nullopt;
+  }
+  return FilterConfig{ConfigProtoName(), Json()};
+}
 
-  absl::StatusOr<FilterConfig> GenerateFilterConfig(
-      upb_StringView serialized_filter_config,
-      upb_Arena* arena) const override {
-    if (envoy_extensions_filters_http_router_v3_Router_parse(
-            serialized_filter_config.data, serialized_filter_config.size,
-            arena) == nullptr) {
-      return absl::InvalidArgumentError("could not parse router filter config");
+absl::optional<XdsHttpFilterImpl::FilterConfig>
+XdsHttpRouterFilter::GenerateFilterConfigOverride(
+    const XdsResourceType::DecodeContext& /*context*/,
+    XdsExtension /*extension*/, ValidationErrors* errors) const {
+  errors->AddError("router filter does not support config override");
+  return absl::nullopt;
+}
+
+//
+// XdsHttpFilterRegistry
+//
+
+XdsHttpFilterRegistry::XdsHttpFilterRegistry(bool register_builtins) {
+  if (register_builtins) {
+    RegisterFilter(std::make_unique<XdsHttpRouterFilter>());
+    RegisterFilter(std::make_unique<XdsHttpFaultFilter>());
+    RegisterFilter(std::make_unique<XdsHttpRbacFilter>());
+    if (XdsOverrideHostEnabled()) {
+      RegisterFilter(std::make_unique<XdsHttpStatefulSessionFilter>());
     }
-    return FilterConfig{kXdsHttpRouterFilterConfigName, Json()};
   }
-
-  absl::StatusOr<FilterConfig> GenerateFilterConfigOverride(
-      upb_StringView /*serialized_filter_config*/,
-      upb_Arena* /*arena*/) const override {
-    return absl::InvalidArgumentError(
-        "router filter does not support config override");
-  }
-
-  const grpc_channel_filter* channel_filter() const override { return nullptr; }
-
-  // No-op.  This will never be called, since channel_filter() returns null.
-  absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(
-      const FilterConfig& /*hcm_filter_config*/,
-      const FilterConfig* /*filter_config_override*/) const override {
-    return absl::UnimplementedError("router filter should never be called");
-  }
-
-  bool IsSupportedOnClients() const override { return true; }
-
-  bool IsSupportedOnServers() const override { return true; }
-
-  bool IsTerminalFilter() const override { return true; }
-};
-
-using FilterOwnerList = std::vector<std::unique_ptr<XdsHttpFilterImpl>>;
-using FilterRegistryMap = std::map<absl::string_view, XdsHttpFilterImpl*>;
-
-FilterOwnerList* g_filters = nullptr;
-FilterRegistryMap* g_filter_registry = nullptr;
-
-}  // namespace
+}
 
 void XdsHttpFilterRegistry::RegisterFilter(
-    std::unique_ptr<XdsHttpFilterImpl> filter,
-    const std::set<absl::string_view>& config_proto_type_names) {
-  for (auto config_proto_type_name : config_proto_type_names) {
-    (*g_filter_registry)[config_proto_type_name] = filter.get();
+    std::unique_ptr<XdsHttpFilterImpl> filter) {
+  GPR_ASSERT(
+      registry_map_.emplace(filter->ConfigProtoName(), filter.get()).second);
+  auto override_proto_name = filter->OverrideConfigProtoName();
+  if (!override_proto_name.empty()) {
+    GPR_ASSERT(registry_map_.emplace(override_proto_name, filter.get()).second);
   }
-  g_filters->push_back(std::move(filter));
+  owning_list_.push_back(std::move(filter));
 }
 
 const XdsHttpFilterImpl* XdsHttpFilterRegistry::GetFilterForType(
-    absl::string_view proto_type_name) {
-  auto it = g_filter_registry->find(proto_type_name);
-  if (it == g_filter_registry->end()) return nullptr;
+    absl::string_view proto_type_name) const {
+  auto it = registry_map_.find(proto_type_name);
+  if (it == registry_map_.end()) return nullptr;
   return it->second;
 }
 
-void XdsHttpFilterRegistry::PopulateSymtab(upb_DefPool* symtab) {
-  for (const auto& filter : *g_filters) {
+void XdsHttpFilterRegistry::PopulateSymtab(upb_DefPool* symtab) const {
+  for (const auto& filter : owning_list_) {
     filter->PopulateSymtab(symtab);
   }
-}
-
-void XdsHttpFilterRegistry::Init() {
-  g_filters = new FilterOwnerList;
-  g_filter_registry = new FilterRegistryMap;
-  RegisterFilter(absl::make_unique<XdsHttpRouterFilter>(),
-                 {kXdsHttpRouterFilterConfigName});
-  RegisterFilter(absl::make_unique<XdsHttpFaultFilter>(),
-                 {kXdsHttpFaultFilterConfigName});
-  RegisterFilter(absl::make_unique<XdsHttpRbacFilter>(),
-                 {kXdsHttpRbacFilterConfigName});
-  RegisterFilter(absl::make_unique<XdsHttpRbacFilter>(),
-                 {kXdsHttpRbacFilterConfigOverrideName});
-}
-
-void XdsHttpFilterRegistry::Shutdown() {
-  delete g_filter_registry;
-  delete g_filters;
 }
 
 }  // namespace grpc_core

@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -22,16 +22,14 @@
 
 #include <inttypes.h>
 
-#include <google/protobuf/duration.pb.h>
 #include <google/protobuf/repeated_ptr_field.h>
 
-#include "absl/memory/memory.h"
-
-#include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/support/time.h>
 #include <grpcpp/support/status.h>
 
 #include "src/cpp/server/load_reporter/constants.h"
+
+// IWYU pragma: no_include "google/protobuf/duration.pb.h"
 
 namespace grpc {
 namespace load_reporter {
@@ -46,12 +44,12 @@ LoadReporterAsyncServiceImpl::LoadReporterAsyncServiceImpl(
     std::unique_ptr<ServerCompletionQueue> cq)
     : cq_(std::move(cq)) {
   thread_ =
-      absl::make_unique<grpc_core::Thread>("server_load_reporting", Work, this);
+      std::make_unique<grpc_core::Thread>("server_load_reporting", Work, this);
   std::unique_ptr<CpuStatsProvider> cpu_stats_provider = nullptr;
 #if defined(GPR_LINUX) || defined(GPR_WINDOWS) || defined(GPR_APPLE)
-  cpu_stats_provider = absl::make_unique<CpuStatsProviderDefaultImpl>();
+  cpu_stats_provider = std::make_unique<CpuStatsProviderDefaultImpl>();
 #endif
-  load_reporter_ = absl::make_unique<LoadReporter>(
+  load_reporter_ = std::make_unique<LoadReporter>(
       kFeedbackSampleWindowSeconds,
       std::unique_ptr<CensusViewProvider>(new CensusViewProviderDefaultImpl()),
       std::move(cpu_stats_provider));
@@ -80,7 +78,7 @@ void LoadReporterAsyncServiceImpl::ScheduleNextFetchAndSample() {
     if (shutdown_) return;
     // TODO(juanlishen): Improve the Alarm implementation to reuse a single
     // instance for multiple events.
-    next_fetch_and_sample_alarm_ = absl::make_unique<Alarm>();
+    next_fetch_and_sample_alarm_ = std::make_unique<Alarm>();
     next_fetch_and_sample_alarm_->Set(cq_.get(), next_fetch_and_sample_time,
                                       this);
   }
@@ -280,7 +278,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::ScheduleNextReport(
                     std::move(self));
     // TODO(juanlishen): Improve the Alarm implementation to reuse a single
     // instance for multiple events.
-    next_report_alarm_ = absl::make_unique<Alarm>();
+    next_report_alarm_ = std::make_unique<Alarm>();
     next_report_alarm_->Set(cq_, next_report_time, &next_outbound_);
   }
   gpr_log(GPR_DEBUG,

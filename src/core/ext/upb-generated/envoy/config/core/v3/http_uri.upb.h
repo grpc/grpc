@@ -9,34 +9,38 @@
 #ifndef ENVOY_CONFIG_CORE_V3_HTTP_URI_PROTO_UPB_H_
 #define ENVOY_CONFIG_CORE_V3_HTTP_URI_PROTO_UPB_H_
 
-#include "upb/msg_internal.h"
-#include "upb/decode.h"
-#include "upb/decode_fast.h"
-#include "upb/encode.h"
+#include "upb/collections/array_internal.h"
+#include "upb/collections/map_gencode_util.h"
+#include "upb/message/accessors.h"
+#include "upb/message/internal.h"
+#include "upb/mini_table/enum_internal.h"
+#include "upb/wire/decode.h"
+#include "upb/wire/decode_fast.h"
+#include "upb/wire/encode.h"
 
-#include "upb/port_def.inc"
+// Must be last. 
+#include "upb/port/def.inc"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-struct envoy_config_core_v3_HttpUri;
 typedef struct envoy_config_core_v3_HttpUri envoy_config_core_v3_HttpUri;
-extern const upb_MiniTable envoy_config_core_v3_HttpUri_msginit;
+extern const upb_MiniTable envoy_config_core_v3_HttpUri_msg_init;
 struct google_protobuf_Duration;
-extern const upb_MiniTable google_protobuf_Duration_msginit;
+extern const upb_MiniTable google_protobuf_Duration_msg_init;
 
 
 
 /* envoy.config.core.v3.HttpUri */
 
 UPB_INLINE envoy_config_core_v3_HttpUri* envoy_config_core_v3_HttpUri_new(upb_Arena* arena) {
-  return (envoy_config_core_v3_HttpUri*)_upb_Message_New(&envoy_config_core_v3_HttpUri_msginit, arena);
+  return (envoy_config_core_v3_HttpUri*)_upb_Message_New(&envoy_config_core_v3_HttpUri_msg_init, arena);
 }
 UPB_INLINE envoy_config_core_v3_HttpUri* envoy_config_core_v3_HttpUri_parse(const char* buf, size_t size, upb_Arena* arena) {
   envoy_config_core_v3_HttpUri* ret = envoy_config_core_v3_HttpUri_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &envoy_config_core_v3_HttpUri_msginit, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
+  if (upb_Decode(buf, size, ret, &envoy_config_core_v3_HttpUri_msg_init, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
@@ -46,7 +50,7 @@ UPB_INLINE envoy_config_core_v3_HttpUri* envoy_config_core_v3_HttpUri_parse_ex(c
                            int options, upb_Arena* arena) {
   envoy_config_core_v3_HttpUri* ret = envoy_config_core_v3_HttpUri_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, ret, &envoy_config_core_v3_HttpUri_msginit, extreg, options, arena) !=
+  if (upb_Decode(buf, size, ret, &envoy_config_core_v3_HttpUri_msg_init, extreg, options, arena) !=
       kUpb_DecodeStatus_Ok) {
     return NULL;
   }
@@ -54,13 +58,13 @@ UPB_INLINE envoy_config_core_v3_HttpUri* envoy_config_core_v3_HttpUri_parse_ex(c
 }
 UPB_INLINE char* envoy_config_core_v3_HttpUri_serialize(const envoy_config_core_v3_HttpUri* msg, upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &envoy_config_core_v3_HttpUri_msginit, 0, arena, &ptr, len);
+  (void)upb_Encode(msg, &envoy_config_core_v3_HttpUri_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
 UPB_INLINE char* envoy_config_core_v3_HttpUri_serialize_ex(const envoy_config_core_v3_HttpUri* msg, int options,
                                  upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(msg, &envoy_config_core_v3_HttpUri_msginit, options, arena, &ptr, len);
+  (void)upb_Encode(msg, &envoy_config_core_v3_HttpUri_msg_init, options, arena, &ptr, len);
   return ptr;
 }
 typedef enum {
@@ -68,59 +72,78 @@ typedef enum {
   envoy_config_core_v3_HttpUri_http_upstream_type_NOT_SET = 0
 } envoy_config_core_v3_HttpUri_http_upstream_type_oneofcases;
 UPB_INLINE envoy_config_core_v3_HttpUri_http_upstream_type_oneofcases envoy_config_core_v3_HttpUri_http_upstream_type_case(const envoy_config_core_v3_HttpUri* msg) {
-  return (envoy_config_core_v3_HttpUri_http_upstream_type_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t);
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 8), -5, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  return (envoy_config_core_v3_HttpUri_http_upstream_type_oneofcases)upb_Message_WhichOneofFieldNumber(msg, &field);
 }
-UPB_INLINE void envoy_config_core_v3_HttpUri_clear_uri(const envoy_config_core_v3_HttpUri* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(16, 24), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
+UPB_INLINE void envoy_config_core_v3_HttpUri_clear_uri(envoy_config_core_v3_HttpUri* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(20, 24), 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE upb_StringView envoy_config_core_v3_HttpUri_uri(const envoy_config_core_v3_HttpUri* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(16, 24), upb_StringView);
+  upb_StringView default_val = upb_StringView_FromString("");
+  upb_StringView ret;
+  const upb_MiniTableField field = {1, UPB_SIZE(20, 24), 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool envoy_config_core_v3_HttpUri_has_cluster(const envoy_config_core_v3_HttpUri* msg) {
-  return _upb_getoneofcase(msg, UPB_SIZE(4, 4)) == 2;
-}
-UPB_INLINE void envoy_config_core_v3_HttpUri_clear_cluster(const envoy_config_core_v3_HttpUri* msg) {
-  UPB_WRITE_ONEOF(msg, upb_StringView, UPB_SIZE(8, 8), upb_StringView_FromDataAndSize(NULL, 0), UPB_SIZE(4, 4), envoy_config_core_v3_HttpUri_http_upstream_type_NOT_SET);
+UPB_INLINE void envoy_config_core_v3_HttpUri_clear_cluster(envoy_config_core_v3_HttpUri* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 8), -5, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE upb_StringView envoy_config_core_v3_HttpUri_cluster(const envoy_config_core_v3_HttpUri* msg) {
-  return UPB_READ_ONEOF(msg, upb_StringView, UPB_SIZE(8, 8), UPB_SIZE(4, 4), 2, upb_StringView_FromString(""));
+  upb_StringView default_val = upb_StringView_FromString("");
+  upb_StringView ret;
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 8), -5, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
 }
-UPB_INLINE bool envoy_config_core_v3_HttpUri_has_timeout(const envoy_config_core_v3_HttpUri* msg) {
-  return _upb_hasbit(msg, 1);
+UPB_INLINE bool envoy_config_core_v3_HttpUri_has_cluster(const envoy_config_core_v3_HttpUri* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 8), -5, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
-UPB_INLINE void envoy_config_core_v3_HttpUri_clear_timeout(const envoy_config_core_v3_HttpUri* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(24, 40), const upb_Message*) = NULL;
+UPB_INLINE void envoy_config_core_v3_HttpUri_clear_timeout(envoy_config_core_v3_HttpUri* msg) {
+  const upb_MiniTableField field = {3, UPB_SIZE(8, 40), 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const struct google_protobuf_Duration* envoy_config_core_v3_HttpUri_timeout(const envoy_config_core_v3_HttpUri* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(24, 40), const struct google_protobuf_Duration*);
+  const struct google_protobuf_Duration* default_val = NULL;
+  const struct google_protobuf_Duration* ret;
+  const upb_MiniTableField field = {3, UPB_SIZE(8, 40), 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
+}
+UPB_INLINE bool envoy_config_core_v3_HttpUri_has_timeout(const envoy_config_core_v3_HttpUri* msg) {
+  const upb_MiniTableField field = {3, UPB_SIZE(8, 40), 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
 
 UPB_INLINE void envoy_config_core_v3_HttpUri_set_uri(envoy_config_core_v3_HttpUri *msg, upb_StringView value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(16, 24), upb_StringView) = value;
+  const upb_MiniTableField field = {1, UPB_SIZE(20, 24), 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void envoy_config_core_v3_HttpUri_set_cluster(envoy_config_core_v3_HttpUri *msg, upb_StringView value) {
-  UPB_WRITE_ONEOF(msg, upb_StringView, UPB_SIZE(8, 8), value, UPB_SIZE(4, 4), 2);
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 8), -5, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void envoy_config_core_v3_HttpUri_set_timeout(envoy_config_core_v3_HttpUri *msg, struct google_protobuf_Duration* value) {
-  _upb_sethas(msg, 1);
-  *UPB_PTR_AT(msg, UPB_SIZE(24, 40), struct google_protobuf_Duration*) = value;
+  const upb_MiniTableField field = {3, UPB_SIZE(8, 40), 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Duration* envoy_config_core_v3_HttpUri_mutable_timeout(envoy_config_core_v3_HttpUri* msg, upb_Arena* arena) {
   struct google_protobuf_Duration* sub = (struct google_protobuf_Duration*)envoy_config_core_v3_HttpUri_timeout(msg);
   if (sub == NULL) {
-    sub = (struct google_protobuf_Duration*)_upb_Message_New(&google_protobuf_Duration_msginit, arena);
-    if (!sub) return NULL;
-    envoy_config_core_v3_HttpUri_set_timeout(msg, sub);
+    sub = (struct google_protobuf_Duration*)_upb_Message_New(&google_protobuf_Duration_msg_init, arena);
+    if (sub) envoy_config_core_v3_HttpUri_set_timeout(msg, sub);
   }
   return sub;
 }
 
-extern const upb_MiniTable_File envoy_config_core_v3_http_uri_proto_upb_file_layout;
+extern const upb_MiniTableFile envoy_config_core_v3_http_uri_proto_upb_file_layout;
 
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif
 
-#include "upb/port_undef.inc"
+#include "upb/port/undef.inc"
 
 #endif  /* ENVOY_CONFIG_CORE_V3_HTTP_URI_PROTO_UPB_H_ */

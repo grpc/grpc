@@ -17,7 +17,14 @@
   FROM golang:latest
   
   <%include file="../../go_path.include"/>
-  <%include file="../../python_deps.include"/>
+
+  # Dependencies to run http2_test_server.py
+  RUN apt-get update && apt-get install -y python3-all-dev python3-pip
+  # pip packages needed to run http2_test_server.py
+  # TODO(jtattermusch): revisit which pip packages are actually needed to run http2 interop server/client
+  RUN python3 -m pip install --upgrade pip==19.3.1
+  RUN python3 -m pip install futures==3.1.1 enum34==1.1.10 protobuf==3.5.2.post1 six==1.16.0
+
   RUN python3 -m pip install twisted h2==2.6.1 hyper
 
   # Define the default command.

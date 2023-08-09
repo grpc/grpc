@@ -32,7 +32,7 @@
 #include "python/descriptor.h"
 #include "python/message.h"
 #include "python/protobuf.h"
-#include "upb/def.h"
+#include "upb/reflection/def.h"
 #include "upb/util/def_to_proto.h"
 
 // -----------------------------------------------------------------------------
@@ -45,7 +45,7 @@ typedef struct {
   PyObject* db;  // The DescriptorDatabase underlying this pool.  May be NULL.
 } PyUpb_DescriptorPool;
 
-PyObject* PyUpb_DescriptorPool_GetDefaultPool() {
+PyObject* PyUpb_DescriptorPool_GetDefaultPool(void) {
   PyUpb_ModuleState* s = PyUpb_ModuleState_Get();
   return s->default_pool;
 }
@@ -218,8 +218,7 @@ static PyObject* PyUpb_DescriptorPool_DoAddSerializedFile(
     }
     const upb_MessageDef* m = PyUpb_DescriptorPool_GetFileProtoDef();
     if (upb_Message_IsEqual(proto, existing, m)) {
-      Py_INCREF(Py_None);
-      result = Py_None;
+      result = PyUpb_FileDescriptor_Get(file);
       goto done;
     }
   }

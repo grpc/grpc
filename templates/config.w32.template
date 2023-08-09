@@ -37,6 +37,7 @@
       "/I"+configure_module_dirname+"\\third_party\\boringssl-with-bazel\\src\\include "+
       "/I"+configure_module_dirname+"\\third_party\\re2 "+
       "/I"+configure_module_dirname+"\\third_party\\upb "+
+      "/I"+configure_module_dirname+"\\third_party\\utf8_range "+
       "/I"+configure_module_dirname+"\\third_party\\xxhash "+
       "/I"+configure_module_dirname+"\\third_party\\zlib ");
   <%

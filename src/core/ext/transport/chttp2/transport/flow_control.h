@@ -1,26 +1,27 @@
-/*
- *
- * Copyright 2017 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2017 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-#ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FLOW_CONTROL_H
-#define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FLOW_CONTROL_H
+#ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FLOW_CONTROL_H
+#define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FLOW_CONTROL_H
 
 #include <grpc/support/port_platform.h>
 
+#include <limits.h>
 #include <stdint.h>
 
 #include <iosfwd>
@@ -29,6 +30,7 @@
 
 #include "absl/functional/function_ref.h"
 #include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
 #include <grpc/support/log.h>
@@ -59,6 +61,7 @@ static constexpr uint32_t kMinPositiveInitialWindowSize = 1024;
 static constexpr const uint32_t kMaxInitialWindowSize = (1u << 30);
 // The maximum per-stream flow control window delta to advertise.
 static constexpr const int64_t kMaxWindowDelta = (1u << 20);
+static constexpr const int kDefaultPreferredRxCryptoFrameSize = INT_MAX;
 
 // TODO(ctiller): clean up when flow_control_fixes is enabled by default
 static constexpr uint32_t kFrameSize = 1024 * 1024;
@@ -72,7 +75,7 @@ enum class StallEdge { kNoChange, kStalled, kUnstalled };
 // Encapsulates a collections of actions the transport needs to take with
 // regard to flow control. Each action comes with urgencies that tell the
 // transport how quickly the action must take place.
-class FlowControlAction {
+class GRPC_MUST_USE_RESULT FlowControlAction {
  public:
   enum class Urgency : uint8_t {
     // Nothing to be done.
@@ -92,8 +95,14 @@ class FlowControlAction {
   Urgency send_max_frame_size_update() const {
     return send_max_frame_size_update_;
   }
+  Urgency preferred_rx_crypto_frame_size_update() const {
+    return preferred_rx_crypto_frame_size_update_;
+  }
   uint32_t initial_window_size() const { return initial_window_size_; }
   uint32_t max_frame_size() const { return max_frame_size_; }
+  uint32_t preferred_rx_crypto_frame_size() const {
+    return preferred_rx_crypto_frame_size_;
+  }
 
   FlowControlAction& set_send_stream_update(Urgency u) {
     send_stream_update_ = u;
@@ -115,6 +124,12 @@ class FlowControlAction {
     max_frame_size_ = update;
     return *this;
   }
+  FlowControlAction& set_preferred_rx_crypto_frame_size_update(
+      Urgency u, uint32_t update) {
+    preferred_rx_crypto_frame_size_update_ = u;
+    preferred_rx_crypto_frame_size_ = update;
+    return *this;
+  }
 
   static const char* UrgencyString(Urgency u);
   std::string DebugString() const;
@@ -129,7 +144,11 @@ class FlowControlAction {
            (send_initial_window_update_ == Urgency::NO_ACTION_NEEDED ||
             initial_window_size_ == other.initial_window_size_) &&
            (send_max_frame_size_update_ == Urgency::NO_ACTION_NEEDED ||
-            max_frame_size_ == other.max_frame_size_);
+            max_frame_size_ == other.max_frame_size_) &&
+           (preferred_rx_crypto_frame_size_update_ ==
+                Urgency::NO_ACTION_NEEDED ||
+            preferred_rx_crypto_frame_size_ ==
+                other.preferred_rx_crypto_frame_size_);
   }
 
  private:
@@ -137,8 +156,10 @@ class FlowControlAction {
   Urgency send_transport_update_ = Urgency::NO_ACTION_NEEDED;
   Urgency send_initial_window_update_ = Urgency::NO_ACTION_NEEDED;
   Urgency send_max_frame_size_update_ = Urgency::NO_ACTION_NEEDED;
+  Urgency preferred_rx_crypto_frame_size_update_ = Urgency::NO_ACTION_NEEDED;
   uint32_t initial_window_size_ = 0;
   uint32_t max_frame_size_ = 0;
+  uint32_t preferred_rx_crypto_frame_size_ = 0;
 };
 
 std::ostream& operator<<(std::ostream& out, FlowControlAction::Urgency urgency);
@@ -148,7 +169,7 @@ std::ostream& operator<<(std::ostream& out, const FlowControlAction& action);
 // to be as performant as possible.
 class TransportFlowControl final {
  public:
-  explicit TransportFlowControl(const char* name, bool enable_bdp_probe,
+  explicit TransportFlowControl(absl::string_view name, bool enable_bdp_probe,
                                 MemoryOwner* memory_owner);
   ~TransportFlowControl() {}
 
@@ -232,12 +253,16 @@ class TransportFlowControl final {
 
   int64_t target_window() const;
   int64_t target_frame_size() const { return target_frame_size_; }
+  int64_t target_preferred_rx_crypto_frame_size() const {
+    return target_preferred_rx_crypto_frame_size_;
+  }
 
   BdpEstimator* bdp_estimator() { return &bdp_estimator_; }
 
   uint32_t acked_init_window() const { return acked_init_window_; }
+  uint32_t sent_init_window() const { return target_initial_window_size_; }
 
-  void SetAckedInitialWindow(uint32_t value) { acked_init_window_ = value; }
+  FlowControlAction SetAckedInitialWindow(uint32_t value);
 
   // Getters
   int64_t remote_window() const { return remote_window_; }
@@ -267,29 +292,31 @@ class TransportFlowControl final {
 
   MemoryOwner* const memory_owner_;
 
-  /** calculating what we should give for local window:
-      we track the total amount of flow control over initial window size
-      across all streams: this is data that we want to receive right now (it
-      has an outstanding read)
-      and the total amount of flow control under initial window size across all
-      streams: this is data we've read early
-      we want to adjust incoming_window such that:
-      incoming_window = total_over - max(bdp - total_under, 0) */
+  /// calculating what we should give for local window:
+  /// we track the total amount of flow control over initial window size
+  /// across all streams: this is data that we want to receive right now (it
+  /// has an outstanding read)
+  /// and the total amount of flow control under initial window size across all
+  /// streams: this is data we've read early
+  /// we want to adjust incoming_window such that:
+  /// incoming_window = total_over - max(bdp - total_under, 0)
   int64_t announced_stream_total_over_incoming_window_ = 0;
 
-  /** should we probe bdp? */
+  /// should we probe bdp?
   const bool enable_bdp_probe_;
 
-  /* bdp estimation */
+  // bdp estimation
   BdpEstimator bdp_estimator_;
 
-  /* pid controller */
+  // pid controller
   PidController pid_controller_;
   Timestamp last_pid_update_;
 
   int64_t remote_window_ = kDefaultWindow;
   int64_t target_initial_window_size_ = kDefaultWindow;
   int64_t target_frame_size_ = kDefaultFrameSize;
+  int64_t target_preferred_rx_crypto_frame_size_ =
+      kDefaultPreferredRxCryptoFrameSize;
   int64_t announced_window_ = kDefaultWindow;
   uint32_t acked_init_window_ = kDefaultWindow;
 };
@@ -319,7 +346,7 @@ class StreamFlowControl final {
     absl::Status RecvData(int64_t incoming_frame_size);
 
     // the application is asking for a certain amount of bytes
-    void SetMinProgressSize(uint32_t min_progress_size) {
+    void SetMinProgressSize(int64_t min_progress_size) {
       sfc_->min_progress_size_ = min_progress_size;
     }
 
@@ -356,7 +383,7 @@ class StreamFlowControl final {
 
   int64_t remote_window_delta() const { return remote_window_delta_; }
   int64_t announced_window_delta() const { return announced_window_delta_; }
-  uint32_t min_progress_size() const { return min_progress_size_; }
+  int64_t min_progress_size() const { return min_progress_size_; }
 
  private:
   TransportFlowControl* const tfc_;
@@ -366,7 +393,7 @@ class StreamFlowControl final {
   absl::optional<int64_t> pending_size_;
 
   FlowControlAction UpdateAction(FlowControlAction action);
-  uint32_t DesiredAnnounceSize() const;
+  int64_t DesiredAnnounceSize() const;
 };
 
 class TestOnlyTransportTargetWindowEstimatesMocker {
@@ -382,4 +409,4 @@ extern TestOnlyTransportTargetWindowEstimatesMocker*
 }  // namespace chttp2
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FLOW_CONTROL_H
+#endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FLOW_CONTROL_H

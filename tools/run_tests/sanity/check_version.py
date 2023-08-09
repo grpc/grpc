@@ -23,60 +23,69 @@ import yaml
 
 errors = 0
 
-os.chdir(os.path.join(os.path.dirname(sys.argv[0]), '../../..'))
+os.chdir(os.path.join(os.path.dirname(sys.argv[0]), "../../.."))
 
 # hack import paths to pick up extra code
-sys.path.insert(0, os.path.abspath('tools/buildgen/plugins'))
+sys.path.insert(0, os.path.abspath("tools/buildgen/plugins"))
 from expand_version import Version
 
 try:
-    branch_name = subprocess.check_output('git rev-parse --abbrev-ref HEAD',
-                                          shell=True).decode()
+    branch_name = subprocess.check_output(
+        "git rev-parse --abbrev-ref HEAD", shell=True
+    ).decode()
 except:
-    print('WARNING: not a git repository')
+    print("WARNING: not a git repository")
     branch_name = None
 
 if branch_name is not None:
-    m = re.match(r'^release-([0-9]+)_([0-9]+)$', branch_name)
+    m = re.match(r"^release-([0-9]+)_([0-9]+)$", branch_name)
     if m:
-        print('RELEASE branch')
+        print("RELEASE branch")
         # version number should align with the branched version
-        check_version = lambda version: (version.major == int(m.group(1)) and
-                                         version.minor == int(m.group(2)))
-        warning = 'Version key "%%s" value "%%s" should have a major version %s and minor version %s' % (
-            m.group(1), m.group(2))
-    elif re.match(r'^debian/.*$', branch_name):
+        check_version = lambda version: (
+            version.major == int(m.group(1))
+            and version.minor == int(m.group(2))
+        )
+        warning = (
+            'Version key "%%s" value "%%s" should have a major version %s and'
+            " minor version %s" % (m.group(1), m.group(2))
+        )
+    elif re.match(r"^debian/.*$", branch_name):
         # no additional version checks for debian branches
         check_version = lambda version: True
     else:
         # all other branches should have a -dev tag
-        check_version = lambda version: version.tag == 'dev'
+        check_version = lambda version: version.tag == "dev"
         warning = 'Version key "%s" value "%s" should have a -dev tag'
 else:
     check_version = lambda version: True
 
-with open('build_handwritten.yaml', 'r') as f:
-    build_yaml = yaml.load(f.read())
+with open("build_handwritten.yaml", "r") as f:
+    build_yaml = yaml.safe_load(f.read())
 
-settings = build_yaml['settings']
+settings = build_yaml["settings"]
 
-top_version = Version(settings['version'])
+top_version = Version(settings["version"])
 if not check_version(top_version):
     errors += 1
-    print((warning % ('version', top_version)))
+    print((warning % ("version", top_version)))
 
 for tag, value in list(settings.items()):
-    if re.match(r'^[a-z]+_version$', tag):
+    if re.match(r"^[a-z]+_version$", tag):
         value = Version(value)
-        if tag != 'core_version':
+        if tag != "core_version":
             if value.major != top_version.major:
                 errors += 1
-                print(('major version mismatch on %s: %d vs %d' %
-                       (tag, value.major, top_version.major)))
+                print(
+                    "major version mismatch on %s: %d vs %d"
+                    % (tag, value.major, top_version.major)
+                )
             if value.minor != top_version.minor:
                 errors += 1
-                print(('minor version mismatch on %s: %d vs %d' %
-                       (tag, value.minor, top_version.minor)))
+                print(
+                    "minor version mismatch on %s: %d vs %d"
+                    % (tag, value.minor, top_version.minor)
+                )
         if not check_version(value):
             errors += 1
             print((warning % (tag, value)))

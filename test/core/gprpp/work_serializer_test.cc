@@ -1,39 +1,39 @@
-/*
- *
- * Copyright 2019 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2019 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "src/core/lib/gprpp/work_serializer.h"
 
+#include <stddef.h>
+
+#include <algorithm>
 #include <memory>
 #include <thread>
+#include <vector>
 
-#include <gtest/gtest.h>
-
-#include "absl/memory/memory.h"
 #include "absl/synchronization/barrier.h"
-#include "absl/synchronization/notification.h"
+#include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/time.h>
 
-#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/thd.h"
-#include "src/core/lib/iomgr/executor.h"
 #include "test/core/util/test_config.h"
 
 namespace {
@@ -115,7 +115,7 @@ TEST(WorkSerializerTest, ExecuteMany) {
   {
     std::vector<std::unique_ptr<TestThread>> threads;
     for (size_t i = 0; i < 10; ++i) {
-      threads.push_back(absl::make_unique<TestThread>(&lock));
+      threads.push_back(std::make_unique<TestThread>(&lock));
     }
   }
 }
@@ -176,7 +176,7 @@ TEST(WorkSerializerTest, ExecuteManyScheduleAndDrain) {
   {
     std::vector<std::unique_ptr<TestThreadScheduleAndDrain>> threads;
     for (size_t i = 0; i < 10; ++i) {
-      threads.push_back(absl::make_unique<TestThreadScheduleAndDrain>(&lock));
+      threads.push_back(std::make_unique<TestThreadScheduleAndDrain>(&lock));
     }
   }
 }
@@ -187,9 +187,9 @@ TEST(WorkSerializerTest, ExecuteManyMixedRunScheduleAndDrain) {
     std::vector<std::unique_ptr<TestThread>> run_threads;
     std::vector<std::unique_ptr<TestThreadScheduleAndDrain>> schedule_threads;
     for (size_t i = 0; i < 10; ++i) {
-      run_threads.push_back(absl::make_unique<TestThread>(&lock));
+      run_threads.push_back(std::make_unique<TestThread>(&lock));
       schedule_threads.push_back(
-          absl::make_unique<TestThreadScheduleAndDrain>(&lock));
+          std::make_unique<TestThreadScheduleAndDrain>(&lock));
     }
   }
 }
@@ -205,7 +205,7 @@ TEST(WorkSerializerTest, CallbackDestroysWorkSerializer) {
 TEST(WorkSerializerTest, WorkSerializerDestructionRace) {
   for (int i = 0; i < 1000; ++i) {
     auto lock = std::make_shared<grpc_core::WorkSerializer>();
-    absl::Notification notification;
+    grpc_core::Notification notification;
     std::thread t1([&]() {
       notification.WaitForNotification();
       lock.reset();

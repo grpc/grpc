@@ -33,6 +33,13 @@ licenses(["notice"])
 exports_files(["LICENSE"])
 
 grpc_cc_library(
+    name = "proto_parser_helper",
+    srcs = ["proto_parser_helper.cc"],
+    hdrs = ["proto_parser_helper.h"],
+    language = "c++",
+)
+
+grpc_cc_library(
     name = "grpc_plugin_support",
     srcs = [
         "cpp_generator.cc",
@@ -70,9 +77,11 @@ grpc_cc_library(
     ],
     external_deps = [
         "protobuf_clib",
+        "protobuf",
     ],
     language = "c++",
     deps = [
+        "proto_parser_helper",
         "//:grpc++_config_proto",
     ],
 )

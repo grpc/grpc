@@ -20,10 +20,9 @@
 
 #include <utility>
 
-#include "absl/memory/memory.h"
+#include "absl/types/optional.h"
 
 #include <grpc/grpc_security.h>
-#include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
@@ -31,11 +30,13 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/authorization/grpc_authorization_engine.h"
+#include "src/core/lib/security/authorization/rbac_translator.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_refcount.h"
 
 namespace grpc_core {
 
@@ -55,8 +56,10 @@ StaticDataAuthorizationPolicyProvider::StaticDataAuthorizationPolicyProvider(
     RbacPolicies policies)
     : allow_engine_(MakeRefCounted<GrpcAuthorizationEngine>(
           std::move(policies.allow_policy))),
-      deny_engine_(MakeRefCounted<GrpcAuthorizationEngine>(
-          std::move(policies.deny_policy))) {}
+      deny_engine_(policies.deny_policy.has_value()
+                       ? MakeRefCounted<GrpcAuthorizationEngine>(
+                             std::move(*policies.deny_policy))
+                       : nullptr) {}
 
 namespace {
 
@@ -64,14 +67,12 @@ absl::StatusOr<std::string> ReadPolicyFromFile(absl::string_view policy_path) {
   grpc_slice policy_slice = grpc_empty_slice();
   grpc_error_handle error =
       grpc_load_file(std::string(policy_path).c_str(), 0, &policy_slice);
-  if (!GRPC_ERROR_IS_NONE(error)) {
-    absl::Status status =
-        absl::InvalidArgumentError(grpc_error_std_string(error));
-    GRPC_ERROR_UNREF(error);
+  if (!error.ok()) {
+    absl::Status status = absl::InvalidArgumentError(StatusToString(error));
     return status;
   }
   std::string policy_contents(StringViewFromSlice(policy_slice));
-  grpc_slice_unref_internal(policy_slice);
+  CSliceUnref(policy_slice);
   return policy_contents;
 }
 
@@ -120,11 +121,12 @@ FileWatcherAuthorizationPolicyProvider::FileWatcherAuthorizationPolicyProvider(
       if (GRPC_TRACE_FLAG_ENABLED(grpc_authz_trace) && !status.ok()) {
         gpr_log(GPR_ERROR,
                 "authorization policy reload status. code=%d error_details=%s",
-                status.code(), std::string(status.message()).c_str());
+                static_cast<int>(status.code()),
+                std::string(status.message()).c_str());
       }
     }
   };
-  refresh_thread_ = absl::make_unique<Thread>(
+  refresh_thread_ = std::make_unique<Thread>(
       "FileWatcherAuthorizationPolicyProvider_refreshing_thread", thread_lambda,
       WeakRef().release());
   refresh_thread_->Start();
@@ -162,8 +164,12 @@ absl::Status FileWatcherAuthorizationPolicyProvider::ForceUpdate() {
   MutexLock lock(&mu_);
   allow_engine_ = MakeRefCounted<GrpcAuthorizationEngine>(
       std::move(rbac_policies_or->allow_policy));
-  deny_engine_ = MakeRefCounted<GrpcAuthorizationEngine>(
-      std::move(rbac_policies_or->deny_policy));
+  if (rbac_policies_or->deny_policy.has_value()) {
+    deny_engine_ = MakeRefCounted<GrpcAuthorizationEngine>(
+        std::move(*rbac_policies_or->deny_policy));
+  } else {
+    deny_engine_.reset();
+  }
   if (cb_ != nullptr) {
     cb_(contents_changed, absl::OkStatus());
   }

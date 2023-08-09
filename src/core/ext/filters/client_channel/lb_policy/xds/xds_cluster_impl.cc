@@ -19,7 +19,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include <algorithm>
 #include <atomic>
 #include <map>
 #include <memory>
@@ -28,20 +27,18 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
-#include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 
-#include <grpc/impl/codegen/connectivity_state.h>
+#include <grpc/impl/connectivity_state.h>
 #include <grpc/support/log.h>
 
+#include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
-#include "src/core/ext/filters/client_channel/lb_policy/xds/xds.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
@@ -52,15 +49,17 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
+#include "src/core/lib/load_balancing/delegating_helper.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
@@ -146,18 +145,13 @@ constexpr absl::string_view kXdsClusterImpl = "xds_cluster_impl_experimental";
 // Config for xDS Cluster Impl LB policy.
 class XdsClusterImplLbConfig : public LoadBalancingPolicy::Config {
  public:
-  XdsClusterImplLbConfig(
-      RefCountedPtr<LoadBalancingPolicy::Config> child_policy,
-      std::string cluster_name, std::string eds_service_name,
-      absl::optional<GrpcXdsBootstrap::GrpcXdsServer> lrs_load_reporting_server,
-      uint32_t max_concurrent_requests,
-      RefCountedPtr<XdsEndpointResource::DropConfig> drop_config)
-      : child_policy_(std::move(child_policy)),
-        cluster_name_(std::move(cluster_name)),
-        eds_service_name_(std::move(eds_service_name)),
-        lrs_load_reporting_server_(std::move(lrs_load_reporting_server)),
-        max_concurrent_requests_(max_concurrent_requests),
-        drop_config_(std::move(drop_config)) {}
+  XdsClusterImplLbConfig() = default;
+
+  XdsClusterImplLbConfig(const XdsClusterImplLbConfig&) = delete;
+  XdsClusterImplLbConfig& operator=(const XdsClusterImplLbConfig&) = delete;
+
+  XdsClusterImplLbConfig(XdsClusterImplLbConfig&& other) = delete;
+  XdsClusterImplLbConfig& operator=(XdsClusterImplLbConfig&& other) = delete;
 
   absl::string_view name() const override { return kXdsClusterImpl; }
 
@@ -174,6 +168,10 @@ class XdsClusterImplLbConfig : public LoadBalancingPolicy::Config {
   RefCountedPtr<XdsEndpointResource::DropConfig> drop_config() const {
     return drop_config_;
   }
+
+  static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+  void JsonPostLoad(const Json& json, const JsonArgs& args,
+                    ValidationErrors* errors);
 
  private:
   RefCountedPtr<LoadBalancingPolicy::Config> child_policy_;
@@ -212,22 +210,11 @@ class XdsClusterImplLb : public LoadBalancingPolicy {
     RefCountedPtr<XdsClusterLocalityStats> locality_stats_;
   };
 
-  // A simple wrapper for ref-counting a picker from the child policy.
-  class RefCountedPicker : public RefCounted<RefCountedPicker> {
-   public:
-    explicit RefCountedPicker(std::unique_ptr<SubchannelPicker> picker)
-        : picker_(std::move(picker)) {}
-    PickResult Pick(PickArgs args) { return picker_->Pick(args); }
-
-   private:
-    std::unique_ptr<SubchannelPicker> picker_;
-  };
-
   // A picker that wraps the picker from the child to perform drops.
   class Picker : public SubchannelPicker {
    public:
     Picker(XdsClusterImplLb* xds_cluster_impl_lb,
-           RefCountedPtr<RefCountedPicker> picker);
+           RefCountedPtr<SubchannelPicker> picker);
 
     PickResult Pick(PickArgs args) override;
 
@@ -238,29 +225,20 @@ class XdsClusterImplLb : public LoadBalancingPolicy {
     uint32_t max_concurrent_requests_;
     RefCountedPtr<XdsEndpointResource::DropConfig> drop_config_;
     RefCountedPtr<XdsClusterDropStats> drop_stats_;
-    RefCountedPtr<RefCountedPicker> picker_;
+    RefCountedPtr<SubchannelPicker> picker_;
   };
 
-  class Helper : public ChannelControlHelper {
+  class Helper
+      : public ParentOwningDelegatingChannelControlHelper<XdsClusterImplLb> {
    public:
     explicit Helper(RefCountedPtr<XdsClusterImplLb> xds_cluster_impl_policy)
-        : xds_cluster_impl_policy_(std::move(xds_cluster_impl_policy)) {}
-
-    ~Helper() override {
-      xds_cluster_impl_policy_.reset(DEBUG_LOCATION, "Helper");
-    }
+        : ParentOwningDelegatingChannelControlHelper(
+              std::move(xds_cluster_impl_policy)) {}
 
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
         ServerAddress address, const ChannelArgs& args) override;
     void UpdateState(grpc_connectivity_state state, const absl::Status& status,
-                     std::unique_ptr<SubchannelPicker> picker) override;
-    void RequestReresolution() override;
-    absl::string_view GetAuthority() override;
-    void AddTraceEvent(TraceSeverity severity,
-                       absl::string_view message) override;
-
-   private:
-    RefCountedPtr<XdsClusterImplLb> xds_cluster_impl_policy_;
+                     RefCountedPtr<SubchannelPicker> picker) override;
   };
 
   ~XdsClusterImplLb() override;
@@ -295,7 +273,7 @@ class XdsClusterImplLb : public LoadBalancingPolicy {
   // Latest state and picker reported by the child policy.
   grpc_connectivity_state state_ = GRPC_CHANNEL_IDLE;
   absl::Status status_;
-  RefCountedPtr<RefCountedPicker> picker_;
+  RefCountedPtr<SubchannelPicker> picker_;
 };
 
 //
@@ -344,7 +322,13 @@ class XdsClusterImplLb::Picker::SubchannelCallTracker
     }
     // Record call completion for load reporting.
     if (locality_stats_ != nullptr) {
-      locality_stats_->AddCallFinished(!args.status.ok());
+      auto* backend_metric_data =
+          args.backend_metric_accessor->GetBackendMetricData();
+      const std::map<absl::string_view, double>* named_metrics = nullptr;
+      if (backend_metric_data != nullptr) {
+        named_metrics = &backend_metric_data->named_metrics;
+      }
+      locality_stats_->AddCallFinished(named_metrics, !args.status.ok());
     }
     // Decrement number of calls in flight.
     call_counter_->Decrement();
@@ -368,7 +352,7 @@ class XdsClusterImplLb::Picker::SubchannelCallTracker
 //
 
 XdsClusterImplLb::Picker::Picker(XdsClusterImplLb* xds_cluster_impl_lb,
-                                 RefCountedPtr<RefCountedPicker> picker)
+                                 RefCountedPtr<SubchannelPicker> picker)
     : call_counter_(xds_cluster_impl_lb->call_counter_),
       max_concurrent_requests_(
           xds_cluster_impl_lb->config_->max_concurrent_requests()),
@@ -420,7 +404,7 @@ LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
     }
     // Inject subchannel call tracker to record call completion.
     complete_pick->subchannel_call_tracker =
-        absl::make_unique<SubchannelCallTracker>(
+        std::make_unique<SubchannelCallTracker>(
             std::move(complete_pick->subchannel_call_tracker),
             std::move(locality_stats),
             call_counter_->Ref(DEBUG_LOCATION, "SubchannelCallTracker"));
@@ -533,7 +517,7 @@ void XdsClusterImplLb::MaybeUpdatePickerLocked() {
   // If we're dropping all calls, report READY, regardless of what (or
   // whether) the child has reported.
   if (config_->drop_config() != nullptr && config_->drop_config()->drop_all()) {
-    auto drop_picker = absl::make_unique<Picker>(this, picker_);
+    auto drop_picker = MakeRefCounted<Picker>(this, picker_);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_cluster_impl_lb_trace)) {
       gpr_log(GPR_INFO,
               "[xds_cluster_impl_lb %p] updating connectivity (drop all): "
@@ -546,7 +530,7 @@ void XdsClusterImplLb::MaybeUpdatePickerLocked() {
   }
   // Otherwise, update only if we have a child picker.
   if (picker_ != nullptr) {
-    auto drop_picker = absl::make_unique<Picker>(this, picker_);
+    auto drop_picker = MakeRefCounted<Picker>(this, picker_);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_cluster_impl_lb_trace)) {
       gpr_log(GPR_INFO,
               "[xds_cluster_impl_lb %p] updating connectivity: state=%s "
@@ -565,7 +549,7 @@ OrphanablePtr<LoadBalancingPolicy> XdsClusterImplLb::CreateChildPolicyLocked(
   lb_policy_args.work_serializer = work_serializer();
   lb_policy_args.args = args;
   lb_policy_args.channel_control_helper =
-      absl::make_unique<Helper>(Ref(DEBUG_LOCATION, "Helper"));
+      std::make_unique<Helper>(Ref(DEBUG_LOCATION, "Helper"));
   OrphanablePtr<LoadBalancingPolicy> lb_policy =
       MakeOrphanable<ChildPolicyHandler>(std::move(lb_policy_args),
                                          &grpc_xds_cluster_impl_lb_trace);
@@ -611,87 +595,124 @@ absl::Status XdsClusterImplLb::UpdateChildPolicyLocked(
 
 RefCountedPtr<SubchannelInterface> XdsClusterImplLb::Helper::CreateSubchannel(
     ServerAddress address, const ChannelArgs& args) {
-  if (xds_cluster_impl_policy_->shutting_down_) return nullptr;
+  if (parent()->shutting_down_) return nullptr;
   // If load reporting is enabled, wrap the subchannel such that it
-  // includes the locality stats object, which will be used by the EdsPicker.
-  if (xds_cluster_impl_policy_->config_->lrs_load_reporting_server()
-          .has_value()) {
-    RefCountedPtr<XdsLocalityName> locality_name;
-    auto* attribute = address.GetAttribute(kXdsLocalityNameAttributeKey);
-    if (attribute != nullptr) {
-      const auto* locality_attr =
-          static_cast<const XdsLocalityAttribute*>(attribute);
-      locality_name = locality_attr->locality_name();
-    }
+  // includes the locality stats object, which will be used by the Picker.
+  if (parent()->config_->lrs_load_reporting_server().has_value()) {
+    auto locality_name = address.args().GetObjectRef<XdsLocalityName>();
     RefCountedPtr<XdsClusterLocalityStats> locality_stats =
-        xds_cluster_impl_policy_->xds_client_->AddClusterLocalityStats(
-            xds_cluster_impl_policy_->config_->lrs_load_reporting_server()
-                .value(),
-            xds_cluster_impl_policy_->config_->cluster_name(),
-            xds_cluster_impl_policy_->config_->eds_service_name(),
-            std::move(locality_name));
+        parent()->xds_client_->AddClusterLocalityStats(
+            parent()->config_->lrs_load_reporting_server().value(),
+            parent()->config_->cluster_name(),
+            parent()->config_->eds_service_name(), std::move(locality_name));
     if (locality_stats != nullptr) {
       return MakeRefCounted<StatsSubchannelWrapper>(
-          xds_cluster_impl_policy_->channel_control_helper()->CreateSubchannel(
+          parent()->channel_control_helper()->CreateSubchannel(
               std::move(address), args),
           std::move(locality_stats));
     }
-    gpr_log(GPR_ERROR,
-            "[xds_cluster_impl_lb %p] Failed to get locality stats object for "
-            "LRS server %s, cluster %s, EDS service name %s; load reports will "
-            "not be generated (not wrapping subchannel)",
-            this,
-            xds_cluster_impl_policy_->config_->lrs_load_reporting_server()
-                ->server_uri()
-                .c_str(),
-            xds_cluster_impl_policy_->config_->cluster_name().c_str(),
-            xds_cluster_impl_policy_->config_->eds_service_name().c_str());
+    gpr_log(
+        GPR_ERROR,
+        "[xds_cluster_impl_lb %p] Failed to get locality stats object for "
+        "LRS server %s, cluster %s, EDS service name %s; load reports will "
+        "not be generated (not wrapping subchannel)",
+        parent(),
+        parent()->config_->lrs_load_reporting_server()->server_uri().c_str(),
+        parent()->config_->cluster_name().c_str(),
+        parent()->config_->eds_service_name().c_str());
   }
   // Load reporting not enabled, so don't wrap the subchannel.
-  return xds_cluster_impl_policy_->channel_control_helper()->CreateSubchannel(
+  return parent()->channel_control_helper()->CreateSubchannel(
       std::move(address), args);
 }
 
 void XdsClusterImplLb::Helper::UpdateState(
     grpc_connectivity_state state, const absl::Status& status,
-    std::unique_ptr<SubchannelPicker> picker) {
-  if (xds_cluster_impl_policy_->shutting_down_) return;
+    RefCountedPtr<SubchannelPicker> picker) {
+  if (parent()->shutting_down_) return;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_cluster_impl_lb_trace)) {
     gpr_log(GPR_INFO,
             "[xds_cluster_impl_lb %p] child connectivity state update: "
-            "state=%s (%s) "
-            "picker=%p",
-            xds_cluster_impl_policy_.get(), ConnectivityStateName(state),
-            status.ToString().c_str(), picker.get());
+            "state=%s (%s) picker=%p",
+            parent(), ConnectivityStateName(state), status.ToString().c_str(),
+            picker.get());
   }
   // Save the state and picker.
-  xds_cluster_impl_policy_->state_ = state;
-  xds_cluster_impl_policy_->status_ = status;
-  xds_cluster_impl_policy_->picker_ =
-      MakeRefCounted<RefCountedPicker>(std::move(picker));
+  parent()->state_ = state;
+  parent()->status_ = status;
+  parent()->picker_ = std::move(picker);
   // Wrap the picker and return it to the channel.
-  xds_cluster_impl_policy_->MaybeUpdatePickerLocked();
-}
-
-void XdsClusterImplLb::Helper::RequestReresolution() {
-  if (xds_cluster_impl_policy_->shutting_down_) return;
-  xds_cluster_impl_policy_->channel_control_helper()->RequestReresolution();
-}
-
-absl::string_view XdsClusterImplLb::Helper::GetAuthority() {
-  return xds_cluster_impl_policy_->channel_control_helper()->GetAuthority();
-}
-
-void XdsClusterImplLb::Helper::AddTraceEvent(TraceSeverity severity,
-                                             absl::string_view message) {
-  if (xds_cluster_impl_policy_->shutting_down_) return;
-  xds_cluster_impl_policy_->channel_control_helper()->AddTraceEvent(severity,
-                                                                    message);
+  parent()->MaybeUpdatePickerLocked();
 }
 
 //
 // factory
 //
+
+struct DropCategory {
+  std::string category;
+  uint32_t requests_per_million;
+
+  static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
+    static const auto* loader =
+        JsonObjectLoader<DropCategory>()
+            .Field("category", &DropCategory::category)
+            .Field("requests_per_million", &DropCategory::requests_per_million)
+            .Finish();
+    return loader;
+  }
+};
+
+const JsonLoaderInterface* XdsClusterImplLbConfig::JsonLoader(const JsonArgs&) {
+  static const auto* loader =
+      JsonObjectLoader<XdsClusterImplLbConfig>()
+          // Note: Some fields require custom processing, so they are
+          // handled in JsonPostLoad() instead.
+          .Field("clusterName", &XdsClusterImplLbConfig::cluster_name_)
+          .OptionalField("edsServiceName",
+                         &XdsClusterImplLbConfig::eds_service_name_)
+          .OptionalField("lrsLoadReportingServer",
+                         &XdsClusterImplLbConfig::lrs_load_reporting_server_)
+          .OptionalField("maxConcurrentRequests",
+                         &XdsClusterImplLbConfig::max_concurrent_requests_)
+          .Finish();
+  return loader;
+}
+
+void XdsClusterImplLbConfig::JsonPostLoad(const Json& json,
+                                          const JsonArgs& args,
+                                          ValidationErrors* errors) {
+  // Parse "childPolicy" field.
+  {
+    ValidationErrors::ScopedField field(errors, ".childPolicy");
+    auto it = json.object().find("childPolicy");
+    if (it == json.object().end()) {
+      errors->AddError("field not present");
+    } else {
+      auto lb_config = CoreConfiguration::Get()
+                           .lb_policy_registry()
+                           .ParseLoadBalancingConfig(it->second);
+      if (!lb_config.ok()) {
+        errors->AddError(lb_config.status().message());
+      } else {
+        child_policy_ = std::move(*lb_config);
+      }
+    }
+  }
+  // Parse "dropCategories" field.
+  {
+    auto value = LoadJsonObjectField<std::vector<DropCategory>>(
+        json.object(), args, "dropCategories", errors);
+    if (value.has_value()) {
+      drop_config_ = MakeRefCounted<XdsEndpointResource::DropConfig>();
+      for (size_t i = 0; i < value->size(); ++i) {
+        DropCategory& drop_category = (*value)[i];
+        drop_config_->AddCategory(std::move(drop_category.category),
+                                  drop_category.requests_per_million);
+      }
+    }
+  }
+}
 
 class XdsClusterImplLbFactory : public LoadBalancingPolicyFactory {
  public:
@@ -713,156 +734,9 @@ class XdsClusterImplLbFactory : public LoadBalancingPolicyFactory {
 
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
-    if (json.type() == Json::Type::JSON_NULL) {
-      // This policy was configured in the deprecated loadBalancingPolicy
-      // field or in the client API.
-      return absl::InvalidArgumentError(
-          "field:loadBalancingPolicy error:xds_cluster_impl policy requires "
-          "configuration. Please use loadBalancingConfig field of service "
-          "config instead.");
-    }
-    std::vector<std::string> errors;
-    // Child policy.
-    RefCountedPtr<LoadBalancingPolicy::Config> child_policy;
-    auto it = json.object_value().find("childPolicy");
-    if (it == json.object_value().end()) {
-      errors.emplace_back("field:childPolicy error:required field missing");
-    } else {
-      auto config = CoreConfiguration::Get()
-                        .lb_policy_registry()
-                        .ParseLoadBalancingConfig(it->second);
-      if (!config.ok()) {
-        errors.emplace_back(absl::StrCat("field:childPolicy error:",
-                                         config.status().message()));
-      } else {
-        child_policy = std::move(*config);
-      }
-    }
-    // Cluster name.
-    std::string cluster_name;
-    it = json.object_value().find("clusterName");
-    if (it == json.object_value().end()) {
-      errors.emplace_back("field:clusterName error:required field missing");
-    } else if (it->second.type() != Json::Type::STRING) {
-      errors.emplace_back("field:clusterName error:type should be string");
-    } else {
-      cluster_name = it->second.string_value();
-    }
-    // EDS service name.
-    std::string eds_service_name;
-    it = json.object_value().find("edsServiceName");
-    if (it != json.object_value().end()) {
-      if (it->second.type() != Json::Type::STRING) {
-        errors.emplace_back("field:edsServiceName error:type should be string");
-      } else {
-        eds_service_name = it->second.string_value();
-      }
-    }
-    // LRS load reporting server name.
-    absl::optional<GrpcXdsBootstrap::GrpcXdsServer> lrs_load_reporting_server;
-    it = json.object_value().find("lrsLoadReportingServer");
-    if (it != json.object_value().end()) {
-      if (it->second.type() != Json::Type::OBJECT) {
-        errors.emplace_back(
-            "field:lrsLoadReportingServer error:type should be object");
-      } else {
-        auto xds_server =
-            LoadFromJson<GrpcXdsBootstrap::GrpcXdsServer>(it->second);
-        if (!xds_server.ok()) {
-          errors.emplace_back(
-              absl::StrCat("error parsing lrs_load_reporting_server: ",
-                           xds_server.status().ToString()));
-        } else {
-          lrs_load_reporting_server = std::move(*xds_server);
-        }
-      }
-    }
-    // Max concurrent requests.
-    uint32_t max_concurrent_requests = 1024;
-    it = json.object_value().find("maxConcurrentRequests");
-    if (it != json.object_value().end()) {
-      if (it->second.type() != Json::Type::NUMBER) {
-        errors.emplace_back(
-            "field:max_concurrent_requests error:must be of type number");
-      } else {
-        max_concurrent_requests =
-            gpr_parse_nonnegative_int(it->second.string_value().c_str());
-      }
-    }
-    // Drop config.
-    auto drop_config = MakeRefCounted<XdsEndpointResource::DropConfig>();
-    it = json.object_value().find("dropCategories");
-    if (it == json.object_value().end()) {
-      errors.emplace_back("field:dropCategories error:required field missing");
-    } else {
-      absl::Status status = ParseDropCategories(it->second, drop_config.get());
-      if (!status.ok()) errors.emplace_back(status.message());
-    }
-    if (!errors.empty()) {
-      return absl::InvalidArgumentError(absl::StrCat(
-          "errors parseing xds_cluster_impl_experimental LB policy config: [",
-          absl::StrJoin(errors, "; "), "]"));
-    }
-    return MakeRefCounted<XdsClusterImplLbConfig>(
-        std::move(child_policy), std::move(cluster_name),
-        std::move(eds_service_name), std::move(lrs_load_reporting_server),
-        max_concurrent_requests, std::move(drop_config));
-  }
-
- private:
-  static absl::Status ParseDropCategories(
-      const Json& json, XdsEndpointResource::DropConfig* drop_config) {
-    if (json.type() != Json::Type::ARRAY) {
-      return absl::InvalidArgumentError("dropCategories field is not an array");
-    }
-    std::vector<std::string> errors;
-    for (size_t i = 0; i < json.array_value().size(); ++i) {
-      const Json& entry = json.array_value()[i];
-      absl::Status status = ParseDropCategory(entry, drop_config);
-      if (!status.ok()) {
-        errors.emplace_back(
-            absl::StrCat("error parsing index ", i, ": ", status.message()));
-      }
-    }
-    if (!errors.empty()) {
-      return absl::InvalidArgumentError(
-          absl::StrCat("errors parsing dropCategories field: [",
-                       absl::StrJoin(errors, "; "), "]"));
-    }
-    return absl::OkStatus();
-  }
-
-  static absl::Status ParseDropCategory(
-      const Json& json, XdsEndpointResource::DropConfig* drop_config) {
-    if (json.type() != Json::Type::OBJECT) {
-      return absl::InvalidArgumentError(
-          "dropCategories entry is not an object");
-    }
-    std::vector<std::string> errors;
-    std::string category;
-    auto it = json.object_value().find("category");
-    if (it == json.object_value().end()) {
-      errors.emplace_back("\"category\" field not present");
-    } else if (it->second.type() != Json::Type::STRING) {
-      errors.emplace_back("\"category\" field is not a string");
-    } else {
-      category = it->second.string_value();
-    }
-    uint32_t requests_per_million = 0;
-    it = json.object_value().find("requests_per_million");
-    if (it == json.object_value().end()) {
-      errors.emplace_back("\"requests_per_million\" field is not present");
-    } else if (it->second.type() != Json::Type::NUMBER) {
-      errors.emplace_back("\"requests_per_million\" field is not a number");
-    } else {
-      requests_per_million =
-          gpr_parse_nonnegative_int(it->second.string_value().c_str());
-    }
-    if (!errors.empty()) {
-      return absl::InvalidArgumentError(absl::StrJoin(errors, "; "));
-    }
-    drop_config->AddCategory(std::move(category), requests_per_million);
-    return absl::OkStatus();
+    return LoadFromJson<RefCountedPtr<XdsClusterImplLbConfig>>(
+        json, JsonArgs(),
+        "errors validating xds_cluster_impl LB policy config");
   }
 };
 
@@ -870,7 +744,7 @@ class XdsClusterImplLbFactory : public LoadBalancingPolicyFactory {
 
 void RegisterXdsClusterImplLbPolicy(CoreConfiguration::Builder* builder) {
   builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
-      absl::make_unique<XdsClusterImplLbFactory>());
+      std::make_unique<XdsClusterImplLbFactory>());
 }
 
 }  // namespace grpc_core

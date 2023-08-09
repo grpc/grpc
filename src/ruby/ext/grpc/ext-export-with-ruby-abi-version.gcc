@@ -1,0 +1,7 @@
+grpc_1.0 { 
+  global: 
+    Init_grpc_c;
+    ruby_abi_version;
+  local: 
+    *;
+};

@@ -1,33 +1,33 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "src/core/lib/compression/message_compress.h"
 
+#include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include <grpc/compression.h>
-#include <grpc/grpc.h>
+#include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/gpr/murmur_hash.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/util/slice_splitter.h"
@@ -57,12 +57,9 @@ static void assert_passthrough(grpc_slice value,
   ASSERT_NE(grpc_compression_algorithm_name(algorithm, &algorithm_name), 0);
   gpr_log(GPR_INFO,
           "assert_passthrough: value_length=%" PRIuPTR
-          " value_hash=0x%08x "
-          "algorithm='%s' uncompressed_split='%s' compressed_split='%s'",
-          GRPC_SLICE_LENGTH(value),
-          gpr_murmur_hash3(GRPC_SLICE_START_PTR(value),
-                           GRPC_SLICE_LENGTH(value), 0),
-          algorithm_name, grpc_slice_split_mode_name(uncompressed_split_mode),
+          " algorithm='%s' uncompressed_split='%s' compressed_split='%s'",
+          GRPC_SLICE_LENGTH(value), algorithm_name,
+          grpc_slice_split_mode_name(uncompressed_split_mode),
           grpc_slice_split_mode_name(compressed_split_mode));
 
   grpc_slice_buffer_init(&input);
@@ -86,7 +83,7 @@ static void assert_passthrough(grpc_slice value,
       ASSERT_EQ(was_compressed, 1);
       break;
     case MAYBE_COMPRESSES:
-      /* no check */
+      // no check
       break;
   }
 
@@ -176,15 +173,15 @@ TEST(MessageCompressTest, BadDecompressionDataCrc) {
   grpc_slice_buffer_add(&input, create_test_value(ONE_MB_A));
 
   grpc_core::ExecCtx exec_ctx;
-  /* compress it */
+  // compress it
   grpc_msg_compress(GRPC_COMPRESS_GZIP, &input, &corrupted);
-  /* corrupt the output by smashing the CRC */
+  // corrupt the output by smashing the CRC
   ASSERT_GT(corrupted.count, 1);
   ASSERT_GT(GRPC_SLICE_LENGTH(corrupted.slices[1]), 8);
   idx = GRPC_SLICE_LENGTH(corrupted.slices[1]) - 8;
   memcpy(GRPC_SLICE_START_PTR(corrupted.slices[1]) + idx, &bad, 4);
 
-  /* try (and fail) to decompress the corrupted compresed buffer */
+  // try (and fail) to decompress the corrupted compresed buffer
   ASSERT_EQ(0, grpc_msg_decompress(GRPC_COMPRESS_GZIP, &corrupted, &output));
 
   grpc_slice_buffer_destroy(&input);
@@ -205,12 +202,12 @@ TEST(MessageCompressTest, BadDecompressionDataMissingTrailer) {
   grpc_slice_buffer_add(&input, create_test_value(ONE_MB_A));
 
   grpc_core::ExecCtx exec_ctx;
-  /* compress it */
+  // compress it
   grpc_msg_compress(GRPC_COMPRESS_GZIP, &input, &decompressed);
   ASSERT_GT(decompressed.length, 8);
-  /* Remove the footer from the decompressed message */
+  // Remove the footer from the decompressed message
   grpc_slice_buffer_trim_end(&decompressed, 8, &garbage);
-  /* try (and fail) to decompress the compressed buffer without the footer */
+  // try (and fail) to decompress the compressed buffer without the footer
   ASSERT_EQ(0, grpc_msg_decompress(GRPC_COMPRESS_GZIP, &decompressed, &output));
 
   grpc_slice_buffer_destroy(&input);
@@ -225,12 +222,12 @@ TEST(MessageCompressTest, BadDecompressionDataTrailingGarbage) {
 
   grpc_slice_buffer_init(&input);
   grpc_slice_buffer_init(&output);
-  /* append 0x99 to the end of an otherwise valid stream */
+  // append 0x99 to the end of an otherwise valid stream
   grpc_slice_buffer_add(
       &input, grpc_slice_from_copied_buffer(
                   "\x78\xda\x63\x60\x60\x60\x00\x00\x00\x04\x00\x01\x99", 13));
 
-  /* try (and fail) to decompress the invalid compresed buffer */
+  // try (and fail) to decompress the invalid compresed buffer
   grpc_core::ExecCtx exec_ctx;
   ASSERT_EQ(0, grpc_msg_decompress(GRPC_COMPRESS_DEFLATE, &input, &output));
 
@@ -247,7 +244,7 @@ TEST(MessageCompressTest, BadDecompressionDataStream) {
   grpc_slice_buffer_add(&input,
                         grpc_slice_from_copied_buffer("\x78\xda\xff\xff", 4));
 
-  /* try (and fail) to decompress the invalid compresed buffer */
+  // try (and fail) to decompress the invalid compresed buffer
   grpc_core::ExecCtx exec_ctx;
   ASSERT_EQ(0, grpc_msg_decompress(GRPC_COMPRESS_DEFLATE, &input, &output));
 

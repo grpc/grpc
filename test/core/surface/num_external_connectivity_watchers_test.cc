@@ -1,32 +1,37 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-#include <gtest/gtest.h>
+#include <stddef.h>
+
+#include <string>
+
+#include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
-#include <grpc/support/alloc.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/slice.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/gprpp/memory.h"
-#include "src/core/lib/gprpp/thd.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "test/core/util/port.h"
@@ -59,16 +64,16 @@ static void channel_idle_poll_for_timeout(grpc_channel* channel,
   grpc_event ev = grpc_completion_queue_next(
       cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
 
-  /* expect watch_connectivity_state to end with a timeout */
+  // expect watch_connectivity_state to end with a timeout
   ASSERT_EQ(ev.type, GRPC_OP_COMPLETE);
   ASSERT_EQ(ev.success, false);
   ASSERT_EQ(grpc_channel_check_connectivity_state(channel, 0),
             GRPC_CHANNEL_IDLE);
 }
 
-/* Test and use the "num_external_watchers" call to make sure
- * that "connectivity watcher" structs are free'd just after, if
- * their corresponding timeouts occur. */
+// Test and use the "num_external_watchers" call to make sure
+// that "connectivity watcher" structs are free'd just after, if
+// their corresponding timeouts occur.
 static void run_timeouts_test(const test_fixture* fixture) {
   gpr_log(GPR_INFO, "TEST: %s", fixture->name);
 
@@ -79,12 +84,12 @@ static void run_timeouts_test(const test_fixture* fixture) {
   grpc_channel* channel = fixture->create_channel(addr.c_str());
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
 
-  /* start 1 watcher and then let it time out */
+  // start 1 watcher and then let it time out
   channel_idle_start_watch(channel, cq);
   channel_idle_poll_for_timeout(channel, cq);
   ASSERT_EQ(grpc_channel_num_external_connectivity_watchers(channel), 0);
 
-  /* start 3 watchers and then let them all time out */
+  // start 3 watchers and then let them all time out
   for (size_t i = 1; i <= 3; i++) {
     channel_idle_start_watch(channel, cq);
   }
@@ -93,8 +98,8 @@ static void run_timeouts_test(const test_fixture* fixture) {
   }
   ASSERT_EQ(grpc_channel_num_external_connectivity_watchers(channel), 0);
 
-  /* start 3 watchers, see one time out, start another 3, and then see them all
-   * time out */
+  // start 3 watchers, see one time out, start another 3, and then see them all
+  // time out
   for (size_t i = 1; i <= 3; i++) {
     channel_idle_start_watch(channel, cq);
   }
@@ -118,8 +123,8 @@ static void run_timeouts_test(const test_fixture* fixture) {
   grpc_shutdown();
 }
 
-/* An edge scenario; sets channel state to explicitly, and outside
- * of a polling call. */
+// An edge scenario; sets channel state to explicitly, and outside
+// of a polling call.
 static void run_channel_shutdown_before_timeout_test(
     const test_fixture* fixture) {
   gpr_log(GPR_INFO, "TEST: %s", fixture->name);
@@ -131,10 +136,10 @@ static void run_channel_shutdown_before_timeout_test(
   grpc_channel* channel = fixture->create_channel(addr.c_str());
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
 
-  /* start 1 watcher and then shut down the channel before the timer goes off */
+  // start 1 watcher and then shut down the channel before the timer goes off
   ASSERT_EQ(grpc_channel_num_external_connectivity_watchers(channel), 0);
 
-  /* expecting a 30 second timeout to go off much later than the shutdown. */
+  // expecting a 30 second timeout to go off much later than the shutdown.
   gpr_timespec connect_deadline = grpc_timeout_seconds_to_deadline(30);
   ASSERT_EQ(grpc_channel_check_connectivity_state(channel, 0),
             GRPC_CHANNEL_IDLE);
@@ -147,7 +152,7 @@ static void run_channel_shutdown_before_timeout_test(
   grpc_event ev = grpc_completion_queue_next(
       cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
   ASSERT_EQ(ev.type, GRPC_OP_COMPLETE);
-  /* expect success with a state transition to CHANNEL_SHUTDOWN */
+  // expect success with a state transition to CHANNEL_SHUTDOWN
   ASSERT_EQ(ev.success, true);
 
   grpc_completion_queue_shutdown(cq);

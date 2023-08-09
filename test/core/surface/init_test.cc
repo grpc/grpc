@@ -1,41 +1,39 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "src/core/lib/surface/init.h"
 
-#include <gtest/gtest.h>
+#include <stdint.h>
 
-#include "absl/synchronization/notification.h"
+#include <chrono>
+#include <memory>
+#include <ratio>
 
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
+#include "gtest/gtest.h"
+
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
 
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/util/test_config.h"
-
-static int g_plugin_state;
-
-static void plugin_init(void) { g_plugin_state = 1; }
-static void plugin_destroy(void) { g_plugin_state = 2; }
-static bool plugin_is_intialized(void) { return g_plugin_state == 1; }
-static bool plugin_is_destroyed(void) { return g_plugin_state == 2; }
 
 static void test(int rounds) {
   int i;
@@ -71,7 +69,7 @@ TEST(Init, blocking) {
   test_blocking(3);
 }
 
-TEST(Init, shutdown_with_thread) {
+TEST(Init, ShutdownWithThread) {
   grpc_init();
   {
     grpc_core::ApplicationCallbackExecCtx callback_exec_ctx(
@@ -92,7 +90,7 @@ TEST(Init, mixed) {
   EXPECT_FALSE(grpc_is_initialized());
 }
 
-TEST(Init, mixed_with_thread) {
+TEST(Init, MixedWithThread) {
   grpc_init();
   {
     grpc_core::ApplicationCallbackExecCtx callback_exec_ctx(
@@ -107,15 +105,7 @@ TEST(Init, mixed_with_thread) {
   EXPECT_FALSE(grpc_is_initialized());
 }
 
-TEST(Init, plugin) {
-  grpc_init();
-  EXPECT_TRUE(plugin_is_intialized());
-  grpc_shutdown_blocking();
-  EXPECT_TRUE(plugin_is_destroyed());
-  EXPECT_FALSE(grpc_is_initialized());
-}
-
-TEST(Init, repeatedly) {
+TEST(Init, Repeatedly) {
   for (int i = 0; i < 10; i++) {
     grpc_init();
     {
@@ -128,7 +118,7 @@ TEST(Init, repeatedly) {
   EXPECT_FALSE(grpc_is_initialized());
 }
 
-TEST(Init, repeatedly_blocking) {
+TEST(Init, RepeatedlyBlocking) {
   for (int i = 0; i < 10; i++) {
     grpc_init();
     {
@@ -142,18 +132,22 @@ TEST(Init, repeatedly_blocking) {
 
 TEST(Init, TimerManagerHoldsLastInit) {
   grpc_init();
-  absl::Notification n;
-  grpc_event_engine::experimental::GetDefaultEventEngine()->RunAfter(
-      std::chrono::seconds(1), [&n] {
+  // the temporary engine is deleted immediately, and the callback owns a copy.
+  auto engine = grpc_event_engine::experimental::GetDefaultEventEngine();
+  engine->RunAfter(
+      std::chrono::seconds(1),
+      [engine = grpc_event_engine::experimental::GetDefaultEventEngine()] {
+        grpc_core::ApplicationCallbackExecCtx app_exec_ctx;
+        grpc_core::ExecCtx exec_ctx;
         grpc_shutdown();
-        n.Notify();
       });
-  n.WaitForNotification();
+  while (engine.use_count() != 1) {
+    absl::SleepFor(absl::Microseconds(15));
+  }
 }
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
-  grpc_register_plugin(plugin_init, plugin_destroy);
   return RUN_ALL_TESTS();
 }

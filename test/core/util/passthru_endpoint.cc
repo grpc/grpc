@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "test/core/util/passthru_endpoint.h"
 
@@ -22,28 +22,31 @@
 
 #include <algorithm>
 #include <functional>
+#include <initializer_list>
 #include <memory>
 #include <string>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
-#include "src/core/lib/iomgr/timer.h"
-#include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_refcount.h"
 
-struct passthru_endpoint;
+using ::grpc_event_engine::experimental::EventEngine;
+using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
 typedef struct passthru_endpoint passthru_endpoint;
 
@@ -55,7 +58,7 @@ typedef struct {
 } pending_op;
 
 typedef struct {
-  grpc_timer timer;
+  absl::optional<EventEngine::TaskHandle> timer_handle;
   uint64_t allowed_write_bytes;
   uint64_t allowed_read_bytes;
   std::vector<grpc_passthru_endpoint_channel_action> actions;
@@ -91,9 +94,8 @@ static void do_pending_read_op_locked(half* m, grpc_error_handle error) {
   GPR_ASSERT(m->bytes_read_so_far <=
              m->parent->channel_effects->allowed_read_bytes);
   if (m->parent->shutdown) {
-    grpc_core::ExecCtx::Run(
-        DEBUG_LOCATION, m->pending_read_op.cb,
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Already shutdown"));
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, m->pending_read_op.cb,
+                            GRPC_ERROR_CREATE("Already shutdown"));
     // Move any pending data into pending_read_op.slices so that it may be
     // free'ed by the executing callback.
     grpc_slice_buffer_move_into(&m->read_buffer, m->pending_read_op.slices);
@@ -127,9 +129,8 @@ static void me_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
   half* m = reinterpret_cast<half*>(ep);
   gpr_mu_lock(&m->parent->mu);
   if (m->parent->shutdown) {
-    grpc_core::ExecCtx::Run(
-        DEBUG_LOCATION, cb,
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Already shutdown"));
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb,
+                            GRPC_ERROR_CREATE("Already shutdown"));
   } else if (m->read_buffer.count > 0) {
     GPR_ASSERT(!m->pending_read_op.is_armed);
     GPR_ASSERT(!m->on_read);
@@ -137,7 +138,7 @@ static void me_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
     m->pending_read_op.cb = cb;
     m->pending_read_op.ep = ep;
     m->pending_read_op.slices = slices;
-    do_pending_read_op_locked(m, GRPC_ERROR_NONE);
+    do_pending_read_op_locked(m, absl::OkStatus());
   } else {
     GPR_ASSERT(!m->pending_read_op.is_armed);
     m->on_read = cb;
@@ -172,9 +173,8 @@ static void do_pending_write_op_locked(half* m, grpc_error_handle error) {
   GPR_ASSERT(m->bytes_written_so_far <=
              m->parent->channel_effects->allowed_write_bytes);
   if (m->parent->shutdown) {
-    grpc_core::ExecCtx::Run(
-        DEBUG_LOCATION, m->pending_write_op.cb,
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Already shutdown"));
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, m->pending_write_op.cb,
+                            GRPC_ERROR_CREATE("Already shutdown"));
     m->pending_write_op.is_armed = false;
     grpc_slice_buffer_reset_and_unref(m->pending_write_op.slices);
     return;
@@ -214,7 +214,7 @@ static void do_pending_write_op_locked(half* m, grpc_error_handle error) {
       other->on_read != nullptr ? other->on_read_out : &other->read_buffer;
   while (max_writable > 0) {
     grpc_slice slice = grpc_slice_buffer_take_first(slices);
-    uint64_t slice_length = GPR_SLICE_LENGTH(slice);
+    uint64_t slice_length = GRPC_SLICE_LENGTH(slice);
     GPR_ASSERT(slice_length > 0);
     grpc_slice split1, split2;
     uint64_t split_length = 0;
@@ -233,14 +233,14 @@ static void do_pending_write_op_locked(half* m, grpc_error_handle error) {
     }
 
     grpc_slice_copy_split(slice, split_length, split1, split2);
-    grpc_slice_unref_internal(slice);
+    grpc_slice_unref(slice);
     // Write a copy of the slice to the destination to be read
     grpc_slice_buffer_add_indexed(dest, split1);
     // Re-insert split2 into source for next iteration.
-    if (GPR_SLICE_LENGTH(split2) > 0) {
+    if (GRPC_SLICE_LENGTH(split2) > 0) {
       grpc_slice_buffer_undo_take_first(slices, split2);
     } else {
-      grpc_slice_unref_internal(split2);
+      grpc_slice_unref(split2);
     }
 
     if (max_readable > 0) {
@@ -274,18 +274,17 @@ static void me_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
                      grpc_closure* cb, void* /*arg*/, int /*max_frame_size*/) {
   half* m = reinterpret_cast<half*>(ep);
   gpr_mu_lock(&m->parent->mu);
-  gpr_atm_no_barrier_fetch_add(&m->parent->stats->num_writes, (gpr_atm)1);
+  gpr_atm_full_fetch_add(&m->parent->stats->num_writes, (gpr_atm)1);
   if (m->parent->shutdown) {
-    grpc_core::ExecCtx::Run(
-        DEBUG_LOCATION, cb,
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Endpoint already shutdown"));
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb,
+                            GRPC_ERROR_CREATE("Endpoint already shutdown"));
   } else {
     GPR_ASSERT(!m->pending_write_op.is_armed);
     // Copy slices into m->pending_write_op.slices
     m->pending_write_op.slices = &m->write_buffer;
     GPR_ASSERT(m->pending_write_op.slices->count == 0);
     for (int i = 0; i < static_cast<int>(slices->count); i++) {
-      if (GPR_SLICE_LENGTH(slices->slices[i]) > 0) {
+      if (GRPC_SLICE_LENGTH(slices->slices[i]) > 0) {
         grpc_slice_buffer_add_indexed(m->pending_write_op.slices,
                                       grpc_slice_copy(slices->slices[i]));
       }
@@ -294,10 +293,10 @@ static void me_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
       m->pending_write_op.is_armed = true;
       m->pending_write_op.cb = cb;
       m->pending_write_op.ep = ep;
-      do_pending_write_op_locked(m, GRPC_ERROR_NONE);
+      do_pending_write_op_locked(m, absl::OkStatus());
     } else {
       // There is nothing to write. Schedule callback to be run right away.
-      grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, GRPC_ERROR_NONE);
+      grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, absl::OkStatus());
     }
   }
   gpr_mu_unlock(&m->parent->mu);
@@ -323,19 +322,17 @@ static void me_delete_from_pollset_set(grpc_endpoint* /*ep*/,
 
 static void shutdown_locked(half* m, grpc_error_handle why) {
   m->parent->shutdown = true;
-  flush_pending_ops_locked(m, GRPC_ERROR_NONE);
+  flush_pending_ops_locked(m, absl::OkStatus());
   if (m->on_read) {
-    grpc_core::ExecCtx::Run(
-        DEBUG_LOCATION, m->on_read,
-        GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("Shutdown", &why, 1));
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, m->on_read,
+                            GRPC_ERROR_CREATE_REFERENCING("Shutdown", &why, 1));
     m->on_read = nullptr;
   }
   m = other_half(m);
-  flush_pending_ops_locked(m, GRPC_ERROR_NONE);
+  flush_pending_ops_locked(m, absl::OkStatus());
   if (m->on_read) {
-    grpc_core::ExecCtx::Run(
-        DEBUG_LOCATION, m->on_read,
-        GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("Shutdown", &why, 1));
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, m->on_read,
+                            GRPC_ERROR_CREATE_REFERENCING("Shutdown", &why, 1));
     m->on_read = nullptr;
   }
 }
@@ -345,19 +342,20 @@ static void me_shutdown(grpc_endpoint* ep, grpc_error_handle why) {
   gpr_mu_lock(&m->parent->mu);
   shutdown_locked(m, why);
   gpr_mu_unlock(&m->parent->mu);
-  GRPC_ERROR_UNREF(why);
 }
 
 void grpc_passthru_endpoint_destroy(passthru_endpoint* p) {
   gpr_mu_destroy(&p->mu);
   grpc_passthru_endpoint_stats_destroy(p->stats);
   delete p->channel_effects;
-  grpc_slice_buffer_destroy_internal(&p->client.read_buffer);
-  grpc_slice_buffer_destroy_internal(&p->server.read_buffer);
-  grpc_slice_buffer_destroy_internal(&p->client.write_buffer);
-  grpc_slice_buffer_destroy_internal(&p->server.write_buffer);
+  grpc_slice_buffer_destroy(&p->client.read_buffer);
+  grpc_slice_buffer_destroy(&p->server.read_buffer);
+  grpc_slice_buffer_destroy(&p->client.write_buffer);
+  grpc_slice_buffer_destroy(&p->server.write_buffer);
   gpr_free(p);
 }
+
+static void do_next_sched_channel_action(void* arg, grpc_error_handle error);
 
 static void me_destroy(grpc_endpoint* ep) {
   passthru_endpoint* p = (reinterpret_cast<half*>(ep))->parent;
@@ -368,7 +366,16 @@ static void me_destroy(grpc_endpoint* ep) {
     grpc_passthru_endpoint_destroy(p);
   } else {
     if (p->halves == 0 && p->simulate_channel_actions) {
-      grpc_timer_cancel(&p->channel_effects->timer);
+      if (p->channel_effects->timer_handle.has_value()) {
+        if (GetDefaultEventEngine()->Cancel(
+                *p->channel_effects->timer_handle)) {
+          gpr_mu_unlock(&p->mu);
+          // This will destroy the passthru endpoint so just return after that.
+          do_next_sched_channel_action(ep, absl::CancelledError());
+          return;
+        }
+        p->channel_effects->timer_handle.reset();
+      }
     }
     gpr_mu_unlock(&p->mu);
   }
@@ -490,18 +497,18 @@ static void do_next_sched_channel_action(void* arg, grpc_error_handle error) {
 
 static void sched_next_channel_action_locked(half* m) {
   if (m->parent->channel_effects->actions.empty()) {
-    grpc_error_handle err =
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel actions complete");
+    grpc_error_handle err = GRPC_ERROR_CREATE("Channel actions complete");
     shutdown_locked(m, err);
-    GRPC_ERROR_UNREF(err);
     return;
   }
-  grpc_timer_init(&m->parent->channel_effects->timer,
-                  grpc_core::Duration::Milliseconds(
-                      m->parent->channel_effects->actions[0].wait_ms) +
-                      grpc_core::ExecCtx::Get()->Now(),
-                  GRPC_CLOSURE_CREATE(do_next_sched_channel_action, m,
-                                      grpc_schedule_on_exec_ctx));
+  m->parent->channel_effects->timer_handle = GetDefaultEventEngine()->RunAfter(
+      grpc_core::Duration::Milliseconds(
+          m->parent->channel_effects->actions[0].wait_ms),
+      [m] {
+        grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+        grpc_core::ExecCtx exec_ctx;
+        do_next_sched_channel_action(m, absl::OkStatus());
+      });
 }
 
 void start_scheduling_grpc_passthru_endpoint_channel_effects(

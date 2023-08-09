@@ -1,23 +1,23 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-#ifndef GRPC_CORE_LIB_IOMGR_POLLSET_WINDOWS_H
-#define GRPC_CORE_LIB_IOMGR_POLLSET_WINDOWS_H
+#ifndef GRPC_SRC_CORE_LIB_IOMGR_POLLSET_WINDOWS_H
+#define GRPC_SRC_CORE_LIB_IOMGR_POLLSET_WINDOWS_H
 
 #include <grpc/support/port_platform.h>
 
@@ -28,10 +28,10 @@
 #ifdef GRPC_WINSOCK_SOCKET
 #include "src/core/lib/iomgr/socket_windows.h"
 
-/* There isn't really any such thing as a pollset under Windows, due to the
-   nature of the IO completion ports. A Windows "pollset" is merely a mutex
-   used to synchronize with the IOCP, and workers are condition variables
-   used to block threads until work is ready. */
+// There isn't really any such thing as a pollset under Windows, due to the
+// nature of the IO completion ports. A Windows "pollset" is merely a mutex
+// used to synchronize with the IOCP, and workers are condition variables
+// used to block threads until work is ready.
 
 typedef enum {
   GRPC_POLLSET_WORKER_LINK_POLLSET = 0,
@@ -67,4 +67,4 @@ void grpc_pollset_global_shutdown(void);
 
 #endif
 
-#endif /* GRPC_CORE_LIB_IOMGR_POLLSET_WINDOWS_H */
+#endif  // GRPC_SRC_CORE_LIB_IOMGR_POLLSET_WINDOWS_H

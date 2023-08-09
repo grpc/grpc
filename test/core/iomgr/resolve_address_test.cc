@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "src/core/lib/iomgr/resolve_address.h"
 
@@ -34,8 +34,9 @@
 #include <grpc/support/time.h>
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
-#include "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/executor.h"
@@ -99,8 +100,7 @@ class ResolveAddressTest : public ::testing::Test {
         if (done_) {
           break;
         }
-        grpc_core::Duration time_left =
-            deadline - grpc_core::ExecCtx::Get()->Now();
+        grpc_core::Duration time_left = deadline - grpc_core::Timestamp::Now();
         gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRId64, done_,
                 time_left.millis());
         ASSERT_GE(time_left, grpc_core::Duration::Zero());
@@ -176,7 +176,7 @@ class ResolveAddressTest : public ::testing::Test {
   grpc_pollset_set* pollset_set_;
   // the default value of grpc_ares_test_only_inject_config, which might
   // be modified during a test
-  void (*default_inject_config_)(ares_channel channel) = nullptr;
+  void (*default_inject_config_)(ares_channel* channel) = nullptr;
 };
 
 }  // namespace
@@ -363,10 +363,11 @@ TEST_F(ResolveAddressTest, UnparseableHostPortsBadLocalhostWithPort) {
 // test doesn't care what the result is, just that we don't crash etc.
 TEST_F(ResolveAddressTest, ImmediateCancel) {
   grpc_core::ExecCtx exec_ctx;
-  auto request_handle = grpc_core::GetDNSResolver()->LookupHostname(
+  auto resolver = grpc_core::GetDNSResolver();
+  auto request_handle = resolver->LookupHostname(
       absl::bind_front(&ResolveAddressTest::DontCare, this), "localhost:1", "1",
       grpc_core::kDefaultDNSRequestTimeout, pollset_set(), "");
-  if (grpc_core::GetDNSResolver()->Cancel(request_handle)) {
+  if (resolver->Cancel(request_handle)) {
     Finish();
   }
   grpc_core::ExecCtx::Get()->Flush();
@@ -376,19 +377,20 @@ TEST_F(ResolveAddressTest, ImmediateCancel) {
 // Attempt to cancel a request after it has completed.
 TEST_F(ResolveAddressTest, CancelDoesNotSucceed) {
   grpc_core::ExecCtx exec_ctx;
-  auto request_handle = grpc_core::GetDNSResolver()->LookupHostname(
+  auto resolver = grpc_core::GetDNSResolver();
+  auto request_handle = resolver->LookupHostname(
       absl::bind_front(&ResolveAddressTest::MustSucceed, this), "localhost:1",
       "1", grpc_core::kDefaultDNSRequestTimeout, pollset_set(), "");
   grpc_core::ExecCtx::Get()->Flush();
   PollPollsetUntilRequestDone();
-  ASSERT_FALSE(grpc_core::GetDNSResolver()->Cancel(request_handle));
+  ASSERT_FALSE(resolver->Cancel(request_handle));
 }
 
 namespace {
 
 int g_fake_non_responsive_dns_server_port;
 
-void InjectNonResponsiveDNSServer(ares_channel channel) {
+void InjectNonResponsiveDNSServer(ares_channel* channel) {
   gpr_log(GPR_DEBUG,
           "Injecting broken nameserver list. Bad server address:|[::1]:%d|.",
           g_fake_non_responsive_dns_server_port);
@@ -401,7 +403,7 @@ void InjectNonResponsiveDNSServer(ares_channel channel) {
   dns_server_addrs[0].tcp_port = g_fake_non_responsive_dns_server_port;
   dns_server_addrs[0].udp_port = g_fake_non_responsive_dns_server_port;
   dns_server_addrs[0].next = nullptr;
-  ASSERT_EQ(ares_set_servers_ports(channel, dns_server_addrs), ARES_SUCCESS);
+  ASSERT_EQ(ares_set_servers_ports(*channel, dns_server_addrs), ARES_SUCCESS);
 }
 
 }  // namespace
@@ -420,12 +422,13 @@ TEST_F(ResolveAddressTest, CancelWithNonResponsiveDNSServer) {
   grpc_ares_test_only_inject_config = InjectNonResponsiveDNSServer;
   // Run the test
   grpc_core::ExecCtx exec_ctx;
-  auto request_handle = grpc_core::GetDNSResolver()->LookupHostname(
+  auto resolver = grpc_core::GetDNSResolver();
+  auto request_handle = resolver->LookupHostname(
       absl::bind_front(&ResolveAddressTest::MustNotBeCalled, this),
       "foo.bar.com:1", "1", grpc_core::kDefaultDNSRequestTimeout, pollset_set(),
       "");
   grpc_core::ExecCtx::Get()->Flush();  // initiate DNS requests
-  ASSERT_TRUE(grpc_core::GetDNSResolver()->Cancel(request_handle));
+  ASSERT_TRUE(resolver->Cancel(request_handle));
   Finish();
   // let cancellation work finish to ensure the callback is not called
   grpc_core::ExecCtx::Get()->Flush();
@@ -484,12 +487,13 @@ TEST_F(ResolveAddressTest, DeleteInterestedPartiesAfterCancellation) {
     // Create a pollset_set, destroyed immediately after cancellation
     std::unique_ptr<PollsetSetWrapper> pss = PollsetSetWrapper::Create();
     // Run the test
-    auto request_handle = grpc_core::GetDNSResolver()->LookupHostname(
+    auto resolver = grpc_core::GetDNSResolver();
+    auto request_handle = resolver->LookupHostname(
         absl::bind_front(&ResolveAddressTest::MustNotBeCalled, this),
         "foo.bar.com:1", "1", grpc_core::kDefaultDNSRequestTimeout,
         pss->pollset_set(), "");
     grpc_core::ExecCtx::Get()->Flush();  // initiate DNS requests
-    ASSERT_TRUE(grpc_core::GetDNSResolver()->Cancel(request_handle));
+    ASSERT_TRUE(resolver->Cancel(request_handle));
   }
   {
     // let cancellation work finish to ensure the callback is not called
@@ -544,7 +548,9 @@ int main(int argc, char** argv) {
   } else {
     GPR_ASSERT(0);
   }
-  GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, g_resolver_type);
+  grpc_core::ConfigVars::Overrides overrides;
+  overrides.dns_resolver = g_resolver_type;
+  grpc_core::ConfigVars::SetOverrides(overrides);
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(&argc, argv);
   const auto result = RUN_ALL_TESTS();

@@ -1,25 +1,25 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-/* Benchmark gRPC end2end in various configurations */
+// Benchmark gRPC end2end in various configurations
 
-#ifndef TEST_CPP_MICROBENCHMARKS_FULLSTACK_STREAMING_PING_PONG_H
-#define TEST_CPP_MICROBENCHMARKS_FULLSTACK_STREAMING_PING_PONG_H
+#ifndef GRPC_TEST_CPP_MICROBENCHMARKS_FULLSTACK_STREAMING_PING_PONG_H
+#define GRPC_TEST_CPP_MICROBENCHMARKS_FULLSTACK_STREAMING_PING_PONG_H
 
 #include <sstream>
 
@@ -32,9 +32,9 @@
 namespace grpc {
 namespace testing {
 
-/*******************************************************************************
- * BENCHMARKING KERNELS
- */
+//******************************************************************************
+// BENCHMARKING KERNELS
+//
 
 static void* tag(intptr_t x) { return reinterpret_cast<void*>(x); }
 
@@ -132,7 +132,6 @@ static void BM_StreamingPingPong(benchmark::State& state) {
     }
   }
 
-  fixture->Finish(state);
   fixture.reset();
   state.SetBytesProcessed(msg_size * state.iterations() * max_ping_pongs * 2);
 }
@@ -218,7 +217,6 @@ static void BM_StreamingPingPongMsgs(benchmark::State& state) {
     GPR_ASSERT(recv_status.ok());
   }
 
-  fixture->Finish(state);
   fixture.reset();
   state.SetBytesProcessed(msg_size * state.iterations() * 2);
 }
@@ -394,11 +392,10 @@ static void BM_StreamingPingPongWithCoalescingApi(benchmark::State& state) {
     }
   }
 
-  fixture->Finish(state);
   fixture.reset();
   state.SetBytesProcessed(msg_size * state.iterations() * max_ping_pongs * 2);
 }
 }  // namespace testing
 }  // namespace grpc
 
-#endif  // TEST_CPP_MICROBENCHMARKS_FULLSTACK_STREAMING_PING_PONG_H
+#endif  // GRPC_TEST_CPP_MICROBENCHMARKS_FULLSTACK_STREAMING_PING_PONG_H

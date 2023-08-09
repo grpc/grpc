@@ -1,0 +1,9 @@
+bootstrap: "{\"xds_servers\": [{\"server_uri\":\"xds.example.com:443\", \"channel_creds\":[{\"type\": \"fake\"}]}]}"
+actions {
+  send_message_to_client {
+    stream_id {
+      ads {
+      }
+    }
+  }
+}

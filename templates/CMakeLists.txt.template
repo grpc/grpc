@@ -71,18 +71,23 @@
 
   def get_deps(target_dict):
     deps = []
-    if target_dict.get('baselib', False) or target_dict['name'] == 'address_sorting':
-      deps.append("${_gRPC_BASELIB_LIBRARIES}")
+    deps.append("${_gRPC_BASELIB_LIBRARIES}")
     if target_dict.get('build', None) in ['protoc']:
       deps.append("${_gRPC_PROTOBUF_PROTOC_LIBRARIES}")
     if target_dict.language == 'c++':
       deps.append("${_gRPC_PROTOBUF_LIBRARIES}")
+    deps.append("${_gRPC_ZLIB_LIBRARIES}")
     if target_dict['name'] in ['grpc', 'grpc_cronet', 'grpc_unsecure']:
-      deps.append("${_gRPC_ZLIB_LIBRARIES}")
       deps.append("${_gRPC_CARES_LIBRARIES}")
       deps.append("${_gRPC_ADDRESS_SORTING_LIBRARIES}")
       deps.append("${_gRPC_RE2_LIBRARIES}")
       deps.append("${_gRPC_UPB_LIBRARIES}")
+    # TODO(yijiem): These targets depend on grpc_base instead of grpc. Since we don't populate grpc_base as a cmake target, the sources all get collapsed into these targets. This workaround adds c-ares and/or re2 dependencies to these targets. We should clean this up.
+    if target_dict['name'] in ['frame_test']:
+      deps.append("${_gRPC_CARES_LIBRARIES}")
+    if target_dict['name'] in ['grpc_authorization_provider']:
+      deps.append("${_gRPC_CARES_LIBRARIES}")
+      deps.append("${_gRPC_RE2_LIBRARIES}")
     deps.append("${_gRPC_ALLTARGETS_LIBRARIES}")
     for d in target_dict.get('deps', []):
       if d == 'benchmark':
@@ -153,7 +158,7 @@
         protobuf_gen_files.add(src)
   %>
 
-  cmake_minimum_required(VERSION 3.5.1)
+  cmake_minimum_required(VERSION 3.8)
 
   set(PACKAGE_NAME          "grpc")
   set(PACKAGE_VERSION       "${settings.cpp_version}")
@@ -216,9 +221,6 @@
   set(gRPC_PROTOBUF_PROVIDER "module" CACHE STRING "Provider of protobuf library")
   set_property(CACHE gRPC_PROTOBUF_PROVIDER PROPERTY STRINGS "module" "package")
 
-  set(gRPC_PROTOBUF_PACKAGE_TYPE "" CACHE STRING "Algorithm for searching protobuf package")
-  set_property(CACHE gRPC_PROTOBUF_PACKAGE_TYPE PROPERTY STRINGS "CONFIG" "MODULE")
-
   if(gRPC_BUILD_TESTS)
     set(gRPC_BENCHMARK_PROVIDER "module" CACHE STRING "Provider of benchmark library")
     set_property(CACHE gRPC_BENCHMARK_PROVIDER PROPERTY STRINGS "module" "package")
@@ -263,25 +265,11 @@
     set(_gRPC_PLATFORM_WINDOWS ON)
   endif()
 
-   # Use C11 standard
-  if (NOT DEFINED CMAKE_C_STANDARD)
-    set(CMAKE_C_STANDARD 11)
-  endif()
-
-  # Add c++14 flags
-  if (NOT DEFINED CMAKE_CXX_STANDARD)
+  if (APPLE AND NOT DEFINED CMAKE_CXX_STANDARD)
+    # AppleClang defaults to C++98, so we bump it to C++14.
+    message("CMAKE_CXX_STANDARD was undefined, defaulting to C++14.")
     set(CMAKE_CXX_STANDARD 14)
-  else()
-    if (CMAKE_CXX_STANDARD LESS 14)
-      message(FATAL_ERROR "CMAKE_CXX_STANDARD is less than 14, please specify at least SET(CMAKE_CXX_STANDARD 14)")
-    endif()
-  endif()
-  if (NOT DEFINED CMAKE_CXX_STANDARD_REQUIRED)
-    set(CMAKE_CXX_STANDARD_REQUIRED ON)
-  endif()
-  if (NOT DEFINED CMAKE_CXX_EXTENSIONS)
-    set(CMAKE_CXX_EXTENSIONS OFF)
-  endif()
+  endif ()
 
   ## Some libraries are shared even with BUILD_SHARED_LIBRARIES=OFF
   if (NOT DEFINED CMAKE_POSITION_INDEPENDENT_CODE)
@@ -368,6 +356,11 @@
   include(cmake/xxhash.cmake)
   include(cmake/zlib.cmake)
   include(cmake/download_archive.cmake)
+
+  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
+    include(cmake/systemd.cmake)
+    set(_gRPC_ALLTARGETS_LIBRARIES <%text>${_gRPC_ALLTARGETS_LIBRARIES}</%text> <%text>${_gRPC_SYSTEMD_LIBRARIES}</%text>)
+  endif()
 
   % for external_proto_library in external_proto_libraries:
   % if len(external_proto_library.urls) > 1:
@@ -654,6 +647,8 @@
   % endfor
   )
 
+  target_compile_features(${lib.name} PUBLIC cxx_std_14)
+
   set_target_properties(${lib.name} PROPERTIES
   % if lib.language == 'c++':
     VERSION <%text>${gRPC_CPP_VERSION}</%text>
@@ -758,7 +753,7 @@
     third_party/googletest/googlemock/src/gmock-all.cc
   % endif
   )
-
+  target_compile_features(${tgt.name} PUBLIC cxx_std_14)
   target_include_directories(${tgt.name}
     PRIVATE
       <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>
@@ -800,7 +795,11 @@
   % else:
   if(gRPC_INSTALL)
   % endif
+  % if tgt.build == 'protoc' and 'grpc_plugin_support' in tgt.get('deps', []):
+    install(TARGETS ${tgt.name} EXPORT gRPCPluginTargets
+  % else:
     install(TARGETS ${tgt.name} EXPORT gRPCTargets
+  % endif
       RUNTIME DESTINATION <%text>${gRPC_INSTALL_BINDIR}</%text>
       BUNDLE DESTINATION  <%text>${gRPC_INSTALL_BINDIR}</%text>
       LIBRARY DESTINATION <%text>${gRPC_INSTALL_LIBDIR}</%text>
@@ -814,6 +813,12 @@
       DESTINATION <%text>${gRPC_INSTALL_CMAKEDIR}</%text>
       NAMESPACE gRPC::
     )
+    if(gRPC_BUILD_CODEGEN)
+      install(EXPORT gRPCPluginTargets
+        DESTINATION <%text>${gRPC_INSTALL_CMAKEDIR}</%text>
+        NAMESPACE gRPC::
+      )
+    endif()
   endif()
 
   include(CMakePackageConfigHelpers)
@@ -831,6 +836,7 @@
   install(FILES
       <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/cmake/modules/Findc-ares.cmake
       <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/cmake/modules/Findre2.cmake
+      <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/cmake/modules/Findsystemd.cmake
     DESTINATION <%text>${gRPC_INSTALL_CMAKEDIR}</%text>/modules
   )
 
@@ -838,12 +844,13 @@
     DESTINATION <%text>${gRPC_INSTALL_SHAREDIR}</%text>)
 
   # Function to generate pkg-config files.
-  function(generate_pkgconfig name description version requires
+  function(generate_pkgconfig name description version requires requires_private
                               libs libs_private output_filename)
     set(PC_NAME "<%text>${name}</%text>")
     set(PC_DESCRIPTION "<%text>${description}</%text>")
     set(PC_VERSION "<%text>${version}</%text>")
     set(PC_REQUIRES "<%text>${requires}</%text>")
+    set(PC_REQUIRES_PRIVATE "<%text>${requires_private}</%text>")
     set(PC_LIB "<%text>${libs}</%text>")
     set(PC_LIBS_PRIVATE "<%text>${libs_private}</%text>")
     set(output_filepath "<%text>${grpc_BINARY_DIR}/libs/opt/pkgconfig/${output_filename}</%text>")
@@ -861,6 +868,7 @@
     "gRPC platform support library"
     "<%text>${gRPC_CORE_VERSION}</%text>"
     "${" ".join(list_abseil_pkg_targets("gpr"))}"
+    ""
     "${" ".join(("-l" + l) for l in ["gpr"])}"
     ""
     "gpr.pc")
@@ -870,9 +878,10 @@
     "gRPC"
     "high performance general RPC framework"
     "<%text>${gRPC_CORE_VERSION}</%text>"
-    "${" ".join(["gpr", "openssl"] + list_abseil_pkg_targets("grpc"))}"
-    "${" ".join(("-l" + l) for l in ["grpc", "address_sorting", "re2", "upb", "cares", "z"])}"
-    ""
+    "${" ".join(["gpr"] + list_abseil_pkg_targets("grpc"))}"
+    "${" ".join(["openssl", "re2", "libcares", "zlib"])}"
+    "${" ".join(("-l" + l) for l in ["grpc",])}"
+    "${" ".join(("-l" + l) for l in ["address_sorting", "upb"])}"
     "grpc.pc")
 
   # grpc_unsecure .pc file
@@ -881,8 +890,9 @@
     "high performance general RPC framework without SSL"
     "<%text>${gRPC_CORE_VERSION}</%text>"
     "${" ".join(["gpr"] + list_abseil_pkg_targets("grpc_unsecure"))}"
+    "${" ".join(["re2", "libcares", "zlib"])}"
     "${" ".join(("-l" + l) for l in ["grpc_unsecure"])}"
-    ""
+    "${" ".join(("-l" + l) for l in ["address_sorting", "upb"])}"
     "grpc_unsecure.pc")
 
   # grpc++ .pc file
@@ -891,6 +901,7 @@
     "C++ wrapper for gRPC"
     "<%text>${gRPC_CPP_VERSION}</%text>"
     "${" ".join(["grpc"] + list_abseil_pkg_targets("grpc++"))}"
+    ""
     "${" ".join(("-l" + l) for l in ["grpc++"])}"
     ""
     "grpc++.pc")
@@ -901,6 +912,7 @@
     "C++ wrapper for gRPC without SSL"
     "<%text>${gRPC_CPP_VERSION}</%text>"
     "${" ".join(["grpc_unsecure"] + list_abseil_pkg_targets("grpc++_unsecure"))}"
+    ""
     "${" ".join(("-l" + l) for l in ["grpc++_unsecure"])}"
     ""
     "grpc++_unsecure.pc")

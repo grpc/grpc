@@ -22,10 +22,10 @@
 
 #include "absl/strings/str_cat.h"
 
+#include <grpc/support/json.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/security/certificate_provider/certificate_provider_registry.h"
 
 namespace grpc_core {
@@ -44,11 +44,11 @@ CertificateProviderStore::PluginDefinition::JsonLoader(const JsonArgs&) {
 }
 
 void CertificateProviderStore::PluginDefinition::JsonPostLoad(
-    const Json& json, const JsonArgs&, ErrorList* errors) {
+    const Json& json, const JsonArgs& args, ValidationErrors* errors) {
   // Check that plugin is supported.
   CertificateProviderFactory* factory = nullptr;
   if (!plugin_name.empty()) {
-    ScopedField field(errors, ".plugin_name");
+    ValidationErrors::ScopedField field(errors, ".plugin_name");
     factory = CoreConfiguration::Get()
                   .certificate_provider_registry()
                   .LookupCertificateProviderFactory(plugin_name);
@@ -59,28 +59,23 @@ void CertificateProviderStore::PluginDefinition::JsonPostLoad(
   }
   // Parse the config field.
   {
-    ScopedField field(errors, ".config");
-    auto it = json.object_value().find("config");
+    ValidationErrors::ScopedField field(errors, ".config");
+    auto it = json.object().find("config");
     // The config field is optional; if not present, we use an empty JSON
     // object.
     Json::Object config_json;
-    if (it != json.object_value().end()) {
-      if (it->second.type() != Json::Type::OBJECT) {
+    if (it != json.object().end()) {
+      if (it->second.type() != Json::Type::kObject) {
         errors->AddError("is not an object");
         return;  // No point parsing config.
       } else {
-        config_json = it->second.object_value();
+        config_json = it->second.object();
       }
     }
     if (factory == nullptr) return;
     // Use plugin to validate and parse config.
-    grpc_error_handle parse_error = GRPC_ERROR_NONE;
-    config =
-        factory->CreateCertificateProviderConfig(config_json, &parse_error);
-    if (!GRPC_ERROR_IS_NONE(parse_error)) {
-      errors->AddError(grpc_error_std_string(parse_error));
-      GRPC_ERROR_UNREF(parse_error);
-    }
+    config = factory->CreateCertificateProviderConfig(
+        Json::FromObject(std::move(config_json)), args, errors);
   }
 }
 

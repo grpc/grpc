@@ -19,15 +19,22 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 
 #include <errno.h>
+#include <stdint.h>
 #include <string.h>
+
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "gtest/gtest.h"
+
+#include "src/core/lib/iomgr/port.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 #ifdef GRPC_HAVE_UNIX_SOCKET
 #include <sys/un.h>
 #endif
 
-#include <gtest/gtest.h>
+#include <string>
 
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/address_utils/parse_address.h"
@@ -224,36 +231,44 @@ TEST(SockAddrUtilsTest, SockAddrToString) {
   grpc_resolved_address inputun;
   struct sockaddr_un* sock_un = reinterpret_cast<struct sockaddr_un*>(&inputun);
   ASSERT_EQ(grpc_core::UnixSockaddrPopulate("/some/unix/path", &inputun),
-            GRPC_ERROR_NONE);
+            absl::OkStatus());
   EXPECT_EQ(grpc_sockaddr_to_string(&inputun, true).value(), "/some/unix/path");
 
   std::string max_filepath(sizeof(sock_un->sun_path) - 1, 'x');
   ASSERT_EQ(grpc_core::UnixSockaddrPopulate(max_filepath, &inputun),
-            GRPC_ERROR_NONE);
+            absl::OkStatus());
   EXPECT_EQ(grpc_sockaddr_to_string(&inputun, true).value(), max_filepath);
 
   ASSERT_EQ(grpc_core::UnixSockaddrPopulate(max_filepath, &inputun),
-            GRPC_ERROR_NONE);
+            absl::OkStatus());
   sock_un->sun_path[sizeof(sockaddr_un::sun_path) - 1] = 'x';
   EXPECT_EQ(grpc_sockaddr_to_string(&inputun, true).status(),
             absl::InvalidArgumentError("UDS path is not null-terminated"));
 
   ASSERT_EQ(grpc_core::UnixAbstractSockaddrPopulate("some_unix_path", &inputun),
-            GRPC_ERROR_NONE);
+            absl::OkStatus());
   EXPECT_EQ(grpc_sockaddr_to_string(&inputun, true).value(),
             absl::StrCat(std::string(1, '\0'), "some_unix_path"));
 
   std::string max_abspath(sizeof(sock_un->sun_path) - 1, '\0');
   ASSERT_EQ(grpc_core::UnixAbstractSockaddrPopulate(max_abspath, &inputun),
-            GRPC_ERROR_NONE);
+            absl::OkStatus());
   EXPECT_EQ(grpc_sockaddr_to_string(&inputun, true).value(),
             absl::StrCat(std::string(1, '\0'), max_abspath));
 
   ASSERT_EQ(grpc_core::UnixAbstractSockaddrPopulate("", &inputun),
-            GRPC_ERROR_NONE);
+            absl::OkStatus());
   inputun.len = sizeof(sock_un->sun_family);
   EXPECT_EQ(grpc_sockaddr_to_string(&inputun, true).status(),
             absl::InvalidArgumentError("empty UDS abstract path"));
+#endif
+
+#ifdef GRPC_HAVE_VSOCK
+  grpc_resolved_address inputvm;
+  ASSERT_EQ(grpc_core::VSockaddrPopulate("-1:12345", &inputvm),
+            absl::OkStatus());
+  EXPECT_EQ(grpc_sockaddr_to_string(&inputvm, true).value(),
+            absl::StrCat((uint32_t)-1, ":12345"));
 #endif
 }
 
@@ -261,22 +276,34 @@ TEST(SockAddrUtilsTest, SockAddrToString) {
 
 TEST(SockAddrUtilsTest, UnixSockAddrToUri) {
   grpc_resolved_address addr;
-  ASSERT_TRUE(GRPC_ERROR_NONE ==
+  ASSERT_TRUE(absl::OkStatus() ==
               grpc_core::UnixSockaddrPopulate("sample-path", &addr));
   EXPECT_EQ(grpc_sockaddr_to_uri(&addr).value(), "unix:sample-path");
 
-  ASSERT_TRUE(GRPC_ERROR_NONE ==
+  ASSERT_TRUE(absl::OkStatus() ==
               grpc_core::UnixAbstractSockaddrPopulate("no-nulls", &addr));
   EXPECT_EQ(grpc_sockaddr_to_uri(&addr).value(), "unix-abstract:no-nulls");
 
-  ASSERT_TRUE(GRPC_ERROR_NONE ==
+  ASSERT_TRUE(absl::OkStatus() ==
               grpc_core::UnixAbstractSockaddrPopulate(
                   std::string("path_\0with_null", 15), &addr));
   EXPECT_EQ(grpc_sockaddr_to_uri(&addr).value(),
             "unix-abstract:path_%00with_null");
 }
 
-#endif /* GRPC_HAVE_UNIX_SOCKET */
+#endif  // GRPC_HAVE_UNIX_SOCKET
+
+#ifdef GRPC_HAVE_VSOCK
+
+TEST(SockAddrUtilsTest, VSockAddrToUri) {
+  grpc_resolved_address addr;
+  ASSERT_TRUE(absl::OkStatus() ==
+              grpc_core::VSockaddrPopulate("-1:12345", &addr));
+  EXPECT_EQ(grpc_sockaddr_to_uri(&addr).value(),
+            absl::StrCat("vsock:", (uint32_t)-1, ":12345"));
+}
+
+#endif  // GRPC_HAVE_VSOCK
 
 TEST(SockAddrUtilsTest, SockAddrSetGetPort) {
   grpc_resolved_address input4 = MakeAddr4(kIPv4, sizeof(kIPv4));

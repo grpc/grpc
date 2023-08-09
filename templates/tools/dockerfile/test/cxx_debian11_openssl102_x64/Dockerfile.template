@@ -18,10 +18,12 @@
   
   <%include file="../../apt_get_basic.include"/>
   <%include file="../../run_tests_python_deps.include"/>
+  <%include file="../../cxx_test_deps.include"/>
   <%include file="../../cxx_deps.include"/>
   <%include file="../../cmake.include"/>
   <%include file="../../ccache.include"/>
   <%include file="../../run_tests_addons.include"/>
+  <%include file="../../git-jenkins.include"/>
 
   # Install openssl 1.0.2 from source
   RUN apt-get update && apt-get install -y build-essential zlib1g-dev

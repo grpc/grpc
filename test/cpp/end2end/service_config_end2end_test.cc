@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <algorithm>
 #include <memory>
@@ -39,7 +39,7 @@
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
 #include <grpcpp/health_check_service_interface.h>
-#include <grpcpp/impl/codegen/sync.h>
+#include <grpcpp/impl/sync.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/support/validate_service_config.h>
@@ -50,6 +50,8 @@
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/config_vars.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/tcp_client.h"
@@ -64,9 +66,6 @@
 #include "test/core/util/resolve_localhost_ip46.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
-
-using grpc::testing::EchoRequest;
-using grpc::testing::EchoResponse;
 
 namespace grpc {
 namespace testing {
@@ -123,10 +122,12 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
         creds_(new SecureChannelCredentials(
             grpc_fake_transport_security_credentials_create())) {}
 
-  static void SetUpTestCase() {
+  static void SetUpTestSuite() {
     // Make the backup poller poll very frequently in order to pick up
     // updates from all the subchannels's FDs.
-    GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
+    grpc_core::ConfigVars::Overrides overrides;
+    overrides.client_channel_backup_poll_interval_ms = 1;
+    grpc_core::ConfigVars::SetOverrides(overrides);
   }
 
   void SetUp() override {
@@ -183,8 +184,7 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
       GPR_ASSERT(lb_uri.ok());
       grpc_resolved_address address;
       GPR_ASSERT(grpc_parse_uri(*lb_uri, &address));
-      result.addresses->emplace_back(address.addr, address.len,
-                                     grpc_core::ChannelArgs());
+      result.addresses->emplace_back(address, grpc_core::ChannelArgs());
     }
     return result;
   }
@@ -320,7 +320,7 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
       gpr_log(GPR_INFO, "starting server on port %d", port_);
       grpc::internal::MutexLock lock(&mu_);
       started_ = true;
-      thread_ = absl::make_unique<std::thread>(
+      thread_ = std::make_unique<std::thread>(
           std::bind(&ServerData::Serve, this, server_host));
       while (!server_ready_) {
         cond_.Wait(&mu_);

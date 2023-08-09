@@ -116,9 +116,10 @@
       :tag => "v#{version}",
     }
 
-    s.ios.deployment_target = '9.0'
-    s.osx.deployment_target = '10.10'
-    s.tvos.deployment_target = '10.0'
+    s.ios.deployment_target = '10.0'
+    s.osx.deployment_target = '10.12'
+    s.tvos.deployment_target = '12.0'
+    s.watchos.deployment_target = '6.0'
 
     s.requires_arc = false
 
@@ -136,7 +137,9 @@
       'USER_HEADER_SEARCH_PATHS' => '"$(PODS_TARGET_SRCROOT)"'${"\\"}
           ' "$(PODS_TARGET_SRCROOT)/src/core/ext/upb-generated"'${"\\"}
           ' "$(PODS_TARGET_SRCROOT)/src/core/ext/upbdefs-generated"'${"\\"}
-          ' "$(PODS_TARGET_SRCROOT)/third_party/**"',
+          ' "$(PODS_TARGET_SRCROOT)/third_party/re2"'${"\\"}
+          ' "$(PODS_TARGET_SRCROOT)/third_party/upb"'${"\\"}
+          ' "$(PODS_TARGET_SRCROOT)/third_party/xxhash"',
       'GCC_PREPROCESSOR_DEFINITIONS' => '"$(inherited)" "COCOAPODS=1"',
       'CLANG_WARN_STRICT_PROTOTYPES' => 'NO',
       'CLANG_WARN_DOCUMENTATION_COMMENTS' => 'NO',
@@ -146,6 +149,7 @@
       # build.
       'USE_HEADERMAP' => 'NO',
       'ALWAYS_SEARCH_USER_PATHS' => 'NO',
+      'CLANG_CXX_LANGUAGE_STANDARD' => 'c++14',
     }
 
     s.libraries = 'c++'
@@ -168,7 +172,7 @@
       ss.header_mappings_dir = '.'
       ss.dependency "#{s.name}/Interface", version
       ss.dependency 'gRPC-Core', version
-      abseil_version = '1.20220623.0'
+      abseil_version = '1.20230125.3'
       % for abseil_spec in grpcpp_abseil_specs:
       ss.dependency '${abseil_spec}', abseil_version
       % endfor

@@ -163,6 +163,7 @@ def grpc_objc_testing_library(
         defines = defines,
         includes = includes,
         deps = deps + additional_deps,
+        testonly = 1,
     )
 
 def local_objc_grpc_library(name, deps, testing = True, srcs = [], use_well_known_protos = False, **kwargs):

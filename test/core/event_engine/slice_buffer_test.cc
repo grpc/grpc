@@ -14,14 +14,17 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
+#include <string.h>
 
+#include <utility>
+
+#include "gtest/gtest.h"
+
+#include <grpc/event_engine/slice.h>
 #include <grpc/event_engine/slice_buffer.h>
-#include <grpc/grpc.h>
-
-#include "src/core/lib/slice/slice.h"
-#include "test/core/util/test_config.h"
+#include <grpc/slice.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 
 using ::grpc_event_engine::experimental::Slice;
 using ::grpc_event_engine::experimental::SliceBuffer;

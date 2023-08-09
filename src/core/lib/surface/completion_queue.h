@@ -1,31 +1,31 @@
-/*
- *
- * Copyright 2015-2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015-2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-#ifndef GRPC_CORE_LIB_SURFACE_COMPLETION_QUEUE_H
-#define GRPC_CORE_LIB_SURFACE_COMPLETION_QUEUE_H
+#ifndef GRPC_SRC_CORE_LIB_SURFACE_COMPLETION_QUEUE_H
+#define GRPC_SRC_CORE_LIB_SURFACE_COMPLETION_QUEUE_H
 
-/* Internal API for completion queues */
+// Internal API for completion queues
 
 #include <grpc/support/port_platform.h>
 
 #include <stdint.h>
 
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/grpc.h>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
@@ -33,8 +33,8 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 
-/* These trace flags default to 1. The corresponding lines are only traced
-   if grpc_api_trace is also truthy */
+// These trace flags default to 1. The corresponding lines are only traced
+// if grpc_api_trace is also truthy
 extern grpc_core::TraceFlag grpc_cq_pluck_trace;
 extern grpc_core::TraceFlag grpc_trace_operation_failures;
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_pending_tags;
@@ -45,13 +45,13 @@ typedef struct grpc_cq_completion {
       grpc_core::MultiProducerSingleConsumerQueue::Node>
       node;
 
-  /** user supplied tag */
+  /// user supplied tag
   void* tag;
-  /** done callback - called when this queue element is no longer
-      needed by the completion queue */
+  /// done callback - called when this queue element is no longer
+  /// needed by the completion queue
   void (*done)(void* done_arg, struct grpc_cq_completion* c);
   void* done_arg;
-  /** next pointer; low bit is used to indicate success or not */
+  /// next pointer; low bit is used to indicate success or not
   uintptr_t next;
 } grpc_cq_completion;
 
@@ -71,14 +71,14 @@ void grpc_cq_internal_unref(grpc_completion_queue* cq);
 #define GRPC_CQ_INTERNAL_UNREF(cq, reason) grpc_cq_internal_unref(cq)
 #endif
 
-/* Flag that an operation is beginning: the completion channel will not finish
-   shutdown until a corrensponding grpc_cq_end_* call is made.
-   \a tag is currently used only in debug builds. Return true on success, and
-   false if completion_queue has been shutdown. */
+// Flag that an operation is beginning: the completion channel will not finish
+// shutdown until a corrensponding grpc_cq_end_* call is made.
+// \a tag is currently used only in debug builds. Return true on success, and
+// false if completion_queue has been shutdown.
 bool grpc_cq_begin_op(grpc_completion_queue* cq, void* tag);
 
-/* Queue a GRPC_OP_COMPLETED operation; tag must correspond to the tag passed to
-   grpc_cq_begin_op */
+// Queue a GRPC_OP_COMPLETED operation; tag must correspond to the tag passed to
+// grpc_cq_begin_op
 void grpc_cq_end_op(grpc_completion_queue* cq, void* tag,
                     grpc_error_handle error,
                     void (*done)(void* done_arg, grpc_cq_completion* storage),
@@ -97,4 +97,4 @@ grpc_completion_queue* grpc_completion_queue_create_internal(
     grpc_cq_completion_type completion_type, grpc_cq_polling_type polling_type,
     grpc_completion_queue_functor* shutdown_callback);
 
-#endif /* GRPC_CORE_LIB_SURFACE_COMPLETION_QUEUE_H */
+#endif  // GRPC_SRC_CORE_LIB_SURFACE_COMPLETION_QUEUE_H

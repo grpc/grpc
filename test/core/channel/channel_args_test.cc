@@ -1,41 +1,44 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "src/core/lib/channel/channel_args.h"
 
 #include <string.h>
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
+#include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
-#include <grpc/impl/codegen/grpc_types.h>
-#include <grpc/impl/codegen/log.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/surface/channel.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
+
+using ::grpc_event_engine::experimental::CreateEventEngine;
+using ::grpc_event_engine::experimental::EventEngine;
 
 TEST(ChannelArgsTest, Noop) { ChannelArgs(); }
 
@@ -69,6 +72,19 @@ TEST(ChannelArgsTest, SetGetRemove) {
             ChannelArgs::Value(ChannelArgs::Pointer(ptr, &malloc_vtable)));
   EXPECT_EQ(*e.Get("alpha"), ChannelArgs::Value("beta"));
   gpr_free(ptr);
+}
+
+TEST(ChannelArgsTest, RemoveAllKeysWithPrefix) {
+  ChannelArgs args;
+  args = args.Set("foo", 1);
+  args = args.Set("foo.bar", 2);
+  args = args.Set("foo.baz", 3);
+  args = args.Set("bar", 4);
+  ChannelArgs modified = args.RemoveAllKeysWithPrefix("foo.");
+  EXPECT_EQ(modified.GetInt("foo"), 1);
+  EXPECT_EQ(modified.GetInt("foo.bar"), absl::nullopt);
+  EXPECT_EQ(modified.GetInt("foo.baz"), absl::nullopt);
+  EXPECT_EQ(modified.GetInt("bar"), 4);
 }
 
 TEST(ChannelArgsTest, StoreRefCountedPtr) {
@@ -122,6 +138,75 @@ TEST(ChannelArgsTest, ToAndFromC) {
   ChannelArgs b = ChannelArgs::FromC(a.ToC().get());
   EXPECT_EQ(a, b);
   gpr_free(ptr);
+}
+
+// shared_ptrs in ChannelArgs must support enable_shared_from_this
+class ShareableObject : public std::enable_shared_from_this<ShareableObject> {
+ public:
+  explicit ShareableObject(int n) : n(n) {}
+  int n;
+  static int ChannelArgsCompare(const ShareableObject* a,
+                                const ShareableObject* b) {
+    return a->n - b->n;
+  }
+  static absl::string_view ChannelArgName() { return "grpc.test"; }
+};
+
+TEST(ChannelArgsTest, StoreAndRetrieveSharedPtr) {
+  std::shared_ptr<ShareableObject> copied_obj;
+  {
+    ChannelArgs channel_args;
+    auto shared_obj = std::make_shared<ShareableObject>(42);
+    EXPECT_TRUE(shared_obj.unique());
+    channel_args = channel_args.SetObject(shared_obj);
+    EXPECT_FALSE(shared_obj.unique());
+    copied_obj = channel_args.GetObjectRef<ShareableObject>();
+    EXPECT_EQ(copied_obj->n, 42);
+    // Refs: p, copied_obj, and ChannelArgs
+    EXPECT_EQ(3, copied_obj.use_count());
+  }
+  // The p and ChannelArgs are deleted.
+  EXPECT_TRUE(copied_obj.unique());
+  EXPECT_EQ(copied_obj->n, 42);
+}
+
+TEST(ChannelArgsTest, RetrieveRawPointerFromStoredSharedPtr) {
+  ChannelArgs channel_args;
+  auto shared_obj = std::make_shared<ShareableObject>(42);
+  EXPECT_TRUE(shared_obj.unique());
+  channel_args = channel_args.SetObject(shared_obj);
+  EXPECT_FALSE(shared_obj.unique());
+  ShareableObject* raw_obj = channel_args.GetObject<ShareableObject>();
+  EXPECT_EQ(raw_obj->n, 42);
+  // Refs: p and ChannelArgs
+  EXPECT_EQ(2, shared_obj.use_count());
+}
+
+TEST(ChannelArgsTest, StoreSharedPtrEventEngine) {
+  auto p = std::shared_ptr<EventEngine>(CreateEventEngine());
+  ChannelArgs a;
+  a = a.SetObject(p);
+  Notification signal;
+  bool triggered = false;
+  a.GetObjectRef<EventEngine>()->Run([&triggered, &signal] {
+    triggered = true;
+    signal.Notify();
+  });
+  signal.WaitForNotification();
+  ASSERT_TRUE(triggered);
+}
+
+TEST(ChannelArgsTest, GetNonOwningEventEngine) {
+  auto p = std::shared_ptr<EventEngine>(CreateEventEngine());
+  ASSERT_TRUE(p.unique());
+  ChannelArgs a;
+  a = a.SetObject(p);
+  ASSERT_FALSE(p.unique());
+  ASSERT_EQ(p.use_count(), 2);
+  EventEngine* engine = a.GetObject<EventEngine>();
+  (void)engine;
+  // p and the channel args
+  ASSERT_EQ(p.use_count(), 2);
 }
 
 }  // namespace grpc_core

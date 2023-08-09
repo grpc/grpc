@@ -1,40 +1,38 @@
-/*
- *
- * Copyright 2015-2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015-2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <limits.h>
 #include <stdint.h>
 #include <string.h>
 
 #include <algorithm>
-#include <iterator>
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/compression_types.h>
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/impl/compression_types.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/workaround_list.h>
 #include <grpcpp/completion_queue.h>
-#include <grpcpp/impl/codegen/server_interface.h>
 #include <grpcpp/impl/server_builder_option.h>
 #include <grpcpp/impl/server_builder_plugin.h>
 #include <grpcpp/impl/service_type.h>
@@ -44,8 +42,8 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
+#include <grpcpp/server_interface.h>
 #include <grpcpp/support/channel_arguments.h>
-#include <grpcpp/support/config.h>
 #include <grpcpp/support/server_interceptor.h>
 
 #include "src/core/lib/gpr/string.h"
@@ -158,6 +156,13 @@ void ServerBuilder::experimental_type::SetAuthorizationPolicyProvider(
     std::shared_ptr<experimental::AuthorizationPolicyProviderInterface>
         provider) {
   builder_->authorization_provider_ = std::move(provider);
+}
+
+void ServerBuilder::experimental_type::EnableCallMetricRecording(
+    experimental::ServerMetricRecorder* server_metric_recorder) {
+  builder_->AddChannelArgument(GRPC_ARG_SERVER_CALL_METRIC_RECORDING, 1);
+  GPR_ASSERT(builder_->server_metric_recorder_ == nullptr);
+  builder_->server_metric_recorder_ = server_metric_recorder;
 }
 
 ServerBuilder& ServerBuilder::SetOption(
@@ -357,18 +362,11 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
     gpr_log(GPR_INFO, "Callback server.");
   }
 
-  // Merge the application and internal interceptors together.
-  // Internal interceptors go first.
-  auto creators = std::move(internal_interceptor_creators_);
-  creators.insert(creators.end(),
-                  std::make_move_iterator(interceptor_creators_.begin()),
-                  std::make_move_iterator(interceptor_creators_.end()));
-
   std::unique_ptr<grpc::Server> server(new grpc::Server(
       &args, sync_server_cqs, sync_server_settings_.min_pollers,
       sync_server_settings_.max_pollers, sync_server_settings_.cq_timeout_msec,
       std::move(acceptors_), server_config_fetcher_, resource_quota_,
-      std::move(creators)));
+      std::move(interceptor_creators_), server_metric_recorder_));
 
   ServerInitializer* initializer = server->initializer();
 

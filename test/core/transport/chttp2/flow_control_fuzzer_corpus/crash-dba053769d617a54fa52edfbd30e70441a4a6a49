@@ -1,0 +1,100 @@
+enable_bdp: true
+actions {
+  set_min_progress_size {
+    size: 33554432
+  }
+}
+actions {
+  stream_write {
+    size: 1633746944
+  }
+}
+actions {
+  set_memory_quota: 0
+}
+actions {
+  step_time_ms: 474140901376
+}
+actions {
+  periodic_update {
+  }
+}
+actions {
+  stream_write {
+    id: 2883584
+    size: 2883584
+  }
+}
+actions {
+  step_time_ms: 474140901376
+}
+actions {
+  periodic_update {
+  }
+}
+actions {
+  periodic_update {
+  }
+}
+actions {
+  read_send_from_remote {
+  }
+}
+actions {
+}
+actions {
+  periodic_update {
+  }
+}
+actions {
+  read_send_from_remote {
+  }
+}
+actions {
+  step_time_ms: 474140901376
+}
+actions {
+  set_memory_quota: 474140901376
+}
+actions {
+  periodic_update {
+  }
+}
+actions {
+  periodic_update {
+  }
+}
+actions {
+  step_time_ms: 474140901376
+}
+actions {
+  periodic_update {
+  }
+}
+actions {
+  step_time_ms: 474140901376
+}
+actions {
+  periodic_update {
+  }
+}
+actions {
+  set_min_progress_size {
+    id: 1593844738
+    size: 11264
+  }
+}
+actions {
+  step_time_ms: 474140901376
+}
+actions {
+  periodic_update {
+  }
+}
+actions {
+  step_time_ms: 474140901376
+}
+actions {
+  periodic_update {
+  }
+}

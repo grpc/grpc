@@ -17,6 +17,8 @@ syntax = "proto3";
 package api_fuzzer;
 
 import "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto";
+import "test/core/util/fuzz_config_vars.proto";
+import "test/core/util/fuzzing_channel_args.proto";
 
 message Empty {}
 
@@ -30,17 +32,6 @@ message StringSlice {
     reserved 2;
     reserved "intern";
     string value = 1;
-}
-
-message ResourceQuota {}
-
-message ChannelArg {
-    string key = 1;
-    oneof value {
-        string str = 2;
-        int64 i = 3;
-        ResourceQuota resource_quota = 4;
-    }
 }
 
 message CredArtifact {
@@ -92,21 +83,14 @@ message Metadatum {
     ByteSlice value = 2;
 }
 
-message ChannelAction {
-  uint64 add_n_bytes_writable = 1;
-  uint64 add_n_bytes_readable = 2;
-  uint64 wait_ms = 3;
-}
-
 message CreateChannel {
     string target = 1;
-    repeated ChannelArg channel_args = 2;
+    grpc.testing.FuzzingChannelArgs channel_args = 2;
     ChannelCreds channel_creds = 3;
-    repeated ChannelAction channel_actions = 4;
 }
 
 message CreateServer {
-    repeated ChannelArg channel_args = 1;
+    grpc.testing.FuzzingChannelArgs channel_args = 1;
 }
 
 message CreateCall {
@@ -193,4 +177,5 @@ message Action {
 message Msg {
     repeated Action actions = 1;
     fuzzing_event_engine.Actions event_engine_actions = 2;
+    grpc.testing.FuzzConfigVars config_vars = 3;
 }

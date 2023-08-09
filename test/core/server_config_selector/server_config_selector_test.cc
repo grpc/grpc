@@ -18,24 +18,21 @@
 
 #include "src/core/ext/filters/server_config_selector/server_config_selector.h"
 
-#include <gtest/gtest.h>
+#include "absl/status/status.h"
+#include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "test/core/util/test_config.h"
 
-namespace grpc {
+namespace grpc_core {
 namespace testing {
 namespace {
 
-using grpc_core::ServerConfigSelector;
-using grpc_core::ServerConfigSelectorProvider;
-
 class TestServerConfigSelectorProvider : public ServerConfigSelectorProvider {
-  absl::StatusOr<grpc_core::RefCountedPtr<ServerConfigSelector>> Watch(
-      std::unique_ptr<ServerConfigSelectorWatcher> /* watcher */) override {
+  absl::StatusOr<RefCountedPtr<ServerConfigSelector>> Watch(
+      std::unique_ptr<ServerConfigSelectorWatcher> /*watcher*/) override {
     return absl::UnavailableError("Test ServerConfigSelector");
   }
 
@@ -48,33 +45,24 @@ class TestServerConfigSelectorProvider : public ServerConfigSelectorProvider {
 // and destroyed
 TEST(ServerConfigSelectorProviderTest, CopyChannelArgs) {
   auto server_config_selector_provider =
-      grpc_core::MakeRefCounted<TestServerConfigSelectorProvider>();
-  grpc_arg arg = server_config_selector_provider->MakeChannelArg();
-  grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
+      MakeRefCounted<TestServerConfigSelectorProvider>();
+  auto args = ChannelArgs().SetObject(server_config_selector_provider);
   EXPECT_EQ(server_config_selector_provider,
-            grpc_core::ChannelArgs::FromC(args)
-                .GetObject<ServerConfigSelectorProvider>());
-  grpc_channel_args_destroy(args);
+            args.GetObject<ServerConfigSelectorProvider>());
 }
 
 // Test compare on channel args with the same ServerConfigSelectorProvider
 TEST(ServerConfigSelectorProviderTest, ChannelArgsCompare) {
   auto server_config_selector_provider =
-      grpc_core::MakeRefCounted<TestServerConfigSelectorProvider>();
-  grpc_arg arg = server_config_selector_provider->MakeChannelArg();
-  grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
-  grpc_channel_args* new_args = grpc_channel_args_copy(args);
-  EXPECT_EQ(grpc_core::ChannelArgs::FromC(new_args)
-                .GetObject<ServerConfigSelectorProvider>(),
-            grpc_core::ChannelArgs::FromC(args)
-                .GetObject<ServerConfigSelectorProvider>());
-  grpc_channel_args_destroy(args);
-  grpc_channel_args_destroy(new_args);
+      MakeRefCounted<TestServerConfigSelectorProvider>();
+  auto args = ChannelArgs().SetObject(server_config_selector_provider);
+  auto args2 = ChannelArgs().SetObject(server_config_selector_provider);
+  EXPECT_EQ(args, args2);
 }
 
 }  // namespace
 }  // namespace testing
-}  // namespace grpc
+}  // namespace grpc_core
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);

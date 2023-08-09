@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <atomic>
 #include <cstring>
@@ -24,32 +24,26 @@
 #include <vector>
 
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/connectivity_state.h>
-#include <grpc/impl/codegen/gpr_types.h>
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/connectivity_state.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/completion_queue.h>
 #include <grpcpp/impl/call.h>
-#include <grpcpp/impl/codegen/call_op_set.h>
-#include <grpcpp/impl/codegen/call_op_set_interface.h>
-#include <grpcpp/impl/codegen/completion_queue_tag.h>
-#include <grpcpp/impl/codegen/core_codegen_interface.h>
-#include <grpcpp/impl/codegen/sync.h>
-#include <grpcpp/impl/grpc_library.h>
+#include <grpcpp/impl/call_op_set_interface.h>
+#include <grpcpp/impl/completion_queue_tag.h>
 #include <grpcpp/impl/rpc_method.h>
+#include <grpcpp/impl/sync.h>
 #include <grpcpp/support/client_interceptor.h>
-#include <grpcpp/support/config.h>
 #include <grpcpp/support/slice.h>
 
 #include "src/core/lib/iomgr/iomgr.h"
 
 namespace grpc {
 
-static grpc::internal::GrpcLibraryInitializer g_gli_initializer;
 Channel::Channel(
     const std::string& host, grpc_channel* channel,
     std::vector<
@@ -57,7 +51,6 @@ Channel::Channel(
         interceptor_creators)
     : host_(host), c_channel_(channel) {
   interceptor_creators_ = std::move(interceptor_creators);
-  g_gli_initializer.summon();
 }
 
 Channel::~Channel() {
@@ -76,7 +69,7 @@ Channel::~Channel() {
 namespace {
 
 inline grpc_slice SliceFromArray(const char* arr, size_t len) {
-  return g_core_codegen_interface->grpc_slice_from_copied_buffer(arr, len);
+  return grpc_slice_from_copied_buffer(arr, len);
 }
 
 std::string GetChannelInfoField(grpc_channel* channel,

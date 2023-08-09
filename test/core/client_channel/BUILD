@@ -23,9 +23,11 @@ grpc_cc_test(
     srcs = ["client_channel_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
     deps = [
-        "//:channel_args",
         "//:grpc_client_channel",
+        "//src/core:channel_args",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -39,6 +41,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:channel_args",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -60,29 +63,35 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "service_config_test",
-    srcs = ["service_config_test.cc"],
+    name = "client_channel_service_config_test",
+    srcs = ["client_channel_service_config_test.cc"],
     external_deps = [
         "gtest",
     ],
     language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:channel_args",
         "//test/core/util:grpc_test_util",
     ],
 )
 
 grpc_cc_test(
-    name = "rls_lb_config_parser_test",
-    srcs = ["rls_lb_config_parser_test.cc"],
+    name = "retry_service_config_test",
+    srcs = ["retry_service_config_test.cc"],
     external_deps = [
         "gtest",
     ],
     language = "C++",
-    tags = ["no_test_ios"],
+    uses_event_engine = False,
+    uses_polling = False,
     deps = [
+        "//:gpr",
         "//:grpc",
+        "//src/core:channel_args",
         "//test/core/util:grpc_test_util",
     ],
 )

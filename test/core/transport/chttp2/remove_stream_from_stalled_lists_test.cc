@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2020 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2020 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -29,21 +29,21 @@
 
 #include <gtest/gtest.h>
 
-#include "absl/memory/memory.h"
+#include "absl/types/optional.h"
 
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
-#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/global_config_generic.h"
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "test/core/util/port.h"
@@ -293,7 +293,7 @@ TEST(Pollers, TestDontCrashWhenTryingToReproIssueFixedBy23984) {
   const int kNumCalls = 64;
   std::vector<std::thread> threads;
   threads.reserve(kNumCalls);
-  std::unique_ptr<TestServer> test_server = absl::make_unique<TestServer>();
+  std::unique_ptr<TestServer> test_server = std::make_unique<TestServer>();
   const std::string server_address = test_server->address();
   for (int i = 0; i < kNumCalls; i++) {
     threads.push_back(std::thread([server_address]() {
@@ -357,7 +357,9 @@ int main(int argc, char** argv) {
   // Make sure that we will have an active poller on all client-side fd's that
   // are capable of sending settings frames with window updates etc., even in
   // the case that we don't have an active RPC operation on the fd.
-  GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
+  grpc_core::ConfigVars::Overrides overrides;
+  overrides.client_channel_backup_poll_interval_ms = 1;
+  grpc_core::ConfigVars::SetOverrides(overrides);
   grpc_core::chttp2::g_test_only_transport_target_window_estimates_mocker =
       new TransportTargetWindowEstimatesMocker();
   grpc::testing::TestEnvironment env(&argc, argv);

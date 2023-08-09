@@ -1,7 +1,5 @@
 install! 'cocoapods', :deterministic_uuids => false
 
-use_frameworks! if ENV['FRAMEWORKS'] != 'NO'
-
 ROOT_DIR = '../../../..'
 
 def grpc_deps
@@ -16,11 +14,11 @@ def grpc_deps
 end
 
 target 'watchOS-sample' do
-platform :ios, '9.0'
+platform :ios, '10.0'
   grpc_deps
 end
 
 target 'watchOS-sample WatchKit Extension' do
-platform :watchos, '4.0'
+platform :watchos, '6.0'
   grpc_deps
 end

@@ -18,6 +18,7 @@
 #include "src/core/lib/security/credentials/external/aws_request_signer.h"
 
 #include <algorithm>
+#include <initializer_list>
 #include <utility>
 #include <vector>
 
@@ -88,7 +89,7 @@ AwsRequestSigner::AwsRequestSigner(
   auto date_it = additional_headers_.find("date");
   if (amz_date_it != additional_headers_.end() &&
       date_it != additional_headers_.end()) {
-    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+    *error = GRPC_ERROR_CREATE(
         "Only one of {date, x-amz-date} can be specified, not both.");
     return;
   }
@@ -99,7 +100,7 @@ AwsRequestSigner::AwsRequestSigner(
     std::string err_str;
     if (!absl::ParseTime(kDateFormat, date_it->second, &request_date,
                          &err_str)) {
-      *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(err_str.c_str());
+      *error = GRPC_ERROR_CREATE(err_str.c_str());
       return;
     }
     static_request_date_ =
@@ -107,7 +108,7 @@ AwsRequestSigner::AwsRequestSigner(
   }
   absl::StatusOr<URI> tmp_url = URI::Parse(url);
   if (!tmp_url.ok()) {
-    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Invalid Aws request url.");
+    *error = GRPC_ERROR_CREATE("Invalid Aws request url.");
     return;
   }
   url_ = tmp_url.value();
@@ -170,6 +171,7 @@ std::map<std::string, std::string> AwsRequestSigner::GetSignedRequestHeaders() {
   canonical_request_vector.emplace_back("\n");
   // 5. SignedHeaders
   std::vector<absl::string_view> signed_headers_vector;
+  signed_headers_vector.reserve(request_headers_.size());
   for (const auto& header : request_headers_) {
     signed_headers_vector.emplace_back(header.first);
   }

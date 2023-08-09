@@ -12,19 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <stddef.h>
+
+#include <algorithm>
+#include <map>
+#include <memory>
+#include <utility>
 #include <vector>
 
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/support/log.h>
+
 #include "src/core/lib/gprpp/chunked_vector.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/gprpp/chunked_vector_fuzzer.pb.h"
 
 bool squelch = true;
 bool leak_check = true;
-
-static auto* g_memory_allocator = new grpc_core::MemoryAllocator(
-    grpc_core::ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
-        "test"));
 
 static constexpr size_t kChunkSize = 17;
 using IntHdl = std::shared_ptr<int>;
@@ -157,7 +165,9 @@ class Fuzzer {
     return &vectors_.emplace(index, Comparison(arena_.get())).first->second;
   }
 
-  ScopedArenaPtr arena_ = MakeScopedArena(128, g_memory_allocator);
+  MemoryAllocator memory_allocator_ = MemoryAllocator(
+      ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
+  ScopedArenaPtr arena_ = MakeScopedArena(128, &memory_allocator_);
   std::map<int, Comparison> vectors_;
 };
 }  // namespace grpc_core

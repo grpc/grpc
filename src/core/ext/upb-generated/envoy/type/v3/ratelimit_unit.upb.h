@@ -9,12 +9,17 @@
 #ifndef ENVOY_TYPE_V3_RATELIMIT_UNIT_PROTO_UPB_H_
 #define ENVOY_TYPE_V3_RATELIMIT_UNIT_PROTO_UPB_H_
 
-#include "upb/msg_internal.h"
-#include "upb/decode.h"
-#include "upb/decode_fast.h"
-#include "upb/encode.h"
+#include "upb/collections/array_internal.h"
+#include "upb/collections/map_gencode_util.h"
+#include "upb/message/accessors.h"
+#include "upb/message/internal.h"
+#include "upb/mini_table/enum_internal.h"
+#include "upb/wire/decode.h"
+#include "upb/wire/decode_fast.h"
+#include "upb/wire/encode.h"
 
-#include "upb/port_def.inc"
+// Must be last. 
+#include "upb/port/def.inc"
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,17 +30,19 @@ typedef enum {
   envoy_type_v3_SECOND = 1,
   envoy_type_v3_MINUTE = 2,
   envoy_type_v3_HOUR = 3,
-  envoy_type_v3_DAY = 4
+  envoy_type_v3_DAY = 4,
+  envoy_type_v3_MONTH = 5,
+  envoy_type_v3_YEAR = 6
 } envoy_type_v3_RateLimitUnit;
 
 
 
-extern const upb_MiniTable_File envoy_type_v3_ratelimit_unit_proto_upb_file_layout;
+extern const upb_MiniTableFile envoy_type_v3_ratelimit_unit_proto_upb_file_layout;
 
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif
 
-#include "upb/port_undef.inc"
+#include "upb/port/undef.inc"
 
 #endif  /* ENVOY_TYPE_V3_RATELIMIT_UNIT_PROTO_UPB_H_ */

@@ -15,6 +15,7 @@
 - script: tools/run_tests/sanity/check_shellcheck.sh
 - script: tools/run_tests/sanity/check_submodules.sh
 - script: tools/run_tests/sanity/check_test_filtering.py
+- script: tools/run_tests/sanity/check_testing_docker_images.sh
 - script: tools/run_tests/sanity/check_tracer_sanity.py
 - script: tools/run_tests/sanity/check_version.sh
 - script: tools/run_tests/sanity/core_banned_functions.py
@@ -32,15 +33,11 @@
 - script: tools/codegen/core/gen_grpc_tls_credentials_options.py --test
 - script: tools/distrib/clang_format_code.sh
   cpu_cost: 1000
-- script: tools/distrib/clang_tidy_code.sh
-  # ClangTidy needs to run exclusively because it uses files under the bazel output
-  # directory and this will be removed by another bazel invocation.
-  cpu_cost: 1000
-- script: tools/distrib/iwyu.sh
+- script: tools/distrib/gen_experiments_and_format.sh --check
   cpu_cost: 1000
 - script: tools/distrib/pylint_code.sh
 - script: tools/distrib/python/check_grpcio_tools.py
-- script: tools/distrib/yapf_code.sh --diff
+- script: tools/distrib/black_code.sh --check
   cpu_cost: 1000
 - script: tools/distrib/isort_code.sh --diff
   cpu_cost: 1000
@@ -49,3 +46,4 @@
 - script: tools/run_tests/sanity/build_banned_constructs.sh
 - script: tools/distrib/check_redundant_namespace_qualifiers.py
 - script: tools/distrib/check_namespace_qualification.py
+- script: tools/distrib/check_path_length.py

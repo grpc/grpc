@@ -49,22 +49,19 @@ py_library(
     srcs = ["methods.py"],
     imports = ["../../"],
     deps = [
-        "//src/python/grpcio/grpc:grpcio",
-        "//src/python/grpcio_tests/tests:bazel_namespace_package_hack",
         "//src/proto/grpc/testing:empty_py_pb2",
         "//src/proto/grpc/testing:py_messages_proto",
         "//src/proto/grpc/testing:py_test_proto",
         "//src/proto/grpc/testing:test_py_pb2_grpc",
+        "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_tests/tests:bazel_namespace_package_hack",
         requirement("google-auth"),
         requirement("requests"),
         requirement("urllib3"),
         requirement("chardet"),
         requirement("certifi"),
         requirement("idna"),
-    ] + select({
-        "//conditions:default": [requirement("enum34")],
-        "//:python3": [],
-    }),
+    ],
 )
 
 py_library(
@@ -97,6 +94,7 @@ py_library(
         "//src/proto/grpc/testing:py_test_proto",
         "//src/python/grpcio/grpc:grpcio",
         "//src/python/grpcio_tests/tests/unit:test_common",
+        requirement("absl-py"),
     ],
 )
 

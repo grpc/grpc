@@ -42,7 +42,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:lb_load_reporter",
-        "//:lb_server_load_reporting_filter",
+        "//src/core:lb_server_load_reporting_filter",
         "//test/core/util:grpc_test_util",
     ],
 )

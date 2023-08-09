@@ -12,11 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_PROMISE_DETAIL_PROMISE_FACTORY_H
-#define GRPC_CORE_LIB_PROMISE_DETAIL_PROMISE_FACTORY_H
+#ifndef GRPC_SRC_CORE_LIB_PROMISE_DETAIL_PROMISE_FACTORY_H
+#define GRPC_SRC_CORE_LIB_PROMISE_DETAIL_PROMISE_FACTORY_H
 
 #include <grpc/support/port_platform.h>
 
+#include <memory>
+#include <type_traits>
 #include <utility>
 
 #include "absl/meta/type_traits.h"
@@ -74,6 +76,20 @@ struct ResultOfT<F(Args...),
   using T = decltype(std::declval<RemoveCVRef<F>>()(std::declval<Args>()...));
 };
 
+template <typename F, typename... Args>
+struct ResultOfT<F(Args...)&,
+                 absl::void_t<decltype(std::declval<RemoveCVRef<F>>()(
+                     std::declval<Args>()...))>> {
+  using T = decltype(std::declval<RemoveCVRef<F>>()(std::declval<Args>()...));
+};
+
+template <typename F, typename... Args>
+struct ResultOfT<const F(Args...)&,
+                 absl::void_t<decltype(std::declval<RemoveCVRef<F>>()(
+                     std::declval<Args>()...))>> {
+  using T = decltype(std::declval<RemoveCVRef<F>>()(std::declval<Args>()...));
+};
+
 template <typename T>
 using ResultOf = typename ResultOfT<T>::T;
 
@@ -91,6 +107,9 @@ class Curried {
  private:
   GPR_NO_UNIQUE_ADDRESS F f_;
   GPR_NO_UNIQUE_ADDRESS Arg arg_;
+#ifndef NDEBUG
+  std::unique_ptr<int> asan_canary_ = std::make_unique<int>(0);
+#endif
 };
 
 // Promote a callable(A) -> T | Poll<T> to a PromiseFactory(A) -> Promise<T> by
@@ -127,6 +146,14 @@ PromiseFactoryImpl(F&& f, A&& arg) {
   return f(std::forward<A>(arg));
 }
 
+// Given a callable(A) -> Promise<T>, name it a PromiseFactory and use it.
+template <typename A, typename F>
+absl::enable_if_t<IsVoidCallable<ResultOf<F(A)>>::value,
+                  PromiseLike<decltype(std::declval<F>()(std::declval<A>()))>>
+PromiseFactoryImpl(F& f, A&& arg) {
+  return f(std::forward<A>(arg));
+}
+
 // Given a callable() -> Promise<T>, promote it to a
 // PromiseFactory(A) -> Promise<T> by dropping the first argument.
 template <typename A, typename F>
@@ -142,10 +169,10 @@ absl::enable_if_t<IsVoidCallable<ResultOf<F()>>::value,
                   PromiseLike<decltype(std::declval<F>()())>>
 PromiseFactoryImpl(F&& f) {
   return f();
-};
+}
 
 template <typename A, typename F>
-class PromiseFactory {
+class OncePromiseFactory {
  private:
   GPR_NO_UNIQUE_ADDRESS F f_;
 
@@ -154,19 +181,15 @@ class PromiseFactory {
   using Promise =
       decltype(PromiseFactoryImpl(std::move(f_), std::declval<A>()));
 
-  explicit PromiseFactory(F f) : f_(std::move(f)) {}
+  explicit OncePromiseFactory(F f) : f_(std::move(f)) {}
 
-  Promise Once(Arg&& a) {
+  Promise Make(Arg&& a) {
     return PromiseFactoryImpl(std::move(f_), std::forward<Arg>(a));
-  }
-
-  Promise Repeated(Arg&& a) const {
-    return PromiseFactoryImpl(f_, std::forward<Arg>(a));
   }
 };
 
 template <typename F>
-class PromiseFactory<void, F> {
+class OncePromiseFactory<void, F> {
  private:
   GPR_NO_UNIQUE_ADDRESS F f_;
 
@@ -174,14 +197,44 @@ class PromiseFactory<void, F> {
   using Arg = void;
   using Promise = decltype(PromiseFactoryImpl(std::move(f_)));
 
-  explicit PromiseFactory(F f) : f_(std::move(f)) {}
+  explicit OncePromiseFactory(F f) : f_(std::move(f)) {}
 
-  Promise Once() { return PromiseFactoryImpl(std::move(f_)); }
+  Promise Make() { return PromiseFactoryImpl(std::move(f_)); }
+};
 
-  Promise Repeated() const { return PromiseFactoryImpl(f_); }
+template <typename A, typename F>
+class RepeatedPromiseFactory {
+ private:
+  GPR_NO_UNIQUE_ADDRESS F f_;
+
+ public:
+  using Arg = A;
+  using Promise = decltype(PromiseFactoryImpl(f_, std::declval<A>()));
+
+  explicit RepeatedPromiseFactory(F f) : f_(std::move(f)) {}
+
+  Promise Make(Arg&& a) const {
+    return PromiseFactoryImpl(f_, std::forward<Arg>(a));
+  }
+  Promise Make(Arg&& a) { return PromiseFactoryImpl(f_, std::forward<Arg>(a)); }
+};
+
+template <typename F>
+class RepeatedPromiseFactory<void, F> {
+ private:
+  GPR_NO_UNIQUE_ADDRESS F f_;
+
+ public:
+  using Arg = void;
+  using Promise = decltype(PromiseFactoryImpl(f_));
+
+  explicit RepeatedPromiseFactory(F f) : f_(std::move(f)) {}
+
+  Promise Make() const { return PromiseFactoryImpl(f_); }
+  Promise Make() { return PromiseFactoryImpl(f_); }
 };
 
 }  // namespace promise_detail
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_PROMISE_DETAIL_PROMISE_FACTORY_H
+#endif  // GRPC_SRC_CORE_LIB_PROMISE_DETAIL_PROMISE_FACTORY_H

@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_LIB_GPRPP_DUAL_REF_COUNTED_H
-#define GRPC_CORE_LIB_GPRPP_DUAL_REF_COUNTED_H
+#ifndef GRPC_SRC_CORE_LIB_GPRPP_DUAL_REF_COUNTED_H
+#define GRPC_SRC_CORE_LIB_GPRPP_DUAL_REF_COUNTED_H
 
 #include <grpc/support/port_platform.h>
 
@@ -49,13 +49,13 @@ class DualRefCounted : public Orphanable {
  public:
   ~DualRefCounted() override = default;
 
-  RefCountedPtr<Child> Ref() GRPC_MUST_USE_RESULT {
+  GRPC_MUST_USE_RESULT RefCountedPtr<Child> Ref() {
     IncrementRefCount();
     return RefCountedPtr<Child>(static_cast<Child*>(this));
   }
 
-  RefCountedPtr<Child> Ref(const DebugLocation& location,
-                           const char* reason) GRPC_MUST_USE_RESULT {
+  GRPC_MUST_USE_RESULT RefCountedPtr<Child> Ref(const DebugLocation& location,
+                                                const char* reason) {
     IncrementRefCount(location, reason);
     return RefCountedPtr<Child>(static_cast<Child*>(this));
   }
@@ -103,7 +103,7 @@ class DualRefCounted : public Orphanable {
     WeakUnref(location, reason);
   }
 
-  RefCountedPtr<Child> RefIfNonZero() GRPC_MUST_USE_RESULT {
+  GRPC_MUST_USE_RESULT RefCountedPtr<Child> RefIfNonZero() {
     uint64_t prev_ref_pair = refs_.load(std::memory_order_acquire);
     do {
       const uint32_t strong_refs = GetStrongRefs(prev_ref_pair);
@@ -121,8 +121,8 @@ class DualRefCounted : public Orphanable {
     return RefCountedPtr<Child>(static_cast<Child*>(this));
   }
 
-  RefCountedPtr<Child> RefIfNonZero(const DebugLocation& location,
-                                    const char* reason) GRPC_MUST_USE_RESULT {
+  GRPC_MUST_USE_RESULT RefCountedPtr<Child> RefIfNonZero(
+      const DebugLocation& location, const char* reason) {
     uint64_t prev_ref_pair = refs_.load(std::memory_order_acquire);
     do {
       const uint32_t strong_refs = GetStrongRefs(prev_ref_pair);
@@ -146,13 +146,13 @@ class DualRefCounted : public Orphanable {
     return RefCountedPtr<Child>(static_cast<Child*>(this));
   }
 
-  WeakRefCountedPtr<Child> WeakRef() GRPC_MUST_USE_RESULT {
+  GRPC_MUST_USE_RESULT WeakRefCountedPtr<Child> WeakRef() {
     IncrementWeakRefCount();
     return WeakRefCountedPtr<Child>(static_cast<Child*>(this));
   }
 
-  WeakRefCountedPtr<Child> WeakRef(const DebugLocation& location,
-                                   const char* reason) GRPC_MUST_USE_RESULT {
+  GRPC_MUST_USE_RESULT WeakRefCountedPtr<Child> WeakRef(
+      const DebugLocation& location, const char* reason) {
     IncrementWeakRefCount(location, reason);
     return WeakRefCountedPtr<Child>(static_cast<Child*>(this));
   }
@@ -324,4 +324,4 @@ class DualRefCounted : public Orphanable {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_GPRPP_DUAL_REF_COUNTED_H */
+#endif  // GRPC_SRC_CORE_LIB_GPRPP_DUAL_REF_COUNTED_H

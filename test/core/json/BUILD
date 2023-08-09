@@ -57,7 +57,7 @@ grpc_cc_test(
     language = "C++",
     uses_polling = False,
     deps = [
-        "//:json_object_loader",
+        "//src/core:json_object_loader",
         "//test/core/util:grpc_test_util",
     ],
 )

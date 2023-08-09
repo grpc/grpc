@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef TEST_PROMISE_H
-#define TEST_PROMISE_H
+#ifndef GRPC_TEST_CORE_PROMISE_TEST_CONTEXT_H
+#define GRPC_TEST_CORE_PROMISE_TEST_CONTEXT_H
 
 #include "src/core/lib/promise/context.h"
 
@@ -24,4 +24,4 @@ using TestContext = promise_detail::Context<T>;
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_TEST_CORE_PROMISE_TEST_CONTEXT_H

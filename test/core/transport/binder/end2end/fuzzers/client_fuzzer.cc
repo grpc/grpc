@@ -36,7 +36,6 @@ static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 static void dont_log(gpr_log_func_args*) {}
 
 DEFINE_PROTO_FUZZER(const binder_transport_fuzzer::Input& input) {
-  grpc_test_only_set_slice_hash_seed(0);
   if (squelch) gpr_set_log_function(dont_log);
   grpc_init();
   {
@@ -46,7 +45,7 @@ DEFINE_PROTO_FUZZER(const binder_transport_fuzzer::Input& input) {
 
     grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
     grpc_transport* client_transport = grpc_create_binder_transport_client(
-        absl::make_unique<grpc_binder::fuzzing::BinderForFuzzing>(
+        std::make_unique<grpc_binder::fuzzing::BinderForFuzzing>(
             input.incoming_parcels()),
         std::make_shared<
             grpc::experimental::binder::UntrustedSecurityPolicy>());

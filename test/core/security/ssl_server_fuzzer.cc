@@ -1,25 +1,28 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
@@ -28,6 +31,9 @@
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
 #define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"
 #define SERVER_KEY_PATH "src/core/tsi/test_creds/server1.key"
+
+using grpc_event_engine::experimental::EventEngine;
+using grpc_event_engine::experimental::GetDefaultEventEngine;
 
 bool squelch = true;
 // ssl has an array of global gpr_mu's that are never released.
@@ -50,7 +56,7 @@ static void on_handshake_done(void* arg, grpc_error_handle error) {
   GPR_ASSERT(state->done_callback_called == false);
   state->done_callback_called = true;
   // The fuzzer should not pass the handshake.
-  GPR_ASSERT(!GRPC_ERROR_IS_NONE(error));
+  GPR_ASSERT(!error.ok());
 }
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
@@ -90,25 +96,26 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
         creds->create_security_connector(grpc_core::ChannelArgs());
     GPR_ASSERT(sc != nullptr);
     grpc_core::Timestamp deadline =
-        grpc_core::Duration::Seconds(1) + grpc_core::ExecCtx::Get()->Now();
+        grpc_core::Duration::Seconds(1) + grpc_core::Timestamp::Now();
 
     struct handshake_state state;
     state.done_callback_called = false;
     auto handshake_mgr =
         grpc_core::MakeRefCounted<grpc_core::HandshakeManager>();
-    sc->add_handshakers(grpc_core::ChannelArgs(), nullptr, handshake_mgr.get());
-    handshake_mgr->DoHandshake(mock_endpoint, grpc_core::ChannelArgs(),
-                               deadline, nullptr /* acceptor */,
-                               on_handshake_done, &state);
+    auto channel_args = grpc_core::ChannelArgs().SetObject<EventEngine>(
+        GetDefaultEventEngine());
+    sc->add_handshakers(channel_args, nullptr, handshake_mgr.get());
+    handshake_mgr->DoHandshake(mock_endpoint, channel_args, deadline,
+                               nullptr /* acceptor */, on_handshake_done,
+                               &state);
     grpc_core::ExecCtx::Get()->Flush();
 
     // If the given string happens to be part of the correct client hello, the
     // server will wait for more data. Explicitly fail the server by shutting
     // down the endpoint.
     if (!state.done_callback_called) {
-      grpc_endpoint_shutdown(
-          mock_endpoint,
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Explicit close"));
+      grpc_endpoint_shutdown(mock_endpoint,
+                             GRPC_ERROR_CREATE("Explicit close"));
       grpc_core::ExecCtx::Get()->Flush();
     }
     GPR_ASSERT(state.done_callback_called);

@@ -1,23 +1,23 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-#ifndef GRPC_CORE_LIB_CHANNEL_CHANNELZ_H
-#define GRPC_CORE_LIB_CHANNEL_CHANNELZ_H
+#ifndef GRPC_SRC_CORE_LIB_CHANNEL_CHANNELZ_H
+#define GRPC_SRC_CORE_LIB_CHANNEL_CHANNELZ_H
 
 #include <grpc/support/port_platform.h>
 
@@ -29,18 +29,18 @@
 #include <set>
 #include <string>
 #include <utility>
-#include <vector>
 
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
-#include <grpc/impl/codegen/connectivity_state.h>
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/connectivity_state.h>
 #include <grpc/slice.h>
 
 #include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/per_cpu.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -53,14 +53,14 @@
 #define GRPC_ARG_CHANNELZ_IS_INTERNAL_CHANNEL \
   "grpc.channelz_is_internal_channel"
 
-/** This is the default value for whether or not to enable channelz. If
- * GRPC_ARG_ENABLE_CHANNELZ is set, it will override this default value. */
+/// This is the default value for whether or not to enable channelz. If
+/// GRPC_ARG_ENABLE_CHANNELZ is set, it will override this default value.
 #define GRPC_ENABLE_CHANNELZ_DEFAULT true
 
-/** This is the default value for the maximum amount of memory used by trace
- * events per channel trace node. If
- * GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE is set, it will override
- * this default value. */
+/// This is the default value for the maximum amount of memory used by trace
+/// events per channel trace node. If
+/// GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE is set, it will override
+/// this default value.
 #define GRPC_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE_DEFAULT (1024 * 4)
 
 namespace grpc_core {
@@ -122,8 +122,6 @@ class BaseNode : public RefCounted<BaseNode> {
 //   - perform rendering of the above items
 class CallCountingHelper {
  public:
-  CallCountingHelper();
-
   void RecordCallStarted();
   void RecordCallFailed();
   void RecordCallSucceeded();
@@ -135,44 +133,53 @@ class CallCountingHelper {
   // testing peer friend.
   friend class testing::CallCountingHelperPeer;
 
-  // TODO(soheil): add a proper PerCPU helper and use it here.
-  struct AtomicCounterData {
-    // Define the ctors so that we can use this structure in InlinedVector.
-    AtomicCounterData() = default;
-    AtomicCounterData(const AtomicCounterData& that)
-        : calls_started(that.calls_started.load(std::memory_order_relaxed)),
-          calls_succeeded(that.calls_succeeded.load(std::memory_order_relaxed)),
-          calls_failed(that.calls_failed.load(std::memory_order_relaxed)),
-          last_call_started_cycle(
-              that.last_call_started_cycle.load(std::memory_order_relaxed)) {}
+  std::atomic<int64_t> calls_started_{0};
+  std::atomic<int64_t> calls_succeeded_{0};
+  std::atomic<int64_t> calls_failed_{0};
+  std::atomic<gpr_cycle_counter> last_call_started_cycle_{0};
+};
 
+class PerCpuCallCountingHelper {
+ public:
+  void RecordCallStarted();
+  void RecordCallFailed();
+  void RecordCallSucceeded();
+
+  // Common rendering of the call count data and last_call_started_timestamp.
+  void PopulateCallCounts(Json::Object* json);
+
+ private:
+  // testing peer friend.
+  friend class testing::CallCountingHelperPeer;
+
+  // We want to ensure that this per-cpu data structure lands on different
+  // cachelines per cpu.
+  // With C++17 we can do so explicitly with an `alignas` specifier.
+  // Prior versions we can at best approximate it by padding the structure.
+  // It'll probably work out ok, but it's not guaranteed across allocators.
+  // (in the bad case where this gets split across cachelines we'll just have
+  // two cpus fighting over the same cacheline with a slight performance
+  // degregation).
+  // TODO(ctiller): When we move to C++17 delete the duplicate definition.
+#if __cplusplus >= 201703L
+  struct alignas(GPR_CACHELINE_SIZE) PerCpuData {
     std::atomic<int64_t> calls_started{0};
     std::atomic<int64_t> calls_succeeded{0};
     std::atomic<int64_t> calls_failed{0};
     std::atomic<gpr_cycle_counter> last_call_started_cycle{0};
-    // Make sure the size is exactly one cache line.
-    uint8_t padding[GPR_CACHELINE_SIZE - 3 * sizeof(std::atomic<intptr_t>) -
-                    sizeof(std::atomic<gpr_cycle_counter>)];
   };
-  // TODO(soheilhy,veblush): Revist this after abseil integration.
-  // This has a problem when using abseil inlined_vector because it
-  // carries an alignment attribute properly but our allocator doesn't
-  // respect this. To avoid UBSAN errors, this should be removed with
-  // abseil inlined_vector.
-  // GPR_ALIGN_STRUCT(GPR_CACHELINE_SIZE);
-
-  struct CounterData {
-    int64_t calls_started = 0;
-    int64_t calls_succeeded = 0;
-    int64_t calls_failed = 0;
-    gpr_cycle_counter last_call_started_cycle = 0;
+#else
+  struct PerCpuDataHeader {
+    std::atomic<int64_t> calls_started{0};
+    std::atomic<int64_t> calls_succeeded{0};
+    std::atomic<int64_t> calls_failed{0};
+    std::atomic<gpr_cycle_counter> last_call_started_cycle{0};
   };
-
-  // collects the sharded data into one CounterData struct.
-  void CollectData(CounterData* out);
-
-  std::vector<AtomicCounterData> per_cpu_counter_data_storage_;
-  size_t num_cores_ = 0;
+  struct PerCpuData : public PerCpuDataHeader {
+    uint8_t padding[GPR_CACHELINE_SIZE - sizeof(PerCpuDataHeader)];
+  };
+#endif
+  PerCpu<PerCpuData> per_cpu_data_{PerCpuOptions().SetCpusPerShard(4)};
 };
 
 // Handles channelz bookkeeping for channels
@@ -271,7 +278,7 @@ class ServerNode : public BaseNode {
   void RecordCallSucceeded() { call_counter_.RecordCallSucceeded(); }
 
  private:
-  CallCountingHelper call_counter_;
+  PerCpuCallCountingHelper call_counter_;
   ChannelTrace trace_;
   Mutex child_mu_;  // Guards child maps below.
   std::map<intptr_t, RefCountedPtr<SocketNode>> child_sockets_;
@@ -371,4 +378,4 @@ class ListenSocketNode : public BaseNode {
 }  // namespace channelz
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_CHANNEL_CHANNELZ_H */
+#endif  // GRPC_SRC_CORE_LIB_CHANNEL_CHANNELZ_H

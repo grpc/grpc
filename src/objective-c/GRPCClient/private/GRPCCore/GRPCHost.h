@@ -18,7 +18,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import <grpc/impl/codegen/compression_types.h>
+#import <grpc/impl/compression_types.h>
 
 #import "GRPCChannelFactory.h"
 

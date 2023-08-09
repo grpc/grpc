@@ -16,15 +16,11 @@
 # This script is invoked by Kokoro and runs a diff on the microbenchmarks
 set -ex
 
-# List of benchmarks that provide good signal for analyzing performance changes in pull requests
-BENCHMARKS_TO_RUN="bm_fullstack_unary_ping_pong bm_fullstack_streaming_ping_pong bm_fullstack_streaming_pump bm_closure bm_cq bm_call_create bm_chttp2_hpack bm_chttp2_transport bm_pollset"
-
 # Enter the gRPC repo root
 cd $(dirname $0)/../../..
 
-source tools/internal_ci/helper_scripts/prepare_build_linux_perf_rc
+source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
-tools/run_tests/start_port_server.py
-tools/internal_ci/linux/run_if_c_cpp_modified.sh tools/profiling/microbenchmarks/bm_diff/bm_main.py \
-  -d "origin/$KOKORO_GITHUB_PULL_REQUEST_TARGET_BRANCH" \
-  -b $BENCHMARKS_TO_RUN
+export DOCKERFILE_DIR=tools/dockerfile/test/cxx_debian11_x64
+export DOCKER_RUN_SCRIPT=tools/internal_ci/linux/grpc_microbenchmark_diff_in_docker.sh
+exec tools/run_tests/dockerize/build_and_run_docker.sh

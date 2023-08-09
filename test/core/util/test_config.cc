@@ -1,38 +1,40 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "test/core/util/test_config.h"
 
 #include <inttypes.h>
 #include <stdlib.h>
 
+#include <initializer_list>
 #include <string>
 
 #include "absl/debugging/failure_signal_handler.h"
 #include "absl/status/status.h"
 #include "absl/strings/match.h"
+#include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gprpp/env.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/surface/init.h"
 #include "test/core/event_engine/test_init.h"
 #include "test/core/util/build.h"
@@ -102,31 +104,16 @@ void RmArg(int i, int* argc, char** argv) {
 void ParseTestArgs(int* argc, char** argv) {
   if (argc == nullptr || *argc <= 1) return;
   // flags to look for and consume
-  const absl::string_view poller_flag{"--poller="};
   const absl::string_view engine_flag{"--engine="};
-  const absl::string_view experiment_flag{"--experiment="};
   int i = 1;
   while (i < *argc) {
-    if (absl::StartsWith(argv[i], poller_flag)) {
-      grpc_core::SetEnv("GRPC_POLL_STRATEGY", argv[i] + poller_flag.length());
-      // remove the spent argv
-      RmArg(i, argc, argv);
-      continue;
-    }
     if (absl::StartsWith(argv[i], engine_flag)) {
       absl::Status engine_set =
           grpc_event_engine::experimental::InitializeTestingEventEngineFactory(
               argv[i] + engine_flag.length());
       if (!engine_set.ok()) {
-        gpr_log(GPR_ERROR, "%s", engine_set.ToString().c_str());
-        GPR_ASSERT(false);
+        grpc_core::Crash(absl::StrFormat("%s", engine_set.ToString().c_str()));
       }
-      // remove the spent argv
-      RmArg(i, argc, argv);
-      continue;
-    }
-    if (absl::StartsWith(argv[i], experiment_flag)) {
-      grpc_core::SetEnv("GRPC_EXPERIMENTS", argv[i] + experiment_flag.length());
       // remove the spent argv
       RmArg(i, argc, argv);
       continue;
@@ -147,8 +134,8 @@ void grpc_test_init(int* argc, char** argv) {
           ", poller=%" PRId64 ", total=%" PRId64,
           grpc_test_sanitizer_slowdown_factor(), g_fixture_slowdown_factor,
           g_poller_slowdown_factor, grpc_test_slowdown_factor());
-  /* seed rng with pid, so we don't end up with the same random numbers as a
-     concurrently running test binary */
+  // seed rng with pid, so we don't end up with the same random numbers as a
+  // concurrently running test binary
   srand(seed());
 }
 

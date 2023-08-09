@@ -1,21 +1,21 @@
 
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -33,12 +33,15 @@
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/event_engine/shim.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/cfstream_handle.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint_cfstream.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/error_cfstream.h"
+#include "src/core/lib/iomgr/event_engine_shims/tcp_client.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/timer.h"
 
@@ -78,7 +81,7 @@ static void OnAlarm(void* arg, grpc_error_handle error) {
   CFStreamConnect* connect = static_cast<CFStreamConnect*>(arg);
   if (grpc_tcp_trace.enabled()) {
     gpr_log(GPR_DEBUG, "CLIENT_CONNECT :%p OnAlarm, error:%s", connect,
-            grpc_error_std_string(error).c_str());
+            grpc_core::StatusToString(error).c_str());
   }
   gpr_mu_lock(&connect->mu);
   grpc_closure* closure = connect->closure;
@@ -90,8 +93,7 @@ static void OnAlarm(void* arg, grpc_error_handle error) {
   if (done) {
     CFStreamConnectCleanup(connect);
   } else {
-    grpc_error_handle error =
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("connect() timed out");
+    grpc_error_handle error = GRPC_ERROR_CREATE("connect() timed out");
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, error);
   }
 }
@@ -100,7 +102,7 @@ static void OnOpen(void* arg, grpc_error_handle error) {
   CFStreamConnect* connect = static_cast<CFStreamConnect*>(arg);
   if (grpc_tcp_trace.enabled()) {
     gpr_log(GPR_DEBUG, "CLIENT_CONNECT :%p OnOpen, error:%s", connect,
-            grpc_error_std_string(error).c_str());
+            grpc_core::StatusToString(error).c_str());
   }
   gpr_mu_lock(&connect->mu);
   grpc_timer_cancel(&connect->alarm);
@@ -116,7 +118,7 @@ static void OnOpen(void* arg, grpc_error_handle error) {
     gpr_mu_unlock(&connect->mu);
     CFStreamConnectCleanup(connect);
   } else {
-    if (GRPC_ERROR_IS_NONE(error)) {
+    if (error.ok()) {
       CFErrorRef stream_error = CFReadStreamCopyError(connect->read_stream);
       if (stream_error == NULL) {
         stream_error = CFWriteStreamCopyError(connect->write_stream);
@@ -125,13 +127,11 @@ static void OnOpen(void* arg, grpc_error_handle error) {
         error = GRPC_ERROR_CREATE_FROM_CFERROR(stream_error, "connect() error");
         CFRelease(stream_error);
       }
-      if (GRPC_ERROR_IS_NONE(error)) {
+      if (error.ok()) {
         *endpoint = grpc_cfstream_endpoint_create(
             connect->read_stream, connect->write_stream,
             connect->addr_name.c_str(), connect->stream_handle);
       }
-    } else {
-      (void)GRPC_ERROR_REF(error);
     }
     gpr_mu_unlock(&connect->mu);
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, error);
@@ -151,13 +151,17 @@ static void ParseResolvedAddress(const grpc_resolved_address* addr,
 
 static int64_t CFStreamClientConnect(
     grpc_closure* closure, grpc_endpoint** ep,
-    grpc_pollset_set* interested_parties,
-    const grpc_event_engine::experimental::EndpointConfig& /*config*/,
+    grpc_pollset_set* /*interested_parties*/,
+    const grpc_event_engine::experimental::EndpointConfig& config,
     const grpc_resolved_address* resolved_addr, grpc_core::Timestamp deadline) {
+  if (grpc_event_engine::experimental::UseEventEngineClient()) {
+    return grpc_event_engine::experimental::event_engine_tcp_client_connect(
+        closure, ep, config, resolved_addr, deadline);
+  }
+
   auto addr_uri = grpc_sockaddr_to_uri(resolved_addr);
   if (!addr_uri.ok()) {
-    grpc_error_handle error =
-        GRPC_ERROR_CREATE_FROM_CPP_STRING(addr_uri.status().ToString());
+    grpc_error_handle error = GRPC_ERROR_CREATE(addr_uri.status().ToString());
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, error);
     return 0;
   }
@@ -201,11 +205,15 @@ static int64_t CFStreamClientConnect(
   return 0;
 }
 
-static bool CFStreamClientCancelConnect(int64_t /*connection_handle*/) {
+static bool CFStreamClientCancelConnect(int64_t connection_handle) {
+  if (grpc_event_engine::experimental::UseEventEngineClient()) {
+    return grpc_event_engine::experimental::
+        event_engine_tcp_client_cancel_connect(connection_handle);
+  }
   return false;
 }
 
 grpc_tcp_client_vtable grpc_cfstream_client_vtable = {
     CFStreamClientConnect, CFStreamClientCancelConnect};
 
-#endif /* GRPC_CFSTREAM_CLIENT */
+#endif  // GRPC_CFSTREAM_CLIENT

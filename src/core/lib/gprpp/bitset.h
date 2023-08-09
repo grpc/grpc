@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_GPRPP_BITSET_H
-#define GRPC_CORE_LIB_GPRPP_BITSET_H
+#ifndef GRPC_SRC_CORE_LIB_GPRPP_BITSET_H
+#define GRPC_SRC_CORE_LIB_GPRPP_BITSET_H
 
 #include <grpc/support/port_platform.h>
 
@@ -131,6 +131,9 @@ class BitSet {
     return true;
   }
 
+  // Returns true if any bites are set.
+  bool any() const { return !none(); }
+
   // Return a count of how many bits are set.
   uint32_t count() const {
     uint32_t count = 0;
@@ -157,6 +160,27 @@ class BitSet {
       if (is_set(i)) result |= (Int(1) << i);
     }
     return result;
+  }
+
+  template <typename Int>
+  static BitSet<kTotalBits, kUnitBits> FromInt(Int value) {
+    BitSet<kTotalBits, kUnitBits> result;
+    for (size_t i = 0; i < kTotalBits; i++) {
+      result.set(i, (value & (Int(1) << i)) != 0);
+    }
+    return result;
+  }
+
+  BitSet& Set(int i, bool value) {
+    set(i, value);
+    return *this;
+  }
+
+  BitSet& SetAll(bool value) {
+    for (size_t i = 0; i < kTotalBits; i++) {
+      set(i, value);
+    }
+    return *this;
   }
 
  private:
@@ -198,4 +222,4 @@ class BitSet<0> {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_GPRPP_BITSET_H
+#endif  // GRPC_SRC_CORE_LIB_GPRPP_BITSET_H

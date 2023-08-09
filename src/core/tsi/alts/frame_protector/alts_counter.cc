@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -35,7 +35,7 @@ grpc_status_code alts_counter_create(bool is_client, size_t counter_size,
                                      size_t overflow_size,
                                      alts_counter** crypter_counter,
                                      char** error_details) {
-  /* Perform input sanity check. */
+  // Perform input sanity check.
   if (counter_size == 0) {
     const char error_msg[] = "counter_size is invalid.";
     maybe_copy_error_msg(error_msg, error_details);
@@ -66,7 +66,7 @@ grpc_status_code alts_counter_create(bool is_client, size_t counter_size,
 grpc_status_code alts_counter_increment(alts_counter* crypter_counter,
                                         bool* is_overflow,
                                         char** error_details) {
-  /* Perform input sanity check. */
+  // Perform input sanity check.
   if (crypter_counter == nullptr) {
     const char error_msg[] = "crypter_counter is nullptr.";
     maybe_copy_error_msg(error_msg, error_details);
@@ -77,7 +77,7 @@ grpc_status_code alts_counter_increment(alts_counter* crypter_counter,
     maybe_copy_error_msg(error_msg, error_details);
     return GRPC_STATUS_INVALID_ARGUMENT;
   }
-  /* Increment the internal counter. */
+  // Increment the internal counter.
   size_t i = 0;
   for (; i < crypter_counter->overflow_size; i++) {
     (crypter_counter->counter)[i]++;
@@ -85,9 +85,9 @@ grpc_status_code alts_counter_increment(alts_counter* crypter_counter,
       break;
     }
   }
-  /**
-   * If the lower overflow_size bytes are all zero, the counter has overflowed.
-   */
+  ///
+  /// If the lower overflow_size bytes are all zero, the counter has overflowed.
+  ///
   if (i == crypter_counter->overflow_size) {
     *is_overflow = true;
     return GRPC_STATUS_FAILED_PRECONDITION;

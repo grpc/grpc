@@ -35,6 +35,7 @@ grpc_cc_test(
     deps = [
         ":alts_handshaker_service_api_test_lib",
         "//:grpc",
+        "//src/core:env",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -91,6 +92,7 @@ grpc_cc_test(
     ],
     deps = [
         "//:grpc",
+        "//src/core:slice",
         "//test/core/end2end:cq_verifier",
         "//test/core/tsi/alts/fake_handshaker:fake_handshaker_lib",
         "//test/core/util:fake_udp_and_tcp_server",

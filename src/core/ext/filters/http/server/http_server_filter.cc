@@ -1,45 +1,49 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/filters/http/server/http_server_filter.h"
 
 #include <functional>
+#include <memory>
+#include <string>
 #include <utility>
 
 #include "absl/base/attributes.h"
+#include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
 
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/promise/call_push_pull.h"
-#include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/detail/basic_seq.h"
-#include "src/core/lib/promise/latch.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/map.h"
+#include "src/core/lib/promise/pipe.h"
+#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
-#include "src/core/lib/promise/seq.h"
-#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/percent_encoding.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/lib/surface/call_trace.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
 namespace grpc_core {
@@ -74,11 +78,11 @@ ArenaPromise<ServerMetadataHandle> HttpServerFilter::MakeCallPromise(
       case HttpMethodMetadata::kInvalid:
       case HttpMethodMetadata::kGet:
         return Immediate(
-            ServerMetadataHandle(absl::UnknownError("Bad method header")));
+            ServerMetadataFromStatus(absl::UnknownError("Bad method header")));
     }
   } else {
     return Immediate(
-        ServerMetadataHandle(absl::UnknownError("Missing :method header")));
+        ServerMetadataFromStatus(absl::UnknownError("Missing :method header")));
   }
 
   auto te = md->Take(TeMetadata());
@@ -86,21 +90,21 @@ ArenaPromise<ServerMetadataHandle> HttpServerFilter::MakeCallPromise(
     // Do nothing, ok.
   } else if (!te.has_value()) {
     return Immediate(
-        ServerMetadataHandle(absl::UnknownError("Missing :te header")));
+        ServerMetadataFromStatus(absl::UnknownError("Missing :te header")));
   } else {
     return Immediate(
-        ServerMetadataHandle(absl::UnknownError("Bad :te header")));
+        ServerMetadataFromStatus(absl::UnknownError("Bad :te header")));
   }
 
   auto scheme = md->Take(HttpSchemeMetadata());
   if (scheme.has_value()) {
     if (*scheme == HttpSchemeMetadata::kInvalid) {
       return Immediate(
-          ServerMetadataHandle(absl::UnknownError("Bad :scheme header")));
+          ServerMetadataFromStatus(absl::UnknownError("Bad :scheme header")));
     }
   } else {
     return Immediate(
-        ServerMetadataHandle(absl::UnknownError("Missing :scheme header")));
+        ServerMetadataFromStatus(absl::UnknownError("Missing :scheme header")));
   }
 
   md->Remove(ContentTypeMetadata());
@@ -108,7 +112,7 @@ ArenaPromise<ServerMetadataHandle> HttpServerFilter::MakeCallPromise(
   Slice* path_slice = md->get_pointer(HttpPathMetadata());
   if (path_slice == nullptr) {
     return Immediate(
-        ServerMetadataHandle(absl::UnknownError("Missing :path header")));
+        ServerMetadataFromStatus(absl::UnknownError("Missing :path header")));
   }
 
   if (md->get_pointer(HttpAuthorityMetadata()) == nullptr) {
@@ -119,33 +123,31 @@ ArenaPromise<ServerMetadataHandle> HttpServerFilter::MakeCallPromise(
   }
 
   if (md->get_pointer(HttpAuthorityMetadata()) == nullptr) {
-    return Immediate(
-        ServerMetadataHandle(absl::UnknownError("Missing :authority header")));
+    return Immediate(ServerMetadataFromStatus(
+        absl::UnknownError("Missing :authority header")));
   }
 
   if (!surface_user_agent_) {
     md->Remove(UserAgentMetadata());
   }
 
-  auto* read_latch = GetContext<Arena>()->New<Latch<ServerMetadata*>>();
-  auto* write_latch =
-      std::exchange(call_args.server_initial_metadata, read_latch);
+  call_args.server_initial_metadata->InterceptAndMap(
+      [](ServerMetadataHandle md) {
+        if (grpc_call_trace.enabled()) {
+          gpr_log(GPR_INFO, "%s[http-server] Write metadata",
+                  Activity::current()->DebugTag().c_str());
+        }
+        FilterOutgoingMetadata(md.get());
+        md->Set(HttpStatusMetadata(), 200);
+        md->Set(ContentTypeMetadata(), ContentTypeMetadata::kApplicationGrpc);
+        return md;
+      });
 
-  return CallPushPull(Seq(next_promise_factory(std::move(call_args)),
-                          [](ServerMetadataHandle md) -> ServerMetadataHandle {
-                            FilterOutgoingMetadata(md.get());
-                            return md;
-                          }),
-                      Seq(read_latch->Wait(),
-                          [write_latch](ServerMetadata** md) {
-                            FilterOutgoingMetadata(*md);
-                            (*md)->Set(HttpStatusMetadata(), 200);
-                            (*md)->Set(ContentTypeMetadata(),
-                                       ContentTypeMetadata::kApplicationGrpc);
-                            write_latch->Set(*md);
-                            return absl::OkStatus();
-                          }),
-                      []() { return absl::OkStatus(); });
+  return Map(next_promise_factory(std::move(call_args)),
+             [](ServerMetadataHandle md) -> ServerMetadataHandle {
+               FilterOutgoingMetadata(md.get());
+               return md;
+             });
 }
 
 absl::StatusOr<HttpServerFilter> HttpServerFilter::Create(

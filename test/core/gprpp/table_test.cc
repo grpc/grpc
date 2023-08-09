@@ -17,9 +17,8 @@
 #include <string>
 #include <tuple>
 
-#include <gtest/gtest.h>
-
 #include "absl/types/optional.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace testing {

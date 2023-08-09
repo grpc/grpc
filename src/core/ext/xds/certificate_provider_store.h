@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_EXT_XDS_CERTIFICATE_PROVIDER_STORE_H
-#define GRPC_CORE_EXT_XDS_CERTIFICATE_PROVIDER_STORE_H
+#ifndef GRPC_SRC_CORE_EXT_XDS_CERTIFICATE_PROVIDER_STORE_H
+#define GRPC_SRC_CORE_EXT_XDS_CERTIFICATE_PROVIDER_STORE_H
 
 #include <grpc/support/port_platform.h>
 
@@ -35,6 +35,7 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
+#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
@@ -54,7 +55,8 @@ class CertificateProviderStore
     RefCountedPtr<CertificateProviderFactory::Config> config;
 
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
-    void JsonPostLoad(const Json& json, const JsonArgs&, ErrorList* errors);
+    void JsonPostLoad(const Json& json, const JsonArgs& args,
+                      ValidationErrors* errors);
   };
 
   // Maps plugin instance (opaque) name to plugin defition.
@@ -133,4 +135,4 @@ class CertificateProviderStore
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_XDS_CERTIFICATE_PROVIDER_STORE_H
+#endif  // GRPC_SRC_CORE_EXT_XDS_CERTIFICATE_PROVIDER_STORE_H

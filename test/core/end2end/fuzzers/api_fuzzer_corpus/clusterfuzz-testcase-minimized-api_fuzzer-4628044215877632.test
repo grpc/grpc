@@ -1,0 +1,84 @@
+actions {
+  change_active_call {
+  }
+}
+actions {
+  create_server {
+  }
+}
+actions {
+  create_channel {
+    darget: "unix::p,grpc,,%,,65535,.\001,-,)\",\014-,l,b(;,x::p,grp,l\"%,,<,\001,-,http-[d483648,,,`0,pc,:"
+    channel_actions {
+      add_n_bytes_writable: 4
+      add_n_bytes_readable: 755771844994271744
+      wait_ms: 44
+    }
+    channel_actions {
+      add_n_bytes_writable: 18691697672192
+      wait_ms: 44
+    }
+    channel_actions {
+      add_n_bytes_writable: 44
+      add_n_bytes_readable: 44
+      wait_ms: 44
+    }
+  }
+}
+actions {
+  enable_tracer: "all\000\n"
+}
+actions {
+  watch_connectivity: 538968064
+}
+actions {
+  create_call {
+    propagation_mask: 1
+    method {
+      value: "["
+    }
+    host {
+      value: "["
+    }
+    timeout: 6386907
+  }
+}
+actions {
+  get_target {
+  }
+}
+actions {
+  queue_batch {
+    operations {
+      send_initial_metadata {
+      }
+    }
+    operations {
+    }
+    operations {
+    }
+  }
+}
+actions {
+  change_active_call {
+  }
+}
+actions {
+  enable_tracer: ""
+}
+actions {
+  queue_batch {
+  }
+}
+actions {
+  change_active_call {
+  }
+}
+actions {
+}
+actions {
+}
+actions {
+}
+actions {
+}

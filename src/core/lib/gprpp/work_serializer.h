@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_LIB_GPRPP_WORK_SERIALIZER_H
-#define GRPC_CORE_LIB_GPRPP_WORK_SERIALIZER_H
+#ifndef GRPC_SRC_CORE_LIB_GPRPP_WORK_SERIALIZER_H
+#define GRPC_SRC_CORE_LIB_GPRPP_WORK_SERIALIZER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -83,4 +83,4 @@ class ABSL_LOCKABLE WorkSerializer {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_GPRPP_WORK_SERIALIZER_H
+#endif  // GRPC_SRC_CORE_LIB_GPRPP_WORK_SERIALIZER_H

@@ -40,7 +40,14 @@ popd
 # Install protobuf
 mkdir -p "third_party/protobuf/cmake/build"
 pushd "third_party/protobuf/cmake/build"
-cmake -Dprotobuf_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=Release ..
+cmake -Dprotobuf_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=Release -Dprotobuf_ABSL_PROVIDER=package ../..
+make "-j${GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS}" install
+popd
+
+# Install re2 pkg-config using `make install`
+# because its `cmake install` doesn't install it
+# https://github.com/google/re2/issues/399
+pushd "third_party/re2"
 make "-j${GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS}" install
 popd
 
@@ -64,6 +71,7 @@ popd
 git submodule foreach 'cd $toplevel; rm -rf $name'
 
 # Install gRPC
+# TODO(jtattermusch): avoid the need for setting utf8_range_DIR
 mkdir -p "cmake/build"
 pushd "cmake/build"
 cmake \
@@ -74,6 +82,7 @@ cmake \
   -DgRPC_ABSL_PROVIDER=package \
   -DgRPC_CARES_PROVIDER=package \
   -DgRPC_PROTOBUF_PROVIDER=package \
+  -Dutf8_range_DIR=/usr/local/lib/cmake/utf8_range \
   -DgRPC_RE2_PROVIDER=package \
   -DgRPC_SSL_PROVIDER=package \
   -DgRPC_ZLIB_PROVIDER=package \
@@ -81,16 +90,22 @@ cmake \
 make "-j${GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS}" install
 popd
 
-# Build helloworld example using Makefile and pkg-config
-pushd examples/cpp/helloworld
+# Set pkgconfig envs
 export PKG_CONFIG_PATH=/usr/local/grpc/lib/pkgconfig
 export PATH=$PATH:/usr/local/grpc/bin
+
+# Show pkg-config configuration
+pkg-config --cflags grpc
+pkg-config --libs --static grpc
+pkg-config --cflags grpc++
+pkg-config --libs --static grpc++
+
+# Build helloworld example using Makefile and pkg-config
+pushd examples/cpp/helloworld
 make "-j${GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS}"
 popd
 
 # Build route_guide example using Makefile and pkg-config
 pushd examples/cpp/route_guide
-export PKG_CONFIG_PATH=/usr/local/grpc/lib/pkgconfig
-export PATH=$PATH:/usr/local/grpc/bin
 make "-j${GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS}"
 popd

@@ -14,29 +14,33 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_XDS_XDS_HTTP_FILTERS_H
-#define GRPC_CORE_EXT_XDS_XDS_HTTP_FILTERS_H
+#ifndef GRPC_SRC_CORE_EXT_XDS_XDS_HTTP_FILTERS_H
+#define GRPC_SRC_CORE_EXT_XDS_XDS_HTTP_FILTERS_H
 
 #include <grpc/support/port_platform.h>
 
+#include <map>
 #include <memory>
-#include <set>
 #include <string>
+#include <utility>
+#include <vector>
 
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "upb/arena.h"
-#include "upb/def.h"
-#include "upb/upb.h"
+#include "absl/types/optional.h"
+#include "upb/reflection/def.h"
 
+#include "src/core/ext/xds/xds_common_types.h"
+#include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
+#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_writer.h"
 
 namespace grpc_core {
-
-extern const char* kXdsHttpRouterFilterConfigName;
 
 class XdsHttpFilterImpl {
  public:
@@ -50,7 +54,7 @@ class XdsHttpFilterImpl {
     }
     std::string ToString() const {
       return absl::StrCat("{config_proto_type_name=", config_proto_type_name,
-                          " config=", config.Dump(), "}");
+                          " config=", JsonDump(config), "}");
     }
   };
 
@@ -69,25 +73,33 @@ class XdsHttpFilterImpl {
 
   virtual ~XdsHttpFilterImpl() = default;
 
+  // Returns the top-level filter config proto message name.
+  virtual absl::string_view ConfigProtoName() const = 0;
+
+  // Returns the override filter config proto message name.
+  // If empty, no override type is supported.
+  virtual absl::string_view OverrideConfigProtoName() const = 0;
+
   // Loads the proto message into the upb symtab.
   virtual void PopulateSymtab(upb_DefPool* symtab) const = 0;
 
   // Generates a Config from the xDS filter config proto.
   // Used for the top-level config in the HCM HTTP filter list.
-  virtual absl::StatusOr<FilterConfig> GenerateFilterConfig(
-      upb_StringView serialized_filter_config, upb_Arena* arena) const = 0;
+  virtual absl::optional<FilterConfig> GenerateFilterConfig(
+      const XdsResourceType::DecodeContext& context, XdsExtension extension,
+      ValidationErrors* errors) const = 0;
 
   // Generates a Config from the xDS filter config proto.
   // Used for the typed_per_filter_config override in VirtualHost and Route.
-  virtual absl::StatusOr<FilterConfig> GenerateFilterConfigOverride(
-      upb_StringView serialized_filter_config, upb_Arena* arena) const = 0;
+  virtual absl::optional<FilterConfig> GenerateFilterConfigOverride(
+      const XdsResourceType::DecodeContext& context, XdsExtension extension,
+      ValidationErrors* errors) const = 0;
 
   // C-core channel filter implementation.
   virtual const grpc_channel_filter* channel_filter() const = 0;
 
   // Modifies channel args that may affect service config parsing (not
   // visible to the channel as a whole).
-  // Takes ownership of args.  Caller takes ownership of return value.
   virtual ChannelArgs ModifyChannelArgs(const ChannelArgs& args) const {
     return args;
   }
@@ -112,22 +124,59 @@ class XdsHttpFilterImpl {
   virtual bool IsTerminalFilter() const { return false; }
 };
 
+class XdsHttpRouterFilter : public XdsHttpFilterImpl {
+ public:
+  absl::string_view ConfigProtoName() const override;
+  absl::string_view OverrideConfigProtoName() const override;
+  void PopulateSymtab(upb_DefPool* symtab) const override;
+  absl::optional<FilterConfig> GenerateFilterConfig(
+      const XdsResourceType::DecodeContext& context, XdsExtension extension,
+      ValidationErrors* errors) const override;
+  absl::optional<FilterConfig> GenerateFilterConfigOverride(
+      const XdsResourceType::DecodeContext& context, XdsExtension extension,
+      ValidationErrors* errors) const override;
+  const grpc_channel_filter* channel_filter() const override { return nullptr; }
+  absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(
+      const FilterConfig& /*hcm_filter_config*/,
+      const FilterConfig* /*filter_config_override*/) const override {
+    // This will never be called, since channel_filter() returns null.
+    return absl::UnimplementedError("router filter should never be called");
+  }
+  bool IsSupportedOnClients() const override { return true; }
+  bool IsSupportedOnServers() const override { return true; }
+  bool IsTerminalFilter() const override { return true; }
+};
+
 class XdsHttpFilterRegistry {
  public:
-  static void RegisterFilter(
-      std::unique_ptr<XdsHttpFilterImpl> filter,
-      const std::set<absl::string_view>& config_proto_type_names);
+  explicit XdsHttpFilterRegistry(bool register_builtins = true);
 
-  static const XdsHttpFilterImpl* GetFilterForType(
-      absl::string_view proto_type_name);
+  // Not copyable.
+  XdsHttpFilterRegistry(const XdsHttpFilterRegistry&) = delete;
+  XdsHttpFilterRegistry& operator=(const XdsHttpFilterRegistry&) = delete;
 
-  static void PopulateSymtab(upb_DefPool* symtab);
+  // Movable.
+  XdsHttpFilterRegistry(XdsHttpFilterRegistry&& other) noexcept
+      : owning_list_(std::move(other.owning_list_)),
+        registry_map_(std::move(other.registry_map_)) {}
+  XdsHttpFilterRegistry& operator=(XdsHttpFilterRegistry&& other) noexcept {
+    owning_list_ = std::move(other.owning_list_);
+    registry_map_ = std::move(other.registry_map_);
+    return *this;
+  }
 
-  // Global init and shutdown.
-  static void Init();
-  static void Shutdown();
+  void RegisterFilter(std::unique_ptr<XdsHttpFilterImpl> filter);
+
+  const XdsHttpFilterImpl* GetFilterForType(
+      absl::string_view proto_type_name) const;
+
+  void PopulateSymtab(upb_DefPool* symtab) const;
+
+ private:
+  std::vector<std::unique_ptr<XdsHttpFilterImpl>> owning_list_;
+  std::map<absl::string_view, XdsHttpFilterImpl*> registry_map_;
 };
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_EXT_XDS_XDS_HTTP_FILTERS_H */
+#endif  // GRPC_SRC_CORE_EXT_XDS_XDS_HTTP_FILTERS_H

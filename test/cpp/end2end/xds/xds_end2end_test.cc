@@ -52,6 +52,7 @@
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
+#include <grpcpp/security/audit_logging.h>
 #include <grpcpp/security/tls_certificate_provider.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
@@ -68,10 +69,12 @@
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gpr/tmpfile.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -80,17 +83,13 @@
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/security/authorization/audit_logging.h"
 #include "src/core/lib/security/certificate_provider/certificate_provider_registry.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/cpp/server/secure_server_credentials.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/ads_for_test.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/cds_for_test.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/eds_for_test.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/lds_rds_for_test.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/ads.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/aggregate_cluster.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h"
@@ -99,14 +98,17 @@
 #include "src/proto/grpc/testing/xds/v3/fault.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/http_filter_rbac.grpc.pb.h"
+#include "src/proto/grpc/testing/xds/v3/http_filter_rbac.pb.h"
 #include "src/proto/grpc/testing/xds/v3/listener.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/lrs.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/route.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/router.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/tls.grpc.pb.h"
+#include "src/proto/grpc/testing/xds/v3/typed_struct.pb.h"
+#include "test/core/util/audit_logging_utils.h"
 #include "test/core/util/port.h"
+#include "test/core/util/scoped_env_var.h"
 #include "test/core/util/test_config.h"
-#include "test/cpp/end2end/xds/no_op_http_filter.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 #include "test/cpp/util/test_config.h"
 #include "test/cpp/util/tls_test_utils.h"
@@ -117,19 +119,29 @@ namespace {
 
 using ::envoy::config::listener::v3::FilterChainMatch;
 using ::envoy::config::rbac::v3::Policy;
-using ::envoy::config::rbac::v3::RBAC_Action;
 using ::envoy::config::rbac::v3::RBAC_Action_ALLOW;
 using ::envoy::config::rbac::v3::RBAC_Action_DENY;
 using ::envoy::config::rbac::v3::RBAC_Action_LOG;
+using ::envoy::config::rbac::v3::
+    RBAC_AuditLoggingOptions_AuditCondition_ON_ALLOW;
+using ::envoy::config::rbac::v3::
+    RBAC_AuditLoggingOptions_AuditCondition_ON_DENY;
+using ::envoy::config::rbac::v3::
+    RBAC_AuditLoggingOptions_AuditCondition_ON_DENY_AND_ALLOW;
 using ::envoy::extensions::filters::http::rbac::v3::RBAC;
 using ::envoy::extensions::filters::http::rbac::v3::RBACPerRoute;
 using ::envoy::extensions::transport_sockets::tls::v3::DownstreamTlsContext;
 using ::envoy::extensions::transport_sockets::tls::v3::UpstreamTlsContext;
 using ::envoy::type::matcher::v3::StringMatcher;
+using ::xds::type::v3::TypedStruct;
 
 using ::grpc::experimental::ExternalCertificateVerifier;
 using ::grpc::experimental::IdentityKeyCertPair;
+using ::grpc::experimental::RegisterAuditLoggerFactory;
 using ::grpc::experimental::StaticDataCertificateProvider;
+using ::grpc_core::experimental::AuditLoggerRegistry;
+using ::grpc_core::testing::ScopedExperimentalEnvVar;
+using ::grpc_core::testing::TestAuditLoggerFactory;
 
 constexpr char kClientCertPath[] = "src/core/tsi/test_creds/client.pem";
 constexpr char kClientKeyPath[] = "src/core/tsi/test_creds/client.key";
@@ -173,12 +185,9 @@ class FakeCertificateProvider final : public grpc_tls_certificate_provider {
       if (!root_being_watched && !identity_being_watched) return;
       auto it = cert_data_map_.find(cert_name);
       if (it == cert_data_map_.end()) {
-        grpc_error_handle error =
-            GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
-                "No certificates available for cert_name \"", cert_name, "\""));
-        distributor_->SetErrorForCert(cert_name, GRPC_ERROR_REF(error),
-                                      GRPC_ERROR_REF(error));
-        GRPC_ERROR_UNREF(error);
+        grpc_error_handle error = GRPC_ERROR_CREATE(absl::StrCat(
+            "No certificates available for cert_name \"", cert_name, "\""));
+        distributor_->SetErrorForCert(cert_name, error, error);
       } else {
         absl::optional<std::string> root_certificate;
         absl::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pairs;
@@ -224,28 +233,30 @@ class FakeCertificateProviderFactory
  public:
   class Config : public grpc_core::CertificateProviderFactory::Config {
    public:
-    explicit Config(const char* name) : name_(name) {}
+    explicit Config(absl::string_view name) : name_(name) {}
 
-    const char* name() const override { return name_; }
+    absl::string_view name() const override { return name_; }
 
     std::string ToString() const override { return "{}"; }
 
    private:
-    const char* name_;
+    absl::string_view name_;
   };
 
   FakeCertificateProviderFactory(
-      const char* name,
+      absl::string_view name,
       FakeCertificateProvider::CertDataMapWrapper* cert_data_map)
       : name_(name), cert_data_map_(cert_data_map) {
     GPR_ASSERT(cert_data_map != nullptr);
   }
 
-  const char* name() const override { return name_; }
+  absl::string_view name() const override { return name_; }
 
   grpc_core::RefCountedPtr<grpc_core::CertificateProviderFactory::Config>
-  CreateCertificateProviderConfig(const grpc_core::Json& /*config_json*/,
-                                  grpc_error_handle* /*error*/) override {
+  CreateCertificateProviderConfig(
+      const grpc_core::Json& /*config_json*/,
+      const grpc_core::JsonArgs& /*args*/,
+      grpc_core::ValidationErrors* /*errors*/) override {
     return grpc_core::MakeRefCounted<Config>(name_);
   }
 
@@ -259,7 +270,7 @@ class FakeCertificateProviderFactory
   }
 
  private:
-  const char* name_;
+  absl::string_view name_;
   FakeCertificateProvider::CertDataMapWrapper* cert_data_map_;
 };
 
@@ -430,367 +441,6 @@ class XdsSecurityTest : public XdsEnd2endTest {
   std::vector<std::string> fallback_authenticated_identity_;
   int backend_index_ = 0;
 };
-
-TEST_P(XdsSecurityTest, UnknownTransportSocket) {
-  auto cluster = default_cluster_;
-  auto* transport_socket = cluster.mutable_transport_socket();
-  transport_socket->set_name("unknown_transport_socket");
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state =
-      WaitForCdsNack(DEBUG_LOCATION, RpcOptions().set_timeout_ms(5000));
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr(
-                  "Unrecognized transport socket: unknown_transport_socket"));
-}
-
-TEST_P(XdsSecurityTest,
-       TLSConfigurationWithoutValidationContextCertificateProviderInstance) {
-  auto cluster = default_cluster_;
-  auto* transport_socket = cluster.mutable_transport_socket();
-  transport_socket->set_name("envoy.transport_sockets.tls");
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state =
-      WaitForCdsNack(DEBUG_LOCATION, RpcOptions().set_timeout_ms(5000));
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("TLS configuration provided but no "
-                                   "ca_certificate_provider_instance found."));
-}
-
-TEST_P(
-    XdsSecurityTest,
-    MatchSubjectAltNamesProvidedWithoutValidationContextCertificateProviderInstance) {
-  auto cluster = default_cluster_;
-  auto* transport_socket = cluster.mutable_transport_socket();
-  transport_socket->set_name("envoy.transport_sockets.tls");
-  UpstreamTlsContext upstream_tls_context;
-  auto* validation_context = upstream_tls_context.mutable_common_tls_context()
-                                 ->mutable_validation_context();
-  *validation_context->add_match_subject_alt_names() = server_san_exact_;
-  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state =
-      WaitForCdsNack(DEBUG_LOCATION, RpcOptions().set_timeout_ms(5000));
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("TLS configuration provided but no "
-                                   "ca_certificate_provider_instance found."));
-}
-
-TEST_P(
-    XdsSecurityTest,
-    TlsCertificateProviderInstanceWithoutValidationContextCertificateProviderInstance) {
-  auto cluster = default_cluster_;
-  auto* transport_socket = cluster.mutable_transport_socket();
-  transport_socket->set_name("envoy.transport_sockets.tls");
-  UpstreamTlsContext upstream_tls_context;
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_tls_certificate_provider_instance()
-      ->set_instance_name(std::string("fake_plugin1"));
-  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state =
-      WaitForCdsNack(DEBUG_LOCATION, RpcOptions().set_timeout_ms(5000));
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("TLS configuration provided but no "
-                                   "ca_certificate_provider_instance found."));
-}
-
-TEST_P(XdsSecurityTest, RegexSanMatcherDoesNotAllowIgnoreCase) {
-  auto cluster = default_cluster_;
-  auto* transport_socket = cluster.mutable_transport_socket();
-  transport_socket->set_name("envoy.transport_sockets.tls");
-  UpstreamTlsContext upstream_tls_context;
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_validation_context()
-      ->mutable_ca_certificate_provider_instance()
-      ->set_instance_name(std::string("fake_plugin1"));
-  auto* validation_context = upstream_tls_context.mutable_common_tls_context()
-                                 ->mutable_validation_context();
-  StringMatcher matcher;
-  matcher.mutable_safe_regex()->mutable_google_re2();
-  matcher.mutable_safe_regex()->set_regex(
-      "(foo|waterzooi).test.google.(fr|be)");
-  matcher.set_ignore_case(true);
-  *validation_context->add_match_subject_alt_names() = matcher;
-  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state =
-      WaitForCdsNack(DEBUG_LOCATION, RpcOptions().set_timeout_ms(5000));
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr(
-                  "StringMatcher: ignore_case has no effect for SAFE_REGEX."));
-}
-
-TEST_P(XdsSecurityTest, UnknownRootCertificateProvider) {
-  auto cluster = default_cluster_;
-  auto* transport_socket = cluster.mutable_transport_socket();
-  transport_socket->set_name("envoy.transport_sockets.tls");
-  UpstreamTlsContext upstream_tls_context;
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_validation_context()
-      ->mutable_ca_certificate_provider_instance()
-      ->set_instance_name("unknown");
-  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state =
-      WaitForCdsNack(DEBUG_LOCATION, RpcOptions().set_timeout_ms(5000));
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr(
-                  "Unrecognized certificate provider instance name: unknown"));
-}
-
-TEST_P(XdsSecurityTest, UnknownIdentityCertificateProvider) {
-  g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
-  auto cluster = default_cluster_;
-  auto* transport_socket = cluster.mutable_transport_socket();
-  transport_socket->set_name("envoy.transport_sockets.tls");
-  UpstreamTlsContext upstream_tls_context;
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_tls_certificate_provider_instance()
-      ->set_instance_name("unknown");
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_validation_context()
-      ->mutable_ca_certificate_provider_instance()
-      ->set_instance_name("fake_plugin1");
-  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state =
-      WaitForCdsNack(DEBUG_LOCATION, RpcOptions().set_timeout_ms(5000));
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr(
-                  "Unrecognized certificate provider instance name: unknown"));
-}
-
-TEST_P(XdsSecurityTest,
-       NacksCertificateValidationContextWithVerifyCertificateSpki) {
-  g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
-  auto cluster = default_cluster_;
-  auto* transport_socket = cluster.mutable_transport_socket();
-  transport_socket->set_name("envoy.transport_sockets.tls");
-  UpstreamTlsContext upstream_tls_context;
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_validation_context()
-      ->mutable_ca_certificate_provider_instance()
-      ->set_instance_name("fake_plugin1");
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_validation_context()
-      ->add_verify_certificate_spki("spki");
-  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state =
-      WaitForCdsNack(DEBUG_LOCATION, RpcOptions().set_timeout_ms(5000));
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
-      response_state->error_message,
-      ::testing::HasSubstr(
-          "CertificateValidationContext: verify_certificate_spki unsupported"));
-}
-
-TEST_P(XdsSecurityTest,
-       NacksCertificateValidationContextWithVerifyCertificateHash) {
-  g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
-  auto cluster = default_cluster_;
-  auto* transport_socket = cluster.mutable_transport_socket();
-  transport_socket->set_name("envoy.transport_sockets.tls");
-  UpstreamTlsContext upstream_tls_context;
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_validation_context()
-      ->mutable_ca_certificate_provider_instance()
-      ->set_instance_name("fake_plugin1");
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_validation_context()
-      ->add_verify_certificate_hash("hash");
-  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state =
-      WaitForCdsNack(DEBUG_LOCATION, RpcOptions().set_timeout_ms(5000));
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
-      response_state->error_message,
-      ::testing::HasSubstr(
-          "CertificateValidationContext: verify_certificate_hash unsupported"));
-}
-
-TEST_P(XdsSecurityTest,
-       NacksCertificateValidationContextWithRequireSignedCertificateTimes) {
-  g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
-  auto cluster = default_cluster_;
-  auto* transport_socket = cluster.mutable_transport_socket();
-  transport_socket->set_name("envoy.transport_sockets.tls");
-  UpstreamTlsContext upstream_tls_context;
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_validation_context()
-      ->mutable_ca_certificate_provider_instance()
-      ->set_instance_name("fake_plugin1");
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_validation_context()
-      ->mutable_require_signed_certificate_timestamp()
-      ->set_value(true);
-  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state =
-      WaitForCdsNack(DEBUG_LOCATION, RpcOptions().set_timeout_ms(5000));
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
-      response_state->error_message,
-      ::testing::HasSubstr("CertificateValidationContext: "
-                           "require_signed_certificate_timestamp unsupported"));
-}
-
-TEST_P(XdsSecurityTest, NacksCertificateValidationContextWithCrl) {
-  g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
-  auto cluster = default_cluster_;
-  auto* transport_socket = cluster.mutable_transport_socket();
-  transport_socket->set_name("envoy.transport_sockets.tls");
-  UpstreamTlsContext upstream_tls_context;
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_validation_context()
-      ->mutable_ca_certificate_provider_instance()
-      ->set_instance_name("fake_plugin1");
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_validation_context()
-      ->mutable_crl();
-  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state =
-      WaitForCdsNack(DEBUG_LOCATION, RpcOptions().set_timeout_ms(5000));
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
-      response_state->error_message,
-      ::testing::HasSubstr("CertificateValidationContext: crl unsupported"));
-}
-
-TEST_P(XdsSecurityTest,
-       NacksCertificateValidationContextWithCustomValidatorConfig) {
-  g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
-  auto cluster = default_cluster_;
-  auto* transport_socket = cluster.mutable_transport_socket();
-  transport_socket->set_name("envoy.transport_sockets.tls");
-  UpstreamTlsContext upstream_tls_context;
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_validation_context()
-      ->mutable_ca_certificate_provider_instance()
-      ->set_instance_name("fake_plugin1");
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_validation_context()
-      ->mutable_custom_validator_config();
-  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state =
-      WaitForCdsNack(DEBUG_LOCATION, RpcOptions().set_timeout_ms(5000));
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
-      response_state->error_message,
-      ::testing::HasSubstr(
-          "CertificateValidationContext: custom_validator_config unsupported"));
-}
-
-TEST_P(XdsSecurityTest, NacksValidationContextSdsSecretConfig) {
-  g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
-  auto cluster = default_cluster_;
-  auto* transport_socket = cluster.mutable_transport_socket();
-  transport_socket->set_name("envoy.transport_sockets.tls");
-  UpstreamTlsContext upstream_tls_context;
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_validation_context_sds_secret_config();
-  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state =
-      WaitForCdsNack(DEBUG_LOCATION, RpcOptions().set_timeout_ms(5000));
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
-      response_state->error_message,
-      ::testing::HasSubstr("validation_context_sds_secret_config unsupported"));
-}
-
-TEST_P(XdsSecurityTest, NacksTlsParams) {
-  g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
-  auto cluster = default_cluster_;
-  auto* transport_socket = cluster.mutable_transport_socket();
-  transport_socket->set_name("envoy.transport_sockets.tls");
-  UpstreamTlsContext upstream_tls_context;
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_validation_context()
-      ->mutable_ca_certificate_provider_instance()
-      ->set_instance_name("fake_plugin1");
-  upstream_tls_context.mutable_common_tls_context()->mutable_tls_params();
-  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state =
-      WaitForCdsNack(DEBUG_LOCATION, RpcOptions().set_timeout_ms(5000));
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("tls_params unsupported"));
-}
-
-TEST_P(XdsSecurityTest, NacksCustomHandshaker) {
-  g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
-  auto cluster = default_cluster_;
-  auto* transport_socket = cluster.mutable_transport_socket();
-  transport_socket->set_name("envoy.transport_sockets.tls");
-  UpstreamTlsContext upstream_tls_context;
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_validation_context()
-      ->mutable_ca_certificate_provider_instance()
-      ->set_instance_name("fake_plugin1");
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_custom_handshaker();
-  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state =
-      WaitForCdsNack(DEBUG_LOCATION, RpcOptions().set_timeout_ms(5000));
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("custom_handshaker unsupported"));
-}
-
-TEST_P(XdsSecurityTest, NacksTlsCertificates) {
-  g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
-  auto cluster = default_cluster_;
-  auto* transport_socket = cluster.mutable_transport_socket();
-  transport_socket->set_name("envoy.transport_sockets.tls");
-  UpstreamTlsContext upstream_tls_context;
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_validation_context()
-      ->mutable_ca_certificate_provider_instance()
-      ->set_instance_name("fake_plugin1");
-  upstream_tls_context.mutable_common_tls_context()->add_tls_certificates();
-  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state =
-      WaitForCdsNack(DEBUG_LOCATION, RpcOptions().set_timeout_ms(5000));
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("tls_certificates unsupported"));
-}
-
-TEST_P(XdsSecurityTest, NacksTlsCertificateSdsSecretConfigs) {
-  g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
-  auto cluster = default_cluster_;
-  auto* transport_socket = cluster.mutable_transport_socket();
-  transport_socket->set_name("envoy.transport_sockets.tls");
-  UpstreamTlsContext upstream_tls_context;
-  upstream_tls_context.mutable_common_tls_context()
-      ->mutable_validation_context()
-      ->mutable_ca_certificate_provider_instance()
-      ->set_instance_name("fake_plugin1");
-  upstream_tls_context.mutable_common_tls_context()
-      ->add_tls_certificate_sds_secret_configs();
-  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state =
-      WaitForCdsNack(DEBUG_LOCATION, RpcOptions().set_timeout_ms(5000));
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
-      response_state->error_message,
-      ::testing::HasSubstr("tls_certificate_sds_secret_configs unsupported"));
-}
 
 TEST_P(XdsSecurityTest, TestTlsConfigurationInCombinedValidationContext) {
   g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
@@ -1136,183 +786,40 @@ TEST_P(XdsEnabledServerTest, ListenerDeletionIgnored) {
   CheckRpcSendOk(DEBUG_LOCATION);
 }
 
+// Testing just one example of an invalid resource here.
+// Unit tests for XdsListenerResourceType have exhaustive tests for all
+// of the invalid cases.
 TEST_P(XdsEnabledServerTest, BadLdsUpdateNoApiListenerNorAddress) {
   DoSetUp();
   Listener listener = default_server_listener_;
   listener.clear_address();
-  listener.set_name(
-      absl::StrCat("grpc/server?xds.resource.listening_address=",
-                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
+  listener.set_name(GetServerListenerName(backends_[0]->port()));
   balancer_->ads_service()->SetLdsResource(listener);
   backends_[0]->Start();
   const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
-      response_state->error_message,
-      ::testing::HasSubstr("Listener has neither address nor ApiListener"));
-}
-
-// TODO(roth): Re-enable the following test once
-// github.com/istio/istio/issues/38914 is resolved.
-TEST_P(XdsEnabledServerTest, DISABLED_BadLdsUpdateBothApiListenerAndAddress) {
-  DoSetUp();
-  Listener listener = default_server_listener_;
-  listener.mutable_api_listener();
-  SetServerListenerNameAndRouteConfiguration(balancer_.get(), listener,
-                                             backends_[0]->port(),
-                                             default_server_route_config_);
-  backends_[0]->Start();
-  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
-      response_state->error_message,
-      ::testing::HasSubstr("Listener has both address and ApiListener"));
-}
-
-TEST_P(XdsEnabledServerTest, NacksNonZeroXffNumTrusterHops) {
-  DoSetUp();
-  Listener listener = default_server_listener_;
-  HttpConnectionManager http_connection_manager =
-      ServerHcmAccessor().Unpack(listener);
-  http_connection_manager.set_xff_num_trusted_hops(1);
-  ServerHcmAccessor().Pack(http_connection_manager, &listener);
-  SetServerListenerNameAndRouteConfiguration(balancer_.get(), listener,
-                                             backends_[0]->port(),
-                                             default_server_route_config_);
-  backends_[0]->Start();
-  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("'xff_num_trusted_hops' must be zero"));
+              ::testing::EndsWith(absl::StrCat(
+                  GetServerListenerName(backends_[0]->port()),
+                  ": INVALID_ARGUMENT: Listener has neither address nor "
+                  "ApiListener]")));
 }
 
-TEST_P(XdsEnabledServerTest, NacksNonEmptyOriginalIpDetectionExtensions) {
+// Verify that a non-TCP listener results in "not serving" status.
+TEST_P(XdsEnabledServerTest, NonTcpListener) {
   DoSetUp();
-  Listener listener = default_server_listener_;
-  HttpConnectionManager http_connection_manager =
-      ServerHcmAccessor().Unpack(listener);
-  http_connection_manager.add_original_ip_detection_extensions();
-  ServerHcmAccessor().Pack(http_connection_manager, &listener);
-  SetServerListenerNameAndRouteConfiguration(balancer_.get(), listener,
-                                             backends_[0]->port(),
-                                             default_server_route_config_);
+  Listener listener = default_listener_;  // Client-side listener.
+  listener = PopulateServerListenerNameAndPort(listener, backends_[0]->port());
+  auto hcm = ClientHcmAccessor().Unpack(listener);
+  auto* rds = hcm.mutable_rds();
+  rds->set_route_config_name(kDefaultRouteConfigurationName);
+  rds->mutable_config_source()->mutable_self();
+  ClientHcmAccessor().Pack(hcm, &listener);
+  balancer_->ads_service()->SetLdsResource(listener);
   backends_[0]->Start();
-  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
-      response_state->error_message,
-      ::testing::HasSubstr("'original_ip_detection_extensions' must be empty"));
-}
-
-TEST_P(XdsEnabledServerTest, UnsupportedL4Filter) {
-  DoSetUp();
-  Listener listener = default_server_listener_;
-  listener.mutable_default_filter_chain()->clear_filters();
-  listener.mutable_default_filter_chain()->add_filters()->mutable_typed_config()->PackFrom(default_listener_ /* any proto object other than HttpConnectionManager */);
-  balancer_->ads_service()->SetLdsResource(
-      PopulateServerListenerNameAndPort(listener, backends_[0]->port()));
-  backends_[0]->Start();
-  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("Unsupported filter type"));
-}
-
-TEST_P(XdsEnabledServerTest, NacksEmptyHttpFilterList) {
-  DoSetUp();
-  Listener listener = default_server_listener_;
-  HttpConnectionManager http_connection_manager =
-      ServerHcmAccessor().Unpack(listener);
-  http_connection_manager.clear_http_filters();
-  ServerHcmAccessor().Pack(http_connection_manager, &listener);
-  SetServerListenerNameAndRouteConfiguration(balancer_.get(), listener,
-                                             backends_[0]->port(),
-                                             default_server_route_config_);
-  backends_[0]->Start();
-  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("Expected at least one HTTP filter"));
-}
-
-TEST_P(XdsEnabledServerTest, UnsupportedHttpFilter) {
-  DoSetUp();
-  Listener listener = default_server_listener_;
-  HttpConnectionManager http_connection_manager =
-      ServerHcmAccessor().Unpack(listener);
-  http_connection_manager.clear_http_filters();
-  auto* http_filter = http_connection_manager.add_http_filters();
-  http_filter->set_name("grpc.testing.unsupported_http_filter");
-  http_filter->mutable_typed_config()->set_type_url(
-      "custom/grpc.testing.unsupported_http_filter");
-  http_filter = http_connection_manager.add_http_filters();
-  http_filter->set_name("router");
-  http_filter->mutable_typed_config()->PackFrom(
-      envoy::extensions::filters::http::router::v3::Router());
-  ServerHcmAccessor().Pack(http_connection_manager, &listener);
-  SetServerListenerNameAndRouteConfiguration(balancer_.get(), listener,
-                                             backends_[0]->port(),
-                                             default_server_route_config_);
-  backends_[0]->Start();
-  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("no filter registered for config type "
-                                   "grpc.testing.unsupported_http_filter"));
-}
-
-TEST_P(XdsEnabledServerTest, HttpFilterNotSupportedOnServer) {
-  DoSetUp();
-  Listener listener = default_server_listener_;
-  HttpConnectionManager http_connection_manager =
-      ServerHcmAccessor().Unpack(listener);
-  http_connection_manager.clear_http_filters();
-  auto* http_filter = http_connection_manager.add_http_filters();
-  http_filter->set_name("grpc.testing.client_only_http_filter");
-  http_filter->mutable_typed_config()->set_type_url(
-      "custom/grpc.testing.client_only_http_filter");
-  http_filter = http_connection_manager.add_http_filters();
-  http_filter->set_name("router");
-  http_filter->mutable_typed_config()->PackFrom(
-      envoy::extensions::filters::http::router::v3::Router());
-  ServerHcmAccessor().Pack(http_connection_manager, &listener);
-  SetServerListenerNameAndRouteConfiguration(balancer_.get(), listener,
-                                             backends_[0]->port(),
-                                             default_server_route_config_);
-  backends_[0]->Start();
-  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
-      response_state->error_message,
-      ::testing::HasSubstr("Filter grpc.testing.client_only_http_filter is not "
-                           "supported on servers"));
-}
-
-TEST_P(XdsEnabledServerTest,
-       HttpFilterNotSupportedOnServerIgnoredWhenOptional) {
-  DoSetUp();
-  Listener listener = default_server_listener_;
-  HttpConnectionManager http_connection_manager =
-      ServerHcmAccessor().Unpack(listener);
-  http_connection_manager.clear_http_filters();
-  auto* http_filter = http_connection_manager.add_http_filters();
-  http_filter->set_name("grpc.testing.client_only_http_filter");
-  http_filter->mutable_typed_config()->set_type_url(
-      "custom/grpc.testing.client_only_http_filter");
-  http_filter->set_is_optional(true);
-  http_filter = http_connection_manager.add_http_filters();
-  http_filter->set_name("router");
-  http_filter->mutable_typed_config()->PackFrom(
-      envoy::extensions::filters::http::router::v3::Router());
-  ServerHcmAccessor().Pack(http_connection_manager, &listener);
-  SetServerListenerNameAndRouteConfiguration(balancer_.get(), listener,
-                                             backends_[0]->port(),
-                                             default_server_route_config_);
-  backends_[0]->Start();
-  WaitForBackend(DEBUG_LOCATION, 0);
-  auto response_state = balancer_->ads_service()->lds_response_state();
-  ASSERT_TRUE(response_state.has_value());
-  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::FAILED_PRECONDITION);
 }
 
 // Verify that a mismatch of listening address results in "not serving"
@@ -1330,21 +837,6 @@ TEST_P(XdsEnabledServerTest, ListenerAddressMismatch) {
   backends_[0]->notifier()->WaitOnServingStatusChange(
       absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
       grpc::StatusCode::FAILED_PRECONDITION);
-}
-
-TEST_P(XdsEnabledServerTest, UseOriginalDstNotSupported) {
-  DoSetUp();
-  Listener listener = default_server_listener_;
-  listener.mutable_use_original_dst()->set_value(true);
-  SetServerListenerNameAndRouteConfiguration(balancer_.get(), listener,
-                                             backends_[0]->port(),
-                                             default_server_route_config_);
-  backends_[0]->Start();
-  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
-      response_state->error_message,
-      ::testing::HasSubstr("Field \'use_original_dst\' is not supported."));
 }
 
 class XdsServerSecurityTest : public XdsEnd2endTest {
@@ -1570,159 +1062,6 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
   std::vector<std::string> server_authenticated_identity_2_;
   std::vector<std::string> client_authenticated_identity_;
 };
-
-TEST_P(XdsServerSecurityTest, UnknownTransportSocket) {
-  Listener listener = default_server_listener_;
-  auto* filter_chain = listener.mutable_default_filter_chain();
-  auto* transport_socket = filter_chain->mutable_transport_socket();
-  transport_socket->set_name("unknown_transport_socket");
-  SetServerListenerNameAndRouteConfiguration(balancer_.get(), listener,
-                                             backends_[0]->port(),
-                                             default_server_route_config_);
-  backends_[0]->Start();
-  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr(
-                  "Unrecognized transport socket: unknown_transport_socket"));
-}
-
-TEST_P(XdsServerSecurityTest, NacksRequireSNI) {
-  Listener listener = default_server_listener_;
-  auto* filter_chain = listener.mutable_default_filter_chain();
-  auto* transport_socket = filter_chain->mutable_transport_socket();
-  transport_socket->set_name("envoy.transport_sockets.tls");
-  DownstreamTlsContext downstream_tls_context;
-  downstream_tls_context.mutable_common_tls_context()
-      ->mutable_tls_certificate_provider_instance()
-      ->set_instance_name("fake_plugin1");
-  downstream_tls_context.mutable_require_sni()->set_value(true);
-  transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
-  SetServerListenerNameAndRouteConfiguration(balancer_.get(), listener,
-                                             backends_[0]->port(),
-                                             default_server_route_config_);
-  backends_[0]->Start();
-  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("require_sni: unsupported"));
-}
-
-TEST_P(XdsServerSecurityTest, NacksOcspStaplePolicyOtherThanLenientStapling) {
-  Listener listener = default_server_listener_;
-  auto* filter_chain = listener.mutable_default_filter_chain();
-  auto* transport_socket = filter_chain->mutable_transport_socket();
-  transport_socket->set_name("envoy.transport_sockets.tls");
-  DownstreamTlsContext downstream_tls_context;
-  downstream_tls_context.mutable_common_tls_context()
-      ->mutable_tls_certificate_provider_instance()
-      ->set_instance_name("fake_plugin1");
-  downstream_tls_context.set_ocsp_staple_policy(
-      envoy::extensions::transport_sockets::tls::v3::
-          DownstreamTlsContext_OcspStaplePolicy_STRICT_STAPLING);
-  transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
-  SetServerListenerNameAndRouteConfiguration(balancer_.get(), listener,
-                                             backends_[0]->port(),
-                                             default_server_route_config_);
-  backends_[0]->Start();
-  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr(
-                  "ocsp_staple_policy: Only LENIENT_STAPLING supported"));
-}
-
-TEST_P(
-    XdsServerSecurityTest,
-    NacksRequiringClientCertificateWithoutValidationCertificateProviderInstance) {
-  Listener listener = default_server_listener_;
-  auto* filter_chain = listener.mutable_default_filter_chain();
-  auto* transport_socket = filter_chain->mutable_transport_socket();
-  transport_socket->set_name("envoy.transport_sockets.tls");
-  DownstreamTlsContext downstream_tls_context;
-  downstream_tls_context.mutable_common_tls_context()
-      ->mutable_tls_certificate_provider_instance()
-      ->set_instance_name("fake_plugin1");
-  downstream_tls_context.mutable_require_client_certificate()->set_value(true);
-  transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
-  SetServerListenerNameAndRouteConfiguration(balancer_.get(), listener,
-                                             backends_[0]->port(),
-                                             default_server_route_config_);
-  backends_[0]->Start();
-  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr(
-                  "TLS configuration requires client certificates but no "
-                  "certificate provider instance specified for validation."));
-}
-
-TEST_P(XdsServerSecurityTest,
-       NacksTlsConfigurationWithoutIdentityProviderInstance) {
-  Listener listener = default_server_listener_;
-  auto* filter_chain = listener.mutable_default_filter_chain();
-  auto* transport_socket = filter_chain->mutable_transport_socket();
-  transport_socket->set_name("envoy.transport_sockets.tls");
-  DownstreamTlsContext downstream_tls_context;
-  transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
-  SetServerListenerNameAndRouteConfiguration(balancer_.get(), listener,
-                                             backends_[0]->port(),
-                                             default_server_route_config_);
-  backends_[0]->Start();
-  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("TLS configuration provided but no "
-                                   "tls_certificate_provider_instance found."));
-}
-
-TEST_P(XdsServerSecurityTest, NacksMatchSubjectAltNames) {
-  Listener listener = default_server_listener_;
-  auto* filter_chain = listener.mutable_default_filter_chain();
-  auto* transport_socket = filter_chain->mutable_transport_socket();
-  transport_socket->set_name("envoy.transport_sockets.tls");
-  DownstreamTlsContext downstream_tls_context;
-  downstream_tls_context.mutable_common_tls_context()
-      ->mutable_tls_certificate_provider_instance()
-      ->set_instance_name("fake_plugin1");
-  downstream_tls_context.mutable_common_tls_context()
-      ->mutable_validation_context()
-      ->add_match_subject_alt_names()
-      ->set_exact("*.test.google.fr");
-  transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
-  SetServerListenerNameAndRouteConfiguration(balancer_.get(), listener,
-                                             backends_[0]->port(),
-                                             default_server_route_config_);
-  backends_[0]->Start();
-  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
-      response_state->error_message,
-      ::testing::HasSubstr("match_subject_alt_names not supported on servers"));
-}
-
-TEST_P(XdsServerSecurityTest, UnknownIdentityCertificateProvider) {
-  SetLdsUpdate("", "", "unknown", "", false);
-  SendRpc([this]() { return CreateTlsChannel(); }, {}, {},
-          true /* test_expects_failure */);
-  backends_[0]->Start();
-  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr(
-                  "Unrecognized certificate provider instance name: unknown"));
-}
-
-TEST_P(XdsServerSecurityTest, UnknownRootCertificateProvider) {
-  g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
-  SetLdsUpdate("unknown", "", "fake_plugin1", "", false);
-  backends_[0]->Start();
-  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr(
-                  "Unrecognized certificate provider instance name: unknown"));
-}
 
 TEST_P(XdsServerSecurityTest,
        TestDeprecateTlsCertificateCertificateProviderInstanceField) {
@@ -2174,7 +1513,16 @@ TEST_P(XdsEnabledServerStatusNotificationTest,
   }
 }
 
-using XdsServerFilterChainMatchTest = XdsServerSecurityTest;
+class XdsServerFilterChainMatchTest : public XdsServerSecurityTest {
+ public:
+  HttpConnectionManager GetHttpConnectionManager(const Listener& listener) {
+    HttpConnectionManager http_connection_manager =
+        ServerHcmAccessor().Unpack(listener);
+    *http_connection_manager.mutable_route_config() =
+        default_server_route_config_;
+    return http_connection_manager;
+  }
+};
 
 TEST_P(XdsServerFilterChainMatchTest,
        DefaultFilterChainUsedWhenNoFilterChainMentioned) {
@@ -2188,7 +1536,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   // Add a filter chain that will never get matched
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
+      GetHttpConnectionManager(listener));
   filter_chain->mutable_filter_chain_match()
       ->mutable_destination_port()
       ->set_value(8080);
@@ -2205,7 +1553,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   // Add filter chain with destination port that should never get matched
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
+      GetHttpConnectionManager(listener));
   filter_chain->mutable_filter_chain_match()
       ->mutable_destination_port()
       ->set_value(8080);
@@ -2224,7 +1572,7 @@ TEST_P(XdsServerFilterChainMatchTest, FilterChainsWithServerNamesDontMatch) {
   // Add filter chain with server name that should never get matched
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
+      GetHttpConnectionManager(listener));
   filter_chain->mutable_filter_chain_match()->add_server_names("server_name");
   listener.clear_default_filter_chain();
   balancer_->ads_service()->SetLdsResource(
@@ -2242,7 +1590,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   // Add filter chain with transport protocol "tls" that should never match
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
+      GetHttpConnectionManager(listener));
   filter_chain->mutable_filter_chain_match()->set_transport_protocol("tls");
   listener.clear_default_filter_chain();
   balancer_->ads_service()->SetLdsResource(
@@ -2260,7 +1608,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   // Add filter chain with application protocol that should never get matched
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
+      GetHttpConnectionManager(listener));
   filter_chain->mutable_filter_chain_match()->add_application_protocols("h2");
   listener.clear_default_filter_chain();
   balancer_->ads_service()->SetLdsResource(
@@ -2278,14 +1626,14 @@ TEST_P(XdsServerFilterChainMatchTest,
   // Add filter chain with "raw_buffer" transport protocol
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
+      GetHttpConnectionManager(listener));
   filter_chain->mutable_filter_chain_match()->set_transport_protocol(
       "raw_buffer");
   // Add another filter chain with no transport protocol set but application
   // protocol set (fails match)
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
+      GetHttpConnectionManager(listener));
   filter_chain->mutable_filter_chain_match()->add_application_protocols("h2");
   listener.clear_default_filter_chain();
   balancer_->ads_service()->SetLdsResource(
@@ -2303,7 +1651,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   // mentioned. (Prefix range is matched first.)
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
+      GetHttpConnectionManager(listener));
   auto* prefix_range =
       filter_chain->mutable_filter_chain_match()->add_prefix_ranges();
   prefix_range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
@@ -2317,7 +1665,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   // the highest match, it should be chosen.
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
+      GetHttpConnectionManager(listener));
   prefix_range =
       filter_chain->mutable_filter_chain_match()->add_prefix_ranges();
   prefix_range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
@@ -2330,7 +1678,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   // 30)
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
+      GetHttpConnectionManager(listener));
   prefix_range =
       filter_chain->mutable_filter_chain_match()->add_prefix_ranges();
   prefix_range->set_address_prefix("192.168.1.1");
@@ -2339,7 +1687,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   // Add another filter chain with no prefix range mentioned
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
+      GetHttpConnectionManager(listener));
   filter_chain->mutable_filter_chain_match()->add_server_names("server_name");
   listener.clear_default_filter_chain();
   balancer_->ads_service()->SetLdsResource(
@@ -2356,7 +1704,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   // Add filter chain with the local source type (best match)
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
+      GetHttpConnectionManager(listener));
   filter_chain->mutable_filter_chain_match()->set_source_type(
       FilterChainMatch::SAME_IP_OR_LOOPBACK);
   // Add filter chain with the external source type but bad source port.
@@ -2364,7 +1712,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   // because it is already being used by a backend.
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
+      GetHttpConnectionManager(listener));
   filter_chain->mutable_filter_chain_match()->set_source_type(
       FilterChainMatch::EXTERNAL);
   filter_chain->mutable_filter_chain_match()->add_source_ports(
@@ -2372,7 +1720,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   // Add filter chain with the default source type (ANY) but bad source port.
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
+      GetHttpConnectionManager(listener));
   filter_chain->mutable_filter_chain_match()->add_source_ports(
       backends_[0]->port());
   listener.clear_default_filter_chain();
@@ -2393,7 +1741,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   // is already being used by a backend.
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
+      GetHttpConnectionManager(listener));
   auto* source_prefix_range =
       filter_chain->mutable_filter_chain_match()->add_source_prefix_ranges();
   source_prefix_range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
@@ -2408,7 +1756,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   // 24 is the highest match, it should be chosen.
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
+      GetHttpConnectionManager(listener));
   source_prefix_range =
       filter_chain->mutable_filter_chain_match()->add_source_prefix_ranges();
   source_prefix_range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
@@ -2421,7 +1769,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   // length 30) and bad source port
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
+      GetHttpConnectionManager(listener));
   source_prefix_range =
       filter_chain->mutable_filter_chain_match()->add_source_prefix_ranges();
   source_prefix_range->set_address_prefix("192.168.1.1");
@@ -2432,7 +1780,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   // source port
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
+      GetHttpConnectionManager(listener));
   filter_chain->mutable_filter_chain_match()->add_source_ports(
       backends_[0]->port());
   listener.clear_default_filter_chain();
@@ -2449,7 +1797,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   Listener listener = default_server_listener_;
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
+      GetHttpConnectionManager(listener));
   // Since we don't know which port will be used by the channel, just add all
   // ports except for 0.
   for (int i = 1; i < 65536; i++) {
@@ -2459,7 +1807,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   // DownstreamTlsContext configuration.
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
+      GetHttpConnectionManager(listener));
   auto* transport_socket = filter_chain->mutable_transport_socket();
   transport_socket->set_name("envoy.transport_sockets.tls");
   DownstreamTlsContext downstream_tls_context;
@@ -2476,238 +1824,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
 }
 
-TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchNacked) {
-  Listener listener = default_server_listener_;
-  // Add filter chain
-  auto* filter_chain = listener.add_filter_chains();
-  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
-  // Add a duplicate filter chain
-  filter_chain = listener.add_filter_chains();
-  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
-  SetServerListenerNameAndRouteConfiguration(balancer_.get(), listener,
-                                             backends_[0]->port(),
-                                             default_server_route_config_);
-  backends_[0]->Start();
-  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
-      response_state->error_message,
-      ::testing::HasSubstr(
-          "Duplicate matching rules detected when adding filter chain: {}"));
-}
-
-TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnPrefixRangesNacked) {
-  Listener listener = default_server_listener_;
-  // Add filter chain with prefix range
-  auto* filter_chain = listener.add_filter_chains();
-  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
-  auto* prefix_range =
-      filter_chain->mutable_filter_chain_match()->add_prefix_ranges();
-  prefix_range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
-  prefix_range->mutable_prefix_len()->set_value(16);
-  prefix_range =
-      filter_chain->mutable_filter_chain_match()->add_prefix_ranges();
-  prefix_range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
-  prefix_range->mutable_prefix_len()->set_value(24);
-  // Add a filter chain with a duplicate prefix range entry
-  filter_chain = listener.add_filter_chains();
-  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
-  prefix_range =
-      filter_chain->mutable_filter_chain_match()->add_prefix_ranges();
-  prefix_range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
-  prefix_range->mutable_prefix_len()->set_value(16);
-  prefix_range =
-      filter_chain->mutable_filter_chain_match()->add_prefix_ranges();
-  prefix_range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
-  prefix_range->mutable_prefix_len()->set_value(32);
-  SetServerListenerNameAndRouteConfiguration(balancer_.get(), listener,
-                                             backends_[0]->port(),
-                                             default_server_route_config_);
-  backends_[0]->Start();
-  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  if (ipv6_only_) {
-    EXPECT_THAT(
-        response_state->error_message,
-        ::testing::HasSubstr(
-            "Duplicate matching rules detected when adding filter chain: "
-            "{prefix_ranges={{address_prefix=[::]:0, prefix_len=16}, "
-            "{address_prefix=[::]:0, prefix_len=32}}}"));
-  } else {
-    EXPECT_THAT(
-        response_state->error_message,
-        ::testing::HasSubstr(
-            "Duplicate matching rules detected when adding filter chain: "
-            "{prefix_ranges={{address_prefix=127.0.0.0:0, prefix_len=16}, "
-            "{address_prefix=127.0.0.1:0, prefix_len=32}}}"));
-  }
-}
-
-TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnTransportProtocolNacked) {
-  Listener listener = default_server_listener_;
-  // Add filter chain with "raw_buffer" transport protocol
-  auto* filter_chain = listener.add_filter_chains();
-  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
-  filter_chain->mutable_filter_chain_match()->set_transport_protocol(
-      "raw_buffer");
-  // Add a duplicate filter chain with the same "raw_buffer" transport
-  // protocol entry
-  filter_chain = listener.add_filter_chains();
-  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
-  filter_chain->mutable_filter_chain_match()->set_transport_protocol(
-      "raw_buffer");
-  SetServerListenerNameAndRouteConfiguration(balancer_.get(), listener,
-                                             backends_[0]->port(),
-                                             default_server_route_config_);
-  backends_[0]->Start();
-  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
-      response_state->error_message,
-      ::testing::HasSubstr("Duplicate matching rules detected when adding "
-                           "filter chain: {transport_protocol=raw_buffer}"));
-}
-
-TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnLocalSourceTypeNacked) {
-  Listener listener = default_server_listener_;
-  // Add filter chain with the local source type
-  auto* filter_chain = listener.add_filter_chains();
-  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
-  filter_chain->mutable_filter_chain_match()->set_source_type(
-      FilterChainMatch::SAME_IP_OR_LOOPBACK);
-  // Add a duplicate filter chain with the same local source type entry
-  filter_chain = listener.add_filter_chains();
-  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
-  filter_chain->mutable_filter_chain_match()->set_source_type(
-      FilterChainMatch::SAME_IP_OR_LOOPBACK);
-  SetServerListenerNameAndRouteConfiguration(balancer_.get(), listener,
-                                             backends_[0]->port(),
-                                             default_server_route_config_);
-  backends_[0]->Start();
-  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
-      response_state->error_message,
-      ::testing::HasSubstr("Duplicate matching rules detected when adding "
-                           "filter chain: {source_type=SAME_IP_OR_LOOPBACK}"));
-}
-
-TEST_P(XdsServerFilterChainMatchTest,
-       DuplicateMatchOnExternalSourceTypeNacked) {
-  Listener listener = default_server_listener_;
-  // Add filter chain with the external source type
-  auto* filter_chain = listener.add_filter_chains();
-  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
-  filter_chain->mutable_filter_chain_match()->set_source_type(
-      FilterChainMatch::EXTERNAL);
-  // Add a duplicate filter chain with the same external source type entry
-  filter_chain = listener.add_filter_chains();
-  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
-  filter_chain->mutable_filter_chain_match()->set_source_type(
-      FilterChainMatch::EXTERNAL);
-  SetServerListenerNameAndRouteConfiguration(balancer_.get(), listener,
-                                             backends_[0]->port(),
-                                             default_server_route_config_);
-  backends_[0]->Start();
-  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
-      response_state->error_message,
-      ::testing::HasSubstr("Duplicate matching rules detected when adding "
-                           "filter chain: {source_type=EXTERNAL}"));
-}
-
-TEST_P(XdsServerFilterChainMatchTest,
-       DuplicateMatchOnSourcePrefixRangesNacked) {
-  Listener listener = default_server_listener_;
-  // Add filter chain with source prefix range
-  auto* filter_chain = listener.add_filter_chains();
-  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
-  auto* prefix_range =
-      filter_chain->mutable_filter_chain_match()->add_source_prefix_ranges();
-  prefix_range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
-  prefix_range->mutable_prefix_len()->set_value(16);
-  prefix_range =
-      filter_chain->mutable_filter_chain_match()->add_source_prefix_ranges();
-  prefix_range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
-  prefix_range->mutable_prefix_len()->set_value(24);
-  // Add a filter chain with a duplicate source prefix range entry
-  filter_chain = listener.add_filter_chains();
-  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
-  prefix_range =
-      filter_chain->mutable_filter_chain_match()->add_source_prefix_ranges();
-  prefix_range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
-  prefix_range->mutable_prefix_len()->set_value(16);
-  prefix_range =
-      filter_chain->mutable_filter_chain_match()->add_source_prefix_ranges();
-  prefix_range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
-  prefix_range->mutable_prefix_len()->set_value(32);
-  SetServerListenerNameAndRouteConfiguration(balancer_.get(), listener,
-                                             backends_[0]->port(),
-                                             default_server_route_config_);
-  backends_[0]->Start();
-  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  if (ipv6_only_) {
-    EXPECT_THAT(
-        response_state->error_message,
-        ::testing::HasSubstr(
-            "Duplicate matching rules detected when adding filter chain: "
-            "{source_prefix_ranges={{address_prefix=[::]:0, prefix_len=16}, "
-            "{address_prefix=[::]:0, prefix_len=32}}}"));
-  } else {
-    EXPECT_THAT(
-        response_state->error_message,
-        ::testing::HasSubstr(
-            "Duplicate matching rules detected when adding filter chain: "
-            "{source_prefix_ranges={{address_prefix=127.0.0.0:0, "
-            "prefix_len=16}, "
-            "{address_prefix=127.0.0.1:0, prefix_len=32}}}"));
-  }
-}
-
-TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnSourcePortNacked) {
-  Listener listener = default_server_listener_;
-  // Add filter chain with the external source type
-  auto* filter_chain = listener.add_filter_chains();
-  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
-  filter_chain->mutable_filter_chain_match()->add_source_ports(8080);
-  // Add a duplicate filter chain with the same source port entry
-  filter_chain = listener.add_filter_chains();
-  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-      ServerHcmAccessor().Unpack(listener));
-  filter_chain->mutable_filter_chain_match()->add_source_ports(8080);
-  SetServerListenerNameAndRouteConfiguration(balancer_.get(), listener,
-                                             backends_[0]->port(),
-                                             default_server_route_config_);
-  backends_[0]->Start();
-  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
-      response_state->error_message,
-      ::testing::HasSubstr("Duplicate matching rules detected when adding "
-                           "filter chain: {source_ports={8080}}"));
-}
-
-class XdsServerRdsTest : public XdsEnabledServerStatusNotificationTest {
- protected:
-  XdsServerRdsTest() : env_var_("GRPC_XDS_EXPERIMENTAL_RBAC") {}
-
-  ScopedExperimentalEnvVar env_var_;
-};
+using XdsServerRdsTest = XdsEnabledServerStatusNotificationTest;
 
 TEST_P(XdsServerRdsTest, Basic) {
   backends_[0]->Start();
@@ -2715,62 +1832,6 @@ TEST_P(XdsServerRdsTest, Basic) {
       absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
       grpc::StatusCode::OK);
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
-}
-
-TEST_P(XdsServerRdsTest, NacksInvalidDomainPattern) {
-  RouteConfiguration route_config = default_server_route_config_;
-  route_config.mutable_virtual_hosts()->at(0).add_domains("");
-  SetServerListenerNameAndRouteConfiguration(
-      balancer_.get(), default_server_listener_, backends_[0]->port(),
-      route_config);
-  backends_[0]->Start();
-  const auto response_state = WaitForRouteConfigNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("Invalid domain pattern \"\""));
-}
-
-TEST_P(XdsServerRdsTest, NacksEmptyDomainsList) {
-  RouteConfiguration route_config = default_server_route_config_;
-  route_config.mutable_virtual_hosts()->at(0).clear_domains();
-  SetServerListenerNameAndRouteConfiguration(
-      balancer_.get(), default_server_listener_, backends_[0]->port(),
-      route_config);
-  backends_[0]->Start();
-  const auto response_state = WaitForRouteConfigNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("VirtualHost has no domains"));
-}
-
-TEST_P(XdsServerRdsTest, NacksEmptyRoutesList) {
-  RouteConfiguration route_config = default_server_route_config_;
-  route_config.mutable_virtual_hosts()->at(0).clear_routes();
-  SetServerListenerNameAndRouteConfiguration(
-      balancer_.get(), default_server_listener_, backends_[0]->port(),
-      route_config);
-  backends_[0]->Start();
-  const auto response_state = WaitForRouteConfigNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("No route found in the virtual host"));
-}
-
-TEST_P(XdsServerRdsTest, NacksEmptyMatch) {
-  RouteConfiguration route_config = default_server_route_config_;
-  route_config.mutable_virtual_hosts()
-      ->at(0)
-      .mutable_routes()
-      ->at(0)
-      .clear_match();
-  SetServerListenerNameAndRouteConfiguration(
-      balancer_.get(), default_server_listener_, backends_[0]->port(),
-      route_config);
-  backends_[0]->Start();
-  const auto response_state = WaitForRouteConfigNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("Match can't be null"));
 }
 
 TEST_P(XdsServerRdsTest, FailsRouteMatchesOtherThanNonForwardingAction) {
@@ -2891,6 +1952,13 @@ TEST_P(XdsServerRdsTest, MultipleRouteConfigurations) {
 // override permutations.
 class XdsRbacTest : public XdsServerRdsTest {
  protected:
+  XdsRbacTest() {
+    RegisterAuditLoggerFactory(
+        std::make_unique<TestAuditLoggerFactory>(&audit_logs_));
+  }
+
+  ~XdsRbacTest() override { AuditLoggerRegistry::TestOnlyResetRegistry(); }
+
   void SetServerRbacPolicies(Listener listener,
                              const std::vector<RBAC>& rbac_policies) {
     HttpConnectionManager http_connection_manager =
@@ -2934,6 +2002,8 @@ class XdsRbacTest : public XdsServerRdsTest {
   void SetServerRbacPolicy(const RBAC& rbac) {
     SetServerRbacPolicy(default_server_listener_, rbac);
   }
+
+  std::vector<std::string> audit_logs_;
 };
 
 TEST_P(XdsRbacTest, AbsentRbacPolicy) {
@@ -2949,7 +2019,7 @@ TEST_P(XdsRbacTest, AbsentRbacPolicy) {
 TEST_P(XdsRbacTest, LogAction) {
   RBAC rbac;
   auto* rules = rbac.mutable_rules();
-  rules->set_action(envoy::config::rbac::v3::RBAC_Action_LOG);
+  rules->set_action(RBAC_Action_LOG);
   SetServerRbacPolicy(rbac);
   backends_[0]->Start();
   backends_[0]->notifier()->WaitOnServingStatusChange(
@@ -2957,116 +2027,6 @@ TEST_P(XdsRbacTest, LogAction) {
       grpc::StatusCode::OK);
   // A Log action is identical to no rbac policy being configured.
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
-}
-
-using XdsRbacNackTest = XdsRbacTest;
-
-TEST_P(XdsRbacNackTest, NacksSchemePrincipalHeader) {
-  RBAC rbac;
-  auto* rules = rbac.mutable_rules();
-  rules->set_action(envoy::config::rbac::v3::RBAC_Action_ALLOW);
-  Policy policy;
-  auto* header = policy.add_principals()->mutable_header();
-  header->set_name(":scheme");
-  header->set_exact_match("http");
-  policy.add_permissions()->set_any(true);
-  (*rules->mutable_policies())["policy"] = policy;
-  SetServerRbacPolicy(rbac);
-  backends_[0]->Start();
-  if (GetParam().enable_rds_testing() &&
-      GetParam().filter_config_setup() ==
-          XdsTestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute) {
-    const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
-    ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-    EXPECT_THAT(response_state->error_message,
-                ::testing::HasSubstr("':scheme' not allowed in header"));
-  } else {
-    const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
-    ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-    EXPECT_THAT(response_state->error_message,
-                ::testing::HasSubstr("':scheme' not allowed in header"));
-  }
-}
-
-TEST_P(XdsRbacNackTest, NacksGrpcPrefixedPrincipalHeaders) {
-  RBAC rbac;
-  auto* rules = rbac.mutable_rules();
-  rules->set_action(envoy::config::rbac::v3::RBAC_Action_ALLOW);
-  Policy policy;
-  auto* header = policy.add_principals()->mutable_header();
-  header->set_name("grpc-status");
-  header->set_exact_match("0");
-  policy.add_permissions()->set_any(true);
-  (*rules->mutable_policies())["policy"] = policy;
-  SetServerRbacPolicy(rbac);
-  backends_[0]->Start();
-  if (GetParam().enable_rds_testing() &&
-      GetParam().filter_config_setup() ==
-          XdsTestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute) {
-    const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
-    ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-    EXPECT_THAT(response_state->error_message,
-                ::testing::HasSubstr("'grpc-' prefixes not allowed in header"));
-  } else {
-    const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
-    ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-    EXPECT_THAT(response_state->error_message,
-                ::testing::HasSubstr("'grpc-' prefixes not allowed in header"));
-  }
-}
-
-TEST_P(XdsRbacNackTest, NacksSchemePermissionHeader) {
-  RBAC rbac;
-  auto* rules = rbac.mutable_rules();
-  rules->set_action(envoy::config::rbac::v3::RBAC_Action_ALLOW);
-  Policy policy;
-  auto* header = policy.add_permissions()->mutable_header();
-  header->set_name(":scheme");
-  header->set_exact_match("http");
-  policy.add_principals()->set_any(true);
-  (*rules->mutable_policies())["policy"] = policy;
-  SetServerRbacPolicy(rbac);
-  backends_[0]->Start();
-  if (GetParam().enable_rds_testing() &&
-      GetParam().filter_config_setup() ==
-          XdsTestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute) {
-    const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
-    ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-    EXPECT_THAT(response_state->error_message,
-                ::testing::HasSubstr("':scheme' not allowed in header"));
-  } else {
-    const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
-    ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-    EXPECT_THAT(response_state->error_message,
-                ::testing::HasSubstr("':scheme' not allowed in header"));
-  }
-}
-
-TEST_P(XdsRbacNackTest, NacksGrpcPrefixedPermissionHeaders) {
-  RBAC rbac;
-  auto* rules = rbac.mutable_rules();
-  rules->set_action(envoy::config::rbac::v3::RBAC_Action_ALLOW);
-  Policy policy;
-  auto* header = policy.add_permissions()->mutable_header();
-  header->set_name("grpc-status");
-  header->set_exact_match("0");
-  policy.add_principals()->set_any(true);
-  (*rules->mutable_policies())["policy"] = policy;
-  SetServerRbacPolicy(rbac);
-  backends_[0]->Start();
-  if (GetParam().enable_rds_testing() &&
-      GetParam().filter_config_setup() ==
-          XdsTestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute) {
-    const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
-    ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-    EXPECT_THAT(response_state->error_message,
-                ::testing::HasSubstr("'grpc-' prefixes not allowed in header"));
-  } else {
-    const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
-    ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-    EXPECT_THAT(response_state->error_message,
-                ::testing::HasSubstr("'grpc-' prefixes not allowed in header"));
-  }
 }
 
 // Tests RBAC policies where a route override is always present. Action
@@ -3856,6 +2816,271 @@ TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionOrIdPrincipal) {
       grpc::StatusCode::PERMISSION_DENIED);
 }
 
+TEST_P(XdsRbacTestWithActionPermutations,
+       AuditLoggerNotInvokedOnAuditConditionNone) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RBAC_AUDIT_LOGGING");
+  RBAC rbac;
+  rbac.mutable_rules()->set_action(GetParam().rbac_action());
+  auto* logging_options = rbac.mutable_rules()->mutable_audit_logging_options();
+  auto* audit_logger =
+      logging_options->add_logger_configs()->mutable_audit_logger();
+  audit_logger->mutable_typed_config()->set_type_url("/test_logger");
+  TypedStruct typed_struct;
+  typed_struct.set_type_url("/test_logger");
+  typed_struct.mutable_value()->mutable_fields();
+  audit_logger->mutable_typed_config()->PackFrom(typed_struct);
+  SetServerRbacPolicy(rbac);
+  backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  // An empty RBAC policy leads to all RPCs being rejected.
+  SendRpc(
+      [this]() { return CreateInsecureChannel(); }, {}, {},
+      /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_ALLOW,
+      grpc::StatusCode::PERMISSION_DENIED);
+  EXPECT_THAT(audit_logs_, ::testing::ElementsAre());
+}
+
+TEST_P(XdsRbacTestWithActionPermutations,
+       MultipleRbacPoliciesWithAuditOnAllow) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RBAC_AUDIT_LOGGING");
+  RBAC always_allow;
+  auto* rules = always_allow.mutable_rules();
+  rules->set_action(RBAC_Action_ALLOW);
+  Policy policy;
+  policy.add_permissions()->set_any(true);
+  policy.add_principals()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  auto* logging_options = rules->mutable_audit_logging_options();
+  logging_options->set_audit_condition(
+      RBAC_AuditLoggingOptions_AuditCondition_ON_ALLOW);
+  auto* audit_logger =
+      logging_options->add_logger_configs()->mutable_audit_logger();
+  audit_logger->mutable_typed_config()->set_type_url("/test_logger");
+  TypedStruct typed_struct;
+  typed_struct.set_type_url("/test_logger");
+  typed_struct.mutable_value()->mutable_fields();
+  audit_logger->mutable_typed_config()->PackFrom(typed_struct);
+  RBAC rbac;
+  rules = rbac.mutable_rules();
+  rules->set_action(GetParam().rbac_action());
+  (*rules->mutable_policies())["policy"] = policy;
+  logging_options = rules->mutable_audit_logging_options();
+  logging_options->set_audit_condition(
+      RBAC_AuditLoggingOptions_AuditCondition_ON_ALLOW);
+  audit_logger = logging_options->add_logger_configs()->mutable_audit_logger();
+  audit_logger->mutable_typed_config()->PackFrom(typed_struct);
+  SetServerRbacPolicies(default_server_listener_,
+                        {always_allow, rbac, always_allow});
+  backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
+          /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
+          grpc::StatusCode::PERMISSION_DENIED);
+  // If the second rbac denies the rpc, only one log from the first rbac.
+  // Otherwise, all three rbacs log.
+  std::vector<absl::string_view> expected(
+      GetParam().rbac_action() != RBAC_Action_DENY ? 3 : 1,
+      "{\"authorized\":true,\"matched_rule\":\"policy\","
+      "\"policy_name\":\"\",\"principal\":\"\",\"rpc_"
+      "method\":\"/grpc.testing.EchoTestService/Echo\"}");
+  EXPECT_THAT(audit_logs_, ::testing::ElementsAreArray(expected));
+}
+
+TEST_P(XdsRbacTestWithActionPermutations, MultipleRbacPoliciesWithAuditOnDeny) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RBAC_AUDIT_LOGGING");
+  RBAC always_allow;
+  auto* rules = always_allow.mutable_rules();
+  rules->set_action(RBAC_Action_ALLOW);
+  Policy policy;
+  policy.add_permissions()->set_any(true);
+  policy.add_principals()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  auto* logging_options = rules->mutable_audit_logging_options();
+  logging_options->set_audit_condition(
+      RBAC_AuditLoggingOptions_AuditCondition_ON_DENY);
+  auto* audit_logger =
+      logging_options->add_logger_configs()->mutable_audit_logger();
+  audit_logger->mutable_typed_config()->set_type_url("/test_logger");
+  TypedStruct typed_struct;
+  typed_struct.set_type_url("/test_logger");
+  typed_struct.mutable_value()->mutable_fields();
+  audit_logger->mutable_typed_config()->PackFrom(typed_struct);
+  RBAC rbac;
+  rules = rbac.mutable_rules();
+  rules->set_action(GetParam().rbac_action());
+  (*rules->mutable_policies())["policy"] = policy;
+  logging_options = rules->mutable_audit_logging_options();
+  logging_options->set_audit_condition(
+      RBAC_AuditLoggingOptions_AuditCondition_ON_DENY);
+  audit_logger = logging_options->add_logger_configs()->mutable_audit_logger();
+  audit_logger->mutable_typed_config()->PackFrom(typed_struct);
+  SetServerRbacPolicies(default_server_listener_,
+                        {always_allow, rbac, always_allow});
+  backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
+          /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
+          grpc::StatusCode::PERMISSION_DENIED);
+  // Only the second rbac logs if it denies the rpc.
+  std::vector<absl::string_view> expected;
+  if (GetParam().rbac_action() == RBAC_Action_DENY) {
+    expected.push_back(
+        "{\"authorized\":false,\"matched_rule\":\"policy\",\"policy_name\":"
+        "\"\",\"principal\":\"\",\"rpc_method\":\"/"
+        "grpc.testing.EchoTestService/Echo\"}");
+  }
+  EXPECT_THAT(audit_logs_, ::testing::ElementsAreArray(expected));
+}
+
+TEST_P(XdsRbacTestWithActionPermutations,
+       MultipleRbacPoliciesWithAuditOnDenyAndAllow) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RBAC_AUDIT_LOGGING");
+  RBAC always_allow;
+  auto* rules = always_allow.mutable_rules();
+  rules->set_action(RBAC_Action_ALLOW);
+  Policy policy;
+  policy.add_permissions()->set_any(true);
+  policy.add_principals()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  auto* logging_options = rules->mutable_audit_logging_options();
+  logging_options->set_audit_condition(
+      RBAC_AuditLoggingOptions_AuditCondition_ON_DENY_AND_ALLOW);
+  auto* audit_logger =
+      logging_options->add_logger_configs()->mutable_audit_logger();
+  audit_logger->mutable_typed_config()->set_type_url("/test_logger");
+  TypedStruct typed_struct;
+  typed_struct.set_type_url("/test_logger");
+  typed_struct.mutable_value()->mutable_fields();
+  audit_logger->mutable_typed_config()->PackFrom(typed_struct);
+  RBAC rbac;
+  rules = rbac.mutable_rules();
+  rules->set_action(GetParam().rbac_action());
+  (*rules->mutable_policies())["policy"] = policy;
+  logging_options = rules->mutable_audit_logging_options();
+  logging_options->set_audit_condition(
+      RBAC_AuditLoggingOptions_AuditCondition_ON_DENY_AND_ALLOW);
+  audit_logger = logging_options->add_logger_configs()->mutable_audit_logger();
+  audit_logger->mutable_typed_config()->PackFrom(typed_struct);
+  SetServerRbacPolicies(default_server_listener_,
+                        {always_allow, rbac, always_allow});
+  backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
+          /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
+          grpc::StatusCode::PERMISSION_DENIED);
+  // If the second rbac denies the request, the last rbac won't log. Otherwise
+  // all rbacs log.
+  std::vector<absl::string_view> expected = {
+      "{\"authorized\":true,\"matched_rule\":\"policy\",\"policy_name\":"
+      "\"\",\"principal\":\"\",\"rpc_method\":\"/"
+      "grpc.testing.EchoTestService/Echo\"}"};
+  if (GetParam().rbac_action() == RBAC_Action_DENY) {
+    expected.push_back(
+        "{\"authorized\":false,\"matched_rule\":\"policy\",\"policy_name\":"
+        "\"\",\"principal\":\"\",\"rpc_method\":\"/"
+        "grpc.testing.EchoTestService/Echo\"}");
+  } else {
+    expected = std::vector<absl::string_view>(
+        3,
+        "{\"authorized\":true,\"matched_rule\":\"policy\",\"policy_name\":"
+        "\"\",\"principal\":\"\",\"rpc_method\":\"/"
+        "grpc.testing.EchoTestService/Echo\"}");
+  }
+  EXPECT_THAT(audit_logs_, ::testing::ElementsAreArray(expected));
+}
+
+// Adds Audit Condition Permutations to XdsRbacTest
+using XdsRbacTestWithActionAndAuditConditionPermutations = XdsRbacTest;
+
+TEST_P(XdsRbacTestWithActionAndAuditConditionPermutations,
+       AuditLoggingDisabled) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(GetParam().rbac_action());
+  Policy policy;
+  policy.add_permissions()->set_any(true);
+  policy.add_principals()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  auto* logging_options = rules->mutable_audit_logging_options();
+  logging_options->set_audit_condition(GetParam().rbac_audit_condition());
+  auto* audit_logger =
+      logging_options->add_logger_configs()->mutable_audit_logger();
+  audit_logger->mutable_typed_config()->set_type_url("/test_logger");
+  TypedStruct typed_struct;
+  typed_struct.set_type_url("/test_logger");
+  typed_struct.mutable_value()->mutable_fields();
+  audit_logger->mutable_typed_config()->PackFrom(typed_struct);
+  SetServerRbacPolicy(rbac);
+  backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
+          /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
+          grpc::StatusCode::PERMISSION_DENIED);
+  EXPECT_THAT(audit_logs_, ::testing::ElementsAre());
+}
+
+TEST_P(XdsRbacTestWithActionAndAuditConditionPermutations, MultipleLoggers) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RBAC_AUDIT_LOGGING");
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(GetParam().rbac_action());
+  Policy policy;
+  policy.add_permissions()->set_any(true);
+  policy.add_principals()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  auto* logging_options = rules->mutable_audit_logging_options();
+  logging_options->set_audit_condition(GetParam().rbac_audit_condition());
+  auto* stdout_logger =
+      logging_options->add_logger_configs()->mutable_audit_logger();
+  stdout_logger->mutable_typed_config()->set_type_url(
+      "/envoy.extensions.rbac.audit_loggers.stream.v3.StdoutAuditLog");
+  auto* test_logger =
+      logging_options->add_logger_configs()->mutable_audit_logger();
+  test_logger->mutable_typed_config()->set_type_url("/test_logger");
+  TypedStruct typed_struct;
+  typed_struct.set_type_url("/test_logger");
+  typed_struct.mutable_value()->mutable_fields();
+  test_logger->mutable_typed_config()->PackFrom(typed_struct);
+  SetServerRbacPolicy(rbac);
+  backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  auto action = GetParam().rbac_action();
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
+          /*test_expects_failure=*/action == RBAC_Action_DENY,
+          grpc::StatusCode::PERMISSION_DENIED);
+  auto audit_condition = GetParam().rbac_audit_condition();
+  bool should_log =
+      (audit_condition ==
+       RBAC_AuditLoggingOptions_AuditCondition_ON_DENY_AND_ALLOW) ||
+      (action != RBAC_Action_DENY &&
+       audit_condition == RBAC_AuditLoggingOptions_AuditCondition_ON_ALLOW) ||
+      (action == RBAC_Action_DENY &&
+       audit_condition == RBAC_AuditLoggingOptions_AuditCondition_ON_DENY);
+  if (should_log) {
+    EXPECT_THAT(audit_logs_,
+                ::testing::ElementsAre(absl::StrFormat(
+                    "{\"authorized\":%s,\"matched_rule\":\"policy\","
+                    "\"policy_name\":\"\",\"principal\":\"\","
+                    "\"rpc_"
+                    "method\":\"/grpc.testing.EchoTestService/Echo\"}",
+                    action == RBAC_Action_DENY ? "false" : "true")));
+  } else {
+    EXPECT_THAT(audit_logs_, ::testing::ElementsAre());
+  }
+}
+
 // CDS depends on XdsResolver.
 // Security depends on v3.
 // Not enabling load reporting or RDS, since those are irrelevant to these
@@ -3942,30 +3167,6 @@ INSTANTIATE_TEST_SUITE_P(
 // Run with bootstrap from env var, so that we use a global XdsClient
 // instance.  Otherwise, we would need to use a separate fake resolver
 // result generator on the client and server sides.
-// Note that we are simply using the default fake credentials instead of xds
-// credentials for NACK tests to avoid a mismatch between the client and the
-// server's security settings when using the WaitForNack() infrastructure.
-INSTANTIATE_TEST_SUITE_P(
-    XdsTest, XdsRbacNackTest,
-    ::testing::Values(
-        XdsTestType().set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
-        XdsTestType().set_enable_rds_testing().set_bootstrap_source(
-            XdsTestType::kBootstrapFromEnvVar),
-        XdsTestType()
-            .set_filter_config_setup(
-                XdsTestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute)
-            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
-        XdsTestType()
-            .set_enable_rds_testing()
-            .set_filter_config_setup(
-                XdsTestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute)
-            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar)),
-    &XdsTestType::Name);
-
-// We are only testing the server here.
-// Run with bootstrap from env var, so that we use a global XdsClient
-// instance.  Otherwise, we would need to use a separate fake resolver
-// result generator on the client and server sides.
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, XdsRbacTestWithRouteOverrideAlwaysPresent,
     ::testing::Values(
@@ -4035,6 +3236,48 @@ INSTANTIATE_TEST_SUITE_P(
             .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar)),
     &XdsTestType::Name);
 
+INSTANTIATE_TEST_SUITE_P(
+    XdsTest, XdsRbacTestWithActionAndAuditConditionPermutations,
+    ::testing::Values(
+        XdsTestType()
+            .set_use_xds_credentials()
+            .set_rbac_action(RBAC_Action_ALLOW)
+            .set_rbac_audit_condition(
+                RBAC_AuditLoggingOptions_AuditCondition_ON_DENY)
+            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
+        XdsTestType()
+            .set_use_xds_credentials()
+            .set_rbac_action(RBAC_Action_ALLOW)
+            .set_rbac_audit_condition(
+                RBAC_AuditLoggingOptions_AuditCondition_ON_ALLOW)
+            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
+        XdsTestType()
+            .set_use_xds_credentials()
+            .set_rbac_action(RBAC_Action_ALLOW)
+            .set_rbac_audit_condition(
+                RBAC_AuditLoggingOptions_AuditCondition_ON_DENY_AND_ALLOW)
+            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
+        XdsTestType()
+            .set_use_xds_credentials()
+            .set_rbac_action(RBAC_Action_DENY)
+            .set_rbac_audit_condition(
+                RBAC_AuditLoggingOptions_AuditCondition_ON_ALLOW)
+            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
+        XdsTestType()
+            .set_use_xds_credentials()
+            .set_rbac_action(RBAC_Action_DENY)
+            .set_rbac_audit_condition(
+                RBAC_AuditLoggingOptions_AuditCondition_ON_DENY)
+            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
+        XdsTestType()
+            .set_use_xds_credentials()
+            .set_enable_rds_testing()
+            .set_rbac_action(RBAC_Action_DENY)
+            .set_rbac_audit_condition(
+                RBAC_AuditLoggingOptions_AuditCondition_ON_DENY_AND_ALLOW)
+            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar)),
+    &XdsTestType::Name);
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc
@@ -4044,7 +3287,9 @@ int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   // Make the backup poller poll very frequently in order to pick up
   // updates from all the subchannels's FDs.
-  GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
+  grpc_core::ConfigVars::Overrides overrides;
+  overrides.client_channel_backup_poll_interval_ms = 1;
+  grpc_core::ConfigVars::SetOverrides(overrides);
 #if TARGET_OS_IPHONE
   // Workaround Apple CFStream bug
   grpc_core::SetEnv("grpc_cfstream", "0");
@@ -4057,34 +3302,14 @@ int main(int argc, char** argv) {
       [](grpc_core::CoreConfiguration::Builder* builder) {
         builder->certificate_provider_registry()
             ->RegisterCertificateProviderFactory(
-                absl::make_unique<
-                    grpc::testing::FakeCertificateProviderFactory>(
+                std::make_unique<grpc::testing::FakeCertificateProviderFactory>(
                     "fake1", grpc::testing::g_fake1_cert_data_map));
         builder->certificate_provider_registry()
             ->RegisterCertificateProviderFactory(
-                absl::make_unique<
-                    grpc::testing::FakeCertificateProviderFactory>(
+                std::make_unique<grpc::testing::FakeCertificateProviderFactory>(
                     "fake2", grpc::testing::g_fake2_cert_data_map));
       });
   grpc_init();
-  grpc_core::XdsHttpFilterRegistry::RegisterFilter(
-      absl::make_unique<grpc::testing::NoOpHttpFilter>(
-          "grpc.testing.client_only_http_filter",
-          /* supported_on_clients = */ true, /* supported_on_servers = */ false,
-          /* is_terminal_filter */ false),
-      {"grpc.testing.client_only_http_filter"});
-  grpc_core::XdsHttpFilterRegistry::RegisterFilter(
-      absl::make_unique<grpc::testing::NoOpHttpFilter>(
-          "grpc.testing.server_only_http_filter",
-          /* supported_on_clients = */ false, /* supported_on_servers = */ true,
-          /* is_terminal_filter */ false),
-      {"grpc.testing.server_only_http_filter"});
-  grpc_core::XdsHttpFilterRegistry::RegisterFilter(
-      absl::make_unique<grpc::testing::NoOpHttpFilter>(
-          "grpc.testing.terminal_http_filter",
-          /* supported_on_clients = */ true, /* supported_on_servers = */ true,
-          /* is_terminal_filter */ true),
-      {"grpc.testing.terminal_http_filter"});
   const auto result = RUN_ALL_TESTS();
   grpc_shutdown();
   return result;

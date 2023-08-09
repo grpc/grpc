@@ -1,32 +1,32 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "src/core/lib/transport/bdp_estimator.h"
 
 #include <stdlib.h>
 
 #include <algorithm>
+#include <atomic>
 
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
 
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "test/core/util/test_config.h"
@@ -36,22 +36,17 @@ extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
 namespace grpc_core {
 namespace testing {
 namespace {
-int g_clock = 123;
-Mutex mu_;
+std::atomic<int> g_clock{123};
 
 gpr_timespec fake_gpr_now(gpr_clock_type clock_type) {
-  MutexLock lock(&mu_);
   gpr_timespec ts;
-  ts.tv_sec = g_clock;
+  ts.tv_sec = g_clock.load();
   ts.tv_nsec = 0;
   ts.clock_type = clock_type;
   return ts;
 }
 
-void inc_time(void) {
-  MutexLock lock(&mu_);
-  g_clock += 30;
-}
+void inc_time(void) { g_clock.fetch_add(30); }
 }  // namespace
 
 TEST(BdpEstimatorTest, NoOp) { BdpEstimator est("test"); }

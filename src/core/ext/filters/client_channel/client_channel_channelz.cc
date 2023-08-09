@@ -1,26 +1,28 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/filters/client_channel/client_channel_channelz.h"
 
-#include <map>
+#include "absl/strings/str_cat.h"
+
+#include <grpc/support/json.h>
 
 #include "src/core/lib/transport/connectivity_state.h"
 
@@ -51,27 +53,24 @@ Json SubchannelNode::RenderJson() {
   grpc_connectivity_state state =
       connectivity_state_.load(std::memory_order_relaxed);
   Json::Object data = {
-      {"state",
-       Json::Object{
-           {"state", ConnectivityStateName(state)},
-       }},
-      {"target", target_},
+      {"state", Json::FromObject({
+                    {"state", Json::FromString(ConnectivityStateName(state))},
+                })},
+      {"target", Json::FromString(target_)},
   };
-
   // Fill in the channel trace if applicable
   Json trace_json = trace_.RenderJson();
-  if (trace_json.type() != Json::Type::JSON_NULL) {
+  if (trace_json.type() != Json::Type::kNull) {
     data["trace"] = std::move(trace_json);
   }
   // Ask CallCountingHelper to populate call count data.
   call_counter_.PopulateCallCounts(&data);
   // Construct top-level object.
   Json::Object object{
-      {"ref",
-       Json::Object{
-           {"subchannelId", std::to_string(uuid())},
-       }},
-      {"data", std::move(data)},
+      {"ref", Json::FromObject({
+                  {"subchannelId", Json::FromString(absl::StrCat(uuid()))},
+              })},
+      {"data", Json::FromObject(std::move(data))},
   };
   // Populate the child socket.
   RefCountedPtr<SocketNode> child_socket;
@@ -80,14 +79,14 @@ Json SubchannelNode::RenderJson() {
     child_socket = child_socket_;
   }
   if (child_socket != nullptr && child_socket->uuid() != 0) {
-    object["socketRef"] = Json::Array{
-        Json::Object{
-            {"socketId", std::to_string(child_socket->uuid())},
-            {"name", child_socket->name()},
-        },
-    };
+    object["socketRef"] = Json::FromArray({
+        Json::FromObject({
+            {"socketId", Json::FromString(absl::StrCat(child_socket->uuid()))},
+            {"name", Json::FromString(child_socket->name())},
+        }),
+    });
   }
-  return object;
+  return Json::FromObject(object);
 }
 
 }  // namespace channelz

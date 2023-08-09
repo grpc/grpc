@@ -24,6 +24,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/tsi/ssl_transport_security.h"
@@ -41,8 +42,15 @@ namespace {
 
 const int kSslTsiTestRevokedKeyCertPairsNum = 1;
 const int kSslTsiTestValidKeyCertPairsNum = 1;
+const int kSslTsiTestRevokedIntermedidateKeyCertPairsNum = 1;
 const char* kSslTsiTestCrlSupportedCredentialsDir =
     "test/core/tsi/test_creds/crl_data/";
+const char* kSslTsiTestCrlSupportedCrlDir =
+    "test/core/tsi/test_creds/crl_data/crls/";
+const char* kSslTsiTestCrlSupportedCrlDirMissingIntermediate =
+    "test/core/tsi/test_creds/crl_data/crls_missing_intermediate/";
+const char* kSslTsiTestCrlSupportedCrlDirMissingRoot =
+    "test/core/tsi/test_creds/crl_data/crls_missing_root/";
 const char* kSslTsiTestFaultyCrlsDir = "bad_path/";
 
 class CrlSslTransportSecurityTest
@@ -56,9 +64,17 @@ class CrlSslTransportSecurityTest
     static SslTsiTestFixture* Create(bool use_revoked_server_cert,
                                      bool use_revoked_client_cert,
                                      bool use_faulty_crl_directory) {
-      return new SslTsiTestFixture(use_revoked_server_cert,
-                                   use_revoked_client_cert,
-                                   use_faulty_crl_directory);
+      return new SslTsiTestFixture(
+          use_revoked_server_cert, use_revoked_client_cert,
+          use_faulty_crl_directory, false, false, false);
+    }
+
+    static SslTsiTestFixture* CreateWithIntermediate(
+        bool use_revoked_intermediate, bool use_missing_intermediate_crl,
+        bool use_missing_root_crl) {
+      return new SslTsiTestFixture(
+          false, false, false, use_revoked_intermediate,
+          use_missing_intermediate_crl, use_missing_root_crl);
     }
 
     void Run() {
@@ -69,10 +85,16 @@ class CrlSslTransportSecurityTest
    private:
     SslTsiTestFixture(bool use_revoked_server_cert,
                       bool use_revoked_client_cert,
-                      bool use_faulty_crl_directory)
+                      bool use_faulty_crl_directory,
+                      bool use_revoked_intermediate,
+                      bool use_missing_intermediate_crl,
+                      bool use_missing_root_crl)
         : use_revoked_server_cert_(use_revoked_server_cert),
           use_revoked_client_cert_(use_revoked_client_cert),
-          use_faulty_crl_directory_(use_faulty_crl_directory) {
+          use_faulty_crl_directory_(use_faulty_crl_directory),
+          use_revoked_intermediate_(use_revoked_intermediate),
+          use_missing_intermediate_crl_(use_missing_intermediate_crl),
+          use_missing_root_crl_(use_missing_root_crl) {
       tsi_test_fixture_init(&base_);
       base_.test_unused_bytes = true;
       base_.vtable = &kVtable;
@@ -91,6 +113,16 @@ class CrlSslTransportSecurityTest
           absl::StrCat(kSslTsiTestCrlSupportedCredentialsDir, "valid.key"));
       valid_pem_key_cert_pairs_[0].cert_chain = LoadFile(
           absl::StrCat(kSslTsiTestCrlSupportedCredentialsDir, "valid.pem"));
+      revoked_intermediate_pem_key_cert_pairs_ =
+          static_cast<tsi_ssl_pem_key_cert_pair*>(
+              gpr_malloc(sizeof(tsi_ssl_pem_key_cert_pair) *
+                         kSslTsiTestRevokedIntermedidateKeyCertPairsNum));
+      revoked_intermediate_pem_key_cert_pairs_[0].private_key =
+          LoadFile(absl::StrCat(kSslTsiTestCrlSupportedCredentialsDir,
+                                "leaf_signed_by_intermediate.key"));
+      revoked_intermediate_pem_key_cert_pairs_[0].cert_chain =
+          LoadFile(absl::StrCat(kSslTsiTestCrlSupportedCredentialsDir,
+                                "leaf_and_intermediate_chain.pem"));
       root_cert_ = LoadFile(
           absl::StrCat(kSslTsiTestCrlSupportedCredentialsDir, "ca.pem"));
       root_store_ = tsi_ssl_root_certs_store_create(root_cert_);
@@ -106,6 +138,11 @@ class CrlSslTransportSecurityTest
         PemKeyCertPairDestroy(revoked_pem_key_cert_pairs_[i]);
       }
       gpr_free(revoked_pem_key_cert_pairs_);
+      for (size_t i = 0; i < kSslTsiTestRevokedIntermedidateKeyCertPairsNum;
+           i++) {
+        PemKeyCertPairDestroy(revoked_intermediate_pem_key_cert_pairs_[i]);
+      }
+      gpr_free(revoked_intermediate_pem_key_cert_pairs_);
       gpr_free(root_cert_);
       tsi_ssl_root_certs_store_destroy(root_store_);
       tsi_ssl_server_handshaker_factory_unref(server_handshaker_factory_);
@@ -129,8 +166,13 @@ class CrlSslTransportSecurityTest
       }
       if (use_faulty_crl_directory_) {
         client_options.crl_directory = kSslTsiTestFaultyCrlsDir;
+      } else if (use_missing_intermediate_crl_) {
+        client_options.crl_directory =
+            kSslTsiTestCrlSupportedCrlDirMissingIntermediate;
+      } else if (use_missing_root_crl_) {
+        client_options.crl_directory = kSslTsiTestCrlSupportedCrlDirMissingRoot;
       } else {
-        client_options.crl_directory = kSslTsiTestCrlSupportedCredentialsDir;
+        client_options.crl_directory = kSslTsiTestCrlSupportedCrlDir;
       }
       client_options.root_store = root_store_;
       client_options.min_tls_version = GetParam();
@@ -143,12 +185,24 @@ class CrlSslTransportSecurityTest
       if (use_revoked_server_cert_) {
         server_options.pem_key_cert_pairs = revoked_pem_key_cert_pairs_;
         server_options.num_key_cert_pairs = kSslTsiTestRevokedKeyCertPairsNum;
-      } else {
+      } else if (!use_revoked_intermediate_) {
         server_options.pem_key_cert_pairs = valid_pem_key_cert_pairs_;
         server_options.num_key_cert_pairs = kSslTsiTestValidKeyCertPairsNum;
+      } else {
+        server_options.pem_key_cert_pairs =
+            revoked_intermediate_pem_key_cert_pairs_;
+        server_options.num_key_cert_pairs =
+            kSslTsiTestRevokedIntermedidateKeyCertPairsNum;
       }
       server_options.pem_client_root_certs = root_cert_;
-      server_options.crl_directory = kSslTsiTestCrlSupportedCredentialsDir;
+      if (use_missing_intermediate_crl_) {
+        server_options.crl_directory =
+            kSslTsiTestCrlSupportedCrlDirMissingIntermediate;
+      } else if (use_missing_root_crl_) {
+        server_options.crl_directory = kSslTsiTestCrlSupportedCrlDirMissingRoot;
+      } else {
+        server_options.crl_directory = kSslTsiTestCrlSupportedCrlDir;
+      }
       server_options.client_certificate_request =
           TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY;
       server_options.session_ticket_key = nullptr;
@@ -184,12 +238,27 @@ class CrlSslTransportSecurityTest
       // For OpenSSL versions < 1.1, TLS 1.3 is not supported, so the
       // client-side handshake should succeed precisely when the server-side
       // handshake succeeds.
+      //
+      // For the intermediate cases, we have a CA -> Intermediate CA -> Leaf
+      // Cert chain in which the Intermediate CA cert is revoked by the CA. We
+      // test 3 cases. Note: A CRL not existing should not make the handshake
+      // fail
+      // 1. CRL Directory with CA's CRL and Intermediate CA's CRL -> Handshake
+      // fails due to revoked cert
+      // 2. CRL Directory with CA's CRL but missing Intermediate CA's CRL ->
+      // Handshake fails due to revoked cert
+      // 3. CRL Directory without CA's CRL with but Intermediate CA's CRL ->
+      // Handshake succeeds because the CRL that revokes the cert is not
+      // present.
       bool expect_server_success =
-          !(use_revoked_server_cert_ || use_revoked_client_cert_);
+          !(use_revoked_server_cert_ || use_revoked_client_cert_ ||
+            (use_revoked_intermediate_ & !use_missing_root_crl_));
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
-      bool expect_client_success = GetParam() == tsi_tls_version::TSI_TLS1_2
-                                       ? expect_server_success
-                                       : !use_revoked_server_cert_;
+      bool expect_client_success =
+          GetParam() == tsi_tls_version::TSI_TLS1_2
+              ? expect_server_success
+              : !(use_revoked_server_cert_ ||
+                  (use_revoked_intermediate_ & !use_missing_root_crl_));
 #else
       // If using OpenSSL version < 1.1, the CRL revocation won't be enabled
       // anyways, so we always expect the connection to be successful.
@@ -228,7 +297,7 @@ class CrlSslTransportSecurityTest
     static char* LoadFile(absl::string_view file_path) {
       grpc_slice slice;
       GPR_ASSERT(grpc_load_file(file_path.data(), 1, &slice) ==
-                 GRPC_ERROR_NONE);
+                 absl::OkStatus());
       char* data = grpc_slice_to_c_string(slice);
       grpc_slice_unref(slice);
       return data;
@@ -240,10 +309,14 @@ class CrlSslTransportSecurityTest
     bool use_revoked_server_cert_;
     bool use_revoked_client_cert_;
     bool use_faulty_crl_directory_;
+    bool use_revoked_intermediate_;
+    bool use_missing_intermediate_crl_;
+    bool use_missing_root_crl_;
     char* root_cert_;
     tsi_ssl_root_certs_store* root_store_;
     tsi_ssl_pem_key_cert_pair* revoked_pem_key_cert_pairs_;
     tsi_ssl_pem_key_cert_pair* valid_pem_key_cert_pairs_;
+    tsi_ssl_pem_key_cert_pair* revoked_intermediate_pem_key_cert_pairs_;
     tsi_ssl_server_handshaker_factory* server_handshaker_factory_;
     tsi_ssl_client_handshaker_factory* client_handshaker_factory_;
   };
@@ -280,6 +353,31 @@ TEST_P(CrlSslTransportSecurityTest, UseFaultyCrlDirectory) {
   auto* fixture = SslTsiTestFixture::Create(/*use_revoked_server_cert=*/false,
                                             /*use_revoked_client_cert=*/false,
                                             /*use_faulty_crl_directory=*/true);
+  fixture->Run();
+}
+
+TEST_P(CrlSslTransportSecurityTest, UseRevokedIntermediate) {
+  auto* fixture = SslTsiTestFixture::CreateWithIntermediate(
+      /*use_revoked_intermediate=*/true,
+      /*use_missing_intermediate_crl=*/false,
+      /*use_missing_root_crl=*/false);
+  fixture->Run();
+}
+
+TEST_P(CrlSslTransportSecurityTest,
+       UseRevokedIntermediateWithMissingIntermediateCrl) {
+  auto* fixture = SslTsiTestFixture::CreateWithIntermediate(
+      /*use_revoked_intermediate=*/true,
+      /*use_missing_intermediate_crl=*/true,
+      /*use_missing_root_crl=*/false);
+  fixture->Run();
+}
+
+TEST_P(CrlSslTransportSecurityTest, UseRevokedIntermediateWithMissingRootCrl) {
+  auto* fixture = SslTsiTestFixture::CreateWithIntermediate(
+      /*use_revoked_intermediate=*/true,
+      /*use_missing_intermediate_crl=*/false,
+      /*use_missing_root_crl=*/true);
   fixture->Run();
 }
 

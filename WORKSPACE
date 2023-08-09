@@ -24,26 +24,6 @@ custom_exec_properties(
     },
 )
 
-load("@bazel_toolchains//rules:rbe_repo.bzl", "rbe_autoconfig")
-
-# Create toolchain configuration for remote execution.
-rbe_autoconfig(
-    name = "rbe_default",
-    exec_properties = create_rbe_exec_properties_dict(
-        docker_add_capabilities = "SYS_PTRACE",
-        docker_privileged = True,
-        labels = {
-            "os": "ubuntu",
-            "machine_size": "small",
-        },
-        os_family = "Linux",
-    ),
-    # use exec_properties instead of deprecated remote_execution_properties
-    use_legacy_platform_definition = False,
-)
-
-load("@bazel_toolchains//rules:environments.bzl", "clang_env")
-load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
@@ -71,15 +51,12 @@ local_repository(
     path = "./src/core/ext/transport/binder/java",
 )
 
-# Create msan toolchain configuration for remote execution.
-rbe_autoconfig(
-    name = "rbe_msan",
-    env = dicts.add(
-        clang_env(),
-        {
-            "BAZEL_LINKOPTS": "-lc++:-lc++abi:-lm",
-        },
-    ),
+# Prevents bazel's '...' expansion from including the following folder.
+# This is required to avoid triggering "Unable to find package for @rules_fuzzing//fuzzing:cc_defs.bzl"
+# error.
+local_repository(
+    name = "ignore_third_party_utf8_range_subtree",
+    path = "third_party/utf8_range",
 )
 
 load("@io_bazel_rules_python//python:pip.bzl", "pip_install")
@@ -88,3 +65,58 @@ pip_install(
     name = "grpc_python_dependencies",
     requirements = "@com_github_grpc_grpc//:requirements.bazel.txt",
 )
+
+load("@upb//bazel:system_python.bzl", "system_python")
+
+system_python(
+    name = "system_python",
+    minimum_python_version = "3.7",
+)
+
+load("@system_python//:pip.bzl", "pip_parse")
+
+pip_parse(
+    name = "pip_deps",
+    requirements = "@upb//python:requirements.txt",
+    requirements_overrides = {
+        "3.11": "@upb//python:requirements_311.txt",
+    },
+)
+
+http_archive(
+    name = "build_bazel_rules_swift",
+    sha256 = "bf2861de6bf75115288468f340b0c4609cc99cc1ccc7668f0f71adfd853eedb3",
+    url = "https://github.com/bazelbuild/rules_swift/releases/download/1.7.1/rules_swift.1.7.1.tar.gz",
+)
+
+load(
+    "@build_bazel_rules_swift//swift:repositories.bzl",
+    "swift_rules_dependencies",
+)
+
+swift_rules_dependencies()
+
+# This loads the libpfm transitive dependency.
+# See https://github.com/google/benchmark/pull/1520
+load("@com_github_google_benchmark//:bazel/benchmark_deps.bzl", "benchmark_deps")
+
+benchmark_deps()
+
+# TODO: Enable below once https://github.com/bazel-xcode/PodToBUILD/issues/232 is resolved
+#
+#http_archive(
+#    name = "rules_pods",
+#    urls = ["https://github.com/pinterest/PodToBUILD/releases/download/4.1.0-412495/PodToBUILD.zip"],
+#)
+#
+#load(
+#    "@rules_pods//BazelExtensions:workspace.bzl",
+#    "new_pod_repository",
+#)
+#
+#new_pod_repository(
+#    name = "CronetFramework",
+#    is_dynamic_framework = True,
+#    podspec_url = "https://raw.githubusercontent.com/CocoaPods/Specs/master/Specs/2/e/1/CronetFramework/0.0.5/CronetFramework.podspec.json",
+#    url = "https://storage.googleapis.com/grpc-precompiled-binaries/cronet/Cronet.framework-v0.0.5.zip",
+#)

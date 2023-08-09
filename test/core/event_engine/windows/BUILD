@@ -34,10 +34,10 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "create_sockpair",
-        "//:common_event_engine_closures",
-        "//:event_engine_utils",
         "//:gpr_platform",
-        "//:windows_iocp",
+        "//src/core:common_event_engine_closures",
+        "//src/core:event_engine_utils",
+        "//src/core:windows_iocp",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -57,9 +57,31 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "create_sockpair",
-        "//:common_event_engine_closures",
         "//:gpr_platform",
-        "//:windows_event_engine",
+        "//src/core:common_event_engine_closures",
+        "//src/core:windows_event_engine",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "windows_endpoint_test",
+    timeout = "short",
+    srcs = ["windows_endpoint_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    tags = [
+        "no_linux",
+        "no_mac",
+        "no_test_ios",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "create_sockpair",
+        "//:gpr_platform",
+        "//src/core:common_event_engine_closures",
+        "//src/core:windows_endpoint",
         "//test/core/util:grpc_test_util",
     ],
 )

@@ -44,20 +44,20 @@ _LENGTH_OF_RPC_SENDING_SEC = 16
 # SLEEP_DURATION number of RPC is finished. The final completed RPC might be
 # slightly more or less.
 _NON_RANDOM_ERROR_TOLERANCE = 0.01
-_RPC_BEHAVIOR_HEADER_NAME = 'rpc-behavior'
+_RPC_BEHAVIOR_HEADER_NAME = "rpc-behavior"
 
 
 def _build_retry_route_rule(retryConditions, num_retries):
     return {
-        'priority': 0,
-        'matchRules': [{
-            'fullPathMatch': '/grpc.testing.TestService/UnaryCall'
-        }],
-        'service': GcpResourceManager().default_backend_service(),
-        'routeAction': {
-            'retryPolicy': {
-                'retryConditions': retryConditions,
-                'numRetries': num_retries,
+        "priority": 0,
+        "matchRules": [
+            {"fullPathMatch": "/grpc.testing.TestService/UnaryCall"}
+        ],
+        "service": GcpResourceManager().default_backend_service(),
+        "routeAction": {
+            "retryPolicy": {
+                "retryConditions": retryConditions,
+                "numRetries": num_retries,
             }
         },
     }
@@ -67,95 +67,115 @@ def _is_supported(config: skips.TestConfig) -> bool:
     # Per "Retry" in
     # https://github.com/grpc/grpc/blob/master/doc/grpc_xds_features.md
     if config.client_lang in _Lang.CPP | _Lang.JAVA | _Lang.PYTHON:
-        return config.version_gte('v1.40.x')
+        return config.version_gte("v1.40.x")
     elif config.client_lang == _Lang.GO:
-        return config.version_gte('v1.41.x')
+        return config.version_gte("v1.41.x")
     elif config.client_lang == _Lang.NODE:
-        return False
+        return config.version_gte("v1.8.x")
     return True
 
 
 class TestRetryUpTo3AttemptsAndFail(xds_url_map_testcase.XdsUrlMapTestCase):
-
     @staticmethod
     def is_supported(config: skips.TestConfig) -> bool:
         return _is_supported(config)
 
     @staticmethod
     def url_map_change(
-            host_rule: HostRule,
-            path_matcher: PathMatcher) -> Tuple[HostRule, PathMatcher]:
+        host_rule: HostRule, path_matcher: PathMatcher
+    ) -> Tuple[HostRule, PathMatcher]:
         path_matcher["routeRules"] = [
-            _build_retry_route_rule(retryConditions=["unavailable"],
-                                    num_retries=3)
+            _build_retry_route_rule(
+                retryConditions=["unavailable"], num_retries=3
+            )
         ]
         return host_rule, path_matcher
 
     def xds_config_validate(self, xds_config: DumpedXdsConfig):
         self.assertNumEndpoints(xds_config, 1)
-        retry_config = xds_config.rds['virtualHosts'][0]['routes'][0]['route'][
-            'retryPolicy']
-        self.assertEqual(3, retry_config['numRetries'])
-        self.assertEqual('unavailable', retry_config['retryOn'])
+        retry_config = xds_config.rds["virtualHosts"][0]["routes"][0]["route"][
+            "retryPolicy"
+        ]
+        self.assertEqual(3, retry_config["numRetries"])
+        self.assertEqual("unavailable", retry_config["retryOn"])
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
-        self.configure_and_send(test_client,
-                                rpc_types=(RpcTypeUnaryCall,),
-                                metadata=[
-                                    (RpcTypeUnaryCall,
-                                     _RPC_BEHAVIOR_HEADER_NAME,
-                                     'succeed-on-retry-attempt-4,error-code-14')
-                                ],
-                                num_rpcs=_NUM_RPCS)
-        self.assertRpcStatusCode(test_client,
-                                 expected=(ExpectedResult(
-                                     rpc_type=RpcTypeUnaryCall,
-                                     status_code=grpc.StatusCode.UNAVAILABLE,
-                                     ratio=1),),
-                                 length=_LENGTH_OF_RPC_SENDING_SEC,
-                                 tolerance=_NON_RANDOM_ERROR_TOLERANCE)
+        self.configure_and_send(
+            test_client,
+            rpc_types=(RpcTypeUnaryCall,),
+            metadata=[
+                (
+                    RpcTypeUnaryCall,
+                    _RPC_BEHAVIOR_HEADER_NAME,
+                    "succeed-on-retry-attempt-4,error-code-14",
+                )
+            ],
+            num_rpcs=_NUM_RPCS,
+        )
+        self.assertRpcStatusCode(
+            test_client,
+            expected=(
+                ExpectedResult(
+                    rpc_type=RpcTypeUnaryCall,
+                    status_code=grpc.StatusCode.UNAVAILABLE,
+                    ratio=1,
+                ),
+            ),
+            length=_LENGTH_OF_RPC_SENDING_SEC,
+            tolerance=_NON_RANDOM_ERROR_TOLERANCE,
+        )
 
 
 class TestRetryUpTo4AttemptsAndSucceed(xds_url_map_testcase.XdsUrlMapTestCase):
-
     @staticmethod
     def is_supported(config: skips.TestConfig) -> bool:
         return _is_supported(config)
 
     @staticmethod
     def url_map_change(
-            host_rule: HostRule,
-            path_matcher: PathMatcher) -> Tuple[HostRule, PathMatcher]:
+        host_rule: HostRule, path_matcher: PathMatcher
+    ) -> Tuple[HostRule, PathMatcher]:
         path_matcher["routeRules"] = [
-            _build_retry_route_rule(retryConditions=["unavailable"],
-                                    num_retries=4)
+            _build_retry_route_rule(
+                retryConditions=["unavailable"], num_retries=4
+            )
         ]
         return host_rule, path_matcher
 
     def xds_config_validate(self, xds_config: DumpedXdsConfig):
         self.assertNumEndpoints(xds_config, 1)
-        retry_config = xds_config.rds['virtualHosts'][0]['routes'][0]['route'][
-            'retryPolicy']
-        self.assertEqual(4, retry_config['numRetries'])
-        self.assertEqual('unavailable', retry_config['retryOn'])
+        retry_config = xds_config.rds["virtualHosts"][0]["routes"][0]["route"][
+            "retryPolicy"
+        ]
+        self.assertEqual(4, retry_config["numRetries"])
+        self.assertEqual("unavailable", retry_config["retryOn"])
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
-        self.configure_and_send(test_client,
-                                rpc_types=(RpcTypeUnaryCall,),
-                                metadata=[
-                                    (RpcTypeUnaryCall,
-                                     _RPC_BEHAVIOR_HEADER_NAME,
-                                     'succeed-on-retry-attempt-4,error-code-14')
-                                ],
-                                num_rpcs=_NUM_RPCS)
-        self.assertRpcStatusCode(test_client,
-                                 expected=(ExpectedResult(
-                                     rpc_type=RpcTypeUnaryCall,
-                                     status_code=grpc.StatusCode.OK,
-                                     ratio=1),),
-                                 length=_LENGTH_OF_RPC_SENDING_SEC,
-                                 tolerance=_NON_RANDOM_ERROR_TOLERANCE)
+        self.configure_and_send(
+            test_client,
+            rpc_types=(RpcTypeUnaryCall,),
+            metadata=[
+                (
+                    RpcTypeUnaryCall,
+                    _RPC_BEHAVIOR_HEADER_NAME,
+                    "succeed-on-retry-attempt-4,error-code-14",
+                )
+            ],
+            num_rpcs=_NUM_RPCS,
+        )
+        self.assertRpcStatusCode(
+            test_client,
+            expected=(
+                ExpectedResult(
+                    rpc_type=RpcTypeUnaryCall,
+                    status_code=grpc.StatusCode.OK,
+                    ratio=1,
+                ),
+            ),
+            length=_LENGTH_OF_RPC_SENDING_SEC,
+            tolerance=_NON_RANDOM_ERROR_TOLERANCE,
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     absltest.main()

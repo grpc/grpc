@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2017 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2017 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <signal.h>
 #include <string.h>
@@ -25,11 +25,14 @@
 #include <vector>
 
 #include "absl/flags/flag.h"
+#include "absl/strings/str_format.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+
+#include "src/core/lib/gprpp/crash.h"
 
 #ifdef __FreeBSD__
 #include <sys/wait.h>
@@ -61,8 +64,6 @@ ABSL_FLAG(std::string, extra_args, "",
           "Comma-separated list of opaque command args to plumb through to "
           "the binary pointed at by --test_bin_name");
 
-using grpc::SubProcess;
-
 namespace grpc {
 
 namespace testing {
@@ -90,21 +91,18 @@ void InvokeResolverComponentTestsRunner(
   int status = test_driver->Join();
   if (WIFEXITED(status)) {
     if (WEXITSTATUS(status)) {
-      gpr_log(GPR_INFO,
-              "Resolver component test test-runner exited with code %d",
-              WEXITSTATUS(status));
-      abort();
+      grpc_core::Crash(absl::StrFormat(
+          "Resolver component test test-runner exited with code %d",
+          WEXITSTATUS(status)));
     }
   } else if (WIFSIGNALED(status)) {
-    gpr_log(GPR_INFO,
-            "Resolver component test test-runner ended from signal %d",
-            WTERMSIG(status));
-    abort();
+    grpc_core::Crash(absl::StrFormat(
+        "Resolver component test test-runner ended from signal %d",
+        WTERMSIG(status)));
   } else {
-    gpr_log(GPR_INFO,
-            "Resolver component test test-runner ended with unknown status %d",
-            status);
-    abort();
+    grpc_core::Crash(absl::StrFormat(
+        "Resolver component test test-runner ended with unknown status %d",
+        status));
   }
   gpr_mu_lock(&test_driver_mu);
   gpr_cv_signal(&test_driver_cv);

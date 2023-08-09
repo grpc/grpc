@@ -1,5 +1,6 @@
 # C/C++ build outputs
 .build/
+build/
 bins
 gens
 libs
@@ -22,7 +23,7 @@ src/python/grpcio_*/=*
 src/python/grpcio_*/build/
 src/python/grpcio_*/LICENSE
 src/python/grpcio_status/grpc_status/google/rpc/status.proto
-yapf_virtual_environment/
+black_virtual_environment/
 isort_virtual_environment/
 
 # Node installation output
@@ -54,6 +55,7 @@ coverage
 
 # vim temp files
 .*.swp
+.*.swo
 
 # Makefile's cache
 cache.mk

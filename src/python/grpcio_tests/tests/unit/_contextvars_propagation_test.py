@@ -16,12 +16,12 @@
 import contextlib
 import logging
 import os
+import queue
 import sys
 import threading
 import unittest
 
 import grpc
-from six.moves import queue
 
 from tests.unit import test_common
 
@@ -36,13 +36,13 @@ def _unary_unary_handler(request, context):
 def contextvars_supported():
     try:
         import contextvars
+
         return True
     except ImportError:
         return False
 
 
 class _GenericHandler(grpc.GenericRpcHandler):
-
     def service(self, handler_call_details):
         if handler_call_details.method == _UNARY_UNARY:
             return grpc.unary_unary_rpc_method_handler(_unary_unary_handler)
@@ -54,7 +54,7 @@ class _GenericHandler(grpc.GenericRpcHandler):
 def _server():
     try:
         server = test_common.test_server()
-        target = 'localhost:0'
+        target = "localhost:0"
         port = server.add_insecure_port(target)
         server.add_generic_rpc_handlers((_GenericHandler(),))
         server.start()
@@ -73,15 +73,17 @@ if contextvars_supported():
         test_var.set(_EXPECTED_VALUE)
 
     class TestCallCredentials(grpc.AuthMetadataPlugin):
-
         def __call__(self, context, callback):
-            if test_var.get(
-            ) != _EXPECTED_VALUE and not test_common.running_under_gevent():
+            if (
+                test_var.get() != _EXPECTED_VALUE
+                and not test_common.running_under_gevent()
+            ):
                 # contextvars do not work under gevent, but the rest of this
                 # test is still valuable as a test of concurrent runs of the
                 # metadata credentials code path.
-                raise AssertionError("{} != {}".format(test_var.get(),
-                                                       _EXPECTED_VALUE))
+                raise AssertionError(
+                    "{} != {}".format(test_var.get(), _EXPECTED_VALUE)
+                )
             callback((), None)
 
         def assert_called(self, test):
@@ -94,7 +96,6 @@ else:
         pass
 
     class TestCallCredentials(grpc.AuthMetadataPlugin):
-
         def __call__(self, context, callback):
             callback((), None)
 
@@ -102,7 +103,6 @@ else:
 # TODO(https://github.com/grpc/grpc/issues/22257)
 @unittest.skipIf(os.name == "nt", "LocalCredentials not supported on Windows.")
 class ContextVarsPropagationTest(unittest.TestCase):
-
     def test_propagation_to_auth_plugin(self):
         set_up_expected_context()
         with _server() as port:
@@ -110,9 +110,11 @@ class ContextVarsPropagationTest(unittest.TestCase):
             local_credentials = grpc.local_channel_credentials()
             test_call_credentials = TestCallCredentials()
             call_credentials = grpc.metadata_call_credentials(
-                test_call_credentials, "test call credentials")
+                test_call_credentials, "test call credentials"
+            )
             composite_credentials = grpc.composite_channel_credentials(
-                local_credentials, call_credentials)
+                local_credentials, call_credentials
+            )
             with grpc.secure_channel(target, composite_credentials) as channel:
                 stub = channel.unary_unary(_UNARY_UNARY)
                 response = stub(_REQUEST, wait_for_ready=True)
@@ -128,15 +130,18 @@ class ContextVarsPropagationTest(unittest.TestCase):
             local_credentials = grpc.local_channel_credentials()
             test_call_credentials = TestCallCredentials()
             call_credentials = grpc.metadata_call_credentials(
-                test_call_credentials, "test call credentials")
+                test_call_credentials, "test call credentials"
+            )
             composite_credentials = grpc.composite_channel_credentials(
-                local_credentials, call_credentials)
+                local_credentials, call_credentials
+            )
             wait_group = test_common.WaitGroup(_THREAD_COUNT)
 
             def _run_on_thread(exception_queue):
                 try:
-                    with grpc.secure_channel(target,
-                                             composite_credentials) as channel:
+                    with grpc.secure_channel(
+                        target, composite_credentials
+                    ) as channel:
                         stub = channel.unary_unary(_UNARY_UNARY)
                         wait_group.done()
                         wait_group.wait()
@@ -161,6 +166,6 @@ class ContextVarsPropagationTest(unittest.TestCase):
                     raise q.get()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig()
     unittest.main(verbosity=2)

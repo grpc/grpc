@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -28,6 +28,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/block_annotate.h"
 
 grpc_error_handle grpc_load_file(const char* filename, int add_null_terminator,
@@ -37,7 +38,7 @@ grpc_error_handle grpc_load_file(const char* filename, int add_null_terminator,
   grpc_slice result = grpc_empty_slice();
   FILE* file;
   size_t bytes_read = 0;
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
 
   GRPC_SCHEDULING_START_BLOCKING_REGION;
   file = fopen(filename, "rb");
@@ -46,7 +47,7 @@ grpc_error_handle grpc_load_file(const char* filename, int add_null_terminator,
     goto end;
   }
   fseek(file, 0, SEEK_END);
-  /* Converting to size_t on the assumption that it will not fail */
+  // Converting to size_t on the assumption that it will not fail
   contents_size = static_cast<size_t>(ftell(file));
   fseek(file, 0, SEEK_SET);
   contents = static_cast<unsigned char*>(
@@ -66,14 +67,10 @@ grpc_error_handle grpc_load_file(const char* filename, int add_null_terminator,
 end:
   *output = result;
   if (file != nullptr) fclose(file);
-  if (!GRPC_ERROR_IS_NONE(error)) {
-    grpc_error_handle error_out =
-        grpc_error_set_str(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                               "Failed to load file", &error, 1),
-                           GRPC_ERROR_STR_FILENAME,
-
-                           filename);
-    GRPC_ERROR_UNREF(error);
+  if (!error.ok()) {
+    grpc_error_handle error_out = grpc_error_set_str(
+        GRPC_ERROR_CREATE_REFERENCING("Failed to load file", &error, 1),
+        grpc_core::StatusStrProperty::kFilename, filename);
     error = error_out;
   }
   GRPC_SCHEDULING_END_BLOCKING_REGION_NO_EXEC_CTX;

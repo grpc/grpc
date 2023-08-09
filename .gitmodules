@@ -1,3 +1,45 @@
+[submodule "third_party/abseil-cpp"]
+	path = third_party/abseil-cpp
+	url = https://github.com/abseil/abseil-cpp.git
+[submodule "third_party/benchmark"]
+	path = third_party/benchmark
+	url = https://github.com/google/benchmark
+[submodule "third_party/bloaty"]
+	path = third_party/bloaty
+	url = https://github.com/google/bloaty.git
+[submodule "third_party/boringssl-with-bazel"]
+	path = third_party/boringssl-with-bazel
+	url = https://github.com/google/boringssl.git
+[submodule "third_party/cares/cares"]
+	path = third_party/cares/cares
+	url = https://github.com/c-ares/c-ares.git
+[submodule "third_party/envoy-api"]
+	path = third_party/envoy-api
+	url = https://github.com/envoyproxy/data-plane-api.git
+[submodule "third_party/googleapis"]
+	path = third_party/googleapis
+	url = https://github.com/googleapis/googleapis.git
+[submodule "third_party/googletest"]
+	path = third_party/googletest
+	url = https://github.com/google/googletest.git
+[submodule "third_party/opencensus-proto"]
+	path = third_party/opencensus-proto
+	url = https://github.com/census-instrumentation/opencensus-proto.git
+[submodule "third_party/opentelemetry"]
+	path = third_party/opentelemetry
+	url = https://github.com/open-telemetry/opentelemetry-proto.git
+[submodule "third_party/protobuf"]
+	path = third_party/protobuf
+	url = https://github.com/protocolbuffers/protobuf.git
+[submodule "third_party/protoc-gen-validate"]
+	path = third_party/protoc-gen-validate
+	url = https://github.com/envoyproxy/protoc-gen-validate.git
+[submodule "third_party/re2"]
+	path = third_party/re2
+	url = https://github.com/google/re2.git
+[submodule "third_party/xds"]
+	path = third_party/xds
+	url = https://github.com/cncf/xds.git
 [submodule "third_party/zlib"]
 	path = third_party/zlib
 	url = https://github.com/madler/zlib
@@ -5,50 +47,3 @@
 	# generated file that makes Git consider the submodule dirty. This
 	# state can be ignored for day-to-day development on gRPC.
 	ignore = dirty
-[submodule "third_party/protobuf"]
-	path = third_party/protobuf
-	url = https://github.com/protocolbuffers/protobuf.git
-[submodule "third_party/googletest"]
-	path = third_party/googletest
-	url = https://github.com/google/googletest.git
-[submodule "third_party/benchmark"]
-	path = third_party/benchmark
-	url = https://github.com/google/benchmark
-[submodule "third_party/boringssl-with-bazel"]
-	path = third_party/boringssl-with-bazel
-	url = https://github.com/google/boringssl.git
-[submodule "third_party/re2"]
-	path = third_party/re2
-	url = https://github.com/google/re2.git
-[submodule "third_party/cares/cares"]
-	path = third_party/cares/cares
-	url = https://github.com/c-ares/c-ares.git
-	branch = cares-1_17_2
-[submodule "third_party/bloaty"]
-	path = third_party/bloaty
-	url = https://github.com/google/bloaty.git
-[submodule "third_party/abseil-cpp"]
-	path = third_party/abseil-cpp
-	url = https://github.com/abseil/abseil-cpp.git
-	branch = lts_2020_02_25
-[submodule "third_party/envoy-api"]
-	path = third_party/envoy-api
-	url = https://github.com/envoyproxy/data-plane-api.git
-[submodule "third_party/googleapis"]
-	path = third_party/googleapis
-	url = https://github.com/googleapis/googleapis.git
-[submodule "third_party/protoc-gen-validate"]
-	path = third_party/protoc-gen-validate
-	url = https://github.com/envoyproxy/protoc-gen-validate.git
-[submodule "third_party/libuv"]
-	path = third_party/libuv
-	url = https://github.com/libuv/libuv.git
-[submodule "third_party/opencensus-proto"]
-	path = third_party/opencensus-proto
-	url = https://github.com/census-instrumentation/opencensus-proto.git
-[submodule "third_party/opentelemetry"]
-	path = third_party/opentelemetry
-	url = https://github.com/open-telemetry/opentelemetry-proto.git
-[submodule "third_party/xds"]
-	path = third_party/xds
-	url = https://github.com/cncf/xds.git

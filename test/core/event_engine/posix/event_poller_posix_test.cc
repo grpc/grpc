@@ -12,60 +12,69 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <ostream>
+#include <stdint.h>
+#include <sys/select.h>
 
-#include "absl/functional/any_invocable.h"
-#include "absl/time/time.h"
-#include "absl/types/variant.h"
+#include <algorithm>
+#include <atomic>
+#include <chrono>
+#include <cstring>
+#include <initializer_list>
+#include <memory>
+#include <string>
+#include <vector>
 
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_split.h"
+#include "absl/strings/string_view.h"
+#include "gtest/gtest.h"
+
+#include <grpc/grpc.h>
+
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/port.h"
+
+// IWYU pragma: no_include <arpa/inet.h>
+// IWYU pragma: no_include <ratio>
 
 // This test won't work except with posix sockets enabled
 #ifdef GRPC_POSIX_SOCKET_EV
 
-#include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <netinet/in.h>
 #include <poll.h>
-#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <sys/socket.h>
-#include <sys/time.h>
 #include <unistd.h>
-
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
 
 #include "absl/status/status.h"
 
-#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
-#include <grpc/support/time.h>
 
 #include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller_posix_default.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
-#include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h"
-#include "src/core/lib/event_engine/promise.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
-#include "src/core/lib/gprpp/global_config.h"
+#include "src/core/lib/gprpp/notification.h"
+#include "src/core/lib/gprpp/strerror.h"
+#include "test/core/event_engine/posix/posix_engine_test_utils.h"
 #include "test/core/util/port.h"
 
-GPR_GLOBAL_CONFIG_DECLARE_STRING(grpc_poll_strategy);
-
-using ::grpc_event_engine::posix_engine::PosixEventPoller;
-
 static gpr_mu g_mu;
-static PosixEventPoller* g_event_poller = nullptr;
+static grpc_event_engine::experimental::PosixEventPoller* g_event_poller =
+    nullptr;
 
 // buffer size used to send and receive data.
 // 1024 is the minimal value to set TCP send and receive buffer.
@@ -78,36 +87,18 @@ static PosixEventPoller* g_event_poller = nullptr;
 #define CLIENT_TOTAL_WRITE_CNT 3
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
-using ::grpc_event_engine::experimental::Poller;
-using ::grpc_event_engine::experimental::Promise;
-using ::grpc_event_engine::experimental::SelfDeletingClosure;
-using ::grpc_event_engine::posix_engine::PosixEventPoller;
 using namespace std::chrono_literals;
 
 namespace {
-
-class TestScheduler : public Scheduler {
- public:
-  explicit TestScheduler(experimental::EventEngine* engine) : engine_(engine) {}
-  void Run(experimental::EventEngine::Closure* closure) override {
-    engine_->Run(closure);
-  }
-
-  void Run(absl::AnyInvocable<void()> cb) override {
-    engine_->Run(std::move(cb));
-  }
-
- private:
-  experimental::EventEngine* engine_;
-};
 
 absl::Status SetSocketSendBuf(int fd, int buffer_size_bytes) {
   return 0 == setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &buffer_size_bytes,
                          sizeof(buffer_size_bytes))
              ? absl::OkStatus()
-             : absl::Status(absl::StatusCode::kInternal, strerror(errno));
+             : absl::Status(absl::StatusCode::kInternal,
+                            grpc_core::StrError(errno).c_str());
 }
 
 // Create a test socket with the right properties for testing.
@@ -143,9 +134,9 @@ void CreateTestSocket(int port, int* socket_fd, struct sockaddr_in6* sin) {
 
 // An upload server.
 typedef struct {
-  EventHandle* em_fd;       /* listening fd */
-  ssize_t read_bytes_total; /* total number of received bytes */
-  int done;                 /* set to 1 when a server finishes serving */
+  EventHandle* em_fd;        // listening fd
+  ssize_t read_bytes_total;  // total number of received bytes
+  int done;                  // set to 1 when a server finishes serving
   PosixEngineClosure* listen_closure;
 } server;
 
@@ -157,9 +148,9 @@ void ServerInit(server* sv) {
 // An upload session.
 // Created when a new upload request arrives in the server.
 typedef struct {
-  server* sv;              /* not owned by a single session */
-  EventHandle* em_fd;      /* fd to read upload bytes */
-  char read_buf[BUF_SIZE]; /* buffer to store upload bytes */
+  server* sv;               // not owned by a single session
+  EventHandle* em_fd;       // fd to read upload bytes
+  char read_buf[BUF_SIZE];  // buffer to store upload bytes
   PosixEngineClosure* session_read_closure;
 } session;
 
@@ -245,6 +236,9 @@ void ListenCb(server* sv, absl::Status status) {
         [sv](absl::Status status) { ListenCb(sv, status); });
     listen_em_fd->NotifyOnRead(sv->listen_closure);
     return;
+  } else if (fd < 0) {
+    gpr_log(GPR_ERROR, "Failed to acceot a connection, returned error: %s",
+            grpc_core::StrError(errno).c_str());
   }
   EXPECT_GE(fd, 0);
   EXPECT_LT(fd, FD_SETSIZE);
@@ -361,8 +355,8 @@ void ClientStart(client* cl, int port) {
         abort();
       }
     } else {
-      gpr_log(GPR_ERROR, "Failed to connect to the server (errno=%d)", errno);
-      abort();
+      grpc_core::Crash(
+          absl::StrFormat("Failed to connect to the server (errno=%d)", errno));
     }
   }
 
@@ -376,37 +370,28 @@ void WaitAndShutdown(server* sv, client* cl) {
   gpr_mu_lock(&g_mu);
   while (!sv->done || !cl->done) {
     gpr_mu_unlock(&g_mu);
-    result = g_event_poller->Work(24h);
-    if (absl::holds_alternative<Poller::Events>(result)) {
-      auto pending_events = absl::get<Poller::Events>(result);
-      for (auto it = pending_events.begin(); it != pending_events.end(); ++it) {
-        (*it)->Run();
-      }
-      pending_events.clear();
-    }
+    result = g_event_poller->Work(24h, []() {});
+    ASSERT_FALSE(result == Poller::WorkResult::kDeadlineExceeded);
     gpr_mu_lock(&g_mu);
   }
   gpr_mu_unlock(&g_mu);
 }
 
-std::string TestScenarioName(
-    const ::testing::TestParamInfo<std::string>& info) {
-  return info.param;
-}
-
-class EventPollerTest : public ::testing::TestWithParam<std::string> {
+class EventPollerTest : public ::testing::Test {
   void SetUp() override {
     engine_ =
-        absl::make_unique<grpc_event_engine::experimental::PosixEventEngine>();
+        std::make_unique<grpc_event_engine::experimental::PosixEventEngine>();
     EXPECT_NE(engine_, nullptr);
     scheduler_ =
-        absl::make_unique<grpc_event_engine::posix_engine::TestScheduler>(
+        std::make_unique<grpc_event_engine::experimental::TestScheduler>(
             engine_.get());
     EXPECT_NE(scheduler_, nullptr);
-    GPR_GLOBAL_CONFIG_SET(grpc_poll_strategy, GetParam().c_str());
-    g_event_poller = GetDefaultPoller(scheduler_.get());
+    g_event_poller = MakeDefaultPoller(scheduler_.get());
+    engine_ = PosixEventEngine::MakeTestOnlyPosixEventEngine(g_event_poller);
+    EXPECT_NE(engine_, nullptr);
+    scheduler_->ChangeCurrentEventEngine(engine_.get());
     if (g_event_poller != nullptr) {
-      EXPECT_EQ(g_event_poller->Name(), GetParam());
+      gpr_log(GPR_INFO, "Using poller: %s", g_event_poller->Name().c_str());
     }
   }
 
@@ -420,14 +405,14 @@ class EventPollerTest : public ::testing::TestWithParam<std::string> {
   TestScheduler* Scheduler() { return scheduler_.get(); }
 
  private:
-  std::unique_ptr<grpc_event_engine::experimental::PosixEventEngine> engine_;
-  std::unique_ptr<grpc_event_engine::posix_engine::TestScheduler> scheduler_;
+  std::shared_ptr<grpc_event_engine::experimental::PosixEventEngine> engine_;
+  std::unique_ptr<grpc_event_engine::experimental::TestScheduler> scheduler_;
 };
 
 // Test grpc_fd. Start an upload server and client, upload a stream of bytes
 // from the client to the server, and verify that the total number of sent
 // bytes is equal to the total number of received bytes.
-TEST_P(EventPollerTest, TestEventPollerHandle) {
+TEST_F(EventPollerTest, TestEventPollerHandle) {
   server sv;
   client cl;
   int port;
@@ -469,7 +454,7 @@ void SecondReadCallback(FdChangeData* fdc, absl::Status /*status*/) {
 // Note that we have two different but almost identical callbacks above -- the
 // point is to have two different function pointers and two different data
 // pointers and make sure that changing both really works.
-TEST_P(EventPollerTest, TestEventPollerHandleChange) {
+TEST_F(EventPollerTest, TestEventPollerHandleChange) {
   EventHandle* em_fd;
   FdChangeData a, b;
   int flags;
@@ -507,15 +492,8 @@ TEST_P(EventPollerTest, TestEventPollerHandleChange) {
     gpr_mu_lock(&g_mu);
     while (fdc->cb_that_ran == nullptr) {
       gpr_mu_unlock(&g_mu);
-      result = g_event_poller->Work(24h);
-      if (absl::holds_alternative<Poller::Events>(result)) {
-        auto pending_events = absl::get<Poller::Events>(result);
-        for (auto it = pending_events.begin(); it != pending_events.end();
-             ++it) {
-          (*it)->Run();
-        }
-        pending_events.clear();
-      }
+      result = g_event_poller->Work(24h, []() {});
+      ASSERT_FALSE(result == Poller::WorkResult::kDeadlineExceeded);
       gpr_mu_lock(&g_mu);
     }
   };
@@ -644,8 +622,9 @@ class WakeupFdHandle : public grpc_core::DualRefCounted<WakeupFdHandle> {
         case EINTR:
           continue;
         default:
-          return absl::Status(absl::StatusCode::kInternal,
-                              absl::StrCat("read: ", strerror(errno)));
+          return absl::Status(
+              absl::StatusCode::kInternal,
+              absl::StrCat("read: ", grpc_core::StrError(errno)));
       }
     }
   }
@@ -673,43 +652,36 @@ class Worker : public grpc_core::DualRefCounted<Worker> {
     }
     WeakRef().release();
   }
-  void Orphan() override { promise.Set(true); }
+  void Orphan() override { signal.Notify(); }
   void Start() {
     // Start executing Work(..).
     scheduler_->Run([this]() { Work(); });
   }
 
   void Wait() {
-    EXPECT_TRUE(promise.Get());
+    signal.WaitForNotification();
     WeakUnref();
   }
 
  private:
   void Work() {
-    auto result = g_event_poller->Work(24h);
-    if (absl::holds_alternative<Poller::Events>(result)) {
+    auto result = g_event_poller->Work(24h, [this]() {
       // Schedule next work instantiation immediately and take a Ref for
       // the next instantiation.
       Ref().release();
       scheduler_->Run([this]() { Work(); });
-      // Process pending events of current Work(..) instantiation.
-      auto pending_events = absl::get<Poller::Events>(result);
-      for (auto it = pending_events.begin(); it != pending_events.end(); ++it) {
-        (*it)->Run();
-      }
-      pending_events.clear();
-      // Corresponds to the Ref taken for the current instantiation.
-      Unref();
-    } else {
-      // The poller got kicked. This can only happen when all the Fds have
-      // orphaned themselves.
-      EXPECT_TRUE(absl::holds_alternative<Poller::Kicked>(result));
-      Unref();
-    }
+    });
+    ASSERT_TRUE(result == Poller::WorkResult::kOk ||
+                result == Poller::WorkResult::kKicked);
+    // Corresponds to the Ref taken for the current instantiation. If the
+    // result was Poller::WorkResult::kKicked, then the next work instantiation
+    // would not have been scheduled and the poll_again callback should have
+    // been deleted.
+    Unref();
   }
   Scheduler* scheduler_;
   PosixEventPoller* poller_;
-  Promise<bool> promise;
+  grpc_core::Notification signal;
   std::vector<WakeupFdHandle*> handles_;
 };
 
@@ -719,7 +691,7 @@ class Worker : public grpc_core::DualRefCounted<Worker> {
 // immediately and schedule the wait for the next read event. A new read event
 // is also generated for each fd in parallel after the previous one is
 // processed.
-TEST_P(EventPollerTest, TestMultipleHandles) {
+TEST_F(EventPollerTest, TestMultipleHandles) {
   static constexpr int kNumHandles = 100;
   static constexpr int kNumWakeupsPerHandle = 100;
   if (g_event_poller == nullptr) {
@@ -731,23 +703,29 @@ TEST_P(EventPollerTest, TestMultipleHandles) {
   worker->Wait();
 }
 
-INSTANTIATE_TEST_SUITE_P(PosixEventPoller, EventPollerTest,
-                         ::testing::ValuesIn({std::string("epoll1"),
-                                              std::string("poll")}),
-                         &TestScenarioName);
-
 }  // namespace
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   gpr_mu_init(&g_mu);
-  return RUN_ALL_TESTS();
+  auto poll_strategy = grpc_core::ConfigVars::Get().PollStrategy();
+  auto strings = absl::StrSplit(poll_strategy, ',');
+  if (std::find(strings.begin(), strings.end(), "none") != strings.end()) {
+    // Skip the test entirely if poll strategy is none.
+    return 0;
+  }
+  // TODO(ctiller): EventEngine temporarily needs grpc to be initialized first
+  // until we clear out the iomgr shutdown code.
+  grpc_init();
+  int r = RUN_ALL_TESTS();
+  grpc_shutdown();
+  return r;
 }
 
-#else /* GRPC_POSIX_SOCKET_EV */
+#else  // GRPC_POSIX_SOCKET_EV
 
 int main(int argc, char** argv) { return 1; }
 
-#endif /* GRPC_POSIX_SOCKET_EV */
+#endif  // GRPC_POSIX_SOCKET_EV

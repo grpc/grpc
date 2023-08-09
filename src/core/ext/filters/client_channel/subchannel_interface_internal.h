@@ -14,12 +14,13 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SUBCHANNEL_INTERFACE_INTERNAL_H
-#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SUBCHANNEL_INTERFACE_INTERNAL_H
+#ifndef GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SUBCHANNEL_INTERFACE_INTERNAL_H
+#define GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SUBCHANNEL_INTERFACE_INTERNAL_H
 
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/filters/client_channel/subchannel.h"
+#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/load_balancing/subchannel_interface.h"
 
 namespace grpc_core {
@@ -29,10 +30,12 @@ namespace grpc_core {
 class InternalSubchannelDataWatcherInterface
     : public SubchannelInterface::DataWatcherInterface {
  public:
+  virtual UniqueTypeName type() const = 0;
+
   // Tells the watcher which subchannel to register itself with.
   virtual void SetSubchannel(Subchannel* subchannel) = 0;
 };
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SUBCHANNEL_INTERFACE_INTERNAL_H
+#endif  // GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SUBCHANNEL_INTERFACE_INTERNAL_H

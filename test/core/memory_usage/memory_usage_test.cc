@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <stdio.h>
 #include <string.h>
@@ -36,9 +36,10 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/config/config_vars.h"
+#include "src/core/lib/gpr/subprocess.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "test/core/util/port.h"
-#include "test/core/util/subprocess.h"
 #include "test/core/util/test_config.h"
 
 ABSL_FLAG(std::string, benchmark_names, "call,channel",
@@ -72,32 +73,37 @@ class Subprocess {
   gpr_subprocess* process_;
 };
 
-/* per-call memory usage benchmark */
+// per-call memory usage benchmark
 int RunCallBenchmark(char* root, std::vector<std::string> server_scenario_flags,
                      std::vector<std::string> client_scenario_flags) {
   int status;
   int port = grpc_pick_unused_port_or_die();
 
-  /* start the server */
+  // start the server
   std::vector<std::string> server_flags = {
       absl::StrCat(root, "/memory_usage_server",
                    gpr_subprocess_binary_extension()),
-      "--bind", grpc_core::JoinHostPort("::", port)};
+      "--grpc_experiments",
+      std::string(grpc_core::ConfigVars::Get().Experiments()), "--bind",
+      grpc_core::JoinHostPort("::", port)};
   // Add scenario-specific server flags to the end of the server_flags
   absl::c_move(server_scenario_flags, std::back_inserter(server_flags));
   Subprocess svr(server_flags);
 
-  /* start the client */
+  // start the client
   std::vector<std::string> client_flags = {
       absl::StrCat(root, "/memory_usage_client",
                    gpr_subprocess_binary_extension()),
-      "--target", grpc_core::JoinHostPort("127.0.0.1", port),
+      "--target",
+      grpc_core::JoinHostPort("localhost", port),
+      "--grpc_experiments",
+      std::string(grpc_core::ConfigVars::Get().Experiments()),
       absl::StrCat("--warmup=", 10000),
       absl::StrCat("--benchmark=", absl::GetFlag(FLAGS_size))};
   // Add scenario-specific client flags to the end of the client_flags
   absl::c_move(client_scenario_flags, std::back_inserter(client_flags));
   Subprocess cli(client_flags);
-  /* wait for completion */
+  // wait for completion
   if ((status = cli.Join()) != 0) {
     printf("client failed with: %d", status);
     return 1;
@@ -107,13 +113,13 @@ int RunCallBenchmark(char* root, std::vector<std::string> server_scenario_flags,
   return svr.Join() == 0 ? 0 : 2;
 }
 
-/* Per-channel benchmark*/
+// Per-channel benchmark
 int RunChannelBenchmark(char* root) {
   // TODO(chennancy) Add the scenario specific flags
   int status;
   int port = grpc_pick_unused_port_or_die();
 
-  /* start the server */
+  // start the server
   std::vector<std::string> server_flags = {
       absl::StrCat(root, "/memory_usage_callback_server",
                    gpr_subprocess_binary_extension()),
@@ -124,17 +130,17 @@ int RunChannelBenchmark(char* root) {
   // of client sending an RPC before the server is set up
   gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
 
-  /* start the client */
+  // start the client
   std::vector<std::string> client_flags = {
       absl::StrCat(root, "/memory_usage_callback_client",
                    gpr_subprocess_binary_extension()),
       "--target",
-      grpc_core::JoinHostPort("127.0.0.1", port),
+      grpc_core::JoinHostPort("localhost", port),
       "--nosecure",
       absl::StrCat("--server_pid=", svr.GetPID()),
       absl::StrCat("--size=", absl::GetFlag(FLAGS_size))};
   Subprocess cli(client_flags);
-  /* wait for completion */
+  // wait for completion
   if ((status = cli.Join()) != 0) {
     printf("client failed with: %d", status);
     return 1;
@@ -164,7 +170,7 @@ int main(int argc, char** argv) {
   char root[1024];
 
   std::vector<const char*> args;
-  /* figure out where we are */
+  // figure out where we are
   if (lslash) {
     memcpy(root, me, static_cast<size_t>(lslash - me));
     root[lslash - me] = 0;
@@ -172,7 +178,7 @@ int main(int argc, char** argv) {
     strcpy(root, ".");
   }
 
-  /* Set configurations based off scenario_config*/
+  // Set configurations based off scenario_config
   struct ScenarioArgs {
     std::vector<std::string> client;
     std::vector<std::string> server;

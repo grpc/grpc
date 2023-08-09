@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2019 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2019 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <spawn.h>
 
@@ -30,6 +30,7 @@
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
@@ -90,14 +91,13 @@ INSTANTIATE_TEST_SUITE_P(TimeJump, TimeJumpTest,
 TEST_P(TimeJumpTest, TimerRunning) {
   grpc_core::ExecCtx exec_ctx;
   grpc_timer timer;
-  grpc_timer_init(
-      &timer,
-      grpc_core::ExecCtx::Get()->Now() + grpc_core::Duration::Seconds(3),
-      GRPC_CLOSURE_CREATE(
-          [](void*, grpc_error_handle error) {
-            GPR_ASSERT(error == GRPC_ERROR_CANCELLED);
-          },
-          nullptr, grpc_schedule_on_exec_ctx));
+  grpc_timer_init(&timer,
+                  grpc_core::Timestamp::Now() + grpc_core::Duration::Seconds(3),
+                  GRPC_CLOSURE_CREATE(
+                      [](void*, grpc_error_handle error) {
+                        GPR_ASSERT(error == absl::CancelledError());
+                      },
+                      nullptr, grpc_schedule_on_exec_ctx));
   gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(100));
   std::ostringstream cmd;
   cmd << "sudo date `date -v" << GetParam() << " \"+%m%d%H%M%y\"`";

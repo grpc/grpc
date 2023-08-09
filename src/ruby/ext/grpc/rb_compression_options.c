@@ -29,7 +29,7 @@
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/compression_types.h>
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/grpc_types.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -70,7 +70,6 @@ static void grpc_rb_compression_options_free_internal(void* p) {
  * wrapped grpc compression options. */
 static void grpc_rb_compression_options_free(void* p) {
   grpc_rb_compression_options_free_internal(p);
-  grpc_ruby_shutdown();
 }
 
 /* Ruby recognized data type for the CompressionOptions class. */

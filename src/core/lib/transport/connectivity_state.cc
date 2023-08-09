@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -64,12 +64,12 @@ class AsyncConnectivityStateWatcherInterface::Notifier {
       : watcher_(std::move(watcher)), state_(state), status_(status) {
     if (work_serializer != nullptr) {
       work_serializer->Run(
-          [this]() { SendNotification(this, GRPC_ERROR_NONE); },
+          [this]() { SendNotification(this, absl::OkStatus()); },
           DEBUG_LOCATION);
     } else {
       GRPC_CLOSURE_INIT(&closure_, SendNotification, this,
                         grpc_schedule_on_exec_ctx);
-      ExecCtx::Run(DEBUG_LOCATION, &closure_, GRPC_ERROR_NONE);
+      ExecCtx::Run(DEBUG_LOCATION, &closure_, absl::OkStatus());
     }
   }
 

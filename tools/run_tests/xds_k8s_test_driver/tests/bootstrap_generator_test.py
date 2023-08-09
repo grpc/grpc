@@ -47,24 +47,20 @@ _timedelta = datetime.timedelta
 def bootstrap_version_testcases() -> List:
     return (
         dict(
-            version='v0.14.0',
-            image=
-            'gcr.io/grpc-testing/td-grpc-bootstrap:d6baaf7b0e0c63054ac4d9bedc09021ff261d599'
+            version="v0.14.0",
+            image="gcr.io/grpc-testing/td-grpc-bootstrap:d6baaf7b0e0c63054ac4d9bedc09021ff261d599",
         ),
         dict(
-            version='v0.13.0',
-            image=
-            'gcr.io/grpc-testing/td-grpc-bootstrap:203db6ce70452996f4183c30dd4c5ecaada168b0'
+            version="v0.13.0",
+            image="gcr.io/grpc-testing/td-grpc-bootstrap:203db6ce70452996f4183c30dd4c5ecaada168b0",
         ),
         dict(
-            version='v0.12.0',
-            image=
-            'gcr.io/grpc-testing/td-grpc-bootstrap:8765051ef3b742bc5cd20f16de078ae7547f2ba2'
+            version="v0.12.0",
+            image="gcr.io/grpc-testing/td-grpc-bootstrap:8765051ef3b742bc5cd20f16de078ae7547f2ba2",
         ),
         dict(
-            version='v0.11.0',
-            image=
-            'gcr.io/grpc-testing/td-grpc-bootstrap:b96f7a73314668aee83cbf86ab1e40135a0542fc'
+            version="v0.11.0",
+            image="gcr.io/grpc-testing/td-grpc-bootstrap:b96f7a73314668aee83cbf86ab1e40135a0542fc",
         ),
         # v0.10.0 uses v2 xDS transport protocol by default. TD only supports v3
         # and we can force the bootstrap generator to emit config with v3
@@ -80,8 +76,9 @@ def bootstrap_version_testcases() -> List:
 # TODO: Reuse service account and namespaces for significant improvements in
 # running time.
 class BootstrapGeneratorClientTest(
-        bootstrap_generator_testcase.BootstrapGeneratorBaseTest,
-        parameterized.TestCase):
+    bootstrap_generator_testcase.BootstrapGeneratorBaseTest,
+    parameterized.TestCase,
+):
     client_runner: KubernetesClientRunner
     server_runner: KubernetesServerRunner
     test_server: XdsTestServer
@@ -103,11 +100,13 @@ class BootstrapGeneratorClientTest(
             port=cls.server_port,
             maintenance_port=cls.server_maintenance_port,
             xds_host=cls.server_xds_host,
-            xds_port=cls.server_xds_port)
+            xds_port=cls.server_xds_port,
+        )
 
         # Load backends.
         neg_name, neg_zones = cls.server_runner.k8s_namespace.get_service_neg(
-            cls.server_runner.service_name, cls.server_port)
+            cls.server_runner.service_name, cls.server_port
+        )
 
         # Add backends to the Backend Service.
         cls.td.backend_service_add_neg_backends(neg_name, neg_zones)
@@ -118,35 +117,41 @@ class BootstrapGeneratorClientTest(
         # Remove backends from the Backend Service before closing the server
         # runner.
         neg_name, neg_zones = cls.server_runner.k8s_namespace.get_service_neg(
-            cls.server_runner.service_name, cls.server_port)
+            cls.server_runner.service_name, cls.server_port
+        )
         cls.td.backend_service_remove_neg_backends(neg_name, neg_zones)
         cls.server_runner.cleanup(force=cls.force_cleanup)
         super().tearDownClass()
 
     def tearDown(self):
-        logger.info('----- TestMethod %s teardown -----', self.id())
-        retryer = retryers.constant_retryer(wait_fixed=_timedelta(seconds=10),
-                                            attempts=3,
-                                            log_level=logging.INFO)
+        logger.info("----- TestMethod %s teardown -----", self.id())
+        retryer = retryers.constant_retryer(
+            wait_fixed=_timedelta(seconds=10),
+            attempts=3,
+            log_level=logging.INFO,
+        )
         try:
             retryer(self._cleanup)
         except retryers.RetryError:
-            logger.exception('Got error during teardown')
+            logger.exception("Got error during teardown")
         super().tearDown()
 
     def _cleanup(self):
         self.client_runner.cleanup(force=self.force_cleanup)
 
     @parameterized.parameters(
-        (t["version"], t["image"]) for t in bootstrap_version_testcases())
+        (t["version"], t["image"]) for t in bootstrap_version_testcases()
+    )
     def test_baseline_in_client_with_bootstrap_version(self, version, image):
         """Runs the baseline test for multiple versions of the bootstrap
         generator on the client.
         """
-        logger.info('----- testing bootstrap generator version %s -----',
-                    version)
+        logger.info(
+            "----- testing bootstrap generator version %s -----", version
+        )
         self.client_runner = self.initKubernetesClientRunner(
-            td_bootstrap_image=image)
+            td_bootstrap_image=image
+        )
         test_client: XdsTestClient = self.startTestClient(self.test_server)
         self.assertXdsConfigExists(test_client)
         self.assertSuccessfulRpcs(test_client)
@@ -156,21 +161,24 @@ class BootstrapGeneratorClientTest(
 # corresponding runners, by suffixing the version of the bootstrap generator
 # being tested. Then, run these in parallel.
 class BootstrapGeneratorServerTest(
-        bootstrap_generator_testcase.BootstrapGeneratorBaseTest,
-        parameterized.TestCase):
+    bootstrap_generator_testcase.BootstrapGeneratorBaseTest,
+    parameterized.TestCase,
+):
     client_runner: KubernetesClientRunner
     server_runner: KubernetesServerRunner
     test_server: XdsTestServer
 
     def tearDown(self):
-        logger.info('----- TestMethod %s teardown -----', self.id())
-        retryer = retryers.constant_retryer(wait_fixed=_timedelta(seconds=10),
-                                            attempts=3,
-                                            log_level=logging.INFO)
+        logger.info("----- TestMethod %s teardown -----", self.id())
+        retryer = retryers.constant_retryer(
+            wait_fixed=_timedelta(seconds=10),
+            attempts=3,
+            log_level=logging.INFO,
+        )
         try:
             retryer(self._cleanup)
         except retryers.RetryError:
-            logger.exception('Got error during teardown')
+            logger.exception("Got error during teardown")
         super().tearDown()
 
     def _cleanup(self):
@@ -179,25 +187,31 @@ class BootstrapGeneratorServerTest(
         self.server_runner.cleanup(force=self.force_cleanup)
 
     @parameterized.parameters(
-        (t["version"], t["image"]) for t in bootstrap_version_testcases())
+        (t["version"], t["image"]) for t in bootstrap_version_testcases()
+    )
     def test_baseline_in_server_with_bootstrap_version(self, version, image):
         """Runs the baseline test for multiple versions of the bootstrap
         generator on the server.
         """
-        logger.info('----- Testing bootstrap generator version %s -----',
-                    version)
+        logger.info(
+            "----- Testing bootstrap generator version %s -----", version
+        )
         self.server_runner = self.initKubernetesServerRunner(
-            td_bootstrap_image=image)
+            td_bootstrap_image=image
+        )
         self.test_server = self.startTestServer(
             server_runner=self.server_runner,
             port=self.server_port,
             maintenance_port=self.server_maintenance_port,
             xds_host=self.server_xds_host,
-            xds_port=self.server_xds_port)
+            xds_port=self.server_xds_port,
+            bootstrap_version=version,
+        )
 
         # Load backends.
         neg_name, neg_zones = self.server_runner.k8s_namespace.get_service_neg(
-            self.server_runner.service_name, self.server_port)
+            self.server_runner.service_name, self.server_port
+        )
 
         # Add backends to the Backend Service.
         self.td.backend_service_add_neg_backends(neg_name, neg_zones)
@@ -209,5 +223,5 @@ class BootstrapGeneratorServerTest(
         self.assertSuccessfulRpcs(test_client)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     absltest.main()

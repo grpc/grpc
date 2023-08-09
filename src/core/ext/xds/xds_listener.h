@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_XDS_XDS_LISTENER_H
-#define GRPC_CORE_EXT_XDS_XDS_LISTENER_H
+#ifndef GRPC_SRC_CORE_EXT_XDS_XDS_LISTENER_H
+#define GRPC_SRC_CORE_EXT_XDS_XDS_LISTENER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -24,19 +24,20 @@
 
 #include <algorithm>
 #include <array>
-#include <cstdint>
 #include <map>
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+#include "absl/types/variant.h"
 #include "envoy/config/listener/v3/listener.upbdefs.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.h"
-#include "upb/def.h"
+#include "upb/reflection/def.h"
 
+#include "src/core/ext/xds/xds_bootstrap_grpc.h"
+#include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/ext/xds/xds_http_filters.h"
 #include "src/core/ext/xds/xds_resource_type.h"
@@ -47,36 +48,14 @@
 
 namespace grpc_core {
 
-// TODO(roth): When we can use absl::variant<>, consider using that
-// here, to enforce the fact that only one of the two fields can be set.
-struct XdsListenerResource {
-  struct DownstreamTlsContext {
-    CommonTlsContext common_tls_context;
-    bool require_client_certificate = false;
-
-    bool operator==(const DownstreamTlsContext& other) const {
-      return common_tls_context == other.common_tls_context &&
-             require_client_certificate == other.require_client_certificate;
-    }
-
-    std::string ToString() const;
-    bool Empty() const;
-  };
-
-  enum class ListenerType {
-    kTcpListener = 0,
-    kHttpApiListener,
-  } type;
-
+struct XdsListenerResource : public XdsResourceType::ResourceData {
   struct HttpConnectionManager {
-    // The name to use in the RDS request.
-    std::string route_config_name;
+    // The RDS resource name or inline RouteConfiguration.
+    absl::variant<std::string, XdsRouteConfigResource> route_config;
+
     // Storing the Http Connection Manager Common Http Protocol Option
     // max_stream_duration
     Duration http_max_stream_duration;
-    // The RouteConfiguration to use for this listener.
-    // Present only if it is inlined in the LDS response.
-    absl::optional<XdsRouteConfigResource> rds_update;
 
     struct HttpFilter {
       std::string name;
@@ -91,21 +70,28 @@ struct XdsListenerResource {
     std::vector<HttpFilter> http_filters;
 
     bool operator==(const HttpConnectionManager& other) const {
-      return route_config_name == other.route_config_name &&
+      return route_config == other.route_config &&
              http_max_stream_duration == other.http_max_stream_duration &&
-             rds_update == other.rds_update &&
              http_filters == other.http_filters;
     }
 
     std::string ToString() const;
   };
 
-  // Populated for type=kHttpApiListener.
-  HttpConnectionManager http_connection_manager;
+  struct DownstreamTlsContext {
+    DownstreamTlsContext() {}
 
-  // Populated for type=kTcpListener.
-  // host:port listening_address set when type is kTcpListener
-  std::string address;
+    CommonTlsContext common_tls_context;
+    bool require_client_certificate = false;
+
+    bool operator==(const DownstreamTlsContext& other) const {
+      return common_tls_context == other.common_tls_context &&
+             require_client_certificate == other.require_client_certificate;
+    }
+
+    std::string ToString() const;
+    bool Empty() const;
+  };
 
   struct FilterChainData {
     DownstreamTlsContext downstream_tls_context;
@@ -186,15 +172,26 @@ struct XdsListenerResource {
     }
 
     std::string ToString() const;
-  } filter_chain_map;
+  };
 
-  absl::optional<FilterChainData> default_filter_chain;
+  struct TcpListener {
+    std::string address;  // host:port listening address
+    FilterChainMap filter_chain_map;
+    absl::optional<FilterChainData> default_filter_chain;
+
+    bool operator==(const TcpListener& other) const {
+      return address == other.address &&
+             filter_chain_map == other.filter_chain_map &&
+             default_filter_chain == other.default_filter_chain;
+    }
+
+    std::string ToString() const;
+  };
+
+  absl::variant<HttpConnectionManager, TcpListener> listener;
 
   bool operator==(const XdsListenerResource& other) const {
-    return http_connection_manager == other.http_connection_manager &&
-           address == other.address &&
-           filter_chain_map == other.filter_chain_map &&
-           default_filter_chain == other.default_filter_chain;
+    return listener == other.listener;
   }
 
   std::string ToString() const;
@@ -206,24 +203,24 @@ class XdsListenerResourceType
   absl::string_view type_url() const override {
     return "envoy.config.listener.v3.Listener";
   }
-  absl::string_view v2_type_url() const override {
-    return "envoy.api.v2.Listener";
-  }
 
-  absl::StatusOr<DecodeResult> Decode(
-      const XdsResourceType::DecodeContext& context,
-      absl::string_view serialized_resource, bool is_v2) const override;
+  DecodeResult Decode(const XdsResourceType::DecodeContext& context,
+                      absl::string_view serialized_resource) const override;
 
   bool AllResourcesRequiredInSotW() const override { return true; }
 
-  void InitUpbSymtab(upb_DefPool* symtab) const override {
+  void InitUpbSymtab(XdsClient* xds_client,
+                     upb_DefPool* symtab) const override {
     envoy_config_listener_v3_Listener_getmsgdef(symtab);
     envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_getmsgdef(
         symtab);
-    XdsHttpFilterRegistry::PopulateSymtab(symtab);
+    const auto& http_filter_registry =
+        static_cast<const GrpcXdsBootstrap&>(xds_client->bootstrap())
+            .http_filter_registry();
+    http_filter_registry.PopulateSymtab(symtab);
   }
 };
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_XDS_XDS_LISTENER_H
+#endif  // GRPC_SRC_CORE_EXT_XDS_XDS_LISTENER_H

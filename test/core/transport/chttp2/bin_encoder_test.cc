@@ -1,28 +1,25 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
 
 #include <string.h>
 
-/* This is here for grpc_is_binary_header
- * TODO(murgatroid99): Remove this
- */
 #include <gtest/gtest.h>
 
 #include <grpc/grpc.h>
@@ -73,7 +70,9 @@ static void expect_combined_equiv(const char* s, size_t len, int line) {
   grpc_slice input = grpc_slice_from_copied_buffer(s, len);
   grpc_slice base64 = grpc_chttp2_base64_encode(input);
   grpc_slice expect = grpc_chttp2_huffman_compress(base64);
-  grpc_slice got = grpc_chttp2_base64_encode_and_huffman_compress(input);
+  uint32_t wire_size;
+  grpc_slice got =
+      grpc_chttp2_base64_encode_and_huffman_compress(input, &wire_size);
   if (!grpc_slice_eq(expect, got)) {
     char* t = grpc_dump_slice(input, GPR_DUMP_HEX | GPR_DUMP_ASCII);
     char* e = grpc_dump_slice(expect, GPR_DUMP_HEX | GPR_DUMP_ASCII);
@@ -103,25 +102,25 @@ static void expect_binary_header(const char* hdr, int binary) {
 }
 
 TEST(BinEncoderTest, MainTest) {
-  /* Base64 test vectors from RFC 4648, with padding removed */
-  /* BASE64("") = "" */
+  // Base64 test vectors from RFC 4648, with padding removed
+  // BASE64("") = ""
   EXPECT_SLICE_EQ("", B64(""));
-  /* BASE64("f") = "Zg" */
+  // BASE64("f") = "Zg"
   EXPECT_SLICE_EQ("Zg", B64("f"));
-  /* BASE64("fo") = "Zm8" */
+  // BASE64("fo") = "Zm8"
   EXPECT_SLICE_EQ("Zm8", B64("fo"));
-  /* BASE64("foo") = "Zm9v" */
+  // BASE64("foo") = "Zm9v"
   EXPECT_SLICE_EQ("Zm9v", B64("foo"));
-  /* BASE64("foob") = "Zm9vYg" */
+  // BASE64("foob") = "Zm9vYg"
   EXPECT_SLICE_EQ("Zm9vYg", B64("foob"));
-  /* BASE64("fooba") = "Zm9vYmE" */
+  // BASE64("fooba") = "Zm9vYmE"
   EXPECT_SLICE_EQ("Zm9vYmE", B64("fooba"));
-  /* BASE64("foobar") = "Zm9vYmFy" */
+  // BASE64("foobar") = "Zm9vYmFy"
   EXPECT_SLICE_EQ("Zm9vYmFy", B64("foobar"));
 
   EXPECT_SLICE_EQ("wMHCw8TF", B64("\xc0\xc1\xc2\xc3\xc4\xc5"));
 
-  /* Huffman encoding tests */
+  // Huffman encoding tests
   EXPECT_SLICE_EQ("\xf1\xe3\xc2\xe5\xf2\x3a\x6b\xa0\xab\x90\xf4\xff",
                   HUFF("www.example.com"));
   EXPECT_SLICE_EQ("\xa8\xeb\x10\x64\x9c\xbf", HUFF("no-cache"));
@@ -136,7 +135,7 @@ TEST(BinEncoderTest, MainTest) {
       "\x9d\x29\xad\x17\x18\x63\xc7\x8f\x0b\x97\xc8\xe9\xae\x82\xae\x43\xd3",
       HUFF("https://www.example.com"));
 
-  /* Various test vectors for combined encoding */
+  // Various test vectors for combined encoding
   EXPECT_COMBINED_EQUIV("");
   EXPECT_COMBINED_EQUIV("f");
   EXPECT_COMBINED_EQUIV("fo");

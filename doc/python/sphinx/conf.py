@@ -68,7 +68,7 @@ autodoc_default_options = {
     'members': None,
 }
 
-autodoc_mock_imports = []
+autodoc_mock_imports = ["envoy"]
 
 autodoc_typehints = 'description'
 

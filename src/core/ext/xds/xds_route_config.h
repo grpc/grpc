@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_XDS_XDS_ROUTE_CONFIG_H
-#define GRPC_CORE_EXT_XDS_XDS_ROUTE_CONFIG_H
+#ifndef GRPC_SRC_CORE_EXT_XDS_XDS_ROUTE_CONFIG_H
+#define GRPC_SRC_CORE_EXT_XDS_XDS_ROUTE_CONFIG_H
 
 #include <grpc/support/port_platform.h>
 
@@ -27,28 +27,28 @@
 #include <string>
 #include <vector>
 
-#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 #include "envoy/config/route/v3/route.upb.h"
 #include "envoy/config/route/v3/route.upbdefs.h"
 #include "re2/re2.h"
-#include "upb/def.h"
+#include "upb/reflection/def.h"
 
+#include "src/core/ext/xds/xds_bootstrap_grpc.h"
+#include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_cluster_specifier_plugin.h"
 #include "src/core/ext/xds/xds_http_filters.h"
 #include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/ext/xds/xds_resource_type_impl.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/matchers/matchers.h"
 
 namespace grpc_core {
 
-bool XdsRbacEnabled();
-
-struct XdsRouteConfigResource {
+struct XdsRouteConfigResource : public XdsResourceType::ResourceData {
   using TypedPerFilterConfig =
       std::map<std::string, XdsHttpFilterImpl::FilterConfig>;
 
@@ -102,25 +102,35 @@ struct XdsRouteConfigResource {
 
     struct RouteAction {
       struct HashPolicy {
-        enum Type { HEADER, CHANNEL_ID };
-        Type type;
+        struct Header {
+          std::string header_name;
+          std::unique_ptr<RE2> regex;
+          std::string regex_substitution;
+
+          Header() = default;
+
+          // Copyable.
+          Header(const Header& other);
+          Header& operator=(const Header& other);
+
+          // Movable.
+          Header(Header&& other) noexcept;
+          Header& operator=(Header&& other) noexcept;
+
+          bool operator==(const Header& other) const;
+          std::string ToString() const;
+        };
+
+        struct ChannelId {
+          bool operator==(const ChannelId&) const { return true; }
+        };
+
+        absl::variant<Header, ChannelId> policy;
         bool terminal = false;
-        // Fields used for type HEADER.
-        std::string header_name;
-        std::unique_ptr<RE2> regex = nullptr;
-        std::string regex_substitution;
 
-        HashPolicy() {}
-
-        // Copyable.
-        HashPolicy(const HashPolicy& other);
-        HashPolicy& operator=(const HashPolicy& other);
-
-        // Moveable.
-        HashPolicy(HashPolicy&& other) noexcept;
-        HashPolicy& operator=(HashPolicy&& other) noexcept;
-
-        bool operator==(const HashPolicy& other) const;
+        bool operator==(const HashPolicy& other) const {
+          return policy == other.policy && terminal == other.terminal;
+        }
         std::string ToString() const;
       };
 
@@ -210,9 +220,10 @@ struct XdsRouteConfigResource {
   }
   std::string ToString() const;
 
-  static absl::StatusOr<XdsRouteConfigResource> Parse(
+  static XdsRouteConfigResource Parse(
       const XdsResourceType::DecodeContext& context,
-      const envoy_config_route_v3_RouteConfiguration* route_config);
+      const envoy_config_route_v3_RouteConfiguration* route_config,
+      ValidationErrors* errors);
 };
 
 class XdsRouteConfigResourceType
@@ -222,20 +233,20 @@ class XdsRouteConfigResourceType
   absl::string_view type_url() const override {
     return "envoy.config.route.v3.RouteConfiguration";
   }
-  absl::string_view v2_type_url() const override {
-    return "envoy.api.v2.RouteConfiguration";
-  }
 
-  absl::StatusOr<DecodeResult> Decode(
-      const XdsResourceType::DecodeContext& context,
-      absl::string_view serialized_resource, bool /*is_v2*/) const override;
+  DecodeResult Decode(const XdsResourceType::DecodeContext& context,
+                      absl::string_view serialized_resource) const override;
 
-  void InitUpbSymtab(upb_DefPool* symtab) const override {
+  void InitUpbSymtab(XdsClient* xds_client,
+                     upb_DefPool* symtab) const override {
     envoy_config_route_v3_RouteConfiguration_getmsgdef(symtab);
-    XdsClusterSpecifierPluginRegistry::PopulateSymtab(symtab);
+    const auto& cluster_specifier_plugin_registry =
+        static_cast<const GrpcXdsBootstrap&>(xds_client->bootstrap())
+            .cluster_specifier_plugin_registry();
+    cluster_specifier_plugin_registry.PopulateSymtab(symtab);
   }
 };
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_XDS_XDS_ROUTE_CONFIG_H
+#endif  // GRPC_SRC_CORE_EXT_XDS_XDS_ROUTE_CONFIG_H

@@ -11,13 +11,28 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef GRPC_CORE_LIB_EVENT_ENGINE_FORKABLE_H
-#define GRPC_CORE_LIB_EVENT_ENGINE_FORKABLE_H
+#ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_FORKABLE_H
+#define GRPC_SRC_CORE_LIB_EVENT_ENGINE_FORKABLE_H
 
 #include <grpc/support/port_platform.h>
 
+#include <grpc/support/log.h>
+
+#include "src/core/lib/debug/trace.h"
+
 namespace grpc_event_engine {
 namespace experimental {
+
+extern grpc_core::TraceFlag grpc_trace_fork;
+
+#define GRPC_FORK_TRACE_LOG(format, ...)                 \
+  do {                                                   \
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_fork)) {      \
+      gpr_log(GPR_DEBUG, "[fork] " format, __VA_ARGS__); \
+    }                                                    \
+  } while (0)
+
+#define GRPC_FORK_TRACE_LOG_STRING(format) GRPC_FORK_TRACE_LOG("%s", format)
 
 // Register fork handlers with the system, enabling fork support.
 //
@@ -58,4 +73,4 @@ void StopManagingForkable(Forkable* forkable);
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_CORE_LIB_EVENT_ENGINE_FORKABLE_H
+#endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_FORKABLE_H

@@ -1,17 +1,3 @@
---- BUILD.bazel
-+++ BUILD.bazel
-@@ -896,6 +896,10 @@ py_library(
-         [
-             "python/google/protobuf/**/*.py",
-         ],
-+        exclude = [
-+            "python/google/protobuf/internal/*_test.py",
-+            "python/google/protobuf/internal/test_util.py",
-+        ]
-     ),
-     imports = ["python"],
-     srcs_version = "PY2AND3",
-
 --- python/google/protobuf/internal/test_util.py
 +++ python/google/protobuf/internal/test_util.py
 @@ -39,6 +39,7 @@ __author__ = 'robinson@google.com (Will Robinson)'
@@ -29,7 +15,7 @@
 +def _SearchUp(path, filename):
 +  path = pathlib.Path(path).resolve()
 +  for parent in [path] + list(path.parents):
-+    file_path = parent / ('src/google/protobuf/testdata/' + filename)
++    file_path = parent / ('google/protobuf/testdata/' + filename)
 +    if file_path.exists():
 +      # Found it.  Load the golden file from the testdata directory.
 +      return file_path.open('rb')

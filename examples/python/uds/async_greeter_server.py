@@ -22,25 +22,26 @@ import helloworld_pb2_grpc
 
 
 class Greeter(helloworld_pb2_grpc.GreeterServicer):
-
     async def SayHello(
-            self, request: helloworld_pb2.HelloRequest,
-            context: grpc.aio.ServicerContext) -> helloworld_pb2.HelloReply:
+        self,
+        request: helloworld_pb2.HelloRequest,
+        context: grpc.aio.ServicerContext,
+    ) -> helloworld_pb2.HelloReply:
         del request
-        return helloworld_pb2.HelloReply(message=f'Hello to {context.peer()}!')
+        return helloworld_pb2.HelloReply(message=f"Hello to {context.peer()}!")
 
 
 async def serve() -> None:
-    uds_addresses = ['unix:helloworld.sock', 'unix:///tmp/helloworld.sock']
+    uds_addresses = ["unix:helloworld.sock", "unix:///tmp/helloworld.sock"]
     server = grpc.aio.server()
     helloworld_pb2_grpc.add_GreeterServicer_to_server(Greeter(), server)
     for uds_address in uds_addresses:
         server.add_insecure_port(uds_address)
-        logging.info('Server listening on: %s', uds_address)
+        logging.info("Server listening on: %s", uds_address)
     await server.start()
     await server.wait_for_termination()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     asyncio.run(serve())

@@ -24,6 +24,7 @@
 #include <atomic>
 #include <functional>
 #include <string>
+#include <type_traits>
 #include <utility>
 
 #include "absl/status/status.h"
@@ -35,14 +36,13 @@
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/fault_injection/service_config_parser.h"
+#include "src/core/ext/filters/fault_injection/fault_injection_service_config_parser.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/sleep.h"
 #include "src/core/lib/promise/try_seq.h"
@@ -207,7 +207,7 @@ FaultInjectionFilter::MakeInjectionDecision(
           initial_metadata->GetStringValue(fi_policy->delay_header, &buffer);
       if (value.has_value()) {
         delay = Duration::Milliseconds(
-            std::max(AsInt<int64_t>(*value).value_or(0), int64_t(0)));
+            std::max(AsInt<int64_t>(*value).value_or(0), int64_t{0}));
       }
     }
     if (!fi_policy->delay_percentage_header.empty()) {
@@ -251,7 +251,7 @@ bool FaultInjectionFilter::InjectionDecision::HaveActiveFaultsQuota() const {
 Timestamp FaultInjectionFilter::InjectionDecision::DelayUntil() {
   if (delay_time_ != Duration::Zero() && HaveActiveFaultsQuota()) {
     active_fault_ = FaultHandle{true};
-    return ExecCtx::Get()->Now() + delay_time_;
+    return Timestamp::Now() + delay_time_;
   }
   return Timestamp::InfPast();
 }

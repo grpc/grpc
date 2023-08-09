@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <net/if.h>
 #include <string.h>
@@ -34,9 +34,10 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#include "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/gprpp/time.h"
@@ -103,8 +104,7 @@ static void actually_poll(void* argsp) {
       if (args->done) {
         break;
       }
-      grpc_core::Duration time_left =
-          deadline - grpc_core::ExecCtx::Get()->Now();
+      grpc_core::Duration time_left = deadline - grpc_core::Timestamp::Now();
       gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRId64, args->done,
               time_left.millis());
       ASSERT_GE(time_left, grpc_core::Duration::Zero());
@@ -188,30 +188,21 @@ TEST(ResolveAddressUsingAresResolverPosixTest, MainTest) {
   // In case that there are more than one argument on the command line,
   // --resolver will always be the first one, so only parse the first argument
   // (other arguments may be unknown to cl)
-  grpc_core::UniquePtr<char> resolver =
-      GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
-  if (strlen(resolver.get()) != 0) {
-    gpr_log(GPR_INFO, "Warning: overriding resolver setting of %s",
-            resolver.get());
-  }
+  grpc_core::ConfigVars::Overrides overrides;
   if (resolver_type == "native") {
-    GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, "native");
+    overrides.dns_resolver = "native";
   } else if (resolver_type == "ares") {
-    GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, "ares");
+    overrides.dns_resolver = "ares";
   } else {
     gpr_log(GPR_ERROR, "--resolver was not set to ares or native");
     ASSERT_TRUE(false);
   }
+  grpc_core::ConfigVars::SetOverrides(overrides);
 
   grpc_init();
   {
     grpc_core::ExecCtx exec_ctx;
     test_named_and_numeric_scope_ids();
-    // c-ares resolver doesn't support UDS (ability for native DNS resolver
-    // to handle this is only expected to be used by servers, which
-    // unconditionally use the native DNS resolver).
-    grpc_core::UniquePtr<char> resolver =
-        GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
   }
   grpc_shutdown();
 }

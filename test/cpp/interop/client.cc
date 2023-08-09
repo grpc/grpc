@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <memory>
 #include <unordered_map>
@@ -26,8 +26,10 @@
 #include <grpc/support/log.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
+#include <grpcpp/support/channel_arguments.h>
 
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/interop/client_helper.h"
 #include "test/cpp/interop/interop_client.h"
@@ -50,38 +52,40 @@ ABSL_FLAG(
 
     // TODO(veblush): Replace the help message with the following full message
     // once Abseil fixes the flag-help compiler error on Windows. (b/171659833)
-    /*
-    "cancel_after_begin : cancel stream after starting it;\n"
-    "cancel_after_first_response: cancel on first response;\n"
-    "channel_soak: sends 'soak_iterations' rpcs, rebuilds channel each time;\n"
-    "client_compressed_streaming : compressed request streaming with "
-    "client_compressed_unary : single compressed request;\n"
-    "client_streaming : request streaming with single response;\n"
-    "compute_engine_creds: large_unary with compute engine auth;\n"
-    "custom_metadata: server will echo custom metadata;\n"
-    "empty_stream : bi-di stream with no request/response;\n"
-    "empty_unary : empty (zero bytes) request and response;\n"
-    "google_default_credentials: large unary using GDC;\n"
-    "half_duplex : half-duplex streaming;\n"
-    "jwt_token_creds: large_unary with JWT token auth;\n"
-    "large_unary : single request and (large) response;\n"
-    "long_lived_channel: sends large_unary rpcs over a long-lived channel;\n"
-    "oauth2_auth_token: raw oauth2 access token auth;\n"
-    "per_rpc_creds: raw oauth2 access token on a single rpc;\n"
-    "ping_pong : full-duplex streaming;\n"
-    "response streaming;\n"
-    "rpc_soak: 'sends soak_iterations' large_unary rpcs;\n"
-    "server_compressed_streaming : single request with compressed "
-    "server_compressed_unary : single compressed response;\n"
-    "server_streaming : single request with response streaming;\n"
-    "slow_consumer : single request with response streaming with "
-    "slow client consumer;\n"
-    "special_status_message: verify Unicode and whitespace in status message;\n"
-    "status_code_and_message: verify status code & message;\n"
-    "timeout_on_sleeping_server: deadline exceeds on stream;\n"
-    "unimplemented_method: client calls an unimplemented method;\n"
-    "unimplemented_service: client calls an unimplemented service;\n"
-    */
+    //
+    //"cancel_after_begin : cancel stream after starting it;\n"
+    //"cancel_after_first_response: cancel on first response;\n"
+    //"channel_soak: sends 'soak_iterations' rpcs, rebuilds channel each
+    // time;\n" "client_compressed_streaming : compressed request streaming with
+    //" "client_compressed_unary : single compressed request;\n"
+    //"client_streaming : request streaming with single response;\n"
+    //"compute_engine_creds: large_unary with compute engine auth;\n"
+    //"custom_metadata: server will echo custom metadata;\n"
+    //"empty_stream : bi-di stream with no request/response;\n"
+    //"empty_unary : empty (zero bytes) request and response;\n"
+    //"google_default_credentials: large unary using GDC;\n"
+    //"half_duplex : half-duplex streaming;\n"
+    //"jwt_token_creds: large_unary with JWT token auth;\n"
+    //"large_unary : single request and (large) response;\n"
+    //"long_lived_channel: sends large_unary rpcs over a long-lived channel;\n"
+    //"oauth2_auth_token: raw oauth2 access token auth;\n"
+    //"orca_per_rpc: custom LB policy receives per-query metric reports;\n"
+    //"orca_oob: receives out-of-band metric reports from the backend;\n"
+    //"per_rpc_creds: raw oauth2 access token on a single rpc;\n"
+    //"ping_pong : full-duplex streaming;\n"
+    //"response streaming;\n"
+    //"rpc_soak: 'sends soak_iterations' large_unary rpcs;\n"
+    //"server_compressed_streaming : single request with compressed "
+    //"server_compressed_unary : single compressed response;\n"
+    //"server_streaming : single request with response streaming;\n"
+    //"slow_consumer : single request with response streaming with "
+    //"slow client consumer;\n"
+    //"special_status_message: verify Unicode and whitespace in status
+    // message;\n" "status_code_and_message: verify status code & message;\n"
+    //"timeout_on_sleeping_server: deadline exceeds on stream;\n"
+    //"unimplemented_method: client calls an unimplemented method;\n"
+    //"unimplemented_service: client calls an unimplemented service;\n"
+    //
 );
 ABSL_FLAG(std::string, default_service_account, "",
           "Email of GCE default service account");
@@ -123,6 +127,9 @@ ABSL_FLAG(
     bool, log_metadata_and_status, false,
     "If set to 'true', will print received initial and trailing metadata, "
     "grpc-status and error message to the console, in a stable format.");
+ABSL_FLAG(std::string, service_config_json, "",
+          "Disables service config lookups and sets the provided string as the "
+          "default service config");
 
 using grpc::testing::CreateChannelForTestCase;
 using grpc::testing::GetServiceAccountJsonKey;
@@ -134,16 +141,18 @@ namespace {
 // alphanumeric characters and dashes in keys, and any character but semicolons
 // in values. Convert keys to lowercase. On failure, log an error and return
 // false.
-bool ParseAdditionalMetadataFlag(
-    const std::string& flag,
-    std::multimap<std::string, std::string>* additional_metadata) {
+absl::StatusOr<std::multimap<std::string, std::string>>
+ParseAdditionalMetadataFlag(const std::string& flag) {
+  std::multimap<std::string, std::string> additional_metadata;
+  if (flag.empty()) {
+    return additional_metadata;
+  }
   size_t start_pos = 0;
   while (start_pos < flag.length()) {
     size_t colon_pos = flag.find(':', start_pos);
     if (colon_pos == std::string::npos) {
-      gpr_log(GPR_ERROR,
-              "Couldn't parse metadata flag: extra characters at end of flag");
-      return false;
+      return absl::InvalidArgumentError(
+          "Couldn't parse metadata flag: extra characters at end of flag");
     }
     size_t semicolon_pos = flag.find(';', colon_pos);
 
@@ -156,11 +165,10 @@ bool ParseAdditionalMetadataFlag(
         "abcdefghijklmnopqrstuvwxyz"
         "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     if (key.find_first_not_of(alphanum_and_hyphen) != std::string::npos) {
-      gpr_log(GPR_ERROR,
-              "Couldn't parse metadata flag: key contains characters other "
-              "than alphanumeric and hyphens: %s",
-              key.c_str());
-      return false;
+      return absl::InvalidArgumentError(absl::StrCat(
+          "Couldn't parse metadata flag: key contains characters other "
+          "than alphanumeric and hyphens: ",
+          key));
     }
 
     // Convert to lowercase.
@@ -172,7 +180,7 @@ bool ParseAdditionalMetadataFlag(
 
     gpr_log(GPR_INFO, "Adding additional metadata with key %s and value %s",
             key.c_str(), value.c_str());
-    additional_metadata->insert({key, value});
+    additional_metadata.insert({key, value});
 
     if (semicolon_pos == std::string::npos) {
       break;
@@ -181,7 +189,7 @@ bool ParseAdditionalMetadataFlag(
     }
   }
 
-  return true;
+  return additional_metadata;
 }
 
 }  // namespace
@@ -193,40 +201,36 @@ int main(int argc, char** argv) {
           absl::GetFlag(FLAGS_test_case).c_str());
   int ret = 0;
 
-  grpc::testing::ChannelCreationFunc channel_creation_func;
   std::string test_case = absl::GetFlag(FLAGS_test_case);
-  if (absl::GetFlag(FLAGS_additional_metadata).empty()) {
-    channel_creation_func = [test_case]() {
-      std::vector<std::unique_ptr<
-          grpc::experimental::ClientInterceptorFactoryInterface>>
-          factories;
-      if (absl::GetFlag(FLAGS_log_metadata_and_status)) {
-        factories.emplace_back(
-            new grpc::testing::MetadataAndStatusLoggerInterceptorFactory());
-      }
-      return CreateChannelForTestCase(test_case, std::move(factories));
-    };
-  } else {
-    std::multimap<std::string, std::string> additional_metadata;
-    if (!ParseAdditionalMetadataFlag(absl::GetFlag(FLAGS_additional_metadata),
-                                     &additional_metadata)) {
-      return 1;
-    }
-
-    channel_creation_func = [test_case, additional_metadata]() {
-      std::vector<std::unique_ptr<
-          grpc::experimental::ClientInterceptorFactoryInterface>>
-          factories;
-      factories.emplace_back(
-          new grpc::testing::AdditionalMetadataInterceptorFactory(
-              additional_metadata));
-      if (absl::GetFlag(FLAGS_log_metadata_and_status)) {
-        factories.emplace_back(
-            new grpc::testing::MetadataAndStatusLoggerInterceptorFactory());
-      }
-      return CreateChannelForTestCase(test_case, std::move(factories));
-    };
+  auto additional_metadata =
+      ParseAdditionalMetadataFlag(absl::GetFlag(FLAGS_additional_metadata));
+  if (!additional_metadata.ok()) {
+    gpr_log(GPR_ERROR, "%s",
+            std::string(additional_metadata.status().message()).c_str());
+    return 1;
   }
+  grpc::testing::ChannelCreationFunc channel_creation_func =
+      [test_case, &additional_metadata](grpc::ChannelArguments arguments) {
+        std::vector<std::unique_ptr<
+            grpc::experimental::ClientInterceptorFactoryInterface>>
+            factories;
+        if (!additional_metadata->empty()) {
+          factories.emplace_back(
+              new grpc::testing::AdditionalMetadataInterceptorFactory(
+                  *additional_metadata));
+        }
+        if (absl::GetFlag(FLAGS_log_metadata_and_status)) {
+          factories.emplace_back(
+              new grpc::testing::MetadataAndStatusLoggerInterceptorFactory());
+        }
+        std::string service_config_json =
+            absl::GetFlag(FLAGS_service_config_json);
+        if (!service_config_json.empty()) {
+          arguments.SetServiceConfigJSON(service_config_json);
+        }
+        return CreateChannelForTestCase(test_case, std::move(factories),
+                                        arguments);
+      };
 
   grpc::testing::InteropClient client(
       channel_creation_func, true,
@@ -266,6 +270,10 @@ int main(int argc, char** argv) {
       std::bind(&grpc::testing::InteropClient::DoEmptyStream, &client);
   actions["pick_first_unary"] =
       std::bind(&grpc::testing::InteropClient::DoPickFirstUnary, &client);
+  actions["orca_per_rpc"] =
+      std::bind(&grpc::testing::InteropClient::DoOrcaPerRpc, &client);
+  actions["orca_oob"] =
+      std::bind(&grpc::testing::InteropClient::DoOrcaOob, &client);
   if (absl::GetFlag(FLAGS_use_tls)) {
     actions["compute_engine_creds"] =
         std::bind(&grpc::testing::InteropClient::DoComputeEngineCreds, &client,
@@ -300,14 +308,14 @@ int main(int argc, char** argv) {
       std::bind(&grpc::testing::InteropClient::DoUnimplementedService, &client);
   actions["channel_soak"] = std::bind(
       &grpc::testing::InteropClient::DoChannelSoakTest, &client,
-      absl::GetFlag(FLAGS_soak_iterations),
+      absl::GetFlag(FLAGS_server_host), absl::GetFlag(FLAGS_soak_iterations),
       absl::GetFlag(FLAGS_soak_max_failures),
       absl::GetFlag(FLAGS_soak_per_iteration_max_acceptable_latency_ms),
       absl::GetFlag(FLAGS_soak_min_time_ms_between_rpcs),
       absl::GetFlag(FLAGS_soak_overall_timeout_seconds));
   actions["rpc_soak"] = std::bind(
       &grpc::testing::InteropClient::DoRpcSoakTest, &client,
-      absl::GetFlag(FLAGS_soak_iterations),
+      absl::GetFlag(FLAGS_server_host), absl::GetFlag(FLAGS_soak_iterations),
       absl::GetFlag(FLAGS_soak_max_failures),
       absl::GetFlag(FLAGS_soak_per_iteration_max_acceptable_latency_ms),
       absl::GetFlag(FLAGS_soak_min_time_ms_between_rpcs),

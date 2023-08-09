@@ -1,33 +1,31 @@
-/*
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
 
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/gpr_types.h>
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 #include <grpcpp/completion_queue.h>
-#include <grpcpp/impl/codegen/completion_queue_tag.h>
+#include <grpcpp/impl/completion_queue_tag.h>
 #include <grpcpp/impl/grpc_library.h>
 
 #include "src/core/lib/gpr/useful.h"
@@ -36,8 +34,6 @@
 
 namespace grpc {
 namespace {
-
-internal::GrpcLibraryInitializer g_gli_initializer;
 
 gpr_once g_once_init_callback_alternative = GPR_ONCE_INIT;
 grpc_core::Mutex* g_callback_alternative_mu;
@@ -130,12 +126,11 @@ CallbackAlternativeCQ g_callback_alternative_cq;
 // a 'grpc_completion_queue' instance (which is being passed as the input to
 // this constructor), one must have already called grpc_init().
 CompletionQueue::CompletionQueue(grpc_completion_queue* take)
-    : GrpcLibraryCodegen(false), cq_(take) {
+    : GrpcLibrary(false), cq_(take) {
   InitialAvalanching();
 }
 
 void CompletionQueue::Shutdown() {
-  g_gli_initializer.summon();
 #ifndef NDEBUG
   if (!ServerListEmpty()) {
     gpr_log(GPR_ERROR,

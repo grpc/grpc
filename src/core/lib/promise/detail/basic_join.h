@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_PROMISE_DETAIL_BASIC_JOIN_H
-#define GRPC_CORE_LIB_PROMISE_DETAIL_BASIC_JOIN_H
+#ifndef GRPC_SRC_CORE_LIB_PROMISE_DETAIL_BASIC_JOIN_H
+#define GRPC_SRC_CORE_LIB_PROMISE_DETAIL_BASIC_JOIN_H
 
 #include <grpc/support/port_platform.h>
 
@@ -22,9 +22,9 @@
 
 #include <array>
 #include <tuple>
+#include <type_traits>
 #include <utility>
 
-#include "absl/types/variant.h"
 #include "absl/utility/utility.h"
 
 #include "src/core/lib/gprpp/bitset.h"
@@ -96,7 +96,7 @@ struct Joint : public Joint<Traits, kRemaining - 1, Fs...> {
     if (!bits->is_set(kIdx)) {
       // Poll the promise
       auto r = fused.f();
-      if (auto* p = absl::get_if<kPollReadyIdx>(&r)) {
+      if (auto* p = r.value_if_ready()) {
         // If it's done, then ask the trait to unwrap it and store that result
         // in the Fused, and continue the iteration. Note that OnResult could
         // instead choose to return a value instead of recursing through the
@@ -194,4 +194,4 @@ class BasicJoin {
 }  // namespace promise_detail
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_PROMISE_DETAIL_BASIC_JOIN_H
+#endif  // GRPC_SRC_CORE_LIB_PROMISE_DETAIL_BASIC_JOIN_H

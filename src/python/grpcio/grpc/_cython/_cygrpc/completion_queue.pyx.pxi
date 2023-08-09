@@ -13,6 +13,8 @@
 # limitations under the License.
 
 
+g_interrupt_check_period_ms = 200
+
 cdef grpc_event _next(grpc_completion_queue *c_completion_queue, deadline) except *:
   global g_interrupt_check_period_ms
   cdef gpr_timespec c_increment

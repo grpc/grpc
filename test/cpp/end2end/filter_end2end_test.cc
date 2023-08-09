@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <memory>
 #include <mutex>
@@ -31,7 +31,7 @@
 #include <grpcpp/create_channel.h>
 #include <grpcpp/generic/async_generic_service.h>
 #include <grpcpp/generic/generic_stub.h>
-#include <grpcpp/impl/codegen/proto_utils.h>
+#include <grpcpp/impl/proto_utils.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
@@ -43,9 +43,6 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/byte_buffer_proto_helper.h"
-
-using grpc::testing::EchoRequest;
-using grpc::testing::EchoResponse;
 
 namespace grpc {
 namespace testing {
@@ -104,7 +101,7 @@ class ChannelDataImpl : public ChannelData {
   grpc_error_handle Init(grpc_channel_element* /*elem*/,
                          grpc_channel_element_args* /*args*/) override {
     IncrementConnectionCounter();
-    return GRPC_ERROR_NONE;
+    return absl::OkStatus();
   }
 };
 
@@ -123,7 +120,7 @@ class FilterEnd2endTest : public ::testing::Test {
  protected:
   FilterEnd2endTest() : server_host_("localhost") {}
 
-  static void SetUpTestCase() {
+  static void SetUpTestSuite() {
     // Workaround for
     // https://github.com/google/google-toolbox-for-mac/issues/242
     static bool setup_done = false;
@@ -161,7 +158,7 @@ class FilterEnd2endTest : public ::testing::Test {
   void ResetStub() {
     std::shared_ptr<Channel> channel = grpc::CreateChannel(
         server_address_.str(), InsecureChannelCredentials());
-    generic_stub_ = absl::make_unique<GenericStub>(channel);
+    generic_stub_ = std::make_unique<GenericStub>(channel);
     ResetConnectionCounter();
     ResetCallCounter();
   }

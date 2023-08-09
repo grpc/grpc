@@ -16,10 +16,11 @@
   
   <%include file="../../oss_fuzz_base.include"/>
   <%include file="../../bazel.include"/>
+  <%include file="../../git-jenkins.include"/>
+
+  RUN apt-get install -y gdb
   
   RUN mkdir -p /var/local/jenkins
 
-  RUN git config --global --add safe.directory /var/local/jenkins/grpc
-  
   # Define the default command.
   CMD ["bash"]

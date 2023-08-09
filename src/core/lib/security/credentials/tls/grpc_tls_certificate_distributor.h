@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CERTIFICATE_DISTRIBUTOR_H
-#define GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CERTIFICATE_DISTRIBUTOR_H
+#ifndef GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CERTIFICATE_DISTRIBUTOR_H
+#define GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CERTIFICATE_DISTRIBUTOR_H
 
 #include <grpc/support/port_platform.h>
 
@@ -176,9 +176,9 @@ struct grpc_tls_certificate_distributor
     // The contents of the identity key-certificate pairs.
     grpc_core::PemKeyCertPairList pem_key_cert_pairs;
     // The root cert reloading error propagated by the caller.
-    grpc_error_handle root_cert_error = GRPC_ERROR_NONE;
+    grpc_error_handle root_cert_error;
     // The identity cert reloading error propagated by the caller.
-    grpc_error_handle identity_cert_error = GRPC_ERROR_NONE;
+    grpc_error_handle identity_cert_error;
     // The set of watchers watching root certificates.
     // This is mainly used for quickly looking up the affected watchers while
     // performing a credential reloading.
@@ -188,16 +188,9 @@ struct grpc_tls_certificate_distributor
     // credential reloading.
     std::set<TlsCertificatesWatcherInterface*> identity_cert_watchers;
 
-    ~CertificateInfo() {
-      GRPC_ERROR_UNREF(root_cert_error);
-      GRPC_ERROR_UNREF(identity_cert_error);
-    }
-    void SetRootError(grpc_error_handle error) {
-      GRPC_ERROR_UNREF(root_cert_error);
-      root_cert_error = error;
-    }
+    ~CertificateInfo() {}
+    void SetRootError(grpc_error_handle error) { root_cert_error = error; }
     void SetIdentityError(grpc_error_handle error) {
-      GRPC_ERROR_UNREF(identity_cert_error);
       identity_cert_error = error;
     }
   };
@@ -220,4 +213,4 @@ struct grpc_tls_certificate_distributor
       ABSL_GUARDED_BY(mu_);
 };
 
-#endif  // GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CERTIFICATE_DISTRIBUTOR_H
+#endif  // GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CERTIFICATE_DISTRIBUTOR_H

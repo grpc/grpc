@@ -20,6 +20,10 @@
 #include <memory>
 #include <string>
 
+#include "absl/flags/flag.h"
+#include "absl/flags/parse.h"
+#include "absl/strings/str_format.h"
+
 #include <grpcpp/ext/proto_server_reflection_plugin.h>
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/health_check_service_interface.h>
@@ -29,6 +33,8 @@
 #else
 #include "helloworld.grpc.pb.h"
 #endif
+
+ABSL_FLAG(uint16_t, port, 50051, "Server port for the service");
 
 using grpc::CallbackServerContext;
 using grpc::Server;
@@ -53,8 +59,8 @@ class GreeterServiceImpl final : public Greeter::CallbackService {
   }
 };
 
-void RunServer() {
-  std::string server_address("0.0.0.0:50051");
+void RunServer(uint16_t port) {
+  std::string server_address = absl::StrFormat("0.0.0.0:%d", port);
   GreeterServiceImpl service;
 
   grpc::EnableDefaultHealthCheckService(true);
@@ -75,7 +81,7 @@ void RunServer() {
 }
 
 int main(int argc, char** argv) {
-  RunServer();
-
+  absl::ParseCommandLine(argc, argv);
+  RunServer(absl::GetFlag(FLAGS_port));
   return 0;
 }

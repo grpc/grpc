@@ -204,7 +204,7 @@ class FakeBinder final : public Binder {
 
   void Initialize() override {}
   absl::Status PrepareTransaction() override {
-    input_ = absl::make_unique<FakeWritableParcel>();
+    input_ = std::make_unique<FakeWritableParcel>();
     return absl::OkStatus();
   }
 

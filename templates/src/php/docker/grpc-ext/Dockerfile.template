@@ -29,4 +29,8 @@
 
   <%include file="../pecl_ext_build_src.include" />
 
-  CMD ["/github/grpc/src/php/bin/run_tests.sh", "--skip-persistent-channel-tests"]
+  RUN curl -sS https://getcomposer.org/installer | php && ${'\\'}
+    chmod +x composer.phar && ${'\\'}
+    mv composer.phar /usr/local/bin/composer
+
+  <%include file="../dockerfile_cmd.include" />

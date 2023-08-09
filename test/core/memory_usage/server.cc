@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <signal.h>
 #include <stdint.h>
@@ -33,12 +33,13 @@
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 
 #include "test/core/memory_usage/memstats.h"
 #ifndef _WIN32
-/* This is for _exit() below, which is temporary. */
+// This is for _exit() below, which is temporary.
 #include <unistd.h>
 #endif
 
@@ -59,7 +60,6 @@ static grpc_op snapshot_ops[5];
 static grpc_op status_op;
 static int got_sigint = 0;
 static grpc_byte_buffer* payload_buffer = nullptr;
-static grpc_byte_buffer* terminal_buffer = nullptr;
 static int was_cancelled = 2;
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
@@ -131,9 +131,6 @@ static void send_snapshot(void* tag, MemStats* snapshot) {
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
   op++;
-  op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message.recv_message = &terminal_buffer;
-  op++;
   op->op = GRPC_OP_SEND_MESSAGE;
   if (payload_buffer == nullptr) {
     gpr_log(GPR_INFO, "NULL payload buffer !!!");
@@ -154,8 +151,8 @@ static void send_snapshot(void* tag, MemStats* snapshot) {
              grpc_call_start_batch((*(fling_call*)tag).call, snapshot_ops,
                                    (size_t)(op - snapshot_ops), tag, nullptr));
 }
-/* We have some sort of deadlock, so let's not exit gracefully for now.
-   When that is resolved, please remove the #include <unistd.h> above. */
+// We have some sort of deadlock, so let's not exit gracefully for now.
+// When that is resolved, please remove the #include <unistd.h> above.
 static void sigint_handler(int /*x*/) { _exit(0); }
 
 ABSL_FLAG(std::string, bind, "", "Bind host:port");
@@ -306,12 +303,10 @@ int main(int argc, char** argv) {
           // FLING_SERVER_SEND_STATUS_SNAPSHOT to destroy the snapshot call
           case FLING_SERVER_SEND_STATUS_SNAPSHOT:
             grpc_byte_buffer_destroy(payload_buffer);
-            grpc_byte_buffer_destroy(terminal_buffer);
             grpc_call_unref(s->call);
             grpc_call_details_destroy(&s->call_details);
             grpc_metadata_array_destroy(&s->initial_metadata_send);
             grpc_metadata_array_destroy(&s->request_metadata_recv);
-            terminal_buffer = nullptr;
             payload_buffer = nullptr;
             break;
         }

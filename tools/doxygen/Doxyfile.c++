@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.50.0-dev
+PROJECT_NUMBER         = 1.58.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -788,6 +788,7 @@ doc/interop-test-descriptions.md \
 doc/keepalive.md \
 doc/load-balancing.md \
 doc/naming.md \
+doc/qos-dscp.md \
 doc/security_audit.md \
 doc/server-reflection.md \
 doc/server_reflection_tutorial.md \
@@ -827,10 +828,7 @@ include/grpc++/impl/codegen/completion_queue.h \
 include/grpc++/impl/codegen/completion_queue_tag.h \
 include/grpc++/impl/codegen/config.h \
 include/grpc++/impl/codegen/config_protobuf.h \
-include/grpc++/impl/codegen/core_codegen.h \
-include/grpc++/impl/codegen/core_codegen_interface.h \
 include/grpc++/impl/codegen/create_auth_context.h \
-include/grpc++/impl/codegen/grpc_library.h \
 include/grpc++/impl/codegen/metadata_map.h \
 include/grpc++/impl/codegen/method_handler_impl.h \
 include/grpc++/impl/codegen/proto_utils.h \
@@ -885,6 +883,7 @@ include/grpc/compression.h \
 include/grpc/event_engine/endpoint_config.h \
 include/grpc/event_engine/event_engine.h \
 include/grpc/event_engine/internal/memory_allocator_impl.h \
+include/grpc/event_engine/internal/slice_cast.h \
 include/grpc/event_engine/memory_allocator.h \
 include/grpc/event_engine/memory_request.h \
 include/grpc/event_engine/port.h \
@@ -892,9 +891,11 @@ include/grpc/event_engine/slice.h \
 include/grpc/event_engine/slice_buffer.h \
 include/grpc/fork.h \
 include/grpc/grpc.h \
+include/grpc/grpc_audit_logging.h \
 include/grpc/grpc_posix.h \
 include/grpc/grpc_security.h \
 include/grpc/grpc_security_constants.h \
+include/grpc/impl/channel_arg_names.h \
 include/grpc/impl/codegen/atm.h \
 include/grpc/impl/codegen/atm_gcc_atomic.h \
 include/grpc/impl/codegen/atm_gcc_sync.h \
@@ -904,7 +905,6 @@ include/grpc/impl/codegen/byte_buffer_reader.h \
 include/grpc/impl/codegen/compression_types.h \
 include/grpc/impl/codegen/connectivity_state.h \
 include/grpc/impl/codegen/fork.h \
-include/grpc/impl/codegen/gpr_slice.h \
 include/grpc/impl/codegen/gpr_types.h \
 include/grpc/impl/codegen/grpc_types.h \
 include/grpc/impl/codegen/log.h \
@@ -918,6 +918,11 @@ include/grpc/impl/codegen/sync_custom.h \
 include/grpc/impl/codegen/sync_generic.h \
 include/grpc/impl/codegen/sync_posix.h \
 include/grpc/impl/codegen/sync_windows.h \
+include/grpc/impl/compression_types.h \
+include/grpc/impl/connectivity_state.h \
+include/grpc/impl/grpc_types.h \
+include/grpc/impl/propagation_bits.h \
+include/grpc/impl/slice_type.h \
 include/grpc/load_reporting.h \
 include/grpc/slice.h \
 include/grpc/slice_buffer.h \
@@ -928,6 +933,7 @@ include/grpc/support/atm_gcc_atomic.h \
 include/grpc/support/atm_gcc_sync.h \
 include/grpc/support/atm_windows.h \
 include/grpc/support/cpu.h \
+include/grpc/support/json.h \
 include/grpc/support/log.h \
 include/grpc/support/log_windows.h \
 include/grpc/support/port_platform.h \
@@ -950,13 +956,17 @@ include/grpcpp/create_channel_binder.h \
 include/grpcpp/create_channel_posix.h \
 include/grpcpp/ext/call_metric_recorder.h \
 include/grpcpp/ext/health_check_service_server_builder_option.h \
+include/grpcpp/ext/server_metric_recorder.h \
 include/grpcpp/generic/async_generic_service.h \
 include/grpcpp/generic/generic_stub.h \
 include/grpcpp/grpcpp.h \
 include/grpcpp/health_check_service_interface.h \
 include/grpcpp/impl/call.h \
 include/grpcpp/impl/call_hook.h \
+include/grpcpp/impl/call_op_set.h \
+include/grpcpp/impl/call_op_set_interface.h \
 include/grpcpp/impl/channel_argument_option.h \
+include/grpcpp/impl/channel_interface.h \
 include/grpcpp/impl/client_unary_call.h \
 include/grpcpp/impl/codegen/async_generic_service.h \
 include/grpcpp/impl/codegen/async_stream.h \
@@ -976,11 +986,8 @@ include/grpcpp/impl/codegen/completion_queue.h \
 include/grpcpp/impl/codegen/completion_queue_tag.h \
 include/grpcpp/impl/codegen/config.h \
 include/grpcpp/impl/codegen/config_protobuf.h \
-include/grpcpp/impl/codegen/core_codegen.h \
-include/grpcpp/impl/codegen/core_codegen_interface.h \
 include/grpcpp/impl/codegen/create_auth_context.h \
 include/grpcpp/impl/codegen/delegating_channel.h \
-include/grpcpp/impl/codegen/grpc_library.h \
 include/grpcpp/impl/codegen/intercepted_channel.h \
 include/grpcpp/impl/codegen/interceptor.h \
 include/grpcpp/impl/codegen/interceptor_common.h \
@@ -1009,16 +1016,27 @@ include/grpcpp/impl/codegen/stub_options.h \
 include/grpcpp/impl/codegen/sync.h \
 include/grpcpp/impl/codegen/sync_stream.h \
 include/grpcpp/impl/codegen/time.h \
+include/grpcpp/impl/completion_queue_tag.h \
+include/grpcpp/impl/create_auth_context.h \
+include/grpcpp/impl/delegating_channel.h \
 include/grpcpp/impl/grpc_library.h \
+include/grpcpp/impl/intercepted_channel.h \
+include/grpcpp/impl/interceptor_common.h \
+include/grpcpp/impl/metadata_map.h \
 include/grpcpp/impl/method_handler_impl.h \
+include/grpcpp/impl/proto_utils.h \
 include/grpcpp/impl/rpc_method.h \
 include/grpcpp/impl/rpc_service_method.h \
 include/grpcpp/impl/serialization_traits.h \
 include/grpcpp/impl/server_builder_option.h \
 include/grpcpp/impl/server_builder_plugin.h \
+include/grpcpp/impl/server_callback_handlers.h \
 include/grpcpp/impl/server_initializer.h \
 include/grpcpp/impl/service_type.h \
+include/grpcpp/impl/status.h \
+include/grpcpp/impl/sync.h \
 include/grpcpp/resource_quota.h \
+include/grpcpp/security/audit_logging.h \
 include/grpcpp/security/auth_context.h \
 include/grpcpp/security/auth_metadata_processor.h \
 include/grpcpp/security/authorization_policy_provider.h \
@@ -1032,10 +1050,12 @@ include/grpcpp/security/tls_credentials_options.h \
 include/grpcpp/server.h \
 include/grpcpp/server_builder.h \
 include/grpcpp/server_context.h \
+include/grpcpp/server_interface.h \
 include/grpcpp/server_posix.h \
 include/grpcpp/support/async_stream.h \
 include/grpcpp/support/async_unary_call.h \
 include/grpcpp/support/byte_buffer.h \
+include/grpcpp/support/callback_common.h \
 include/grpcpp/support/channel_arguments.h \
 include/grpcpp/support/client_callback.h \
 include/grpcpp/support/client_interceptor.h \
@@ -1055,6 +1075,7 @@ include/grpcpp/support/stub_options.h \
 include/grpcpp/support/sync_stream.h \
 include/grpcpp/support/time.h \
 include/grpcpp/support/validate_service_config.h \
+include/grpcpp/version_info.h \
 include/grpcpp/xds_server_builder.h
 
 # This tag can be used to specify the character encoding of the source files

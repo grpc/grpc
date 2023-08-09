@@ -1,4 +1,4 @@
-// Copyright 2021 gRPC authors.
+// Copyright 2016 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,20 +16,5 @@
 
 #include "src/core/lib/slice/slice_refcount.h"
 
-#include <chrono>
-
-namespace grpc_core {
-
-uint32_t g_hash_seed = []() {
-  auto now = std::chrono::system_clock::now();
-  auto now_since_epoch = now.time_since_epoch();
-  auto now_ns =
-      std::chrono::duration_cast<std::chrono::nanoseconds>(now_since_epoch);
-  return static_cast<uint32_t>(now_ns.count());
-}();
-
-}  // namespace grpc_core
-
-void grpc_test_only_set_slice_hash_seed(uint32_t seed) {
-  grpc_core::g_hash_seed = seed;
-}
+grpc_core::DebugOnlyTraceFlag grpc_slice_refcount_trace(false,
+                                                        "slice_refcount");

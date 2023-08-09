@@ -1,215 +1,79 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-#include <stdint.h>
-#include <string.h>
+#include "gtest/gtest.h"
 
-#include <grpc/grpc.h>
-#include <grpc/impl/codegen/propagation_bits.h>
-#include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 
-#include "test/core/end2end/cq_verifier.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gprpp/time.h"
 #include "test/core/end2end/end2end_tests.h"
-#include "test/core/util/test_config.h"
 
-static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
+#ifndef GPR_WINDOWS  // b/148110727 for more details
+namespace grpc_core {
 
-static gpr_timespec n_seconds_from_now(int n) {
-  return grpc_timeout_seconds_to_deadline(n);
+static void OneRequestAndShutdownServer(CoreEnd2endTest& test) {
+  gpr_log(GPR_ERROR, "Create client side call");
+  auto c = test.NewClientCall("/service/method")
+               .Timeout(Duration::Seconds(30))
+               .Create();
+  CoreEnd2endTest::IncomingMetadata server_initial_md;
+  CoreEnd2endTest::IncomingStatusOnClient server_status;
+  gpr_log(GPR_ERROR, "Start initial batch");
+  c.NewBatch(1)
+      .SendInitialMetadata({})
+      .SendCloseFromClient()
+      .RecvInitialMetadata(server_initial_md)
+      .RecvStatusOnClient(server_status);
+  auto s = test.RequestCall(101);
+  test.Expect(101, true);
+  test.Step();
+  test.ShutdownServerAndNotify(1000);
+  CoreEnd2endTest::IncomingCloseOnServer client_closed;
+  s.NewBatch(102)
+      .SendInitialMetadata({})
+      .SendStatusFromServer(GRPC_STATUS_UNIMPLEMENTED, "xyz", {})
+      .RecvCloseOnServer(client_closed);
+  test.Expect(102, true);
+  test.Expect(1, true);
+  test.Expect(1000, true);
+  test.Step();
+  // Please refer https://github.com/grpc/grpc/issues/21221 for additional
+  // details.
+  // TODO(yashykt@) - The following line should be removeable after C-Core
+  // correctly handles GOAWAY frames. Internal Reference b/135458602. If this
+  // test remains flaky even after this, an alternative fix would be to send a
+  // request when the server is in the shut down state.
+  //
+  test.Step();
+
+  EXPECT_EQ(server_status.status(), GRPC_STATUS_UNIMPLEMENTED);
+  EXPECT_EQ(server_status.message(), "xyz");
+  EXPECT_EQ(s.method(), "/service/method");
+  EXPECT_FALSE(client_closed.was_cancelled());
 }
 
-static gpr_timespec five_seconds_from_now(void) {
-  return n_seconds_from_now(5);
+CORE_END2END_TEST(CoreClientChannelTest, DisappearingServer) {
+  OneRequestAndShutdownServer(*this);
+  InitServer(ChannelArgs());
+  OneRequestAndShutdownServer(*this);
 }
 
-static void drain_cq(grpc_completion_queue* cq) {
-  grpc_event ev;
-  do {
-    ev = grpc_completion_queue_next(cq, five_seconds_from_now(), nullptr);
-  } while (ev.type != GRPC_QUEUE_SHUTDOWN);
-}
-
-static void shutdown_server(grpc_end2end_test_fixture* f) {
-  if (!f->server) return;
-  grpc_server_destroy(f->server);
-  f->server = nullptr;
-}
-
-static void shutdown_client(grpc_end2end_test_fixture* f) {
-  if (!f->client) return;
-  grpc_channel_destroy(f->client);
-  f->client = nullptr;
-}
-
-static void end_test(grpc_end2end_test_fixture* f) {
-  shutdown_server(f);
-  shutdown_client(f);
-
-  grpc_completion_queue_shutdown(f->cq);
-  drain_cq(f->cq);
-  grpc_completion_queue_destroy(f->cq);
-}
-
-static void do_request_and_shutdown_server(grpc_end2end_test_config /*config*/,
-                                           grpc_end2end_test_fixture* f,
-                                           grpc_core::CqVerifier& cqv) {
-  grpc_call* c;
-  grpc_call* s;
-  grpc_op ops[6];
-  grpc_op* op;
-  grpc_metadata_array initial_metadata_recv;
-  grpc_metadata_array trailing_metadata_recv;
-  grpc_metadata_array request_metadata_recv;
-  grpc_call_details call_details;
-  grpc_status_code status;
-  grpc_call_error error;
-  grpc_slice details;
-  int was_cancelled = 2;
-
-  gpr_timespec deadline = five_seconds_from_now();
-  c = grpc_channel_create_call(f->client, nullptr, GRPC_PROPAGATE_DEFAULTS,
-                               f->cq, grpc_slice_from_static_string("/foo"),
-                               nullptr, deadline, nullptr);
-  GPR_ASSERT(c);
-
-  grpc_metadata_array_init(&initial_metadata_recv);
-  grpc_metadata_array_init(&trailing_metadata_recv);
-  grpc_metadata_array_init(&request_metadata_recv);
-  grpc_call_details_init(&call_details);
-
-  memset(ops, 0, sizeof(ops));
-  op = ops;
-  op->op = GRPC_OP_SEND_INITIAL_METADATA;
-  op->data.send_initial_metadata.count = 0;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
-  op->data.recv_status_on_client.status = &status;
-  op->data.recv_status_on_client.status_details = &details;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
-  GPR_ASSERT(GRPC_CALL_OK == error);
-
-  error =
-      grpc_server_request_call(f->server, &s, &call_details,
-                               &request_metadata_recv, f->cq, f->cq, tag(101));
-  GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(tag(101), true);
-  cqv.Verify();
-
-  /* should be able to shut down the server early
-     - and still complete the request */
-  grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
-
-  memset(ops, 0, sizeof(ops));
-  op = ops;
-  op->op = GRPC_OP_SEND_INITIAL_METADATA;
-  op->data.send_initial_metadata.count = 0;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
-  op->data.send_status_from_server.trailing_metadata_count = 0;
-  op->data.send_status_from_server.status = GRPC_STATUS_UNIMPLEMENTED;
-  grpc_slice status_details = grpc_slice_from_static_string("xyz");
-  op->data.send_status_from_server.status_details = &status_details;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
-  op->data.recv_close_on_server.cancelled = &was_cancelled;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
-                                nullptr);
-  GPR_ASSERT(GRPC_CALL_OK == error);
-
-  cqv.Expect(tag(102), true);
-  cqv.Expect(tag(1), true);
-  cqv.Expect(tag(1000), true);
-  cqv.Verify();
-  /* Please refer https://github.com/grpc/grpc/issues/21221 for additional
-   * details.
-   * TODO(yashykt@) - The following line should be removeable after C-Core
-   * correctly handles GOAWAY frames. Internal Reference b/135458602. If this
-   * test remains flaky even after this, an alternative fix would be to send a
-   * request when the server is in the shut down state.
-   */
-  cqv.VerifyEmpty();
-
-  GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
-  GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
-  GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
-  GPR_ASSERT(was_cancelled == 0);
-
-  grpc_slice_unref(details);
-  grpc_metadata_array_destroy(&initial_metadata_recv);
-  grpc_metadata_array_destroy(&trailing_metadata_recv);
-  grpc_metadata_array_destroy(&request_metadata_recv);
-  grpc_call_details_destroy(&call_details);
-
-  grpc_call_unref(c);
-  grpc_call_unref(s);
-}
-
-static void disappearing_server_test(grpc_end2end_test_config config) {
-  grpc_end2end_test_fixture f = config.create_fixture(nullptr, nullptr);
-  grpc_core::CqVerifier cqv(f.cq);
-
-  gpr_log(GPR_INFO, "Running test: %s/%s", "disappearing_server_test",
-          config.name);
-
-  config.init_client(&f, nullptr);
-  config.init_server(&f, nullptr);
-
-  do_request_and_shutdown_server(config, &f, cqv);
-
-  /* now destroy and recreate the server */
-  config.init_server(&f, nullptr);
-
-  do_request_and_shutdown_server(config, &f, cqv);
-
-  end_test(&f);
-  config.tear_down_data(&f);
-}
-
-void disappearing_server(grpc_end2end_test_config config) {
-  GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION);
-#ifndef GPR_WINDOWS /* b/148110727 for more details */
-  disappearing_server_test(config);
-#endif /* GPR_WINDOWS */
-}
-
-void disappearing_server_pre_init(void) {}
+}  // namespace grpc_core
+#endif  // GPR_WINDOWS

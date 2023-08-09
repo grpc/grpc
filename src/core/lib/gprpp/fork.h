@@ -1,32 +1,33 @@
-/*
- *
- * Copyright 2017 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2017 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-#ifndef GRPC_CORE_LIB_GPRPP_FORK_H
-#define GRPC_CORE_LIB_GPRPP_FORK_H
+#ifndef GRPC_SRC_CORE_LIB_GPRPP_FORK_H
+#define GRPC_SRC_CORE_LIB_GPRPP_FORK_H
 
 #include <grpc/support/port_platform.h>
 
 #include <atomic>
+#include <set>
 
-/*
- * NOTE: FORKING IS NOT GENERALLY SUPPORTED, THIS IS ONLY INTENDED TO WORK
- *       AROUND VERY SPECIFIC USE CASES.
- */
+//
+// NOTE: FORKING IS NOT GENERALLY SUPPORTED, THIS IS ONLY INTENDED TO WORK
+//       AROUND VERY SPECIFIC USE CASES.
+//
 
 namespace grpc_core {
 
@@ -56,9 +57,11 @@ class Fork {
 
   // Provide a function that will be invoked in the child's postfork handler to
   // reset the polling engine's internal state.
-  static void SetResetChildPollingEngineFunc(
+  // Returns true if reset_child_polling_engine was not previously registered,
+  // otherwise returns false and does nothing.
+  static bool RegisterResetChildPollingEngineFunc(
       child_postfork_func reset_child_polling_engine);
-  static child_postfork_func GetResetChildPollingEngineFunc();
+  static const std::set<child_postfork_func>& GetResetChildPollingEngineFunc();
 
   // Check if there is a single active ExecCtx
   // (the one used to invoke this function).  If there are more,
@@ -87,9 +90,9 @@ class Fork {
 
   static std::atomic<bool> support_enabled_;
   static bool override_enabled_;
-  static child_postfork_func reset_child_polling_engine_;
+  static std::set<child_postfork_func>* reset_child_polling_engine_;
 };
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_GPRPP_FORK_H */
+#endif  // GRPC_SRC_CORE_LIB_GPRPP_FORK_H

@@ -38,9 +38,6 @@ curl -sSL --fail -o C:\zip\zip.exe https://storage.googleapis.com/grpc-build-hel
 set PATH=C:\zip;%PATH%
 zip --version
 
-@rem Build all C# windows artifacts
-python tools/run_tests/task_runner.py -f artifact windows csharp %TASK_RUNNER_EXTRA_FILTERS% -j 4 --inner_jobs 4 -x build_artifacts_csharp/sponge_log.xml || set FAILED=true
-
 @rem Build all protoc windows artifacts
 python tools/run_tests/task_runner.py -f artifact windows protoc %TASK_RUNNER_EXTRA_FILTERS% -j 4 --inner_jobs 4 -x build_artifacts_protoc/sponge_log.xml || set FAILED=true
 

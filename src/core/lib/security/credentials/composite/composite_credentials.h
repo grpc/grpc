@@ -1,23 +1,23 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
-#ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_COMPOSITE_COMPOSITE_CREDENTIALS_H
-#define GRPC_CORE_LIB_SECURITY_CREDENTIALS_COMPOSITE_COMPOSITE_CREDENTIALS_H
+#ifndef GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_COMPOSITE_COMPOSITE_CREDENTIALS_H
+#define GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_COMPOSITE_COMPOSITE_CREDENTIALS_H
 
 #include <grpc/support/port_platform.h>
 
@@ -41,7 +41,7 @@
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/transport/transport.h"
 
-/* -- Composite channel credentials. -- */
+// -- Composite channel credentials. --
 
 class grpc_composite_channel_credentials : public grpc_channel_credentials {
  public:
@@ -68,7 +68,9 @@ class grpc_composite_channel_credentials : public grpc_channel_credentials {
     return inner_creds_->update_arguments(std::move(args));
   }
 
-  grpc_core::UniqueTypeName type() const override;
+  static grpc_core::UniqueTypeName Type();
+
+  grpc_core::UniqueTypeName type() const override { return Type(); }
 
   const grpc_channel_credentials* inner_creds() const {
     return inner_creds_.get();
@@ -88,7 +90,7 @@ class grpc_composite_channel_credentials : public grpc_channel_credentials {
   grpc_core::RefCountedPtr<grpc_call_credentials> call_creds_;
 };
 
-/* -- Composite call credentials. -- */
+// -- Composite call credentials. --
 
 class grpc_composite_call_credentials : public grpc_call_credentials {
  public:
@@ -128,5 +130,4 @@ class grpc_composite_call_credentials : public grpc_call_credentials {
   CallCredentialsList inner_;
 };
 
-#endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_COMPOSITE_COMPOSITE_CREDENTIALS_H \
-        */
+#endif  // GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_COMPOSITE_COMPOSITE_CREDENTIALS_H

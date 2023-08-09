@@ -32,10 +32,12 @@ from framework.test_app.runners.k8s import k8s_xds_server_runner
 flags.adopt_module_key_flags(xds_flags)
 flags.adopt_module_key_flags(xds_k8s_flags)
 
-STRATEGY = flags.DEFINE_enum('strategy',
-                             default='reuse',
-                             enum_values=['create', 'keep', 'reuse'],
-                             help='Strategy of GCP resources management')
+STRATEGY = flags.DEFINE_enum(
+    "strategy",
+    default="reuse",
+    enum_values=["create", "keep", "reuse"],
+    help="Strategy of GCP resources management",
+)
 
 # Type alias
 _KubernetesServerRunner = k8s_xds_server_runner.KubernetesServerRunner
@@ -59,16 +61,21 @@ class _UrlMapChangeAggregator:
     def get_map(self) -> UrlMapType:
         return self._map
 
-    def apply_change(self, test_case: 'XdsUrlMapTestCase') -> None:
-        logging.info('Apply urlMap change for test case: %s.%s',
-                     test_case.short_module_name, test_case.__name__)
+    def apply_change(self, test_case: "XdsUrlMapTestCase") -> None:
+        logging.info(
+            "Apply urlMap change for test case: %s.%s",
+            test_case.short_module_name,
+            test_case.__name__,
+        )
         url_map_parts = test_case.url_map_change(
-            *self._get_test_case_url_map(test_case))
+            *self._get_test_case_url_map(test_case)
+        )
         self._set_test_case_url_map(*url_map_parts)
 
     @staticmethod
     def _get_test_case_url_map(
-            test_case: 'XdsUrlMapTestCase') -> Tuple[HostRule, PathMatcher]:
+        test_case: "XdsUrlMapTestCase",
+    ) -> Tuple[HostRule, PathMatcher]:
         host_rule = {
             "hosts": [test_case.hostname()],
             "pathMatcher": test_case.path_matcher_name(),
@@ -79,8 +86,9 @@ class _UrlMapChangeAggregator:
         }
         return host_rule, path_matcher
 
-    def _set_test_case_url_map(self, host_rule: HostRule,
-                               path_matcher: PathMatcher) -> None:
+    def _set_test_case_url_map(
+        self, host_rule: HostRule, path_matcher: PathMatcher
+    ) -> None:
         self._map["hostRules"].append(host_rule)
         self._map["pathMatchers"].append(path_matcher)
 
@@ -99,7 +107,7 @@ def _package_flags() -> Mapping[str, Any]:
         for key, value in inspect.getmembers(flag_module):
             if isinstance(value, flags.FlagHolder):
                 res[key.lower()] = value.value
-    res['strategy'] = STRATEGY.value
+    res["strategy"] = STRATEGY.value
     return res
 
 
@@ -141,13 +149,17 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
             for key in absl_flags:
                 setattr(self, key, absl_flags[key])
         # Pick a client_namespace_suffix if not set
-        if getattr(self, 'resource_suffix', None) is None:
+        if getattr(self, "resource_suffix", None) is None:
             self.resource_suffix = ""
         else:
             raise NotImplementedError(
-                'Predefined resource_suffix is not supported for UrlMap tests')
-        logging.info('GcpResourceManager: resource prefix=%s, suffix=%s',
-                     self.resource_prefix, self.resource_suffix)
+                "Predefined resource_suffix is not supported for UrlMap tests"
+            )
+        logging.info(
+            "GcpResourceManager: resource prefix=%s, suffix=%s",
+            self.resource_prefix,
+            self.resource_suffix,
+        )
 
         # Must be called before KubernetesApiManager or GcpApiManager init.
         xds_flags.set_socket_default_timeout_from_flag()
@@ -164,8 +176,9 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
             compute_api_version=self.compute_api_version,
         )
         # Kubernetes namespace
-        self.k8s_namespace = k8s.KubernetesNamespace(self.k8s_api_manager,
-                                                     self.resource_prefix)
+        self.k8s_namespace = k8s.KubernetesNamespace(
+            self.k8s_api_manager, self.resource_prefix
+        )
         # Kubernetes Test Servers
         self.test_server_runner = _KubernetesServerRunner(
             self.k8s_namespace,
@@ -177,10 +190,11 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
             td_bootstrap_image=self.td_bootstrap_image,
             xds_server_uri=self.xds_server_uri,
             network=self.network,
-            enable_workload_identity=self.enable_workload_identity)
+            enable_workload_identity=self.enable_workload_identity,
+        )
         self.test_server_alternative_runner = _KubernetesServerRunner(
             self.k8s_namespace,
-            deployment_name=self.server_name + '-alternative',
+            deployment_name=self.server_name + "-alternative",
             image_name=self.server_image,
             gcp_project=self.project,
             gcp_api_manager=self.gcp_api_manager,
@@ -189,10 +203,11 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
             xds_server_uri=self.xds_server_uri,
             network=self.network,
             enable_workload_identity=self.enable_workload_identity,
-            reuse_namespace=True)
+            reuse_namespace=True,
+        )
         self.test_server_affinity_runner = _KubernetesServerRunner(
             self.k8s_namespace,
-            deployment_name=self.server_name + '-affinity',
+            deployment_name=self.server_name + "-affinity",
             image_name=self.server_image,
             gcp_project=self.project,
             gcp_api_manager=self.gcp_api_manager,
@@ -201,20 +216,25 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
             xds_server_uri=self.xds_server_uri,
             network=self.network,
             enable_workload_identity=self.enable_workload_identity,
-            reuse_namespace=True)
-        logging.info('Strategy of GCP resources management: %s', self.strategy)
+            reuse_namespace=True,
+        )
+        logging.info("Strategy of GCP resources management: %s", self.strategy)
 
     def create_test_client_runner(self):
         if self.resource_suffix:
             client_namespace_suffix = self.resource_suffix
         else:
-            client_namespace_suffix = framework.helpers.rand.random_resource_suffix(
+            client_namespace_suffix = (
+                framework.helpers.rand.random_resource_suffix()
             )
-        logging.info('GcpResourceManager: client_namespace_suffix=%s',
-                     client_namespace_suffix)
+        logging.info(
+            "GcpResourceManager: client_namespace_suffix=%s",
+            client_namespace_suffix,
+        )
         # Kubernetes Test Client
         namespace_name = _KubernetesClientRunner.make_namespace_name(
-            self.resource_prefix, client_namespace_suffix)
+            self.resource_prefix, client_namespace_suffix
+        )
         return _KubernetesClientRunner(
             k8s.KubernetesNamespace(self.k8s_api_manager, namespace_name),
             deployment_name=self.client_name,
@@ -227,27 +247,31 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
             network=self.network,
             debug_use_port_forwarding=self.debug_use_port_forwarding,
             enable_workload_identity=self.enable_workload_identity,
-            stats_port=self.client_port)
+            stats_port=self.client_port,
+        )
 
     def _pre_cleanup(self):
         # Cleanup existing debris
-        logging.info('GcpResourceManager: pre clean-up')
+        logging.info("GcpResourceManager: pre clean-up")
         self.td.cleanup(force=True)
         self.test_server_runner.delete_namespace()
 
-    def setup(self, test_case_classes: Iterable['XdsUrlMapTestCase']) -> None:
-        if self.strategy not in ['create', 'keep']:
-            logging.info('GcpResourceManager: skipping setup for strategy [%s]',
-                         self.strategy)
+    def setup(self, test_case_classes: Iterable["XdsUrlMapTestCase"]) -> None:
+        if self.strategy not in ["create", "keep"]:
+            logging.info(
+                "GcpResourceManager: skipping setup for strategy [%s]",
+                self.strategy,
+            )
             return
         # Clean up debris from previous runs
         self._pre_cleanup()
         # Start creating GCP resources
-        logging.info('GcpResourceManager: start setup')
+        logging.info("GcpResourceManager: start setup")
         # Firewall
         if self.ensure_firewall:
             self.td.create_firewall_rule(
-                allowed_ports=self.firewall_allowed_ports)
+                allowed_ports=self.firewall_allowed_ports
+            )
         # Health Checks
         self.td.create_health_check()
         # Backend Services
@@ -256,7 +280,8 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
         self.td.create_affinity_backend_service()
         # Construct UrlMap from test classes
         aggregator = _UrlMapChangeAggregator(
-            url_map_name=self.td.make_resource_name(self.td.URL_MAP_NAME))
+            url_map_name=self.td.make_resource_name(self.td.URL_MAP_NAME)
+        )
         for test_case_class in test_case_classes:
             aggregator.apply_change(test_case_class)
         final_url_map = aggregator.get_map()
@@ -269,53 +294,67 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
         # Kubernetes Test Server
         self.test_server_runner.run(
             test_port=self.server_port,
-            maintenance_port=self.server_maintenance_port)
+            maintenance_port=self.server_maintenance_port,
+        )
         # Kubernetes Test Server Alternative
         self.test_server_alternative_runner.run(
             test_port=self.server_port,
-            maintenance_port=self.server_maintenance_port)
+            maintenance_port=self.server_maintenance_port,
+        )
         # Kubernetes Test Server Affinity. 3 endpoints to test that only the
         # picked sub-channel is connected.
         self.test_server_affinity_runner.run(
             test_port=self.server_port,
             maintenance_port=self.server_maintenance_port,
-            replica_count=3)
+            replica_count=3,
+        )
         # Add backend to default backend service
         neg_name, neg_zones = self.k8s_namespace.get_service_neg(
-            self.test_server_runner.service_name, self.server_port)
+            self.test_server_runner.service_name, self.server_port
+        )
         self.td.backend_service_add_neg_backends(neg_name, neg_zones)
         # Add backend to alternative backend service
         neg_name_alt, neg_zones_alt = self.k8s_namespace.get_service_neg(
-            self.test_server_alternative_runner.service_name, self.server_port)
+            self.test_server_alternative_runner.service_name, self.server_port
+        )
         self.td.alternative_backend_service_add_neg_backends(
-            neg_name_alt, neg_zones_alt)
+            neg_name_alt, neg_zones_alt
+        )
         # Add backend to affinity backend service
-        neg_name_affinity, neg_zones_affinity = self.k8s_namespace.get_service_neg(
-            self.test_server_affinity_runner.service_name, self.server_port)
+        (
+            neg_name_affinity,
+            neg_zones_affinity,
+        ) = self.k8s_namespace.get_service_neg(
+            self.test_server_affinity_runner.service_name, self.server_port
+        )
         self.td.affinity_backend_service_add_neg_backends(
-            neg_name_affinity, neg_zones_affinity)
+            neg_name_affinity, neg_zones_affinity
+        )
         # Wait for healthy backends
         self.td.wait_for_backends_healthy_status()
         self.td.wait_for_alternative_backends_healthy_status()
         self.td.wait_for_affinity_backends_healthy_status()
 
     def cleanup(self) -> None:
-        if self.strategy not in ['create']:
+        if self.strategy not in ["create"]:
             logging.info(
-                'GcpResourceManager: skipping tear down for strategy [%s]',
-                self.strategy)
+                "GcpResourceManager: skipping tear down for strategy [%s]",
+                self.strategy,
+            )
             return
-        logging.info('GcpResourceManager: start tear down')
-        if hasattr(self, 'td'):
+        logging.info("GcpResourceManager: start tear down")
+        if hasattr(self, "td"):
             self.td.cleanup(force=True)
-        if hasattr(self, 'test_server_runner'):
+        if hasattr(self, "test_server_runner"):
             self.test_server_runner.cleanup(force=True)
-        if hasattr(self, 'test_server_alternative_runner'):
-            self.test_server_alternative_runner.cleanup(force=True,
-                                                        force_namespace=True)
-        if hasattr(self, 'test_server_affinity_runner'):
-            self.test_server_affinity_runner.cleanup(force=True,
-                                                     force_namespace=True)
+        if hasattr(self, "test_server_alternative_runner"):
+            self.test_server_alternative_runner.cleanup(
+                force=True, force_namespace=True
+            )
+        if hasattr(self, "test_server_affinity_runner"):
+            self.test_server_affinity_runner.cleanup(
+                force=True, force_namespace=True
+            )
 
     @functools.lru_cache(None)
     def default_backend_service(self) -> str:

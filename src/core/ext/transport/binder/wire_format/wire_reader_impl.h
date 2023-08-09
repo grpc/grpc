@@ -12,16 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_EXT_TRANSPORT_BINDER_WIRE_FORMAT_WIRE_READER_IMPL_H
-#define GRPC_CORE_EXT_TRANSPORT_BINDER_WIRE_FORMAT_WIRE_READER_IMPL_H
+#ifndef GRPC_SRC_CORE_EXT_TRANSPORT_BINDER_WIRE_FORMAT_WIRE_READER_IMPL_H
+#define GRPC_SRC_CORE_EXT_TRANSPORT_BINDER_WIRE_FORMAT_WIRE_READER_IMPL_H
 
 #include <grpc/support/port_platform.h>
 
 #include <memory>
+#include <queue>
 #include <utility>
 
 #include "absl/container/flat_hash_map.h"
-#include "absl/synchronization/notification.h"
+#include "absl/functional/any_invocable.h"
 
 #include <grpcpp/security/binder_security_policy.h>
 
@@ -29,6 +30,7 @@
 #include "src/core/ext/transport/binder/wire_format/binder.h"
 #include "src/core/ext/transport/binder/wire_format/wire_reader.h"
 #include "src/core/ext/transport/binder/wire_format/wire_writer.h"
+#include "src/core/lib/gprpp/notification.h"
 
 namespace grpc_binder {
 
@@ -87,7 +89,7 @@ class WireReaderImpl : public WireReader {
   ///
   /// This is the other half of the SETUP_TRANSPORT process. We wait for
   /// in-coming SETUP_TRANSPORT request with the "sending" part of a binder from
-  /// the other end. For client, the message is coming from the trasnaction
+  /// the other end. For client, the message is coming from the transaction
   /// receiver we just constructed in SendSetupTransport(). For server, we
   /// assume that this step is already completed.
   // TODO(waynetu): In the testing environment, we still use this method (on
@@ -99,15 +101,17 @@ class WireReaderImpl : public WireReader {
  private:
   absl::Status ProcessStreamingTransaction(transaction_code_t code,
                                            ReadableParcel* parcel);
-  absl::Status ProcessStreamingTransactionImpl(transaction_code_t code,
-                                               ReadableParcel* parcel,
-                                               int* cancellation_flags)
+  absl::Status ProcessStreamingTransactionImpl(
+      transaction_code_t code, ReadableParcel* parcel, int* cancellation_flags,
+      // The queue saves the actions needed to be done "WITHOUT" `mu_`.
+      // It prevents deadlock against wire writer issues.
+      std::queue<absl::AnyInvocable<void() &&>>& deferred_func_queue)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   std::shared_ptr<TransportStreamReceiver> transport_stream_receiver_;
-  absl::Notification connection_noti_;
+  grpc_core::Notification connection_noti_;
   grpc_core::Mutex mu_;
-  bool connected_ ABSL_GUARDED_BY(mu_) = false;
+  std::atomic_bool connected_{false};
   bool recvd_setup_transport_ ABSL_GUARDED_BY(mu_) = false;
   // NOTE: other_end_binder_ will be moved out when RecvSetupTransport() is
   // called. Be cautious not to access it afterward.
@@ -130,8 +134,27 @@ class WireReaderImpl : public WireReader {
 
   // Used to send ACK.
   std::shared_ptr<WireWriter> wire_writer_;
+
+  // Workaround for race condition.
+  //
+  // In `SetupTransport()`, we set `connected_` to true, call
+  // `SendSetupTransport()`, and construct `wire_writer_`. There is a potential
+  // race condition between calling `SendSetupTransport()` and constructing
+  // `wire_writer_`. So use this notification to wait. This should be very fast
+  // and waiting is acceptable.
+  //
+  // The original problem was that we can't move `connected_ = true` and
+  // `SendSetupTransport()` into the mutex, as it will deadlock if
+  // `ProcessTransaction()` is called in the same call chain.
+  //
+  // Note: this is not the perfect solution, the system will still deadlock if,
+  // e.g., the first request is 64K and we entered the sending ACK code path.
+  //
+  // TODO(littlecvr): Figure out a better solution to not causing any potential
+  // deadlock and not having to wait.
+  grpc_core::Notification wire_writer_ready_notification_;
 };
 
 }  // namespace grpc_binder
 
-#endif  // GRPC_CORE_EXT_TRANSPORT_BINDER_WIRE_FORMAT_WIRE_READER_IMPL_H
+#endif  // GRPC_SRC_CORE_EXT_TRANSPORT_BINDER_WIRE_FORMAT_WIRE_READER_IMPL_H

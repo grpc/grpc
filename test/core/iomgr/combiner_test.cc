@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "src/core/lib/iomgr/combiner.h"
 
@@ -25,6 +25,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "test/core/util/test_config.h"
 
@@ -46,7 +47,7 @@ TEST(CombinerTest, TestExecuteOne) {
   gpr_event_init(&done);
   grpc_core::ExecCtx exec_ctx;
   lock->Run(GRPC_CLOSURE_CREATE(set_event_to_true, &done, nullptr),
-            GRPC_ERROR_NONE);
+            absl::OkStatus());
   grpc_core::ExecCtx::Get()->Flush();
   ASSERT_NE(gpr_event_wait(&done, grpc_timeout_seconds_to_deadline(5)),
             nullptr);
@@ -81,7 +82,7 @@ static void execute_many_loop(void* a) {
       c->ctr = &args->ctr;
       c->value = n++;
       args->lock->Run(GRPC_CLOSURE_CREATE(check_one, c, nullptr),
-                      GRPC_ERROR_NONE);
+                      absl::OkStatus());
       grpc_core::ExecCtx::Get()->Flush();
     }
     // sleep for a little bit, to test a combiner draining and another thread
@@ -89,14 +90,14 @@ static void execute_many_loop(void* a) {
     gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(100));
   }
   args->lock->Run(GRPC_CLOSURE_CREATE(set_event_to_true, &args->done, nullptr),
-                  GRPC_ERROR_NONE);
+                  absl::OkStatus());
 }
 
 TEST(CombinerTest, TestExecuteMany) {
   gpr_log(GPR_DEBUG, "test_execute_many");
 
   grpc_core::Combiner* lock = grpc_combiner_create();
-  grpc_core::Thread thds[100];
+  grpc_core::Thread thds[10];
   thd_args ta[GPR_ARRAY_SIZE(thds)];
   for (size_t i = 0; i < GPR_ARRAY_SIZE(thds); i++) {
     ta[i].ctr = 0;
@@ -122,7 +123,7 @@ static void in_finally(void* /*arg*/, grpc_error_handle /*error*/) {
 
 static void add_finally(void* arg, grpc_error_handle /*error*/) {
   static_cast<grpc_core::Combiner*>(arg)->Run(
-      GRPC_CLOSURE_CREATE(in_finally, arg, nullptr), GRPC_ERROR_NONE);
+      GRPC_CLOSURE_CREATE(in_finally, arg, nullptr), absl::OkStatus());
 }
 
 TEST(CombinerTest, TestExecuteFinally) {
@@ -131,7 +132,7 @@ TEST(CombinerTest, TestExecuteFinally) {
   grpc_core::Combiner* lock = grpc_combiner_create();
   grpc_core::ExecCtx exec_ctx;
   gpr_event_init(&got_in_finally);
-  lock->Run(GRPC_CLOSURE_CREATE(add_finally, lock, nullptr), GRPC_ERROR_NONE);
+  lock->Run(GRPC_CLOSURE_CREATE(add_finally, lock, nullptr), absl::OkStatus());
   grpc_core::ExecCtx::Get()->Flush();
   ASSERT_NE(
       gpr_event_wait(&got_in_finally, grpc_timeout_seconds_to_deadline(5)),

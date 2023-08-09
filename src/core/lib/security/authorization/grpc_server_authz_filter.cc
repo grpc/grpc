@@ -17,6 +17,7 @@
 #include "src/core/lib/security/authorization/grpc_server_authz_filter.h"
 
 #include <functional>
+#include <memory>
 #include <string>
 #include <utility>
 
@@ -107,8 +108,9 @@ bool GrpcServerAuthzFilter::IsAuthorized(
 ArenaPromise<ServerMetadataHandle> GrpcServerAuthzFilter::MakeCallPromise(
     CallArgs call_args, NextPromiseFactory next_promise_factory) {
   if (!IsAuthorized(call_args.client_initial_metadata)) {
-    return ArenaPromise<ServerMetadataHandle>(Immediate(ServerMetadataHandle(
-        absl::PermissionDeniedError("Unauthorized RPC request rejected."))));
+    return ArenaPromise<ServerMetadataHandle>(
+        Immediate(ServerMetadataFromStatus(absl::PermissionDeniedError(
+            "Unauthorized RPC request rejected."))));
   }
   return next_promise_factory(std::move(call_args));
 }

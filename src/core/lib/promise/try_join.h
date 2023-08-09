@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_PROMISE_TRY_JOIN_H
-#define GRPC_CORE_LIB_PROMISE_TRY_JOIN_H
+#ifndef GRPC_SRC_CORE_LIB_PROMISE_TRY_JOIN_H
+#define GRPC_SRC_CORE_LIB_PROMISE_TRY_JOIN_H
 
 #include <grpc/support/port_platform.h>
 
@@ -40,7 +40,6 @@ T IntoResult(absl::StatusOr<T>* status) {
 // TryJoin returns a StatusOr<tuple<A,B,C>> for f()->Poll<StatusOr<A>>,
 // g()->Poll<StatusOr<B>>, h()->Poll<StatusOr<C>>. If one of those should be a
 // Status instead, we need a placeholder type to return, and this is it.
-struct Empty {};
 inline Empty IntoResult(absl::Status*) { return Empty{}; }
 
 // Traits object to pass to BasicJoin
@@ -80,4 +79,4 @@ promise_detail::TryJoin<Promises...> TryJoin(Promises... promises) {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_PROMISE_TRY_JOIN_H
+#endif  // GRPC_SRC_CORE_LIB_PROMISE_TRY_JOIN_H

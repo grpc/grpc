@@ -12,7 +12,7 @@ and tests run by Kokoro CI.
 
 - See [Installing Bazel](https://docs.bazel.build/versions/master/install.html) for instructions how to install bazel on your system.
 
-- Setup application default credentials for running remote builds by following the ["Set credentials" section](https://cloud.google.com/remote-build-execution/docs/results-ui/getting-started-results-ui). (Note: for the ResultStore UI upload to work, you'll need a special kind of application default credentials, so if the build event upload doesn't work, doublecheck the instructions)
+- Setup Application Default Credentials (ADC) for running remote builds by following the ["Set credentials" section](https://developers.google.com/remote-build-execution/docs/set-up/first-remote-build#set_credentials). (Note: make sure that quota project "grpc-testing" was added to your ADC, you can double check the credential file at `${HOME}/.config/gcloud/application_default_credentials.json`)
 
 
 ## Running remote build manually from dev workstation
@@ -32,6 +32,8 @@ This also works for sanitizer runs (`asan`, `msan`, `tsan`, `ubsan`):
 # manual run of bazel tests remotely on Foundry with given sanitizer
 bazel --bazelrc=tools/remote_build/linux.bazelrc test --config=asan //test/...
 ```
+
+NOTE: If you see errors about Build Event Protocol upload failure (e.g. `ERROR: The Build Event Protocol upload failed: All retry attempts failed. PERMISSION_DENIED...`), try running `bazel shutdown` and try again.
 
 ### Windows
 

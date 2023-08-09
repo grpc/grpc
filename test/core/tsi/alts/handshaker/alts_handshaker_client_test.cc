@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include "src/core/tsi/alts/handshaker/alts_handshaker_client.h"
 
@@ -25,6 +25,7 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/tsi/alts/handshaker/alts_shared_resource.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
@@ -40,6 +41,8 @@
 #define ALTS_HANDSHAKER_CLIENT_TEST_TARGET_SERVICE_ACCOUNT2 "B@google.com"
 #define ALTS_HANDSHAKER_CLIENT_TEST_MAX_FRAME_SIZE (64 * 1024)
 
+const char kMaxConcurrentStreamsEnvironmentVariable[] =
+    "GRPC_ALTS_MAX_CONCURRENT_HANDSHAKES";
 const size_t kHandshakerClientOpNum = 4;
 const size_t kMaxRpcVersionMajor = 3;
 const size_t kMaxRpcVersionMinor = 2;
@@ -98,10 +101,10 @@ static void validate_target_identities(
           ALTS_HANDSHAKER_CLIENT_TEST_TARGET_SERVICE_ACCOUNT2)));
 }
 
-/**
- * Validate if grpc operation data is correctly populated with the fields of
- * ALTS handshaker client.
- */
+///
+/// Validate if grpc operation data is correctly populated with the fields of
+/// ALTS handshaker client.
+///
 static bool validate_op(alts_handshaker_client* c, const grpc_op* op,
                         size_t nops, bool is_start) {
   EXPECT_TRUE(c != nullptr && op != nullptr && nops != 0);
@@ -148,10 +151,10 @@ static bool is_recv_status_op(const grpc_op* op, size_t nops) {
   return nops == 1 && op->op == GRPC_OP_RECV_STATUS_ON_CLIENT;
 }
 
-/**
- * A mock grpc_caller used to check if client_start, server_start, and next
- * operations correctly handle invalid arguments. It should not be called.
- */
+///
+/// A mock grpc_caller used to check if client_start, server_start, and next
+/// operations correctly handle invalid arguments. It should not be called.
+///
 static grpc_call_error check_must_not_be_called(grpc_call* /*call*/,
                                                 const grpc_op* /*ops*/,
                                                 size_t /*nops*/,
@@ -159,12 +162,12 @@ static grpc_call_error check_must_not_be_called(grpc_call* /*call*/,
   abort();
 }
 
-/**
- * A mock grpc_caller used to check correct execution of client_start operation.
- * It checks if the client_start handshaker request is populated with correct
- * handshake_security_protocol, application_protocol, record_protocol and
- * max_frame_size, and op is correctly populated.
- */
+///
+/// A mock grpc_caller used to check correct execution of client_start
+/// operation. It checks if the client_start handshaker request is populated
+/// with correct handshake_security_protocol, application_protocol,
+/// record_protocol and max_frame_size, and op is correctly populated.
+///
 static grpc_call_error check_client_start_success(grpc_call* /*call*/,
                                                   const grpc_op* op,
                                                   size_t nops,
@@ -211,12 +214,12 @@ static grpc_call_error check_client_start_success(grpc_call* /*call*/,
   return GRPC_CALL_OK;
 }
 
-/**
- * A mock grpc_caller used to check correct execution of server_start operation.
- * It checks if the server_start handshaker request is populated with correct
- * handshake_security_protocol, application_protocol, record_protocol and
- * max_frame_size, and op is correctly populated.
- */
+///
+/// A mock grpc_caller used to check correct execution of server_start
+/// operation. It checks if the server_start handshaker request is populated
+/// with correct handshake_security_protocol, application_protocol,
+/// record_protocol and max_frame_size, and op is correctly populated.
+///
 static grpc_call_error check_server_start_success(grpc_call* /*call*/,
                                                   const grpc_op* op,
                                                   size_t nops,
@@ -257,11 +260,11 @@ static grpc_call_error check_server_start_success(grpc_call* /*call*/,
   return GRPC_CALL_OK;
 }
 
-/**
- * A mock grpc_caller used to check correct execution of next operation. It
- * checks if the next handshaker request is populated with correct information,
- * and op is correctly populated.
- */
+///
+/// A mock grpc_caller used to check correct execution of next operation. It
+/// checks if the next handshaker request is populated with correct information,
+/// and op is correctly populated.
+///
 static grpc_call_error check_next_success(grpc_call* /*call*/,
                                           const grpc_op* op, size_t nops,
                                           grpc_closure* closure) {
@@ -280,11 +283,11 @@ static grpc_call_error check_next_success(grpc_call* /*call*/,
   return GRPC_CALL_OK;
 }
 
-/**
- * A mock grpc_caller used to check if client_start, server_start, and next
- * operations correctly handle the situation when the grpc call made to the
- * handshaker service fails.
- */
+///
+/// A mock grpc_caller used to check if client_start, server_start, and next
+/// operations correctly handle the situation when the grpc call made to the
+/// handshaker service fails.
+///
 static grpc_call_error check_grpc_call_failure(grpc_call* /*call*/,
                                                const grpc_op* op, size_t nops,
                                                grpc_closure* /*tag*/) {
@@ -361,18 +364,18 @@ static void destroy_config(alts_handshaker_client_test_config* config) {
 }
 
 TEST(AltsHandshakerClientTest, ScheduleRequestInvalidArgTest) {
-  /* Initialization. */
+  // Initialization.
   alts_handshaker_client_test_config* config = create_config();
-  /* Tests. */
+  // Tests.
   alts_handshaker_client_set_grpc_caller_for_testing(config->client,
                                                      check_must_not_be_called);
-  /* Check client_start. */
+  // Check client_start.
   {
     grpc_core::ExecCtx exec_ctx;
     ASSERT_EQ(alts_handshaker_client_start_client(nullptr),
               TSI_INVALID_ARGUMENT);
   }
-  /* Check server_start. */
+  // Check server_start.
   {
     grpc_core::ExecCtx exec_ctx;
     ASSERT_EQ(alts_handshaker_client_start_server(config->server, nullptr),
@@ -383,7 +386,7 @@ TEST(AltsHandshakerClientTest, ScheduleRequestInvalidArgTest) {
     ASSERT_EQ(alts_handshaker_client_start_server(nullptr, &config->out_frame),
               TSI_INVALID_ARGUMENT);
   }
-  /* Check next. */
+  // Check next.
   {
     grpc_core::ExecCtx exec_ctx;
     ASSERT_EQ(alts_handshaker_client_next(config->client, nullptr),
@@ -394,16 +397,16 @@ TEST(AltsHandshakerClientTest, ScheduleRequestInvalidArgTest) {
     ASSERT_EQ(alts_handshaker_client_next(nullptr, &config->out_frame),
               TSI_INVALID_ARGUMENT);
   }
-  /* Check shutdown. */
+  // Check shutdown.
   alts_handshaker_client_shutdown(nullptr);
-  /* Cleanup. */
+  // Cleanup.
   destroy_config(config);
 }
 
 TEST(AltsHandshakerClientTest, ScheduleRequestSuccessTest) {
-  /* Initialization. */
+  // Initialization.
   alts_handshaker_client_test_config* config = create_config();
-  /* Check client_start success. */
+  // Check client_start success.
   alts_handshaker_client_set_grpc_caller_for_testing(
       config->client, check_client_start_success);
   {
@@ -415,7 +418,7 @@ TEST(AltsHandshakerClientTest, ScheduleRequestSuccessTest) {
     ASSERT_EQ(alts_handshaker_client_next(nullptr, &config->out_frame),
               TSI_INVALID_ARGUMENT);
   }
-  /* Check server_start success. */
+  // Check server_start success.
   alts_handshaker_client_set_grpc_caller_for_testing(
       config->server, check_server_start_success);
   {
@@ -424,7 +427,7 @@ TEST(AltsHandshakerClientTest, ScheduleRequestSuccessTest) {
         alts_handshaker_client_start_server(config->server, &config->out_frame),
         TSI_OK);
   }
-  /* Check client next success. */
+  // Check client next success.
   alts_handshaker_client_set_grpc_caller_for_testing(config->client,
                                                      check_next_success);
   {
@@ -432,7 +435,7 @@ TEST(AltsHandshakerClientTest, ScheduleRequestSuccessTest) {
     ASSERT_EQ(alts_handshaker_client_next(config->client, &config->out_frame),
               TSI_OK);
   }
-  /* Check server next success. */
+  // Check server next success.
   alts_handshaker_client_set_grpc_caller_for_testing(config->server,
                                                      check_next_success);
   {
@@ -440,13 +443,13 @@ TEST(AltsHandshakerClientTest, ScheduleRequestSuccessTest) {
     ASSERT_EQ(alts_handshaker_client_next(config->server, &config->out_frame),
               TSI_OK);
   }
-  /* Cleanup. */
+  // Cleanup.
   {
     grpc_core::ExecCtx exec_ctx;
     alts_handshaker_client_on_status_received_for_testing(
-        config->client, GRPC_STATUS_OK, GRPC_ERROR_NONE);
+        config->client, GRPC_STATUS_OK, absl::OkStatus());
     alts_handshaker_client_on_status_received_for_testing(
-        config->server, GRPC_STATUS_OK, GRPC_ERROR_NONE);
+        config->server, GRPC_STATUS_OK, absl::OkStatus());
   }
   destroy_config(config);
 }
@@ -459,9 +462,9 @@ static void tsi_cb_assert_tsi_internal_error(
 }
 
 TEST(AltsHandshakerClientTest, ScheduleRequestGrpcCallFailureTest) {
-  /* Initialization. */
+  // Initialization.
   alts_handshaker_client_test_config* config = create_config();
-  /* Check client_start failure. */
+  // Check client_start failure.
   alts_handshaker_client_set_grpc_caller_for_testing(config->client,
                                                      check_grpc_call_failure);
   {
@@ -473,7 +476,7 @@ TEST(AltsHandshakerClientTest, ScheduleRequestGrpcCallFailureTest) {
                                               tsi_cb_assert_tsi_internal_error);
     alts_handshaker_client_start_client(config->client);
   }
-  /* Check server_start failure. */
+  // Check server_start failure.
   alts_handshaker_client_set_grpc_caller_for_testing(config->server,
                                                      check_grpc_call_failure);
   {
@@ -487,25 +490,45 @@ TEST(AltsHandshakerClientTest, ScheduleRequestGrpcCallFailureTest) {
   }
   {
     grpc_core::ExecCtx exec_ctx;
-    /* Check client next failure. */
+    // Check client next failure.
     ASSERT_EQ(alts_handshaker_client_next(config->client, &config->out_frame),
               TSI_INTERNAL_ERROR);
   }
   {
     grpc_core::ExecCtx exec_ctx;
-    /* Check server next failure. */
+    // Check server next failure.
     ASSERT_EQ(alts_handshaker_client_next(config->server, &config->out_frame),
               TSI_INTERNAL_ERROR);
   }
-  /* Cleanup. */
+  // Cleanup.
   {
     grpc_core::ExecCtx exec_ctx;
     alts_handshaker_client_on_status_received_for_testing(
-        config->client, GRPC_STATUS_OK, GRPC_ERROR_NONE);
+        config->client, GRPC_STATUS_OK, absl::OkStatus());
     alts_handshaker_client_on_status_received_for_testing(
-        config->server, GRPC_STATUS_OK, GRPC_ERROR_NONE);
+        config->server, GRPC_STATUS_OK, absl::OkStatus());
   }
   destroy_config(config);
+}
+
+TEST(MaxNumberOfConcurrentHandshakesTest, Default) {
+  grpc_core::UnsetEnv(kMaxConcurrentStreamsEnvironmentVariable);
+  EXPECT_EQ(MaxNumberOfConcurrentHandshakes(), 40);
+}
+
+TEST(MaxNumberOfConcurrentHandshakesTest, EnvVarNotInt) {
+  grpc_core::SetEnv(kMaxConcurrentStreamsEnvironmentVariable, "not-a-number");
+  EXPECT_EQ(MaxNumberOfConcurrentHandshakes(), 40);
+}
+
+TEST(MaxNumberOfConcurrentHandshakesTest, EnvVarNegative) {
+  grpc_core::SetEnv(kMaxConcurrentStreamsEnvironmentVariable, "-10");
+  EXPECT_EQ(MaxNumberOfConcurrentHandshakes(), 40);
+}
+
+TEST(MaxNumberOfConcurrentHandshakesTest, EnvVarSuccess) {
+  grpc_core::SetEnv(kMaxConcurrentStreamsEnvironmentVariable, "10");
+  EXPECT_EQ(MaxNumberOfConcurrentHandshakes(), 10);
 }
 
 int main(int argc, char** argv) {

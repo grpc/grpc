@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -183,7 +183,7 @@ std::string RemoveWhitespaces(std::string input) {
 class ChannelzServerTest : public ::testing::TestWithParam<CredentialsType> {
  public:
   ChannelzServerTest() {}
-  static void SetUpTestCase() {
+  static void SetUpTestSuite() {
 #if TARGET_OS_IPHONE
     // Workaround Apple CFStream bug
     grpc_core::SetEnv("grpc_cfstream", "0");
@@ -225,7 +225,7 @@ class ChannelzServerTest : public ::testing::TestWithParam<CredentialsType> {
           "localhost:" + to_string(backends_[i].port);
       backend_builder.AddListeningPort(backend_server_address,
                                        GetServerCredentials(GetParam()));
-      backends_[i].service = absl::make_unique<TestServiceImpl>();
+      backends_[i].service = std::make_unique<TestServiceImpl>();
       // ensure that the backend itself has channelz disabled.
       backend_builder.AddChannelArgument(GRPC_ARG_ENABLE_CHANNELZ, 0);
       backend_builder.RegisterService(backends_[i].service.get());

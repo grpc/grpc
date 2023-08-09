@@ -24,13 +24,40 @@ CPU_COUNT=`nproc`
 
 rm -rf iwyu || true
 git clone https://github.com/include-what-you-use/include-what-you-use.git iwyu
-# latest commit on the clang 13 branch
+
+###############################################################################
+#
+#   BEWARE!  BEWARE!  BEWARE!  BEWARE!  BEWARE!  BEWARE!  BEWARE!  BEWARE!
+#
+#   Changing the version of iwyu can bring along subtle changes.
+#   You *must* test the new version of iwyu:
+#   1. run it on the entire codebase before submitting
+#   2. UPLOAD A CHANGE THAT SHOULD BE BROKEN AFTER SUBMISSION OF THIS CHANGE
+#   ensure that the broken change is caught by the new version of iwyu
+#
+#   BEWARE!  BEWARE!  BEWARE!  BEWARE!  BEWARE!  BEWARE!  BEWARE!  BEWARE!
+#
+###############################################################################
+
+# latest commit on the clang 15 branch
 cd ${IWYU_ROOT}/iwyu
-git checkout fbd921d6640bf1b18fe5a8a895636215367eb6b9
+git checkout 7f0b6c304acf69c42bb7f6e03c63f836924cb7e0
+if [ $? -ne 0 ]; then
+  echo "Failed to checkout iwyu commit"
+  exit 1
+fi
 mkdir -p ${IWYU_ROOT}/iwyu_build
 cd ${IWYU_ROOT}/iwyu_build
-cmake -G "Unix Makefiles" -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DLLVM_ROOT_DIR=/usr/lib/llvm-13 ${IWYU_ROOT}/iwyu 
+cmake -G "Unix Makefiles" -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DLLVM_ROOT_DIR=/usr/lib/llvm-15 ${IWYU_ROOT}/iwyu 
+if [ $? -ne 0 ]; then
+  echo "Failed to cmake iwyu"
+  exit 1
+fi
 make -j $CPU_COUNT
+if [ $? -ne 0 ]; then
+  echo "Failed to make iwyu"
+  exit 1
+fi
 cd ${IWYU_ROOT}
 
 # patch python shebang for our environment (we need python3, not python)
@@ -38,7 +65,8 @@ sed -i 's,^#!/usr/bin/env python,#!/usr/bin/env python3,g' ${IWYU_ROOT}/iwyu/iwy
 sed -i 's,^#!/usr/bin/env python,#!/usr/bin/env python3,g' ${IWYU_ROOT}/iwyu/fix_includes.py
 
 cat compile_commands.json                            \
-  | sed "s/ -DNDEBUG//g"                              \
+  | sed "s/ -DNDEBUG//g"                             \
+  | sed "s/ -std=c\\+\\+14/ -std=c++17/g"            \
   | sed "s,\"file\": \",\"file\": \"${IWYU_ROOT}/,g" \
   > compile_commands_for_iwyu.json
 
@@ -46,19 +74,19 @@ export ENABLED_MODULES='
   src/core/ext
   src/core/lib
   src/cpp
-  test/core/end2end
-  test/core/memory_usage
-  test/core/promise
-  test/core/resource_quota
-  test/core/transport
-  test/core/uri
-  test/core/util
+  src/python/grpcio_observability
+  test/core
+  fuzztest
 '
 
 export DISABLED_MODULES='
   src/core/lib/gpr
   src/core/lib/iomgr
   src/core/ext/transport/binder
+  test/core/alts
+  test/core/iomgr
+  test/core/security
+  test/core/tsi
   test/core/transport/binder
 '
 
@@ -103,7 +131,8 @@ ${IWYU_ROOT}/iwyu/fix_includes.py \
   --nocomments                    \
   --nosafe_headers                \
   --ignore_re='^(include/.*|src/core/lib/security/credentials/tls/grpc_tls_credentials_options\.h)' \
-  < iwyu.out
+  < iwyu.out                      \
+  | grep 'IWYU edited 0 files on your behalf'
 
 if [ $? -ne 0 ] 
 then

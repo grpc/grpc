@@ -1,28 +1,31 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 
+#include "absl/strings/str_format.h"
+
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/error.h"
 
@@ -53,9 +56,9 @@ static void exec_ctx_sched(grpc_closure* closure) {
 
 namespace grpc_core {
 
-GPR_THREAD_LOCAL(ExecCtx*) ExecCtx::exec_ctx_;
-GPR_THREAD_LOCAL(ApplicationCallbackExecCtx*)
-ApplicationCallbackExecCtx::callback_exec_ctx_;
+thread_local ExecCtx* ExecCtx::exec_ctx_;
+thread_local ApplicationCallbackExecCtx*
+    ApplicationCallbackExecCtx::callback_exec_ctx_;
 
 bool ExecCtx::Flush() {
   bool did_something = false;
@@ -77,30 +80,20 @@ bool ExecCtx::Flush() {
   return did_something;
 }
 
-Timestamp ExecCtx::Now() {
-  if (!now_is_valid_) {
-    now_ = Timestamp::FromTimespecRoundDown(gpr_now(GPR_CLOCK_MONOTONIC));
-    now_is_valid_ = true;
-  }
-  return now_;
-}
-
 void ExecCtx::Run(const DebugLocation& location, grpc_closure* closure,
                   grpc_error_handle error) {
   (void)location;
   if (closure == nullptr) {
-    GRPC_ERROR_UNREF(error);
     return;
   }
 #ifndef NDEBUG
   if (closure->scheduled) {
-    gpr_log(GPR_ERROR,
-            "Closure already scheduled. (closure: %p, created: [%s:%d], "
-            "previously scheduled at: [%s: %d], newly scheduled at [%s: %d]",
-            closure, closure->file_created, closure->line_created,
-            closure->file_initiated, closure->line_initiated, location.file(),
-            location.line());
-    abort();
+    Crash(absl::StrFormat(
+        "Closure already scheduled. (closure: %p, created: [%s:%d], "
+        "previously scheduled at: [%s: %d], newly scheduled at [%s: %d]",
+        closure, closure->file_created, closure->line_created,
+        closure->file_initiated, closure->line_initiated, location.file(),
+        location.line()));
   }
   closure->scheduled = true;
   closure->file_initiated = location.file();
@@ -119,12 +112,11 @@ void ExecCtx::RunList(const DebugLocation& location, grpc_closure_list* list) {
     grpc_closure* next = c->next_data.next;
 #ifndef NDEBUG
     if (c->scheduled) {
-      gpr_log(GPR_ERROR,
-              "Closure already scheduled. (closure: %p, created: [%s:%d], "
-              "previously scheduled at: [%s: %d], newly scheduled at [%s:%d]",
-              c, c->file_created, c->line_created, c->file_initiated,
-              c->line_initiated, location.file(), location.line());
-      abort();
+      Crash(absl::StrFormat(
+          "Closure already scheduled. (closure: %p, created: [%s:%d], "
+          "previously scheduled at: [%s: %d], newly scheduled at [%s:%d]",
+          c, c->file_created, c->line_created, c->file_initiated,
+          c->line_initiated, location.file(), location.line()));
     }
     c->scheduled = true;
     c->file_initiated = location.file();

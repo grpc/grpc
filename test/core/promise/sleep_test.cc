@@ -20,92 +20,149 @@
 #include <utility>
 #include <vector>
 
-#include "absl/synchronization/notification.h"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
+#include <grpc/support/log.h>
 
+#include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
 #include "src/core/lib/promise/race.h"
+#include "test/core/event_engine/mock_event_engine.h"
 #include "test/core/promise/test_wakeup_schedulers.h"
+
+using grpc_event_engine::experimental::EventEngine;
+using grpc_event_engine::experimental::GetDefaultEventEngine;
+using grpc_event_engine::experimental::MockEventEngine;
+using testing::_;
+using testing::DoAll;
+using testing::Matcher;
+using testing::Mock;
+using testing::Return;
+using testing::SaveArg;
+using testing::StrictMock;
 
 namespace grpc_core {
 namespace {
 
 TEST(Sleep, Zzzz) {
   ExecCtx exec_ctx;
-  absl::Notification done;
-  Timestamp done_time = ExecCtx::Get()->Now() + Duration::Seconds(1);
+  Notification done;
+  Timestamp done_time = Timestamp::Now() + Duration::Seconds(1);
+  auto engine = GetDefaultEventEngine();
   // Sleep for one second then set done to true.
-  auto activity = MakeActivity(Sleep(done_time), InlineWakeupScheduler(),
-                               [&done](absl::Status r) {
-                                 EXPECT_EQ(r, absl::OkStatus());
-                                 done.Notify();
-                               });
+  auto activity = MakeActivity(
+      Sleep(done_time), InlineWakeupScheduler(),
+      [&done](absl::Status r) {
+        EXPECT_EQ(r, absl::OkStatus());
+        done.Notify();
+      },
+      engine.get());
   done.WaitForNotification();
   exec_ctx.InvalidateNow();
-  EXPECT_GE(ExecCtx::Get()->Now(), done_time);
+  EXPECT_GE(Timestamp::Now(), done_time);
+}
+
+TEST(Sleep, OverlyEagerEventEngine) {
+  StrictMock<MockEventEngine> mock_event_engine;
+
+  ExecCtx exec_ctx;
+  bool done = false;
+  // Schedule a sleep for a very long time.
+  Timestamp done_time = Timestamp::Now() + Duration::Seconds(1e6);
+  EventEngine::Closure* wakeup = nullptr;
+  EXPECT_CALL(mock_event_engine, RunAfter(_, Matcher<EventEngine::Closure*>(_)))
+      .WillOnce(
+          DoAll(SaveArg<1>(&wakeup), Return(EventEngine::TaskHandle{42, 123})));
+  auto activity = MakeActivity(
+      Sleep(done_time), InlineWakeupScheduler(),
+      [&done](absl::Status r) {
+        EXPECT_EQ(r, absl::OkStatus());
+        done = true;
+      },
+      static_cast<EventEngine*>(&mock_event_engine));
+  Mock::VerifyAndClearExpectations(&mock_event_engine);
+  EXPECT_NE(wakeup, nullptr);
+  EXPECT_FALSE(done);
+  // Schedule the wakeup instantaneously - It won't have passed the scheduled
+  // time yet, but sleep should believe the EventEngine.
+  wakeup->Run();
+  EXPECT_TRUE(done);
 }
 
 TEST(Sleep, AlreadyDone) {
   ExecCtx exec_ctx;
-  absl::Notification done;
-  Timestamp done_time = ExecCtx::Get()->Now() - Duration::Seconds(1);
+  Notification done;
+  Timestamp done_time = Timestamp::Now() - Duration::Seconds(1);
+  auto engine = GetDefaultEventEngine();
   // Sleep for no time at all then set done to true.
-  auto activity = MakeActivity(Sleep(done_time), InlineWakeupScheduler(),
-                               [&done](absl::Status r) {
-                                 EXPECT_EQ(r, absl::OkStatus());
-                                 done.Notify();
-                               });
+  auto activity = MakeActivity(
+      Sleep(done_time), InlineWakeupScheduler(),
+      [&done](absl::Status r) {
+        EXPECT_EQ(r, absl::OkStatus());
+        done.Notify();
+      },
+      engine.get());
   done.WaitForNotification();
 }
 
 TEST(Sleep, Cancel) {
   ExecCtx exec_ctx;
-  absl::Notification done;
-  Timestamp done_time = ExecCtx::Get()->Now() + Duration::Seconds(1);
+  Notification done;
+  Timestamp done_time = Timestamp::Now() + Duration::Seconds(1);
+  auto engine = GetDefaultEventEngine();
   // Sleep for one second but race it to complete immediately
   auto activity = MakeActivity(
       Race(Sleep(done_time), [] { return absl::CancelledError(); }),
-      InlineWakeupScheduler(), [&done](absl::Status r) {
+      InlineWakeupScheduler(),
+      [&done](absl::Status r) {
         EXPECT_EQ(r, absl::CancelledError());
         done.Notify();
-      });
+      },
+      engine.get());
   done.WaitForNotification();
   exec_ctx.InvalidateNow();
-  EXPECT_LT(ExecCtx::Get()->Now(), done_time);
+  EXPECT_LT(Timestamp::Now(), done_time);
 }
 
 TEST(Sleep, MoveSemantics) {
   // ASAN should help determine if there are any memory leaks here
   ExecCtx exec_ctx;
-  absl::Notification done;
-  Timestamp done_time = ExecCtx::Get()->Now() + Duration::Milliseconds(111);
+  Notification done;
+  Timestamp done_time = Timestamp::Now() + Duration::Milliseconds(111);
   Sleep donor(done_time);
   Sleep sleeper = std::move(donor);
-  auto activity = MakeActivity(std::move(sleeper), InlineWakeupScheduler(),
-                               [&done](absl::Status r) {
-                                 EXPECT_EQ(r, absl::OkStatus());
-                                 done.Notify();
-                               });
+  auto engine = GetDefaultEventEngine();
+  auto activity = MakeActivity(
+      std::move(sleeper), InlineWakeupScheduler(),
+      [&done](absl::Status r) {
+        EXPECT_EQ(r, absl::OkStatus());
+        done.Notify();
+      },
+      engine.get());
   done.WaitForNotification();
   exec_ctx.InvalidateNow();
-  EXPECT_GE(ExecCtx::Get()->Now(), done_time);
+  EXPECT_GE(Timestamp::Now(), done_time);
 }
 
 TEST(Sleep, StressTest) {
   // Kick off a bunch sleeps for one second.
   static const int kNumActivities = 100000;
   ExecCtx exec_ctx;
-  std::vector<std::shared_ptr<absl::Notification>> notifications;
+  std::vector<std::shared_ptr<Notification>> notifications;
   std::vector<ActivityPtr> activities;
+  auto engine = GetDefaultEventEngine();
   gpr_log(GPR_INFO, "Starting %d sleeps for 1sec", kNumActivities);
   for (int i = 0; i < kNumActivities; i++) {
-    auto notification = std::make_shared<absl::Notification>();
+    auto notification = std::make_shared<Notification>();
     auto activity = MakeActivity(
-        Sleep(exec_ctx.Now() + Duration::Seconds(1)), ExecCtxWakeupScheduler(),
-        [notification](absl::Status /*r*/) { notification->Notify(); });
+        Sleep(Timestamp::Now() + Duration::Seconds(1)),
+        ExecCtxWakeupScheduler(),
+        [notification](absl::Status /*r*/) { notification->Notify(); },
+        engine.get());
     notifications.push_back(std::move(notification));
     activities.push_back(std::move(activity));
   }

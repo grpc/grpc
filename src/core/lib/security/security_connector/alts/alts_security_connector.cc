@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -31,7 +31,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security_constants.h>
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -51,7 +51,7 @@
 #include "src/core/lib/security/credentials/alts/alts_credentials.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
-#include "src/core/lib/slice/slice_refcount.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/handshaker.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
@@ -77,9 +77,8 @@ void alts_check_peer(tsi_peer peer,
   tsi_peer_destruct(&peer);
   grpc_error_handle error =
       *auth_context != nullptr
-          ? GRPC_ERROR_NONE
-          : GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                "Could not get ALTS auth context from TSI peer");
+          ? absl::OkStatus()
+          : GRPC_ERROR_CREATE("Could not get ALTS auth context from TSI peer");
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
 }
 
@@ -121,9 +120,7 @@ class grpc_alts_channel_security_connector final
   }
 
   void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
-                         grpc_error_handle error) override {
-    GRPC_ERROR_UNREF(error);
-  }
+                         grpc_error_handle /*error*/) override {}
 
   int cmp(const grpc_security_connector* other_sc) const override {
     auto* other =
@@ -134,11 +131,7 @@ class grpc_alts_channel_security_connector final
   }
 
   grpc_core::ArenaPromise<absl::Status> CheckCallHost(
-      absl::string_view host, grpc_auth_context*) override {
-    if (host.empty() || host != target_name_) {
-      return grpc_core::Immediate(absl::UnauthenticatedError(
-          "ALTS call host does not match target name"));
-    }
+      absl::string_view, grpc_auth_context*) override {
     return grpc_core::ImmediateOkStatus();
   }
 
@@ -180,9 +173,7 @@ class grpc_alts_server_security_connector final
   }
 
   void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
-                         grpc_error_handle error) override {
-    GRPC_ERROR_UNREF(error);
-  }
+                         grpc_error_handle /*error*/) override {}
 
   int cmp(const grpc_security_connector* other) const override {
     return server_security_connector_cmp(
@@ -200,7 +191,7 @@ RefCountedPtr<grpc_auth_context> grpc_alts_auth_context_from_tsi_peer(
             "Invalid arguments to grpc_alts_auth_context_from_tsi_peer()");
     return nullptr;
   }
-  /* Validate certificate type. */
+  // Validate certificate type.
   const tsi_peer_property* cert_type_prop =
       tsi_peer_get_property_by_name(peer, TSI_CERTIFICATE_TYPE_PEER_PROPERTY);
   if (cert_type_prop == nullptr ||
@@ -209,14 +200,14 @@ RefCountedPtr<grpc_auth_context> grpc_alts_auth_context_from_tsi_peer(
     gpr_log(GPR_ERROR, "Invalid or missing certificate type property.");
     return nullptr;
   }
-  /* Check if security level exists. */
+  // Check if security level exists.
   const tsi_peer_property* security_level_prop =
       tsi_peer_get_property_by_name(peer, TSI_SECURITY_LEVEL_PEER_PROPERTY);
   if (security_level_prop == nullptr) {
     gpr_log(GPR_ERROR, "Missing security level property.");
     return nullptr;
   }
-  /* Validate RPC protocol versions. */
+  // Validate RPC protocol versions.
   const tsi_peer_property* rpc_versions_prop =
       tsi_peer_get_property_by_name(peer, TSI_ALTS_RPC_VERSIONS);
   if (rpc_versions_prop == nullptr) {
@@ -229,26 +220,26 @@ RefCountedPtr<grpc_auth_context> grpc_alts_auth_context_from_tsi_peer(
       rpc_versions_prop->value.data, rpc_versions_prop->value.length);
   bool decode_result =
       grpc_gcp_rpc_protocol_versions_decode(slice, &peer_versions);
-  grpc_slice_unref_internal(slice);
+  CSliceUnref(slice);
   if (!decode_result) {
     gpr_log(GPR_ERROR, "Invalid peer rpc protocol versions.");
     return nullptr;
   }
-  /* TODO: Pass highest common rpc protocol version to grpc caller. */
+  // TODO(unknown): Pass highest common rpc protocol version to grpc caller.
   bool check_result = grpc_gcp_rpc_protocol_versions_check(
       &local_versions, &peer_versions, nullptr);
   if (!check_result) {
     gpr_log(GPR_ERROR, "Mismatch of local and peer rpc protocol versions.");
     return nullptr;
   }
-  /* Validate ALTS Context. */
+  // Validate ALTS Context.
   const tsi_peer_property* alts_context_prop =
       tsi_peer_get_property_by_name(peer, TSI_ALTS_CONTEXT);
   if (alts_context_prop == nullptr) {
     gpr_log(GPR_ERROR, "Missing alts context property.");
     return nullptr;
   }
-  /* Create auth context. */
+  // Create auth context.
   auto ctx = MakeRefCounted<grpc_auth_context>(nullptr);
   grpc_auth_context_add_cstring_property(
       ctx.get(), GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
@@ -256,7 +247,7 @@ RefCountedPtr<grpc_auth_context> grpc_alts_auth_context_from_tsi_peer(
   size_t i = 0;
   for (i = 0; i < peer->property_count; i++) {
     const tsi_peer_property* tsi_prop = &peer->properties[i];
-    /* Add service account to auth context. */
+    // Add service account to auth context.
     if (strcmp(tsi_prop->name, TSI_ALTS_SERVICE_ACCOUNT_PEER_PROPERTY) == 0) {
       grpc_auth_context_add_property(
           ctx.get(), TSI_ALTS_SERVICE_ACCOUNT_PEER_PROPERTY,
@@ -264,13 +255,13 @@ RefCountedPtr<grpc_auth_context> grpc_alts_auth_context_from_tsi_peer(
       GPR_ASSERT(grpc_auth_context_set_peer_identity_property_name(
                      ctx.get(), TSI_ALTS_SERVICE_ACCOUNT_PEER_PROPERTY) == 1);
     }
-    /* Add alts context to auth context. */
+    // Add alts context to auth context.
     if (strcmp(tsi_prop->name, TSI_ALTS_CONTEXT) == 0) {
       grpc_auth_context_add_property(ctx.get(), TSI_ALTS_CONTEXT,
                                      tsi_prop->value.data,
                                      tsi_prop->value.length);
     }
-    /* Add security level to auth context. */
+    // Add security level to auth context.
     if (strcmp(tsi_prop->name, TSI_SECURITY_LEVEL_PEER_PROPERTY) == 0) {
       grpc_auth_context_add_property(
           ctx.get(), GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME,

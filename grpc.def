@@ -1,4 +1,15 @@
 EXPORTS
+    grpc_raw_byte_buffer_create
+    grpc_raw_compressed_byte_buffer_create
+    grpc_byte_buffer_copy
+    grpc_byte_buffer_length
+    grpc_byte_buffer_destroy
+    grpc_byte_buffer_reader_init
+    grpc_byte_buffer_reader_destroy
+    grpc_byte_buffer_reader_next
+    grpc_byte_buffer_reader_peek
+    grpc_byte_buffer_reader_readall
+    grpc_raw_byte_buffer_from_reader
     grpc_compression_algorithm_is_message
     grpc_compression_algorithm_is_stream
     grpc_compression_algorithm_parse
@@ -12,7 +23,6 @@ EXPORTS
     grpc_metadata_array_destroy
     grpc_call_details_init
     grpc_call_details_destroy
-    grpc_register_plugin
     grpc_init
     grpc_shutdown
     grpc_is_initialized
@@ -155,6 +165,7 @@ EXPORTS
     grpc_tls_credentials_options_set_cert_request_type
     grpc_tls_credentials_options_set_crl_directory
     grpc_tls_credentials_options_set_verify_server_cert
+    grpc_tls_credentials_options_set_send_client_ca_list
     grpc_tls_credentials_options_set_check_call_host
     grpc_insecure_credentials_create
     grpc_insecure_server_credentials_create
@@ -164,24 +175,6 @@ EXPORTS
     grpc_authorization_policy_provider_file_watcher_create
     grpc_authorization_policy_provider_release
     grpc_tls_credentials_options_set_tls_session_key_log_file_path
-    grpc_raw_byte_buffer_create
-    grpc_raw_compressed_byte_buffer_create
-    grpc_byte_buffer_copy
-    grpc_byte_buffer_length
-    grpc_byte_buffer_destroy
-    grpc_byte_buffer_reader_init
-    grpc_byte_buffer_reader_destroy
-    grpc_byte_buffer_reader_next
-    grpc_byte_buffer_reader_peek
-    grpc_byte_buffer_reader_readall
-    grpc_raw_byte_buffer_from_reader
-    gpr_log_severity_string
-    gpr_log
-    gpr_should_log
-    gpr_log_message
-    gpr_set_log_verbosity
-    gpr_log_verbosity_init
-    gpr_set_log_function
     grpc_slice_ref
     grpc_slice_unref
     grpc_slice_copy
@@ -234,6 +227,14 @@ EXPORTS
     gpr_free_aligned
     gpr_cpu_num_cores
     gpr_cpu_current_cpu
+    gpr_log_severity_string
+    gpr_log
+    gpr_should_log
+    gpr_log_message
+    gpr_set_log_verbosity
+    gpr_log_verbosity_init
+    gpr_set_log_function
+    gpr_assertion_failed
     gpr_format_message
     gpr_strdup
     gpr_asprintf

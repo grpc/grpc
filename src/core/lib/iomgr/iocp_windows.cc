@@ -1,20 +1,20 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -31,6 +31,8 @@
 #include <grpc/support/log_windows.h>
 
 #include "src/core/lib/debug/stats.h"
+#include "src/core/lib/debug/stats_data.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
@@ -41,6 +43,7 @@ static ULONG g_iocp_kick_token;
 static OVERLAPPED g_iocp_custom_overlap;
 
 static gpr_atm g_custom_events = 0;
+static gpr_atm g_pending_socket_shutdowns = 0;
 
 static HANDLE g_iocp;
 
@@ -48,7 +51,7 @@ static DWORD deadline_to_millis_timeout(grpc_core::Timestamp deadline) {
   if (deadline == grpc_core::Timestamp::InfFuture()) {
     return INFINITE;
   }
-  grpc_core::Timestamp now = grpc_core::ExecCtx::Get()->Now();
+  grpc_core::Timestamp now = grpc_core::Timestamp::Now();
   if (deadline < now) return 0;
   grpc_core::Duration timeout = deadline - now;
   if (timeout.millis() > std::numeric_limits<DWORD>::max()) return INFINITE;
@@ -74,11 +77,10 @@ grpc_iocp_work_status grpc_iocp_work(grpc_core::Timestamp deadline) {
   if (overlapped == &g_iocp_custom_overlap) {
     gpr_atm_full_fetch_add(&g_custom_events, -1);
     if (completion_key == (ULONG_PTR)&g_iocp_kick_token) {
-      /* We were awoken from a kick. */
+      // We were awoken from a kick.
       return GRPC_IOCP_WORK_KICK;
     }
-    gpr_log(GPR_ERROR, "Unknown custom completion key.");
-    abort();
+    grpc_core::Crash("Unknown custom completion key.");
   }
 
   socket = (grpc_winsocket*)completion_key;
@@ -89,6 +91,7 @@ grpc_iocp_work_status grpc_iocp_work(grpc_core::Timestamp deadline) {
   } else {
     abort();
   }
+  gpr_mu_lock(&socket->state_mu);
   if (socket->shutdown_called) {
     info->bytes_transferred = 0;
     info->wsa_error = WSA_OPERATION_ABORTED;
@@ -99,7 +102,11 @@ grpc_iocp_work_status grpc_iocp_work(grpc_core::Timestamp deadline) {
     info->wsa_error = success ? 0 : WSAGetLastError();
   }
   GPR_ASSERT(overlapped == &info->overlapped);
-  grpc_socket_become_ready(socket, info);
+  bool should_destroy = grpc_socket_become_ready(socket, info);
+  gpr_mu_unlock(&socket->state_mu);
+  if (should_destroy) {
+    grpc_winsocket_finish(socket);
+  }
   return GRPC_IOCP_WORK_WORK;
 }
 
@@ -121,11 +128,13 @@ void grpc_iocp_kick(void) {
 void grpc_iocp_flush(void) {
   grpc_core::ExecCtx exec_ctx;
   grpc_iocp_work_status work_status;
-
+  // This method is called during grpc_shutdown. We make the loop
+  // spin until any pending socket shutdowns are complete.
   do {
     work_status = grpc_iocp_work(grpc_core::Timestamp::InfPast());
   } while (work_status == GRPC_IOCP_WORK_KICK ||
-           grpc_core::ExecCtx::Get()->Flush());
+           grpc_core::ExecCtx::Get()->Flush() ||
+           gpr_atm_acq_load(&g_pending_socket_shutdowns) != 0);
 }
 
 void grpc_iocp_shutdown(void) {
@@ -154,4 +163,17 @@ void grpc_iocp_add_socket(grpc_winsocket* socket) {
   GPR_ASSERT(ret == g_iocp);
 }
 
-#endif /* GRPC_WINSOCK_SOCKET */
+void grpc_iocp_register_socket_shutdown_socket_locked(grpc_winsocket* socket) {
+  if (!socket->shutdown_registered) {
+    socket->shutdown_registered = true;
+    gpr_atm_full_fetch_add(&g_pending_socket_shutdowns, 1);
+  }
+}
+
+void grpc_iocp_finish_socket_shutdown(grpc_winsocket* socket) {
+  if (socket->shutdown_registered) {
+    gpr_atm_full_fetch_add(&g_pending_socket_shutdowns, -1);
+  }
+}
+
+#endif  // GRPC_WINSOCK_SOCKET

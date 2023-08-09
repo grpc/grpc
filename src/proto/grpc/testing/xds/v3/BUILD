@@ -93,6 +93,7 @@ grpc_proto_library(
         "config_source_proto",
         "endpoint_proto",
         "extension_proto",
+        "health_check_proto",
         "outlier_detection_proto",
     ],
 )
@@ -106,7 +107,15 @@ grpc_proto_library(
     deps = [
         "address_proto",
         "base_proto",
+        "health_check_proto",
         "percent_proto",
+    ],
+)
+
+grpc_proto_library(
+    name = "health_check_proto",
+    srcs = [
+        "health_check.proto",
     ],
 )
 
@@ -228,6 +237,7 @@ grpc_proto_library(
         "percent_proto",
         "range_proto",
         "regex_proto",
+        "string_proto",
     ],
 )
 
@@ -376,6 +386,30 @@ grpc_proto_library(
     ],
 )
 
+# Contains stdout audit logger.
+grpc_proto_library(
+    name = "audit_logger_stream_proto",
+    srcs = [
+        "audit_logger_stream.proto",
+    ],
+)
+
+grpc_proto_library(
+    name = "client_side_weighted_round_robin_proto",
+    srcs = [
+        "client_side_weighted_round_robin.proto",
+    ],
+    well_known_protos = True,
+)
+
+grpc_proto_library(
+    name = "pick_first_proto",
+    srcs = [
+        "pick_first.proto",
+    ],
+    well_known_protos = True,
+)
+
 grpc_proto_library(
     name = "ring_hash_proto",
     srcs = [
@@ -417,6 +451,34 @@ grpc_proto_library(
         "udpa_typed_struct.proto",
     ],
     well_known_protos = True,
+)
+
+grpc_proto_library(
+    name = "cookie_proto",
+    srcs = [
+        "cookie.proto",
+    ],
+    well_known_protos = True,
+)
+
+grpc_proto_library(
+    name = "stateful_session_cookie_proto",
+    srcs = [
+        "stateful_session_cookie.proto",
+    ],
+    deps = [
+        "cookie_proto",
+    ],
+)
+
+grpc_proto_library(
+    name = "stateful_session_proto",
+    srcs = [
+        "stateful_session.proto",
+    ],
+    deps = [
+        "extension_proto",
+    ],
 )
 
 py_proto_library(

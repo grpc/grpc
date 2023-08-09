@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright 2015 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -58,6 +58,9 @@ if cur_resolver and cur_resolver != 'ares':
   test_runner_log('Exit 1 without running tests.')
   sys.exit(1)
 os.environ.update({'GRPC_TRACE': 'cares_resolver,cares_address_sorting'})
+experiments = os.environ.get('GRPC_EXPERIMENTS')
+if experiments is not None and 'event_engine_dns' in experiments:
+  os.environ.update({'GRPC_TRACE': 'event_engine_client_channel_resolver,cares_resolver'})
 
 def wait_until_dns_server_is_up(args,
                                 dns_server_subprocess,
@@ -541,7 +544,7 @@ current_test_subprocess = subprocess.Popen([
   '--do_ordered_address_comparison', 'False',
   '--expected_addrs', '1.2.3.4:443,False',
   '--expected_chosen_service_config', '',
-  '--expected_service_config_error', 'field:clientLanguage error:should be of type array',
+  '--expected_service_config_error', 'clientLanguage error:is not an array',
   '--expected_lb_policy', '',
   '--enable_srv_queries', 'True',
   '--enable_txt_queries', 'True',
@@ -559,7 +562,7 @@ current_test_subprocess = subprocess.Popen([
   '--do_ordered_address_comparison', 'False',
   '--expected_addrs', '1.2.3.4:443,False',
   '--expected_chosen_service_config', '',
-  '--expected_service_config_error', 'field:percentage error:should be of type number',
+  '--expected_service_config_error', 'percentage error:failed to parse number',
   '--expected_lb_policy', '',
   '--enable_srv_queries', 'True',
   '--enable_txt_queries', 'True',
@@ -577,7 +580,7 @@ current_test_subprocess = subprocess.Popen([
   '--do_ordered_address_comparison', 'False',
   '--expected_addrs', '1.2.3.4:443,False',
   '--expected_chosen_service_config', '',
-  '--expected_service_config_error', 'field:waitForReady error:Type should be true/false',
+  '--expected_service_config_error', 'field:methodConfig[0].waitForReady error:is not a boolean',
   '--expected_lb_policy', '',
   '--enable_srv_queries', 'True',
   '--enable_txt_queries', 'True',
@@ -613,7 +616,7 @@ current_test_subprocess = subprocess.Popen([
   '--do_ordered_address_comparison', 'False',
   '--expected_addrs', '1.2.3.4:443,False',
   '--expected_chosen_service_config', '',
-  '--expected_service_config_error', 'field:loadBalancingPolicy error:type should be string',
+  '--expected_service_config_error', 'field:loadBalancingPolicy error:is not a string',
   '--expected_lb_policy', '',
   '--enable_srv_queries', 'True',
   '--enable_txt_queries', 'True',

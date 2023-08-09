@@ -20,6 +20,8 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/crash.h"
+
 #if defined(ANDROID) || defined(__ANDROID__)
 
 namespace grpc_binder {

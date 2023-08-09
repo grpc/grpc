@@ -16,6 +16,7 @@
 
 #include <stddef.h>
 
+#include <algorithm>
 #include <functional>
 #include <map>
 #include <string>
@@ -27,17 +28,13 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include <grpcpp/impl/codegen/sync.h>
-#include <grpcpp/impl/grpc_library.h>
+#include <grpcpp/impl/sync.h>
 #include <grpcpp/security/tls_certificate_verifier.h>
-#include <grpcpp/support/config.h>
 #include <grpcpp/support/status.h>
 #include <grpcpp/support/string_ref.h>
 
 namespace grpc {
 namespace experimental {
-
-static internal::GrpcLibraryInitializer g_gli_initializer;
 
 TlsCustomVerificationCheckRequest::TlsCustomVerificationCheckRequest(
     grpc_tls_custom_verification_check_request* request)
@@ -65,6 +62,13 @@ grpc::string_ref TlsCustomVerificationCheckRequest::peer_cert_full_chain()
 grpc::string_ref TlsCustomVerificationCheckRequest::common_name() const {
   return c_request_->peer_info.common_name != nullptr
              ? c_request_->peer_info.common_name
+             : "";
+}
+
+grpc::string_ref TlsCustomVerificationCheckRequest::verified_root_cert_subject()
+    const {
+  return c_request_->peer_info.verified_root_cert_subject != nullptr
+             ? c_request_->peer_info.verified_root_cert_subject
              : "";
 }
 
@@ -106,9 +110,7 @@ std::vector<grpc::string_ref> TlsCustomVerificationCheckRequest::ip_names()
 }
 
 CertificateVerifier::CertificateVerifier(grpc_tls_certificate_verifier* v)
-    : verifier_(v) {
-  g_gli_initializer.summon();
-}
+    : verifier_(v) {}
 
 CertificateVerifier::~CertificateVerifier() {
   grpc_tls_certificate_verifier_release(verifier_);

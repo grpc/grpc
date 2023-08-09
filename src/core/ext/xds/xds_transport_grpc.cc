@@ -29,8 +29,9 @@
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/connectivity_state.h>
-#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/impl/connectivity_state.h>
+#include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
 
@@ -51,7 +52,6 @@
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/init_internally.h"
@@ -138,7 +138,7 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
   grpc_metadata_array_destroy(&trailing_metadata_recv_);
   grpc_byte_buffer_destroy(send_message_payload_);
   grpc_byte_buffer_destroy(recv_message_payload_);
-  grpc_slice_unref_internal(status_details_);
+  CSliceUnref(status_details_);
   GPR_ASSERT(call_ != nullptr);
   grpc_call_unref(call_);
 }
@@ -159,7 +159,7 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::SendMessage(
   // Create payload.
   grpc_slice slice = grpc_slice_from_cpp_string(std::move(payload));
   send_message_payload_ = grpc_raw_byte_buffer_create(&slice, 1);
-  grpc_slice_unref_internal(slice);
+  CSliceUnref(slice);
   // Send the message.
   grpc_op op;
   memset(&op, 0, sizeof(op));
@@ -178,7 +178,7 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
   grpc_byte_buffer_destroy(self->send_message_payload_);
   self->send_message_payload_ = nullptr;
   // Invoke request handler.
-  self->event_handler_->OnRequestSent(GRPC_ERROR_IS_NONE(error));
+  self->event_handler_->OnRequestSent(error.ok());
   // Drop the ref.
   self->Unref(DEBUG_LOCATION, "OnRequestSent");
 }
@@ -200,7 +200,7 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
   grpc_byte_buffer_destroy(self->recv_message_payload_);
   self->recv_message_payload_ = nullptr;
   self->event_handler_->OnRecvMessage(StringViewFromSlice(response_slice));
-  grpc_slice_unref_internal(response_slice);
+  CSliceUnref(response_slice);
   // Keep reading.
   grpc_op op;
   memset(&op, 0, sizeof(op));
@@ -256,7 +256,7 @@ grpc_channel* CreateXdsChannel(const ChannelArgs& args,
                                const GrpcXdsBootstrap::GrpcXdsServer& server) {
   RefCountedPtr<grpc_channel_credentials> channel_creds =
       CoreConfiguration::Get().channel_creds_registry().CreateChannelCreds(
-          server.channel_creds_type(), server.channel_creds_config());
+          server.channel_creds_config());
   return grpc_channel_create(server.server_uri().c_str(), channel_creds.get(),
                              args.ToC().get());
 }
@@ -292,7 +292,7 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcXdsTransport(
 }
 
 GrpcXdsTransportFactory::GrpcXdsTransport::~GrpcXdsTransport() {
-  grpc_channel_destroy(channel_);
+  grpc_channel_destroy_internal(channel_);
 }
 
 void GrpcXdsTransportFactory::GrpcXdsTransport::Orphan() {

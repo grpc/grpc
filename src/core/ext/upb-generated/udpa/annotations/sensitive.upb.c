@@ -7,25 +7,28 @@
  * regenerated. */
 
 #include <stddef.h>
-#include "upb/msg_internal.h"
+#include "upb/collections/array_internal.h"
+#include "upb/message/internal.h"
+#include "upb/mini_table/enum_internal.h"
 #include "udpa/annotations/sensitive.upb.h"
 #include "google/protobuf/descriptor.upb.h"
 
-#include "upb/port_def.inc"
+// Must be last.
+#include "upb/port/def.inc"
 
-extern const upb_MiniTable google_protobuf_FieldOptions_msginit;
-const upb_MiniTable_Extension udpa_annotations_sensitive_ext = {
-  {76569463, UPB_SIZE(0, 0), UPB_SIZE(0, 0), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsExtension | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
-  &google_protobuf_FieldOptions_msginit,
+extern const upb_MiniTable google_protobuf_FieldOptions_msg_init;
+const upb_MiniTableExtension udpa_annotations_sensitive_ext = {
+  {76569463, 0, 0, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsExtension | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+  &google_protobuf_FieldOptions_msg_init,
   {.submsg = NULL},
 
 };
 
-static const upb_MiniTable_Extension *extensions_layout[1] = {
+static const upb_MiniTableExtension *extensions_layout[1] = {
   &udpa_annotations_sensitive_ext,
 };
 
-const upb_MiniTable_File udpa_annotations_sensitive_proto_upb_file_layout = {
+const upb_MiniTableFile udpa_annotations_sensitive_proto_upb_file_layout = {
   NULL,
   NULL,
   extensions_layout,
@@ -34,5 +37,5 @@ const upb_MiniTable_File udpa_annotations_sensitive_proto_upb_file_layout = {
   1,
 };
 
-#include "upb/port_undef.inc"
+#include "upb/port/undef.inc"
 
