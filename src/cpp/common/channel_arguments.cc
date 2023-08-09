@@ -83,15 +83,15 @@ void ChannelArguments::Swap(ChannelArguments& other) {
 }
 
 void ChannelArguments::SetCompressionAlgorithm(
-    grpc_compression_algorithm algorithm) {
+    grpc_compression_algorithm algorithm, grpc_core::SourceLocation location) {
   SetInt(GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM, algorithm);
 }
 
-void ChannelArguments::SetGrpclbFallbackTimeout(int fallback_timeout) {
+void ChannelArguments::SetGrpclbFallbackTimeout(int fallback_timeout, grpc_core::SourceLocation location) {
   SetInt(GRPC_ARG_GRPCLB_FALLBACK_TIMEOUT_MS, fallback_timeout);
 }
 
-void ChannelArguments::SetSocketMutator(grpc_socket_mutator* mutator) {
+void ChannelArguments::SetSocketMutator(grpc_socket_mutator* mutator, grpc_core::SourceLocation location) {
   if (!mutator) {
     return;
   }
@@ -120,7 +120,7 @@ void ChannelArguments::SetSocketMutator(grpc_socket_mutator* mutator) {
 // prefix. The user can build up a prefix string by calling this multiple times,
 // each with more significant identifier.
 void ChannelArguments::SetUserAgentPrefix(
-    const std::string& user_agent_prefix) {
+    const std::string& user_agent_prefix, grpc_core::SourceLocation location) {
   if (user_agent_prefix.empty()) {
     return;
   }
@@ -145,31 +145,31 @@ void ChannelArguments::SetUserAgentPrefix(
 }
 
 void ChannelArguments::SetResourceQuota(
-    const grpc::ResourceQuota& resource_quota) {
+    const grpc::ResourceQuota& resource_quota, grpc_core::SourceLocation location) {
   SetPointerWithVtable(GRPC_ARG_RESOURCE_QUOTA,
                        resource_quota.c_resource_quota(),
                        grpc_resource_quota_arg_vtable());
 }
 
-void ChannelArguments::SetMaxReceiveMessageSize(int size) {
+void ChannelArguments::SetMaxReceiveMessageSize(int size, grpc_core::SourceLocation location) {
   SetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, size);
 }
 
-void ChannelArguments::SetMaxSendMessageSize(int size) {
+void ChannelArguments::SetMaxSendMessageSize(int size, grpc_core::SourceLocation location) {
   SetInt(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, size);
 }
 
 void ChannelArguments::SetLoadBalancingPolicyName(
-    const std::string& lb_policy_name) {
+    const std::string& lb_policy_name, grpc_core::SourceLocation location) {
   SetString(GRPC_ARG_LB_POLICY_NAME, lb_policy_name);
 }
 
 void ChannelArguments::SetServiceConfigJSON(
-    const std::string& service_config_json) {
+    const std::string& service_config_json, grpc_core::SourceLocation location) {
   SetString(GRPC_ARG_SERVICE_CONFIG, service_config_json);
 }
 
-void ChannelArguments::SetInt(const std::string& key, int value) {
+void ChannelArguments::SetInt(const std::string& key, int value, grpc_core::SourceLocation location) {
   grpc_arg arg;
   arg.type = GRPC_ARG_INTEGER;
   strings_.push_back(key);
@@ -179,7 +179,7 @@ void ChannelArguments::SetInt(const std::string& key, int value) {
   args_.push_back(arg);
 }
 
-void ChannelArguments::SetPointer(const std::string& key, void* value) {
+void ChannelArguments::SetPointer(const std::string& key, void* value, grpc_core::SourceLocation location) {
   static const grpc_arg_pointer_vtable vtable = {
       &PointerVtableMembers::Copy, &PointerVtableMembers::Destroy,
       &PointerVtableMembers::Compare};
@@ -188,7 +188,7 @@ void ChannelArguments::SetPointer(const std::string& key, void* value) {
 
 void ChannelArguments::SetPointerWithVtable(
     const std::string& key, void* value,
-    const grpc_arg_pointer_vtable* vtable) {
+    const grpc_arg_pointer_vtable* vtable, grpc_core::SourceLocation location) {
   grpc_arg arg;
   arg.type = GRPC_ARG_POINTER;
   strings_.push_back(key);
@@ -199,7 +199,7 @@ void ChannelArguments::SetPointerWithVtable(
 }
 
 void ChannelArguments::SetString(const std::string& key,
-                                 const std::string& value) {
+                                 const std::string& value, grpc_core::SourceLocation location) {
   grpc_arg arg;
   arg.type = GRPC_ARG_STRING;
   strings_.push_back(key);
@@ -210,7 +210,7 @@ void ChannelArguments::SetString(const std::string& key,
   args_.push_back(arg);
 }
 
-void ChannelArguments::SetChannelArgs(grpc_channel_args* channel_args) const {
+void ChannelArguments::SetChannelArgs(grpc_channel_args* channel_args, grpc_core::SourceLocation location) const {
   channel_args->num_args = args_.size();
   if (channel_args->num_args > 0) {
     channel_args->args = const_cast<grpc_arg*>(&args_[0]);
