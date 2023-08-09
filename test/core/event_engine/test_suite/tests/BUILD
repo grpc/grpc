@@ -68,6 +68,7 @@ grpc_cc_library(
         "address_sorting",
     ],
     deps = [
+        "//:subprocess",
         "//src/core:env",
         "//test/core/event_engine:event_engine_test_utils",
         "//test/core/event_engine/test_suite:event_engine_test_framework",
