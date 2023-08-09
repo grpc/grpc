@@ -498,15 +498,13 @@ void WorkStealingThreadPool::ThreadState::FinishDraining() {
 // -------- WorkStealingThreadPool::ThreadCount --------
 
 void WorkStealingThreadPool::ThreadCount::Add(CounterType counter_type) {
-  grpc_core::MutexLock lock(&wait_mu_[counter_type]);
-  ++thread_counts_[counter_type];
-  wait_cv_[counter_type].SignalAll();
+  CheckAndNotifyCountChange(counter_type,
+                            thread_counts_[counter_type].fetch_add(1) + 1);
 }
 
 void WorkStealingThreadPool::ThreadCount::Remove(CounterType counter_type) {
-  grpc_core::MutexLock lock(&wait_mu_[counter_type]);
-  --thread_counts_[counter_type];
-  wait_cv_[counter_type].SignalAll();
+  CheckAndNotifyCountChange(counter_type,
+                            thread_counts_[counter_type].fetch_sub(1) - 1);
 }
 
 void WorkStealingThreadPool::ThreadCount::BlockUntilThreadCount(
@@ -531,24 +529,36 @@ size_t WorkStealingThreadPool::ThreadCount::WaitForCountChange(
     CounterType counter_type, size_t desired_threads,
     grpc_core::Duration timeout) {
   size_t count;
-  auto deadline = absl::Now() + absl::Milliseconds(timeout.millis());
+  auto now = absl::Now();
+  auto deadline = now + absl::Milliseconds(timeout.millis());
+  // Set up the count change notification
+  GPR_ASSERT(wait_for_thread_counts_[counter_type].exchange(desired_threads) ==
+             kWaitForThreadCountUnset);
+  wait_notifications_[counter_type] =
+      std::make_unique<grpc_core::Notification>();
   do {
-    grpc_core::MutexLock lock(&wait_mu_[counter_type]);
-    count = GetCountLocked(counter_type);
+    count = GetCount(counter_type);
     if (count == desired_threads) break;
-    wait_cv_[counter_type].WaitWithDeadline(&wait_mu_[counter_type], deadline);
-  } while (absl::Now() < deadline);
+    wait_notifications_[counter_type]->WaitForNotificationWithTimeout(deadline -
+                                                                      now);
+    now = absl::Now();
+  } while (now < deadline);
+  // Reset the count change notification
+  wait_for_thread_counts_[counter_type].store(kWaitForThreadCountUnset);
+  wait_notifications_[counter_type].reset();
   return count;
 }
 
-size_t WorkStealingThreadPool::ThreadCount::GetCount(CounterType counter_type) {
-  grpc_core::MutexLock lock(&wait_mu_[counter_type]);
-  return GetCountLocked(counter_type);
+void WorkStealingThreadPool::ThreadCount::CheckAndNotifyCountChange(
+    CounterType counter_type, size_t new_value) {
+  if (wait_for_thread_counts_[counter_type] != kWaitForThreadCountUnset &&
+      new_value == wait_for_thread_counts_[counter_type]) {
+    wait_notifications_[counter_type]->Notify();
+  }
 }
 
-size_t WorkStealingThreadPool::ThreadCount::GetCountLocked(
-    CounterType counter_type) {
-  return thread_counts_[counter_type];
+size_t WorkStealingThreadPool::ThreadCount::GetCount(CounterType counter_type) {
+  return thread_counts_[counter_type].load();
 }
 
 WorkStealingThreadPool::ThreadCount::AutoThreadCount::AutoThreadCount(

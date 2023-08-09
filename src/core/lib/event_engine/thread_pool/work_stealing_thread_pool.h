@@ -24,6 +24,7 @@
 #include <stdint.h>
 
 #include <atomic>
+#include <limits>
 #include <memory>
 
 #include "absl/base/thread_annotations.h"
@@ -85,23 +86,21 @@ class WorkStealingThreadPool final : public ThreadPool {
   };
 
   class ThreadCount {
+    static constexpr size_t kWaitForThreadCountUnset =
+        std::numeric_limits<size_t>::max();
+
    public:
     // Adds 1 to the thread count for that counter type.
-    void Add(CounterType counter_type)
-        ABSL_LOCKS_EXCLUDED(wait_mu_[counter_type]);
+    void Add(CounterType counter_type);
     // Subtracts 1 from the thread count for that counter type.
-    void Remove(CounterType counter_type)
-        ABSL_LOCKS_EXCLUDED(wait_mu_[counter_type]);
+    void Remove(CounterType counter_type);
     // Blocks until the thread count for that type reaches `desired_threads`.
     void BlockUntilThreadCount(CounterType counter_type, size_t desired_threads,
-                               const char* why, WorkSignal* work_signal)
-        ABSL_LOCKS_EXCLUDED(wait_mu_[counter_type]);
+                               const char* why, WorkSignal* work_signal);
     // Returns the current thread count for the tracked type.
-    size_t GetCount(CounterType counter_type)
-        ABSL_LOCKS_EXCLUDED(wait_mu_[counter_type]);
+    size_t GetCount(CounterType counter_type);
     // Returns the current thread count for the tracked type.
-    size_t GetCountLocked(CounterType counter_type)
-        ABSL_EXCLUSIVE_LOCKS_REQUIRED(wait_mu_[counter_type]);
+    size_t GetCountLocked(CounterType counter_type);
 
     // Adds and removes thread counts on construction and destruction
     class AutoThreadCount {
@@ -118,12 +117,20 @@ class WorkStealingThreadPool final : public ThreadPool {
     // Wait for the desired count to be reached.
     // Returns the current thread count either when the desired count is
     // reached, or when the deadline has passed, whichever happens first.
+    //
+    // Only one caller can be waiting at any given time for each counter_type.
     size_t WaitForCountChange(CounterType counter_type, size_t desired_threads,
                               grpc_core::Duration timeout);
 
-    grpc_core::Mutex wait_mu_[2];
-    grpc_core::CondVar wait_cv_[2];
-    size_t thread_counts_[2]{0, 0};
+    // Any changes to thread counts will check if a caller is waiting in
+    // WaitForCountChange. If so, and the desired count is reached, the waiter
+    // will be notified.
+    void CheckAndNotifyCountChange(CounterType counter_type, size_t new_value);
+
+    std::unique_ptr<grpc_core::Notification> wait_notifications_[2];
+    std::atomic<size_t> wait_for_thread_counts_[2]{{kWaitForThreadCountUnset},
+                                                   {kWaitForThreadCountUnset}};
+    std::atomic<size_t> thread_counts_[2]{{0}, {0}};
   };
 
   // A pool of WorkQueues that participate in work stealing.
