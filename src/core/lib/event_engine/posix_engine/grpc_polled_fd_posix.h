@@ -25,6 +25,7 @@
 
 #include <string.h>
 #include <sys/ioctl.h>
+#include <sys/uio.h>
 
 #include <string>
 #include <utility>
@@ -38,6 +39,7 @@
 #include "src/core/lib/event_engine/grpc_polled_fd.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
+#include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/iomgr/error.h"
 
 namespace grpc_event_engine {
@@ -95,7 +97,14 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
   explicit GrpcPolledFdFactoryPosix(PosixEventPoller* poller)
       : poller_(poller) {}
 
+  ~GrpcPolledFdFactoryPosix() override {
+    for (auto& fd : owned_fds_) {
+      close(fd);
+    }
+  }
+
   GrpcPolledFd* NewGrpcPolledFdLocked(ares_socket_t as) override {
+    GPR_ASSERT(owned_fds_.insert(as).second);
     return new GrpcPolledFdPosix(
         as,
         poller_->CreateHandle(as, "c-ares socket", poller_->CanTrackErrors()));
@@ -153,15 +162,13 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
   ///   - cloexec flag
   ///   - disable nagle
   static int ConfigureSocket(ares_socket_t fd, int type, void* /*user_data*/) {
-    grpc_error_handle err;
-    err = grpc_set_socket_nonblocking(fd, true);
-    if (!err.ok()) return -1;
-    err = grpc_set_socket_cloexec(fd, true);
-    if (!err.ok()) return -1;
-    if (type == SOCK_STREAM) {
-      err = grpc_set_socket_low_latency(fd, true);
-      if (!err.ok()) return -1;
-    }
+    // clang-format off
+#define RETURN_IF_ERROR(expr) if (!(expr).ok()) { return -1; }
+    // clang-format on
+    PosixSocketWrapper sock(fd);
+    RETURN_IF_ERROR(sock.SetSocketNonBlocking(1));
+    RETURN_IF_ERROR(sock.SetSocketCloexec(1));
+    RETURN_IF_ERROR(sock.SetSocketLowLatency(1));
     return 0;
   }
 

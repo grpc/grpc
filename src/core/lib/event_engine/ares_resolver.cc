@@ -171,6 +171,7 @@ AresResolver::CreateAresResolver(
         absl::StrCat("Failed to init c-ares channel: ", ares_strerror(status)));
   }
   event_engine_grpc_ares_test_only_inject_config(&channel);
+  polled_fd_factory->ConfigureAresChannelLocked(channel);
   if (!dns_server.empty()) {
     absl::Status status = SetRequestDNSServer(dns_server, &channel);
     if (!status.ok()) {
