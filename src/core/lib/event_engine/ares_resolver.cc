@@ -197,7 +197,7 @@ void AresResolver::Orphan() {
     }
     for (const auto& fd_node : fd_node_list_) {
       if (!fd_node->already_shutdown) {
-        GRPC_ARES_RESOLVER_TRACE_LOG("request: %p shutdown fd: %s", this,
+        GRPC_ARES_RESOLVER_TRACE_LOG("resolver: %p shutdown fd: %s", this,
                                      fd_node->polled_fd->GetName());
         fd_node->polled_fd->ShutdownLocked(
             absl::CancelledError("AresResolver::Orphan"));
@@ -356,7 +356,8 @@ void AresResolver::CheckSocketsLocked() {
         if (iter == fd_node_list_.end()) {
           new_list.push_back(std::make_unique<FdNode>(
               socks[i], polled_fd_factory_->NewGrpcPolledFdLocked(socks[i])));
-          GRPC_ARES_RESOLVER_TRACE_LOG("request:%p new fd: %d", this, socks[i]);
+          GRPC_ARES_RESOLVER_TRACE_LOG("resolver:%p new fd: %d", this,
+                                       socks[i]);
         } else {
           new_list.splice(new_list.end(), fd_node_list_, iter);
         }
@@ -371,7 +372,7 @@ void AresResolver::CheckSocketsLocked() {
             // new data arrives and c-ares hasn't read all the data in the
             // previous ares_process_fd.
             GRPC_ARES_RESOLVER_TRACE_LOG(
-                "request:%p schedule read directly on: %d", this, fd_node->as);
+                "resolver:%p schedule read directly on: %d", this, fd_node->as);
             event_engine_->Run(
                 [self = Ref(DEBUG_LOCATION, "CheckSocketsLocked"),
                  fd_node]() mutable {
@@ -379,7 +380,7 @@ void AresResolver::CheckSocketsLocked() {
                 });
           } else {
             // Otherwise register with the poller for readable event.
-            GRPC_ARES_RESOLVER_TRACE_LOG("request:%p notify read on: %d", this,
+            GRPC_ARES_RESOLVER_TRACE_LOG("resolver:%p notify read on: %d", this,
                                          fd_node->as);
             fd_node->polled_fd->RegisterForOnReadableLocked(
                 [self = Ref(DEBUG_LOCATION, "CheckSocketsLocked"),
@@ -392,7 +393,7 @@ void AresResolver::CheckSocketsLocked() {
         // has not been registered with this socket.
         if (ARES_GETSOCK_WRITABLE(socks_bitmask, i) &&
             !fd_node->writable_registered) {
-          GRPC_ARES_RESOLVER_TRACE_LOG("request:%p notify write on: %d", this,
+          GRPC_ARES_RESOLVER_TRACE_LOG("resolver:%p notify write on: %d", this,
                                        fd_node->as);
           fd_node->writable_registered = true;
           fd_node->polled_fd->RegisterForOnWriteableLocked(
@@ -410,13 +411,13 @@ void AresResolver::CheckSocketsLocked() {
   while (!fd_node_list_.empty()) {
     FdNode* fd_node = fd_node_list_.front().get();
     if (!fd_node->already_shutdown) {
-      GRPC_ARES_RESOLVER_TRACE_LOG("request: %p shutdown fd: %s", this,
+      GRPC_ARES_RESOLVER_TRACE_LOG("resolver: %p shutdown fd: %s", this,
                                    fd_node->polled_fd->GetName());
       fd_node->polled_fd->ShutdownLocked(absl::OkStatus());
       fd_node->already_shutdown = true;
     }
     if (!fd_node->readable_registered && !fd_node->writable_registered) {
-      GRPC_ARES_RESOLVER_TRACE_LOG("request: %p delete fd: %s", this,
+      GRPC_ARES_RESOLVER_TRACE_LOG("resolver: %p delete fd: %s", this,
                                    fd_node->polled_fd->GetName());
       fd_node_list_.pop_front();
     } else {
