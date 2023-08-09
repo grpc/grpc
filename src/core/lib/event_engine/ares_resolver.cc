@@ -159,6 +159,9 @@ AresResolver::CreateAresResolver(
     std::shared_ptr<EventEngine> event_engine) {
   ares_options opts = {};
   opts.flags |= ARES_FLAG_STAYOPEN;
+  if (g_event_engine_grpc_ares_test_only_force_tcp) {
+    opts.flags |= ARES_FLAG_USEVC;
+  }
   ares_channel channel;
   int status = ares_init_options(&channel, &opts, ARES_OPT_FLAGS);
   if (status != ARES_SUCCESS) {
@@ -701,5 +704,7 @@ void noop_inject_channel_config(ares_channel* /*channel*/) {}
 
 void (*event_engine_grpc_ares_test_only_inject_config)(ares_channel* channel) =
     noop_inject_channel_config;
+
+bool g_event_engine_grpc_ares_test_only_force_tcp = false;
 
 #endif  // GRPC_ARES == 1
