@@ -21,19 +21,16 @@
 #include <condition_variable>
 #include <deque>
 #include <map>
-#include <memory>
 #include <mutex>
 #include <set>
 #include <sstream>
 #include <string>
 #include <thread>
-#include <utility>
 #include <vector>
 
 #include "absl/algorithm/container.h"
 #include "absl/flags/flag.h"
 #include "absl/strings/str_split.h"
-#include "google/protobuf/repeated_ptr_field.h"
 
 #include <grpcpp/ext/admin_services.h>
 #include <grpcpp/ext/proto_server_reflection_plugin.h>
@@ -209,8 +206,7 @@ class TestClient {
                               metadata_hostname->second.length())
                 : call->result.simple_response.hostname();
         for (auto watcher : stats_watchers_->watchers) {
-          watcher->RpcCompleted(call->result, hostname,
-                                call->context.GetServerInitialMetadata());
+          watcher->RpcCompleted(call->result, hostname);
         }
       }
 
@@ -269,22 +265,20 @@ class LoadBalancerStatsServiceImpl : public LoadBalancerStatsService::Service {
                         LoadBalancerStatsResponse* response) override {
     int start_id;
     int end_id;
-    std::unique_ptr<XdsStatsWatcher> watcher;
+    XdsStatsWatcher* watcher;
     {
       std::lock_guard<std::mutex> lock(stats_watchers_->mu);
       start_id = stats_watchers_->global_request_id + 1;
       end_id = start_id + request->num_rpcs();
-      watcher = std::make_unique<XdsStatsWatcher>(
-          start_id, end_id,
-          std::vector<std::string>(request->metadata_keys().begin(),
-                                   request->metadata_keys().end()));
-      stats_watchers_->watchers.insert(watcher.get());
+      watcher = new XdsStatsWatcher(start_id, end_id);
+      stats_watchers_->watchers.insert(watcher);
     }
-    *response = watcher->WaitForRpcStatsResponse(request->timeout_sec());
+    watcher->WaitForRpcStatsResponse(response, request->timeout_sec());
     {
       std::lock_guard<std::mutex> lock(stats_watchers_->mu);
-      stats_watchers_->watchers.erase(watcher.get());
+      stats_watchers_->watchers.erase(watcher);
     }
+    delete watcher;
     return Status::OK;
   }
 
@@ -362,7 +356,8 @@ void RunTestLoop(std::chrono::duration<double> duration_per_query,
   std::vector<RpcConfig> configs;
   while (true) {
     {
-      std::lock_guard<std::mutex> lock(rpc_configs_queue->mu_rpc_configs_queue);
+      std::lock_guard<std::mutex> lockk(
+          rpc_configs_queue->mu_rpc_configs_queue);
       if (!rpc_configs_queue->rpc_configs_queue.empty()) {
         configs = std::move(rpc_configs_queue->rpc_configs_queue.front());
         rpc_configs_queue->rpc_configs_queue.pop_front();
@@ -469,7 +464,7 @@ int main(int argc, char** argv) {
 
   {
     std::lock_guard<std::mutex> lock(stats_watchers.mu);
-    stats_watchers.global_watcher = new XdsStatsWatcher(0, 0, {});
+    stats_watchers.global_watcher = new XdsStatsWatcher(0, 0);
     stats_watchers.watchers.insert(stats_watchers.global_watcher);
   }
 
