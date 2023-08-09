@@ -14,10 +14,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from mako.template import Template
 import sys
 
-seq_state = Template("""
+from mako.template import Template
+
+seq_state = Template(
+    """
 <%def name="decl(promise_name, i, n)">
 using Promise${i} = ${promise_name};
 % if i < n-1:
@@ -160,7 +162,8 @@ tail${i}:
       }
     }
   }
-};""")
+};"""
+)
 
 front_matter = """
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_DETAIL_SEQ_STATE_H
@@ -196,12 +199,14 @@ end_matter = """
 #endif  // GRPC_SRC_CORE_LIB_PROMISE_DETAIL_SEQ_STATE_H
 """
 
+
 # utility: print a big comment block into a set of files
 def put_banner(files, banner):
     for f in files:
         for line in banner:
             print("// %s" % line, file=f)
         print("", file=f)
+
 
 with open(sys.argv[0]) as my_source:
     copyright = []
