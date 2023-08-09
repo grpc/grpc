@@ -19,36 +19,11 @@
 namespace grpc {
 namespace testing {
 
-namespace {
+XdsStatsWatcher::XdsStatsWatcher(int start_id, int end_id)
+    : start_id_(start_id), end_id_(end_id), rpcs_needed_(end_id - start_id) {}
 
-LoadBalancerStatsResponse::RpcMetadata BuildRpcMetadata(
-    absl::Span<const std::string> metadata_keys,
-    const std::multimap<grpc::string_ref, grpc::string_ref>& initial_metadata) {
-  LoadBalancerStatsResponse::RpcMetadata rpc_metadata;
-  for (const auto& key : metadata_keys) {
-    auto matching = initial_metadata.equal_range(key);
-    for (auto value = matching.first; value != matching.second; ++value) {
-      auto entry = rpc_metadata.add_metadata();
-      entry->set_key(key);
-      entry->set_value(
-          absl::string_view(value->second.data(), value->second.length()));
-    }
-  }
-  return rpc_metadata;
-}
-
-}  // namespace
-
-XdsStatsWatcher::XdsStatsWatcher(int start_id, int end_id,
-                                 absl::Span<const std::string> metadata_keys)
-    : start_id_(start_id),
-      end_id_(end_id),
-      rpcs_needed_(end_id - start_id),
-      metadata_keys_(metadata_keys.begin(), metadata_keys.end()) {}
-
-void XdsStatsWatcher::RpcCompleted(
-    const AsyncClientCallResult& call, const std::string& peer,
-    const std::multimap<grpc::string_ref, grpc::string_ref>& initial_metadata) {
+void XdsStatsWatcher::RpcCompleted(const AsyncClientCallResult& call,
+                                   const std::string& peer) {
   // We count RPCs for global watcher or if the request_id falls into the
   // watcher's interested range of request ids.
   if ((start_id_ == 0 && end_id_ == 0) ||
@@ -62,8 +37,6 @@ void XdsStatsWatcher::RpcCompleted(
         // RPC is counted into both per-peer bin and per-method-per-peer bin.
         rpcs_by_peer_[peer]++;
         rpcs_by_type_[call.rpc_type][peer]++;
-        *metadata_by_peer_[peer].add_rpc_metadata() =
-            BuildRpcMetadata(metadata_keys_, initial_metadata);
       }
       rpcs_needed_--;
       // Report accumulated stats.
@@ -82,17 +55,14 @@ void XdsStatsWatcher::RpcCompleted(
   }
 }
 
-LoadBalancerStatsResponse XdsStatsWatcher::WaitForRpcStatsResponse(
-    int timeout_sec) {
-  LoadBalancerStatsResponse response;
+void XdsStatsWatcher::WaitForRpcStatsResponse(
+    LoadBalancerStatsResponse* response, int timeout_sec) {
   std::unique_lock<std::mutex> lock(m_);
   cv_.wait_for(lock, std::chrono::seconds(timeout_sec),
                [this] { return rpcs_needed_ == 0; });
-  response.mutable_rpcs_by_peer()->insert(rpcs_by_peer_.begin(),
-                                          rpcs_by_peer_.end());
-  response.mutable_metadatas_by_peer()->insert(metadata_by_peer_.begin(),
-                                               metadata_by_peer_.end());
-  auto& response_rpcs_by_method = *response.mutable_rpcs_by_method();
+  response->mutable_rpcs_by_peer()->insert(rpcs_by_peer_.begin(),
+                                           rpcs_by_peer_.end());
+  auto& response_rpcs_by_method = *response->mutable_rpcs_by_method();
   for (const auto& rpc_by_type : rpcs_by_type_) {
     std::string method_name;
     if (rpc_by_type.first == ClientConfigureRequest::EMPTY_CALL) {
@@ -113,8 +83,7 @@ LoadBalancerStatsResponse XdsStatsWatcher::WaitForRpcStatsResponse(
       response_rpc_by_peer = rpc_by_peer.second;
     }
   }
-  response.set_num_failures(no_remote_peer_ + rpcs_needed_);
-  return response;
+  response->set_num_failures(no_remote_peer_ + rpcs_needed_);
 }
 
 void XdsStatsWatcher::GetCurrentRpcStats(

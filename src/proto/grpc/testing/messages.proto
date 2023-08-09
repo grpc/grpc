@@ -103,6 +103,9 @@ message SimpleRequest {
 
   // If set the server should record this metrics report data for the current RPC.
   TestOrcaReport orca_per_query_report = 11;
+
+  // If set the server should update this metrics report data at the OOB server.
+  TestOrcaReport orca_oob_report = 12;
 }
 
 // Unary response, as configured by the request.
@@ -207,26 +210,9 @@ message LoadBalancerStatsRequest {
   int32 num_rpcs = 1;
   // If num_rpcs have not completed within timeout_sec, return partial results.
   int32 timeout_sec = 2;
-  // response header+trailer we want the values of
-  repeated string metadata_keys = 3;
 }
 
 message LoadBalancerStatsResponse {
-  message MetadataEntry {
-    string key = 1;
-    string value = 2;
-  }
-  message RpcMetadata {
-    // metadata values for each rpc for the keys specified in
-    // LoadBalancerStatsRequest.metadata_keys.
-    // metadata keys and values are returned exactly as was recieved
-    // from the server.
-    repeated MetadataEntry metadata = 1;
-  }
-  message MetadataByPeer {
-    // List of RpcMetadata in for each RPC with a given peer
-    repeated RpcMetadata rpc_metadata = 1;
-  }
   message RpcsByPeer {
     // The number of completed RPCs for each peer.
     map<string, int32> rpcs_by_peer = 1;
@@ -236,8 +222,6 @@ message LoadBalancerStatsResponse {
   // The number of RPCs that failed to record a remote peer.
   int32 num_failures = 2;
   map<string, RpcsByPeer> rpcs_by_method = 3;
-  // All the metadata of all RPCs for each peer.
-  map<string, MetadataByPeer> metadatas_by_peer = 4;
 }
 
 // Request for retrieving a test client's accumulated stats.
