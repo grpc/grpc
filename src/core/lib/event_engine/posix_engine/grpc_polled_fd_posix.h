@@ -17,6 +17,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <sys/socket.h>
+
 #include "src/core/lib/iomgr/port.h"
 
 #if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
@@ -168,7 +170,9 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
     PosixSocketWrapper sock(fd);
     RETURN_IF_ERROR(sock.SetSocketNonBlocking(1));
     RETURN_IF_ERROR(sock.SetSocketCloexec(1));
-    RETURN_IF_ERROR(sock.SetSocketLowLatency(1));
+    if (type == SOCK_STREAM) {
+      RETURN_IF_ERROR(sock.SetSocketLowLatency(1));
+    }
     return 0;
   }
 
