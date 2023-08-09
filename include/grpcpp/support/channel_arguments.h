@@ -54,61 +54,61 @@ class ChannelArguments {
   ///
   /// Note that the underlying arguments are shared. Changes made to either \a
   /// channel_args or this instance would be reflected on both.
-  void SetChannelArgs(grpc_channel_args* channel_args) const;
+  void SetChannelArgs(grpc_channel_args* channel_args, grpc_core::SourceLocation location) const;
 
   // gRPC specific channel argument setters
   /// Set target name override for SSL host name checking. This option should
   /// be used with caution in production.
-  void SetSslTargetNameOverride(const std::string& name);
+  void SetSslTargetNameOverride(const std::string& name, grpc_core::SourceLocation location);
   // TODO(yangg) add flow control options
   /// Set the compression algorithm for the channel.
-  void SetCompressionAlgorithm(grpc_compression_algorithm algorithm);
+  void SetCompressionAlgorithm(grpc_compression_algorithm algorithm, grpc_core::SourceLocation location);
 
   /// Set the grpclb fallback timeout (in ms) for the channel. If this amount
   /// of time has passed but we have not gotten any non-empty \a serverlist from
   /// the balancer, we will fall back to use the backend address(es) returned by
   /// the resolver.
-  void SetGrpclbFallbackTimeout(int fallback_timeout);
+  void SetGrpclbFallbackTimeout(int fallback_timeout, grpc_core::SourceLocation location);
 
   /// Set a mutator for the underlying socket.
-  void SetSocketMutator(grpc_socket_mutator* mutator);
+  void SetSocketMutator(grpc_socket_mutator* mutator, grpc_core::SourceLocation location);
 
   /// Set the string to prepend to the user agent.
-  void SetUserAgentPrefix(const std::string& user_agent_prefix);
+  void SetUserAgentPrefix(const std::string& user_agent_prefix, grpc_core::SourceLocation location);
 
   /// Set the buffer pool to be attached to the constructed channel.
-  void SetResourceQuota(const grpc::ResourceQuota& resource_quota);
+  void SetResourceQuota(const grpc::ResourceQuota& resource_quota, grpc_core::SourceLocation location);
 
   /// Set the max receive and send message sizes.
-  void SetMaxReceiveMessageSize(int size);
-  void SetMaxSendMessageSize(int size);
+  void SetMaxReceiveMessageSize(int size, grpc_core::SourceLocation location);
+  void SetMaxSendMessageSize(int size, grpc_core::SourceLocation location);
 
   /// Set LB policy name.
   /// Note that if the name resolver returns only balancer addresses, the
   /// grpclb LB policy will be used, regardless of what is specified here.
-  void SetLoadBalancingPolicyName(const std::string& lb_policy_name);
+  void SetLoadBalancingPolicyName(const std::string& lb_policy_name, grpc_core::SourceLocation location);
 
   /// Set service config in JSON form.
   /// Primarily meant for use in unit tests.
-  void SetServiceConfigJSON(const std::string& service_config_json);
+  void SetServiceConfigJSON(const std::string& service_config_json, grpc_core::SourceLocation location);
 
   // Generic channel argument setter. Only for advanced use cases.
   /// Set an integer argument \a value under \a key.
-  void SetInt(const std::string& key, int value);
+  void SetInt(const std::string& key, int value, grpc_core::SourceLocation location);
 
   // Generic channel argument setter. Only for advanced use cases.
   /// Set a pointer argument \a value under \a key. Ownership is not
   /// transferred.
-  void SetPointer(const std::string& key, void* value);
+  void SetPointer(const std::string& key, void* value, grpc_core::SourceLocation location);
 
   /// Set a pointer argument \a value under \a key, transferring ownership of
   /// \a value to the \a ChannelArguments object. The \a vtable::Delete function
   /// is responsible for \a value cleanup/destruction when called.
   void SetPointerWithVtable(const std::string& key, void* value,
-                            const grpc_arg_pointer_vtable* vtable);
+                            const grpc_arg_pointer_vtable* vtable, grpc_core::SourceLocation location);
 
   /// Set a textual argument \a value under \a key.
-  void SetString(const std::string& key, const std::string& value);
+  void SetString(const std::string& key, const std::string& value, grpc_core::SourceLocation location);
 
   /// Return (by value) a C \a grpc_channel_args structure which points to
   /// arguments owned by this \a ChannelArguments instance
