@@ -528,9 +528,10 @@ void WorkStealingThreadPool::ThreadCount::BlockUntilThreadCount(
 size_t WorkStealingThreadPool::ThreadCount::WaitForCountChange(
     CounterType counter_type, size_t desired_threads,
     grpc_core::Duration timeout) {
+  if (GetCount(counter_type) == desired_threads) return desired_threads;
   size_t count;
   auto now = absl::Now();
-  auto deadline = now + absl::Milliseconds(timeout.millis());
+  const auto deadline = now + absl::Milliseconds(timeout.millis());
   // Set up the count change notification
   GPR_ASSERT(wait_for_thread_counts_[counter_type].load() ==
              kWaitForThreadCountUnset);
@@ -540,10 +541,10 @@ size_t WorkStealingThreadPool::ThreadCount::WaitForCountChange(
       std::make_unique<grpc_core::Notification>();
   wait_for_thread_counts_[counter_type].store(desired_threads);
   do {
-    count = GetCount(counter_type);
-    if (count == desired_threads) break;
     wait_notifications_[counter_type]->WaitForNotificationWithTimeout(deadline -
                                                                       now);
+    count = GetCount(counter_type);
+    if (count == desired_threads) break;
     now = absl::Now();
   } while (now < deadline);
   // Reset the count change notification
