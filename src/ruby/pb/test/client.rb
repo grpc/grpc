@@ -656,6 +656,7 @@ class NamedTests
       response_status: EchoStatus.new(code: code, message: message))
     begin
       resp = @stub.unary_call(req)
+      fail AssertionError, "GRPC::Unknown should have been raised."
     rescue GRPC::Unknown => e
       if e.details.force_encoding("UTF-8") != message
         fail AssertionError,
