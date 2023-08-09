@@ -468,7 +468,7 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
         self.xds_config_validate(DumpedXdsConfig(self._xds_json_config))
 
     def _print_error_list(self, flavour, errors):
-        for test, err in errors:
+        for _, err in errors:
             logging.error("%s: %s" % (flavour, self.__class__.__name__))
             logging.error("%s" % err)
 
@@ -478,7 +478,7 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
         This prevents the test runner to waste time on RPC distribution test,
         and yields clearer signal.
         """
-        global _first_error_printed
+        global _first_error_printed  # pylint: disable=global-statement
 
         if result.failures or result.errors:
             if not _first_error_printed:
