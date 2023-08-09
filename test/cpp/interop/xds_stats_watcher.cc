@@ -21,7 +21,7 @@ namespace testing {
 
 namespace {
 
-LoadBalancerStatsResponse::RpcMetadata AddRpcMetadata(
+LoadBalancerStatsResponse::RpcMetadata BuildRpcMetadata(
     absl::Span<const std::string> metadata_keys,
     const std::multimap<grpc::string_ref, grpc::string_ref>& initial_metadata) {
   LoadBalancerStatsResponse::RpcMetadata rpc_metadata;
@@ -63,7 +63,7 @@ void XdsStatsWatcher::RpcCompleted(
         rpcs_by_peer_[peer]++;
         rpcs_by_type_[call.rpc_type][peer]++;
         *metadata_by_peer_[peer].add_rpc_metadata() =
-            AddRpcMetadata(metadata_keys_, initial_metadata);
+            BuildRpcMetadata(metadata_keys_, initial_metadata);
       }
       rpcs_needed_--;
       // Report accumulated stats.
