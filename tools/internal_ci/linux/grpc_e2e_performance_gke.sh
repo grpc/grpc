@@ -30,6 +30,8 @@ GRPC_GO_REPO=grpc/grpc-go
 GRPC_GO_GITREF=master
 GRPC_JAVA_REPO=grpc/grpc-java
 GRPC_JAVA_GITREF=master
+GRPC_NODE_REPO=grpc/grpc-node
+GRPC_NODE_GITREF=master
 TEST_INFRA_REPO=grpc/test-infra
 TEST_INFRA_GITREF=master
 
@@ -73,6 +75,7 @@ fi
 GRPC_DOTNET_COMMIT="$(git ls-remote "https://github.com/${GRPC_DOTNET_REPO}.git" "${GRPC_DOTNET_GITREF}" | cut -f1)"
 GRPC_GO_COMMIT="$(git ls-remote "https://github.com/${GRPC_GO_REPO}.git" "${GRPC_GO_GITREF}" | cut -f1)"
 GRPC_JAVA_COMMIT="$(git ls-remote "https://github.com/${GRPC_JAVA_REPO}.git" "${GRPC_JAVA_GITREF}" | cut -f1)"
+GRPC_NODE_COMMIT="$(git ls-remote "https://github.com/${GRPC_NODE_REPO}.git" "${GRPC_NODE_GITREF}" | cut -f1)"
 # Kokoro jobs run on dedicated pools.
 DRIVER_POOL=drivers-ci
 WORKER_POOL_8CORE=workers-c2-8core-ci
@@ -141,6 +144,10 @@ runnerLangArgs+=( -l "go:${GRPC_GO_REPO}:${GRPC_GO_COMMIT}" )
 configLangArgs8core+=( -l java )
 configLangArgs32core+=( -l java )
 runnerLangArgs+=( -l "java:${GRPC_JAVA_REPO}:${GRPC_JAVA_COMMIT}" )
+
+# node
+configLangArgs8core+=( -l node )  # 8-core only.
+runnerLangArgs+=( -l "node:${GRPC_NODE_REPO}:${GRPC_NODE_COMMIT}" )
 
 # python
 configLangArgs8core+=( -l python )  # 8-core only.
