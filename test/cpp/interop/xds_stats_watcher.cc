@@ -19,6 +19,26 @@
 namespace grpc {
 namespace testing {
 
+namespace {
+
+LoadBalancerStatsResponse::RpcMetadata AddRpcMetadata(
+    absl::Span<const std::string> metadata_keys,
+    const std::multimap<grpc::string_ref, grpc::string_ref>& initial_metadata) {
+  LoadBalancerStatsResponse::RpcMetadata rpc_metadata;
+  for (const auto& key : metadata_keys) {
+    auto matching = initial_metadata.equal_range(key);
+    for (auto value = matching.first; value != matching.second; ++value) {
+      auto entry = rpc_metadata.add_metadata();
+      entry->set_key(key);
+      entry->set_value(
+          absl::string_view(value->second.data(), value->second.length()));
+    }
+  }
+  return rpc_metadata;
+}
+
+}  // namespace
+
 XdsStatsWatcher::XdsStatsWatcher(int start_id, int end_id,
                                  absl::Span<const std::string> metadata_keys)
     : start_id_(start_id),
@@ -42,6 +62,8 @@ void XdsStatsWatcher::RpcCompleted(
         // RPC is counted into both per-peer bin and per-method-per-peer bin.
         rpcs_by_peer_[peer]++;
         rpcs_by_type_[call.rpc_type][peer]++;
+        *metadata_by_peer_[peer].add_rpc_metadata() =
+            AddRpcMetadata(metadata_keys_, initial_metadata);
       }
       rpcs_needed_--;
       // Report accumulated stats.
@@ -55,16 +77,6 @@ void XdsStatsWatcher::RpcCompleted(
       ++num_rpcs;
       auto rpcs_started = method_stat.rpcs_started();
       method_stat.set_rpcs_started(++rpcs_started);
-      auto rpc_metadata = metadata_by_peer_[peer].add_rpc_metadata();
-      for (const auto& key : metadata_keys_) {
-        for (auto value = initial_metadata.lower_bound(key);
-             value != initial_metadata.upper_bound(key); value++) {
-          auto entry = rpc_metadata->add_metadata();
-          entry->set_key(key);
-          entry->set_value(
-              absl::string_view(value->second.data(), value->second.length()));
-        }
-      }
     }
     cv_.notify_one();
   }

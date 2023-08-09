@@ -217,16 +217,14 @@ message LoadBalancerStatsResponse {
     string value = 2;
   }
   message RpcMetadata {
-    // Metadata associated with the RPC call
+    // metadata values for each rpc for the keys specified in
+    // LoadBalancerStatsRequest.metadata_keys.
+    // metadata keys and values are returned exactly as was recieved
+    // from the server.
     repeated MetadataEntry metadata = 1;
   }
   message MetadataByPeer {
-    // metadata values in the response for each rpc for all keys
-    // specified in LoadBalancerStatsRequest.metadata_keys
-    // Binary values are base64 encoded
-    // note this is a list of maps: each element in the list
-    // is for an RPC and each map includes all requested
-    // metadata (key, value pair)
+    // List of RpcMetadata in for each RPC with a given peer
     repeated RpcMetadata rpc_metadata = 1;
   }
   message RpcsByPeer {
