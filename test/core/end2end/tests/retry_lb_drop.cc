@@ -25,6 +25,7 @@
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 
@@ -100,7 +101,7 @@ void RegisterDropPolicy(CoreConfiguration::Builder* builder) {
 // even when there is retry configuration in the service config.
 // - 1 retry allowed for UNAVAILABLE status
 // - first attempt returns UNAVAILABLE due to LB drop but does not retry
-TEST_P(RetryTest, RetryLbDrop) {
+CORE_END2END_TEST(RetryTest, RetryLbDrop) {
   CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
     RegisterTestPickArgsLoadBalancingPolicy(
         builder,

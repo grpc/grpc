@@ -38,14 +38,17 @@ class ServerTlsPolicy:
     create_time: str
 
     @classmethod
-    def from_response(cls, name: str, response: Dict[str,
-                                                     Any]) -> 'ServerTlsPolicy':
-        return cls(name=name,
-                   url=response['name'],
-                   server_certificate=response.get('serverCertificate', {}),
-                   mtls_policy=response.get('mtlsPolicy', {}),
-                   create_time=response['createTime'],
-                   update_time=response['updateTime'])
+    def from_response(
+        cls, name: str, response: Dict[str, Any]
+    ) -> "ServerTlsPolicy":
+        return cls(
+            name=name,
+            url=response["name"],
+            server_certificate=response.get("serverCertificate", {}),
+            mtls_policy=response.get("mtlsPolicy", {}),
+            create_time=response["createTime"],
+            update_time=response["updateTime"],
+        )
 
 
 @dataclasses.dataclass(frozen=True)
@@ -58,14 +61,17 @@ class ClientTlsPolicy:
     create_time: str
 
     @classmethod
-    def from_response(cls, name: str, response: Dict[str,
-                                                     Any]) -> 'ClientTlsPolicy':
-        return cls(name=name,
-                   url=response['name'],
-                   client_certificate=response.get('clientCertificate', {}),
-                   server_validation_ca=response.get('serverValidationCa', []),
-                   create_time=response['createTime'],
-                   update_time=response['updateTime'])
+    def from_response(
+        cls, name: str, response: Dict[str, Any]
+    ) -> "ClientTlsPolicy":
+        return cls(
+            name=name,
+            url=response["name"],
+            client_certificate=response.get("clientCertificate", {}),
+            server_validation_ca=response.get("serverValidationCa", []),
+            create_time=response["createTime"],
+            update_time=response["updateTime"],
+        )
 
 
 @dataclasses.dataclass(frozen=True)
@@ -78,18 +84,22 @@ class AuthorizationPolicy:
     rules: list
 
     @classmethod
-    def from_response(cls, name: str,
-                      response: Dict[str, Any]) -> 'AuthorizationPolicy':
-        return cls(name=name,
-                   url=response['name'],
-                   create_time=response['createTime'],
-                   update_time=response['updateTime'],
-                   action=response['action'],
-                   rules=response.get('rules', []))
+    def from_response(
+        cls, name: str, response: Dict[str, Any]
+    ) -> "AuthorizationPolicy":
+        return cls(
+            name=name,
+            url=response["name"],
+            create_time=response["createTime"],
+            update_time=response["updateTime"],
+            action=response["action"],
+            rules=response.get("rules", []),
+        )
 
 
-class _NetworkSecurityBase(gcp.api.GcpStandardCloudApiResource,
-                           metaclass=abc.ABCMeta):
+class _NetworkSecurityBase(
+    gcp.api.GcpStandardCloudApiResource, metaclass=abc.ABCMeta
+):
     """Base class for NetworkSecurity APIs."""
 
     # TODO(https://github.com/grpc/grpc/issues/29532) remove pylint disable
@@ -102,9 +112,11 @@ class _NetworkSecurityBase(gcp.api.GcpStandardCloudApiResource,
 
     @property
     def api_name(self) -> str:
-        return 'networksecurity'
+        return "networksecurity"
 
-    def _execute(self, *args, **kwargs):  # pylint: disable=signature-differs,arguments-differ
+    def _execute(
+        self, *args, **kwargs
+    ):  # pylint: disable=signature-differs,arguments-differ
         # Workaround TD bug: throttled operations are reported as internal.
         # Ref b/175345578
         retryer = tenacity.Retrying(
@@ -112,76 +124,88 @@ class _NetworkSecurityBase(gcp.api.GcpStandardCloudApiResource,
             wait=tenacity.wait_fixed(10),
             stop=tenacity.stop_after_delay(5 * 60),
             before_sleep=tenacity.before_sleep_log(logger, logging.DEBUG),
-            reraise=True)
+            reraise=True,
+        )
         retryer(super()._execute, *args, **kwargs)
 
     @staticmethod
     def _operation_internal_error(exception):
-        return (isinstance(exception, gcp.api.OperationError) and
-                exception.error.code == code_pb2.INTERNAL)
+        return (
+            isinstance(exception, gcp.api.OperationError)
+            and exception.error.code == code_pb2.INTERNAL
+        )
 
 
 class NetworkSecurityV1Beta1(_NetworkSecurityBase):
     """NetworkSecurity API v1beta1."""
 
-    SERVER_TLS_POLICIES = 'serverTlsPolicies'
-    CLIENT_TLS_POLICIES = 'clientTlsPolicies'
-    AUTHZ_POLICIES = 'authorizationPolicies'
+    SERVER_TLS_POLICIES = "serverTlsPolicies"
+    CLIENT_TLS_POLICIES = "clientTlsPolicies"
+    AUTHZ_POLICIES = "authorizationPolicies"
 
     @property
     def api_version(self) -> str:
-        return 'v1beta1'
+        return "v1beta1"
 
     def create_server_tls_policy(self, name: str, body: dict) -> GcpResource:
         return self._create_resource(
             collection=self._api_locations.serverTlsPolicies(),
             body=body,
-            serverTlsPolicyId=name)
+            serverTlsPolicyId=name,
+        )
 
     def get_server_tls_policy(self, name: str) -> ServerTlsPolicy:
         response = self._get_resource(
             collection=self._api_locations.serverTlsPolicies(),
-            full_name=self.resource_full_name(name, self.SERVER_TLS_POLICIES))
+            full_name=self.resource_full_name(name, self.SERVER_TLS_POLICIES),
+        )
         return ServerTlsPolicy.from_response(name, response)
 
     def delete_server_tls_policy(self, name: str) -> bool:
         return self._delete_resource(
             collection=self._api_locations.serverTlsPolicies(),
-            full_name=self.resource_full_name(name, self.SERVER_TLS_POLICIES))
+            full_name=self.resource_full_name(name, self.SERVER_TLS_POLICIES),
+        )
 
     def create_client_tls_policy(self, name: str, body: dict) -> GcpResource:
         return self._create_resource(
             collection=self._api_locations.clientTlsPolicies(),
             body=body,
-            clientTlsPolicyId=name)
+            clientTlsPolicyId=name,
+        )
 
     def get_client_tls_policy(self, name: str) -> ClientTlsPolicy:
         response = self._get_resource(
             collection=self._api_locations.clientTlsPolicies(),
-            full_name=self.resource_full_name(name, self.CLIENT_TLS_POLICIES))
+            full_name=self.resource_full_name(name, self.CLIENT_TLS_POLICIES),
+        )
         return ClientTlsPolicy.from_response(name, response)
 
     def delete_client_tls_policy(self, name: str) -> bool:
         return self._delete_resource(
             collection=self._api_locations.clientTlsPolicies(),
-            full_name=self.resource_full_name(name, self.CLIENT_TLS_POLICIES))
+            full_name=self.resource_full_name(name, self.CLIENT_TLS_POLICIES),
+        )
 
     def create_authz_policy(self, name: str, body: dict) -> GcpResource:
         return self._create_resource(
             collection=self._api_locations.authorizationPolicies(),
             body=body,
-            authorizationPolicyId=name)
+            authorizationPolicyId=name,
+        )
 
     def get_authz_policy(self, name: str) -> ClientTlsPolicy:
         response = self._get_resource(
             collection=self._api_locations.authorizationPolicies(),
-            full_name=self.resource_full_name(name, self.AUTHZ_POLICIES))
+            full_name=self.resource_full_name(name, self.AUTHZ_POLICIES),
+        )
         return ClientTlsPolicy.from_response(name, response)
 
     def delete_authz_policy(self, name: str) -> bool:
         return self._delete_resource(
             collection=self._api_locations.authorizationPolicies(),
-            full_name=self.resource_full_name(name, self.AUTHZ_POLICIES))
+            full_name=self.resource_full_name(name, self.AUTHZ_POLICIES),
+        )
 
 
 class NetworkSecurityV1Alpha1(NetworkSecurityV1Beta1):
@@ -194,4 +218,4 @@ class NetworkSecurityV1Alpha1(NetworkSecurityV1Beta1):
 
     @property
     def api_version(self) -> str:
-        return 'v1alpha1'
+        return "v1alpha1"

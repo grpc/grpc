@@ -27,8 +27,9 @@
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
 
-#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
+#include <grpc/support/json.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"

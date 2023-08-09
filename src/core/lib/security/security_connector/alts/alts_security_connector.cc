@@ -31,6 +31,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security_constants.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -130,11 +131,7 @@ class grpc_alts_channel_security_connector final
   }
 
   grpc_core::ArenaPromise<absl::Status> CheckCallHost(
-      absl::string_view host, grpc_auth_context*) override {
-    if (host.empty() || host != target_name_) {
-      return grpc_core::Immediate(absl::UnauthenticatedError(
-          "ALTS call host does not match target name"));
-    }
+      absl::string_view, grpc_auth_context*) override {
     return grpc_core::ImmediateOkStatus();
   }
 

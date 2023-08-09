@@ -15,9 +15,8 @@
 //
 
 #include "absl/types/optional.h"
-#include "gtest/gtest.h"
 
-#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/time.h"
@@ -28,7 +27,7 @@ namespace {
 
 // Tests that we can unref a call after the first attempt starts but
 // before any ops complete.  This should not cause a memory leak.
-TEST_P(RetryTest, RetryCancelAfterFirstAttemptStarts) {
+CORE_END2END_TEST(RetryTest, RetryCancelAfterFirstAttemptStarts) {
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,

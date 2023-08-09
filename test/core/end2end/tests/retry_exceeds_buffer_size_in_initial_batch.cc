@@ -19,7 +19,7 @@
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
 
-#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -35,7 +35,7 @@ namespace {
 // - buffer size set to 2 bytes
 // - client sends a 3-byte message
 // - first attempt gets ABORTED but is not retried
-TEST_P(RetryTest, RetryExceedsBufferSizeInInitialBatch) {
+CORE_END2END_TEST(RetryTest, RetryExceedsBufferSizeInInitialBatch) {
   InitServer(ChannelArgs());
   InitClient(
       ChannelArgs()

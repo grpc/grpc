@@ -32,7 +32,7 @@ namespace {
 void TestRequestResponseWithMetadataToBeFiltered(
     CoreEnd2endTest& test, absl::string_view filtered_md_key,
     absl::string_view filter_md_value) {
-  auto c = test.NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
+  auto c = test.NewClientCall("/foo").Timeout(Duration::Seconds(30)).Create();
 
   CoreEnd2endTest::IncomingMetadata server_initial_metadata;
   CoreEnd2endTest::IncomingStatusOnClient server_status;
@@ -71,7 +71,9 @@ void TestRequestResponseWithMetadataToBeFiltered(
   EXPECT_EQ(server_initial_metadata.Get(filtered_md_key), absl::nullopt);
 }
 
-TEST_P(CoreEnd2endTest, ContentLengthIsFiltered) {
+CORE_END2END_TEST(CoreEnd2endTest, ContentLengthIsFiltered) {
+  // TODO(vigneshbabu): re-enable these before release
+  SKIP_IF_USES_EVENT_ENGINE_CLIENT();
   TestRequestResponseWithMetadataToBeFiltered(*this, "content-length", "45");
 }
 

@@ -245,10 +245,6 @@ void BaseCallData::CapturedBatch::CancelWith(grpc_error_handle error,
   uintptr_t& refcnt = *RefCountField(batch);
   if (refcnt == 0) {
     // refcnt==0 ==> cancelled
-    if (grpc_trace_channel.enabled()) {
-      gpr_log(GPR_INFO, "%sCANCEL BATCH REQUEST ALREADY CANCELLED",
-              Activity::current()->DebugTag().c_str());
-    }
     return;
   }
   refcnt = 0;
@@ -305,6 +301,9 @@ BaseCallData::Flusher::~Flusher() {
   if (grpc_trace_channel.enabled()) {
     gpr_log(GPR_INFO, "FLUSHER:forward batch: %s",
             grpc_transport_stream_op_batch_string(release_[0], false).c_str());
+  }
+  if (call_->call_context_ != nullptr && call_->call_context_->traced()) {
+    release_[0]->is_traced = true;
   }
   grpc_call_next_op(call_->elem(), release_[0]);
   GRPC_CALL_STACK_UNREF(call_->call_stack(), "flusher");

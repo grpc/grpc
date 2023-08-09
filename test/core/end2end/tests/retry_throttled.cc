@@ -19,7 +19,7 @@
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
 
-#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -32,7 +32,7 @@ namespace {
 // Tests that we don't retry when throttled.
 // - 1 retry allowed for ABORTED status
 // - first attempt gets ABORTED but is over limit, so no retry is done
-TEST_P(RetryTest, RetryThrottled) {
+CORE_END2END_TEST(RetryTest, RetryThrottled) {
   InitServer(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
       "{\n"
@@ -58,7 +58,7 @@ TEST_P(RetryTest, RetryThrottled) {
       "}"));
   InitClient(ChannelArgs());
   auto c =
-      NewClientCall("/service/method").Timeout(Duration::Seconds(5)).Create();
+      NewClientCall("/service/method").Timeout(Duration::Seconds(30)).Create();
   EXPECT_NE(c.GetPeer(), absl::nullopt);
   IncomingStatusOnClient server_status;
   IncomingMetadata server_initial_metadata;

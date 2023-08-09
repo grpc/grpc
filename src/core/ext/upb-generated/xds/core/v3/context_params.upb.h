@@ -88,9 +88,6 @@ UPB_INLINE const xds_core_v3_ContextParams_ParamsEntry* xds_core_v3_ContextParam
   if (!map) return NULL;
   return (const xds_core_v3_ContextParams_ParamsEntry*)_upb_map_next(map, iter);
 }
-UPB_INLINE bool xds_core_v3_ContextParams_has_params(const xds_core_v3_ContextParams* msg) {
-  return xds_core_v3_ContextParams_params_size(msg) != 0;
-}
 
 UPB_INLINE void xds_core_v3_ContextParams_params_clear(xds_core_v3_ContextParams* msg) {
   const upb_MiniTableField field = {1, 0, 0, 0, 11, kUpb_FieldMode_Map | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};

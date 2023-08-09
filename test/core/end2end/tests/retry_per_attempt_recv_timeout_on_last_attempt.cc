@@ -20,7 +20,7 @@
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
 
-#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -34,7 +34,7 @@ namespace {
 // Tests perAttemptRecvTimeout:
 // - 1 retry allowed for ABORTED status
 // - both attempts do not receive a response until after perAttemptRecvTimeout
-TEST_P(RetryTest, RetryPerAttemptRecvTimeoutOnLastAttempt) {
+CORE_END2END_TEST(RetryTest, RetryPerAttemptRecvTimeoutOnLastAttempt) {
   InitServer(ChannelArgs());
   InitClient(
       ChannelArgs()

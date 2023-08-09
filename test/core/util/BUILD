@@ -59,8 +59,6 @@ grpc_cc_library(
         "passthru_endpoint.cc",
         "resolve_localhost_ip46.cc",
         "slice_splitter.cc",
-        "subprocess_posix.cc",
-        "subprocess_windows.cc",
         "tracer_util.cc",
     ],
     hdrs = [
@@ -75,7 +73,6 @@ grpc_cc_library(
         "passthru_endpoint.h",
         "resolve_localhost_ip46.h",
         "slice_splitter.h",
-        "subprocess.h",
         "tracer_util.h",
     ],
     external_deps = [
@@ -311,6 +308,7 @@ grpc_cc_library(
         "//:server_address",
         "//:uri_parser",
         "//src/core:channel_args",
+        "//src/core:delegating_helper",
         "//src/core:error",
         "//src/core:grpc_backend_metric_data",
         "//src/core:json",
@@ -363,9 +361,53 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "socket_use_after_close_detector",
+    testonly = True,
+    srcs = ["socket_use_after_close_detector.cc"],
+    hdrs = ["socket_use_after_close_detector.h"],
+    external_deps = ["gtest"],
+    language = "C++",
+    deps = [
+        "grpc_test_util",
+        "//:gpr",
+        "//:grpc",
+        "//src/core:grpc_sockaddr",
+    ],
+)
+
+grpc_cc_library(
+    name = "socket_use_after_close_detector_unsecure",
+    testonly = True,
+    srcs = ["socket_use_after_close_detector.cc"],
+    hdrs = ["socket_use_after_close_detector.h"],
+    external_deps = ["gtest"],
+    language = "C++",
+    deps = [
+        "grpc_test_util_unsecure",
+        "//:gpr",
+        "//:grpc",
+        "//src/core:grpc_sockaddr",
+    ],
+)
+
+grpc_cc_library(
     name = "build",
     srcs = ["build.cc"],
     hdrs = ["build.h"],
+)
+
+grpc_cc_library(
+    name = "osa_distance",
+    srcs = ["osa_distance.cc"],
+    hdrs = ["osa_distance.h"],
+    external_deps = ["absl/strings"],
+)
+
+grpc_cc_test(
+    name = "osa_distance_test",
+    srcs = ["osa_distance_test.cc"],
+    external_deps = ["gtest"],
+    deps = ["osa_distance"],
 )
 
 grpc_cc_library(
@@ -390,8 +432,55 @@ grpc_cc_library(
     hdrs = ["fuzz_config_vars.h"],
     external_deps = ["absl/types:optional"],
     deps = [
+        "fuzz_config_vars_helpers",
         "fuzz_config_vars_proto",
         "//:config_vars",
         "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "fuzz_config_vars_helpers",
+    srcs = ["fuzz_config_vars_helpers.cc"],
+    hdrs = ["fuzz_config_vars_helpers.h"],
+    external_deps = ["absl/strings"],
+    deps = [
+        "//:gpr_platform",
+        "//src/core:experiments",
+    ],
+)
+
+grpc_cc_library(
+    name = "audit_logging_utils",
+    srcs = ["audit_logging_utils.cc"],
+    hdrs = ["audit_logging_utils.h"],
+    external_deps = [
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    deps = [
+        "//:gpr",
+        "//:gpr_platform",
+        "//:grpc",
+        "//src/core:json_writer",
+    ],
+)
+
+grpc_proto_library(
+    name = "fuzzing_channel_args_proto",
+    srcs = ["fuzzing_channel_args.proto"],
+    has_services = False,
+)
+
+grpc_cc_library(
+    name = "fuzzing_channel_args",
+    srcs = ["fuzzing_channel_args.cc"],
+    hdrs = ["fuzzing_channel_args.h"],
+    deps = [
+        "fuzzing_channel_args_proto",
+        "//:gpr_platform",
+        "//:ref_counted_ptr",
+        "//src/core:channel_args",
+        "//src/core:resource_quota",
     ],
 )

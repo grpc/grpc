@@ -21,7 +21,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
-#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -68,17 +68,18 @@ void CancelAfterRoundTrip(CoreEnd2endTest& test,
   EXPECT_TRUE(client_close.was_cancelled());
 }
 
-TEST_P(CoreEnd2endTest, CancelAfterRoundTrip) {
+CORE_END2END_TEST(CoreEnd2endTest, CancelAfterRoundTrip) {
   CancelAfterRoundTrip(*this, std::make_unique<CancelCancellationMode>(),
                        Duration::Seconds(5));
 }
 
-TEST_P(CoreDeadlineTest, DeadlineAfterRoundTrip) {
+CORE_END2END_TEST(CoreDeadlineTest, DeadlineAfterRoundTrip) {
   CancelAfterRoundTrip(*this, std::make_unique<DeadlineCancellationMode>(),
                        Duration::Seconds(5));
 }
 
-TEST_P(CoreClientChannelTest, DeadlineAfterAcceptWithServiceConfig) {
+CORE_END2END_TEST(CoreClientChannelTest,
+                  DeadlineAfterRoundTripWithServiceConfig) {
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,

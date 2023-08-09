@@ -30,7 +30,7 @@
 #include "upb/upb.hpp"
 #include "xds/data/orca/v3/orca_load_report.upb.h"
 
-#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
@@ -65,6 +65,11 @@ absl::optional<std::string> BackendMetricFilter::MaybeSerializeBackendMetrics(
   if (data.mem_utilization != -1) {
     xds_data_orca_v3_OrcaLoadReport_set_mem_utilization(response,
                                                         data.mem_utilization);
+    has_data = true;
+  }
+  if (data.application_utilization != -1) {
+    xds_data_orca_v3_OrcaLoadReport_set_application_utilization(
+        response, data.application_utilization);
     has_data = true;
   }
   if (data.qps != -1) {

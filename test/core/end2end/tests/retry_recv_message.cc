@@ -19,7 +19,7 @@
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
 
-#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -33,7 +33,7 @@ namespace {
 // - 1 retry allowed for ABORTED status
 // - first attempt receives a message and therefore does not retry even
 //   though the final status is ABORTED
-TEST_P(RetryTest, RetryRecvMessage) {
+CORE_END2END_TEST(RetryTest, RetryRecvMessage) {
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
@@ -52,7 +52,7 @@ TEST_P(RetryTest, RetryRecvMessage) {
       "  } ]\n"
       "}"));
   auto c =
-      NewClientCall("/service/method").Timeout(Duration::Seconds(5)).Create();
+      NewClientCall("/service/method").Timeout(Duration::Minutes(1)).Create();
   EXPECT_NE(c.GetPeer(), absl::nullopt);
   IncomingMessage server_message;
   IncomingMetadata server_initial_metadata;

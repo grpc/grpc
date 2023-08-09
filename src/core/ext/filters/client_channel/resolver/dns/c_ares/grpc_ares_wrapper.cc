@@ -24,7 +24,7 @@
 
 #include "absl/strings/string_view.h"
 
-#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/sockaddr.h"
@@ -510,10 +510,12 @@ void grpc_ares_ev_driver_start_locked(grpc_ares_ev_driver* ev_driver)
                   &ev_driver->on_ares_backup_poll_alarm_locked);
 }
 
-static void noop_inject_channel_config(ares_channel /*channel*/) {}
+static void noop_inject_channel_config(ares_channel* /*channel*/) {}
 
-void (*grpc_ares_test_only_inject_config)(ares_channel channel) =
+void (*grpc_ares_test_only_inject_config)(ares_channel* channel) =
     noop_inject_channel_config;
+
+bool g_grpc_ares_test_only_force_tcp = false;
 
 grpc_error_handle grpc_ares_ev_driver_create_locked(
     grpc_ares_ev_driver** ev_driver, grpc_pollset_set* pollset_set,
@@ -523,8 +525,11 @@ grpc_error_handle grpc_ares_ev_driver_create_locked(
   ares_options opts;
   memset(&opts, 0, sizeof(opts));
   opts.flags |= ARES_FLAG_STAYOPEN;
+  if (g_grpc_ares_test_only_force_tcp) {
+    opts.flags |= ARES_FLAG_USEVC;
+  }
   int status = ares_init_options(&(*ev_driver)->channel, &opts, ARES_OPT_FLAGS);
-  grpc_ares_test_only_inject_config((*ev_driver)->channel);
+  grpc_ares_test_only_inject_config(&(*ev_driver)->channel);
   GRPC_CARES_TRACE_LOG("request:%p grpc_ares_ev_driver_create_locked", request);
   if (status != ARES_SUCCESS) {
     grpc_error_handle err = GRPC_ERROR_CREATE(absl::StrCat(
@@ -666,35 +671,33 @@ static void on_hostbyname_done_locked(void* arg, int status, int /*timeouts*/,
       if (hr->is_balancer) {
         args = args.Set(GRPC_ARG_DEFAULT_AUTHORITY, hr->host);
       }
+      grpc_resolved_address address;
+      memset(&address, 0, sizeof(address));
       switch (hostent->h_addrtype) {
         case AF_INET6: {
-          size_t addr_len = sizeof(struct sockaddr_in6);
-          struct sockaddr_in6 addr;
-          memset(&addr, 0, addr_len);
-          memcpy(&addr.sin6_addr, hostent->h_addr_list[i],
+          address.len = sizeof(struct sockaddr_in6);
+          auto* addr = reinterpret_cast<struct sockaddr_in6*>(&address.addr);
+          memcpy(&addr->sin6_addr, hostent->h_addr_list[i],
                  sizeof(struct in6_addr));
-          addr.sin6_family = static_cast<unsigned char>(hostent->h_addrtype);
-          addr.sin6_port = hr->port;
-          addresses.emplace_back(&addr, addr_len, args);
+          addr->sin6_family = static_cast<unsigned char>(hostent->h_addrtype);
+          addr->sin6_port = hr->port;
           char output[INET6_ADDRSTRLEN];
-          ares_inet_ntop(AF_INET6, &addr.sin6_addr, output, INET6_ADDRSTRLEN);
+          ares_inet_ntop(AF_INET6, &addr->sin6_addr, output, INET6_ADDRSTRLEN);
           GRPC_CARES_TRACE_LOG(
               "request:%p c-ares resolver gets a AF_INET6 result: \n"
               "  addr: %s\n  port: %d\n  sin6_scope_id: %d\n",
-              r, output, ntohs(hr->port), addr.sin6_scope_id);
+              r, output, ntohs(hr->port), addr->sin6_scope_id);
           break;
         }
         case AF_INET: {
-          size_t addr_len = sizeof(struct sockaddr_in);
-          struct sockaddr_in addr;
-          memset(&addr, 0, addr_len);
-          memcpy(&addr.sin_addr, hostent->h_addr_list[i],
+          address.len = sizeof(struct sockaddr_in);
+          auto* addr = reinterpret_cast<struct sockaddr_in*>(&address.addr);
+          memcpy(&addr->sin_addr, hostent->h_addr_list[i],
                  sizeof(struct in_addr));
-          addr.sin_family = static_cast<unsigned char>(hostent->h_addrtype);
-          addr.sin_port = hr->port;
-          addresses.emplace_back(&addr, addr_len, args);
+          addr->sin_family = static_cast<unsigned char>(hostent->h_addrtype);
+          addr->sin_port = hr->port;
           char output[INET_ADDRSTRLEN];
-          ares_inet_ntop(AF_INET, &addr.sin_addr, output, INET_ADDRSTRLEN);
+          ares_inet_ntop(AF_INET, &addr->sin_addr, output, INET_ADDRSTRLEN);
           GRPC_CARES_TRACE_LOG(
               "request:%p c-ares resolver gets a AF_INET result: \n"
               "  addr: %s\n  port: %d\n",
@@ -702,6 +705,7 @@ static void on_hostbyname_done_locked(void* arg, int status, int /*timeouts*/,
           break;
         }
       }
+      addresses.emplace_back(address, args);
     }
   } else {
     std::string error_msg = absl::StrFormat(
@@ -920,7 +924,7 @@ static bool inner_resolve_as_ip_literal_locked(
                                false /* log errors */)) {
     GPR_ASSERT(*addrs == nullptr);
     *addrs = std::make_unique<ServerAddressList>();
-    (*addrs)->emplace_back(addr.addr, addr.len, grpc_core::ChannelArgs());
+    (*addrs)->emplace_back(addr, grpc_core::ChannelArgs());
     return true;
   }
   return false;
@@ -979,23 +983,26 @@ static bool inner_maybe_resolve_localhost_manually_locked(
     GPR_ASSERT(*addrs == nullptr);
     *addrs = std::make_unique<grpc_core::ServerAddressList>();
     uint16_t numeric_port = grpc_strhtons(port->c_str());
+    grpc_resolved_address address;
     // Append the ipv6 loopback address.
-    struct sockaddr_in6 ipv6_loopback_addr;
-    memset(&ipv6_loopback_addr, 0, sizeof(ipv6_loopback_addr));
-    ((char*)&ipv6_loopback_addr.sin6_addr)[15] = 1;
-    ipv6_loopback_addr.sin6_family = AF_INET6;
-    ipv6_loopback_addr.sin6_port = numeric_port;
-    (*addrs)->emplace_back(&ipv6_loopback_addr, sizeof(ipv6_loopback_addr),
-                           grpc_core::ChannelArgs() /* args */);
+    memset(&address, 0, sizeof(address));
+    auto* ipv6_loopback_addr =
+        reinterpret_cast<struct sockaddr_in6*>(&address.addr);
+    ((char*)&ipv6_loopback_addr->sin6_addr)[15] = 1;
+    ipv6_loopback_addr->sin6_family = AF_INET6;
+    ipv6_loopback_addr->sin6_port = numeric_port;
+    address.len = sizeof(struct sockaddr_in6);
+    (*addrs)->emplace_back(address, grpc_core::ChannelArgs());
     // Append the ipv4 loopback address.
-    struct sockaddr_in ipv4_loopback_addr;
-    memset(&ipv4_loopback_addr, 0, sizeof(ipv4_loopback_addr));
-    ((char*)&ipv4_loopback_addr.sin_addr)[0] = 0x7f;
-    ((char*)&ipv4_loopback_addr.sin_addr)[3] = 0x01;
-    ipv4_loopback_addr.sin_family = AF_INET;
-    ipv4_loopback_addr.sin_port = numeric_port;
-    (*addrs)->emplace_back(&ipv4_loopback_addr, sizeof(ipv4_loopback_addr),
-                           grpc_core::ChannelArgs() /* args */);
+    memset(&address, 0, sizeof(address));
+    auto* ipv4_loopback_addr =
+        reinterpret_cast<struct sockaddr_in*>(&address.addr);
+    ((char*)&ipv4_loopback_addr->sin_addr)[0] = 0x7f;
+    ((char*)&ipv4_loopback_addr->sin_addr)[3] = 0x01;
+    ipv4_loopback_addr->sin_family = AF_INET;
+    ipv4_loopback_addr->sin_port = numeric_port;
+    address.len = sizeof(struct sockaddr_in);
+    (*addrs)->emplace_back(address, grpc_core::ChannelArgs());
     // Let the address sorter figure out which one should be tried first.
     grpc_cares_wrapper_address_sorting_sort(r, addrs->get());
     return true;

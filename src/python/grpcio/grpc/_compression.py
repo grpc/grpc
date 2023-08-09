@@ -25,34 +25,42 @@ Deflate = cygrpc.CompressionAlgorithm.deflate
 Gzip = cygrpc.CompressionAlgorithm.gzip
 
 _METADATA_STRING_MAPPING = {
-    NoCompression: 'identity',
-    Deflate: 'deflate',
-    Gzip: 'gzip',
+    NoCompression: "identity",
+    Deflate: "deflate",
+    Gzip: "gzip",
 }
 
 
 def _compression_algorithm_to_metadata_value(
-        compression: grpc.Compression) -> str:
+    compression: grpc.Compression,
+) -> str:
     return _METADATA_STRING_MAPPING[compression]
 
 
 def compression_algorithm_to_metadata(compression: grpc.Compression):
-    return (cygrpc.GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY,
-            _compression_algorithm_to_metadata_value(compression))
+    return (
+        cygrpc.GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY,
+        _compression_algorithm_to_metadata_value(compression),
+    )
 
 
 def create_channel_option(compression: Optional[grpc.Compression]):
-    return ((cygrpc.GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM,
-             int(compression)),) if compression else ()
+    return (
+        ((cygrpc.GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM, int(compression)),)
+        if compression
+        else ()
+    )
 
 
-def augment_metadata(metadata: Optional[MetadataType],
-                     compression: Optional[grpc.Compression]):
+def augment_metadata(
+    metadata: Optional[MetadataType], compression: Optional[grpc.Compression]
+):
     if not metadata and not compression:
         return None
     base_metadata = tuple(metadata) if metadata else ()
     compression_metadata = (
-        compression_algorithm_to_metadata(compression),) if compression else ()
+        (compression_algorithm_to_metadata(compression),) if compression else ()
+    )
     return base_metadata + compression_metadata
 
 

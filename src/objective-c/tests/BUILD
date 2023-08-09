@@ -333,6 +333,39 @@ grpc_objc_ios_unit_test(
     deps = [":CFStreamTests-lib"],
 )
 
+grpc_objc_testing_library(
+    name = "EventEngineClientTests-lib",
+    srcs = ["EventEngineTests/CFEventEngineClientTests.mm"],
+    # defines = ["GRPC_IOS_EVENT_ENGINE_CLIENT=1"],
+    deps = [
+        "//src/core:cf_event_engine",
+        "//test/core/event_engine/test_suite/posix:oracle_event_engine_posix",
+        "//test/core/event_engine/test_suite/tests:client",
+    ],
+)
+
+grpc_objc_testing_library(
+    name = "EventEngineUnitTests-lib",
+    srcs = ["EventEngineTests/CFEventEngineUnitTests.mm"],
+    defines = ["GRPC_IOS_EVENT_ENGINE_CLIENT=1"],
+    deps = [
+        "//src/core:cf_event_engine",
+        "//test/core/event_engine/cf:cf_engine_unit_test_lib",
+        "//test/core/event_engine/test_suite/tests:dns",
+        "//test/core/event_engine/test_suite/tests:timer",
+    ],
+)
+
+grpc_objc_ios_unit_test(
+    name = "EventEngineClientTests",
+    deps = [":EventEngineClientTests-lib"],
+)
+
+grpc_objc_ios_unit_test(
+    name = "EventEngineUnitTests",
+    deps = [":EventEngineUnitTests-lib"],
+)
+
 # Note that bazel currently doesn't support running tvos_unit_test
 # See https://github.com/bazelbuild/rules_apple/blob/8d841342c238457896cd7596cc29b2d06c9a75f0/apple/testing/default_runner/tvos_test_runner.template.sh
 tvos_unit_test(
@@ -367,8 +400,8 @@ grpc_sh_test(
     name = "objc_codegen_plugin_test",
     srcs = ["PluginTest/plugin_test.sh"],
     data = [
-        "@com_google_protobuf//:protoc",
         "//src/compiler:grpc_objective_c_plugin",
+        "@com_google_protobuf//:protoc",
     ] + glob(["PluginTest/*.proto"]),
     uses_polling = False,
 )
@@ -377,8 +410,8 @@ grpc_sh_test(
     name = "objc_codegen_plugin_option_test",
     srcs = ["PluginTest/plugin_option_test.sh"],
     data = [
-        "@com_google_protobuf//:protoc",
         "//src/compiler:grpc_objective_c_plugin",
+        "@com_google_protobuf//:protoc",
         "@com_google_protobuf//:well_known_type_protos",
     ] + glob(["RemoteTestClient/*.proto"]),
     uses_polling = False,

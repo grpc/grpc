@@ -30,6 +30,7 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/context.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -49,14 +50,37 @@ namespace grpc_core {
 // The base class for all tracer implementations.
 class CallTracerAnnotationInterface {
  public:
+  // Enum associated with types of Annotations.
+  enum class AnnotationType {
+    kMetadataSizes,
+    kDoNotUse_MustBeLast,
+  };
+
+  // Base class to define a new type of annotation.
+  class Annotation {
+   public:
+    explicit Annotation(AnnotationType type) : type_(type) {}
+    AnnotationType type() const { return type_; }
+    virtual std::string ToString() const = 0;
+    virtual ~Annotation() = default;
+
+   private:
+    const AnnotationType type_;
+  };
+
   virtual ~CallTracerAnnotationInterface() {}
   // Records an annotation on the call attempt.
   // TODO(yashykt): If needed, extend this to attach attributes with
   // annotations.
   virtual void RecordAnnotation(absl::string_view annotation) = 0;
+  virtual void RecordAnnotation(const Annotation& annotation) = 0;
   virtual std::string TraceId() = 0;
   virtual std::string SpanId() = 0;
   virtual bool IsSampled() = 0;
+  // Indicates whether this tracer is a delegating tracer or not.
+  // `DelegatingClientCallTracer`, `DelegatingClientCallAttemptTracer` and
+  // `DelegatingServerCallTracer` are the only delegating call tracers.
+  virtual bool IsDelegatingTracer() { return false; }
 };
 
 // The base class for CallAttemptTracer and ServerCallTracer.
@@ -160,6 +184,17 @@ class ServerCallTracerFactory {
 };
 
 void RegisterServerCallTracerFilter(CoreConfiguration::Builder* builder);
+
+// Convenience functions to add call tracers to a call context. Allows setting
+// multiple call tracers to a single call. It is only valid to add client call
+// tracers before the client_channel filter sees the send_initial_metadata op.
+void AddClientCallTracerToContext(grpc_call_context_element* call_context,
+                                  ClientCallTracer* tracer);
+
+// TODO(yashykt): We want server call tracers to be registered through the
+// ServerCallTracerFactory, which has yet to be made into a list.
+void AddServerCallTracerToContext(grpc_call_context_element* call_context,
+                                  ServerCallTracer* tracer);
 
 }  // namespace grpc_core
 

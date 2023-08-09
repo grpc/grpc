@@ -20,7 +20,7 @@
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
 
-#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -34,7 +34,7 @@ namespace {
 // - 2 retries allowed for ABORTED status
 // - first attempt gets ABORTED
 // - second attempt gets ABORTED but server push back disables retrying
-TEST_P(RetryTest, RetryServerPushbackDisabled) {
+CORE_END2END_TEST(RetryTest, RetryServerPushbackDisabled) {
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,

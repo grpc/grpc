@@ -176,6 +176,19 @@ TEST(FuzzTest, EditionEmbeddedNull) {
       ParseTextProtoOrDie(R"pb(file { name: "n" edition: "\000" })pb"));
 }
 
+TEST(FuzzTest, DuplicateOneofIndex) {
+  RoundTripDescriptor(ParseTextProtoOrDie(
+      R"pb(file {
+             name: "F"
+             message_type {
+               name: "M"
+               oneof_decl { name: "O" }
+               field { name: "f1" number: 1 type: TYPE_INT32 oneof_index: 0 }
+               field { name: "f2" number: 1 type: TYPE_INT32 oneof_index: 0 }
+             }
+           })pb"));
+}
+
 TEST(FuzzTest, NanValue) {
   RoundTripDescriptor(ParseTextProtoOrDie(
       R"pb(file {
@@ -286,6 +299,36 @@ TEST(FuzzTest, DefaultWithValidHexEscapePrintable) {
 TEST(FuzzTest, PackageStartsWithNumber) {
   RoundTripDescriptor(
       ParseTextProtoOrDie(R"pb(file { name: "" package: "0" })pb"));
+}
+
+TEST(FuzzTest, RoundTripDescriptorRegression) {
+  RoundTripDescriptor(ParseTextProtoOrDie(R"pb(file {
+                                                 name: ""
+                                                 message_type {
+                                                   name: "A"
+                                                   field {
+                                                     name: "B"
+                                                     number: 1
+                                                     type: TYPE_BYTES
+                                                     default_value: "\007"
+                                                   }
+                                                 }
+                                               })pb"));
+}
+
+// Multiple oneof fields which have the same name.
+TEST(FuzzTest, RoundTripDescriptorRegressionOneofSameName) {
+  RoundTripDescriptor(ParseTextProtoOrDie(
+      R"pb(file {
+             name: "N"
+             package: ""
+             message_type {
+               name: "b"
+               field { name: "W" number: 1 type: TYPE_BYTES oneof_index: 0 }
+               field { name: "W" number: 17 type: TYPE_UINT32 oneof_index: 0 }
+               oneof_decl { name: "k" }
+             }
+           })pb"));
 }
 
 }  // namespace upb_test

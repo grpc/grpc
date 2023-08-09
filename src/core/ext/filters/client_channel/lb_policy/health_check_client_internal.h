@@ -28,6 +28,7 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 
 #include <grpc/impl/connectivity_state.h>
 
@@ -68,9 +69,10 @@ class HealthProducer : public Subchannel::DataProducerInterface {
   UniqueTypeName type() const override { return Type(); }
 
   void AddWatcher(HealthWatcher* watcher,
-                  const std::string& health_check_service_name);
-  void RemoveWatcher(HealthWatcher* watcher,
-                     const std::string& health_check_service_name);
+                  const absl::optional<std::string>& health_check_service_name);
+  void RemoveWatcher(
+      HealthWatcher* watcher,
+      const absl::optional<std::string>& health_check_service_name);
 
  private:
   class ConnectivityWatcher;
@@ -148,6 +150,7 @@ class HealthProducer : public Subchannel::DataProducerInterface {
   std::map<std::string /*health_check_service_name*/,
            OrphanablePtr<HealthChecker>>
       health_checkers_ ABSL_GUARDED_BY(&mu_);
+  std::set<HealthWatcher*> non_health_watchers_ ABSL_GUARDED_BY(&mu_);
 };
 
 // A data watcher that handles health checking.
@@ -155,17 +158,30 @@ class HealthWatcher : public InternalSubchannelDataWatcherInterface {
  public:
   HealthWatcher(
       std::shared_ptr<WorkSerializer> work_serializer,
-      absl::string_view health_check_service_name,
+      absl::optional<std::string> health_check_service_name,
       std::unique_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>
           watcher)
       : work_serializer_(std::move(work_serializer)),
-        health_check_service_name_(health_check_service_name),
+        health_check_service_name_(std::move(health_check_service_name)),
         watcher_(std::move(watcher)) {}
   ~HealthWatcher() override;
+
+  UniqueTypeName type() const override { return HealthProducer::Type(); }
 
   // When the client channel sees this wrapper, it will pass it the real
   // subchannel to use.
   void SetSubchannel(Subchannel* subchannel) override;
+
+  // For intercepting the watcher before it gets up to the real subchannel.
+  std::shared_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>
+  TakeWatcher() {
+    return std::move(watcher_);
+  }
+  void SetWatcher(
+      std::shared_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>
+          watcher) {
+    watcher_ = std::move(watcher);
+  }
 
   void Notify(grpc_connectivity_state state, absl::Status status);
 
@@ -175,7 +191,7 @@ class HealthWatcher : public InternalSubchannelDataWatcherInterface {
 
  private:
   std::shared_ptr<WorkSerializer> work_serializer_;
-  std::string health_check_service_name_;
+  absl::optional<std::string> health_check_service_name_;
   std::shared_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>
       watcher_;
   RefCountedPtr<HealthProducer> producer_;

@@ -134,6 +134,7 @@ void WriteHeader(const protobuf::FileDescriptor* file, Output& output) {
 #include "absl/strings/string_view.h"
 #include "absl/status/statusor.h"
 #include "upb/message/internal.h"
+#include "upb/message/copy.h"
       )cc",
       ToPreproc(file->name()));
 
@@ -171,7 +172,8 @@ void WriteHeader(const protobuf::FileDescriptor* file, Output& output) {
   output("\n");
 
   for (auto message : this_file_messages) {
-    WriteMessageClassDeclarations(message, this_file_exts, output);
+    WriteMessageClassDeclarations(message, this_file_exts, this_file_enums,
+                                  output);
   }
   output("\n");
 
@@ -195,6 +197,7 @@ void WriteSource(const protobuf::FileDescriptor* file, Output& output,
       R"cc(
 #include <stddef.h>
 #include "absl/strings/string_view.h"
+#include "upb/message/copy.h"
 #include "upb/message/internal.h"
 #include "protos/protos.h"
 #include "$0"

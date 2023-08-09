@@ -28,11 +28,17 @@ _LOGGER.setLevel(logging.DEBUG)
 
 
 def _create_channel(args):
-    target = f'{args.server_host}:{args.server_port}'
+    target = f"{args.server_host}:{args.server_port}"
 
-    if args.use_tls or args.use_alts or args.custom_credentials_type is not None:
-        channel_credentials, options = interop_client_lib.get_secure_channel_parameters(
-            args)
+    if (
+        args.use_tls
+        or args.use_alts
+        or args.custom_credentials_type is not None
+    ):
+        (
+            channel_credentials,
+            options,
+        ) = interop_client_lib.get_secure_channel_parameters(args)
         return aio.secure_channel(target, channel_credentials, options)
     else:
         return aio.insecure_channel(target)
@@ -47,7 +53,6 @@ def _test_case_from_arg(test_case_arg):
 
 
 async def test_interoperability():
-
     args = interop_client_lib.parse_interop_client_args()
     channel = _create_channel(args)
     stub = interop_client_lib.create_stub(channel, args)
@@ -55,7 +60,7 @@ async def test_interoperability():
     await methods.test_interoperability(test_case, stub, args)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     asyncio.get_event_loop().set_debug(True)
     asyncio.get_event_loop().run_until_complete(test_interoperability())

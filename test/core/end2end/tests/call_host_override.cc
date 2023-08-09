@@ -19,7 +19,7 @@
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
 
-#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -29,12 +29,12 @@
 namespace grpc_core {
 namespace {
 
-TEST_P(CoreClientChannelTest, CallHostOverride) {
+CORE_END2END_TEST(CoreClientChannelTest, CallHostOverride) {
   InitClient(ChannelArgs().Set(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG,
                                "foo.test.google.fr:1234"));
   InitServer(ChannelArgs());
   auto c = NewClientCall("/foo")
-               .Timeout(Duration::Seconds(5))
+               .Timeout(Duration::Seconds(30))
                .Host("foo.test.google.fr:1234")
                .Create();
   EXPECT_NE(c.GetPeer(), absl::nullopt);

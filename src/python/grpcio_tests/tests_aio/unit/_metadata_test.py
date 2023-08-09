@@ -22,8 +22,11 @@ class TestTypeMetadata(unittest.TestCase):
     """Tests for the metadata type"""
 
     _DEFAULT_DATA = (("key1", "value1"), ("key2", "value2"))
-    _MULTI_ENTRY_DATA = (("key1", "value1"), ("key1", "other value 1"),
-                         ("key2", "value2"))
+    _MULTI_ENTRY_DATA = (
+        ("key1", "value1"),
+        ("key1", "other value 1"),
+        ("key2", "value2"),
+    )
 
     def test_init_metadata(self):
         test_cases = {
@@ -37,8 +40,9 @@ class TestTypeMetadata(unittest.TestCase):
                 self.assertEqual(len(metadata), len(args))
 
     def test_get_item(self):
-        metadata = Metadata(("key", "value1"), ("key", "value2"),
-                            ("key2", "other value"))
+        metadata = Metadata(
+            ("key", "value1"), ("key", "value2"), ("key2", "other value")
+        )
         self.assertEqual(metadata["key"], "value1")
         self.assertEqual(metadata["key2"], "other value")
         self.assertEqual(metadata.get("key"), "value1")
@@ -88,8 +92,9 @@ class TestTypeMetadata(unittest.TestCase):
             metadata["key1"] = override_value
 
         self.assertEqual(metadata["key1"], override_value)
-        self.assertEqual(metadata.get_all("key1"),
-                         [override_value, "other value 1"])
+        self.assertEqual(
+            metadata.get_all("key1"), [override_value, "other value 1"]
+        )
 
         empty_metadata = Metadata()
         for _ in range(3):
@@ -132,6 +137,6 @@ class TestTypeMetadata(unittest.TestCase):
                 self.assertEqual(expected, Metadata.from_tuple(source))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig()
     unittest.main(verbosity=2)

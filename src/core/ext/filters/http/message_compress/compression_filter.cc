@@ -32,6 +32,7 @@
 
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/compression_types.h>
 #include <grpc/support/log.h>
 
@@ -49,7 +50,7 @@
 #include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/poll.h"
-#include "src/core/lib/promise/race.h"
+#include "src/core/lib/promise/prioritized_race.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/call.h"
@@ -273,8 +274,8 @@ ArenaPromise<ServerMetadataHandle> ClientCompressionFilter::MakeCallPromise(
         return std::move(*r);
       });
   // Run the next filter, and race it with getting an error from decompression.
-  return Race(decompress_err->Wait(),
-              next_promise_factory(std::move(call_args)));
+  return PrioritizedRace(decompress_err->Wait(),
+                         next_promise_factory(std::move(call_args)));
 }
 
 ArenaPromise<ServerMetadataHandle> ServerCompressionFilter::MakeCallPromise(
@@ -316,8 +317,8 @@ ArenaPromise<ServerMetadataHandle> ServerCompressionFilter::MakeCallPromise(
         return CompressMessage(std::move(message), *compression_algorithm);
       });
   // Run the next filter, and race it with getting an error from decompression.
-  return Race(decompress_err->Wait(),
-              next_promise_factory(std::move(call_args)));
+  return PrioritizedRace(decompress_err->Wait(),
+                         next_promise_factory(std::move(call_args)));
 }
 
 }  // namespace grpc_core

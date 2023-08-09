@@ -201,7 +201,7 @@ void WindowsEventEngineListener::SinglePortSocketListener::
       peer_address, listener_->iocp_->Watch(io_state_->accept_socket),
       listener_->memory_allocator_factory_->CreateMemoryAllocator(
           absl::StrFormat("listener endpoint %s", peer_name)),
-      listener_->config_, listener_->executor_, listener_->engine_);
+      listener_->config_, listener_->thread_pool_, listener_->engine_);
   listener_->accept_cb_(
       std::move(endpoint),
       listener_->memory_allocator_factory_->CreateMemoryAllocator(
@@ -265,12 +265,12 @@ WindowsEventEngineListener::WindowsEventEngineListener(
     IOCP* iocp, AcceptCallback accept_cb,
     absl::AnyInvocable<void(absl::Status)> on_shutdown,
     std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory,
-    std::shared_ptr<EventEngine> engine, Executor* executor,
+    std::shared_ptr<EventEngine> engine, ThreadPool* thread_pool,
     const EndpointConfig& config)
     : iocp_(iocp),
       config_(config),
       engine_(std::move(engine)),
-      executor_(executor),
+      thread_pool_(thread_pool),
       memory_allocator_factory_(std::move(memory_allocator_factory)),
       accept_cb_(std::move(accept_cb)),
       on_shutdown_(std::move(on_shutdown)) {}

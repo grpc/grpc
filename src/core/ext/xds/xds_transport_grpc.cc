@@ -29,6 +29,7 @@
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
@@ -255,7 +256,7 @@ grpc_channel* CreateXdsChannel(const ChannelArgs& args,
                                const GrpcXdsBootstrap::GrpcXdsServer& server) {
   RefCountedPtr<grpc_channel_credentials> channel_creds =
       CoreConfiguration::Get().channel_creds_registry().CreateChannelCreds(
-          server.channel_creds_type(), server.channel_creds_config());
+          server.channel_creds_config());
   return grpc_channel_create(server.server_uri().c_str(), channel_creds.get(),
                              args.ToC().get());
 }

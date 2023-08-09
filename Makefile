@@ -375,7 +375,7 @@ LDFLAGS += -pthread
 endif
 
 ifeq ($(SYSTEM),MINGW32)
-LIBS = m pthread ws2_32 dbghelp bcrypt
+LIBS = m pthread ws2_32 iphlpapi dbghelp bcrypt
 LDFLAGS += -pthread
 endif
 
@@ -410,9 +410,9 @@ E = @echo
 Q = @
 endif
 
-CORE_VERSION = 32.0.0
-CPP_VERSION = 1.56.0-dev
-CSHARP_VERSION = 2.56.0-dev
+CORE_VERSION = 34.0.0
+CPP_VERSION = 1.58.0-dev
+CSHARP_VERSION = 2.58.0-dev
 
 CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
 CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
@@ -448,7 +448,7 @@ SHARED_EXT_CORE = dll
 SHARED_EXT_CPP = dll
 SHARED_EXT_CSHARP = dll
 SHARED_PREFIX =
-SHARED_VERSION_CORE = -32
+SHARED_VERSION_CORE = -34
 SHARED_VERSION_CPP = -1
 SHARED_VERSION_CSHARP = -2
 else ifeq ($(SYSTEM),Darwin)
@@ -638,7 +638,7 @@ systemtap_dep_error:
 	@echo
 	@echo "DEPENDENCY ERROR"
 	@echo
-	@echo "Under the '$(CONFIG)' configutation, the target you are trying "
+	@echo "Under the '$(CONFIG)' configuration, the target you are trying "
 	@echo "to build requires systemtap 2.7+ (on Linux) or dtrace (on other "
 	@echo "platforms such as Solaris and *BSD). "
 	@echo
@@ -826,8 +826,8 @@ $(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE):
 ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBADDRESS_SORTING_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libaddress_sorting.so.32 -o $(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBADDRESS_SORTING_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE).so.32
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libaddress_sorting.so.34 -o $(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBADDRESS_SORTING_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE).so.34
 	$(Q) ln -sf $(SHARED_PREFIX)address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE).so
 endif
 endif
@@ -908,6 +908,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/support/atm_gcc_sync.h \
     include/grpc/support/atm_windows.h \
     include/grpc/support/cpu.h \
+    include/grpc/support/json.h \
     include/grpc/support/log.h \
     include/grpc/support/log_windows.h \
     include/grpc/support/port_platform.h \
@@ -947,8 +948,8 @@ $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGPR_OB
 ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGPR_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgpr.so.32 -o $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGPR_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).so.32
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgpr.so.34 -o $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGPR_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).so.34
 	$(Q) ln -sf $(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).so
 endif
 endif
@@ -996,7 +997,6 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/weighted_round_robin.cc \
     src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/cds.cc \
-    src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc \
@@ -1020,6 +1020,7 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc \
     src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc \
     src/core/ext/filters/client_channel/retry_filter.cc \
+    src/core/ext/filters/client_channel/retry_filter_legacy_call_data.cc \
     src/core/ext/filters/client_channel/retry_service_config.cc \
     src/core/ext/filters/client_channel/retry_throttle.cc \
     src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc \
@@ -1057,14 +1058,16 @@ LIBGRPC_SRC = \
     src/core/ext/transport/chttp2/transport/frame_window_update.cc \
     src/core/ext/transport/chttp2/transport/hpack_encoder.cc \
     src/core/ext/transport/chttp2/transport/hpack_encoder_table.cc \
+    src/core/ext/transport/chttp2/transport/hpack_parse_result.cc \
     src/core/ext/transport/chttp2/transport/hpack_parser.cc \
     src/core/ext/transport/chttp2/transport/hpack_parser_table.cc \
     src/core/ext/transport/chttp2/transport/http2_settings.cc \
     src/core/ext/transport/chttp2/transport/http_trace.cc \
     src/core/ext/transport/chttp2/transport/huffsyms.cc \
     src/core/ext/transport/chttp2/transport/parsing.cc \
+    src/core/ext/transport/chttp2/transport/ping_abuse_policy.cc \
+    src/core/ext/transport/chttp2/transport/ping_rate_policy.cc \
     src/core/ext/transport/chttp2/transport/stream_lists.cc \
-    src/core/ext/transport/chttp2/transport/stream_map.cc \
     src/core/ext/transport/chttp2/transport/varint.cc \
     src/core/ext/transport/chttp2/transport/writing.cc \
     src/core/ext/transport/inproc/inproc_plugin.cc \
@@ -1132,6 +1135,7 @@ LIBGRPC_SRC = \
     src/core/ext/upb-generated/envoy/config/trace/v3/trace.upb.c \
     src/core/ext/upb-generated/envoy/config/trace/v3/xray.upb.c \
     src/core/ext/upb-generated/envoy/config/trace/v3/zipkin.upb.c \
+    src/core/ext/upb-generated/envoy/data/accesslog/v3/accesslog.upb.c \
     src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.c \
     src/core/ext/upb-generated/envoy/extensions/filters/common/fault/v3/fault.upb.c \
     src/core/ext/upb-generated/envoy/extensions/filters/http/fault/v3/fault.upb.c \
@@ -1142,6 +1146,7 @@ LIBGRPC_SRC = \
     src/core/ext/upb-generated/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb.c \
     src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.upb.c \
     src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/common/v3/common.upb.c \
+    src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/pick_first/v3/pick_first.upb.c \
     src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb.c \
     src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb.c \
     src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.c \
@@ -1293,6 +1298,7 @@ LIBGRPC_SRC = \
     src/core/ext/upbdefs-generated/envoy/config/trace/v3/trace.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/config/trace/v3/xray.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/config/trace/v3/zipkin.upbdefs.c \
+    src/core/ext/upbdefs-generated/envoy/data/accesslog/v3/accesslog.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/extensions/filters/common/fault/v3/fault.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/extensions/filters/http/fault/v3/fault.upbdefs.c \
@@ -1431,6 +1437,10 @@ LIBGRPC_SRC = \
     src/core/lib/debug/stats.cc \
     src/core/lib/debug/stats_data.cc \
     src/core/lib/debug/trace.cc \
+    src/core/lib/event_engine/ares_resolver.cc \
+    src/core/lib/event_engine/cf_engine/cf_engine.cc \
+    src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc \
+    src/core/lib/event_engine/cf_engine/dns_service_resolver.cc \
     src/core/lib/event_engine/channel_args_endpoint_config.cc \
     src/core/lib/event_engine/default_event_engine.cc \
     src/core/lib/event_engine/default_event_engine_factory.cc \
@@ -1459,7 +1469,10 @@ LIBGRPC_SRC = \
     src/core/lib/event_engine/slice.cc \
     src/core/lib/event_engine/slice_buffer.cc \
     src/core/lib/event_engine/tcp_socket_utils.cc \
-    src/core/lib/event_engine/thread_pool.cc \
+    src/core/lib/event_engine/thread_pool/original_thread_pool.cc \
+    src/core/lib/event_engine/thread_pool/thread_pool_factory.cc \
+    src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc \
+    src/core/lib/event_engine/thready_event_engine/thready_event_engine.cc \
     src/core/lib/event_engine/time_util.cc \
     src/core/lib/event_engine/trace.cc \
     src/core/lib/event_engine/utils.cc \
@@ -1468,9 +1481,11 @@ LIBGRPC_SRC = \
     src/core/lib/event_engine/windows/windows_endpoint.cc \
     src/core/lib/event_engine/windows/windows_engine.cc \
     src/core/lib/event_engine/windows/windows_listener.cc \
+    src/core/lib/event_engine/work_queue/basic_work_queue.cc \
     src/core/lib/experiments/config.cc \
     src/core/lib/experiments/experiments.cc \
     src/core/lib/gprpp/load_file.cc \
+    src/core/lib/gprpp/per_cpu.cc \
     src/core/lib/gprpp/status_helper.cc \
     src/core/lib/gprpp/time.cc \
     src/core/lib/gprpp/time_averaged_stats.cc \
@@ -1554,6 +1569,7 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/timer_manager.cc \
     src/core/lib/iomgr/unix_sockets_posix.cc \
     src/core/lib/iomgr/unix_sockets_posix_noop.cc \
+    src/core/lib/iomgr/vsock.cc \
     src/core/lib/iomgr/wakeup_fd_eventfd.cc \
     src/core/lib/iomgr/wakeup_fd_nospecial.cc \
     src/core/lib/iomgr/wakeup_fd_pipe.cc \
@@ -1579,12 +1595,14 @@ LIBGRPC_SRC = \
     src/core/lib/resource_quota/resource_quota.cc \
     src/core/lib/resource_quota/thread_quota.cc \
     src/core/lib/resource_quota/trace.cc \
+    src/core/lib/security/authorization/audit_logging.cc \
     src/core/lib/security/authorization/authorization_policy_provider_vtable.cc \
     src/core/lib/security/authorization/evaluate_args.cc \
     src/core/lib/security/authorization/grpc_authorization_engine.cc \
     src/core/lib/security/authorization/grpc_server_authz_filter.cc \
     src/core/lib/security/authorization/matchers.cc \
     src/core/lib/security/authorization/rbac_policy.cc \
+    src/core/lib/security/authorization/stdout_logger.cc \
     src/core/lib/security/certificate_provider/certificate_provider_registry.cc \
     src/core/lib/security/context/security_context.cc \
     src/core/lib/security/credentials/alts/alts_credentials.cc \
@@ -1733,9 +1751,11 @@ PUBLIC_HEADERS_C += \
     include/grpc/event_engine/slice_buffer.h \
     include/grpc/fork.h \
     include/grpc/grpc.h \
+    include/grpc/grpc_audit_logging.h \
     include/grpc/grpc_posix.h \
     include/grpc/grpc_security.h \
     include/grpc/grpc_security_constants.h \
+    include/grpc/impl/channel_arg_names.h \
     include/grpc/impl/codegen/atm.h \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \
@@ -1772,6 +1792,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/support/atm_gcc_sync.h \
     include/grpc/support/atm_windows.h \
     include/grpc/support/cpu.h \
+    include/grpc/support/json.h \
     include/grpc/support/log.h \
     include/grpc/support/log_windows.h \
     include/grpc/support/port_platform.h \
@@ -1822,8 +1843,8 @@ $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_
 ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc.so.32 -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so.32
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc.so.34 -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so.34
 	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so
 endif
 endif
@@ -1868,7 +1889,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.cc \
     src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc \
     src/core/ext/filters/client_channel/lb_policy/priority/priority.cc \
-    src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc \
     src/core/ext/filters/client_channel/lb_policy/rls/rls.cc \
     src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc \
     src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.cc \
@@ -1890,6 +1910,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/resolver/polling_resolver.cc \
     src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc \
     src/core/ext/filters/client_channel/retry_filter.cc \
+    src/core/ext/filters/client_channel/retry_filter_legacy_call_data.cc \
     src/core/ext/filters/client_channel/retry_service_config.cc \
     src/core/ext/filters/client_channel/retry_throttle.cc \
     src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc \
@@ -1920,14 +1941,16 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/transport/chttp2/transport/frame_window_update.cc \
     src/core/ext/transport/chttp2/transport/hpack_encoder.cc \
     src/core/ext/transport/chttp2/transport/hpack_encoder_table.cc \
+    src/core/ext/transport/chttp2/transport/hpack_parse_result.cc \
     src/core/ext/transport/chttp2/transport/hpack_parser.cc \
     src/core/ext/transport/chttp2/transport/hpack_parser_table.cc \
     src/core/ext/transport/chttp2/transport/http2_settings.cc \
     src/core/ext/transport/chttp2/transport/http_trace.cc \
     src/core/ext/transport/chttp2/transport/huffsyms.cc \
     src/core/ext/transport/chttp2/transport/parsing.cc \
+    src/core/ext/transport/chttp2/transport/ping_abuse_policy.cc \
+    src/core/ext/transport/chttp2/transport/ping_rate_policy.cc \
     src/core/ext/transport/chttp2/transport/stream_lists.cc \
-    src/core/ext/transport/chttp2/transport/stream_map.cc \
     src/core/ext/transport/chttp2/transport/varint.cc \
     src/core/ext/transport/chttp2/transport/writing.cc \
     src/core/ext/transport/inproc/inproc_plugin.cc \
@@ -1977,6 +2000,10 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/debug/stats.cc \
     src/core/lib/debug/stats_data.cc \
     src/core/lib/debug/trace.cc \
+    src/core/lib/event_engine/ares_resolver.cc \
+    src/core/lib/event_engine/cf_engine/cf_engine.cc \
+    src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc \
+    src/core/lib/event_engine/cf_engine/dns_service_resolver.cc \
     src/core/lib/event_engine/channel_args_endpoint_config.cc \
     src/core/lib/event_engine/default_event_engine.cc \
     src/core/lib/event_engine/default_event_engine_factory.cc \
@@ -2005,7 +2032,10 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/event_engine/slice.cc \
     src/core/lib/event_engine/slice_buffer.cc \
     src/core/lib/event_engine/tcp_socket_utils.cc \
-    src/core/lib/event_engine/thread_pool.cc \
+    src/core/lib/event_engine/thread_pool/original_thread_pool.cc \
+    src/core/lib/event_engine/thread_pool/thread_pool_factory.cc \
+    src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc \
+    src/core/lib/event_engine/thready_event_engine/thready_event_engine.cc \
     src/core/lib/event_engine/time_util.cc \
     src/core/lib/event_engine/trace.cc \
     src/core/lib/event_engine/utils.cc \
@@ -2014,9 +2044,11 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/event_engine/windows/windows_endpoint.cc \
     src/core/lib/event_engine/windows/windows_engine.cc \
     src/core/lib/event_engine/windows/windows_listener.cc \
+    src/core/lib/event_engine/work_queue/basic_work_queue.cc \
     src/core/lib/experiments/config.cc \
     src/core/lib/experiments/experiments.cc \
     src/core/lib/gprpp/load_file.cc \
+    src/core/lib/gprpp/per_cpu.cc \
     src/core/lib/gprpp/status_helper.cc \
     src/core/lib/gprpp/time.cc \
     src/core/lib/gprpp/time_averaged_stats.cc \
@@ -2099,6 +2131,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/timer_manager.cc \
     src/core/lib/iomgr/unix_sockets_posix.cc \
     src/core/lib/iomgr/unix_sockets_posix_noop.cc \
+    src/core/lib/iomgr/vsock.cc \
     src/core/lib/iomgr/wakeup_fd_eventfd.cc \
     src/core/lib/iomgr/wakeup_fd_nospecial.cc \
     src/core/lib/iomgr/wakeup_fd_pipe.cc \
@@ -2222,9 +2255,11 @@ PUBLIC_HEADERS_C += \
     include/grpc/event_engine/slice_buffer.h \
     include/grpc/fork.h \
     include/grpc/grpc.h \
+    include/grpc/grpc_audit_logging.h \
     include/grpc/grpc_posix.h \
     include/grpc/grpc_security.h \
     include/grpc/grpc_security_constants.h \
+    include/grpc/impl/channel_arg_names.h \
     include/grpc/impl/codegen/atm.h \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \
@@ -2261,6 +2296,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/support/atm_gcc_sync.h \
     include/grpc/support/atm_windows.h \
     include/grpc/support/cpu.h \
+    include/grpc/support/json.h \
     include/grpc/support/log.h \
     include/grpc/support/log_windows.h \
     include/grpc/support/port_platform.h \
@@ -2301,8 +2337,8 @@ $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $
 ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_UNSECURE_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_unsecure.so.32 -o $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_UNSECURE_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).so.32
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_unsecure.so.34 -o $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_UNSECURE_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).so.34
 	$(Q) ln -sf $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).so
 endif
 endif
@@ -2380,13 +2416,16 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_freebsd.c \
     third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_fuchsia.c \
     third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_linux.c \
+    third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_openbsd.c \
     third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_win.c \
     third_party/boringssl-with-bazel/src/crypto/cpu_arm.c \
     third_party/boringssl-with-bazel/src/crypto/cpu_arm_freebsd.c \
     third_party/boringssl-with-bazel/src/crypto/cpu_arm_linux.c \
+    third_party/boringssl-with-bazel/src/crypto/cpu_arm_openbsd.c \
     third_party/boringssl-with-bazel/src/crypto/cpu_intel.c \
     third_party/boringssl-with-bazel/src/crypto/crypto.c \
     third_party/boringssl-with-bazel/src/crypto/curve25519/curve25519.c \
+    third_party/boringssl-with-bazel/src/crypto/curve25519/curve25519_64_adx.c \
     third_party/boringssl-with-bazel/src/crypto/curve25519/spake25519.c \
     third_party/boringssl-with-bazel/src/crypto/des/des.c \
     third_party/boringssl-with-bazel/src/crypto/dh_extra/dh_asn1.c \
@@ -2421,7 +2460,6 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/ex_data.c \
     third_party/boringssl-with-bazel/src/crypto/fipsmodule/bcm.c \
     third_party/boringssl-with-bazel/src/crypto/fipsmodule/fips_shared_support.c \
-    third_party/boringssl-with-bazel/src/crypto/hkdf/hkdf.c \
     third_party/boringssl-with-bazel/src/crypto/hpke/hpke.c \
     third_party/boringssl-with-bazel/src/crypto/hrss/hrss.c \
     third_party/boringssl-with-bazel/src/crypto/kyber/keccak.c \
@@ -2449,14 +2487,16 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/pool/pool.c \
     third_party/boringssl-with-bazel/src/crypto/rand_extra/deterministic.c \
     third_party/boringssl-with-bazel/src/crypto/rand_extra/forkunsafe.c \
-    third_party/boringssl-with-bazel/src/crypto/rand_extra/fuchsia.c \
+    third_party/boringssl-with-bazel/src/crypto/rand_extra/getentropy.c \
+    third_party/boringssl-with-bazel/src/crypto/rand_extra/ios.c \
     third_party/boringssl-with-bazel/src/crypto/rand_extra/passive.c \
     third_party/boringssl-with-bazel/src/crypto/rand_extra/rand_extra.c \
+    third_party/boringssl-with-bazel/src/crypto/rand_extra/trusty.c \
     third_party/boringssl-with-bazel/src/crypto/rand_extra/windows.c \
     third_party/boringssl-with-bazel/src/crypto/rc4/rc4.c \
-    third_party/boringssl-with-bazel/src/crypto/refcount_c11.c \
-    third_party/boringssl-with-bazel/src/crypto/refcount_lock.c \
+    third_party/boringssl-with-bazel/src/crypto/refcount.c \
     third_party/boringssl-with-bazel/src/crypto/rsa_extra/rsa_asn1.c \
+    third_party/boringssl-with-bazel/src/crypto/rsa_extra/rsa_crypt.c \
     third_party/boringssl-with-bazel/src/crypto/rsa_extra/rsa_print.c \
     third_party/boringssl-with-bazel/src/crypto/siphash/siphash.c \
     third_party/boringssl-with-bazel/src/crypto/stack/stack.c \
@@ -2657,8 +2697,8 @@ LIBUPB_SRC = \
     third_party/utf8_range/range2-sse.c \
     third_party/upb/upb/base/status.c \
     third_party/upb/upb/collections/array.c \
-    third_party/upb/upb/collections/map.c \
     third_party/upb/upb/collections/map_sorter.c \
+    third_party/upb/upb/collections/map.c \
     third_party/upb/upb/hash/common.c \
     third_party/upb/upb/json/decode.c \
     third_party/upb/upb/json/encode.c \
@@ -2684,15 +2724,15 @@ LIBUPB_SRC = \
     third_party/upb/upb/reflection/extension_range.c \
     third_party/upb/upb/reflection/field_def.c \
     third_party/upb/upb/reflection/file_def.c \
-    third_party/upb/upb/reflection/message.c \
     third_party/upb/upb/reflection/message_def.c \
     third_party/upb/upb/reflection/message_reserved_range.c \
+    third_party/upb/upb/reflection/message.c \
     third_party/upb/upb/reflection/method_def.c \
     third_party/upb/upb/reflection/oneof_def.c \
     third_party/upb/upb/reflection/service_def.c \
     third_party/upb/upb/text/encode.c \
-    third_party/upb/upb/wire/decode.c \
     third_party/upb/upb/wire/decode_fast.c \
+    third_party/upb/upb/wire/decode.c \
     third_party/upb/upb/wire/encode.c \
     third_party/upb/upb/wire/eps_copy_input_stream.c \
     third_party/upb/upb/wire/reader.c \
@@ -2726,8 +2766,8 @@ $(LIBDIR)/$(CONFIG)/libupb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBUPB_OB
 ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libupb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libupb.so.32 -o $(LIBDIR)/$(CONFIG)/libupb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb$(SHARED_VERSION_CORE).so.32
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libupb.so.34 -o $(LIBDIR)/$(CONFIG)/libupb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb$(SHARED_VERSION_CORE).so.34
 	$(Q) ln -sf $(SHARED_PREFIX)upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb$(SHARED_VERSION_CORE).so
 endif
 endif
@@ -2782,62 +2822,66 @@ endif
 
 # start of build recipe for library "ares" (generated by makelib(lib) template function)
 LIBARES_SRC = \
-    third_party/cares/cares/src/lib/ares_init.c \
-    third_party/cares/cares/src/lib/ares_expand_string.c \
-    third_party/cares/cares/src/lib/ares_strcasecmp.c \
-    third_party/cares/cares/src/lib/ares_destroy.c \
-    third_party/cares/cares/src/lib/ares_free_string.c \
-    third_party/cares/cares/src/lib/ares__timeval.c \
-    third_party/cares/cares/src/lib/ares_library_init.c \
-    third_party/cares/cares/src/lib/ares_getsock.c \
-    third_party/cares/cares/src/lib/ares_process.c \
-    third_party/cares/cares/src/lib/ares_create_query.c \
-    third_party/cares/cares/src/lib/ares_fds.c \
-    third_party/cares/cares/src/lib/ares_gethostbyname.c \
-    third_party/cares/cares/src/lib/ares_mkquery.c \
-    third_party/cares/cares/src/lib/ares_freeaddrinfo.c \
-    third_party/cares/cares/src/lib/ares_strdup.c \
-    third_party/cares/cares/src/lib/ares_timeout.c \
-    third_party/cares/cares/src/lib/ares_getnameinfo.c \
-    third_party/cares/cares/src/lib/ares_parse_soa_reply.c \
-    third_party/cares/cares/src/lib/ares_parse_naptr_reply.c \
-    third_party/cares/cares/src/lib/ares_parse_a_reply.c \
-    third_party/cares/cares/src/lib/ares_send.c \
-    third_party/cares/cares/src/lib/ares_nowarn.c \
-    third_party/cares/cares/src/lib/ares__sortaddrinfo.c \
-    third_party/cares/cares/src/lib/ares_android.c \
-    third_party/cares/cares/src/lib/ares_strerror.c \
-    third_party/cares/cares/src/lib/ares_parse_caa_reply.c \
-    third_party/cares/cares/src/lib/ares__close_sockets.c \
-    third_party/cares/cares/src/lib/ares_llist.c \
-    third_party/cares/cares/src/lib/ares_parse_aaaa_reply.c \
-    third_party/cares/cares/src/lib/ares_getaddrinfo.c \
-    third_party/cares/cares/src/lib/ares_parse_ns_reply.c \
-    third_party/cares/cares/src/lib/windows_port.c \
-    third_party/cares/cares/src/lib/bitncmp.c \
-    third_party/cares/cares/src/lib/ares_strsplit.c \
-    third_party/cares/cares/src/lib/ares_data.c \
-    third_party/cares/cares/src/lib/ares_free_hostent.c \
-    third_party/cares/cares/src/lib/ares_platform.c \
-    third_party/cares/cares/src/lib/ares_parse_txt_reply.c \
-    third_party/cares/cares/src/lib/ares__parse_into_addrinfo.c \
-    third_party/cares/cares/src/lib/ares_gethostbyaddr.c \
-    third_party/cares/cares/src/lib/ares_parse_srv_reply.c \
-    third_party/cares/cares/src/lib/ares_version.c \
-    third_party/cares/cares/src/lib/ares_getenv.c \
-    third_party/cares/cares/src/lib/ares_search.c \
-    third_party/cares/cares/src/lib/ares_parse_mx_reply.c \
-    third_party/cares/cares/src/lib/ares__get_hostent.c \
-    third_party/cares/cares/src/lib/ares__readaddrinfo.c \
-    third_party/cares/cares/src/lib/ares_parse_ptr_reply.c \
     third_party/cares/cares/src/lib/ares__read_line.c \
-    third_party/cares/cares/src/lib/ares_query.c \
-    third_party/cares/cares/src/lib/ares_options.c \
-    third_party/cares/cares/src/lib/inet_net_pton.c \
-    third_party/cares/cares/src/lib/ares_expand_name.c \
-    third_party/cares/cares/src/lib/inet_ntop.c \
+    third_party/cares/cares/src/lib/ares__get_hostent.c \
+    third_party/cares/cares/src/lib/ares__close_sockets.c \
+    third_party/cares/cares/src/lib/ares__timeval.c \
+    third_party/cares/cares/src/lib/ares_gethostbyaddr.c \
+    third_party/cares/cares/src/lib/ares_getenv.c \
+    third_party/cares/cares/src/lib/ares_free_string.c \
+    third_party/cares/cares/src/lib/ares_free_hostent.c \
+    third_party/cares/cares/src/lib/ares_fds.c \
+    third_party/cares/cares/src/lib/ares_expand_string.c \
+    third_party/cares/cares/src/lib/ares_create_query.c \
     third_party/cares/cares/src/lib/ares_cancel.c \
+    third_party/cares/cares/src/lib/ares_android.c \
+    third_party/cares/cares/src/lib/ares_parse_txt_reply.c \
+    third_party/cares/cares/src/lib/ares_parse_srv_reply.c \
+    third_party/cares/cares/src/lib/ares_parse_soa_reply.c \
+    third_party/cares/cares/src/lib/ares_parse_ptr_reply.c \
+    third_party/cares/cares/src/lib/ares_parse_ns_reply.c \
+    third_party/cares/cares/src/lib/ares_parse_naptr_reply.c \
+    third_party/cares/cares/src/lib/ares_parse_mx_reply.c \
+    third_party/cares/cares/src/lib/ares_parse_caa_reply.c \
+    third_party/cares/cares/src/lib/ares_options.c \
+    third_party/cares/cares/src/lib/ares_nowarn.c \
+    third_party/cares/cares/src/lib/ares_mkquery.c \
+    third_party/cares/cares/src/lib/ares_llist.c \
+    third_party/cares/cares/src/lib/ares_getsock.c \
+    third_party/cares/cares/src/lib/ares_getnameinfo.c \
+    third_party/cares/cares/src/lib/bitncmp.c \
     third_party/cares/cares/src/lib/ares_writev.c \
+    third_party/cares/cares/src/lib/ares_version.c \
+    third_party/cares/cares/src/lib/ares_timeout.c \
+    third_party/cares/cares/src/lib/ares_strerror.c \
+    third_party/cares/cares/src/lib/ares_strcasecmp.c \
+    third_party/cares/cares/src/lib/ares_search.c \
+    third_party/cares/cares/src/lib/ares_platform.c \
+    third_party/cares/cares/src/lib/windows_port.c \
+    third_party/cares/cares/src/lib/inet_ntop.c \
+    third_party/cares/cares/src/lib/ares__sortaddrinfo.c \
+    third_party/cares/cares/src/lib/ares__readaddrinfo.c \
+    third_party/cares/cares/src/lib/ares_parse_uri_reply.c \
+    third_party/cares/cares/src/lib/ares__parse_into_addrinfo.c \
+    third_party/cares/cares/src/lib/ares_parse_a_reply.c \
+    third_party/cares/cares/src/lib/ares_parse_aaaa_reply.c \
+    third_party/cares/cares/src/lib/ares_library_init.c \
+    third_party/cares/cares/src/lib/ares_init.c \
+    third_party/cares/cares/src/lib/ares_gethostbyname.c \
+    third_party/cares/cares/src/lib/ares_getaddrinfo.c \
+    third_party/cares/cares/src/lib/ares_freeaddrinfo.c \
+    third_party/cares/cares/src/lib/ares_expand_name.c \
+    third_party/cares/cares/src/lib/ares_destroy.c \
+    third_party/cares/cares/src/lib/ares_data.c \
+    third_party/cares/cares/src/lib/ares__addrinfo_localhost.c \
+    third_party/cares/cares/src/lib/ares__addrinfo2hostent.c \
+    third_party/cares/cares/src/lib/inet_net_pton.c \
+    third_party/cares/cares/src/lib/ares_strsplit.c \
+    third_party/cares/cares/src/lib/ares_strdup.c \
+    third_party/cares/cares/src/lib/ares_send.c \
+    third_party/cares/cares/src/lib/ares_rand.c \
+    third_party/cares/cares/src/lib/ares_query.c \
+    third_party/cares/cares/src/lib/ares_process.c \
 
 
 LIBARES_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBARES_SRC))))
@@ -3017,8 +3061,8 @@ ifneq ($(OPENSSL_DEP),)
 # This is to ensure the embedded OpenSSL is built beforehand, properly
 # installing headers to their final destination on the drive. We need this
 # otherwise parallel compilation will fail if a source is compiled first.
+src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc: $(OPENSSL_DEP)
 src/core/ext/filters/client_channel/lb_policy/xds/cds.cc: $(OPENSSL_DEP)
-src/core/ext/filters/client_channel/lb_policy/xds/xds_attributes.cc: $(OPENSSL_DEP)
 src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc: $(OPENSSL_DEP)
 src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc: $(OPENSSL_DEP)
 src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc: $(OPENSSL_DEP)
@@ -3096,6 +3140,7 @@ src/core/ext/upb-generated/envoy/config/trace/v3/skywalking.upb.c: $(OPENSSL_DEP
 src/core/ext/upb-generated/envoy/config/trace/v3/trace.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/config/trace/v3/xray.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/config/trace/v3/zipkin.upb.c: $(OPENSSL_DEP)
+src/core/ext/upb-generated/envoy/data/accesslog/v3/accesslog.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/extensions/filters/common/fault/v3/fault.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/extensions/filters/http/fault/v3/fault.upb.c: $(OPENSSL_DEP)
@@ -3106,6 +3151,7 @@ src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_mana
 src/core/ext/upb-generated/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/common/v3/common.upb.c: $(OPENSSL_DEP)
+src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/pick_first/v3/pick_first.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.c: $(OPENSSL_DEP)
@@ -3238,6 +3284,7 @@ src/core/ext/upbdefs-generated/envoy/config/trace/v3/skywalking.upbdefs.c: $(OPE
 src/core/ext/upbdefs-generated/envoy/config/trace/v3/trace.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/config/trace/v3/xray.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/config/trace/v3/zipkin.upbdefs.c: $(OPENSSL_DEP)
+src/core/ext/upbdefs-generated/envoy/data/accesslog/v3/accesslog.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/extensions/filters/common/fault/v3/fault.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/extensions/filters/http/fault/v3/fault.upbdefs.c: $(OPENSSL_DEP)
@@ -3352,9 +3399,11 @@ src/core/ext/xds/xds_transport_grpc.cc: $(OPENSSL_DEP)
 src/core/lib/http/httpcli_security_connector.cc: $(OPENSSL_DEP)
 src/core/lib/json/json_util.cc: $(OPENSSL_DEP)
 src/core/lib/matchers/matchers.cc: $(OPENSSL_DEP)
+src/core/lib/security/authorization/audit_logging.cc: $(OPENSSL_DEP)
 src/core/lib/security/authorization/grpc_authorization_engine.cc: $(OPENSSL_DEP)
 src/core/lib/security/authorization/matchers.cc: $(OPENSSL_DEP)
 src/core/lib/security/authorization/rbac_policy.cc: $(OPENSSL_DEP)
+src/core/lib/security/authorization/stdout_logger.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/alts/alts_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/channel_creds_registry_init.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/external/aws_external_account_credentials.cc: $(OPENSSL_DEP)

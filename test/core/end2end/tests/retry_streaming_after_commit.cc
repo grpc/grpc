@@ -19,7 +19,7 @@
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
 
-#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -31,7 +31,7 @@ namespace {
 
 // Tests that we can continue to send/recv messages on a streaming call
 // after retries are committed.
-TEST_P(RetryTest, RetryStreamingAfterCommit) {
+CORE_END2END_TEST(RetryTest, RetryStreamingAfterCommit) {
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,

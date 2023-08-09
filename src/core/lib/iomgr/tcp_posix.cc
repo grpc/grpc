@@ -729,6 +729,9 @@ static void tcp_shutdown(grpc_endpoint* ep, grpc_error_handle why) {
   grpc_tcp* tcp = reinterpret_cast<grpc_tcp*>(ep);
   ZerocopyDisableAndWaitForRemaining(tcp);
   grpc_fd_shutdown(tcp->em_fd, why);
+  tcp->read_mu.Lock();
+  tcp->memory_owner.Reset();
+  tcp->read_mu.Unlock();
 }
 
 static void tcp_free(grpc_tcp* tcp) {
@@ -775,6 +778,9 @@ static void tcp_destroy(grpc_endpoint* ep) {
     gpr_atm_no_barrier_store(&tcp->stop_error_notification, true);
     grpc_fd_set_error(tcp->em_fd);
   }
+  tcp->read_mu.Lock();
+  tcp->memory_owner.Reset();
+  tcp->read_mu.Unlock();
   TCP_UNREF(tcp, "destroy");
 }
 
@@ -795,11 +801,14 @@ static void maybe_post_reclaimer(grpc_tcp* tcp)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(tcp->read_mu) {
   if (!tcp->has_posted_reclaimer) {
     tcp->has_posted_reclaimer = true;
+    TCP_REF(tcp, "posted_reclaimer");
     tcp->memory_owner.PostReclaimer(
         grpc_core::ReclamationPass::kBenign,
         [tcp](absl::optional<grpc_core::ReclamationSweep> sweep) {
-          if (!sweep.has_value()) return;
-          perform_reclamation(tcp);
+          if (sweep.has_value()) {
+            perform_reclamation(tcp);
+          }
+          TCP_UNREF(tcp, "posted_reclaimer");
         });
   }
 }
@@ -1048,7 +1057,7 @@ static void maybe_make_read_slices(grpc_tcp* tcp)
   static const int kBigAlloc = 64 * 1024;
   static const int kSmallAlloc = 8 * 1024;
   if (tcp->incoming_buffer->length <
-      static_cast<size_t>(tcp->min_progress_size)) {
+      std::max<size_t>(tcp->min_progress_size, 1)) {
     size_t allocate_length = tcp->min_progress_size;
     const size_t target_length = static_cast<size_t>(tcp->target_length);
     // If memory pressure is low and we think there will be more than
@@ -1058,8 +1067,8 @@ static void maybe_make_read_slices(grpc_tcp* tcp)
     if (low_memory_pressure && target_length > allocate_length) {
       allocate_length = target_length;
     }
-    int extra_wanted =
-        allocate_length - static_cast<int>(tcp->incoming_buffer->length);
+    int extra_wanted = std::max<int>(
+        1, allocate_length - static_cast<int>(tcp->incoming_buffer->length));
     if (extra_wanted >=
         (low_memory_pressure ? kSmallAlloc * 3 / 2 : kBigAlloc)) {
       while (extra_wanted > 0) {
@@ -1088,7 +1097,7 @@ static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error_handle error) {
   }
   tcp->read_mu.Lock();
   grpc_error_handle tcp_read_error;
-  if (GPR_LIKELY(error.ok())) {
+  if (GPR_LIKELY(error.ok()) && tcp->memory_owner.is_valid()) {
     maybe_make_read_slices(tcp);
     if (!tcp_do_read(tcp, &tcp_read_error)) {
       // Maybe update rcv lowat value based on the number of bytes read in this
@@ -1101,7 +1110,12 @@ static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error_handle error) {
     }
     tcp_trace_read(tcp, tcp_read_error);
   } else {
-    tcp_read_error = error;
+    if (!tcp->memory_owner.is_valid() && error.ok()) {
+      tcp_read_error =
+          tcp_annotate_error(absl::InternalError("Socket closed"), tcp);
+    } else {
+      tcp_read_error = error;
+    }
     grpc_slice_buffer_reset_and_unref(tcp->incoming_buffer);
     grpc_slice_buffer_reset_and_unref(&tcp->last_read_buffer);
   }
@@ -2031,6 +2045,9 @@ void grpc_tcp_destroy_and_release_fd(grpc_endpoint* ep, int* fd,
     gpr_atm_no_barrier_store(&tcp->stop_error_notification, true);
     grpc_fd_set_error(tcp->em_fd);
   }
+  tcp->read_mu.Lock();
+  tcp->memory_owner.Reset();
+  tcp->read_mu.Unlock();
   TCP_UNREF(tcp, "destroy");
 }
 

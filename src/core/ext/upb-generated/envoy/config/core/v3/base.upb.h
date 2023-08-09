@@ -410,6 +410,23 @@ UPB_INLINE upb_StringView const* envoy_config_core_v3_Extension_type_urls(const 
     return NULL;
   }
 }
+UPB_INLINE const upb_Array* _envoy_config_core_v3_Extension_type_urls_upb_array(const envoy_config_core_v3_Extension* msg, size_t* size) {
+  const upb_MiniTableField field = {6, UPB_SIZE(12, 64), 0, kUpb_NoSub, 9, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _envoy_config_core_v3_Extension_type_urls_mutable_upb_array(const envoy_config_core_v3_Extension* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {6, UPB_SIZE(12, 64), 0, kUpb_NoSub, 9, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
 UPB_INLINE bool envoy_config_core_v3_Extension_has_type_urls(const envoy_config_core_v3_Extension* msg) {
   size_t size;
   envoy_config_core_v3_Extension_type_urls(msg, &size);
@@ -621,6 +638,23 @@ UPB_INLINE const envoy_config_core_v3_Extension* const* envoy_config_core_v3_Nod
     return NULL;
   }
 }
+UPB_INLINE const upb_Array* _envoy_config_core_v3_Node_extensions_upb_array(const envoy_config_core_v3_Node* msg, size_t* size) {
+  const upb_MiniTableField field = {9, UPB_SIZE(16, 88), 0, 3, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _envoy_config_core_v3_Node_extensions_mutable_upb_array(const envoy_config_core_v3_Node* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {9, UPB_SIZE(16, 88), 0, 3, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
 UPB_INLINE bool envoy_config_core_v3_Node_has_extensions(const envoy_config_core_v3_Node* msg) {
   size_t size;
   envoy_config_core_v3_Node_extensions(msg, &size);
@@ -641,6 +675,23 @@ UPB_INLINE upb_StringView const* envoy_config_core_v3_Node_client_features(const
     return NULL;
   }
 }
+UPB_INLINE const upb_Array* _envoy_config_core_v3_Node_client_features_upb_array(const envoy_config_core_v3_Node* msg, size_t* size) {
+  const upb_MiniTableField field = {10, UPB_SIZE(20, 96), 0, kUpb_NoSub, 9, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _envoy_config_core_v3_Node_client_features_mutable_upb_array(const envoy_config_core_v3_Node* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {10, UPB_SIZE(20, 96), 0, kUpb_NoSub, 9, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
 UPB_INLINE bool envoy_config_core_v3_Node_has_client_features(const envoy_config_core_v3_Node* msg) {
   size_t size;
   envoy_config_core_v3_Node_client_features(msg, &size);
@@ -660,6 +711,23 @@ UPB_INLINE const struct envoy_config_core_v3_Address* const* envoy_config_core_v
     if (size) *size = 0;
     return NULL;
   }
+}
+UPB_INLINE const upb_Array* _envoy_config_core_v3_Node_listening_addresses_upb_array(const envoy_config_core_v3_Node* msg, size_t* size) {
+  const upb_MiniTableField field = {11, UPB_SIZE(24, 104), 0, 4, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _envoy_config_core_v3_Node_listening_addresses_mutable_upb_array(const envoy_config_core_v3_Node* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {11, UPB_SIZE(24, 104), 0, 4, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
 }
 UPB_INLINE bool envoy_config_core_v3_Node_has_listening_addresses(const envoy_config_core_v3_Node* msg) {
   size_t size;
@@ -686,9 +754,6 @@ UPB_INLINE const envoy_config_core_v3_Node_DynamicParametersEntry* envoy_config_
   const upb_Map* map = upb_Message_GetMap(msg, &field);
   if (!map) return NULL;
   return (const envoy_config_core_v3_Node_DynamicParametersEntry*)_upb_map_next(map, iter);
-}
-UPB_INLINE bool envoy_config_core_v3_Node_has_dynamic_parameters(const envoy_config_core_v3_Node* msg) {
-  return envoy_config_core_v3_Node_dynamic_parameters_size(msg) != 0;
 }
 
 UPB_INLINE void envoy_config_core_v3_Node_set_id(envoy_config_core_v3_Node *msg, upb_StringView value) {
@@ -921,9 +986,6 @@ UPB_INLINE const envoy_config_core_v3_Metadata_FilterMetadataEntry* envoy_config
   if (!map) return NULL;
   return (const envoy_config_core_v3_Metadata_FilterMetadataEntry*)_upb_map_next(map, iter);
 }
-UPB_INLINE bool envoy_config_core_v3_Metadata_has_filter_metadata(const envoy_config_core_v3_Metadata* msg) {
-  return envoy_config_core_v3_Metadata_filter_metadata_size(msg) != 0;
-}
 UPB_INLINE void envoy_config_core_v3_Metadata_clear_typed_filter_metadata(envoy_config_core_v3_Metadata* msg) {
   const upb_MiniTableField field = {2, UPB_SIZE(4, 8), 0, 1, 11, kUpb_FieldMode_Map | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
@@ -944,9 +1006,6 @@ UPB_INLINE const envoy_config_core_v3_Metadata_TypedFilterMetadataEntry* envoy_c
   const upb_Map* map = upb_Message_GetMap(msg, &field);
   if (!map) return NULL;
   return (const envoy_config_core_v3_Metadata_TypedFilterMetadataEntry*)_upb_map_next(map, iter);
-}
-UPB_INLINE bool envoy_config_core_v3_Metadata_has_typed_filter_metadata(const envoy_config_core_v3_Metadata* msg) {
-  return envoy_config_core_v3_Metadata_typed_filter_metadata_size(msg) != 0;
 }
 
 UPB_INLINE void envoy_config_core_v3_Metadata_filter_metadata_clear(envoy_config_core_v3_Metadata* msg) {
@@ -1636,6 +1695,23 @@ UPB_INLINE const envoy_config_core_v3_HeaderValue* const* envoy_config_core_v3_H
     if (size) *size = 0;
     return NULL;
   }
+}
+UPB_INLINE const upb_Array* _envoy_config_core_v3_HeaderMap_headers_upb_array(const envoy_config_core_v3_HeaderMap* msg, size_t* size) {
+  const upb_MiniTableField field = {1, 0, 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _envoy_config_core_v3_HeaderMap_headers_mutable_upb_array(const envoy_config_core_v3_HeaderMap* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {1, 0, 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
 }
 UPB_INLINE bool envoy_config_core_v3_HeaderMap_has_headers(const envoy_config_core_v3_HeaderMap* msg) {
   size_t size;

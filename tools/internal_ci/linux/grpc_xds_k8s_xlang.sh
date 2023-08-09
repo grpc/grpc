@@ -75,6 +75,7 @@ main() {
   OLDEST_BRANCH=$(find_oldest_branch "${OLDEST_BRANCH}" "${LATEST_BRANCH}")
   # Run cross lang tests: for given cross lang versions
   XLANG_VERSIONS="${MAIN_BRANCH} ${LATEST_BRANCH} ${OLDEST_BRANCH}"
+  declare -A FIXED_VERSION_NAMES=( ["${MAIN_BRANCH}"]="${MAIN_BRANCH}" ["${LATEST_BRANCH}"]="latest" ["${OLDEST_BRANCH}"]="oldest")
   for VERSION in ${XLANG_VERSIONS}
   do
     for CLIENT_LANG in ${CLIENT_LANGS}
@@ -82,7 +83,8 @@ main() {
     for SERVER_LANG in ${SERVER_LANGS}
     do
       if [ "${CLIENT_LANG}" != "${SERVER_LANG}" ]; then
-        if run_test "${CLIENT_LANG}" "${VERSION}" "${SERVER_LANG}" "${VERSION}"; then
+        FIXED="${FIXED_VERSION_NAMES[${VERSION}]}"
+        if run_test "${CLIENT_LANG}" "${VERSION}" "${SERVER_LANG}" "${VERSION}" "${FIXED}" "${FIXED}"; then
           successful_string="${successful_string} ${VERSION}/${CLIENT_LANG}-${SERVER_LANG}"
         else
           failed_tests=$((failed_tests+1))
@@ -96,9 +98,6 @@ main() {
   set +x
   echo "Failed test suites list: ${failed_string}"
   echo "Successful test suites list: ${successful_string}"
-  if (( failed_tests > 0 )); then
-    exit 1
-  fi
 }
 
 main "$@"

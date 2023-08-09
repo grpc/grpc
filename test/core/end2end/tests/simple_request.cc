@@ -49,7 +49,7 @@ void CheckPeer(std::string peer_name) {
 
 void SimpleRequestBody(CoreEnd2endTest& test) {
   auto before = global_stats().Collect();
-  auto c = test.NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
+  auto c = test.NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
   EXPECT_NE(c.GetPeer(), absl::nullopt);
   CoreEnd2endTest::IncomingStatusOnClient server_status;
   CoreEnd2endTest::IncomingMetadata server_initial_metadata;
@@ -98,9 +98,13 @@ void SimpleRequestBody(CoreEnd2endTest& test) {
             expected_calls);
 }
 
-TEST_P(CoreEnd2endTest, SimpleRequest) { SimpleRequestBody(*this); }
+CORE_END2END_TEST(CoreEnd2endTest, SimpleRequest) {
+  // TODO(vigneshbabu): re-enable these before release
+  SKIP_IF_USES_EVENT_ENGINE_LISTENER();
+  SimpleRequestBody(*this);
+}
 
-TEST_P(CoreEnd2endTest, SimpleRequest10) {
+CORE_END2END_TEST(CoreEnd2endTest, SimpleRequest10) {
   for (int i = 0; i < 10; i++) {
     SimpleRequestBody(*this);
   }

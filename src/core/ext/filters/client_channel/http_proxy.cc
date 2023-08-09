@@ -39,7 +39,7 @@
 #include "absl/strings/strip.h"
 #include "absl/types/optional.h"
 
-#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
@@ -177,6 +177,11 @@ absl::optional<std::string> HttpProxyMapper::MapName(
   }
   if (uri->scheme() == "unix") {
     gpr_log(GPR_INFO, "not using proxy for Unix domain socket '%s'",
+            std::string(server_uri).c_str());
+    return absl::nullopt;
+  }
+  if (uri->scheme() == "vsock") {
+    gpr_log(GPR_INFO, "not using proxy for VSock '%s'",
             std::string(server_uri).c_str());
     return absl::nullopt;
   }

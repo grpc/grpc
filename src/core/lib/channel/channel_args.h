@@ -22,6 +22,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <stddef.h>
+#include <stdint.h>
 
 #include <algorithm>  // IWYU pragma: keep
 #include <iosfwd>
@@ -33,7 +34,6 @@
 #include "absl/meta/type_traits.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-#include "absl/types/variant.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
@@ -220,6 +220,91 @@ struct GetObjectImpl<T, absl::enable_if_t<!WrapInSharedPtr<T>::value, void>> {
   };
 };
 
+// Immutable reference counted string
+class RcString {
+ public:
+  static RefCountedPtr<RcString> Make(absl::string_view src);
+
+  RefCountedPtr<RcString> Ref() {
+    IncrementRefCount();
+    return RefCountedPtr<RcString>(this);
+  }
+  void IncrementRefCount() { header_.rc.Ref(); }
+  void Unref() {
+    if (header_.rc.Unref()) Destroy();
+  }
+
+  absl::string_view as_string_view() const {
+    return absl::string_view(payload_, header_.length);
+  }
+
+  char* c_str() { return payload_; }
+
+ private:
+  explicit RcString(absl::string_view src);
+  void Destroy();
+
+  struct Header {
+    RefCount rc;
+    size_t length;
+  };
+  Header header_;
+  char payload_[];
+};
+
+// Wrapper around RefCountedPtr<RcString> to give value semantics, especially to
+// overloaded operators.
+class RcStringValue {
+ public:
+  RcStringValue() : str_{} {}
+  explicit RcStringValue(absl::string_view str) : str_(RcString::Make(str)) {}
+
+  absl::string_view as_string_view() const {
+    return str_ == nullptr ? absl::string_view() : str_->as_string_view();
+  }
+
+  const char* c_str() const { return str_ == nullptr ? "" : str_->c_str(); }
+
+ private:
+  RefCountedPtr<RcString> str_;
+};
+
+inline bool operator==(const RcStringValue& lhs, absl::string_view rhs) {
+  return lhs.as_string_view() == rhs;
+}
+
+inline bool operator==(absl::string_view lhs, const RcStringValue& rhs) {
+  return lhs == rhs.as_string_view();
+}
+
+inline bool operator==(const RcStringValue& lhs, const RcStringValue& rhs) {
+  return lhs.as_string_view() == rhs.as_string_view();
+}
+
+inline bool operator<(const RcStringValue& lhs, absl::string_view rhs) {
+  return lhs.as_string_view() < rhs;
+}
+
+inline bool operator<(absl::string_view lhs, const RcStringValue& rhs) {
+  return lhs < rhs.as_string_view();
+}
+
+inline bool operator<(const RcStringValue& lhs, const RcStringValue& rhs) {
+  return lhs.as_string_view() < rhs.as_string_view();
+}
+
+inline bool operator>(const RcStringValue& lhs, absl::string_view rhs) {
+  return lhs.as_string_view() > rhs;
+}
+
+inline bool operator>(absl::string_view lhs, const RcStringValue& rhs) {
+  return lhs > rhs.as_string_view();
+}
+
+inline bool operator>(const RcStringValue& lhs, const RcStringValue& rhs) {
+  return lhs.as_string_view() > rhs.as_string_view();
+}
+
 // Provide the canonical name for a type's channel arg key
 template <typename T>
 struct ChannelArgNameTraits {
@@ -281,7 +366,46 @@ class ChannelArgs {
     const grpc_arg_pointer_vtable* vtable_;
   };
 
-  using Value = absl::variant<int, std::string, Pointer>;
+  class Value {
+   public:
+    explicit Value(int n) : rep_(reinterpret_cast<void*>(n), &int_vtable_) {}
+    explicit Value(std::string s)
+        : rep_(RcString::Make(s).release(), &string_vtable_) {}
+    explicit Value(Pointer p) : rep_(std::move(p)) {}
+
+    absl::optional<int> GetIfInt() const {
+      if (rep_.c_vtable() != &int_vtable_) return absl::nullopt;
+      return reinterpret_cast<intptr_t>(rep_.c_pointer());
+    }
+    RefCountedPtr<RcString> GetIfString() const {
+      if (rep_.c_vtable() != &string_vtable_) return nullptr;
+      return static_cast<RcString*>(rep_.c_pointer())->Ref();
+    }
+    const Pointer* GetIfPointer() const {
+      if (rep_.c_vtable() == &int_vtable_) return nullptr;
+      if (rep_.c_vtable() == &string_vtable_) return nullptr;
+      return &rep_;
+    }
+
+    std::string ToString() const;
+
+    grpc_arg MakeCArg(const char* name) const;
+
+    bool operator<(const Value& rhs) const { return rep_ < rhs.rep_; }
+    bool operator==(const Value& rhs) const { return rep_ == rhs.rep_; }
+    bool operator!=(const Value& rhs) const { return !this->operator==(rhs); }
+    bool operator==(absl::string_view rhs) const {
+      auto str = GetIfString();
+      if (str == nullptr) return false;
+      return str->as_string_view() == rhs;
+    }
+
+   private:
+    static const grpc_arg_pointer_vtable int_vtable_;
+    static const grpc_arg_pointer_vtable string_vtable_;
+
+    Pointer rep_;
+  };
 
   struct ChannelArgsDeleter {
     void operator()(const grpc_channel_args* p) const;
@@ -306,6 +430,11 @@ class ChannelArgs {
   // Returns the union of this channel args with other.
   // If a key is present in both, the value from this is used.
   GRPC_MUST_USE_RESULT ChannelArgs UnionWith(ChannelArgs other) const;
+
+  // Only used in union_with_test.cc, reference version of UnionWith for
+  // differential fuzzing.
+  GRPC_MUST_USE_RESULT ChannelArgs
+  FuzzingReferenceUnionWith(ChannelArgs other) const;
 
   const Value* Get(absl::string_view name) const;
   GRPC_MUST_USE_RESULT ChannelArgs Set(absl::string_view name,
@@ -361,6 +490,9 @@ class ChannelArgs {
   }
   GRPC_MUST_USE_RESULT ChannelArgs Remove(absl::string_view name) const;
   bool Contains(absl::string_view name) const;
+
+  GRPC_MUST_USE_RESULT ChannelArgs
+  RemoveAllKeysWithPrefix(absl::string_view prefix) const;
 
   template <typename T>
   bool ContainsObject() const {
@@ -426,12 +558,12 @@ class ChannelArgs {
   std::string ToString() const;
 
  private:
-  explicit ChannelArgs(AVL<std::string, Value> args);
+  explicit ChannelArgs(AVL<RcStringValue, Value> args);
 
   GRPC_MUST_USE_RESULT ChannelArgs Set(absl::string_view name,
                                        Value value) const;
 
-  AVL<std::string, Value> args_;
+  AVL<RcStringValue, Value> args_;
 };
 
 std::ostream& operator<<(std::ostream& out, const ChannelArgs& args);

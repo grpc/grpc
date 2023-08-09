@@ -1,0 +1,15 @@
+actions {
+  create_channel {
+    target: "unix:,:,2147483653,p,,,::, H?:::c23http8:::::;::::::"
+    channel_args {
+      key: "grpc.min_reconnect_backoff_ms"
+      i: 720575938231795711
+    }
+    channel_actions {
+      wait_ms: 106
+    }
+  }
+}
+actions {
+  check_connectivity: true
+}

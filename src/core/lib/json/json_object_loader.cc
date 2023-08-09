@@ -22,6 +22,8 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/strip.h"
 
+#include <grpc/support/json.h>
+
 namespace grpc_core {
 namespace json_detail {
 
@@ -91,13 +93,11 @@ bool LoadNumber::IsNumber() const { return true; }
 
 void LoadBool::LoadInto(const Json& json, const JsonArgs&, void* dst,
                         ValidationErrors* errors) const {
-  if (json.type() == Json::Type::kTrue) {
-    *static_cast<bool*>(dst) = true;
-  } else if (json.type() == Json::Type::kFalse) {
-    *static_cast<bool*>(dst) = false;
-  } else {
+  if (json.type() != Json::Type::kBoolean) {
     errors->AddError("is not a boolean");
+    return;
   }
+  *static_cast<bool*>(dst) = json.boolean();
 }
 
 void LoadUnprocessedJsonObject::LoadInto(const Json& json, const JsonArgs&,
@@ -168,9 +168,8 @@ void LoadMap::LoadInto(const Json& json, const JsonArgs& args, void* dst,
   }
 }
 
-void LoadOptional::LoadInto(const Json& json, const JsonArgs& args, void* dst,
-                            ValidationErrors* errors) const {
-  if (json.type() == Json::Type::kNull) return;
+void LoadWrapped::LoadInto(const Json& json, const JsonArgs& args, void* dst,
+                           ValidationErrors* errors) const {
   void* element = Emplace(dst);
   size_t starting_error_size = errors->size();
   ElementLoader()->LoadInto(json, args, element, errors);
@@ -191,7 +190,7 @@ bool LoadObject(const Json& json, const JsonArgs& args, const Element* elements,
     ValidationErrors::ScopedField field(errors,
                                         absl::StrCat(".", element.name));
     const auto& it = json.object().find(element.name);
-    if (it == json.object().end()) {
+    if (it == json.object().end() || it->second.type() == Json::Type::kNull) {
       if (element.optional) continue;
       errors->AddError("field not present");
       continue;

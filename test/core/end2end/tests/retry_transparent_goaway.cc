@@ -20,7 +20,7 @@
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
 
-#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -132,7 +132,7 @@ grpc_channel_filter FailFirstCallFilter::kFilterVtable = {
 };
 
 // Tests transparent retries when the call was never sent out on the wire.
-TEST_P(RetryTest, TransparentGoaway) {
+CORE_END2END_TEST(RetryTest, TransparentGoaway) {
   CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
     builder->channel_init()->RegisterStage(
         GRPC_CLIENT_SUBCHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY + 1,

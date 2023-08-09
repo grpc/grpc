@@ -160,9 +160,6 @@ UPB_INLINE const grpc_gcp_AltsContext_PeerAttributesEntry* grpc_gcp_AltsContext_
   if (!map) return NULL;
   return (const grpc_gcp_AltsContext_PeerAttributesEntry*)_upb_map_next(map, iter);
 }
-UPB_INLINE bool grpc_gcp_AltsContext_has_peer_attributes(const grpc_gcp_AltsContext* msg) {
-  return grpc_gcp_AltsContext_peer_attributes_size(msg) != 0;
-}
 
 UPB_INLINE void grpc_gcp_AltsContext_set_application_protocol(grpc_gcp_AltsContext *msg, upb_StringView value) {
   const upb_MiniTableField field = {1, UPB_SIZE(16, 8), 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};

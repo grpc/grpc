@@ -23,11 +23,9 @@
 #include <memory>
 #include <string>
 #include <utility>
-#include <vector>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "absl/strings/numbers.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 #include "gmock/gmock.h"
@@ -44,12 +42,13 @@
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
 #include "src/core/lib/json/json_reader.h"
-#include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/security/certificate_provider/certificate_provider_factory.h"
+#include "src/core/lib/security/credentials/channel_creds_registry.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 #include "test/core/util/test_config.h"
 
@@ -143,9 +142,8 @@ TEST(XdsBootstrapTest, Basic) {
   auto* server =
       &static_cast<const GrpcXdsBootstrap::GrpcXdsServer&>(bootstrap->server());
   EXPECT_EQ(server->server_uri(), "fake:///lb");
-  EXPECT_EQ(server->channel_creds_type(), "fake");
-  EXPECT_TRUE(server->channel_creds_config().empty())
-      << JsonDump(Json{server->channel_creds_config()});
+  ASSERT_NE(server->channel_creds_config(), nullptr);
+  EXPECT_EQ(server->channel_creds_config()->type(), "fake");
   EXPECT_EQ(bootstrap->authorities().size(), 2);
   auto* authority = static_cast<const GrpcXdsBootstrap::GrpcAuthority*>(
       bootstrap->LookupAuthority("xds.example.com"));
@@ -157,9 +155,8 @@ TEST(XdsBootstrapTest, Basic) {
       static_cast<const GrpcXdsBootstrap::GrpcXdsServer*>(authority->server());
   ASSERT_NE(server, nullptr);
   EXPECT_EQ(server->server_uri(), "fake:///xds_server");
-  EXPECT_EQ(server->channel_creds_type(), "fake");
-  EXPECT_TRUE(server->channel_creds_config().empty())
-      << JsonDump(Json{server->channel_creds_config()});
+  ASSERT_NE(server->channel_creds_config(), nullptr);
+  EXPECT_EQ(server->channel_creds_config()->type(), "fake");
   authority = static_cast<const GrpcXdsBootstrap::GrpcAuthority*>(
       bootstrap->LookupAuthority("xds.example2.com"));
   ASSERT_NE(authority, nullptr);
@@ -170,9 +167,8 @@ TEST(XdsBootstrapTest, Basic) {
       static_cast<const GrpcXdsBootstrap::GrpcXdsServer*>(authority->server());
   ASSERT_NE(server, nullptr);
   EXPECT_EQ(server->server_uri(), "fake:///xds_server2");
-  EXPECT_EQ(server->channel_creds_type(), "fake");
-  EXPECT_TRUE(server->channel_creds_config().empty())
-      << JsonDump(Json{server->channel_creds_config()});
+  ASSERT_NE(server->channel_creds_config(), nullptr);
+  EXPECT_EQ(server->channel_creds_config()->type(), "fake");
   ASSERT_NE(bootstrap->node(), nullptr);
   EXPECT_EQ(bootstrap->node()->id(), "foo");
   EXPECT_EQ(bootstrap->node()->cluster(), "bar");
@@ -211,7 +207,8 @@ TEST(XdsBootstrapTest, ValidWithoutNode) {
   auto* server =
       &static_cast<const GrpcXdsBootstrap::GrpcXdsServer&>(bootstrap->server());
   EXPECT_EQ(server->server_uri(), "fake:///lb");
-  EXPECT_EQ(server->channel_creds_type(), "fake");
+  ASSERT_NE(server->channel_creds_config(), nullptr);
+  EXPECT_EQ(server->channel_creds_config()->type(), "fake");
   EXPECT_EQ(bootstrap->node(), nullptr);
 }
 
@@ -231,7 +228,8 @@ TEST(XdsBootstrapTest, InsecureCreds) {
   auto* server =
       &static_cast<const GrpcXdsBootstrap::GrpcXdsServer&>(bootstrap->server());
   EXPECT_EQ(server->server_uri(), "fake:///lb");
-  EXPECT_EQ(server->channel_creds_type(), "insecure");
+  ASSERT_NE(server->channel_creds_config(), nullptr);
+  EXPECT_EQ(server->channel_creds_config()->type(), "insecure");
   EXPECT_EQ(bootstrap->node(), nullptr);
 }
 
@@ -267,7 +265,8 @@ TEST(XdsBootstrapTest, GoogleDefaultCreds) {
   auto* server =
       &static_cast<const GrpcXdsBootstrap::GrpcXdsServer&>(bootstrap->server());
   EXPECT_EQ(server->server_uri(), "fake:///lb");
-  EXPECT_EQ(server->channel_creds_type(), "google_default");
+  ASSERT_NE(server->channel_creds_config(), nullptr);
+  EXPECT_EQ(server->channel_creds_config()->type(), "google_default");
   EXPECT_EQ(bootstrap->node(), nullptr);
 }
 
@@ -310,6 +309,19 @@ TEST(XdsBootstrapTest, MissingXdsServers) {
   EXPECT_EQ(
       bootstrap.status().message(),
       "errors validating JSON: [field:xds_servers error:field not present]")
+      << bootstrap.status();
+}
+
+TEST(XdsBootstrapTest, EmptyXdsServers) {
+  const char* json_str =
+      "{"
+      "  \"xds_servers\": ["
+      "  ]"
+      "}";
+  auto bootstrap = GrpcXdsBootstrap::Create(json_str);
+  EXPECT_EQ(
+      bootstrap.status().message(),
+      "errors validating JSON: [field:xds_servers error:must be non-empty]")
       << bootstrap.status();
 }
 
@@ -565,11 +577,9 @@ class FakeCertificateProviderFactory : public CertificateProviderFactory {
  public:
   class Config : public CertificateProviderFactory::Config {
    public:
-    explicit Config(int value) : value_(value) {}
-
     int value() const { return value_; }
 
-    const char* name() const override { return "fake"; }
+    absl::string_view name() const override { return "fake"; }
 
     std::string ToString() const override {
       return absl::StrFormat(
@@ -579,28 +589,23 @@ class FakeCertificateProviderFactory : public CertificateProviderFactory {
           value_);
     }
 
+    static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
+      static const auto* loader = JsonObjectLoader<Config>()
+                                      .OptionalField("value", &Config::value_)
+                                      .Finish();
+      return loader;
+    }
+
    private:
     int value_;
   };
 
-  const char* name() const override { return "fake"; }
+  absl::string_view name() const override { return "fake"; }
 
   RefCountedPtr<CertificateProviderFactory::Config>
-  CreateCertificateProviderConfig(const Json& config_json,
-                                  grpc_error_handle* error) override {
-    std::vector<grpc_error_handle> error_list;
-    EXPECT_EQ(config_json.type(), Json::Type::kObject);
-    auto it = config_json.object().find("value");
-    if (it == config_json.object().end()) {
-      return MakeRefCounted<FakeCertificateProviderFactory::Config>(0);
-    } else if (it->second.type() != Json::Type::kNumber) {
-      *error = GRPC_ERROR_CREATE("field:config field:value not of type number");
-    } else {
-      int value = 0;
-      EXPECT_TRUE(absl::SimpleAtoi(it->second.string(), &value));
-      return MakeRefCounted<FakeCertificateProviderFactory::Config>(value);
-    }
-    return nullptr;
+  CreateCertificateProviderConfig(const Json& config_json, const JsonArgs& args,
+                                  ValidationErrors* errors) override {
+    return LoadFromJson<RefCountedPtr<Config>>(config_json, args, errors);
   }
 
   RefCountedPtr<grpc_tls_certificate_provider> CreateCertificateProvider(
@@ -622,20 +627,16 @@ TEST(XdsBootstrapTest, CertificateProvidersFakePluginParsingError) {
       "    \"fake_plugin\": {"
       "      \"plugin_name\": \"fake\","
       "      \"config\": {"
-      "        \"value\": \"10\""
+      "        \"value\": []"
       "      }"
       "    }"
       "  }"
       "}";
   auto bootstrap = GrpcXdsBootstrap::Create(json_str);
-  EXPECT_THAT(
-      // Explicit conversion to std::string to work around
-      // https://github.com/google/googletest/issues/3949.
-      std::string(bootstrap.status().message()),
-      ::testing::MatchesRegex(
-          "errors validating JSON: \\["
-          "field:certificate_providers\\[\"fake_plugin\"\\].config "
-          "error:UNKNOWN:field:config field:value not of type number.*\\]"))
+  EXPECT_EQ(bootstrap.status().message(),
+            "errors validating JSON: ["
+            "field:certificate_providers[\"fake_plugin\"].config.value "
+            "error:is not a number]")
       << bootstrap.status();
 }
 
@@ -663,7 +664,7 @@ TEST(XdsBootstrapTest, CertificateProvidersFakePluginParsingSuccess) {
   const CertificateProviderStore::PluginDefinition& fake_plugin =
       bootstrap->certificate_providers().at("fake_plugin");
   ASSERT_EQ(fake_plugin.plugin_name, "fake");
-  ASSERT_STREQ(fake_plugin.config->name(), "fake");
+  ASSERT_EQ(fake_plugin.config->name(), "fake");
   ASSERT_EQ(static_cast<RefCountedPtr<FakeCertificateProviderFactory::Config>>(
                 fake_plugin.config)
                 ->value(),
@@ -691,7 +692,7 @@ TEST(XdsBootstrapTest, CertificateProvidersFakePluginEmptyConfig) {
   const CertificateProviderStore::PluginDefinition& fake_plugin =
       bootstrap->certificate_providers().at("fake_plugin");
   ASSERT_EQ(fake_plugin.plugin_name, "fake");
-  ASSERT_STREQ(fake_plugin.config->name(), "fake");
+  ASSERT_EQ(fake_plugin.config->name(), "fake");
   ASSERT_EQ(static_cast<RefCountedPtr<FakeCertificateProviderFactory::Config>>(
                 fake_plugin.config)
                 ->value(),

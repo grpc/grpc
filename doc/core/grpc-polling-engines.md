@@ -24,8 +24,6 @@ There are multiple polling engine implementations depending on the OS and the OS
   - `poll` (If kernel does not have epoll support)
 - Mac: **`poll`** (default)
 - Windows: (no name)
-- One-off polling engines:
-  - NodeJS : `libuv` polling engine implementation (requires different compile `#define`s)
 
 ## Polling Engine Interface
 

@@ -18,7 +18,7 @@
 
 #include "gtest/gtest.h"
 
-#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -31,7 +31,7 @@ namespace grpc_core {
 namespace {
 
 // Send more pings than server allows to trigger server's GOAWAY.
-TEST_P(RetryHttp2Test, BadPing) {
+CORE_END2END_TEST(RetryHttp2Test, BadPing) {
   InitClient(ChannelArgs()
                  .Set(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA, 0)
                  .Set(GRPC_ARG_HTTP2_BDP_PROBE, 0));
@@ -84,7 +84,7 @@ TEST_P(RetryHttp2Test, BadPing) {
 
 // Try sending more pings than server allows, but server should be fine because
 // max_pings_without_data should limit pings sent out on wire.
-TEST_P(RetryHttp2Test, PingsWithoutData) {
+CORE_END2END_TEST(RetryHttp2Test, PingsWithoutData) {
   // Only allow MAX_PING_STRIKES pings without data (DATA/HEADERS/WINDOW_UPDATE)
   // so that the transport will throttle the excess pings.
   InitClient(ChannelArgs()

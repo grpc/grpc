@@ -19,16 +19,16 @@ import sys
 os.chdir(os.path.dirname(sys.argv[0]))
 
 streams = {
-    'server_hanging_response_1_header':
-        ([0, 0, 0, 4, 0, 0, 0, 0, 0] +  # settings frame
-         [0, 0, 0, 1, 5, 0, 0, 0, 1]  # trailers
-        ),
-    'server_hanging_response_2_header2':
-        ([0, 0, 0, 4, 0, 0, 0, 0, 0] +  # settings frame
-         [0, 0, 0, 1, 4, 0, 0, 0, 1] +  # headers
-         [0, 0, 0, 1, 5, 0, 0, 0, 1]  # trailers
-        ),
+    "server_hanging_response_1_header": (
+        [0, 0, 0, 4, 0, 0, 0, 0, 0]
+        + [0, 0, 0, 1, 5, 0, 0, 0, 1]  # settings frame  # trailers
+    ),
+    "server_hanging_response_2_header2": (
+        [0, 0, 0, 4, 0, 0, 0, 0, 0]
+        + [0, 0, 0, 1, 4, 0, 0, 0, 1]  # settings frame
+        + [0, 0, 0, 1, 5, 0, 0, 0, 1]  # headers  # trailers
+    ),
 }
 
 for name, stream in streams.items():
-    open('client_fuzzer_corpus/%s' % name, 'w').write(bytearray(stream))
+    open("client_fuzzer_corpus/%s" % name, "w").write(bytearray(stream))

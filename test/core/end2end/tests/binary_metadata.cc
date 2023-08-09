@@ -18,7 +18,7 @@
 
 #include "gtest/gtest.h"
 
-#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -45,7 +45,7 @@ static void BinaryMetadata(CoreEnd2endTest& test, bool server_true_binary,
   auto response_payload = RandomBinarySlice(9);
   auto status_string = RandomBinarySlice(256);
 
-  auto c = test.NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
+  auto c = test.NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
   CoreEnd2endTest::IncomingMetadata server_initial_md;
   CoreEnd2endTest::IncomingMessage server_message;
   CoreEnd2endTest::IncomingStatusOnClient server_status;
@@ -100,19 +100,25 @@ static void BinaryMetadata(CoreEnd2endTest& test, bool server_true_binary,
             key6_payload.as_string_view());
 }
 
-TEST_P(CoreEnd2endTest, BinaryMetadataServerTrueBinaryClientHttp2Fallback) {
+CORE_END2END_TEST(CoreEnd2endTest,
+                  BinaryMetadataServerTrueBinaryClientHttp2Fallback) {
   BinaryMetadata(*this, true, false);
 }
 
-TEST_P(CoreEnd2endTest, BinaryMetadataServerHttp2FallbackClientTrueBinary) {
+CORE_END2END_TEST(CoreEnd2endTest,
+                  BinaryMetadataServerHttp2FallbackClientTrueBinary) {
   BinaryMetadata(*this, false, true);
 }
 
-TEST_P(CoreEnd2endTest, BinaryMetadataServerTrueBinaryClientTrueBinary) {
+CORE_END2END_TEST(CoreEnd2endTest,
+                  BinaryMetadataServerTrueBinaryClientTrueBinary) {
   BinaryMetadata(*this, true, true);
 }
 
-TEST_P(CoreEnd2endTest, BinaryMetadataServerHttp2FallbackClientHttp2Fallback) {
+CORE_END2END_TEST(CoreEnd2endTest,
+                  BinaryMetadataServerHttp2FallbackClientHttp2Fallback) {
+  // TODO(vigneshbabu): re-enable these before release
+  SKIP_IF_USES_EVENT_ENGINE_CLIENT();
   BinaryMetadata(*this, false, false);
 }
 

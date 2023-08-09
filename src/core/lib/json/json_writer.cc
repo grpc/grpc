@@ -145,9 +145,7 @@ void JsonWriter::EscapeString(const std::string& string) {
   OutputChar('"');
   for (size_t idx = 0; idx < string.size(); ++idx) {
     uint8_t c = static_cast<uint8_t>(string[idx]);
-    if (c == 0) {
-      break;
-    } else if (c >= 32 && c <= 126) {
+    if (c >= 32 && c <= 126) {
       if (c == '\\' || c == '"') OutputChar('\\');
       OutputChar(static_cast<char>(c));
     } else if (c < 32 || c == 127) {
@@ -311,11 +309,12 @@ void JsonWriter::DumpValue(const Json& value) {
     case Json::Type::kNumber:
       ValueRaw(value.string());
       break;
-    case Json::Type::kTrue:
-      ValueRaw(std::string("true", 4));
-      break;
-    case Json::Type::kFalse:
-      ValueRaw(std::string("false", 5));
+    case Json::Type::kBoolean:
+      if (value.boolean()) {
+        ValueRaw(std::string("true", 4));
+      } else {
+        ValueRaw(std::string("false", 5));
+      }
       break;
     case Json::Type::kNull:
       ValueRaw(std::string("null", 4));

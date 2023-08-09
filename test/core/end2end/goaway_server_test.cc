@@ -34,6 +34,7 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
@@ -185,12 +186,14 @@ static grpc_ares_request* my_dns_lookup_ares(
     error = GRPC_ERROR_CREATE("Forced Failure");
   } else {
     *addresses = std::make_unique<grpc_core::ServerAddressList>();
-    grpc_sockaddr_in sa;
-    memset(&sa, 0, sizeof(sa));
-    sa.sin_family = GRPC_AF_INET;
-    sa.sin_addr.s_addr = 0x100007f;
-    sa.sin_port = grpc_htons(static_cast<uint16_t>(g_resolve_port));
-    (*addresses)->emplace_back(&sa, sizeof(sa), grpc_core::ChannelArgs());
+    grpc_resolved_address address;
+    memset(&address, 0, sizeof(address));
+    auto* sa = reinterpret_cast<grpc_sockaddr_in*>(&address.addr);
+    sa->sin_family = GRPC_AF_INET;
+    sa->sin_addr.s_addr = 0x100007f;
+    sa->sin_port = grpc_htons(static_cast<uint16_t>(g_resolve_port));
+    address.len = sizeof(grpc_sockaddr_in);
+    (*addresses)->emplace_back(address, grpc_core::ChannelArgs());
     gpr_mu_unlock(&g_mu);
   }
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, error);

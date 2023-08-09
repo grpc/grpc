@@ -1,4 +1,4 @@
-// Copyright 2022 The gRPC Authors
+// Copyright 2023 The gRPC Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,8 +16,16 @@
 
 #ifdef GPR_APPLE
 
+#include <CoreFoundation/CoreFoundation.h>
+
+#include <grpc/support/cpu.h>
+
 #include "src/core/lib/event_engine/cf_engine/cf_engine.h"
+#include "src/core/lib/event_engine/cf_engine/cfstream_endpoint.h"
+#include "src/core/lib/event_engine/cf_engine/dns_service_resolver.h"
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
+#include "src/core/lib/event_engine/tcp_socket_utils.h"
+#include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/event_engine/utils.h"
 #include "src/core/lib/gprpp/crash.h"
@@ -35,7 +43,7 @@ struct CFEventEngine::Closure final : public EventEngine::Closure {
     GRPC_EVENT_ENGINE_TRACE("CFEventEngine:%p executing callback:%s", engine,
                             HandleToString(handle).c_str());
     {
-      grpc_core::MutexLock lock(&engine->mu_);
+      grpc_core::MutexLock lock(&engine->task_mu_);
       engine->known_handles_.erase(handle);
     }
     cb();
@@ -44,11 +52,13 @@ struct CFEventEngine::Closure final : public EventEngine::Closure {
 };
 
 CFEventEngine::CFEventEngine()
-    : executor_(std::make_shared<ThreadPool>()), timer_manager_(executor_) {}
+    : thread_pool_(
+          MakeThreadPool(grpc_core::Clamp(gpr_cpu_num_cores(), 2u, 16u))),
+      timer_manager_(thread_pool_) {}
 
 CFEventEngine::~CFEventEngine() {
   {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(&task_mu_);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
       for (auto handle : known_handles_) {
         gpr_log(GPR_ERROR,
@@ -59,7 +69,7 @@ CFEventEngine::~CFEventEngine() {
     GPR_ASSERT(GPR_LIKELY(known_handles_.empty()));
     timer_manager_.Shutdown();
   }
-  executor_->Quiesce();
+  thread_pool_->Quiesce();
 }
 
 absl::StatusOr<std::unique_ptr<EventEngine::Listener>>
@@ -72,29 +82,97 @@ CFEventEngine::CreateListener(
 }
 
 CFEventEngine::ConnectionHandle CFEventEngine::Connect(
-    OnConnectCallback /* on_connect */, const ResolvedAddress& /* addr */,
-    const EndpointConfig& /* args */, MemoryAllocator /* memory_allocator */,
-    Duration /* timeout */) {
-  grpc_core::Crash("unimplemented");
+    OnConnectCallback on_connect, const ResolvedAddress& addr,
+    const EndpointConfig& /* args */, MemoryAllocator memory_allocator,
+    Duration timeout) {
+  auto endpoint_ptr = new CFStreamEndpoint(
+      std::static_pointer_cast<CFEventEngine>(shared_from_this()),
+      std::move(memory_allocator));
+
+  ConnectionHandle handle{reinterpret_cast<intptr_t>(endpoint_ptr), 0};
+  {
+    grpc_core::MutexLock lock(&conn_mu_);
+    conn_handles_.insert(handle);
+  }
+
+  auto deadline_timer =
+      RunAfter(timeout, [handle, that = std::static_pointer_cast<CFEventEngine>(
+                                     shared_from_this())]() {
+        that->CancelConnectInternal(
+            handle, absl::DeadlineExceededError("Connect timed out"));
+      });
+
+  auto on_connect2 =
+      [that = std::static_pointer_cast<CFEventEngine>(shared_from_this()),
+       deadline_timer, handle,
+       on_connect = std::move(on_connect)](absl::Status status) mutable {
+        // best effort canceling deadline timer
+        that->Cancel(deadline_timer);
+
+        {
+          grpc_core::MutexLock lock(&that->conn_mu_);
+          that->conn_handles_.erase(handle);
+        }
+
+        auto endpoint_ptr = reinterpret_cast<CFStreamEndpoint*>(handle.keys[0]);
+
+        if (!status.ok()) {
+          on_connect(std::move(status));
+          delete endpoint_ptr;
+          return;
+        }
+
+        on_connect(std::unique_ptr<EventEngine::Endpoint>(endpoint_ptr));
+      };
+
+  endpoint_ptr->Connect(std::move(on_connect2), addr);
+
+  return handle;
 }
 
-bool CFEventEngine::CancelConnect(ConnectionHandle /* handle */) {
-  grpc_core::Crash("unimplemented");
+bool CFEventEngine::CancelConnect(ConnectionHandle handle) {
+  CancelConnectInternal(handle, absl::CancelledError("CancelConnect"));
+  // on_connect will always be called, even if cancellation is successful
+  return false;
+}
+
+bool CFEventEngine::CancelConnectInternal(ConnectionHandle handle,
+                                          absl::Status status) {
+  grpc_core::MutexLock lock(&conn_mu_);
+
+  if (!conn_handles_.contains(handle)) {
+    GRPC_EVENT_ENGINE_TRACE(
+        "Unknown connection handle: %s",
+        HandleToString<EventEngine::ConnectionHandle>(handle).c_str());
+    return false;
+  }
+  conn_handles_.erase(handle);
+
+  // keep the `conn_mu_` lock to prevent endpoint_ptr from being deleted
+
+  auto endpoint_ptr = reinterpret_cast<CFStreamEndpoint*>(handle.keys[0]);
+  return endpoint_ptr->CancelConnect(status);
 }
 
 bool CFEventEngine::IsWorkerThread() { grpc_core::Crash("unimplemented"); }
 
-std::unique_ptr<EventEngine::DNSResolver> CFEventEngine::GetDNSResolver(
-    const DNSResolver::ResolverOptions& /* options */) {
-  grpc_core::Crash("unimplemented");
+absl::StatusOr<std::unique_ptr<EventEngine::DNSResolver>>
+CFEventEngine::GetDNSResolver(const DNSResolver::ResolverOptions& options) {
+  if (!options.dns_server.empty()) {
+    return absl::InvalidArgumentError(
+        "CFEventEngine does not support custom DNS servers");
+  }
+
+  return std::make_unique<DNSServiceResolver>(
+      std::static_pointer_cast<CFEventEngine>(shared_from_this()));
 }
 
-void CFEventEngine::Run(EventEngine::Closure* /* closure */) {
-  grpc_core::Crash("unimplemented");
+void CFEventEngine::Run(EventEngine::Closure* closure) {
+  thread_pool_->Run(closure);
 }
 
-void CFEventEngine::Run(absl::AnyInvocable<void()> /* closure */) {
-  grpc_core::Crash("unimplemented");
+void CFEventEngine::Run(absl::AnyInvocable<void()> closure) {
+  thread_pool_->Run(std::move(closure));
 }
 
 EventEngine::TaskHandle CFEventEngine::RunAfter(Duration when,
@@ -108,7 +186,7 @@ EventEngine::TaskHandle CFEventEngine::RunAfter(
 }
 
 bool CFEventEngine::Cancel(TaskHandle handle) {
-  grpc_core::MutexLock lock(&mu_);
+  grpc_core::MutexLock lock(&task_mu_);
   if (!known_handles_.contains(handle)) return false;
   auto* cd = reinterpret_cast<Closure*>(handle.keys[0]);
   bool r = timer_manager_.TimerCancel(&cd->timer);
@@ -125,7 +203,7 @@ EventEngine::TaskHandle CFEventEngine::RunAfterInternal(
   cd->engine = this;
   EventEngine::TaskHandle handle{reinterpret_cast<intptr_t>(cd),
                                  aba_token_.fetch_add(1)};
-  grpc_core::MutexLock lock(&mu_);
+  grpc_core::MutexLock lock(&task_mu_);
   known_handles_.insert(handle);
   cd->handle = handle;
   GRPC_EVENT_ENGINE_TRACE("CFEventEngine:%p scheduling callback:%s", this,

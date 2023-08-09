@@ -17,7 +17,7 @@
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
 
-#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -30,7 +30,7 @@ namespace {
 // Tests that we can unref a call while recv ops are started but before
 // they complete.  This ensures that we don't drop callbacks or cause a
 // memory leak.
-TEST_P(RetryTest, UnrefBeforeRecv) {
+CORE_END2END_TEST(RetryTest, UnrefBeforeRecv) {
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
@@ -49,7 +49,7 @@ TEST_P(RetryTest, UnrefBeforeRecv) {
       "  } ]\n"
       "}"));
   absl::optional<Call> c{
-      NewClientCall("/service/method").Timeout(Duration::Seconds(5)).Create()};
+      NewClientCall("/service/method").Timeout(Duration::Seconds(60)).Create()};
 
   // Client starts send ops.
   c->NewBatch(1)

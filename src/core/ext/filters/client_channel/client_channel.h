@@ -65,6 +65,7 @@
 #include "src/core/lib/resolver/resolver.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/service_config/service_config.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata_batch.h"
@@ -246,6 +247,10 @@ class ClientChannel {
       Resolver::Result result) ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
   OrphanablePtr<LoadBalancingPolicy> CreateLbPolicyLocked(
       const ChannelArgs& args) ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
+
+  void UpdateStateLocked(grpc_connectivity_state state,
+                         const absl::Status& status, const char* reason)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
 
   void UpdateStateAndPickerLocked(
       grpc_connectivity_state state, const absl::Status& status,
@@ -552,6 +557,7 @@ class ClientChannel::FilterBasedLoadBalancedCall
   CallCombiner* call_combiner_;
   grpc_polling_entity* pollent_;
   grpc_closure* on_call_destruction_complete_;
+  absl::optional<Slice> peer_string_;
 
   // Set when we get a cancel_stream op.
   grpc_error_handle cancel_error_;

@@ -22,6 +22,7 @@
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 
@@ -65,12 +66,13 @@ class SockpairFixture : public CoreTestFixture {
  private:
   virtual ChannelArgs MutateClientArgs(ChannelArgs args) { return args; }
   virtual ChannelArgs MutateServerArgs(ChannelArgs args) { return args; }
-  grpc_server* MakeServer(const ChannelArgs& in_args) override {
+  grpc_server* MakeServer(const ChannelArgs& in_args,
+                          grpc_completion_queue* cq) override {
     auto args = MutateServerArgs(in_args);
     ExecCtx exec_ctx;
     grpc_transport* transport;
     auto* server = grpc_server_create(args.ToC().get(), nullptr);
-    grpc_server_register_completion_queue(server, cq(), nullptr);
+    grpc_server_register_completion_queue(server, cq, nullptr);
     grpc_server_start(server);
     auto server_channel_args = CoreConfiguration::Get()
                                    .channel_args_preconditioning()
@@ -79,7 +81,7 @@ class SockpairFixture : public CoreTestFixture {
     EXPECT_NE(server_endpoint, nullptr);
     transport = grpc_create_chttp2_transport(server_channel_args,
                                              server_endpoint, false);
-    grpc_endpoint_add_to_pollset(server_endpoint, grpc_cq_pollset(cq()));
+    grpc_endpoint_add_to_pollset(server_endpoint, grpc_cq_pollset(cq));
     Server* core_server = Server::FromC(server);
     grpc_error_handle error = core_server->SetupTransport(
         transport, nullptr, core_server->channel_args(), nullptr);
@@ -90,7 +92,8 @@ class SockpairFixture : public CoreTestFixture {
     }
     return server;
   }
-  grpc_channel* MakeClient(const ChannelArgs& in_args) override {
+  grpc_channel* MakeClient(const ChannelArgs& in_args,
+                           grpc_completion_queue*) override {
     ExecCtx exec_ctx;
     auto args = CoreConfiguration::Get()
                     .channel_args_preconditioning()

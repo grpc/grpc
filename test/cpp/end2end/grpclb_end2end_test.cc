@@ -102,8 +102,8 @@ constexpr char kDefaultServiceConfig[] =
 using BackendService = CountedService<TestServiceImpl>;
 using BalancerService = CountedService<LoadBalancer::Service>;
 
-const char g_kCallCredsMdKey[] = "Balancer should not ...";
-const char g_kCallCredsMdValue[] = "... receive me";
+const char g_kCallCredsMdKey[] = "call-creds";
+const char g_kCallCredsMdValue[] = "should not be received by balancer";
 
 // A test user agent string sent by the client only to the grpclb loadbalancer.
 // The backend should not see this user-agent string.
@@ -566,9 +566,8 @@ class GrpclbEnd2endTest : public ::testing::Test {
       grpc_resolved_address address;
       GPR_ASSERT(grpc_parse_uri(*lb_uri, &address));
       addresses.emplace_back(
-          address.addr, address.len,
-          grpc_core::ChannelArgs().Set(GRPC_ARG_DEFAULT_AUTHORITY,
-                                       addr.balancer_name));
+          address, grpc_core::ChannelArgs().Set(GRPC_ARG_DEFAULT_AUTHORITY,
+                                                addr.balancer_name));
     }
     return addresses;
   }

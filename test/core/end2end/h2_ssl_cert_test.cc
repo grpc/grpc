@@ -31,6 +31,7 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
@@ -197,15 +198,19 @@ static void simple_request_body(grpc_core::CoreTestFixture* f,
                                 test_result expected_result) {
   grpc_call* c;
   gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
-  grpc_core::CqVerifier cqv(f->cq());
+  grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
+  grpc_core::CqVerifier cqv(cq);
   grpc_op ops[6];
   grpc_op* op;
   grpc_call_error error;
 
+  grpc_channel* client = f->MakeClient(grpc_core::ChannelArgs(), cq);
+  grpc_server* server = f->MakeServer(grpc_core::ChannelArgs(), cq);
+
   grpc_slice host = grpc_slice_from_static_string("foo.test.google.fr:1234");
-  c = grpc_channel_create_call(f->client(), nullptr, GRPC_PROPAGATE_DEFAULTS,
-                               f->cq(), grpc_slice_from_static_string("/foo"),
-                               &host, deadline, nullptr);
+  c = grpc_channel_create_call(client, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
+                               grpc_slice_from_static_string("/foo"), &host,
+                               deadline, nullptr);
   GPR_ASSERT(c);
 
   memset(ops, 0, sizeof(ops));
@@ -223,6 +228,16 @@ static void simple_request_body(grpc_core::CoreTestFixture* f,
   cqv.Verify();
 
   grpc_call_unref(c);
+  grpc_channel_destroy(client);
+  grpc_server_shutdown_and_notify(server, cq, nullptr);
+  cqv.Expect(nullptr, true);
+  cqv.Verify();
+  grpc_server_destroy(server);
+  grpc_completion_queue_shutdown(cq);
+  GPR_ASSERT(grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME),
+                                        nullptr)
+                 .type == GRPC_QUEUE_SHUTDOWN);
+  grpc_completion_queue_destroy(cq);
 }
 
 class H2SslCertTest : public ::testing::TestWithParam<CoreTestConfigWrapper> {
@@ -233,8 +248,6 @@ class H2SslCertTest : public ::testing::TestWithParam<CoreTestConfigWrapper> {
   void SetUp() override {
     fixture_ = GetParam().config.create_fixture(grpc_core::ChannelArgs(),
                                                 grpc_core::ChannelArgs());
-    fixture_->InitServer(grpc_core::ChannelArgs());
-    fixture_->InitClient(grpc_core::ChannelArgs());
   }
   void TearDown() override { fixture_.reset(); }
 

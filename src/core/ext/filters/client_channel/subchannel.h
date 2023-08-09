@@ -119,9 +119,9 @@ class SubchannelCall {
   void SetAfterCallStackDestroy(grpc_closure* closure);
 
   // Interface of RefCounted<>.
-  RefCountedPtr<SubchannelCall> Ref() GRPC_MUST_USE_RESULT;
-  RefCountedPtr<SubchannelCall> Ref(const DebugLocation& location,
-                                    const char* reason) GRPC_MUST_USE_RESULT;
+  GRPC_MUST_USE_RESULT RefCountedPtr<SubchannelCall> Ref();
+  GRPC_MUST_USE_RESULT RefCountedPtr<SubchannelCall> Ref(
+      const DebugLocation& location, const char* reason);
   // When refcount drops to 0, destroys itself and the associated call stack,
   // but does NOT free the memory because it's in the call arena.
   void Unref();

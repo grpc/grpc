@@ -103,6 +103,23 @@ UPB_INLINE const struct envoy_config_endpoint_v3_ClusterStats* const* envoy_serv
     return NULL;
   }
 }
+UPB_INLINE const upb_Array* _envoy_service_load_stats_v3_LoadStatsRequest_cluster_stats_upb_array(const envoy_service_load_stats_v3_LoadStatsRequest* msg, size_t* size) {
+  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 0, 1, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _envoy_service_load_stats_v3_LoadStatsRequest_cluster_stats_mutable_upb_array(const envoy_service_load_stats_v3_LoadStatsRequest* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 0, 1, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
 UPB_INLINE bool envoy_service_load_stats_v3_LoadStatsRequest_has_cluster_stats(const envoy_service_load_stats_v3_LoadStatsRequest* msg) {
   size_t size;
   envoy_service_load_stats_v3_LoadStatsRequest_cluster_stats(msg, &size);
@@ -197,6 +214,23 @@ UPB_INLINE upb_StringView const* envoy_service_load_stats_v3_LoadStatsResponse_c
     if (size) *size = 0;
     return NULL;
   }
+}
+UPB_INLINE const upb_Array* _envoy_service_load_stats_v3_LoadStatsResponse_clusters_upb_array(const envoy_service_load_stats_v3_LoadStatsResponse* msg, size_t* size) {
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 0, kUpb_NoSub, 9, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_Array* arr = upb_Message_GetArray(msg, &field);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
+}
+UPB_INLINE upb_Array* _envoy_service_load_stats_v3_LoadStatsResponse_clusters_mutable_upb_array(const envoy_service_load_stats_v3_LoadStatsResponse* msg, size_t* size, upb_Arena* arena) {
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 0, kUpb_NoSub, 9, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
+      (upb_Message*)msg, &field, arena);
+  if (size) {
+    *size = arr ? arr->size : 0;
+  }
+  return arr;
 }
 UPB_INLINE bool envoy_service_load_stats_v3_LoadStatsResponse_has_clusters(const envoy_service_load_stats_v3_LoadStatsResponse* msg) {
   size_t size;

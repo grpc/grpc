@@ -35,6 +35,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/variant.h"
 
+#include <grpc/support/json.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/match.h"
@@ -107,8 +108,13 @@ class JsonReader {
 
     Json TakeAsJson() {
       return MatchMutable(
-          &data, [&](Json::Object* object) { return Json(std::move(*object)); },
-          [&](Json::Array* array) { return Json(std::move(*array)); });
+          &data,
+          [&](Json::Object* object) {
+            return Json::FromObject(std::move(*object));
+          },
+          [&](Json::Array* array) {
+            return Json::FromArray(std::move(*array));
+          });
     }
   };
 
@@ -307,26 +313,26 @@ void JsonReader::SetKey() {
 
 void JsonReader::SetString() {
   Json* value = CreateAndLinkValue();
-  *value = std::move(string_);
+  *value = Json::FromString(std::move(string_));
   string_.clear();
 }
 
 bool JsonReader::SetNumber() {
   Json* value = CreateAndLinkValue();
-  *value = Json(string_, /*is_number=*/true);
+  *value = Json::FromNumber(std::move(string_));
   string_.clear();
   return true;
 }
 
 void JsonReader::SetTrue() {
   Json* value = CreateAndLinkValue();
-  *value = true;
+  *value = Json::FromBool(true);
   string_.clear();
 }
 
 void JsonReader::SetFalse() {
   Json* value = CreateAndLinkValue();
-  *value = false;
+  *value = Json::FromBool(false);
   string_.clear();
 }
 
@@ -470,6 +476,7 @@ JsonReader::Status JsonReader::Run() {
                 return Status::GRPC_JSON_PARSE_ERROR;
               }
               state_ = State::GRPC_JSON_STATE_VALUE_END;
+              container_just_begun_ = false;
               EndContainer();
               if (stack_.empty()) {
                 state_ = State::GRPC_JSON_STATE_END;

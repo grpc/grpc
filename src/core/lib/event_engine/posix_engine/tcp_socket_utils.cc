@@ -27,6 +27,7 @@
 #include "absl/types/optional.h"
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/impl/channel_arg_names.h>
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"  // IWYU pragma: keep
@@ -128,10 +129,11 @@ absl::Status PrepareTcpClientSocket(PosixSocketWrapper sock,
   if (options.tcp_receive_buffer_size != options.kReadBufferSizeUnset) {
     GRPC_RETURN_IF_ERROR(sock.SetSocketRcvBuf(options.tcp_receive_buffer_size));
   }
-  if (reinterpret_cast<const sockaddr*>(addr.address())->sa_family != AF_UNIX) {
-    // If its not a unix socket address.
+  if (addr.address()->sa_family != AF_UNIX && !ResolvedAddressIsVSock(addr)) {
+    // If its not a unix socket or vsock address.
     GRPC_RETURN_IF_ERROR(sock.SetSocketLowLatency(1));
     GRPC_RETURN_IF_ERROR(sock.SetSocketReuseAddr(1));
+    GRPC_RETURN_IF_ERROR(sock.SetSocketDscp(options.dscp));
     sock.TrySetSocketTcpUserTimeout(options, true);
   }
   GRPC_RETURN_IF_ERROR(sock.SetSocketNoSigpipeIfPossible());
@@ -184,6 +186,8 @@ PosixTcpOptions TcpOptionsFromEndpointConfig(const EndpointConfig& config) {
   options.expand_wildcard_addrs =
       (AdjustValue(0, 1, INT_MAX,
                    config.GetInt(GRPC_ARG_EXPAND_WILDCARD_ADDRS)) != 0);
+  options.dscp = AdjustValue(PosixTcpOptions::kDscpNotSet, 0, 63,
+                             config.GetInt(GRPC_ARG_DSCP));
   options.allow_reuse_port = PosixSocketWrapper::IsSocketReusePortSupported();
   auto allow_reuse_port_value = config.GetInt(GRPC_ARG_ALLOW_REUSEPORT);
   if (allow_reuse_port_value.has_value()) {
@@ -519,6 +523,39 @@ absl::Status PosixSocketWrapper::SetSocketLowLatency(int low_latency) {
   return absl::OkStatus();
 }
 
+// Set Differentiated Services Code Point (DSCP)
+absl::Status PosixSocketWrapper::SetSocketDscp(int dscp) {
+  if (dscp == PosixTcpOptions::kDscpNotSet) {
+    return absl::OkStatus();
+  }
+  // The TOS/TrafficClass byte consists of following bits:
+  // | 7 6 5 4 3 2 | 1 0 |
+  // |    DSCP     | ECN |
+  int newval = dscp << 2;
+  int val;
+  socklen_t intlen = sizeof(val);
+  // Get ECN bits from current IP_TOS value unless IPv6 only
+  if (0 == getsockopt(fd_, IPPROTO_IP, IP_TOS, &val, &intlen)) {
+    newval |= (val & 0x3);
+    if (0 != setsockopt(fd_, IPPROTO_IP, IP_TOS, &newval, sizeof(newval))) {
+      return absl::Status(
+          absl::StatusCode::kInternal,
+          absl::StrCat("setsockopt(IP_TOS): ", grpc_core::StrError(errno)));
+    }
+  }
+  // Get ECN from current Traffic Class value if IPv6 is available
+  if (0 == getsockopt(fd_, IPPROTO_IPV6, IPV6_TCLASS, &val, &intlen)) {
+    newval |= (val & 0x3);
+    if (0 !=
+        setsockopt(fd_, IPPROTO_IPV6, IPV6_TCLASS, &newval, sizeof(newval))) {
+      return absl::Status(absl::StatusCode::kInternal,
+                          absl::StrCat("setsockopt(IPV6_TCLASS): ",
+                                       grpc_core::StrError(errno)));
+    }
+  }
+  return absl::OkStatus();
+}
+
 #if GPR_LINUX == 1
 // For Linux, it will be detected to support TCP_USER_TIMEOUT
 #ifndef TCP_USER_TIMEOUT
@@ -796,6 +833,10 @@ absl::Status PosixSocketWrapper::SetSocketLowLatency(int /*low_latency*/) {
 }
 
 absl::Status PosixSocketWrapper::SetSocketReusePort(int /*reuse*/) {
+  grpc_core::Crash("unimplemented");
+}
+
+absl::Status PosixSocketWrapper::SetSocketDscp(int /*dscp*/) {
   grpc_core::Crash("unimplemented");
 }
 

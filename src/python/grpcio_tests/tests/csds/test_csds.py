@@ -27,7 +27,7 @@ from google.protobuf import json_format
 import grpc
 import grpc_csds
 
-_DUMMY_XDS_ADDRESS = 'xds:///foo.bar'
+_DUMMY_XDS_ADDRESS = "xds:///foo.bar"
 _DUMMY_BOOTSTRAP_FILE = """
 {
   \"xds_servers\": [
@@ -57,25 +57,26 @@ _DUMMY_BOOTSTRAP_FILE = """
 """
 
 
-@unittest.skipIf(sys.version_info[0] < 3,
-                 'ProtoBuf descriptor has moved on from Python2')
+@unittest.skipIf(
+    sys.version_info[0] < 3, "ProtoBuf descriptor has moved on from Python2"
+)
 class TestCsds(unittest.TestCase):
-
     def setUp(self):
-        os.environ['GRPC_XDS_BOOTSTRAP_CONFIG'] = _DUMMY_BOOTSTRAP_FILE
+        os.environ["GRPC_XDS_BOOTSTRAP_CONFIG"] = _DUMMY_BOOTSTRAP_FILE
         self._server = grpc.server(ThreadPoolExecutor())
-        port = self._server.add_insecure_port('localhost:0')
+        port = self._server.add_insecure_port("localhost:0")
         grpc_csds.add_csds_servicer(self._server)
         self._server.start()
 
-        self._channel = grpc.insecure_channel('localhost:%s' % port)
+        self._channel = grpc.insecure_channel("localhost:%s" % port)
         self._stub = csds_pb2_grpc.ClientStatusDiscoveryServiceStub(
-            self._channel)
+            self._channel
+        )
 
     def tearDown(self):
         self._channel.close()
         self._server.stop(0)
-        os.environ.pop('GRPC_XDS_BOOTSTRAP_CONFIG', None)
+        os.environ.pop("GRPC_XDS_BOOTSTRAP_CONFIG", None)
 
     def get_xds_config_dump(self):
         return self._stub.FetchClientStatus(csds_pb2.ClientStatusRequest())
@@ -83,17 +84,18 @@ class TestCsds(unittest.TestCase):
     def test_has_node(self):
         resp = self.get_xds_config_dump()
         self.assertEqual(1, len(resp.config))
-        self.assertEqual('python_test_csds', resp.config[0].node.id)
-        self.assertEqual('test', resp.config[0].node.cluster)
+        self.assertEqual("python_test_csds", resp.config[0].node.id)
+        self.assertEqual("test", resp.config[0].node.cluster)
 
     def test_no_lds_found(self):
         dummy_channel = grpc.insecure_channel(_DUMMY_XDS_ADDRESS)
 
         # Force the XdsClient to initialize and request a resource
         with self.assertRaises(grpc.RpcError) as rpc_error:
-            dummy_channel.unary_unary('')(b'', wait_for_ready=False, timeout=1)
-        self.assertEqual(grpc.StatusCode.DEADLINE_EXCEEDED,
-                         rpc_error.exception.code())
+            dummy_channel.unary_unary("")(b"", wait_for_ready=False, timeout=1)
+        self.assertEqual(
+            grpc.StatusCode.DEADLINE_EXCEEDED, rpc_error.exception.code()
+        )
 
         # The resource request will fail with DOES_NOT_EXIST (after 15s)
         while True:
@@ -104,14 +106,16 @@ class TestCsds(unittest.TestCase):
                 for xds_config in config["config"][0].get("xdsConfig", []):
                     if "listenerConfig" in xds_config:
                         listener = xds_config["listenerConfig"][
-                            "dynamicListeners"][0]
-                        if listener['clientStatus'] == 'REQUESTED':
+                            "dynamicListeners"
+                        ][0]
+                        if listener["clientStatus"] == "REQUESTED":
                             ok = True
                             break
                 for generic_xds_config in config["config"][0].get(
-                        "genericXdsConfigs", []):
+                    "genericXdsConfigs", []
+                ):
                     if "Listener" in generic_xds_config["typeUrl"]:
-                        if generic_xds_config['clientStatus'] == 'REQUESTED':
+                        if generic_xds_config["clientStatus"] == "REQUESTED":
                             ok = True
                             break
             except KeyError as e:
@@ -123,15 +127,16 @@ class TestCsds(unittest.TestCase):
         dummy_channel.close()
 
 
-@unittest.skipIf(sys.version_info[0] < 3,
-                 'ProtoBuf descriptor has moved on from Python2')
+@unittest.skipIf(
+    sys.version_info[0] < 3, "ProtoBuf descriptor has moved on from Python2"
+)
 class TestCsdsStream(TestCsds):
-
     def get_xds_config_dump(self):
-        if not hasattr(self, 'request_queue'):
+        if not hasattr(self, "request_queue"):
             request_queue = queue.Queue()
             response_iterator = self._stub.StreamClientStatus(
-                iter(request_queue.get, None))
+                iter(request_queue.get, None)
+            )
         request_queue.put(csds_pb2.ClientStatusRequest())
         return next(response_iterator)
 

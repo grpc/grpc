@@ -63,12 +63,9 @@ class ExternalProtoLibrary:
         http_archive in Bazel.
     """
 
-    def __init__(self,
-                 destination,
-                 proto_prefix,
-                 urls=None,
-                 hash="",
-                 strip_prefix=""):
+    def __init__(
+        self, destination, proto_prefix, urls=None, hash="", strip_prefix=""
+    ):
         self.destination = destination
         self.proto_prefix = proto_prefix
         if urls is None:
@@ -80,24 +77,27 @@ class ExternalProtoLibrary:
 
 
 EXTERNAL_PROTO_LIBRARIES = {
-    'envoy_api':
-        ExternalProtoLibrary(destination='third_party/envoy-api',
-                             proto_prefix='third_party/envoy-api/'),
-    'com_google_googleapis':
-        ExternalProtoLibrary(destination='third_party/googleapis',
-                             proto_prefix='third_party/googleapis/'),
-    'com_github_cncf_udpa':
-        ExternalProtoLibrary(destination='third_party/xds',
-                             proto_prefix='third_party/xds/'),
-    'opencensus_proto':
-        ExternalProtoLibrary(destination='third_party/opencensus-proto/src',
-                             proto_prefix='third_party/opencensus-proto/src/'),
+    "envoy_api": ExternalProtoLibrary(
+        destination="third_party/envoy-api",
+        proto_prefix="third_party/envoy-api/",
+    ),
+    "com_google_googleapis": ExternalProtoLibrary(
+        destination="third_party/googleapis",
+        proto_prefix="third_party/googleapis/",
+    ),
+    "com_github_cncf_udpa": ExternalProtoLibrary(
+        destination="third_party/xds", proto_prefix="third_party/xds/"
+    ),
+    "opencensus_proto": ExternalProtoLibrary(
+        destination="third_party/opencensus-proto/src",
+        proto_prefix="third_party/opencensus-proto/src/",
+    ),
 }
 
 
 def _maybe_get_internal_path(name: str) -> Optional[str]:
     for key in EXTERNAL_PROTO_LIBRARIES:
-        if name.startswith('@' + key):
+        if name.startswith("@" + key):
             return key
     return None
 
@@ -105,51 +105,52 @@ def _maybe_get_internal_path(name: str) -> Optional[str]:
 def _bazel_query_xml_tree(query: str) -> ET.Element:
     """Get xml output of bazel query invocation, parsed as XML tree"""
     output = subprocess.check_output(
-        ['tools/bazel', 'query', '--noimplicit_deps', '--output', 'xml', query])
+        ["tools/bazel", "query", "--noimplicit_deps", "--output", "xml", query]
+    )
     return ET.fromstring(output)
 
 
 def _rule_dict_from_xml_node(rule_xml_node):
     """Converts XML node representing a rule (obtained from "bazel query --output xml") to a dictionary that contains all the metadata we will need."""
     result = {
-        'class': rule_xml_node.attrib.get('class'),
-        'name': rule_xml_node.attrib.get('name'),
-        'srcs': [],
-        'hdrs': [],
-        'deps': [],
-        'data': [],
-        'tags': [],
-        'args': [],
-        'generator_function': None,
-        'size': None,
-        'flaky': False,
-        'actual': None,  # the real target name for aliases
+        "class": rule_xml_node.attrib.get("class"),
+        "name": rule_xml_node.attrib.get("name"),
+        "srcs": [],
+        "hdrs": [],
+        "deps": [],
+        "data": [],
+        "tags": [],
+        "args": [],
+        "generator_function": None,
+        "size": None,
+        "flaky": False,
+        "actual": None,  # the real target name for aliases
     }
     for child in rule_xml_node:
         # all the metadata we want is stored under "list" tags
-        if child.tag == 'list':
-            list_name = child.attrib['name']
-            if list_name in ['srcs', 'hdrs', 'deps', 'data', 'tags', 'args']:
-                result[list_name] += [item.attrib['value'] for item in child]
-        if child.tag == 'string':
-            string_name = child.attrib['name']
-            if string_name in ['generator_function', 'size']:
-                result[string_name] = child.attrib['value']
-        if child.tag == 'boolean':
-            bool_name = child.attrib['name']
-            if bool_name in ['flaky']:
-                result[bool_name] = child.attrib['value'] == 'true'
-        if child.tag == 'label':
+        if child.tag == "list":
+            list_name = child.attrib["name"]
+            if list_name in ["srcs", "hdrs", "deps", "data", "tags", "args"]:
+                result[list_name] += [item.attrib["value"] for item in child]
+        if child.tag == "string":
+            string_name = child.attrib["name"]
+            if string_name in ["generator_function", "size"]:
+                result[string_name] = child.attrib["value"]
+        if child.tag == "boolean":
+            bool_name = child.attrib["name"]
+            if bool_name in ["flaky"]:
+                result[bool_name] = child.attrib["value"] == "true"
+        if child.tag == "label":
             # extract actual name for alias rules
-            label_name = child.attrib['name']
-            if label_name in ['actual']:
-                actual_name = child.attrib.get('value', None)
+            label_name = child.attrib["name"]
+            if label_name in ["actual"]:
+                actual_name = child.attrib.get("value", None)
                 if actual_name:
-                    result['actual'] = actual_name
+                    result["actual"] = actual_name
                     # HACK: since we do a lot of transitive dependency scanning,
                     # make it seem that the actual name is a dependency of the alias rule
                     # (aliases don't have dependencies themselves)
-                    result['deps'].append(actual_name)
+                    result["deps"].append(actual_name)
     return result
 
 
@@ -157,53 +158,53 @@ def _extract_rules_from_bazel_xml(xml_tree):
     """Extract bazel rules from an XML tree node obtained from "bazel query --output xml" command."""
     result = {}
     for child in xml_tree:
-        if child.tag == 'rule':
+        if child.tag == "rule":
             rule_dict = _rule_dict_from_xml_node(child)
-            rule_clazz = rule_dict['class']
-            rule_name = rule_dict['name']
+            rule_clazz = rule_dict["class"]
+            rule_name = rule_dict["name"]
             if rule_clazz in [
-                    'cc_library',
-                    'cc_binary',
-                    'cc_test',
-                    'cc_proto_library',
-                    'cc_proto_gen_validate',
-                    'proto_library',
-                    'upb_proto_library',
-                    'upb_proto_reflection_library',
-                    'alias',
+                "cc_library",
+                "cc_binary",
+                "cc_test",
+                "cc_proto_library",
+                "cc_proto_gen_validate",
+                "proto_library",
+                "upb_proto_library",
+                "upb_proto_reflection_library",
+                "alias",
             ]:
                 if rule_name in result:
-                    raise Exception('Rule %s already present' % rule_name)
+                    raise Exception("Rule %s already present" % rule_name)
                 result[rule_name] = rule_dict
     return result
 
 
 def _get_bazel_label(target_name: str) -> str:
-    if target_name.startswith('@'):
+    if target_name.startswith("@"):
         return target_name
-    if ':' in target_name:
-        return '//%s' % target_name
+    if ":" in target_name:
+        return "//%s" % target_name
     else:
-        return '//:%s' % target_name
+        return "//:%s" % target_name
 
 
 def _extract_source_file_path(label: str) -> str:
     """Gets relative path to source file from bazel deps listing"""
-    if label.startswith('//'):
-        label = label[len('//'):]
+    if label.startswith("//"):
+        label = label[len("//") :]
     # labels in form //:src/core/lib/surface/call_test_only.h
-    if label.startswith(':'):
-        label = label[len(':'):]
+    if label.startswith(":"):
+        label = label[len(":") :]
     # labels in form //test/core/util:port.cc
-    label = label.replace(':', '/')
+    label = label.replace(":", "/")
     return label
 
 
 def _extract_public_headers(bazel_rule: BuildMetadata) -> List[str]:
     """Gets list of public headers from a bazel rule"""
     result = []
-    for dep in bazel_rule['hdrs']:
-        if dep.startswith('//:include/') and dep.endswith('.h'):
+    for dep in bazel_rule["hdrs"]:
+        if dep.startswith("//:include/") and dep.endswith(".h"):
             result.append(_extract_source_file_path(dep))
     return list(sorted(result))
 
@@ -211,9 +212,12 @@ def _extract_public_headers(bazel_rule: BuildMetadata) -> List[str]:
 def _extract_nonpublic_headers(bazel_rule: BuildMetadata) -> List[str]:
     """Gets list of non-public headers from a bazel rule"""
     result = []
-    for dep in bazel_rule['hdrs']:
-        if dep.startswith('//') and not dep.startswith(
-                '//:include/') and dep.endswith('.h'):
+    for dep in bazel_rule["hdrs"]:
+        if (
+            dep.startswith("//")
+            and not dep.startswith("//:include/")
+            and dep.endswith(".h")
+        ):
             result.append(_extract_source_file_path(dep))
     return list(sorted(result))
 
@@ -221,9 +225,9 @@ def _extract_nonpublic_headers(bazel_rule: BuildMetadata) -> List[str]:
 def _extract_sources(bazel_rule: BuildMetadata) -> List[str]:
     """Gets list of source files from a bazel rule"""
     result = []
-    for src in bazel_rule['srcs']:
-        if src.endswith('.cc') or src.endswith('.c') or src.endswith('.proto'):
-            if src.startswith('//'):
+    for src in bazel_rule["srcs"]:
+        if src.endswith(".cc") or src.endswith(".c") or src.endswith(".proto"):
+            if src.startswith("//"):
                 # This source file is local to gRPC
                 result.append(_extract_source_file_path(src))
             else:
@@ -235,20 +239,26 @@ def _extract_sources(bazel_rule: BuildMetadata) -> List[str]:
                 if external_proto_library_name is not None:
                     result.append(
                         src.replace(
-                            '@%s//' % external_proto_library_name,
+                            "@%s//" % external_proto_library_name,
                             EXTERNAL_PROTO_LIBRARIES[
-                                external_proto_library_name].proto_prefix).
-                        replace(':', '/'))
+                                external_proto_library_name
+                            ].proto_prefix,
+                        ).replace(":", "/")
+                    )
     return list(sorted(result))
 
 
-def _extract_deps(bazel_rule: BuildMetadata,
-                  bazel_rules: BuildDict) -> List[str]:
+def _extract_deps(
+    bazel_rule: BuildMetadata, bazel_rules: BuildDict
+) -> List[str]:
     """Gets list of deps from from a bazel rule"""
-    deps = set(bazel_rule['deps'])
-    for src in bazel_rule['srcs']:
-        if not src.endswith('.cc') and not src.endswith(
-                '.c') and not src.endswith('.proto'):
+    deps = set(bazel_rule["deps"])
+    for src in bazel_rule["srcs"]:
+        if (
+            not src.endswith(".cc")
+            and not src.endswith(".c")
+            and not src.endswith(".proto")
+        ):
             if src in bazel_rules:
                 # This label doesn't point to a source file, but another Bazel
                 # target. This is required for :pkg_cc_proto_validate targets,
@@ -257,8 +267,9 @@ def _extract_deps(bazel_rule: BuildMetadata,
     return list(sorted(list(deps)))
 
 
-def _create_target_from_bazel_rule(target_name: str,
-                                   bazel_rules: BuildDict) -> BuildMetadata:
+def _create_target_from_bazel_rule(
+    target_name: str, bazel_rules: BuildDict
+) -> BuildMetadata:
     """Create build.yaml-like target definition from bazel metadata"""
     bazel_rule = bazel_rules[_get_bazel_label(target_name)]
 
@@ -267,31 +278,31 @@ def _create_target_from_bazel_rule(target_name: str,
     # and only later we will populate the public fields (once we do some extra
     # postprocessing).
     result = {
-        'name': target_name,
-        '_PUBLIC_HEADERS_BAZEL': _extract_public_headers(bazel_rule),
-        '_HEADERS_BAZEL': _extract_nonpublic_headers(bazel_rule),
-        '_SRC_BAZEL': _extract_sources(bazel_rule),
-        '_DEPS_BAZEL': _extract_deps(bazel_rule, bazel_rules),
-        'public_headers': bazel_rule['_COLLAPSED_PUBLIC_HEADERS'],
-        'headers': bazel_rule['_COLLAPSED_HEADERS'],
-        'src': bazel_rule['_COLLAPSED_SRCS'],
-        'deps': bazel_rule['_COLLAPSED_DEPS'],
+        "name": target_name,
+        "_PUBLIC_HEADERS_BAZEL": _extract_public_headers(bazel_rule),
+        "_HEADERS_BAZEL": _extract_nonpublic_headers(bazel_rule),
+        "_SRC_BAZEL": _extract_sources(bazel_rule),
+        "_DEPS_BAZEL": _extract_deps(bazel_rule, bazel_rules),
+        "public_headers": bazel_rule["_COLLAPSED_PUBLIC_HEADERS"],
+        "headers": bazel_rule["_COLLAPSED_HEADERS"],
+        "src": bazel_rule["_COLLAPSED_SRCS"],
+        "deps": bazel_rule["_COLLAPSED_DEPS"],
     }
     return result
 
 
 def _external_dep_name_from_bazel_dependency(bazel_dep: str) -> Optional[str]:
     """Returns name of dependency if external bazel dependency is provided or None"""
-    if bazel_dep.startswith('@com_google_absl//'):
+    if bazel_dep.startswith("@com_google_absl//"):
         # special case for add dependency on one of the absl libraries (there is not just one absl library)
-        prefixlen = len('@com_google_absl//')
+        prefixlen = len("@com_google_absl//")
         return bazel_dep[prefixlen:]
-    elif bazel_dep == '//external:upb_lib':
-        return 'upb'
-    elif bazel_dep == '//external:benchmark':
-        return 'benchmark'
-    elif bazel_dep == '//external:libssl':
-        return 'libssl'
+    elif bazel_dep == "//external:upb_lib":
+        return "upb"
+    elif bazel_dep == "//external:benchmark":
+        return "benchmark"
+    elif bazel_dep == "//external:libssl":
+        return "libssl"
     else:
         # all the other external deps such as protobuf, cares, zlib
         # don't need to be listed explicitly, they are handled automatically
@@ -300,8 +311,8 @@ def _external_dep_name_from_bazel_dependency(bazel_dep: str) -> Optional[str]:
 
 
 def _compute_transitive_metadata(
-        rule_name: str, bazel_rules: Any,
-        bazel_label_to_dep_name: Dict[str, str]) -> None:
+    rule_name: str, bazel_rules: Any, bazel_label_to_dep_name: Dict[str, str]
+) -> None:
     """Computes the final build metadata for Bazel target with rule_name.
 
     The dependencies that will appear on the deps list are:
@@ -355,23 +366,27 @@ def _compute_transitive_metadata(
             if external_dep_name_maybe is None:
                 if "_PROCESSING_DONE" not in bazel_rules[dep]:
                     # This item is not processed before, compute now
-                    _compute_transitive_metadata(dep, bazel_rules,
-                                                 bazel_label_to_dep_name)
-                transitive_deps.update(bazel_rules[dep].get(
-                    '_TRANSITIVE_DEPS', []))
+                    _compute_transitive_metadata(
+                        dep, bazel_rules, bazel_label_to_dep_name
+                    )
+                transitive_deps.update(
+                    bazel_rules[dep].get("_TRANSITIVE_DEPS", [])
+                )
                 collapsed_deps.update(
-                    collapsed_deps, bazel_rules[dep].get('_COLLAPSED_DEPS', []))
-                exclude_deps.update(bazel_rules[dep].get('_EXCLUDE_DEPS', []))
+                    collapsed_deps, bazel_rules[dep].get("_COLLAPSED_DEPS", [])
+                )
+                exclude_deps.update(bazel_rules[dep].get("_EXCLUDE_DEPS", []))
 
         # This dep is a public target, add it as a dependency
         if dep in bazel_label_to_dep_name:
             transitive_deps.update([bazel_label_to_dep_name[dep]])
-            collapsed_deps.update(collapsed_deps,
-                                  [bazel_label_to_dep_name[dep]])
+            collapsed_deps.update(
+                collapsed_deps, [bazel_label_to_dep_name[dep]]
+            )
             # Add all the transitive deps of our every public dep to exclude
             # list since we want to avoid building sources that are already
             # built by our dependencies
-            exclude_deps.update(bazel_rules[dep]['_TRANSITIVE_DEPS'])
+            exclude_deps.update(bazel_rules[dep]["_TRANSITIVE_DEPS"])
             continue
 
         # This dep is an external target, add it as a dependency
@@ -385,7 +400,8 @@ def _compute_transitive_metadata(
 
     # Calculate transitive public deps (needed for collapsing sources)
     transitive_public_deps = set(
-        [x for x in transitive_deps if x in bazel_label_to_dep_name])
+        [x for x in transitive_deps if x in bazel_label_to_dep_name]
+    )
 
     # Remove intermediate targets that our public dependencies already depend
     # on. This is the step that further shorten the deps list.
@@ -415,19 +431,22 @@ def _compute_transitive_metadata(
             if dep in bazel_rules:
                 collapsed_srcs.update(_extract_sources(bazel_rules[dep]))
                 collapsed_public_headers.update(
-                    _extract_public_headers(bazel_rules[dep]))
+                    _extract_public_headers(bazel_rules[dep])
+                )
                 collapsed_headers.update(
-                    _extract_nonpublic_headers(bazel_rules[dep]))
+                    _extract_nonpublic_headers(bazel_rules[dep])
+                )
     # This item is a "visited" flag
-    bazel_rule['_PROCESSING_DONE'] = True
+    bazel_rule["_PROCESSING_DONE"] = True
     # Following items are described in the docstinrg.
-    bazel_rule['_TRANSITIVE_DEPS'] = list(sorted(transitive_deps))
-    bazel_rule['_COLLAPSED_DEPS'] = list(sorted(collapsed_deps))
-    bazel_rule['_COLLAPSED_SRCS'] = list(sorted(collapsed_srcs))
-    bazel_rule['_COLLAPSED_PUBLIC_HEADERS'] = list(
-        sorted(collapsed_public_headers))
-    bazel_rule['_COLLAPSED_HEADERS'] = list(sorted(collapsed_headers))
-    bazel_rule['_EXCLUDE_DEPS'] = list(sorted(exclude_deps))
+    bazel_rule["_TRANSITIVE_DEPS"] = list(sorted(transitive_deps))
+    bazel_rule["_COLLAPSED_DEPS"] = list(sorted(collapsed_deps))
+    bazel_rule["_COLLAPSED_SRCS"] = list(sorted(collapsed_srcs))
+    bazel_rule["_COLLAPSED_PUBLIC_HEADERS"] = list(
+        sorted(collapsed_public_headers)
+    )
+    bazel_rule["_COLLAPSED_HEADERS"] = list(sorted(collapsed_headers))
+    bazel_rule["_EXCLUDE_DEPS"] = list(sorted(exclude_deps))
 
 
 # TODO(jtattermusch): deduplicate with transitive_dependencies.py (which has a
@@ -440,8 +459,9 @@ def _compute_transitive_metadata(
 # bazel builds it is customary to define larger number of smaller
 # "sublibraries". The need for elision (and expansion) of intermediate libraries
 # can be re-evaluated in the future.
-def _populate_transitive_metadata(bazel_rules: Any,
-                                  public_dep_names: Iterable[str]) -> None:
+def _populate_transitive_metadata(
+    bazel_rules: Any, public_dep_names: Iterable[str]
+) -> None:
     """Add 'transitive_deps' field for each of the rules"""
     # Create the map between Bazel label and public dependency name
     bazel_label_to_dep_name = {}
@@ -451,28 +471,30 @@ def _populate_transitive_metadata(bazel_rules: Any,
     # Make sure we reached all the Bazel rules
     # TODO(lidiz) potentially we could only update a subset of rules
     for rule_name in bazel_rules:
-        if '_PROCESSING_DONE' not in bazel_rules[rule_name]:
-            _compute_transitive_metadata(rule_name, bazel_rules,
-                                         bazel_label_to_dep_name)
+        if "_PROCESSING_DONE" not in bazel_rules[rule_name]:
+            _compute_transitive_metadata(
+                rule_name, bazel_rules, bazel_label_to_dep_name
+            )
 
 
 def update_test_metadata_with_transitive_metadata(
-        all_extra_metadata: BuildDict, bazel_rules: BuildDict) -> None:
+    all_extra_metadata: BuildDict, bazel_rules: BuildDict
+) -> None:
     """Patches test build metadata with transitive metadata."""
     for lib_name, lib_dict in list(all_extra_metadata.items()):
         # Skip if it isn't not an test
-        if lib_dict.get('build') != 'test' or lib_dict.get('_TYPE') != 'target':
+        if lib_dict.get("build") != "test" or lib_dict.get("_TYPE") != "target":
             continue
 
         bazel_rule = bazel_rules[_get_bazel_label(lib_name)]
 
-        if '//external:benchmark' in bazel_rule['_TRANSITIVE_DEPS']:
-            lib_dict['benchmark'] = True
-            lib_dict['defaults'] = 'benchmark'
+        if "//external:benchmark" in bazel_rule["_TRANSITIVE_DEPS"]:
+            lib_dict["benchmark"] = True
+            lib_dict["defaults"] = "benchmark"
 
-        if '//external:gtest' in bazel_rule['_TRANSITIVE_DEPS']:
-            lib_dict['gtest'] = True
-            lib_dict['language'] = 'c++'
+        if "//external:gtest" in bazel_rule["_TRANSITIVE_DEPS"]:
+            lib_dict["gtest"] = True
+            lib_dict["language"] = "c++"
 
 
 def _get_transitive_protos(bazel_rules, t):
@@ -485,12 +507,12 @@ def _get_transitive_protos(bazel_rules, t):
         name = que.pop(0)
         rule = bazel_rules.get(name, None)
         if rule:
-            for dep in rule['deps']:
+            for dep in rule["deps"]:
                 if dep not in visited:
                     visited.add(dep)
                     que.append(dep)
-            for src in rule['srcs']:
-                if src.endswith('.proto'):
+            for src in rule["srcs"]:
+                if src.endswith(".proto"):
                     ret.append(src)
     return list(set(ret))
 
@@ -498,36 +520,45 @@ def _get_transitive_protos(bazel_rules, t):
 def _expand_upb_proto_library_rules(bazel_rules):
     # Expand the .proto files from UPB proto library rules into the pre-generated
     # upb.h and upb.c files.
-    GEN_UPB_ROOT = '//:src/core/ext/upb-generated/'
-    GEN_UPBDEFS_ROOT = '//:src/core/ext/upbdefs-generated/'
-    EXTERNAL_LINKS = [('@com_google_protobuf//', 'src/'),
-                      ('@com_google_googleapis//', ''),
-                      ('@com_github_cncf_udpa//', ''),
-                      ('@com_envoyproxy_protoc_gen_validate//', ''),
-                      ('@envoy_api//', ''), ('@opencensus_proto//', '')]
+    GEN_UPB_ROOT = "//:src/core/ext/upb-generated/"
+    GEN_UPBDEFS_ROOT = "//:src/core/ext/upbdefs-generated/"
+    EXTERNAL_LINKS = [
+        ("@com_google_protobuf//", "src/"),
+        ("@com_google_googleapis//", ""),
+        ("@com_github_cncf_udpa//", ""),
+        ("@com_envoyproxy_protoc_gen_validate//", ""),
+        ("@envoy_api//", ""),
+        ("@opencensus_proto//", ""),
+    ]
     for name, bazel_rule in bazel_rules.items():
-        gen_func = bazel_rule.get('generator_function', None)
-        if gen_func in ('grpc_upb_proto_library',
-                        'grpc_upb_proto_reflection_library'):
+        gen_func = bazel_rule.get("generator_function", None)
+        if gen_func in (
+            "grpc_upb_proto_library",
+            "grpc_upb_proto_reflection_library",
+        ):
             # get proto dependency
-            deps = bazel_rule['deps']
+            deps = bazel_rule["deps"]
             if len(deps) != 1:
                 raise Exception(
-                    'upb rule "{0}" should have 1 proto dependency but has "{1}"'
-                    .format(name, deps))
+                    'upb rule "{0}" should have 1 proto dependency but has'
+                    ' "{1}"'.format(name, deps)
+                )
             # deps is not properly fetched from bazel query for upb_proto_library target
             # so add the upb dependency manually
-            bazel_rule['deps'] = [
-                '//external:upb_lib', '//external:upb_lib_descriptor',
-                '//external:upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me'
+            bazel_rule["deps"] = [
+                "//external:upb_lib",
+                "//external:upb_lib_descriptor",
+                "//external:upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
             ]
             # populate the upb_proto_library rule with pre-generated upb headers
             # and sources using proto_rule
             protos = _get_transitive_protos(bazel_rules, deps[0])
             if len(protos) == 0:
                 raise Exception(
-                    'upb rule "{0}" should have at least one proto file.'.
-                    format(name))
+                    'upb rule "{0}" should have at least one proto file.'.format(
+                        name
+                    )
+                )
             srcs = []
             hdrs = []
             for proto_src in protos:
@@ -536,23 +567,35 @@ def _expand_upb_proto_library_rules(bazel_rules):
                         prefix_to_strip = external_link[0] + external_link[1]
                         if not proto_src.startswith(prefix_to_strip):
                             raise Exception(
-                                'Source file "{0}" in upb rule {1} does not have the expected prefix "{2}"'
-                                .format(proto_src, name, prefix_to_strip))
-                        proto_src = proto_src[len(prefix_to_strip):]
+                                'Source file "{0}" in upb rule {1} does not'
+                                ' have the expected prefix "{2}"'.format(
+                                    proto_src, name, prefix_to_strip
+                                )
+                            )
+                        proto_src = proto_src[len(prefix_to_strip) :]
                         break
-                if proto_src.startswith('@'):
+                if proto_src.startswith("@"):
                     raise Exception('"{0}" is unknown workspace.'.format(name))
                 proto_src = _extract_source_file_path(proto_src)
-                ext = '.upb' if gen_func == 'grpc_upb_proto_library' else '.upbdefs'
-                root = GEN_UPB_ROOT if gen_func == 'grpc_upb_proto_library' else GEN_UPBDEFS_ROOT
-                srcs.append(root + proto_src.replace('.proto', ext + '.c'))
-                hdrs.append(root + proto_src.replace('.proto', ext + '.h'))
-            bazel_rule['srcs'] = srcs
-            bazel_rule['hdrs'] = hdrs
+                ext = (
+                    ".upb"
+                    if gen_func == "grpc_upb_proto_library"
+                    else ".upbdefs"
+                )
+                root = (
+                    GEN_UPB_ROOT
+                    if gen_func == "grpc_upb_proto_library"
+                    else GEN_UPBDEFS_ROOT
+                )
+                srcs.append(root + proto_src.replace(".proto", ext + ".c"))
+                hdrs.append(root + proto_src.replace(".proto", ext + ".h"))
+            bazel_rule["srcs"] = srcs
+            bazel_rule["hdrs"] = hdrs
 
 
-def _generate_build_metadata(build_extra_metadata: BuildDict,
-                             bazel_rules: BuildDict) -> BuildDict:
+def _generate_build_metadata(
+    build_extra_metadata: BuildDict, bazel_rules: BuildDict
+) -> BuildDict:
     """Generate build metadata in build.yaml-like format bazel build metadata and build.yaml-specific "extra metadata"."""
     lib_names = list(build_extra_metadata.keys())
     result = {}
@@ -572,38 +615,48 @@ def _generate_build_metadata(build_extra_metadata: BuildDict,
     # The rename step needs to be made after we're done with most of processing logic
     # otherwise the already-renamed libraries will have different names than expected
     for lib_name in lib_names:
-        to_name = build_extra_metadata.get(lib_name, {}).get('_RENAME', None)
+        to_name = build_extra_metadata.get(lib_name, {}).get("_RENAME", None)
         if to_name:
             # store lib under the new name and also change its 'name' property
             if to_name in result:
-                raise Exception('Cannot rename target ' + str(lib_name) + ', ' +
-                                str(to_name) + ' already exists.')
+                raise Exception(
+                    "Cannot rename target "
+                    + str(lib_name)
+                    + ", "
+                    + str(to_name)
+                    + " already exists."
+                )
             lib_dict = result.pop(lib_name)
-            lib_dict['name'] = to_name
+            lib_dict["name"] = to_name
             result[to_name] = lib_dict
 
             # dep names need to be updated as well
             for lib_dict_to_update in list(result.values()):
-                lib_dict_to_update['deps'] = list([
-                    to_name if dep == lib_name else dep
-                    for dep in lib_dict_to_update['deps']
-                ])
+                lib_dict_to_update["deps"] = list(
+                    [
+                        to_name if dep == lib_name else dep
+                        for dep in lib_dict_to_update["deps"]
+                    ]
+                )
 
     return result
 
 
 def _convert_to_build_yaml_like(lib_dict: BuildMetadata) -> BuildYaml:
     lib_names = [
-        lib_name for lib_name in list(lib_dict.keys())
-        if lib_dict[lib_name].get('_TYPE', 'library') == 'library'
+        lib_name
+        for lib_name in list(lib_dict.keys())
+        if lib_dict[lib_name].get("_TYPE", "library") == "library"
     ]
     target_names = [
-        lib_name for lib_name in list(lib_dict.keys())
-        if lib_dict[lib_name].get('_TYPE', 'library') == 'target'
+        lib_name
+        for lib_name in list(lib_dict.keys())
+        if lib_dict[lib_name].get("_TYPE", "library") == "target"
     ]
     test_names = [
-        lib_name for lib_name in list(lib_dict.keys())
-        if lib_dict[lib_name].get('_TYPE', 'library') == 'test'
+        lib_name
+        for lib_name in list(lib_dict.keys())
+        if lib_dict[lib_name].get("_TYPE", "library") == "test"
     ]
 
     # list libraries and targets in predefined order
@@ -614,29 +667,31 @@ def _convert_to_build_yaml_like(lib_dict: BuildMetadata) -> BuildYaml:
     # get rid of temporary private fields prefixed with "_" and some other useless fields
     for lib in lib_list:
         for field_to_remove in [
-                k for k in list(lib.keys()) if k.startswith('_')
+            k for k in list(lib.keys()) if k.startswith("_")
         ]:
             lib.pop(field_to_remove, None)
     for target in target_list:
         for field_to_remove in [
-                k for k in list(target.keys()) if k.startswith('_')
+            k for k in list(target.keys()) if k.startswith("_")
         ]:
             target.pop(field_to_remove, None)
-        target.pop('public_headers',
-                   None)  # public headers make no sense for targets
+        target.pop(
+            "public_headers", None
+        )  # public headers make no sense for targets
     for test in test_list:
         for field_to_remove in [
-                k for k in list(test.keys()) if k.startswith('_')
+            k for k in list(test.keys()) if k.startswith("_")
         ]:
             test.pop(field_to_remove, None)
-        test.pop('public_headers',
-                 None)  # public headers make no sense for tests
+        test.pop(
+            "public_headers", None
+        )  # public headers make no sense for tests
 
     build_yaml_like = {
-        'libs': lib_list,
-        'filegroups': [],
-        'targets': target_list,
-        'tests': test_list,
+        "libs": lib_list,
+        "filegroups": [],
+        "targets": target_list,
+        "tests": test_list,
     }
     return build_yaml_like
 
@@ -645,10 +700,10 @@ def _extract_cc_tests(bazel_rules: BuildDict) -> List[str]:
     """Gets list of cc_test tests from bazel rules"""
     result = []
     for bazel_rule in list(bazel_rules.values()):
-        if bazel_rule['class'] == 'cc_test':
-            test_name = bazel_rule['name']
-            if test_name.startswith('//'):
-                prefixlen = len('//')
+        if bazel_rule["class"] == "cc_test":
+            test_name = bazel_rule["name"]
+            if test_name.startswith("//"):
+                prefixlen = len("//")
                 result.append(test_name[prefixlen:])
     return list(sorted(result))
 
@@ -657,111 +712,137 @@ def _exclude_unwanted_cc_tests(tests: List[str]) -> List[str]:
     """Filters out bazel tests that we don't want to run with other build systems or we cannot build them reasonably"""
 
     # most qps tests are autogenerated, we are fine without them
-    tests = [test for test in tests if not test.startswith('test/cpp/qps:')]
+    tests = [test for test in tests if not test.startswith("test/cpp/qps:")]
     # microbenchmarks aren't needed for checking correctness
     tests = [
-        test for test in tests
-        if not test.startswith('test/cpp/microbenchmarks:')
+        test
+        for test in tests
+        if not test.startswith("test/cpp/microbenchmarks:")
     ]
     tests = [
-        test for test in tests
-        if not test.startswith('test/core/promise/benchmark:')
+        test
+        for test in tests
+        if not test.startswith("test/core/promise/benchmark:")
     ]
 
     # we have trouble with census dependency outside of bazel
     tests = [
-        test for test in tests
-        if not test.startswith('test/cpp/ext/filters/census:') and
-        not test.startswith('test/core/xds:xds_channel_stack_modifier_test') and
-        not test.startswith('test/cpp/ext/gcp:') and
-        not test.startswith('test/cpp/ext/filters/logging:') and
-        not test.startswith('test/cpp/interop:observability_interop')
+        test
+        for test in tests
+        if not test.startswith("test/cpp/ext/filters/census:")
+        and not test.startswith("test/core/xds:xds_channel_stack_modifier_test")
+        and not test.startswith("test/cpp/ext/gcp:")
+        and not test.startswith("test/cpp/ext/filters/logging:")
+        and not test.startswith("test/cpp/interop:observability_interop")
+    ]
+
+    # we have not added otel dependency outside of bazel
+    tests = [
+        test
+        for test in tests
+        if not test.startswith("test/cpp/ext/otel:")
+        and not test.startswith("test/cpp/ext/gsm:")
     ]
 
     # missing opencensus/stats/stats.h
     tests = [
-        test for test in tests if not test.startswith(
-            'test/cpp/end2end:server_load_reporting_end2end_test')
+        test
+        for test in tests
+        if not test.startswith(
+            "test/cpp/end2end:server_load_reporting_end2end_test"
+        )
     ]
     tests = [
-        test for test in tests if not test.startswith(
-            'test/cpp/server/load_reporter:lb_load_reporter_test')
+        test
+        for test in tests
+        if not test.startswith(
+            "test/cpp/server/load_reporter:lb_load_reporter_test"
+        )
     ]
 
     # The test uses --running_under_bazel cmdline argument
     # To avoid the trouble needing to adjust it, we just skip the test
     tests = [
-        test for test in tests if not test.startswith(
-            'test/cpp/naming:resolver_component_tests_runner_invoker')
+        test
+        for test in tests
+        if not test.startswith(
+            "test/cpp/naming:resolver_component_tests_runner_invoker"
+        )
     ]
 
     # the test requires 'client_crash_test_server' to be built
     tests = [
-        test for test in tests
-        if not test.startswith('test/cpp/end2end:time_change_test')
+        test
+        for test in tests
+        if not test.startswith("test/cpp/end2end:time_change_test")
     ]
 
     # the test requires 'client_crash_test_server' to be built
     tests = [
-        test for test in tests
-        if not test.startswith('test/cpp/end2end:client_crash_test')
+        test
+        for test in tests
+        if not test.startswith("test/cpp/end2end:client_crash_test")
     ]
 
     # the test requires 'server_crash_test_client' to be built
     tests = [
-        test for test in tests
-        if not test.startswith('test/cpp/end2end:server_crash_test')
+        test
+        for test in tests
+        if not test.startswith("test/cpp/end2end:server_crash_test")
     ]
 
     # test never existed under build.yaml and it fails -> skip it
     tests = [
-        test for test in tests
-        if not test.startswith('test/core/tsi:ssl_session_cache_test')
+        test
+        for test in tests
+        if not test.startswith("test/core/tsi:ssl_session_cache_test")
     ]
 
     # the binary of this test does not get built with cmake
     tests = [
-        test for test in tests
-        if not test.startswith('test/cpp/util:channelz_sampler_test')
+        test
+        for test in tests
+        if not test.startswith("test/cpp/util:channelz_sampler_test")
     ]
 
     # we don't need to generate fuzzers outside of bazel
-    tests = [test for test in tests if not test.endswith('_fuzzer')]
+    tests = [test for test in tests if not test.endswith("_fuzzer")]
 
     return tests
 
 
 def _generate_build_extra_metadata_for_tests(
-        tests: List[str], bazel_rules: BuildDict) -> BuildDict:
+    tests: List[str], bazel_rules: BuildDict
+) -> BuildDict:
     """For given tests, generate the "extra metadata" that we need for our "build.yaml"-like output. The extra metadata is generated from the bazel rule metadata by using a bunch of heuristics."""
     test_metadata = {}
     for test in tests:
-        test_dict = {'build': 'test', '_TYPE': 'target'}
+        test_dict = {"build": "test", "_TYPE": "target"}
 
         bazel_rule = bazel_rules[_get_bazel_label(test)]
 
-        bazel_tags = bazel_rule['tags']
-        if 'manual' in bazel_tags:
+        bazel_tags = bazel_rule["tags"]
+        if "manual" in bazel_tags:
             # don't run the tests marked as "manual"
-            test_dict['run'] = False
+            test_dict["run"] = False
 
-        if bazel_rule['flaky']:
+        if bazel_rule["flaky"]:
             # don't run tests that are marked as "flaky" under bazel
             # because that would only add noise for the run_tests.py tests
             # and seeing more failures for tests that we already know are flaky
             # doesn't really help anything
-            test_dict['run'] = False
+            test_dict["run"] = False
 
-        if 'no_uses_polling' in bazel_tags:
-            test_dict['uses_polling'] = False
+        if "no_uses_polling" in bazel_tags:
+            test_dict["uses_polling"] = False
 
-        if 'grpc_fuzzer' == bazel_rule['generator_function']:
+        if "grpc_fuzzer" == bazel_rule["generator_function"]:
             # currently we hand-list fuzzers instead of generating them automatically
             # because there's no way to obtain maxlen property from bazel BUILD file.
-            print(('skipping fuzzer ' + test))
+            print(("skipping fuzzer " + test))
             continue
 
-        if 'bazel_only' in bazel_tags:
+        if "bazel_only" in bazel_tags:
             continue
 
         # if any tags that restrict platform compatibility are present,
@@ -771,42 +852,43 @@ def _generate_build_extra_metadata_for_tests(
         # is made (for tests where uses_polling=True). So for now, we just
         # assume all tests are compatible with linux and ignore the "no_linux" tag
         # completely.
-        known_platform_tags = set(['no_windows', 'no_mac'])
+        known_platform_tags = set(["no_windows", "no_mac"])
         if set(bazel_tags).intersection(known_platform_tags):
             platforms = []
             # assume all tests are compatible with linux and posix
-            platforms.append('linux')
+            platforms.append("linux")
             platforms.append(
-                'posix')  # there is no posix-specific tag in bazel BUILD
-            if 'no_mac' not in bazel_tags:
-                platforms.append('mac')
-            if 'no_windows' not in bazel_tags:
-                platforms.append('windows')
-            test_dict['platforms'] = platforms
+                "posix"
+            )  # there is no posix-specific tag in bazel BUILD
+            if "no_mac" not in bazel_tags:
+                platforms.append("mac")
+            if "no_windows" not in bazel_tags:
+                platforms.append("windows")
+            test_dict["platforms"] = platforms
 
-        cmdline_args = bazel_rule['args']
+        cmdline_args = bazel_rule["args"]
         if cmdline_args:
-            test_dict['args'] = list(cmdline_args)
+            test_dict["args"] = list(cmdline_args)
 
-        if test.startswith('test/cpp'):
-            test_dict['language'] = 'c++'
+        if test.startswith("test/cpp"):
+            test_dict["language"] = "c++"
 
-        elif test.startswith('test/core'):
-            test_dict['language'] = 'c'
+        elif test.startswith("test/core"):
+            test_dict["language"] = "c"
         else:
-            raise Exception('wrong test' + test)
+            raise Exception("wrong test" + test)
 
         # short test name without the path.
         # There can be name collisions, but we will resolve them later
         simple_test_name = os.path.basename(_extract_source_file_path(test))
-        test_dict['_RENAME'] = simple_test_name
+        test_dict["_RENAME"] = simple_test_name
 
         test_metadata[test] = test_dict
 
     # detect duplicate test names
     tests_by_simple_name = {}
     for test_name, test_dict in list(test_metadata.items()):
-        simple_test_name = test_dict['_RENAME']
+        simple_test_name = test_dict["_RENAME"]
         if simple_test_name not in tests_by_simple_name:
             tests_by_simple_name[simple_test_name] = []
         tests_by_simple_name[simple_test_name].append(test_name)
@@ -815,37 +897,40 @@ def _generate_build_extra_metadata_for_tests(
     for collision_list in list(tests_by_simple_name.values()):
         if len(collision_list) > 1:
             for test_name in collision_list:
-                long_name = test_name.replace('/', '_').replace(':', '_')
-                print((
-                    'short name of "%s" collides with another test, renaming to %s'
-                    % (test_name, long_name)))
-                test_metadata[test_name]['_RENAME'] = long_name
+                long_name = test_name.replace("/", "_").replace(":", "_")
+                print(
+                    'short name of "%s" collides with another test, renaming'
+                    " to %s" % (test_name, long_name)
+                )
+                test_metadata[test_name]["_RENAME"] = long_name
 
     return test_metadata
 
 
-def _parse_http_archives(xml_tree: ET.Element) -> 'List[ExternalProtoLibrary]':
+def _parse_http_archives(xml_tree: ET.Element) -> "List[ExternalProtoLibrary]":
     """Parse Bazel http_archive rule into ExternalProtoLibrary objects."""
     result = []
     for xml_http_archive in xml_tree:
-        if xml_http_archive.tag != 'rule' or xml_http_archive.attrib[
-                'class'] != 'http_archive':
+        if (
+            xml_http_archive.tag != "rule"
+            or xml_http_archive.attrib["class"] != "http_archive"
+        ):
             continue
         # A distilled Python representation of Bazel http_archive
         http_archive = dict()
         for xml_node in xml_http_archive:
-            if xml_node.attrib['name'] == 'name':
-                http_archive["name"] = xml_node.attrib['value']
-            if xml_node.attrib['name'] == 'urls':
+            if xml_node.attrib["name"] == "name":
+                http_archive["name"] = xml_node.attrib["value"]
+            if xml_node.attrib["name"] == "urls":
                 http_archive["urls"] = []
                 for url_node in xml_node:
-                    http_archive["urls"].append(url_node.attrib['value'])
-            if xml_node.attrib['name'] == 'url':
-                http_archive["urls"] = [xml_node.attrib['value']]
-            if xml_node.attrib['name'] == 'sha256':
-                http_archive["hash"] = xml_node.attrib['value']
-            if xml_node.attrib['name'] == 'strip_prefix':
-                http_archive["strip_prefix"] = xml_node.attrib['value']
+                    http_archive["urls"].append(url_node.attrib["value"])
+            if xml_node.attrib["name"] == "url":
+                http_archive["urls"] = [xml_node.attrib["value"]]
+            if xml_node.attrib["name"] == "sha256":
+                http_archive["hash"] = xml_node.attrib["value"]
+            if xml_node.attrib["name"] == "strip_prefix":
+                http_archive["strip_prefix"] = xml_node.attrib["value"]
         if http_archive["name"] not in EXTERNAL_PROTO_LIBRARIES:
             # If this http archive is not one of the external proto libraries,
             # we don't want to include it as a CMake target
@@ -860,7 +945,7 @@ def _parse_http_archives(xml_tree: ET.Element) -> 'List[ExternalProtoLibrary]':
 
 def _generate_external_proto_libraries() -> List[Dict[str, Any]]:
     """Generates the build metadata for external proto libraries"""
-    xml_tree = _bazel_query_xml_tree('kind(http_archive, //external:*)')
+    xml_tree = _bazel_query_xml_tree("kind(http_archive, //external:*)")
     libraries = _parse_http_archives(xml_tree)
     libraries.sort(key=lambda x: x.destination)
     return list(map(lambda x: x.__dict__, libraries))
@@ -868,12 +953,18 @@ def _generate_external_proto_libraries() -> List[Dict[str, Any]]:
 
 def _detect_and_print_issues(build_yaml_like: BuildYaml) -> None:
     """Try detecting some unusual situations and warn about them."""
-    for tgt in build_yaml_like['targets']:
-        if tgt['build'] == 'test':
-            for src in tgt['src']:
-                if src.startswith('src/') and not src.endswith('.proto'):
-                    print(('source file from under "src/" tree used in test ' +
-                           tgt['name'] + ': ' + src))
+    for tgt in build_yaml_like["targets"]:
+        if tgt["build"] == "test":
+            for src in tgt["src"]:
+                if src.startswith("src/") and not src.endswith(".proto"):
+                    print(
+                        (
+                            'source file from under "src/" tree used in test '
+                            + tgt["name"]
+                            + ": "
+                            + src
+                        )
+                    )
 
 
 # extra metadata that will be used to construct build.yaml
@@ -881,206 +972,184 @@ def _detect_and_print_issues(build_yaml_like: BuildYaml) -> None:
 # _TYPE: whether this is library, target or test
 # _RENAME: whether this target should be renamed to a different name (to match expectations of make and cmake builds)
 _BUILD_EXTRA_METADATA = {
-    'third_party/address_sorting:address_sorting': {
-        'language': 'c',
-        'build': 'all',
-        '_RENAME': 'address_sorting'
+    "third_party/address_sorting:address_sorting": {
+        "language": "c",
+        "build": "all",
+        "_RENAME": "address_sorting",
     },
-    'gpr': {
-        'language': 'c',
-        'build': 'all',
+    "gpr": {
+        "language": "c",
+        "build": "all",
     },
-    'grpc': {
-        'language': 'c',
-        'build': 'all',
-        'baselib': True,
-        'generate_plugin_registry': True
+    "grpc": {
+        "language": "c",
+        "build": "all",
+        "baselib": True,
+        "generate_plugin_registry": True,
     },
-    'grpc++': {
-        'language': 'c++',
-        'build': 'all',
-        'baselib': True,
+    "grpc++": {
+        "language": "c++",
+        "build": "all",
+        "baselib": True,
     },
-    'grpc++_alts': {
-        'language': 'c++',
-        'build': 'all',
-        'baselib': True
+    "grpc++_alts": {"language": "c++", "build": "all", "baselib": True},
+    "grpc++_error_details": {"language": "c++", "build": "all"},
+    "grpc++_reflection": {"language": "c++", "build": "all"},
+    "grpc_authorization_provider": {"language": "c++", "build": "all"},
+    "grpc++_unsecure": {
+        "language": "c++",
+        "build": "all",
+        "baselib": True,
     },
-    'grpc++_error_details': {
-        'language': 'c++',
-        'build': 'all'
+    "grpc_unsecure": {
+        "language": "c",
+        "build": "all",
+        "baselib": True,
+        "generate_plugin_registry": True,
     },
-    'grpc++_reflection': {
-        'language': 'c++',
-        'build': 'all'
+    "grpcpp_channelz": {"language": "c++", "build": "all"},
+    "grpc++_test": {
+        "language": "c++",
+        "build": "private",
     },
-    'grpc_authorization_provider': {
-        'language': 'c++',
-        'build': 'all'
+    "src/compiler:grpc_plugin_support": {
+        "language": "c++",
+        "build": "protoc",
+        "_RENAME": "grpc_plugin_support",
     },
-    'grpc++_unsecure': {
-        'language': 'c++',
-        'build': 'all',
-        'baselib': True,
+    "src/compiler:grpc_cpp_plugin": {
+        "language": "c++",
+        "build": "protoc",
+        "_TYPE": "target",
+        "_RENAME": "grpc_cpp_plugin",
     },
-    'grpc_unsecure': {
-        'language': 'c',
-        'build': 'all',
-        'baselib': True,
-        'generate_plugin_registry': True
+    "src/compiler:grpc_csharp_plugin": {
+        "language": "c++",
+        "build": "protoc",
+        "_TYPE": "target",
+        "_RENAME": "grpc_csharp_plugin",
     },
-    'grpcpp_channelz': {
-        'language': 'c++',
-        'build': 'all'
+    "src/compiler:grpc_node_plugin": {
+        "language": "c++",
+        "build": "protoc",
+        "_TYPE": "target",
+        "_RENAME": "grpc_node_plugin",
     },
-    'grpc++_test': {
-        'language': 'c++',
-        'build': 'private',
+    "src/compiler:grpc_objective_c_plugin": {
+        "language": "c++",
+        "build": "protoc",
+        "_TYPE": "target",
+        "_RENAME": "grpc_objective_c_plugin",
     },
-    'src/compiler:grpc_plugin_support': {
-        'language': 'c++',
-        'build': 'protoc',
-        '_RENAME': 'grpc_plugin_support'
+    "src/compiler:grpc_php_plugin": {
+        "language": "c++",
+        "build": "protoc",
+        "_TYPE": "target",
+        "_RENAME": "grpc_php_plugin",
     },
-    'src/compiler:grpc_cpp_plugin': {
-        'language': 'c++',
-        'build': 'protoc',
-        '_TYPE': 'target',
-        '_RENAME': 'grpc_cpp_plugin'
+    "src/compiler:grpc_python_plugin": {
+        "language": "c++",
+        "build": "protoc",
+        "_TYPE": "target",
+        "_RENAME": "grpc_python_plugin",
     },
-    'src/compiler:grpc_csharp_plugin': {
-        'language': 'c++',
-        'build': 'protoc',
-        '_TYPE': 'target',
-        '_RENAME': 'grpc_csharp_plugin'
+    "src/compiler:grpc_ruby_plugin": {
+        "language": "c++",
+        "build": "protoc",
+        "_TYPE": "target",
+        "_RENAME": "grpc_ruby_plugin",
     },
-    'src/compiler:grpc_node_plugin': {
-        'language': 'c++',
-        'build': 'protoc',
-        '_TYPE': 'target',
-        '_RENAME': 'grpc_node_plugin'
-    },
-    'src/compiler:grpc_objective_c_plugin': {
-        'language': 'c++',
-        'build': 'protoc',
-        '_TYPE': 'target',
-        '_RENAME': 'grpc_objective_c_plugin'
-    },
-    'src/compiler:grpc_php_plugin': {
-        'language': 'c++',
-        'build': 'protoc',
-        '_TYPE': 'target',
-        '_RENAME': 'grpc_php_plugin'
-    },
-    'src/compiler:grpc_python_plugin': {
-        'language': 'c++',
-        'build': 'protoc',
-        '_TYPE': 'target',
-        '_RENAME': 'grpc_python_plugin'
-    },
-    'src/compiler:grpc_ruby_plugin': {
-        'language': 'c++',
-        'build': 'protoc',
-        '_TYPE': 'target',
-        '_RENAME': 'grpc_ruby_plugin'
-    },
-
     # TODO(jtattermusch): consider adding grpc++_core_stats
-
     # test support libraries
-    'test/core/util:grpc_test_util': {
-        'language': 'c',
-        'build': 'private',
-        '_RENAME': 'grpc_test_util'
+    "test/core/util:grpc_test_util": {
+        "language": "c",
+        "build": "private",
+        "_RENAME": "grpc_test_util",
     },
-    'test/core/util:grpc_test_util_unsecure': {
-        'language': 'c',
-        'build': 'private',
-        '_RENAME': 'grpc_test_util_unsecure'
+    "test/core/util:grpc_test_util_unsecure": {
+        "language": "c",
+        "build": "private",
+        "_RENAME": "grpc_test_util_unsecure",
     },
     # TODO(jtattermusch): consider adding grpc++_test_util_unsecure - it doesn't seem to be used by bazel build (don't forget to set secure: False)
-    'test/cpp/util:test_config': {
-        'language': 'c++',
-        'build': 'private',
-        '_RENAME': 'grpc++_test_config'
+    "test/cpp/util:test_config": {
+        "language": "c++",
+        "build": "private",
+        "_RENAME": "grpc++_test_config",
     },
-    'test/cpp/util:test_util': {
-        'language': 'c++',
-        'build': 'private',
-        '_RENAME': 'grpc++_test_util'
+    "test/cpp/util:test_util": {
+        "language": "c++",
+        "build": "private",
+        "_RENAME": "grpc++_test_util",
     },
-
     # benchmark support libraries
-    'test/cpp/microbenchmarks:helpers': {
-        'language': 'c++',
-        'build': 'test',
-        'defaults': 'benchmark',
-        '_RENAME': 'benchmark_helpers'
+    "test/cpp/microbenchmarks:helpers": {
+        "language": "c++",
+        "build": "test",
+        "defaults": "benchmark",
+        "_RENAME": "benchmark_helpers",
     },
-    'test/cpp/interop:interop_client': {
-        'language': 'c++',
-        'build': 'test',
-        'run': False,
-        '_TYPE': 'target',
-        '_RENAME': 'interop_client'
+    "test/cpp/interop:interop_client": {
+        "language": "c++",
+        "build": "test",
+        "run": False,
+        "_TYPE": "target",
+        "_RENAME": "interop_client",
     },
-    'test/cpp/interop:interop_server': {
-        'language': 'c++',
-        'build': 'test',
-        'run': False,
-        '_TYPE': 'target',
-        '_RENAME': 'interop_server'
+    "test/cpp/interop:interop_server": {
+        "language": "c++",
+        "build": "test",
+        "run": False,
+        "_TYPE": "target",
+        "_RENAME": "interop_server",
     },
-    'test/cpp/interop:xds_interop_client': {
-        'language': 'c++',
-        'build': 'test',
-        'run': False,
-        '_TYPE': 'target',
-        '_RENAME': 'xds_interop_client'
+    "test/cpp/interop:xds_interop_client": {
+        "language": "c++",
+        "build": "test",
+        "run": False,
+        "_TYPE": "target",
+        "_RENAME": "xds_interop_client",
     },
-    'test/cpp/interop:xds_interop_server': {
-        'language': 'c++',
-        'build': 'test',
-        'run': False,
-        '_TYPE': 'target',
-        '_RENAME': 'xds_interop_server'
+    "test/cpp/interop:xds_interop_server": {
+        "language": "c++",
+        "build": "test",
+        "run": False,
+        "_TYPE": "target",
+        "_RENAME": "xds_interop_server",
     },
-    'test/cpp/interop:http2_client': {
-        'language': 'c++',
-        'build': 'test',
-        'run': False,
-        '_TYPE': 'target',
-        '_RENAME': 'http2_client'
+    "test/cpp/interop:http2_client": {
+        "language": "c++",
+        "build": "test",
+        "run": False,
+        "_TYPE": "target",
+        "_RENAME": "http2_client",
     },
-    'test/cpp/qps:qps_json_driver': {
-        'language': 'c++',
-        'build': 'test',
-        'run': False,
-        '_TYPE': 'target',
-        '_RENAME': 'qps_json_driver'
+    "test/cpp/qps:qps_json_driver": {
+        "language": "c++",
+        "build": "test",
+        "run": False,
+        "_TYPE": "target",
+        "_RENAME": "qps_json_driver",
     },
-    'test/cpp/qps:qps_worker': {
-        'language': 'c++',
-        'build': 'test',
-        'run': False,
-        '_TYPE': 'target',
-        '_RENAME': 'qps_worker'
+    "test/cpp/qps:qps_worker": {
+        "language": "c++",
+        "build": "test",
+        "run": False,
+        "_TYPE": "target",
+        "_RENAME": "qps_worker",
     },
-    'test/cpp/util:grpc_cli': {
-        'language': 'c++',
-        'build': 'test',
-        'run': False,
-        '_TYPE': 'target',
-        '_RENAME': 'grpc_cli'
+    "test/cpp/util:grpc_cli": {
+        "language": "c++",
+        "build": "test",
+        "run": False,
+        "_TYPE": "target",
+        "_RENAME": "grpc_cli",
     },
-
     # TODO(jtattermusch): create_jwt and verify_jwt breaks distribtests because it depends on grpc_test_utils and thus requires tests to be built
     # For now it's ok to disable them as these binaries aren't very useful anyway.
     # 'test/core/security:create_jwt': { 'language': 'c', 'build': 'tool', '_TYPE': 'target', '_RENAME': 'grpc_create_jwt' },
     # 'test/core/security:verify_jwt': { 'language': 'c', 'build': 'tool', '_TYPE': 'target', '_RENAME': 'grpc_verify_jwt' },
-
     # TODO(jtattermusch): add remaining tools such as grpc_print_google_default_creds_token (they are not used by bazel build)
-
     # TODO(jtattermusch): these fuzzers had no build.yaml equivalent
     # test/core/compression:message_compress_fuzzer
     # test/core/compression:message_decompress_fuzzer
@@ -1115,7 +1184,8 @@ _BAZEL_DEPS_QUERIES = [
 bazel_rules = {}
 for query in _BAZEL_DEPS_QUERIES:
     bazel_rules.update(
-        _extract_rules_from_bazel_xml(_bazel_query_xml_tree(query)))
+        _extract_rules_from_bazel_xml(_bazel_query_xml_tree(query))
+    )
 
 # Step 1.5: The sources for UPB protos are pre-generated, so we want
 # to expand the UPB proto library bazel rules into the generated
@@ -1174,7 +1244,8 @@ tests = _exclude_unwanted_cc_tests(_extract_cc_tests(bazel_rules))
 all_extra_metadata = {}
 all_extra_metadata.update(_BUILD_EXTRA_METADATA)
 all_extra_metadata.update(
-    _generate_build_extra_metadata_for_tests(tests, bazel_rules))
+    _generate_build_extra_metadata_for_tests(tests, bazel_rules)
+)
 
 # Step 4: Compute the build metadata that will be used in the final build.yaml.
 # The final build metadata includes transitive dependencies, and sources/headers
@@ -1245,7 +1316,8 @@ build_yaml_like = _convert_to_build_yaml_like(all_targets_dict)
 # will be a soft error that doesn't block existing target from successfully
 # built.
 build_yaml_like[
-    'external_proto_libraries'] = _generate_external_proto_libraries()
+    "external_proto_libraries"
+] = _generate_external_proto_libraries()
 
 # detect and report some suspicious situations we've seen before
 _detect_and_print_issues(build_yaml_like)
@@ -1257,6 +1329,7 @@ _detect_and_print_issues(build_yaml_like)
 # TODO(jtattermusch): The "cleanup" function is taken from the legacy
 # build system (which used build.yaml) and can be eventually removed.
 build_yaml_string = build_cleaner.cleaned_build_yaml_dict_as_string(
-    build_yaml_like)
-with open('build_autogenerated.yaml', 'w') as file:
+    build_yaml_like
+)
+with open("build_autogenerated.yaml", "w") as file:
     file.write(build_yaml_string)

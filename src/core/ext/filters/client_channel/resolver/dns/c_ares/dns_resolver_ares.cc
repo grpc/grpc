@@ -33,8 +33,7 @@
 #include "absl/strings/strip.h"
 #include "absl/types/optional.h"
 
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
@@ -70,7 +69,6 @@
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/config_vars.h"
-#include "src/core/lib/event_engine/handle_containers.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/service_config/service_config_impl.h"
@@ -706,8 +704,7 @@ class AresDNSResolver : public DNSResolver {
   // the previous default DNS resolver, used to delegate blocking DNS calls to
   std::shared_ptr<DNSResolver> default_resolver_ = GetDNSResolver();
   Mutex mu_;
-  grpc_event_engine::experimental::LookupTaskHandleSet open_requests_
-      ABSL_GUARDED_BY(mu_);
+  TaskHandleSet open_requests_ ABSL_GUARDED_BY(mu_);
   intptr_t aba_token_ ABSL_GUARDED_BY(mu_) = 0;
 };
 

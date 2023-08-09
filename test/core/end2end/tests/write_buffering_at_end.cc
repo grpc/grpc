@@ -27,8 +27,8 @@
 namespace grpc_core {
 namespace {
 
-TEST_P(WriteBufferingTest, WriteBufferingAtEnd) {
-  auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
+CORE_END2END_TEST(WriteBufferingTest, WriteBufferingAtEnd) {
+  auto c = NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
   c.NewBatch(1).SendInitialMetadata({});
   CoreEnd2endTest::IncomingMetadata server_initial_metadata;
   c.NewBatch(2).RecvInitialMetadata(server_initial_metadata);

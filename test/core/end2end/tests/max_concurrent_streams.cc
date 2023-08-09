@@ -18,7 +18,7 @@
 
 #include "gtest/gtest.h"
 
-#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -54,7 +54,7 @@ void SimpleRequestBody(CoreEnd2endTest& test) {
   EXPECT_FALSE(client_close.was_cancelled());
 }
 
-TEST_P(Http2SingleHopTest, MaxConcurrentStreams) {
+CORE_END2END_TEST(Http2SingleHopTest, MaxConcurrentStreams) {
   SKIP_IF_MINSTACK();
   InitServer(ChannelArgs().Set(GRPC_ARG_MAX_CONCURRENT_STREAMS, 1));
   InitClient(ChannelArgs());
@@ -143,7 +143,7 @@ TEST_P(Http2SingleHopTest, MaxConcurrentStreams) {
   Step();
 }
 
-TEST_P(Http2SingleHopTest, MaxConcurrentStreamsTimeoutOnFirst) {
+CORE_END2END_TEST(Http2SingleHopTest, MaxConcurrentStreamsTimeoutOnFirst) {
   SKIP_IF_MINSTACK();
   InitServer(ChannelArgs().Set(GRPC_ARG_MAX_CONCURRENT_STREAMS, 1));
   InitClient(ChannelArgs());
@@ -188,7 +188,7 @@ TEST_P(Http2SingleHopTest, MaxConcurrentStreamsTimeoutOnFirst) {
   Step();
 }
 
-TEST_P(Http2SingleHopTest, MaxConcurrentStreamsTimeoutOnSecond) {
+CORE_END2END_TEST(Http2SingleHopTest, MaxConcurrentStreamsTimeoutOnSecond) {
   SKIP_IF_MINSTACK();
   InitServer(ChannelArgs().Set(GRPC_ARG_MAX_CONCURRENT_STREAMS, 1));
   InitClient(ChannelArgs());

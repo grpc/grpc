@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.56.0-dev
+PROJECT_NUMBER         = 1.58.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -788,6 +788,7 @@ doc/interop-test-descriptions.md \
 doc/keepalive.md \
 doc/load-balancing.md \
 doc/naming.md \
+doc/qos-dscp.md \
 doc/security_audit.md \
 doc/server-reflection.md \
 doc/server_reflection_tutorial.md \
@@ -890,9 +891,11 @@ include/grpc/event_engine/slice.h \
 include/grpc/event_engine/slice_buffer.h \
 include/grpc/fork.h \
 include/grpc/grpc.h \
+include/grpc/grpc_audit_logging.h \
 include/grpc/grpc_posix.h \
 include/grpc/grpc_security.h \
 include/grpc/grpc_security_constants.h \
+include/grpc/impl/channel_arg_names.h \
 include/grpc/impl/codegen/atm.h \
 include/grpc/impl/codegen/atm_gcc_atomic.h \
 include/grpc/impl/codegen/atm_gcc_sync.h \
@@ -930,6 +933,7 @@ include/grpc/support/atm_gcc_atomic.h \
 include/grpc/support/atm_gcc_sync.h \
 include/grpc/support/atm_windows.h \
 include/grpc/support/cpu.h \
+include/grpc/support/json.h \
 include/grpc/support/log.h \
 include/grpc/support/log_windows.h \
 include/grpc/support/port_platform.h \
@@ -1032,6 +1036,7 @@ include/grpcpp/impl/service_type.h \
 include/grpcpp/impl/status.h \
 include/grpcpp/impl/sync.h \
 include/grpcpp/resource_quota.h \
+include/grpcpp/security/audit_logging.h \
 include/grpcpp/security/auth_context.h \
 include/grpcpp/security/auth_metadata_processor.h \
 include/grpcpp/security/authorization_policy_provider.h \

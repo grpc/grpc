@@ -28,6 +28,7 @@
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
+#include "src/core/lib/resolver/server_address.h"
 
 namespace grpc_core {
 
@@ -38,7 +39,7 @@ struct OutlierDetectionConfig {
   uint32_t max_ejection_percent = 10;
   struct SuccessRateEjection {
     uint32_t stdev_factor = 1900;
-    uint32_t enforcement_percentage = 0;
+    uint32_t enforcement_percentage = 100;
     uint32_t minimum_hosts = 5;
     uint32_t request_volume = 100;
 
@@ -56,7 +57,7 @@ struct OutlierDetectionConfig {
   };
   struct FailurePercentageEjection {
     uint32_t threshold = 85;
-    uint32_t enforcement_percentage = 0;
+    uint32_t enforcement_percentage = 100;
     uint32_t minimum_hosts = 5;
     uint32_t request_volume = 50;
 
@@ -88,6 +89,12 @@ struct OutlierDetectionConfig {
   void JsonPostLoad(const Json& json, const JsonArgs&,
                     ValidationErrors* errors);
 };
+
+// TODO(roth): This is a horrible hack used to disable outlier detection
+// when used with the pick_first policy.  Remove this as part of
+// implementing the dualstack backend design.
+#define GRPC_ARG_OUTLIER_DETECTION_DISABLE \
+  GRPC_ARG_NO_SUBCHANNEL_PREFIX "outlier_detection_disable"
 
 }  // namespace grpc_core
 

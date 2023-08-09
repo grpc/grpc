@@ -52,9 +52,8 @@ namespace experimental {
 class FuzzingEventEngine : public EventEngine {
  public:
   struct Options {
-    // After all scheduled tick lengths are completed, this is the amount of
-    // time Now() will be incremented each tick.
-    Duration final_tick_length = std::chrono::seconds(1);
+    Duration max_delay_run_after = std::chrono::seconds(30);
+    Duration max_delay_write = std::chrono::seconds(30);
   };
   explicit FuzzingEventEngine(Options options,
                               const fuzzing_event_engine::Actions& actions);
@@ -64,7 +63,8 @@ class FuzzingEventEngine : public EventEngine {
   // quiescence.
   void FuzzingDone() ABSL_LOCKS_EXCLUDED(mu_);
   // Increment time once and perform any scheduled work.
-  void Tick() ABSL_LOCKS_EXCLUDED(mu_);
+  void Tick(Duration max_time = std::chrono::seconds(600))
+      ABSL_LOCKS_EXCLUDED(mu_);
   // Repeatedly call Tick() until there is no more work to do.
   void TickUntilIdle() ABSL_LOCKS_EXCLUDED(mu_);
 
@@ -85,7 +85,7 @@ class FuzzingEventEngine : public EventEngine {
 
   bool IsWorkerThread() override;
 
-  std::unique_ptr<DNSResolver> GetDNSResolver(
+  absl::StatusOr<std::unique_ptr<DNSResolver>> GetDNSResolver(
       const DNSResolver::ResolverOptions& options) override;
 
   void Run(Closure* closure) ABSL_LOCKS_EXCLUDED(mu_) override;
@@ -107,6 +107,11 @@ class FuzzingEventEngine : public EventEngine {
   void UnsetGlobalHooks() ABSL_LOCKS_EXCLUDED(mu_);
 
  private:
+  enum class RunType {
+    kWrite,
+    kRunAfter,
+  };
+
   // One pending task to be run.
   struct Task {
     Task(intptr_t id, absl::AnyInvocable<void()> closure)
@@ -173,7 +178,9 @@ class FuzzingEventEngine : public EventEngine {
     // Address of each side of the endpoint.
     const ResolvedAddress addrs[2];
     // Is the endpoint closed?
-    bool closed ABSL_GUARDED_BY(mu_) = false;
+    bool closed[2] ABSL_GUARDED_BY(mu_) = {false, false};
+    // Is the endpoint writing?
+    bool writing[2] ABSL_GUARDED_BY(mu_) = {false, false};
     // Bytes written into each endpoint and awaiting a read.
     std::vector<uint8_t> pending[2] ABSL_GUARDED_BY(mu_);
     // The sizes of each accepted write, as determined by the fuzzer actions.
@@ -224,12 +231,13 @@ class FuzzingEventEngine : public EventEngine {
     const int index_;
   };
 
-  void RunLocked(absl::AnyInvocable<void()> closure)
+  void RunLocked(RunType run_type, absl::AnyInvocable<void()> closure)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-    RunAfterLocked(Duration::zero(), std::move(closure));
+    RunAfterLocked(run_type, Duration::zero(), std::move(closure));
   }
 
-  TaskHandle RunAfterLocked(Duration when, absl::AnyInvocable<void()> closure)
+  TaskHandle RunAfterLocked(RunType run_type, Duration when,
+                            absl::AnyInvocable<void()> closure)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   // Allocate a port. Considered fuzzer selected port orderings first, and then
@@ -243,18 +251,21 @@ class FuzzingEventEngine : public EventEngine {
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   gpr_timespec NowAsTimespec(gpr_clock_type clock_type)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(now_mu_);
   static gpr_timespec GlobalNowImpl(gpr_clock_type clock_type)
       ABSL_LOCKS_EXCLUDED(mu_);
-  const Duration final_tick_length_;
 
   static grpc_core::NoDestruct<grpc_core::Mutex> mu_;
+  static grpc_core::NoDestruct<grpc_core::Mutex> now_mu_
+      ABSL_ACQUIRED_AFTER(mu_);
 
+  Duration exponential_gate_time_increment_ ABSL_GUARDED_BY(mu_) =
+      std::chrono::milliseconds(1);
+  const Duration max_delay_[2];
   intptr_t next_task_id_ ABSL_GUARDED_BY(mu_);
-  intptr_t current_tick_ ABSL_GUARDED_BY(mu_);
-  Time now_ ABSL_GUARDED_BY(mu_);
-  std::map<intptr_t, Duration> tick_increments_ ABSL_GUARDED_BY(mu_);
-  std::map<intptr_t, Duration> task_delays_ ABSL_GUARDED_BY(mu_);
+  intptr_t current_tick_ ABSL_GUARDED_BY(now_mu_);
+  Time now_ ABSL_GUARDED_BY(now_mu_);
+  std::queue<Duration> task_delays_ ABSL_GUARDED_BY(mu_);
   std::map<intptr_t, std::shared_ptr<Task>> tasks_by_id_ ABSL_GUARDED_BY(mu_);
   std::multimap<Time, std::shared_ptr<Task>> tasks_by_time_
       ABSL_GUARDED_BY(mu_);

@@ -235,14 +235,10 @@ sh_test(
     tags = ["no_windows"],
 )
 
-grpc_cc_binary(
-    name = "xds_interop_client",
-    srcs = [
-        "xds_interop_client.cc",
-    ],
-    external_deps = [
-        "absl/flags:flag",
-    ],
+grpc_cc_library(
+    name = "xds_stats_watcher",
+    srcs = ["xds_stats_watcher.cc"],
+    hdrs = ["xds_stats_watcher.h"],
     deps = [
         ":rpc_behavior_lb_policy",
         "//:grpc++",
@@ -256,6 +252,55 @@ grpc_cc_binary(
     ],
 )
 
+grpc_cc_test(
+    name = "xds_stats_watcher_test",
+    srcs = [
+        "xds_stats_watcher_test.cc",
+    ],
+    external_deps = ["gtest"],
+    deps = [":xds_stats_watcher"],
+)
+
+grpc_cc_binary(
+    name = "xds_interop_client",
+    srcs = [
+        "xds_interop_client.cc",
+    ],
+    external_deps = [
+        "absl/flags:flag",
+    ],
+    deps = [
+        ":rpc_behavior_lb_policy",
+        ":xds_stats_watcher",
+        "//:grpc++",
+        "//:grpc++_reflection",
+        "//:grpcpp_admin",
+        "//src/proto/grpc/testing:empty_proto",
+        "//src/proto/grpc/testing:messages_proto",
+        "//src/proto/grpc/testing:test_proto",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_config",
+    ],
+)
+
+grpc_cc_library(
+    name = "xds_interop_server_lib",
+    testonly = True,
+    srcs = [
+        "xds_interop_server_lib.cc",
+    ],
+    hdrs = ["xds_interop_server_lib.h"],
+    deps = [
+        "//:grpc++",
+        "//:grpc++_reflection",
+        "//:grpcpp_admin",
+        "//src/proto/grpc/testing:empty_proto",
+        "//src/proto/grpc/testing:messages_proto",
+        "//src/proto/grpc/testing:test_proto",
+        "//test/cpp/end2end:test_health_check_service_impl",
+    ],
+)
+
 grpc_cc_binary(
     name = "xds_interop_server",
     testonly = True,
@@ -266,14 +311,25 @@ grpc_cc_binary(
         "absl/flags:flag",
     ],
     deps = [
+        ":xds_interop_server_lib",
         "//:grpc++",
-        "//:grpc++_reflection",
-        "//:grpcpp_admin",
-        "//src/proto/grpc/testing:empty_proto",
-        "//src/proto/grpc/testing:messages_proto",
-        "//src/proto/grpc/testing:test_proto",
         "//test/core/util:grpc_test_util",
         "//test/cpp/end2end:test_health_check_service_impl",
+        "//test/cpp/util:test_config",
+    ],
+)
+
+grpc_cc_test(
+    name = "xds_interop_server_test",
+    srcs = [
+        "xds_interop_server_test.cc",
+    ],
+    external_deps = ["gtest"],
+    deps = [
+        ":xds_interop_server_lib",
+        "//:grpc++",
+        "//src/proto/grpc/testing:istio_echo_proto",
+        "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_config",
     ],
 )
