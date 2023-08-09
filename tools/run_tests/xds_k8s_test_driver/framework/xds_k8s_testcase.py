@@ -22,6 +22,7 @@ import signal
 import time
 from types import FrameType
 from typing import Any, Callable, List, Optional, Tuple, Union
+import unittest
 
 from absl import flags
 from absl.testing import absltest
@@ -79,6 +80,7 @@ _SignalHandler = Callable[[_SignalNum, Optional[FrameType]], Any]
 
 _TD_CONFIG_MAX_WAIT_SEC = 600
 
+_first_error_printed: bool = False
 
 class TdPropagationRetryableError(Exception):
     """Indicates that TD config hasn't propagated yet, and it's safe to retry"""
@@ -233,6 +235,23 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
         if self._prev_sigint_handler is not None:
             signal.signal(signal.SIGINT, self._prev_sigint_handler)
         raise KeyboardInterrupt
+
+    def _print_error_list(self, flavour, errors):
+        for _, err in errors:
+            logging.error("%s: %s", flavour, self.__class__.__name__)
+            logging.error("%s", err)
+
+    def run(self, result: unittest.TestResult = None) -> None:
+        global _first_error_printed  # pylint: disable=global-statement
+
+        if result.failures or result.errors:
+            if not _first_error_printed:
+                self._print_error_list("ERROR", result.errors)
+                self._print_error_list("FAIL", result.failures)
+                _first_error_printed = True
+        else:
+            logging.info("Passed test: %s", self.__class__.__name__)
+        super().run(result)
 
     @contextlib.contextmanager
     def subTest(self, msg, **params):  # noqa pylint: disable=signature-differs

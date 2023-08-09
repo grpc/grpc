@@ -469,8 +469,8 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
 
     def _print_error_list(self, flavour, errors):
         for _, err in errors:
-            logging.error("%s: %s" % (flavour, self.__class__.__name__))
-            logging.error("%s" % err)
+            logging.error("%s: %s", flavour, self.__class__.__name__)
+            logging.error("%s", err)
 
     def run(self, result: unittest.TestResult = None) -> None:
         """Abort this test case if CSDS check is failed.
@@ -488,6 +488,7 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
             logging.info("Aborting %s", self.__class__.__name__)
         else:
             super().run(result)
+            logging.info("Passed test: %s", self.__class__.__name__)
 
     def test_client_config(self):
         retryer = retryers.constant_retryer(
