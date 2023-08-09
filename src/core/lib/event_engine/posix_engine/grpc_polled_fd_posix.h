@@ -17,7 +17,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <sys/socket.h>
 #include <unistd.h>
 
 #include <unordered_set>
@@ -31,6 +30,7 @@
 // IWYU pragma: no_include <ares_build.h>
 
 #include <sys/ioctl.h>
+#include <sys/socket.h>
 #include <sys/uio.h>
 
 #include <string>
