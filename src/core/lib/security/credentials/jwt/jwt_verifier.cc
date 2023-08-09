@@ -37,6 +37,9 @@
 #include <openssl/pem.h>
 #include <openssl/rsa.h>
 #include <openssl/x509.h>
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+#include <openssl/param_build.h>
+#endif
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -527,7 +530,8 @@ static EVP_PKEY* pkey_from_jwk(const Json& json, const char* kty) {
   RSA* rsa = nullptr;
 #else
   EVP_PKEY_CTX* ctx = nullptr;
-  OSSL_PARAM params[3] = {};
+  OSSL_PARAM* params = NULL;
+  OSSL_PARAM_BLD* bld = OSSL_PARAM_BLD_new();
 #endif
   EVP_PKEY* result = nullptr;
   BIGNUM* tmp_n = nullptr;
@@ -554,9 +558,6 @@ static EVP_PKEY* pkey_from_jwk(const Json& json, const char* kty) {
   }
   tmp_n = bignum_from_base64(validate_string_field(it->second, "n"));
   if (tmp_n == nullptr) goto end;
-#if OPENSSL_VERSION_NUMBER >= 0x30000000L
-  params[0] = OSSL_PARAM_BN("n", tmp_n, sizeof(tmp_n));
-#endif
   it = json.object().find("e");
   if (it == json.object().end()) {
     gpr_log(GPR_ERROR, "Missing RSA public key field.");
@@ -575,8 +576,14 @@ static EVP_PKEY* pkey_from_jwk(const Json& json, const char* kty) {
   result = EVP_PKEY_new();
   EVP_PKEY_set1_RSA(result, rsa);  // uprefs rsa.
 #else
-  params[1] = OSSL_PARAM_BN("e", tmp_e, sizeof(tmp_e));
-  params[2] = OSSL_PARAM_END;
+
+  if (!OSSL_PARAM_BLD_push_BN(bld, "n", tmp_n) ||
+      !OSSL_PARAM_BLD_push_BN(bld, "e", tmp_e) ||
+      (params = OSSL_PARAM_BLD_to_param(bld)) == NULL) {
+    gpr_log(GPR_ERROR, "Could not create OSSL_PARAM");
+    OSSL_PARAM_BLD_free(bld);
+    goto end;
+  }
 
   ctx = EVP_PKEY_CTX_new_from_name(nullptr, "RSA", nullptr);
   if (ctx == nullptr) {
@@ -598,6 +605,7 @@ end:
   RSA_free(rsa);
 #else
   EVP_PKEY_CTX_free(ctx);
+  OSSL_PARAM_free(params);
 #endif
   BN_free(tmp_n);
   BN_free(tmp_e);
@@ -675,6 +683,7 @@ static int verify_jwt_signature(EVP_PKEY* key, const char* alg,
   if (EVP_DigestVerifyFinal(md_ctx, GRPC_SLICE_START_PTR(signature),
                             GRPC_SLICE_LENGTH(signature)) != 1) {
     gpr_log(GPR_ERROR, "JWT signature verification failed.");
+
     goto end;
   }
   result = 1;
