@@ -20,6 +20,7 @@ import logging
 import pathlib
 import threading
 from typing import Any, Callable, List, Optional, Tuple
+import warnings
 
 from kubernetes import client
 from kubernetes import utils
@@ -105,6 +106,17 @@ class KubernetesApiManager:
         self.apps = client.AppsV1Api(self.client)
         self.core = client.CoreV1Api(self.client)
         self._apis = {self.apps, self.core}
+        # TODO(https://github.com/kubernetes-client/python/issues/2101): remove
+        #  when the issue is solved, and the kubernetes dependency is bumped.
+        warnings.filterwarnings(
+            "ignore",
+            category=DeprecationWarning,
+            module="kubernetes.client.rest",
+            message=(
+                "HTTPResponse.getheaders?\\(\\) is deprecated"
+                " and will be removed in urllib3 v2.1.0."
+            ),
+        )
 
     @property
     def client(self) -> ApiClient:
