@@ -467,7 +467,7 @@ TEST_F(CancelDuringAresQuery, TestQueryFailsBecauseTcpServerClosesSocket) {
                               expected_error_message_substring, rpc_deadline,
                               dns_query_timeout_ms, fake_dns_server.port());
   if (grpc_core::IsEventEngineDnsEnabled()) {
-    g_event_engine_grpc_ares_test_only_force_tcp = true;
+    g_event_engine_grpc_ares_test_only_force_tcp = false;
   } else {
     g_grpc_ares_test_only_force_tcp = false;
   }
