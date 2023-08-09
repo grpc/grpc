@@ -250,7 +250,9 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
                 self._print_error_list("FAIL", result.failures)
                 _first_error_printed = True
         else:
-            logging.info("Passed test: %s", self.__class__.__name__)
+            logging.info("Passed test: %s with id: %s",
+                self.__class__.__name__,
+                self.id())
         super().run(result)
 
     @contextlib.contextmanager
