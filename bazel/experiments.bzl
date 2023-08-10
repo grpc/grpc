@@ -25,10 +25,8 @@ EXPERIMENTS = {
                 "transport_supplies_client_latency",
             ],
             "core_end2end_test": [
-                "event_engine_listener",
                 "promise_based_client_call",
                 "promise_based_server_call",
-                "unique_metadata_strings",
             ],
             "cpp_end2end_test": [
                 "promise_based_server_call",
@@ -74,10 +72,8 @@ EXPERIMENTS = {
                 "transport_supplies_client_latency",
             ],
             "core_end2end_test": [
-                "event_engine_listener",
                 "promise_based_client_call",
                 "promise_based_server_call",
-                "unique_metadata_strings",
             ],
             "cpp_end2end_test": [
                 "promise_based_server_call",
@@ -126,11 +122,8 @@ EXPERIMENTS = {
                 "transport_supplies_client_latency",
             ],
             "core_end2end_test": [
-                "event_engine_client",
-                "event_engine_listener",
                 "promise_based_client_call",
                 "promise_based_server_call",
-                "unique_metadata_strings",
             ],
             "cpp_end2end_test": [
                 "promise_based_server_call",

@@ -38,7 +38,7 @@
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/promise/detail/basic_seq.h"
+#include "src/core/lib/promise/seq.h"
 #include "src/core/lib/slice/slice.h"
 
 extern grpc_core::TraceFlag grpc_trace_channel;

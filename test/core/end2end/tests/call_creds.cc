@@ -62,7 +62,7 @@ void PrintAuthContext(bool is_client, const grpc_auth_context* ctx) {
 
 void TestRequestResponseWithPayloadAndCallCreds(CoreEnd2endTest& test,
                                                 bool use_secure_call_creds) {
-  auto c = test.NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
+  auto c = test.NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
   grpc_call_credentials* creds;
   if (use_secure_call_creds) {
     creds =
@@ -119,7 +119,7 @@ void TestRequestResponseWithPayloadAndCallCreds(CoreEnd2endTest& test,
 
 void TestRequestResponseWithPayloadAndOverriddenCallCreds(
     CoreEnd2endTest& test, bool use_secure_call_creds) {
-  auto c = test.NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
+  auto c = test.NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
   grpc_call_credentials* creds;
   if (use_secure_call_creds) {
     creds =
@@ -185,7 +185,7 @@ void TestRequestResponseWithPayloadAndOverriddenCallCreds(
 
 void TestRequestResponseWithPayloadAndDeletedCallCreds(
     CoreEnd2endTest& test, bool use_secure_call_creds) {
-  auto c = test.NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
+  auto c = test.NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
   grpc_call_credentials* creds;
   if (use_secure_call_creds) {
     creds =
@@ -242,7 +242,7 @@ CORE_END2END_TEST(PerCallCredsOnInsecureTest,
                   RequestWithServerRejectingClientCreds) {
   InitClient(ChannelArgs());
   InitServer(ChannelArgs().Set(FAIL_AUTH_CHECK_SERVER_ARG_NAME, true));
-  auto c = NewClientCall("/foo").Timeout(Duration::Seconds(10)).Create();
+  auto c = NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
   auto* creds =
       grpc_md_only_test_credentials_create(fake_md_key, fake_md_value);
   EXPECT_NE(creds, nullptr);
