@@ -533,31 +533,43 @@ size_t WorkStealingThreadPool::ThreadCount::WaitForCountChange(
   auto now = absl::Now();
   const auto deadline = now + absl::Milliseconds(timeout.millis());
   // Set up the count change notification
-  GPR_ASSERT(wait_for_thread_counts_[counter_type].load() ==
-             kWaitForThreadCountUnset);
   // The notification must be set up before the desired thread count is stored,
   // or else a race can happen around Notification access.
-  wait_notifications_[counter_type] =
-      std::make_unique<grpc_core::Notification>();
-  wait_for_thread_counts_[counter_type].store(desired_threads);
+  {
+    grpc_core::MutexLock lock(&mu_);
+    wait_notifications_[counter_type] =
+        std::make_unique<grpc_core::Notification>();
+  }
+  GPR_ASSERT(wait_for_thread_counts_[counter_type].exchange(desired_threads) ==
+             kWaitForThreadCountUnset);
   do {
-    wait_notifications_[counter_type]->WaitForNotificationWithTimeout(deadline -
-                                                                      now);
-    count = GetCount(counter_type);
+    count = WaitForCountChangeLoopBody(counter_type, deadline - now);
     if (count == desired_threads) break;
     now = absl::Now();
   } while (now < deadline);
   // Reset the count change notification
   wait_for_thread_counts_[counter_type].store(kWaitForThreadCountUnset);
-  wait_notifications_[counter_type].reset();
+  {
+    grpc_core::MutexLock lock(&mu_);
+    wait_notifications_[counter_type].reset();
+  }
   return count;
+}
+
+size_t WorkStealingThreadPool::ThreadCount::WaitForCountChangeLoopBody(
+    CounterType counter_type, absl::Duration timeout) {
+  wait_notifications_[counter_type]->WaitForNotificationWithTimeout(timeout);
+  return GetCount(counter_type);
 }
 
 void WorkStealingThreadPool::ThreadCount::CheckAndNotifyCountChange(
     CounterType counter_type, size_t new_value) {
-  if (wait_for_thread_counts_[counter_type] != kWaitForThreadCountUnset &&
-      new_value == wait_for_thread_counts_[counter_type]) {
-    wait_notifications_[counter_type]->Notify();
+  auto count = wait_for_thread_counts_[counter_type].load();
+  if (count != kWaitForThreadCountUnset && new_value == count) {
+    grpc_core::MutexLock lock(&mu_);
+    if (wait_notifications_[counter_type] != nullptr) {
+      wait_notifications_[counter_type]->Notify();
+    }
   }
 }
 
