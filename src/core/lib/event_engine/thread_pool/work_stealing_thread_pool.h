@@ -99,8 +99,6 @@ class WorkStealingThreadPool final : public ThreadPool {
                                const char* why, WorkSignal* work_signal);
     // Returns the current thread count for the tracked type.
     size_t GetCount(CounterType counter_type);
-    // Returns the current thread count for the tracked type.
-    size_t GetCountLocked(CounterType counter_type);
 
     // Adds and removes thread counts on construction and destruction
     class AutoThreadCount {
@@ -127,8 +125,8 @@ class WorkStealingThreadPool final : public ThreadPool {
     // will be notified.
     void CheckAndNotifyCountChange(CounterType counter_type, size_t new_value);
 
-    grpc_core::Mutex mu_;
-    grpc_core::CondVar wait_cvs_[2] ABSL_GUARDED_BY(mu_);
+    grpc_core::Mutex wait_mu_;
+    grpc_core::CondVar wait_cvs_[2] ABSL_GUARDED_BY(wait_mu_);
     std::atomic<size_t> wait_for_thread_counts_[2]{{kWaitForThreadCountUnset},
                                                    {kWaitForThreadCountUnset}};
     std::atomic<size_t> thread_counts_[2]{{0}, {0}};

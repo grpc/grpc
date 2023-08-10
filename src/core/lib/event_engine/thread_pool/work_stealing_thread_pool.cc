@@ -537,8 +537,8 @@ size_t WorkStealingThreadPool::ThreadCount::WaitForCountChange(
              kWaitForThreadCountUnset);
   do {
     {
-      grpc_core::MutexLock lock(&mu_);
-      wait_cvs_[counter_type].WaitWithTimeout(&mu_, deadline - now);
+      grpc_core::MutexLock lock(&wait_mu_);
+      wait_cvs_[counter_type].WaitWithTimeout(&wait_mu_, deadline - now);
     }
     count = GetCount(counter_type);
     if (count == desired_threads) break;
@@ -553,7 +553,7 @@ void WorkStealingThreadPool::ThreadCount::CheckAndNotifyCountChange(
     CounterType counter_type, size_t new_value) {
   auto count = wait_for_thread_counts_[counter_type].load();
   if (count != kWaitForThreadCountUnset && new_value == count) {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(&wait_mu_);
     wait_cvs_[counter_type].Signal();
   }
 }
