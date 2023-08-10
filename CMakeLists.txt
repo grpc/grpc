@@ -5236,7 +5236,6 @@ target_link_libraries(activity_test
   absl::hash
   absl::type_traits
   absl::statusor
-  absl::utility
   gpr
 )
 
@@ -12178,7 +12177,6 @@ target_link_libraries(for_each_test
   absl::hash
   absl::type_traits
   absl::statusor
-  absl::utility
   gpr
   upb
 )
@@ -15950,7 +15948,6 @@ target_link_libraries(latch_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::type_traits
   absl::statusor
-  absl::utility
   gpr
 )
 
@@ -16291,7 +16288,6 @@ target_link_libraries(map_pipe_test
   absl::hash
   absl::type_traits
   absl::statusor
-  absl::utility
   gpr
   upb
 )
