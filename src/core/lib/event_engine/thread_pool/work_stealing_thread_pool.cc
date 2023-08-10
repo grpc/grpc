@@ -533,8 +533,6 @@ size_t WorkStealingThreadPool::ThreadCount::WaitForCountChange(
   auto now = absl::Now();
   const auto deadline = now + absl::Milliseconds(timeout.millis());
   // Set up the count change notification
-  // The notification must be set up before the desired thread count is stored,
-  // or else a race can happen around Notification access.
   {
     grpc_core::MutexLock lock(&mu_);
     wait_notifications_[counter_type] =

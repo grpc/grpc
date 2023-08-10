@@ -124,8 +124,9 @@ class WorkStealingThreadPool final : public ThreadPool {
 
     // Implementation of the loop body for WaitForCountChange
     //
-    // The notifier is guaranteed not to be modified while this loop is running,
-    // so thread safety analysis is disabled to avoid having to claim the mutex.
+    // The notifier is guaranteed to exist while this loop is running, and
+    // Notification operations are thread-safe, so thread safety analysis is
+    // disabled to avoid having to claim the mutex.
     size_t WaitForCountChangeLoopBody(CounterType counter_type,
                                       absl::Duration timeout)
         ABSL_NO_THREAD_SAFETY_ANALYSIS;
