@@ -111,7 +111,7 @@ class KubernetesApiManager:
         warnings.filterwarnings(
             "ignore",
             category=DeprecationWarning,
-            module="kubernetes.client.rest",
+            module="kubernetes",
             message=(
                 "HTTPResponse.getheaders?\\(\\) is deprecated"
                 " and will be removed in urllib3 v2.1.0."
