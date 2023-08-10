@@ -22,10 +22,8 @@ import signal
 import time
 from types import FrameType
 from typing import Any, Callable, List, Optional, Tuple, Union
-import unittest
 
 from absl import flags
-from absl.testing import absltest
 from google.protobuf import json_format
 import grpc
 

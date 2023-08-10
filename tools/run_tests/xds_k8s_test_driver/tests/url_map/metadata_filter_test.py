@@ -118,7 +118,6 @@ class TestMetadataFilterMatchAll(xds_url_map_testcase.XdsUrlMapTestCase):
             xds_config.rds["virtualHosts"][0]["routes"][1]["match"]["prefix"],
             "",
         )
-        self.assertEqual(2, 3)
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
         rpc_distribution = self.configure_and_send(

@@ -32,10 +32,10 @@ class BaseTestCase(absltest.TestCase):
             logging.info("----- TestCase %s PASSED -----", self.id())
         else:
             logging.info("----- TestCase %s FAILED -----", self.id())
-        if current_errors:
-            self._print_error_list("ERROR", current_errors)
-        if current_failures:
-            self._print_error_list("FAILURE", current_failures)
+            if current_errors:
+                self._print_error_list("ERROR", current_errors)
+            if current_failures:
+                self._print_error_list("FAILURE", current_failures)
 
     def _get_current_errors(
         self, errors: List[ErrorAndFailureType]
