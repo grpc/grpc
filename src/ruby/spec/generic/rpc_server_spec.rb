@@ -670,7 +670,7 @@ describe GRPC::RpcServer do
 
         l = []
         call.each_remote_read.each { |r| l << r }
-        expect(l.size).t eq(0)
+        expect(l.size).to eq(0)
       end
 
       def common_check_of_finished_server_call(call)
