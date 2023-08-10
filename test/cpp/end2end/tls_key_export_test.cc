@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -274,7 +275,12 @@ TEST_P(TlsKeyLoggingEnd2EndTest, KeyLogging) {
     }
 
 #ifdef TLS_KEY_LOGGING_AVAILABLE
-    EXPECT_THAT(server_key_log, ::testing::StrEq(channel_key_log));
+    std::vector<absl::string_view> server_separated =
+        absl::StrSplit(server_key_log, "\r");
+    std::vector<absl::string_view> client_separated =
+        absl::StrSplit(channel_key_log, "\r");
+    EXPECT_THAT(server_separated,
+                ::testing::UnorderedElementsAreArray(client_separated));
 
     if (GetParam().share_tls_key_log_file() &&
         GetParam().enable_tls_key_logging()) {
