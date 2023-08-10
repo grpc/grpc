@@ -433,7 +433,7 @@ class ComputeV1(
                     highlight=False,
                 )
             except Exception as error:  # noqa pylint: disable=broad-except
-                logger.error(
+                logger.debug(
                     "Couldn't load backend health info, plain list name"
                     "will be printed instead. Error: %r",
                     error,
