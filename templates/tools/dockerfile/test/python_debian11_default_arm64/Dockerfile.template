@@ -32,4 +32,4 @@
 
   <%include file="../../cmake.include"/>
   <%include file="../../ccache.include"/>
-  <%include file="../../git-jenkins.include"/>
+  <%include file="../../git_avoid_dubious_ownership_error.include"/>

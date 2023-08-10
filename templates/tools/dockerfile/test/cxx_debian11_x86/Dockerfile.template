@@ -23,7 +23,7 @@
   <%include file="../../cmake.include"/>
   <%include file="../../ccache.include"/>
   <%include file="../../run_tests_addons.include"/>
-  <%include file="../../git-jenkins.include"/>
+  <%include file="../../git_avoid_dubious_ownership_error.include"/>
 
   # Define the default command.
   CMD ["bash"]
