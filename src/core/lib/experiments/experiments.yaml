@@ -69,7 +69,7 @@
   description: Use EventEngine clients instead of iomgr's grpc_tcp_client
   expiry: 2023/10/01
   owner: hork@google.com
-  test_tags: ["core_end2end_test", "event_engine_client_test"]
+  test_tags: ["event_engine_client_test"]
 - name: monitoring_experiment
   description: Placeholder experiment to prove/disprove our monitoring is working
   expiry: never-ever
@@ -103,7 +103,7 @@
   description: Use EventEngine listeners instead of iomgr's grpc_tcp_server
   expiry: 2024/01/01
   owner: vigneshbabu@google.com
-  test_tags: ["core_end2end_test", "event_engine_listener_test"]
+  test_tags: ["event_engine_listener_test"]
 - name: schedule_cancellation_over_write
   description: Allow cancellation op to be scheduled over a write
   expiry: 2024/01/01
