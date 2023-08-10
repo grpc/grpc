@@ -232,16 +232,15 @@ module GRPC
     def server_unary_response(req, trailing_metadata: {},
                               code: Core::StatusCodes::OK, details: 'OK')
       ops = {}
+      ops[SEND_MESSAGE] = @marshal.call(req)
+      ops[SEND_STATUS_FROM_SERVER] = Struct::Status.new(
+        code, details, trailing_metadata)
+      ops[RECV_CLOSE_ON_SERVER] = nil
+
       @send_initial_md_mutex.synchronize do
         ops[SEND_INITIAL_METADATA] = @metadata_to_send unless @metadata_sent
         @metadata_sent = true
       end
-
-      payload = @marshal.call(req)
-      ops[SEND_MESSAGE] = payload
-      ops[SEND_STATUS_FROM_SERVER] = Struct::Status.new(
-        code, details, trailing_metadata)
-      ops[RECV_CLOSE_ON_SERVER] = nil
 
       @call.run_batch(ops)
       set_output_stream_done

@@ -217,6 +217,12 @@ def _before_sleep_log(logger, log_level, exc_info=False):
 
 
 class RetryError(tenacity.RetryError):
+    # Note: framework.errors.FrameworkError could be used as a mixin,
+    # but this would rely too much on tenacity.RetryError to not change.
+
+    last_attempt: tenacity.Future
+    note: str = ""
+
     def __init__(
         self,
         retry_state,
@@ -225,7 +231,9 @@ class RetryError(tenacity.RetryError):
         attempts: int = 0,
         check_result: Optional[CheckResultFn] = None,
     ):
-        super().__init__(retry_state.outcome)
+        last_attempt: tenacity.Future = retry_state.outcome
+        super().__init__(last_attempt)
+
         callback_name = tenacity_utils.get_callback_name(retry_state.fn)
         self.message = f"Retry error calling {callback_name}:"
         if timeout:
@@ -237,16 +245,29 @@ class RetryError(tenacity.RetryError):
 
         self.message += "."
 
-        if retry_state.outcome.failed:
-            ex = retry_state.outcome.exception()
-            self.message += f" Last exception: {type(ex).__name__}: {ex}"
+        if last_attempt.failed:
+            err = last_attempt.exception()
+            self.message += f" Last exception: {type(err).__name__}: {err}"
         elif check_result:
             self.message += " Check result callback returned False."
 
     def result(self, *, default=None):
         return (
-            default if self.last_attempt.failed else self.last_attempt.result()
+            self.last_attempt.result()
+            if not self.last_attempt.failed
+            else default
         )
 
+    def exception(self, *, default=None):
+        return (
+            self.last_attempt.exception()
+            if self.last_attempt.failed
+            else default
+        )
+
+    # TODO(sergiitk): Remove in py3.11, this will be built-in. See PEP 678.
+    def add_note(self, note: str):
+        self.note = note
+
     def __str__(self):
-        return self.message
+        return self.message if not self.note else f"{self.message}\n{self.note}"
