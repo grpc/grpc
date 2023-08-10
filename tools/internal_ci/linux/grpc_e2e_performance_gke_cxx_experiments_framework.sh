@@ -131,7 +131,7 @@ trap deleteImages EXIT
 
 # Build and push prebuilt images for running tests.
 time ../test-infra/bin/prepare_prebuilt_workers \
-    -l "cxx:${GRPC_CORE_REPO}:${GRPC_CORE_COMMIT}" \
+    -l "cxx_perf:${GRPC_CORE_REPO}:${GRPC_CORE_COMMIT}" \
     -p "${PREBUILT_IMAGE_PREFIX}" \
     -t "${UNIQUE_IDENTIFIER}" \
     -r "${ROOT_DIRECTORY_OF_DOCKERFILES}"
