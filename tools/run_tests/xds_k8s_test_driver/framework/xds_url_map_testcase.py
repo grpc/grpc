@@ -26,7 +26,6 @@ import unittest
 
 from absl import flags
 from absl import logging
-from absl.testing import absltest
 from google.protobuf import json_format
 import grpc
 
