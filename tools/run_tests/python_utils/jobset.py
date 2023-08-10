@@ -227,7 +227,12 @@ class JobSpec(object):
                 "Cannot use custom logfile when retries are enabled"
             )
         # Allow setting an env variable to force verbose_success=True for all jobset actions.
-        if os.environ.get("GRPC_RUN_TESTS_JOBSET_FORCE_VERBOSE_SUCCESS", "false") == "true":
+        if (
+            os.environ.get(
+                "GRPC_RUN_TESTS_JOBSET_FORCE_VERBOSE_SUCCESS", "false"
+            )
+            == "true"
+        ):
             self.verbose_success = True
 
     def identity(self):
