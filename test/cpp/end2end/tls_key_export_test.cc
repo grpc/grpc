@@ -276,9 +276,9 @@ TEST_P(TlsKeyLoggingEnd2EndTest, KeyLogging) {
 
 #ifdef TLS_KEY_LOGGING_AVAILABLE
     std::vector<absl::string_view> server_separated =
-        absl::StrSplit(server_key_log, "\r");
+        absl::StrSplit(server_key_log, '\r');
     std::vector<absl::string_view> client_separated =
-        absl::StrSplit(channel_key_log, "\r");
+        absl::StrSplit(channel_key_log, '\r');
     EXPECT_THAT(server_separated,
                 ::testing::UnorderedElementsAreArray(client_separated));
 
