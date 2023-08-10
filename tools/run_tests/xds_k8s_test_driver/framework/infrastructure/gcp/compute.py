@@ -422,15 +422,15 @@ class ComputeV1(
                         backend_service,
                         backend,
                     )
-                    unhealthy.append(health_status)
+                    unhealthy.append(
+                        {"name": backend.name, "health_status": health_status}
+                    )
 
                 # Override the plain list of unhealthy backend name with
                 # the one showing the latest backend statuses.
-                unhealthy_backends = "\n".join(
-                    [
-                        self.resource_pretty_format(unhealthy_backend)
-                        for unhealthy_backend in unhealthy
-                    ]
+                unhealthy_backends = self.resources_pretty_format(
+                    unhealthy,
+                    highlight=False,
                 )
             except Exception as error:  # noqa pylint: disable=broad-except
                 logger.debug(
@@ -452,6 +452,7 @@ class ComputeV1(
                     ),
                 )
             )
+
             raise
 
     def _retry_backends_health(
