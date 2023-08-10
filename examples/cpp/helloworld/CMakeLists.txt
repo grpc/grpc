@@ -70,3 +70,5 @@ foreach(_target
     ${_GRPC_GRPCPP}
     ${_PROTOBUF_LIBPROTOBUF})
 endforeach()
+
+add_library()
