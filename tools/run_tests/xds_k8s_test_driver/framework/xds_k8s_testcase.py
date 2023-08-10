@@ -670,7 +670,7 @@ class IsolatedXdsKubernetesTestCase(
                 client_restarts,
                 0,
                 msg=(
-                    "Client pods unexpectedly restarted"
+                    "Client container unexpectedly restarted"
                     f" {client_restarts} times during test. In most cases, this"
                     " is caused by the test client app crash."
                 ),
@@ -679,7 +679,7 @@ class IsolatedXdsKubernetesTestCase(
                 server_restarts,
                 0,
                 msg=(
-                    "Server pods unexpectedly restarted"
+                    "Server container unexpectedly restarted"
                     f" {server_restarts} times during test. In most cases, this"
                     " is caused by the test client app crash."
                 ),
