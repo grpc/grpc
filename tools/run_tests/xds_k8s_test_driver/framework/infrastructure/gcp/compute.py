@@ -452,6 +452,7 @@ class ComputeV1(
                     ),
                 )
             )
+
             raise
 
     def _retry_backends_health(
