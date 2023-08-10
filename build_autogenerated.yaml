@@ -4324,7 +4324,6 @@ targets:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/utility:utility
   - gpr
   uses_polling: false
 - name: address_sorting_test
@@ -7914,7 +7913,6 @@ targets:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/utility:utility
   - gpr
   - upb
   uses_polling: false
@@ -10090,7 +10088,6 @@ targets:
   deps:
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/utility:utility
   - gpr
   uses_polling: false
 - name: lb_get_cpu_stats_test
@@ -10283,7 +10280,6 @@ targets:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/utility:utility
   - gpr
   - upb
   uses_polling: false
