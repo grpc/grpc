@@ -122,26 +122,13 @@ class WorkStealingThreadPool final : public ThreadPool {
     size_t WaitForCountChange(CounterType counter_type, size_t desired_threads,
                               grpc_core::Duration timeout);
 
-    // Implementation of the loop body for WaitForCountChange
-    //
-    // The notifier is guaranteed to exist while this loop is running, and
-    // Notification operations are thread-safe, so thread safety analysis is
-    // disabled to avoid having to claim the mutex.
-    size_t WaitForCountChangeLoopBody(CounterType counter_type,
-                                      absl::Duration timeout)
-        ABSL_NO_THREAD_SAFETY_ANALYSIS;
-
     // Any changes to thread counts will check if a caller is waiting in
     // WaitForCountChange. If so, and the desired count is reached, the waiter
     // will be notified.
     void CheckAndNotifyCountChange(CounterType counter_type, size_t new_value);
 
-    // Protects the Notifications from concurrent access & deletion.
-    // Note that Notification creation cannot race, and WaitForCountChange only
-    // really needs to claim the lock during destruction.
     grpc_core::Mutex mu_;
-    std::unique_ptr<grpc_core::Notification>
-        wait_notifications_[2] ABSL_GUARDED_BY(mu_);
+    grpc_core::CondVar wait_cvs_[2] ABSL_GUARDED_BY(mu_);
     std::atomic<size_t> wait_for_thread_counts_[2]{{kWaitForThreadCountUnset},
                                                    {kWaitForThreadCountUnset}};
     std::atomic<size_t> thread_counts_[2]{{0}, {0}};
