@@ -179,6 +179,10 @@ const char test_signed_jwt_token_type2[] =
 const char test_signed_jwt_path_prefix[] = "test_sign_jwt";
 
 const char pluggable_auth_file_path_prefix[] = "pluggable_auth";
+const char saml2_token_type[] = "urn:ietf:params:oauth:token-type:saml2";
+const char id_token_token_type[] = "urn:ietf:params:oauth:token-type:jwt";
+const char saml_token_key[] = "saml_response";
+const char id_token_key[] = "id_token";
 
 const char test_service_url[] = "https://foo.com/foo.v1";
 const char test_service_url_no_service_name[] = "https://foo.com/";
@@ -339,6 +343,56 @@ ExternalAccountCredentials::Options getDefaultOptions() {
       "workforce_pool_user_project",      // workforce_pool_user_project;
   };
   return options;
+}
+
+std::string getDefaultOptionsStringWithCustomCredentialSource(
+    std::string credential_source) {
+  return absl::StrFormat(
+      "{\"type\":\"external_account\",\"audience\":\"audience\",\"subject_"
+      "token_type\":\"subject_token_type\",\"service_account_impersonation_"
+      "url\":\"service_account_impersonation_url\",\"token_url\":\"token_url\","
+      "\"token_info_url\":\"token_info_url\",%s,\"quota_project_id\":\"quota_"
+      "project_id\",\"client_id\":\"client_id\",\"client_secret\":\"client_"
+      "secret\"}",
+      credential_source);
+}
+
+char* get_pluggable_auth_executable_file_contents(
+    int32_t expiration_time, std::string token_type = saml2_token_type,
+    std::string subject_token_key = saml_token_key) {
+  std::string executable_file_contents = absl::StrFormat(
+      "#!/bin/bash\n\necho \"{\\\"version\\\": 1,\\\"success\\\": "
+      "\"true\",\\\"token_type\\\": \\\"%s\\\",\\\"%s\\\":"
+      "\\\"test_subject_token\\\",\\\"expiration_time\\\":%d}\"",
+      token_type, subject_token_key, expiration_time);
+  return gpr_strdup(executable_file_contents.c_str());
+}
+
+char* get_pluggable_auth_executable_file_contents_for_output_file(
+    int32_t expiration_time, const char* output_file_filename) {
+  std::string executable_file_contents =
+      get_pluggable_auth_executable_file_contents(expiration_time);
+  executable_file_contents.append(
+      absl::StrFormat(" > %s", output_file_filename));
+  return gpr_strdup(executable_file_contents.c_str());
+}
+
+Json get_valid_pluggable_auth_credential_source(
+    const char* executable_filename, const char* output_file_filename) {
+  auto credential_source = JsonParse(absl::StrFormat(
+      "{\"executable\":{\"command\":\"%s\", \"output_file\":\"%s\"}}",
+      executable_filename, output_file_filename));
+  GPR_ASSERT(credential_source.ok());
+  return *credential_source;
+}
+
+char* get_pluggable_auth_cached_executable_contents(int32_t expiration_time) {
+  std::string cached_executable_response_file_contents = absl::StrFormat(
+      "{\"version\": 1,\"success\": "
+      "true,\"token_type\":\"urn:ietf:params:oauth:token-type:saml2\","
+      "\"saml_response\":\"test_subject_token\",\"expiration_time\":%d}",
+      expiration_time);
+  return gpr_strdup(cached_executable_response_file_contents.c_str());
 }
 
 // -- Tests. --
@@ -3837,19 +3891,10 @@ TEST(CredentialsTest,
 
 TEST(CredentialsTest,
      TestPluggableAuthExternalAccountCredentialsCreateSuccess) {
-  const char* executable_options_string =
-      "{\"type\":\"external_account\","
-      "\"audience\":\"audience\","
-      "\"subject_token_type\":\"subject_token_type\","
-      "\"service_account_impersonation_url\":\"service_account_impersonation_"
-      "url\",\"token_url\":\"token_url\","
-      "\"token_info_url\":\"token_info_url\",	\"credential_source\": "
-      "{\"executable\":{"
-      "\"command\":\"command\","
-      "\"output_file\":\"output_file\"}},"
-      "\"quota_project_id\":\"quota_project_id\","
-      "\"client_id\":\"client_id\","
-      "\"client_secret\":\"client_secret\"}";
+  std::string executable_options_string =
+      getDefaultOptionsStringWithCustomCredentialSource(
+          "\"credential_source\":{\"executable\":{\"command\":\"command\","
+          "\"output_file\":\"output_file\"}}");
   auto executable_options_json = JsonParse(executable_options_string);
   GPR_ASSERT(executable_options_json.ok());
   grpc_error_handle error;
@@ -3861,19 +3906,10 @@ TEST(CredentialsTest,
 
 TEST(CredentialsTest,
      TestPluggableAuthExternalAccountCredentialsCreateFailureInvalidCommand) {
-  const char* executable_options_string =
-      "{\"type\":\"external_account\","
-      "\"audience\":\"audience\","
-      "\"subject_token_type\":\"subject_token_type\","
-      "\"service_account_impersonation_url\":\"service_account_impersonation_"
-      "url\",\"token_url\":\"token_url\","
-      "\"token_info_url\":\"token_info_url\",	\"credential_source\": "
-      "{\"executable\":{"
-      "\"timeout_millis\":10000,"
-      "\"output_file\":\"output_file\"}},"
-      "\"quota_project_id\":\"quota_project_id\","
-      "\"client_id\":\"client_id\","
-      "\"client_secret\":\"client_secret\"}";
+  std::string executable_options_string =
+      getDefaultOptionsStringWithCustomCredentialSource(
+          "\"credential_source\":{\"executable\":{\"timeout_millis\":10000,"
+          "\"output_file\":\"output_file\"}}");
   auto executable_options_json = JsonParse(executable_options_string);
   GPR_ASSERT(executable_options_json.ok());
   grpc_error_handle error;
@@ -3890,20 +3926,10 @@ TEST(CredentialsTest,
 TEST(
     CredentialsTest,
     TestPluggableAuthExternalAccountCredentialsCreateFailureExecutableTimeoutLessThan5Seconds) {
-  const char* executable_options_string =
-      "{\"type\":\"external_account\","
-      "\"audience\":\"audience\","
-      "\"subject_token_type\":\"subject_token_type\","
-      "\"service_account_impersonation_url\":\"service_account_impersonation_"
-      "url\",\"token_url\":\"token_url\","
-      "\"token_info_url\":\"token_info_url\",	\"credential_source\": "
-      "{\"executable\":{"
-      "\"command\":\"command\","
-      "\"timeout_millis\":4999,"
-      "\"output_file\":\"output_file\"}},"
-      "\"quota_project_id\":\"quota_project_id\","
-      "\"client_id\":\"client_id\","
-      "\"client_secret\":\"client_secret\"}";
+  std::string executable_options_string =
+      getDefaultOptionsStringWithCustomCredentialSource(
+          "\"credential_source\":{\"executable\":{\"command\":\"command\","
+          "\"timeout_millis\":4999,\"output_file\":\"output_file\"}}");
   auto executable_options_json = JsonParse(executable_options_string);
   GPR_ASSERT(executable_options_json.ok());
   grpc_error_handle error;
@@ -3920,20 +3946,10 @@ TEST(
 TEST(
     CredentialsTest,
     TestPluggableAuthExternalAccountCredentialsCreateFailureExecutableTimeoutMoreThan120Seconds) {
-  const char* executable_options_string =
-      "{\"type\":\"external_account\","
-      "\"audience\":\"audience\","
-      "\"subject_token_type\":\"subject_token_type\","
-      "\"service_account_impersonation_url\":\"service_account_impersonation_"
-      "url\",\"token_url\":\"token_url\","
-      "\"token_info_url\":\"token_info_url\",	\"credential_source\": "
-      "{\"executable\":{"
-      "\"command\":\"command\","
-      "\"timeout_millis\":120001,"
-      "\"output_file\":\"output_file\"}},"
-      "\"quota_project_id\":\"quota_project_id\","
-      "\"client_id\":\"client_id\","
-      "\"client_secret\":\"client_secret\"}";
+  std::string executable_options_string =
+      getDefaultOptionsStringWithCustomCredentialSource(
+          "\"credential_source\":{\"executable\":{\"command\":\"command\","
+          "\"timeout_millis\":120001,\"output_file\":\"output_file\"}}");
   auto executable_options_json = JsonParse(executable_options_string);
   GPR_ASSERT(executable_options_json.ok());
   grpc_error_handle error;
@@ -3949,46 +3965,8 @@ TEST(
 
 #ifndef GPR_WINDOWS
 
-char* get_pluggable_auth_executable_file_contents(int32_t expiration_time) {
-  std::string executable_file_contents = absl::StrFormat(
-      "#!/bin/bash\n\necho \"{\\\"version\\\": 1,\\\"success\\\": "
-      "\"true\",\\\"token_type\\\": "
-      "\\\"urn:ietf:params:oauth:token-type:saml2\\\",\\\"saml_response\\\":"
-      "\\\"test_subject_token\\\",\\\"expiration_time\\\":%d}\"",
-      expiration_time);
-  return gpr_strdup(executable_file_contents.c_str());
-}
-
-char* get_pluggable_auth_executable_file_contents_for_id_token(
-    int32_t expiration_time) {
-  std::string executable_file_contents = absl::StrFormat(
-      "#!/bin/bash\n\necho \"{\\\"version\\\": 1,\\\"success\\\": "
-      "\"true\",\\\"token_type\\\": "
-      "\\\"urn:ietf:params:oauth:token-type:jwt\\\",\\\"id_token\\\":"
-      "\\\"test_subject_token\\\",\\\"expiration_time\\\":%d}\"",
-      expiration_time);
-  return gpr_strdup(executable_file_contents.c_str());
-}
-
-char* get_pluggable_auth_executable_file_contents_for_output_file(
-    int32_t expiration_time, const char* output_file_filename) {
-  std::string executable_file_contents =
-      get_pluggable_auth_executable_file_contents(expiration_time);
-  executable_file_contents.append(
-      absl::StrFormat(" > %s", output_file_filename));
-  return gpr_strdup(executable_file_contents.c_str());
-}
-
-Json get_valid_pluggable_auth_credential_source(
-    const char* executable_filename, const char* output_file_filename) {
-  auto credential_source = JsonParse(absl::StrFormat(
-      "{\"executable\":{\"command\":\"%s\", \"output_file\":\"%s\"}}",
-      executable_filename, output_file_filename));
-  GPR_ASSERT(credential_source.ok());
-  return *credential_source;
-}
-
 TEST(CredentialsTest, TestPluggableAuthExecutableSuccess) {
+  SetEnv("GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES", "1");
   ExecCtx exec_ctx;
   char* executable_file_contents = get_pluggable_auth_executable_file_contents(
       gpr_time_to_millis(gpr_inf_future(GPR_CLOCK_REALTIME)));
@@ -4001,7 +3979,6 @@ TEST(CredentialsTest, TestPluggableAuthExecutableSuccess) {
   grpc_error_handle error;
   auto creds = PluggableAuthExternalAccountCredentials::Create(
       executable_options, {}, &error);
-  SetEnv("GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES", "1");
   chmod(filename, ALLPERMS);
   GPR_ASSERT(creds != nullptr);
   auto state = RequestMetadataState::NewInstance(
@@ -4017,10 +3994,11 @@ TEST(CredentialsTest, TestPluggableAuthExecutableSuccess) {
 }
 
 TEST(CredentialsTest, TestPluggableAuthExecutableSuccessIdToken) {
+  SetEnv("GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES", "1");
   ExecCtx exec_ctx;
-  char* executable_file_contents =
-      get_pluggable_auth_executable_file_contents_for_id_token(
-          gpr_time_to_millis(gpr_inf_future(GPR_CLOCK_REALTIME)));
+  char* executable_file_contents = get_pluggable_auth_executable_file_contents(
+      gpr_time_to_millis(gpr_inf_future(GPR_CLOCK_REALTIME)),
+      id_token_token_type, id_token_key);
   char* filename =
       write_file(pluggable_auth_file_path_prefix, executable_file_contents);
   auto credential_source =
@@ -4030,7 +4008,6 @@ TEST(CredentialsTest, TestPluggableAuthExecutableSuccessIdToken) {
   grpc_error_handle error;
   auto creds = PluggableAuthExternalAccountCredentials::Create(
       executable_options, {}, &error);
-  SetEnv("GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES", "1");
   chmod(filename, ALLPERMS);
   GPR_ASSERT(creds != nullptr);
   auto state = RequestMetadataState::NewInstance(
@@ -4045,16 +4022,8 @@ TEST(CredentialsTest, TestPluggableAuthExecutableSuccessIdToken) {
   UnsetEnv("GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES");
 }
 
-char* get_pluggable_auth_cached_executable_contents(int32_t expiration_time) {
-  std::string cached_executable_response_file_contents = absl::StrFormat(
-      "{\"version\": 1,\"success\": "
-      "true,\"token_type\":\"urn:ietf:params:oauth:token-type:saml2\","
-      "\"saml_response\":\"test_subject_token\",\"expiration_time\":%d}",
-      expiration_time);
-  return gpr_strdup(cached_executable_response_file_contents.c_str());
-}
-
 TEST(CredentialsTest, TestPluggableAuthSuccessCachedExecutableResponse) {
+  SetEnv("GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES", "1");
   ExecCtx exec_ctx;
   char* cached_response_contents =
       get_pluggable_auth_cached_executable_contents(
@@ -4068,7 +4037,6 @@ TEST(CredentialsTest, TestPluggableAuthSuccessCachedExecutableResponse) {
   grpc_error_handle error;
   auto creds = PluggableAuthExternalAccountCredentials::Create(
       executable_options, {}, &error);
-  SetEnv("GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES", "1");
   GPR_ASSERT(creds != nullptr);
   auto state = RequestMetadataState::NewInstance(
       absl::OkStatus(), "authorization: Bearer token_exchange_access_token");
@@ -4084,6 +4052,7 @@ TEST(CredentialsTest, TestPluggableAuthSuccessCachedExecutableResponse) {
 
 TEST(CredentialsTest,
      TestPluggableAuthSuccessWithExpiredCachedExecutableResponse) {
+  SetEnv("GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES", "1");
   ExecCtx exec_ctx;
   char* cached_response_contents =
       get_pluggable_auth_cached_executable_contents(
@@ -4103,7 +4072,6 @@ TEST(CredentialsTest,
   grpc_error_handle error;
   auto creds = PluggableAuthExternalAccountCredentials::Create(
       executable_options, {}, &error);
-  SetEnv("GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES", "1");
   chmod(executable_file_filename, ALLPERMS);
   GPR_ASSERT(creds != nullptr);
   auto state = RequestMetadataState::NewInstance(
@@ -4120,6 +4088,7 @@ TEST(CredentialsTest,
 
 TEST(CredentialsTest,
      TestPluggableAuthSuccessWithCachedExecutableErrorResponse) {
+  SetEnv("GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES", "1");
   ExecCtx exec_ctx;
   const char* cached_response_contents =
       "{\"version\":1, \"success\":false, \"code\":\"E404\", "
@@ -4139,7 +4108,6 @@ TEST(CredentialsTest,
   grpc_error_handle error;
   auto creds = PluggableAuthExternalAccountCredentials::Create(
       executable_options, {}, &error);
-  SetEnv("GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES", "1");
   chmod(executable_file_filename, ALLPERMS);
   GPR_ASSERT(creds != nullptr);
   auto state = RequestMetadataState::NewInstance(
@@ -4156,6 +4124,7 @@ TEST(CredentialsTest,
 
 TEST(CredentialsTest,
      TestPluggableAuthSuccessWithBlankCachedExecutableOutputFile) {
+  SetEnv("GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES", "1");
   ExecCtx exec_ctx;
   const char* cached_response_contents = "";
   char* cached_output_file_filename =
@@ -4173,7 +4142,6 @@ TEST(CredentialsTest,
   grpc_error_handle error;
   auto creds = PluggableAuthExternalAccountCredentials::Create(
       executable_options, {}, &error);
-  SetEnv("GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES", "1");
   chmod(executable_file_filename, ALLPERMS);
   GPR_ASSERT(creds != nullptr);
   auto state = RequestMetadataState::NewInstance(
@@ -4190,6 +4158,7 @@ TEST(CredentialsTest,
 
 TEST(CredentialsTest,
      TestPluggableAuthFailureWithInvalidCachedOutputFileCodeNotPresent) {
+  SetEnv("GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES", "1");
   ExecCtx exec_ctx;
   const char* cached_response_contents = "{\"version\":1, \"success\":false}";
   char* cached_output_file_filename =
@@ -4207,7 +4176,6 @@ TEST(CredentialsTest,
   grpc_error_handle error;
   auto creds = PluggableAuthExternalAccountCredentials::Create(
       executable_options, {}, &error);
-  SetEnv("GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES", "1");
   chmod(executable_file_filename, ALLPERMS);
   GPR_ASSERT(creds != nullptr);
   error = GRPC_ERROR_CREATE(
@@ -4228,6 +4196,7 @@ TEST(CredentialsTest,
 
 TEST(CredentialsTest,
      TestPluggableAuthFailureWithInvalidCachedOutputFileMessageNotPresent) {
+  SetEnv("GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES", "1");
   ExecCtx exec_ctx;
   const char* cached_response_contents =
       "{\"version\":1, \"success\":false, \"code\":\"E404\"}";
@@ -4246,7 +4215,6 @@ TEST(CredentialsTest,
   grpc_error_handle error;
   auto creds = PluggableAuthExternalAccountCredentials::Create(
       executable_options, {}, &error);
-  SetEnv("GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES", "1");
   chmod(executable_file_filename, ALLPERMS);
   GPR_ASSERT(creds != nullptr);
   error = GRPC_ERROR_CREATE(
@@ -4268,6 +4236,7 @@ TEST(CredentialsTest,
 TEST(
     CredentialsTest,
     TestPluggableAuthFailureWithInvalidCachedOutputFileSuccessFieldNotPresent) {
+  SetEnv("GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES", "1");
   ExecCtx exec_ctx;
   const char* cached_response_contents =
       "{\"version\":1, \"code\":\"E404\", \"message\":\"Error Message\"}";
@@ -4286,7 +4255,6 @@ TEST(
   grpc_error_handle error;
   auto creds = PluggableAuthExternalAccountCredentials::Create(
       executable_options, {}, &error);
-  SetEnv("GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES", "1");
   chmod(executable_file_filename, ALLPERMS);
   GPR_ASSERT(creds != nullptr);
   error = GRPC_ERROR_CREATE(
@@ -4307,6 +4275,7 @@ TEST(
 TEST(
     CredentialsTest,
     TestPluggableAuthFailureWithInvalidCachedOutputFileVersionFieldNotPresent) {
+  SetEnv("GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES", "1");
   ExecCtx exec_ctx;
   const char* cached_response_contents =
       "{\"success\":false, \"code\":\"E404\", \"message\":\"Error Message\"}";
@@ -4325,7 +4294,6 @@ TEST(
   grpc_error_handle error;
   auto creds = PluggableAuthExternalAccountCredentials::Create(
       executable_options, {}, &error);
-  SetEnv("GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES", "1");
   chmod(executable_file_filename, ALLPERMS);
   GPR_ASSERT(creds != nullptr);
   error = GRPC_ERROR_CREATE(
@@ -4346,6 +4314,7 @@ TEST(
 TEST(
     CredentialsTest,
     TestPluggableAuthFailureWithInvalidCachedOutputFileTokenTypeFieldNotPresent) {
+  SetEnv("GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES", "1");
   ExecCtx exec_ctx;
   const char* cached_response_contents = "{\"version\":1, \"success\": true}";
   char* cached_output_file_filename =
@@ -4363,7 +4332,6 @@ TEST(
   grpc_error_handle error;
   auto creds = PluggableAuthExternalAccountCredentials::Create(
       executable_options, {}, &error);
-  SetEnv("GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES", "1");
   chmod(executable_file_filename, ALLPERMS);
   GPR_ASSERT(creds != nullptr);
   error = GRPC_ERROR_CREATE(
@@ -4384,6 +4352,7 @@ TEST(
 TEST(
     CredentialsTest,
     TestPluggableAuthFailureWithInvalidCachedOutputFileExpirationTimeFieldNotPresent) {
+  SetEnv("GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES", "1");
   ExecCtx exec_ctx;
   const char* cached_response_contents =
       "{\"version\":1, \"success\": true, "
@@ -4403,7 +4372,6 @@ TEST(
   grpc_error_handle error;
   auto creds = PluggableAuthExternalAccountCredentials::Create(
       executable_options, {}, &error);
-  SetEnv("GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES", "1");
   chmod(executable_file_filename, ALLPERMS);
   GPR_ASSERT(creds != nullptr);
   error = GRPC_ERROR_CREATE(
@@ -4425,6 +4393,7 @@ TEST(
 
 TEST(CredentialsTest,
      TestPluggableAuthFailureWithInvalidCachedOutputFileInvalidExpirationTime) {
+  SetEnv("GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES", "1");
   ExecCtx exec_ctx;
   const char* cached_response_contents =
       "{\"version\":1, \"success\": true, "
@@ -4445,7 +4414,6 @@ TEST(CredentialsTest,
   grpc_error_handle error;
   auto creds = PluggableAuthExternalAccountCredentials::Create(
       executable_options, {}, &error);
-  SetEnv("GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES", "1");
   chmod(executable_file_filename, ALLPERMS);
   GPR_ASSERT(creds != nullptr);
   error = GRPC_ERROR_CREATE(
@@ -4466,12 +4434,12 @@ TEST(CredentialsTest,
 
 TEST(CredentialsTest,
      TestPluggableAuthFailureWithInvalidExecutableOutputInvalidTokenType) {
+  SetEnv("GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES", "1");
   ExecCtx exec_ctx;
   const char* executable_file_contents =
-      "#!/bin/bash\n\necho \"{\\\"version\\\": 1,\\\"success\\\": "
-      "\"true\",\\\"token_type\\\": "
-      "\\\"urn:ietf:params:oauth:token-type:saml2\\\",\\\"id_token\\\":"
-      "\\\"test_subject_token\\\"}\"";
+      get_pluggable_auth_executable_file_contents(
+          gpr_time_to_millis(gpr_inf_future(GPR_CLOCK_REALTIME)),
+          saml2_token_type, id_token_key);
   char* executable_file_filename =
       write_file(pluggable_auth_file_path_prefix, executable_file_contents);
   auto credential_source =
@@ -4481,7 +4449,6 @@ TEST(CredentialsTest,
   grpc_error_handle error;
   auto creds = PluggableAuthExternalAccountCredentials::Create(
       executable_options, {}, &error);
-  SetEnv("GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES", "1");
   chmod(executable_file_filename, ALLPERMS);
   GPR_ASSERT(creds != nullptr);
   error =
