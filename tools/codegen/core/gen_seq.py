@@ -186,6 +186,45 @@ front_matter = """
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/poll.h"
 
+// A sequence under some traits for some set of callables P, Fs.
+// P should be a promise-like object that yields a value.
+// Fs... should be promise-factory-like objects that take the value from the
+// previous step and yield a promise. Note that most of the machinery in
+// PromiseFactory exists to make it possible for those promise-factory-like
+// objects to be anything that's convenient.
+// Traits defines how we move from one step to the next. Traits sets up the 
+// wrapping and escape handling for the sequence. 
+// Promises return wrapped values that the trait can inspect and unwrap before
+// passing them to the next element of the sequence. The trait can
+// also interpret a wrapped value as an escape value, which terminates
+// evaluation of the sequence immediately yielding a result. Traits for type T
+// have the members:
+//  * type UnwrappedType - the type after removing wrapping from T (i.e. for
+//    TrySeq, T=StatusOr<U> yields UnwrappedType=U).
+//  * type WrappedType - the type after adding wrapping if it doesn't already
+//    exist (i.e. for TrySeq if T is not Status/StatusOr/void, then
+//    WrappedType=StatusOr<T>; if T is Status then WrappedType=Status (it's
+//    already wrapped!))
+//  * template <typename Next> void CallFactory(Next* next_factory, T&& value) -
+//    call promise factory next_factory with the result of unwrapping value, and
+//    return the resulting promise.
+//  * template <typename Result, typename RunNext> Poll<Result>
+//    CheckResultAndRunNext(T prior, RunNext run_next) - examine the value of
+//    prior, and decide to escape or continue. If escaping, return the final
+//    sequence value of type Poll<Result>. If continuing, return the value of
+//    run_next(std::move(prior)).
+//
+// A state contains the current promise, and the promise factory to turn the
+// result of the current promise into the next state's promise. We play a shell
+// game such that the prior state and our current promise are kept in a union,
+// and the next promise factory is kept alongside in the state struct.
+// Recursively this guarantees that the next functions get initialized once, and
+// destroyed once, and don't need to be moved around in between, which avoids a
+// potential O(n**2) loop of next factory moves had we used a variant of states
+// here. The very first state does not have a prior state, and so that state has
+// a partial specialization below. The final state does not have a next state;
+// that state is inlined in BasicSeq since that was simpler to type.
+
 namespace grpc_core {
 namespace promise_detail {
 template <template<typename> class Traits, typename P, typename... Fs>
