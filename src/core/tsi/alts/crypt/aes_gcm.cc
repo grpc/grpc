@@ -36,7 +36,8 @@ constexpr size_t kKdfCounterOffset = 2;
 constexpr size_t kRekeyAeadKeyLen = kAes128GcmKeyLength;
 
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L
-const char kEvpMacAlgorithm[] = "SHA-256";
+const char kEvpMacAlgorithm[] = "HMAC";
+char kEvpDigest[] = "SHA-256";
 #endif
 
 /* Struct for additional data required if rekeying is enabled. */
@@ -218,7 +219,11 @@ static grpc_status_code aes_gcm_derive_aead_key(uint8_t* dst,
   if (ctx == nullptr) {
     return GRPC_STATUS_INTERNAL;
   }
-  if (!EVP_MAC_init(ctx, kdf_key, kKdfKeyLen, nullptr) ||
+  OSSL_PARAM params[2];
+  params[0] = OSSL_PARAM_construct_utf8_string("digest", kEvpDigest, 0);
+  params[1] = OSSL_PARAM_construct_end();
+
+  if (!EVP_MAC_init(ctx, kdf_key, kKdfKeyLen, params) ||
       !EVP_MAC_update(ctx, kdf_counter, kKdfCounterLen) ||
       !EVP_MAC_update(ctx, &ctr, 1) ||
       !EVP_MAC_final(ctx, buf, nullptr, EVP_MAX_MD_SIZE)) {
