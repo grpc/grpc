@@ -86,6 +86,10 @@ bool ExtractJsonString(const Json& json, absl::string_view field_name,
   return true;
 }
 
+bool ExtractJsonCharPtr(const Json& json, absl::string_view field_name,
+                        char** output,
+                        std::vector<grpc_error_handle>* error_list);
+
 bool ExtractJsonArray(const Json& json, absl::string_view field_name,
                       const Json::Array** output,
                       std::vector<grpc_error_handle>* error_list);
@@ -121,6 +125,11 @@ inline bool ExtractJsonType(const Json& json, absl::string_view field_name,
                             const Json::Array** output,
                             std::vector<grpc_error_handle>* error_list) {
   return ExtractJsonArray(json, field_name, output, error_list);
+}
+inline bool ExtractJsonType(const Json& json, absl::string_view field_name,
+                            char** output,
+                            std::vector<grpc_error_handle>* error_list) {
+  return ExtractJsonCharPtr(json, field_name, output, error_list);
 }
 inline bool ExtractJsonType(const Json& json, absl::string_view field_name,
                             const Json::Object** output,

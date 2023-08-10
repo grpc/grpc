@@ -3389,6 +3389,7 @@ grpc_cc_library(
         "httpcli_ssl_credentials",
         "json",
         "json_reader",
+        "json_util",
         "json_writer",
         "slice",
         "slice_refcount",

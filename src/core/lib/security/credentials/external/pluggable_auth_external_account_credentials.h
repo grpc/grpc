@@ -38,7 +38,7 @@ class PluggableAuthExternalAccountCredentials final
   struct ExecutableResponse {
     bool success;
     int version;
-    int expiration_time;
+    int64_t expiration_time;
     char* token_type;
     char* subject_token;
     char* error_code;
@@ -54,19 +54,20 @@ class PluggableAuthExternalAccountCredentials final
                                           grpc_error_handle* error);
 
  private:
+  bool RetrieveSubjectTokenFromCachedOutputFile();
   void RetrieveSubjectToken(
       HTTPRequestContext* ctx, const Options& options,
       std::function<void(std::string, grpc_error_handle)> cb) override;
 
-  ExecutableResponse* CreateExecutableResponse(std::string executable_output,
-                                               grpc_error_handle* error);
+  ExecutableResponse* ParseExecutableResponse(std::string executable_output,
+                                              grpc_error_handle* error);
   void FinishRetrieveSubjectToken(std::string token, grpc_error_handle error);
   // Fields of credential_source.executable
   std::string command_;
   int64_t executable_timeout_ms_;
   std::string output_file_path_ = "";
 
-  ExecutableResponse* executable_response_;
+  ExecutableResponse* executable_response_ = nullptr;
   gpr_subprocess* gpr_subprocess_;
 
   std::function<void(std::string, grpc_error_handle)> cb_ = nullptr;

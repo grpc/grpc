@@ -75,6 +75,8 @@ class ExternalAccountCredentials
   std::string debug_string() override;
 
  protected:
+  std::string GetImpersonatedEmail(
+      std::string service_account_impersonation_url);
   // This is a helper struct to pass information between multiple callback based
   // asynchronous calls.
   struct HTTPRequestContext {

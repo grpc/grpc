@@ -20,6 +20,8 @@
 
 #include "src/core/lib/json/json_util.h"
 
+#include <grpc/support/string_util.h>
+
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/json/json_args.h"
@@ -69,6 +71,16 @@ bool ExtractJsonObject(const Json& json, absl::string_view field_name,
     return false;
   }
   *output = &json.object();
+  return true;
+}
+
+bool ExtractJsonCharPtr(const Json& json, absl::string_view field_name,
+                        char** output,
+                        std::vector<grpc_error_handle>* error_list) {
+  std::string output_string;
+  if (!ExtractJsonString(json, field_name, &output_string, error_list))
+    return false;
+  *output = gpr_strdup(output_string.c_str());
   return true;
 }
 
