@@ -206,7 +206,6 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//src/core:basic_seq",
         "//src/core:loop",
         "//src/core:seq",
     ],
@@ -335,7 +334,6 @@ grpc_cc_test(
         "//:ref_counted_ptr",
         "//src/core:activity",
         "//src/core:arena",
-        "//src/core:basic_seq",
         "//src/core:event_engine_memory_allocator",
         "//src/core:for_each",
         "//src/core:join",
@@ -361,7 +359,6 @@ grpc_cc_test(
         "//:ref_counted_ptr",
         "//src/core:activity",
         "//src/core:arena",
-        "//src/core:basic_seq",
         "//src/core:event_engine_memory_allocator",
         "//src/core:for_each",
         "//src/core:join",
@@ -496,6 +493,7 @@ grpc_cc_test(
     deps = [
         "test_wakeup_schedulers",
         "//:exec_ctx",
+        "//:gpr",
         "//:grpc",
         "//src/core:default_event_engine",
         "//src/core:exec_ctx_wakeup_scheduler",

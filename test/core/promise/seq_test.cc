@@ -14,6 +14,8 @@
 
 #include "src/core/lib/promise/seq.h"
 
+#include <stdint.h>
+
 #include <memory>
 #include <string>
 #include <vector>
