@@ -857,8 +857,8 @@ libs:
   - src/core/lib/promise/detail/basic_seq.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/seq_state.h
   - src/core/lib/promise/detail/status.h
-  - src/core/lib/promise/detail/switch.h
   - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
   - src/core/lib/promise/for_each.h
   - src/core/lib/promise/if.h
@@ -2253,8 +2253,8 @@ libs:
   - src/core/lib/promise/detail/basic_seq.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/seq_state.h
   - src/core/lib/promise/detail/status.h
-  - src/core/lib/promise/detail/switch.h
   - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
   - src/core/lib/promise/for_each.h
   - src/core/lib/promise/if.h
@@ -3754,8 +3754,8 @@ libs:
   - src/core/lib/promise/detail/basic_seq.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/seq_state.h
   - src/core/lib/promise/detail/status.h
-  - src/core/lib/promise/detail/switch.h
   - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
   - src/core/lib/promise/for_each.h
   - src/core/lib/promise/if.h
@@ -4307,8 +4307,8 @@ targets:
   - src/core/lib/promise/detail/basic_seq.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/seq_state.h
   - src/core/lib/promise/detail/status.h
-  - src/core/lib/promise/detail/switch.h
   - src/core/lib/promise/join.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/promise.h
@@ -6115,8 +6115,8 @@ targets:
   - src/core/lib/promise/detail/basic_seq.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/seq_state.h
   - src/core/lib/promise/detail/status.h
-  - src/core/lib/promise/detail/switch.h
   - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/map.h
@@ -6167,7 +6167,6 @@ targets:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/utility:utility
   - gpr
   - upb
   uses_polling: false
@@ -7761,8 +7760,8 @@ targets:
   - src/core/lib/promise/detail/basic_seq.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/seq_state.h
   - src/core/lib/promise/detail/status.h
-  - src/core/lib/promise/detail/switch.h
   - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/map.h
@@ -7818,7 +7817,6 @@ targets:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/utility:utility
   - gpr
   - upb
   uses_polling: false
@@ -7854,8 +7852,8 @@ targets:
   - src/core/lib/promise/detail/basic_seq.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/seq_state.h
   - src/core/lib/promise/detail/status.h
-  - src/core/lib/promise/detail/switch.h
   - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
   - src/core/lib/promise/for_each.h
   - src/core/lib/promise/if.h
@@ -9154,8 +9152,8 @@ targets:
   - src/core/lib/promise/detail/basic_seq.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/seq_state.h
   - src/core/lib/promise/detail/status.h
-  - src/core/lib/promise/detail/switch.h
   - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
   - src/core/lib/promise/interceptor_list.h
   - src/core/lib/promise/loop.h
@@ -9210,7 +9208,6 @@ targets:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/utility:utility
   - gpr
   - upb
   uses_polling: false
@@ -9527,8 +9524,8 @@ targets:
   - src/core/lib/promise/detail/basic_seq.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/seq_state.h
   - src/core/lib/promise/detail/status.h
-  - src/core/lib/promise/detail/switch.h
   - src/core/lib/promise/join.h
   - src/core/lib/promise/latch.h
   - src/core/lib/promise/poll.h
@@ -9631,7 +9628,7 @@ targets:
   - src/core/lib/promise/detail/basic_seq.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
-  - src/core/lib/promise/detail/switch.h
+  - src/core/lib/promise/detail/seq_state.h
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/seq.h
@@ -9640,7 +9637,6 @@ targets:
   deps:
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/utility:utility
   - gpr
   uses_polling: false
 - name: map_pipe_test
@@ -9675,8 +9671,8 @@ targets:
   - src/core/lib/promise/detail/basic_seq.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/seq_state.h
   - src/core/lib/promise/detail/status.h
-  - src/core/lib/promise/detail/switch.h
   - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
   - src/core/lib/promise/for_each.h
   - src/core/lib/promise/if.h
@@ -12893,14 +12889,13 @@ targets:
   - src/core/lib/promise/detail/basic_seq.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
-  - src/core/lib/promise/detail/switch.h
+  - src/core/lib/promise/detail/seq_state.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/seq.h
   src:
   - test/core/promise/seq_test.cc
   deps:
   - absl/meta:type_traits
-  - absl/utility:utility
   - gpr
   uses_polling: false
 - name: sequential_connectivity_test
@@ -14593,8 +14588,8 @@ targets:
   - src/core/lib/promise/detail/basic_seq.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/seq_state.h
   - src/core/lib/promise/detail/status.h
-  - src/core/lib/promise/detail/switch.h
   - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
   - src/core/lib/promise/for_each.h
   - src/core/lib/promise/if.h
@@ -15441,8 +15436,8 @@ targets:
   - src/core/lib/promise/detail/basic_seq.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/seq_state.h
   - src/core/lib/promise/detail/status.h
-  - src/core/lib/promise/detail/switch.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/try_seq.h
   src:
@@ -15450,7 +15445,6 @@ targets:
   deps:
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/utility:utility
   - gpr
   uses_polling: false
 - name: unique_type_name_test

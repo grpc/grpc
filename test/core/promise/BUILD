@@ -206,7 +206,6 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//src/core:basic_seq",
         "//src/core:loop",
         "//src/core:seq",
     ],
@@ -337,7 +336,6 @@ grpc_cc_test(
         "//src/core:activity",
         "//src/core:arena",
         "//src/core:basic_join",
-        "//src/core:basic_seq",
         "//src/core:event_engine_memory_allocator",
         "//src/core:for_each",
         "//src/core:join",
@@ -364,7 +362,6 @@ grpc_cc_test(
         "//src/core:activity",
         "//src/core:arena",
         "//src/core:basic_join",
-        "//src/core:basic_seq",
         "//src/core:event_engine_memory_allocator",
         "//src/core:for_each",
         "//src/core:join",

@@ -47,10 +47,6 @@ CONFIGURATION_FILE_HEADER_COMMENT = """
 
 def safe_name(language: str) -> str:
     """Returns a name that is safe to use in labels and file names."""
-    # The language "node_purejs" differs from "node" only in the scenarios
-    # covered, so it is treated the same as "node".
-    if language == "node_purejs":
-        return scenario_config.LANGUAGES["node"].safename
     return scenario_config.LANGUAGES[language].safename
 
 
