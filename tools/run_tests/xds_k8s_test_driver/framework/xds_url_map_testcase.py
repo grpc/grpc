@@ -38,6 +38,7 @@ from framework.helpers import skips
 from framework.infrastructure import k8s
 from framework.test_app import client_app
 from framework.test_app.runners.k8s import k8s_xds_client_runner
+from framework.test_cases import base_testcase
 
 # Load existing flags
 flags.adopt_module_key_flags(xds_k8s_testcase)
@@ -66,8 +67,6 @@ _timedelta = datetime.timedelta
 # ProtoBuf translatable RpcType enums
 RpcTypeUnaryCall = "UNARY_CALL"
 RpcTypeEmptyCall = "EMPTY_CALL"
-
-_first_error_printed: bool = False
 
 
 def _split_camel(s: str, delimiter: str = "-") -> str:
@@ -270,7 +269,9 @@ class _MetaXdsUrlMapTestCase(type):
         return new_class
 
 
-class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
+class XdsUrlMapTestCase(
+    base_testcase.BaseTestCase, metaclass=_MetaXdsUrlMapTestCase
+):
     """XdsUrlMapTestCase is the base class for urlMap related tests.
 
     The subclass is expected to implement 3 methods:
@@ -467,28 +468,16 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
         # Execute the child class provided validation logic
         self.xds_config_validate(DumpedXdsConfig(self._xds_json_config))
 
-    def _print_error_list(self, flavour, errors):
-        for _, err in errors:
-            logging.error("%s: %s", flavour, self.__class__.__name__)
-            logging.error("%s", err)
-
     def run(self, result: unittest.TestResult = None) -> None:
         """Abort this test case if CSDS check is failed.
 
         This prevents the test runner to waste time on RPC distribution test,
         and yields clearer signal.
         """
-        global _first_error_printed  # pylint: disable=global-statement
-
         if result.failures or result.errors:
-            if not _first_error_printed:
-                self._print_error_list("ERROR", result.errors)
-                self._print_error_list("FAIL", result.failures)
-                _first_error_printed = True
             logging.info("Aborting %s", self.__class__.__name__)
         else:
             super().run(result)
-            logging.info("Passed test: %s", self.__class__.__name__)
 
     def test_client_config(self):
         retryer = retryers.constant_retryer(

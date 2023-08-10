@@ -47,6 +47,7 @@ from framework.test_app import client_app
 from framework.test_app import server_app
 from framework.test_app.runners.k8s import k8s_xds_client_runner
 from framework.test_app.runners.k8s import k8s_xds_server_runner
+from framework.test_cases import base_testcase
 
 logger = logging.getLogger(__name__)
 # TODO(yashkt): We will no longer need this flag once Core exposes local certs
@@ -82,11 +83,12 @@ _TD_CONFIG_MAX_WAIT_SEC = 600
 
 _first_error_printed: bool = False
 
+
 class TdPropagationRetryableError(Exception):
     """Indicates that TD config hasn't propagated yet, and it's safe to retry"""
 
 
-class XdsKubernetesBaseTestCase(absltest.TestCase):
+class XdsKubernetesBaseTestCase(base_testcase.BaseTestCase):
     lang_spec: skips.TestConfig
     client_namespace: str
     client_runner: KubernetesClientRunner
@@ -235,25 +237,6 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
         if self._prev_sigint_handler is not None:
             signal.signal(signal.SIGINT, self._prev_sigint_handler)
         raise KeyboardInterrupt
-
-    def _print_error_list(self, flavour, errors):
-        for _, err in errors:
-            logging.error("%s: %s", flavour, self.__class__.__name__)
-            logging.error("%s", err)
-
-    def run(self, result: unittest.TestResult = None) -> None:
-        global _first_error_printed  # pylint: disable=global-statement
-
-        if result.failures or result.errors:
-            if not _first_error_printed:
-                self._print_error_list("ERROR", result.errors)
-                self._print_error_list("FAIL", result.failures)
-                _first_error_printed = True
-        else:
-            logging.info("Passed test: %s with id: %s",
-                self.__class__.__name__,
-                self.id())
-        super().run(result)
 
     @contextlib.contextmanager
     def subTest(self, msg, **params):  # noqa pylint: disable=signature-differs

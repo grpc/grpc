@@ -65,6 +65,7 @@ class TestBasicCsds(xds_url_map_testcase.XdsUrlMapTestCase):
         # Validate Clusters
         self.assertEqual(1, len(xds_config.cds))
         self.assertEqual("EDS", xds_config.cds[0]["type"])
+        self.assertEqual(2, 3)
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
         rpc_distribution = self.configure_and_send(

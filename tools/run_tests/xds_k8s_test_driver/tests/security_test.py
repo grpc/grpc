@@ -161,7 +161,6 @@ class SecurityTest(xds_k8s_testcase.SecurityXdsKubernetesTestCase):
             "[SUCCESS] Client's connectivity state is consistent with a mTLS "
             "error caused by not presenting mTLS certificate to the server."
         )
-        self.assertEqual(2, 3)
 
     def test_server_authz_error(self):
         """Negative test: AuthZ error.
