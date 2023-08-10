@@ -21,7 +21,7 @@
   <%include file="../../run_tests_python_deps.include"/>
   <%include file="../../cxx_test_deps.include"/>
   <%include file="../../cmake.include"/>
-  <%include file="../../ccache.include"/>
+  <%include file="../../ccache_old.include"/>
   <%include file="../../run_tests_addons.include"/>
 
   # Define the default command.
