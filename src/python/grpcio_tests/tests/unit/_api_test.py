@@ -57,6 +57,8 @@ class AllTest(unittest.TestCase):
             "ServiceRpcHandler",
             "Server",
             "ServerInterceptor",
+            "SyncAbortError",
+            "SyncBaseError",
             "LocalConnectionType",
             "local_channel_credentials",
             "local_server_credentials",
