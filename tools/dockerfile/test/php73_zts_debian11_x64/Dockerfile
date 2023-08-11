@@ -20,6 +20,15 @@ RUN apt-get update && apt-get install -y \
   zlib1g-dev \
   && apt-get clean
 
+#=================
+# Setup git to access working directory across docker boundary.
+# This avoids the "fatal: detected dubious ownership in repository XYZ"
+# git error.
+
+RUN git config --global --add safe.directory '*'
+RUN git config --global protocol.file.allow always
+
+
 # install php pthreads from source
 # TODO(jtattermusch): is this really needed?
 # See https://github.com/grpc/grpc/pull/23056
