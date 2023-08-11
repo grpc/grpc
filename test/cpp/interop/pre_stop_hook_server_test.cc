@@ -93,7 +93,7 @@ TEST(PreStopHookServer, DISABLED_ClosingWhilePending) {
   call->StartCall();
   call->Finish(&info.response, &info.status, &info);
   ASSERT_EQ(server.ExpectRequests(1), 1);
-  server.Stop();
+  ASSERT_TRUE(server.Stop().ok());
   void* returned_tag;
   bool ok = false;
   ASSERT_TRUE(cq.Next(&returned_tag, &ok));
