@@ -201,8 +201,8 @@ bool PreStopHookServerManager::ExpectRequests(size_t expected_requests_count,
 }
 
 void PreStopHookServerManager::PreStopHookServerDeleter::operator()(
-    PreStopHookServer* holder) {
-  delete holder;
+    PreStopHookServer* server) {
+  delete server;
 }
 
 }  // namespace testing
