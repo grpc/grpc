@@ -12,31 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
-
 licenses(["notice"])
 
-grpc_package(
-    name = "test/cpp/ext/gsm",
-    visibility = "tests",
+package(
+    default_visibility = ["//visibility:public"]
 )
 
-grpc_cc_test(
-    name = "gsm_observability_test",
-    srcs = [
-        "gsm_observability_test.cc",
-    ],
-    external_deps = [
-        "gtest",
-        "otel/sdk/src/metrics",
-        "google_cloud_cpp:experimental-opentelemetry",
-    ],
-    language = "C++",
-    tags = [
-    ],
-    deps = [
-        "//:grpc++",
-        "//src/cpp/ext/gsm:gsm_observability",
-        "//test/core/util:grpc_test_util",
+# This is needed for the dependency on google_cloud_cpp to work.
+# Taken from https://github.com/googleapis/google-cloud-cpp/blob/2839e9dba793ca023e11ea67f201f66f74fa7d3e/bazel/googleapis.BUILD
+cc_library(
+    name = "googleapis_system_includes",
+    includes = [
+        ".",
     ],
 )
