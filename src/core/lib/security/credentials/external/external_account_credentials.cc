@@ -113,7 +113,7 @@ bool MatchWorkforcePoolAudience(absl::string_view audience) {
 std::string ExternalAccountCredentials::GetImpersonatedEmail(
     std::string service_account_impersonation_url) {
   std::vector<absl::string_view> url_elements =
-      absl::StrSplit(service_account_impersonation_url, "/");
+      absl::StrSplit(service_account_impersonation_url, '/');
   absl::string_view impersonated_email = url_elements[url_elements.size() - 1];
   absl::ConsumeSuffix(&impersonated_email, ":generateAccessToken");
   return std::string(impersonated_email);

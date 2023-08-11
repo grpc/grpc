@@ -326,7 +326,7 @@ grpc_http_response http_response(int status, const char* body) {
 ExternalAccountCredentials::Options getDefaultOptions() {
   ExternalAccountCredentials::ServiceAccountImpersonation
       service_account_impersonation;
-  service_account_impersonation.token_lifetime_seconds = 3600;
+  service_account_impersonation.token_lifetime_seconds = NULL;
   auto credential_source = JsonParse("{}");
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
@@ -3904,6 +3904,25 @@ TEST(CredentialsTest,
   GPR_ASSERT(creds != nullptr);
 }
 
+TEST(
+    CredentialsTest,
+    TestPluggableAuthExternalAccountCredentialsCreateFailureInvalidExecutable) {
+  std::string executable_options_string =
+      getDefaultOptionsStringWithCustomCredentialSource(
+          "\"credential_source\":{\"executable\":\"executable\"}");
+  auto executable_options_json = JsonParse(executable_options_string);
+  GPR_ASSERT(executable_options_json.ok());
+  grpc_error_handle error;
+  auto creds = ExternalAccountCredentials::Create(*executable_options_json,
+                                                  {"scope"}, &error);
+  std::string actual_error,
+      expected_error =
+          "Invalid credential source for executable-sourced credentials: "
+          "`executable` field must be present and must be an object.";
+  grpc_error_get_str(error, StatusStrProperty::kDescription, &actual_error);
+  GPR_ASSERT(strcmp(actual_error.c_str(), expected_error.c_str()) == 0);
+}
+
 TEST(CredentialsTest,
      TestPluggableAuthExternalAccountCredentialsCreateFailureInvalidCommand) {
   std::string executable_options_string =
@@ -3919,6 +3938,26 @@ TEST(CredentialsTest,
       expected_error =
           "Invalid credential source for executable-sourced credentials: "
           "`command` field must be provided.";
+  grpc_error_get_str(error, StatusStrProperty::kDescription, &actual_error);
+  GPR_ASSERT(strcmp(actual_error.c_str(), expected_error.c_str()) == 0);
+}
+
+TEST(
+    CredentialsTest,
+    TestPluggableAuthExternalAccountCredentialsCreateFailureExecutableInvalidTimeoutMillis) {
+  std::string executable_options_string =
+      getDefaultOptionsStringWithCustomCredentialSource(
+          "\"credential_source\":{\"executable\":{\"command\":\"command\","
+          "\"timeout_millis\":\"abcd\",\"output_file\":\"output_file\"}}");
+  auto executable_options_json = JsonParse(executable_options_string);
+  GPR_ASSERT(executable_options_json.ok());
+  grpc_error_handle error;
+  auto creds = ExternalAccountCredentials::Create(*executable_options_json,
+                                                  {"scope"}, &error);
+  std::string actual_error,
+      expected_error =
+          "Invalid credential source for executable-sourced credentials: "
+          "timeout_millis field must be a number.";
   grpc_error_get_str(error, StatusStrProperty::kDescription, &actual_error);
   GPR_ASSERT(strcmp(actual_error.c_str(), expected_error.c_str()) == 0);
 }
@@ -4258,7 +4297,8 @@ TEST(
   chmod(executable_file_filename, ALLPERMS);
   GPR_ASSERT(creds != nullptr);
   error = GRPC_ERROR_CREATE(
-      "The executable response must contain the `success` field.");
+      "The executable response must contain the `success` field and should "
+      "be a boolean.");
   grpc_error_handle expected_error = GRPC_ERROR_CREATE_REFERENCING(
       "Error occurred when fetching oauth2 token.", &error, 1);
   auto state = RequestMetadataState::NewInstance(expected_error, {});
@@ -4297,7 +4337,8 @@ TEST(
   chmod(executable_file_filename, ALLPERMS);
   GPR_ASSERT(creds != nullptr);
   error = GRPC_ERROR_CREATE(
-      "The executable response must contain the `version` field.");
+      "The executable response must contain the `version` field and should "
+      "be a number.");
   grpc_error_handle expected_error = GRPC_ERROR_CREATE_REFERENCING(
       "Error occurred when fetching oauth2 token.", &error, 1);
   auto state = RequestMetadataState::NewInstance(expected_error, {});

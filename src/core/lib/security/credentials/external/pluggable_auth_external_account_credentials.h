@@ -65,7 +65,7 @@ class PluggableAuthExternalAccountCredentials final
   // Fields of credential_source.executable
   std::string command_;
   int64_t executable_timeout_ms_;
-  std::string output_file_path_ = "";
+  std::string output_file_path_;
 
   ExecutableResponse* executable_response_ = nullptr;
   gpr_subprocess* gpr_subprocess_;

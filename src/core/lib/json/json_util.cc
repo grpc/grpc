@@ -78,8 +78,9 @@ bool ExtractJsonCharPtr(const Json& json, absl::string_view field_name,
                         char** output,
                         std::vector<grpc_error_handle>* error_list) {
   std::string output_string;
-  if (!ExtractJsonString(json, field_name, &output_string, error_list))
+  if (!ExtractJsonString(json, field_name, &output_string, error_list)) {
     return false;
+  }
   *output = gpr_strdup(output_string.c_str());
   return true;
 }

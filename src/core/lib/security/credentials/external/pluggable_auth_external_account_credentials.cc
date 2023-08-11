@@ -75,7 +75,7 @@ bool run_executable(gpr_subprocess** gpr_subprocess, int argc, char** argv,
   *gpr_subprocess =
       gpr_subprocess_create_with_envp(argc, const_cast<const char**>(argv),
                                       envc, const_cast<const char**>(envp));
-  std::string input = "";
+  std::string input;
   return gpr_subprocess_communicate(*gpr_subprocess, input, output, stderr_data,
                                     error);
 }
@@ -107,7 +107,7 @@ PluggableAuthExternalAccountCredentials::
                             &executable_json, &error_list)) {
     *error = GRPC_ERROR_CREATE(
         "Invalid credential source for executable-sourced credentials: "
-        "`executable` field must be an object.");
+        "`executable` field must be present and must be an object.");
     return;
   }
   if (!ParseJsonObjectField(*executable_json, "command", &command_, &error_list,
@@ -120,7 +120,7 @@ PluggableAuthExternalAccountCredentials::
   executable_timeout_ms_ = DEFAULT_EXECUTABLE_TIMEOUT_MS;
   ParseJsonObjectField(*executable_json, "timeout_millis",
                        &executable_timeout_ms_, &error_list, false);
-  if (error_list.size() != 0) {
+  if (!error_list.empty()) {
     *error = GRPC_ERROR_CREATE(
         "Invalid credential source for executable-sourced credentials: "
         "timeout_millis field must be a number.");
@@ -144,7 +144,7 @@ PluggableAuthExternalAccountCredentials::ParseExecutableResponse(
   std::vector<grpc_error_handle> error_list;
   auto executable_output = JsonParse(executable_output_string);
   ExecutableResponse* executable_response =
-      (ExecutableResponse*)gpr_malloc(sizeof(ExecutableResponse));
+      static_cast<ExecutableResponse*>(gpr_malloc(sizeof(ExecutableResponse)));
   if (!executable_output.ok()) {
     *error = GRPC_ERROR_CREATE(
         absl::StrFormat("The response from the executable contains an invalid "
@@ -156,14 +156,15 @@ PluggableAuthExternalAccountCredentials::ParseExecutableResponse(
   if (!ParseJsonObjectField(executable_output_object, "version",
                             &executable_response->version, &error_list, true)) {
     *error = GRPC_ERROR_CREATE(
-        "Invalid response from the executable: The executable response must "
-        "contain the `version` field.");
+        "The executable response must contain the `version` field and should "
+        "be a number.");
     return nullptr;
   }
   if (!ParseJsonObjectField(executable_output_object, "success",
                             &executable_response->success, &error_list, true)) {
     *error = GRPC_ERROR_CREATE(
-        "The executable response must contain the `success` field.");
+        "The executable response must contain the `success` field and should "
+        "be a boolean.");
     return nullptr;
   }
   if (executable_response->success) {
@@ -176,28 +177,28 @@ PluggableAuthExternalAccountCredentials::ParseExecutableResponse(
     }
     executable_response->expiration_time =
         gpr_time_to_millis(gpr_inf_future(GPR_CLOCK_REALTIME));
-    if (output_file_path_ != "" &&
+    if (!output_file_path_.empty() &&
         executable_output_object.find("expiration_time") ==
             executable_output_object.end()) {
       *error = GRPC_ERROR_CREATE(
           "The executable response must contain the `expiration_time` field "
-          "for successful responses when an output_file has been specified "
-          "in "
+          "for successful responses when an output_file has been specified in "
           "the configuration.");
       return nullptr;
     }
     ParseJsonObjectField(executable_output_object, "expiration_time",
                          &executable_response->expiration_time, &error_list,
                          false);
-    if (error_list.size() != 0) {
+    if (!error_list.empty()) {
       *error = GRPC_ERROR_CREATE(
           "The executable response contains an invalid value for "
           "`expiration_time`.");
       return nullptr;
     }
     auto executable_output_it = executable_output_object.find("id_token");
-    if (strcmp(executable_response->token_type, SAML_SUBJECT_TOKEN_TYPE) == 0)
+    if (strcmp(executable_response->token_type, SAML_SUBJECT_TOKEN_TYPE) == 0) {
       executable_output_it = executable_output_object.find("saml_response");
+    }
     if (executable_output_it == executable_output_object.end()) {
       *error = GRPC_ERROR_CREATE(
           "The executable response must contain a valid token.");
@@ -229,12 +230,9 @@ PluggableAuthExternalAccountCredentials::ParseExecutableResponse(
 bool validate_allow_executables_env() {
   char* allow_exec_env_value =
       getenv(GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES);
-  if (allow_exec_env_value == nullptr ||
-      strcmp(getenv(GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES),
-             GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES_ACCEPTED_VALUE)) {
-    return false;
-  }
-  return true;
+  if (allow_exec_env_value == nullptr) return false;
+  return strcmp(getenv(GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES),
+                GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES_ACCEPTED_VALUE) == 0;
 }
 
 // Users can specify an output file path in the Pluggable Auth ADC
@@ -298,19 +296,23 @@ void PluggableAuthExternalAccountCredentials::RetrieveSubjectToken(
       absl::StrFormat(
           "GOOGLE_EXTERNAL_ACCOUNT_IMPERSONATED_EMAIL=%s",
           GetImpersonatedEmail(options.service_account_impersonation_url))};
-  if (!output_file_path_.empty())
+  if (!output_file_path_.empty()) {
     envp_vector.push_back(absl::StrFormat(
         "GOOGLE_EXTERNAL_ACCOUNT_OUTPUT_FILE=%s", output_file_path_));
+  }
   int environ_count = 0, envc = 0, argc = 0;
   while (environ[environ_count] != nullptr) environ_count += 1;
-  char** envp =
-      (char**)gpr_malloc(sizeof(char*) * (environ_count + envp_vector.size()));
-  for (; envc < environ_count; envc++) envp[envc] = gpr_strdup(environ[envc]);
-  for (int j = 0; j < envp_vector.size(); envc++, j++)
+  char** envp = static_cast<char**>(
+      gpr_malloc(sizeof(char*) * (environ_count + envp_vector.size())));
+  for (; envc < environ_count; envc++) {
+    envp[envc] = gpr_strdup(environ[envc]);
+  }
+  for (int j = 0; j < envp_vector.size(); envc++, j++) {
     envp[envc] = gpr_strdup(envp_vector[j].c_str());
-  std::vector<std::string> arg_vector = absl::StrSplit(command_, " ");
+  }
+  std::vector<std::string> arg_vector = absl::StrSplit(command_, ' ');
   argc = arg_vector.size();
-  char** argv = (char**)malloc(sizeof(char*) * argc);
+  char** argv = static_cast<char**>(malloc(sizeof(char*) * argc));
   for (int i = 0; i < argc; i++) {
     argv[i] = gpr_strdup(arg_vector[i].c_str());
   }
@@ -391,10 +393,11 @@ void PluggableAuthExternalAccountCredentials::FinishRetrieveSubjectToken(
     std::string token, grpc_error_handle error) {
   auto cb = cb_;
   cb_ = nullptr;
-  if (error.ok())
+  if (error.ok()) {
     cb(token, absl::OkStatus());
-  else
+  } else {
     cb("", error);
+  }
 }
 
 }  // namespace grpc_core
