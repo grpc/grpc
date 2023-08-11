@@ -110,7 +110,7 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
   }
 
   GrpcPolledFd* NewGrpcPolledFdLocked(ares_socket_t as) override {
-    GPR_ASSERT(owned_fds_.insert(as).second);
+    owned_fds_.insert(as);
     return new GrpcPolledFdPosix(
         as,
         poller_->CreateHandle(as, "c-ares socket", poller_->CanTrackErrors()));

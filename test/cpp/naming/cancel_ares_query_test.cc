@@ -443,8 +443,6 @@ TEST_F(CancelDuringAresQuery, TestQueryFailsBecauseTcpServerClosesSocket) {
           kWaitForClientToSendFirstBytes,
       grpc_core::testing::FakeUdpAndTcpServer::
           CloseSocketUponReceivingBytesFromPeer);
-  // TODO(yijiem): make this test work with the EE DNS resolver by supporting
-  // this test flag to force TCP in the EE DNS resolver.
   if (grpc_core::IsEventEngineDnsEnabled()) {
     g_event_engine_grpc_ares_test_only_force_tcp = true;
   } else {

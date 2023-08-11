@@ -355,10 +355,10 @@ void AresResolver::CheckSocketsLocked() {
             fd_node_list_.begin(), fd_node_list_.end(),
             [sock = socks[i]](const auto& node) { return node->as == sock; });
         if (iter == fd_node_list_.end()) {
-          new_list.push_back(std::make_unique<FdNode>(
-              socks[i], polled_fd_factory_->NewGrpcPolledFdLocked(socks[i])));
           GRPC_ARES_RESOLVER_TRACE_LOG("resolver:%p new fd: %d", this,
                                        socks[i]);
+          new_list.push_back(std::make_unique<FdNode>(
+              socks[i], polled_fd_factory_->NewGrpcPolledFdLocked(socks[i])));
         } else {
           new_list.splice(new_list.end(), fd_node_list_, iter);
         }
