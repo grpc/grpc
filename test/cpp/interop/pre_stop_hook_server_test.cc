@@ -36,10 +36,29 @@ namespace testing {
 namespace {
 
 struct CallInfo {
+ public:
   ClientContext context;
   Empty request;
   Empty response;
-  Status status;
+
+  Status WaitForStatus() {
+    grpc_core::MutexLock lock(&mu);
+    while (!status_.has_value()) {
+      cv.Wait(&mu);
+    }
+    return *status_;
+  }
+
+  void SetStatus(const Status& status) {
+    grpc_core::MutexLock lock(&mu);
+    status_ = status;
+    cv.SignalAll();
+  }
+
+ private:
+  grpc_core::Mutex mu;
+  grpc_core::CondVar cv;
+  absl::optional<Status> status_;
 };
 
 TEST(PreStopHookServer, StartDoRequestStop) {
@@ -51,24 +70,17 @@ TEST(PreStopHookServer, StartDoRequestStop) {
                                InsecureChannelCredentials());
   ASSERT_TRUE(channel);
   CallInfo info;
-  CompletionQueue cq;
   HookService::Stub stub(std::move(channel));
-  auto call = stub.PrepareAsyncHook(&info.context, info.request, &cq);
-  call->StartCall();
-  call->Finish(&info.response, &info.status, &info);
+  stub.async()->Hook(&info.context, &info.request, &info.response,
+                     [&info](Status status) { info.SetStatus(status); });
   ASSERT_EQ(server.ExpectRequests(1), 1);
   server.Return(StatusCode::INTERNAL, "Just a test");
-  void* returned_tag;
-  bool ok = false;
-  ASSERT_TRUE(cq.Next(&returned_tag, &ok));
-  EXPECT_TRUE(ok);
-  EXPECT_EQ(returned_tag, &info);
-  EXPECT_EQ(info.status.error_code(), StatusCode::INTERNAL);
-  EXPECT_EQ(info.status.error_message(), "Just a test");
-  cq.Shutdown();
+  Status status = info.WaitForStatus();
+  EXPECT_EQ(status.error_code(), StatusCode::INTERNAL);
+  EXPECT_EQ(status.error_message(), "Just a test");
 }
 
-TEST(PreStopHookServer, StartedWhileRunning) {
+TEST(PreStopHookServer, StartServerWhileAlreadyRunning) {
   int port = grpc_pick_unused_port_or_die();
   PreStopHookServerManager server;
   Status status = server.Start(port, 15);
@@ -78,7 +90,7 @@ TEST(PreStopHookServer, StartedWhileRunning) {
       << status.error_message();
 }
 
-TEST(PreStopHookServer, ClosingWhilePending) {
+TEST(PreStopHookServer, StopServerWhileRequestPending) {
   int port = grpc_pick_unused_port_or_die();
   PreStopHookServerManager server;
   Status start_status = server.Start(port, 15);
@@ -86,24 +98,17 @@ TEST(PreStopHookServer, ClosingWhilePending) {
   auto channel = CreateChannel(absl::StrFormat("127.0.0.1:%d", port),
                                InsecureChannelCredentials());
   ASSERT_TRUE(channel);
-  CompletionQueue cq;
   CallInfo info;
   HookService::Stub stub(std::move(channel));
-  auto call = stub.PrepareAsyncHook(&info.context, info.request, &cq);
-  call->StartCall();
-  call->Finish(&info.response, &info.status, &info);
+  stub.async()->Hook(&info.context, &info.request, &info.response,
+                     [&info](Status status) { info.SetStatus(status); });
   ASSERT_EQ(server.ExpectRequests(1), 1);
   ASSERT_TRUE(server.Stop().ok());
-  void* returned_tag;
-  bool ok = false;
-  ASSERT_TRUE(cq.Next(&returned_tag, &ok));
-  EXPECT_TRUE(ok);
-  EXPECT_EQ(returned_tag, &info);
-  cq.Shutdown();
-  EXPECT_EQ(info.status.error_code(), StatusCode::ABORTED);
+  Status status = info.WaitForStatus();
+  EXPECT_EQ(status.error_code(), StatusCode::ABORTED);
 }
 
-TEST(PreStopHookServer, MultiplePending) {
+TEST(PreStopHookServer, RespondToMultiplePendingRequests) {
   int port = grpc_pick_unused_port_or_die();
   PreStopHookServerManager server;
   Status start_status = server.Start(port, 15);
@@ -112,37 +117,29 @@ TEST(PreStopHookServer, MultiplePending) {
                                InsecureChannelCredentials());
   ASSERT_TRUE(channel);
   std::array<CallInfo, 2> info;
-  CompletionQueue cq;
   HookService::Stub stub(std::move(channel));
-  auto call1 = stub.PrepareAsyncHook(&info[0].context, info[0].request, &cq);
-  call1->StartCall();
-  call1->Finish(&info[0].response, &info[0].status, &info[0]);
-  auto call2 = stub.PrepareAsyncHook(&info[1].context, info[1].request, &cq);
-  call2->StartCall();
-  call2->Finish(&info[1].response, &info[1].status, &info[1]);
+  stub.async()->Hook(&info[0].context, &info[0].request, &info[0].response,
+                     [&info](Status status) { info[0].SetStatus(status); });
+  stub.async()->Hook(&info[1].context, &info[1].request, &info[1].response,
+                     [&info](Status status) { info[1].SetStatus(status); });
   server.ExpectRequests(2);
   server.Return(StatusCode::INTERNAL, "Just a test");
-  std::array<void*, 2> tags;
-  std::array<bool, 2> oks;
-  ASSERT_TRUE(cq.Next(&tags[0], &oks[0]));
-  ASSERT_TRUE(cq.Next(&tags[1], &oks[1]));
-  EXPECT_THAT(tags, ::testing::UnorderedElementsAre(&info[0], &info[1]));
-  EXPECT_THAT(oks, ::testing::ElementsAre(true, true));
-  EXPECT_EQ(info[0].status.error_code(), StatusCode::INTERNAL);
-  EXPECT_EQ(info[0].status.error_message(), "Just a test");
-  EXPECT_EQ(info[1].status.error_code(), StatusCode::INTERNAL);
-  EXPECT_EQ(info[1].status.error_message(), "Just a test");
-  cq.Shutdown();
+  Status status = info[0].WaitForStatus();
+  EXPECT_EQ(status.error_code(), StatusCode::INTERNAL);
+  EXPECT_EQ(status.error_message(), "Just a test");
+  status = info[1].WaitForStatus();
+  EXPECT_EQ(status.error_code(), StatusCode::INTERNAL);
+  EXPECT_EQ(status.error_message(), "Just a test");
 }
 
-TEST(PreStopHookServer, StoppingNotStarted) {
+TEST(PreStopHookServer, StopServerThatNotStarted) {
   PreStopHookServerManager server;
   Status status = server.Stop();
   EXPECT_EQ(status.error_code(), StatusCode::UNAVAILABLE)
       << status.error_message();
 }
 
-TEST(PreStopHookServer, ReturnBeforeSend) {
+TEST(PreStopHookServer, SetStatusBeforeRequestReceived) {
   int port = grpc_pick_unused_port_or_die();
   PreStopHookServerManager server;
   Status start_status = server.Start(port, 15);
@@ -151,20 +148,13 @@ TEST(PreStopHookServer, ReturnBeforeSend) {
   auto channel = CreateChannel(absl::StrFormat("127.0.0.1:%d", port),
                                InsecureChannelCredentials());
   ASSERT_TRUE(channel);
-  CallInfo info;
-  CompletionQueue cq;
   HookService::Stub stub(std::move(channel));
-  auto call = stub.PrepareAsyncHook(&info.context, info.request, &cq);
-  call->StartCall();
-  call->Finish(&info.response, &info.status, &info);
-  void* returned_tag;
-  bool ok = false;
-  ASSERT_TRUE(cq.Next(&returned_tag, &ok));
-  EXPECT_TRUE(ok);
-  EXPECT_EQ(returned_tag, &info);
-  EXPECT_EQ(info.status.error_code(), StatusCode::INTERNAL);
-  EXPECT_EQ(info.status.error_message(), "Just a test");
-  cq.Shutdown();
+  CallInfo info;
+  stub.async()->Hook(&info.context, &info.request, &info.response,
+                     [&info](Status status) { info.SetStatus(status); });
+  Status status = info.WaitForStatus();
+  EXPECT_EQ(status.error_code(), StatusCode::INTERNAL);
+  EXPECT_EQ(status.error_message(), "Just a test");
 }
 
 }  // namespace
