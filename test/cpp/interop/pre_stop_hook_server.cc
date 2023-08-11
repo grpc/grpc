@@ -28,7 +28,6 @@
 
 namespace grpc {
 namespace testing {
-
 namespace {
 
 class HookServiceImpl final : public HookService::CallbackService {
@@ -41,6 +40,8 @@ class HookServiceImpl final : public HookService::CallbackService {
     if (pending_status_) {
       reactor->Finish(std::move(*pending_status_));
       pending_status_ = absl::nullopt;
+    } else if (done_) {
+      reactor->Finish(Status(StatusCode::ABORTED, "Shutting down"));
     } else {
       pending_requests_.push_back(reactor);
     }
@@ -69,11 +70,20 @@ class HookServiceImpl final : public HookService::CallbackService {
     return pending_requests_.size() >= expected_requests_count;
   }
 
+  void Stop() {
+    absl::MutexLock lock(&mu_);
+    for (auto request : pending_requests_) {
+      request->Finish(Status(StatusCode::ABORTED, "Shutting down"));
+    }
+    pending_requests_.clear();
+  }
+
  private:
   grpc_core::Mutex mu_;
   grpc_core::CondVar request_var_ ABSL_GUARDED_BY(&mu_);
   absl::optional<Status> pending_status_ ABSL_GUARDED_BY(&mu_);
   std::vector<ServerUnaryReactor*> pending_requests_ ABSL_GUARDED_BY(&mu_);
+  bool done_ ABSL_GUARDED_BY(&mu_) = false;
 };
 
 enum class State { kNew, kWaiting, kDone, kShuttingDown };
@@ -86,9 +96,9 @@ std::unique_ptr<Server> BuildHookServer(HookServiceImpl* service, int port) {
   return builder.BuildAndStart();
 }
 
-class PreStopHookServer {
+class PreStopHookGrpcServer {
  public:
-  explicit PreStopHookServer(std::unique_ptr<Server> server)
+  explicit PreStopHookGrpcServer(std::unique_ptr<Server> server)
       : server_(std::move(server)) {}
 
   void Shutdown() {
@@ -115,7 +125,7 @@ class PreStopHookServer {
     return state_ == state;
   }
 
-  static void ServerThread(std::shared_ptr<PreStopHookServer> server) {
+  static void ServerThread(std::shared_ptr<PreStopHookGrpcServer> server) {
     server->SetState(State::kWaiting);
     server->server_->Wait();
     server->SetState(State::kDone);
@@ -130,16 +140,17 @@ class PreStopHookServer {
 
 }  // namespace
 
-class ServerHolder : private std::enable_shared_from_this<ServerHolder> {
+class PreStopHookServer {
  public:
-  explicit ServerHolder(int port, const absl::Duration& timeout)
-      : server_(std::make_shared<PreStopHookServer>(
+  explicit PreStopHookServer(int port, const absl::Duration& timeout)
+      : server_(std::make_shared<PreStopHookGrpcServer>(
             BuildHookServer(&hook_service_, port))),
-        server_thread_(PreStopHookServer::ServerThread, server_) {
+        server_thread_(PreStopHookGrpcServer::ServerThread, server_) {
     server_->WaitForState(State::kWaiting, timeout);
   }
 
-  ~ServerHolder() {
+  ~PreStopHookServer() {
+    hook_service_.Stop();
     server_->Shutdown();
     server_thread_.join();
   }
@@ -154,7 +165,7 @@ class ServerHolder : private std::enable_shared_from_this<ServerHolder> {
 
  private:
   HookServiceImpl hook_service_;
-  std::shared_ptr<PreStopHookServer> server_;
+  std::shared_ptr<PreStopHookGrpcServer> server_;
   std::thread server_thread_;
 };
 
@@ -163,8 +174,9 @@ Status PreStopHookServerManager::Start(int port, size_t timeout_s) {
     return Status(StatusCode::ALREADY_EXISTS,
                   "Pre hook server is already running");
   }
-  server_ = std::unique_ptr<ServerHolder, ServerHolderDeleter>(
-      new ServerHolder(port, absl::Seconds(timeout_s)), ServerHolderDeleter());
+  server_ = std::unique_ptr<PreStopHookServer, PreStopHookServerDeleter>(
+      new PreStopHookServer(port, absl::Seconds(timeout_s)),
+      PreStopHookServerDeleter());
   return server_->state() == State::kWaiting
              ? Status::OK
              : Status(StatusCode::DEADLINE_EXCEEDED, "Server have not started");
@@ -188,8 +200,8 @@ bool PreStopHookServerManager::ExpectRequests(size_t expected_requests_count,
   return server_->ExpectRequests(expected_requests_count, timeout_s);
 }
 
-void PreStopHookServerManager::ServerHolderDeleter::operator()(
-    ServerHolder* holder) {
+void PreStopHookServerManager::PreStopHookServerDeleter::operator()(
+    PreStopHookServer* holder) {
   delete holder;
 }
 

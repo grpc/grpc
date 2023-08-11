@@ -78,7 +78,7 @@ TEST(PreStopHookServer, StartedWhileRunning) {
       << status.error_message();
 }
 
-TEST(PreStopHookServer, DISABLED_ClosingWhilePending) {
+TEST(PreStopHookServer, ClosingWhilePending) {
   int port = grpc_pick_unused_port_or_die();
   PreStopHookServerManager server;
   Status start_status = server.Start(port, 15);
@@ -100,7 +100,7 @@ TEST(PreStopHookServer, DISABLED_ClosingWhilePending) {
   EXPECT_TRUE(ok);
   EXPECT_EQ(returned_tag, &info);
   cq.Shutdown();
-  EXPECT_EQ(info.status.error_code(), StatusCode::UNAVAILABLE);
+  EXPECT_EQ(info.status.error_code(), StatusCode::ABORTED);
 }
 
 TEST(PreStopHookServer, MultiplePending) {

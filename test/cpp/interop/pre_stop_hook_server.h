@@ -30,7 +30,7 @@
 namespace grpc {
 namespace testing {
 
-class ServerHolder;
+class PreStopHookServer;
 
 class PreStopHookServerManager {
  public:
@@ -38,17 +38,17 @@ class PreStopHookServerManager {
   Status Stop();
   void Return(StatusCode code, absl::string_view description);
   // Suspends the thread until there are pending requests. Returns false
-  // if necessary number of requests have not been received before the timeout.
+  // if the necessary number of requests have not been received before the
+  // timeout.
   bool ExpectRequests(size_t expected_requests_count, size_t timeout_s = 15);
 
  private:
-  struct ServerHolderDeleter {
-    void operator()(ServerHolder* server);
+  // Custom deleter so we don't have to include PreStopHookServer in this header
+  struct PreStopHookServerDeleter {
+    void operator()(PreStopHookServer* server);
   };
 
-  // Custom deleter so we don't have to include PreStopHookServer in this header
-  // std::unique_ptr<PreStopHookServer, DeleteServer> server_;
-  std::unique_ptr<ServerHolder, ServerHolderDeleter> server_;
+  std::unique_ptr<PreStopHookServer, PreStopHookServerDeleter> server_;
 };
 
 }  // namespace testing
