@@ -79,8 +79,6 @@ _SignalHandler = Callable[[_SignalNum, Optional[FrameType]], Any]
 
 _TD_CONFIG_MAX_WAIT_SEC = 600
 
-_first_error_printed: bool = False
-
 
 class TdPropagationRetryableError(Exception):
     """Indicates that TD config hasn't propagated yet, and it's safe to retry"""
