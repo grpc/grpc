@@ -21,6 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <thread>
+
 #include <grpcpp/server.h>
 
 #include "src/core/lib/config/core_configuration.h"
@@ -28,11 +30,13 @@
 namespace grpc {
 namespace testing {
 
-class PreStopHookServer;
+class ServerHolder;
 
 class PreStopHookServerManager {
  public:
-  Status Start(int port);
+  ~PreStopHookServerManager() { Stop(); }
+
+  Status Start(int port, size_t timeout_s);
   Status Stop();
   void Return(StatusCode code, absl::string_view description);
   // Suspends the thread until there are pending requests. Returns false
@@ -40,11 +44,13 @@ class PreStopHookServerManager {
   bool ExpectRequests(size_t expected_requests_count, size_t timeout_s = 15);
 
  private:
-  struct DeleteServer {
-    void operator()(PreStopHookServer* server);
+  struct ServerHolderDeleter {
+    void operator()(ServerHolder* server);
   };
+
   // Custom deleter so we don't have to include PreStopHookServer in this header
-  std::unique_ptr<PreStopHookServer, DeleteServer> server_;
+  // std::unique_ptr<PreStopHookServer, DeleteServer> server_;
+  std::unique_ptr<ServerHolder, ServerHolderDeleter> server_;
 };
 
 }  // namespace testing
