@@ -101,28 +101,16 @@ def _start_exporting_thread(object exporter) -> None:
   GLOBAL_EXPORT_THREAD = Thread(target=_export_census_data, args=(exporter,))
   GLOBAL_EXPORT_THREAD.start()
 
+def activate_config(object py_config) -> None:
+  py_config: _gcp_observability.GcpObservabilityConfig
 
-def set_gcp_observability_config(object py_config) -> bool:
-  py_config: _gcp_observability.GcpObservabilityPythonConfig
-
-  py_labels = {}
-  sampling_rate = 0.0
-
-  cdef cGcpObservabilityConfig c_config = ReadAndActivateObservabilityConfig()
-  if not c_config.is_valid:
-    return False
-
-  for label in c_config.labels:
-    py_labels[_decode(label.key)] = _decode(label.value)
-
-  if PythonCensusTracingEnabled():
-    sampling_rate = c_config.cloud_trace.sampling_rate
+  if (py_config.tracing_enabled):
+    EnablePythonCensusTracing(True);
     # Save sampling rate to global sampler.
-    ProbabilitySampler.Get().SetThreshold(sampling_rate)
+    ProbabilitySampler.Get().SetThreshold(py_config.sampling_rate)
 
-  py_config.set_configuration(_decode(c_config.project_id), sampling_rate, py_labels,
-                              PythonCensusTracingEnabled(), PythonCensusStatsEnabled())
-  return True
+  if (py_config.stats_enabled):
+    EnablePythonCensusStats(True);
 
 
 def create_client_call_tracer(bytes method_name, bytes trace_id,

@@ -25,6 +25,7 @@ cc_library(
         "client_call_tracer.cc",
         "observability_util.cc",
         "python_census_context.cc",
+        "rpc_encoding.cc",
         "sampler.cc",
         "server_call_tracer.cc",
     ],
@@ -33,6 +34,7 @@ cc_library(
         "constants.h",
         "observability_util.h",
         "python_census_context.h",
+        "rpc_encoding.h",
         "sampler.h",
         "server_call_tracer.h",
     ],
@@ -40,8 +42,6 @@ cc_library(
     deps = [
         #TODO(xuanwn): Confirm only referenced code is inlcuded in shared object library
         "//:grpc",
-        "//:grpc_rpc_encoding",
-        "//src/cpp/ext/gcp:observability_config",
     ],
 )
 
@@ -65,6 +65,7 @@ py_library(
         "_gcp_observability.py",
         "_measures.py",
         "_observability.py",
+        "_observability_config.py",
         "_open_census_exporter.py",
         "_views.py",
     ],
