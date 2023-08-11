@@ -13,15 +13,17 @@
 # limitations under the License.
 from __future__ import annotations
 
-from dataclasses import dataclass
-from dataclasses import field
 import logging
-import threading
 import time
-from typing import Any, Mapping, Optional
+from typing import Any
 
 import grpc
-from grpc_observability import _cyobservability  # pytype: disable=pyi-error
+
+# pytype: disable=pyi-error
+from grpc_observability import _cyobservability
+from grpc_observability import _observability_config
+
+# pytype: enable=pyi-error
 from grpc_observability._open_census_exporter import CENSUS_UPLOAD_INTERVAL_SECS
 from grpc_observability._open_census_exporter import OpenCensusExporter
 from opencensus.trace import execution_context
@@ -59,40 +61,6 @@ GRPC_STATUS_CODE_TO_STRING = {
 GRPC_SPAN_CONTEXT = "grpc_span_context"
 
 
-@dataclass
-class GcpObservabilityPythonConfig:
-    _singleton = None
-    _lock: threading.RLock = threading.RLock()
-    project_id: str = ""
-    stats_enabled: bool = False
-    tracing_enabled: bool = False
-    labels: Optional[Mapping[str, str]] = field(default_factory=dict)
-    sampling_rate: Optional[float] = 0.0
-
-    @staticmethod
-    def get():
-        with GcpObservabilityPythonConfig._lock:
-            if GcpObservabilityPythonConfig._singleton is None:
-                GcpObservabilityPythonConfig._singleton = (
-                    GcpObservabilityPythonConfig()
-                )
-        return GcpObservabilityPythonConfig._singleton
-
-    def set_configuration(
-        self,
-        project_id: str,
-        sampling_rate: Optional[float] = 0.0,
-        labels: Optional[Mapping[str, str]] = None,
-        tracing_enabled: bool = False,
-        stats_enabled: bool = False,
-    ) -> None:
-        self.project_id = project_id
-        self.stats_enabled = stats_enabled
-        self.tracing_enabled = tracing_enabled
-        self.labels = labels
-        self.sampling_rate = sampling_rate
-
-
 # pylint: disable=no-self-use
 class GCPOpenCensusObservability(grpc._observability.ObservabilityPlugin):
     """GCP OpenCensus based plugin implementation.
@@ -108,19 +76,19 @@ class GCPOpenCensusObservability(grpc._observability.ObservabilityPlugin):
       exporter: Exporter used to export data.
     """
 
-    config: GcpObservabilityPythonConfig
+    config: _observability_config.GcpObservabilityConfig
     exporter: "grpc_observability.Exporter"
     use_open_census_exporter: bool
 
     def __init__(self, exporter: "grpc_observability.Exporter" = None):
         self.exporter = None
-        self.config = GcpObservabilityPythonConfig.get()
+        self.config = _observability_config.GcpObservabilityConfig.get()
         self.use_open_census_exporter = False
-        config_valid = _cyobservability.set_gcp_observability_config(
-            self.config
-        )
-        if not config_valid:
-            raise ValueError("Invalid configuration")
+        try:
+            self.config = _observability_config.read_config()
+            _cyobservability.activate_config(self.config)
+        except Exception as e:  # pylint: disable=broad-except
+            raise ValueError(f"Read configuration failed with: {e}")
 
         if exporter:
             self.exporter = exporter

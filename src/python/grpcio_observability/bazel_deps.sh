@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Copyright 2023 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,16 +13,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-package(default_visibility = ["//visibility:public"])
 
-py_test(
-    name = "_observability_test",
-    size = "small",
-    srcs = glob(["*.py"]),
-    imports = ["../../"],
-    main = "_observability_test.py",
-    deps = [
-        "//src/python/grpcio_observability/grpc_observability:pyobservability",
-        "//src/python/grpcio_tests/tests/testing",
-    ],
-)
+cd $(dirname $0)/../../../
+
+# use tools/bazel wrapper to make sure we use the right version of bazel
+tools/bazel query 'deps('$1')'

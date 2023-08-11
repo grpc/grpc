@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_PYRHON_OPENCENSUS_H
-#define GRPC_PYRHON_OPENCENSUS_H
+#ifndef GRPC_PYTHON_OPENCENSUS_H
+#define GRPC_PYTHON_OPENCENSUS_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -31,8 +31,8 @@
 #include <grpc/slice.h>
 
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/python/grpcio_observability/grpc_observability/constants.h"
-#include "src/python/grpcio_observability/grpc_observability/sampler.h"
+#include "constants.h"
+#include "sampler.h"
 
 namespace grpc_observability {
 
@@ -235,9 +235,9 @@ class PythonCensusContext {
   PythonCensusContext(absl::string_view name, const Span* parent)
       : span_(Span::StartSpan(name, parent)), labels_({}) {}
 
-  Span& Span() { return span_; }
+  Span& GetSpan() { return span_; }
   std::vector<Label>& Labels() { return labels_; }  // Only used for metrics
-  const SpanContext& SpanContext() const { return span_.Context(); }
+  const SpanContext& GetSpanContext() const { return span_.Context(); }
 
   void AddSpanAttribute(absl::string_view key, absl::string_view attribute) {
     span_.AddAttribute(key, attribute);
@@ -249,7 +249,7 @@ class PythonCensusContext {
 
   void IncreaseChildSpanCount() { span_.IncreaseChildSpanCount(); }
 
-  void EndSpan() { Span().End(); }
+  void EndSpan() { GetSpan().End(); }
 
  private:
   grpc_observability::Span span_;
@@ -324,4 +324,4 @@ uint64_t GetOutgoingDataSize(const grpc_call_final_info* final_info);
 
 }  // namespace grpc_observability
 
-#endif  // GRPC_PYRHON_OPENCENSUS_H
+#endif  // GRPC_PYTHON_OPENCENSUS_H

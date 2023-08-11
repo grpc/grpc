@@ -12,10 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/python/grpcio_observability/grpc_observability/observability_util.h"
-
-#include <constants.h>
-#include <python_census_context.h>
+#include "observability_util.h"
 
 #include <chrono>
 #include <cstdlib>
@@ -28,9 +25,10 @@
 
 #include <grpc/support/log.h>
 
-#include "src/cpp/ext/gcp/observability_config.h"
-#include "src/python/grpcio_observability/grpc_observability/client_call_tracer.h"
-#include "src/python/grpcio_observability/grpc_observability/server_call_tracer.h"
+#include "client_call_tracer.h"
+#include "server_call_tracer.h"
+#include "constants.h"
+#include "python_census_context.h"
 
 namespace grpc_observability {
 
@@ -126,56 +124,6 @@ void AddCensusDataToBuffer(const CensusData& data) {
       (GetExportThreadHold() * GetMaxExportBufferSize())) {
     g_census_data_buffer_cv.notify_all();
   }
-}
-
-GcpObservabilityConfig ReadAndActivateObservabilityConfig() {
-  auto config = grpc::internal::GcpObservabilityConfig::ReadFromEnv();
-  if (!config.ok()) {
-    return GcpObservabilityConfig();
-  }
-
-  if (!config->cloud_trace.has_value() &&
-      !config->cloud_monitoring.has_value() &&
-      !config->cloud_logging.has_value()) {
-    return GcpObservabilityConfig(true);
-  }
-
-  if (config->cloud_trace.has_value()) {
-    EnablePythonCensusTracing(true);
-  }
-  if (config->cloud_monitoring.has_value()) {
-    EnablePythonCensusStats(true);
-  }
-
-  std::vector<Label> labels;
-  std::string project_id = config->project_id;
-  CloudMonitoring cloud_monitoring_config = CloudMonitoring();
-  CloudTrace cloud_trace_config = CloudTrace();
-  CloudLogging cloud_logging_config = CloudLogging();
-
-  if (config->cloud_trace.has_value() || config->cloud_monitoring.has_value()) {
-    labels.reserve(config->labels.size());
-    // Insert in user defined labels from the GCP Observability config.
-    for (const auto& label : config->labels) {
-      labels.emplace_back(label.first, label.second);
-    }
-
-    if (config->cloud_trace.has_value()) {
-      double sampleRate = config->cloud_trace->sampling_rate;
-      cloud_trace_config = CloudTrace(sampleRate);
-    }
-    if (config->cloud_monitoring.has_value()) {
-      cloud_monitoring_config = CloudMonitoring();
-    }
-  }
-
-  // Clound logging
-  if (config->cloud_logging.has_value()) {
-    // TODO(xuanwn): Read cloud logging config
-  }
-
-  return GcpObservabilityConfig(cloud_monitoring_config, cloud_trace_config,
-                                cloud_logging_config, project_id, labels);
 }
 
 absl::string_view StatusCodeToString(grpc_status_code code) {
