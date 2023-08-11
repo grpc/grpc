@@ -15,13 +15,17 @@ from __future__ import annotations
 
 import logging
 import time
-from typing import Any
+from typing import Any, Iterable, Optional
 
 import grpc
 
 # pytype: disable=pyi-error
 from grpc_observability import _cyobservability
-from grpc_observability import _observability_config
+from grpc_observability._open_telemetry_exporter import (
+    _OpenTelemetryExporterDelegator,
+)
+from grpc_observability._open_telemetry_plugin import OpenTelemetryPlugin
+from grpc_observability._open_telemetry_plugin import _OpenTelemetryPlugin
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -53,48 +57,45 @@ GRPC_STATUS_CODE_TO_STRING = {
 
 
 # pylint: disable=no-self-use
-class GCPOpenCensusObservability(grpc._observability.ObservabilityPlugin):
-    """GCP OpenCensus based plugin implementation.
+class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
+    """OpenTelemetry based plugin implementation.
 
-    If no exporter is passed, the default will be OpenCensus StackDriver
-    based exporter.
-
-    For more details, please refer to User Guide:
-      * https://cloud.google.com/stackdriver/docs/solutions/grpc
-
-    Attributes:
-      config: Configuration for GCP OpenCensus Observability.
+    Args:
       exporter: Exporter used to export data.
+      plugin: OpenTelemetryPlugin to enable.
     """
 
-    config: _observability_config.GcpObservabilityConfig
     exporter: "grpc_observability.Exporter"
+    plugins: Iterable[OpenTelemetryPlugin]
 
-    def __init__(self, exporter: "grpc_observability.Exporter" = None):
-        self.exporter = None
-        self.config = None
-        try:
-            self.config = _observability_config.read_config()
-            _cyobservability.activate_config(self.config)
-        except Exception as e:  # pylint: disable=broad-except
-            raise ValueError(f"Reading configuration failed with: {e}")
+    def __init__(
+        self,
+        *,
+        plugins: Optional[Iterable[OpenTelemetryPlugin]] = None,
+        exporter: "grpc_observability.Exporter" = None,
+    ):
+        _plugins = []
+        if plugins:
+            for plugin in plugins:
+                _plugins.append(_OpenTelemetryPlugin(plugin))
 
         if exporter:
             self.exporter = exporter
         else:
-            raise ValueError(f"Please provide an exporter!")
+            self.exporter = _OpenTelemetryExporterDelegator(_plugins)
 
-        if self.config.tracing_enabled:
-            self.set_tracing(True)
-        if self.config.stats_enabled:
+        try:
+            _cyobservability.activate_stats()
             self.set_stats(True)
+        except Exception as e:  # pylint: disable=broad-except
+            raise ValueError(f"Activate stats failed with: {e}")
 
     def __enter__(self):
         try:
             _cyobservability.cyobservability_init(self.exporter)
         # TODO(xuanwn): Use specific exceptons
         except Exception as e:  # pylint: disable=broad-except
-            _LOGGER.exception("GCPOpenCensusObservability failed with: %s", e)
+            _LOGGER.exception("Initiate observability failed with: %s", e)
 
         grpc._observability.observability_init(self)
         return self

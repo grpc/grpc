@@ -226,7 +226,7 @@ void PythonOpenCensusServerCallTracer::RecordEnd(
   if (PythonCensusStatsEnabled()) {
     const uint64_t request_size = GetOutgoingDataSize(final_info);
     const uint64_t response_size = GetIncomingDataSize(final_info);
-    double elapsed_time_ms = absl::ToDoubleMilliseconds(elapsed_time_);
+    double elapsed_time_ms = absl::ToDoubleSeconds(elapsed_time_);
     context_.Labels().emplace_back(kServerMethod, std::string(method_));
     context_.Labels().emplace_back(
         kServerStatus,
