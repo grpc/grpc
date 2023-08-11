@@ -67,6 +67,8 @@ ABSL_FLAG(
     //"half_duplex : half-duplex streaming;\n"
     //"jwt_token_creds: large_unary with JWT token auth;\n"
     //"large_unary : single request and (large) response;\n"
+    //"pick_first_unary : soft affinity on a single channel;\n"
+    //"pick_first_randomness: soft affinity randomly picks one backend;\n"
     //"long_lived_channel: sends large_unary rpcs over a long-lived channel;\n"
     //"oauth2_auth_token: raw oauth2 access token auth;\n"
     //"orca_per_rpc: custom LB policy receives per-query metric reports;\n"
@@ -128,6 +130,9 @@ ABSL_FLAG(
     int32_t, soak_response_size, 314159,
     "The response size in a soak RPC. "
     "The default value is set based on the interop large unary test case.");
+ABSL_FLAG(int32_t, channel_pool_size, 0,
+          "Create a channel pool that will be used in some test cases "
+          "like pick_first_randomness test.");
 ABSL_FLAG(std::string, additional_metadata, "",
           "Additional metadata to send in each request, as a "
           "semicolon-separated list of key:value pairs.");
@@ -242,7 +247,8 @@ int main(int argc, char** argv) {
 
   grpc::testing::InteropClient client(
       channel_creation_func, true,
-      absl::GetFlag(FLAGS_do_not_abort_on_transient_failures));
+      absl::GetFlag(FLAGS_do_not_abort_on_transient_failures),
+      absl::GetFlag(FLAGS_channel_pool_size));
 
   std::unordered_map<std::string, std::function<bool()>> actions;
   actions["empty_unary"] =
@@ -278,6 +284,8 @@ int main(int argc, char** argv) {
       std::bind(&grpc::testing::InteropClient::DoEmptyStream, &client);
   actions["pick_first_unary"] =
       std::bind(&grpc::testing::InteropClient::DoPickFirstUnary, &client);
+  actions["pick_first_randomness"] =
+      std::bind(&grpc::testing::InteropClient::DoPickFirstRandomness, &client);
   actions["orca_per_rpc"] =
       std::bind(&grpc::testing::InteropClient::DoOrcaPerRpc, &client);
   actions["orca_oob"] =

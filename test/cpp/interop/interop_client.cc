@@ -175,14 +175,24 @@ void InteropClient::ServiceStub::ResetChannel() {
 
 InteropClient::InteropClient(ChannelCreationFunc channel_creation_func,
                              bool new_stub_every_test_case,
-                             bool do_not_abort_on_transient_failures)
+                             bool do_not_abort_on_transient_failures,
+                             int channel_pool_size)
     : serviceStub_(
           [channel_creation_func = std::move(channel_creation_func), this]() {
             return channel_creation_func(
                 load_report_tracker_.GetChannelArguments());
           },
           new_stub_every_test_case),
-      do_not_abort_on_transient_failures_(do_not_abort_on_transient_failures) {}
+      channel_pool_size_(channel_pool_size),
+      do_not_abort_on_transient_failures_(do_not_abort_on_transient_failures) {
+  if (channel_pool_size > 0) {
+    for (int i = 0; i < channel_pool_size; ++i) {
+      interopClients_.push_back(std::make_unique<InteropClient>(
+          channel_creation_func, new_stub_every_test_case,
+          do_not_abort_on_transient_failures, 0));
+    }
+  }
+}
 
 bool InteropClient::AssertStatusOk(const Status& s,
                                    const std::string& optional_debug_string) {
@@ -989,6 +999,56 @@ bool InteropClient::DoPickFirstUnary() {
     }
   }
   gpr_log(GPR_DEBUG, "pick first unary successfully finished");
+  return true;
+}
+
+bool InteropClient::DoPickFirstRandomness() {
+  if (channel_pool_size_ <= 0) {
+    gpr_log(GPR_ERROR,
+            "pick_first_randomness test must be run with multiple "
+            "channels, but got %d",
+            channel_pool_size_);
+    return false;
+  }
+  std::vector<std::string> peer_addresses;
+  int total_failures = 0;
+  int per_channel_rpcs = 10;
+  // 3% error rate
+  int max_allowed_failures = ceil(0.03 * per_channel_rpcs * channel_pool_size_);
+  for (int i = 0; i < per_channel_rpcs; i++) {  // every channel sends 10 RPCs
+    for (int ch = 0; ch < channel_pool_size_; ch++) {
+      auto result = interopClients_[ch]->PerformOneSoakTestIteration(
+          /*reset_channel*/ false,
+          /*max_acceptable_per_iteration_latency_ms*/ 5000);
+      bool success = std::get<0>(result);
+      int32_t elapsed_ms = std::get<1>(result);
+      std::string debug_string = std::get<2>(result);
+      std::string peer = std::get<3>(result);
+      if (!success) {
+        gpr_log(GPR_DEBUG,
+                "channel: %d rpc iteration: %d elapsed_ms: %d peer: "
+                "%s failed: %s",
+                ch, i, elapsed_ms, peer.c_str(), debug_string.c_str());
+        ++total_failures;
+      }
+      if (i == 0) {  // record peer when a channel send RPC for the first time
+        peer_addresses.push_back(peer);
+      } else {  // check affinity on a channel
+        if (peer != peer_addresses[ch]) {
+          gpr_log(GPR_ERROR,
+                  "channel: %d rpc iteration: %d affinity broke. "
+                  "expected peer: %s got peer: %s",
+                  ch, i, peer_addresses[ch].c_str(), peer.c_str());
+          return false;
+        }
+      }
+    }
+  }
+  if (total_failures > max_allowed_failures) {
+    gpr_log(GPR_ERROR, "failed RPC: %d exceeded the max_allowed: %d",
+            total_failures, max_allowed_failures);
+  }
+  gpr_log(GPR_DEBUG, "pick first randomness successfully finished");
   return true;
 }
 

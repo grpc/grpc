@@ -48,7 +48,8 @@ class InteropClient {
   /// in case of transient failures (like connection failures)
   explicit InteropClient(ChannelCreationFunc channel_creation_func,
                          bool new_stub_every_test_case,
-                         bool do_not_abort_on_transient_failures);
+                         bool do_not_abort_on_transient_failures,
+                         int channel_pool_size = 0);
   ~InteropClient() {}
 
   void Reset(const std::shared_ptr<Channel>& channel);
@@ -76,6 +77,8 @@ class InteropClient {
   bool DoUnimplementedService();
   // all requests are sent to one server despite multiple servers are resolved
   bool DoPickFirstUnary();
+  // create a pool of channels for the pick first randomness test case.
+  bool DoPickFirstRandomness();
   bool DoOrcaPerRpc();
   bool DoOrcaOob();
 
@@ -162,6 +165,8 @@ class InteropClient {
                        const int32_t request_size, const int32_t response_size);
 
   ServiceStub serviceStub_;
+  std::vector<std::unique_ptr<InteropClient>> interopClients_;
+  int channel_pool_size_;
   /// If true, abort() is not called for transient failures
   bool do_not_abort_on_transient_failures_;
   // Load Orca metrics captured by the custom LB policy.
