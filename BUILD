@@ -2291,28 +2291,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_rpc_encoding",
-    srcs = [
-        "src/cpp/ext/filters/census/rpc_encoding.cc",
-    ],
-    hdrs = [
-        "src/cpp/ext/filters/census/rpc_encoding.h",
-    ],
-    external_deps = [
-        "absl/base",
-        "absl/base:core_headers",
-        "absl/meta:type_traits",
-        "absl/status",
-        "absl/strings",
-        "absl/time",
-    ],
-    language = "c++",
-    tags = ["nofixdeps"],
-    visibility = ["@grpc:grpc_python_observability"],
-    deps = ["gpr_platform"],
-)
-
-grpc_cc_library(
     name = "grpc_opencensus_plugin",
     srcs = [
         "src/cpp/ext/filters/census/client_filter.cc",

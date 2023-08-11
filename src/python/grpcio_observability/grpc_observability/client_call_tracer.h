@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_PYRHON_OPENCENSUS_CLIENT_CALL_TRACER_H
-#define GRPC_PYRHON_OPENCENSUS_CLIENT_CALL_TRACER_H
+#ifndef GRPC_PYTHON_OPENCENSUS_CLIENT_CALL_TRACER_H
+#define GRPC_PYTHON_OPENCENSUS_CLIENT_CALL_TRACER_H
 
 #include <stdint.h>
 
@@ -138,4 +138,4 @@ class PythonOpenCensusCallTracer : public grpc_core::ClientCallTracer {
 
 }  // namespace grpc_observability
 
-#endif  // GRPC_PYRHON_OPENCENSUS_CLIENT_CALL_TRACER_H
+#endif  // GRPC_PYTHON_OPENCENSUS_CLIENT_CALL_TRACER_H

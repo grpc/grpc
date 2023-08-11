@@ -46,41 +46,6 @@ struct CensusData {
   CensusData(const SpanCensusData& sd) : type(kSpanData), span_data(sd) {}
 };
 
-struct CloudMonitoring {
-  CloudMonitoring() {}
-};
-
-struct CloudTrace {
-  float sampling_rate = 0.0;
-  CloudTrace() {}
-  CloudTrace(double sr) : sampling_rate(sr) {}
-};
-
-struct CloudLogging {
-  CloudLogging() {}
-};
-
-struct GcpObservabilityConfig {
-  CloudMonitoring cloud_monitoring;
-  CloudTrace cloud_trace;
-  CloudLogging cloud_logging;
-  std::string project_id;
-  std::vector<Label> labels;
-  bool is_valid;
-  GcpObservabilityConfig() : is_valid(false) {}
-  GcpObservabilityConfig(bool valid) : is_valid(true) {}
-  GcpObservabilityConfig(CloudMonitoring cloud_monitoring,
-                         CloudTrace cloud_trace, CloudLogging cloud_logging,
-                         const std::string& project_id,
-                         const std::vector<Label>& labels)
-      : cloud_monitoring(cloud_monitoring),
-        cloud_trace(cloud_trace),
-        cloud_logging(cloud_logging),
-        project_id(project_id),
-        labels(labels),
-        is_valid(true) {}
-};
-
 // extern is required for Cython
 extern std::queue<CensusData>* g_census_data_buffer;
 extern std::mutex g_census_data_buffer_mutex;
@@ -104,8 +69,6 @@ void RecordDoubleMetric(MetricsName name, double value,
                         const std::vector<Label>& labels);
 
 void RecordSpan(const SpanCensusData& span_census_data);
-
-GcpObservabilityConfig ReadAndActivateObservabilityConfig();
 
 absl::string_view StatusCodeToString(grpc_status_code code);
 
