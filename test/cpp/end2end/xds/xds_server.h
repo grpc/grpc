@@ -759,7 +759,8 @@ class LrsServiceImpl
         }
       }
       response.mutable_load_reporting_interval()->set_seconds(
-          client_load_reporting_interval_seconds_);
+          client_load_reporting_interval_seconds_ *
+          grpc_test_slowdown_factor());
       stream->Write(response);
       IncreaseResponseCount();
       // Wait for report.
