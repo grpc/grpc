@@ -1019,7 +1019,9 @@ bool InteropClient::DoPickFirstRandomness() {
     for (int ch = 0; ch < channel_pool_size_; ch++) {
       auto result = interopClients_[ch]->PerformOneSoakTestIteration(
           /*reset_channel*/ false,
-          /*max_acceptable_per_iteration_latency_ms*/ 5000);
+          /*max_acceptable_per_iteration_latency_ms*/ 5000,
+          /*request_size*/ kLargeRequestSize,
+          /*response_size*/ kLargeResponseSize);
       bool success = std::get<0>(result);
       int32_t elapsed_ms = std::get<1>(result);
       std::string debug_string = std::get<2>(result);
