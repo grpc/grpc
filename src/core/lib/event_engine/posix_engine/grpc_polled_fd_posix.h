@@ -17,10 +17,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <unistd.h>
-
-#include <unordered_set>
-
 #include <grpc/support/log.h>
 
 #include "src/core/lib/iomgr/port.h"
@@ -32,8 +28,10 @@
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/uio.h>
+#include <unistd.h>
 
 #include <string>
+#include <unordered_set>
 #include <utility>
 
 #include <ares.h>
