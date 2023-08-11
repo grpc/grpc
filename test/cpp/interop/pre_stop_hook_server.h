@@ -34,8 +34,6 @@ class ServerHolder;
 
 class PreStopHookServerManager {
  public:
-  ~PreStopHookServerManager() { Stop(); }
-
   Status Start(int port, size_t timeout_s);
   Status Stop();
   void Return(StatusCode code, absl::string_view description);
