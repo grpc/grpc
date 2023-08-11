@@ -3352,6 +3352,7 @@ void ServerPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
         break;
       case GRPC_OP_RECV_MESSAGE:
         if (cancelled_.load(std::memory_order_relaxed)) {
+          set_failed_before_recv_message();
           FailCompletion(completion);
           break;
         }
