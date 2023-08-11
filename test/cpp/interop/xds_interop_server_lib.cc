@@ -133,8 +133,9 @@ class XdsUpdateHealthServiceImpl : public XdsUpdateHealthService::Service {
     return Status::OK;
   }
 
-  Status SendHookRequest(ServerContext* context, const HookRequest* request,
-                         HookResponse* response) override {
+  Status SendHookRequest(ServerContext* /* context */,
+                         const HookRequest* request,
+                         HookResponse* /* response */) override {
     switch (request->command()) {
       case HookRequestCommand::START:
         return pre_stop_hook_server_->Start(request->server_port());

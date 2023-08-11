@@ -56,6 +56,7 @@ TEST(PreStopHookServer, StartDoRequestStop) {
   auto call = stub.PrepareAsyncHook(&info.context, info.request, &cq);
   call->StartCall();
   call->Finish(&info.response, &info.status, &info);
+  ASSERT_EQ(server.ExpectRequests(1), 1);
   server.Return(StatusCode::INTERNAL, "Just a test");
   void* returned_tag;
   bool ok = false;
@@ -133,8 +134,37 @@ TEST(PreStopHookServer, MultiplePending) {
   cq.Shutdown();
 }
 
-TEST(PreStopHookServer, DISABLED_StoppingNotStarted) {}
-TEST(PreStopHookServer, DISABLED_ReturnBeforeSend) {}
+TEST(PreStopHookServer, StoppingNotStarted) {
+  PreStopHookServerManager server;
+  Status status = server.Stop();
+  EXPECT_EQ(status.error_code(), StatusCode::UNAVAILABLE)
+      << status.error_message();
+}
+
+TEST(PreStopHookServer, ReturnBeforeSend) {
+  int port = grpc_pick_unused_port_or_die();
+  PreStopHookServerManager server;
+  Status start_status = server.Start(port);
+  server.Return(StatusCode::INTERNAL, "Just a test");
+  ASSERT_TRUE(start_status.ok()) << start_status.error_message();
+  auto channel = CreateChannel(absl::StrFormat("127.0.0.1:%d", port),
+                               InsecureChannelCredentials());
+  ASSERT_TRUE(channel);
+  CallInfo info;
+  CompletionQueue cq;
+  HookService::Stub stub(std::move(channel));
+  auto call = stub.PrepareAsyncHook(&info.context, info.request, &cq);
+  call->StartCall();
+  call->Finish(&info.response, &info.status, &info);
+  void* returned_tag;
+  bool ok = false;
+  ASSERT_TRUE(cq.Next(&returned_tag, &ok));
+  EXPECT_TRUE(ok);
+  EXPECT_EQ(returned_tag, &info);
+  EXPECT_EQ(info.status.error_code(), StatusCode::INTERNAL);
+  EXPECT_EQ(info.status.error_message(), "Just a test");
+  cq.Shutdown();
+}
 
 }  // namespace
 }  // namespace testing
