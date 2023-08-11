@@ -71,7 +71,7 @@ class HookServiceImpl final : public HookService::CallbackService {
   }
 
   void Stop() {
-    absl::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(&mu_);
     for (auto request : pending_requests_) {
       request->Finish(Status(StatusCode::ABORTED, "Shutting down"));
     }
