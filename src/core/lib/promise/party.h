@@ -491,6 +491,8 @@ void Party::BulkSpawner::Spawn(absl::string_view name, Factory promise_factory,
     gpr_log(GPR_DEBUG, "%s[bulk_spawn] On %p queue %s",
             party_->DebugTag().c_str(), this, std::string(name).c_str());
   }
+  gpr_log(GPR_ERROR, "PARTICIPANT_SIZE[%s]:%zu", std::string(name).c_str(),
+          sizeof(ParticipantImpl<Factory, OnComplete>));
   participants_[num_participants_++] =
       party_->arena_->NewPooled<ParticipantImpl<Factory, OnComplete>>(
           name, std::move(promise_factory), std::move(on_complete));
