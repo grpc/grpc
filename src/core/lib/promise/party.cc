@@ -17,12 +17,10 @@
 #include "src/core/lib/promise/party.h"
 
 #include <atomic>
-#include <cstdint>
 #include <initializer_list>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/strings/str_format.h"
-#include "party.h"
 
 #include <grpc/support/log.h>
 
@@ -30,6 +28,7 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/party.h"
 #include "src/core/lib/promise/trace.h"
 
 #ifdef GRPC_MAXIMIZE_THREADYNESS
