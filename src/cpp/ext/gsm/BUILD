@@ -32,21 +32,28 @@ grpc_cc_library(
     name = "gsm_observability",
     srcs = [
         "gsm_observability.cc",
+        "metadata_exchange.cc",
     ],
     hdrs = [
         "gsm_observability.h",
+        "metadata_exchange.h",
     ],
     external_deps = [
+        "absl/container:flat_hash_map",
         "absl/container:flat_hash_set",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
         "otel/sdk/src/metrics",
+        "upb_lib",
     ],
     language = "c++",
     visibility = ["//:__subpackages__"],
     deps = [
         "//:gpr_platform",
+        "//:grpc_base",
+        "//:protobuf_struct_upb",
+        "//src/core:slice",
         "//src/cpp/ext/otel:otel_plugin",
     ],
 )

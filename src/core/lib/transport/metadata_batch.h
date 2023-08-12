@@ -305,6 +305,13 @@ struct GrpcTagsBinMetadata : public SimpleSliceBasedMetadata {
   static absl::string_view key() { return "grpc-tags-bin"; }
 };
 
+// XEnvoyPeerMetadata
+struct XEnvoyPeerMetadata : public SimpleSliceBasedMetadata {
+  static constexpr bool kRepeatable = false;
+  using CompressionTraits = grpc_core::StableValueCompressor;
+  static absl::string_view key() { return "x-envoy-peer-metadata"; }
+};
+
 // :authority metadata trait.
 struct HttpAuthorityMetadata : public SimpleSliceBasedMetadata {
   static constexpr bool kRepeatable = false;
@@ -1474,6 +1481,7 @@ using grpc_metadata_batch_base = grpc_core::MetadataMap<
     grpc_core::GrpcServerStatsBinMetadata, grpc_core::GrpcTraceBinMetadata,
     grpc_core::GrpcTagsBinMetadata, grpc_core::GrpcLbClientStatsMetadata,
     grpc_core::LbCostBinMetadata, grpc_core::LbTokenMetadata,
+    grpc_core::XEnvoyPeerMetadata,
     // Non-encodable things
     grpc_core::GrpcStreamNetworkState, grpc_core::PeerString,
     grpc_core::GrpcStatusContext, grpc_core::GrpcStatusFromWire,

@@ -26,11 +26,14 @@
 #include <memory>
 #include <string>
 
+#include "absl/container/flat_hash_map.h"
 #include "absl/container/flat_hash_set.h"
 #include "absl/strings/string_view.h"
 #include "opentelemetry/metrics/meter_provider.h"
 #include "opentelemetry/metrics/sync_instruments.h"
 #include "opentelemetry/nostd/shared_ptr.h"
+
+#include "src/core/lib/transport/metadata_batch.h"
 
 namespace grpc {
 namespace internal {
@@ -80,6 +83,20 @@ absl::string_view OTelServerCallDurationInstrumentName();
 absl::string_view OTelServerCallSentTotalCompressedMessageSizeInstrumentName();
 absl::string_view OTelServerCallRcvdTotalCompressedMessageSizeInstrumentName();
 
+class LabelsInjector {
+ public:
+  virtual ~LabelsInjector() {}
+  // Read the incoming initial metadata to get the set of labels to be added to
+  // metrics.
+  virtual absl::flat_hash_map<std::string, std::string> GetPeerLabels(
+      grpc_metadata_batch* incoming_initial_metadata) = 0;
+
+  // Modify the outgoing initial metadata with metadata information to be sent
+  // to the peer.
+  virtual void AddLocalLabels(
+      grpc_metadata_batch* outgoing_initial_metadata) = 0;
+};
+
 class OpenTelemetryPluginBuilder {
  public:
   OpenTelemetryPluginBuilder& SetMeterProvider(
@@ -91,6 +108,10 @@ class OpenTelemetryPluginBuilder {
   OpenTelemetryPluginBuilder& DisableMetrics(
       const absl::flat_hash_set<absl::string_view>& metric_names);
   // Builds and registers the OTel Plugin
+
+  OpenTelemetryPluginBuilder& SetLabelsInjector(
+      std::unique_ptr<LabelsInjector> labels_injector);
+
   void BuildAndRegisterGlobal();
 
   // The base set of metrics -
@@ -106,6 +127,7 @@ class OpenTelemetryPluginBuilder {
 
  private:
   std::shared_ptr<opentelemetry::metrics::MeterProvider> meter_provider_;
+  std::unique_ptr<LabelsInjector> labels_injector_;
   absl::flat_hash_set<std::string> metrics_;
 };
 

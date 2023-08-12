@@ -117,6 +117,12 @@ OpenTelemetryPluginBuilder& OpenTelemetryPluginBuilder::DisableMetrics(
   return *this;
 }
 
+OpenTelemetryPluginBuilder& OpenTelemetryPluginBuilder::SetLabelsInjector(
+    std::unique_ptr<LabelsInjector> labels_injector) {
+  labels_injector_ = std::move(labels_injector);
+  return *this;
+}
+
 void OpenTelemetryPluginBuilder::BuildAndRegisterGlobal() {
   opentelemetry::nostd::shared_ptr<opentelemetry::metrics::MeterProvider>
       meter_provider = meter_provider_;
