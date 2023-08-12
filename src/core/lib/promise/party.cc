@@ -17,10 +17,12 @@
 #include "src/core/lib/promise/party.h"
 
 #include <atomic>
+#include <cstdint>
 #include <initializer_list>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/strings/str_format.h"
+#include "party.h"
 
 #include <grpc/support/log.h>
 
@@ -170,14 +172,20 @@ Party::Participant::~Participant() {
 
 Party::~Party() {}
 
+Party::LoadedParticipant Party::LoadForDestroy(int i) {
+  uintptr_t p = participants_[i].load(std::memory_order_acquire);
+  bool first = (p & kNotPolled) == kNotPolled;
+  return LoadedParticipant{reinterpret_cast<Participant*>(p & ~kNotPolled),
+                           first};
+}
+
 void Party::CancelRemainingParticipants() {
   ScopedActivity activity(this);
   promise_detail::Context<Arena> arena_ctx(arena_);
   for (size_t i = 0; i < party_detail::kMaxParticipants; i++) {
-    if (auto* p =
-            participants_[i].exchange(nullptr, std::memory_order_acquire)) {
-      p->Destroy();
-    }
+    LoadedParticipant p = LoadForDestroy(i);
+    if (p.participant == nullptr) continue;
+    p.participant->Destroy(!p.first);
   }
 }
 
@@ -191,17 +199,28 @@ Waker Party::MakeOwningWaker() {
   return Waker(this, 1u << currently_polling_);
 }
 
+Party::Participant& Party::LoadForWake(int i) {
+  return *reinterpret_cast<Participant*>(
+      participants_[i].load(std::memory_order_relaxed));
+}
+
 Waker Party::MakeNonOwningWaker() {
   GPR_DEBUG_ASSERT(currently_polling_ != kNotPolling);
-  return Waker(participants_[currently_polling_]
-                   .load(std::memory_order_relaxed)
-                   ->MakeNonOwningWakeable(this),
+  return Waker(LoadForWake(currently_polling_).MakeNonOwningWakeable(this),
                1u << currently_polling_);
 }
 
 void Party::ForceImmediateRepoll(WakeupMask mask) {
   GPR_DEBUG_ASSERT(is_current());
   sync_.ForceImmediateRepoll(mask);
+}
+
+Party::LoadedParticipant Party::LoadForPoll(int i) {
+  uintptr_t p =
+      participants_[i].fetch_and(~kNotPolled, std::memory_order_acquire);
+  bool first = (p & kNotPolled) == kNotPolled;
+  return LoadedParticipant{reinterpret_cast<Participant*>(p & ~kNotPolled),
+                           first};
 }
 
 void Party::RunLocked() {
@@ -233,8 +252,8 @@ bool Party::RunParty() {
     // If the participant is null, skip.
     // This allows participants to complete whilst wakers still exist
     // somewhere.
-    auto* participant = participants_[i].load(std::memory_order_acquire);
-    if (participant == nullptr) {
+    LoadedParticipant p = LoadForPoll(i);
+    if (p.participant == nullptr) {
       if (grpc_trace_promise_primitives.enabled()) {
         gpr_log(GPR_DEBUG, "%s[party] wakeup %d already complete",
                 DebugTag().c_str(), i);
@@ -243,20 +262,20 @@ bool Party::RunParty() {
     }
     absl::string_view name;
     if (grpc_trace_promise_primitives.enabled()) {
-      name = participant->name();
+      name = p.participant->name();
       gpr_log(GPR_DEBUG, "%s[%s] begin job %d", DebugTag().c_str(),
               std::string(name).c_str(), i);
     }
     // Poll the participant.
     currently_polling_ = i;
-    bool done = participant->Poll();
+    bool done = p.participant->Poll(p.first);
     currently_polling_ = kNotPolling;
     if (done) {
       if (!name.empty()) {
         gpr_log(GPR_DEBUG, "%s[%s] end poll and finish job %d",
                 DebugTag().c_str(), std::string(name).c_str(), i);
       }
-      participants_[i].store(nullptr, std::memory_order_relaxed);
+      participants_[i].store(0, std::memory_order_relaxed);
     } else if (!name.empty()) {
       gpr_log(GPR_DEBUG, "%s[%s] end poll", DebugTag().c_str(),
               std::string(name).c_str());
@@ -266,12 +285,14 @@ bool Party::RunParty() {
 }
 
 void Party::AddParticipants(Participant** participants, size_t count) {
-  bool run_party = sync_.AddParticipantsAndRef(count, [this, participants,
-                                                       count](size_t* slots) {
-    for (size_t i = 0; i < count; i++) {
-      participants_[slots[i]].store(participants[i], std::memory_order_release);
-    }
-  });
+  bool run_party = sync_.AddParticipantsAndRef(
+      count, [this, participants, count](size_t* slots) {
+        for (size_t i = 0; i < count; i++) {
+          participants_[slots[i]].store(
+              reinterpret_cast<uintptr_t>(participants[i]) | kNotPolled,
+              std::memory_order_release);
+        }
+      });
   if (run_party) RunLocked();
   Unref();
 }

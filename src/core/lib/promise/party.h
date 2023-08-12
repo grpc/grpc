@@ -296,25 +296,38 @@ class Party : public Activity, private Wakeable {
   // One participant in the party.
   class Participant {
    public:
-    explicit Participant(absl::string_view name) : name_(name) {}
+    explicit Participant(absl::string_view name)
+#ifndef NDEBUG
+        : name_(name)
+#endif
+    {
+    }
     // Poll the participant. Return true if complete.
     // Participant should take care of its own deallocation in this case.
-    virtual bool Poll() = 0;
+    virtual bool Poll(bool first) = 0;
 
     // Destroy the participant before finishing.
-    virtual void Destroy() = 0;
+    virtual void Destroy(bool polled) = 0;
 
     // Return a Handle instance for this participant.
     Wakeable* MakeNonOwningWakeable(Party* party);
 
-    absl::string_view name() const { return name_; }
+    std::string name() const {
+#ifndef NDEBUG
+      return std::string(name_);
+#else
+      return absl::StrFormat("P[%p]", this);
+#endif
+    }
 
    protected:
     ~Participant();
 
    private:
     Handle* handle_ = nullptr;
+#ifndef NDEBUG
     absl::string_view name_;
+#endif
   };
 
  public:
@@ -406,41 +419,52 @@ class Party : public Activity, private Wakeable {
                     OnComplete on_complete)
         : Participant(name), on_complete_(std::move(on_complete)) {
       Construct(&factory_, std::move(promise_factory));
+      gpr_log(GPR_ERROR, "%p: factory=%zu; promise=%zu; on_complete=%zu", this,
+              sizeof(factory_), sizeof(promise_), sizeof(on_complete_));
     }
-    ~ParticipantImpl() {
-      if (!started_) {
-        Destruct(&factory_);
-      } else {
-        Destruct(&promise_);
-      }
-    }
+    ~ParticipantImpl() {}
 
-    bool Poll() override {
-      if (!started_) {
+    bool Poll(bool first) override {
+      gpr_log(GPR_ERROR, "%p poll first=%d", this, first);
+      if (first) {
         auto p = factory_.Make();
         Destruct(&factory_);
         Construct(&promise_, std::move(p));
-        started_ = true;
       }
       auto p = promise_();
       if (auto* r = p.value_if_ready()) {
         on_complete_(std::move(*r));
-        GetContext<Arena>()->DeletePooled(this);
+        Destroy(true);
         return true;
       }
       return false;
     }
 
-    void Destroy() override { GetContext<Arena>()->DeletePooled(this); }
+    void Destroy(bool polled) override {
+      if (polled) {
+        Destruct(&promise_);
+      } else {
+        Destruct(&factory_);
+      }
+      GetContext<Arena>()->DeletePooled(this);
+    }
 
    private:
+    GPR_NO_UNIQUE_ADDRESS OnComplete on_complete_;
     union {
       GPR_NO_UNIQUE_ADDRESS Factory factory_;
       GPR_NO_UNIQUE_ADDRESS Promise promise_;
     };
-    GPR_NO_UNIQUE_ADDRESS OnComplete on_complete_;
-    bool started_ = false;
   };
+
+  struct LoadedParticipant {
+    Participant* participant;
+    bool first;
+  };
+
+  LoadedParticipant LoadForPoll(int i);
+  LoadedParticipant LoadForDestroy(int i);
+  Participant& LoadForWake(int i);
 
   // Notification that the party has finished and this instance can be deleted.
   // Derived types should arrange to call CancelRemainingParticipants during
@@ -476,12 +500,14 @@ class Party : public Activity, private Wakeable {
 #error No synchronization method defined
 #endif
 
+  static constexpr uintptr_t kNotPolled = 1;
+
   Arena* const arena_;
   uint8_t currently_polling_ = kNotPolling;
   // All current participants, using a tagged format.
   // If the lower bit is unset, then this is a Participant*.
   // If the lower bit is set, then this is a ParticipantFactory*.
-  std::atomic<Participant*> participants_[party_detail::kMaxParticipants] = {};
+  std::atomic<uintptr_t> participants_[party_detail::kMaxParticipants] = {};
 };
 
 template <typename Factory, typename OnComplete>
