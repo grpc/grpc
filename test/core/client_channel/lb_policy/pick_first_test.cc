@@ -316,22 +316,6 @@ TEST_F(PickFirstTest, ShufflingDisabled) {
     EXPECT_THAT(address_order, ::testing::ElementsAreArray(kAddresses));
   }
 }
-
-// TODO(eugeneo): remove when the env var no longer necessary
-TEST_F(PickFirstTest, ShufflingDisabledViaEnvVar) {
-  constexpr std::array<absl::string_view, 6> kAddresses = {
-      "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444", "ipv4:127.0.0.1:445",
-      "ipv4:127.0.0.1:446", "ipv4:127.0.0.1:447", "ipv4:127.0.0.1:448"};
-  constexpr static size_t kMaxAttempts = 5;
-  for (size_t attempt = 0; attempt < kMaxAttempts; ++attempt) {
-    absl::Status status = ApplyUpdate(
-        BuildUpdate(kAddresses, MakePickFirstConfig(true)), lb_policy_.get());
-    EXPECT_TRUE(status.ok()) << status;
-    std::vector<absl::string_view> address_order;
-    GetOrderAddressesArePicked(kAddresses, &address_order);
-    EXPECT_THAT(address_order, ::testing::ElementsAreArray(kAddresses));
-  }
-}
 }  // namespace
 }  // namespace testing
 }  // namespace grpc_core
