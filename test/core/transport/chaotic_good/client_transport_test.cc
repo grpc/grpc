@@ -114,6 +114,18 @@ class ClientTransportTest : public ::testing::Test {
         pipe_client_to_server_messages_(arena_.get()),
         pipe_client_to_server_messages_second_(arena_.get()) {}
 
+  std::vector<MessageHandle> CreateMessages(int num_of_messages) {
+    std::vector<MessageHandle> messages;
+    for (int i = 0; i < num_of_messages; i++) {
+      SliceBuffer buffer;
+      buffer.Append(
+          Slice::FromCopiedString(absl::StrFormat("test message %d", i)));
+      auto message = arena_->MakePooled<Message>(std::move(buffer), 0);
+      messages.push_back(std::move(message));
+    }
+    return messages;
+  }
+
  private:
   MockEndpoint* control_endpoint_ptr_;
   MockEndpoint* data_endpoint_ptr_;
@@ -137,9 +149,7 @@ class ClientTransportTest : public ::testing::Test {
 };
 
 TEST_F(ClientTransportTest, AddOneStream) {
-  SliceBuffer buffer;
-  buffer.Append(Slice::FromCopiedString("test add stream."));
-  auto message = arena_->MakePooled<Message>(std::move(buffer), 0);
+  auto messages = CreateMessages(1);
   ClientMetadataHandle md;
   auto args = CallArgs{
       std::move(md), ClientInitialMetadataOutstandingToken::Empty(), nullptr,
@@ -153,7 +163,7 @@ TEST_F(ClientTransportTest, AddOneStream) {
           // Concurrently: send message into the pipe, and receive from the
           // pipe.
           Join(Seq(pipe_client_to_server_messages_.sender.Push(
-                       std::move(message)),
+                       std::move(messages[0])),
                    [this] {
                      this->pipe_client_to_server_messages_.sender.Close();
                      return absl::OkStatus();
@@ -173,9 +183,7 @@ TEST_F(ClientTransportTest, AddOneStream) {
 }
 
 TEST_F(ClientTransportTest, AddOneStreamWithEEFailed) {
-  SliceBuffer buffer;
-  buffer.Append(Slice::FromCopiedString("test add stream."));
-  auto message = arena_->MakePooled<Message>(std::move(buffer), 0);
+  auto messages = CreateMessages(1);
   ClientMetadataHandle md;
   auto args = CallArgs{
       std::move(md), ClientInitialMetadataOutstandingToken::Empty(), nullptr,
@@ -199,7 +207,7 @@ TEST_F(ClientTransportTest, AddOneStreamWithEEFailed) {
           // Concurrently: send message into the pipe, and receive from the
           // pipe.
           Join(Seq(pipe_client_to_server_messages_.sender.Push(
-                       std::move(message)),
+                       std::move(messages[0])),
                    [this] {
                      this->pipe_client_to_server_messages_.sender.Close();
                      return absl::OkStatus();
@@ -221,9 +229,7 @@ TEST_F(ClientTransportTest, AddOneStreamWithEEFailed) {
 }
 
 TEST_F(ClientTransportTest, AddOneStreamMultipleMessages) {
-  SliceBuffer buffer;
-  buffer.Append(Slice::FromCopiedString("test add stream."));
-  auto message = arena_->MakePooled<Message>(std::move(buffer), 0);
+  auto messages = CreateMessages(3);
   ClientMetadataHandle md;
   auto args = CallArgs{
       std::move(md), ClientInitialMetadataOutstandingToken::Empty(), nullptr,
@@ -237,11 +243,11 @@ TEST_F(ClientTransportTest, AddOneStreamMultipleMessages) {
           // Concurrently: send messages into the pipe, and receive from the
           // pipe.
           Join(Seq(pipe_client_to_server_messages_.sender.Push(
-                       std::move(message)),
+                       std::move(messages[0])),
                    pipe_client_to_server_messages_.sender.Push(
-                       std::move(message)),
+                       std::move(messages[1])),
                    pipe_client_to_server_messages_.sender.Push(
-                       std::move(message)),
+                       std::move(messages[2])),
                    [this] {
                      this->pipe_client_to_server_messages_.sender.Close();
                      return absl::OkStatus();
@@ -261,9 +267,7 @@ TEST_F(ClientTransportTest, AddOneStreamMultipleMessages) {
 }
 
 TEST_F(ClientTransportTest, AddMultipleStreams) {
-  SliceBuffer buffer;
-  buffer.Append(Slice::FromCopiedString("test add stream."));
-  auto message = arena_->MakePooled<Message>(std::move(buffer), 0);
+  auto messages = CreateMessages(2);
   ClientMetadataHandle md;
   auto first_stream_args = CallArgs{
       std::move(md), ClientInitialMetadataOutstandingToken::Empty(), nullptr,
@@ -282,14 +286,14 @@ TEST_F(ClientTransportTest, AddMultipleStreams) {
           Join(
               // Send message to first stream pipe.
               Seq(pipe_client_to_server_messages_.sender.Push(
-                      std::move(message)),
+                      std::move(messages[0])),
                   [this] {
                     pipe_client_to_server_messages_.sender.Close();
                     return absl::OkStatus();
                   }),
               // Send message to second stream pipe.
               Seq(pipe_client_to_server_messages_second_.sender.Push(
-                      std::move(message)),
+                      std::move(messages[1])),
                   [this] {
                     pipe_client_to_server_messages_second_.sender.Close();
                     return absl::OkStatus();
@@ -315,9 +319,7 @@ TEST_F(ClientTransportTest, AddMultipleStreams) {
 }
 
 TEST_F(ClientTransportTest, AddMultipleStreamsMultipleMessages) {
-  SliceBuffer buffer;
-  buffer.Append(Slice::FromCopiedString("test add stream."));
-  auto message = arena_->MakePooled<Message>(std::move(buffer), 0);
+  auto messages = CreateMessages(6);
   ClientMetadataHandle md;
   auto first_stream_args = CallArgs{
       std::move(md), ClientInitialMetadataOutstandingToken::Empty(), nullptr,
@@ -336,22 +338,22 @@ TEST_F(ClientTransportTest, AddMultipleStreamsMultipleMessages) {
           Join(
               // Send messages to first stream pipe.
               Seq(pipe_client_to_server_messages_.sender.Push(
-                      std::move(message)),
+                      std::move(messages[0])),
                   pipe_client_to_server_messages_.sender.Push(
-                      std::move(message)),
+                      std::move(messages[1])),
                   pipe_client_to_server_messages_.sender.Push(
-                      std::move(message)),
+                      std::move(messages[2])),
                   [this] {
                     pipe_client_to_server_messages_.sender.Close();
                     return absl::OkStatus();
                   }),
               // Send messages to second stream pipe.
               Seq(pipe_client_to_server_messages_second_.sender.Push(
-                      std::move(message)),
+                      std::move(messages[3])),
                   pipe_client_to_server_messages_second_.sender.Push(
-                      std::move(message)),
+                      std::move(messages[4])),
                   pipe_client_to_server_messages_second_.sender.Push(
-                      std::move(message)),
+                      std::move(messages[5])),
                   [this] {
                     pipe_client_to_server_messages_second_.sender.Close();
                     return absl::OkStatus();
