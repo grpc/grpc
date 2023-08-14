@@ -31,6 +31,7 @@
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/ext/transport/chaotic_good/frame.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/for_each.h"
@@ -103,6 +104,7 @@ class ClientTransport {
   std::unique_ptr<PromiseEndpoint> data_endpoint_;
   SliceBuffer control_endpoint_write_buffer_;
   SliceBuffer data_endpoint_write_buffer_;
+  std::unique_ptr<HPackCompressor> hpack_compressor_;
   // Use to synchronize writer_ and reader_ activity with outside activities;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
 };
