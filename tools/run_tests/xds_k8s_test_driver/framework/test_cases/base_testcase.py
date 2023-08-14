@@ -29,20 +29,38 @@ class BaseTestCase(absltest.TestCase):
         current_failures = [
             failure for test, failure in result.failures if test is self
         ]
+        current_unexpected_successes = [
+            test for test in result.unexpectedSuccesses if test is self
+        ]
+        current_skipped = [
+            reason for test, reason in result.skipped if test is self
+        ]
+        # Assume one test case will only have one status.
         if current_errors or current_failures:
             logging.info("----- TestCase %s FAILED -----", self.id())
             if current_errors:
-                self._print_error_list("ERROR", current_errors)
+                self._print_error_list(current_errors, is_unexpected_error=True)
             if current_failures:
-                self._print_error_list("FAILURE", current_failures)
+                self._print_error_list(current_failures)
+        elif current_unexpected_successes:
+            logging.info(
+                "----- TestCase %s UNEXPECTEDLY SUCCEED -----", self.id()
+            )
+        elif current_skipped:
+            logging.info("----- TestCase %s SKIPPED -----", self.id())
+            logging.info("Reason for skipping: %s", current_skipped)
         else:
             logging.info("----- TestCase %s PASSED -----", self.id())
 
     def _print_error_list(
-        self, flavour: str, errors: Optional[list[str]]
+        self, errors: Optional[list[str]], is_unexpected_error: bool = False
     ) -> None:
-        if not errors:
-            return
+        # FAILUREs are those errors explicitly signalled using the TestCase.assert*()
+        # methods.
         for err in errors:
-            logging.error("%s Traceback in: %s:", flavour, self.id())
-            logging.error("%s", err)
+            logging.error(
+                "%s Traceback in %s:\n%s",
+                "ERROR" if is_unexpected_error else "FAILURE",
+                self.id(),
+                err,
+            )
