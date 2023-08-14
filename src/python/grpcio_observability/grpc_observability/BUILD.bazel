@@ -27,7 +27,6 @@ cc_library(
         "python_census_context.cc",
         "rpc_encoding.cc",
         "sampler.cc",
-        "rpc_encoding.cc",
         "server_call_tracer.cc",
     ],
     hdrs = [
@@ -37,7 +36,6 @@ cc_library(
         "python_census_context.h",
         "rpc_encoding.h",
         "sampler.h",
-        "rpc_encoding.h",
         "server_call_tracer.h",
     ],
     includes = ["."],
