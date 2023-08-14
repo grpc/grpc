@@ -12,16 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from distutils import cygwinccompiler
-from distutils import extension
-from distutils import util
-import errno
 import os
 import os.path
 import platform
 import re
 import shlex
-import shutil
 import subprocess
 from subprocess import PIPE
 import sys
@@ -209,7 +204,7 @@ if 'darwin' in sys.platform:
         os.environ['MACOSX_DEPLOYMENT_TARGET'] = '10.10'
         os.environ['_PYTHON_HOST_PLATFORM'] = re.sub(
             r'macosx-[0-9]+\.[0-9]+-(.+)', r'macosx-10.10-\1',
-            util.get_platform())
+            sysconfig.get_platform())
 
 
 def extension_modules():
@@ -237,7 +232,7 @@ def extension_modules():
         os.path.join('grpc_observability', 'rpc_encoding.cc')
     ] + cython_module_files
 
-    plugin_ext = extension.Extension(
+    plugin_ext = setuptools.Extension(
         name='grpc_observability._cyobservability',
         sources=plugin_sources,
         include_dirs=plugin_include,
