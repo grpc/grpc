@@ -161,7 +161,8 @@ EXTRA_COMPILE_ARGS = shlex.split(EXTRA_ENV_COMPILE_ARGS)
 
 # Instead of building anything from source, grpc_observability take dependency on
 # cygrpc shared objet library.
-EXTRA_ENV_LINK_ARGS += f' -L{os.path.dirname(os.path.abspath(__file__))} -l:_cygrpc.so'
+CYGRPC_SO_PATH = os.path.dirname(os.path.abspath(__file__))
+EXTRA_ENV_LINK_ARGS += f' -L{CYGRPC_SO_PATH} -l:_cygrpc.so -Wl,-rpath,{CYGRPC_SO_PATH}'
 
 EXTRA_LINK_ARGS = shlex.split(EXTRA_ENV_LINK_ARGS)
 
