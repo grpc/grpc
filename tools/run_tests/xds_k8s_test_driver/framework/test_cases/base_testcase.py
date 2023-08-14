@@ -13,7 +13,6 @@
 # limitations under the License.
 """Base test case used for xds test suites."""
 
-from typing import Optional
 import unittest
 
 from absl import logging
@@ -23,40 +22,39 @@ from absl.testing import absltest
 class BaseTestCase(absltest.TestCase):
     def run(self, result: unittest.TestResult = None) -> None:
         super().run(result)
-        current_errors = [
-            error for test, error in result.errors if test is self
-        ]
-        current_failures = [
+        test_errors = [error for test, error in result.errors if test is self]
+        test_failures = [
             failure for test, failure in result.failures if test is self
         ]
-        current_unexpected_successes = [
+        test_unexpected_successes = [
             test for test in result.unexpectedSuccesses if test is self
         ]
-        current_skipped = [
-            reason for test, reason in result.skipped if test is self
-        ]
+        test_skipped = next(
+            (reason for test, reason in result.skipped if test is self),
+            None,
+        )
         # Assume one test case will only have one status.
-        if current_errors or current_failures:
+        if test_errors or test_failures:
             logging.info("----- TestCase %s FAILED -----", self.id())
-            if current_errors:
-                self._print_error_list(current_errors, is_unexpected_error=True)
-            if current_failures:
-                self._print_error_list(current_failures)
-        elif current_unexpected_successes:
+            if test_errors:
+                self._print_error_list(test_errors, is_unexpected_error=True)
+            if test_failures:
+                self._print_error_list(test_failures)
+        elif test_unexpected_successes:
             logging.info(
-                "----- TestCase %s UNEXPECTEDLY SUCCEED -----", self.id()
+                "----- TestCase %s UNEXPECTEDLY SUCCEEDED -----", self.id()
             )
-        elif current_skipped:
+        elif test_skipped:
             logging.info("----- TestCase %s SKIPPED -----", self.id())
-            logging.info("Reason for skipping: %s", current_skipped)
+            logging.info("Reason for skipping: %s", test_skipped)
         else:
             logging.info("----- TestCase %s PASSED -----", self.id())
 
     def _print_error_list(
-        self, errors: Optional[list[str]], is_unexpected_error: bool = False
+        self, errors: list[str], is_unexpected_error: bool = False
     ) -> None:
-        # FAILUREs are those errors explicitly signalled using the TestCase.assert*()
-        # methods.
+        # FAILUREs are those errors explicitly signalled using
+        # the TestCase.assert*() methods.
         for err in errors:
             logging.error(
                 "%s Traceback in %s:\n%s",
