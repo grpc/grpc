@@ -1,28 +1,5 @@
 var searchData=
 [
-  ['readme_236',['README',['../md_src_objective-c_examples__sample__r_e_a_d_m_e.html',1,'']]],
-  ['readme_237',['README',['../md_src_objective-c__g_r_p_c_client__r_e_a_d_m_e.html',1,'']]],
-  ['readme_238',['README',['../md_src_objective-c__r_e_a_d_m_e.html',1,'']]],
-  ['readme_2dcfstream_239',['README-CFSTREAM',['../md_src_objective-c__r_e_a_d_m_e-_c_f_s_t_r_e_a_m.html',1,'']]],
-  ['readme_240',['README',['../md_src_objective-c__rx_library__r_e_a_d_m_e.html',1,'']]],
-  ['readme_241',['README',['../md_src_objective-c_tests__connectivity__r_e_a_d_m_e.html',1,'']]],
-  ['readme_2dcfstream_2emd_242',['README-CFSTREAM.md',['../_r_e_a_d_m_e-_c_f_s_t_r_e_a_m_8md.html',1,'']]],
-  ['readme_2emd_243',['README.md',['../_g_r_p_c_client_2_r_e_a_d_m_e_8md.html',1,'(Global Namespace)'],['../_r_e_a_d_m_e_8md.html',1,'(Global Namespace)'],['../_rx_library_2_r_e_a_d_m_e_8md.html',1,'(Global Namespace)'],['../examples_2_sample_2_r_e_a_d_m_e_8md.html',1,'(Global Namespace)'],['../tests_2_connectivity_2_r_e_a_d_m_e_8md.html',1,'(Global Namespace)']]],
-  ['receivenextinterceptormessages_3a_244',['receiveNextInterceptorMessages:',['../interface_g_r_p_c_interceptor_manager.html#a9af11abeae29a37b44dc0301a9b62a51',1,'GRPCInterceptorManager']]],
-  ['receivenextmessage_245',['receiveNextMessage',['../interface_g_r_p_c_streaming_proto_call.html#a520b480b583f74d2c5d1f584f7981d5a',1,'GRPCStreamingProtoCall']]],
-  ['receivenextmessages_3a_246',['receiveNextMessages:',['../interface_g_r_p_c_call2.html#a90800373d194e3a1ad56dd2cd65d4cc7',1,'GRPCCall2::receiveNextMessages:()'],['../protocol_g_r_p_c_interceptor_interface-p.html#add7e9df3d4d740fb065ef372ad56046a',1,'GRPCInterceptorInterface-p::receiveNextMessages:()'],['../interface_g_r_p_c_interceptor.html#a1e93189dcb502c1f85856f712a384877',1,'GRPCInterceptor::receiveNextMessages:()'],['../interface_g_r_p_c_streaming_proto_call.html#a8692c9f0d29747cacad0474bb2e5c4a8',1,'GRPCStreamingProtoCall::receiveNextMessages:()']]],
-  ['registerglobalinterceptor_3a_247',['registerGlobalInterceptor:',['../category_g_r_p_c_call2_07_interceptor_08.html#ab90fbe693288211ace1016cc54664917',1,'GRPCCall2(Interceptor)::registerGlobalInterceptor:()'],['../interface_g_r_p_c_call2.html#ab90fbe693288211ace1016cc54664917',1,'GRPCCall2::registerGlobalInterceptor:()']]],
-  ['registertransportwithid_3afactory_3a_248',['registerTransportWithID:factory:',['../interface_g_r_p_c_transport_registry.html#a2d117db1e7c3267ede1c220342507557',1,'GRPCTransportRegistry']]],
-  ['removeallobjects_249',['removeAllObjects',['../protocol_g_r_p_c_request_headers-p.html#a2c70d17d2feba3b80e6688b9eec3a06a',1,'GRPCRequestHeaders-p']]],
-  ['removeobjectforkey_3a_250',['removeObjectForKey:',['../protocol_g_r_p_c_request_headers-p.html#a0a0f42aa8860bb8364608ded8f3b0236',1,'GRPCRequestHeaders-p']]],
-  ['requestheaders_251',['requestHeaders',['../interface_g_r_p_c_call.html#a2ed2de5d312a9d6e6d350f3f6d1b8756',1,'GRPCCall']]],
-  ['requestoptions_252',['requestOptions',['../interface_g_r_p_c_call2.html#a7dd38889c137bbdf0b68c3d992a38357',1,'GRPCCall2']]],
-  ['resethostsettings_253',['resetHostSettings',['../category_g_r_p_c_call_07_tests_08.html#aeceaad197ffe1e67e147c9537149dd60',1,'GRPCCall(Tests)::resetHostSettings()'],['../interface_g_r_p_c_call.html#aeceaad197ffe1e67e147c9537149dd60',1,'GRPCCall::resetHostSettings()']]],
-  ['responsedispatchqueue_254',['responseDispatchQueue',['../interface_g_r_p_c_unary_response_handler.html#a293ad0fcb490ed0a6eed993d496c6f0a',1,'GRPCUnaryResponseHandler']]],
-  ['responseheaders_255',['responseHeaders',['../interface_g_r_p_c_call.html#ac169b143f3ff705b6d3f3b3b26a53771',1,'GRPCCall::responseHeaders()'],['../interface_g_r_p_c_unary_response_handler.html#ae9039f0429cab446d2b5455c1c65a5ae',1,'GRPCUnaryResponseHandler::responseHeaders()']]],
-  ['responsesizelimit_256',['responseSizeLimit',['../interface_g_r_p_c_call_options.html#adfc34b4132ebb80e45ef939380c2d669',1,'GRPCCallOptions::responseSizeLimit()'],['../interface_g_r_p_c_mutable_call_options.html#a87947a9b236b6cad84f7e6743f43649b',1,'GRPCMutableCallOptions::responseSizeLimit()']]],
-  ['responsetrailers_257',['responseTrailers',['../interface_g_r_p_c_call.html#a47397e8d3c5f177e7d40f3b5dfbe11f1',1,'GRPCCall::responseTrailers()'],['../interface_g_r_p_c_unary_response_handler.html#a33dca1040ee0d7a78c495f3cd510fb6b',1,'GRPCUnaryResponseHandler::responseTrailers()']]],
-  ['retryenabled_258',['retryEnabled',['../interface_g_r_p_c_call_options.html#a5f8f4bbb48dab6d80d6117333e618c39',1,'GRPCCallOptions::retryEnabled()'],['../interface_g_r_p_c_mutable_call_options.html#ac39bb383754ef889b82f7447c110c8ec',1,'GRPCMutableCallOptions::retryEnabled()']]],
-  ['retryfactor_259',['retryFactor',['../interface_g_r_p_c_call_options.html#a658ed2a443512dacbfd871ea5c7a03b9',1,'GRPCCallOptions::retryFactor()'],['../interface_g_r_p_c_mutable_call_options.html#a6ca4b5236ac65e0cead6f843f2ae67da',1,'GRPCMutableCallOptions::retryFactor()']]],
-  ['rpctomethod_3arequestswriter_3aresponseclass_3aresponseswriteable_3a_260',['RPCToMethod:requestsWriter:responseClass:responsesWriteable:',['../category_proto_service_07_legacy_08.html#ae9f33d9570df9963bf7cd20f517b7822',1,'ProtoService(Legacy)']]]
+  ['quality_20of_20service_20_28qos_29_20using_20differentiated_20services_236',['Quality of Service (QoS) using Differentiated services',['../md_doc_qos-dscp.html',1,'']]],
+  ['qos_2ddscp_2emd_237',['qos-dscp.md',['../qos-dscp_8md.html',1,'']]]
 ];

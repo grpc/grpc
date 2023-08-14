@@ -4,12 +4,12 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>grpc.aio._channel &#8212; gRPC Python 1.56.0 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css" />
-    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
-    <script src="../../../_static/doctools.js"></script>
-    <script src="../../../_static/sphinx_highlight.js"></script>
+    <title>grpc.aio._channel &#8212; gRPC Python 1.57.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=4f649999" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=8090fdca" />
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=a042030b"></script>
+    <script src="../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=4825356b"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
    
@@ -27,7 +27,7 @@
 
 
 
-<p class="blurb">1.56.0</p>
+<p class="blurb">1.57.0</p>
 
 
 
@@ -136,28 +136,36 @@
 <span class="kn">from</span> <span class="nn">._typing</span> <span class="kn">import</span> <span class="n">SerializingFunction</span>
 <span class="kn">from</span> <span class="nn">._utils</span> <span class="kn">import</span> <span class="n">_timeout_to_deadline</span>
 
-<span class="n">_USER_AGENT</span> <span class="o">=</span> <span class="s1">&#39;grpc-python-asyncio/</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_grpcio_metadata</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span>
+<span class="n">_USER_AGENT</span> <span class="o">=</span> <span class="s2">&quot;grpc-python-asyncio/</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_grpcio_metadata</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span>
 
 <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">7</span><span class="p">:</span>
 
     <span class="k">def</span> <span class="nf">_all_tasks</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">asyncio</span><span class="o">.</span><span class="n">Task</span><span class="p">]:</span>
-        <span class="k">return</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">Task</span><span class="o">.</span><span class="n">all_tasks</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">Task</span><span class="o">.</span><span class="n">all_tasks</span><span class="p">()</span>  <span class="c1"># pylint: disable=no-member</span>
+
 <span class="k">else</span><span class="p">:</span>
 
     <span class="k">def</span> <span class="nf">_all_tasks</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">asyncio</span><span class="o">.</span><span class="n">Task</span><span class="p">]:</span>
         <span class="k">return</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">all_tasks</span><span class="p">()</span>
 
 
-<span class="k">def</span> <span class="nf">_augment_channel_arguments</span><span class="p">(</span><span class="n">base_options</span><span class="p">:</span> <span class="n">ChannelArgumentType</span><span class="p">,</span>
-                               <span class="n">compression</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">Compression</span><span class="p">]):</span>
+<span class="k">def</span> <span class="nf">_augment_channel_arguments</span><span class="p">(</span>
+    <span class="n">base_options</span><span class="p">:</span> <span class="n">ChannelArgumentType</span><span class="p">,</span> <span class="n">compression</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">Compression</span><span class="p">]</span>
+<span class="p">):</span>
     <span class="n">compression_channel_argument</span> <span class="o">=</span> <span class="n">_compression</span><span class="o">.</span><span class="n">create_channel_option</span><span class="p">(</span>
-        <span class="n">compression</span><span class="p">)</span>
-    <span class="n">user_agent_channel_argument</span> <span class="o">=</span> <span class="p">((</span>
-        <span class="n">cygrpc</span><span class="o">.</span><span class="n">ChannelArgKey</span><span class="o">.</span><span class="n">primary_user_agent_string</span><span class="p">,</span>
-        <span class="n">_USER_AGENT</span><span class="p">,</span>
-    <span class="p">),)</span>
-    <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">base_options</span>
-                <span class="p">)</span> <span class="o">+</span> <span class="n">compression_channel_argument</span> <span class="o">+</span> <span class="n">user_agent_channel_argument</span>
+        <span class="n">compression</span>
+    <span class="p">)</span>
+    <span class="n">user_agent_channel_argument</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="p">(</span>
+            <span class="n">cygrpc</span><span class="o">.</span><span class="n">ChannelArgKey</span><span class="o">.</span><span class="n">primary_user_agent_string</span><span class="p">,</span>
+            <span class="n">_USER_AGENT</span><span class="p">,</span>
+        <span class="p">),</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="nb">tuple</span><span class="p">(</span><span class="n">base_options</span><span class="p">)</span>
+        <span class="o">+</span> <span class="n">compression_channel_argument</span>
+        <span class="o">+</span> <span class="n">user_agent_channel_argument</span>
+    <span class="p">)</span>
 
 
 <span class="k">class</span> <span class="nc">_BaseMultiCallable</span><span class="p">:</span>
@@ -165,6 +173,7 @@
 
 <span class="sd">    Handles the initialization logic and stores common attributes.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="n">_loop</span><span class="p">:</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">AbstractEventLoop</span>
     <span class="n">_channel</span><span class="p">:</span> <span class="n">cygrpc</span><span class="o">.</span><span class="n">AioChannel</span>
     <span class="n">_method</span><span class="p">:</span> <span class="nb">bytes</span>
@@ -195,21 +204,23 @@
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">_init_metadata</span><span class="p">(</span>
-            <span class="n">metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Metadata</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-            <span class="n">compression</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">Compression</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Metadata</span><span class="p">:</span>
+        <span class="n">metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Metadata</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">compression</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">Compression</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Metadata</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Based on the provided values for &lt;metadata&gt; or &lt;compression&gt; initialise the final</span>
 <span class="sd">        metadata, as it should be used for the current call.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">metadata</span> <span class="o">=</span> <span class="n">metadata</span> <span class="ow">or</span> <span class="n">Metadata</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">compression</span><span class="p">:</span>
             <span class="n">metadata</span> <span class="o">=</span> <span class="n">Metadata</span><span class="p">(</span>
-                <span class="o">*</span><span class="n">_compression</span><span class="o">.</span><span class="n">augment_metadata</span><span class="p">(</span><span class="n">metadata</span><span class="p">,</span> <span class="n">compression</span><span class="p">))</span>
+                <span class="o">*</span><span class="n">_compression</span><span class="o">.</span><span class="n">augment_metadata</span><span class="p">(</span><span class="n">metadata</span><span class="p">,</span> <span class="n">compression</span><span class="p">)</span>
+            <span class="p">)</span>
         <span class="k">return</span> <span class="n">metadata</span>
 
 
-<span class="k">class</span> <span class="nc">UnaryUnaryMultiCallable</span><span class="p">(</span><span class="n">_BaseMultiCallable</span><span class="p">,</span>
-                              <span class="n">_base_channel</span><span class="o">.</span><span class="n">UnaryUnaryMultiCallable</span><span class="p">):</span>
-
+<span class="k">class</span> <span class="nc">UnaryUnaryMultiCallable</span><span class="p">(</span>
+    <span class="n">_BaseMultiCallable</span><span class="p">,</span> <span class="n">_base_channel</span><span class="o">.</span><span class="n">UnaryUnaryMultiCallable</span>
+<span class="p">):</span>
     <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">request</span><span class="p">:</span> <span class="n">RequestType</span><span class="p">,</span>
@@ -218,29 +229,43 @@
         <span class="n">metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Metadata</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">credentials</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">CallCredentials</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">wait_for_ready</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">compression</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">Compression</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">compression</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">Compression</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_base_call</span><span class="o">.</span><span class="n">UnaryUnaryCall</span><span class="p">[</span><span class="n">RequestType</span><span class="p">,</span> <span class="n">ResponseType</span><span class="p">]:</span>
-
         <span class="n">metadata</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_init_metadata</span><span class="p">(</span><span class="n">metadata</span><span class="p">,</span> <span class="n">compression</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interceptors</span><span class="p">:</span>
-            <span class="n">call</span> <span class="o">=</span> <span class="n">UnaryUnaryCall</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">_timeout_to_deadline</span><span class="p">(</span><span class="n">timeout</span><span class="p">),</span>
-                                  <span class="n">metadata</span><span class="p">,</span> <span class="n">credentials</span><span class="p">,</span> <span class="n">wait_for_ready</span><span class="p">,</span>
-                                  <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_method</span><span class="p">,</span>
-                                  <span class="bp">self</span><span class="o">.</span><span class="n">_request_serializer</span><span class="p">,</span>
-                                  <span class="bp">self</span><span class="o">.</span><span class="n">_response_deserializer</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">)</span>
+            <span class="n">call</span> <span class="o">=</span> <span class="n">UnaryUnaryCall</span><span class="p">(</span>
+                <span class="n">request</span><span class="p">,</span>
+                <span class="n">_timeout_to_deadline</span><span class="p">(</span><span class="n">timeout</span><span class="p">),</span>
+                <span class="n">metadata</span><span class="p">,</span>
+                <span class="n">credentials</span><span class="p">,</span>
+                <span class="n">wait_for_ready</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_method</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_request_serializer</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_response_deserializer</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">,</span>
+            <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">call</span> <span class="o">=</span> <span class="n">InterceptedUnaryUnaryCall</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_interceptors</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">timeout</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span> <span class="n">credentials</span><span class="p">,</span>
-                <span class="n">wait_for_ready</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_method</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_request_serializer</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_response_deserializer</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_interceptors</span><span class="p">,</span>
+                <span class="n">request</span><span class="p">,</span>
+                <span class="n">timeout</span><span class="p">,</span>
+                <span class="n">metadata</span><span class="p">,</span>
+                <span class="n">credentials</span><span class="p">,</span>
+                <span class="n">wait_for_ready</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_method</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_request_serializer</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_response_deserializer</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">,</span>
+            <span class="p">)</span>
 
         <span class="k">return</span> <span class="n">call</span>
 
 
-<span class="k">class</span> <span class="nc">UnaryStreamMultiCallable</span><span class="p">(</span><span class="n">_BaseMultiCallable</span><span class="p">,</span>
-                               <span class="n">_base_channel</span><span class="o">.</span><span class="n">UnaryStreamMultiCallable</span><span class="p">):</span>
-
+<span class="k">class</span> <span class="nc">UnaryStreamMultiCallable</span><span class="p">(</span>
+    <span class="n">_BaseMultiCallable</span><span class="p">,</span> <span class="n">_base_channel</span><span class="o">.</span><span class="n">UnaryStreamMultiCallable</span>
+<span class="p">):</span>
     <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">request</span><span class="p">:</span> <span class="n">RequestType</span><span class="p">,</span>
@@ -249,30 +274,45 @@
         <span class="n">metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Metadata</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">credentials</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">CallCredentials</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">wait_for_ready</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">compression</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">Compression</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">compression</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">Compression</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_base_call</span><span class="o">.</span><span class="n">UnaryStreamCall</span><span class="p">[</span><span class="n">RequestType</span><span class="p">,</span> <span class="n">ResponseType</span><span class="p">]:</span>
-
         <span class="n">metadata</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_init_metadata</span><span class="p">(</span><span class="n">metadata</span><span class="p">,</span> <span class="n">compression</span><span class="p">)</span>
         <span class="n">deadline</span> <span class="o">=</span> <span class="n">_timeout_to_deadline</span><span class="p">(</span><span class="n">timeout</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interceptors</span><span class="p">:</span>
-            <span class="n">call</span> <span class="o">=</span> <span class="n">UnaryStreamCall</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">deadline</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span> <span class="n">credentials</span><span class="p">,</span>
-                                   <span class="n">wait_for_ready</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_method</span><span class="p">,</span>
-                                   <span class="bp">self</span><span class="o">.</span><span class="n">_request_serializer</span><span class="p">,</span>
-                                   <span class="bp">self</span><span class="o">.</span><span class="n">_response_deserializer</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">)</span>
+            <span class="n">call</span> <span class="o">=</span> <span class="n">UnaryStreamCall</span><span class="p">(</span>
+                <span class="n">request</span><span class="p">,</span>
+                <span class="n">deadline</span><span class="p">,</span>
+                <span class="n">metadata</span><span class="p">,</span>
+                <span class="n">credentials</span><span class="p">,</span>
+                <span class="n">wait_for_ready</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_method</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_request_serializer</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_response_deserializer</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">,</span>
+            <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">call</span> <span class="o">=</span> <span class="n">InterceptedUnaryStreamCall</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_interceptors</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">deadline</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span> <span class="n">credentials</span><span class="p">,</span>
-                <span class="n">wait_for_ready</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_method</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_request_serializer</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_response_deserializer</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_interceptors</span><span class="p">,</span>
+                <span class="n">request</span><span class="p">,</span>
+                <span class="n">deadline</span><span class="p">,</span>
+                <span class="n">metadata</span><span class="p">,</span>
+                <span class="n">credentials</span><span class="p">,</span>
+                <span class="n">wait_for_ready</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_method</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_request_serializer</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_response_deserializer</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">,</span>
+            <span class="p">)</span>
 
         <span class="k">return</span> <span class="n">call</span>
 
 
-<span class="k">class</span> <span class="nc">StreamUnaryMultiCallable</span><span class="p">(</span><span class="n">_BaseMultiCallable</span><span class="p">,</span>
-                               <span class="n">_base_channel</span><span class="o">.</span><span class="n">StreamUnaryMultiCallable</span><span class="p">):</span>
-
+<span class="k">class</span> <span class="nc">StreamUnaryMultiCallable</span><span class="p">(</span>
+    <span class="n">_BaseMultiCallable</span><span class="p">,</span> <span class="n">_base_channel</span><span class="o">.</span><span class="n">StreamUnaryMultiCallable</span>
+<span class="p">):</span>
     <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">request_iterator</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RequestIterableType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -280,30 +320,45 @@
         <span class="n">metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Metadata</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">credentials</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">CallCredentials</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">wait_for_ready</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">compression</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">Compression</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">compression</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">Compression</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_base_call</span><span class="o">.</span><span class="n">StreamUnaryCall</span><span class="p">:</span>
-
         <span class="n">metadata</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_init_metadata</span><span class="p">(</span><span class="n">metadata</span><span class="p">,</span> <span class="n">compression</span><span class="p">)</span>
         <span class="n">deadline</span> <span class="o">=</span> <span class="n">_timeout_to_deadline</span><span class="p">(</span><span class="n">timeout</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interceptors</span><span class="p">:</span>
-            <span class="n">call</span> <span class="o">=</span> <span class="n">StreamUnaryCall</span><span class="p">(</span><span class="n">request_iterator</span><span class="p">,</span> <span class="n">deadline</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span>
-                                   <span class="n">credentials</span><span class="p">,</span> <span class="n">wait_for_ready</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">,</span>
-                                   <span class="bp">self</span><span class="o">.</span><span class="n">_method</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request_serializer</span><span class="p">,</span>
-                                   <span class="bp">self</span><span class="o">.</span><span class="n">_response_deserializer</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">)</span>
+            <span class="n">call</span> <span class="o">=</span> <span class="n">StreamUnaryCall</span><span class="p">(</span>
+                <span class="n">request_iterator</span><span class="p">,</span>
+                <span class="n">deadline</span><span class="p">,</span>
+                <span class="n">metadata</span><span class="p">,</span>
+                <span class="n">credentials</span><span class="p">,</span>
+                <span class="n">wait_for_ready</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_method</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_request_serializer</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_response_deserializer</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">,</span>
+            <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">call</span> <span class="o">=</span> <span class="n">InterceptedStreamUnaryCall</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_interceptors</span><span class="p">,</span> <span class="n">request_iterator</span><span class="p">,</span> <span class="n">deadline</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span>
-                <span class="n">credentials</span><span class="p">,</span> <span class="n">wait_for_ready</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_method</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_request_serializer</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_response_deserializer</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_interceptors</span><span class="p">,</span>
+                <span class="n">request_iterator</span><span class="p">,</span>
+                <span class="n">deadline</span><span class="p">,</span>
+                <span class="n">metadata</span><span class="p">,</span>
+                <span class="n">credentials</span><span class="p">,</span>
+                <span class="n">wait_for_ready</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_method</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_request_serializer</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_response_deserializer</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">,</span>
+            <span class="p">)</span>
 
         <span class="k">return</span> <span class="n">call</span>
 
 
-<span class="k">class</span> <span class="nc">StreamStreamMultiCallable</span><span class="p">(</span><span class="n">_BaseMultiCallable</span><span class="p">,</span>
-                                <span class="n">_base_channel</span><span class="o">.</span><span class="n">StreamStreamMultiCallable</span><span class="p">):</span>
-
+<span class="k">class</span> <span class="nc">StreamStreamMultiCallable</span><span class="p">(</span>
+    <span class="n">_BaseMultiCallable</span><span class="p">,</span> <span class="n">_base_channel</span><span class="o">.</span><span class="n">StreamStreamMultiCallable</span>
+<span class="p">):</span>
     <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">request_iterator</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RequestIterableType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -311,23 +366,38 @@
         <span class="n">metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Metadata</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">credentials</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">CallCredentials</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">wait_for_ready</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">compression</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">Compression</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">compression</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">Compression</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_base_call</span><span class="o">.</span><span class="n">StreamStreamCall</span><span class="p">:</span>
-
         <span class="n">metadata</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_init_metadata</span><span class="p">(</span><span class="n">metadata</span><span class="p">,</span> <span class="n">compression</span><span class="p">)</span>
         <span class="n">deadline</span> <span class="o">=</span> <span class="n">_timeout_to_deadline</span><span class="p">(</span><span class="n">timeout</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interceptors</span><span class="p">:</span>
-            <span class="n">call</span> <span class="o">=</span> <span class="n">StreamStreamCall</span><span class="p">(</span><span class="n">request_iterator</span><span class="p">,</span> <span class="n">deadline</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span>
-                                    <span class="n">credentials</span><span class="p">,</span> <span class="n">wait_for_ready</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">,</span>
-                                    <span class="bp">self</span><span class="o">.</span><span class="n">_method</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request_serializer</span><span class="p">,</span>
-                                    <span class="bp">self</span><span class="o">.</span><span class="n">_response_deserializer</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">)</span>
+            <span class="n">call</span> <span class="o">=</span> <span class="n">StreamStreamCall</span><span class="p">(</span>
+                <span class="n">request_iterator</span><span class="p">,</span>
+                <span class="n">deadline</span><span class="p">,</span>
+                <span class="n">metadata</span><span class="p">,</span>
+                <span class="n">credentials</span><span class="p">,</span>
+                <span class="n">wait_for_ready</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_method</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_request_serializer</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_response_deserializer</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">,</span>
+            <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">call</span> <span class="o">=</span> <span class="n">InterceptedStreamStreamCall</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_interceptors</span><span class="p">,</span> <span class="n">request_iterator</span><span class="p">,</span> <span class="n">deadline</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span>
-                <span class="n">credentials</span><span class="p">,</span> <span class="n">wait_for_ready</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_method</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_request_serializer</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_response_deserializer</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_interceptors</span><span class="p">,</span>
+                <span class="n">request_iterator</span><span class="p">,</span>
+                <span class="n">deadline</span><span class="p">,</span>
+                <span class="n">metadata</span><span class="p">,</span>
+                <span class="n">credentials</span><span class="p">,</span>
+                <span class="n">wait_for_ready</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_method</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_request_serializer</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_response_deserializer</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">,</span>
+            <span class="p">)</span>
 
         <span class="k">return</span> <span class="n">call</span>
 
@@ -340,10 +410,14 @@
     <span class="n">_stream_unary_interceptors</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">StreamUnaryClientInterceptor</span><span class="p">]</span>
     <span class="n">_stream_stream_interceptors</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">StreamStreamClientInterceptor</span><span class="p">]</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">options</span><span class="p">:</span> <span class="n">ChannelArgumentType</span><span class="p">,</span>
-                 <span class="n">credentials</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">ChannelCredentials</span><span class="p">],</span>
-                 <span class="n">compression</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">Compression</span><span class="p">],</span>
-                 <span class="n">interceptors</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="n">ClientInterceptor</span><span class="p">]]):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">target</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">options</span><span class="p">:</span> <span class="n">ChannelArgumentType</span><span class="p">,</span>
+        <span class="n">credentials</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">ChannelCredentials</span><span class="p">],</span>
+        <span class="n">compression</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">Compression</span><span class="p">],</span>
+        <span class="n">interceptors</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="n">ClientInterceptor</span><span class="p">]],</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Constructor.</span>
 
 <span class="sd">        Args:</span>
@@ -372,17 +446,20 @@
                     <span class="bp">self</span><span class="o">.</span><span class="n">_stream_stream_interceptors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">interceptor</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                        <span class="s2">&quot;Interceptor </span><span class="si">{}</span><span class="s2"> must be &quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">interceptor</span><span class="p">)</span> <span class="o">+</span>
-                        <span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> or &quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">UnaryUnaryClientInterceptor</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span> <span class="o">+</span>
-                        <span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> or &quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">UnaryStreamClientInterceptor</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span> <span class="o">+</span>
-                        <span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> or &quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">StreamUnaryClientInterceptor</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span> <span class="o">+</span>
-                        <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">. &quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">StreamStreamClientInterceptor</span><span class="o">.</span><span class="vm">__name__</span><span class="p">))</span>
+                        <span class="s2">&quot;Interceptor </span><span class="si">{}</span><span class="s2"> must be &quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">interceptor</span><span class="p">)</span>
+                        <span class="o">+</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> or &quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">UnaryUnaryClientInterceptor</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+                        <span class="o">+</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> or &quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">UnaryStreamClientInterceptor</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+                        <span class="o">+</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> or &quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">StreamUnaryClientInterceptor</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+                        <span class="o">+</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">. &quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">StreamStreamClientInterceptor</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+                    <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span> <span class="o">=</span> <span class="n">cygrpc</span><span class="o">.</span><span class="n">get_working_loop</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span> <span class="o">=</span> <span class="n">cygrpc</span><span class="o">.</span><span class="n">AioChannel</span><span class="p">(</span>
             <span class="n">_common</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">target</span><span class="p">),</span>
-            <span class="n">_augment_channel_arguments</span><span class="p">(</span><span class="n">options</span><span class="p">,</span> <span class="n">compression</span><span class="p">),</span> <span class="n">credentials</span><span class="p">,</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">)</span>
+            <span class="n">_augment_channel_arguments</span><span class="p">(</span><span class="n">options</span><span class="p">,</span> <span class="n">compression</span><span class="p">),</span>
+            <span class="n">credentials</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">,</span>
+        <span class="p">)</span>
 
     <span class="k">async</span> <span class="k">def</span> <span class="fm">__aenter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span>
@@ -419,7 +496,7 @@
                 <span class="c1"># but not available until 3.9 or 3.8.3. So, we have to keep it</span>
                 <span class="c1"># for a while.</span>
                 <span class="c1"># TODO(lidiz) drop this hack after 3.8 deprecation</span>
-                <span class="k">if</span> <span class="s1">&#39;frame&#39;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">attribute_error</span><span class="p">):</span>
+                <span class="k">if</span> <span class="s2">&quot;frame&quot;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">attribute_error</span><span class="p">):</span>
                     <span class="k">continue</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="k">raise</span>
@@ -430,21 +507,22 @@
 
             <span class="c1"># Locate ones created by `aio.Call`.</span>
             <span class="n">frame</span> <span class="o">=</span> <span class="n">stack</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="n">candidate</span> <span class="o">=</span> <span class="n">frame</span><span class="o">.</span><span class="n">f_locals</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;self&#39;</span><span class="p">)</span>
+            <span class="n">candidate</span> <span class="o">=</span> <span class="n">frame</span><span class="o">.</span><span class="n">f_locals</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;self&quot;</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">candidate</span><span class="p">:</span>
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">candidate</span><span class="p">,</span> <span class="n">_base_call</span><span class="o">.</span><span class="n">Call</span><span class="p">):</span>
-                    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">candidate</span><span class="p">,</span> <span class="s1">&#39;_channel&#39;</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">candidate</span><span class="p">,</span> <span class="s2">&quot;_channel&quot;</span><span class="p">):</span>
                         <span class="c1"># For intercepted Call object</span>
                         <span class="k">if</span> <span class="n">candidate</span><span class="o">.</span><span class="n">_channel</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">:</span>
                             <span class="k">continue</span>
-                    <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">candidate</span><span class="p">,</span> <span class="s1">&#39;_cython_call&#39;</span><span class="p">):</span>
+                    <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">candidate</span><span class="p">,</span> <span class="s2">&quot;_cython_call&quot;</span><span class="p">):</span>
                         <span class="c1"># For normal Call object</span>
                         <span class="k">if</span> <span class="n">candidate</span><span class="o">.</span><span class="n">_cython_call</span><span class="o">.</span><span class="n">_channel</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">:</span>
                             <span class="k">continue</span>
                     <span class="k">else</span><span class="p">:</span>
                         <span class="c1"># Unidentified Call object</span>
                         <span class="k">raise</span> <span class="n">cygrpc</span><span class="o">.</span><span class="n">InternalError</span><span class="p">(</span>
-                            <span class="sa">f</span><span class="s1">&#39;Unrecognized call object: </span><span class="si">{</span><span class="n">candidate</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+                            <span class="sa">f</span><span class="s2">&quot;Unrecognized call object: </span><span class="si">{</span><span class="n">candidate</span><span class="si">}</span><span class="s2">&quot;</span>
+                        <span class="p">)</span>
 
                     <span class="n">calls</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">candidate</span><span class="p">)</span>
                     <span class="n">call_tasks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">task</span><span class="p">)</span>
@@ -465,12 +543,13 @@
         <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_close</span><span class="p">(</span><span class="n">grace</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;_channel&#39;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_channel&quot;</span><span class="p">):</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="o">.</span><span class="n">closed</span><span class="p">():</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">get_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
-                  <span class="n">try_to_connect</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">grpc</span><span class="o">.</span><span class="n">ChannelConnectivity</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">get_state</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">try_to_connect</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">grpc</span><span class="o">.</span><span class="n">ChannelConnectivity</span><span class="p">:</span>
         <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="o">.</span><span class="n">check_connectivity_state</span><span class="p">(</span><span class="n">try_to_connect</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">_common</span><span class="o">.</span><span class="n">CYGRPC_CONNECTIVITY_STATE_TO_CHANNEL_CONNECTIVITY</span><span class="p">[</span><span class="n">result</span><span class="p">]</span>
 
@@ -479,7 +558,8 @@
         <span class="n">last_observed_state</span><span class="p">:</span> <span class="n">grpc</span><span class="o">.</span><span class="n">ChannelConnectivity</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">assert</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="o">.</span><span class="n">watch_connectivity_state</span><span class="p">(</span>
-            <span class="n">last_observed_state</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="n">last_observed_state</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="kc">None</span>
+        <span class="p">)</span>
 
     <span class="k">async</span> <span class="k">def</span> <span class="nf">channel_ready</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_state</span><span class="p">(</span><span class="n">try_to_connect</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -491,56 +571,73 @@
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">method</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">request_serializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SerializingFunction</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">response_deserializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DeserializingFunction</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">response_deserializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DeserializingFunction</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">UnaryUnaryMultiCallable</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">UnaryUnaryMultiCallable</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">,</span> <span class="n">_common</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">method</span><span class="p">),</span>
-                                       <span class="n">request_serializer</span><span class="p">,</span>
-                                       <span class="n">response_deserializer</span><span class="p">,</span>
-                                       <span class="bp">self</span><span class="o">.</span><span class="n">_unary_unary_interceptors</span><span class="p">,</span> <span class="p">[</span><span class="bp">self</span><span class="p">],</span>
-                                       <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">UnaryUnaryMultiCallable</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">,</span>
+            <span class="n">_common</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">method</span><span class="p">),</span>
+            <span class="n">request_serializer</span><span class="p">,</span>
+            <span class="n">response_deserializer</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_unary_unary_interceptors</span><span class="p">,</span>
+            <span class="p">[</span><span class="bp">self</span><span class="p">],</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">,</span>
+        <span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">unary_stream</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">method</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">request_serializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SerializingFunction</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">response_deserializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DeserializingFunction</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">response_deserializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DeserializingFunction</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">UnaryStreamMultiCallable</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">UnaryStreamMultiCallable</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">,</span> <span class="n">_common</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">method</span><span class="p">),</span>
-                                        <span class="n">request_serializer</span><span class="p">,</span>
-                                        <span class="n">response_deserializer</span><span class="p">,</span>
-                                        <span class="bp">self</span><span class="o">.</span><span class="n">_unary_stream_interceptors</span><span class="p">,</span> <span class="p">[</span><span class="bp">self</span><span class="p">],</span>
-                                        <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">UnaryStreamMultiCallable</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">,</span>
+            <span class="n">_common</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">method</span><span class="p">),</span>
+            <span class="n">request_serializer</span><span class="p">,</span>
+            <span class="n">response_deserializer</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_unary_stream_interceptors</span><span class="p">,</span>
+            <span class="p">[</span><span class="bp">self</span><span class="p">],</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">,</span>
+        <span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">stream_unary</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">method</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">request_serializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SerializingFunction</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">response_deserializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DeserializingFunction</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">response_deserializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DeserializingFunction</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">StreamUnaryMultiCallable</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">StreamUnaryMultiCallable</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">,</span> <span class="n">_common</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">method</span><span class="p">),</span>
-                                        <span class="n">request_serializer</span><span class="p">,</span>
-                                        <span class="n">response_deserializer</span><span class="p">,</span>
-                                        <span class="bp">self</span><span class="o">.</span><span class="n">_stream_unary_interceptors</span><span class="p">,</span> <span class="p">[</span><span class="bp">self</span><span class="p">],</span>
-                                        <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">StreamUnaryMultiCallable</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">,</span>
+            <span class="n">_common</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">method</span><span class="p">),</span>
+            <span class="n">request_serializer</span><span class="p">,</span>
+            <span class="n">response_deserializer</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_stream_unary_interceptors</span><span class="p">,</span>
+            <span class="p">[</span><span class="bp">self</span><span class="p">],</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">,</span>
+        <span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">stream_stream</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">method</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">request_serializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SerializingFunction</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">response_deserializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DeserializingFunction</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">response_deserializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DeserializingFunction</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">StreamStreamMultiCallable</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">StreamStreamMultiCallable</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">,</span> <span class="n">_common</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">method</span><span class="p">),</span>
-                                         <span class="n">request_serializer</span><span class="p">,</span>
-                                         <span class="n">response_deserializer</span><span class="p">,</span>
-                                         <span class="bp">self</span><span class="o">.</span><span class="n">_stream_stream_interceptors</span><span class="p">,</span>
-                                         <span class="p">[</span><span class="bp">self</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">StreamStreamMultiCallable</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">,</span>
+            <span class="n">_common</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">method</span><span class="p">),</span>
+            <span class="n">request_serializer</span><span class="p">,</span>
+            <span class="n">response_deserializer</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_stream_stream_interceptors</span><span class="p">,</span>
+            <span class="p">[</span><span class="bp">self</span><span class="p">],</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">,</span>
+        <span class="p">)</span>
 
 
 <div class="viewcode-block" id="insecure_channel"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.insecure_channel">[docs]</a><span class="k">def</span> <span class="nf">insecure_channel</span><span class="p">(</span>
-        <span class="n">target</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-        <span class="n">options</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ChannelArgumentType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">compression</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">Compression</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">interceptors</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="n">ClientInterceptor</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+    <span class="n">target</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">options</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ChannelArgumentType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">compression</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">Compression</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">interceptors</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="n">ClientInterceptor</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Creates an insecure asynchronous Channel to a server.</span>
 
 <span class="sd">    Args:</span>
@@ -555,15 +652,22 @@
 <span class="sd">    Returns:</span>
 <span class="sd">      A Channel.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">Channel</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="p">()</span> <span class="k">if</span> <span class="n">options</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">options</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span>
-                   <span class="n">compression</span><span class="p">,</span> <span class="n">interceptors</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">Channel</span><span class="p">(</span>
+        <span class="n">target</span><span class="p">,</span>
+        <span class="p">()</span> <span class="k">if</span> <span class="n">options</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">options</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+        <span class="n">compression</span><span class="p">,</span>
+        <span class="n">interceptors</span><span class="p">,</span>
+    <span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="secure_channel"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.secure_channel">[docs]</a><span class="k">def</span> <span class="nf">secure_channel</span><span class="p">(</span><span class="n">target</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-                   <span class="n">credentials</span><span class="p">:</span> <span class="n">grpc</span><span class="o">.</span><span class="n">ChannelCredentials</span><span class="p">,</span>
-                   <span class="n">options</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ChannelArgumentType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-                   <span class="n">compression</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">Compression</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-                   <span class="n">interceptors</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="n">ClientInterceptor</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="secure_channel"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.secure_channel">[docs]</a><span class="k">def</span> <span class="nf">secure_channel</span><span class="p">(</span>
+    <span class="n">target</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">credentials</span><span class="p">:</span> <span class="n">grpc</span><span class="o">.</span><span class="n">ChannelCredentials</span><span class="p">,</span>
+    <span class="n">options</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ChannelArgumentType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">compression</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">Compression</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">interceptors</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="n">ClientInterceptor</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Creates a secure asynchronous Channel to a server.</span>
 
 <span class="sd">    Args:</span>
@@ -579,8 +683,13 @@
 <span class="sd">    Returns:</span>
 <span class="sd">      An aio.Channel.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">Channel</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="p">()</span> <span class="k">if</span> <span class="n">options</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">options</span><span class="p">,</span>
-                   <span class="n">credentials</span><span class="o">.</span><span class="n">_credentials</span><span class="p">,</span> <span class="n">compression</span><span class="p">,</span> <span class="n">interceptors</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">Channel</span><span class="p">(</span>
+        <span class="n">target</span><span class="p">,</span>
+        <span class="p">()</span> <span class="k">if</span> <span class="n">options</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">options</span><span class="p">,</span>
+        <span class="n">credentials</span><span class="o">.</span><span class="n">_credentials</span><span class="p">,</span>
+        <span class="n">compression</span><span class="p">,</span>
+        <span class="n">interceptors</span><span class="p">,</span>
+    <span class="p">)</span></div>
 </pre></div>
 
           </div>

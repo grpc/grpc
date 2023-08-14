@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">33.0.0</span>
+   &#160;<span id="projectnumber">34.0.0</span>
    </div>
   </td>
  </tr>
@@ -76,6 +76,7 @@ $(function() {
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><code>#include &lt;<a class="el" href="support_2port__platform_8h_source.html">grpc/support/port_platform.h</a>&gt;</code><br />
+<code>#include &lt;stdbool.h&gt;</code><br />
 <code>#include &lt;<a class="el" href="grpc_8h_source.html">grpc/grpc.h</a>&gt;</code><br />
 <code>#include &lt;<a class="el" href="grpc__security__constants_8h_source.html">grpc/grpc_security_constants.h</a>&gt;</code><br />
 <code>#include &lt;<a class="el" href="status_8h_source.html">grpc/status.h</a>&gt;</code><br />
@@ -382,6 +383,9 @@ Functions</h2></td></tr>
 <tr class="memitem:a2a1bd0a20897756471d19c9adff72338"><td class="memItemLeft" align="right" valign="top"><a class="el" href="support_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a2a1bd0a20897756471d19c9adff72338">grpc_tls_credentials_options_set_verify_server_cert</a> (<a class="el" href="grpc__security_8h.html#a8fe8a5a9b93ff8671a7843add47d57be">grpc_tls_credentials_options</a> *options, int verify_server_cert)</td></tr>
 <tr class="memdesc:a2a1bd0a20897756471d19c9adff72338"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL API - Subject to change.  <a href="grpc__security_8h.html#a2a1bd0a20897756471d19c9adff72338">More...</a><br /></td></tr>
 <tr class="separator:a2a1bd0a20897756471d19c9adff72338"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a865429446f46e48fd4729720b022e5bc"><td class="memItemLeft" align="right" valign="top"><a class="el" href="support_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a865429446f46e48fd4729720b022e5bc">grpc_tls_credentials_options_set_send_client_ca_list</a> (<a class="el" href="grpc__security_8h.html#a8fe8a5a9b93ff8671a7843add47d57be">grpc_tls_credentials_options</a> *options, bool send_client_ca_list)</td></tr>
+<tr class="memdesc:a865429446f46e48fd4729720b022e5bc"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL API - Subject to change.  <a href="grpc__security_8h.html#a865429446f46e48fd4729720b022e5bc">More...</a><br /></td></tr>
+<tr class="separator:a865429446f46e48fd4729720b022e5bc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a129d8fd8e77cde679368f6ae03f990d4"><td class="memItemLeft" align="right" valign="top"><a class="el" href="grpc__security_8h.html#afc10060e41d23b0e31f5c5a312d49138">grpc_tls_certificate_verifier</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a129d8fd8e77cde679368f6ae03f990d4">grpc_tls_certificate_verifier_external_create</a> (<a class="el" href="structgrpc__tls__certificate__verifier__external.html">grpc_tls_certificate_verifier_external</a> *external_verifier)</td></tr>
 <tr class="memdesc:a129d8fd8e77cde679368f6ae03f990d4"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL API - Subject to change.  <a href="grpc__security_8h.html#a129d8fd8e77cde679368f6ae03f990d4">More...</a><br /></td></tr>
 <tr class="separator:a129d8fd8e77cde679368f6ae03f990d4"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -1063,7 +1067,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p>&ndash; The following auth context methods should only be called by a server metadata </p>
-<h2><a class="anchor" id="autotoc_md318"></a>
+<h2><a class="anchor" id="autotoc_md319"></a>
 processor to set properties extracted from auth metadata.</h2>
 <p>Add a property. </p>
 
@@ -2929,6 +2933,38 @@ processor to set properties extracted from auth metadata.</h2>
 
 </div>
 </div>
+<a id="a865429446f46e48fd4729720b022e5bc"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a865429446f46e48fd4729720b022e5bc">&#9670;&nbsp;</a></span>grpc_tls_credentials_options_set_send_client_ca_list()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="support_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void grpc_tls_credentials_options_set_send_client_ca_list </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="grpc__security_8h.html#a8fe8a5a9b93ff8671a7843add47d57be">grpc_tls_credentials_options</a> *&#160;</td>
+          <td class="paramname"><em>options</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>send_client_ca_list</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>EXPERIMENTAL API - Subject to change. </p>
+<p>Sets whether or not a TLS server should send a list of CA names in the ServerHello. This list of CA names is read from the server's trust bundle, so that the client can use this list as a hint to know which certificate it should send to the server.</p>
+<p>WARNING: This API is extremely dangerous and should not be used. If the server's trust bundle is too large, then the TLS server will be unable to form a ServerHello, and hence will be unusable. The definition of "too large" depends on the underlying SSL library being used and on the size of the CN fields of the certificates in the trust bundle. </p>
+
+</div>
+</div>
 <a id="a50f8a772b8c673a67b7c640e51b840da"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a50f8a772b8c673a67b7c640e51b840da">&#9670;&nbsp;</a></span>grpc_tls_credentials_options_set_tls_session_key_log_file_path()</h2>
 
@@ -3184,7 +3220,7 @@ processor to set properties extracted from auth metadata.</h2>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Jun 27 2023 17:50:37 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Aug 14 2023 18:27:15 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

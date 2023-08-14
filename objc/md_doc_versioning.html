@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Objective-C
-   &#160;<span id="projectnumber">1.56.0</span>
+   &#160;<span id="projectnumber">1.57.0</span>
    </div>
   </td>
  </tr>
@@ -66,7 +66,7 @@ $(function() {
 <div class="title">gRPC Versioning Guide </div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><h1><a class="anchor" id="autotoc_md227"></a>
+<div class="textblock"><h1><a class="anchor" id="autotoc_md228"></a>
 Versioning Overview</h1>
 <p>All gRPC implementations use a three-part version number (<code>vX.Y.Z</code>) and follow <a href="https://semver.org/">semantic versioning</a>, which defines the semantics of major, minor and patch components of the version number. In addition to that, gRPC versions evolve according to these rules:</p><ul>
 <li><b>Major version bumps</b> only happen on rare occasions. In order to qualify for a major version bump, certain criteria described later in this document need to be met. Most importantly, a major version increase must not break wire compatibility with other gRPC implementations so that existing gRPC libraries remain fully interoperable.</li>
@@ -87,10 +87,10 @@ Versioning Overview</h1>
 </li>
 <li>Once a gRPC library reaches 1.0 (or higher version), the normal rules for versioning apply.</li>
 </ul>
-<h1><a class="anchor" id="autotoc_md228"></a>
+<h1><a class="anchor" id="autotoc_md229"></a>
 Policy for updating the major version number</h1>
 <p>To avoid user confusion and simplify reasoning, the gRPC releases in different languages try to stay synchronized in terms of major and minor version (all languages follow the same release schedule). Nevertheless, because we also strictly follow semantic versioning, there are circumstances in which a gRPC implementation needs to break the version synchronicity and do a major version bump independently of other languages.</p>
-<h2><a class="anchor" id="autotoc_md229"></a>
+<h2><a class="anchor" id="autotoc_md230"></a>
 Situations when it's ok to do a major version bump</h2>
 <ul>
 <li><b>change forced by the language ecosystem:</b> when the language itself or its standard libraries that we depend on make a breaking change (something which is out of our control), reacting with updating gRPC APIs may be the only adequate response.</li>
@@ -108,7 +108,7 @@ Situations when it's ok to do a major version bump</h2>
 </li>
 </ul>
 <p>Note that while major version bump allows changing APIs used by the users, it must not impact the interoperability of the implementation with other gRPC implementations and the previous major version released. That means that <b>no backward incompatible protocol changes are allowed</b>: old clients must continue interoperating correctly with new servers and new servers with old clients.</p>
-<h2><a class="anchor" id="autotoc_md230"></a>
+<h2><a class="anchor" id="autotoc_md231"></a>
 Situations that DON'T warrant a major version bump</h2>
 <ul>
 <li>Because other languages do so. This is not a good enough reason because doing a major version bump has high potential for disturbing and confusing the users of that language and fragmenting the user base and that is a bigger threat than having language implementations at different major version (provided the state is well documented). Having some languages at different major version seems to be unavoidable anyway (due to forced version bumps), unless we bump some languages artificially.</li>
@@ -118,7 +118,7 @@ Situations that DON'T warrant a major version bump</h2>
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Jun 27 2023 17:51:08 for GRPC Objective-C by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Aug 14 2023 18:27:49 for GRPC Objective-C by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

@@ -1,7 +1,4 @@
 var searchData=
 [
-  ['server_2dside_20api_20for_20authenticating_20clients_491',['Server-side API for Authenticating Clients',['../md_doc_server_side_auth.html',1,'']]],
-  ['service_20config_20in_20grpc_492',['Service Config in gRPC',['../md_doc_service_config.html',1,'']]],
-  ['ssl_20in_20grpc_20and_20performance_493',['SSL in gRPC and performance',['../md_doc_ssl-performance.html',1,'']]],
-  ['status_20codes_20and_20their_20use_20in_20grpc_494',['Status codes and their use in gRPC',['../md_doc_statuscodes.html',1,'']]]
+  ['quality_20of_20service_20_28qos_29_20using_20differentiated_20services_494',['Quality of Service (QoS) using Differentiated services',['../md_doc_qos-dscp.html',1,'']]]
 ];

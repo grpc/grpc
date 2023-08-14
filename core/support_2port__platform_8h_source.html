@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">33.0.0</span>
+   &#160;<span id="projectnumber">34.0.0</span>
    </div>
   </td>
  </tr>
@@ -635,239 +635,245 @@ $(function() {
 <div class="line"><a name="l00563"></a><span class="lineno"><a class="line" href="support_2port__platform_8h.html#aa642fae320ed450c1979f5f707402b3c">  563</a></span>&#160;<span class="preprocessor">#define GRPC_IF_NAMETOINDEX 1</span></div>
 <div class="line"><a name="l00564"></a><span class="lineno">  564</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00565"></a><span class="lineno">  565</span>&#160; </div>
-<div class="line"><a name="l00566"></a><span class="lineno">  566</span>&#160;<span class="preprocessor">#ifndef GRPC_MUST_USE_RESULT</span></div>
+<div class="line"><a name="l00566"></a><span class="lineno">  566</span>&#160;<span class="preprocessor">#ifndef GRPC_UNUSED</span></div>
 <div class="line"><a name="l00567"></a><span class="lineno">  567</span>&#160;<span class="preprocessor">#if defined(__GNUC__) &amp;&amp; !defined(__MINGW32__)</span></div>
-<div class="line"><a name="l00568"></a><span class="lineno">  568</span>&#160;<span class="preprocessor">#define GRPC_MUST_USE_RESULT __attribute__((warn_unused_result))</span></div>
-<div class="line"><a name="l00569"></a><span class="lineno">  569</span>&#160;<span class="preprocessor">#define GPR_ALIGN_STRUCT(n) __attribute__((aligned(n)))</span></div>
-<div class="line"><a name="l00570"></a><span class="lineno">  570</span>&#160;<span class="preprocessor">#else</span></div>
-<div class="line"><a name="l00571"></a><span class="lineno"><a class="line" href="support_2port__platform_8h.html#aef49047a3be38448a61332117b306686">  571</a></span>&#160;<span class="preprocessor">#define GRPC_MUST_USE_RESULT</span></div>
-<div class="line"><a name="l00572"></a><span class="lineno"><a class="line" href="support_2port__platform_8h.html#aafd38282877816cf1eea110c65fdf14b">  572</a></span>&#160;<span class="preprocessor">#define GPR_ALIGN_STRUCT(n)</span></div>
-<div class="line"><a name="l00573"></a><span class="lineno">  573</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00574"></a><span class="lineno">  574</span>&#160;<span class="preprocessor">#ifdef USE_STRICT_WARNING</span></div>
-<div class="line"><a name="l00575"></a><span class="lineno">  575</span>&#160;<span class="comment">/* When building with USE_STRICT_WARNING (which -Werror), types with this</span></div>
-<div class="line"><a name="l00576"></a><span class="lineno">  576</span>&#160;<span class="comment">   attribute will be treated as annotated with warn_unused_result, enforcing</span></div>
-<div class="line"><a name="l00577"></a><span class="lineno">  577</span>&#160;<span class="comment">   returned values of this type should be used.</span></div>
-<div class="line"><a name="l00578"></a><span class="lineno">  578</span>&#160;<span class="comment">   This is added in grpc::Status in mind to address the issue where it always</span></div>
-<div class="line"><a name="l00579"></a><span class="lineno">  579</span>&#160;<span class="comment">   has this annotation internally but OSS doesn&#39;t, sometimes causing internal</span></div>
-<div class="line"><a name="l00580"></a><span class="lineno">  580</span>&#160;<span class="comment">   build failure. To prevent this, this is added while not introducing</span></div>
-<div class="line"><a name="l00581"></a><span class="lineno">  581</span>&#160;<span class="comment">   a breaking change to existing user code which may not use returned values</span></div>
-<div class="line"><a name="l00582"></a><span class="lineno">  582</span>&#160;<span class="comment">   of grpc::Status. */</span></div>
-<div class="line"><a name="l00583"></a><span class="lineno">  583</span>&#160;<span class="preprocessor">#define GRPC_MUST_USE_RESULT_WHEN_USE_STRICT_WARNING GRPC_MUST_USE_RESULT</span></div>
-<div class="line"><a name="l00584"></a><span class="lineno">  584</span>&#160;<span class="preprocessor">#else</span></div>
-<div class="line"><a name="l00585"></a><span class="lineno"><a class="line" href="support_2port__platform_8h.html#ae573312314f81c2a87ecdbcc7bbd7159">  585</a></span>&#160;<span class="preprocessor">#define GRPC_MUST_USE_RESULT_WHEN_USE_STRICT_WARNING</span></div>
-<div class="line"><a name="l00586"></a><span class="lineno">  586</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00587"></a><span class="lineno">  587</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00588"></a><span class="lineno">  588</span>&#160; </div>
-<div class="line"><a name="l00589"></a><span class="lineno">  589</span>&#160;<span class="preprocessor">#ifndef GRPC_UNUSED</span></div>
-<div class="line"><a name="l00590"></a><span class="lineno">  590</span>&#160;<span class="preprocessor">#if defined(__GNUC__) &amp;&amp; !defined(__MINGW32__)</span></div>
-<div class="line"><a name="l00591"></a><span class="lineno">  591</span>&#160;<span class="preprocessor">#define GRPC_UNUSED __attribute__((unused))</span></div>
-<div class="line"><a name="l00592"></a><span class="lineno">  592</span>&#160;<span class="preprocessor">#else</span></div>
-<div class="line"><a name="l00593"></a><span class="lineno"><a class="line" href="support_2port__platform_8h.html#a278515bb22fcd59e3a1092bb35063bd8">  593</a></span>&#160;<span class="preprocessor">#define GRPC_UNUSED</span></div>
-<div class="line"><a name="l00594"></a><span class="lineno">  594</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00568"></a><span class="lineno">  568</span>&#160;<span class="preprocessor">#define GRPC_UNUSED __attribute__((unused))</span></div>
+<div class="line"><a name="l00569"></a><span class="lineno">  569</span>&#160;<span class="preprocessor">#else</span></div>
+<div class="line"><a name="l00570"></a><span class="lineno"><a class="line" href="support_2port__platform_8h.html#a278515bb22fcd59e3a1092bb35063bd8">  570</a></span>&#160;<span class="preprocessor">#define GRPC_UNUSED</span></div>
+<div class="line"><a name="l00571"></a><span class="lineno">  571</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00572"></a><span class="lineno">  572</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00573"></a><span class="lineno">  573</span>&#160; </div>
+<div class="line"><a name="l00574"></a><span class="lineno">  574</span>&#160;<span class="preprocessor">#ifndef GPR_PRINT_FORMAT_CHECK</span></div>
+<div class="line"><a name="l00575"></a><span class="lineno">  575</span>&#160;<span class="preprocessor">#ifdef __GNUC__</span></div>
+<div class="line"><a name="l00576"></a><span class="lineno">  576</span>&#160;<span class="preprocessor">#define GPR_PRINT_FORMAT_CHECK(FORMAT_STR, ARGS) \</span></div>
+<div class="line"><a name="l00577"></a><span class="lineno">  577</span>&#160;<span class="preprocessor">  __attribute__((format(printf, FORMAT_STR, ARGS)))</span></div>
+<div class="line"><a name="l00578"></a><span class="lineno">  578</span>&#160;<span class="preprocessor">#else</span></div>
+<div class="line"><a name="l00579"></a><span class="lineno"><a class="line" href="support_2port__platform_8h.html#a3364659cddcdfeae3897c3300de03d05">  579</a></span>&#160;<span class="preprocessor">#define GPR_PRINT_FORMAT_CHECK(FORMAT_STR, ARGS)</span></div>
+<div class="line"><a name="l00580"></a><span class="lineno">  580</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00581"></a><span class="lineno">  581</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GPR_PRINT_FORMAT_CHECK */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00582"></a><span class="lineno">  582</span>&#160; </div>
+<div class="line"><a name="l00583"></a><span class="lineno">  583</span>&#160;<span class="preprocessor">#ifndef GPR_HAS_CPP_ATTRIBUTE</span></div>
+<div class="line"><a name="l00584"></a><span class="lineno">  584</span>&#160;<span class="preprocessor">#ifdef __has_cpp_attribute</span></div>
+<div class="line"><a name="l00585"></a><span class="lineno">  585</span>&#160;<span class="preprocessor">#define GPR_HAS_CPP_ATTRIBUTE(a) __has_cpp_attribute(a)</span></div>
+<div class="line"><a name="l00586"></a><span class="lineno">  586</span>&#160;<span class="preprocessor">#else</span></div>
+<div class="line"><a name="l00587"></a><span class="lineno"><a class="line" href="support_2port__platform_8h.html#afa6c7ed76d8e2246fefbfd69e9fabe4f">  587</a></span>&#160;<span class="preprocessor">#define GPR_HAS_CPP_ATTRIBUTE(a) 0</span></div>
+<div class="line"><a name="l00588"></a><span class="lineno">  588</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00589"></a><span class="lineno">  589</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GPR_HAS_CPP_ATTRIBUTE */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00590"></a><span class="lineno">  590</span>&#160; </div>
+<div class="line"><a name="l00591"></a><span class="lineno">  591</span>&#160;<span class="preprocessor">#if defined(__GNUC__) &amp;&amp; !defined(__MINGW32__)</span></div>
+<div class="line"><a name="l00592"></a><span class="lineno">  592</span>&#160;<span class="preprocessor">#define GPR_ALIGN_STRUCT(n) __attribute__((aligned(n)))</span></div>
+<div class="line"><a name="l00593"></a><span class="lineno">  593</span>&#160;<span class="preprocessor">#else</span></div>
+<div class="line"><a name="l00594"></a><span class="lineno"><a class="line" href="support_2port__platform_8h.html#aafd38282877816cf1eea110c65fdf14b">  594</a></span>&#160;<span class="preprocessor">#define GPR_ALIGN_STRUCT(n)</span></div>
 <div class="line"><a name="l00595"></a><span class="lineno">  595</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00596"></a><span class="lineno">  596</span>&#160; </div>
-<div class="line"><a name="l00597"></a><span class="lineno">  597</span>&#160;<span class="preprocessor">#ifndef GPR_PRINT_FORMAT_CHECK</span></div>
-<div class="line"><a name="l00598"></a><span class="lineno">  598</span>&#160;<span class="preprocessor">#ifdef __GNUC__</span></div>
-<div class="line"><a name="l00599"></a><span class="lineno">  599</span>&#160;<span class="preprocessor">#define GPR_PRINT_FORMAT_CHECK(FORMAT_STR, ARGS) \</span></div>
-<div class="line"><a name="l00600"></a><span class="lineno">  600</span>&#160;<span class="preprocessor">  __attribute__((format(printf, FORMAT_STR, ARGS)))</span></div>
-<div class="line"><a name="l00601"></a><span class="lineno">  601</span>&#160;<span class="preprocessor">#else</span></div>
-<div class="line"><a name="l00602"></a><span class="lineno"><a class="line" href="support_2port__platform_8h.html#a3364659cddcdfeae3897c3300de03d05">  602</a></span>&#160;<span class="preprocessor">#define GPR_PRINT_FORMAT_CHECK(FORMAT_STR, ARGS)</span></div>
-<div class="line"><a name="l00603"></a><span class="lineno">  603</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00604"></a><span class="lineno">  604</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GPR_PRINT_FORMAT_CHECK */</span><span class="preprocessor"></span></div>
-<div class="line"><a name="l00605"></a><span class="lineno">  605</span>&#160; </div>
-<div class="line"><a name="l00606"></a><span class="lineno">  606</span>&#160;<span class="preprocessor">#ifndef GPR_HAS_CPP_ATTRIBUTE</span></div>
-<div class="line"><a name="l00607"></a><span class="lineno">  607</span>&#160;<span class="preprocessor">#ifdef __has_cpp_attribute</span></div>
-<div class="line"><a name="l00608"></a><span class="lineno">  608</span>&#160;<span class="preprocessor">#define GPR_HAS_CPP_ATTRIBUTE(a) __has_cpp_attribute(a)</span></div>
-<div class="line"><a name="l00609"></a><span class="lineno">  609</span>&#160;<span class="preprocessor">#else</span></div>
-<div class="line"><a name="l00610"></a><span class="lineno"><a class="line" href="support_2port__platform_8h.html#afa6c7ed76d8e2246fefbfd69e9fabe4f">  610</a></span>&#160;<span class="preprocessor">#define GPR_HAS_CPP_ATTRIBUTE(a) 0</span></div>
-<div class="line"><a name="l00611"></a><span class="lineno">  611</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00612"></a><span class="lineno">  612</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GPR_HAS_CPP_ATTRIBUTE */</span><span class="preprocessor"></span></div>
-<div class="line"><a name="l00613"></a><span class="lineno">  613</span>&#160; </div>
-<div class="line"><a name="l00614"></a><span class="lineno">  614</span>&#160;<span class="preprocessor">#ifndef GPR_HAS_ATTRIBUTE</span></div>
-<div class="line"><a name="l00615"></a><span class="lineno">  615</span>&#160;<span class="preprocessor">#ifdef __has_attribute</span></div>
-<div class="line"><a name="l00616"></a><span class="lineno">  616</span>&#160;<span class="preprocessor">#define GPR_HAS_ATTRIBUTE(a) __has_attribute(a)</span></div>
-<div class="line"><a name="l00617"></a><span class="lineno">  617</span>&#160;<span class="preprocessor">#else</span></div>
-<div class="line"><a name="l00618"></a><span class="lineno"><a class="line" href="support_2port__platform_8h.html#a4b5b587f4ab8c10f30046681bc5e87da">  618</a></span>&#160;<span class="preprocessor">#define GPR_HAS_ATTRIBUTE(a) 0</span></div>
-<div class="line"><a name="l00619"></a><span class="lineno">  619</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00620"></a><span class="lineno">  620</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GPR_HAS_ATTRIBUTE */</span><span class="preprocessor"></span></div>
-<div class="line"><a name="l00621"></a><span class="lineno">  621</span>&#160; </div>
-<div class="line"><a name="l00622"></a><span class="lineno">  622</span>&#160;<span class="preprocessor">#if GPR_HAS_ATTRIBUTE(noreturn)</span></div>
-<div class="line"><a name="l00623"></a><span class="lineno">  623</span>&#160;<span class="preprocessor">#define GPR_ATTRIBUTE_NORETURN __attribute__((noreturn))</span></div>
-<div class="line"><a name="l00624"></a><span class="lineno">  624</span>&#160;<span class="preprocessor">#else</span></div>
-<div class="line"><a name="l00625"></a><span class="lineno"><a class="line" href="support_2port__platform_8h.html#ae73de412cde28680b1a91f444463d4df">  625</a></span>&#160;<span class="preprocessor">#define GPR_ATTRIBUTE_NORETURN</span></div>
-<div class="line"><a name="l00626"></a><span class="lineno">  626</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00597"></a><span class="lineno">  597</span>&#160;<span class="preprocessor">#ifndef GRPC_MUST_USE_RESULT</span></div>
+<div class="line"><a name="l00598"></a><span class="lineno">  598</span>&#160;<span class="preprocessor">#if GPR_HAS_CPP_ATTRIBUTE(nodiscard)</span></div>
+<div class="line"><a name="l00599"></a><span class="lineno">  599</span>&#160;<span class="preprocessor">#define GRPC_MUST_USE_RESULT [[nodiscard]]</span></div>
+<div class="line"><a name="l00600"></a><span class="lineno">  600</span>&#160;<span class="preprocessor">#elif defined(__GNUC__) &amp;&amp; !defined(__MINGW32__)</span></div>
+<div class="line"><a name="l00601"></a><span class="lineno">  601</span>&#160;<span class="preprocessor">#define GRPC_MUST_USE_RESULT __attribute__((warn_unused_result))</span></div>
+<div class="line"><a name="l00602"></a><span class="lineno">  602</span>&#160;<span class="preprocessor">#else</span></div>
+<div class="line"><a name="l00603"></a><span class="lineno"><a class="line" href="support_2port__platform_8h.html#aef49047a3be38448a61332117b306686">  603</a></span>&#160;<span class="preprocessor">#define GRPC_MUST_USE_RESULT</span></div>
+<div class="line"><a name="l00604"></a><span class="lineno">  604</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00605"></a><span class="lineno">  605</span>&#160;<span class="preprocessor">#ifdef USE_STRICT_WARNING</span></div>
+<div class="line"><a name="l00606"></a><span class="lineno">  606</span>&#160;<span class="comment">/* When building with USE_STRICT_WARNING (which -Werror), types with this</span></div>
+<div class="line"><a name="l00607"></a><span class="lineno">  607</span>&#160;<span class="comment">   attribute will be treated as annotated with warn_unused_result, enforcing</span></div>
+<div class="line"><a name="l00608"></a><span class="lineno">  608</span>&#160;<span class="comment">   returned values of this type should be used.</span></div>
+<div class="line"><a name="l00609"></a><span class="lineno">  609</span>&#160;<span class="comment">   This is added in grpc::Status in mind to address the issue where it always</span></div>
+<div class="line"><a name="l00610"></a><span class="lineno">  610</span>&#160;<span class="comment">   has this annotation internally but OSS doesn&#39;t, sometimes causing internal</span></div>
+<div class="line"><a name="l00611"></a><span class="lineno">  611</span>&#160;<span class="comment">   build failure. To prevent this, this is added while not introducing</span></div>
+<div class="line"><a name="l00612"></a><span class="lineno">  612</span>&#160;<span class="comment">   a breaking change to existing user code which may not use returned values</span></div>
+<div class="line"><a name="l00613"></a><span class="lineno">  613</span>&#160;<span class="comment">   of grpc::Status. */</span></div>
+<div class="line"><a name="l00614"></a><span class="lineno">  614</span>&#160;<span class="preprocessor">#define GRPC_MUST_USE_RESULT_WHEN_USE_STRICT_WARNING GRPC_MUST_USE_RESULT</span></div>
+<div class="line"><a name="l00615"></a><span class="lineno">  615</span>&#160;<span class="preprocessor">#else</span></div>
+<div class="line"><a name="l00616"></a><span class="lineno"><a class="line" href="support_2port__platform_8h.html#ae573312314f81c2a87ecdbcc7bbd7159">  616</a></span>&#160;<span class="preprocessor">#define GRPC_MUST_USE_RESULT_WHEN_USE_STRICT_WARNING</span></div>
+<div class="line"><a name="l00617"></a><span class="lineno">  617</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00618"></a><span class="lineno">  618</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00619"></a><span class="lineno">  619</span>&#160; </div>
+<div class="line"><a name="l00620"></a><span class="lineno">  620</span>&#160;<span class="preprocessor">#ifndef GPR_HAS_ATTRIBUTE</span></div>
+<div class="line"><a name="l00621"></a><span class="lineno">  621</span>&#160;<span class="preprocessor">#ifdef __has_attribute</span></div>
+<div class="line"><a name="l00622"></a><span class="lineno">  622</span>&#160;<span class="preprocessor">#define GPR_HAS_ATTRIBUTE(a) __has_attribute(a)</span></div>
+<div class="line"><a name="l00623"></a><span class="lineno">  623</span>&#160;<span class="preprocessor">#else</span></div>
+<div class="line"><a name="l00624"></a><span class="lineno"><a class="line" href="support_2port__platform_8h.html#a4b5b587f4ab8c10f30046681bc5e87da">  624</a></span>&#160;<span class="preprocessor">#define GPR_HAS_ATTRIBUTE(a) 0</span></div>
+<div class="line"><a name="l00625"></a><span class="lineno">  625</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00626"></a><span class="lineno">  626</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GPR_HAS_ATTRIBUTE */</span><span class="preprocessor"></span></div>
 <div class="line"><a name="l00627"></a><span class="lineno">  627</span>&#160; </div>
-<div class="line"><a name="l00628"></a><span class="lineno">  628</span>&#160;<span class="preprocessor">#if defined(GPR_FORBID_UNREACHABLE_CODE) &amp;&amp; GPR_FORBID_UNREACHABLE_CODE</span></div>
-<div class="line"><a name="l00629"></a><span class="lineno">  629</span>&#160;<span class="preprocessor">#define GPR_UNREACHABLE_CODE(STATEMENT)</span></div>
+<div class="line"><a name="l00628"></a><span class="lineno">  628</span>&#160;<span class="preprocessor">#if GPR_HAS_ATTRIBUTE(noreturn)</span></div>
+<div class="line"><a name="l00629"></a><span class="lineno">  629</span>&#160;<span class="preprocessor">#define GPR_ATTRIBUTE_NORETURN __attribute__((noreturn))</span></div>
 <div class="line"><a name="l00630"></a><span class="lineno">  630</span>&#160;<span class="preprocessor">#else</span></div>
-<div class="line"><a name="l00631"></a><span class="lineno">  631</span>&#160;<span class="preprocessor">#ifdef __cplusplus</span></div>
-<div class="line"><a name="l00632"></a><span class="lineno">  632</span>&#160;<span class="keyword">extern</span> <span class="stringliteral">&quot;C&quot;</span> {</div>
-<div class="line"><a name="l00633"></a><span class="lineno">  633</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00634"></a><span class="lineno">  634</span>&#160;<span class="keyword">extern</span> <span class="keywordtype">void</span> <a class="code" href="support_2port__platform_8h.html#ad81f265625a28840b8be4c9f8247d50f">gpr_unreachable_code</a>(<span class="keyword">const</span> <span class="keywordtype">char</span>* reason, <span class="keyword">const</span> <span class="keywordtype">char</span>* <a class="code" href="structgpr__log__func__args.html#a7961b2303b10d4f66d1aee6b5857ef89">file</a>,</div>
-<div class="line"><a name="l00635"></a><span class="lineno">  635</span>&#160;                                 <span class="keywordtype">int</span> <a class="code" href="structgpr__log__func__args.html#ae1a051bbc7e0ef6c58de0db3efda24bb">line</a>) <a class="code" href="support_2port__platform_8h.html#ae73de412cde28680b1a91f444463d4df">GPR_ATTRIBUTE_NORETURN</a>;</div>
-<div class="line"><a name="l00636"></a><span class="lineno">  636</span>&#160;<span class="preprocessor">#ifdef __cplusplus</span></div>
-<div class="line"><a name="l00637"></a><span class="lineno">  637</span>&#160;}</div>
-<div class="line"><a name="l00638"></a><span class="lineno">  638</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00639"></a><span class="lineno"><a class="line" href="support_2port__platform_8h.html#ab75d366740f8322e795ab0d44ed9d958">  639</a></span>&#160;<span class="preprocessor">#define GPR_UNREACHABLE_CODE(STATEMENT)                   \</span></div>
-<div class="line"><a name="l00640"></a><span class="lineno">  640</span>&#160;<span class="preprocessor">  do {                                                    \</span></div>
-<div class="line"><a name="l00641"></a><span class="lineno">  641</span>&#160;<span class="preprocessor">    gpr_unreachable_code(#STATEMENT, __FILE__, __LINE__); \</span></div>
-<div class="line"><a name="l00642"></a><span class="lineno">  642</span>&#160;<span class="preprocessor">    STATEMENT;                                            \</span></div>
-<div class="line"><a name="l00643"></a><span class="lineno">  643</span>&#160;<span class="preprocessor">  } while (0)</span></div>
-<div class="line"><a name="l00644"></a><span class="lineno">  644</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GPR_FORBID_UNREACHABLE_CODE */</span><span class="preprocessor"></span></div>
-<div class="line"><a name="l00645"></a><span class="lineno">  645</span>&#160; </div>
-<div class="line"><a name="l00646"></a><span class="lineno">  646</span>&#160;<span class="preprocessor">#ifndef GPRAPI</span></div>
-<div class="line"><a name="l00647"></a><span class="lineno"><a class="line" href="support_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">  647</a></span>&#160;<span class="preprocessor">#define GPRAPI</span></div>
-<div class="line"><a name="l00648"></a><span class="lineno">  648</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00649"></a><span class="lineno">  649</span>&#160; </div>
-<div class="line"><a name="l00650"></a><span class="lineno">  650</span>&#160;<span class="preprocessor">#ifndef GRPCAPI</span></div>
-<div class="line"><a name="l00651"></a><span class="lineno"><a class="line" href="support_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">  651</a></span>&#160;<span class="preprocessor">#define GRPCAPI GPRAPI</span></div>
-<div class="line"><a name="l00652"></a><span class="lineno">  652</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00653"></a><span class="lineno">  653</span>&#160; </div>
-<div class="line"><a name="l00654"></a><span class="lineno">  654</span>&#160;<span class="preprocessor">#ifndef CENSUSAPI</span></div>
-<div class="line"><a name="l00655"></a><span class="lineno"><a class="line" href="support_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">  655</a></span>&#160;<span class="preprocessor">#define CENSUSAPI GRPCAPI</span></div>
-<div class="line"><a name="l00656"></a><span class="lineno">  656</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00657"></a><span class="lineno">  657</span>&#160; </div>
-<div class="line"><a name="l00658"></a><span class="lineno">  658</span>&#160;<span class="preprocessor">#ifndef GPR_HAS_FEATURE</span></div>
-<div class="line"><a name="l00659"></a><span class="lineno">  659</span>&#160;<span class="preprocessor">#ifdef __has_feature</span></div>
-<div class="line"><a name="l00660"></a><span class="lineno">  660</span>&#160;<span class="preprocessor">#define GPR_HAS_FEATURE(a) __has_feature(a)</span></div>
-<div class="line"><a name="l00661"></a><span class="lineno">  661</span>&#160;<span class="preprocessor">#else</span></div>
-<div class="line"><a name="l00662"></a><span class="lineno"><a class="line" href="support_2port__platform_8h.html#a237f93b6124a494f4aac2d7abc9f1e48">  662</a></span>&#160;<span class="preprocessor">#define GPR_HAS_FEATURE(a) 0</span></div>
-<div class="line"><a name="l00663"></a><span class="lineno">  663</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00664"></a><span class="lineno">  664</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GPR_HAS_FEATURE */</span><span class="preprocessor"></span></div>
-<div class="line"><a name="l00665"></a><span class="lineno">  665</span>&#160; </div>
-<div class="line"><a name="l00666"></a><span class="lineno">  666</span>&#160;<span class="preprocessor">#ifndef GPR_ATTRIBUTE_NOINLINE</span></div>
-<div class="line"><a name="l00667"></a><span class="lineno">  667</span>&#160;<span class="preprocessor">#if GPR_HAS_ATTRIBUTE(noinline) || (defined(__GNUC__) &amp;&amp; !defined(__clang__))</span></div>
-<div class="line"><a name="l00668"></a><span class="lineno">  668</span>&#160;<span class="preprocessor">#define GPR_ATTRIBUTE_NOINLINE __attribute__((noinline))</span></div>
-<div class="line"><a name="l00669"></a><span class="lineno">  669</span>&#160;<span class="preprocessor">#define GPR_HAS_ATTRIBUTE_NOINLINE 1</span></div>
-<div class="line"><a name="l00670"></a><span class="lineno">  670</span>&#160;<span class="preprocessor">#else</span></div>
-<div class="line"><a name="l00671"></a><span class="lineno"><a class="line" href="support_2port__platform_8h.html#ab83587850217119f977454604236a0e6">  671</a></span>&#160;<span class="preprocessor">#define GPR_ATTRIBUTE_NOINLINE</span></div>
-<div class="line"><a name="l00672"></a><span class="lineno">  672</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00673"></a><span class="lineno">  673</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GPR_ATTRIBUTE_NOINLINE */</span><span class="preprocessor"></span></div>
-<div class="line"><a name="l00674"></a><span class="lineno">  674</span>&#160; </div>
-<div class="line"><a name="l00675"></a><span class="lineno">  675</span>&#160;<span class="preprocessor">#ifndef GPR_NO_UNIQUE_ADDRESS</span></div>
-<div class="line"><a name="l00676"></a><span class="lineno">  676</span>&#160;<span class="preprocessor">#if GPR_HAS_CPP_ATTRIBUTE(no_unique_address)</span></div>
-<div class="line"><a name="l00677"></a><span class="lineno">  677</span>&#160;<span class="preprocessor">#define GPR_NO_UNIQUE_ADDRESS [[no_unique_address]]</span></div>
-<div class="line"><a name="l00678"></a><span class="lineno">  678</span>&#160;<span class="preprocessor">#else</span></div>
-<div class="line"><a name="l00679"></a><span class="lineno"><a class="line" href="support_2port__platform_8h.html#a70b25734869fa577e3db64392b6ba0c8">  679</a></span>&#160;<span class="preprocessor">#define GPR_NO_UNIQUE_ADDRESS</span></div>
-<div class="line"><a name="l00680"></a><span class="lineno">  680</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00681"></a><span class="lineno">  681</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GPR_NO_UNIQUE_ADDRESS */</span><span class="preprocessor"></span></div>
-<div class="line"><a name="l00682"></a><span class="lineno">  682</span>&#160; </div>
-<div class="line"><a name="l00683"></a><span class="lineno">  683</span>&#160;<span class="preprocessor">#ifndef GRPC_DEPRECATED</span></div>
-<div class="line"><a name="l00684"></a><span class="lineno">  684</span>&#160;<span class="preprocessor">#if GPR_HAS_CPP_ATTRIBUTE(deprecated)</span></div>
-<div class="line"><a name="l00685"></a><span class="lineno">  685</span>&#160;<span class="preprocessor">#define GRPC_DEPRECATED(reason) [[deprecated(reason)]]</span></div>
-<div class="line"><a name="l00686"></a><span class="lineno">  686</span>&#160;<span class="preprocessor">#else</span></div>
-<div class="line"><a name="l00687"></a><span class="lineno">  687</span>&#160;<span class="preprocessor">#define GRPC_DEPRECATED(reason)</span></div>
-<div class="line"><a name="l00688"></a><span class="lineno">  688</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00689"></a><span class="lineno">  689</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_DEPRECATED */</span><span class="preprocessor"></span></div>
-<div class="line"><a name="l00690"></a><span class="lineno">  690</span>&#160; </div>
-<div class="line"><a name="l00691"></a><span class="lineno">  691</span>&#160;<span class="preprocessor">#ifndef GPR_ATTRIBUTE_WEAK</span></div>
-<div class="line"><a name="l00692"></a><span class="lineno">  692</span>&#160;<span class="comment">/* Attribute weak is broken on LLVM/windows:</span></div>
-<div class="line"><a name="l00693"></a><span class="lineno">  693</span>&#160;<span class="comment"> * https://bugs.llvm.org/show_bug.cgi?id=37598 */</span></div>
-<div class="line"><a name="l00694"></a><span class="lineno">  694</span>&#160;<span class="preprocessor">#if (GPR_HAS_ATTRIBUTE(weak) || (defined(__GNUC__) &amp;&amp; !defined(__clang__))) &amp;&amp; \</span></div>
-<div class="line"><a name="l00695"></a><span class="lineno">  695</span>&#160;<span class="preprocessor">    !(defined(__llvm__) &amp;&amp; defined(_WIN32))</span></div>
-<div class="line"><a name="l00696"></a><span class="lineno">  696</span>&#160;<span class="preprocessor">#define GPR_ATTRIBUTE_WEAK __attribute__((weak))</span></div>
-<div class="line"><a name="l00697"></a><span class="lineno">  697</span>&#160;<span class="preprocessor">#define GPR_HAS_ATTRIBUTE_WEAK 1</span></div>
-<div class="line"><a name="l00698"></a><span class="lineno">  698</span>&#160;<span class="preprocessor">#else</span></div>
-<div class="line"><a name="l00699"></a><span class="lineno"><a class="line" href="support_2port__platform_8h.html#a5b73ca15c9e24b43959f202f094ea7b6">  699</a></span>&#160;<span class="preprocessor">#define GPR_ATTRIBUTE_WEAK</span></div>
-<div class="line"><a name="l00700"></a><span class="lineno">  700</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00701"></a><span class="lineno">  701</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GPR_ATTRIBUTE_WEAK */</span><span class="preprocessor"></span></div>
-<div class="line"><a name="l00702"></a><span class="lineno">  702</span>&#160; </div>
-<div class="line"><a name="l00703"></a><span class="lineno">  703</span>&#160;<span class="preprocessor">#ifndef GPR_ATTRIBUTE_NO_TSAN </span><span class="comment">/* (1) */</span><span class="preprocessor"></span></div>
-<div class="line"><a name="l00704"></a><span class="lineno">  704</span>&#160;<span class="preprocessor">#if GPR_HAS_FEATURE(thread_sanitizer)</span></div>
-<div class="line"><a name="l00705"></a><span class="lineno">  705</span>&#160;<span class="preprocessor">#define GPR_ATTRIBUTE_NO_TSAN __attribute__((no_sanitize(&quot;thread&quot;)))</span></div>
-<div class="line"><a name="l00706"></a><span class="lineno">  706</span>&#160;<span class="preprocessor">#endif                        </span><span class="comment">/* GPR_HAS_FEATURE */</span><span class="preprocessor"></span></div>
-<div class="line"><a name="l00707"></a><span class="lineno">  707</span>&#160;<span class="preprocessor">#ifndef GPR_ATTRIBUTE_NO_TSAN </span><span class="comment">/* (2) */</span><span class="preprocessor"></span></div>
-<div class="line"><a name="l00708"></a><span class="lineno"><a class="line" href="support_2port__platform_8h.html#ac5d859f207ef029e0f5fc556f8e5876e">  708</a></span>&#160;<span class="preprocessor">#define GPR_ATTRIBUTE_NO_TSAN</span></div>
-<div class="line"><a name="l00709"></a><span class="lineno">  709</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GPR_ATTRIBUTE_NO_TSAN (2) */</span><span class="preprocessor"></span></div>
-<div class="line"><a name="l00710"></a><span class="lineno">  710</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GPR_ATTRIBUTE_NO_TSAN (1) */</span><span class="preprocessor"></span></div>
-<div class="line"><a name="l00711"></a><span class="lineno">  711</span>&#160; </div>
-<div class="line"><a name="l00712"></a><span class="lineno">  712</span>&#160;<span class="comment">/* GRPC_TSAN_ENABLED will be defined, when compiled with thread sanitizer. */</span></div>
-<div class="line"><a name="l00713"></a><span class="lineno">  713</span>&#160;<span class="preprocessor">#ifndef GRPC_TSAN_SUPPRESSED</span></div>
-<div class="line"><a name="l00714"></a><span class="lineno">  714</span>&#160;<span class="preprocessor">#if defined(__SANITIZE_THREAD__)</span></div>
-<div class="line"><a name="l00715"></a><span class="lineno">  715</span>&#160;<span class="preprocessor">#define GRPC_TSAN_ENABLED</span></div>
-<div class="line"><a name="l00716"></a><span class="lineno">  716</span>&#160;<span class="preprocessor">#elif GPR_HAS_FEATURE(thread_sanitizer)</span></div>
-<div class="line"><a name="l00717"></a><span class="lineno">  717</span>&#160;<span class="preprocessor">#define GRPC_TSAN_ENABLED</span></div>
-<div class="line"><a name="l00718"></a><span class="lineno">  718</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00719"></a><span class="lineno">  719</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00720"></a><span class="lineno">  720</span>&#160; </div>
-<div class="line"><a name="l00721"></a><span class="lineno">  721</span>&#160;<span class="comment">/* GRPC_ASAN_ENABLED will be defined, when compiled with address sanitizer. */</span></div>
-<div class="line"><a name="l00722"></a><span class="lineno">  722</span>&#160;<span class="preprocessor">#ifndef GRPC_ASAN_SUPPRESSED</span></div>
-<div class="line"><a name="l00723"></a><span class="lineno">  723</span>&#160;<span class="preprocessor">#if defined(__SANITIZE_ADDRESS__)</span></div>
-<div class="line"><a name="l00724"></a><span class="lineno">  724</span>&#160;<span class="preprocessor">#define GRPC_ASAN_ENABLED</span></div>
-<div class="line"><a name="l00725"></a><span class="lineno">  725</span>&#160;<span class="preprocessor">#elif GPR_HAS_FEATURE(address_sanitizer)</span></div>
-<div class="line"><a name="l00726"></a><span class="lineno">  726</span>&#160;<span class="preprocessor">#define GRPC_ASAN_ENABLED</span></div>
-<div class="line"><a name="l00727"></a><span class="lineno">  727</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00728"></a><span class="lineno">  728</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00729"></a><span class="lineno">  729</span>&#160; </div>
-<div class="line"><a name="l00730"></a><span class="lineno">  730</span>&#160;<span class="comment">/* GRPC_ALLOW_EXCEPTIONS should be 0 or 1 if exceptions are allowed or not */</span></div>
-<div class="line"><a name="l00731"></a><span class="lineno">  731</span>&#160;<span class="preprocessor">#ifndef GRPC_ALLOW_EXCEPTIONS</span></div>
-<div class="line"><a name="l00732"></a><span class="lineno">  732</span>&#160;<span class="preprocessor">#ifdef GPR_WINDOWS</span></div>
-<div class="line"><a name="l00733"></a><span class="lineno">  733</span>&#160;<span class="preprocessor">#if defined(_MSC_VER) &amp;&amp; defined(_CPPUNWIND)</span></div>
-<div class="line"><a name="l00734"></a><span class="lineno">  734</span>&#160;<span class="preprocessor">#define GRPC_ALLOW_EXCEPTIONS 1</span></div>
-<div class="line"><a name="l00735"></a><span class="lineno">  735</span>&#160;<span class="preprocessor">#elif defined(__EXCEPTIONS)</span></div>
-<div class="line"><a name="l00736"></a><span class="lineno">  736</span>&#160;<span class="preprocessor">#define GRPC_ALLOW_EXCEPTIONS 1</span></div>
-<div class="line"><a name="l00737"></a><span class="lineno">  737</span>&#160;<span class="preprocessor">#else</span></div>
-<div class="line"><a name="l00738"></a><span class="lineno">  738</span>&#160;<span class="preprocessor">#define GRPC_ALLOW_EXCEPTIONS 0</span></div>
-<div class="line"><a name="l00739"></a><span class="lineno">  739</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00740"></a><span class="lineno">  740</span>&#160;<span class="preprocessor">#else </span><span class="comment">/* GPR_WINDOWS */</span><span class="preprocessor"></span></div>
-<div class="line"><a name="l00741"></a><span class="lineno">  741</span>&#160;<span class="preprocessor">#ifdef __EXCEPTIONS</span></div>
+<div class="line"><a name="l00631"></a><span class="lineno"><a class="line" href="support_2port__platform_8h.html#ae73de412cde28680b1a91f444463d4df">  631</a></span>&#160;<span class="preprocessor">#define GPR_ATTRIBUTE_NORETURN</span></div>
+<div class="line"><a name="l00632"></a><span class="lineno">  632</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00633"></a><span class="lineno">  633</span>&#160; </div>
+<div class="line"><a name="l00634"></a><span class="lineno">  634</span>&#160;<span class="preprocessor">#if defined(GPR_FORBID_UNREACHABLE_CODE) &amp;&amp; GPR_FORBID_UNREACHABLE_CODE</span></div>
+<div class="line"><a name="l00635"></a><span class="lineno">  635</span>&#160;<span class="preprocessor">#define GPR_UNREACHABLE_CODE(STATEMENT)</span></div>
+<div class="line"><a name="l00636"></a><span class="lineno">  636</span>&#160;<span class="preprocessor">#else</span></div>
+<div class="line"><a name="l00637"></a><span class="lineno">  637</span>&#160;<span class="preprocessor">#ifdef __cplusplus</span></div>
+<div class="line"><a name="l00638"></a><span class="lineno">  638</span>&#160;<span class="keyword">extern</span> <span class="stringliteral">&quot;C&quot;</span> {</div>
+<div class="line"><a name="l00639"></a><span class="lineno">  639</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00640"></a><span class="lineno">  640</span>&#160;<span class="keyword">extern</span> <span class="keywordtype">void</span> <a class="code" href="support_2port__platform_8h.html#ad81f265625a28840b8be4c9f8247d50f">gpr_unreachable_code</a>(<span class="keyword">const</span> <span class="keywordtype">char</span>* reason, <span class="keyword">const</span> <span class="keywordtype">char</span>* <a class="code" href="structgpr__log__func__args.html#a7961b2303b10d4f66d1aee6b5857ef89">file</a>,</div>
+<div class="line"><a name="l00641"></a><span class="lineno">  641</span>&#160;                                 <span class="keywordtype">int</span> <a class="code" href="structgpr__log__func__args.html#ae1a051bbc7e0ef6c58de0db3efda24bb">line</a>) <a class="code" href="support_2port__platform_8h.html#ae73de412cde28680b1a91f444463d4df">GPR_ATTRIBUTE_NORETURN</a>;</div>
+<div class="line"><a name="l00642"></a><span class="lineno">  642</span>&#160;<span class="preprocessor">#ifdef __cplusplus</span></div>
+<div class="line"><a name="l00643"></a><span class="lineno">  643</span>&#160;}</div>
+<div class="line"><a name="l00644"></a><span class="lineno">  644</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00645"></a><span class="lineno"><a class="line" href="support_2port__platform_8h.html#ab75d366740f8322e795ab0d44ed9d958">  645</a></span>&#160;<span class="preprocessor">#define GPR_UNREACHABLE_CODE(STATEMENT)                   \</span></div>
+<div class="line"><a name="l00646"></a><span class="lineno">  646</span>&#160;<span class="preprocessor">  do {                                                    \</span></div>
+<div class="line"><a name="l00647"></a><span class="lineno">  647</span>&#160;<span class="preprocessor">    gpr_unreachable_code(#STATEMENT, __FILE__, __LINE__); \</span></div>
+<div class="line"><a name="l00648"></a><span class="lineno">  648</span>&#160;<span class="preprocessor">    STATEMENT;                                            \</span></div>
+<div class="line"><a name="l00649"></a><span class="lineno">  649</span>&#160;<span class="preprocessor">  } while (0)</span></div>
+<div class="line"><a name="l00650"></a><span class="lineno">  650</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GPR_FORBID_UNREACHABLE_CODE */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00651"></a><span class="lineno">  651</span>&#160; </div>
+<div class="line"><a name="l00652"></a><span class="lineno">  652</span>&#160;<span class="preprocessor">#ifndef GPRAPI</span></div>
+<div class="line"><a name="l00653"></a><span class="lineno"><a class="line" href="support_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">  653</a></span>&#160;<span class="preprocessor">#define GPRAPI</span></div>
+<div class="line"><a name="l00654"></a><span class="lineno">  654</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00655"></a><span class="lineno">  655</span>&#160; </div>
+<div class="line"><a name="l00656"></a><span class="lineno">  656</span>&#160;<span class="preprocessor">#ifndef GRPCAPI</span></div>
+<div class="line"><a name="l00657"></a><span class="lineno"><a class="line" href="support_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">  657</a></span>&#160;<span class="preprocessor">#define GRPCAPI GPRAPI</span></div>
+<div class="line"><a name="l00658"></a><span class="lineno">  658</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00659"></a><span class="lineno">  659</span>&#160; </div>
+<div class="line"><a name="l00660"></a><span class="lineno">  660</span>&#160;<span class="preprocessor">#ifndef CENSUSAPI</span></div>
+<div class="line"><a name="l00661"></a><span class="lineno"><a class="line" href="support_2port__platform_8h.html#a3f6006f19ae6445e4a42f9d16b720ad7">  661</a></span>&#160;<span class="preprocessor">#define CENSUSAPI GRPCAPI</span></div>
+<div class="line"><a name="l00662"></a><span class="lineno">  662</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00663"></a><span class="lineno">  663</span>&#160; </div>
+<div class="line"><a name="l00664"></a><span class="lineno">  664</span>&#160;<span class="preprocessor">#ifndef GPR_HAS_FEATURE</span></div>
+<div class="line"><a name="l00665"></a><span class="lineno">  665</span>&#160;<span class="preprocessor">#ifdef __has_feature</span></div>
+<div class="line"><a name="l00666"></a><span class="lineno">  666</span>&#160;<span class="preprocessor">#define GPR_HAS_FEATURE(a) __has_feature(a)</span></div>
+<div class="line"><a name="l00667"></a><span class="lineno">  667</span>&#160;<span class="preprocessor">#else</span></div>
+<div class="line"><a name="l00668"></a><span class="lineno"><a class="line" href="support_2port__platform_8h.html#a237f93b6124a494f4aac2d7abc9f1e48">  668</a></span>&#160;<span class="preprocessor">#define GPR_HAS_FEATURE(a) 0</span></div>
+<div class="line"><a name="l00669"></a><span class="lineno">  669</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00670"></a><span class="lineno">  670</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GPR_HAS_FEATURE */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00671"></a><span class="lineno">  671</span>&#160; </div>
+<div class="line"><a name="l00672"></a><span class="lineno">  672</span>&#160;<span class="preprocessor">#ifndef GPR_ATTRIBUTE_NOINLINE</span></div>
+<div class="line"><a name="l00673"></a><span class="lineno">  673</span>&#160;<span class="preprocessor">#if GPR_HAS_ATTRIBUTE(noinline) || (defined(__GNUC__) &amp;&amp; !defined(__clang__))</span></div>
+<div class="line"><a name="l00674"></a><span class="lineno">  674</span>&#160;<span class="preprocessor">#define GPR_ATTRIBUTE_NOINLINE __attribute__((noinline))</span></div>
+<div class="line"><a name="l00675"></a><span class="lineno">  675</span>&#160;<span class="preprocessor">#define GPR_HAS_ATTRIBUTE_NOINLINE 1</span></div>
+<div class="line"><a name="l00676"></a><span class="lineno">  676</span>&#160;<span class="preprocessor">#else</span></div>
+<div class="line"><a name="l00677"></a><span class="lineno"><a class="line" href="support_2port__platform_8h.html#ab83587850217119f977454604236a0e6">  677</a></span>&#160;<span class="preprocessor">#define GPR_ATTRIBUTE_NOINLINE</span></div>
+<div class="line"><a name="l00678"></a><span class="lineno">  678</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00679"></a><span class="lineno">  679</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GPR_ATTRIBUTE_NOINLINE */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00680"></a><span class="lineno">  680</span>&#160; </div>
+<div class="line"><a name="l00681"></a><span class="lineno">  681</span>&#160;<span class="preprocessor">#ifndef GPR_NO_UNIQUE_ADDRESS</span></div>
+<div class="line"><a name="l00682"></a><span class="lineno">  682</span>&#160;<span class="preprocessor">#if GPR_HAS_CPP_ATTRIBUTE(no_unique_address)</span></div>
+<div class="line"><a name="l00683"></a><span class="lineno">  683</span>&#160;<span class="preprocessor">#define GPR_NO_UNIQUE_ADDRESS [[no_unique_address]]</span></div>
+<div class="line"><a name="l00684"></a><span class="lineno">  684</span>&#160;<span class="preprocessor">#else</span></div>
+<div class="line"><a name="l00685"></a><span class="lineno"><a class="line" href="support_2port__platform_8h.html#a70b25734869fa577e3db64392b6ba0c8">  685</a></span>&#160;<span class="preprocessor">#define GPR_NO_UNIQUE_ADDRESS</span></div>
+<div class="line"><a name="l00686"></a><span class="lineno">  686</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00687"></a><span class="lineno">  687</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GPR_NO_UNIQUE_ADDRESS */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00688"></a><span class="lineno">  688</span>&#160; </div>
+<div class="line"><a name="l00689"></a><span class="lineno">  689</span>&#160;<span class="preprocessor">#ifndef GRPC_DEPRECATED</span></div>
+<div class="line"><a name="l00690"></a><span class="lineno">  690</span>&#160;<span class="preprocessor">#if GPR_HAS_CPP_ATTRIBUTE(deprecated)</span></div>
+<div class="line"><a name="l00691"></a><span class="lineno">  691</span>&#160;<span class="preprocessor">#define GRPC_DEPRECATED(reason) [[deprecated(reason)]]</span></div>
+<div class="line"><a name="l00692"></a><span class="lineno">  692</span>&#160;<span class="preprocessor">#else</span></div>
+<div class="line"><a name="l00693"></a><span class="lineno">  693</span>&#160;<span class="preprocessor">#define GRPC_DEPRECATED(reason)</span></div>
+<div class="line"><a name="l00694"></a><span class="lineno">  694</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00695"></a><span class="lineno">  695</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_DEPRECATED */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00696"></a><span class="lineno">  696</span>&#160; </div>
+<div class="line"><a name="l00697"></a><span class="lineno">  697</span>&#160;<span class="preprocessor">#ifndef GPR_ATTRIBUTE_WEAK</span></div>
+<div class="line"><a name="l00698"></a><span class="lineno">  698</span>&#160;<span class="comment">/* Attribute weak is broken on LLVM/windows:</span></div>
+<div class="line"><a name="l00699"></a><span class="lineno">  699</span>&#160;<span class="comment"> * https://bugs.llvm.org/show_bug.cgi?id=37598 */</span></div>
+<div class="line"><a name="l00700"></a><span class="lineno">  700</span>&#160;<span class="preprocessor">#if (GPR_HAS_ATTRIBUTE(weak) || (defined(__GNUC__) &amp;&amp; !defined(__clang__))) &amp;&amp; \</span></div>
+<div class="line"><a name="l00701"></a><span class="lineno">  701</span>&#160;<span class="preprocessor">    !(defined(__llvm__) &amp;&amp; defined(_WIN32))</span></div>
+<div class="line"><a name="l00702"></a><span class="lineno">  702</span>&#160;<span class="preprocessor">#define GPR_ATTRIBUTE_WEAK __attribute__((weak))</span></div>
+<div class="line"><a name="l00703"></a><span class="lineno">  703</span>&#160;<span class="preprocessor">#define GPR_HAS_ATTRIBUTE_WEAK 1</span></div>
+<div class="line"><a name="l00704"></a><span class="lineno">  704</span>&#160;<span class="preprocessor">#else</span></div>
+<div class="line"><a name="l00705"></a><span class="lineno"><a class="line" href="support_2port__platform_8h.html#a5b73ca15c9e24b43959f202f094ea7b6">  705</a></span>&#160;<span class="preprocessor">#define GPR_ATTRIBUTE_WEAK</span></div>
+<div class="line"><a name="l00706"></a><span class="lineno">  706</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00707"></a><span class="lineno">  707</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GPR_ATTRIBUTE_WEAK */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00708"></a><span class="lineno">  708</span>&#160; </div>
+<div class="line"><a name="l00709"></a><span class="lineno">  709</span>&#160;<span class="preprocessor">#ifndef GPR_ATTRIBUTE_NO_TSAN </span><span class="comment">/* (1) */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00710"></a><span class="lineno">  710</span>&#160;<span class="preprocessor">#if GPR_HAS_FEATURE(thread_sanitizer)</span></div>
+<div class="line"><a name="l00711"></a><span class="lineno">  711</span>&#160;<span class="preprocessor">#define GPR_ATTRIBUTE_NO_TSAN __attribute__((no_sanitize(&quot;thread&quot;)))</span></div>
+<div class="line"><a name="l00712"></a><span class="lineno">  712</span>&#160;<span class="preprocessor">#endif                        </span><span class="comment">/* GPR_HAS_FEATURE */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00713"></a><span class="lineno">  713</span>&#160;<span class="preprocessor">#ifndef GPR_ATTRIBUTE_NO_TSAN </span><span class="comment">/* (2) */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00714"></a><span class="lineno"><a class="line" href="support_2port__platform_8h.html#ac5d859f207ef029e0f5fc556f8e5876e">  714</a></span>&#160;<span class="preprocessor">#define GPR_ATTRIBUTE_NO_TSAN</span></div>
+<div class="line"><a name="l00715"></a><span class="lineno">  715</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GPR_ATTRIBUTE_NO_TSAN (2) */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00716"></a><span class="lineno">  716</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GPR_ATTRIBUTE_NO_TSAN (1) */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00717"></a><span class="lineno">  717</span>&#160; </div>
+<div class="line"><a name="l00718"></a><span class="lineno">  718</span>&#160;<span class="comment">/* GRPC_TSAN_ENABLED will be defined, when compiled with thread sanitizer. */</span></div>
+<div class="line"><a name="l00719"></a><span class="lineno">  719</span>&#160;<span class="preprocessor">#ifndef GRPC_TSAN_SUPPRESSED</span></div>
+<div class="line"><a name="l00720"></a><span class="lineno">  720</span>&#160;<span class="preprocessor">#if defined(__SANITIZE_THREAD__)</span></div>
+<div class="line"><a name="l00721"></a><span class="lineno">  721</span>&#160;<span class="preprocessor">#define GRPC_TSAN_ENABLED</span></div>
+<div class="line"><a name="l00722"></a><span class="lineno">  722</span>&#160;<span class="preprocessor">#elif GPR_HAS_FEATURE(thread_sanitizer)</span></div>
+<div class="line"><a name="l00723"></a><span class="lineno">  723</span>&#160;<span class="preprocessor">#define GRPC_TSAN_ENABLED</span></div>
+<div class="line"><a name="l00724"></a><span class="lineno">  724</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00725"></a><span class="lineno">  725</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00726"></a><span class="lineno">  726</span>&#160; </div>
+<div class="line"><a name="l00727"></a><span class="lineno">  727</span>&#160;<span class="comment">/* GRPC_ASAN_ENABLED will be defined, when compiled with address sanitizer. */</span></div>
+<div class="line"><a name="l00728"></a><span class="lineno">  728</span>&#160;<span class="preprocessor">#ifndef GRPC_ASAN_SUPPRESSED</span></div>
+<div class="line"><a name="l00729"></a><span class="lineno">  729</span>&#160;<span class="preprocessor">#if defined(__SANITIZE_ADDRESS__)</span></div>
+<div class="line"><a name="l00730"></a><span class="lineno">  730</span>&#160;<span class="preprocessor">#define GRPC_ASAN_ENABLED</span></div>
+<div class="line"><a name="l00731"></a><span class="lineno">  731</span>&#160;<span class="preprocessor">#elif GPR_HAS_FEATURE(address_sanitizer)</span></div>
+<div class="line"><a name="l00732"></a><span class="lineno">  732</span>&#160;<span class="preprocessor">#define GRPC_ASAN_ENABLED</span></div>
+<div class="line"><a name="l00733"></a><span class="lineno">  733</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00734"></a><span class="lineno">  734</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00735"></a><span class="lineno">  735</span>&#160; </div>
+<div class="line"><a name="l00736"></a><span class="lineno">  736</span>&#160;<span class="comment">/* GRPC_ALLOW_EXCEPTIONS should be 0 or 1 if exceptions are allowed or not */</span></div>
+<div class="line"><a name="l00737"></a><span class="lineno">  737</span>&#160;<span class="preprocessor">#ifndef GRPC_ALLOW_EXCEPTIONS</span></div>
+<div class="line"><a name="l00738"></a><span class="lineno">  738</span>&#160;<span class="preprocessor">#ifdef GPR_WINDOWS</span></div>
+<div class="line"><a name="l00739"></a><span class="lineno">  739</span>&#160;<span class="preprocessor">#if defined(_MSC_VER) &amp;&amp; defined(_CPPUNWIND)</span></div>
+<div class="line"><a name="l00740"></a><span class="lineno">  740</span>&#160;<span class="preprocessor">#define GRPC_ALLOW_EXCEPTIONS 1</span></div>
+<div class="line"><a name="l00741"></a><span class="lineno">  741</span>&#160;<span class="preprocessor">#elif defined(__EXCEPTIONS)</span></div>
 <div class="line"><a name="l00742"></a><span class="lineno">  742</span>&#160;<span class="preprocessor">#define GRPC_ALLOW_EXCEPTIONS 1</span></div>
-<div class="line"><a name="l00743"></a><span class="lineno">  743</span>&#160;<span class="preprocessor">#else </span><span class="comment">/* __EXCEPTIONS */</span><span class="preprocessor"></span></div>
-<div class="line"><a name="l00744"></a><span class="lineno"><a class="line" href="support_2port__platform_8h.html#a30c4ae5cdf0ec0d72fd9e08e0d06370a">  744</a></span>&#160;<span class="preprocessor">#define GRPC_ALLOW_EXCEPTIONS 0</span></div>
-<div class="line"><a name="l00745"></a><span class="lineno">  745</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* __EXCEPTIONS */</span><span class="preprocessor"></span></div>
-<div class="line"><a name="l00746"></a><span class="lineno">  746</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* __GPR_WINDOWS */</span><span class="preprocessor"></span></div>
-<div class="line"><a name="l00747"></a><span class="lineno">  747</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_ALLOW_EXCEPTIONS */</span><span class="preprocessor"></span></div>
-<div class="line"><a name="l00748"></a><span class="lineno">  748</span>&#160; </div>
-<div class="line"><a name="l00749"></a><span class="lineno">  749</span>&#160;<span class="comment">/* Use GPR_LIKELY only in cases where you are sure that a certain outcome is the</span></div>
-<div class="line"><a name="l00750"></a><span class="lineno">  750</span>&#160;<span class="comment"> * most likely. Ideally, also collect performance numbers to justify the claim.</span></div>
-<div class="line"><a name="l00751"></a><span class="lineno">  751</span>&#160;<span class="comment"> */</span></div>
-<div class="line"><a name="l00752"></a><span class="lineno">  752</span>&#160;<span class="preprocessor">#ifdef __GNUC__</span></div>
-<div class="line"><a name="l00753"></a><span class="lineno">  753</span>&#160;<span class="preprocessor">#define GPR_LIKELY(x) __builtin_expect((x), 1)</span></div>
-<div class="line"><a name="l00754"></a><span class="lineno">  754</span>&#160;<span class="preprocessor">#define GPR_UNLIKELY(x) __builtin_expect((x), 0)</span></div>
-<div class="line"><a name="l00755"></a><span class="lineno">  755</span>&#160;<span class="preprocessor">#else </span><span class="comment">/* __GNUC__ */</span><span class="preprocessor"></span></div>
-<div class="line"><a name="l00756"></a><span class="lineno"><a class="line" href="support_2port__platform_8h.html#a518d2d0a7ae17a01e2fa2dee0e2f84df">  756</a></span>&#160;<span class="preprocessor">#define GPR_LIKELY(x) (x)</span></div>
-<div class="line"><a name="l00757"></a><span class="lineno"><a class="line" href="support_2port__platform_8h.html#a99b5bddfe84f8dc8ee55b35405b8fddd">  757</a></span>&#160;<span class="preprocessor">#define GPR_UNLIKELY(x) (x)</span></div>
-<div class="line"><a name="l00758"></a><span class="lineno">  758</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* __GNUC__ */</span><span class="preprocessor"></span></div>
-<div class="line"><a name="l00759"></a><span class="lineno">  759</span>&#160; </div>
-<div class="line"><a name="l00760"></a><span class="lineno">  760</span>&#160;<span class="preprocessor">#ifndef __STDC_FORMAT_MACROS</span></div>
-<div class="line"><a name="l00761"></a><span class="lineno"><a class="line" href="support_2port__platform_8h.html#aacbb9e1f38be71e22df1584a37c56693">  761</a></span>&#160;<span class="preprocessor">#define __STDC_FORMAT_MACROS</span></div>
-<div class="line"><a name="l00762"></a><span class="lineno">  762</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00763"></a><span class="lineno">  763</span>&#160; </div>
-<div class="line"><a name="l00764"></a><span class="lineno">  764</span>&#160;<span class="comment">/* MSVC doesn&#39;t do the empty base class optimization in debug builds by default,</span></div>
-<div class="line"><a name="l00765"></a><span class="lineno">  765</span>&#160;<span class="comment"> * and because of ABI likely won&#39;t.</span></div>
-<div class="line"><a name="l00766"></a><span class="lineno">  766</span>&#160;<span class="comment"> * This enables it for specific types, use as:</span></div>
-<div class="line"><a name="l00767"></a><span class="lineno">  767</span>&#160;<span class="comment"> * class GPR_MSVC_EMPTY_BASE_CLASS_WORKAROUND Foo : public A, public B, public C</span></div>
-<div class="line"><a name="l00768"></a><span class="lineno">  768</span>&#160;<span class="comment"> * {}; */</span></div>
-<div class="line"><a name="l00769"></a><span class="lineno">  769</span>&#160;<span class="preprocessor">#ifndef GPR_MSVC_EMPTY_BASE_CLASS_WORKAROUND</span></div>
-<div class="line"><a name="l00770"></a><span class="lineno">  770</span>&#160;<span class="preprocessor">#ifdef GPR_WINDOWS</span></div>
-<div class="line"><a name="l00771"></a><span class="lineno">  771</span>&#160;<span class="preprocessor">#define GPR_MSVC_EMPTY_BASE_CLASS_WORKAROUND __declspec(empty_bases)</span></div>
-<div class="line"><a name="l00772"></a><span class="lineno">  772</span>&#160;<span class="preprocessor">#else</span></div>
-<div class="line"><a name="l00773"></a><span class="lineno"><a class="line" href="support_2port__platform_8h.html#a1ccd8664edb82d0da42a252c40f19bd5">  773</a></span>&#160;<span class="preprocessor">#define GPR_MSVC_EMPTY_BASE_CLASS_WORKAROUND</span></div>
-<div class="line"><a name="l00774"></a><span class="lineno">  774</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00775"></a><span class="lineno">  775</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00776"></a><span class="lineno">  776</span>&#160; </div>
-<div class="line"><a name="l00777"></a><span class="lineno"><a class="line" href="support_2port__platform_8h.html#ab895b9154f9a06d9042a9f627dab8046">  777</a></span>&#160;<span class="preprocessor">#define GRPC_CALLBACK_API_NONEXPERIMENTAL</span></div>
-<div class="line"><a name="l00778"></a><span class="lineno">  778</span>&#160; </div>
-<div class="line"><a name="l00779"></a><span class="lineno">  779</span>&#160;<span class="comment">/* clang 12 and lower with msan miscompiles destruction of [[no_unique_address]]</span></div>
-<div class="line"><a name="l00780"></a><span class="lineno">  780</span>&#160;<span class="comment"> * members of zero size - for a repro see:</span></div>
-<div class="line"><a name="l00781"></a><span class="lineno">  781</span>&#160;<span class="comment"> * test/core/compiler_bugs/miscompile_with_no_unique_address_test.cc</span></div>
-<div class="line"><a name="l00782"></a><span class="lineno">  782</span>&#160;<span class="comment"> */</span></div>
-<div class="line"><a name="l00783"></a><span class="lineno">  783</span>&#160;<span class="preprocessor">#ifdef __clang__</span></div>
-<div class="line"><a name="l00784"></a><span class="lineno">  784</span>&#160;<span class="preprocessor">#if __clang__ &amp;&amp; __clang_major__ &lt;= 12 &amp;&amp; __has_feature(memory_sanitizer)</span></div>
-<div class="line"><a name="l00785"></a><span class="lineno">  785</span>&#160;<span class="preprocessor">#undef GPR_NO_UNIQUE_ADDRESS</span></div>
-<div class="line"><a name="l00786"></a><span class="lineno">  786</span>&#160;<span class="preprocessor">#define GPR_NO_UNIQUE_ADDRESS</span></div>
-<div class="line"><a name="l00787"></a><span class="lineno">  787</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00788"></a><span class="lineno">  788</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00789"></a><span class="lineno">  789</span>&#160; </div>
-<div class="line"><a name="l00790"></a><span class="lineno">  790</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_SUPPORT_PORT_PLATFORM_H */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00743"></a><span class="lineno">  743</span>&#160;<span class="preprocessor">#else</span></div>
+<div class="line"><a name="l00744"></a><span class="lineno">  744</span>&#160;<span class="preprocessor">#define GRPC_ALLOW_EXCEPTIONS 0</span></div>
+<div class="line"><a name="l00745"></a><span class="lineno">  745</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00746"></a><span class="lineno">  746</span>&#160;<span class="preprocessor">#else </span><span class="comment">/* GPR_WINDOWS */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00747"></a><span class="lineno">  747</span>&#160;<span class="preprocessor">#ifdef __EXCEPTIONS</span></div>
+<div class="line"><a name="l00748"></a><span class="lineno">  748</span>&#160;<span class="preprocessor">#define GRPC_ALLOW_EXCEPTIONS 1</span></div>
+<div class="line"><a name="l00749"></a><span class="lineno">  749</span>&#160;<span class="preprocessor">#else </span><span class="comment">/* __EXCEPTIONS */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00750"></a><span class="lineno"><a class="line" href="support_2port__platform_8h.html#a30c4ae5cdf0ec0d72fd9e08e0d06370a">  750</a></span>&#160;<span class="preprocessor">#define GRPC_ALLOW_EXCEPTIONS 0</span></div>
+<div class="line"><a name="l00751"></a><span class="lineno">  751</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* __EXCEPTIONS */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00752"></a><span class="lineno">  752</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* __GPR_WINDOWS */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00753"></a><span class="lineno">  753</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_ALLOW_EXCEPTIONS */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00754"></a><span class="lineno">  754</span>&#160; </div>
+<div class="line"><a name="l00755"></a><span class="lineno">  755</span>&#160;<span class="comment">/* Use GPR_LIKELY only in cases where you are sure that a certain outcome is the</span></div>
+<div class="line"><a name="l00756"></a><span class="lineno">  756</span>&#160;<span class="comment"> * most likely. Ideally, also collect performance numbers to justify the claim.</span></div>
+<div class="line"><a name="l00757"></a><span class="lineno">  757</span>&#160;<span class="comment"> */</span></div>
+<div class="line"><a name="l00758"></a><span class="lineno">  758</span>&#160;<span class="preprocessor">#ifdef __GNUC__</span></div>
+<div class="line"><a name="l00759"></a><span class="lineno">  759</span>&#160;<span class="preprocessor">#define GPR_LIKELY(x) __builtin_expect((x), 1)</span></div>
+<div class="line"><a name="l00760"></a><span class="lineno">  760</span>&#160;<span class="preprocessor">#define GPR_UNLIKELY(x) __builtin_expect((x), 0)</span></div>
+<div class="line"><a name="l00761"></a><span class="lineno">  761</span>&#160;<span class="preprocessor">#else </span><span class="comment">/* __GNUC__ */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00762"></a><span class="lineno"><a class="line" href="support_2port__platform_8h.html#a518d2d0a7ae17a01e2fa2dee0e2f84df">  762</a></span>&#160;<span class="preprocessor">#define GPR_LIKELY(x) (x)</span></div>
+<div class="line"><a name="l00763"></a><span class="lineno"><a class="line" href="support_2port__platform_8h.html#a99b5bddfe84f8dc8ee55b35405b8fddd">  763</a></span>&#160;<span class="preprocessor">#define GPR_UNLIKELY(x) (x)</span></div>
+<div class="line"><a name="l00764"></a><span class="lineno">  764</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* __GNUC__ */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00765"></a><span class="lineno">  765</span>&#160; </div>
+<div class="line"><a name="l00766"></a><span class="lineno">  766</span>&#160;<span class="preprocessor">#ifndef __STDC_FORMAT_MACROS</span></div>
+<div class="line"><a name="l00767"></a><span class="lineno"><a class="line" href="support_2port__platform_8h.html#aacbb9e1f38be71e22df1584a37c56693">  767</a></span>&#160;<span class="preprocessor">#define __STDC_FORMAT_MACROS</span></div>
+<div class="line"><a name="l00768"></a><span class="lineno">  768</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00769"></a><span class="lineno">  769</span>&#160; </div>
+<div class="line"><a name="l00770"></a><span class="lineno">  770</span>&#160;<span class="comment">/* MSVC doesn&#39;t do the empty base class optimization in debug builds by default,</span></div>
+<div class="line"><a name="l00771"></a><span class="lineno">  771</span>&#160;<span class="comment"> * and because of ABI likely won&#39;t.</span></div>
+<div class="line"><a name="l00772"></a><span class="lineno">  772</span>&#160;<span class="comment"> * This enables it for specific types, use as:</span></div>
+<div class="line"><a name="l00773"></a><span class="lineno">  773</span>&#160;<span class="comment"> * class GPR_MSVC_EMPTY_BASE_CLASS_WORKAROUND Foo : public A, public B, public C</span></div>
+<div class="line"><a name="l00774"></a><span class="lineno">  774</span>&#160;<span class="comment"> * {}; */</span></div>
+<div class="line"><a name="l00775"></a><span class="lineno">  775</span>&#160;<span class="preprocessor">#ifndef GPR_MSVC_EMPTY_BASE_CLASS_WORKAROUND</span></div>
+<div class="line"><a name="l00776"></a><span class="lineno">  776</span>&#160;<span class="preprocessor">#ifdef GPR_WINDOWS</span></div>
+<div class="line"><a name="l00777"></a><span class="lineno">  777</span>&#160;<span class="preprocessor">#define GPR_MSVC_EMPTY_BASE_CLASS_WORKAROUND __declspec(empty_bases)</span></div>
+<div class="line"><a name="l00778"></a><span class="lineno">  778</span>&#160;<span class="preprocessor">#else</span></div>
+<div class="line"><a name="l00779"></a><span class="lineno"><a class="line" href="support_2port__platform_8h.html#a1ccd8664edb82d0da42a252c40f19bd5">  779</a></span>&#160;<span class="preprocessor">#define GPR_MSVC_EMPTY_BASE_CLASS_WORKAROUND</span></div>
+<div class="line"><a name="l00780"></a><span class="lineno">  780</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00781"></a><span class="lineno">  781</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00782"></a><span class="lineno">  782</span>&#160; </div>
+<div class="line"><a name="l00783"></a><span class="lineno"><a class="line" href="support_2port__platform_8h.html#ab895b9154f9a06d9042a9f627dab8046">  783</a></span>&#160;<span class="preprocessor">#define GRPC_CALLBACK_API_NONEXPERIMENTAL</span></div>
+<div class="line"><a name="l00784"></a><span class="lineno">  784</span>&#160; </div>
+<div class="line"><a name="l00785"></a><span class="lineno">  785</span>&#160;<span class="comment">/* clang 12 and lower with msan miscompiles destruction of [[no_unique_address]]</span></div>
+<div class="line"><a name="l00786"></a><span class="lineno">  786</span>&#160;<span class="comment"> * members of zero size - for a repro see:</span></div>
+<div class="line"><a name="l00787"></a><span class="lineno">  787</span>&#160;<span class="comment"> * test/core/compiler_bugs/miscompile_with_no_unique_address_test.cc</span></div>
+<div class="line"><a name="l00788"></a><span class="lineno">  788</span>&#160;<span class="comment"> */</span></div>
+<div class="line"><a name="l00789"></a><span class="lineno">  789</span>&#160;<span class="preprocessor">#ifdef __clang__</span></div>
+<div class="line"><a name="l00790"></a><span class="lineno">  790</span>&#160;<span class="preprocessor">#if __clang__ &amp;&amp; __clang_major__ &lt;= 12 &amp;&amp; __has_feature(memory_sanitizer)</span></div>
+<div class="line"><a name="l00791"></a><span class="lineno">  791</span>&#160;<span class="preprocessor">#undef GPR_NO_UNIQUE_ADDRESS</span></div>
+<div class="line"><a name="l00792"></a><span class="lineno">  792</span>&#160;<span class="preprocessor">#define GPR_NO_UNIQUE_ADDRESS</span></div>
+<div class="line"><a name="l00793"></a><span class="lineno">  793</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00794"></a><span class="lineno">  794</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00795"></a><span class="lineno">  795</span>&#160; </div>
+<div class="line"><a name="l00796"></a><span class="lineno">  796</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_SUPPORT_PORT_PLATFORM_H */</span><span class="preprocessor"></span></div>
 </div><!-- fragment --></div><!-- contents -->
-<div class="ttc" id="asupport_2port__platform_8h_html_ae73de412cde28680b1a91f444463d4df"><div class="ttname"><a href="support_2port__platform_8h.html#ae73de412cde28680b1a91f444463d4df">GPR_ATTRIBUTE_NORETURN</a></div><div class="ttdeci">#define GPR_ATTRIBUTE_NORETURN</div><div class="ttdef"><b>Definition:</b> port_platform.h:625</div></div>
+<div class="ttc" id="asupport_2port__platform_8h_html_ae73de412cde28680b1a91f444463d4df"><div class="ttname"><a href="support_2port__platform_8h.html#ae73de412cde28680b1a91f444463d4df">GPR_ATTRIBUTE_NORETURN</a></div><div class="ttdeci">#define GPR_ATTRIBUTE_NORETURN</div><div class="ttdef"><b>Definition:</b> port_platform.h:631</div></div>
 <div class="ttc" id="astructgpr__log__func__args_html_a7961b2303b10d4f66d1aee6b5857ef89"><div class="ttname"><a href="structgpr__log__func__args.html#a7961b2303b10d4f66d1aee6b5857ef89">gpr_log_func_args::file</a></div><div class="ttdeci">const char * file</div><div class="ttdef"><b>Definition:</b> log.h:76</div></div>
 <div class="ttc" id="asupport_2port__platform_8h_html_ad81f265625a28840b8be4c9f8247d50f"><div class="ttname"><a href="support_2port__platform_8h.html#ad81f265625a28840b8be4c9f8247d50f">gpr_unreachable_code</a></div><div class="ttdeci">void gpr_unreachable_code(const char *reason, const char *file, int line)</div></div>
 <div class="ttc" id="astructgpr__log__func__args_html_ae1a051bbc7e0ef6c58de0db3efda24bb"><div class="ttname"><a href="structgpr__log__func__args.html#ae1a051bbc7e0ef6c58de0db3efda24bb">gpr_log_func_args::line</a></div><div class="ttdeci">int line</div><div class="ttdef"><b>Definition:</b> log.h:77</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Jun 27 2023 17:50:37 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Aug 14 2023 18:27:15 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

@@ -4,12 +4,12 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>grpc.aio._base_server &#8212; gRPC Python 1.56.0 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css" />
-    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
-    <script src="../../../_static/doctools.js"></script>
-    <script src="../../../_static/sphinx_highlight.js"></script>
+    <title>grpc.aio._base_server &#8212; gRPC Python 1.57.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=4f649999" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=8090fdca" />
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=a042030b"></script>
+    <script src="../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=4825356b"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
    
@@ -27,7 +27,7 @@
 
 
 
-<p class="blurb">1.56.0</p>
+<p class="blurb">1.57.0</p>
 
 
 
@@ -119,8 +119,8 @@
 
 <div class="viewcode-block" id="Server.add_generic_rpc_handlers"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.Server.add_generic_rpc_handlers">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
     <span class="k">def</span> <span class="nf">add_generic_rpc_handlers</span><span class="p">(</span>
-            <span class="bp">self</span><span class="p">,</span>
-            <span class="n">generic_rpc_handlers</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">GenericRpcHandler</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">generic_rpc_handlers</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">GenericRpcHandler</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Registers GenericRpcHandlers with this Server.</span>
 
 <span class="sd">        This method is only safe to call before the server is started.</span>
@@ -148,8 +148,9 @@
 <span class="sd">        &quot;&quot;&quot;</span></div>
 
 <div class="viewcode-block" id="Server.add_secure_port"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.Server.add_secure_port">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-    <span class="k">def</span> <span class="nf">add_secure_port</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-                        <span class="n">server_credentials</span><span class="p">:</span> <span class="n">grpc</span><span class="o">.</span><span class="n">ServerCredentials</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">add_secure_port</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">server_credentials</span><span class="p">:</span> <span class="n">grpc</span><span class="o">.</span><span class="n">ServerCredentials</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Opens a secure port for accepting RPCs.</span>
 
 <span class="sd">        A port is a communication endpoint that used by networking protocols,</span>
@@ -199,8 +200,9 @@
 <span class="sd">        &quot;&quot;&quot;</span></div>
 
 <div class="viewcode-block" id="Server.wait_for_termination"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.Server.wait_for_termination">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">wait_for_termination</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
-                                   <span class="n">timeout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">wait_for_termination</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Continues current coroutine once the server stops.</span>
 
 <span class="sd">        This is an EXPERIMENTAL API.</span>
@@ -251,8 +253,9 @@
 <span class="sd">        &quot;&quot;&quot;</span></div>
 
 <div class="viewcode-block" id="ServicerContext.send_initial_metadata"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.ServicerContext.send_initial_metadata">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">send_initial_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
-                                    <span class="n">initial_metadata</span><span class="p">:</span> <span class="n">MetadataType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">send_initial_metadata</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">initial_metadata</span><span class="p">:</span> <span class="n">MetadataType</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Sends the initial metadata value to the client.</span>
 
 <span class="sd">        This method need not be called by implementations if they have no</span>
@@ -266,8 +269,9 @@
     <span class="k">async</span> <span class="k">def</span> <span class="nf">abort</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">code</span><span class="p">:</span> <span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="p">,</span>
-        <span class="n">details</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="p">,</span>
-        <span class="n">trailing_metadata</span><span class="p">:</span> <span class="n">MetadataType</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">())</span> <span class="o">-&gt;</span> <span class="n">NoReturn</span><span class="p">:</span>
+        <span class="n">details</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="n">trailing_metadata</span><span class="p">:</span> <span class="n">MetadataType</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(),</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NoReturn</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Raises an exception to terminate the RPC with a non-OK status.</span>
 
 <span class="sd">        The code and details passed as arguments will supercede any existing</span>

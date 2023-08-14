@@ -670,6 +670,16 @@ dd {
     margin-left: 30px;
 }
 
+.sig dd {
+    margin-top: 0px;
+    margin-bottom: 0px;
+}
+
+.sig dl {
+    margin-top: 0px;
+    margin-bottom: 0px;
+}
+
 dl > dd:last-child,
 dl > dd:last-child > :last-child {
     margin-bottom: 0;
@@ -736,6 +746,14 @@ dl.glossary dt {
 abbr, acronym {
     border-bottom: dotted 1px;
     cursor: help;
+}
+
+.translated {
+    background-color: rgba(207, 255, 207, 0.2)
+}
+
+.untranslated {
+    background-color: rgba(255, 207, 207, 0.2)
 }
 
 /* -- code displays --------------------------------------------------------- */

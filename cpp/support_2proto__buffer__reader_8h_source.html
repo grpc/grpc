@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.56.0</span>
+   &#160;<span id="projectnumber">1.57.0</span>
    </div>
   </td>
  </tr>
@@ -202,7 +202,7 @@ $(function() {
 <div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;      }</div>
 <div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;      uint64_t slice_length = <a class="code" href="slice__type_8h.html#ae965fb2ee1a646253cdbd49d82b0b6c5">GRPC_SLICE_LENGTH</a>(*<a class="code" href="classgrpc_1_1_proto_buffer_reader.html#a0874823748781629e0b2bde470d78bf3">slice</a>());</div>
 <div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;      <a class="code" href="classgrpc_1_1_proto_buffer_reader.html#a9fa8b889f80d4bf56f6915ad9245ac3b">set_byte_count</a>(<a class="code" href="classgrpc_1_1_proto_buffer_reader.html#a98601902abf9a69f2072e81aa65f67a0">ByteCount</a>() + slice_length);</div>
-<div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;      <span class="keywordflow">if</span> (slice_length &lt;= count) {</div>
+<div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;      <span class="keywordflow">if</span> (slice_length &lt;= <span class="keyword">static_cast&lt;</span>uint64_t<span class="keyword">&gt;</span>(count)) {</div>
 <div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;        cord-&gt;Append(MakeCordFromSlice(<a class="code" href="grpc_2slice_8h.html#aaf6dd367abbe7883973588f411928c6e">grpc_slice_ref</a>(*<a class="code" href="classgrpc_1_1_proto_buffer_reader.html#a0874823748781629e0b2bde470d78bf3">slice</a>())));</div>
 <div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;        count -= slice_length;</div>
 <div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;      } <span class="keywordflow">else</span> {</div>
@@ -236,7 +236,7 @@ $(function() {
 <div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;    <span class="keywordflow">return</span> absl::MakeCordFromExternal(</div>
 <div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160;        absl::string_view(<span class="keyword">reinterpret_cast&lt;</span><span class="keywordtype">char</span>*<span class="keyword">&gt;</span>(<a class="code" href="slice__type_8h.html#a8a15783c251cdeb18c3f8b0ad41d0352">GRPC_SLICE_START_PTR</a>(<a class="code" href="classgrpc_1_1_proto_buffer_reader.html#a0874823748781629e0b2bde470d78bf3">slice</a>)),</div>
 <div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;                          <a class="code" href="slice__type_8h.html#ae965fb2ee1a646253cdbd49d82b0b6c5">GRPC_SLICE_LENGTH</a>(<a class="code" href="classgrpc_1_1_proto_buffer_reader.html#a0874823748781629e0b2bde470d78bf3">slice</a>)),</div>
-<div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;        [<a class="code" href="classgrpc_1_1_proto_buffer_reader.html#a0874823748781629e0b2bde470d78bf3">slice</a>](absl::string_view view) { <a class="code" href="grpc_2slice_8h.html#ac9952d98910886ca44ac416d547d0e08">grpc_slice_unref</a>(<a class="code" href="classgrpc_1_1_proto_buffer_reader.html#a0874823748781629e0b2bde470d78bf3">slice</a>); });</div>
+<div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;        [<a class="code" href="classgrpc_1_1_proto_buffer_reader.html#a0874823748781629e0b2bde470d78bf3">slice</a>](absl::string_view <span class="comment">/* view */</span>) { <a class="code" href="grpc_2slice_8h.html#ac9952d98910886ca44ac416d547d0e08">grpc_slice_unref</a>(<a class="code" href="classgrpc_1_1_proto_buffer_reader.html#a0874823748781629e0b2bde470d78bf3">slice</a>); });</div>
 <div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;  }</div>
 <div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;<span class="preprocessor">#endif  // GRPC_PROTOBUF_CORD_SUPPORT_ENABLED</span></div>
 <div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160; </div>
@@ -297,7 +297,7 @@ $(function() {
 <div class="ttc" id="anamespacegrpc_html_aff1730578c90160528f6a8d67ef5c43ba0ae30536146394965fd8ad64c2d414f3"><div class="ttname"><a href="namespacegrpc.html#aff1730578c90160528f6a8d67ef5c43ba0ae30536146394965fd8ad64c2d414f3">grpc::INTERNAL</a></div><div class="ttdeci">@ INTERNAL</div><div class="ttdoc">Internal errors.</div><div class="ttdef"><b>Definition:</b> status_code_enum.h:121</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Jun 27 2023 17:50:38 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Aug 14 2023 18:27:17 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

@@ -4,12 +4,12 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>grpc.aio._base_call &#8212; gRPC Python 1.56.0 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css" />
-    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
-    <script src="../../../_static/doctools.js"></script>
-    <script src="../../../_static/sphinx_highlight.js"></script>
+    <title>grpc.aio._base_call &#8212; gRPC Python 1.57.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=4f649999" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=8090fdca" />
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=a042030b"></script>
+    <script src="../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=4825356b"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
    
@@ -27,7 +27,7 @@
 
 
 
-<p class="blurb">1.56.0</p>
+<p class="blurb">1.57.0</p>
 
 
 
@@ -119,7 +119,7 @@
 <span class="kn">from</span> <span class="nn">._typing</span> <span class="kn">import</span> <span class="n">RequestType</span>
 <span class="kn">from</span> <span class="nn">._typing</span> <span class="kn">import</span> <span class="n">ResponseType</span>
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="s1">&#39;RpcContext&#39;</span><span class="p">,</span> <span class="s1">&#39;Call&#39;</span><span class="p">,</span> <span class="s1">&#39;UnaryUnaryCall&#39;</span><span class="p">,</span> <span class="s1">&#39;UnaryStreamCall&#39;</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="s2">&quot;RpcContext&quot;</span><span class="p">,</span> <span class="s2">&quot;Call&quot;</span><span class="p">,</span> <span class="s2">&quot;UnaryUnaryCall&quot;</span><span class="p">,</span> <span class="s2">&quot;UnaryStreamCall&quot;</span>
 
 
 <div class="viewcode-block" id="RpcContext"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.RpcContext">[docs]</a><span class="k">class</span> <span class="nc">RpcContext</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
@@ -224,9 +224,9 @@
 <span class="sd">        &quot;&quot;&quot;</span></div></div>
 
 
-<div class="viewcode-block" id="UnaryUnaryCall"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.UnaryUnaryCall">[docs]</a><span class="k">class</span> <span class="nc">UnaryUnaryCall</span><span class="p">(</span><span class="n">Generic</span><span class="p">[</span><span class="n">RequestType</span><span class="p">,</span> <span class="n">ResponseType</span><span class="p">],</span>
-                     <span class="n">Call</span><span class="p">,</span>
-                     <span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
+<div class="viewcode-block" id="UnaryUnaryCall"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.UnaryUnaryCall">[docs]</a><span class="k">class</span> <span class="nc">UnaryUnaryCall</span><span class="p">(</span>
+    <span class="n">Generic</span><span class="p">[</span><span class="n">RequestType</span><span class="p">,</span> <span class="n">ResponseType</span><span class="p">],</span> <span class="n">Call</span><span class="p">,</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span>
+<span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;The abstract base class of an unary-unary RPC on the client-side.&quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="UnaryUnaryCall.__await__"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.UnaryUnaryCall.__await__">[docs]</a>    <span class="nd">@abstractmethod</span>
@@ -238,10 +238,9 @@
 <span class="sd">        &quot;&quot;&quot;</span></div></div>
 
 
-<div class="viewcode-block" id="UnaryStreamCall"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.UnaryStreamCall">[docs]</a><span class="k">class</span> <span class="nc">UnaryStreamCall</span><span class="p">(</span><span class="n">Generic</span><span class="p">[</span><span class="n">RequestType</span><span class="p">,</span> <span class="n">ResponseType</span><span class="p">],</span>
-                      <span class="n">Call</span><span class="p">,</span>
-                      <span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
-
+<div class="viewcode-block" id="UnaryStreamCall"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.UnaryStreamCall">[docs]</a><span class="k">class</span> <span class="nc">UnaryStreamCall</span><span class="p">(</span>
+    <span class="n">Generic</span><span class="p">[</span><span class="n">RequestType</span><span class="p">,</span> <span class="n">ResponseType</span><span class="p">],</span> <span class="n">Call</span><span class="p">,</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span>
+<span class="p">):</span>
 <div class="viewcode-block" id="UnaryStreamCall.__aiter__"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.UnaryStreamCall.__aiter__">[docs]</a>    <span class="nd">@abstractmethod</span>
     <span class="k">def</span> <span class="fm">__aiter__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AsyncIterator</span><span class="p">[</span><span class="n">ResponseType</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the async iterator representation that yields messages.</span>
@@ -265,10 +264,9 @@
 <span class="sd">        &quot;&quot;&quot;</span></div></div>
 
 
-<div class="viewcode-block" id="StreamUnaryCall"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.StreamUnaryCall">[docs]</a><span class="k">class</span> <span class="nc">StreamUnaryCall</span><span class="p">(</span><span class="n">Generic</span><span class="p">[</span><span class="n">RequestType</span><span class="p">,</span> <span class="n">ResponseType</span><span class="p">],</span>
-                      <span class="n">Call</span><span class="p">,</span>
-                      <span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
-
+<div class="viewcode-block" id="StreamUnaryCall"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.StreamUnaryCall">[docs]</a><span class="k">class</span> <span class="nc">StreamUnaryCall</span><span class="p">(</span>
+    <span class="n">Generic</span><span class="p">[</span><span class="n">RequestType</span><span class="p">,</span> <span class="n">ResponseType</span><span class="p">],</span> <span class="n">Call</span><span class="p">,</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span>
+<span class="p">):</span>
 <div class="viewcode-block" id="StreamUnaryCall.write"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.StreamUnaryCall.write">[docs]</a>    <span class="nd">@abstractmethod</span>
     <span class="k">async</span> <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">RequestType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Writes one message to the stream.</span>
@@ -294,10 +292,9 @@
 <span class="sd">        &quot;&quot;&quot;</span></div></div>
 
 
-<div class="viewcode-block" id="StreamStreamCall"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.StreamStreamCall">[docs]</a><span class="k">class</span> <span class="nc">StreamStreamCall</span><span class="p">(</span><span class="n">Generic</span><span class="p">[</span><span class="n">RequestType</span><span class="p">,</span> <span class="n">ResponseType</span><span class="p">],</span>
-                       <span class="n">Call</span><span class="p">,</span>
-                       <span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
-
+<div class="viewcode-block" id="StreamStreamCall"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.StreamStreamCall">[docs]</a><span class="k">class</span> <span class="nc">StreamStreamCall</span><span class="p">(</span>
+    <span class="n">Generic</span><span class="p">[</span><span class="n">RequestType</span><span class="p">,</span> <span class="n">ResponseType</span><span class="p">],</span> <span class="n">Call</span><span class="p">,</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span>
+<span class="p">):</span>
 <div class="viewcode-block" id="StreamStreamCall.__aiter__"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.StreamStreamCall.__aiter__">[docs]</a>    <span class="nd">@abstractmethod</span>
     <span class="k">def</span> <span class="fm">__aiter__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AsyncIterator</span><span class="p">[</span><span class="n">ResponseType</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the async iterator representation that yields messages.</span>

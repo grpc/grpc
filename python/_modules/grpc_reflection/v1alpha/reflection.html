@@ -4,12 +4,12 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>grpc_reflection.v1alpha.reflection &#8212; gRPC Python 1.56.0 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css" />
-    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
-    <script src="../../../_static/doctools.js"></script>
-    <script src="../../../_static/sphinx_highlight.js"></script>
+    <title>grpc_reflection.v1alpha.reflection &#8212; gRPC Python 1.57.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=4f649999" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=8090fdca" />
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=a042030b"></script>
+    <script src="../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=4825356b"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
    
@@ -27,7 +27,7 @@
 
 
 
-<p class="blurb">1.56.0</p>
+<p class="blurb">1.57.0</p>
 
 
 
@@ -108,7 +108,8 @@
 <span class="kn">from</span> <span class="nn">grpc_reflection.v1alpha._base</span> <span class="kn">import</span> <span class="n">BaseReflectionServicer</span>
 
 <span class="n">SERVICE_NAME</span> <span class="o">=</span> <span class="n">_reflection_pb2</span><span class="o">.</span><span class="n">DESCRIPTOR</span><span class="o">.</span><span class="n">services_by_name</span><span class="p">[</span>
-    <span class="s1">&#39;ServerReflection&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">full_name</span>
+    <span class="s2">&quot;ServerReflection&quot;</span>
+<span class="p">]</span><span class="o">.</span><span class="n">full_name</span>
 
 
 <div class="viewcode-block" id="ReflectionServicer"><a class="viewcode-back" href="../../../grpc_reflection.html#grpc_reflection.v1alpha.reflection.ReflectionServicer">[docs]</a><span class="k">class</span> <span class="nc">ReflectionServicer</span><span class="p">(</span><span class="n">BaseReflectionServicer</span><span class="p">):</span>
@@ -117,27 +118,32 @@
 <div class="viewcode-block" id="ReflectionServicer.ServerReflectionInfo"><a class="viewcode-back" href="../../../grpc_reflection.html#grpc_reflection.v1alpha.reflection.ReflectionServicer.ServerReflectionInfo">[docs]</a>    <span class="k">def</span> <span class="nf">ServerReflectionInfo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request_iterator</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
         <span class="c1"># pylint: disable=unused-argument</span>
         <span class="k">for</span> <span class="n">request</span> <span class="ow">in</span> <span class="n">request_iterator</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">HasField</span><span class="p">(</span><span class="s1">&#39;file_by_filename&#39;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">HasField</span><span class="p">(</span><span class="s2">&quot;file_by_filename&quot;</span><span class="p">):</span>
                 <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">_file_by_filename</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">file_by_filename</span><span class="p">)</span>
-            <span class="k">elif</span> <span class="n">request</span><span class="o">.</span><span class="n">HasField</span><span class="p">(</span><span class="s1">&#39;file_containing_symbol&#39;</span><span class="p">):</span>
+            <span class="k">elif</span> <span class="n">request</span><span class="o">.</span><span class="n">HasField</span><span class="p">(</span><span class="s2">&quot;file_containing_symbol&quot;</span><span class="p">):</span>
                 <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">_file_containing_symbol</span><span class="p">(</span>
-                    <span class="n">request</span><span class="o">.</span><span class="n">file_containing_symbol</span><span class="p">)</span>
-            <span class="k">elif</span> <span class="n">request</span><span class="o">.</span><span class="n">HasField</span><span class="p">(</span><span class="s1">&#39;file_containing_extension&#39;</span><span class="p">):</span>
+                    <span class="n">request</span><span class="o">.</span><span class="n">file_containing_symbol</span>
+                <span class="p">)</span>
+            <span class="k">elif</span> <span class="n">request</span><span class="o">.</span><span class="n">HasField</span><span class="p">(</span><span class="s2">&quot;file_containing_extension&quot;</span><span class="p">):</span>
                 <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">_file_containing_extension</span><span class="p">(</span>
                     <span class="n">request</span><span class="o">.</span><span class="n">file_containing_extension</span><span class="o">.</span><span class="n">containing_type</span><span class="p">,</span>
-                    <span class="n">request</span><span class="o">.</span><span class="n">file_containing_extension</span><span class="o">.</span><span class="n">extension_number</span><span class="p">)</span>
-            <span class="k">elif</span> <span class="n">request</span><span class="o">.</span><span class="n">HasField</span><span class="p">(</span><span class="s1">&#39;all_extension_numbers_of_type&#39;</span><span class="p">):</span>
+                    <span class="n">request</span><span class="o">.</span><span class="n">file_containing_extension</span><span class="o">.</span><span class="n">extension_number</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="k">elif</span> <span class="n">request</span><span class="o">.</span><span class="n">HasField</span><span class="p">(</span><span class="s2">&quot;all_extension_numbers_of_type&quot;</span><span class="p">):</span>
                 <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">_all_extension_numbers_of_type</span><span class="p">(</span>
-                    <span class="n">request</span><span class="o">.</span><span class="n">all_extension_numbers_of_type</span><span class="p">)</span>
-            <span class="k">elif</span> <span class="n">request</span><span class="o">.</span><span class="n">HasField</span><span class="p">(</span><span class="s1">&#39;list_services&#39;</span><span class="p">):</span>
+                    <span class="n">request</span><span class="o">.</span><span class="n">all_extension_numbers_of_type</span>
+                <span class="p">)</span>
+            <span class="k">elif</span> <span class="n">request</span><span class="o">.</span><span class="n">HasField</span><span class="p">(</span><span class="s2">&quot;list_services&quot;</span><span class="p">):</span>
                 <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">_list_services</span><span class="p">()</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">yield</span> <span class="n">_reflection_pb2</span><span class="o">.</span><span class="n">ServerReflectionResponse</span><span class="p">(</span>
                     <span class="n">error_response</span><span class="o">=</span><span class="n">_reflection_pb2</span><span class="o">.</span><span class="n">ErrorResponse</span><span class="p">(</span>
                         <span class="n">error_code</span><span class="o">=</span><span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">INVALID_ARGUMENT</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
-                        <span class="n">error_message</span><span class="o">=</span><span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">INVALID_ARGUMENT</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span>
-                        <span class="n">encode</span><span class="p">(),</span>
-                    <span class="p">))</span></div></div>
+                        <span class="n">error_message</span><span class="o">=</span><span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">INVALID_ARGUMENT</span><span class="o">.</span><span class="n">value</span><span class="p">[</span>
+                            <span class="mi">1</span>
+                        <span class="p">]</span><span class="o">.</span><span class="n">encode</span><span class="p">(),</span>
+                    <span class="p">)</span>
+                <span class="p">)</span></div></div>
 
 
 <span class="n">_enable_server_reflection_doc</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;Enables server reflection on a server.</span>
@@ -150,17 +156,21 @@
 
 <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">3</span> <span class="ow">and</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">6</span><span class="p">:</span>
     <span class="c1"># Exposes AsyncReflectionServicer as public API.</span>
-    <span class="kn">from</span> <span class="nn">grpc.experimental</span> <span class="kn">import</span> <span class="n">aio</span> <span class="k">as</span> <span class="n">grpc_aio</span>  <span class="c1"># pylint: disable=ungrouped-imports</span>
+    <span class="c1"># pylint: disable=ungrouped-imports</span>
+    <span class="kn">from</span> <span class="nn">grpc.experimental</span> <span class="kn">import</span> <span class="n">aio</span> <span class="k">as</span> <span class="n">grpc_aio</span>
 
+    <span class="c1"># pylint: enable=ungrouped-imports</span>
     <span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">_async</span> <span class="k">as</span> <span class="n">aio</span>
 
     <span class="k">def</span> <span class="nf">enable_server_reflection</span><span class="p">(</span><span class="n">service_names</span><span class="p">,</span> <span class="n">server</span><span class="p">,</span> <span class="n">pool</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">server</span><span class="p">,</span> <span class="n">grpc_aio</span><span class="o">.</span><span class="n">Server</span><span class="p">):</span>
             <span class="n">_reflection_pb2_grpc</span><span class="o">.</span><span class="n">add_ServerReflectionServicer_to_server</span><span class="p">(</span>
-                <span class="n">aio</span><span class="o">.</span><span class="n">ReflectionServicer</span><span class="p">(</span><span class="n">service_names</span><span class="p">,</span> <span class="n">pool</span><span class="o">=</span><span class="n">pool</span><span class="p">),</span> <span class="n">server</span><span class="p">)</span>
+                <span class="n">aio</span><span class="o">.</span><span class="n">ReflectionServicer</span><span class="p">(</span><span class="n">service_names</span><span class="p">,</span> <span class="n">pool</span><span class="o">=</span><span class="n">pool</span><span class="p">),</span> <span class="n">server</span>
+            <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">_reflection_pb2_grpc</span><span class="o">.</span><span class="n">add_ServerReflectionServicer_to_server</span><span class="p">(</span>
-                <span class="n">ReflectionServicer</span><span class="p">(</span><span class="n">service_names</span><span class="p">,</span> <span class="n">pool</span><span class="o">=</span><span class="n">pool</span><span class="p">),</span> <span class="n">server</span><span class="p">)</span>
+                <span class="n">ReflectionServicer</span><span class="p">(</span><span class="n">service_names</span><span class="p">,</span> <span class="n">pool</span><span class="o">=</span><span class="n">pool</span><span class="p">),</span> <span class="n">server</span>
+            <span class="p">)</span>
 
     <span class="n">enable_server_reflection</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="n">_enable_server_reflection_doc</span>
 
@@ -174,7 +184,8 @@
 
 <div class="viewcode-block" id="enable_server_reflection"><a class="viewcode-back" href="../../../grpc_reflection.html#grpc_reflection.v1alpha.reflection.enable_server_reflection">[docs]</a>    <span class="k">def</span> <span class="nf">enable_server_reflection</span><span class="p">(</span><span class="n">service_names</span><span class="p">,</span> <span class="n">server</span><span class="p">,</span> <span class="n">pool</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="n">_reflection_pb2_grpc</span><span class="o">.</span><span class="n">add_ServerReflectionServicer_to_server</span><span class="p">(</span>
-            <span class="n">ReflectionServicer</span><span class="p">(</span><span class="n">service_names</span><span class="p">,</span> <span class="n">pool</span><span class="o">=</span><span class="n">pool</span><span class="p">),</span> <span class="n">server</span><span class="p">)</span></div>
+            <span class="n">ReflectionServicer</span><span class="p">(</span><span class="n">service_names</span><span class="p">,</span> <span class="n">pool</span><span class="o">=</span><span class="n">pool</span><span class="p">),</span> <span class="n">server</span>
+        <span class="p">)</span></div>
 
     <span class="n">enable_server_reflection</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="n">_enable_server_reflection_doc</span>
 

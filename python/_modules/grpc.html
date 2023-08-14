@@ -4,12 +4,12 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>grpc &#8212; gRPC Python 1.56.0 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css" />
-    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-    <script src="../_static/doctools.js"></script>
-    <script src="../_static/sphinx_highlight.js"></script>
+    <title>grpc &#8212; gRPC Python 1.57.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=4f649999" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=8090fdca" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=a042030b"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
    
@@ -27,7 +27,7 @@
 
 
 
-<p class="blurb">1.56.0</p>
+<p class="blurb">1.57.0</p>
 
 
 
@@ -306,12 +306,15 @@
 <span class="sd">        to recover.</span>
 <span class="sd">      SHUTDOWN: The channel has seen a failure from which it cannot recover.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">IDLE</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">ConnectivityState</span><span class="o">.</span><span class="n">idle</span><span class="p">,</span> <span class="s1">&#39;idle&#39;</span><span class="p">)</span>
-    <span class="n">CONNECTING</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">ConnectivityState</span><span class="o">.</span><span class="n">connecting</span><span class="p">,</span> <span class="s1">&#39;connecting&#39;</span><span class="p">)</span>
-    <span class="n">READY</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">ConnectivityState</span><span class="o">.</span><span class="n">ready</span><span class="p">,</span> <span class="s1">&#39;ready&#39;</span><span class="p">)</span>
-    <span class="n">TRANSIENT_FAILURE</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">ConnectivityState</span><span class="o">.</span><span class="n">transient_failure</span><span class="p">,</span>
-                         <span class="s1">&#39;transient failure&#39;</span><span class="p">)</span>
-    <span class="n">SHUTDOWN</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">ConnectivityState</span><span class="o">.</span><span class="n">shutdown</span><span class="p">,</span> <span class="s1">&#39;shutdown&#39;</span><span class="p">)</span></div>
+
+    <span class="n">IDLE</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">ConnectivityState</span><span class="o">.</span><span class="n">idle</span><span class="p">,</span> <span class="s2">&quot;idle&quot;</span><span class="p">)</span>
+    <span class="n">CONNECTING</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">ConnectivityState</span><span class="o">.</span><span class="n">connecting</span><span class="p">,</span> <span class="s2">&quot;connecting&quot;</span><span class="p">)</span>
+    <span class="n">READY</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">ConnectivityState</span><span class="o">.</span><span class="n">ready</span><span class="p">,</span> <span class="s2">&quot;ready&quot;</span><span class="p">)</span>
+    <span class="n">TRANSIENT_FAILURE</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">_cygrpc</span><span class="o">.</span><span class="n">ConnectivityState</span><span class="o">.</span><span class="n">transient_failure</span><span class="p">,</span>
+        <span class="s2">&quot;transient failure&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">SHUTDOWN</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">ConnectivityState</span><span class="o">.</span><span class="n">shutdown</span><span class="p">,</span> <span class="s2">&quot;shutdown&quot;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="StatusCode"><a class="viewcode-back" href="../grpc.html#grpc.StatusCode">[docs]</a><span class="nd">@enum</span><span class="o">.</span><span class="n">unique</span>
@@ -343,27 +346,36 @@
 <span class="sd">      UNAVAILABLE: The service is currently unavailable.</span>
 <span class="sd">      DATA_LOSS: Unrecoverable data loss or corruption.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">OK</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">ok</span><span class="p">,</span> <span class="s1">&#39;ok&#39;</span><span class="p">)</span>
-    <span class="n">CANCELLED</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">cancelled</span><span class="p">,</span> <span class="s1">&#39;cancelled&#39;</span><span class="p">)</span>
-    <span class="n">UNKNOWN</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">unknown</span><span class="p">,</span> <span class="s1">&#39;unknown&#39;</span><span class="p">)</span>
-    <span class="n">INVALID_ARGUMENT</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">invalid_argument</span><span class="p">,</span> <span class="s1">&#39;invalid argument&#39;</span><span class="p">)</span>
-    <span class="n">DEADLINE_EXCEEDED</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">deadline_exceeded</span><span class="p">,</span>
-                         <span class="s1">&#39;deadline exceeded&#39;</span><span class="p">)</span>
-    <span class="n">NOT_FOUND</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">not_found</span><span class="p">,</span> <span class="s1">&#39;not found&#39;</span><span class="p">)</span>
-    <span class="n">ALREADY_EXISTS</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">already_exists</span><span class="p">,</span> <span class="s1">&#39;already exists&#39;</span><span class="p">)</span>
-    <span class="n">PERMISSION_DENIED</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">permission_denied</span><span class="p">,</span>
-                         <span class="s1">&#39;permission denied&#39;</span><span class="p">)</span>
-    <span class="n">RESOURCE_EXHAUSTED</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">resource_exhausted</span><span class="p">,</span>
-                          <span class="s1">&#39;resource exhausted&#39;</span><span class="p">)</span>
-    <span class="n">FAILED_PRECONDITION</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">failed_precondition</span><span class="p">,</span>
-                           <span class="s1">&#39;failed precondition&#39;</span><span class="p">)</span>
-    <span class="n">ABORTED</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">aborted</span><span class="p">,</span> <span class="s1">&#39;aborted&#39;</span><span class="p">)</span>
-    <span class="n">OUT_OF_RANGE</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">out_of_range</span><span class="p">,</span> <span class="s1">&#39;out of range&#39;</span><span class="p">)</span>
-    <span class="n">UNIMPLEMENTED</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">unimplemented</span><span class="p">,</span> <span class="s1">&#39;unimplemented&#39;</span><span class="p">)</span>
-    <span class="n">INTERNAL</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">internal</span><span class="p">,</span> <span class="s1">&#39;internal&#39;</span><span class="p">)</span>
-    <span class="n">UNAVAILABLE</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">unavailable</span><span class="p">,</span> <span class="s1">&#39;unavailable&#39;</span><span class="p">)</span>
-    <span class="n">DATA_LOSS</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">data_loss</span><span class="p">,</span> <span class="s1">&#39;data loss&#39;</span><span class="p">)</span>
-    <span class="n">UNAUTHENTICATED</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">unauthenticated</span><span class="p">,</span> <span class="s1">&#39;unauthenticated&#39;</span><span class="p">)</span></div>
+
+    <span class="n">OK</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">ok</span><span class="p">,</span> <span class="s2">&quot;ok&quot;</span><span class="p">)</span>
+    <span class="n">CANCELLED</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">cancelled</span><span class="p">,</span> <span class="s2">&quot;cancelled&quot;</span><span class="p">)</span>
+    <span class="n">UNKNOWN</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">unknown</span><span class="p">,</span> <span class="s2">&quot;unknown&quot;</span><span class="p">)</span>
+    <span class="n">INVALID_ARGUMENT</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">invalid_argument</span><span class="p">,</span> <span class="s2">&quot;invalid argument&quot;</span><span class="p">)</span>
+    <span class="n">DEADLINE_EXCEEDED</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">deadline_exceeded</span><span class="p">,</span>
+        <span class="s2">&quot;deadline exceeded&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">NOT_FOUND</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">not_found</span><span class="p">,</span> <span class="s2">&quot;not found&quot;</span><span class="p">)</span>
+    <span class="n">ALREADY_EXISTS</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">already_exists</span><span class="p">,</span> <span class="s2">&quot;already exists&quot;</span><span class="p">)</span>
+    <span class="n">PERMISSION_DENIED</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">permission_denied</span><span class="p">,</span>
+        <span class="s2">&quot;permission denied&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">RESOURCE_EXHAUSTED</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">resource_exhausted</span><span class="p">,</span>
+        <span class="s2">&quot;resource exhausted&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">FAILED_PRECONDITION</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">failed_precondition</span><span class="p">,</span>
+        <span class="s2">&quot;failed precondition&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">ABORTED</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">aborted</span><span class="p">,</span> <span class="s2">&quot;aborted&quot;</span><span class="p">)</span>
+    <span class="n">OUT_OF_RANGE</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">out_of_range</span><span class="p">,</span> <span class="s2">&quot;out of range&quot;</span><span class="p">)</span>
+    <span class="n">UNIMPLEMENTED</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">unimplemented</span><span class="p">,</span> <span class="s2">&quot;unimplemented&quot;</span><span class="p">)</span>
+    <span class="n">INTERNAL</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">internal</span><span class="p">,</span> <span class="s2">&quot;internal&quot;</span><span class="p">)</span>
+    <span class="n">UNAVAILABLE</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">unavailable</span><span class="p">,</span> <span class="s2">&quot;unavailable&quot;</span><span class="p">)</span>
+    <span class="n">DATA_LOSS</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">data_loss</span><span class="p">,</span> <span class="s2">&quot;data loss&quot;</span><span class="p">)</span>
+    <span class="n">UNAUTHENTICATED</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">unauthenticated</span><span class="p">,</span> <span class="s2">&quot;unauthenticated&quot;</span><span class="p">)</span></div>
 
 
 <span class="c1">#############################  gRPC Status  ################################</span>
@@ -546,8 +558,9 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Affords intercepting unary-stream invocations.&quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="UnaryStreamClientInterceptor.intercept_unary_stream"><a class="viewcode-back" href="../grpc.html#grpc.UnaryStreamClientInterceptor.intercept_unary_stream">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-    <span class="k">def</span> <span class="nf">intercept_unary_stream</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">continuation</span><span class="p">,</span> <span class="n">client_call_details</span><span class="p">,</span>
-                               <span class="n">request</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">intercept_unary_stream</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">continuation</span><span class="p">,</span> <span class="n">client_call_details</span><span class="p">,</span> <span class="n">request</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Intercepts a unary-stream invocation.</span>
 
 <span class="sd">        Args:</span>
@@ -580,8 +593,9 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Affords intercepting stream-unary invocations.&quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="StreamUnaryClientInterceptor.intercept_stream_unary"><a class="viewcode-back" href="../grpc.html#grpc.StreamUnaryClientInterceptor.intercept_stream_unary">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-    <span class="k">def</span> <span class="nf">intercept_stream_unary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">continuation</span><span class="p">,</span> <span class="n">client_call_details</span><span class="p">,</span>
-                               <span class="n">request_iterator</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">intercept_stream_unary</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">continuation</span><span class="p">,</span> <span class="n">client_call_details</span><span class="p">,</span> <span class="n">request_iterator</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Intercepts a stream-unary invocation asynchronously.</span>
 
 <span class="sd">        Args:</span>
@@ -614,8 +628,9 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Affords intercepting stream-stream invocations.&quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="StreamStreamClientInterceptor.intercept_stream_stream"><a class="viewcode-back" href="../grpc.html#grpc.StreamStreamClientInterceptor.intercept_stream_stream">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-    <span class="k">def</span> <span class="nf">intercept_stream_stream</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">continuation</span><span class="p">,</span> <span class="n">client_call_details</span><span class="p">,</span>
-                                <span class="n">request_iterator</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">intercept_stream_stream</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">continuation</span><span class="p">,</span> <span class="n">client_call_details</span><span class="p">,</span> <span class="n">request_iterator</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Intercepts a stream-stream invocation.</span>
 
 <span class="sd">        Args:</span>
@@ -749,13 +764,15 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Affords invoking a unary-unary RPC from client-side.&quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="UnaryUnaryMultiCallable.__call__"><a class="viewcode-back" href="../grpc.html#grpc.UnaryUnaryMultiCallable.__call__">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
-                 <span class="n">request</span><span class="p">,</span>
-                 <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                 <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                 <span class="n">credentials</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                 <span class="n">wait_for_ready</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                 <span class="n">compression</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">request</span><span class="p">,</span>
+        <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">credentials</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">wait_for_ready</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">compression</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Synchronously invokes the underlying RPC.</span>
 
 <span class="sd">        Args:</span>
@@ -781,13 +798,15 @@
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="UnaryUnaryMultiCallable.with_call"><a class="viewcode-back" href="../grpc.html#grpc.UnaryUnaryMultiCallable.with_call">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-    <span class="k">def</span> <span class="nf">with_call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
-                  <span class="n">request</span><span class="p">,</span>
-                  <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                  <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                  <span class="n">credentials</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                  <span class="n">wait_for_ready</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                  <span class="n">compression</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">with_call</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">request</span><span class="p">,</span>
+        <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">credentials</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">wait_for_ready</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">compression</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Synchronously invokes the underlying RPC.</span>
 
 <span class="sd">        Args:</span>
@@ -813,13 +832,15 @@
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="UnaryUnaryMultiCallable.future"><a class="viewcode-back" href="../grpc.html#grpc.UnaryUnaryMultiCallable.future">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-    <span class="k">def</span> <span class="nf">future</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
-               <span class="n">request</span><span class="p">,</span>
-               <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-               <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-               <span class="n">credentials</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-               <span class="n">wait_for_ready</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-               <span class="n">compression</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">future</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">request</span><span class="p">,</span>
+        <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">credentials</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">wait_for_ready</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">compression</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Asynchronously invokes the underlying RPC.</span>
 
 <span class="sd">        Args:</span>
@@ -848,13 +869,15 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Affords invoking a unary-stream RPC from client-side.&quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="UnaryStreamMultiCallable.__call__"><a class="viewcode-back" href="../grpc.html#grpc.UnaryStreamMultiCallable.__call__">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
-                 <span class="n">request</span><span class="p">,</span>
-                 <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                 <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                 <span class="n">credentials</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                 <span class="n">wait_for_ready</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                 <span class="n">compression</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">request</span><span class="p">,</span>
+        <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">credentials</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">wait_for_ready</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">compression</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Invokes the underlying RPC.</span>
 
 <span class="sd">        Args:</span>
@@ -882,13 +905,15 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Affords invoking a stream-unary RPC from client-side.&quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="StreamUnaryMultiCallable.__call__"><a class="viewcode-back" href="../grpc.html#grpc.StreamUnaryMultiCallable.__call__">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
-                 <span class="n">request_iterator</span><span class="p">,</span>
-                 <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                 <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                 <span class="n">credentials</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                 <span class="n">wait_for_ready</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                 <span class="n">compression</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">request_iterator</span><span class="p">,</span>
+        <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">credentials</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">wait_for_ready</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">compression</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Synchronously invokes the underlying RPC.</span>
 
 <span class="sd">        Args:</span>
@@ -915,13 +940,15 @@
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="StreamUnaryMultiCallable.with_call"><a class="viewcode-back" href="../grpc.html#grpc.StreamUnaryMultiCallable.with_call">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-    <span class="k">def</span> <span class="nf">with_call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
-                  <span class="n">request_iterator</span><span class="p">,</span>
-                  <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                  <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                  <span class="n">credentials</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                  <span class="n">wait_for_ready</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                  <span class="n">compression</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">with_call</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">request_iterator</span><span class="p">,</span>
+        <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">credentials</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">wait_for_ready</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">compression</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Synchronously invokes the underlying RPC on the client.</span>
 
 <span class="sd">        Args:</span>
@@ -948,13 +975,15 @@
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="StreamUnaryMultiCallable.future"><a class="viewcode-back" href="../grpc.html#grpc.StreamUnaryMultiCallable.future">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-    <span class="k">def</span> <span class="nf">future</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
-               <span class="n">request_iterator</span><span class="p">,</span>
-               <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-               <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-               <span class="n">credentials</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-               <span class="n">wait_for_ready</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-               <span class="n">compression</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">future</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">request_iterator</span><span class="p">,</span>
+        <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">credentials</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">wait_for_ready</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">compression</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Asynchronously invokes the underlying RPC on the client.</span>
 
 <span class="sd">        Args:</span>
@@ -983,13 +1012,15 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Affords invoking a stream-stream RPC on client-side.&quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="StreamStreamMultiCallable.__call__"><a class="viewcode-back" href="../grpc.html#grpc.StreamStreamMultiCallable.__call__">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
-                 <span class="n">request_iterator</span><span class="p">,</span>
-                 <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                 <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                 <span class="n">credentials</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                 <span class="n">wait_for_ready</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                 <span class="n">compression</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">request_iterator</span><span class="p">,</span>
+        <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">credentials</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">wait_for_ready</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">compression</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Invokes the underlying RPC on the client.</span>
 
 <span class="sd">        Args:</span>
@@ -1055,10 +1086,9 @@
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="Channel.unary_unary"><a class="viewcode-back" href="../grpc.html#grpc.Channel.unary_unary">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-    <span class="k">def</span> <span class="nf">unary_unary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
-                    <span class="n">method</span><span class="p">,</span>
-                    <span class="n">request_serializer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                    <span class="n">response_deserializer</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">unary_unary</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">request_serializer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">response_deserializer</span><span class="o">=</span><span class="kc">None</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates a UnaryUnaryMultiCallable for a unary-unary method.</span>
 
 <span class="sd">        Args:</span>
@@ -1075,10 +1105,9 @@
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="Channel.unary_stream"><a class="viewcode-back" href="../grpc.html#grpc.Channel.unary_stream">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-    <span class="k">def</span> <span class="nf">unary_stream</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
-                     <span class="n">method</span><span class="p">,</span>
-                     <span class="n">request_serializer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                     <span class="n">response_deserializer</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">unary_stream</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">request_serializer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">response_deserializer</span><span class="o">=</span><span class="kc">None</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates a UnaryStreamMultiCallable for a unary-stream method.</span>
 
 <span class="sd">        Args:</span>
@@ -1095,10 +1124,9 @@
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="Channel.stream_unary"><a class="viewcode-back" href="../grpc.html#grpc.Channel.stream_unary">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-    <span class="k">def</span> <span class="nf">stream_unary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
-                     <span class="n">method</span><span class="p">,</span>
-                     <span class="n">request_serializer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                     <span class="n">response_deserializer</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">stream_unary</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">request_serializer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">response_deserializer</span><span class="o">=</span><span class="kc">None</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates a StreamUnaryMultiCallable for a stream-unary method.</span>
 
 <span class="sd">        Args:</span>
@@ -1115,10 +1143,9 @@
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="Channel.stream_stream"><a class="viewcode-back" href="../grpc.html#grpc.Channel.stream_stream">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-    <span class="k">def</span> <span class="nf">stream_stream</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
-                      <span class="n">method</span><span class="p">,</span>
-                      <span class="n">request_serializer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                      <span class="n">response_deserializer</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">stream_stream</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">request_serializer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">response_deserializer</span><span class="o">=</span><span class="kc">None</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates a StreamStreamMultiCallable for a stream-stream method.</span>
 
 <span class="sd">        Args:</span>
@@ -1580,9 +1607,9 @@
 <span class="c1">#################################  Functions    ################################</span>
 
 
-<div class="viewcode-block" id="unary_unary_rpc_method_handler"><a class="viewcode-back" href="../grpc.html#grpc.unary_unary_rpc_method_handler">[docs]</a><span class="k">def</span> <span class="nf">unary_unary_rpc_method_handler</span><span class="p">(</span><span class="n">behavior</span><span class="p">,</span>
-                                   <span class="n">request_deserializer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                                   <span class="n">response_serializer</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="unary_unary_rpc_method_handler"><a class="viewcode-back" href="../grpc.html#grpc.unary_unary_rpc_method_handler">[docs]</a><span class="k">def</span> <span class="nf">unary_unary_rpc_method_handler</span><span class="p">(</span>
+    <span class="n">behavior</span><span class="p">,</span> <span class="n">request_deserializer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">response_serializer</span><span class="o">=</span><span class="kc">None</span>
+<span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Creates an RpcMethodHandler for a unary-unary RPC method.</span>
 
 <span class="sd">    Args:</span>
@@ -1595,14 +1622,22 @@
 <span class="sd">      An RpcMethodHandler object that is typically used by grpc.Server.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="kn">from</span> <span class="nn">grpc</span> <span class="kn">import</span> <span class="n">_utilities</span>  <span class="c1"># pylint: disable=cyclic-import</span>
-    <span class="k">return</span> <span class="n">_utilities</span><span class="o">.</span><span class="n">RpcMethodHandler</span><span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="n">request_deserializer</span><span class="p">,</span>
-                                       <span class="n">response_serializer</span><span class="p">,</span> <span class="n">behavior</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span>
-                                       <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span></div>
+
+    <span class="k">return</span> <span class="n">_utilities</span><span class="o">.</span><span class="n">RpcMethodHandler</span><span class="p">(</span>
+        <span class="kc">False</span><span class="p">,</span>
+        <span class="kc">False</span><span class="p">,</span>
+        <span class="n">request_deserializer</span><span class="p">,</span>
+        <span class="n">response_serializer</span><span class="p">,</span>
+        <span class="n">behavior</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="unary_stream_rpc_method_handler"><a class="viewcode-back" href="../grpc.html#grpc.unary_stream_rpc_method_handler">[docs]</a><span class="k">def</span> <span class="nf">unary_stream_rpc_method_handler</span><span class="p">(</span><span class="n">behavior</span><span class="p">,</span>
-                                    <span class="n">request_deserializer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                                    <span class="n">response_serializer</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="unary_stream_rpc_method_handler"><a class="viewcode-back" href="../grpc.html#grpc.unary_stream_rpc_method_handler">[docs]</a><span class="k">def</span> <span class="nf">unary_stream_rpc_method_handler</span><span class="p">(</span>
+    <span class="n">behavior</span><span class="p">,</span> <span class="n">request_deserializer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">response_serializer</span><span class="o">=</span><span class="kc">None</span>
+<span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Creates an RpcMethodHandler for a unary-stream RPC method.</span>
 
 <span class="sd">    Args:</span>
@@ -1615,14 +1650,22 @@
 <span class="sd">      An RpcMethodHandler object that is typically used by grpc.Server.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="kn">from</span> <span class="nn">grpc</span> <span class="kn">import</span> <span class="n">_utilities</span>  <span class="c1"># pylint: disable=cyclic-import</span>
-    <span class="k">return</span> <span class="n">_utilities</span><span class="o">.</span><span class="n">RpcMethodHandler</span><span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="n">request_deserializer</span><span class="p">,</span>
-                                       <span class="n">response_serializer</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">behavior</span><span class="p">,</span>
-                                       <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span></div>
+
+    <span class="k">return</span> <span class="n">_utilities</span><span class="o">.</span><span class="n">RpcMethodHandler</span><span class="p">(</span>
+        <span class="kc">False</span><span class="p">,</span>
+        <span class="kc">True</span><span class="p">,</span>
+        <span class="n">request_deserializer</span><span class="p">,</span>
+        <span class="n">response_serializer</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+        <span class="n">behavior</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="stream_unary_rpc_method_handler"><a class="viewcode-back" href="../grpc.html#grpc.stream_unary_rpc_method_handler">[docs]</a><span class="k">def</span> <span class="nf">stream_unary_rpc_method_handler</span><span class="p">(</span><span class="n">behavior</span><span class="p">,</span>
-                                    <span class="n">request_deserializer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                                    <span class="n">response_serializer</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="stream_unary_rpc_method_handler"><a class="viewcode-back" href="../grpc.html#grpc.stream_unary_rpc_method_handler">[docs]</a><span class="k">def</span> <span class="nf">stream_unary_rpc_method_handler</span><span class="p">(</span>
+    <span class="n">behavior</span><span class="p">,</span> <span class="n">request_deserializer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">response_serializer</span><span class="o">=</span><span class="kc">None</span>
+<span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Creates an RpcMethodHandler for a stream-unary RPC method.</span>
 
 <span class="sd">    Args:</span>
@@ -1635,14 +1678,22 @@
 <span class="sd">      An RpcMethodHandler object that is typically used by grpc.Server.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="kn">from</span> <span class="nn">grpc</span> <span class="kn">import</span> <span class="n">_utilities</span>  <span class="c1"># pylint: disable=cyclic-import</span>
-    <span class="k">return</span> <span class="n">_utilities</span><span class="o">.</span><span class="n">RpcMethodHandler</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="n">request_deserializer</span><span class="p">,</span>
-                                       <span class="n">response_serializer</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span>
-                                       <span class="n">behavior</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span></div>
+
+    <span class="k">return</span> <span class="n">_utilities</span><span class="o">.</span><span class="n">RpcMethodHandler</span><span class="p">(</span>
+        <span class="kc">True</span><span class="p">,</span>
+        <span class="kc">False</span><span class="p">,</span>
+        <span class="n">request_deserializer</span><span class="p">,</span>
+        <span class="n">response_serializer</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+        <span class="n">behavior</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="stream_stream_rpc_method_handler"><a class="viewcode-back" href="../grpc.html#grpc.stream_stream_rpc_method_handler">[docs]</a><span class="k">def</span> <span class="nf">stream_stream_rpc_method_handler</span><span class="p">(</span><span class="n">behavior</span><span class="p">,</span>
-                                     <span class="n">request_deserializer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                                     <span class="n">response_serializer</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="stream_stream_rpc_method_handler"><a class="viewcode-back" href="../grpc.html#grpc.stream_stream_rpc_method_handler">[docs]</a><span class="k">def</span> <span class="nf">stream_stream_rpc_method_handler</span><span class="p">(</span>
+    <span class="n">behavior</span><span class="p">,</span> <span class="n">request_deserializer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">response_serializer</span><span class="o">=</span><span class="kc">None</span>
+<span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Creates an RpcMethodHandler for a stream-stream RPC method.</span>
 
 <span class="sd">    Args:</span>
@@ -1655,9 +1706,17 @@
 <span class="sd">      An RpcMethodHandler object that is typically used by grpc.Server.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="kn">from</span> <span class="nn">grpc</span> <span class="kn">import</span> <span class="n">_utilities</span>  <span class="c1"># pylint: disable=cyclic-import</span>
-    <span class="k">return</span> <span class="n">_utilities</span><span class="o">.</span><span class="n">RpcMethodHandler</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="n">request_deserializer</span><span class="p">,</span>
-                                       <span class="n">response_serializer</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span>
-                                       <span class="n">behavior</span><span class="p">)</span></div>
+
+    <span class="k">return</span> <span class="n">_utilities</span><span class="o">.</span><span class="n">RpcMethodHandler</span><span class="p">(</span>
+        <span class="kc">True</span><span class="p">,</span>
+        <span class="kc">True</span><span class="p">,</span>
+        <span class="n">request_deserializer</span><span class="p">,</span>
+        <span class="n">response_serializer</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+        <span class="n">behavior</span><span class="p">,</span>
+    <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="method_handlers_generic_handler"><a class="viewcode-back" href="../grpc.html#grpc.method_handlers_generic_handler">[docs]</a><span class="k">def</span> <span class="nf">method_handlers_generic_handler</span><span class="p">(</span><span class="n">service</span><span class="p">,</span> <span class="n">method_handlers</span><span class="p">):</span>
@@ -1674,12 +1733,13 @@
 <span class="sd">      with add_generic_rpc_handlers() before starting the server.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="kn">from</span> <span class="nn">grpc</span> <span class="kn">import</span> <span class="n">_utilities</span>  <span class="c1"># pylint: disable=cyclic-import</span>
+
     <span class="k">return</span> <span class="n">_utilities</span><span class="o">.</span><span class="n">DictionaryGenericHandler</span><span class="p">(</span><span class="n">service</span><span class="p">,</span> <span class="n">method_handlers</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="ssl_channel_credentials"><a class="viewcode-back" href="../grpc.html#grpc.ssl_channel_credentials">[docs]</a><span class="k">def</span> <span class="nf">ssl_channel_credentials</span><span class="p">(</span><span class="n">root_certificates</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                            <span class="n">private_key</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                            <span class="n">certificate_chain</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="ssl_channel_credentials"><a class="viewcode-back" href="../grpc.html#grpc.ssl_channel_credentials">[docs]</a><span class="k">def</span> <span class="nf">ssl_channel_credentials</span><span class="p">(</span>
+    <span class="n">root_certificates</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">private_key</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">certificate_chain</span><span class="o">=</span><span class="kc">None</span>
+<span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Creates a ChannelCredentials for use with an SSL-enabled Channel.</span>
 
 <span class="sd">    Args:</span>
@@ -1695,8 +1755,10 @@
 <span class="sd">      A ChannelCredentials for use with an SSL-enabled Channel.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">ChannelCredentials</span><span class="p">(</span>
-        <span class="n">_cygrpc</span><span class="o">.</span><span class="n">SSLChannelCredentials</span><span class="p">(</span><span class="n">root_certificates</span><span class="p">,</span> <span class="n">private_key</span><span class="p">,</span>
-                                      <span class="n">certificate_chain</span><span class="p">))</span></div>
+        <span class="n">_cygrpc</span><span class="o">.</span><span class="n">SSLChannelCredentials</span><span class="p">(</span>
+            <span class="n">root_certificates</span><span class="p">,</span> <span class="n">private_key</span><span class="p">,</span> <span class="n">certificate_chain</span>
+        <span class="p">)</span>
+    <span class="p">)</span></div>
 
 
 <span class="k">def</span> <span class="nf">xds_channel_credentials</span><span class="p">(</span><span class="n">fallback_credentials</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -1708,10 +1770,14 @@
 <span class="sd">        establish a secure connection via xDS. If no fallback_credentials</span>
 <span class="sd">        argument is supplied, a default SSLChannelCredentials is used.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">fallback_credentials</span> <span class="o">=</span> <span class="n">ssl_channel_credentials</span><span class="p">(</span>
-    <span class="p">)</span> <span class="k">if</span> <span class="n">fallback_credentials</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">fallback_credentials</span>
+    <span class="n">fallback_credentials</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">ssl_channel_credentials</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">fallback_credentials</span> <span class="ow">is</span> <span class="kc">None</span>
+        <span class="k">else</span> <span class="n">fallback_credentials</span>
+    <span class="p">)</span>
     <span class="k">return</span> <span class="n">ChannelCredentials</span><span class="p">(</span>
-        <span class="n">_cygrpc</span><span class="o">.</span><span class="n">XDSChannelCredentials</span><span class="p">(</span><span class="n">fallback_credentials</span><span class="o">.</span><span class="n">_credentials</span><span class="p">))</span>
+        <span class="n">_cygrpc</span><span class="o">.</span><span class="n">XDSChannelCredentials</span><span class="p">(</span><span class="n">fallback_credentials</span><span class="o">.</span><span class="n">_credentials</span><span class="p">)</span>
+    <span class="p">)</span>
 
 
 <div class="viewcode-block" id="metadata_call_credentials"><a class="viewcode-back" href="../grpc.html#grpc.metadata_call_credentials">[docs]</a><span class="k">def</span> <span class="nf">metadata_call_credentials</span><span class="p">(</span><span class="n">metadata_plugin</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -1725,8 +1791,10 @@
 <span class="sd">      A CallCredentials.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="kn">from</span> <span class="nn">grpc</span> <span class="kn">import</span> <span class="n">_plugin_wrapping</span>  <span class="c1"># pylint: disable=cyclic-import</span>
+
     <span class="k">return</span> <span class="n">_plugin_wrapping</span><span class="o">.</span><span class="n">metadata_plugin_call_credentials</span><span class="p">(</span>
-        <span class="n">metadata_plugin</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span></div>
+        <span class="n">metadata_plugin</span><span class="p">,</span> <span class="n">name</span>
+    <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="access_token_call_credentials"><a class="viewcode-back" href="../grpc.html#grpc.access_token_call_credentials">[docs]</a><span class="k">def</span> <span class="nf">access_token_call_credentials</span><span class="p">(</span><span class="n">access_token</span><span class="p">):</span>
@@ -1742,8 +1810,10 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="kn">from</span> <span class="nn">grpc</span> <span class="kn">import</span> <span class="n">_auth</span>  <span class="c1"># pylint: disable=cyclic-import</span>
     <span class="kn">from</span> <span class="nn">grpc</span> <span class="kn">import</span> <span class="n">_plugin_wrapping</span>  <span class="c1"># pylint: disable=cyclic-import</span>
+
     <span class="k">return</span> <span class="n">_plugin_wrapping</span><span class="o">.</span><span class="n">metadata_plugin_call_credentials</span><span class="p">(</span>
-        <span class="n">_auth</span><span class="o">.</span><span class="n">AccessTokenAuthMetadataPlugin</span><span class="p">(</span><span class="n">access_token</span><span class="p">),</span> <span class="kc">None</span><span class="p">)</span></div>
+        <span class="n">_auth</span><span class="o">.</span><span class="n">AccessTokenAuthMetadataPlugin</span><span class="p">(</span><span class="n">access_token</span><span class="p">),</span> <span class="kc">None</span>
+    <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="composite_call_credentials"><a class="viewcode-back" href="../grpc.html#grpc.composite_call_credentials">[docs]</a><span class="k">def</span> <span class="nf">composite_call_credentials</span><span class="p">(</span><span class="o">*</span><span class="n">call_credentials</span><span class="p">):</span>
@@ -1757,8 +1827,12 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">CallCredentials</span><span class="p">(</span>
         <span class="n">_cygrpc</span><span class="o">.</span><span class="n">CompositeCallCredentials</span><span class="p">(</span>
-            <span class="nb">tuple</span><span class="p">(</span><span class="n">single_call_credentials</span><span class="o">.</span><span class="n">_credentials</span>
-                  <span class="k">for</span> <span class="n">single_call_credentials</span> <span class="ow">in</span> <span class="n">call_credentials</span><span class="p">)))</span></div>
+            <span class="nb">tuple</span><span class="p">(</span>
+                <span class="n">single_call_credentials</span><span class="o">.</span><span class="n">_credentials</span>
+                <span class="k">for</span> <span class="n">single_call_credentials</span> <span class="ow">in</span> <span class="n">call_credentials</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+    <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="composite_channel_credentials"><a class="viewcode-back" href="../grpc.html#grpc.composite_channel_credentials">[docs]</a><span class="k">def</span> <span class="nf">composite_channel_credentials</span><span class="p">(</span><span class="n">channel_credentials</span><span class="p">,</span> <span class="o">*</span><span class="n">call_credentials</span><span class="p">):</span>
@@ -1774,14 +1848,20 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">ChannelCredentials</span><span class="p">(</span>
         <span class="n">_cygrpc</span><span class="o">.</span><span class="n">CompositeChannelCredentials</span><span class="p">(</span>
-            <span class="nb">tuple</span><span class="p">(</span><span class="n">single_call_credentials</span><span class="o">.</span><span class="n">_credentials</span>
-                  <span class="k">for</span> <span class="n">single_call_credentials</span> <span class="ow">in</span> <span class="n">call_credentials</span><span class="p">),</span>
-            <span class="n">channel_credentials</span><span class="o">.</span><span class="n">_credentials</span><span class="p">))</span></div>
+            <span class="nb">tuple</span><span class="p">(</span>
+                <span class="n">single_call_credentials</span><span class="o">.</span><span class="n">_credentials</span>
+                <span class="k">for</span> <span class="n">single_call_credentials</span> <span class="ow">in</span> <span class="n">call_credentials</span>
+            <span class="p">),</span>
+            <span class="n">channel_credentials</span><span class="o">.</span><span class="n">_credentials</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="ssl_server_credentials"><a class="viewcode-back" href="../grpc.html#grpc.ssl_server_credentials">[docs]</a><span class="k">def</span> <span class="nf">ssl_server_credentials</span><span class="p">(</span><span class="n">private_key_certificate_chain_pairs</span><span class="p">,</span>
-                           <span class="n">root_certificates</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                           <span class="n">require_client_auth</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<div class="viewcode-block" id="ssl_server_credentials"><a class="viewcode-back" href="../grpc.html#grpc.ssl_server_credentials">[docs]</a><span class="k">def</span> <span class="nf">ssl_server_credentials</span><span class="p">(</span>
+    <span class="n">private_key_certificate_chain_pairs</span><span class="p">,</span>
+    <span class="n">root_certificates</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">require_client_auth</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Creates a ServerCredentials for use with an SSL-enabled Server.</span>
 
 <span class="sd">    Args:</span>
@@ -1800,17 +1880,24 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">private_key_certificate_chain_pairs</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="s1">&#39;At least one private key-certificate chain pair is required!&#39;</span><span class="p">)</span>
+            <span class="s2">&quot;At least one private key-certificate chain pair is required!&quot;</span>
+        <span class="p">)</span>
     <span class="k">elif</span> <span class="n">require_client_auth</span> <span class="ow">and</span> <span class="n">root_certificates</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="s1">&#39;Illegal to require client auth without providing root certificates!&#39;</span>
+            <span class="s2">&quot;Illegal to require client auth without providing root&quot;</span>
+            <span class="s2">&quot; certificates!&quot;</span>
         <span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">ServerCredentials</span><span class="p">(</span>
-            <span class="n">_cygrpc</span><span class="o">.</span><span class="n">server_credentials_ssl</span><span class="p">(</span><span class="n">root_certificates</span><span class="p">,</span> <span class="p">[</span>
-                <span class="n">_cygrpc</span><span class="o">.</span><span class="n">SslPemKeyCertPair</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">pem</span><span class="p">)</span>
-                <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">pem</span> <span class="ow">in</span> <span class="n">private_key_certificate_chain_pairs</span>
-            <span class="p">],</span> <span class="n">require_client_auth</span><span class="p">))</span></div>
+            <span class="n">_cygrpc</span><span class="o">.</span><span class="n">server_credentials_ssl</span><span class="p">(</span>
+                <span class="n">root_certificates</span><span class="p">,</span>
+                <span class="p">[</span>
+                    <span class="n">_cygrpc</span><span class="o">.</span><span class="n">SslPemKeyCertPair</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">pem</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">pem</span> <span class="ow">in</span> <span class="n">private_key_certificate_chain_pairs</span>
+                <span class="p">],</span>
+                <span class="n">require_client_auth</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span></div>
 
 
 <span class="k">def</span> <span class="nf">xds_server_credentials</span><span class="p">(</span><span class="n">fallback_credentials</span><span class="p">):</span>
@@ -1822,7 +1909,8 @@
 <span class="sd">        establish a secure connection via xDS. No default value is provided.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">ServerCredentials</span><span class="p">(</span>
-        <span class="n">_cygrpc</span><span class="o">.</span><span class="n">xds_server_credentials</span><span class="p">(</span><span class="n">fallback_credentials</span><span class="o">.</span><span class="n">_credentials</span><span class="p">))</span>
+        <span class="n">_cygrpc</span><span class="o">.</span><span class="n">xds_server_credentials</span><span class="p">(</span><span class="n">fallback_credentials</span><span class="o">.</span><span class="n">_credentials</span><span class="p">)</span>
+    <span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">insecure_server_credentials</span><span class="p">():</span>
@@ -1836,8 +1924,9 @@
     <span class="k">return</span> <span class="n">ServerCredentials</span><span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">insecure_server_credentials</span><span class="p">())</span>
 
 
-<div class="viewcode-block" id="ssl_server_certificate_configuration"><a class="viewcode-back" href="../grpc.html#grpc.ssl_server_certificate_configuration">[docs]</a><span class="k">def</span> <span class="nf">ssl_server_certificate_configuration</span><span class="p">(</span><span class="n">private_key_certificate_chain_pairs</span><span class="p">,</span>
-                                         <span class="n">root_certificates</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="ssl_server_certificate_configuration"><a class="viewcode-back" href="../grpc.html#grpc.ssl_server_certificate_configuration">[docs]</a><span class="k">def</span> <span class="nf">ssl_server_certificate_configuration</span><span class="p">(</span>
+    <span class="n">private_key_certificate_chain_pairs</span><span class="p">,</span> <span class="n">root_certificates</span><span class="o">=</span><span class="kc">None</span>
+<span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Creates a ServerCertificateConfiguration for use with a Server.</span>
 
 <span class="sd">    Args:</span>
@@ -1853,18 +1942,25 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">private_key_certificate_chain_pairs</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">ServerCertificateConfiguration</span><span class="p">(</span>
-            <span class="n">_cygrpc</span><span class="o">.</span><span class="n">server_certificate_config_ssl</span><span class="p">(</span><span class="n">root_certificates</span><span class="p">,</span> <span class="p">[</span>
-                <span class="n">_cygrpc</span><span class="o">.</span><span class="n">SslPemKeyCertPair</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">pem</span><span class="p">)</span>
-                <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">pem</span> <span class="ow">in</span> <span class="n">private_key_certificate_chain_pairs</span>
-            <span class="p">]))</span>
+            <span class="n">_cygrpc</span><span class="o">.</span><span class="n">server_certificate_config_ssl</span><span class="p">(</span>
+                <span class="n">root_certificates</span><span class="p">,</span>
+                <span class="p">[</span>
+                    <span class="n">_cygrpc</span><span class="o">.</span><span class="n">SslPemKeyCertPair</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">pem</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">pem</span> <span class="ow">in</span> <span class="n">private_key_certificate_chain_pairs</span>
+                <span class="p">],</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="s1">&#39;At least one private key-certificate chain pair is required!&#39;</span><span class="p">)</span></div>
+            <span class="s2">&quot;At least one private key-certificate chain pair is required!&quot;</span>
+        <span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="dynamic_ssl_server_credentials"><a class="viewcode-back" href="../grpc.html#grpc.dynamic_ssl_server_credentials">[docs]</a><span class="k">def</span> <span class="nf">dynamic_ssl_server_credentials</span><span class="p">(</span><span class="n">initial_certificate_configuration</span><span class="p">,</span>
-                                   <span class="n">certificate_configuration_fetcher</span><span class="p">,</span>
-                                   <span class="n">require_client_authentication</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<div class="viewcode-block" id="dynamic_ssl_server_credentials"><a class="viewcode-back" href="../grpc.html#grpc.dynamic_ssl_server_credentials">[docs]</a><span class="k">def</span> <span class="nf">dynamic_ssl_server_credentials</span><span class="p">(</span>
+    <span class="n">initial_certificate_configuration</span><span class="p">,</span>
+    <span class="n">certificate_configuration_fetcher</span><span class="p">,</span>
+    <span class="n">require_client_authentication</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Creates a ServerCredentials for use with an SSL-enabled Server.</span>
 
 <span class="sd">    Args:</span>
@@ -1888,7 +1984,10 @@
     <span class="k">return</span> <span class="n">ServerCredentials</span><span class="p">(</span>
         <span class="n">_cygrpc</span><span class="o">.</span><span class="n">server_credentials_ssl_dynamic_cert_config</span><span class="p">(</span>
             <span class="n">initial_certificate_configuration</span><span class="p">,</span>
-            <span class="n">certificate_configuration_fetcher</span><span class="p">,</span> <span class="n">require_client_authentication</span><span class="p">))</span></div>
+            <span class="n">certificate_configuration_fetcher</span><span class="p">,</span>
+            <span class="n">require_client_authentication</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="LocalConnectionType"><a class="viewcode-back" href="../grpc.html#grpc.LocalConnectionType">[docs]</a><span class="nd">@enum</span><span class="o">.</span><span class="n">unique</span>
@@ -1899,6 +1998,7 @@
 <span class="sd">      UDS: Unix domain socket connections</span>
 <span class="sd">      LOCAL_TCP: Local TCP connections.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="n">UDS</span> <span class="o">=</span> <span class="n">_cygrpc</span><span class="o">.</span><span class="n">LocalConnectionType</span><span class="o">.</span><span class="n">uds</span>
     <span class="n">LOCAL_TCP</span> <span class="o">=</span> <span class="n">_cygrpc</span><span class="o">.</span><span class="n">LocalConnectionType</span><span class="o">.</span><span class="n">local_tcp</span></div>
 
@@ -1930,7 +2030,8 @@
 <span class="sd">      A ChannelCredentials for use with a local Channel</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">ChannelCredentials</span><span class="p">(</span>
-        <span class="n">_cygrpc</span><span class="o">.</span><span class="n">channel_credentials_local</span><span class="p">(</span><span class="n">local_connect_type</span><span class="o">.</span><span class="n">value</span><span class="p">))</span></div>
+        <span class="n">_cygrpc</span><span class="o">.</span><span class="n">channel_credentials_local</span><span class="p">(</span><span class="n">local_connect_type</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+    <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="local_server_credentials"><a class="viewcode-back" href="../grpc.html#grpc.local_server_credentials">[docs]</a><span class="k">def</span> <span class="nf">local_server_credentials</span><span class="p">(</span><span class="n">local_connect_type</span><span class="o">=</span><span class="n">LocalConnectionType</span><span class="o">.</span><span class="n">LOCAL_TCP</span><span class="p">):</span>
@@ -1960,7 +2061,8 @@
 <span class="sd">      A ServerCredentials for use with a local Server</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">ServerCredentials</span><span class="p">(</span>
-        <span class="n">_cygrpc</span><span class="o">.</span><span class="n">server_credentials_local</span><span class="p">(</span><span class="n">local_connect_type</span><span class="o">.</span><span class="n">value</span><span class="p">))</span></div>
+        <span class="n">_cygrpc</span><span class="o">.</span><span class="n">server_credentials_local</span><span class="p">(</span><span class="n">local_connect_type</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+    <span class="p">)</span></div>
 
 
 <span class="k">def</span> <span class="nf">alts_channel_credentials</span><span class="p">(</span><span class="n">service_accounts</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -1981,7 +2083,8 @@
 <span class="sd">      A ChannelCredentials for use with an ALTS-enabled Channel</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">ChannelCredentials</span><span class="p">(</span>
-        <span class="n">_cygrpc</span><span class="o">.</span><span class="n">channel_credentials_alts</span><span class="p">(</span><span class="n">service_accounts</span> <span class="ow">or</span> <span class="p">[]))</span>
+        <span class="n">_cygrpc</span><span class="o">.</span><span class="n">channel_credentials_alts</span><span class="p">(</span><span class="n">service_accounts</span> <span class="ow">or</span> <span class="p">[])</span>
+    <span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">alts_server_credentials</span><span class="p">():</span>
@@ -2012,7 +2115,9 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">ChannelCredentials</span><span class="p">(</span>
         <span class="n">_cygrpc</span><span class="o">.</span><span class="n">channel_credentials_compute_engine</span><span class="p">(</span>
-            <span class="n">call_credentials</span><span class="o">.</span><span class="n">_credentials</span><span class="p">))</span></div>
+            <span class="n">call_credentials</span><span class="o">.</span><span class="n">_credentials</span>
+        <span class="p">)</span>
+    <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="channel_ready_future"><a class="viewcode-back" href="../grpc.html#grpc.channel_ready_future">[docs]</a><span class="k">def</span> <span class="nf">channel_ready_future</span><span class="p">(</span><span class="n">channel</span><span class="p">):</span>
@@ -2029,6 +2134,7 @@
 <span class="sd">      ChannelConnectivity.READY.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="kn">from</span> <span class="nn">grpc</span> <span class="kn">import</span> <span class="n">_utilities</span>  <span class="c1"># pylint: disable=cyclic-import</span>
+
     <span class="k">return</span> <span class="n">_utilities</span><span class="o">.</span><span class="n">channel_ready_future</span><span class="p">(</span><span class="n">channel</span><span class="p">)</span></div>
 
 
@@ -2048,8 +2154,10 @@
 <span class="sd">      A Channel.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="kn">from</span> <span class="nn">grpc</span> <span class="kn">import</span> <span class="n">_channel</span>  <span class="c1"># pylint: disable=cyclic-import</span>
-    <span class="k">return</span> <span class="n">_channel</span><span class="o">.</span><span class="n">Channel</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="p">()</span> <span class="k">if</span> <span class="n">options</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">options</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span>
-                            <span class="n">compression</span><span class="p">)</span></div>
+
+    <span class="k">return</span> <span class="n">_channel</span><span class="o">.</span><span class="n">Channel</span><span class="p">(</span>
+        <span class="n">target</span><span class="p">,</span> <span class="p">()</span> <span class="k">if</span> <span class="n">options</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">options</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">compression</span>
+    <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="secure_channel"><a class="viewcode-back" href="../grpc.html#grpc.secure_channel">[docs]</a><span class="k">def</span> <span class="nf">secure_channel</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">credentials</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -2070,12 +2178,18 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="kn">from</span> <span class="nn">grpc</span> <span class="kn">import</span> <span class="n">_channel</span>  <span class="c1"># pylint: disable=cyclic-import</span>
     <span class="kn">from</span> <span class="nn">grpc.experimental</span> <span class="kn">import</span> <span class="n">_insecure_channel_credentials</span>
+
     <span class="k">if</span> <span class="n">credentials</span><span class="o">.</span><span class="n">_credentials</span> <span class="ow">is</span> <span class="n">_insecure_channel_credentials</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="s2">&quot;secure_channel cannot be called with insecure credentials.&quot;</span> <span class="o">+</span>
-            <span class="s2">&quot; Call insecure_channel instead.&quot;</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">_channel</span><span class="o">.</span><span class="n">Channel</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="p">()</span> <span class="k">if</span> <span class="n">options</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">options</span><span class="p">,</span>
-                            <span class="n">credentials</span><span class="o">.</span><span class="n">_credentials</span><span class="p">,</span> <span class="n">compression</span><span class="p">)</span></div>
+            <span class="s2">&quot;secure_channel cannot be called with insecure credentials.&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot; Call insecure_channel instead.&quot;</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">_channel</span><span class="o">.</span><span class="n">Channel</span><span class="p">(</span>
+        <span class="n">target</span><span class="p">,</span>
+        <span class="p">()</span> <span class="k">if</span> <span class="n">options</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">options</span><span class="p">,</span>
+        <span class="n">credentials</span><span class="o">.</span><span class="n">_credentials</span><span class="p">,</span>
+        <span class="n">compression</span><span class="p">,</span>
+    <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="intercept_channel"><a class="viewcode-back" href="../grpc.html#grpc.intercept_channel">[docs]</a><span class="k">def</span> <span class="nf">intercept_channel</span><span class="p">(</span><span class="n">channel</span><span class="p">,</span> <span class="o">*</span><span class="n">interceptors</span><span class="p">):</span>
@@ -2101,16 +2215,19 @@
 <span class="sd">        StreamStreamClientInterceptor.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="kn">from</span> <span class="nn">grpc</span> <span class="kn">import</span> <span class="n">_interceptor</span>  <span class="c1"># pylint: disable=cyclic-import</span>
+
     <span class="k">return</span> <span class="n">_interceptor</span><span class="o">.</span><span class="n">intercept_channel</span><span class="p">(</span><span class="n">channel</span><span class="p">,</span> <span class="o">*</span><span class="n">interceptors</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="server"><a class="viewcode-back" href="../grpc.html#grpc.server">[docs]</a><span class="k">def</span> <span class="nf">server</span><span class="p">(</span><span class="n">thread_pool</span><span class="p">,</span>
-           <span class="n">handlers</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-           <span class="n">interceptors</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-           <span class="n">options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-           <span class="n">maximum_concurrent_rpcs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-           <span class="n">compression</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-           <span class="n">xds</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<div class="viewcode-block" id="server"><a class="viewcode-back" href="../grpc.html#grpc.server">[docs]</a><span class="k">def</span> <span class="nf">server</span><span class="p">(</span>
+    <span class="n">thread_pool</span><span class="p">,</span>
+    <span class="n">handlers</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">interceptors</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">maximum_concurrent_rpcs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">compression</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">xds</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Creates a Server with which RPCs can be serviced.</span>
 
 <span class="sd">    Args:</span>
@@ -2138,16 +2255,22 @@
 <span class="sd">      A Server object.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="kn">from</span> <span class="nn">grpc</span> <span class="kn">import</span> <span class="n">_server</span>  <span class="c1"># pylint: disable=cyclic-import</span>
-    <span class="k">return</span> <span class="n">_server</span><span class="o">.</span><span class="n">create_server</span><span class="p">(</span><span class="n">thread_pool</span><span class="p">,</span>
-                                 <span class="p">()</span> <span class="k">if</span> <span class="n">handlers</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">handlers</span><span class="p">,</span>
-                                 <span class="p">()</span> <span class="k">if</span> <span class="n">interceptors</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">interceptors</span><span class="p">,</span>
-                                 <span class="p">()</span> <span class="k">if</span> <span class="n">options</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">options</span><span class="p">,</span>
-                                 <span class="n">maximum_concurrent_rpcs</span><span class="p">,</span> <span class="n">compression</span><span class="p">,</span> <span class="n">xds</span><span class="p">)</span></div>
+
+    <span class="k">return</span> <span class="n">_server</span><span class="o">.</span><span class="n">create_server</span><span class="p">(</span>
+        <span class="n">thread_pool</span><span class="p">,</span>
+        <span class="p">()</span> <span class="k">if</span> <span class="n">handlers</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">handlers</span><span class="p">,</span>
+        <span class="p">()</span> <span class="k">if</span> <span class="n">interceptors</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">interceptors</span><span class="p">,</span>
+        <span class="p">()</span> <span class="k">if</span> <span class="n">options</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">options</span><span class="p">,</span>
+        <span class="n">maximum_concurrent_rpcs</span><span class="p">,</span>
+        <span class="n">compression</span><span class="p">,</span>
+        <span class="n">xds</span><span class="p">,</span>
+    <span class="p">)</span></div>
 
 
 <span class="nd">@contextlib</span><span class="o">.</span><span class="n">contextmanager</span>
 <span class="k">def</span> <span class="nf">_create_servicer_context</span><span class="p">(</span><span class="n">rpc_event</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">request_deserializer</span><span class="p">):</span>
     <span class="kn">from</span> <span class="nn">grpc</span> <span class="kn">import</span> <span class="n">_server</span>  <span class="c1"># pylint: disable=cyclic-import</span>
+
     <span class="n">context</span> <span class="o">=</span> <span class="n">_server</span><span class="o">.</span><span class="n">_Context</span><span class="p">(</span><span class="n">rpc_event</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">request_deserializer</span><span class="p">)</span>
     <span class="k">yield</span> <span class="n">context</span>
     <span class="n">context</span><span class="o">.</span><span class="n">_finalize_state</span><span class="p">()</span>  <span class="c1"># pylint: disable=protected-access</span>
@@ -2157,11 +2280,12 @@
 <span class="k">class</span> <span class="nc">Compression</span><span class="p">(</span><span class="n">enum</span><span class="o">.</span><span class="n">IntEnum</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Indicates the compression method to be used for an RPC.</span>
 
-<span class="sd">       Attributes:</span>
-<span class="sd">        NoCompression: Do not use compression algorithm.</span>
-<span class="sd">        Deflate: Use &quot;Deflate&quot; compression algorithm.</span>
-<span class="sd">        Gzip: Use &quot;Gzip&quot; compression algorithm.</span>
+<span class="sd">    Attributes:</span>
+<span class="sd">     NoCompression: Do not use compression algorithm.</span>
+<span class="sd">     Deflate: Use &quot;Deflate&quot; compression algorithm.</span>
+<span class="sd">     Gzip: Use &quot;Gzip&quot; compression algorithm.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="n">NoCompression</span> <span class="o">=</span> <span class="n">_compression</span><span class="o">.</span><span class="n">NoCompression</span>
     <span class="n">Deflate</span> <span class="o">=</span> <span class="n">_compression</span><span class="o">.</span><span class="n">Deflate</span>
     <span class="n">Gzip</span> <span class="o">=</span> <span class="n">_compression</span><span class="o">.</span><span class="n">Gzip</span></div>
@@ -2170,70 +2294,70 @@
 <span class="c1">###################################  __all__  #################################</span>
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">(</span>
-    <span class="s1">&#39;FutureTimeoutError&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;FutureCancelledError&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;Future&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;ChannelConnectivity&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;StatusCode&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;Status&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;RpcError&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;RpcContext&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;Call&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;ChannelCredentials&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;CallCredentials&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;AuthMetadataContext&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;AuthMetadataPluginCallback&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;AuthMetadataPlugin&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;Compression&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;ClientCallDetails&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;ServerCertificateConfiguration&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;ServerCredentials&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;LocalConnectionType&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;UnaryUnaryMultiCallable&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;UnaryStreamMultiCallable&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;StreamUnaryMultiCallable&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;StreamStreamMultiCallable&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;UnaryUnaryClientInterceptor&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;UnaryStreamClientInterceptor&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;StreamUnaryClientInterceptor&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;StreamStreamClientInterceptor&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;Channel&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;ServicerContext&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;RpcMethodHandler&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;HandlerCallDetails&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;GenericRpcHandler&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;ServiceRpcHandler&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;Server&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;ServerInterceptor&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;unary_unary_rpc_method_handler&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;unary_stream_rpc_method_handler&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;stream_unary_rpc_method_handler&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;stream_stream_rpc_method_handler&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;method_handlers_generic_handler&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;ssl_channel_credentials&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;metadata_call_credentials&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;access_token_call_credentials&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;composite_call_credentials&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;composite_channel_credentials&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;compute_engine_channel_credentials&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;local_channel_credentials&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;local_server_credentials&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;alts_channel_credentials&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;alts_server_credentials&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;ssl_server_credentials&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;ssl_server_certificate_configuration&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;dynamic_ssl_server_credentials&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;channel_ready_future&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;insecure_channel&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;secure_channel&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;intercept_channel&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;server&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;protos&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;services&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;protos_and_services&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;xds_channel_credentials&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;xds_server_credentials&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;insecure_server_credentials&#39;</span><span class="p">,</span>
+    <span class="s2">&quot;FutureTimeoutError&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;FutureCancelledError&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Future&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;ChannelConnectivity&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;StatusCode&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Status&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;RpcError&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;RpcContext&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Call&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;ChannelCredentials&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;CallCredentials&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;AuthMetadataContext&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;AuthMetadataPluginCallback&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;AuthMetadataPlugin&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Compression&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;ClientCallDetails&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;ServerCertificateConfiguration&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;ServerCredentials&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;LocalConnectionType&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;UnaryUnaryMultiCallable&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;UnaryStreamMultiCallable&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;StreamUnaryMultiCallable&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;StreamStreamMultiCallable&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;UnaryUnaryClientInterceptor&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;UnaryStreamClientInterceptor&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;StreamUnaryClientInterceptor&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;StreamStreamClientInterceptor&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Channel&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;ServicerContext&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;RpcMethodHandler&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;HandlerCallDetails&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;GenericRpcHandler&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;ServiceRpcHandler&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Server&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;ServerInterceptor&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;unary_unary_rpc_method_handler&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;unary_stream_rpc_method_handler&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;stream_unary_rpc_method_handler&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;stream_stream_rpc_method_handler&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;method_handlers_generic_handler&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;ssl_channel_credentials&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;metadata_call_credentials&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;access_token_call_credentials&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;composite_call_credentials&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;composite_channel_credentials&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;compute_engine_channel_credentials&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;local_channel_credentials&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;local_server_credentials&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;alts_channel_credentials&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;alts_server_credentials&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;ssl_server_credentials&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;ssl_server_certificate_configuration&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;dynamic_ssl_server_credentials&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;channel_ready_future&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;insecure_channel&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;secure_channel&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;intercept_channel&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;server&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;protos&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;services&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;protos_and_services&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;xds_channel_credentials&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;xds_server_credentials&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;insecure_server_credentials&quot;</span><span class="p">,</span>
 <span class="p">)</span>
 
 <span class="c1">############################### Extension Shims ################################</span>
@@ -2241,24 +2365,28 @@
 <span class="c1"># Here to maintain backwards compatibility; avoid using these in new code!</span>
 <span class="k">try</span><span class="p">:</span>
     <span class="kn">import</span> <span class="nn">grpc_tools</span>
-    <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;grpc.tools&#39;</span><span class="p">:</span> <span class="n">grpc_tools</span><span class="p">})</span>
+
+    <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">&quot;grpc.tools&quot;</span><span class="p">:</span> <span class="n">grpc_tools</span><span class="p">})</span>
 <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
     <span class="k">pass</span>
 <span class="k">try</span><span class="p">:</span>
     <span class="kn">import</span> <span class="nn">grpc_health</span>
-    <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;grpc.health&#39;</span><span class="p">:</span> <span class="n">grpc_health</span><span class="p">})</span>
+
+    <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">&quot;grpc.health&quot;</span><span class="p">:</span> <span class="n">grpc_health</span><span class="p">})</span>
 <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
     <span class="k">pass</span>
 <span class="k">try</span><span class="p">:</span>
     <span class="kn">import</span> <span class="nn">grpc_reflection</span>
-    <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;grpc.reflection&#39;</span><span class="p">:</span> <span class="n">grpc_reflection</span><span class="p">})</span>
+
+    <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">&quot;grpc.reflection&quot;</span><span class="p">:</span> <span class="n">grpc_reflection</span><span class="p">})</span>
 <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
     <span class="k">pass</span>
 
 <span class="c1"># Prevents import order issue in the case of renamed path.</span>
 <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span> <span class="ow">and</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;grpc&quot;</span><span class="p">:</span>
     <span class="kn">from</span> <span class="nn">grpc</span> <span class="kn">import</span> <span class="n">aio</span>  <span class="c1"># pylint: disable=ungrouped-imports</span>
-    <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;grpc.aio&#39;</span><span class="p">:</span> <span class="n">aio</span><span class="p">})</span>
+
+    <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">&quot;grpc.aio&quot;</span><span class="p">:</span> <span class="n">aio</span><span class="p">})</span>
 </pre></div>
 
           </div>
