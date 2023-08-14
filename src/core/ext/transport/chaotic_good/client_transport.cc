@@ -54,18 +54,18 @@ ClientTransport::ClientTransport(
       data_endpoint_(std::move(data_endpoint)),
       control_endpoint_write_buffer_(SliceBuffer()),
       data_endpoint_write_buffer_(SliceBuffer()),
+      hpack_compressor_(std::make_unique<HPackCompressor>()),
       event_engine_(event_engine) {
-  auto hpack_compressor = std::make_shared<HPackCompressor>();
   auto write_loop = Loop(Seq(
       // Get next outgoing frame.
       this->outgoing_frames_.Next(),
       // Construct data buffers that will be sent to the endpoints.
-      [hpack_compressor, this](ClientFrame client_frame) {
+      [this](ClientFrame client_frame) {
         MatchMutable(
             &client_frame,
-            [hpack_compressor, this](ClientFragmentFrame* frame) mutable {
+            [this](ClientFragmentFrame* frame) mutable {
               control_endpoint_write_buffer_.Append(
-                  frame->Serialize(hpack_compressor.get()));
+                  frame->Serialize(hpack_compressor_.get()));
               if (frame->message != nullptr) {
                 char* header_string = grpc_slice_to_c_string(
                     control_endpoint_write_buffer_.c_slice_buffer()->slices[0]);
@@ -84,9 +84,9 @@ ClientTransport::ClientTransport(
                     data_endpoint_write_buffer_);
               }
             },
-            [hpack_compressor, this](CancelFrame* frame) mutable {
+            [this](CancelFrame* frame) mutable {
               control_endpoint_write_buffer_.Append(
-                  frame->Serialize(hpack_compressor.get()));
+                  frame->Serialize(hpack_compressor_.get()));
             });
         return absl::OkStatus();
       },
