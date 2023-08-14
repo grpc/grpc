@@ -1057,6 +1057,8 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/cf_engine/cfstream_endpoint.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/cf_engine/cftype_unique_ref.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/cf_engine/dns_service_resolver.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/cf_engine/dns_service_resolver.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/channel_args_endpoint_config.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/channel_args_endpoint_config.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/common_closures.h" role="src" />
@@ -1433,8 +1435,8 @@
     <file baseinstalldir="/" name="src/core/lib/promise/detail/basic_seq.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/detail/promise_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/detail/promise_like.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/promise/detail/seq_state.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/detail/status.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/promise/detail/switch.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/exec_ctx_wakeup_scheduler.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/for_each.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/if.h" role="src" />
@@ -1830,6 +1832,7 @@
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/options.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/policy_checks.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/port.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/prefetch.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/thread_annotations.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/cleanup/cleanup.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/cleanup/internal/cleanup.h" role="src" />
@@ -2100,13 +2103,25 @@
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/create_thread_identity.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/create_thread_identity.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/futex.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/futex_waiter.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/futex_waiter.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/graphcycles.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/graphcycles.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/kernel_timeout.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/kernel_timeout.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/per_thread_sem.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/per_thread_sem.h" role="src" />
-    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/waiter.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/pthread_waiter.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/pthread_waiter.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/sem_waiter.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/sem_waiter.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/stdcpp_waiter.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/stdcpp_waiter.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/waiter.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/waiter_base.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/waiter_base.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/win32_waiter.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/win32_waiter.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/mutex.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/mutex.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/notification.cc" role="src" />

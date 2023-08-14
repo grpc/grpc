@@ -522,6 +522,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/event_engine/ares_resolver.cc \
     src/core/lib/event_engine/cf_engine/cf_engine.cc \
     src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc \
+    src/core/lib/event_engine/cf_engine/dns_service_resolver.cc \
     src/core/lib/event_engine/channel_args_endpoint_config.cc \
     src/core/lib/event_engine/default_event_engine.cc \
     src/core/lib/event_engine/default_event_engine_factory.cc \
@@ -964,9 +965,15 @@ if test "$PHP_GRPC" != "no"; then
     third_party/abseil-cpp/absl/synchronization/barrier.cc \
     third_party/abseil-cpp/absl/synchronization/blocking_counter.cc \
     third_party/abseil-cpp/absl/synchronization/internal/create_thread_identity.cc \
+    third_party/abseil-cpp/absl/synchronization/internal/futex_waiter.cc \
     third_party/abseil-cpp/absl/synchronization/internal/graphcycles.cc \
+    third_party/abseil-cpp/absl/synchronization/internal/kernel_timeout.cc \
     third_party/abseil-cpp/absl/synchronization/internal/per_thread_sem.cc \
-    third_party/abseil-cpp/absl/synchronization/internal/waiter.cc \
+    third_party/abseil-cpp/absl/synchronization/internal/pthread_waiter.cc \
+    third_party/abseil-cpp/absl/synchronization/internal/sem_waiter.cc \
+    third_party/abseil-cpp/absl/synchronization/internal/stdcpp_waiter.cc \
+    third_party/abseil-cpp/absl/synchronization/internal/waiter_base.cc \
+    third_party/abseil-cpp/absl/synchronization/internal/win32_waiter.cc \
     third_party/abseil-cpp/absl/synchronization/mutex.cc \
     third_party/abseil-cpp/absl/synchronization/notification.cc \
     third_party/abseil-cpp/absl/time/civil_time.cc \

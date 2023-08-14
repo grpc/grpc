@@ -19,6 +19,7 @@
 
 #include "src/core/ext/filters/channel_idle/channel_idle_filter.h"
 
+#include <stdint.h>
 #include <stdlib.h>
 
 #include <functional>

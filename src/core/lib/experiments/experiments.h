@@ -69,8 +69,7 @@ inline bool IsEventEngineClientEnabled() { return false; }
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsPromiseBasedClientCallEnabled() { return false; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_SERVER_CALL
-inline bool IsPromiseBasedServerCallEnabled() { return true; }
+inline bool IsPromiseBasedServerCallEnabled() { return false; }
 inline bool IsTransportSuppliesClientLatencyEnabled() { return false; }
 inline bool IsEventEngineListenerEnabled() { return false; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
@@ -89,7 +88,8 @@ inline bool IsWorkStealingEnabled() {
 inline bool IsClientPrivacyEnabled() { return false; }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
 inline bool IsServerPrivacyEnabled() { return false; }
-inline bool IsUniqueMetadataStringsEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_UNIQUE_METADATA_STRINGS
+inline bool IsUniqueMetadataStringsEnabled() { return true; }
 inline bool IsKeepaliveFixEnabled() { return false; }
 inline bool IsKeepaliveServerFixEnabled() { return false; }
 
@@ -104,8 +104,7 @@ inline bool IsEventEngineClientEnabled() { return false; }
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsPromiseBasedClientCallEnabled() { return false; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_SERVER_CALL
-inline bool IsPromiseBasedServerCallEnabled() { return true; }
+inline bool IsPromiseBasedServerCallEnabled() { return false; }
 inline bool IsTransportSuppliesClientLatencyEnabled() { return false; }
 inline bool IsEventEngineListenerEnabled() { return false; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
@@ -124,7 +123,8 @@ inline bool IsWorkStealingEnabled() {
 inline bool IsClientPrivacyEnabled() { return false; }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
 inline bool IsServerPrivacyEnabled() { return false; }
-inline bool IsUniqueMetadataStringsEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_UNIQUE_METADATA_STRINGS
+inline bool IsUniqueMetadataStringsEnabled() { return true; }
 inline bool IsKeepaliveFixEnabled() { return false; }
 inline bool IsKeepaliveServerFixEnabled() { return false; }
 
@@ -139,8 +139,7 @@ inline bool IsEventEngineClientEnabled() { return false; }
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsPromiseBasedClientCallEnabled() { return false; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_SERVER_CALL
-inline bool IsPromiseBasedServerCallEnabled() { return true; }
+inline bool IsPromiseBasedServerCallEnabled() { return false; }
 inline bool IsTransportSuppliesClientLatencyEnabled() { return false; }
 inline bool IsEventEngineListenerEnabled() { return false; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
@@ -159,7 +158,8 @@ inline bool IsWorkStealingEnabled() {
 inline bool IsClientPrivacyEnabled() { return false; }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
 inline bool IsServerPrivacyEnabled() { return false; }
-inline bool IsUniqueMetadataStringsEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_UNIQUE_METADATA_STRINGS
+inline bool IsUniqueMetadataStringsEnabled() { return true; }
 inline bool IsKeepaliveFixEnabled() { return false; }
 inline bool IsKeepaliveServerFixEnabled() { return false; }
 #endif

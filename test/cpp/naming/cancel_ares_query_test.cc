@@ -39,6 +39,7 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/stats_data.h"
+#include "src/core/lib/event_engine/ares_resolver.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/string.h"
@@ -442,13 +443,20 @@ TEST_F(CancelDuringAresQuery, TestQueryFailsBecauseTcpServerClosesSocket) {
           kWaitForClientToSendFirstBytes,
       grpc_core::testing::FakeUdpAndTcpServer::
           CloseSocketUponReceivingBytesFromPeer);
-  // TODO(yijiem): make this test work with the EE DNS resolver by supporting
-  // this test flag to force TCP in the EE DNS resolver.
-  if (grpc_core::IsEventEngineDnsEnabled()) return;
-  g_grpc_ares_test_only_force_tcp = true;
+  if (grpc_core::IsEventEngineDnsEnabled()) {
+    g_event_engine_grpc_ares_test_only_force_tcp = true;
+  } else {
+    g_grpc_ares_test_only_force_tcp = true;
+  }
   grpc_status_code expected_status_code = GRPC_STATUS_UNAVAILABLE;
-  std::string expected_error_message_substring =
-      absl::StrCat("DNS resolution failed for ", kFakeName);
+  std::string expected_error_message_substring;
+  if (grpc_core::IsEventEngineDnsEnabled()) {
+    expected_error_message_substring =
+        absl::StrCat("errors resolving ", kFakeName);
+  } else {
+    expected_error_message_substring =
+        absl::StrCat("DNS resolution failed for ", kFakeName);
+  }
   // Don't really care about the deadline - we should quickly hit a DNS
   // resolution failure.
   gpr_timespec rpc_deadline = grpc_timeout_seconds_to_deadline(100);
@@ -456,7 +464,11 @@ TEST_F(CancelDuringAresQuery, TestQueryFailsBecauseTcpServerClosesSocket) {
   TestCancelDuringActiveQuery(expected_status_code,
                               expected_error_message_substring, rpc_deadline,
                               dns_query_timeout_ms, fake_dns_server.port());
-  g_grpc_ares_test_only_force_tcp = false;
+  if (grpc_core::IsEventEngineDnsEnabled()) {
+    g_event_engine_grpc_ares_test_only_force_tcp = false;
+  } else {
+    g_grpc_ares_test_only_force_tcp = false;
+  }
 }
 
 }  // namespace
