@@ -17,8 +17,6 @@ load("//bazel:cython_library.bzl", "pyx_library")
 
 package(default_visibility = ["//visibility:private"])
 
-# TODO(xuanwn): We also need support Python-native build
-
 cc_library(
     name = "observability",
     srcs = [
@@ -41,10 +39,7 @@ cc_library(
     includes = ["."],
     deps = [
         #TODO(xuanwn): Confirm only referenced code is inlcuded in shared object library
-        # "//:grpc_rpc_encoding",
-        # "//src/cpp/ext/gcp:observability_config",
         "//:grpc_base",
-        "//src/core:slice",
     ],
 )
 
