@@ -85,7 +85,6 @@
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/detail/basic_seq.h"
 #include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/party.h"
@@ -3353,6 +3352,7 @@ void ServerPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
         break;
       case GRPC_OP_RECV_MESSAGE:
         if (cancelled_.load(std::memory_order_relaxed)) {
+          set_failed_before_recv_message();
           FailCompletion(completion);
           break;
         }

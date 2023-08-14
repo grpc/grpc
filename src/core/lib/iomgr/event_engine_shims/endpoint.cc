@@ -74,15 +74,9 @@ class EventEngineEndpointWrapper {
     return fd_;
   }
 
-  absl::string_view PeerAddress() {
-    grpc_core::MutexLock lock(&mu_);
-    return peer_address_;
-  }
+  absl::string_view PeerAddress() { return peer_address_; }
 
-  absl::string_view LocalAddress() {
-    grpc_core::MutexLock lock(&mu_);
-    return local_address_;
-  }
+  absl::string_view LocalAddress() { return local_address_; }
 
   void Ref() { refs_.fetch_add(1, std::memory_order_relaxed); }
   void Unref() {
@@ -269,8 +263,6 @@ class EventEngineEndpointWrapper {
     {
       grpc_core::MutexLock lock(&mu_);
       fd_ = -1;
-      local_address_ = "";
-      peer_address_ = "";
     }
     endpoint_.reset();
     // For the Ref taken in TriggerShutdown
@@ -285,8 +277,10 @@ class EventEngineEndpointWrapper {
   grpc_closure* pending_read_cb_;
   grpc_closure* pending_write_cb_;
   grpc_slice_buffer* pending_read_buffer_;
-  std::string peer_address_;
-  std::string local_address_;
+  const std::string peer_address_{
+      ResolvedAddressToURI(endpoint_->GetPeerAddress()).value_or("")};
+  const std::string local_address_{
+      ResolvedAddressToURI(endpoint_->GetLocalAddress()).value_or("")};
   int fd_{-1};
 };
 
@@ -412,14 +406,6 @@ EventEngineEndpointWrapper::EventEngineEndpointWrapper(
       eeep_(std::make_unique<grpc_event_engine_endpoint>()) {
   eeep_->base.vtable = &grpc_event_engine_endpoint_vtable;
   eeep_->wrapper = this;
-  auto local_addr = ResolvedAddressToURI(endpoint_->GetLocalAddress());
-  if (local_addr.ok()) {
-    local_address_ = *local_addr;
-  }
-  auto peer_addr = ResolvedAddressToURI(endpoint_->GetPeerAddress());
-  if (peer_addr.ok()) {
-    peer_address_ = *peer_addr;
-  }
   if (EventEngineSupportsFd()) {
     fd_ = reinterpret_cast<PosixEndpointWithFdSupport*>(endpoint_.get())
               ->GetWrappedFd();

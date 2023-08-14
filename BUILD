@@ -1534,7 +1534,6 @@ grpc_cc_library(
         "//src/core:arena",
         "//src/core:arena_promise",
         "//src/core:atomic_utils",
-        "//src/core:basic_seq",
         "//src/core:bitset",
         "//src/core:cancel_callback",
         "//src/core:channel_args",
@@ -1799,7 +1798,6 @@ grpc_cc_library(
         "//src/core:activity",
         "//src/core:arena",
         "//src/core:arena_promise",
-        "//src/core:basic_seq",
         "//src/core:channel_args",
         "//src/core:channel_fwd",
         "//src/core:closure",
@@ -3997,6 +3995,26 @@ grpc_cc_library(
         "gpr_platform",
         "grpc++_public_hdrs",
         "grpc_public_hdrs",
+    ],
+)
+
+grpc_cc_library(
+    name = "subprocess",
+    srcs = [
+        "//src/core:lib/gpr/subprocess_posix.cc",
+        "//src/core:lib/gpr/subprocess_windows.cc",
+    ],
+    hdrs = [
+        "//src/core:lib/gpr/subprocess.h",
+    ],
+    external_deps = [
+        "absl/strings",
+        "absl/types:span",
+    ],
+    deps = [
+        "gpr",
+        "//src/core:strerror",
+        "//src/core:tchar",
     ],
 )
 

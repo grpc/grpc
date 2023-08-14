@@ -215,7 +215,7 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     ss.dependency "#{s.name}/Interface", version
     ss.dependency 'gRPC-Core', version
-    abseil_version = '1.20230125.3'
+    abseil_version = '1.20230802.0'
     ss.dependency 'abseil/algorithm/container', abseil_version
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/core_headers', abseil_version
@@ -758,6 +758,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/event_engine/cf_engine/cf_engine.h',
                       'src/core/lib/event_engine/cf_engine/cfstream_endpoint.h',
                       'src/core/lib/event_engine/cf_engine/cftype_unique_ref.h',
+                      'src/core/lib/event_engine/cf_engine/dns_service_resolver.h',
                       'src/core/lib/event_engine/channel_args_endpoint_config.h',
                       'src/core/lib/event_engine/common_closures.h',
                       'src/core/lib/event_engine/default_event_engine.h',
@@ -950,8 +951,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/promise/detail/basic_seq.h',
                       'src/core/lib/promise/detail/promise_factory.h',
                       'src/core/lib/promise/detail/promise_like.h',
+                      'src/core/lib/promise/detail/seq_state.h',
                       'src/core/lib/promise/detail/status.h',
-                      'src/core/lib/promise/detail/switch.h',
                       'src/core/lib/promise/exec_ctx_wakeup_scheduler.h',
                       'src/core/lib/promise/for_each.h',
                       'src/core/lib/promise/if.h',
@@ -1807,6 +1808,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/event_engine/cf_engine/cf_engine.h',
                               'src/core/lib/event_engine/cf_engine/cfstream_endpoint.h',
                               'src/core/lib/event_engine/cf_engine/cftype_unique_ref.h',
+                              'src/core/lib/event_engine/cf_engine/dns_service_resolver.h',
                               'src/core/lib/event_engine/channel_args_endpoint_config.h',
                               'src/core/lib/event_engine/common_closures.h',
                               'src/core/lib/event_engine/default_event_engine.h',
@@ -1999,8 +2001,8 @@ Pod::Spec.new do |s|
                               'src/core/lib/promise/detail/basic_seq.h',
                               'src/core/lib/promise/detail/promise_factory.h',
                               'src/core/lib/promise/detail/promise_like.h',
+                              'src/core/lib/promise/detail/seq_state.h',
                               'src/core/lib/promise/detail/status.h',
-                              'src/core/lib/promise/detail/switch.h',
                               'src/core/lib/promise/exec_ctx_wakeup_scheduler.h',
                               'src/core/lib/promise/for_each.h',
                               'src/core/lib/promise/if.h',

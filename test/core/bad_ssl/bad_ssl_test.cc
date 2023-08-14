@@ -32,11 +32,11 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/gpr/subprocess.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
-#include "test/core/util/subprocess.h"
 #include "test/core/util/test_config.h"
 
 static void run_test(const char* target, size_t nops) {

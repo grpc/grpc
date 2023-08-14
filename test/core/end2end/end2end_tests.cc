@@ -20,6 +20,7 @@
 #include "test/core/end2end/end2end_tests.h"
 
 #include <regex>
+#include <tuple>
 
 #include "absl/memory/memory.h"
 #include "absl/random/random.h"
@@ -370,6 +371,11 @@ std::vector<absl::string_view> KeysFrom(const Map& map) {
 
 std::vector<CoreEnd2endTestRegistry::Test> CoreEnd2endTestRegistry::AllTests() {
   std::vector<Test> tests;
+  // Sort inputs to ensure outputs are deterministic
+  for (auto& suite_configs : suites_) {
+    std::sort(suite_configs.second.begin(), suite_configs.second.end(),
+              [](const auto* a, const auto* b) { return a->name < b->name; });
+  }
   for (const auto& suite_configs : suites_) {
     if (suite_configs.second.empty()) {
       CrashWithStdio(

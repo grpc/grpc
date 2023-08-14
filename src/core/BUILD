@@ -665,10 +665,6 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "basic_seq",
-    external_deps = [
-        "absl/meta:type_traits",
-        "absl/utility",
-    ],
     language = "c++",
     public_hdrs = [
         "lib/promise/detail/basic_seq.h",
@@ -676,10 +672,23 @@ grpc_cc_library(
     deps = [
         "construct_destruct",
         "poll",
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "seq_state",
+    external_deps = ["absl/base:core_headers"],
+    language = "c++",
+    public_hdrs = [
+        "lib/promise/detail/seq_state.h",
+    ],
+    deps = [
+        "construct_destruct",
+        "poll",
         "promise_factory",
         "promise_like",
-        "switch",
-        "//:gpr_platform",
+        "//:gpr",
     ],
 )
 
@@ -693,6 +702,7 @@ grpc_cc_library(
         "basic_seq",
         "poll",
         "promise_like",
+        "seq_state",
         "//:gpr_platform",
     ],
 )
@@ -713,6 +723,7 @@ grpc_cc_library(
         "poll",
         "promise_like",
         "promise_status",
+        "seq_state",
         "//:gpr_platform",
     ],
 )
@@ -1080,7 +1091,6 @@ grpc_cc_library(
     ],
     deps = [
         "activity",
-        "basic_seq",
         "event_engine_memory_allocator",
         "exec_ctx_wakeup_scheduler",
         "experiments",
@@ -1386,6 +1396,7 @@ grpc_cc_library(
         "//:config_vars",
         "//:gpr",
         "//:gpr_platform",
+        "//:grpc_trace",
     ],
 )
 
@@ -1742,6 +1753,7 @@ grpc_cc_library(
         "common_event_engine_closures",
         "event_engine_poller",
         "event_engine_time_util",
+        "forkable",
         "iomgr_port",
         "posix_event_engine_closure",
         "posix_event_engine_event_poller",
@@ -2121,13 +2133,18 @@ grpc_cc_library(
     srcs = [
         "lib/event_engine/cf_engine/cf_engine.cc",
         "lib/event_engine/cf_engine/cfstream_endpoint.cc",
+        "lib/event_engine/cf_engine/dns_service_resolver.cc",
     ],
     hdrs = [
         "lib/event_engine/cf_engine/cf_engine.h",
         "lib/event_engine/cf_engine/cfstream_endpoint.h",
         "lib/event_engine/cf_engine/cftype_unique_ref.h",
+        "lib/event_engine/cf_engine/dns_service_resolver.h",
     ],
-    external_deps = ["absl/strings:str_format"],
+    external_deps = [
+        "absl/container:flat_hash_map",
+        "absl/strings:str_format",
+    ],
     deps = [
         "event_engine_common",
         "event_engine_tcp_socket_utils",
@@ -2143,6 +2160,7 @@ grpc_cc_library(
         "strerror",
         "//:event_engine_base_hdrs",
         "//:gpr",
+        "//:parse_address",
         "//:ref_counted_ptr",
         "//:sockaddr_utils",
     ],
