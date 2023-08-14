@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.56.0</span>
+   &#160;<span id="projectnumber">1.57.0</span>
    </div>
   </td>
  </tr>
@@ -455,11 +455,11 @@ $(function() {
 <li>GPR_UNLIKELY
 : <a class="el" href="support_2port__platform_8h.html#a99b5bddfe84f8dc8ee55b35405b8fddd">port_platform.h</a>
 </li>
-<li>gpr_unreachable_code()
-: <a class="el" href="support_2port__platform_8h.html#ad81f265625a28840b8be4c9f8247d50f">port_platform.h</a>
-</li>
 <li>GPR_UNREACHABLE_CODE
 : <a class="el" href="support_2port__platform_8h.html#ab75d366740f8322e795ab0d44ed9d958">port_platform.h</a>
+</li>
+<li>gpr_unreachable_code()
+: <a class="el" href="support_2port__platform_8h.html#ad81f265625a28840b8be4c9f8247d50f">port_platform.h</a>
 </li>
 <li>gpr_unref()
 : <a class="el" href="support_2sync_8h.html#a244626eb1a00a846eb602820fc736f84">sync.h</a>
@@ -538,6 +538,9 @@ $(function() {
 </li>
 <li>GRPC_ARG_DNS_MIN_TIME_BETWEEN_RESOLUTIONS_MS
 : <a class="el" href="group__grpc__arg__keys.html#ga04ecb35be00c4d5f12f8f10e1a501713">grpc_types.h</a>
+</li>
+<li>GRPC_ARG_DSCP
+: <a class="el" href="group__grpc__arg__keys.html#gabe2bd19481175dba1f79a3d382a8cd91">grpc_types.h</a>
 </li>
 <li>GRPC_ARG_ENABLE_CENSUS
 : <a class="el" href="group__grpc__arg__keys.html#gae498934a02de89ce29cec570b02a2037">grpc_types.h</a>
@@ -2004,15 +2007,15 @@ $(function() {
 : <a class="el" href="grpc__security_8h.html#af2bc85e32b46689f20d6b8fe78954146">grpc_security.h</a>
 </li>
 <li>grpc_tls_certificate_verifier
-: <a class="el" href="grpc__security_8h.html#afc10060e41d23b0e31f5c5a312d49138">grpc_security.h</a>
-, <a class="el" href="tls__certificate__verifier_8h.html#afc10060e41d23b0e31f5c5a312d49138">tls_certificate_verifier.h</a>
+: <a class="el" href="tls__certificate__verifier_8h.html#afc10060e41d23b0e31f5c5a312d49138">tls_certificate_verifier.h</a>
+, <a class="el" href="grpc__security_8h.html#afc10060e41d23b0e31f5c5a312d49138">grpc_security.h</a>
 </li>
 <li>grpc_tls_certificate_verifier_cancel()
 : <a class="el" href="grpc__security_8h.html#a8650518e6108ff6ed8624e0c00f8a55c">grpc_security.h</a>
 </li>
 <li>grpc_tls_certificate_verifier_external
-: <a class="el" href="tls__certificate__verifier_8h.html#a02ce84a849538d46352f38553d1df8f1">tls_certificate_verifier.h</a>
-, <a class="el" href="grpc__security_8h.html#a02ce84a849538d46352f38553d1df8f1">grpc_security.h</a>
+: <a class="el" href="grpc__security_8h.html#a02ce84a849538d46352f38553d1df8f1">grpc_security.h</a>
+, <a class="el" href="tls__certificate__verifier_8h.html#a02ce84a849538d46352f38553d1df8f1">tls_certificate_verifier.h</a>
 </li>
 <li>grpc_tls_certificate_verifier_external_create()
 : <a class="el" href="tls__certificate__verifier_8h.html#a129d8fd8e77cde679368f6ae03f990d4">tls_certificate_verifier.h</a>
@@ -2060,6 +2063,9 @@ $(function() {
 <li>grpc_tls_credentials_options_set_root_cert_name()
 : <a class="el" href="grpc__security_8h.html#a1e5ce0bf79a2a373b68a8d1d7e80dae2">grpc_security.h</a>
 </li>
+<li>grpc_tls_credentials_options_set_send_client_ca_list()
+: <a class="el" href="grpc__security_8h.html#a865429446f46e48fd4729720b022e5bc">grpc_security.h</a>
+</li>
 <li>grpc_tls_credentials_options_set_tls_session_key_log_file_path()
 : <a class="el" href="grpc__security_8h.html#a50f8a772b8c673a67b7c640e51b840da">grpc_security.h</a>
 </li>
@@ -2073,8 +2079,8 @@ $(function() {
 : <a class="el" href="grpc__security_8h.html#a8ff29ccc59d1f44abb524641f4c93abb">grpc_security.h</a>
 </li>
 <li>grpc_tls_custom_verification_check_request
-: <a class="el" href="grpc__security_8h.html#aaac530cd68851c41b8817ec9749f5df1">grpc_security.h</a>
-, <a class="el" href="tls__certificate__verifier_8h.html#aaac530cd68851c41b8817ec9749f5df1">tls_certificate_verifier.h</a>
+: <a class="el" href="tls__certificate__verifier_8h.html#aaac530cd68851c41b8817ec9749f5df1">tls_certificate_verifier.h</a>
+, <a class="el" href="grpc__security_8h.html#aaac530cd68851c41b8817ec9749f5df1">grpc_security.h</a>
 </li>
 <li>grpc_tls_identity_pairs
 : <a class="el" href="grpc__security_8h.html#a5221eaf9ffa015b04d60d0005cf9b279">grpc_security.h</a>
@@ -2162,7 +2168,7 @@ $(function() {
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Jun 27 2023 17:50:39 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Aug 14 2023 18:27:18 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

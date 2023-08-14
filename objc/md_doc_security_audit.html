@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Objective-C
-   &#160;<span id="projectnumber">1.56.0</span>
+   &#160;<span id="projectnumber">1.57.0</span>
    </div>
   </td>
  </tr>
@@ -67,19 +67,19 @@ $(function() {
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><p>A third-party security audit of gRPC C++ stack was performed by <a href="https://cure53.de">Cure53</a> in October 2019. The full report can be found <a href="https://github.com/grpc/grpc/tree/master/doc/grpc_security_audit.pdf">here</a>.</p>
-<h1><a class="anchor" id="autotoc_md184"></a>
+<h1><a class="anchor" id="autotoc_md185"></a>
 Addressing grpc_security_audit</h1>
 <p>The following describes how gRPC team has or will address each of the security issues pointed out in the report.</p>
-<h2><a class="anchor" id="autotoc_md185"></a>
+<h2><a class="anchor" id="autotoc_md186"></a>
 GRP-01-001 DoS through uninitialized pointer dereference</h2>
 <p>GRP-01-001 was fixed in version 1.24.0 and above with <a href="https://github.com/grpc/grpc/pull/20351">https://github.com/grpc/grpc/pull/20351</a>. The fix was also patched in version 1.23.1.</p>
-<h2><a class="anchor" id="autotoc_md186"></a>
+<h2><a class="anchor" id="autotoc_md187"></a>
 GRP-01-002 Refs to freed memory not automatically nulled</h2>
 <p>GRP-01-002 describes a programming pattern in gRPC Core where <code>gpr_free</code> is called and then the pointer is nulled afterwards. GRP-01-002 can be split into two concerns: 1) dangling pointer bugs and 2) the potential vulnerability of leveraging other bugs to access data through a freed pointer.</p>
 <p>Regarding 1), gRPC uses a suite of sanitizer tests (asan, tsan, etc) to detect and fix any memory-related bugs. gRPC is also in the process of moving to c++ and the standard library, enabling the use of smart pointers in Core and thus making it harder to generate memory-related bugs. There are also plans to remove <code>gpr_free</code> in general.</p>
 <p>Regarding 2), moving to smart pointers (in particular, unique_ptr) will help this issue as well. In addition, gRPC has continuous fuzzing tests to find and resolve security issues, and the pen test did not discover any concrete vulnerabilities in this area.</p>
 <p>Below is a list of alternatives that gRPC team considered.</p>
-<h3><a class="anchor" id="autotoc_md187"></a>
+<h3><a class="anchor" id="autotoc_md188"></a>
 Alternative #1: Rewrite gpr_free to take void**</h3>
 <p>One solution is to change the API of <code>gpr_free</code> so that it automatically nulls the given pointer after freeing it.</p>
 <div class="fragment"><div class="line">gpr_free (void** ptr) {</div>
@@ -91,33 +91,33 @@ Alternative #1: Rewrite gpr_free to take void**</h3>
 <p>Maintainability is also an issue since this approach impacts use of <code>*const</code>. Member pointers that are set in the initialization list of a constructor and not changed thereafter can be declared <code>*const</code>. This is a useful compile-time check if the member is taking ownership of something that was passed in by argument or allocated through a helper function called by the constructor initializer list. If this thing needs to be <code>gpr_free</code>'d using the proposed syntax, it can no longer be <code>*const</code> and we lose these checks (or we have to const_cast it which is also error-prone).</p>
 <p>Another concern is readability - this <code>gpr_free</code> interface is less intuitive than the current one.</p>
 <p>Yet another concern is that the use of non-smart pointers doesn’t imply ownership - it doesn’t protect against spare copies of the same pointers.</p>
-<h3><a class="anchor" id="autotoc_md188"></a>
+<h3><a class="anchor" id="autotoc_md189"></a>
 Alternative #2: Add another gpr_free to the Core API</h3>
 <p>Adding an alternative <code>gpr_free</code> that nulls the given pointer is undesirable because we cannot enforce that we’re using this version of <code>gpr_free</code> everywhere we need to. It doesn’t solve the original problem because it doesn’t reduce the chance of programmer error.</p>
 <p>Like alternative #1, this solution doesn’t protect against spare copies of the same pointers and is subject to the same maintainability concerns.</p>
-<h3><a class="anchor" id="autotoc_md189"></a>
+<h3><a class="anchor" id="autotoc_md190"></a>
 Alternative #3: Rewrite gpr_free to take void*&amp;</h3>
 <div class="fragment"><div class="line">gpr_free (void*&amp; ptr) {</div>
 <div class="line">  ...</div>
 <div class="line">  ptr = nullptr;</div>
 <div class="line">}</div>
 </div><!-- fragment --><p>This falls into the same pitfalls as solution #1 and furthermore is C89 non-compliant, which is a current requirement for <code>gpr_free</code>. Moreover, Google’s style guide discourages non-const reference parameters, so this is even less desirable than solution #1.</p>
-<h3><a class="anchor" id="autotoc_md190"></a>
+<h3><a class="anchor" id="autotoc_md191"></a>
 Conclusion</h3>
 <p>Because of performance and maintainability concerns, GRP-01-002 will be addressed through the ongoing work to move gRPC Core to C++ and smart pointers and the future work of removing <code>gpr_free</code> in general. We will continue to leverage our sanitizer and fuzzing tests to help expose vulnerabilities.</p>
-<h2><a class="anchor" id="autotoc_md191"></a>
+<h2><a class="anchor" id="autotoc_md192"></a>
 GRP-01-003 Calls to malloc suffer from potential integer overflows</h2>
 <p>The vulnerability, as defined by the report, is that calls to <code>gpr_malloc</code> in the C-core codebase may suffer from potential integer overflow in cases where we multiply the array element size by the size of the array. The penetration testers did not identify a concrete place where this occurred, but rather emphasized that the coding pattern itself had potential to lead to vulnerabilities. The report’s suggested solution for GRP-01-003 was to create a <code>calloc(size_t nmemb, size_t size)</code> wrapper that contains integer overflow checks.</p>
 <p>However, gRPC team firmly believes that gRPC Core should only use integer overflow checks in the places where they’re needed; for example, any place where remote input influences the input to <code>gpr_malloc</code> in an unverified way. This is because bounds-checking is very expensive at the RPC layer.</p>
 <p>Determining exactly where bounds-checking is needed requires an audit of tracing each <code>gpr_malloc</code> (or <code>gpr_realloc</code> or <code>gpr_zalloc</code>) call up the stack to determine if the sufficient bounds-checking was performed. This kind of audit, done manually, is fairly expensive engineer-wise.</p>
-<h3><a class="anchor" id="autotoc_md192"></a>
+<h3><a class="anchor" id="autotoc_md193"></a>
 Conclusion</h3>
 <p>GRP-01-003 will be addressed through leveraging gRPC Core fuzzer tests to actively identify and resolve any integer overflow issues. If any issues are identified, we may create a <code>gpr_safe_malloc(size_t nmemb, size_t size)</code> wrapper to consolidate bounds-checking in one place. This function will <em>not</em> zero out memory because of performance concerns, and so will not be a calloc-style wrapper. </p>
 </div></div><!-- contents -->
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Jun 27 2023 17:51:08 for GRPC Objective-C by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Aug 14 2023 18:27:49 for GRPC Objective-C by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

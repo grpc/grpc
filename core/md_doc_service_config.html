@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">33.0.0</span>
+   &#160;<span id="projectnumber">34.0.0</span>
    </div>
   </td>
  </tr>
@@ -66,10 +66,10 @@ $(function() {
 <div class="title">Service Config in gRPC </div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><h1><a class="anchor" id="autotoc_md269"></a>
+<div class="textblock"><h1><a class="anchor" id="autotoc_md270"></a>
 Objective</h1>
 <p>The service config is a mechanism that allows service owners to publish parameters to be automatically used by all clients of their service.</p>
-<h1><a class="anchor" id="autotoc_md270"></a>
+<h1><a class="anchor" id="autotoc_md271"></a>
 Format</h1>
 <p>The fields of the service config are defined by the <a href="https://github.com/grpc/grpc-proto/blob/master/grpc/service_config/service_config.proto"><code>grpc.service_config.ServiceConfig</code> protocol buffer message</a>. Note that new fields may be added in the future as new functionality is introduced.</p>
 <p>Internally, gRPC uses the service config in JSON form. The JSON representation is the result of converting the protobuf form into JSON using the normal <a href="https://developers.google.com/protocol-buffers/docs/proto3#json">protobuf to JSON translation rules</a>. In particular, this means:</p><ul>
@@ -84,12 +84,12 @@ Format</h1>
 </ul>
 <p>For more details, see the protobuf docs linked above.</p>
 <p>Note that the JSON representation has one advantage over the protobuf representation, which is that it is possible to encode configurations for <a class="el" href="load-balancing_8md.html">LB policies</a> that are not known to gRPC. In protobuf form, the <code>loadBalancingConfig</code> field contains a <code>oneof</code> supporting only the built-in LB policies. However, in JSON form, the field inside the <code>oneof</code> is encoded as a string that indicates the LB policy name. In JSON form, that string can be any arbitrary value, not just one of the supported policies inside of the <code>oneof</code>, so third-party policies can be selected.</p>
-<h1><a class="anchor" id="autotoc_md271"></a>
+<h1><a class="anchor" id="autotoc_md272"></a>
 Architecture</h1>
 <p>A service config is associated with a server name. The <a class="el" href="naming_8md.html">name</a>resolver" plugin, when asked to resolve a particular server name, will return both the resolved addresses and the service config.</p>
 <p>The name resolver returns the service config to the gRPC client in JSON form. Individual resolver implementations determine where and in what format the service config is stored. If the resolver implemention obtains the service config in protobuf form, it must convert it to JSON. Alternatively, a resolver implementation may obtain the service config already in JSON form, in which case it may return it directly. Or it may construct the JSON dynamically from some other source data.</p>
 <p>For details of how the DNS resolver plugin supports service configs, see <a href="https://github.com/grpc/proposal/blob/master/A2-service-configs-in-dns.md">gRFC A2: Service Config via DNS</a>.</p>
-<h1><a class="anchor" id="autotoc_md272"></a>
+<h1><a class="anchor" id="autotoc_md273"></a>
 Example</h1>
 <p>Here is an example service config in protobuf form:</p>
 <div class="fragment"><div class="line">{</div>
@@ -125,7 +125,7 @@ Example</h1>
 <div class="line">    }</div>
 <div class="line">  ]</div>
 <div class="line">}</div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md273"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md274"></a>
 APIs</h1>
 <p>The service config is used in the following APIs:</p>
 <ul>
@@ -137,7 +137,7 @@ APIs</h1>
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Jun 27 2023 17:50:37 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Aug 14 2023 18:27:15 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

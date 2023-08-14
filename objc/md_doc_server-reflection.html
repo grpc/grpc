@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Objective-C
-   &#160;<span id="projectnumber">1.56.0</span>
+   &#160;<span id="projectnumber">1.57.0</span>
    </div>
   </td>
  </tr>
@@ -69,7 +69,7 @@ $(function() {
 <div class="textblock"><p>This document describes server reflection as an optional extension for servers to assist clients in runtime construction of requests without having stub information precompiled into the client.</p>
 <p>The primary usecase for server reflection is to write (typically) command line debugging tools for talking to a grpc server. In particular, such a tool will take in a method and a payload (in human readable text format) send it to the server (typically in binary proto wire format), and then take the response and decode it to text to present to the user.</p>
 <p>This broadly involves two problems: determining what formats (which protobuf messages) a server’s method uses, and determining how to convert messages between human readable format and the (likely binary) wire format.</p>
-<h1><a class="anchor" id="autotoc_md193"></a>
+<h1><a class="anchor" id="autotoc_md194"></a>
 Method reflection</h1>
 <p>We want to be able to answer the following queries:</p><ol type="1">
 <li>What methods does a server export?</li>
@@ -77,17 +77,17 @@ Method reflection</h1>
 </ol>
 <p>The first proposed version of the protocol is here: <a href="https://github.com/grpc/grpc/blob/master/src/proto/grpc/reflection/v1alpha/reflection.proto">https://github.com/grpc/grpc/blob/master/src/proto/grpc/reflection/v1alpha/reflection.proto</a></p>
 <p>Note that a server is under no obligation to return a complete list of all methods it supports. For example, a reverse proxy may support server reflection for methods implemented directly on the proxy but not enumerate all methods supported by its backends.</p>
-<h2><a class="anchor" id="autotoc_md194"></a>
+<h2><a class="anchor" id="autotoc_md195"></a>
 Open questions on method reflection</h2>
 <ul>
 <li>Consider how to extend this protocol to support non-protobuf methods.</li>
 </ul>
-<h1><a class="anchor" id="autotoc_md195"></a>
+<h1><a class="anchor" id="autotoc_md196"></a>
 Argument reflection</h1>
 <p>The second half of the problem is converting between the human readable input/output of a debugging tool and the binary format understood by the method.</p>
 <p>This is obviously dependent on protocol type. At one extreme, if both the server and the debugging tool accept JSON, there may be no need for such a conversion in the first place. At the opposite extreme, a server using a custom binary format has no hope of being supported by a generic system. The intermediate interesting common case is a server which speaks binary-proto and a debugging client which speaks either ascii-proto or json-proto.</p>
 <p>One approach would be to require servers directly support human readable input. In the future method reflection may be extended to document such support, should it become widespread or standardized.</p>
-<h1><a class="anchor" id="autotoc_md196"></a>
+<h1><a class="anchor" id="autotoc_md197"></a>
 Protobuf descriptors</h1>
 <p>A second would be for the server to export its google::protobuf::DescriptorDatabase over the wire. This is very easy to implement in C++, and Google implementations of a similar protocol already exist in C++, Go, and Java.</p>
 <p>This protocol mostly returns FileDescriptorProtos, which are a proto encoding of a parsed .proto file. It supports four queries:</p><ol type="1">
@@ -98,7 +98,7 @@ Protobuf descriptors</h1>
 </ol>
 <p>These directly correspond to the methods of google::protobuf::DescriptorDatabase. Note that this protocol includes support for extensions, which have been removed from proto3 but are still in widespread use in Google’s codebase.</p>
 <p>Because most usecases will require also requesting the transitive dependencies of requested files, the queries will also return all transitive dependencies of the returned file. Should interesting usecases for non-transitive queries turn up later, we can easily extend the protocol to support them.</p>
-<h2><a class="anchor" id="autotoc_md197"></a>
+<h2><a class="anchor" id="autotoc_md198"></a>
 Reverse proxy traversal</h2>
 <p>One potential issue with naive reverse proxies is that, while any individual server will have a consistent and valid picture of the proto DB which is sufficient to handle incoming requests, incompatibilities will arise if the backend servers have a mix of builds. For example, if a given message is moved from foo.proto to bar.proto, and the client requests foo.proto from an old server and bar.proto from a new server, the resulting database will have a double definition.</p>
 <p>To solve this problem, the protocol is structured as a bidirectional stream, ensuring all related requests go to a single server. This has the additional benefit that overlapping recursive requests don’t require sending a lot of redundant information, because there is a single stream to maintain context between queries.</p>
@@ -155,11 +155,11 @@ Reverse proxy traversal</h2>
 <td class="markdownTableBodyNone">list_all_extensions_of_type </td><td class="markdownTableBodyNone">ListAllExtensionsResponse containing all known extension numbers of a given type  </td></tr>
 </table>
 <p>At some point it would make sense to additionally also support any.proto’s format. Note that known any.proto messages can be queried by symbol using this protocol even without any such support, by parsing the url and extracting the symbol name from it.</p>
-<h1><a class="anchor" id="autotoc_md198"></a>
+<h1><a class="anchor" id="autotoc_md199"></a>
 Language specific implementation thoughts</h1>
 <p>All of the information needed to implement Proto reflection is available to the code generator, but I’m not certain we actually generate this in every language. If the proto implementation in the language doesn’t have something like google::protobuf::DescriptorPool the grpc implementation for that language will need to index those FileDescriptorProtos by file and symbol and imports.</p>
 <p>One issue is that some grpc implementations are very loosely coupled with protobufs; in such implementations it probably makes sense to split apart these reflection APIs so as not to take an additional proto dependency.</p>
-<h1><a class="anchor" id="autotoc_md199"></a>
+<h1><a class="anchor" id="autotoc_md200"></a>
 Known Implementations</h1>
 <p>Enabling server reflection differs language-to-language. Here are links to docs relevant to each language:</p>
 <ul>
@@ -174,7 +174,7 @@ Known Implementations</h1>
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Jun 27 2023 17:51:08 for GRPC Objective-C by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Aug 14 2023 18:27:49 for GRPC Objective-C by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

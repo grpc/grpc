@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.56.0</span>
+   &#160;<span id="projectnumber">1.57.0</span>
    </div>
   </td>
  </tr>
@@ -129,9 +129,9 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:aa283885518525b71339f166e15932cd1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afb9dbb26c374daf51b6460da89a7d586"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#afb9dbb26c374daf51b6460da89a7d586">IsWorkerThread</a> ()=0</td></tr>
 <tr class="separator:afb9dbb26c374daf51b6460da89a7d586"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2ff36f88737f1ea6daf7e0f630935d37"><td class="memItemLeft" align="right" valign="top">virtual std::unique_ptr&lt; <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html">DNSResolver</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a2ff36f88737f1ea6daf7e0f630935d37">GetDNSResolver</a> (const <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver_1_1_resolver_options.html">DNSResolver::ResolverOptions</a> &amp;options)=0</td></tr>
-<tr class="memdesc:a2ff36f88737f1ea6daf7e0f630935d37"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates and returns an instance of a <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html" title="Provides asynchronous resolution.">DNSResolver</a>, optionally configured by the <em>options</em> struct.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a2ff36f88737f1ea6daf7e0f630935d37">More...</a><br /></td></tr>
-<tr class="separator:a2ff36f88737f1ea6daf7e0f630935d37"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9454ccca7e1b26a2ba5dd37ebc16b4d0"><td class="memItemLeft" align="right" valign="top">virtual absl::StatusOr&lt; std::unique_ptr&lt; <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html">DNSResolver</a> &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a9454ccca7e1b26a2ba5dd37ebc16b4d0">GetDNSResolver</a> (const <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver_1_1_resolver_options.html">DNSResolver::ResolverOptions</a> &amp;options)=0</td></tr>
+<tr class="memdesc:a9454ccca7e1b26a2ba5dd37ebc16b4d0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates and returns an instance of a <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html" title="Provides asynchronous resolution.">DNSResolver</a>, optionally configured by the <em>options</em> struct.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a9454ccca7e1b26a2ba5dd37ebc16b4d0">More...</a><br /></td></tr>
+<tr class="separator:a9454ccca7e1b26a2ba5dd37ebc16b4d0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a589e091e9af842bcda00411996d9255f"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a589e091e9af842bcda00411996d9255f">Run</a> (<a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_closure.html">Closure</a> *closure)=0</td></tr>
 <tr class="memdesc:a589e091e9af842bcda00411996d9255f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Asynchronously executes a task as soon as possible.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a589e091e9af842bcda00411996d9255f">More...</a><br /></td></tr>
 <tr class="separator:a589e091e9af842bcda00411996d9255f"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -150,12 +150,12 @@ Public Member Functions</h2></td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>The <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> Interface. </p>
-<h2><a class="anchor" id="autotoc_md265"></a>
+<h2><a class="anchor" id="autotoc_md266"></a>
 Overview</h2>
 <p>The <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> encapsulates all platform-specific behaviors related to low level network I/O, timers, asynchronous execution, and DNS resolution.</p>
 <p>This interface allows developers to provide their own event management and network stacks. Motivating uses cases for supporting custom EventEngines include the ability to hook into external event loops, and using different <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> instances for each channel to better insulate network I/O and callback processing from other channels.</p>
 <p>A default cross-platform <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> instance is provided by gRPC.</p>
-<h2><a class="anchor" id="autotoc_md266"></a>
+<h2><a class="anchor" id="autotoc_md267"></a>
 Lifespan and Ownership</h2>
 <p>gRPC takes shared ownership of EventEngines via std::shared_ptrs to ensure that the engines remain available until they are no longer needed. Depending on the use case, engines may live until gRPC is shut down.</p>
 <p>EXAMPLE USAGE (Not yet implemented)</p>
@@ -163,7 +163,7 @@ Lifespan and Ownership</h2>
 <p>ChannelArguments args; std::shared_ptr&lt;EventEngine&gt; engine = std::make_shared&lt;MyEngine&gt;(...); args.SetEventEngine(engine); MyAppClient client(<a class="el" href="namespacegrpc.html#a4a5c8a2c77389604feaa5d38cdd7b8d3" title="Create a new custom Channel pointing to target.">grpc::CreateCustomChannel</a>( "localhost:50051", <a class="el" href="namespacegrpc.html#a72a5e2e0be4aa041cb587bea339589d7" title="Credentials for an unencrypted, unauthenticated channel.">grpc::InsecureChannelCredentials()</a>, args));</p>
 <p>A gRPC server can use a custom <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> by calling the ServerBuilder::SetEventEngine method:</p>
 <p>ServerBuilder builder; std::shared_ptr&lt;EventEngine&gt; engine = std::make_shared&lt;MyEngine&gt;(...); builder.SetEventEngine(engine); std::unique_ptr&lt;Server&gt; server(builder.BuildAndStart()); server-&gt;Wait();</p>
-<h2><a class="anchor" id="autotoc_md267"></a>
+<h2><a class="anchor" id="autotoc_md268"></a>
 Blocking EventEngine Callbacks</h2>
 <p>Doing blocking work in <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> callbacks is generally not advisable. While gRPC's default <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> implementations have some capacity to scale their thread pools to avoid starvation, this is not an instantaneous process. Further, user-provided EventEngines may not be optimized to handle excessive blocking work at all.</p>
 <p><em>Best Practice</em> : Occasional blocking work may be fine, but we do not recommend running a mostly blocking workload in <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> threads. </p>
@@ -404,8 +404,8 @@ Blocking EventEngine Callbacks</h2>
 
 </div>
 </div>
-<a id="a2ff36f88737f1ea6daf7e0f630935d37"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a2ff36f88737f1ea6daf7e0f630935d37">&#9670;&nbsp;</a></span>GetDNSResolver()</h2>
+<a id="a9454ccca7e1b26a2ba5dd37ebc16b4d0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9454ccca7e1b26a2ba5dd37ebc16b4d0">&#9670;&nbsp;</a></span>GetDNSResolver()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -414,7 +414,7 @@ Blocking EventEngine Callbacks</h2>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual std::unique_ptr&lt;<a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html">DNSResolver</a>&gt; grpc_event_engine::experimental::EventEngine::GetDNSResolver </td>
+          <td class="memname">virtual absl::StatusOr&lt;std::unique_ptr&lt;<a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html">DNSResolver</a>&gt; &gt; grpc_event_engine::experimental::EventEngine::GetDNSResolver </td>
           <td>(</td>
           <td class="paramtype">const <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver_1_1_resolver_options.html">DNSResolver::ResolverOptions</a> &amp;&#160;</td>
           <td class="paramname"><em>options</em></td><td>)</td>
@@ -429,6 +429,7 @@ Blocking EventEngine Callbacks</h2>
 </div><div class="memdoc">
 
 <p>Creates and returns an instance of a <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html" title="Provides asynchronous resolution.">DNSResolver</a>, optionally configured by the <em>options</em> struct. </p>
+<p>This method may return a non-OK status if an error occurred when creating the <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html" title="Provides asynchronous resolution.">DNSResolver</a>. If the caller requests a custom DNS server, and the <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> implementation does not support it, this must return an error. </p>
 
 </div>
 </div>
@@ -605,7 +606,7 @@ Blocking EventEngine Callbacks</h2>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Jun 27 2023 17:50:39 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Aug 14 2023 18:27:17 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

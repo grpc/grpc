@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.56.0</span>
+   &#160;<span id="projectnumber">1.57.0</span>
    </div>
   </td>
  </tr>
@@ -67,14 +67,14 @@ $(function() {
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><p>gRPC Server Reflection provides information about publicly-accessible gRPC services on a server, and assists clients at runtime to construct RPC requests and responses without precompiled service information. It is used by gRPC CLI, which can be used to introspect server protos and send/receive test RPCs.</p>
-<h1><a class="anchor" id="autotoc_md204"></a>
+<h1><a class="anchor" id="autotoc_md205"></a>
 Enable Server Reflection</h1>
-<h2><a class="anchor" id="autotoc_md205"></a>
+<h2><a class="anchor" id="autotoc_md206"></a>
 Enable server reflection in C++ servers</h2>
 <p>C++ Server Reflection is an add-on library, <code>libgrpc++_reflection</code>. To enable C++ server reflection, you can link this library to your server binary.</p>
 <p>Some platforms (e.g. Ubuntu 11.10 onwards) only link in libraries that directly contain symbols used by the application. On these platforms, LD flag <code>--no-as-needed</code> is needed for dynamic linking and <code>--whole-archive</code> is needed for static linking.</p>
 <p>This <a href="../examples/cpp/helloworld/Makefile#L37#L45">Makefile</a> demonstrates enabling c++ server reflection on Linux and MacOS.</p>
-<h1><a class="anchor" id="autotoc_md206"></a>
+<h1><a class="anchor" id="autotoc_md207"></a>
 Test services using Server Reflection</h1>
 <p>After enabling Server Reflection in a server application, you can use gRPC CLI to test its services.</p>
 <p>Instructions on how to use gRPC CLI can be found at <a class="el" href="command__line__tool_8md.html">command_line_tool.md</a>, or using <code>grpc_cli help</code> command.</p>
@@ -92,7 +92,7 @@ Test services using Server Reflection</h1>
 <div class="fragment"><div class="line">make grpc_cli</div>
 <div class="line">cd bins/opt</div>
 </div><!-- fragment --><p>gRPC CLI binary <code>grpc_cli</code> can be found at <code>bins/opt/</code> folder. This tool is still new and does not have a <code>make install</code> target yet.</p>
-<h2><a class="anchor" id="autotoc_md207"></a>
+<h2><a class="anchor" id="autotoc_md208"></a>
 List services</h2>
 <p><code>grpc_cli ls</code> command lists services and methods exposed at a given port</p>
 <ul>
@@ -112,7 +112,7 @@ List services</h2>
 <div class="line">service Greeter {</div>
 <div class="line">  rpc SayHello(helloworld.HelloRequest) returns (helloworld.HelloReply) {}</div>
 <div class="line">}</div>
-</div><!-- fragment --><h2><a class="anchor" id="autotoc_md208"></a>
+</div><!-- fragment --><h2><a class="anchor" id="autotoc_md209"></a>
 List methods</h2>
 <ul>
 <li><p class="startli">List one method with details</p>
@@ -121,7 +121,7 @@ List methods</h2>
 </ul>
 <div class="fragment"><div class="line">$ grpc_cli ls localhost:50051 helloworld.Greeter.SayHello -l</div>
 </div><!-- fragment --><p>output: </p><div class="fragment"><div class="line">rpc SayHello(helloworld.HelloRequest) returns (helloworld.HelloReply) {}</div>
-</div><!-- fragment --><h2><a class="anchor" id="autotoc_md209"></a>
+</div><!-- fragment --><h2><a class="anchor" id="autotoc_md210"></a>
 Inspect message types</h2>
 <p>We can use<code>grpc_cli type</code> command to inspect request/response types given the full name of the type (in the format of &lt;package&gt;.&lt;type&gt;).</p>
 <ul>
@@ -131,7 +131,7 @@ Inspect message types</h2>
 </div><!-- fragment --><p>output: </p><div class="fragment"><div class="line">message HelloRequest {</div>
 <div class="line">  optional string name = 1;</div>
 <div class="line">}</div>
-</div><!-- fragment --><h2><a class="anchor" id="autotoc_md210"></a>
+</div><!-- fragment --><h2><a class="anchor" id="autotoc_md211"></a>
 Call a remote method</h2>
 <p>We can send RPCs to a server and get responses using <code>grpc_cli call</code> command.</p>
 <ul>
@@ -139,7 +139,7 @@ Call a remote method</h2>
 </ul>
 <div class="fragment"><div class="line">$ grpc_cli call localhost:50051 SayHello &quot;name: &#39;gRPC CLI&#39;&quot;</div>
 </div><!-- fragment --><p>output: </p><div class="fragment"><div class="line">message: &quot;Hello gRPC CLI&quot;</div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md211"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md212"></a>
 Use Server Reflection in a C++ client</h1>
 <p>Server Reflection can be used by clients to get information about gRPC services at runtime. We've provided a descriptor database called <a href="../test/cpp/util/proto_reflection_descriptor_database.h">grpc::ProtoReflectionDescriptorDatabase</a> which implements the <a href="https://developers.google.com/protocol-buffers/docs/reference/cpp/google.protobuf.descriptor_database#DescriptorDatabase">google::protobuf::DescriptorDatabase</a> interface. It manages the communication between clients and reflection services and the storage of received information. Clients can use it as using a local descriptor database.</p>
 <ul>
@@ -165,14 +165,14 @@ Use Server Reflection in a C++ client</h1>
 </ul>
 </li>
 </ul>
-<h1><a class="anchor" id="autotoc_md212"></a>
+<h1><a class="anchor" id="autotoc_md213"></a>
 Use Server Reflection in a Python client</h1>
 <p>See Python Server Reflection. </p>
 </div></div><!-- contents -->
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Jun 27 2023 17:50:38 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Aug 14 2023 18:27:17 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

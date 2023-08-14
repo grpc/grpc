@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC PHP
-   &#160;<span id="projectnumber">1.56.0</span>
+   &#160;<span id="projectnumber">1.57.0</span>
    </div>
   </td>
  </tr>
@@ -67,7 +67,7 @@ $(function() {
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><p>This directory contains a number of docker images to assist testing the <a href="http://pecl.php.net/package/grpc">gRPC PECL extension</a> against various different PHP environments.</p>
-<h1><a class="anchor" id="autotoc_md295"></a>
+<h1><a class="anchor" id="autotoc_md296"></a>
 Build and Run Tests</h1>
 <div class="fragment"><div class="line">$ cd grpc</div>
 </div><!-- fragment --><p>To build all docker images: </p><div class="fragment"><div class="line">$ ./src/php/bin/build_all_docker_images.sh</div>
@@ -76,55 +76,55 @@ Build and Run Tests</h1>
 </div><!-- fragment --><p>To run all tests: </p><div class="fragment"><div class="line">$ ./src/php/bin/run_all_docker_images.sh</div>
 </div><!-- fragment --><p>Or to only run some selected images </p><div class="fragment"><div class="line">$ ./src/php/bin/run_all_docker_images.sh grpc-ext php-src</div>
 </div><!-- fragment --><p>Or to only print out individual <code>docker run</code> commands </p><div class="fragment"><div class="line">$ ./src/php/bin/run_all_docker_images.sh --cmds</div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md296"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md297"></a>
 Build and Run Specified Image</h1>
-<h2><a class="anchor" id="autotoc_md297"></a>
+<h2><a class="anchor" id="autotoc_md298"></a>
 &lt;tt&gt;grpc-ext&lt;/tt&gt;</h2>
 <p>This image builds the full <code>grpc</code> PECL extension (effectively the current release candidate), installs it against the current PHP version, and runs the unit tests.</p>
 <p>Build <code>grpc-ext</code> docker image: </p><div class="fragment"><div class="line">$ cd grpc</div>
 <div class="line">$ docker build -t grpc-php/grpc-ext -f ./src/php/docker/grpc-ext/Dockerfile .</div>
 </div><!-- fragment --><p>Run image: </p><div class="fragment"><div class="line">$ docker run -it --rm grpc-php/grpc-ext</div>
-</div><!-- fragment --><h2><a class="anchor" id="autotoc_md298"></a>
+</div><!-- fragment --><h2><a class="anchor" id="autotoc_md299"></a>
 &lt;tt&gt;grpc-src&lt;/tt&gt;</h2>
 <p>This image builds the <code>grpc</code> PECL extension in a 'thin' way, only containing the gRPC extension source files. The gRPC C Core library is expected to be installed separately and dynamically linked. The extension is installed against the current PHP version.</p>
 <p>This also allows us to compile our <code>grpc</code> extension with some additional configure options, like <code>--enable-tests</code>, which allows some additional unit tests to be run.</p>
 <p>Build <code>grpc-src</code> docker image: </p><div class="fragment"><div class="line">$ cd grpc</div>
 <div class="line">$ docker build -t grpc-php/grpc-src -f ./src/php/docker/grpc-src/Dockerfile .</div>
 </div><!-- fragment --><p>Run image: </p><div class="fragment"><div class="line">$ docker run -it --rm grpc-php/grpc-src</div>
-</div><!-- fragment --><h2><a class="anchor" id="autotoc_md299"></a>
+</div><!-- fragment --><h2><a class="anchor" id="autotoc_md300"></a>
 &lt;tt&gt;alpine&lt;/tt&gt;</h2>
 <p>This image builds the <code>grpc</code> extension against the current PHP version in an Alpine-Linux base image.</p>
 <p>Build <code>alpine</code> docker image: </p><div class="fragment"><div class="line">$ cd grpc</div>
 <div class="line">$ docker build -t grpc-php/alpine -f ./src/php/docker/alpine/Dockerfile .</div>
 </div><!-- fragment --><p>Run image: </p><div class="fragment"><div class="line">$ docker run -it --rm grpc-php/alpine</div>
-</div><!-- fragment --><h2><a class="anchor" id="autotoc_md300"></a>
+</div><!-- fragment --><h2><a class="anchor" id="autotoc_md301"></a>
 &lt;tt&gt;centos7&lt;/tt&gt;</h2>
 <p>This image builds the <code>grpc</code> extension against the GCC version in Centos7 base image. The default version of gcc in centos7 is gcc-4.8.5. Run <code>scl enable devtoolset-7 bash</code> command to enable gcc-7.3.1.</p>
 <p>Build <code>centos7</code> docker image: </p><div class="fragment"><div class="line">$ cd grpc</div>
 <div class="line">$ docker build -t grpc-gcc7/centos -f ./src/php/docker/centos7/Dockerfile .</div>
 </div><!-- fragment --><p>Run image: </p><div class="fragment"><div class="line">$ docker run -it --rm grpc-gcc7/centos</div>
-</div><!-- fragment --><h2><a class="anchor" id="autotoc_md301"></a>
+</div><!-- fragment --><h2><a class="anchor" id="autotoc_md302"></a>
 &lt;tt&gt;php-src&lt;/tt&gt;</h2>
 <p>Instead of using a general purpose base docker image provided by PHP, here we compile PHP itself from <a href="https://github.com/php/php-src">source</a>. This will allow us to change some <code>configure</code> options, like <code>--enable-debug</code>. Then we proceed to build the full <code>grpc</code> PECL extension and run the unit tests.</p>
 <p>Build <code>php-src</code> docker image: </p><div class="fragment"><div class="line">$ cd grpc</div>
 <div class="line">$ docker build -t grpc-php/php-src -f ./src/php/docker/php-src/Dockerfile .</div>
 </div><!-- fragment --><p>Run image: </p><div class="fragment"><div class="line">$ docker run -it --rm grpc-php/php-src</div>
-</div><!-- fragment --><h2><a class="anchor" id="autotoc_md302"></a>
+</div><!-- fragment --><h2><a class="anchor" id="autotoc_md303"></a>
 &lt;tt&gt;php-zts&lt;/tt&gt;</h2>
 <p>This image builds the <code>grpc</code> extension against the current PHP version with ZTS enabled.</p>
 <p>Build <code>php-zts</code> docker image: </p><div class="fragment"><div class="line">$ cd grpc</div>
 <div class="line">$ docker build -t grpc-php/php-zts -f ./src/php/docker/php-zts/Dockerfile .</div>
 </div><!-- fragment --><p>Run image: </p><div class="fragment"><div class="line">$ docker run -it --rm grpc-php/php-zts</div>
-</div><!-- fragment --><h2><a class="anchor" id="autotoc_md303"></a>
+</div><!-- fragment --><h2><a class="anchor" id="autotoc_md304"></a>
 &lt;tt&gt;php-future&lt;/tt&gt;</h2>
 <p>This image builds the <code>grpc</code> extension against the next future PHP version currently in alpha, beta or release candidate stage.</p>
 <p>Build <code>php-future</code> docker image: </p><div class="fragment"><div class="line">$ cd grpc</div>
 <div class="line">$ docker build -t grpc-php/php-future -f ./src/php/docker/php-future/Dockerfile .</div>
 </div><!-- fragment --><p>Run image: </p><div class="fragment"><div class="line">$ docker run -it --rm grpc-php/php-future</div>
-</div><!-- fragment --><h2><a class="anchor" id="autotoc_md304"></a>
+</div><!-- fragment --><h2><a class="anchor" id="autotoc_md305"></a>
 &lt;tt&gt;php5&lt;/tt&gt;</h2>
 <p>NOTE: PHP 5.x has reached the end-of-life state and is no longer supported.</p>
-<h2><a class="anchor" id="autotoc_md305"></a>
+<h2><a class="anchor" id="autotoc_md306"></a>
 &lt;tt&gt;fork-support&lt;/tt&gt;</h2>
 <p>This image tests <code>pcntl_fork()</code> support and makes sure scripts using <code>pcntl_fork()</code> don't freeze or crash.</p>
 <p>Build <code>grpc-ext</code> docker image: </p><div class="fragment"><div class="line">$ cd grpc</div>
@@ -134,7 +134,7 @@ Build and Run Specified Image</h1>
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Jun 27 2023 17:51:09 for GRPC PHP by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Aug 14 2023 18:27:50 for GRPC PHP by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

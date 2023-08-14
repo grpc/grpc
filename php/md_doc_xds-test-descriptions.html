@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC PHP
-   &#160;<span id="projectnumber">1.56.0</span>
+   &#160;<span id="projectnumber">1.57.0</span>
    </div>
   </td>
  </tr>
@@ -67,7 +67,7 @@ $(function() {
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><p>Client and server use <a href="../src/proto/grpc/testing/test.proto">test.proto</a>.</p>
-<h1><a class="anchor" id="autotoc_md236"></a>
+<h1><a class="anchor" id="autotoc_md237"></a>
 Server</h1>
 <p>The code for the xDS test server can be found at: <a href="https://github.com/grpc/grpc-java/blob/master/interop-testing/src/main/java/io/grpc/testing/integration/XdsTestServer.java">Java</a> (other language implementations are in progress).</p>
 <p>Server should accept these arguments:</p>
@@ -94,7 +94,7 @@ Server</h1>
 <li>A value can have a prefix <code>hostname=&lt;string&gt;</code> followed by a space. In that case, the rest of the value should only be applied if the specified hostname matches the server's hostname.</li>
 </ul>
 <p>The <code>rpc-behavior</code> header value can have multiple options separated by commas. In that case, the value should be split by commas and the options should be applied in the order specified. If a request has multiple <code>rpc-behavior</code> metadata values, each one should be processed that way in order.</p>
-<h1><a class="anchor" id="autotoc_md237"></a>
+<h1><a class="anchor" id="autotoc_md238"></a>
 Client</h1>
 <p>The base behavior of the xDS test client is to send a constant QPS of unary messages and record the remote-peer distribution of the responses. Further, the client must expose an implementation of the <code>LoadBalancerStatsService</code> gRPC service to allow the test driver to validate the load balancing behavior for a particular test case (see below for more details).</p>
 <p>The code for the xDS test client can be at: <a href="https://github.com/grpc/grpc-java/blob/master/interop-testing/src/main/java/io/grpc/testing/integration/XdsTestClient.java">Java</a> (other language implementations are in progress).</p>
@@ -129,7 +129,7 @@ Client</h1>
 </ul>
 </li>
 </ul>
-<h2><a class="anchor" id="autotoc_md238"></a>
+<h2><a class="anchor" id="autotoc_md239"></a>
 XdsUpdateClientConfigureService</h2>
 <p>The xDS test client's behavior can be dynamically changed in the middle of tests. This is achieved by invoking the <code>XdsUpdateClientConfigureService</code> gRPC service on the test client. This can be useful for tests requiring special client behaviors that are not desirable at test initialization and client warmup. The service is defined as:</p>
 <div class="fragment"><div class="line">message ClientConfigureRequest {</div>
@@ -162,10 +162,10 @@ XdsUpdateClientConfigureService</h2>
 <div class="line">  rpc Configure(ClientConfigureRequest) returns (ClientConfigureResponse);</div>
 <div class="line">}</div>
 </div><!-- fragment --><p>The test client changes its behavior right after receiving the <code>ClientConfigureRequest</code>. Currently it only supports configuring the type(s) of RPCs sent by the test client, metadata attached to each type of RPCs, and the timeout.</p>
-<h1><a class="anchor" id="autotoc_md239"></a>
+<h1><a class="anchor" id="autotoc_md240"></a>
 Test Driver</h1>
 <p>Note that, unlike our other interop tests, neither the client nor the server has any notion of which of the following test scenarios is under test. Instead, a separate test driver is responsible for configuring the load balancer and the server backends, running the client, and then querying the client's <code>LoadBalancerStatsService</code> to validate load balancer behavior for each of the tests described below.</p>
-<h1><a class="anchor" id="autotoc_md240"></a>
+<h1><a class="anchor" id="autotoc_md241"></a>
 LoadBalancerStatsService</h1>
 <p>The service is defined as:</p>
 <div class="fragment"><div class="line">message LoadBalancerStatsRequest {</div>
@@ -223,9 +223,9 @@ LoadBalancerStatsService</h1>
 <div class="line">      returns (LoadBalancerAccumulatedStatsResponse) {}</div>
 <div class="line">}</div>
 </div><!-- fragment --><p>Note that the <code>LoadBalancerStatsResponse</code> contains the remote peer distribution of the next <code>num_rpcs</code> <em>sent</em> by the client after receiving the <code>LoadBalancerStatsRequest</code>. It is important that the remote peer distribution be recorded for a block of consecutive outgoing RPCs, to validate the intended distribution from the load balancer, rather than just looking at the next <code>num_rpcs</code> responses received from backends, as different backends may respond at different rates.</p>
-<h1><a class="anchor" id="autotoc_md241"></a>
+<h1><a class="anchor" id="autotoc_md242"></a>
 Test Cases</h1>
-<h2><a class="anchor" id="autotoc_md242"></a>
+<h2><a class="anchor" id="autotoc_md243"></a>
 ping_pong</h2>
 <p>This test verifies that every backend receives traffic.</p>
 <p>Client parameters:</p>
@@ -246,7 +246,7 @@ ping_pong</h2>
 <ol type="1">
 <li>All backends receive at least one RPC</li>
 </ol>
-<h2><a class="anchor" id="autotoc_md243"></a>
+<h2><a class="anchor" id="autotoc_md244"></a>
 round_robin</h2>
 <p>This test verifies that RPCs are evenly routed according to an unweighted round robin policy.</p>
 <p>Client parameters:</p>
@@ -267,7 +267,7 @@ round_robin</h2>
 <ol type="1">
 <li>Once all backends receive at least one RPC, the following 100 RPCs are evenly distributed across the 4 backends.</li>
 </ol>
-<h2><a class="anchor" id="autotoc_md244"></a>
+<h2><a class="anchor" id="autotoc_md245"></a>
 backends_restart</h2>
 <p>This test verifies that the load balancer will resume sending traffic to a set of backends that is stopped and then resumed.</p>
 <p>Client parameters:</p>
@@ -295,7 +295,7 @@ backends_restart</h2>
 <ol type="1">
 <li>Once all backends receive at least one RPC, the distribution for a block of 100 RPCs is the same as the distribution recorded prior to restart.</li>
 </ol>
-<h2><a class="anchor" id="autotoc_md245"></a>
+<h2><a class="anchor" id="autotoc_md246"></a>
 secondary_locality_gets_requests_on_primary_failure</h2>
 <p>This test verifies that backends in a secondary locality receive traffic when all backends in the primary locality fail.</p>
 <p>Client parameters:</p>
@@ -332,7 +332,7 @@ secondary_locality_gets_requests_on_primary_failure</h2>
 <ol type="1">
 <li>No backends in the secondary locality receive RPCs.</li>
 </ol>
-<h2><a class="anchor" id="autotoc_md246"></a>
+<h2><a class="anchor" id="autotoc_md247"></a>
 secondary_locality_gets_no_requests_on_partial_primary_failure</h2>
 <p>This test verifies that backends in a failover locality do not receive traffic when at least one of the backends in the primary locality remain healthy.</p>
 <p><b>Note:</b> Future TD features may change the expected behavior and require changes to this test case.</p>
@@ -365,7 +365,7 @@ secondary_locality_gets_no_requests_on_partial_primary_failure</h2>
 <ol type="1">
 <li>No backends in the secondary locality receive RPCs.</li>
 </ol>
-<h2><a class="anchor" id="autotoc_md247"></a>
+<h2><a class="anchor" id="autotoc_md248"></a>
 remove_instance_group</h2>
 <p>This test verifies that a remaining instance group can successfully serve RPCs after removal of another instance group in the same zone.</p>
 <p>Client parameters:</p>
@@ -388,7 +388,7 @@ remove_instance_group</h2>
 <ol type="1">
 <li>All RPCs are directed to the two remaining backends (no RPC failures).</li>
 </ol>
-<h2><a class="anchor" id="autotoc_md248"></a>
+<h2><a class="anchor" id="autotoc_md249"></a>
 change_backend_service</h2>
 <p>This test verifies that the backend service can be replaced and traffic routed to the new backends.</p>
 <p>Client parameters:</p>
@@ -414,7 +414,7 @@ change_backend_service</h2>
 <ol type="1">
 <li>All RPCs are directed to the new backend service.</li>
 </ol>
-<h2><a class="anchor" id="autotoc_md249"></a>
+<h2><a class="anchor" id="autotoc_md250"></a>
 traffic_splitting</h2>
 <p>This test verifies that the traffic will be distributed between backend services with the correct weights when route action is set to weighted backend services.</p>
 <p>Client parameters:</p>
@@ -437,7 +437,7 @@ traffic_splitting</h2>
 <ol type="1">
 <li>Once all backends receive at least one RPC, the following 1000 RPCs are distributed across the 2 backends as a: 20, b: 80. </li>
 </ol>
-<h2><a class="anchor" id="autotoc_md250"></a>
+<h2><a class="anchor" id="autotoc_md251"></a>
 path_matching</h2>
 <p>This test verifies that the traffic for a certain RPC can be routed to a specific cluster based on the RPC path.</p>
 <p>Client parameters:</p>
@@ -498,7 +498,7 @@ path_matching</h2>
 </ul>
 </li>
 </ul>
-<h2><a class="anchor" id="autotoc_md251"></a>
+<h2><a class="anchor" id="autotoc_md252"></a>
 header_matching</h2>
 <p>This test verifies that the traffic for a certain RPC can be routed to a specific cluster based on the RPC header (metadata).</p>
 <p>Client parameters:</p>
@@ -578,7 +578,7 @@ header_matching</h2>
 </ul>
 </li>
 </ul>
-<h2><a class="anchor" id="autotoc_md252"></a>
+<h2><a class="anchor" id="autotoc_md253"></a>
 gentle_failover</h2>
 <p>This test verifies that traffic is partially diverted to a secondary locality when &gt; 50% of the instances in the primary locality are unhealthy.</p>
 <p>Client parameters:</p>
@@ -618,7 +618,7 @@ gentle_failover</h2>
 <ol type="1">
 <li>No backends in the secondary locality receive RPCs.</li>
 </ol>
-<h2><a class="anchor" id="autotoc_md253"></a>
+<h2><a class="anchor" id="autotoc_md254"></a>
 load_based_failover</h2>
 <p>This test verifies that traffic is partially diverted to a secondary locality when the QPS is greater than the configured RPS in the priority locality.</p>
 <p>Client parameters:</p>
@@ -658,7 +658,7 @@ load_based_failover</h2>
 <ol type="1">
 <li>No backends in the secondary locality receive RPCs.</li>
 </ol>
-<h2><a class="anchor" id="autotoc_md254"></a>
+<h2><a class="anchor" id="autotoc_md255"></a>
 circuit_breaking</h2>
 <p>This test verifies that the maximum number of outstanding requests is limited by circuit breakers of the backend service.</p>
 <p>Client parameters:</p>
@@ -693,7 +693,7 @@ circuit_breaking</h2>
 <ol type="1">
 <li>After reaching steady state, there are 800 UnaryCall RPCs in-flight.</li>
 </ol>
-<h2><a class="anchor" id="autotoc_md255"></a>
+<h2><a class="anchor" id="autotoc_md256"></a>
 timeout</h2>
 <p>This test verifies that traffic along a route with a <code>max_stream_duration</code> set will cause timeouts on streams open longer than that duration.</p>
 <p>Client parameters:</p>
@@ -742,7 +742,7 @@ timeout</h2>
 </ol>
 </li>
 </ol>
-<h2><a class="anchor" id="autotoc_md256"></a>
+<h2><a class="anchor" id="autotoc_md257"></a>
 api_listener</h2>
 <p>The test case verifies a specific use case where it creates a second TD API listener using the same name as the existing one and then delete the old one. The test driver verifies this is a safe way to update the API listener configuration while keep using the existing name.</p>
 <p>Client parameters:</p>
@@ -767,7 +767,7 @@ api_listener</h2>
 <li>The test driver deletes the first set of configurations in step 1.</li>
 </ol>
 <p>The test driver verifies, at each configuration step, the traffic is always able to reach the designated hosts.</p>
-<h2><a class="anchor" id="autotoc_md257"></a>
+<h2><a class="anchor" id="autotoc_md258"></a>
 metadata_filter</h2>
 <p>This test case verifies that metadata filter configurations in URL map match rule are effective at Traffic Director for routing selection against downstream node metadata.</p>
 <p>Client parameters:</p>
@@ -805,7 +805,7 @@ metadata_filter</h2>
 <li>Then it verifies traffic switches to alternate backend service hosts.</li>
 </ol>
 <p>This way, we test that TD correctly evaluates both matching and non-matching configuration scenario.</p>
-<h2><a class="anchor" id="autotoc_md258"></a>
+<h2><a class="anchor" id="autotoc_md259"></a>
 forwarding_rule_port_match</h2>
 <p>This test verifies that request server uri port should match with the GCP forwarding rule configuration port.</p>
 <p>Client parameters:</p>
@@ -825,7 +825,7 @@ forwarding_rule_port_match</h2>
 <ol type="1">
 <li>The test driver updates the forwarding rule to use a different port, then verifies that the traffic stops going to those backend service instances.</li>
 </ol>
-<h2><a class="anchor" id="autotoc_md259"></a>
+<h2><a class="anchor" id="autotoc_md260"></a>
 forwarding_rule_default_port</h2>
 <p>This test verifies that omitting port in the request server uri should only match with the default port(80) configuration in the forwarding rule. In addition, request server uri port should exactly match that in the URL map host rule, as described in <a href="https://cloud.google.com/traffic-director/docs/proxyless-overview#proxyless-url-map">public doc</a>.</p>
 <p>Client parameters:</p>
@@ -849,7 +849,7 @@ forwarding_rule_default_port</h2>
 <ol type="1">
 <li>No traffic goes to backends when configuring the target URI <code>xds:///myservice</code>, the forwarding rule port <code>80</code> and the host rule <code>myservice::80</code>.</li>
 </ol>
-<h2><a class="anchor" id="autotoc_md260"></a>
+<h2><a class="anchor" id="autotoc_md261"></a>
 outlier_detection</h2>
 <p>This test verifies that the client applies the outlier detection configuration and temporarily drops traffic to a server that fails requests.</p>
 <p>Client parameters:</p>
@@ -866,7 +866,7 @@ outlier_detection</h2>
 <li>The test driver chooses one of the five backends to fail requests, and configures the client to send the metadata <code>rpc-behavior: hostname=&lt;chosen backend&gt; error-code-2</code>. The driver asserts that during some 10-second interval, all traffic goes to the other four backends and all requests end with the <code>OK</code> status.</li>
 <li>The test driver removes the client configuration to send metadata. The driver asserts that during some 10-second interval, traffic is equally distributed among the five backends, and all requests end with the <code>OK</code> status.</li>
 </ol>
-<h2><a class="anchor" id="autotoc_md261"></a>
+<h2><a class="anchor" id="autotoc_md262"></a>
 custom_lb</h2>
 <p>This test verifies that a custom load balancer policy can be configured in the client. It also verifies that when given a list of policies the client can ignore a bad one and try the next one on the list until it finds a good one.</p>
 <p>Client parameters:</p>
@@ -901,7 +901,7 @@ custom_lb</h2>
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Jun 27 2023 17:51:09 for GRPC PHP by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Aug 14 2023 18:27:50 for GRPC PHP by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

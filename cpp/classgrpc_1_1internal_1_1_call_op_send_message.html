@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.56.0</span>
+   &#160;<span id="projectnumber">1.57.0</span>
    </div>
   </td>
  </tr>
@@ -80,21 +80,33 @@ $(function() {
 Public Member Functions</h2></td></tr>
 <tr class="memitem:aa01329229f6593fc55f073f92b27dc17"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_call_op_send_message.html#aa01329229f6593fc55f073f92b27dc17">CallOpSendMessage</a> ()</td></tr>
 <tr class="separator:aa01329229f6593fc55f073f92b27dc17"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac33bee02bc0b6e0892365dc5f50f7f43"><td class="memTemplParams" colspan="2">template&lt;class M &gt; </td></tr>
-<tr class="memitem:ac33bee02bc0b6e0892365dc5f50f7f43"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_status.html">Status</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_call_op_send_message.html#ac33bee02bc0b6e0892365dc5f50f7f43">SendMessage</a> (const M &amp;message, <a class="el" href="classgrpc_1_1_write_options.html">WriteOptions</a> options) <a class="el" href="support_2port__platform_8h.html#aef49047a3be38448a61332117b306686">GRPC_MUST_USE_RESULT</a></td></tr>
-<tr class="memdesc:ac33bee02bc0b6e0892365dc5f50f7f43"><td class="mdescLeft">&#160;</td><td class="mdescRight">Send <em>message</em> using <em>options</em> for the write.  <a href="classgrpc_1_1internal_1_1_call_op_send_message.html#ac33bee02bc0b6e0892365dc5f50f7f43">More...</a><br /></td></tr>
-<tr class="separator:ac33bee02bc0b6e0892365dc5f50f7f43"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a52db0710a21166b732bf5af66a69ca1f"><td class="memTemplParams" colspan="2">template&lt;class M &gt; </td></tr>
-<tr class="memitem:a52db0710a21166b732bf5af66a69ca1f"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_status.html">Status</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_call_op_send_message.html#a52db0710a21166b732bf5af66a69ca1f">SendMessage</a> (const M &amp;message) <a class="el" href="support_2port__platform_8h.html#aef49047a3be38448a61332117b306686">GRPC_MUST_USE_RESULT</a></td></tr>
-<tr class="separator:a52db0710a21166b732bf5af66a69ca1f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4b590dbe3faae7c82243d533cae71d1e"><td class="memTemplParams" colspan="2">template&lt;class M &gt; </td></tr>
-<tr class="memitem:a4b590dbe3faae7c82243d533cae71d1e"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_status.html">Status</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_call_op_send_message.html#a4b590dbe3faae7c82243d533cae71d1e">SendMessagePtr</a> (const M *message, <a class="el" href="classgrpc_1_1_write_options.html">WriteOptions</a> options) <a class="el" href="support_2port__platform_8h.html#aef49047a3be38448a61332117b306686">GRPC_MUST_USE_RESULT</a></td></tr>
-<tr class="memdesc:a4b590dbe3faae7c82243d533cae71d1e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Send <em>message</em> using <em>options</em> for the write.  <a href="classgrpc_1_1internal_1_1_call_op_send_message.html#a4b590dbe3faae7c82243d533cae71d1e">More...</a><br /></td></tr>
-<tr class="separator:a4b590dbe3faae7c82243d533cae71d1e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab6bc347158d5afdc9885ebf9ed396096"><td class="memTemplParams" colspan="2">template&lt;class M &gt; </td></tr>
-<tr class="memitem:ab6bc347158d5afdc9885ebf9ed396096"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_status.html">Status</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_call_op_send_message.html#ab6bc347158d5afdc9885ebf9ed396096">SendMessagePtr</a> (const M *message) <a class="el" href="support_2port__platform_8h.html#aef49047a3be38448a61332117b306686">GRPC_MUST_USE_RESULT</a></td></tr>
-<tr class="memdesc:ab6bc347158d5afdc9885ebf9ed396096"><td class="mdescLeft">&#160;</td><td class="mdescRight">This form of SendMessage allows gRPC to reference <em>message</em> beyond the lifetime of SendMessage.  <a href="classgrpc_1_1internal_1_1_call_op_send_message.html#ab6bc347158d5afdc9885ebf9ed396096">More...</a><br /></td></tr>
-<tr class="separator:ab6bc347158d5afdc9885ebf9ed396096"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8ad993a3ba2b8affa28f8b772de6a5e4"><td class="memTemplParams" colspan="2">template&lt;class M &gt; </td></tr>
+<tr class="memitem:a8ad993a3ba2b8affa28f8b772de6a5e4"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="support_2port__platform_8h.html#aef49047a3be38448a61332117b306686">GRPC_MUST_USE_RESULT</a> <a class="el" href="classgrpc_1_1_status.html">Status</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_call_op_send_message.html#a8ad993a3ba2b8affa28f8b772de6a5e4">SendMessage</a> (const M &amp;message, <a class="el" href="classgrpc_1_1_write_options.html">WriteOptions</a> options)</td></tr>
+<tr class="memdesc:a8ad993a3ba2b8affa28f8b772de6a5e4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Send <em>message</em> using <em>options</em> for the write.  <a href="classgrpc_1_1internal_1_1_call_op_send_message.html#a8ad993a3ba2b8affa28f8b772de6a5e4">More...</a><br /></td></tr>
+<tr class="separator:a8ad993a3ba2b8affa28f8b772de6a5e4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab62f66921eddb938b153b0170dc917d4"><td class="memTemplParams" colspan="2">template&lt;class M &gt; </td></tr>
+<tr class="memitem:ab62f66921eddb938b153b0170dc917d4"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="support_2port__platform_8h.html#aef49047a3be38448a61332117b306686">GRPC_MUST_USE_RESULT</a> <a class="el" href="classgrpc_1_1_status.html">Status</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_call_op_send_message.html#ab62f66921eddb938b153b0170dc917d4">SendMessage</a> (const M &amp;message)</td></tr>
+<tr class="separator:ab62f66921eddb938b153b0170dc917d4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac9c49c180f43d4951a95d53159bff0e9"><td class="memTemplParams" colspan="2">template&lt;class M &gt; </td></tr>
+<tr class="memitem:ac9c49c180f43d4951a95d53159bff0e9"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="support_2port__platform_8h.html#aef49047a3be38448a61332117b306686">GRPC_MUST_USE_RESULT</a> <a class="el" href="classgrpc_1_1_status.html">Status</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_call_op_send_message.html#ac9c49c180f43d4951a95d53159bff0e9">SendMessagePtr</a> (const M *message, <a class="el" href="classgrpc_1_1_write_options.html">WriteOptions</a> options)</td></tr>
+<tr class="memdesc:ac9c49c180f43d4951a95d53159bff0e9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Send <em>message</em> using <em>options</em> for the write.  <a href="classgrpc_1_1internal_1_1_call_op_send_message.html#ac9c49c180f43d4951a95d53159bff0e9">More...</a><br /></td></tr>
+<tr class="separator:ac9c49c180f43d4951a95d53159bff0e9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a20e7abced779381533dab2e5a5d2d74f"><td class="memTemplParams" colspan="2">template&lt;class M &gt; </td></tr>
+<tr class="memitem:a20e7abced779381533dab2e5a5d2d74f"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="support_2port__platform_8h.html#aef49047a3be38448a61332117b306686">GRPC_MUST_USE_RESULT</a> <a class="el" href="classgrpc_1_1_status.html">Status</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_call_op_send_message.html#a20e7abced779381533dab2e5a5d2d74f">SendMessagePtr</a> (const M *message)</td></tr>
+<tr class="memdesc:a20e7abced779381533dab2e5a5d2d74f"><td class="mdescLeft">&#160;</td><td class="mdescRight">This form of SendMessage allows gRPC to reference <em>message</em> beyond the lifetime of SendMessage.  <a href="classgrpc_1_1internal_1_1_call_op_send_message.html#a20e7abced779381533dab2e5a5d2d74f">More...</a><br /></td></tr>
+<tr class="separator:a20e7abced779381533dab2e5a5d2d74f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abe51dae74904b6885bd1aa5a278018a0"><td class="memTemplParams" colspan="2">template&lt;class M &gt; </td></tr>
+<tr class="memitem:abe51dae74904b6885bd1aa5a278018a0"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_status.html">Status</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_call_op_send_message.html#abe51dae74904b6885bd1aa5a278018a0">SendMessage</a> (const M &amp;message, <a class="el" href="classgrpc_1_1_write_options.html">WriteOptions</a> options)</td></tr>
+<tr class="separator:abe51dae74904b6885bd1aa5a278018a0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a455aa6d24a0662a4c361278dc9ba97a2"><td class="memTemplParams" colspan="2">template&lt;class M &gt; </td></tr>
+<tr class="memitem:a455aa6d24a0662a4c361278dc9ba97a2"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_status.html">Status</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_call_op_send_message.html#a455aa6d24a0662a4c361278dc9ba97a2">SendMessage</a> (const M &amp;message)</td></tr>
+<tr class="separator:a455aa6d24a0662a4c361278dc9ba97a2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a16e04ba0a91c6a5c5d679730e7662456"><td class="memTemplParams" colspan="2">template&lt;class M &gt; </td></tr>
+<tr class="memitem:a16e04ba0a91c6a5c5d679730e7662456"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_status.html">Status</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_call_op_send_message.html#a16e04ba0a91c6a5c5d679730e7662456">SendMessagePtr</a> (const M *message, <a class="el" href="classgrpc_1_1_write_options.html">WriteOptions</a> options)</td></tr>
+<tr class="separator:a16e04ba0a91c6a5c5d679730e7662456"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac81e1cb485462a43989a914f571f8f38"><td class="memTemplParams" colspan="2">template&lt;class M &gt; </td></tr>
+<tr class="memitem:ac81e1cb485462a43989a914f571f8f38"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_status.html">Status</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_call_op_send_message.html#ac81e1cb485462a43989a914f571f8f38">SendMessagePtr</a> (const M *message)</td></tr>
+<tr class="separator:ac81e1cb485462a43989a914f571f8f38"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-methods"></a>
 Protected Member Functions</h2></td></tr>
@@ -198,8 +210,28 @@ Protected Member Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="a52db0710a21166b732bf5af66a69ca1f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a52db0710a21166b732bf5af66a69ca1f">&#9670;&nbsp;</a></span>SendMessage() <span class="overload">[1/2]</span></h2>
+<a id="ab62f66921eddb938b153b0170dc917d4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab62f66921eddb938b153b0170dc917d4">&#9670;&nbsp;</a></span>SendMessage() <span class="overload">[1/4]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class M &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="support_2port__platform_8h.html#aef49047a3be38448a61332117b306686">GRPC_MUST_USE_RESULT</a> <a class="el" href="classgrpc_1_1_status.html">Status</a> grpc::internal::CallOpSendMessage::SendMessage </td>
+          <td>(</td>
+          <td class="paramtype">const M &amp;&#160;</td>
+          <td class="paramname"><em>message</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a455aa6d24a0662a4c361278dc9ba97a2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a455aa6d24a0662a4c361278dc9ba97a2">&#9670;&nbsp;</a></span>SendMessage() <span class="overload">[2/4]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -218,8 +250,8 @@ template&lt;class M &gt; </div>
 
 </div>
 </div>
-<a id="ac33bee02bc0b6e0892365dc5f50f7f43"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac33bee02bc0b6e0892365dc5f50f7f43">&#9670;&nbsp;</a></span>SendMessage() <span class="overload">[2/2]</span></h2>
+<a id="a8ad993a3ba2b8affa28f8b772de6a5e4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8ad993a3ba2b8affa28f8b772de6a5e4">&#9670;&nbsp;</a></span>SendMessage() <span class="overload">[3/4]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -227,7 +259,7 @@ template&lt;class M &gt; </div>
 template&lt;class M &gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="classgrpc_1_1_status.html">Status</a> grpc::internal::CallOpSendMessage::SendMessage </td>
+          <td class="memname"><a class="el" href="support_2port__platform_8h.html#aef49047a3be38448a61332117b306686">GRPC_MUST_USE_RESULT</a> <a class="el" href="classgrpc_1_1_status.html">Status</a> grpc::internal::CallOpSendMessage::SendMessage </td>
           <td>(</td>
           <td class="paramtype">const M &amp;&#160;</td>
           <td class="paramname"><em>message</em>, </td>
@@ -251,8 +283,60 @@ template&lt;class M &gt; </div>
 
 </div>
 </div>
-<a id="ab6bc347158d5afdc9885ebf9ed396096"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab6bc347158d5afdc9885ebf9ed396096">&#9670;&nbsp;</a></span>SendMessagePtr() <span class="overload">[1/2]</span></h2>
+<a id="abe51dae74904b6885bd1aa5a278018a0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abe51dae74904b6885bd1aa5a278018a0">&#9670;&nbsp;</a></span>SendMessage() <span class="overload">[4/4]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class M &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classgrpc_1_1_status.html">Status</a> grpc::internal::CallOpSendMessage::SendMessage </td>
+          <td>(</td>
+          <td class="paramtype">const M &amp;&#160;</td>
+          <td class="paramname"><em>message</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classgrpc_1_1_write_options.html">WriteOptions</a>&#160;</td>
+          <td class="paramname"><em>options</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a20e7abced779381533dab2e5a5d2d74f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a20e7abced779381533dab2e5a5d2d74f">&#9670;&nbsp;</a></span>SendMessagePtr() <span class="overload">[1/4]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class M &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="support_2port__platform_8h.html#aef49047a3be38448a61332117b306686">GRPC_MUST_USE_RESULT</a> <a class="el" href="classgrpc_1_1_status.html">Status</a> grpc::internal::CallOpSendMessage::SendMessagePtr </td>
+          <td>(</td>
+          <td class="paramtype">const M *&#160;</td>
+          <td class="paramname"><em>message</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>This form of SendMessage allows gRPC to reference <em>message</em> beyond the lifetime of SendMessage. </p>
+
+</div>
+</div>
+<a id="ac81e1cb485462a43989a914f571f8f38"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac81e1cb485462a43989a914f571f8f38">&#9670;&nbsp;</a></span>SendMessagePtr() <span class="overload">[2/4]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -269,12 +353,43 @@ template&lt;class M &gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p>This form of SendMessage allows gRPC to reference <em>message</em> beyond the lifetime of SendMessage. </p>
+</div>
+</div>
+<a id="ac9c49c180f43d4951a95d53159bff0e9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac9c49c180f43d4951a95d53159bff0e9">&#9670;&nbsp;</a></span>SendMessagePtr() <span class="overload">[3/4]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class M &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="support_2port__platform_8h.html#aef49047a3be38448a61332117b306686">GRPC_MUST_USE_RESULT</a> <a class="el" href="classgrpc_1_1_status.html">Status</a> grpc::internal::CallOpSendMessage::SendMessagePtr </td>
+          <td>(</td>
+          <td class="paramtype">const M *&#160;</td>
+          <td class="paramname"><em>message</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classgrpc_1_1_write_options.html">WriteOptions</a>&#160;</td>
+          <td class="paramname"><em>options</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Send <em>message</em> using <em>options</em> for the write. </p>
+<p>The <em>options</em> are cleared after use. This form of SendMessage allows gRPC to reference <em>message</em> beyond the lifetime of SendMessage. </p>
 
 </div>
 </div>
-<a id="a4b590dbe3faae7c82243d533cae71d1e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4b590dbe3faae7c82243d533cae71d1e">&#9670;&nbsp;</a></span>SendMessagePtr() <span class="overload">[2/2]</span></h2>
+<a id="a16e04ba0a91c6a5c5d679730e7662456"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a16e04ba0a91c6a5c5d679730e7662456">&#9670;&nbsp;</a></span>SendMessagePtr() <span class="overload">[4/4]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -300,9 +415,6 @@ template&lt;class M &gt; </div>
         </tr>
       </table>
 </div><div class="memdoc">
-
-<p>Send <em>message</em> using <em>options</em> for the write. </p>
-<p>The <em>options</em> are cleared after use. This form of SendMessage allows gRPC to reference <em>message</em> beyond the lifetime of SendMessage. </p>
 
 </div>
 </div>
@@ -390,7 +502,7 @@ template&lt;class M &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Jun 27 2023 17:50:39 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Aug 14 2023 18:27:17 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

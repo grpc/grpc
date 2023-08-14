@@ -1,10 +1,5 @@
 var searchData=
 [
-  ['read_164',['read',['../class_grpc_1_1_bidi_streaming_call.html#aeb056a807c6ef6f7a75bac639d325e44',1,'Grpc\BidiStreamingCall\read()'],['../class_grpc_1_1_server_call_reader.html#a295aa14ce8d0087e2229d70cc56c7462',1,'Grpc\ServerCallReader\read()']]],
-  ['readme_2emd_165',['README.md',['../_r_e_a_d_m_e_8md.html',1,'(Global Namespace)'],['../docker_2_r_e_a_d_m_e_8md.html',1,'(Global Namespace)']]],
-  ['requestcall_166',['requestCall',['../class_grpc_1_1_server.html#a90ada396f37c675d70b43d4f96afe334',1,'Grpc::Server']]],
-  ['responses_167',['responses',['../class_grpc_1_1_server_streaming_call.html#a85965dccc4da15b5549508881244c4d5',1,'Grpc::ServerStreamingCall']]],
-  ['rpcserver_168',['RpcServer',['../class_grpc_1_1_rpc_server.html',1,'Grpc']]],
-  ['rpcserver_2ephp_169',['RpcServer.php',['../_rpc_server_8php.html',1,'']]],
-  ['run_170',['run',['../class_grpc_1_1_rpc_server.html#a6376eda9f614e1c61715ebc0ae3ca746',1,'Grpc::RpcServer']]]
+  ['quality_20of_20service_20_28qos_29_20using_20differentiated_20services_164',['Quality of Service (QoS) using Differentiated services',['../md_doc_qos-dscp.html',1,'']]],
+  ['qos_2ddscp_2emd_165',['qos-dscp.md',['../qos-dscp_8md.html',1,'']]]
 ];

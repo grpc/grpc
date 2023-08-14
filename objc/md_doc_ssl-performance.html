@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Objective-C
-   &#160;<span id="projectnumber">1.56.0</span>
+   &#160;<span id="projectnumber">1.57.0</span>
    </div>
   </td>
  </tr>
@@ -68,7 +68,7 @@ $(function() {
 <div class="contents">
 <div class="textblock"><p>The SSL requirement of gRPC isn't necessarily making it easy to integrate. The HTTP/2 protocol requires ALPN support, which is a fairly new handshake protocol only supported by recent implementations.</p>
 <p>As a result, we've tried hard to provide a smooth experience to our users when compiling and distributing gRPC, but this may come at performance costs due to this. More specifically, we will sometime build the SSL library by disabling assembly code (by setting the <code>OPENSSL_NO_ASM</code> option), which can impact performance by an order of magnitude when processing encrypted streams.</p>
-<h1><a class="anchor" id="autotoc_md222"></a>
+<h1><a class="anchor" id="autotoc_md223"></a>
 gRPC C++: Building from Source</h1>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -92,7 +92,7 @@ gRPC C++: Building from Source</h1>
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyNone">CMake </td><td class="markdownTableBodyNone">pre-installed OpenSSL 1.0.2+ (<code>gRPC_SSL_PROVIDER=package</code>) </td><td class="markdownTableBodyNone">all </td><td class="markdownTableBodyNone">:heavy_check_mark:  </td></tr>
 </table>
-<h1><a class="anchor" id="autotoc_md223"></a>
+<h1><a class="anchor" id="autotoc_md224"></a>
 Other Languages: Binary/Source Packages</h1>
 <p>In addition, we are shipping packages for language implementations. These packages are source packages, but also have pre-built binaries being distributed. Building packages from source may give a different result in some cases.</p>
 <table class="markdownTable">
@@ -137,7 +137,7 @@ Other Languages: Binary/Source Packages</h1>
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Jun 27 2023 17:51:08 for GRPC Objective-C by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Aug 14 2023 18:27:49 for GRPC Objective-C by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

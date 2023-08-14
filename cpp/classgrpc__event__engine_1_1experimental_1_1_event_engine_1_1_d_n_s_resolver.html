@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.56.0</span>
+   &#160;<span id="projectnumber">1.57.0</span>
    </div>
   </td>
  </tr>
@@ -82,9 +82,6 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Data Structures</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver_1_1_lookup_task_handle.html">LookupTaskHandle</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Task handle for DNS Resolution requests.  <a href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver_1_1_lookup_task_handle.html#details">More...</a><br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver_1_1_resolver_options.html">ResolverOptions</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Optional configuration for DNSResolvers.  <a href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver_1_1_resolver_options.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -108,21 +105,19 @@ Public Types</h2></td></tr>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:ae8966e8aee5db98a0380cbfc5526227b"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#ae8966e8aee5db98a0380cbfc5526227b">~DNSResolver</a> ()=default</td></tr>
 <tr class="separator:ae8966e8aee5db98a0380cbfc5526227b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1a3c83499257e24aaf5c124204b588af"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver_1_1_lookup_task_handle.html">LookupTaskHandle</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#a1a3c83499257e24aaf5c124204b588af">LookupHostname</a> (<a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#ae821bfc2fff7ccf741d8f6d1c25861ca">LookupHostnameCallback</a> on_resolve, absl::string_view name, absl::string_view default_port, <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a3380997754430d27e6b9832174184327">Duration</a> timeout)=0</td></tr>
-<tr class="memdesc:a1a3c83499257e24aaf5c124204b588af"><td class="mdescLeft">&#160;</td><td class="mdescRight">Asynchronously resolve an address.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#a1a3c83499257e24aaf5c124204b588af">More...</a><br /></td></tr>
-<tr class="separator:a1a3c83499257e24aaf5c124204b588af"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad2d7f668ee781c66c981b6444251013b"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver_1_1_lookup_task_handle.html">LookupTaskHandle</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#ad2d7f668ee781c66c981b6444251013b">LookupSRV</a> (<a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#a9ef5cdd1a8c31ee078a7aa775a8d73b2">LookupSRVCallback</a> on_resolve, absl::string_view name, <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a3380997754430d27e6b9832174184327">Duration</a> timeout)=0</td></tr>
-<tr class="memdesc:ad2d7f668ee781c66c981b6444251013b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Asynchronously perform an SRV record lookup.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#ad2d7f668ee781c66c981b6444251013b">More...</a><br /></td></tr>
-<tr class="separator:ad2d7f668ee781c66c981b6444251013b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af0205e1ee52aa10594b986574375ad30"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver_1_1_lookup_task_handle.html">LookupTaskHandle</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#af0205e1ee52aa10594b986574375ad30">LookupTXT</a> (<a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#a10f0463006effedc249bb06c810d5ffc">LookupTXTCallback</a> on_resolve, absl::string_view name, <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a3380997754430d27e6b9832174184327">Duration</a> timeout)=0</td></tr>
-<tr class="memdesc:af0205e1ee52aa10594b986574375ad30"><td class="mdescLeft">&#160;</td><td class="mdescRight">Asynchronously perform a TXT record lookup.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#af0205e1ee52aa10594b986574375ad30">More...</a><br /></td></tr>
-<tr class="separator:af0205e1ee52aa10594b986574375ad30"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af52da243fc5151eb2e3ad0d1dc36e7db"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#af52da243fc5151eb2e3ad0d1dc36e7db">CancelLookup</a> (<a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver_1_1_lookup_task_handle.html">LookupTaskHandle</a> handle)=0</td></tr>
-<tr class="memdesc:af52da243fc5151eb2e3ad0d1dc36e7db"><td class="mdescLeft">&#160;</td><td class="mdescRight">Cancel an asynchronous lookup operation.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#af52da243fc5151eb2e3ad0d1dc36e7db">More...</a><br /></td></tr>
-<tr class="separator:af52da243fc5151eb2e3ad0d1dc36e7db"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaaed79a28cb950311144852e00c55c7b"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#aaaed79a28cb950311144852e00c55c7b">LookupHostname</a> (<a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#ae821bfc2fff7ccf741d8f6d1c25861ca">LookupHostnameCallback</a> on_resolve, absl::string_view name, absl::string_view default_port)=0</td></tr>
+<tr class="memdesc:aaaed79a28cb950311144852e00c55c7b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Asynchronously resolve an address.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#aaaed79a28cb950311144852e00c55c7b">More...</a><br /></td></tr>
+<tr class="separator:aaaed79a28cb950311144852e00c55c7b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6934f9edc78f329c6c95f34a4110dace"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#a6934f9edc78f329c6c95f34a4110dace">LookupSRV</a> (<a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#a9ef5cdd1a8c31ee078a7aa775a8d73b2">LookupSRVCallback</a> on_resolve, absl::string_view name)=0</td></tr>
+<tr class="memdesc:a6934f9edc78f329c6c95f34a4110dace"><td class="mdescLeft">&#160;</td><td class="mdescRight">Asynchronously perform an SRV record lookup.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#a6934f9edc78f329c6c95f34a4110dace">More...</a><br /></td></tr>
+<tr class="separator:a6934f9edc78f329c6c95f34a4110dace"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a686959fe71eaba0dcaf7849a2ad37c72"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#a686959fe71eaba0dcaf7849a2ad37c72">LookupTXT</a> (<a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#a10f0463006effedc249bb06c810d5ffc">LookupTXTCallback</a> on_resolve, absl::string_view name)=0</td></tr>
+<tr class="memdesc:a686959fe71eaba0dcaf7849a2ad37c72"><td class="mdescLeft">&#160;</td><td class="mdescRight">Asynchronously perform a TXT record lookup.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#a686959fe71eaba0dcaf7849a2ad37c72">More...</a><br /></td></tr>
+<tr class="separator:a686959fe71eaba0dcaf7849a2ad37c72"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Provides asynchronous resolution. </p>
+<p>This object has a destruction-is-cancellation semantic. Implementations should make sure that all pending requests are cancelled when the object is destroyed and all pending callbacks will be called shortly. If cancellation races with request completion, implementations may choose to either cancel or satisfy the request. </p>
 </div><h2 class="groupheader">Member Typedef Documentation</h2>
 <a id="ae821bfc2fff7ccf741d8f6d1c25861ca"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ae821bfc2fff7ccf741d8f6d1c25861ca">&#9670;&nbsp;</a></span>LookupHostnameCallback</h2>
@@ -199,8 +194,8 @@ Public Member Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="af52da243fc5151eb2e3ad0d1dc36e7db"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af52da243fc5151eb2e3ad0d1dc36e7db">&#9670;&nbsp;</a></span>CancelLookup()</h2>
+<a id="aaaed79a28cb950311144852e00c55c7b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aaaed79a28cb950311144852e00c55c7b">&#9670;&nbsp;</a></span>LookupHostname()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -209,36 +204,7 @@ Public Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual bool grpc_event_engine::experimental::EventEngine::DNSResolver::CancelLookup </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver_1_1_lookup_task_handle.html">LookupTaskHandle</a>&#160;</td>
-          <td class="paramname"><em>handle</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Cancel an asynchronous lookup operation. </p>
-<p>This shares the same semantics with <em><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#aab8a579f7dc8429c8d2aa2cd81da910b" title="Request cancellation of a task.">EventEngine::Cancel</a>:</em> successfully cancelled lookups will not have their callbacks executed, and this method returns true. </p>
-
-</div>
-</div>
-<a id="a1a3c83499257e24aaf5c124204b588af"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a1a3c83499257e24aaf5c124204b588af">&#9670;&nbsp;</a></span>LookupHostname()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">virtual <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver_1_1_lookup_task_handle.html">LookupTaskHandle</a> grpc_event_engine::experimental::EventEngine::DNSResolver::LookupHostname </td>
+          <td class="memname">virtual void grpc_event_engine::experimental::EventEngine::DNSResolver::LookupHostname </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#ae821bfc2fff7ccf741d8f6d1c25861ca">LookupHostnameCallback</a>&#160;</td>
           <td class="paramname"><em>on_resolve</em>, </td>
@@ -253,13 +219,7 @@ Public Member Functions</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">absl::string_view&#160;</td>
-          <td class="paramname"><em>default_port</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a3380997754430d27e6b9832174184327">Duration</a>&#160;</td>
-          <td class="paramname"><em>timeout</em>&#160;</td>
+          <td class="paramname"><em>default_port</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -276,13 +236,12 @@ Public Member Functions</h2></td></tr>
 
 <p>Asynchronously resolve an address. </p>
 <p><em>default_port</em> may be a non-numeric named service port, and will only be used if <em>address</em> does not already contain a port component.</p>
-<p>When the lookup is complete, the <em>on_resolve</em> callback will be invoked with a status indicating the success or failure of the lookup. Implementations should pass the appropriate statuses to the callback. For example, callbacks might expect to receive DEADLINE_EXCEEDED or NOT_FOUND.</p>
-<p>If cancelled, <em>on_resolve</em> will not be executed. </p>
+<p>When the lookup is complete or cancelled, the <em>on_resolve</em> callback will be invoked with a status indicating the success or failure of the lookup. Implementations should pass the appropriate statuses to the callback. For example, callbacks might expect to receive CANCELLED or NOT_FOUND. </p>
 
 </div>
 </div>
-<a id="ad2d7f668ee781c66c981b6444251013b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad2d7f668ee781c66c981b6444251013b">&#9670;&nbsp;</a></span>LookupSRV()</h2>
+<a id="a6934f9edc78f329c6c95f34a4110dace"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6934f9edc78f329c6c95f34a4110dace">&#9670;&nbsp;</a></span>LookupSRV()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -291,7 +250,7 @@ Public Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver_1_1_lookup_task_handle.html">LookupTaskHandle</a> grpc_event_engine::experimental::EventEngine::DNSResolver::LookupSRV </td>
+          <td class="memname">virtual void grpc_event_engine::experimental::EventEngine::DNSResolver::LookupSRV </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#a9ef5cdd1a8c31ee078a7aa775a8d73b2">LookupSRVCallback</a>&#160;</td>
           <td class="paramname"><em>on_resolve</em>, </td>
@@ -300,13 +259,7 @@ Public Member Functions</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">absl::string_view&#160;</td>
-          <td class="paramname"><em>name</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a3380997754430d27e6b9832174184327">Duration</a>&#160;</td>
-          <td class="paramname"><em>timeout</em>&#160;</td>
+          <td class="paramname"><em>name</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -326,8 +279,8 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="af0205e1ee52aa10594b986574375ad30"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af0205e1ee52aa10594b986574375ad30">&#9670;&nbsp;</a></span>LookupTXT()</h2>
+<a id="a686959fe71eaba0dcaf7849a2ad37c72"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a686959fe71eaba0dcaf7849a2ad37c72">&#9670;&nbsp;</a></span>LookupTXT()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -336,7 +289,7 @@ Public Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver_1_1_lookup_task_handle.html">LookupTaskHandle</a> grpc_event_engine::experimental::EventEngine::DNSResolver::LookupTXT </td>
+          <td class="memname">virtual void grpc_event_engine::experimental::EventEngine::DNSResolver::LookupTXT </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#a10f0463006effedc249bb06c810d5ffc">LookupTXTCallback</a>&#160;</td>
           <td class="paramname"><em>on_resolve</em>, </td>
@@ -345,13 +298,7 @@ Public Member Functions</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">absl::string_view&#160;</td>
-          <td class="paramname"><em>name</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a3380997754430d27e6b9832174184327">Duration</a>&#160;</td>
-          <td class="paramname"><em>timeout</em>&#160;</td>
+          <td class="paramname"><em>name</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -377,7 +324,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Jun 27 2023 17:50:39 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Aug 14 2023 18:27:17 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

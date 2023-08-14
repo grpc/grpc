@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Objective-C
-   &#160;<span id="projectnumber">1.56.0</span>
+   &#160;<span id="projectnumber">1.57.0</span>
    </div>
   </td>
  </tr>
@@ -67,19 +67,19 @@ $(function() {
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><p><a href="https://cocoapods.org/pods/gRPC"><object type="image/svg+xml" data="https://img.shields.io/cocoapods/v/gRPC.svg" style="pointer-events: none;">Cocoapods</object></a> </p>
-<h1><a class="anchor" id="autotoc_md269"></a>
+<h1><a class="anchor" id="autotoc_md270"></a>
 gRPC Objective-C with CFStream</h1>
 <p>gRPC now provides the option to use Apple's CFStream API (rather than TCP sockets) for networking. Using CFStream resolves a bunch of network connectivity transition issues (see the <a href="https://github.com/grpc/grpc/blob/master/src/objective-c/NetworkTransitionBehavior.md">doc</a> for more information).</p>
 <p><s>CFStream integration is now in experimental state. You will need explicit opt-in to use it to get the benefits of resolving the issues above. We expect to make CFStream the default networking interface that gRPC uses when it is ready for production.</s></p>
 <p>As of v1.21.0, CFStream integration is now the default networking stack being used by gRPC Objective-C on iOS layer. You get to use it automatically without special configuration needed. See below on how to disable CFStream in case of problem.</p>
 <p>As of v1.23.0, CFStream is enabled by default on iOS for all wrapped languages. See below on how to disable CFStream in case of a problem.</p>
-<h2><a class="anchor" id="autotoc_md270"></a>
+<h2><a class="anchor" id="autotoc_md271"></a>
 Usage</h2>
 <p>If you use gRPC on iOS, CFStream is on automatically. If you use it on other platforms, you can turn it on with macro <code>GRPC_CFSTREAM=1</code> for the pod 'gRPC-Core' and 'gRPC'. In case of problem and you want to disable CFStream on iOS, you can set environment variable "grpc\_cfstream=0".</p>
-<h2><a class="anchor" id="autotoc_md271"></a>
+<h2><a class="anchor" id="autotoc_md272"></a>
 Caveats</h2>
 <p>It is known to us that the CFStream API has some bug (FB6162039) which will cause gRPC's CFStream networking layer to stall occasionally. The issue mostly occur on MacOS systems (including iOS simulators on MacOS); iOS may be affected too but we have not seen issue there. gRPC provides a workaround to this problem with an alternative poller based on CFRunLoop. The poller can be enabled by setting environment variable <code>GRPC_CFSTREAM_RUN_LOOP=1</code>. Note that the poller is a client side only poller that does not support running a server on it. That means if an app opts in to the CFRunLoop-based poller, the app cannot host a gRPC server (gRPC Objective-C does not support running a server but other languages running on iOS do support it).</p>
-<h2><a class="anchor" id="autotoc_md272"></a>
+<h2><a class="anchor" id="autotoc_md273"></a>
 Notes</h2>
 <ul>
 <li>Currently we do not support platforms other than iOS, although it is likely that this integration can run on MacOS targets with Apple's compiler.</li>
@@ -89,7 +89,7 @@ Notes</h2>
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Jun 27 2023 17:51:08 for GRPC Objective-C by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Aug 14 2023 18:27:49 for GRPC Objective-C by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

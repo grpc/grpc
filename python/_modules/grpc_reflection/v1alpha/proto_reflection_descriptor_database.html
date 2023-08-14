@@ -4,12 +4,12 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>grpc_reflection.v1alpha.proto_reflection_descriptor_database &#8212; gRPC Python 1.56.0 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css" />
-    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
-    <script src="../../../_static/doctools.js"></script>
-    <script src="../../../_static/sphinx_highlight.js"></script>
+    <title>grpc_reflection.v1alpha.proto_reflection_descriptor_database &#8212; gRPC Python 1.57.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=4f649999" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=8090fdca" />
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=a042030b"></script>
+    <script src="../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=4825356b"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
    
@@ -27,7 +27,7 @@
 
 
 
-<p class="blurb">1.56.0</p>
+<p class="blurb">1.57.0</p>
 
 
 
@@ -239,17 +239,19 @@
         <span class="k">if</span> <span class="n">extendee_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cached_extension_numbers</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cached_extension_numbers</span><span class="p">[</span><span class="n">extendee_name</span><span class="p">]</span>
         <span class="n">request</span> <span class="o">=</span> <span class="n">ServerReflectionRequest</span><span class="p">(</span>
-            <span class="n">all_extension_numbers_of_type</span><span class="o">=</span><span class="n">extendee_name</span><span class="p">)</span>
+            <span class="n">all_extension_numbers_of_type</span><span class="o">=</span><span class="n">extendee_name</span>
+        <span class="p">)</span>
         <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_one_request</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">extendee_name</span><span class="p">)</span>
         <span class="n">all_extension_numbers</span><span class="p">:</span> <span class="n">ExtensionNumberResponse</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">response</span><span class="o">.</span><span class="n">all_extension_numbers_response</span><span class="p">)</span>
+            <span class="n">response</span><span class="o">.</span><span class="n">all_extension_numbers_response</span>
+        <span class="p">)</span>
         <span class="n">numbers</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">all_extension_numbers</span><span class="o">.</span><span class="n">extension_number</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_cached_extension_numbers</span><span class="p">[</span><span class="n">extendee_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">numbers</span>
         <span class="k">return</span> <span class="n">numbers</span></div>
 
 <div class="viewcode-block" id="ProtoReflectionDescriptorDatabase.FindFileContainingExtension"><a class="viewcode-back" href="../../../grpc_reflection.html#grpc_reflection.v1alpha.proto_reflection_descriptor_database.ProtoReflectionDescriptorDatabase.FindFileContainingExtension">[docs]</a>    <span class="k">def</span> <span class="nf">FindFileContainingExtension</span><span class="p">(</span>
-            <span class="bp">self</span><span class="p">,</span> <span class="n">extendee_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-            <span class="n">extension_number</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FileDescriptorProto</span><span class="p">:</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">extendee_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">extension_number</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FileDescriptorProto</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Find the file which defines an extension for the given message type</span>
 <span class="sd">        and field number.</span>
@@ -269,42 +271,50 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">try</span><span class="p">:</span>
-            <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">FindFileContainingExtension</span><span class="p">(</span><span class="n">extendee_name</span><span class="p">,</span>
-                                                       <span class="n">extension_number</span><span class="p">)</span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">FindFileContainingExtension</span><span class="p">(</span>
+                <span class="n">extendee_name</span><span class="p">,</span> <span class="n">extension_number</span>
+            <span class="p">)</span>
         <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
             <span class="k">pass</span>
         <span class="n">request</span> <span class="o">=</span> <span class="n">ServerReflectionRequest</span><span class="p">(</span>
             <span class="n">file_containing_extension</span><span class="o">=</span><span class="n">ExtensionRequest</span><span class="p">(</span>
-                <span class="n">containing_type</span><span class="o">=</span><span class="n">extendee_name</span><span class="p">,</span>
-                <span class="n">extension_number</span><span class="o">=</span><span class="n">extension_number</span><span class="p">))</span>
-        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_one_request</span><span class="p">(</span><span class="n">request</span><span class="p">,</span>
-                                        <span class="n">key</span><span class="o">=</span><span class="p">(</span><span class="n">extendee_name</span><span class="p">,</span> <span class="n">extension_number</span><span class="p">))</span>
+                <span class="n">containing_type</span><span class="o">=</span><span class="n">extendee_name</span><span class="p">,</span> <span class="n">extension_number</span><span class="o">=</span><span class="n">extension_number</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_one_request</span><span class="p">(</span>
+            <span class="n">request</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="p">(</span><span class="n">extendee_name</span><span class="p">,</span> <span class="n">extension_number</span><span class="p">)</span>
+        <span class="p">)</span>
         <span class="n">file_desc</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">file_descriptor_response</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_add_file_from_response</span><span class="p">(</span><span class="n">file_desc</span><span class="p">)</span>
-        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">FindFileContainingExtension</span><span class="p">(</span><span class="n">extendee_name</span><span class="p">,</span>
-                                                   <span class="n">extension_number</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">FindFileContainingExtension</span><span class="p">(</span>
+            <span class="n">extendee_name</span><span class="p">,</span> <span class="n">extension_number</span>
+        <span class="p">)</span></div>
 
-    <span class="k">def</span> <span class="nf">_do_one_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">ServerReflectionRequest</span><span class="p">,</span>
-                        <span class="n">key</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ServerReflectionResponse</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">_do_one_request</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">ServerReflectionRequest</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="n">Any</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ServerReflectionResponse</span><span class="p">:</span>
         <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stub</span><span class="o">.</span><span class="n">ServerReflectionInfo</span><span class="p">(</span><span class="nb">iter</span><span class="p">([</span><span class="n">request</span><span class="p">]))</span>
         <span class="n">res</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">res</span><span class="o">.</span><span class="n">WhichOneof</span><span class="p">(</span><span class="s2">&quot;message_response&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;error_response&quot;</span><span class="p">:</span>
             <span class="c1"># Only NOT_FOUND errors are expected at this layer</span>
             <span class="n">error_code</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">error_response</span><span class="o">.</span><span class="n">error_code</span>
-            <span class="k">assert</span> <span class="p">(</span><span class="n">error_code</span> <span class="o">==</span> <span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">NOT_FOUND</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-                   <span class="p">),</span> <span class="s2">&quot;unexpected error response: &quot;</span> <span class="o">+</span> <span class="nb">repr</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">error_response</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="p">(</span>
+                <span class="n">error_code</span> <span class="o">==</span> <span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">NOT_FOUND</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="p">),</span> <span class="s2">&quot;unexpected error response: &quot;</span> <span class="o">+</span> <span class="nb">repr</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">error_response</span><span class="p">)</span>
             <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">res</span>
 
     <span class="k">def</span> <span class="nf">_add_file_from_response</span><span class="p">(</span>
-            <span class="bp">self</span><span class="p">,</span> <span class="n">file_descriptor</span><span class="p">:</span> <span class="n">FileDescriptorResponse</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">file_descriptor</span><span class="p">:</span> <span class="n">FileDescriptorResponse</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">protos</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]</span> <span class="o">=</span> <span class="n">file_descriptor</span><span class="o">.</span><span class="n">file_descriptor_proto</span>
         <span class="k">for</span> <span class="n">proto</span> <span class="ow">in</span> <span class="n">protos</span><span class="p">:</span>
             <span class="n">desc</span> <span class="o">=</span> <span class="n">FileDescriptorProto</span><span class="p">()</span>
             <span class="n">desc</span><span class="o">.</span><span class="n">ParseFromString</span><span class="p">(</span><span class="n">proto</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">desc</span><span class="o">.</span><span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_known_files</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Loading descriptors from file: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
-                                  <span class="n">desc</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                    <span class="s2">&quot;Loading descriptors from file: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">desc</span><span class="o">.</span><span class="n">name</span>
+                <span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_known_files</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">desc</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">desc</span><span class="p">)</span></div>
 </pre></div>

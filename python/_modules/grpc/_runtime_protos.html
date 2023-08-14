@@ -4,12 +4,12 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>grpc._runtime_protos &#8212; gRPC Python 1.56.0 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css" />
-    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
-    <script src="../../_static/doctools.js"></script>
-    <script src="../../_static/sphinx_highlight.js"></script>
+    <title>grpc._runtime_protos &#8212; gRPC Python 1.57.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=4f649999" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=8090fdca" />
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=a042030b"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
    
@@ -27,7 +27,7 @@
 
 
 
-<p class="blurb">1.56.0</p>
+<p class="blurb">1.57.0</p>
 
 
 
@@ -108,8 +108,12 @@
 <span class="n">_REQUIRED_SYMBOLS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;_protos&quot;</span><span class="p">,</span> <span class="s2">&quot;_services&quot;</span><span class="p">,</span> <span class="s2">&quot;_protos_and_services&quot;</span><span class="p">)</span>
 <span class="n">_MINIMUM_VERSION</span> <span class="o">=</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
 
-<span class="n">_UNINSTALLED_TEMPLATE</span> <span class="o">=</span> <span class="s2">&quot;Install the grpcio-tools package (1.32.0+) to use the </span><span class="si">{}</span><span class="s2"> function.&quot;</span>
-<span class="n">_VERSION_ERROR_TEMPLATE</span> <span class="o">=</span> <span class="s2">&quot;The </span><span class="si">{}</span><span class="s2"> function is only on available on Python 3.X interpreters.&quot;</span>
+<span class="n">_UNINSTALLED_TEMPLATE</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s2">&quot;Install the grpcio-tools package (1.32.0+) to use the </span><span class="si">{}</span><span class="s2"> function.&quot;</span>
+<span class="p">)</span>
+<span class="n">_VERSION_ERROR_TEMPLATE</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s2">&quot;The </span><span class="si">{}</span><span class="s2"> function is only on available on Python 3.X interpreters.&quot;</span>
+<span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">_has_runtime_proto_symbols</span><span class="p">(</span><span class="n">mod</span><span class="p">:</span> <span class="n">types</span><span class="o">.</span><span class="n">ModuleType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
@@ -119,6 +123,7 @@
 <span class="k">def</span> <span class="nf">_is_grpc_tools_importable</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="kn">import</span> <span class="nn">grpc_tools</span>  <span class="c1"># pylint: disable=unused-import # pytype: disable=import-error</span>
+
         <span class="k">return</span> <span class="kc">True</span>
     <span class="k">except</span> <span class="ne">ImportError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
         <span class="c1"># NOTE: It&#39;s possible that we&#39;re encountering a transitive ImportError, so</span>
@@ -146,8 +151,9 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="n">_is_grpc_tools_importable</span><span class="p">():</span>
             <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="n">_UNINSTALLED_TEMPLATE</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">fn_name</span><span class="p">))</span>
         <span class="kn">import</span> <span class="nn">grpc_tools.protoc</span>  <span class="c1"># pytype: disable=import-error</span>
+
         <span class="k">if</span> <span class="n">_has_runtime_proto_symbols</span><span class="p">(</span><span class="n">grpc_tools</span><span class="o">.</span><span class="n">protoc</span><span class="p">):</span>
-            <span class="n">fn</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">grpc_tools</span><span class="o">.</span><span class="n">protoc</span><span class="p">,</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="n">fn_name</span><span class="p">)</span>
+            <span class="n">fn</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">grpc_tools</span><span class="o">.</span><span class="n">protoc</span><span class="p">,</span> <span class="s2">&quot;_&quot;</span> <span class="o">+</span> <span class="n">fn_name</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">fn</span><span class="p">(</span><span class="n">protobuf_path</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="n">_UNINSTALLED_TEMPLATE</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">fn_name</span><span class="p">))</span>

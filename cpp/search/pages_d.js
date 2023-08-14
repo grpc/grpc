@@ -1,5 +1,7 @@
 var searchData=
 [
-  ['xds_20features_20in_20grpc_4686',['xDS Features in gRPC',['../md_doc_grpc_xds_features.html',1,'']]],
-  ['xds_20_28load_2dbalancing_29_20interop_20test_20case_20descriptions_4687',['xDS (Load-Balancing) Interop Test Case Descriptions',['../md_doc_xds-test-descriptions.html',1,'']]]
+  ['server_2dside_20api_20for_20authenticating_20clients_4687',['Server-side API for Authenticating Clients',['../md_doc_server_side_auth.html',1,'']]],
+  ['service_20config_20in_20grpc_4688',['Service Config in gRPC',['../md_doc_service_config.html',1,'']]],
+  ['ssl_20in_20grpc_20and_20performance_4689',['SSL in gRPC and performance',['../md_doc_ssl-performance.html',1,'']]],
+  ['status_20codes_20and_20their_20use_20in_20grpc_4690',['Status codes and their use in gRPC',['../md_doc_statuscodes.html',1,'']]]
 ];

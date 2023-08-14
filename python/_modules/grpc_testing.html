@@ -4,12 +4,12 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>grpc_testing &#8212; gRPC Python 1.56.0 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css" />
-    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-    <script src="../_static/doctools.js"></script>
-    <script src="../_static/sphinx_highlight.js"></script>
+    <title>grpc_testing &#8212; gRPC Python 1.57.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=4f649999" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=8090fdca" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=a042030b"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
    
@@ -27,7 +27,7 @@
 
 
 
-<p class="blurb">1.56.0</p>
+<p class="blurb">1.57.0</p>
 
 
 
@@ -580,8 +580,9 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A server with which to test a system that services RPCs.&quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="Server.invoke_unary_unary"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.Server.invoke_unary_unary">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-    <span class="k">def</span> <span class="nf">invoke_unary_unary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method_descriptor</span><span class="p">,</span> <span class="n">invocation_metadata</span><span class="p">,</span>
-                           <span class="n">request</span><span class="p">,</span> <span class="n">timeout</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">invoke_unary_unary</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">method_descriptor</span><span class="p">,</span> <span class="n">invocation_metadata</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">timeout</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Invokes an RPC to be serviced by the system under test.</span>
 
 <span class="sd">        Args:</span>
@@ -598,8 +599,9 @@
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="Server.invoke_unary_stream"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.Server.invoke_unary_stream">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-    <span class="k">def</span> <span class="nf">invoke_unary_stream</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method_descriptor</span><span class="p">,</span> <span class="n">invocation_metadata</span><span class="p">,</span>
-                            <span class="n">request</span><span class="p">,</span> <span class="n">timeout</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">invoke_unary_stream</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">method_descriptor</span><span class="p">,</span> <span class="n">invocation_metadata</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">timeout</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Invokes an RPC to be serviced by the system under test.</span>
 
 <span class="sd">        Args:</span>
@@ -616,8 +618,9 @@
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="Server.invoke_stream_unary"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.Server.invoke_stream_unary">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-    <span class="k">def</span> <span class="nf">invoke_stream_unary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method_descriptor</span><span class="p">,</span> <span class="n">invocation_metadata</span><span class="p">,</span>
-                            <span class="n">timeout</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">invoke_stream_unary</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">method_descriptor</span><span class="p">,</span> <span class="n">invocation_metadata</span><span class="p">,</span> <span class="n">timeout</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Invokes an RPC to be serviced by the system under test.</span>
 
 <span class="sd">        Args:</span>
@@ -633,8 +636,9 @@
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="Server.invoke_stream_stream"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.Server.invoke_stream_stream">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
-    <span class="k">def</span> <span class="nf">invoke_stream_stream</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method_descriptor</span><span class="p">,</span> <span class="n">invocation_metadata</span><span class="p">,</span>
-                             <span class="n">timeout</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">invoke_stream_stream</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">method_descriptor</span><span class="p">,</span> <span class="n">invocation_metadata</span><span class="p">,</span> <span class="n">timeout</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Invokes an RPC to be serviced by the system under test.</span>
 
 <span class="sd">        Args:</span>
@@ -727,6 +731,7 @@
 <span class="sd">      A Time backed by the &quot;system&quot; (Python interpreter&#39;s) time.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="kn">from</span> <span class="nn">grpc_testing</span> <span class="kn">import</span> <span class="n">_time</span>
+
     <span class="k">return</span> <span class="n">_time</span><span class="o">.</span><span class="n">StrictRealTime</span><span class="p">()</span></div>
 
 
@@ -746,6 +751,7 @@
 <span class="sd">      A Time that simulates the passage of time.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="kn">from</span> <span class="nn">grpc_testing</span> <span class="kn">import</span> <span class="n">_time</span>
+
     <span class="k">return</span> <span class="n">_time</span><span class="o">.</span><span class="n">StrictFakeTime</span><span class="p">(</span><span class="n">now</span><span class="p">)</span></div>
 
 
@@ -762,6 +768,7 @@
 <span class="sd">      A Channel for use in tests.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="kn">from</span> <span class="nn">grpc_testing</span> <span class="kn">import</span> <span class="n">_channel</span>
+
     <span class="k">return</span> <span class="n">_channel</span><span class="o">.</span><span class="n">testing_channel</span><span class="p">(</span><span class="n">service_descriptors</span><span class="p">,</span> <span class="n">time</span><span class="p">)</span></div>
 
 
@@ -779,6 +786,7 @@
 <span class="sd">      A Server for use in tests.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="kn">from</span> <span class="nn">grpc_testing</span> <span class="kn">import</span> <span class="n">_server</span>
+
     <span class="k">return</span> <span class="n">_server</span><span class="o">.</span><span class="n">server_from_dictionary</span><span class="p">(</span><span class="n">descriptors_to_servicers</span><span class="p">,</span> <span class="n">time</span><span class="p">)</span></div>
 </pre></div>
 

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC PHP
-   &#160;<span id="projectnumber">1.56.0</span>
+   &#160;<span id="projectnumber">1.57.0</span>
    </div>
   </td>
  </tr>
@@ -67,9 +67,9 @@ $(function() {
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><p>This directory contains source code for PHP implementation of gRPC layered on shared C library. The same installation guides with more examples and tutorials can be seen at <a href="https://grpc.io/docs/languages/php/quickstart">grpc.io</a>. gRPC PHP installation instructions for Google Cloud Platform is in <a href="https://cloud.google.com/php/grpc">cloud.google.com</a>.</p>
-<h1><a class="anchor" id="autotoc_md263"></a>
+<h1><a class="anchor" id="autotoc_md264"></a>
 Environment</h1>
-<h2><a class="anchor" id="autotoc_md264"></a>
+<h2><a class="anchor" id="autotoc_md265"></a>
 Prerequisites</h2>
 <ul>
 <li><code>php</code>: version 7.0 or above (PHP 5.x support is deprecated from Sep 2020).</li>
@@ -77,31 +77,31 @@ Prerequisites</h2>
 <li><code>composer</code></li>
 <li><code>phpunit</code> (optional)</li>
 </ul>
-<h1><a class="anchor" id="autotoc_md265"></a>
+<h1><a class="anchor" id="autotoc_md266"></a>
 Install the &lt;em&gt;grpc&lt;/em&gt; extension</h1>
 <p>There are two ways to install the <code>grpc</code> extension.</p><ul>
 <li>Via <code>pecl</code></li>
 <li>Build from source</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md266"></a>
+<h2><a class="anchor" id="autotoc_md267"></a>
 Install from PECL</h2>
 <div class="fragment"><div class="line">$ [sudo] pecl install grpc</div>
 </div><!-- fragment --><p>or specific version</p>
 <div class="fragment"><div class="line">$ [sudo] pecl install grpc-1.30.0</div>
 </div><!-- fragment --><p>Please make sure your <code>gcc</code> version satisfies the minimum requirement as specified <a href="https://grpc.io/docs/languages/#official-support">here</a>.</p>
-<h2><a class="anchor" id="autotoc_md267"></a>
+<h2><a class="anchor" id="autotoc_md268"></a>
 Install on Windows</h2>
 <p>You can download the pre-compiled <code>grpc.dll</code> extension from the PECL <a href="https://pecl.php.net/package/grpc">website</a>.</p>
-<h2><a class="anchor" id="autotoc_md268"></a>
+<h2><a class="anchor" id="autotoc_md269"></a>
 Build from source</h2>
 <p>Clone this repository at the <a href="https://github.com/grpc/grpc/releases">latest stable release tag</a>.</p>
 <div class="fragment"><div class="line">$ git clone -b RELEASE_TAG_HERE https://github.com/grpc/grpc</div>
 <div class="line">$ cd grpc</div>
-</div><!-- fragment --><h3><a class="anchor" id="autotoc_md269"></a>
+</div><!-- fragment --><h3><a class="anchor" id="autotoc_md270"></a>
 Build the gRPC C core library</h3>
 <div class="fragment"><div class="line">$ git submodule update --init</div>
 <div class="line">$ EXTRA_DEFINES=GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK make</div>
-</div><!-- fragment --><h3><a class="anchor" id="autotoc_md270"></a>
+</div><!-- fragment --><h3><a class="anchor" id="autotoc_md271"></a>
 Build and install the &lt;tt&gt;grpc&lt;/tt&gt; extension</h3>
 <p>Compile the <code>grpc</code> extension from source</p>
 <div class="fragment"><div class="line">$ grpc_root=&quot;$(pwd)&quot;</div>
@@ -111,18 +111,18 @@ Build and install the &lt;tt&gt;grpc&lt;/tt&gt; extension</h3>
 <div class="line">$ make</div>
 <div class="line">$ [sudo] make install</div>
 </div><!-- fragment --><p>This will compile and install the <code>grpc</code> extension into the standard PHP extension directory. You should be able to run the <a href="#unit-tests">unit tests</a>, with the <code>grpc</code> extension installed.</p>
-<h2><a class="anchor" id="autotoc_md271"></a>
+<h2><a class="anchor" id="autotoc_md272"></a>
 Update php.ini</h2>
 <p>After installing the <code>grpc</code> extension, make sure you add this line to your <code>php.ini</code> file, depending on where your PHP installation is, to enable the <code>grpc</code> extension.</p>
 <div class="fragment"><div class="line">extension=grpc.so</div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md272"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md273"></a>
 Composer package</h1>
 <p>In addition to the <code>grpc</code> extension, you will need to install the <code>grpc/grpc</code> composer package as well. Add this to your project's <code>composer.json</code> file.</p>
 <div class="fragment"><div class="line">&quot;require&quot;: {</div>
 <div class="line">    &quot;grpc/grpc&quot;: &quot;~1.30.0&quot;</div>
 <div class="line">}</div>
 </div><!-- fragment --><p>To run tests with generated stub code from <code>.proto</code> files, you will also need the <code>composer</code> and <code>protoc</code> binaries. You can find out how to get these below.</p>
-<h1><a class="anchor" id="autotoc_md273"></a>
+<h1><a class="anchor" id="autotoc_md274"></a>
 Protocol Buffers</h1>
 <p>gRPC PHP supports <a href="https://developers.google.com/protocol-buffers">protocol buffers</a> out-of-the-box. You will need the following things to get started:</p>
 <ul>
@@ -130,7 +130,7 @@ Protocol Buffers</h1>
 <li><code>grpc_php_plugin</code>: a plugin for <code>protoc</code> to generate the service stub classes.</li>
 <li><code>protobuf.so</code>: the <code>protobuf</code> extension runtime library.</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md274"></a>
+<h2><a class="anchor" id="autotoc_md275"></a>
 &lt;tt&gt;protoc&lt;/tt&gt; compiler</h2>
 <p>If you don't have it already, you need to install the protobuf compiler <code>protoc</code>, version 3.5.0+ (the newer the better) for the current gRPC version. If you installed already, make the protobuf version is compatible to the grpc version you installed. If you build grpc.so from the souce, you can check the version of grpc inside package.xml file.</p>
 <p>The compatibility between the grpc and protobuf version is listed as table below:</p>
@@ -162,7 +162,7 @@ Protocol Buffers</h1>
 <div class="fragment"><div class="line">$ cd grpc/third_party/protobuf</div>
 <div class="line">$ ./autogen.sh &amp;&amp; ./configure &amp;&amp; make</div>
 <div class="line">$ [sudo] make install</div>
-</div><!-- fragment --><h2><a class="anchor" id="autotoc_md275"></a>
+</div><!-- fragment --><h2><a class="anchor" id="autotoc_md276"></a>
 &lt;tt&gt;grpc_php_plugin&lt;/tt&gt; protoc plugin</h2>
 <p>You need the <code>grpc_php_plugin</code> to generate the PHP client stub classes. This plugin works with the main <code>protoc</code> binary to generate classes that you can import into your project.</p>
 <p>You can build <code>grpc_php_plugin</code> with <code>cmake</code>:</p>
@@ -179,10 +179,10 @@ Protocol Buffers</h1>
 <div class="line">$ bazel build src/compiler:grpc_php_plugin</div>
 </div><!-- fragment --><p>The <code>protoc</code> binary will be found in <code>bazel-bin/external/com_google_protobuf/protoc</code>. The <code>grpc_php_plugin</code> binary will be found in <code>bazel-bin/src/compiler/grpc_php_plugin</code>.</p>
 <p>Plugin may use the new feature of the new protobuf version, thus please also make sure that the protobuf version installed is compatible with the grpc version you build this plugin.</p>
-<h2><a class="anchor" id="autotoc_md276"></a>
+<h2><a class="anchor" id="autotoc_md277"></a>
 &lt;tt&gt;protobuf&lt;/tt&gt; runtime library</h2>
 <p>There are two <code>protobuf</code> runtime libraries to choose from. They are identical in terms of APIs offered. The C implementation provides better performance, while the native implementation is easier to install.</p>
-<h3><a class="anchor" id="autotoc_md277"></a>
+<h3><a class="anchor" id="autotoc_md278"></a>
 C implementation (for better performance)</h3>
 <p>Install the <code>protobuf</code> extension from PECL:</p>
 <div class="fragment"><div class="line">$ [sudo] pecl install protobuf</div>
@@ -190,18 +190,18 @@ C implementation (for better performance)</h3>
 <div class="fragment"><div class="line">$ [sudo] pecl install protobuf-3.12.2</div>
 </div><!-- fragment --><p>And add this to your <code>php.ini</code> file:</p>
 <div class="fragment"><div class="line">extension=protobuf.so</div>
-</div><!-- fragment --><h3><a class="anchor" id="autotoc_md278"></a>
+</div><!-- fragment --><h3><a class="anchor" id="autotoc_md279"></a>
 PHP implementation (for easier installation)</h3>
 <p>Or require the <code>google/protobuf</code> composer package. Add this to your <code>composer.json</code> file:</p>
 <div class="fragment"><div class="line">&quot;require&quot;: {</div>
 <div class="line">    &quot;google/protobuf&quot;: &quot;~v3.12.2&quot;</div>
 <div class="line">}</div>
-</div><!-- fragment --><h2><a class="anchor" id="autotoc_md279"></a>
+</div><!-- fragment --><h2><a class="anchor" id="autotoc_md280"></a>
 Generate PHP classes from your service definition</h2>
 <p>With all the above done, now you can define your message and service definition in a <code>.proto</code> file and generate the corresponding PHP classes, which you can import into your project, with a command similar to the following:</p>
 <div class="fragment"><div class="line">$ protoc -I=. echo.proto --php_out=. --grpc_out=. \</div>
 <div class="line">--plugin=protoc-gen-grpc=&lt;path to grpc_php_plugin&gt;</div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md280"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md281"></a>
 Unit Tests</h1>
 <p>You will need the source code to run tests</p>
 <div class="fragment"><div class="line">$ git clone -b RELEASE_TAG_HERE https://github.com/grpc/grpc</div>
@@ -210,46 +210,46 @@ Unit Tests</h1>
 </div><!-- fragment --><p>Run unit tests</p>
 <div class="fragment"><div class="line">$ cd grpc/src/php</div>
 <div class="line">$ ./bin/run_tests.sh</div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md281"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md282"></a>
 Generated Code Tests</h1>
 <p>This section specifies the prerequisites for running the generated code tests, as well as how to run the tests themselves.</p>
-<h2><a class="anchor" id="autotoc_md282"></a>
+<h2><a class="anchor" id="autotoc_md283"></a>
 Composer</h2>
 <p>Install the runtime dependencies via <code>composer install</code>.</p>
 <div class="fragment"><div class="line">$ cd grpc/src/php</div>
 <div class="line">$ composer install</div>
-</div><!-- fragment --><h2><a class="anchor" id="autotoc_md283"></a>
+</div><!-- fragment --><h2><a class="anchor" id="autotoc_md284"></a>
 Client Stub</h2>
 <p>The generate client stub classes have already been generated from <code>.proto</code> files by the <code>./bin/generate_proto_php.sh</code> script.</p>
-<h2><a class="anchor" id="autotoc_md284"></a>
+<h2><a class="anchor" id="autotoc_md285"></a>
 Run test server</h2>
 <p>Run a local server serving the <code>Math</code> <a href="https://github.com/grpc/grpc/blob/master/src/proto/math/math.proto#L42">service</a>.</p>
 <div class="fragment"><div class="line">$ cd grpc/src/php/tests/generated_code</div>
 <div class="line">$ npm install</div>
 <div class="line">$ node math_server.js</div>
-</div><!-- fragment --><h2><a class="anchor" id="autotoc_md285"></a>
+</div><!-- fragment --><h2><a class="anchor" id="autotoc_md286"></a>
 Run test client</h2>
 <p>Run the generated code tests</p>
 <div class="fragment"><div class="line">$ cd grpc/src/php</div>
 <div class="line">$ ./bin/run_gen_code_test.sh</div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md286"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md287"></a>
 Apache, PHP-FPM and Nginx</h1>
 <p>For more information on how you can run the <code>grpc</code> library with Apache, PHP-FPM and Nginx, you can check out <a href="https://github.com/grpc/grpc/tree/master/examples/php/echo">this guide</a>. There you will find a series of Docker images where you can quickly run an end-to-end example.</p>
-<h1><a class="anchor" id="autotoc_md287"></a>
+<h1><a class="anchor" id="autotoc_md288"></a>
 Misc Config Options</h1>
-<h2><a class="anchor" id="autotoc_md288"></a>
+<h2><a class="anchor" id="autotoc_md289"></a>
 SSL credentials</h2>
 <p>Here's how you can specify SSL credentials when creating your PHP client:</p>
 <div class="fragment"><div class="line">$client = <span class="keyword">new</span> Helloworld\GreeterClient(<span class="stringliteral">&#39;localhost:50051&#39;</span>, [</div>
 <div class="line">    <span class="stringliteral">&#39;credentials&#39;</span> =&gt; <a class="code" href="namespace_grpc.html">Grpc</a>\ChannelCredentials::createSsl(</div>
 <div class="line">        file_get_contents(<span class="stringliteral">&#39;&lt;path to certificate&gt;&#39;</span>))</div>
 <div class="line">]);</div>
-</div><!-- fragment --><h2><a class="anchor" id="autotoc_md289"></a>
+</div><!-- fragment --><h2><a class="anchor" id="autotoc_md290"></a>
 pcntl_fork() support</h2>
 <p>To make sure the <code>grpc</code> extension works with <code>pcntl_fork()</code> and related functions, add the following lines to your <code>php.ini</code> file:</p>
 <div class="fragment"><div class="line">grpc.enable_fork_support = 1</div>
 <div class="line">grpc.poll_strategy = epoll1</div>
-</div><!-- fragment --><h2><a class="anchor" id="autotoc_md290"></a>
+</div><!-- fragment --><h2><a class="anchor" id="autotoc_md291"></a>
 Tracing and Logging</h2>
 <p>To turn on gRPC tracing, add the following lines to your <code>php.ini</code> file. For all possible values of the <code>grpc.grpc.trace</code> option, please check <a href="https://github.com/grpc/grpc/blob/master/doc/environment_variables.md">this doc</a>.</p>
 <div class="fragment"><div class="line">grpc.grpc_verbosity=debug</div>
@@ -260,21 +260,21 @@ Tracing and Logging</h2>
 <div class="line">$ sudo chmod 666 /var/log/grpc.log</div>
 </div><!-- fragment --><p>Note: The log file does grow pretty quickly depending on how much logs are being printed out. Make sure you have other mechanisms (perhaps another cronjob) to zero out the log file from time to time, e.g. <code>cp /dev/null /var/log/grpc.log</code>, or turn these off when logs or tracing are not necessary for debugging purposes. </p>
 </blockquote>
-<h2><a class="anchor" id="autotoc_md291"></a>
+<h2><a class="anchor" id="autotoc_md292"></a>
 User agent string</h2>
 <p>You can customize the user agent string for your gRPC PHP client by specifying this <code>grpc.primary_user_agent</code> option when constructing your PHP client:</p>
 <div class="fragment"><div class="line">$client = <span class="keyword">new</span> Helloworld\GreeterClient(<span class="stringliteral">&#39;localhost:50051&#39;</span>, [</div>
 <div class="line">    <span class="stringliteral">&#39;credentials&#39;</span> =&gt; <a class="code" href="namespace_grpc.html">Grpc</a>\ChannelCredentials::createInsecure(),</div>
 <div class="line">    <span class="stringliteral">&#39;grpc.primary_user_agent&#39;</span> =&gt; <span class="stringliteral">&#39;my-user-agent-identifier&#39;</span>,</div>
 <div class="line">]);</div>
-</div><!-- fragment --><h2><a class="anchor" id="autotoc_md292"></a>
+</div><!-- fragment --><h2><a class="anchor" id="autotoc_md293"></a>
 Maximum message size</h2>
 <p>To change the default maximum message size, specify this <code>grpc.max_receive_message_length</code> option when constructing your PHP client:</p>
 <div class="fragment"><div class="line">$client = <span class="keyword">new</span> Helloworld\GreeterClient(<span class="stringliteral">&#39;localhost:50051&#39;</span>, [</div>
 <div class="line">    <span class="stringliteral">&#39;credentials&#39;</span> =&gt; <a class="code" href="namespace_grpc.html">Grpc</a>\ChannelCredentials::createInsecure(),</div>
 <div class="line">    <span class="stringliteral">&#39;grpc.max_receive_message_length&#39;</span> =&gt; 8*1024*1024,</div>
 <div class="line">]);</div>
-</div><!-- fragment --><h2><a class="anchor" id="autotoc_md293"></a>
+</div><!-- fragment --><h2><a class="anchor" id="autotoc_md294"></a>
 Compression</h2>
 <p>You can customize the compression behavior on the client side, by specifying the following options when constructing your PHP client.</p>
 <div class="fragment"><div class="line">$client = <span class="keyword">new</span> Helloworld\GreeterClient(<span class="stringliteral">&#39;localhost:50051&#39;</span>, [</div>
@@ -297,7 +297,7 @@ Compression</h2>
 <div class="ttc" id="anamespace_grpc_html"><div class="ttname"><a href="namespace_grpc.html">Grpc</a></div><div class="ttdoc">Class AbstractCall.</div><div class="ttdef"><b>Definition:</b> AbstractCall.php:20</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Jun 27 2023 17:51:09 for GRPC PHP by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Aug 14 2023 18:27:50 for GRPC PHP by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>
