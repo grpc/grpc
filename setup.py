@@ -413,19 +413,12 @@ if BUILD_WITH_BORING_SSL_ASM and not BUILD_WITH_SYSTEM_OPENSSL:
         if BUILD_OVERRIDE_BORING_SSL_ASM_PLATFORM
         else util.get_platform()
     )
-    LINUX_X86_64 = "linux-x86_64"
-    LINUX_ARM = "linux-arm"
-    LINUX_AARCH64 = "linux-aarch64"
-    if LINUX_X86_64 == boringssl_asm_platform:
-        asm_key = "crypto_linux_x86_64"
-    elif LINUX_ARM == boringssl_asm_platform:
-        asm_key = "crypto_linux_arm"
-    elif LINUX_AARCH64 == boringssl_asm_platform:
-        asm_key = "crypto_linux_aarch64"
-    elif "mac" in boringssl_asm_platform and "x86_64" in boringssl_asm_platform:
-        asm_key = "crypto_apple_x86_64"
-    elif "mac" in boringssl_asm_platform and "arm64" in boringssl_asm_platform:
-        asm_key = "crypto_apple_aarch64"
+    # BoringSSL's gas-compatible assembly files are all internally conditioned
+    # by the preprocessor. Provided the platform has a gas-compatible assembler
+    # (i.e. not Windows), we can include the assembly files and let BoringSSL
+    # decide which ones should and shouldn't be used for the build.
+    if not boringssl_asm_platform.startswith("win"):
+        asm_key = "crypto_asm"
     else:
         print(
             "ASM Builds for BoringSSL currently not supported on:",
@@ -586,7 +579,7 @@ except ImportError:
         sys.stderr.write(
             "We could not find Cython. Setup may take 10-20 minutes.\n"
         )
-        SETUP_REQUIRES += ("cython>=0.23",)
+        SETUP_REQUIRES += ("cython>=0.23,<3.0.0rc1",)
 
 COMMAND_CLASS = {
     "doc": commands.SphinxDocumentation,

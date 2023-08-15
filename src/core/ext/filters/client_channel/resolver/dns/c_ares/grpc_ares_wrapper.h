@@ -131,6 +131,9 @@ void grpc_cares_wrapper_address_sorting_sort(
     const grpc_ares_request* request, grpc_core::ServerAddressList* addresses);
 
 // Exposed in this header for C-core tests only
-extern void (*grpc_ares_test_only_inject_config)(ares_channel channel);
+extern void (*grpc_ares_test_only_inject_config)(ares_channel* channel);
+
+// Exposed in this header for C-core tests only
+extern bool g_grpc_ares_test_only_force_tcp;
 
 #endif  // GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_DNS_C_ARES_GRPC_ARES_WRAPPER_H

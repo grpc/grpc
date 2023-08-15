@@ -18,6 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdint.h>
 #include <string.h>
 
 #include <functional>
@@ -43,7 +44,6 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/detail/basic_seq.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/try_seq.h"
@@ -196,10 +196,13 @@ ArenaPromise<ServerMetadataHandle> ClientAuthFilter::MakeCallPromise(
   if (host == nullptr) {
     return next_promise_factory(std::move(call_args));
   }
-  return TrySeq(args_.security_connector->CheckCallHost(
-                    host->as_string_view(), args_.auth_context.get()),
-                GetCallCredsMetadata(std::move(call_args)),
-                next_promise_factory);
+  return TrySeq(
+      args_.security_connector->CheckCallHost(host->as_string_view(),
+                                              args_.auth_context.get()),
+      [this, call_args = std::move(call_args)]() mutable {
+        return GetCallCredsMetadata(std::move(call_args));
+      },
+      next_promise_factory);
 }
 
 absl::StatusOr<ClientAuthFilter> ClientAuthFilter::Create(

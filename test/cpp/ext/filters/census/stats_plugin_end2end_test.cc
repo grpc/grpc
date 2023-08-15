@@ -631,6 +631,9 @@ bool IsAnnotationPresent(
   for (const auto& event : span->annotations().events()) {
     if (absl::StrContains(event.event().description(), annotation)) {
       return true;
+    } else if (::testing::Matches(::testing::ContainsRegex(annotation))(
+                   event.event().description())) {
+      return true;
     }
   }
   return false;
@@ -805,6 +808,50 @@ TEST_F(StatsPluginEnd2EndTest, TestMessageSizeWithCompressionAnnotations) {
   EXPECT_TRUE(IsAnnotationPresent(server_span_data, "Received message:"));
   EXPECT_TRUE(IsAnnotationPresent(server_span_data,
                                   "Received decompressed message: 1026 bytes"));
+}
+
+// Tests that the metadata size trace annotations are present.
+TEST_F(StatsPluginEnd2EndTest, TestMetadataSizeAnnotations) {
+  {
+    // Client spans are ended when the ClientContext's destructor is invoked.
+    EchoRequest request;
+    EchoResponse response;
+
+    grpc::ClientContext context;
+    ::opencensus::trace::AlwaysSampler always_sampler;
+    ::opencensus::trace::StartSpanOptions options;
+    options.sampler = &always_sampler;
+    auto sampling_span =
+        ::opencensus::trace::Span::StartSpan("sampling", nullptr, options);
+    grpc::CensusContext app_census_context("root", &sampling_span,
+                                           ::opencensus::tags::TagMap{});
+    context.set_census_context(
+        reinterpret_cast<census_context*>(&app_census_context));
+    context.AddMetadata(kExpectedTraceIdKey,
+                        app_census_context.Span().context().trace_id().ToHex());
+    traces_recorder_->StartRecording();
+    grpc::Status status = stub_->Echo(&context, request, &response);
+    EXPECT_TRUE(status.ok());
+  }
+  absl::SleepFor(absl::Milliseconds(500 * grpc_test_slowdown_factor()));
+  TestUtils::Flush();
+  ::opencensus::trace::exporter::SpanExporterTestPeer::ExportForTesting();
+  traces_recorder_->StopRecording();
+  auto recorded_spans = traces_recorder_->GetAndClearSpans();
+  // Check presence of metadata size annotations in client span.
+  auto sent_span_data =
+      GetSpanByName(recorded_spans, absl::StrCat("Sent.", client_method_name_));
+  ASSERT_NE(sent_span_data, recorded_spans.end());
+  EXPECT_TRUE(IsAnnotationPresent(
+      sent_span_data,
+      "gRPC metadata soft_limit:[0-9]{4,5},hard_limit:[0-9]{5},:status:["
+      "0-9]{1,2},content-type:[0-9]{1,2},grpc-encoding:[0-"
+      "9]{1,2},grpc-accept-encoding:[0-9]{1,2},"));
+  EXPECT_TRUE(IsAnnotationPresent(
+      sent_span_data,
+      "gRPC metadata "
+      "soft_limit:[0-9]{4,5},hard_limit:[0-9]{5},grpc-status:[0-9]{1,2},grpc-"
+      "server-stats-bin:[0-9]{1,2},"));
 }
 
 // Test the working of GRPC_ARG_DISABLE_OBSERVABILITY.

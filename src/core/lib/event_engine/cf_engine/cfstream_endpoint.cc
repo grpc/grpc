@@ -96,8 +96,8 @@ void CFStreamEndpointImpl::Connect(
   std::string host_string;
   std::string port_string;
   grpc_core::SplitHostPort(host_port.value(), &host_string, &port_string);
-  CFStringRef host = CFStringCreateWithCString(NULL, host_string.c_str(),
-                                               kCFStringEncodingUTF8);
+  CFTypeUniqueRef<CFStringRef> host = CFStringCreateWithCString(
+      NULL, host_string.c_str(), kCFStringEncodingUTF8);
   int port = ResolvedAddressGetPort(peer_address_);
   CFStreamCreatePairWithSocketToHost(NULL, host, port, &cf_read_stream_,
                                      &cf_write_stream_);

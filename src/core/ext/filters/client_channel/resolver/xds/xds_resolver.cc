@@ -44,7 +44,7 @@
 #include "absl/types/variant.h"
 #include "re2/re2.h"
 
-#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 
 #include "src/core/lib/slice/slice.h"
 

@@ -82,7 +82,11 @@
       deps.append("${_gRPC_ADDRESS_SORTING_LIBRARIES}")
       deps.append("${_gRPC_RE2_LIBRARIES}")
       deps.append("${_gRPC_UPB_LIBRARIES}")
+    # TODO(yijiem): These targets depend on grpc_base instead of grpc. Since we don't populate grpc_base as a cmake target, the sources all get collapsed into these targets. This workaround adds c-ares and/or re2 dependencies to these targets. We should clean this up.
+    if target_dict['name'] in ['frame_test']:
+      deps.append("${_gRPC_CARES_LIBRARIES}")
     if target_dict['name'] in ['grpc_authorization_provider']:
+      deps.append("${_gRPC_CARES_LIBRARIES}")
       deps.append("${_gRPC_RE2_LIBRARIES}")
     deps.append("${_gRPC_ALLTARGETS_LIBRARIES}")
     for d in target_dict.get('deps', []):
