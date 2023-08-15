@@ -284,8 +284,6 @@ int main(int argc, char** argv) {
       std::bind(&grpc::testing::InteropClient::DoEmptyStream, &client);
   actions["pick_first_unary"] =
       std::bind(&grpc::testing::InteropClient::DoPickFirstUnary, &client);
-  actions["pick_first_randomness"] =
-      std::bind(&grpc::testing::InteropClient::DoPickFirstRandomness, &client);
   actions["orca_per_rpc"] =
       std::bind(&grpc::testing::InteropClient::DoOrcaPerRpc, &client);
   actions["orca_oob"] =
