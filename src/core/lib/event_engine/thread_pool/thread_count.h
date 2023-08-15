@@ -11,6 +11,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_THREAD_POOL_THREAD_COUNT_H
+#define GRPC_SRC_CORE_LIB_EVENT_ENGINE_THREAD_POOL_THREAD_COUNT_H
+
 #include <grpc/support/port_platform.h>
 
 #include <atomic>
@@ -52,11 +55,11 @@ class BusyThreadCount {
 
  private:
   struct ShardedData {
-    std::atomic<int> busy_count{0};
+    std::atomic<size_t> busy_count{0};
   } GPR_ALIGN_STRUCT(GPR_CACHELINE_SIZE);
 
   std::vector<ShardedData> shards_;
-  std::atomic<int> next_idx_{0};
+  std::atomic<size_t> next_idx_{0};
 };
 
 // Tracks the number of living threads. It is intended for a fast count
@@ -93,3 +96,5 @@ class LivingThreadCount {
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
+
+#endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_THREAD_POOL_THREAD_COUNT_H
