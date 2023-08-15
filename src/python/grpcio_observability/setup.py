@@ -33,8 +33,6 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.abspath('.'))
 
 import _parallel_compile_patch
-import observability_lib_deps
-
 import grpc_version
 
 _EXT_INIT_SYMBOL = "PyInit__protoc_compiler"
@@ -187,10 +185,6 @@ EXTRA_LINK_ARGS = shlex.split(EXTRA_ENV_LINK_ARGS)
 if BUILD_WITH_STATIC_LIBSTDCXX:
     EXTRA_LINK_ARGS.append('-static-libstdc++')
 
-CC_INCLUDES = [
-    os.path.normpath(include_dir) for include_dir in observability_lib_deps.CC_INCLUDES
-]
-
 DEFINE_MACROS = ()
 
 # Fix for Cython build issue in aarch64.
@@ -238,7 +232,8 @@ def extension_modules():
 
     plugin_include = ['grpc_root', # For path starts with src/
                       os.path.join('grpc_root', 'include'), # For core deps
-                      ] + CC_INCLUDES
+                      os.path.join('third_party', 'abseil-cpp'),
+                      ]
     plugin_sources = []
     plugin_sources += _find_files_with_extension('grpc_observability', 'cc')
     plugin_sources += cython_module_files
