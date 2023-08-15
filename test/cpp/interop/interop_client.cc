@@ -1260,7 +1260,8 @@ void InteropClient::PerformSoakTest(
       if (channel_pool_size_ > 0) {
         result = interopClients_[ch]->PerformOneSoakTestIteration(
             reset_channel_per_iteration,
-            max_acceptable_per_iteration_latency_ms);
+            max_acceptable_per_iteration_latency_ms, request_size,
+            response_size);
       } else {
         result =
             PerformOneSoakTestIteration(reset_channel_per_iteration,
