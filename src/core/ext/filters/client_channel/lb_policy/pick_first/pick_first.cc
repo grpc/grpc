@@ -383,7 +383,7 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
     }
     // Any state change is considered to be a failure of the existing
     // connection.
-    // TODO(roth): We chould check the connectivity states of all the
+    // TODO(roth): We could check the connectivity states of all the
     // subchannels here, just in case one of them happens to be READY,
     // and we could switch to that rather than going IDLE.
     // Request a re-resolution.
