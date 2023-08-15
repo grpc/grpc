@@ -13,6 +13,7 @@
 # limitations under the License.
 """Base test case used for xds test suites."""
 
+from typing import Optional
 import unittest
 
 from absl import logging
