@@ -64,9 +64,7 @@ class WaitSet final {
   };
 
   GRPC_MUST_USE_RESULT WakeupSet TakeWakeupSet() {
-    auto ret = WakeupSet(std::move(pending_));
-    pending_.clear();  // reinitialize after move.
-    return ret;
+    return WakeupSet(std::move(pending_));
   }
 
  private:
