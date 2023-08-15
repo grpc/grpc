@@ -83,8 +83,7 @@ class LivingThreadCount {
   AutoThreadCounter MakeAutoThreadCounter();
   void Increment() ABSL_LOCKS_EXCLUDED(mu_);
   void Decrement() ABSL_LOCKS_EXCLUDED(mu_);
-  void BlockUntilThreadCount(size_t desired_threads,
-                             grpc_core::Duration timeout, const char* why)
+  void BlockUntilThreadCount(size_t desired_threads, const char* why)
       ABSL_LOCKS_EXCLUDED(mu_);
   size_t count() ABSL_LOCKS_EXCLUDED(mu_);
 

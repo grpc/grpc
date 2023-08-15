@@ -126,13 +126,13 @@ void LivingThreadCount::Decrement() {
 }
 
 void LivingThreadCount::BlockUntilThreadCount(size_t desired_threads,
-                                              grpc_core::Duration timeout,
                                               const char* why) {
+  constexpr grpc_core::Duration log_rate = grpc_core::Duration::Seconds(3);
   while (true) {
-    auto curr_threads = WaitForCountChange(desired_threads, timeout);
+    auto curr_threads = WaitForCountChange(desired_threads, log_rate);
     if (curr_threads == desired_threads) break;
     GRPC_LOG_EVERY_N_SEC_DELAYED(
-        timeout.seconds(), GPR_DEBUG,
+        log_rate.seconds(), GPR_DEBUG,
         "Waiting for thread pool to idle before %s. (%" PRIdPTR " to %" PRIdPTR
         ")",
         why, curr_threads, desired_threads);

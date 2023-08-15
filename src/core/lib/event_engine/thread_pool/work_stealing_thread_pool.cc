@@ -208,10 +208,8 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Quiesce() {
   // running instead of zero.
   bool is_threadpool_thread = g_local_queue != nullptr;
   work_signal()->SignalAll();
-  living_thread_count_.BlockUntilThreadCount(
-      is_threadpool_thread ? 1 : 0,
-      grpc_core::Duration::Seconds(kBlockingQuiesceLogRateSeconds),
-      "shutting down");
+  living_thread_count_.BlockUntilThreadCount(is_threadpool_thread ? 1 : 0,
+                                             "shutting down");
   GPR_ASSERT(queue_.Empty());
   quiesced_.store(true, std::memory_order_relaxed);
   lifeguard_.BlockUntilShutdownAndReset();
@@ -250,9 +248,7 @@ bool WorkStealingThreadPool::WorkStealingThreadPoolImpl::IsQuiesced() {
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::PrepareFork() {
   SetForking(true);
   work_signal_.SignalAll();
-  living_thread_count_.BlockUntilThreadCount(
-      0, grpc_core::Duration::Seconds(kBlockingQuiesceLogRateSeconds),
-      "forking");
+  living_thread_count_.BlockUntilThreadCount(0, "forking");
   lifeguard_.BlockUntilShutdownAndReset();
 }
 
