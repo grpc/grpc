@@ -3764,6 +3764,29 @@ endif()
 
 endif()
 
+# Currently for shared lib on Windows (i.e. a DLL) certain bits of source code
+# are generated from protobuf definitions by upbc. This source code does not include
+# annotations needed to export these functions from gprc.lib so we have to
+# re-include a small subset of these.
+#
+# This is not an ideal situation because these functions will be unavailable
+# to clients of grpc and the libraries that need this (e.g. grpc++) will
+# include redundant duplicate code. Hence, the duplication is only activated
+# for DLL builds - and should be completely removed when source files are
+# generated with the necessary __declspec annotations.
+if(BUILD_SHARED_LIBS AND WIN32)
+
+set(gRPC_UPB_GEN_DUPL_SRC
+  src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
+  src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
+  src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.c
+  src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
+)
+else()
+set(gRPC_UPB_GEN_DUPL_SRC
+)
+endif()
+
 add_library(grpc++
   src/core/ext/transport/binder/client/binder_connector.cc
   src/core/ext/transport/binder/client/channel_create.cc
@@ -3830,6 +3853,7 @@ add_library(grpc++
   src/cpp/util/status.cc
   src/cpp/util/string_ref.cc
   src/cpp/util/time_cc.cc
+  ${gRPC_UPB_GEN_DUPL_SRC}
 )
 
 target_compile_features(grpc++ PUBLIC cxx_std_14)
@@ -4102,6 +4126,7 @@ endif()
 add_library(grpc++_alts
   src/cpp/common/alts_context.cc
   src/cpp/common/alts_util.cc
+  ${gRPC_UPB_GEN_DUPL_SRC}
 )
 
 target_compile_features(grpc++_alts PUBLIC cxx_std_14)
@@ -4513,6 +4538,7 @@ add_library(grpc++_unsecure
   src/cpp/util/status.cc
   src/cpp/util/string_ref.cc
   src/cpp/util/time_cc.cc
+  ${gRPC_UPB_GEN_DUPL_SRC}
 )
 
 target_compile_features(grpc++_unsecure PUBLIC cxx_std_14)

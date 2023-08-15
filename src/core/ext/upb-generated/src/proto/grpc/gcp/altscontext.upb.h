@@ -19,7 +19,7 @@ extern "C" {
 
 typedef struct grpc_gcp_AltsContext grpc_gcp_AltsContext;
 typedef struct grpc_gcp_AltsContext_PeerAttributesEntry grpc_gcp_AltsContext_PeerAttributesEntry;
-extern const GRPC_DLL upb_MiniTable grpc_gcp_AltsContext_msg_init;
+extern const upb_MiniTable grpc_gcp_AltsContext_msg_init;
 extern const upb_MiniTable grpc_gcp_AltsContext_PeerAttributesEntry_msg_init;
 struct grpc_gcp_RpcProtocolVersions;
 extern const upb_MiniTable grpc_gcp_RpcProtocolVersions_msg_init;
