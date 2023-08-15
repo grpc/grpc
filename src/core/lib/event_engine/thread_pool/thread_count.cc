@@ -40,7 +40,21 @@ BusyThreadCount::AutoThreadCounter::AutoThreadCounter(BusyThreadCount* counter,
 }
 
 BusyThreadCount::AutoThreadCounter::~AutoThreadCounter() {
-  counter_->Decrement(idx_);
+  if (counter_ != nullptr) counter_->Decrement(idx_);
+}
+
+BusyThreadCount::AutoThreadCounter::AutoThreadCounter(
+    BusyThreadCount::AutoThreadCounter&& other) noexcept {
+  counter_ = std::exchange(other.counter_, nullptr);
+  idx_ = other.idx_;
+}
+
+BusyThreadCount::AutoThreadCounter&
+BusyThreadCount::AutoThreadCounter::operator=(
+    BusyThreadCount::AutoThreadCounter&& other) noexcept {
+  counter_ = std::exchange(other.counter_, nullptr);
+  idx_ = other.idx_;
+  return *this;
 }
 
 BusyThreadCount::BusyThreadCount()
@@ -79,7 +93,19 @@ LivingThreadCount::AutoThreadCounter::AutoThreadCounter(
 }
 
 LivingThreadCount::AutoThreadCounter::~AutoThreadCounter() {
-  counter_->Decrement();
+  if (counter_ != nullptr) counter_->Decrement();
+}
+
+LivingThreadCount::AutoThreadCounter::AutoThreadCounter(
+    LivingThreadCount::AutoThreadCounter&& other) noexcept {
+  counter_ = std::exchange(other.counter_, nullptr);
+}
+
+LivingThreadCount::AutoThreadCounter&
+LivingThreadCount::AutoThreadCounter::operator=(
+    LivingThreadCount::AutoThreadCounter&& other) noexcept {
+  counter_ = std::exchange(other.counter_, nullptr);
+  return *this;
 }
 
 LivingThreadCount::AutoThreadCounter

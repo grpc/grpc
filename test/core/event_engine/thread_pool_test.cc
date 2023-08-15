@@ -312,6 +312,7 @@ TEST_F(ThreadCountTest, BusyCountStressTest) {
   for (auto& thd : threads) thd.join();
   stop_counting.Notify();
   counter_thread.join();
+  ASSERT_EQ(busy_thread_count.count(), 0);
 }
 
 TEST_F(ThreadCountTest, AutoBusyCountStressTest) {
@@ -345,6 +346,7 @@ TEST_F(ThreadCountTest, AutoBusyCountStressTest) {
   for (auto& thd : threads) thd.join();
   stop_counting.Notify();
   counter_thread.join();
+  ASSERT_EQ(busy_thread_count.count(), 0);
 }
 
 TEST_F(ThreadCountTest, LivingCountStressTest) {
@@ -381,6 +383,7 @@ TEST_F(ThreadCountTest, LivingCountStressTest) {
   for (auto& thd : threads) thd.join();
   stop_counting.Notify();
   counter_thread.join();
+  ASSERT_EQ(living_thread_count.count(), 0);
 }
 
 TEST_F(ThreadCountTest, AutoLivingCountStressTest) {
@@ -413,6 +416,7 @@ TEST_F(ThreadCountTest, AutoLivingCountStressTest) {
   for (auto& thd : threads) thd.join();
   stop_counting.Notify();
   counter_thread.join();
+  ASSERT_EQ(living_thread_count.count(), 0);
 }
 
 }  // namespace experimental

@@ -38,6 +38,8 @@ class BusyThreadCount {
    public:
     AutoThreadCounter(BusyThreadCount* counter, size_t idx);
     ~AutoThreadCounter();
+    AutoThreadCounter(AutoThreadCounter&& other) noexcept;
+    AutoThreadCounter& operator=(AutoThreadCounter&& other) noexcept;
 
    private:
     BusyThreadCount* counter_;
@@ -71,6 +73,8 @@ class LivingThreadCount {
    public:
     explicit AutoThreadCounter(LivingThreadCount* counter);
     ~AutoThreadCounter();
+    AutoThreadCounter(AutoThreadCounter&& other) noexcept;
+    AutoThreadCounter& operator=(AutoThreadCounter&& other) noexcept;
 
    private:
     LivingThreadCount* counter_;
