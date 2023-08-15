@@ -331,7 +331,7 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::
   // No new threads are started when forking.
   // No new work is done when forking needs to begin.
   if (pool_->forking_.load()) return;
-  const int living_thread_count = pool_->living_thread_count()->count();
+  const auto living_thread_count = pool_->living_thread_count()->count();
   // Wake an idle worker thread if there's global work to be had.
   if (pool_->busy_thread_count()->count() < living_thread_count) {
     if (!pool_->queue_.Empty()) {
