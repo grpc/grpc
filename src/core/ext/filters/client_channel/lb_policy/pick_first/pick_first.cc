@@ -85,9 +85,7 @@ class PickFirstConfig : public LoadBalancingPolicy::Config {
   }
 
   void JsonPostLoad(const Json& /* json */, const JsonArgs& /* args */,
-                    ValidationErrors* /* errors */) {
-    shuffle_addresses_ = true;
-  }
+                    ValidationErrors* /* errors */) {}
 
  private:
   bool shuffle_addresses_ = false;
