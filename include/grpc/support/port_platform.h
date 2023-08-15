@@ -61,20 +61,27 @@
 // headers consuming a DLL, this macro expands to `__declspec(dllimport)` so
 // that consumers know the symbol is defined inside the DLL. In all other cases,
 // the macro expands to nothing.
-// Note: gRPC_DLL_EXPORTS is set in CMakeLists.txt when building shared grpc{,_unsecure}
-//       gRPC_DLL_IMPORTS is set by us as part of the interface for consumers of the DLL
-#if defined(gRPC_DLL_EXPORTS)
+//
+// Warning: shared library support for Windows (i.e. producing DLL plus import
+//   library instead of a static library) is experimental. Some symbols that can
+//   be linked using the static library may not be available when using the
+//   dynamically linked library.
+//
+// Note: GRPC_DLL_EXPORTS is set in CMakeLists.txt when building shared
+// grpc{,_unsecure}
+//       GRPC_DLL_IMPORTS is set by us as part of the interface for consumers of the DLL
+#if defined(GRPC_DLL_EXPORTS)
 #define GRPC_DLL __declspec(dllexport)
-#elif defined(gRPC_DLL_IMPORTS)
+#elif defined(GRPC_DLL_IMPORTS)
 #define GRPC_DLL __declspec(dllimport)
 #else
 #define GRPC_DLL
-#endif // defined(gRPC_DLL_EXPORTS)
+#endif // defined(GRPC_DLL_EXPORTS)
 
 // same for gRPC++
-#if defined(gRPCXX_DLL_EXPORTS)
+#if defined(GRPCXX_DLL_EXPORTS)
 #define GRPCXX_DLL __declspec(dllexport)
-#elif defined(gRPCXX_DLL_IMPORTS)
+#elif defined(GRPCXX_DLL_IMPORTS)
 #define GRPCXX_DLL __declspec(dllimport)
 #else
 #define GRPCXX_DLL
