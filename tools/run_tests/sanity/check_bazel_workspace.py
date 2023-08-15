@@ -167,6 +167,7 @@ build_rules = {
     "load": lambda a, b: None,
     "git_repository": lambda **args: eval_state.git_repository(**args),
     "grpc_python_deps": lambda: None,
+    "Label": lambda a: None,
 }
 exec((bazel_file), build_rules)
 for name in _GRPC_DEP_NAMES:
@@ -215,6 +216,7 @@ for name in _GRPC_DEP_NAMES:
         "load": lambda a, b: None,
         "git_repository": lambda **args: state.git_repository(**args),
         "grpc_python_deps": lambda *args, **kwargs: None,
+        "Label": lambda a: None,
     }
     exec((bazel_file), rules)
     assert name not in list(names_and_urls_with_overridden_name.keys())
