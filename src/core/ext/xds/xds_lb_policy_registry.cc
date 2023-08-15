@@ -307,11 +307,9 @@ XdsLbPolicyRegistry::XdsLbPolicyRegistry() {
   policy_config_factories_.emplace(
       WrrLocalityLbPolicyConfigFactory::Type(),
       std::make_unique<WrrLocalityLbPolicyConfigFactory>());
-  if (ShufflePickFirstEnabled()) {
-    policy_config_factories_.emplace(
-        PickFirstLbPolicyConfigFactory::Type(),
-        std::make_unique<PickFirstLbPolicyConfigFactory>());
-  }
+  policy_config_factories_.emplace(
+      PickFirstLbPolicyConfigFactory::Type(),
+      std::make_unique<PickFirstLbPolicyConfigFactory>());
 }
 
 Json::Array XdsLbPolicyRegistry::ConvertXdsLbPolicyConfig(

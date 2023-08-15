@@ -486,15 +486,6 @@ TEST(PickFirst, ShuffleOmitted) {
   EXPECT_EQ(*result, "{\"pick_first\":{\"shuffleAddressList\":false}}");
 }
 
-TEST(PickFirst, EnvVarEnabled) {
-  LoadBalancingPolicyProto policy;
-  auto* lb_policy = policy.add_policies();
-  lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
-      PickFirst());
-  auto result = ConvertXdsPolicy(policy);
-  ASSERT_TRUE(result.ok());
-}
-
 //
 // CustomPolicy
 //

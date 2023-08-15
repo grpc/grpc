@@ -62,14 +62,6 @@ namespace grpc_core {
 
 TraceFlag grpc_lb_pick_first_trace(false, "pick_first");
 
-bool ShufflePickFirstEnabled() {
-  auto value = GetEnv("GRPC_EXPERIMENTAL_PICKFIRST_LB_CONFIG");
-  if (!value.has_value()) return true;
-  bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
-  return parse_succeeded && parsed_value;
-}
-
 namespace {
 
 //
@@ -94,9 +86,7 @@ class PickFirstConfig : public LoadBalancingPolicy::Config {
 
   void JsonPostLoad(const Json& /* json */, const JsonArgs& /* args */,
                     ValidationErrors* /* errors */) {
-    if (!ShufflePickFirstEnabled()) {
-      shuffle_addresses_ = false;
-    }
+    shuffle_addresses_ = true;
   }
 
  private:
