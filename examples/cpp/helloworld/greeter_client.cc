@@ -111,8 +111,7 @@ void RPC(const std::string target_str, const std::string method, const grpc::Byt
     std::condition_variable cv;
     
     stub->UnaryCall(
-                    &cli_ctx, method, options, send_buf, &recv_buf,
-                    [&recv_buf, &done, &mu, &cv](Status s)
+                    &cli_ctx, method, options, send_buf, &recv_buf, [&recv_buf, &done, &mu, &cv](Status s)
                     {
                         if (!s.ok())
                         {
@@ -142,8 +141,7 @@ int main(int argc, char** argv) {
     std::string kMethodName("/helloworld.Greeter/SayHello");
     std::string data("\n\U00000004John");
     grpc::ByteBuffer* send_buf;
-    auto d = SerializeToByteBuffer(data);
-    send_buf = d.get();
+    send_buf = SerializeToByteBuffer(data).get();
 
     RPC(target_str, kMethodName, send_buf);
 

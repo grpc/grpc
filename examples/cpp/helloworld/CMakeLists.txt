@@ -71,4 +71,12 @@ foreach(_target
     ${_PROTOBUF_LIBPROTOBUF})
 endforeach()
 
-add_library()
+add_library(generic_grpc generic_grpc.cc)
+target_link_libraries(generic_grpc hw_grpc_proto absl::flags absl::flags_parse ${_REFLECTION} ${_GRPC_GRPCPP} ${_PROTOBUF_LIBPROTOBUF})
+
+
+include(GNUInstallDirs)
+install(TARGETS generic_grpc
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)

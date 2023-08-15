@@ -6,5 +6,7 @@
 /Users/jwu/code/grpc/examples/cpp/helloworld/cmake/xcode/CMakeFiles/greeter_async_client.dir
 /Users/jwu/code/grpc/examples/cpp/helloworld/cmake/xcode/CMakeFiles/greeter_async_client2.dir
 /Users/jwu/code/grpc/examples/cpp/helloworld/cmake/xcode/CMakeFiles/greeter_async_server.dir
+/Users/jwu/code/grpc/examples/cpp/helloworld/cmake/xcode/CMakeFiles/generic_grpc.dir
+/Users/jwu/code/grpc/examples/cpp/helloworld/cmake/xcode/CMakeFiles/install.dir
 /Users/jwu/code/grpc/examples/cpp/helloworld/cmake/xcode/CMakeFiles/ALL_BUILD.dir
 /Users/jwu/code/grpc/examples/cpp/helloworld/cmake/xcode/CMakeFiles/ZERO_CHECK.dir
