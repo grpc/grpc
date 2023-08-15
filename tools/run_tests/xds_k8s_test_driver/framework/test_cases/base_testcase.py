@@ -20,7 +20,7 @@ from absl.testing import absltest
 
 
 class BaseTestCase(absltest.TestCase):
-    def run(self, result: unittest.TestResult = None) -> None:
+    def run(self, result: Optional[unittest.TestResult] = None) -> None:
         super().run(result)
         test_errors = [error for test, error in result.errors if test is self]
         test_failures = [
