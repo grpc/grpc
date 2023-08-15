@@ -27,8 +27,7 @@ build --remote_instance_name=projects/grpc-testing/instances/default_instance
 # unless overridden by --google_credentials=service_account_credentials.json
 # How to setup credentials to be able to use bazel RBE locally:
 # https://cloud.google.com/remote-build-execution/docs/results-ui/getting-started-results-ui
-# TODO(jtattermusch): Option 'auth_enabled' is deprecated: Use --google_default_credentials instead
-build --auth_enabled=true
+build --google_default_credentials
 
 # use remote cache (remote execution needs to be configured separately)
 # Note that remote cache is needed
@@ -41,5 +40,7 @@ build --remote_cache=grpcs://remotebuildexecution.googleapis.com
 build --bes_backend=grpcs://buildeventservice.googleapis.com
 build --bes_timeout=600s
 build --bes_results_url="https://source.cloud.google.com/results/invocations/"
-# TODO(jtattermusch): Option 'project_id' is deprecated: Use --bes_instance_name instead
-build --project_id=grpc-testing
+build --bes_instance_name=grpc-testing
+
+# Avoid timeouts for actions that don't write output for long time (See b/143346671 and b/143134296)
+build --grpc_keepalive_time=10m

@@ -56,8 +56,8 @@ class MemoryAllocator {
   /// The object will not be usable after this call unless it's a valid
   /// allocator is moved into it.
   void Reset() {
-    if (allocator_ != nullptr) allocator_->Shutdown();
-    allocator_.reset();
+    auto a = std::move(allocator_);
+    if (a != nullptr) a->Shutdown();
   }
 
   /// Reserve bytes from the quota.

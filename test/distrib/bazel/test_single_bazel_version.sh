@@ -44,6 +44,9 @@ EXCLUDED_TARGETS=(
 
   # TODO(jtattermusch): add back once fixed
   "-//examples/android/binder/..."
+
+  # Exclude bazelified tests as they contain some bazel hackery
+  "-//tools/bazelify_tests/..."
 )
 
 TEST_DIRECTORIES=(

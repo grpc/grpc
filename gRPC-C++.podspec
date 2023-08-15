@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.57.0-dev'
+  version = '1.58.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -215,7 +215,7 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     ss.dependency "#{s.name}/Interface", version
     ss.dependency 'gRPC-Core', version
-    abseil_version = '1.20230125.3'
+    abseil_version = '1.20230802.0'
     ss.dependency 'abseil/algorithm/container', abseil_version
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/core_headers', abseil_version
@@ -377,6 +377,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/http_trace.h',
                       'src/core/ext/transport/chttp2/transport/huffsyms.h',
                       'src/core/ext/transport/chttp2/transport/internal.h',
+                      'src/core/ext/transport/chttp2/transport/ping_abuse_policy.h',
+                      'src/core/ext/transport/chttp2/transport/ping_rate_policy.h',
                       'src/core/ext/transport/chttp2/transport/varint.h',
                       'src/core/ext/transport/inproc/inproc_transport.h',
                       'src/core/ext/upb-generated/envoy/admin/v3/certs.upb.h',
@@ -752,14 +754,17 @@ Pod::Spec.new do |s|
                       'src/core/lib/debug/stats.h',
                       'src/core/lib/debug/stats_data.h',
                       'src/core/lib/debug/trace.h',
+                      'src/core/lib/event_engine/ares_resolver.h',
                       'src/core/lib/event_engine/cf_engine/cf_engine.h',
                       'src/core/lib/event_engine/cf_engine/cfstream_endpoint.h',
                       'src/core/lib/event_engine/cf_engine/cftype_unique_ref.h',
+                      'src/core/lib/event_engine/cf_engine/dns_service_resolver.h',
                       'src/core/lib/event_engine/channel_args_endpoint_config.h',
                       'src/core/lib/event_engine/common_closures.h',
                       'src/core/lib/event_engine/default_event_engine.h',
                       'src/core/lib/event_engine/default_event_engine_factory.h',
                       'src/core/lib/event_engine/forkable.h',
+                      'src/core/lib/event_engine/grpc_polled_fd.h',
                       'src/core/lib/event_engine/handle_containers.h',
                       'src/core/lib/event_engine/memory_allocator_factory.h',
                       'src/core/lib/event_engine/poller.h',
@@ -768,6 +773,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/event_engine/posix_engine/ev_poll_posix.h',
                       'src/core/lib/event_engine/posix_engine/event_poller.h',
                       'src/core/lib/event_engine/posix_engine/event_poller_posix_default.h',
+                      'src/core/lib/event_engine/posix_engine/grpc_polled_fd_posix.h',
                       'src/core/lib/event_engine/posix_engine/internal_errqueue.h',
                       'src/core/lib/event_engine/posix_engine/lockfree_event.h',
                       'src/core/lib/event_engine/posix_engine/posix_endpoint.h',
@@ -942,12 +948,11 @@ Pod::Spec.new do |s|
                       'src/core/lib/promise/arena_promise.h',
                       'src/core/lib/promise/cancel_callback.h',
                       'src/core/lib/promise/context.h',
-                      'src/core/lib/promise/detail/basic_join.h',
                       'src/core/lib/promise/detail/basic_seq.h',
                       'src/core/lib/promise/detail/promise_factory.h',
                       'src/core/lib/promise/detail/promise_like.h',
+                      'src/core/lib/promise/detail/seq_state.h',
                       'src/core/lib/promise/detail/status.h',
-                      'src/core/lib/promise/detail/switch.h',
                       'src/core/lib/promise/exec_ctx_wakeup_scheduler.h',
                       'src/core/lib/promise/for_each.h',
                       'src/core/lib/promise/if.h',
@@ -964,7 +969,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/promise/seq.h',
                       'src/core/lib/promise/sleep.h',
                       'src/core/lib/promise/trace.h',
-                      'src/core/lib/promise/try_join.h',
                       'src/core/lib/promise/try_seq.h',
                       'src/core/lib/resolver/resolver.h',
                       'src/core/lib/resolver/resolver_factory.h',
@@ -1423,6 +1427,8 @@ Pod::Spec.new do |s|
                               'src/core/ext/transport/chttp2/transport/http_trace.h',
                               'src/core/ext/transport/chttp2/transport/huffsyms.h',
                               'src/core/ext/transport/chttp2/transport/internal.h',
+                              'src/core/ext/transport/chttp2/transport/ping_abuse_policy.h',
+                              'src/core/ext/transport/chttp2/transport/ping_rate_policy.h',
                               'src/core/ext/transport/chttp2/transport/varint.h',
                               'src/core/ext/transport/inproc/inproc_transport.h',
                               'src/core/ext/upb-generated/envoy/admin/v3/certs.upb.h',
@@ -1798,14 +1804,17 @@ Pod::Spec.new do |s|
                               'src/core/lib/debug/stats.h',
                               'src/core/lib/debug/stats_data.h',
                               'src/core/lib/debug/trace.h',
+                              'src/core/lib/event_engine/ares_resolver.h',
                               'src/core/lib/event_engine/cf_engine/cf_engine.h',
                               'src/core/lib/event_engine/cf_engine/cfstream_endpoint.h',
                               'src/core/lib/event_engine/cf_engine/cftype_unique_ref.h',
+                              'src/core/lib/event_engine/cf_engine/dns_service_resolver.h',
                               'src/core/lib/event_engine/channel_args_endpoint_config.h',
                               'src/core/lib/event_engine/common_closures.h',
                               'src/core/lib/event_engine/default_event_engine.h',
                               'src/core/lib/event_engine/default_event_engine_factory.h',
                               'src/core/lib/event_engine/forkable.h',
+                              'src/core/lib/event_engine/grpc_polled_fd.h',
                               'src/core/lib/event_engine/handle_containers.h',
                               'src/core/lib/event_engine/memory_allocator_factory.h',
                               'src/core/lib/event_engine/poller.h',
@@ -1814,6 +1823,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/event_engine/posix_engine/ev_poll_posix.h',
                               'src/core/lib/event_engine/posix_engine/event_poller.h',
                               'src/core/lib/event_engine/posix_engine/event_poller_posix_default.h',
+                              'src/core/lib/event_engine/posix_engine/grpc_polled_fd_posix.h',
                               'src/core/lib/event_engine/posix_engine/internal_errqueue.h',
                               'src/core/lib/event_engine/posix_engine/lockfree_event.h',
                               'src/core/lib/event_engine/posix_engine/posix_endpoint.h',
@@ -1988,12 +1998,11 @@ Pod::Spec.new do |s|
                               'src/core/lib/promise/arena_promise.h',
                               'src/core/lib/promise/cancel_callback.h',
                               'src/core/lib/promise/context.h',
-                              'src/core/lib/promise/detail/basic_join.h',
                               'src/core/lib/promise/detail/basic_seq.h',
                               'src/core/lib/promise/detail/promise_factory.h',
                               'src/core/lib/promise/detail/promise_like.h',
+                              'src/core/lib/promise/detail/seq_state.h',
                               'src/core/lib/promise/detail/status.h',
-                              'src/core/lib/promise/detail/switch.h',
                               'src/core/lib/promise/exec_ctx_wakeup_scheduler.h',
                               'src/core/lib/promise/for_each.h',
                               'src/core/lib/promise/if.h',
@@ -2010,7 +2019,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/promise/seq.h',
                               'src/core/lib/promise/sleep.h',
                               'src/core/lib/promise/trace.h',
-                              'src/core/lib/promise/try_join.h',
                               'src/core/lib/promise/try_seq.h',
                               'src/core/lib/resolver/resolver.h',
                               'src/core/lib/resolver/resolver_factory.h',

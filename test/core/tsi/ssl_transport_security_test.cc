@@ -27,6 +27,8 @@
 #include <openssl/err.h>
 #include <openssl/pem.h>
 
+#include "absl/strings/str_cat.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -180,6 +182,7 @@ static void ssl_test_setup_handshakers(tsi_test_fixture* fixture) {
     server_options.client_certificate_request =
         TSI_DONT_REQUEST_CLIENT_CERTIFICATE;
   }
+  server_options.send_client_ca_list = test_send_client_ca_list;
   server_options.session_ticket_key = ssl_fixture->session_ticket_key;
   server_options.session_ticket_key_size = ssl_fixture->session_ticket_key_size;
   server_options.min_tls_version = test_tls_version;
@@ -502,6 +505,32 @@ static char* load_file(const char* dir_path, const char* file_name) {
   return data;
 }
 
+static bool is_slow_build() {
+#if defined(GPR_ARCH_32) || defined(__APPLE__)
+  return true;
+#else
+  return BuiltUnderMsan() || BuiltUnderTsan() || BuiltUnderUbsan();
+#endif
+}
+
+static std::string GenerateTrustBundle() {
+  // Create a trust bundle, consisting of 200 self-signed certs. The self-signed
+  // certs have subject DNs that are sufficiently big and complex that they
+  // substantially increase the server handshake message size.
+  std::string trust_bundle;
+  int trust_bundle_size = is_slow_build() ? 20 : 200;
+  for (int i = 0; i < trust_bundle_size; ++i) {
+    SelfSignedCertificateOptions options;
+    options.common_name =
+        absl::StrCat("{46f0eaed-6e05-43f5-9289-379104612fc", i, "}");
+    options.organization = absl::StrCat("organization-", i);
+    options.organizational_unit = absl::StrCat("organizational-unit-", i);
+    std::string self_signed_cert = GenerateSelfSignedCertificate(options);
+    trust_bundle.append(self_signed_cert);
+  }
+  return trust_bundle;
+}
+
 static tsi_test_fixture* ssl_tsi_test_fixture_create() {
   ssl_tsi_test_fixture* ssl_fixture = grpc_core::Zalloc<ssl_tsi_test_fixture>();
   tsi_test_fixture_init(&ssl_fixture->base);
@@ -619,6 +648,37 @@ void ssl_tsi_test_do_handshake_with_root_store() {
       reinterpret_cast<ssl_tsi_test_fixture*>(fixture);
   ssl_fixture->key_cert_lib->use_root_store = true;
   tsi_test_do_handshake(fixture);
+  tsi_test_fixture_destroy(fixture);
+}
+
+void ssl_tsi_test_do_handshake_with_large_server_handshake_messages(
+    const std::string& trust_bundle) {
+  gpr_log(GPR_INFO,
+          "ssl_tsi_test_do_handshake_with_large_server_handshake_messages");
+  tsi_test_fixture* fixture = ssl_tsi_test_fixture_create();
+  // Force the test to read more handshake bytes from the peer than we have room
+  // for in the BIO. The default BIO buffer size is 17kB.
+  fixture->handshake_buffer_size = 18000;
+  ssl_tsi_test_fixture* ssl_fixture =
+      reinterpret_cast<ssl_tsi_test_fixture*>(fixture);
+  // Make a copy of the root cert and free the original.
+  std::string root_cert(ssl_fixture->key_cert_lib->root_cert);
+  gpr_free(ssl_fixture->key_cert_lib->root_cert);
+  ssl_fixture->key_cert_lib->root_cert = nullptr;
+  // Create a new root store, consisting of the root cert that is actually
+  // needed and 200 self-signed certs.
+  std::string effective_trust_bundle = absl::StrCat(root_cert, trust_bundle);
+  tsi_ssl_root_certs_store_destroy(ssl_fixture->key_cert_lib->root_store);
+  ssl_fixture->key_cert_lib->root_cert =
+      const_cast<char*>(effective_trust_bundle.c_str());
+  ssl_fixture->key_cert_lib->root_store =
+      tsi_ssl_root_certs_store_create(effective_trust_bundle.c_str());
+  ssl_fixture->key_cert_lib->use_root_store = true;
+  ssl_fixture->force_client_auth = true;
+  tsi_test_do_handshake(fixture);
+  // Overwrite the root_cert pointer so that tsi_test_fixture_destroy does not
+  // try to gpr_free it.
+  ssl_fixture->key_cert_lib->root_cert = nullptr;
   tsi_test_fixture_destroy(fixture);
 }
 
@@ -779,14 +839,6 @@ void ssl_tsi_test_do_round_trip_with_error_on_stack() {
   tsi_test_fixture* fixture = ssl_tsi_test_fixture_create();
   tsi_test_do_round_trip(fixture);
   tsi_test_fixture_destroy(fixture);
-}
-
-static bool is_slow_build() {
-#if defined(GPR_ARCH_32) || defined(__APPLE__)
-  return true;
-#else
-  return BuiltUnderMsan() || BuiltUnderTsan();
-#endif
 }
 
 void ssl_tsi_test_do_round_trip_odd_buffer_size() {
@@ -1166,6 +1218,7 @@ void ssl_tsi_test_do_handshake_with_custom_bio_pair() {
 
 TEST(SslTransportSecurityTest, MainTest) {
   grpc_init();
+  std::string trust_bundle = GenerateTrustBundle();
   const size_t number_tls_versions = 2;
   const tsi_tls_version tls_versions[] = {tsi_tls_version::TSI_TLS1_2,
                                           tsi_tls_version::TSI_TLS1_3};
@@ -1178,6 +1231,8 @@ TEST(SslTransportSecurityTest, MainTest) {
       ssl_tsi_test_do_handshake_small_handshake_buffer();
       ssl_tsi_test_do_handshake();
       ssl_tsi_test_do_handshake_with_root_store();
+      ssl_tsi_test_do_handshake_with_large_server_handshake_messages(
+          trust_bundle);
       ssl_tsi_test_do_handshake_with_client_authentication();
       ssl_tsi_test_do_handshake_with_client_authentication_and_root_store();
       ssl_tsi_test_do_handshake_with_server_name_indication_exact_domain();

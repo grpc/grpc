@@ -14,14 +14,9 @@
 
 # Dockerfile for building //test/cpp/interop:xds_interop_client
 
-FROM phusion/baseimage:master@sha256:65ea10d5f757e5e86272625f8675d437dd83d8db64bdb429e2354d58f5462750
+FROM python:3.9-slim-bullseye
 
-RUN apt-get update -y && \
-    apt-get install -y \
-    build-essential \
-    clang \
-    python3 \
-    python3-dev
+RUN apt-get update -y && apt-get upgrade -y && apt-get install -y build-essential clang curl
 
 WORKDIR /workdir
 
@@ -32,7 +27,7 @@ COPY . .
 RUN tools/bazel build //test/cpp/interop:xds_interop_client
 RUN cp -rL /workdir/bazel-bin/test/cpp/interop/xds_interop_client /artifacts/
 
-FROM phusion/baseimage:master@sha256:65ea10d5f757e5e86272625f8675d437dd83d8db64bdb429e2354d58f5462750
+FROM python:3.9-slim-bullseye
 COPY --from=0 /artifacts ./
 
 ENV GRPC_VERBOSITY="DEBUG"

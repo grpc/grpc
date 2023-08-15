@@ -1,6 +1,8 @@
 [
   "_sanity._sanity_test.SanityTest",
+  "admin.test_admin.TestAdmin",
   "channelz._channelz_servicer_test.ChannelzServicerTest",
+  "csds.test_csds.TestCsds",
   "fork._fork_interop_test.ForkInteropTest",
   "health_check._health_servicer_test.HealthServicerBackwardsCompatibleWatchTest",
   "health_check._health_servicer_test.HealthServicerTest",

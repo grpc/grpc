@@ -68,11 +68,8 @@ void PromiseEndpoint::WriteCallback(absl::Status status) {
   write_waker_.Wakeup();
 }
 
-void PromiseEndpoint::ReadCallback(
-    absl::Status status, size_t num_bytes_requested,
-    absl::optional<
-        struct grpc_event_engine::experimental::EventEngine::Endpoint::ReadArgs>
-        requested_read_args) {
+void PromiseEndpoint::ReadCallback(absl::Status status,
+                                   size_t num_bytes_requested) {
   if (!status.ok()) {
     // Invalidates all previous reads.
     pending_read_buffer_.Clear();
@@ -88,18 +85,16 @@ void PromiseEndpoint::ReadCallback(
     if (read_buffer_.Length() < num_bytes_requested) {
       // A further read is needed.
       // Set read args with number of bytes needed as hint.
-      requested_read_args = {
-          static_cast<int64_t>(num_bytes_requested - read_buffer_.Length())};
+      grpc_event_engine::experimental::EventEngine::Endpoint::ReadArgs
+          read_args = {static_cast<int64_t>(num_bytes_requested -
+                                            read_buffer_.Length())};
       // If `Read()` returns true immediately, the callback will not be
       // called. We still need to call our callback to pick up the result and
       // maybe do further reads.
       if (endpoint_->Read(std::bind(&PromiseEndpoint::ReadCallback, this,
-                                    std::placeholders::_1, num_bytes_requested,
-                                    requested_read_args),
-                          &pending_read_buffer_,
-                          &(requested_read_args.value()))) {
-        ReadCallback(absl::OkStatus(), num_bytes_requested,
-                     requested_read_args);
+                                    std::placeholders::_1, num_bytes_requested),
+                          &pending_read_buffer_, &read_args)) {
+        ReadCallback(absl::OkStatus(), num_bytes_requested);
       }
     } else {
       MutexLock lock(&read_mutex_);

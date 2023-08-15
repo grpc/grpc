@@ -99,6 +99,7 @@ class OpenCensusCallTracer : public grpc_core::ClientCallTracer {
     void RecordCancel(grpc_error_handle cancel_error) override;
     void RecordEnd(const gpr_timespec& /*latency*/) override;
     void RecordAnnotation(absl::string_view annotation) override;
+    void RecordAnnotation(const Annotation& annotation) override;
 
     experimental::CensusContext* context() { return &context_; }
 
@@ -136,6 +137,7 @@ class OpenCensusCallTracer : public grpc_core::ClientCallTracer {
   OpenCensusCallAttemptTracer* StartNewAttempt(
       bool is_transparent_retry) override;
   void RecordAnnotation(absl::string_view annotation) override;
+  void RecordAnnotation(const Annotation& annotation) override;
 
   // APIs to record API call latency
   void RecordApiLatency(absl::Duration api_latency,

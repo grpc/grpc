@@ -39,12 +39,12 @@
     TCP would not indicate completion of a read operation until a specified
     number of bytes have been read over the socket.
     Buffers are also allocated according to estimated RPC sizes.
-  expiry: 2023/08/01
+  expiry: 2024/01/01
   owner: vigneshbabu@google.com
   test_tags: ["endpoint_test", "flow_control_test"]
 - name: tcp_rcv_lowat
   description: Use SO_RCVLOWAT to avoid wakeups on the read path.
-  expiry: 2023/08/01
+  expiry: 2024/01/01
   owner: vigneshbabu@google.com
   test_tags: ["endpoint_test", "flow_control_test"]
 - name: peer_state_based_framing
@@ -52,7 +52,7 @@
     If set, the max sizes of frames sent to lower layers is controlled based
     on the peer's memory pressure which is reflected in its max http2 frame
     size.
-  expiry: 2023/08/01
+  expiry: 2024/01/01
   owner: vigneshbabu@google.com
   test_tags: ["flow_control_test"]
 - name: memory_pressure_controller
@@ -93,7 +93,7 @@
     (ie when all filters in a stack are promise based)
   expiry: 2023/11/01
   owner: ctiller@google.com
-  test_tags: ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test"]
+  test_tags: ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test", "logging_test"]
 - name: transport_supplies_client_latency
   description: If set, use the transport represented value for client latency in opencensus
   expiry: 2023/09/01
@@ -101,17 +101,17 @@
   test_tags: [census_test]
 - name: event_engine_listener
   description: Use EventEngine listeners instead of iomgr's grpc_tcp_server
-  expiry: 2023/10/01
+  expiry: 2024/01/01
   owner: vigneshbabu@google.com
   test_tags: ["core_end2end_test", "event_engine_listener_test"]
 - name: schedule_cancellation_over_write
   description: Allow cancellation op to be scheduled over a write
-  expiry: 2023/10/01
+  expiry: 2024/01/01
   owner: vigneshbabu@google.com
   test_tags: []
 - name: trace_record_callops
   description: Enables tracing of call batch initiation and completion.
-  expiry: 2023/10/01
+  expiry: 2024/01/01
   owner: vigneshbabu@google.com
   test_tags: []
 - name: event_engine_dns
@@ -119,12 +119,12 @@
     If set, use EventEngine DNSResolver for client channel resolution
   expiry: 2023/10/01
   owner: yijiem@google.com
-  test_tags: []
+  test_tags: ["cancel_ares_query_test", "resolver_component_tests_runner_invoker"]
   allow_in_fuzzing_config: false
 - name: work_stealing
   description:
     If set, use a work stealing thread pool implementation in EventEngine
-  expiry: 2023/08/01
+  expiry: 2023/10/01
   owner: hork@google.com
   test_tags: ["core_end2end_test"]
   allow_in_fuzzing_config: false
@@ -156,12 +156,20 @@
     lifetimes to be extended leading to memory bloat.
   expiry: 2023/11/01
   owner: ctiller@google.com
-  test_tags: ["core_end2end_test"]
+  test_tags: []
   allow_in_fuzzing_config: true
 - name: keepalive_fix
   description:
     Allows overriding keepalive_permit_without_calls.
     Refer https://github.com/grpc/grpc/pull/33428 for more information.
+  expiry: 2023/09/07
+  owner: yashkt@google.com
+  test_tags: []
+  allow_in_fuzzing_config: false
+- name: keepalive_server_fix
+  description:
+    Allows overriding keepalive_permit_without_calls for servers.
+    Refer https://github.com/grpc/grpc/pull/33917 for more information.
   expiry: 2023/09/07
   owner: yashkt@google.com
   test_tags: []

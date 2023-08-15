@@ -31,6 +31,7 @@
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/json.h>
 
 #include "src/core/lib/channel/channel_args.h"
