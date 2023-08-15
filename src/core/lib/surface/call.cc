@@ -2366,8 +2366,10 @@ grpc_error_handle MakePromiseBasedCall(grpc_call_create_args* args,
                                        grpc_call** out_call) {
   Channel* channel = args->channel.get();
 
-  auto alloc = Arena::CreateWithAlloc(channel->CallSizeEstimate(), sizeof(T),
-                                      channel->allocator());
+  const auto initial_size = channel->CallSizeEstimate();
+  global_stats().IncrementCallInitialSize(initial_size);
+  auto alloc =
+      Arena::CreateWithAlloc(initial_size, sizeof(T), channel->allocator());
   PromiseBasedCall* call = new (alloc.second) T(alloc.first, args);
   *out_call = call->c_ptr();
   GPR_DEBUG_ASSERT(Call::FromC(*out_call) == call);
