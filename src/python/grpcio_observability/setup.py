@@ -33,8 +33,7 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.abspath('.'))
 
 import _parallel_compile_patch
-import observability_lib_deps
-
+from make_grpcio_observability import CYGRPC_SO_PATH, CYGRPC_SO_FILE
 import grpc_version
 
 _EXT_INIT_SYMBOL = "PyInit__protoc_compiler"
@@ -179,17 +178,12 @@ EXTRA_COMPILE_ARGS = shlex.split(EXTRA_ENV_COMPILE_ARGS)
 
 # Instead of building anything from source, grpc_observability take dependency on
 # cygrpc shared objet library.
-CYGRPC_SO_PATH = os.path.dirname(os.path.abspath(__file__))
-EXTRA_ENV_LINK_ARGS += f' -L{CYGRPC_SO_PATH} -l:_cygrpc.so -Wl,-rpath,{CYGRPC_SO_PATH}'
+EXTRA_ENV_LINK_ARGS += f' -L{CYGRPC_SO_PATH} -l:{CYGRPC_SO_FILE} -Wl,-rpath,{CYGRPC_SO_PATH}'
 
 EXTRA_LINK_ARGS = shlex.split(EXTRA_ENV_LINK_ARGS)
 
 if BUILD_WITH_STATIC_LIBSTDCXX:
     EXTRA_LINK_ARGS.append('-static-libstdc++')
-
-CC_INCLUDES = [
-    os.path.normpath(include_dir) for include_dir in observability_lib_deps.CC_INCLUDES
-]
 
 DEFINE_MACROS = ()
 
@@ -238,7 +232,8 @@ def extension_modules():
 
     plugin_include = ['grpc_root', # For path starts with src/
                       os.path.join('grpc_root', 'include'), # For core deps
-                      ] + CC_INCLUDES
+                      os.path.join('third_party', 'abseil-cpp'),
+                      ]
     plugin_sources = []
     plugin_sources += _find_files_with_extension('grpc_observability', 'cc')
     plugin_sources += cython_module_files
@@ -255,7 +250,9 @@ def extension_modules():
     extensions = [plugin_ext]
     if BUILD_WITH_CYTHON:
         from Cython import Build
-        return Build.cythonize(extensions)
+        return Build.cythonize(
+            extensions,
+            compiler_directives={'language_level' : "3"})
     else:
         return extensions
 
