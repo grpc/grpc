@@ -92,6 +92,24 @@ def check_linker_need_libatomic():
     cpp_test.communicate(input=code_test)
     return cpp_test.returncode == 0
 
+def _find_files_with_extension(directory: str, extension: str):
+    """Finds all files in a directory with the specified extension.
+
+    Args:
+    directory: The directory to search.
+    extension: The file extension to find.
+
+    Returns:
+    A list of file paths that match the specified extension.
+    """
+
+    files = []
+    for filename in os.listdir(directory):
+        filepath = os.path.join(directory, filename)
+        if os.path.isfile(filepath) and filename.endswith(extension):
+            files.append(filepath)
+
+    return files
 
 class BuildExt(build_ext.build_ext):
     """Custom build_ext command."""
@@ -218,20 +236,12 @@ def extension_modules():
             os.path.join('grpc_observability', '_cyobservability.cpp')
         ]
 
-    plugin_include = ['.',
-                      'grpc_root',
-                      os.path.join('grpc_root', 'include'),
+    plugin_include = ['grpc_root', # For path starts with src/
+                      os.path.join('grpc_root', 'include'), # For core deps
                       ] + CC_INCLUDES
-
     plugin_sources = []
-    plugin_sources += [
-        os.path.join('grpc_observability', 'client_call_tracer.cc'),
-        os.path.join('grpc_observability', 'server_call_tracer.cc'),
-        os.path.join('grpc_observability', 'observability_util.cc'),
-        os.path.join('grpc_observability', 'python_census_context.cc'),
-        os.path.join('grpc_observability', 'sampler.cc'),
-        os.path.join('grpc_observability', 'rpc_encoding.cc')
-    ] + cython_module_files
+    plugin_sources += _find_files_with_extension('grpc_observability', 'cc')
+    plugin_sources += cython_module_files
 
     plugin_ext = setuptools.Extension(
         name='grpc_observability._cyobservability',
