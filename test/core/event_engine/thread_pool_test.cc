@@ -275,9 +275,9 @@ TEST_F(WorkStealingThreadPoolTest, QuiesceRaceStressTest) {
   }
 }
 
-class ThreadCountTest : public testing::Test {};
+class BusyThreadCountTest : public testing::Test {};
 
-TEST_F(ThreadCountTest, BusyCountStressTest) {
+TEST_F(BusyThreadCountTest, StressTest) {
   // Spawns a large number of threads to concurrently increments/decrement the
   // counters, and request count totals. Magic numbers were tuned for tests to
   // run in a reasonable amount of time.
@@ -315,7 +315,7 @@ TEST_F(ThreadCountTest, BusyCountStressTest) {
   ASSERT_EQ(busy_thread_count.count(), 0);
 }
 
-TEST_F(ThreadCountTest, AutoBusyCountStressTest) {
+TEST_F(BusyThreadCountTest, AutoCountStressTest) {
   // Spawns a large number of threads to concurrently increments/decrement the
   // counters, and request count totals. Magic numbers were tuned for tests to
   // run in a reasonable amount of time.
@@ -349,7 +349,9 @@ TEST_F(ThreadCountTest, AutoBusyCountStressTest) {
   ASSERT_EQ(busy_thread_count.count(), 0);
 }
 
-TEST_F(ThreadCountTest, LivingCountStressTest) {
+class LivingThreadCountTest : public testing::Test {};
+
+TEST_F(LivingThreadCountTest, StressTest) {
   // Spawns a large number of threads to concurrently increments/decrement the
   // counters, and request count totals. Magic numbers were tuned for tests to
   // run in a reasonable amount of time.
@@ -386,7 +388,7 @@ TEST_F(ThreadCountTest, LivingCountStressTest) {
   ASSERT_EQ(living_thread_count.count(), 0);
 }
 
-TEST_F(ThreadCountTest, AutoLivingCountStressTest) {
+TEST_F(LivingThreadCountTest, AutoCountStressTest) {
   // Spawns a large number of threads to concurrently increments/decrement the
   // counters, and request count totals. Magic numbers were tuned for tests to
   // run in a reasonable amount of time.
@@ -416,6 +418,35 @@ TEST_F(ThreadCountTest, AutoLivingCountStressTest) {
   for (auto& thd : threads) thd.join();
   stop_counting.Notify();
   counter_thread.join();
+  ASSERT_EQ(living_thread_count.count(), 0);
+}
+
+TEST_F(LivingThreadCountTest, BlockUntilThreadCountTest) {
+  size_t thread_count = 100;
+  grpc_core::Notification waiting;
+  LivingThreadCount living_thread_count;
+  std::vector<std::thread> threads;
+  threads.reserve(thread_count);
+  // Start N living threads
+  for (int i = 0; i < thread_count; i++) {
+    threads.emplace_back([&]() {
+      auto alive = living_thread_count.MakeAutoThreadCounter();
+      waiting.WaitForNotification();
+    });
+  }
+  // Join in a separate thread
+  std::thread joiner([&]() {
+    waiting.Notify();
+    for (auto& thd : threads) thd.join();
+  });
+  {
+    auto alive = living_thread_count.MakeAutoThreadCounter();
+    living_thread_count.BlockUntilThreadCount(1,
+                                              "block until 1 thread remains");
+  }
+  living_thread_count.BlockUntilThreadCount(0,
+                                            "block until all threads are gone");
+  joiner.join();
   ASSERT_EQ(living_thread_count.count(), 0);
 }
 
