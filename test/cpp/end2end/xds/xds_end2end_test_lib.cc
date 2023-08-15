@@ -280,10 +280,9 @@ XdsEnd2endTest::BalancerServerThread::BalancerServerThread(
     XdsEnd2endTest* test_obj)
     : ServerThread(test_obj, /*use_xds_enabled_server=*/false),
       ads_service_(new AdsServiceImpl()),
-      lrs_service_(new LrsServiceImpl(
-          (GetParam().enable_load_reporting() ? 20 * grpc_test_slowdown_factor()
-                                              : 0),
-          {kDefaultClusterName})) {}
+      lrs_service_(
+          new LrsServiceImpl((GetParam().enable_load_reporting() ? 20 : 0),
+                             {kDefaultClusterName})) {}
 
 void XdsEnd2endTest::BalancerServerThread::RegisterAllServices(
     ServerBuilder* builder) {

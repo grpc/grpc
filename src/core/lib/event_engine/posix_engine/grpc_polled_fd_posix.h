@@ -21,10 +21,15 @@
 
 #if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
 
-#include <string.h>
+// IWYU pragma: no_include <ares_build.h>
+
 #include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <sys/uio.h>
+#include <unistd.h>
 
 #include <string>
+#include <unordered_set>
 #include <utility>
 
 #include <ares.h>
@@ -36,6 +41,7 @@
 #include "src/core/lib/event_engine/grpc_polled_fd.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
+#include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/iomgr/error.h"
 
 namespace grpc_event_engine {
@@ -93,16 +99,95 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
   explicit GrpcPolledFdFactoryPosix(PosixEventPoller* poller)
       : poller_(poller) {}
 
+  ~GrpcPolledFdFactoryPosix() override {
+    for (auto& fd : owned_fds_) {
+      close(fd);
+    }
+  }
+
   GrpcPolledFd* NewGrpcPolledFdLocked(ares_socket_t as) override {
+    owned_fds_.insert(as);
     return new GrpcPolledFdPosix(
         as,
         poller_->CreateHandle(as, "c-ares socket", poller_->CanTrackErrors()));
   }
 
-  void ConfigureAresChannelLocked(ares_channel /*channel*/) override {}
+  void ConfigureAresChannelLocked(ares_channel channel) override {
+    ares_set_socket_functions(channel, &kSockFuncs, this);
+    ares_set_socket_configure_callback(
+        channel, &GrpcPolledFdFactoryPosix::ConfigureSocket, nullptr);
+  }
 
  private:
+  /// Overridden socket API for c-ares
+  static ares_socket_t Socket(int af, int type, int protocol,
+                              void* /*user_data*/) {
+    return socket(af, type, protocol);
+  }
+
+  /// Overridden connect API for c-ares
+  static int Connect(ares_socket_t as, const struct sockaddr* target,
+                     ares_socklen_t target_len, void* /*user_data*/) {
+    return connect(as, target, target_len);
+  }
+
+  /// Overridden writev API for c-ares
+  static ares_ssize_t WriteV(ares_socket_t as, const struct iovec* iov,
+                             int iovec_count, void* /*user_data*/) {
+    return writev(as, iov, iovec_count);
+  }
+
+  /// Overridden recvfrom API for c-ares
+  static ares_ssize_t RecvFrom(ares_socket_t as, void* data, size_t data_len,
+                               int flags, struct sockaddr* from,
+                               ares_socklen_t* from_len, void* /*user_data*/) {
+    return recvfrom(as, data, data_len, flags, from, from_len);
+  }
+
+  /// Overridden close API for c-ares
+  static int Close(ares_socket_t as, void* user_data) {
+    GrpcPolledFdFactoryPosix* self =
+        static_cast<GrpcPolledFdFactoryPosix*>(user_data);
+    if (self->owned_fds_.find(as) == self->owned_fds_.end()) {
+      // c-ares owns this fd, grpc has never seen it
+      return close(as);
+    }
+    return 0;
+  }
+
+  /// Because we're using socket API overrides, c-ares won't
+  /// perform its typical configuration on the socket. See
+  /// https://github.com/c-ares/c-ares/blob/bad62225b7f6b278b92e8e85a255600b629ef517/src/lib/ares_process.c#L1018.
+  /// So we use the configure socket callback override and copy default
+  /// settings that c-ares would normally apply on posix platforms:
+  ///   - non-blocking
+  ///   - cloexec flag
+  ///   - disable nagle
+  static int ConfigureSocket(ares_socket_t fd, int type, void* /*user_data*/) {
+    // clang-format off
+#define RETURN_IF_ERROR(expr) if (!(expr).ok()) { return -1; }
+    // clang-format on
+    PosixSocketWrapper sock(fd);
+    RETURN_IF_ERROR(sock.SetSocketNonBlocking(1));
+    RETURN_IF_ERROR(sock.SetSocketCloexec(1));
+    if (type == SOCK_STREAM) {
+      RETURN_IF_ERROR(sock.SetSocketLowLatency(1));
+    }
+    return 0;
+  }
+
+  const struct ares_socket_functions kSockFuncs = {
+      &GrpcPolledFdFactoryPosix::Socket /* socket */,
+      &GrpcPolledFdFactoryPosix::Close /* close */,
+      &GrpcPolledFdFactoryPosix::Connect /* connect */,
+      &GrpcPolledFdFactoryPosix::RecvFrom /* recvfrom */,
+      &GrpcPolledFdFactoryPosix::WriteV /* writev */,
+  };
+
   PosixEventPoller* poller_;
+  // fds that are used/owned by grpc - we (grpc) will close them rather than
+  // c-ares
+  std::unordered_set<ares_socket_t> owned_fds_;
 };
 
 }  // namespace experimental

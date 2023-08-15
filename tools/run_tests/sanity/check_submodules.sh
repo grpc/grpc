@@ -25,7 +25,7 @@ want_submodules=$(mktemp /tmp/submXXXXXX)
 
 git submodule | awk '{ print $2 " " $1 }' | sort >"$submodules"
 cat <<EOF | sort >"$want_submodules"
-third_party/abseil-cpp c2435f8342c2d0ed8101cb43adfd605fdc52dca2
+third_party/abseil-cpp 29bf8085f3bf17b84d30e34b3d7ff8248fda404e
 third_party/benchmark 015d1a091af6937488242b70121858bce8fd40e9
 third_party/bloaty 60209eb1ccc34d5deefb002d1b7f37545204f7f2
 third_party/boringssl-with-bazel 342e805bc1f5dfdd650e3f031686d6c939b095d9
