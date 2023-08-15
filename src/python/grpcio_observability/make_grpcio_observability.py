@@ -19,9 +19,14 @@ from __future__ import print_function
 import errno
 import os
 import shutil
+import subprocess
 
 # the target directory is relative to the grpcio_observability package root.
 GRPCIO_OBSERVABILITY_ROOT_PREFIX = 'src/python/grpcio_observability/'
+
+# cygrpc.so build from bazel
+CYGRPC_SO_PATH = os.path.dirname(os.path.abspath(__file__))
+CYGRPC_SO_FILE = "_cygrpc.so"
 
 # Pairs of (source, target) directories to copy
 # from the grpc repo root to the grpcio_observability build root.
@@ -35,6 +40,11 @@ COPY_FILES_SOURCE_TARGET_PAIRS = [
 # grpc repo root
 GRPC_ROOT = os.path.abspath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..'))
+
+# the script to run for getting dependencies
+BAZEL_BUILD = os.path.join(
+    GRPC_ROOT, "tools", "distrib", "python", "bazel_build.sh"
+)
 
 def _copy_source_tree(source, target):
     """Copies source directory to a given target directory."""
@@ -54,6 +64,12 @@ def _copy_source_tree(source, target):
                 os.path.join(target_dir, relative_file))
             shutil.copyfile(source_file, target_file)
 
+def _bazel_build(query):
+    """Runs 'bazel build' to collect source file info."""
+    print('Running "bazel build %s"' % query)
+    output = subprocess.check_output([BAZEL_BUILD, query])
+    return output.decode("ascii").splitlines()
+
 
 def main():
     os.chdir(GRPC_ROOT)
@@ -72,6 +88,22 @@ def main():
         _copy_source_tree(source_abs, target_abs)
     print('The necessary source files were copied under the grpcio_observability package root.')
 
+    # Step 2:
+    _bazel_build("//src/python/grpcio/grpc:grpcio")
+
+    _source_dir = os.path.join(
+        GRPC_ROOT, "bazel-bin", "src", "python", "grpcio", "grpc", "_cython", "cygrpc.so"
+    )
+    source_file = os.path.abspath(_source_dir)
+
+    # _target_dir = os.path.join(
+    #     GRPC_ROOT, "src", "python", "grpcio_observability"
+    # )
+    target_file = os.path.abspath(
+        os.path.join(CYGRPC_SO_PATH, CYGRPC_SO_FILE)
+    )
+    print('Copying %s to %s' % (source_file, target_file))
+    shutil.copyfile(source_file, target_file)
 
 if __name__ == '__main__':
     main()

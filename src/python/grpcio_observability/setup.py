@@ -33,6 +33,7 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.abspath('.'))
 
 import _parallel_compile_patch
+from make_grpcio_observability import CYGRPC_SO_PATH, CYGRPC_SO_FILE
 import grpc_version
 
 _EXT_INIT_SYMBOL = "PyInit__protoc_compiler"
@@ -177,8 +178,7 @@ EXTRA_COMPILE_ARGS = shlex.split(EXTRA_ENV_COMPILE_ARGS)
 
 # Instead of building anything from source, grpc_observability take dependency on
 # cygrpc shared objet library.
-CYGRPC_SO_PATH = os.path.dirname(os.path.abspath(__file__))
-EXTRA_ENV_LINK_ARGS += f' -L{CYGRPC_SO_PATH} -l:_cygrpc.so -Wl,-rpath,{CYGRPC_SO_PATH}'
+EXTRA_ENV_LINK_ARGS += f' -L{CYGRPC_SO_PATH} -l:{CYGRPC_SO_FILE} -Wl,-rpath,{CYGRPC_SO_PATH}'
 
 EXTRA_LINK_ARGS = shlex.split(EXTRA_ENV_LINK_ARGS)
 
@@ -250,7 +250,9 @@ def extension_modules():
     extensions = [plugin_ext]
     if BUILD_WITH_CYTHON:
         from Cython import Build
-        return Build.cythonize(extensions)
+        return Build.cythonize(
+            extensions,
+            compiler_directives={'language_level' : "3"})
     else:
         return extensions
 
