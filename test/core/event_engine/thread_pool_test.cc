@@ -27,6 +27,7 @@
 #include <grpc/grpc.h>
 
 #include "src/core/lib/event_engine/thread_pool/original_thread_pool.h"
+#include "src/core/lib/event_engine/thread_pool/thread_count.h"
 #include "src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/thd.h"
@@ -272,6 +273,146 @@ TEST_F(WorkStealingThreadPoolTest, QuiesceRaceStressTest) {
     }
     p.Quiesce();
   }
+}
+
+class ThreadCountTest : public testing::Test {};
+
+TEST_F(ThreadCountTest, BusyCountStressTest) {
+  // Spawns a large number of threads to concurrently increments/decrement the
+  // counters, and request count totals. Magic numbers were tuned for tests to
+  // run in a reasonable amount of time.
+  int thread_count = 300;
+  int run_count = 1000;
+  int increment_by = 50;
+  BusyThreadCount busy_thread_count;
+  grpc_core::Notification stop_counting;
+  std::thread counter_thread([&]() {
+    while (!stop_counting.HasBeenNotified()) {
+      busy_thread_count.count();
+    }
+  });
+  std::vector<std::thread> threads;
+  threads.reserve(thread_count);
+  for (int i = 0; i < thread_count; i++) {
+    threads.emplace_back([&]() {
+      for (int j = 0; j < run_count; j++) {
+        // Get a new index for every iteration.
+        // This is not the intended use, but further stress tests the NextIndex
+        // function.
+        auto thread_idx = busy_thread_count.NextIndex();
+        for (int inc = 0; inc < increment_by; inc++) {
+          busy_thread_count.Increment(thread_idx);
+        }
+        for (int inc = 0; inc < increment_by; inc++) {
+          busy_thread_count.Decrement(thread_idx);
+        }
+      }
+    });
+  }
+  for (auto& thd : threads) thd.join();
+  stop_counting.Notify();
+  counter_thread.join();
+}
+
+TEST_F(ThreadCountTest, AutoBusyCountStressTest) {
+  // Spawns a large number of threads to concurrently increments/decrement the
+  // counters, and request count totals. Magic numbers were tuned for tests to
+  // run in a reasonable amount of time.
+  int thread_count = 150;
+  int run_count = 1000;
+  int increment_by = 30;
+  BusyThreadCount busy_thread_count;
+  grpc_core::Notification stop_counting;
+  std::thread counter_thread([&]() {
+    while (!stop_counting.HasBeenNotified()) {
+      busy_thread_count.count();
+    }
+  });
+  std::vector<std::thread> threads;
+  threads.reserve(thread_count);
+  for (int i = 0; i < thread_count; i++) {
+    threads.emplace_back([&]() {
+      for (int j = 0; j < run_count; j++) {
+        std::vector<BusyThreadCount::AutoThreadCounter> auto_counters;
+        auto_counters.reserve(increment_by);
+        for (int ctr_count = 0; ctr_count < increment_by; ctr_count++) {
+          auto_counters.push_back(busy_thread_count.MakeAutoThreadCounter(
+              busy_thread_count.NextIndex()));
+        }
+      }
+    });
+  }
+  for (auto& thd : threads) thd.join();
+  stop_counting.Notify();
+  counter_thread.join();
+}
+
+TEST_F(ThreadCountTest, LivingCountStressTest) {
+  // Spawns a large number of threads to concurrently increments/decrement the
+  // counters, and request count totals. Magic numbers were tuned for tests to
+  // run in a reasonable amount of time.
+  int thread_count = 50;
+  int run_count = 1000;
+  int increment_by = 10;
+  LivingThreadCount living_thread_count;
+  grpc_core::Notification stop_counting;
+  std::thread counter_thread([&]() {
+    while (!stop_counting.HasBeenNotified()) {
+      living_thread_count.count();
+    }
+  });
+  std::vector<std::thread> threads;
+  threads.reserve(thread_count);
+  for (int i = 0; i < thread_count; i++) {
+    threads.emplace_back([&]() {
+      for (int j = 0; j < run_count; j++) {
+        // Get a new index for every iteration.
+        // This is not the intended use, but further stress tests the NextIndex
+        // function.
+        for (int inc = 0; inc < increment_by; inc++) {
+          living_thread_count.Increment();
+        }
+        for (int inc = 0; inc < increment_by; inc++) {
+          living_thread_count.Decrement();
+        }
+      }
+    });
+  }
+  for (auto& thd : threads) thd.join();
+  stop_counting.Notify();
+  counter_thread.join();
+}
+
+TEST_F(ThreadCountTest, AutoLivingCountStressTest) {
+  // Spawns a large number of threads to concurrently increments/decrement the
+  // counters, and request count totals. Magic numbers were tuned for tests to
+  // run in a reasonable amount of time.
+  int thread_count = 50;
+  int run_count = 1000;
+  int increment_by = 10;
+  LivingThreadCount living_thread_count;
+  grpc_core::Notification stop_counting;
+  std::thread counter_thread([&]() {
+    while (!stop_counting.HasBeenNotified()) {
+      living_thread_count.count();
+    }
+  });
+  std::vector<std::thread> threads;
+  threads.reserve(thread_count);
+  for (int i = 0; i < thread_count; i++) {
+    threads.emplace_back([&]() {
+      for (int j = 0; j < run_count; j++) {
+        std::vector<LivingThreadCount::AutoThreadCounter> auto_counters;
+        auto_counters.reserve(increment_by);
+        for (int ctr_count = 0; ctr_count < increment_by; ctr_count++) {
+          auto_counters.push_back(living_thread_count.MakeAutoThreadCounter());
+        }
+      }
+    });
+  }
+  for (auto& thd : threads) thd.join();
+  stop_counting.Notify();
+  counter_thread.join();
 }
 
 }  // namespace experimental
