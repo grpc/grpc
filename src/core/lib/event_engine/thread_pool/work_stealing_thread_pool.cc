@@ -356,7 +356,8 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::
   // queue, nor any work to steal. Add more sophisticated logic about when to
   // start a thread.
   GRPC_EVENT_ENGINE_TRACE(
-      "Starting new ThreadPool thread due to backlog (total threads: %d)",
+      "Starting new ThreadPool thread due to backlog (total threads: %" PRIuPTR
+      ")",
       living_thread_count + 1);
   pool_->StartThread();
   // Tell the lifeguard to monitor the pool more closely.
