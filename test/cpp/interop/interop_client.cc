@@ -1002,58 +1002,6 @@ bool InteropClient::DoPickFirstUnary() {
   return true;
 }
 
-bool InteropClient::DoPickFirstRandomness() {
-  if (channel_pool_size_ <= 0) {
-    gpr_log(GPR_ERROR,
-            "pick_first_randomness test must be run with multiple "
-            "channels, but got %d",
-            channel_pool_size_);
-    return false;
-  }
-  std::vector<std::string> peer_addresses;
-  int total_failures = 0;
-  int per_channel_rpcs = 10;
-  // 3% error rate
-  int max_allowed_failures = ceil(0.03 * per_channel_rpcs * channel_pool_size_);
-  for (int i = 0; i < per_channel_rpcs; i++) {  // every channel sends 10 RPCs
-    for (int ch = 0; ch < channel_pool_size_; ch++) {
-      auto result = interopClients_[ch]->PerformOneSoakTestIteration(
-          /*reset_channel*/ false,
-          /*max_acceptable_per_iteration_latency_ms*/ 5000,
-          /*request_size*/ kLargeRequestSize,
-          /*response_size*/ kLargeResponseSize);
-      bool success = std::get<0>(result);
-      int32_t elapsed_ms = std::get<1>(result);
-      std::string debug_string = std::get<2>(result);
-      std::string peer = std::get<3>(result);
-      if (!success) {
-        gpr_log(GPR_DEBUG,
-                "channel: %d rpc iteration: %d elapsed_ms: %d peer: "
-                "%s failed: %s",
-                ch, i, elapsed_ms, peer.c_str(), debug_string.c_str());
-        ++total_failures;
-      }
-      if (i == 0) {  // record peer when a channel send RPC for the first time
-        peer_addresses.push_back(peer);
-      } else {  // check affinity on a channel
-        if (peer != peer_addresses[ch]) {
-          gpr_log(GPR_ERROR,
-                  "channel: %d rpc iteration: %d affinity broke. "
-                  "expected peer: %s got peer: %s",
-                  ch, i, peer_addresses[ch].c_str(), peer.c_str());
-          return false;
-        }
-      }
-    }
-  }
-  if (total_failures > max_allowed_failures) {
-    gpr_log(GPR_ERROR, "failed RPC: %d exceeded the max_allowed: %d",
-            total_failures, max_allowed_failures);
-  }
-  gpr_log(GPR_DEBUG, "pick first randomness successfully finished");
-  return true;
-}
-
 bool InteropClient::DoOrcaPerRpc() {
   load_report_tracker_.ResetCollectedLoadReports();
   grpc_core::CoreConfiguration::RegisterBuilder(RegisterBackendMetricsLbPolicy);
@@ -1296,37 +1244,51 @@ void InteropClient::PerformSoakTest(
       gpr_time_from_seconds(overall_timeout_seconds, GPR_TIMESPAN));
   int32_t iterations_ran = 0;
   int total_failures = 0;
+  int num_channels = 1;
+  if (channel_pool_size_ > 0) {
+    num_channels = channel_pool_size_;
+  }
   for (int i = 0;
        i < soak_iterations &&
        gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), overall_deadline) < 0;
        ++i) {
-    gpr_timespec earliest_next_start = gpr_time_add(
-        gpr_now(GPR_CLOCK_MONOTONIC),
-        gpr_time_from_millis(min_time_ms_between_rpcs, GPR_TIMESPAN));
-    auto result = PerformOneSoakTestIteration(
-        reset_channel_per_iteration, max_acceptable_per_iteration_latency_ms,
-        request_size, response_size);
-    bool success = std::get<0>(result);
-    int32_t elapsed_ms = std::get<1>(result);
-    std::string debug_string = std::get<2>(result);
-    std::string peer = std::get<3>(result);
-    results.push_back(result);
-    if (!success) {
-      gpr_log(GPR_DEBUG,
-              "soak iteration: %d elapsed_ms: %d peer: %s server_uri: %s "
-              "failed: %s",
-              i, elapsed_ms, peer.c_str(), server_uri.c_str(),
-              debug_string.c_str());
-      total_failures++;
-    } else {
-      gpr_log(
-          GPR_DEBUG,
-          "soak iteration: %d elapsed_ms: %d peer: %s server_uri: %s succeeded",
-          i, elapsed_ms, peer.c_str(), server_uri.c_str());
+    for (int ch = 0; ch < num_channels; ++ch) {
+      gpr_timespec earliest_next_start = gpr_time_add(
+          gpr_now(GPR_CLOCK_MONOTONIC),
+          gpr_time_from_millis(min_time_ms_between_rpcs, GPR_TIMESPAN));
+      std::tuple<bool, int32_t, std::string, std::string> result;
+      if (channel_pool_size_ > 0) {
+        result = interopClients_[ch]->PerformOneSoakTestIteration(
+            reset_channel_per_iteration,
+            max_acceptable_per_iteration_latency_ms);
+      } else {
+        result =
+            PerformOneSoakTestIteration(reset_channel_per_iteration,
+                                        max_acceptable_per_iteration_latency_ms,
+                                        request_size, response_size);
+      }
+      bool success = std::get<0>(result);
+      int32_t elapsed_ms = std::get<1>(result);
+      std::string debug_string = std::get<2>(result);
+      std::string peer = std::get<3>(result);
+      results.push_back(result);
+      if (!success) {
+        gpr_log(GPR_DEBUG,
+                "soak iteration: %d elapsed_ms: %d peer: %s server_uri: %s "
+                "failed: %s",
+                i, elapsed_ms, peer.c_str(), server_uri.c_str(),
+                debug_string.c_str());
+        total_failures++;
+      } else {
+        gpr_log(GPR_DEBUG,
+                "soak iteration: %d elapsed_ms: %d peer: %s server_uri: %s "
+                "succeeded",
+                i, elapsed_ms, peer.c_str(), server_uri.c_str());
+      }
+      grpc_histogram_add(latencies_ms_histogram, std::get<1>(result));
+      iterations_ran++;
+      gpr_sleep_until(earliest_next_start);
     }
-    grpc_histogram_add(latencies_ms_histogram, std::get<1>(result));
-    iterations_ran++;
-    gpr_sleep_until(earliest_next_start);
   }
   double latency_ms_median =
       grpc_histogram_percentile(latencies_ms_histogram, 50);

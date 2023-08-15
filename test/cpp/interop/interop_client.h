@@ -77,8 +77,6 @@ class InteropClient {
   bool DoUnimplementedService();
   // all requests are sent to one server despite multiple servers are resolved
   bool DoPickFirstUnary();
-  // create a pool of channels for the pick first randomness test case.
-  bool DoPickFirstRandomness();
   bool DoOrcaPerRpc();
   bool DoOrcaOob();
 
