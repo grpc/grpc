@@ -2191,6 +2191,7 @@ add_library(grpc
   src/core/lib/event_engine/slice_buffer.cc
   src/core/lib/event_engine/tcp_socket_utils.cc
   src/core/lib/event_engine/thread_pool/original_thread_pool.cc
+  src/core/lib/event_engine/thread_pool/thread_count.cc
   src/core/lib/event_engine/thread_pool/thread_pool_factory.cc
   src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
   src/core/lib/event_engine/thready_event_engine/thready_event_engine.cc
@@ -2901,6 +2902,7 @@ add_library(grpc_unsecure
   src/core/lib/event_engine/slice_buffer.cc
   src/core/lib/event_engine/tcp_socket_utils.cc
   src/core/lib/event_engine/thread_pool/original_thread_pool.cc
+  src/core/lib/event_engine/thread_pool/thread_count.cc
   src/core/lib/event_engine/thread_pool/thread_pool_factory.cc
   src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
   src/core/lib/event_engine/thready_event_engine/thready_event_engine.cc
@@ -4438,6 +4440,7 @@ add_library(grpc_authorization_provider
   src/core/lib/event_engine/slice_buffer.cc
   src/core/lib/event_engine/tcp_socket_utils.cc
   src/core/lib/event_engine/thread_pool/original_thread_pool.cc
+  src/core/lib/event_engine/thread_pool/thread_count.cc
   src/core/lib/event_engine/thread_pool/thread_pool_factory.cc
   src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
   src/core/lib/event_engine/thready_event_engine/thready_event_engine.cc
@@ -12474,6 +12477,7 @@ add_executable(frame_test
   src/core/lib/event_engine/slice_buffer.cc
   src/core/lib/event_engine/tcp_socket_utils.cc
   src/core/lib/event_engine/thread_pool/original_thread_pool.cc
+  src/core/lib/event_engine/thread_pool/thread_count.cc
   src/core/lib/event_engine/thread_pool/thread_pool_factory.cc
   src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
   src/core/lib/event_engine/thready_event_engine/thready_event_engine.cc

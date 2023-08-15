@@ -1495,6 +1495,23 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "event_engine_thread_count",
+    srcs = [
+        "lib/event_engine/thread_pool/thread_count.cc",
+    ],
+    hdrs = ["lib/event_engine/thread_pool/thread_count.h"],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/time",
+    ],
+    deps = [
+        "time",
+        "useful",
+        "//:gpr",
+    ],
+)
+
+grpc_cc_library(
     name = "event_engine_thread_pool",
     srcs = [
         "lib/event_engine/thread_pool/original_thread_pool.cc",
@@ -1515,6 +1532,7 @@ grpc_cc_library(
     deps = [
         "common_event_engine_closures",
         "event_engine_basic_work_queue",
+        "event_engine_thread_count",
         "event_engine_thread_local",
         "event_engine_trace",
         "event_engine_work_queue",

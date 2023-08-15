@@ -1137,6 +1137,8 @@ let package = Package(
         "src/core/lib/event_engine/thread_local.h",
         "src/core/lib/event_engine/thread_pool/original_thread_pool.cc",
         "src/core/lib/event_engine/thread_pool/original_thread_pool.h",
+        "src/core/lib/event_engine/thread_pool/thread_count.cc",
+        "src/core/lib/event_engine/thread_pool/thread_count.h",
         "src/core/lib/event_engine/thread_pool/thread_pool.h",
         "src/core/lib/event_engine/thread_pool/thread_pool_factory.cc",
         "src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc",
