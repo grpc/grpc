@@ -45,6 +45,7 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "otel/sdk/src/metrics",
+        "otel/sdk:headers",
         "upb_lib",
     ],
     language = "c++",

@@ -87,9 +87,13 @@ class LabelsInjector {
  public:
   virtual ~LabelsInjector() {}
   // Read the incoming initial metadata to get the set of labels to be added to
-  // metrics.
-  virtual absl::flat_hash_map<std::string, std::string> GetPeerLabels(
+  // metrics. (Includes the local labels.)
+  virtual absl::flat_hash_map<std::string, std::string> GetLabels(
       grpc_metadata_batch* incoming_initial_metadata) = 0;
+
+  // Get the local labels to be added to metrics. To be used when the peer
+  // metadata is not available, for example, for started RPCs metric.
+  virtual absl::flat_hash_map<std::string, std::string> GetLocalLabels() = 0;
 
   // Modify the outgoing initial metadata with metadata information to be sent
   // to the peer.
