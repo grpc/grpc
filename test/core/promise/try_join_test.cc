@@ -16,7 +16,6 @@
 
 #include <functional>
 #include <tuple>
-#include <utility>
 
 #include "absl/utility/utility.h"
 #include "gtest/gtest.h"

@@ -490,6 +490,19 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "wait_for_callback",
+    hdrs = [
+        "lib/promise/wait_for_callback.h",
+    ],
+    external_deps = ["absl/base:core_headers"],
+    deps = [
+        "activity",
+        "poll",
+        "//:gpr",
+    ],
+)
+
+grpc_cc_library(
     name = "arena_promise",
     external_deps = ["absl/meta:type_traits"],
     language = "c++",
@@ -607,17 +620,17 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "basic_join",
-    external_deps = ["absl/utility"],
+    name = "join_state",
     language = "c++",
     public_hdrs = [
-        "lib/promise/detail/basic_join.h",
+        "lib/promise/detail/join_state.h",
     ],
     deps = [
         "bitset",
         "construct_destruct",
         "poll",
         "promise_like",
+        "//:gpr",
         "//:gpr_platform",
     ],
 )
@@ -630,7 +643,8 @@ grpc_cc_library(
         "lib/promise/join.h",
     ],
     deps = [
-        "basic_join",
+        "join_state",
+        "map",
         "//:gpr_platform",
     ],
 )
@@ -647,9 +661,9 @@ grpc_cc_library(
         "lib/promise/try_join.h",
     ],
     deps = [
-        "basic_join",
+        "join_state",
+        "map",
         "poll",
-        "promise_status",
         "//:gpr_platform",
     ],
 )

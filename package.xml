@@ -2695,18 +2695,12 @@
     <file baseinstalldir="/" name="third_party/re2/re2/unicode_groups.cc" role="src" />
     <file baseinstalldir="/" name="third_party/re2/re2/unicode_groups.h" role="src" />
     <file baseinstalldir="/" name="third_party/re2/re2/walker-inl.h" role="src" />
-    <file baseinstalldir="/" name="third_party/re2/util/benchmark.h" role="src" />
-    <file baseinstalldir="/" name="third_party/re2/util/flags.h" role="src" />
     <file baseinstalldir="/" name="third_party/re2/util/logging.h" role="src" />
-    <file baseinstalldir="/" name="third_party/re2/util/malloc_counter.h" role="src" />
     <file baseinstalldir="/" name="third_party/re2/util/mix.h" role="src" />
     <file baseinstalldir="/" name="third_party/re2/util/mutex.h" role="src" />
-    <file baseinstalldir="/" name="third_party/re2/util/pcre.cc" role="src" />
-    <file baseinstalldir="/" name="third_party/re2/util/pcre.h" role="src" />
     <file baseinstalldir="/" name="third_party/re2/util/rune.cc" role="src" />
     <file baseinstalldir="/" name="third_party/re2/util/strutil.cc" role="src" />
     <file baseinstalldir="/" name="third_party/re2/util/strutil.h" role="src" />
-    <file baseinstalldir="/" name="third_party/re2/util/test.h" role="src" />
     <file baseinstalldir="/" name="third_party/re2/util/utf.h" role="src" />
     <file baseinstalldir="/" name="third_party/re2/util/util.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/alloc.h" role="src" />
@@ -2763,7 +2757,6 @@
     <file baseinstalldir="/" name="third_party/upb/upb/message/internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/message/message.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/message/message.h" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/mini_table.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/mini_table/common.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/mini_table/common.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/mini_table/common_internal.h" role="src" />
@@ -2869,11 +2862,7 @@
     <file baseinstalldir="/" name="third_party/zlib/crc32.h" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/deflate.c" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/deflate.h" role="src" />
-    <file baseinstalldir="/" name="third_party/zlib/gzclose.c" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/gzguts.h" role="src" />
-    <file baseinstalldir="/" name="third_party/zlib/gzlib.c" role="src" />
-    <file baseinstalldir="/" name="third_party/zlib/gzread.c" role="src" />
-    <file baseinstalldir="/" name="third_party/zlib/gzwrite.c" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/infback.c" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/inffast.c" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/inffast.h" role="src" />
