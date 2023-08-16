@@ -26177,8 +26177,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(wait_for_callback_test
   src/core/lib/promise/activity.cc
   test/core/promise/wait_for_callback_test.cc
-  third_party/googletest/googletest/src/gtest-all.cc
-  third_party/googletest/googlemock/src/gmock-all.cc
 )
 target_compile_features(wait_for_callback_test PUBLIC cxx_std_14)
 target_include_directories(wait_for_callback_test
@@ -26203,8 +26201,8 @@ target_include_directories(wait_for_callback_test
 target_link_libraries(wait_for_callback_test
   ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
-  ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
   absl::type_traits
   absl::statusor
   gpr
