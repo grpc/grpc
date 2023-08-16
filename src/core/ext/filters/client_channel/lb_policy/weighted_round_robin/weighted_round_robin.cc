@@ -605,8 +605,10 @@ void WeightedRoundRobin::Picker::BuildSchedulerAndStartTimerLocked() {
             self->BuildSchedulerAndStartTimerLocked();
           }
         }
-        // Release ref before ExecCtx goes out of scope.
-        self.reset();
+        // Release the picker ref inside the WorkSerializer.
+        auto* self_ptr = self.get();
+        self_ptr->wrr_->work_serializer()->Run([self = std::move(self)]() {},
+                                               DEBUG_LOCATION);
       });
 }
 
