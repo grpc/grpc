@@ -1,4 +1,3 @@
-recursive-include src/python/grpcio_observability/grpc_observability *.c *.h *.inc *.py *.pyx *.pxd *.pxi *.python *.pem
 graft src/python/grpcio_observability/grpcio_observability.egg-info
 graft grpc_observability
 graft grpc_root
