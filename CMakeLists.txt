@@ -2489,7 +2489,6 @@ target_include_directories(grpc
 )
 target_link_libraries(grpc
   ${_gRPC_BASELIB_LIBRARIES}
-  ${_gRPC_UPB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   ${_gRPC_RE2_LIBRARIES}
   upb_json_lib
@@ -3138,7 +3137,6 @@ target_include_directories(grpc_unsecure
 )
 target_link_libraries(grpc_unsecure
   ${_gRPC_BASELIB_LIBRARIES}
-  ${_gRPC_UPB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   upb_collections_lib
   upb
