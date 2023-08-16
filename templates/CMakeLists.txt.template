@@ -37,30 +37,35 @@
     return path
 
   def proto_replace_ext(filename, ext):
-      m = proto_re.match(filename)
-      if not m:
-        return filename
-      return '${_gRPC_PROTO_GENS_DIR}/' + third_party_proto_import_path(m.group(1)) + ext
+    """Replace the .proto extension with given extension."""
+    m = proto_re.match(filename)
+    if not m:
+      return filename
+    return '${_gRPC_PROTO_GENS_DIR}/' + third_party_proto_import_path(m.group(1)) + ext
 
   def is_absl_lib(lib_name):
-      return lib_name.startswith("absl/")
+    """Returns True if the library is one of the abseil libraries."""
+    return lib_name.startswith("absl/")
 
   def get_absl_dep(lib_name):
       return lib_map[lib_name].cmake_target
 
-  def lib_and_transitive_deps(lib):
+  def get_transitive_deps(lib_name):
+    """Get list of transitive deps for given library."""
     transitive_deps = []
-    lib_metadata = lib_map.get(lib, None)
+    lib_metadata = lib_map.get(lib_name, None)
     if lib_metadata:
       transitive_deps = lib_metadata.transitive_deps
-    return list(sorted(set({lib} | set(transitive_deps))))
+    return list(transitive_deps)
 
   def list_abseil_pkg_targets(lib):
+    # TODO(jtattermusch): this function is odd, try to eliminate it.
     # This returns a list of abseil pkg targets which the given lib and
     # its non-abseil transitive dependencies depend on.
     # As a result, internal abseil libraries are excluded from the result.
     absl_specs = set()
-    for lib_name in lib_and_transitive_deps(lib):
+    transitive_deps_and_self = [lib] + get_transitive_deps(lib)
+    for lib_name in transitive_deps_and_self:
       if is_absl_lib(lib_name): continue
       lib_metadata = lib_map.get(lib_name, None)
       if lib_metadata:
@@ -68,6 +73,80 @@
           if is_absl_lib(dep):
             absl_specs.add(get_absl_dep(dep).replace("::", "_"))
     return list(sorted(absl_specs))
+
+  def lib_name_to_pkgconfig_requires_private_name(lib_name):
+    """If library belongs to pkgconfig Requires.private section, return the name under which to include it."""
+    # TODO(jtattermusch): extract the metadata to a centralized location.
+    deps_to_pkgconfig_requires_private = {
+      "cares": "libcares",
+      "libssl": "openssl",
+      "re2": "re2",
+      "z": "zlib",
+    }
+    return deps_to_pkgconfig_requires_private.get(lib_name, None)
+
+  def is_pkgconfig_package(lib_name):
+    """Returns True if a pkgconfig package exists for a given library."""
+    # TODO(jtattermusch): extract the metadata to a centralized location.
+    if lib_name in ["address_sorting", "utf8_range_lib"]:
+      return False
+    if lib_name == "upb" or lib_name.startswith("upb_"):
+      # TODO(jtattermusch): Add better detection for what are the "upb" libs.
+      return False
+    return True
+
+  def get_pkgconfig_requires(lib):
+    """Returns "Requires" list for generating the pkgconfig .pc file for given library."""
+    requires = set()
+    requires.update(list_abseil_pkg_targets(lib))
+    for lib_name in get_transitive_deps(lib):
+      if not is_pkgconfig_package(lib_name):
+        # these deps go into Libs or Libs.Private
+        continue
+      if is_absl_lib(lib_name):
+        # absl libs have special handling
+        continue
+      if lib_name_to_pkgconfig_requires_private_name(lib_name) is not None:
+        # these deps go into Requires.private
+        continue
+      if lib_name == 'protobuf':
+        # TODO(jtattermusch): add better way of excluding explicit protobuf dependency.
+        continue
+      requires.add(lib_name)
+    return list(sorted(requires))
+
+  def get_pkgconfig_requires_private(lib):
+    """Returns the "Requires.private" list for generating the pkgconfig .pc file for given library."""
+    private_requires = set()
+    for lib_name in get_transitive_deps(lib):
+      if is_absl_lib(lib_name):
+        # absl deps to into Requires
+        continue
+      require_name = lib_name_to_pkgconfig_requires_private_name(lib_name)
+      if require_name:
+        private_requires.add(require_name)
+    return list(sorted(private_requires))
+
+  def get_pkgconfig_libs(lib):
+    """The "Libs" list for generating the pkgconfig .pc file for given library."""
+    libs = set()
+    # add self
+    libs.add("-l" + lib)
+    return list(sorted(libs))
+
+  def get_pkgconfig_libs_private(lib):
+    """The "Libs.private" list for generating the pkgconfig .pc file for given library."""
+    private_libs = []
+    for lib_name in get_transitive_deps(lib):
+      if is_absl_lib(lib_name):
+        # absl deps to into Requires
+        continue
+      if is_pkgconfig_package(lib_name):
+        continue
+      # Transitive deps are pre-sorted in topological order.
+      # We must maintain that order to prevent linkage errors.
+      private_libs.append("-l" + lib_name)
+    return private_libs
 
   def is_shared_only_lib(lib_name):
     """Returns True if only shared library should be generated."""
@@ -878,10 +957,10 @@
     "gpr"
     "gRPC platform support library"
     "<%text>${gRPC_CORE_VERSION}</%text>"
-    "${" ".join(list_abseil_pkg_targets("gpr"))}"
-    ""
-    "${" ".join(("-l" + l) for l in ["gpr"])}"
-    ""
+    "${" ".join(get_pkgconfig_requires("gpr"))}"
+    "${" ".join(get_pkgconfig_requires_private("gpr"))}"
+    "${" ".join(get_pkgconfig_libs("gpr"))}"
+    "${" ".join(get_pkgconfig_libs_private("gpr"))}"
     "gpr.pc")
 
   # grpc .pc file
@@ -889,10 +968,10 @@
     "gRPC"
     "high performance general RPC framework"
     "<%text>${gRPC_CORE_VERSION}</%text>"
-    "${" ".join(["gpr"] + list_abseil_pkg_targets("grpc"))}"
-    "${" ".join(["openssl", "re2", "libcares", "zlib"])}"
-    "${" ".join(("-l" + l) for l in ["grpc",])}"
-    "${" ".join(("-l" + l) for l in ["address_sorting", "upb"])}"
+    "${" ".join(get_pkgconfig_requires("grpc"))}"
+    "${" ".join(get_pkgconfig_requires_private("grpc"))}"
+    "${" ".join(get_pkgconfig_libs("grpc"))}"
+    "${" ".join(get_pkgconfig_libs_private("grpc"))}"
     "grpc.pc")
 
   # grpc_unsecure .pc file
@@ -900,10 +979,10 @@
     "gRPC unsecure"
     "high performance general RPC framework without SSL"
     "<%text>${gRPC_CORE_VERSION}</%text>"
-    "${" ".join(["gpr"] + list_abseil_pkg_targets("grpc_unsecure"))}"
-    "${" ".join(["re2", "libcares", "zlib"])}"
-    "${" ".join(("-l" + l) for l in ["grpc_unsecure"])}"
-    "${" ".join(("-l" + l) for l in ["address_sorting", "upb"])}"
+    "${" ".join(get_pkgconfig_requires("grpc_unsecure"))}"
+    "${" ".join(get_pkgconfig_requires_private("grpc_unsecure"))}"
+    "${" ".join(get_pkgconfig_libs("grpc_unsecure"))}"
+    "${" ".join(get_pkgconfig_libs_private("grpc_unsecure"))}"
     "grpc_unsecure.pc")
 
   # grpc++ .pc file
@@ -911,10 +990,10 @@
     "gRPC++"
     "C++ wrapper for gRPC"
     "<%text>${gRPC_CPP_VERSION}</%text>"
-    "${" ".join(["grpc"] + list_abseil_pkg_targets("grpc++"))}"
-    ""
-    "${" ".join(("-l" + l) for l in ["grpc++"])}"
-    ""
+    "${" ".join(get_pkgconfig_requires("grpc++"))}"
+    "${" ".join(get_pkgconfig_requires_private("grpc++"))}"
+    "${" ".join(get_pkgconfig_libs("grpc++"))}"
+    "${" ".join(get_pkgconfig_libs_private("grpc++"))}"
     "grpc++.pc")
 
   # grpc++_unsecure .pc file
@@ -922,8 +1001,8 @@
     "gRPC++ unsecure"
     "C++ wrapper for gRPC without SSL"
     "<%text>${gRPC_CPP_VERSION}</%text>"
-    "${" ".join(["grpc_unsecure"] + list_abseil_pkg_targets("grpc++_unsecure"))}"
-    ""
-    "${" ".join(("-l" + l) for l in ["grpc++_unsecure"])}"
-    ""
+    "${" ".join(get_pkgconfig_requires("grpc++_unsecure"))}"
+    "${" ".join(get_pkgconfig_requires_private("grpc++_unsecure"))}"
+    "${" ".join(get_pkgconfig_libs("grpc++_unsecure"))}"
+    "${" ".join(get_pkgconfig_libs_private("grpc++_unsecure"))}"
     "grpc++_unsecure.pc")
