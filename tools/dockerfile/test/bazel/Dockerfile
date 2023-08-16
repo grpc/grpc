@@ -58,9 +58,11 @@ RUN BAZEL_ARCH_SUFFIX="$(uname -m | sed s/aarch64/arm64/)" \
 # hardware, when qemu-user-static isn't getting into the way.
 
 #=================
-# Setup git to access working directory across docker boundary
+# Setup git to access working directory across docker boundary.
+# This avoids the "fatal: detected dubious ownership in repository XYZ"
+# git error.
 
-RUN git config --global --add safe.directory /var/local/jenkins/grpc
+RUN git config --global --add safe.directory '*'
 RUN git config --global protocol.file.allow always
 
 

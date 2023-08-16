@@ -39,7 +39,3 @@
   <%include file="../../cmake.include"/>
   <%include file="../../ccache.include"/>
 
-  # Fix dubious ownerhsip issue.
-  RUN git config --global --add safe.directory '*' && ${'\\'}
-  	git config --global protocol.file.allow always
-  
