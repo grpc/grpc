@@ -73,6 +73,49 @@ TEST(XdsStatsWatcherTest, WaitForRpcStatsResponse) {
             expected.DebugString());
 }
 
+TEST(XdsStatsWatcherTest, WaitForRpcStatsResponseIgnoresCase) {
+  // "k3" will be ignored
+  XdsStatsWatcher watcher(0, 3, {"k1", "K2"});
+  watcher.RpcCompleted(BuildCallResult(0), "peer1",
+                       {{"K1", "v1"}, {"k2", "v2"}, {"k3", "v3"}});
+  watcher.RpcCompleted(BuildCallResult(1), "peer1", {{"k1", "v4"}});
+  watcher.RpcCompleted(BuildCallResult(2), "peer2",
+                       {{"k1", "v5"}, {"K2", "v6"}, {"k3", "v7"}});
+  LoadBalancerStatsResponse expected;
+  expected.mutable_rpcs_by_peer()->insert({{"peer1", 2}, {"peer2", 1}});
+  expected.mutable_metadatas_by_peer()->insert({
+      {"peer1", BuildMetadatas({{{"K1", "v1"}, {"k2", "v2"}}, {{"k1", "v4"}}})},
+      {"peer2", BuildMetadatas({{{"K2", "v6"}, {"k1", "v5"}}})},
+  });
+  (*expected.mutable_rpcs_by_method())["UnaryCall"]
+      .mutable_rpcs_by_peer()
+      ->insert({{"peer1", 2}, {"peer2", 1}});
+  EXPECT_EQ(watcher.WaitForRpcStatsResponse(0).DebugString(),
+            expected.DebugString());
+}
+
+TEST(XdsStatsWatcherTest, WaitForRpcStatsResponseReturnsAll) {
+  // "k3" will be ignored
+  XdsStatsWatcher watcher(0, 3, {"*"});
+  watcher.RpcCompleted(BuildCallResult(0), "peer1",
+                       {{"K1", "v1"}, {"k2", "v2"}, {"k3", "v3"}});
+  watcher.RpcCompleted(BuildCallResult(1), "peer1", {{"k1", "v4"}});
+  watcher.RpcCompleted(BuildCallResult(2), "peer2",
+                       {{"k1", "v5"}, {"K2", "v6"}, {"k3", "v7"}});
+  LoadBalancerStatsResponse expected;
+  expected.mutable_rpcs_by_peer()->insert({{"peer1", 2}, {"peer2", 1}});
+  expected.mutable_metadatas_by_peer()->insert({
+      {"peer1", BuildMetadatas({{{"K1", "v1"}, {"k2", "v2"}, {"k3", "v3"}},
+                                {{"k1", "v4"}}})},
+      {"peer2", BuildMetadatas({{{"K2", "v6"}, {"k1", "v5"}, {"k3", "v7"}}})},
+  });
+  (*expected.mutable_rpcs_by_method())["UnaryCall"]
+      .mutable_rpcs_by_peer()
+      ->insert({{"peer1", 2}, {"peer2", 1}});
+  EXPECT_EQ(watcher.WaitForRpcStatsResponse(0).DebugString(),
+            expected.DebugString());
+}
+
 TEST(XdsStatsWatcherTest, WaitForRpcStatsResponseIgnoresMetadata) {
   XdsStatsWatcher watcher(0, 3, {});
   // RPC had metadata - but watcher should ignore it
