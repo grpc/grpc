@@ -5049,8 +5049,6 @@ target_include_directories(grpc_authorization_provider
 target_link_libraries(grpc_authorization_provider
   ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
-  ${_gRPC_CARES_LIBRARIES}
-  ${_gRPC_RE2_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   ${_gRPC_RE2_LIBRARIES}
   upb
@@ -12629,7 +12627,6 @@ target_include_directories(frame_test
 target_link_libraries(frame_test
   ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
-  ${_gRPC_CARES_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   upb
