@@ -4734,7 +4734,6 @@ grpc_cc_library(
         "lb_policy_factory",
         "subchannel_interface",
         "validation_errors",
-        "//:channel_arg_names",
         "//:config",
         "//:debug_location",
         "//:gpr",
