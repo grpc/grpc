@@ -23,6 +23,7 @@
 #include <atomic>
 #include <functional>
 #include <memory>
+#include <thread>
 #include <utility>
 
 #include <grpc/support/log.h>
@@ -46,6 +47,12 @@ class WorkSerializer::WorkSerializerImpl : public Orphanable {
   void Schedule(std::function<void()> callback, const DebugLocation& location);
   void DrainQueue();
   void Orphan() override;
+
+#ifndef NDEBUG
+  bool RunningInWorkSerializer() const {
+    return std::this_thread::get_id() == current_thread_;
+  }
+#endif
 
  private:
   struct CallbackWrapper {
@@ -86,6 +93,9 @@ class WorkSerializer::WorkSerializerImpl : public Orphanable {
   // orphaned.
   std::atomic<uint64_t> refs_{MakeRefPair(0, 1)};
   MultiProducerSingleConsumerQueue queue_;
+#ifndef NDEBUG
+  std::thread::id current_thread_;
+#endif
 };
 
 void WorkSerializer::WorkSerializerImpl::Run(std::function<void()> callback,
@@ -102,11 +112,17 @@ void WorkSerializer::WorkSerializerImpl::Run(std::function<void()> callback,
   GPR_DEBUG_ASSERT(GetSize(prev_ref_pair) > 0);
   if (GetOwners(prev_ref_pair) == 0) {
     // We took ownership of the WorkSerializer. Invoke callback and drain queue.
+#ifndef NDEBUG
+    current_thread_ = std::this_thread::get_id();
+#endif
     if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
       gpr_log(GPR_INFO, "  Executing immediately");
     }
     callback();
     DrainQueueOwned();
+#ifndef NDEBUG
+    current_thread_ = std::thread::id();
+#endif
   } else {
     // Another thread is holding the WorkSerializer, so decrement the ownership
     // count we just added and queue the callback.
@@ -158,8 +174,14 @@ void WorkSerializer::WorkSerializerImpl::DrainQueue() {
   const uint64_t prev_ref_pair =
       refs_.fetch_add(MakeRefPair(1, 1), std::memory_order_acq_rel);
   if (GetOwners(prev_ref_pair) == 0) {
+#ifndef NDEBUG
+    current_thread_ = std::this_thread::get_id();
+#endif
     // We took ownership of the WorkSerializer. Drain the queue.
     DrainQueueOwned();
+#ifndef NDEBUG
+    current_thread_ = std::thread::id();
+#endif
   } else {
     // Another thread is holding the WorkSerializer, so decrement the ownership
     // count we just added and queue a no-op callback.
@@ -243,5 +265,11 @@ void WorkSerializer::Schedule(std::function<void()> callback,
 }
 
 void WorkSerializer::DrainQueue() { impl_->DrainQueue(); }
+
+#ifndef NDEBUG
+bool WorkSerializer::RunningInWorkSerializer() const {
+  return impl_->RunningInWorkSerializer();
+}
+#endif
 
 }  // namespace grpc_core
