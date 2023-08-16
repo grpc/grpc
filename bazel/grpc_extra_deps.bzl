@@ -20,7 +20,6 @@ load("@com_envoyproxy_protoc_gen_validate//:dependencies.bzl", "go_third_party")
 load("@com_google_googleapis//:repository_rules.bzl", "switched_rules_by_language")
 load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
 load("@envoy_api//bazel:repositories.bzl", "api_dependencies")
-load("@google_cloud_cpp//bazel:google_cloud_cpp_deps.bzl", "google_cloud_cpp_deps")
 load("@io_bazel_rules_go//go:deps.bzl", "go_register_toolchains", "go_rules_dependencies")
 load("@upb//bazel:workspace_deps.bzl", "upb_deps")
 
@@ -72,5 +71,3 @@ def grpc_extra_deps(ignore_version_differences = False):
         grpc = True,
         python = True,
     )
-
-    google_cloud_cpp_deps()

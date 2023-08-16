@@ -4303,13 +4303,14 @@ targets:
   - src/core/lib/gprpp/ref_counted_ptr.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
-  - src/core/lib/promise/detail/basic_join.h
   - src/core/lib/promise/detail/basic_seq.h
+  - src/core/lib/promise/detail/join_state.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/detail/seq_state.h
   - src/core/lib/promise/detail/status.h
   - src/core/lib/promise/join.h
+  - src/core/lib/promise/map.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/promise.h
   - src/core/lib/promise/seq.h
@@ -4323,7 +4324,6 @@ targets:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/utility:utility
   - gpr
   uses_polling: false
 - name: address_sorting_test
@@ -5674,7 +5674,6 @@ targets:
   - src/core/ext/upb-generated/google/protobuf/timestamp.upb.h
   - src/core/ext/upb-generated/google/protobuf/wrappers.upb.h
   - src/core/ext/upb-generated/google/rpc/status.upb.h
-  - src/core/ext/upb-generated/google/type/expr.upb.h
   - src/core/ext/upb-generated/udpa/annotations/migrate.upb.h
   - src/core/ext/upb-generated/udpa/annotations/security.upb.h
   - src/core/ext/upb-generated/udpa/annotations/sensitive.upb.h
@@ -5782,7 +5781,6 @@ targets:
   - src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
   - src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
   - src/core/ext/upb-generated/google/rpc/status.upb.c
-  - src/core/ext/upb-generated/google/type/expr.upb.c
   - src/core/ext/upb-generated/udpa/annotations/migrate.upb.c
   - src/core/ext/upb-generated/udpa/annotations/security.upb.c
   - src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c
@@ -7848,8 +7846,8 @@ targets:
   - src/core/lib/iomgr/iomgr_internal.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
-  - src/core/lib/promise/detail/basic_join.h
   - src/core/lib/promise/detail/basic_seq.h
+  - src/core/lib/promise/detail/join_state.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/detail/seq_state.h
@@ -7913,7 +7911,6 @@ targets:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/utility:utility
   - gpr
   - upb
   uses_polling: false
@@ -9879,15 +9876,15 @@ targets:
   language: c++
   headers:
   - src/core/lib/gprpp/bitset.h
-  - src/core/lib/promise/detail/basic_join.h
+  - src/core/lib/promise/detail/join_state.h
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/join.h
+  - src/core/lib/promise/map.h
   - src/core/lib/promise/poll.h
   src:
   - test/core/promise/join_test.cc
   deps:
   - absl/meta:type_traits
-  - absl/utility:utility
   - gpr
   uses_polling: false
 - name: json_object_loader_test
@@ -10068,14 +10065,15 @@ targets:
   - src/core/lib/gprpp/ref_counted_ptr.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
-  - src/core/lib/promise/detail/basic_join.h
   - src/core/lib/promise/detail/basic_seq.h
+  - src/core/lib/promise/detail/join_state.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/detail/seq_state.h
   - src/core/lib/promise/detail/status.h
   - src/core/lib/promise/join.h
   - src/core/lib/promise/latch.h
+  - src/core/lib/promise/map.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/seq.h
   - src/core/lib/promise/trace.h
@@ -10088,7 +10086,6 @@ targets:
   deps:
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/utility:utility
   - gpr
   uses_polling: false
 - name: lb_get_cpu_stats_test
@@ -10215,8 +10212,8 @@ targets:
   - src/core/lib/iomgr/iomgr_internal.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
-  - src/core/lib/promise/detail/basic_join.h
   - src/core/lib/promise/detail/basic_seq.h
+  - src/core/lib/promise/detail/join_state.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/detail/seq_state.h
@@ -10281,7 +10278,6 @@ targets:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/utility:utility
   - gpr
   - upb
   uses_polling: false
@@ -11321,7 +11317,7 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/promise/detail/basic_join.h
+  - src/core/lib/promise/detail/join_state.h
   - src/core/lib/promise/join.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
@@ -11457,7 +11453,7 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/promise/detail/basic_join.h
+  - src/core/lib/promise/detail/join_state.h
   - src/core/lib/promise/join.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/promise/test_wakeup_schedulers.h
@@ -15378,9 +15374,9 @@ targets:
   language: c++
   headers:
   - src/core/lib/gprpp/bitset.h
-  - src/core/lib/promise/detail/basic_join.h
+  - src/core/lib/promise/detail/join_state.h
   - src/core/lib/promise/detail/promise_like.h
-  - src/core/lib/promise/detail/status.h
+  - src/core/lib/promise/map.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/try_join.h
   src:
