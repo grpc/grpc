@@ -16459,6 +16459,7 @@ targets:
   - src/core/lib/promise/activity.cc
   - test/core/promise/wait_for_callback_test.cc
   deps:
+  - gtest
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
