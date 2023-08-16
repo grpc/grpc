@@ -195,6 +195,21 @@
         deps.append(d)
     return deps
 
+  def is_generate_cmake_target(lib_or_target):
+    """Returns True if a cmake target should be generated for given library/target."""
+    if lib_or_target.build not in ["all", "protoc", "tool", "test", "private"]:
+      return False
+    if lib_or_target.boringssl:
+      # Don't generate target for boringssl libs or tests
+      return False
+    if lib_or_target.name in ['ares', 'benchmark', 're2', 'xxhash', 'z']:
+      # we rely on these target to be created by external cmake builds.
+      return False
+    if is_absl_lib(lib_or_target.name):
+      # we rely on absl targets to be created by an external cmake build.
+      return False
+    return True
+
   def get_platforms_condition_begin(platforms):
     if all(platform in platforms for platform in ['linux', 'mac', 'posix', 'windows']):
       return ''
@@ -660,12 +675,8 @@
   endif()
   <%
     cmake_libs = []
-    # TODO(jtattermusch): remove special cases based on target names and other properties
     for lib in libs:
-      if lib.build not in ["all", "protoc", "tool", "test", "private"] or lib.boringssl: continue
-      if lib.get('build_system', []) and 'cmake' not in lib.get('build_system', []): continue
-      if lib.name in ['ares', 'benchmark', 're2', 'xxhash', 'z']: continue  # we build these using CMake instead
-      if is_absl_lib(lib.name): continue  # we build these using CMake instead
+      if not is_generate_cmake_target(lib): continue
       cmake_libs.append(lib)
   %>
   % for lib in cmake_libs:
@@ -692,7 +703,7 @@
   % endfor
 
   % for tgt in targets:
-  % if tgt.build in ["all", "protoc", "tool", "test", "private"] and not tgt.boringssl:
+  % if is_generate_cmake_target(tgt):
   % if tgt.build in ["test", "private"]:
   if(gRPC_BUILD_TESTS)
   <%block filter='platforms_condition_block(tgt.platforms)'>
