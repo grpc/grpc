@@ -73,10 +73,7 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
     cq_timer_handle_ = event_engine_->RunAfter(
         grpc_core::Timestamp::FromTimespecRoundUp(deadline) -
             grpc_core::ExecCtx::Get()->Now(),
-        [this] {
-          cq_armed_.store(false);
-          OnCQAlarm(absl::OkStatus());
-        });
+        [this] { OnCQAlarm(absl::OkStatus()); });
   }
   void Set(gpr_timespec deadline, std::function<void(bool)> f) {
     grpc_core::ExecCtx exec_ctx;
@@ -88,25 +85,17 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
     callback_timer_handle_ = event_engine_->RunAfter(
         grpc_core::Timestamp::FromTimespecRoundUp(deadline) -
             grpc_core::ExecCtx::Get()->Now(),
-        [this] {
-          callback_armed_.store(false);
-          OnCallbackAlarm(true);
-        });
+        [this] { OnCallbackAlarm(true); });
   }
   void Cancel() {
     grpc_core::ExecCtx exec_ctx;
     if (callback_armed_.load() &&
         event_engine_->Cancel(callback_timer_handle_)) {
-      event_engine_->Run([this] {
-        callback_armed_.store(false);
-        OnCallbackAlarm(/*is_ok=*/false);
-      });
+      event_engine_->Run([this] { OnCallbackAlarm(/*is_ok=*/false); });
     }
     if (cq_armed_.load() && event_engine_->Cancel(cq_timer_handle_)) {
-      event_engine_->Run([this] {
-        cq_armed_.store(false);
-        OnCQAlarm(absl::CancelledError("cancelled"));
-      });
+      event_engine_->Run(
+          [this] { OnCQAlarm(absl::CancelledError("cancelled")); });
     }
   }
   void Destroy() {
@@ -116,6 +105,7 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
 
  private:
   void OnCQAlarm(grpc_error_handle error) {
+    cq_armed_.store(false);
     grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
     grpc_core::ExecCtx exec_ctx;
     // Preserve the cq and reset the cq_ so that the alarm
@@ -130,6 +120,7 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
   }
 
   void OnCallbackAlarm(bool is_ok) {
+    callback_armed_.store(false);
     grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
     grpc_core::ExecCtx exec_ctx;
     callback_(is_ok);
