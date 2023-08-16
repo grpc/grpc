@@ -53,6 +53,15 @@ RUN apt-get update && apt-get install -y \
   zip \
   && apt-get clean
 
+#=================
+# Setup git to access working directory across docker boundary.
+# This avoids the "fatal: detected dubious ownership in repository XYZ"
+# git error.
+
+RUN git config --global --add safe.directory '*'
+RUN git config --global protocol.file.allow always
+
+
 
 # Install Python 3.7 from source (and installed as a default python3)
 # (Bullseye comes with Python 3.9 which isn't supported by pytype yet)
@@ -125,12 +134,6 @@ RUN BAZEL_ARCH_SUFFIX="$(uname -m | sed s/aarch64/arm64/)" \
 RUN wget https://github.com/bazelbuild/buildtools/releases/download/0.29.0/buildifier
 RUN chmod +x buildifier
 RUN mv buildifier /usr/local/bin
-
-#=================
-# Setup git to access working directory across docker boundary
-
-RUN git config --global --add safe.directory /var/local/jenkins/grpc
-RUN git config --global protocol.file.allow always
 
 
 # Define the default command.
