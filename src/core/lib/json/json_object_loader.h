@@ -536,8 +536,8 @@ class FinishedJsonObjectLoader<T, kElemCount,
   explicit FinishedJsonObjectLoader(const Vec<Element, kElemCount>& elements)
       : elements_(elements) {}
 
-  void LoadInto(const Json& json, const JsonArgs& args, void* dst,
-                ValidationErrors* errors) const override {}
+  void LoadInto(const Json&, const JsonArgs&, void*,
+                ValidationErrors*) const override {}
 
  private:
   GPR_NO_UNIQUE_ADDRESS Vec<Element, kElemCount> elements_;
