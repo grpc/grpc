@@ -2404,6 +2404,7 @@ grpc_cc_library(
     visibility = ["@grpc:client_channel"],
     deps = [
         "debug_location",
+        "exec_ctx",
         "gpr",
         "grpc_trace",
         "orphanable",

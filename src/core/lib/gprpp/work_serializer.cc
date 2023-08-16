@@ -32,6 +32,11 @@
 #include "src/core/lib/gprpp/mpscq.h"
 #include "src/core/lib/gprpp/orphanable.h"
 
+#ifdef GRPC_MAXIMIZE_THREADYNESS
+#include "src/core/lib/gprpp/thd.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#endif
+
 namespace grpc_core {
 
 DebugOnlyTraceFlag grpc_work_serializer_trace(false, "work_serializer");
@@ -105,8 +110,21 @@ void WorkSerializer::WorkSerializerImpl::Run(std::function<void()> callback,
     if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
       gpr_log(GPR_INFO, "  Executing immediately");
     }
+#ifndef GRPC_MAXIMIZE_THREADYNESS
     callback();
     DrainQueueOwned();
+#else
+    Thread thd(
+        "work_serializer",
+        [callback = std::move(callback), this]() {
+          ApplicationCallbackExecCtx app_exec_ctx;
+          ExecCtx exec_ctx;
+          callback();
+          DrainQueueOwned();
+        },
+        nullptr, Thread::Options().set_tracked(false).set_joinable(false));
+    thd.Start();
+#endif
   } else {
     // Another thread is holding the WorkSerializer, so decrement the ownership
     // count we just added and queue the callback.
