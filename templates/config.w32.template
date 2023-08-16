@@ -14,9 +14,13 @@
     php_full_deps = []
     for dep in php_deps:
       php_full_deps.append(dep)
-      php_full_deps.extend(lib_maps[dep].transitive_deps)
+      lib = lib_maps.get(dep, None)
+      if lib:
+        php_full_deps.extend(lib.transitive_deps)
     for dep in php_full_deps:
-      srcs.extend(lib_maps[dep].src)
+      lib = lib_maps.get(dep, None)
+      if lib:
+        srcs.extend(lib.src)
     srcs = sorted(set(srcs))
   %>
     EXTENSION("grpc",

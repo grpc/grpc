@@ -34,7 +34,11 @@
     return "abseil/" + label[5:].replace(":", "/")
 
   def lib_and_transitive_deps(lib):
-    return list(sorted(set({lib} | set(lib_maps[lib].transitive_deps))))
+    transitive_deps = []
+    lib_metadata = lib_maps.get(lib, None)
+    if lib_metadata:
+      transitive_deps = lib_metadata.transitive_deps
+    return list(sorted(set({lib} | set(transitive_deps))))
 
   def non_abseil_lib_and_transitive_deps(lib):
     return [l for l in lib_and_transitive_deps(lib) if not is_absl_lib(l)]
@@ -46,17 +50,20 @@
     absl_specs = set()
     for lib_name in lib_and_transitive_deps(lib):
       if is_absl_lib(lib_name): continue
-      for dep in lib_maps[lib_name].deps:
-        if is_absl_lib(dep):
-          absl_specs.add(get_absl_spec_name(dep))
+      lib_metadata = lib_maps.get(lib_name, None)
+      if lib_metadata:
+        for dep in lib_metadata.deps:
+          if is_absl_lib(dep):
+            absl_specs.add(get_absl_spec_name(dep))
     return list(sorted(absl_specs))
 
   def list_lib_files(lib, fields):
     files = set()
     for lib_name in non_abseil_lib_and_transitive_deps(lib):
-      lib = lib_maps[lib_name]
-      for field in fields:
-        files.update(lib.get(field, []))
+      lib = lib_maps.get(lib_name, None)
+      if lib:
+        for field in fields:
+          files.update(lib.get(field, []))
     return list(sorted(files))
 
   # ObjectiveC doesn't use c-ares so we don't need address_sorting files at all
@@ -122,7 +129,7 @@
     s.requires_arc = false
 
     name = 'grpc'
-    abseil_version = '1.20230125.3'
+    abseil_version = '1.20230802.0'
 
     # When creating a dynamic framework, name it grpc.framework instead of gRPC-Core.framework.
     # This lets users write their includes like `#include <grpc/grpc.h>` as opposed to `#include

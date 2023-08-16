@@ -436,7 +436,7 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
 
             # Fail if any of the pods restarted.
             error_msg = (
-                "Client pods unexpectedly restarted"
+                "Client container unexpectedly restarted"
                 f" {client_restarts} times during test."
                 " In most cases, this is caused by the test client app crash."
             )

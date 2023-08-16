@@ -143,5 +143,8 @@ class AresResolver : public grpc_core::InternallyRefCounted<AresResolver> {
 extern void (*event_engine_grpc_ares_test_only_inject_config)(
     ares_channel* channel);
 
+// Exposed in this header for C-core tests only
+extern bool g_event_engine_grpc_ares_test_only_force_tcp;
+
 #endif  // GRPC_ARES == 1
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_ARES_RESOLVER_H

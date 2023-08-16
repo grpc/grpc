@@ -29,6 +29,7 @@
 namespace grpc {
 namespace testing {
 namespace {
+
 AsyncClientCallResult BuildCallResult(int saved_request_id) {
   AsyncClientCallResult result;
   result.saved_request_id = saved_request_id;
@@ -36,25 +37,63 @@ AsyncClientCallResult BuildCallResult(int saved_request_id) {
   return result;
 }
 
-TEST(XdsStatsWatcherTest, CollectsMetadata) {
-  XdsStatsWatcher watcher(0, 3);
-  watcher.RpcCompleted(BuildCallResult(0), "peer1");
-  watcher.RpcCompleted(BuildCallResult(1), "peer1");
-  watcher.RpcCompleted(BuildCallResult(2), "peer2");
-  LoadBalancerStatsResponse lb_response;
-  watcher.WaitForRpcStatsResponse(&lb_response, 1);
-  EXPECT_EQ(
-      (std::multimap<std::string, int32_t>(lb_response.rpcs_by_peer().begin(),
-                                           lb_response.rpcs_by_peer().end())),
-      (std::multimap<std::string, int32_t>({{"peer1", 2}, {"peer2", 1}})));
-  EXPECT_EQ(lb_response.rpcs_by_method_size(), 1);
-  auto rpcs = lb_response.rpcs_by_method().find("UnaryCall");
-  EXPECT_NE(rpcs, lb_response.rpcs_by_method().end());
-  std::multimap<std::string, int32_t> by_peer(
-      rpcs->second.rpcs_by_peer().begin(), rpcs->second.rpcs_by_peer().end());
-  EXPECT_EQ(
-      by_peer,
-      (std::multimap<std::string, int32_t>({{"peer1", 2}, {"peer2", 1}})));
+LoadBalancerStatsResponse::MetadataByPeer BuildMetadatas(
+    const std::initializer_list<
+        std::initializer_list<std::pair<std::string, std::string>>>& values) {
+  LoadBalancerStatsResponse::MetadataByPeer metadata_by_peer;
+  for (const auto& per_rpc : values) {
+    auto rpc_metadata = metadata_by_peer.add_rpc_metadata();
+    for (const auto& key_value : per_rpc) {
+      auto entry = rpc_metadata->add_metadata();
+      entry->set_key(key_value.first);
+      entry->set_value(key_value.second);
+    }
+  }
+  return metadata_by_peer;
+}
+
+TEST(XdsStatsWatcherTest, WaitForRpcStatsResponse) {
+  // "k3" will be ignored
+  XdsStatsWatcher watcher(0, 3, {"k1", "k2"});
+  watcher.RpcCompleted(BuildCallResult(0), "peer1",
+                       {{"k1", "v1"}, {"k2", "v2"}, {"k3", "v3"}});
+  watcher.RpcCompleted(BuildCallResult(1), "peer1", {{"k1", "v4"}});
+  watcher.RpcCompleted(BuildCallResult(2), "peer2",
+                       {{"k1", "v5"}, {"k2", "v6"}, {"k3", "v7"}});
+  LoadBalancerStatsResponse expected;
+  expected.mutable_rpcs_by_peer()->insert({{"peer1", 2}, {"peer2", 1}});
+  expected.mutable_metadatas_by_peer()->insert({
+      {"peer1", BuildMetadatas({{{"k1", "v1"}, {"k2", "v2"}}, {{"k1", "v4"}}})},
+      {"peer2", BuildMetadatas({{{"k1", "v5"}, {"k2", "v6"}}})},
+  });
+  (*expected.mutable_rpcs_by_method())["UnaryCall"]
+      .mutable_rpcs_by_peer()
+      ->insert({{"peer1", 2}, {"peer2", 1}});
+  EXPECT_EQ(watcher.WaitForRpcStatsResponse(0).DebugString(),
+            expected.DebugString());
+}
+
+TEST(XdsStatsWatcherTest, WaitForRpcStatsResponseIgnoresMetadata) {
+  XdsStatsWatcher watcher(0, 3, {});
+  // RPC had metadata - but watcher should ignore it
+  watcher.RpcCompleted(BuildCallResult(0), "peer1",
+                       {{"k1", "v1"}, {"k2", "v2"}, {"k3", "v3"}});
+  // No metadata came with RPC
+  watcher.RpcCompleted(BuildCallResult(1), "peer1", {});
+  watcher.RpcCompleted(BuildCallResult(2), "peer2",
+                       {{"k1", "v5"}, {"k2", "v6"}, {"k3", "v7"}});
+  LoadBalancerStatsResponse expected;
+  expected.mutable_rpcs_by_peer()->insert({{"peer1", 2}, {"peer2", 1}});
+  // There will still be an empty metadata collection for each RPC
+  expected.mutable_metadatas_by_peer()->insert({
+      {"peer1", BuildMetadatas({{}, {}})},
+      {"peer2", BuildMetadatas({{}})},
+  });
+  (*expected.mutable_rpcs_by_method())["UnaryCall"]
+      .mutable_rpcs_by_peer()
+      ->insert({{"peer1", 2}, {"peer2", 1}});
+  EXPECT_EQ(watcher.WaitForRpcStatsResponse(0).DebugString(),
+            expected.DebugString());
 }
 
 }  // namespace
