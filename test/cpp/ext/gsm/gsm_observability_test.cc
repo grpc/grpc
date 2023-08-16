@@ -18,7 +18,6 @@
 
 #include "src/cpp/ext/gsm/gsm_observability.h"
 
-#include "google/cloud/opentelemetry/resource_detector.h"
 #include "gtest/gtest.h"
 
 #include "test/core/util/test_config.h"
@@ -31,10 +30,6 @@ TEST(GsmCustomObservabilityBuilderTest, Basic) {
   EXPECT_EQ(
       internal::GsmCustomObservabilityBuilder().BuildAndRegister().status(),
       absl::UnimplementedError("Not Implemented"));
-}
-
-TEST(GsmDependencyTest, GoogleCloudOpenTelemetryDependency) {
-  EXPECT_NE(google::cloud::otel::MakeResourceDetector(), nullptr);
 }
 
 }  // namespace
