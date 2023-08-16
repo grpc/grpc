@@ -48,7 +48,9 @@
     return lib_name.startswith("absl/")
 
   def get_absl_dep(lib_name):
-      return lib_map[lib_name].cmake_target
+    """Gets the corresponding cmake target for given absl library."""
+    # The "cmake_target" field originates from src/abseil-cpp/preprocessed_builds.yaml.gen.py
+    return lib_map[lib_name].cmake_target
 
   def get_transitive_deps(lib_name):
     """Get list of transitive deps for given library."""
@@ -155,14 +157,13 @@
     return lib_name in ['grpc_csharp_ext']
 
   def get_deps(target_dict):
+    # TODO(jtattermusch): remove special cases based on target names
     deps = []
     deps.append("${_gRPC_BASELIB_LIBRARIES}")
     if target_dict.get('build', None) in ['protoc']:
       deps.append("${_gRPC_PROTOBUF_PROTOC_LIBRARIES}")
     if target_dict.language == 'c++':
       deps.append("${_gRPC_PROTOBUF_LIBRARIES}")
-    if target_dict['name'] in ['grpc', 'grpc_cronet', 'grpc_unsecure']:
-      deps.append("${_gRPC_UPB_LIBRARIES}")
     # TODO(yijiem): These targets depend on grpc_base instead of grpc. Since we don't populate grpc_base as a cmake target, the sources all get collapsed into these targets. This workaround adds c-ares and/or re2 dependencies to these targets. We should clean this up.
     if target_dict['name'] in ['frame_test']:
       deps.append("${_gRPC_CARES_LIBRARIES}")
@@ -659,6 +660,7 @@
   endif()
   <%
     cmake_libs = []
+    # TODO(jtattermusch): remove special cases based on target names and other properties
     for lib in libs:
       if lib.build not in ["all", "protoc", "tool", "test", "private"] or lib.boringssl: continue
       if lib.get('build_system', []) and 'cmake' not in lib.get('build_system', []): continue
@@ -806,7 +808,7 @@
   % endif
   % if lib.name in ["grpc", "grpc_cronet", "grpc_test_util", \
                     "grpc_test_util_unsecure", "grpc_unsecure", \
-                    "grpc++_cronet"]:
+                    "grpc++_cronet"]: # TODO(jtattermusch): remove special cases based on target names
   if(_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
     target_link_libraries(${lib.name} "-framework CoreFoundation")
   endif()
