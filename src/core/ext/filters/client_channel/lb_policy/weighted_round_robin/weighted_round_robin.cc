@@ -603,7 +603,9 @@ void WeightedRoundRobin::Picker::BuildSchedulerAndStartTimerLocked() {
   // Start timer.
   WeakRefCountedPtr<Picker> self = WeakRef();
   timer_handle_ = wrr_->channel_control_helper()->GetEventEngine()->RunAfter(
-      config_->weight_update_period(), [self = std::move(self)]() mutable {
+      config_->weight_update_period(),
+      [self = std::move(self), work_serializer = wrr_->work_serializer()]()
+          mutable {
         ApplicationCallbackExecCtx callback_exec_ctx;
         ExecCtx exec_ctx;
         {
@@ -617,9 +619,7 @@ void WeightedRoundRobin::Picker::BuildSchedulerAndStartTimerLocked() {
           }
         }
         // Release the picker ref inside the WorkSerializer.
-        auto* self_ptr = self.get();
-        self_ptr->wrr_->work_serializer()->Run([self = std::move(self)]() {},
-                                               DEBUG_LOCATION);
+        work_serializer->Run([self = std::move(self)]() {}, DEBUG_LOCATION);
       });
 }
 
