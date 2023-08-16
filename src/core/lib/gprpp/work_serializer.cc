@@ -119,6 +119,7 @@ void WorkSerializer::WorkSerializerImpl::Run(std::function<void()> callback,
       gpr_log(GPR_INFO, "  Executing immediately");
     }
     callback();
+    callback = nullptr;  // Delete while still holding WorkSerializer.
     DrainQueueOwned();
 #ifndef NDEBUG
     current_thread_ = std::thread::id();
