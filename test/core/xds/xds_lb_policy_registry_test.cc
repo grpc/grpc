@@ -450,7 +450,6 @@ TEST(WrrLocality, UnsupportedChildPolicyTypeSkipped) {
 //
 
 TEST(PickFirst, NoShuffle) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_PICKFIRST_LB_CONFIG");
   LoadBalancingPolicyProto policy;
   auto* lb_policy = policy.add_policies();
   PickFirst pick_first;
@@ -463,7 +462,6 @@ TEST(PickFirst, NoShuffle) {
 }
 
 TEST(PickFirst, Shuffle) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_PICKFIRST_LB_CONFIG");
   LoadBalancingPolicyProto policy;
   auto* lb_policy = policy.add_policies();
   PickFirst pick_first;
@@ -476,7 +474,6 @@ TEST(PickFirst, Shuffle) {
 }
 
 TEST(PickFirst, ShuffleOmitted) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_PICKFIRST_LB_CONFIG");
   LoadBalancingPolicyProto policy;
   auto* lb_policy = policy.add_policies();
   lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(

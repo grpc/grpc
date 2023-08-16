@@ -80,8 +80,6 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, PickFirstTest,
                          ::testing::Values(XdsTestType()), &XdsTestType::Name);
 
 TEST_P(PickFirstTest, PickFirstConfigurationIsPropagated) {
-  grpc_core::testing::ScopedExperimentalEnvVar env_var(
-      "GRPC_EXPERIMENTAL_PICKFIRST_LB_CONFIG");
   CreateAndStartBackends(6);
   // Change cluster to use pick_first with shuffle option.
   auto cluster = default_cluster_;

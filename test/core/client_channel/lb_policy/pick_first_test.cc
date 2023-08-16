@@ -486,8 +486,6 @@ TEST_F(PickFirstTest, GoesIdleWhenConnectionFailsThenCanReconnect) {
 }
 
 TEST_F(PickFirstTest, WithShuffle) {
-  testing::ScopedExperimentalEnvVar env_var(
-      "GRPC_EXPERIMENTAL_PICKFIRST_LB_CONFIG");
   constexpr std::array<absl::string_view, 6> kAddresses = {
       "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444", "ipv4:127.0.0.1:445",
       "ipv4:127.0.0.1:446", "ipv4:127.0.0.1:447", "ipv4:127.0.0.1:448"};
@@ -516,8 +514,6 @@ TEST_F(PickFirstTest, WithShuffle) {
 }
 
 TEST_F(PickFirstTest, ShufflingDisabled) {
-  testing::ScopedExperimentalEnvVar env_var(
-      "GRPC_EXPERIMENTAL_PICKFIRST_LB_CONFIG");
   constexpr std::array<absl::string_view, 6> kAddresses = {
       "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444", "ipv4:127.0.0.1:445",
       "ipv4:127.0.0.1:446", "ipv4:127.0.0.1:447", "ipv4:127.0.0.1:448"};
