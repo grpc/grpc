@@ -121,9 +121,6 @@ void WorkSerializer::WorkSerializerImpl::Run(std::function<void()> callback,
     callback();
     callback = nullptr;  // Delete while still holding WorkSerializer.
     DrainQueueOwned();
-#ifndef NDEBUG
-    current_thread_ = std::thread::id();
-#endif
   } else {
     // Another thread is holding the WorkSerializer, so decrement the ownership
     // count we just added and queue the callback.
@@ -180,9 +177,6 @@ void WorkSerializer::WorkSerializerImpl::DrainQueue() {
 #endif
     // We took ownership of the WorkSerializer. Drain the queue.
     DrainQueueOwned();
-#ifndef NDEBUG
-    current_thread_ = std::thread::id();
-#endif
   } else {
     // Another thread is holding the WorkSerializer, so decrement the ownership
     // count we just added and queue a no-op callback.
@@ -213,6 +207,9 @@ void WorkSerializer::WorkSerializerImpl::DrainQueueOwned() {
       if (refs_.compare_exchange_strong(expected, MakeRefPair(0, 1),
                                         std::memory_order_acq_rel)) {
         // Queue is drained.
+#ifndef NDEBUG
+        current_thread_ = std::thread::id();
+#endif
         return;
       }
       if (GetSize(expected) == 0) {
