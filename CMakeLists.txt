@@ -204,6 +204,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_str_format
   absl_str_format_internal
   absl_strerror
+  absl_string_view
   absl_strings
   absl_strings_internal
   absl_symbolize
@@ -5236,7 +5237,6 @@ target_link_libraries(activity_test
   absl::hash
   absl::type_traits
   absl::statusor
-  absl::utility
   gpr
 )
 
@@ -7963,7 +7963,6 @@ add_executable(cel_authorization_engine_test
   src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
   src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
   src/core/ext/upb-generated/google/rpc/status.upb.c
-  src/core/ext/upb-generated/google/type/expr.upb.c
   src/core/ext/upb-generated/udpa/annotations/migrate.upb.c
   src/core/ext/upb-generated/udpa/annotations/security.upb.c
   src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c
@@ -8777,7 +8776,6 @@ target_link_libraries(chunked_vector_test
   absl::hash
   absl::type_traits
   absl::statusor
-  absl::utility
   gpr
   upb
 )
@@ -12110,7 +12108,6 @@ target_link_libraries(flow_control_test
   absl::hash
   absl::type_traits
   absl::statusor
-  absl::utility
   gpr
   upb
 )
@@ -12180,7 +12177,6 @@ target_link_libraries(for_each_test
   absl::hash
   absl::type_traits
   absl::statusor
-  absl::utility
   gpr
   upb
 )
@@ -15292,7 +15288,6 @@ target_link_libraries(interceptor_list_test
   absl::hash
   absl::type_traits
   absl::statusor
-  absl::utility
   gpr
   upb
 )
@@ -15609,7 +15604,6 @@ target_link_libraries(join_test
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::type_traits
-  absl::utility
   gpr
 )
 
@@ -15954,7 +15948,6 @@ target_link_libraries(latch_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::type_traits
   absl::statusor
-  absl::utility
   gpr
 )
 
@@ -16227,7 +16220,6 @@ target_link_libraries(loop_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::type_traits
   absl::statusor
-  absl::utility
   gpr
 )
 
@@ -16296,7 +16288,6 @@ target_link_libraries(map_pipe_test
   absl::hash
   absl::type_traits
   absl::statusor
-  absl::utility
   gpr
   upb
 )
@@ -22151,7 +22142,6 @@ target_link_libraries(seq_test
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::type_traits
-  absl::utility
   gpr
 )
 
@@ -26523,7 +26513,6 @@ target_link_libraries(try_seq_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::type_traits
   absl::statusor
-  absl::utility
   gpr
 )
 

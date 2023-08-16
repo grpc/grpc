@@ -16,7 +16,7 @@
 Generates portability tests.
 """
 
-load("//tools/bazelify_tests:build_defs.bzl", "grpc_run_tests_py_test")
+load("//tools/bazelify_tests:build_defs.bzl", "grpc_run_tests_harness_test")
 
 def _safe_language_name(name):
     """Character '+' isn't allowed in bazel target name"""
@@ -31,7 +31,7 @@ def generate_run_tests_portability_tests(name):
     test_names = []
 
     # portability C x86
-    grpc_run_tests_py_test(
+    grpc_run_tests_harness_test(
         name = "runtests_c_linux_dbg_x86",
         args = ["-l c -c dbg"],
         docker_image_version = "tools/dockerfile/test/cxx_debian11_x86.current_version",
@@ -42,7 +42,7 @@ def generate_run_tests_portability_tests(name):
     # C and C++ with no-exceptions on Linux
     for language in ["c", "c++"]:
         test_name = "runtests_%s_linux_dbg_noexcept_build_only" % _safe_language_name(language)
-        grpc_run_tests_py_test(
+        grpc_run_tests_harness_test(
             name = test_name,
             args = ["-l %s --config noexcept --build_only" % language],
             docker_image_version = "tools/dockerfile/test/cxx_debian11_x64.current_version",
@@ -65,7 +65,7 @@ def generate_run_tests_portability_tests(name):
 
         for compiler_name, args, docker_image_version in compiler_configs:
             test_name = "runtests_%s_linux_dbg_%s_build_only" % (_safe_language_name(language), compiler_name)
-            grpc_run_tests_py_test(
+            grpc_run_tests_harness_test(
                 name = test_name,
                 args = ["-l %s -c dbg %s --build_only" % (language, args)],
                 docker_image_version = docker_image_version,
@@ -75,7 +75,7 @@ def generate_run_tests_portability_tests(name):
 
     # TODO(jtattermusch): Reintroduce the test once it passes.
     # Python on alpine
-    #grpc_run_tests_py_test(
+    #grpc_run_tests_harness_test(
     #    name = "runtests_python_linux_dbg_alpine",
     #    args = [
     #        "-l python -c dbg --compiler python_alpine",

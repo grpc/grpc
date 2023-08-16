@@ -1015,7 +1015,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "envoy_config_rbac_upb",
-        "google_type_expr_upb",
+        "google_api_expr_v1alpha1_syntax_upb",
         "gpr",
         "grpc_mock_cel",
         "//src/core:grpc_authorization_base",
@@ -1534,7 +1534,6 @@ grpc_cc_library(
         "//src/core:arena",
         "//src/core:arena_promise",
         "//src/core:atomic_utils",
-        "//src/core:basic_seq",
         "//src/core:bitset",
         "//src/core:cancel_callback",
         "//src/core:channel_args",
@@ -1799,7 +1798,6 @@ grpc_cc_library(
         "//src/core:activity",
         "//src/core:arena",
         "//src/core:arena_promise",
-        "//src/core:basic_seq",
         "//src/core:channel_args",
         "//src/core:channel_fwd",
         "//src/core:closure",
@@ -3679,7 +3677,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "google_type_expr_upb",
+        "google_api_expr_v1alpha1_syntax_upb",
         "gpr_public_hdrs",
     ],
 )
@@ -4264,8 +4262,8 @@ grpc_upb_proto_reflection_library(
 )
 
 grpc_upb_proto_library(
-    name = "google_type_expr_upb",
-    deps = ["@com_google_googleapis//google/type:expr_proto"],
+    name = "google_api_expr_v1alpha1_syntax_upb",
+    deps = ["@com_google_googleapis//google/api/expr/v1alpha1:syntax_proto"],
 )
 
 grpc_upb_proto_library(
