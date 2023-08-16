@@ -37,7 +37,6 @@
 #include "src/core/lib/gprpp/env.h"
 #include "src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/pick_first.pb.h"
-#include "test/core/util/scoped_env_var.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/connection_attempt_injector.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
