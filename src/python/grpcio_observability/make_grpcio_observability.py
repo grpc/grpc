@@ -22,7 +22,7 @@ import shutil
 import subprocess
 
 # the target directory is relative to the grpcio_observability package root.
-GRPCIO_OBSERVABILITY_ROOT_PREFIX = 'src/python/grpcio_observability/'
+GRPCIO_OBSERVABILITY_ROOT_PREFIX = "src/python/grpcio_observability/"
 
 # cygrpc.so build from bazel
 CYGRPC_SO_PATH = os.path.dirname(os.path.abspath(__file__))
@@ -31,27 +31,33 @@ CYGRPC_SO_FILE = "_cygrpc.so"
 # Pairs of (source, target) directories to copy
 # from the grpc repo root to the grpcio_observability build root.
 COPY_FILES_SOURCE_TARGET_PAIRS = [
-    ('include', 'grpc_root/include'),
-    ('third_party/abseil-cpp/absl', 'third_party/abseil-cpp/absl'),
-    ('src/core/lib', 'grpc_root/src/core/lib'),
-    ('src/core/ext/filters/client_channel/lb_policy', 'grpc_root/src/core/ext/filters/client_channel/lb_policy'),
+    ("include", "grpc_root/include"),
+    ("third_party/abseil-cpp/absl", "third_party/abseil-cpp/absl"),
+    ("src/core/lib", "grpc_root/src/core/lib"),
+    (
+        "src/core/ext/filters/client_channel/lb_policy",
+        "grpc_root/src/core/ext/filters/client_channel/lb_policy",
+    ),
 ]
 
 # grpc repo root
 GRPC_ROOT = os.path.abspath(
-    os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..'))
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..")
+)
 
 # the script to run for getting dependencies
 BAZEL_BUILD = os.path.join(
     GRPC_ROOT, "tools", "distrib", "python", "bazel_build.sh"
 )
 
+
 def _copy_source_tree(source, target):
     """Copies source directory to a given target directory."""
-    print('Copying contents of %s to %s' % (source, target))
+    print("Copying contents of %s to %s" % (source, target))
     for source_dir, _, files in os.walk(source):
         target_dir = os.path.abspath(
-            os.path.join(target, os.path.relpath(source_dir, source)))
+            os.path.join(target, os.path.relpath(source_dir, source))
+        )
         try:
             os.makedirs(target_dir)
         except OSError as error:
@@ -59,16 +65,18 @@ def _copy_source_tree(source, target):
                 raise
         for relative_file in files:
             source_file = os.path.abspath(
-                os.path.join(source_dir, relative_file))
+                os.path.join(source_dir, relative_file)
+            )
             target_file = os.path.abspath(
-                os.path.join(target_dir, relative_file))
+                os.path.join(target_dir, relative_file)
+            )
             shutil.copyfile(source_file, target_file)
 
+
 def _bazel_build(query):
-    """Runs 'bazel build' to collect source file info."""
+    """Runs 'bazel build' to build _cygrpc.so"""
     print('Running "bazel build %s"' % query)
-    output = subprocess.check_output([BAZEL_BUILD, query])
-    return output.decode("ascii").splitlines()
+    subprocess.check_output([BAZEL_BUILD, query])
 
 
 def main():
@@ -81,29 +89,33 @@ def main():
     for source, target in COPY_FILES_SOURCE_TARGET_PAIRS:
         # convert the slashes in the relative path to platform-specific path dividers.
         # All paths are relative to GRPC_ROOT
-        source_abs = os.path.join(GRPC_ROOT, os.path.join(*source.split('/')))
+        source_abs = os.path.join(GRPC_ROOT, os.path.join(*source.split("/")))
         # for targets, add grpcio_observability root prefix
         target = GRPCIO_OBSERVABILITY_ROOT_PREFIX + target
-        target_abs = os.path.join(GRPC_ROOT, os.path.join(*target.split('/')))
+        target_abs = os.path.join(GRPC_ROOT, os.path.join(*target.split("/")))
         _copy_source_tree(source_abs, target_abs)
-    print('The necessary source files were copied under the grpcio_observability package root.')
+    print("The necessary source files were copied under"
+          + " the grpcio_observability package root.")
 
     # Step 2:
-    _bazel_build("//src/python/grpcio/grpc:grpcio")
+    # Use bazel to build _cygrpc.so and save it to proper location.
+    _bazel_build("//src/python/grpcio/grpc/_cython:cygrpc")
 
     _source_dir = os.path.join(
-        GRPC_ROOT, "bazel-bin", "src", "python", "grpcio", "grpc", "_cython", "cygrpc.so"
+        GRPC_ROOT,
+        "bazel-bin",
+        "src",
+        "python",
+        "grpcio",
+        "grpc",
+        "_cython",
+        "cygrpc.so",
     )
     source_file = os.path.abspath(_source_dir)
-
-    # _target_dir = os.path.join(
-    #     GRPC_ROOT, "src", "python", "grpcio_observability"
-    # )
-    target_file = os.path.abspath(
-        os.path.join(CYGRPC_SO_PATH, CYGRPC_SO_FILE)
-    )
-    print('Copying %s to %s' % (source_file, target_file))
+    target_file = os.path.abspath(os.path.join(CYGRPC_SO_PATH, CYGRPC_SO_FILE))
+    print("Copying %s to %s" % (source_file, target_file))
     shutil.copyfile(source_file, target_file)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
