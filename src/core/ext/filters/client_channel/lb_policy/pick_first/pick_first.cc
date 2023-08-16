@@ -632,8 +632,8 @@ void PickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
   ReactToConnectivityStateLocked();
 }
 
-void
-PickFirst::SubchannelList::SubchannelData::ReactToConnectivityStateLocked() {
+void PickFirst::SubchannelList::SubchannelData::
+    ReactToConnectivityStateLocked() {
   PickFirst* p = subchannel_list_->policy_.get();
   // Otherwise, process connectivity state.
   switch (connectivity_state_.value()) {
