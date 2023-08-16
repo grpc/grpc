@@ -1,4 +1,5 @@
-# Copyright 2023 gRPC authors.
+#!/bin/bash
+# Copyright 2023 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,17 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-licenses(["notice"])
+# make sure /usr/local/rvm is writable by ruby when running under docker as non-root
+sudo chown -R "$(id -u)" /usr/local/rvm
 
-package(
-    default_visibility = ["//visibility:public"]
-)
-
-# This is needed for the dependency on google_cloud_cpp to work.
-# Taken from https://github.com/googleapis/google-cloud-cpp/blob/2839e9dba793ca023e11ea67f201f66f74fa7d3e/bazel/googleapis.BUILD
-cc_library(
-    name = "googleapis_system_includes",
-    includes = [
-        ".",
-    ],
-)
