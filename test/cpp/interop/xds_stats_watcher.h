@@ -29,6 +29,7 @@
 #include <sstream>
 #include <string>
 #include <thread>
+#include <unordered_set>
 #include <vector>
 
 #include "absl/status/status.h"
@@ -99,7 +100,8 @@ class XdsStatsWatcher {
   LoadBalancerAccumulatedStatsResponse accumulated_stats_;
   std::mutex m_;
   std::condition_variable cv_;
-  std::vector<std::string> metadata_keys_;
+  std::unordered_set<std::string> metadata_keys_;
+  bool include_all_metadata_ = false;
   std::map<std::string, LoadBalancerStatsResponse::MetadataByPeer>
       metadata_by_peer_;
 };

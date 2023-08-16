@@ -25,7 +25,134 @@
     import os
 
     def is_absl_lib(target_name):
-      return target_name.startswith("absl/");
+      """Returns True if the target name is one of the abseil libraries."""
+      return target_name.startswith("absl/")
+
+
+    def collapse_absl_deps(deps):
+      """Replace first occurrence of absl dependency with grpc_abseil and remove the remaining absl dependencies."""
+      result = []
+      absl_dep_added = False
+      for dep in deps:
+          if is_absl_lib(dep):
+            if not absl_dep_added:
+                result.append('grpc_abseil')
+                absl_dep_added = True
+          else:
+            result.append(dep)
+      return result
+
+
+    def get_dep_expression(dep):
+      """For given dependency, return the expression to be used in Makefile rule dependencies."""
+      if dep == 'z':
+          return "$(ZLIB_DEP)"
+      elif dep == 'cares':
+          return "$(CARES_DEP)"
+      elif dep == 'grpc_abseil':
+          return "$(GRPC_ABSEIL_DEP)"
+      elif dep == 'libssl':
+          return "$(OPENSSL_DEP)"
+      else:
+          return "$(LIBDIR)/$(CONFIG)/lib%s.a" % dep
+
+
+    def get_merge_libs_expression(dep):
+      """For given dependency, return the lib archive expression to be used when linking."""
+      if dep == 'z':
+          return "$(ZLIB_MERGE_LIBS)"
+      elif dep == 'cares':
+          return "$(CARES_MERGE_LIBS)"
+      elif dep == 'grpc_abseil':
+          return "$(GRPC_ABSEIL_MERGE_LIBS)"
+      elif dep == 'libssl':
+          return "$(OPENSSL_MERGE_LIBS)"
+      else:
+          return "$(LIBDIR)/$(CONFIG)/lib%s.a" % dep
+
+
+    def get_objs_expression(dep):
+      """For given dependency, return the expression with variable that has list of all object files."""
+      if dep == 'z':
+          return "$(ZLIB_MERGE_OBJS)"
+      elif dep == 'cares':
+          return "$(CARES_MERGE_OBJS)"
+      elif dep == 'grpc_abseil':
+          return "$(LIBGRPC_ABSEIL_OBJS)"
+      elif dep == 'libssl':
+          return "$(OPENSSL_MERGE_OBJS)"
+      else:
+          return "$(LIB%s_OBJS)" % dep.upper()
+
+
+    def get_make_rule_static_lib_deps(lib):
+      """Generate make rule dependency list for given library, when building as static."""
+
+      make_rule_deps = []
+
+      collapsed_deps = collapse_absl_deps(lib.get('transitive_deps', []))
+
+      # depend on static libraries
+      for dep in collapsed_deps:
+          make_rule_deps.append(get_dep_expression(dep))
+
+      # depend of obj files of this library itself
+      make_rule_deps.append(get_objs_expression(lib.name))
+
+      # depend on obj files of dependencies
+      for dep in collapsed_deps:
+          make_rule_deps.append(get_objs_expression(dep))
+
+      return " ".join(make_rule_deps)
+
+
+    def get_merge_objs_for_deps(lib):
+      """Get list of merge objs for all deps of a given library."""
+      result = []
+      collapsed_deps = collapse_absl_deps(lib.get('transitive_deps', []))
+
+      for dep in collapsed_deps:
+          result.append(get_objs_expression(dep))
+
+      return " ".join(result)
+
+
+    def get_make_rule_shared_lib_deps(lib):
+      """Generate make rule dependency list given library, when built as shared."""
+      make_rule_deps = []
+
+      collapsed_deps = collapse_absl_deps(lib.get('transitive_deps', []))
+
+      # depend of obj files of this library itself
+      make_rule_deps.append(get_objs_expression(lib.name))
+
+      # depend on static libraries
+      for dep in collapsed_deps:
+          make_rule_deps.append(get_dep_expression(dep))
+
+      return " ".join(make_rule_deps)
+
+
+    def get_shared_lib_linklibs(lib):
+      """Generate list of libraries to link given library, when built as shared."""
+      result = []
+
+      collapsed_deps = collapse_absl_deps(lib.get('transitive_deps', []))
+
+      # depend of obj files of this library itself
+      result.append(get_objs_expression(lib.name))
+
+      # depend on static libraries
+      for dep in collapsed_deps:
+          result.append(get_merge_libs_expression(dep))
+
+      if 'libssl' in collapsed_deps:
+          result.append("$(LDLIBS_SECURE)")
+
+      result.append("$(LDLIBS)")
+
+      return " ".join(result)
+
 
     sources_that_need_openssl = set()
     sources_that_don_t_need_openssl = set()
@@ -46,7 +173,6 @@
     lang_to_var = {
       'c': 'CORE',
       'c++': 'CPP',
-      'csharp': 'CSHARP'
     }
   %>
   <%
@@ -320,7 +446,6 @@
 
   CORE_VERSION = ${settings.core_version}
   CPP_VERSION = ${settings.cpp_version}
-  CSHARP_VERSION = ${settings.csharp_version}
 
   CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
   CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
@@ -351,29 +476,24 @@
   EXECUTABLE_SUFFIX = .exe
   SHARED_EXT_CORE = dll
   SHARED_EXT_CPP = dll
-  SHARED_EXT_CSHARP = dll
+
   SHARED_PREFIX =
   SHARED_VERSION_CORE = -${settings.core_version.major}
   SHARED_VERSION_CPP = -${settings.cpp_version.major}
-  SHARED_VERSION_CSHARP = -${settings.csharp_version.major}
   else ifeq ($(SYSTEM),Darwin)
   EXECUTABLE_SUFFIX =
   SHARED_EXT_CORE = dylib
   SHARED_EXT_CPP = dylib
-  SHARED_EXT_CSHARP = dylib
   SHARED_PREFIX = lib
   SHARED_VERSION_CORE =
   SHARED_VERSION_CPP =
-  SHARED_VERSION_CSHARP =
   else
   EXECUTABLE_SUFFIX =
   SHARED_EXT_CORE = so.$(CORE_VERSION)
   SHARED_EXT_CPP = so.$(CPP_VERSION)
-  SHARED_EXT_CSHARP = so.$(CSHARP_VERSION)
   SHARED_PREFIX = lib
   SHARED_VERSION_CORE =
   SHARED_VERSION_CPP =
-  SHARED_VERSION_CSHARP =
   endif
 
   ifeq ($(wildcard .git),)
@@ -430,27 +550,13 @@
 
   # Setup address_sorting dependency
 
-  ADDRESS_SORTING_DEP = $(LIBDIR)/$(CONFIG)/libaddress_sorting.a
-  ADDRESS_SORTING_MERGE_OBJS = $(LIBADDRESS_SORTING_OBJS)
-  ADDRESS_SORTING_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libaddress_sorting.a
+  # TODO(jtattermusch): should the include be added elsewhere?
   CPPFLAGS := -Ithird_party/address_sorting/include $(CPPFLAGS)
 
   # Setup abseil dependency
 
   GRPC_ABSEIL_DEP = $(LIBDIR)/$(CONFIG)/libgrpc_abseil.a
   GRPC_ABSEIL_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libgrpc_abseil.a
-
-  # Setup re2 dependency
-
-  RE2_DEP = $(LIBDIR)/$(CONFIG)/libre2.a
-  RE2_MERGE_OBJS = $(LIBRE2_OBJS)
-  RE2_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libre2.a
-
-  # Setup upb dependency
-
-  UPB_DEP = $(LIBDIR)/$(CONFIG)/libupb.a
-  UPB_MERGE_OBJS = $(LIBUPB_OBJS)
-  UPB_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libupb.a
 
   # Setup boringssl dependency
 
@@ -597,16 +703,6 @@
   % endfor
 
 
-  static_csharp: static_c \
-  % for lib in filtered_libs:
-  % if 'Makefile' in lib.get('build_system', ['Makefile']):
-  % if lib.build == 'all' and lib.language == 'csharp':
-   $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
-  % endif
-  % endif
-  % endfor
-
-
   shared: shared_c shared_cxx
 
   shared_c: cache.mk\
@@ -627,17 +723,6 @@
   % endif
   % endfor
 
-
-  shared_csharp: shared_c \
-  % for lib in filtered_libs:
-  % if 'Makefile' in lib.get('build_system', ['Makefile']):
-  % if lib.build == 'all' and lib.language == 'csharp':
-   $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP)\
-  % endif
-  % endif
-  % endfor
-
-  grpc_csharp_ext: shared_csharp
 
   privatelibs: privatelibs_c privatelibs_cxx
 
@@ -739,20 +824,6 @@
   % endfor
   endif
 
-  strip-shared_csharp: shared_csharp
-  ifeq ($(CONFIG),opt)
-  % for lib in filtered_libs:
-  % if 'Makefile' in lib.get('build_system', ['Makefile']):
-  % if lib.language == "csharp":
-  % if lib.build == "all":
-  	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP)"
-  	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP)
-  % endif
-  % endif
-  % endif
-  % endfor
-  endif
-
   cache.mk::
   	$(E) "[MAKE]    Generating $@"
   	$(Q) echo "$(CACHE_MK)" | tr , '\n' >$@
@@ -797,8 +868,6 @@
   install_c: install_not_supported_error
 
   install_cxx: install_not_supported_error
-
-  install_csharp: install_not_supported_error
 
   install-static: install_not_supported_error
 
@@ -847,6 +916,8 @@
 
   <%def name="makelib(lib)">
   # start of build recipe for library "${lib.name}" (generated by makelib(lib) template function)
+  # deps: ${collapse_absl_deps(lib.get('deps', []))}
+  # transitive_deps: ${collapse_absl_deps(lib.get('transitive_deps', []))}
   LIB${lib.name.upper()}_SRC = \\
 
   % for src in lib.src:
@@ -877,7 +948,7 @@
   % endif
 
   ## If the library requires OpenSSL, let's add some restrictions.
-  % if 'libssl' in lib.get('deps', []):
+  % if 'libssl' in lib.get('transitive_deps', []):
   ifeq ($(NO_SECURE),true)
 
   # You can't build secure libraries if you don't have OpenSSL.
@@ -890,130 +961,68 @@
 
   else
 
-  $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) \
-  ## The else here corresponds to the if secure earlier.
-  % else:
-  $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: \
-  % if lib.name not in ['z', 'ares', 'address_sorting', 're2', 'upb', 'grpc_abseil']:
-  $(ZLIB_DEP) \
-  $(CARES_DEP) \
-  $(ADDRESS_SORTING_DEP) \
-  $(RE2_DEP) \
-  $(UPB_DEP) \
-  $(GRPC_ABSEIL_DEP) \
+  ## The following endif corresponds to the "If the library requires OpenSSL" above
   % endif
-  % endif
-   $(LIB${lib.name.upper()}_OBJS) \
-  % if lib.get('baselib', False):
-   $(LIBGPR_OBJS) \
-   $(LIBGRPC_ABSEIL_OBJS) \
-   $(ZLIB_MERGE_OBJS) \
-   $(CARES_MERGE_OBJS) \
-   $(ADDRESS_SORTING_MERGE_OBJS) \
-   $(RE2_MERGE_OBJS) \
-   $(UPB_MERGE_OBJS) \
-  % if 'libssl' in lib.get('deps', []):
-   $(OPENSSL_MERGE_OBJS) \
-  % endif
-  % endif
-
+  # static library for "${lib.name}"
+  $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: ${get_make_rule_static_lib_deps(lib)}
   	$(E) "[AR]      Creating $@"
   	$(Q) mkdir -p `dirname $@`
   	$(Q) rm -f $(LIBDIR)/$(CONFIG)/lib${lib.name}.a
-  	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(LIB${lib.name.upper()}_OBJS) \
-  % if lib.get('baselib', False):
-   $(LIBGPR_OBJS) \
-   $(LIBGRPC_ABSEIL_OBJS) \
-   $(ZLIB_MERGE_OBJS) \
-   $(CARES_MERGE_OBJS) \
-   $(ADDRESS_SORTING_MERGE_OBJS) \
-   $(RE2_MERGE_OBJS) \
-   $(UPB_MERGE_OBJS) \
-  % if 'libssl' in lib.get('deps', []):
-   $(OPENSSL_MERGE_OBJS) \
-  % endif
-  % endif
-
+  	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(LIB${lib.name.upper()}_OBJS) ${get_merge_objs_for_deps(lib)}
   ifeq ($(SYSTEM),Darwin)
   	$(Q) $(RANLIB) $(RANLIBFLAGS) $(LIBDIR)/$(CONFIG)/lib${lib.name}.a
   endif
-
   <%
     ld = '$(LDXX)'
 
     out_mingbase = '$(LIBDIR)/$(CONFIG)/' + lib.name + '$(SHARED_VERSION_' + lang_to_var[lib.language] + ')'
     out_libbase = '$(LIBDIR)/$(CONFIG)/lib' + lib.name + '$(SHARED_VERSION_' + lang_to_var[lib.language] + ')'
 
-    common = '$(LIB' + lib.name.upper() + '_OBJS)'
+    ldflags = '$(LDFLAGS)'
+    if lib.get('LDFLAGS', None):
+      ldflags += ' ' + lib['LDFLAGS']
 
-    link_libs = ''
-    lib_deps = ' $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)'
-    mingw_libs = ''
-    mingw_lib_deps = ' $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)'
-    for dep in lib.get('deps', []):
-      if is_absl_lib(dep): continue
-      if 'libssl' == dep: continue
-      lib_archive = '$(LIBDIR)/$(CONFIG)/lib' + dep + '.a'
-      common = common + ' ' + lib_archive
-      lib_deps = lib_deps + ' ' + lib_archive
-      mingw_lib_deps = mingw_lib_deps + ' ' + lib_archive
-
-    security = 'libssl' in lib.get('deps', [])
-    if security == True:
-      common = common + ' $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE)'
-    common = common + ' $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS)'
-
-    if security in [True, 'check']:
+    if 'libssl' in lib.get('transitive_deps', []):
       for src in lib.src:
         sources_that_need_openssl.add(src)
     else:
       for src in lib.src:
         sources_that_don_t_need_openssl.add(src)
-
-    if 'libssl' in lib.get('deps', []):
-      lib_deps = lib_deps + ' $(OPENSSL_DEP)'
-      mingw_lib_deps = mingw_lib_deps + ' $(OPENSSL_DEP)'
-
-    ldflags = '$(LDFLAGS)'
-    if lib.get('LDFLAGS', None):
-      ldflags += ' ' + lib['LDFLAGS']
-
-    common = common + ' $(LDLIBS)'
   %>
-
+  # shared library for "${lib.name}"
   % if lib.build == "all":
   ifeq ($(SYSTEM),MINGW32)
-  ${out_mingbase}.$(SHARED_EXT_${lang_to_var[lib.language]}): $(LIB${lib.name.upper()}_OBJS) ${mingw_lib_deps}
+  ${out_mingbase}.$(SHARED_EXT_${lang_to_var[lib.language]}): ${get_make_rule_shared_lib_deps(lib)}
   	$(E) "[LD]      Linking $@"
   	$(Q) mkdir -p `dirname $@`
-  	$(Q) ${ld} ${ldflags} -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=${out_mingbase}.def -Wl,--out-implib=${out_libbase}-dll.a -o ${out_mingbase}.$(SHARED_EXT_${lang_to_var[lib.language]}) ${common}${mingw_libs}
+  	$(Q) ${ld} ${ldflags} -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=${out_mingbase}.def -Wl,--out-implib=${out_libbase}-dll.a -o ${out_mingbase}.$(SHARED_EXT_${lang_to_var[lib.language]}) ${get_shared_lib_linklibs(lib)}
   else
-  ${out_libbase}.$(SHARED_EXT_${lang_to_var[lib.language]}): $(LIB${lib.name.upper()}_OBJS) ${lib_deps}
+  ${out_libbase}.$(SHARED_EXT_${lang_to_var[lib.language]}): ${get_make_rule_shared_lib_deps(lib)}
   	$(E) "[LD]      Linking $@"
   	$(Q) mkdir -p `dirname $@`
   ifeq ($(SYSTEM),Darwin)
-  	$(Q) ${ld} ${ldflags} -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) -dynamiclib -o ${out_libbase}.$(SHARED_EXT_${lang_to_var[lib.language]}) ${common}${link_libs}
+  	$(Q) ${ld} ${ldflags} -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) -dynamiclib -o ${out_libbase}.$(SHARED_EXT_${lang_to_var[lib.language]}) ${get_shared_lib_linklibs(lib)}
   else
-  	$(Q) ${ld} ${ldflags} -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,lib${lib.name}.so.${settings.get(lang_to_var[lib.language].lower() + '_version').major} -o ${out_libbase}.$(SHARED_EXT_${lang_to_var[lib.language]}) ${common}${link_libs}
+  	$(Q) ${ld} ${ldflags} -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,lib${lib.name}.so.${settings.get(lang_to_var[lib.language].lower() + '_version').major} -o ${out_libbase}.$(SHARED_EXT_${lang_to_var[lib.language]}) ${get_shared_lib_linklibs(lib)}
   	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) ${out_libbase}.so.${settings.get(lang_to_var[lib.language].lower() + '_version').major}
   	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) ${out_libbase}.so
   endif
   endif
   % endif
-  % if 'libssl' in lib.get('deps', []):
-  ## If the lib was secure, we have to close the Makefile's if that tested
+  % if 'libssl' in lib.get('transitive_deps', []):
+  ## If the lib was secure, we have to close the Makefile's ifeq that tested
   ## the presence of OpenSSL.
 
-  endif
+  endif  # corresponds to the "ifeq ($(NO_SECURE),true)" above
   % endif
 
-  % if 'libssl' in lib.get('deps', []):
+  % if 'libssl' in lib.get('transitive_deps', []):
   ifneq ($(NO_SECURE),true)
   % endif
   ifneq ($(NO_DEPS),true)
   -include $(LIB${lib.name.upper()}_OBJS:.o=.dep)
   endif
-  % if 'libssl' in lib.get('deps', []):
+  % if 'libssl' in lib.get('transitive_deps', []):
   endif
   % endif
   # end of build recipe for library "${lib.name}"
@@ -1035,7 +1044,7 @@
   dep_error openssl_dep_error openssl_dep_message git_update stop \
   buildtests buildtests_c buildtests_cxx \
   test test_c test_cxx \
-  install install_c install_cxx install_csharp install-static install-certs \
+  install install_c install_cxx install-static install-certs \
   strip strip-shared strip-static \
   strip_c strip-shared_c strip-static_c \
   strip_cxx strip-shared_cxx strip-static_cxx \
