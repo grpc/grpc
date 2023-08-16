@@ -38,6 +38,10 @@ class BusyThreadCount {
    public:
     AutoThreadCounter(BusyThreadCount* counter, size_t idx);
     ~AutoThreadCounter();
+    // not copyable
+    AutoThreadCounter(const AutoThreadCounter&) = delete;
+    AutoThreadCounter& operator=(const AutoThreadCounter&) = delete;
+    // moveable
     AutoThreadCounter(AutoThreadCounter&& other) noexcept;
     AutoThreadCounter& operator=(AutoThreadCounter&& other) noexcept;
 
@@ -73,6 +77,10 @@ class LivingThreadCount {
    public:
     explicit AutoThreadCounter(LivingThreadCount* counter);
     ~AutoThreadCounter();
+    // not copyable
+    AutoThreadCounter(const AutoThreadCounter&) = delete;
+    AutoThreadCounter& operator=(const AutoThreadCounter&) = delete;
+    // moveable
     AutoThreadCounter(AutoThreadCounter&& other) noexcept;
     AutoThreadCounter& operator=(AutoThreadCounter&& other) noexcept;
 
