@@ -68,7 +68,8 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
     tag_ = tag;
     GPR_ASSERT(grpc_cq_begin_op(cq_, this));
     Ref();
-    cq_armed_.store(true);
+    GPR_ASSERT(cq_armed_.exchange(true) == false);
+    GPR_ASSERT(!callback_armed_.load());
     cq_timer_handle_ = event_engine_->RunAfter(
         grpc_core::Timestamp::FromTimespecRoundUp(deadline) -
             grpc_core::ExecCtx::Get()->Now(),
@@ -82,7 +83,8 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
     // Don't use any CQ at all. Instead just use the timer to fire the function
     callback_ = std::move(f);
     Ref();
-    callback_armed_.store(true);
+    GPR_ASSERT(callback_armed_.exchange(true) == false);
+    GPR_ASSERT(!cq_armed_.load());
     callback_timer_handle_ = event_engine_->RunAfter(
         grpc_core::Timestamp::FromTimespecRoundUp(deadline) -
             grpc_core::ExecCtx::Get()->Now(),
@@ -95,11 +97,16 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
     grpc_core::ExecCtx exec_ctx;
     if (callback_armed_.load() &&
         event_engine_->Cancel(callback_timer_handle_)) {
-      event_engine_->Run([this] { OnCallbackAlarm(/*is_ok=*/false); });
+      event_engine_->Run([this] {
+        callback_armed_.store(false);
+        OnCallbackAlarm(/*is_ok=*/false);
+      });
     }
     if (cq_armed_.load() && event_engine_->Cancel(cq_timer_handle_)) {
-      event_engine_->Run(
-          [this] { OnCQAlarm(absl::CancelledError("cancelled")); });
+      event_engine_->Run([this] {
+        cq_armed_.store(false);
+        OnCQAlarm(absl::CancelledError("cancelled"));
+      });
     }
   }
   void Destroy() {
