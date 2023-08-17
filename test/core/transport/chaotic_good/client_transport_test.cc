@@ -18,10 +18,13 @@
 
 #include <stdio.h>
 
+#include <algorithm>  // IWYU pragma: keep
 #include <memory>
 #include <tuple>
+#include <vector>  // IWYU pragma: keep
 
 #include "absl/functional/any_invocable.h"
+#include "absl/strings/str_format.h"  // IWYU pragma: keep
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
