@@ -1,4 +1,3 @@
-
 // Copyright 2015-2016 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -207,20 +206,29 @@ message LoadBalancerStatsRequest {
   int32 num_rpcs = 1;
   // If num_rpcs have not completed within timeout_sec, return partial results.
   int32 timeout_sec = 2;
-  // response header+trailer we want the values of
+  // Response header + trailer metadata entries we want the values of.
+  // Matching of the keys is case-insensitive as per rfc7540#section-8.1.2
+  // * (asterisk) is a special value that will return all metadata entries
   repeated string metadata_keys = 3;
 }
 
 message LoadBalancerStatsResponse {
+  enum MetadataType {
+    Initial = 0;
+    Trailing = 1;
+  }
   message MetadataEntry {
+    // Key, exactly as received from the server. Case may be different from what
+    // was requested in the LoadBalancerStatsRequest)
     string key = 1;
+    // Value, exactly as received from the server.
     string value = 2;
+    // Metadata type is either Initial or Trailing
+    MetadataType type = 3;
   }
   message RpcMetadata {
     // metadata values for each rpc for the keys specified in
     // LoadBalancerStatsRequest.metadata_keys.
-    // metadata keys and values are returned exactly as was recieved
-    // from the server.
     repeated MetadataEntry metadata = 1;
   }
   message MetadataByPeer {
@@ -308,4 +316,24 @@ message TestOrcaReport {
   double memory_utilization = 2;
   map<string, double> request_cost = 3;
   map<string, double> utilization = 4;
+}
+
+enum HookRequestCommand {
+  // Start the HTTP endpoint
+  START = 0;
+  // Stop
+  STOP = 1;
+  // Return from HTTP GET/POST
+  RETURN = 2;
+}
+
+message HookRequest {
+  HookRequestCommand command = 1;
+  int32 grpc_code_to_return = 2;
+  string grpc_status_description = 3;
+  // Server port to listen to
+  int32 server_port = 4;
+}
+
+message HookResponse {
 }
