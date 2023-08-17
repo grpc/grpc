@@ -16,25 +16,38 @@
 
 #include <map>
 
+#include "absl/algorithm/container.h"
+#include "absl/strings/ascii.h"
+
 namespace grpc {
 namespace testing {
 
 namespace {
 
 LoadBalancerStatsResponse::RpcMetadata BuildRpcMetadata(
-    absl::Span<const std::string> metadata_keys,
+    const std::unordered_set<std::string>& included_keys, bool include_all_keys,
     const std::multimap<grpc::string_ref, grpc::string_ref>& initial_metadata) {
   LoadBalancerStatsResponse::RpcMetadata rpc_metadata;
-  for (const auto& key : metadata_keys) {
-    auto matching = initial_metadata.equal_range(key);
-    for (auto value = matching.first; value != matching.second; ++value) {
+  for (const auto& key_value : initial_metadata) {
+    absl::string_view key(key_value.first.data(), key_value.first.length());
+    if (include_all_keys ||
+        included_keys.find(absl::AsciiStrToLower(key)) != included_keys.end()) {
       auto entry = rpc_metadata.add_metadata();
       entry->set_key(key);
-      entry->set_value(
-          absl::string_view(value->second.data(), value->second.length()));
+      entry->set_value(absl::string_view(key_value.second.data(),
+                                         key_value.second.length()));
     }
   }
   return rpc_metadata;
+}
+
+std::unordered_set<std::string> ToLowerCase(
+    absl::Span<const std::string> strings) {
+  std::unordered_set<std::string> result;
+  for (const auto& str : strings) {
+    result.emplace(absl::AsciiStrToLower(str));
+  }
+  return result;
 }
 
 }  // namespace
@@ -44,7 +57,11 @@ XdsStatsWatcher::XdsStatsWatcher(int start_id, int end_id,
     : start_id_(start_id),
       end_id_(end_id),
       rpcs_needed_(end_id - start_id),
-      metadata_keys_(metadata_keys.begin(), metadata_keys.end()) {}
+      metadata_keys_(ToLowerCase(metadata_keys)),
+      include_all_metadata_(
+          absl::c_any_of(metadata_keys, [](absl::string_view key) {
+            return absl::StripAsciiWhitespace(key) == "*";
+          })) {}
 
 void XdsStatsWatcher::RpcCompleted(
     const AsyncClientCallResult& call, const std::string& peer,
@@ -62,8 +79,8 @@ void XdsStatsWatcher::RpcCompleted(
         // RPC is counted into both per-peer bin and per-method-per-peer bin.
         rpcs_by_peer_[peer]++;
         rpcs_by_type_[call.rpc_type][peer]++;
-        *metadata_by_peer_[peer].add_rpc_metadata() =
-            BuildRpcMetadata(metadata_keys_, initial_metadata);
+        *metadata_by_peer_[peer].add_rpc_metadata() = BuildRpcMetadata(
+            metadata_keys_, include_all_metadata_, initial_metadata);
       }
       rpcs_needed_--;
       // Report accumulated stats.

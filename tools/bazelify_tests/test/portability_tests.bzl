@@ -55,8 +55,7 @@ def generate_run_tests_portability_tests(name):
         compiler_configs = [
             # TODO(b/283304471): Add 'gcc10.2_openssl102' once possible
             ["gcc_7", "", "tools/dockerfile/test/cxx_gcc_7_x64.current_version"],
-            # TODO(jtattermusch): re-enable once not flaky anymore
-            #["gcc_12", "--cmake_configure_extra_args=-DCMAKE_CXX_STANDARD=20", "tools/dockerfile/test/cxx_gcc_12_x64.current_version"],
+            ["gcc_12", "--cmake_configure_extra_args=-DCMAKE_CXX_STANDARD=20", "tools/dockerfile/test/cxx_gcc_12_x64.current_version"],
             # TODO(jtattermusch): Re-enable once the build can finish in reasonable time (looks like ccache is not being used?)
             #["gcc_musl", "", "tools/dockerfile/test/cxx_alpine_x64.current_version"],
             ["clang_6", "--cmake_configure_extra_args=-DCMAKE_C_COMPILER=clang --cmake_configure_extra_args=-DCMAKE_CXX_COMPILER=clang++", "tools/dockerfile/test/cxx_clang_6_x64.current_version"],
@@ -73,17 +72,16 @@ def generate_run_tests_portability_tests(name):
             )
             test_names.append(test_name)
 
-    # TODO(jtattermusch): Reintroduce the test once it passes.
     # Python on alpine
-    #grpc_run_tests_harness_test(
-    #    name = "runtests_python_linux_dbg_alpine",
-    #    args = [
-    #        "-l python -c dbg --compiler python_alpine",
-    #    ],
-    #    docker_image_version = "tools/dockerfile/test/python_alpine_x64.current_version",
-    #    size = "enormous",
-    #)
-    #test_names.append("runtests_python_linux_dbg_alpine")
+    grpc_run_tests_harness_test(
+        name = "runtests_python_linux_dbg_alpine",
+        args = [
+            "-l python -c dbg --compiler python_alpine",
+        ],
+        docker_image_version = "tools/dockerfile/test/python_alpine_x64.current_version",
+        size = "enormous",
+    )
+    test_names.append("runtests_python_linux_dbg_alpine")
 
     # Generate test suite that allows easily running all portability tests.
     native.test_suite(
