@@ -23,6 +23,7 @@
 
 #include <functional>
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpcpp/completion_queue.h>
 #include <grpcpp/impl/completion_queue_tag.h>
@@ -31,9 +32,15 @@
 
 namespace grpc {
 
+/// Trigger a \a CompletionQueue event, or asynchronous callback execution,
+/// after some deadline.
+///
+/// The \a Alarm API has separate \a Set methods for CompletionQueues and
+/// callbacks, but only one can be used at any given time. After an alarm has
+/// been triggered or cancelled, the same Alarm object may reused.
 class Alarm : private grpc::internal::GrpcLibrary {
  public:
-  /// Create an unset completion queue alarm
+  /// Create an unset Alarm.
   Alarm();
 
   /// Destroy the given completion queue alarm, cancelling it in the process.
