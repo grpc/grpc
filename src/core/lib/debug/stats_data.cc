@@ -82,15 +82,25 @@ Histogram_80_10 operator-(const Histogram_80_10& left,
 }
 const absl::string_view
     GlobalStats::counter_name[static_cast<int>(Counter::COUNT)] = {
-        "client_calls_created",    "server_calls_created",
-        "client_channels_created", "client_subchannels_created",
-        "server_channels_created", "insecure_connections_created",
-        "syscall_write",           "syscall_read",
-        "tcp_read_alloc_8k",       "tcp_read_alloc_64k",
-        "http2_settings_writes",   "http2_pings_sent",
-        "http2_writes_begun",      "http2_transport_stalls",
-        "http2_stream_stalls",     "cq_pluck_creates",
-        "cq_next_creates",         "cq_callback_creates",
+        "client_calls_created",
+        "server_calls_created",
+        "client_channels_created",
+        "client_subchannels_created",
+        "server_channels_created",
+        "insecure_connections_created",
+        "syscall_write",
+        "syscall_read",
+        "tcp_read_alloc_8k",
+        "tcp_read_alloc_64k",
+        "http2_settings_writes",
+        "http2_pings_sent",
+        "http2_writes_begun",
+        "http2_transport_stalls",
+        "http2_stream_stalls",
+        "cq_pluck_creates",
+        "cq_next_creates",
+        "cq_callback_creates",
+        "wrr_updates",
 };
 const absl::string_view GlobalStats::counter_doc[static_cast<int>(
     Counter::COUNT)] = {
@@ -118,6 +128,7 @@ const absl::string_view GlobalStats::counter_doc[static_cast<int>(
     "usage)",
     "Number of completion queues created for cq_callback (indicates callback "
     "api usage)",
+    "Number of wrr updates that have been received",
 };
 const absl::string_view
     GlobalStats::histogram_name[static_cast<int>(Histogram::COUNT)] = {
@@ -266,7 +277,8 @@ GlobalStats::GlobalStats()
       http2_stream_stalls{0},
       cq_pluck_creates{0},
       cq_next_creates{0},
-      cq_callback_creates{0} {}
+      cq_callback_creates{0},
+      wrr_updates{0} {}
 HistogramView GlobalStats::histogram(Histogram which) const {
   switch (which) {
     default:
@@ -340,6 +352,7 @@ std::unique_ptr<GlobalStats> GlobalStatsCollector::Collect() const {
         data.cq_next_creates.load(std::memory_order_relaxed);
     result->cq_callback_creates +=
         data.cq_callback_creates.load(std::memory_order_relaxed);
+    result->wrr_updates += data.wrr_updates.load(std::memory_order_relaxed);
     data.call_initial_size.Collect(&result->call_initial_size);
     data.tcp_write_size.Collect(&result->tcp_write_size);
     data.tcp_write_iov_size.Collect(&result->tcp_write_iov_size);
@@ -381,6 +394,7 @@ std::unique_ptr<GlobalStats> GlobalStats::Diff(const GlobalStats& other) const {
   result->cq_pluck_creates = cq_pluck_creates - other.cq_pluck_creates;
   result->cq_next_creates = cq_next_creates - other.cq_next_creates;
   result->cq_callback_creates = cq_callback_creates - other.cq_callback_creates;
+  result->wrr_updates = wrr_updates - other.wrr_updates;
   result->call_initial_size = call_initial_size - other.call_initial_size;
   result->tcp_write_size = tcp_write_size - other.tcp_write_size;
   result->tcp_write_iov_size = tcp_write_iov_size - other.tcp_write_iov_size;

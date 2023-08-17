@@ -142,6 +142,7 @@ struct GlobalStats {
     kCqPluckCreates,
     kCqNextCreates,
     kCqCallbackCreates,
+    kWrrUpdates,
     COUNT
   };
   enum class Histogram {
@@ -184,6 +185,7 @@ struct GlobalStats {
       uint64_t cq_pluck_creates;
       uint64_t cq_next_creates;
       uint64_t cq_callback_creates;
+      uint64_t wrr_updates;
     };
     uint64_t counters[static_cast<int>(Counter::COUNT)];
   };
@@ -267,6 +269,9 @@ class GlobalStatsCollector {
     data_.this_cpu().cq_callback_creates.fetch_add(1,
                                                    std::memory_order_relaxed);
   }
+  void IncrementWrrUpdates() {
+    data_.this_cpu().wrr_updates.fetch_add(1, std::memory_order_relaxed);
+  }
   void IncrementCallInitialSize(int value) {
     data_.this_cpu().call_initial_size.Increment(value);
   }
@@ -318,6 +323,7 @@ class GlobalStatsCollector {
     std::atomic<uint64_t> cq_pluck_creates{0};
     std::atomic<uint64_t> cq_next_creates{0};
     std::atomic<uint64_t> cq_callback_creates{0};
+    std::atomic<uint64_t> wrr_updates{0};
     HistogramCollector_65536_26 call_initial_size;
     HistogramCollector_16777216_20 tcp_write_size;
     HistogramCollector_80_10 tcp_write_iov_size;

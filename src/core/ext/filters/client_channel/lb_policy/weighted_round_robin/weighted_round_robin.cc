@@ -661,6 +661,7 @@ void WeightedRoundRobin::ResetBackoffLocked() {
 }
 
 absl::Status WeightedRoundRobin::UpdateLocked(UpdateArgs args) {
+  global_stats().IncrementWrrUpdates();
   config_ = std::move(args.config);
   ServerAddressList addresses;
   if (args.addresses.ok()) {
