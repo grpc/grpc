@@ -51,6 +51,7 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -511,6 +512,9 @@ WeightedRoundRobin::Picker::Picker(
       subchannels_.emplace_back(sd->subchannel()->Ref(), sd->weight());
     }
   }
+  global_stats().IncrementWrrSubchannelListSize(
+      subchannel_list->num_subchannels());
+  global_stats().IncrementWrrSubchannelListSize(subchannels_.size());
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
     gpr_log(GPR_INFO,
             "[WRR %p picker %p] created picker from subchannel_list=%p "

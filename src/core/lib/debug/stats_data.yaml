@@ -87,3 +87,12 @@
   doc: Number of completion queues created for cq_next (indicates cq async api usage)
 - counter: cq_callback_creates
   doc: Number of completion queues created for cq_callback (indicates callback api usage)
+# wrr
+- histogram: wrr_subchannel_list_size
+  doc: Number of subchannels in a subchannel list at picker creation time
+  max: 10000
+  buckets: 20
+- histogram: wrr_subchannel_ready_size
+  doc: Number of subchannels in a subchannel list at picker creation time
+  max: 10000
+  buckets: 20

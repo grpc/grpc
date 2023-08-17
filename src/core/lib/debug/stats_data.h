@@ -76,6 +76,29 @@ class HistogramCollector_16777216_20 {
  private:
   std::atomic<uint64_t> buckets_[20]{};
 };
+class HistogramCollector_10000_20;
+class Histogram_10000_20 {
+ public:
+  static int BucketFor(int value);
+  const uint64_t* buckets() const { return buckets_; }
+  friend Histogram_10000_20 operator-(const Histogram_10000_20& left,
+                                      const Histogram_10000_20& right);
+
+ private:
+  friend class HistogramCollector_10000_20;
+  uint64_t buckets_[20]{};
+};
+class HistogramCollector_10000_20 {
+ public:
+  void Increment(int value) {
+    buckets_[Histogram_10000_20::BucketFor(value)].fetch_add(
+        1, std::memory_order_relaxed);
+  }
+  void Collect(Histogram_10000_20* result) const;
+
+ private:
+  std::atomic<uint64_t> buckets_[20]{};
+};
 class HistogramCollector_80_10;
 class Histogram_80_10 {
  public:
@@ -130,6 +153,8 @@ struct GlobalStats {
     kTcpReadOfferIovSize,
     kHttp2SendMessageSize,
     kHttp2MetadataSize,
+    kWrrSubchannelListSize,
+    kWrrSubchannelReadySize,
     COUNT
   };
   GlobalStats();
@@ -170,6 +195,8 @@ struct GlobalStats {
   Histogram_80_10 tcp_read_offer_iov_size;
   Histogram_16777216_20 http2_send_message_size;
   Histogram_65536_26 http2_metadata_size;
+  Histogram_10000_20 wrr_subchannel_list_size;
+  Histogram_10000_20 wrr_subchannel_ready_size;
   HistogramView histogram(Histogram which) const;
   std::unique_ptr<GlobalStats> Diff(const GlobalStats& other) const;
 };
@@ -264,6 +291,12 @@ class GlobalStatsCollector {
   void IncrementHttp2MetadataSize(int value) {
     data_.this_cpu().http2_metadata_size.Increment(value);
   }
+  void IncrementWrrSubchannelListSize(int value) {
+    data_.this_cpu().wrr_subchannel_list_size.Increment(value);
+  }
+  void IncrementWrrSubchannelReadySize(int value) {
+    data_.this_cpu().wrr_subchannel_ready_size.Increment(value);
+  }
 
  private:
   struct Data {
@@ -293,6 +326,8 @@ class GlobalStatsCollector {
     HistogramCollector_80_10 tcp_read_offer_iov_size;
     HistogramCollector_16777216_20 http2_send_message_size;
     HistogramCollector_65536_26 http2_metadata_size;
+    HistogramCollector_10000_20 wrr_subchannel_list_size;
+    HistogramCollector_10000_20 wrr_subchannel_ready_size;
   };
   PerCpu<Data> data_{PerCpuOptions().SetCpusPerShard(4).SetMaxShards(32)};
 };
