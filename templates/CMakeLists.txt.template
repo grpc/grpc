@@ -48,7 +48,9 @@
     return lib_name.startswith("absl/")
 
   def get_absl_dep(lib_name):
-      return lib_map[lib_name].cmake_target
+    """Gets the corresponding cmake target for given absl library."""
+    # The "cmake_target" field originates from src/abseil-cpp/preprocessed_builds.yaml.gen.py
+    return lib_map[lib_name].cmake_target
 
   def get_transitive_deps(lib_name):
     """Get list of transitive deps for given library."""
@@ -148,27 +150,9 @@
       private_libs.append("-l" + lib_name)
     return private_libs
 
-  def is_shared_only_lib(lib_name):
-    """Returns True if only shared library should be generated."""
-    # grpc_csharp_ext is loaded by C# runtime and it
-    # only makes sense as a shared lib.
-    return lib_name in ['grpc_csharp_ext']
-
   def get_deps(target_dict):
+    # TODO(jtattermusch): remove special cases based on target names
     deps = []
-    deps.append("${_gRPC_BASELIB_LIBRARIES}")
-    if target_dict.get('build', None) in ['protoc']:
-      deps.append("${_gRPC_PROTOBUF_PROTOC_LIBRARIES}")
-    if target_dict.language == 'c++':
-      deps.append("${_gRPC_PROTOBUF_LIBRARIES}")
-    if target_dict['name'] in ['grpc', 'grpc_cronet', 'grpc_unsecure']:
-      deps.append("${_gRPC_UPB_LIBRARIES}")
-    # TODO(yijiem): These targets depend on grpc_base instead of grpc. Since we don't populate grpc_base as a cmake target, the sources all get collapsed into these targets. This workaround adds c-ares and/or re2 dependencies to these targets. We should clean this up.
-    if target_dict['name'] in ['frame_test']:
-      deps.append("${_gRPC_CARES_LIBRARIES}")
-    if target_dict['name'] in ['grpc_authorization_provider']:
-      deps.append("${_gRPC_CARES_LIBRARIES}")
-      deps.append("${_gRPC_RE2_LIBRARIES}")
     deps.append("${_gRPC_ALLTARGETS_LIBRARIES}")
     for d in target_dict.get('deps', []):
       if d == 'z':
@@ -193,6 +177,22 @@
       else:
         deps.append(d)
     return deps
+
+  def is_generate_cmake_target(lib_or_target):
+    """Returns True if a cmake target should be generated for given library/target."""
+    # TODO(jtattermusch): extract the metadata to a centralized location.
+    if lib_or_target.build not in ["all", "protoc", "tool", "test", "private"]:
+      return False
+    if lib_or_target.boringssl:
+      # Don't generate target for boringssl libs or tests
+      return False
+    if lib_or_target.name in ['cares', 'benchmark', 're2', 'xxhash', 'z']:
+      # we rely on these target to be created by external cmake builds.
+      return False
+    if is_absl_lib(lib_or_target.name):
+      # we rely on absl targets to be created by an external cmake build.
+      return False
+    return True
 
   def get_platforms_condition_begin(platforms):
     if all(platform in platforms for platform in ['linux', 'mac', 'posix', 'windows']):
@@ -260,8 +260,6 @@
   set(gRPC_CORE_SOVERSION   "${settings.core_version.major}")
   set(gRPC_CPP_VERSION      "${settings.cpp_version}")
   set(gRPC_CPP_SOVERSION    "${settings.cpp_version.major}.${settings.cpp_version.minor}")
-  set(gRPC_CSHARP_VERSION   "${settings.csharp_version}")
-  set(gRPC_CSHARP_SOVERSION "${settings.csharp_version.major}.${settings.csharp_version.minor}")
   set(PACKAGE_STRING        "<%text>${PACKAGE_NAME} ${PACKAGE_VERSION}</%text>")
   set(PACKAGE_TARNAME       "<%text>${PACKAGE_NAME}-${PACKAGE_VERSION}</%text>")
   set(PACKAGE_BUGREPORT     "https://github.com/grpc/grpc/issues/")
@@ -277,7 +275,6 @@
   # Options
   option(gRPC_BUILD_TESTS "Build tests" OFF)
   option(gRPC_BUILD_CODEGEN "Build codegen" ON)
-  option(gRPC_BUILD_CSHARP_EXT "Build C# extensions" ON)
   option(gRPC_BACKWARDS_COMPATIBILITY_MODE "Build libraries that are binary compatible across a larger number of OS and libc versions" OFF)
 
   set(gRPC_INSTALL_default ON)
@@ -420,12 +417,6 @@
     set(_gRPC_CORE_NOSTDCXX_FLAGS "")
   endif()
 
-  if (gRPC_XDS_USER_AGENT_IS_CSHARP)
-    # The value of the defines needs to contain quotes.
-    # See https://github.com/grpc/grpc/blob/fbf32836a418cc84f58786700273b65cb9174e1d/src/core/ext/xds/xds_api.cc#L854
-    add_definitions("-DGRPC_XDS_USER_AGENT_NAME_SUFFIX=\"csharp\"" "-DGRPC_XDS_USER_AGENT_VERSION_SUFFIX=\"${settings.csharp_version}\"")
-  endif()
-
   if(UNIX AND NOT HAIKU)
     # -pthread does more than -lpthread
     set(THREADS_PREFER_PTHREAD_FLAG ON)
@@ -476,7 +467,7 @@
   % endfor
 
   if(WIN32)
-    set(_gRPC_BASELIB_LIBRARIES ws2_32 crypt32)
+    set(_gRPC_ALLTARGETS_LIBRARIES <%text>${_gRPC_ALLTARGETS_LIBRARIES}</%text> ws2_32 crypt32)
   endif()
 
   # Create directory for proto source files
@@ -638,7 +629,7 @@
   if(gRPC_BUILD_TESTS)
     add_custom_target(buildtests_c)
     % for tgt in targets:
-    % if tgt.build == 'test' and not tgt.language == 'c++' and not tgt.get('external_deps', None) and not tgt.boringssl:
+    % if is_generate_cmake_target(tgt) and tgt.build == 'test' and not tgt.language == 'c++':
     <%block filter='platforms_condition_block(tgt.platforms)'>
     add_dependencies(buildtests_c ${tgt.name})
     </%block>
@@ -647,7 +638,7 @@
 
     add_custom_target(buildtests_cxx)
     % for tgt in targets:
-    % if tgt.build == 'test' and tgt.language == 'c++' and not tgt.get('external_deps', None) and not tgt.boringssl:
+    % if is_generate_cmake_target(tgt) and tgt.build == 'test' and tgt.language == 'c++':
     <%block filter='platforms_condition_block(tgt.platforms)'>
     add_dependencies(buildtests_cxx ${tgt.name})
     </%block>
@@ -660,19 +651,12 @@
   <%
     cmake_libs = []
     for lib in libs:
-      if lib.build not in ["all", "protoc", "tool", "test", "private"] or lib.boringssl: continue
-      if lib.get('build_system', []) and 'cmake' not in lib.get('build_system', []): continue
-      if lib.name in ['ares', 'benchmark', 're2', 'xxhash', 'z']: continue  # we build these using CMake instead
-      if is_absl_lib(lib.name): continue  # we build these using CMake instead
+      if not is_generate_cmake_target(lib): continue
       cmake_libs.append(lib)
   %>
   % for lib in cmake_libs:
   %   if lib.build in ["test", "private"]:
   if(gRPC_BUILD_TESTS)
-  ${cc_library(lib)}
-  endif()
-  %   elif lib.name in ['grpc_csharp_ext']:
-  if(gRPC_BUILD_CSHARP_EXT)
   ${cc_library(lib)}
   endif()
   %   else:
@@ -690,7 +674,7 @@
   % endfor
 
   % for tgt in targets:
-  % if tgt.build in ["all", "protoc", "tool", "test", "private"] and not tgt.boringssl:
+  % if is_generate_cmake_target(tgt):
   % if tgt.build in ["test", "private"]:
   if(gRPC_BUILD_TESTS)
   <%block filter='platforms_condition_block(tgt.platforms)'>
@@ -717,7 +701,7 @@
 
   <%def name="cc_library(lib)">
   % if any(proto_re.match(src) for src in lib.src):
-  % if lib.name == 'grpcpp_channelz':
+  % if lib.name == 'grpcpp_channelz':  # TODO(jtattermusch): remove special case based on target name
   # grpcpp_channelz doesn't build with protobuf-lite
   # See https://github.com/grpc/grpc/issues/19473
   if(gRPC_BUILD_CODEGEN AND NOT gRPC_USE_PROTO_LITE)
@@ -725,7 +709,7 @@
   if(gRPC_BUILD_CODEGEN)
   % endif
   % endif
-  add_library(${lib.name}${' SHARED' if is_shared_only_lib(lib.name) else ''}
+  add_library(${lib.name}
   % for src in lib.src:
   % if not proto_re.match(src):
     ${src}
@@ -747,9 +731,6 @@
   % if lib.language == 'c++':
     VERSION <%text>${gRPC_CPP_VERSION}</%text>
     SOVERSION <%text>${gRPC_CPP_SOVERSION}</%text>
-  % elif lib.language == 'csharp':
-    VERSION <%text>${gRPC_CSHARP_VERSION}</%text>
-    SOVERSION <%text>${gRPC_CSHARP_SOVERSION}</%text>
   % else:
     VERSION <%text>${gRPC_CORE_VERSION}</%text>
     SOVERSION <%text>${gRPC_CORE_SOVERSION}</%text>
@@ -779,7 +760,7 @@
       <%text>${_gRPC_UPB_INCLUDE_DIR}</%text>
       <%text>${_gRPC_XXHASH_INCLUDE_DIR}</%text>
       <%text>${_gRPC_ZLIB_INCLUDE_DIR}</%text>
-  % if 'gtest' in lib.transitive_deps or lib.name == 'gtest':
+  % if 'gtest' in lib.transitive_deps or lib.name == 'gtest':  # TODO(jtattermusch): avoid special case based on target name
       third_party/googletest/googletest/include
       third_party/googletest/googletest
       third_party/googletest/googlemock/include
@@ -796,7 +777,7 @@
   % endfor
   )
   % endif
-  % if lib.name in ["gpr"]:
+  % if lib.name in ["gpr"]:  # TODO(jtattermusch): avoid special case based on target name
   if(_gRPC_PLATFORM_ANDROID)
     target_link_libraries(gpr
       android
@@ -806,7 +787,7 @@
   % endif
   % if lib.name in ["grpc", "grpc_cronet", "grpc_test_util", \
                     "grpc_test_util_unsecure", "grpc_unsecure", \
-                    "grpc++_cronet"]:
+                    "grpc++_cronet"]: # TODO(jtattermusch): remove special cases based on target names
   if(_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
     target_link_libraries(${lib.name} "-framework CoreFoundation")
   endif()

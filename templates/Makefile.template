@@ -47,8 +47,6 @@
       """For given dependency, return the expression to be used in Makefile rule dependencies."""
       if dep == 'z':
           return "$(ZLIB_DEP)"
-      elif dep == 'cares':
-          return "$(CARES_DEP)"
       elif dep == 'grpc_abseil':
           return "$(GRPC_ABSEIL_DEP)"
       elif dep == 'libssl':
@@ -61,8 +59,6 @@
       """For given dependency, return the lib archive expression to be used when linking."""
       if dep == 'z':
           return "$(ZLIB_MERGE_LIBS)"
-      elif dep == 'cares':
-          return "$(CARES_MERGE_LIBS)"
       elif dep == 'grpc_abseil':
           return "$(GRPC_ABSEIL_MERGE_LIBS)"
       elif dep == 'libssl':
@@ -75,8 +71,6 @@
       """For given dependency, return the expression with variable that has list of all object files."""
       if dep == 'z':
           return "$(ZLIB_MERGE_OBJS)"
-      elif dep == 'cares':
-          return "$(CARES_MERGE_OBJS)"
       elif dep == 'grpc_abseil':
           return "$(LIBGRPC_ABSEIL_OBJS)"
       elif dep == 'libssl':
@@ -183,7 +177,7 @@
     # Currently it is necessary because some dependencies are marked as "build: private" in build.yaml
     # (which itself is correct, as they are not "public" libraries from our perspective and cmake
     # needs to have them marked as such)
-    filtered_libs = [lib for lib in libs if (lib.build in ['all'] and lib.language != 'c++') or lib.name in ['ares', 'boringssl', 're2', 'upb', 'z']]
+    filtered_libs = [lib for lib in libs if (lib.build in ['all'] and lib.language != 'c++') or lib.name in ['cares', 'boringssl', 'z']]
     filtered_targets = [tgt for tgt in targets if tgt.build in ['all'] and lib.language != 'c++']
   %>
 
@@ -542,9 +536,6 @@
   endif
 
   ifeq ($(EMBED_CARES),true)
-  CARES_DEP = $(LIBDIR)/$(CONFIG)/libares.a
-  CARES_MERGE_OBJS = $(LIBARES_OBJS)
-  CARES_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libares.a
   CPPFLAGS := -Ithird_party/cares/cares/include -Ithird_party/cares -Ithird_party/cares/cares $(CPPFLAGS)
   endif
 
