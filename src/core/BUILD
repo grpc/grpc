@@ -4890,6 +4890,7 @@ grpc_cc_library(
         "//:ref_counted_ptr",
         "//:server_address",
         "//:sockaddr_utils",
+        "//:stats",
         "//:work_serializer",
     ],
 )
