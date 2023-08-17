@@ -19,6 +19,7 @@
 #include <atomic>
 #include <cstddef>
 #include <numeric>
+#include <utility>
 #include <vector>
 
 #include "absl/base/thread_annotations.h"

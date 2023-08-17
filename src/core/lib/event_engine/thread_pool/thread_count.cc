@@ -20,10 +20,7 @@
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 
-#include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
-
-#include "src/core/lib/gpr/useful.h"
 
 namespace grpc_event_engine {
 namespace experimental {
