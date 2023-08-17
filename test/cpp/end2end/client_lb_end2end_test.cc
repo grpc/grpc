@@ -841,9 +841,8 @@ TEST_F(PickFirstTest, BackOffInitialReconnect) {
       channel.get(),
       [&](grpc_connectivity_state state) {
         if (state == GRPC_CHANNEL_TRANSIENT_FAILURE) return true;
-        EXPECT_THAT(
-            state,
-            ::testing::AnyOf(GRPC_CHANNEL_IDLE, GRPC_CHANNEL_CONNECTING));
+        EXPECT_THAT(state, ::testing::AnyOf(GRPC_CHANNEL_IDLE,
+                                            GRPC_CHANNEL_CONNECTING));
         return false;
       },
       /*try_to_connect=*/true));
