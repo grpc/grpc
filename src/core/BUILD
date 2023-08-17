@@ -4876,6 +4876,7 @@ grpc_cc_library(
         "ref_counted",
         "resolved_address",
         "static_stride_scheduler",
+        "stats_data",
         "subchannel_interface",
         "time",
         "validation_errors",
@@ -4890,6 +4891,7 @@ grpc_cc_library(
         "//:ref_counted_ptr",
         "//:server_address",
         "//:sockaddr_utils",
+        "//:stats",
         "//:work_serializer",
     ],
 )
