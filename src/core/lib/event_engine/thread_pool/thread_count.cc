@@ -17,10 +17,6 @@
 
 #include <inttypes.h>
 
-#include <atomic>
-#include <numeric>
-#include <utility>
-
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 
@@ -32,99 +28,7 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-// -------- BusyThreadCount --------
-
-BusyThreadCount::AutoThreadCounter::AutoThreadCounter(BusyThreadCount* counter,
-                                                      size_t idx)
-    : counter_(counter), idx_(idx) {
-  counter_->Increment(idx_);
-}
-
-BusyThreadCount::AutoThreadCounter::~AutoThreadCounter() {
-  if (counter_ != nullptr) counter_->Decrement(idx_);
-}
-
-BusyThreadCount::AutoThreadCounter::AutoThreadCounter(
-    BusyThreadCount::AutoThreadCounter&& other) noexcept {
-  counter_ = std::exchange(other.counter_, nullptr);
-  idx_ = other.idx_;
-}
-
-BusyThreadCount::AutoThreadCounter&
-BusyThreadCount::AutoThreadCounter::operator=(
-    BusyThreadCount::AutoThreadCounter&& other) noexcept {
-  counter_ = std::exchange(other.counter_, nullptr);
-  idx_ = other.idx_;
-  return *this;
-}
-
-BusyThreadCount::BusyThreadCount()
-    : shards_(grpc_core::Clamp(gpr_cpu_num_cores(), 2u, 64u)) {}
-
-BusyThreadCount::AutoThreadCounter BusyThreadCount::MakeAutoThreadCounter(
-    size_t idx) {
-  return AutoThreadCounter(this, idx);
-};
-
-void BusyThreadCount::Increment(size_t idx) {
-  shards_[idx].busy_count.fetch_add(1, std::memory_order_relaxed);
-}
-
-void BusyThreadCount::Decrement(size_t idx) {
-  shards_[idx].busy_count.fetch_sub(1, std::memory_order_relaxed);
-}
-
-size_t BusyThreadCount::count() {
-  return std::accumulate(
-      shards_.begin(), shards_.end(), 0, [](size_t running, ShardedData& d) {
-        return running + d.busy_count.load(std::memory_order_relaxed);
-      });
-}
-
-size_t BusyThreadCount::NextIndex() {
-  return next_idx_.fetch_add(1) % shards_.size();
-}
-
 // -------- LivingThreadCount --------
-
-LivingThreadCount::AutoThreadCounter::AutoThreadCounter(
-    LivingThreadCount* counter)
-    : counter_(counter) {
-  counter_->Increment();
-}
-
-LivingThreadCount::AutoThreadCounter::~AutoThreadCounter() {
-  if (counter_ != nullptr) counter_->Decrement();
-}
-
-LivingThreadCount::AutoThreadCounter::AutoThreadCounter(
-    LivingThreadCount::AutoThreadCounter&& other) noexcept {
-  counter_ = std::exchange(other.counter_, nullptr);
-}
-
-LivingThreadCount::AutoThreadCounter&
-LivingThreadCount::AutoThreadCounter::operator=(
-    LivingThreadCount::AutoThreadCounter&& other) noexcept {
-  counter_ = std::exchange(other.counter_, nullptr);
-  return *this;
-}
-
-LivingThreadCount::AutoThreadCounter
-LivingThreadCount::MakeAutoThreadCounter() {
-  return AutoThreadCounter(this);
-};
-
-void LivingThreadCount::Increment() {
-  grpc_core::MutexLock lock(&mu_);
-  ++living_count_;
-  cv_.SignalAll();
-}
-
-void LivingThreadCount::Decrement() {
-  grpc_core::MutexLock lock(&mu_);
-  --living_count_;
-  cv_.SignalAll();
-}
 
 void LivingThreadCount::BlockUntilThreadCount(size_t desired_threads,
                                               const char* why) {
@@ -139,13 +43,6 @@ void LivingThreadCount::BlockUntilThreadCount(size_t desired_threads,
         why, curr_threads, desired_threads);
   }
 }
-
-size_t LivingThreadCount::count() {
-  grpc_core::MutexLock lock(&mu_);
-  return CountLocked();
-}
-
-size_t LivingThreadCount::CountLocked() { return living_count_; }
 
 size_t LivingThreadCount::WaitForCountChange(size_t desired_threads,
                                              grpc_core::Duration timeout) {
