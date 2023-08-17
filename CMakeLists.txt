@@ -5191,7 +5191,6 @@ target_include_directories(grpc_plugin_support
 )
 target_link_libraries(grpc_plugin_support
   ${_gRPC_BASELIB_LIBRARIES}
-  ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
@@ -13127,7 +13126,6 @@ target_include_directories(grpc_cpp_plugin
 
 target_link_libraries(grpc_cpp_plugin
   ${_gRPC_BASELIB_LIBRARIES}
-  ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_plugin_support
 )
@@ -13167,7 +13165,6 @@ target_include_directories(grpc_csharp_plugin
 
 target_link_libraries(grpc_csharp_plugin
   ${_gRPC_BASELIB_LIBRARIES}
-  ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_plugin_support
 )
@@ -13251,7 +13248,6 @@ target_include_directories(grpc_node_plugin
 
 target_link_libraries(grpc_node_plugin
   ${_gRPC_BASELIB_LIBRARIES}
-  ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_plugin_support
 )
@@ -13291,7 +13287,6 @@ target_include_directories(grpc_objective_c_plugin
 
 target_link_libraries(grpc_objective_c_plugin
   ${_gRPC_BASELIB_LIBRARIES}
-  ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_plugin_support
 )
@@ -13331,7 +13326,6 @@ target_include_directories(grpc_php_plugin
 
 target_link_libraries(grpc_php_plugin
   ${_gRPC_BASELIB_LIBRARIES}
-  ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_plugin_support
 )
@@ -13371,7 +13365,6 @@ target_include_directories(grpc_python_plugin
 
 target_link_libraries(grpc_python_plugin
   ${_gRPC_BASELIB_LIBRARIES}
-  ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_plugin_support
 )
@@ -13411,7 +13404,6 @@ target_include_directories(grpc_ruby_plugin
 
 target_link_libraries(grpc_ruby_plugin
   ${_gRPC_BASELIB_LIBRARIES}
-  ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_plugin_support
 )
