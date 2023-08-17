@@ -17,9 +17,4 @@
 #ifndef GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_PICK_FIRST_PICK_FIRST_H
 #define GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_PICK_FIRST_PICK_FIRST_H
 
-namespace grpc_core {
-// TODO(eostroukhov): Remove once this feature is no longer experimental.
-bool ShufflePickFirstEnabled();
-}  // namespace grpc_core
-
 #endif  // GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_PICK_FIRST_PICK_FIRST_H

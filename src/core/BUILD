@@ -4731,7 +4731,6 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
-        "env",
         "grpc_lb_subchannel_list",
         "grpc_outlier_detection_header",
         "json",
@@ -4740,7 +4739,6 @@ grpc_cc_library(
         "lb_policy",
         "lb_policy_factory",
         "subchannel_interface",
-        "validation_errors",
         "//:channel_arg_names",
         "//:config",
         "//:debug_location",
