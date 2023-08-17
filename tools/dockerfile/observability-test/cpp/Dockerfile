@@ -24,8 +24,7 @@ RUN apt-get update && apt-get install -y clang curl git
 WORKDIR /grpc
 COPY . .
 
-RUN git submodule update --init --recursive && \
-  /grpc/tools/bazel build test/cpp/interop:observability_interop_test
+RUN /grpc/tools/bazel build test/cpp/interop:observability_interop_test
 
 
 
