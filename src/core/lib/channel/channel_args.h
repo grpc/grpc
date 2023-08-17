@@ -368,10 +368,12 @@ class ChannelArgs {
 
   class Value {
    public:
-    explicit Value(int n) : rep_(reinterpret_cast<void*>(n), &int_vtable_) {}
-    explicit Value(std::string s)
-        : rep_(RcString::Make(s).release(), &string_vtable_) {}
-    explicit Value(Pointer p) : rep_(std::move(p)) {}
+    explicit Value(int n, grpc_core::SourceLocation location = grpc_core::SourceLocation()) 
+        : rep_(reinterpret_cast<void*>(n), &int_vtable_), location_(location) {}
+    explicit Value(std::string s, grpc_core::SourceLocation location = grpc_core::SourceLocation())
+        : rep_(RcString::Make(s).release(), &string_vtable_), location_(location) {}
+    explicit Value(Pointer p, grpc_core::SourceLocation location = grpc_core::SourceLocation()) 
+        : rep_(std::move(p)), location_(location) {}
 
     absl::optional<int> GetIfInt() const {
       if (rep_.c_vtable() != &int_vtable_) return absl::nullopt;
@@ -405,6 +407,7 @@ class ChannelArgs {
     static const grpc_arg_pointer_vtable string_vtable_;
 
     Pointer rep_;
+    grpc_core::SourceLocation location_;
   };
 
   struct ChannelArgsDeleter {
