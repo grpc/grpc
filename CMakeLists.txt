@@ -25100,8 +25100,6 @@ target_include_directories(wait_for_callback_test
 )
 
 target_link_libraries(wait_for_callback_test
-  ${_gRPC_BASELIB_LIBRARIES}
-  ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::type_traits
