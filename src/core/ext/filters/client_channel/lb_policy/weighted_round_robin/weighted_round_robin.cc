@@ -514,7 +514,7 @@ WeightedRoundRobin::Picker::Picker(
   }
   global_stats().IncrementWrrSubchannelListSize(
       subchannel_list->num_subchannels());
-  global_stats().IncrementWrrSubchannelListSize(subchannels_.size());
+  global_stats().IncrementWrrSubchannelReadySize(subchannels_.size());
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
     gpr_log(GPR_INFO,
             "[WRR %p picker %p] created picker from subchannel_list=%p "

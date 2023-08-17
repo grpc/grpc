@@ -138,7 +138,7 @@ const absl::string_view GlobalStats::histogram_doc[static_cast<int>(
     "Size of messages received by HTTP2 transport",
     "Number of bytes consumed by metadata, according to HPACK accounting rules",
     "Number of subchannels in a subchannel list at picker creation time",
-    "Number of subchannels in a subchannel list at picker creation time",
+    "Number of READY subchannels in a subchannel list at picker creation time",
 };
 namespace {
 const int kStatsTable0[27] = {0,    1,     2,     4,     7,     11,   17,

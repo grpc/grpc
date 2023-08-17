@@ -93,6 +93,6 @@
   max: 10000
   buckets: 20
 - histogram: wrr_subchannel_ready_size
-  doc: Number of subchannels in a subchannel list at picker creation time
+  doc: Number of READY subchannels in a subchannel list at picker creation time
   max: 10000
   buckets: 20
