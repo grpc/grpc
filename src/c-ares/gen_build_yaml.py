@@ -51,8 +51,8 @@ try:
 
     out["libs"] = [
         {
-            "name": "ares",
-            "defaults": "ares",
+            "name": "cares",
+            "defaults": "cares",
             "build": "private",
             "language": "c",
             "secure": False,

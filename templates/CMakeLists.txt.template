@@ -186,7 +186,7 @@
     if lib_or_target.boringssl:
       # Don't generate target for boringssl libs or tests
       return False
-    if lib_or_target.name in ['ares', 'benchmark', 're2', 'xxhash', 'z']:
+    if lib_or_target.name in ['cares', 'benchmark', 're2', 'xxhash', 'z']:
       # we rely on these target to be created by external cmake builds.
       return False
     if is_absl_lib(lib_or_target.name):
