@@ -153,7 +153,6 @@
   def get_deps(target_dict):
     # TODO(jtattermusch): remove special cases based on target names
     deps = []
-    deps.append("${_gRPC_BASELIB_LIBRARIES}")
     deps.append("${_gRPC_ALLTARGETS_LIBRARIES}")
     for d in target_dict.get('deps', []):
       if d == 'z':
@@ -181,6 +180,7 @@
 
   def is_generate_cmake_target(lib_or_target):
     """Returns True if a cmake target should be generated for given library/target."""
+    # TODO(jtattermusch): extract the metadata to a centralized location.
     if lib_or_target.build not in ["all", "protoc", "tool", "test", "private"]:
       return False
     if lib_or_target.boringssl:
@@ -476,7 +476,7 @@
   % endfor
 
   if(WIN32)
-    set(_gRPC_BASELIB_LIBRARIES ws2_32 crypt32)
+    set(_gRPC_ALLTARGETS_LIBRARIES <%text>${_gRPC_ALLTARGETS_LIBRARIES}</%text> ws2_32 crypt32)
   endif()
 
   # Create directory for proto source files
