@@ -490,6 +490,19 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "wait_for_callback",
+    hdrs = [
+        "lib/promise/wait_for_callback.h",
+    ],
+    external_deps = ["absl/base:core_headers"],
+    deps = [
+        "activity",
+        "poll",
+        "//:gpr",
+    ],
+)
+
+grpc_cc_library(
     name = "arena_promise",
     external_deps = ["absl/meta:type_traits"],
     language = "c++",
@@ -4718,7 +4731,6 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
-        "env",
         "grpc_lb_subchannel_list",
         "grpc_outlier_detection_header",
         "json",
@@ -4727,7 +4739,6 @@ grpc_cc_library(
         "lb_policy",
         "lb_policy_factory",
         "subchannel_interface",
-        "validation_errors",
         "//:channel_arg_names",
         "//:config",
         "//:debug_location",
