@@ -391,6 +391,9 @@ class ChannelArgs {
     }
 
     std::string ToString() const;
+
+    // TODO(tjagtap) : Make this available in the
+    // GetChannelArgsDebugInfo() function after rebasing.
     std::string GetSourceString() const;
 
     grpc_arg MakeCArg(const char* name) const;
