@@ -9207,8 +9207,6 @@ target_include_directories(client_transport_test
 )
 
 target_link_libraries(client_transport_test
-  ${_gRPC_BASELIB_LIBRARIES}
-  ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   ${_gRPC_PROTOBUF_LIBRARIES}
