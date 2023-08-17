@@ -192,11 +192,11 @@ ChannelArgs::CPtr ChannelArgs::ToC() const {
 }
 
 ChannelArgs ChannelArgs::Set(absl::string_view name, Pointer value) const {
-  return Set(name, Value(std::move(value)));
+  return Set(name, Value(std::move(value), grpc_core::SourceLocation()));
 }
 
 ChannelArgs ChannelArgs::Set(absl::string_view name, int value) const {
-  return Set(name, Value(value));
+  return Set(name, Value(value, grpc_core::SourceLocation()));
 }
 
 ChannelArgs ChannelArgs::Set(absl::string_view name, Value value) const {
@@ -216,7 +216,7 @@ ChannelArgs ChannelArgs::Set(absl::string_view name, const char* value) const {
 }
 
 ChannelArgs ChannelArgs::Set(absl::string_view name, std::string value) const {
-  return Set(name, Value(std::move(value)));
+  return Set(name, Value(std::move(value), grpc_core::SourceLocation()));
 }
 
 ChannelArgs ChannelArgs::Remove(absl::string_view name) const {

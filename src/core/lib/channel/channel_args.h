@@ -368,11 +368,11 @@ class ChannelArgs {
 
   class Value {
    public:
-    explicit Value(int n, grpc_core::SourceLocation location = grpc_core::SourceLocation()) 
+    explicit Value(int n, grpc_core::SourceLocation location) 
         : rep_(reinterpret_cast<void*>(n), &int_vtable_), location_(location) {}
-    explicit Value(std::string s, grpc_core::SourceLocation location = grpc_core::SourceLocation())
+    explicit Value(std::string s, grpc_core::SourceLocation location)
         : rep_(RcString::Make(s).release(), &string_vtable_), location_(location) {}
-    explicit Value(Pointer p, grpc_core::SourceLocation location = grpc_core::SourceLocation()) 
+    explicit Value(Pointer p, grpc_core::SourceLocation location) 
         : rep_(std::move(p)), location_(location) {}
 
     absl::optional<int> GetIfInt() const {
