@@ -318,18 +318,6 @@ std::string ChannelArgs::ToString() const {
   return absl::StrCat("{", absl::StrJoin(arg_strings, ", "), "}");
 }
 
-std::string ChannelArgs::Value::GetSourceString() const {
-  // TODO(tjagtap) : Caution. location_file() will be valid for as long
-  // as the module of the source code line is loaded. Suppose if the
-  // module is unloaded, this would cause an access violation.
-  // Check if we have to handle this special case of modules getting
-  // unloaded. If we have to handle the case, we should
-  // save this final string as std::string location_ in the Value class.
-  std::string src_code(location_.file());
-  src_code += std::to_string(location_.line());
-  return src_code;
-}
-
 ChannelArgs ChannelArgs::UnionWith(ChannelArgs other) const {
   if (args_.Empty()) return other;
   if (other.args_.Empty()) return *this;

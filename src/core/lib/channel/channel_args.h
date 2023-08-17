@@ -367,14 +367,16 @@ class ChannelArgs {
    public:
 
     explicit Value(int n, grpc_core::SourceLocation& location)
-        : rep_(reinterpret_cast<void*>(n), &int_vtable_), location_(location) {}
+        : rep_(reinterpret_cast<void*>(n), &int_vtable_),
+          location_(SetSourceLocationString(location)) {}
 
     explicit Value(std::string s, grpc_core::SourceLocation& location)
         : rep_(RcString::Make(s).release(), &string_vtable_),
-          location_(location) {}
+          location_(SetSourceLocationString(location)) {}
 
     explicit Value(Pointer p, grpc_core::SourceLocation& location)
-        : rep_(std::move(p)), location_(location) {}
+        : rep_(std::move(p)),
+          location_(SetSourceLocationString(location)) {}
 
     absl::optional<int> GetIfInt() const {
       if (rep_.c_vtable() != &int_vtable_) return absl::nullopt;
@@ -394,7 +396,7 @@ class ChannelArgs {
 
     // TODO(tjagtap) : Make this available in the
     // GetChannelArgsDebugInfo() function after rebasing.
-    std::string GetSourceString() const;
+    std::string GetSourceLocationString() { return location_; };
 
     grpc_arg MakeCArg(const char* name) const;
 
@@ -408,11 +410,17 @@ class ChannelArgs {
     }
 
    private:
+    std::string SetSourceLocationString(grpc_core::SourceLocation& location){
+      std::string location_str(location.file());
+      location_str += ":";
+      location_str += std::to_string(location.line());
+      return location_str;
+    }
     static const grpc_arg_pointer_vtable int_vtable_;
     static const grpc_arg_pointer_vtable string_vtable_;
 
     Pointer rep_;
-    grpc_core::SourceLocation location_;
+    std::string location_;
   };
 
   struct ChannelArgsDeleter {
