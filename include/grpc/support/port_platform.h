@@ -111,6 +111,10 @@
 #error \
     "Please compile grpc with _WIN32_WINNT of at least 0x600 (aka Windows Vista)"
 #endif /* _WIN32_WINNT < 0x0600 */
+#else
+#define GRPC_DLL
+#define GRPCXX_DLL
+#define GPR_DLL
 #endif /* defined(_WIN32_WINNT) */
 
 #ifdef GRPC_WIN32_LEAN_AND_MEAN_WAS_NOT_DEFINED
