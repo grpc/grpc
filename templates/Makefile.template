@@ -47,8 +47,6 @@
       """For given dependency, return the expression to be used in Makefile rule dependencies."""
       if dep == 'z':
           return "$(ZLIB_DEP)"
-      elif dep == 'cares':
-          return "$(CARES_DEP)"
       elif dep == 'grpc_abseil':
           return "$(GRPC_ABSEIL_DEP)"
       elif dep == 'libssl':
@@ -61,8 +59,6 @@
       """For given dependency, return the lib archive expression to be used when linking."""
       if dep == 'z':
           return "$(ZLIB_MERGE_LIBS)"
-      elif dep == 'cares':
-          return "$(CARES_MERGE_LIBS)"
       elif dep == 'grpc_abseil':
           return "$(GRPC_ABSEIL_MERGE_LIBS)"
       elif dep == 'libssl':
@@ -75,8 +71,6 @@
       """For given dependency, return the expression with variable that has list of all object files."""
       if dep == 'z':
           return "$(ZLIB_MERGE_OBJS)"
-      elif dep == 'cares':
-          return "$(CARES_MERGE_OBJS)"
       elif dep == 'grpc_abseil':
           return "$(LIBGRPC_ABSEIL_OBJS)"
       elif dep == 'libssl':
@@ -542,9 +536,6 @@
   endif
 
   ifeq ($(EMBED_CARES),true)
-  CARES_DEP = $(LIBDIR)/$(CONFIG)/libares.a
-  CARES_MERGE_OBJS = $(LIBARES_OBJS)
-  CARES_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libares.a
   CPPFLAGS := -Ithird_party/cares/cares/include -Ithird_party/cares -Ithird_party/cares/cares $(CPPFLAGS)
   endif
 
