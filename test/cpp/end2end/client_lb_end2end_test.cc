@@ -852,8 +852,7 @@ TEST_F(PickFirstTest, BackOffInitialReconnect) {
   // Now the channel will become connected.
   ASSERT_TRUE(WaitForChannelReady(channel.get()));
   // Check how long it took.
-  const grpc_core::Timestamp t1 = grpc_core::Timestamp::Now();
-  const grpc_core::Duration waited = t1 - t0;
+  const grpc_core::Duration waited = grpc_core::Timestamp::Now() - t0;
   gpr_log(GPR_DEBUG, "Waited %" PRId64 " milliseconds", waited.millis());
   // We should have waited at least kInitialBackOffMs. We substract one to
   // account for test and precision accuracy drift.
