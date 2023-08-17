@@ -260,8 +260,6 @@
   set(gRPC_CORE_SOVERSION   "${settings.core_version.major}")
   set(gRPC_CPP_VERSION      "${settings.cpp_version}")
   set(gRPC_CPP_SOVERSION    "${settings.cpp_version.major}.${settings.cpp_version.minor}")
-  set(gRPC_CSHARP_VERSION   "${settings.csharp_version}")
-  set(gRPC_CSHARP_SOVERSION "${settings.csharp_version.major}.${settings.csharp_version.minor}")
   set(PACKAGE_STRING        "<%text>${PACKAGE_NAME} ${PACKAGE_VERSION}</%text>")
   set(PACKAGE_TARNAME       "<%text>${PACKAGE_NAME}-${PACKAGE_VERSION}</%text>")
   set(PACKAGE_BUGREPORT     "https://github.com/grpc/grpc/issues/")
@@ -277,7 +275,6 @@
   # Options
   option(gRPC_BUILD_TESTS "Build tests" OFF)
   option(gRPC_BUILD_CODEGEN "Build codegen" ON)
-  option(gRPC_BUILD_CSHARP_EXT "Build C# extensions" ON)
   option(gRPC_BACKWARDS_COMPATIBILITY_MODE "Build libraries that are binary compatible across a larger number of OS and libc versions" OFF)
 
   set(gRPC_INSTALL_default ON)
@@ -418,12 +415,6 @@
     set(_gRPC_CORE_NOSTDCXX_FLAGS -fno-exceptions -fno-rtti)
   else()
     set(_gRPC_CORE_NOSTDCXX_FLAGS "")
-  endif()
-
-  if (gRPC_XDS_USER_AGENT_IS_CSHARP)
-    # The value of the defines needs to contain quotes.
-    # See https://github.com/grpc/grpc/blob/fbf32836a418cc84f58786700273b65cb9174e1d/src/core/ext/xds/xds_api.cc#L854
-    add_definitions("-DGRPC_XDS_USER_AGENT_NAME_SUFFIX=\"csharp\"" "-DGRPC_XDS_USER_AGENT_VERSION_SUFFIX=\"${settings.csharp_version}\"")
   endif()
 
   if(UNIX AND NOT HAIKU)
@@ -668,10 +659,6 @@
   if(gRPC_BUILD_TESTS)
   ${cc_library(lib)}
   endif()
-  %   elif lib.name in ['grpc_csharp_ext']:
-  if(gRPC_BUILD_CSHARP_EXT)
-  ${cc_library(lib)}
-  endif()
   %   else:
   ${cc_library(lib)}
   %     if not lib.build in ["tool"]:
@@ -744,9 +731,6 @@
   % if lib.language == 'c++':
     VERSION <%text>${gRPC_CPP_VERSION}</%text>
     SOVERSION <%text>${gRPC_CPP_SOVERSION}</%text>
-  % elif lib.language == 'csharp':
-    VERSION <%text>${gRPC_CSHARP_VERSION}</%text>
-    SOVERSION <%text>${gRPC_CSHARP_SOVERSION}</%text>
   % else:
     VERSION <%text>${gRPC_CORE_VERSION}</%text>
     SOVERSION <%text>${gRPC_CORE_SOVERSION}</%text>
