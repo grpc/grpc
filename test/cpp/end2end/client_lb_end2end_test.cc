@@ -830,32 +830,38 @@ TEST_F(PickFirstTest, BackOffInitialReconnect) {
   args.SetInt(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS,
               kInitialBackOffMs * grpc_test_slowdown_factor());
   const std::vector<int> ports = {grpc_pick_unused_port_or_die()};
-  const gpr_timespec t0 = gpr_now(GPR_CLOCK_MONOTONIC);
   auto response_generator = BuildResolverResponseGenerator();
   auto channel = BuildChannel("pick_first", response_generator, args);
   auto stub = BuildStub(channel);
   response_generator.SetNextResolution(ports);
-  // The channel won't become connected (there's no server).
-  ASSERT_FALSE(channel->WaitForConnected(
-      grpc_timeout_milliseconds_to_deadline(kInitialBackOffMs * 2)));
+  // Start trying to connect.  The channel will report
+  // TRANSIENT_FAILURE, because the server is not reachable.
+  const grpc_core::Timestamp t0 = grpc_core::Timestamp::Now();
+  ASSERT_TRUE(WaitForChannelState(
+      channel.get(),
+      [&](grpc_connectivity_state state) {
+        if (state == GRPC_CHANNEL_TRANSIENT_FAILURE) return true;
+        EXPECT_THAT(
+            state,
+            ::testing::AnyOf(GRPC_CHANNEL_IDLE, GRPC_CHANNEL_CONNECTING));
+        return false;
+      },
+      /*try_to_connect=*/true));
   // Bring up a server on the chosen port.
   StartServers(1, ports);
-  // Now it will.
-  ASSERT_TRUE(channel->WaitForConnected(
-      grpc_timeout_milliseconds_to_deadline(kInitialBackOffMs * 2)));
-  const gpr_timespec t1 = gpr_now(GPR_CLOCK_MONOTONIC);
-  const grpc_core::Duration waited =
-      grpc_core::Duration::FromTimespec(gpr_time_sub(t1, t0));
+  // Now the channel will become connected.
+  ASSERT_TRUE(WaitForChannelReady(channel.get()));
+  // Check how long it took.
+  const grpc_core::Timestamp t1 = grpc_core::Timestamp::Now();
+  const grpc_core::Duration waited = t1 - t0;
   gpr_log(GPR_DEBUG, "Waited %" PRId64 " milliseconds", waited.millis());
   // We should have waited at least kInitialBackOffMs. We substract one to
   // account for test and precision accuracy drift.
   EXPECT_GE(waited.millis(),
             (kInitialBackOffMs * grpc_test_slowdown_factor()) - 1);
   // But not much more.
-  EXPECT_GT(
-      gpr_time_cmp(
-          grpc_timeout_milliseconds_to_deadline(kInitialBackOffMs * 1.10), t1),
-      0);
+  EXPECT_LE(waited.millis(),
+            (kInitialBackOffMs * grpc_test_slowdown_factor()) * 1.1);
 }
 
 TEST_F(PickFirstTest, BackOffMinReconnect) {

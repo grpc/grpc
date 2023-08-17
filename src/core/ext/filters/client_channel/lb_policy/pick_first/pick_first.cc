@@ -450,6 +450,7 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
   // with the first subchannel.
   if (!old_state.has_value()) {
     subchannel_list()->subchannel(0)->ReactToConnectivityStateLocked();
+    return;
   }
   // Ignore any other updates for subchannels we're not currently trying to
   // connect to.
