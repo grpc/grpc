@@ -278,7 +278,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_transport_supplies_client_latency,
      additional_constraints_transport_supplies_client_latency, false, true},
     {"event_engine_listener", description_event_engine_listener,
-     additional_constraints_event_engine_listener, false, true},
+     additional_constraints_event_engine_listener, kDefaultForDebugOnly, true},
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, false, true},

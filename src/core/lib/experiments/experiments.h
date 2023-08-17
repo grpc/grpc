@@ -106,7 +106,16 @@ inline bool IsPromiseBasedClientCallEnabled() { return false; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
 inline bool IsPromiseBasedServerCallEnabled() { return false; }
 inline bool IsTransportSuppliesClientLatencyEnabled() { return false; }
-inline bool IsEventEngineListenerEnabled() { return false; }
+#ifndef NDEBUG
+#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_LISTENER
+#endif
+inline bool IsEventEngineListenerEnabled() {
+#ifdef NDEBUG
+  return false;
+#else
+  return true;
+#endif
+}
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsTraceRecordCallopsEnabled() { return false; }
 inline bool IsEventEngineDnsEnabled() { return false; }
