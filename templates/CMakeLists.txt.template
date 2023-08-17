@@ -701,7 +701,7 @@
 
   <%def name="cc_library(lib)">
   % if any(proto_re.match(src) for src in lib.src):
-  % if lib.name == 'grpcpp_channelz':
+  % if lib.name == 'grpcpp_channelz':  # TODO(jtattermusch): remove special case based on target name
   # grpcpp_channelz doesn't build with protobuf-lite
   # See https://github.com/grpc/grpc/issues/19473
   if(gRPC_BUILD_CODEGEN AND NOT gRPC_USE_PROTO_LITE)
@@ -760,7 +760,7 @@
       <%text>${_gRPC_UPB_INCLUDE_DIR}</%text>
       <%text>${_gRPC_XXHASH_INCLUDE_DIR}</%text>
       <%text>${_gRPC_ZLIB_INCLUDE_DIR}</%text>
-  % if 'gtest' in lib.transitive_deps or lib.name == 'gtest':
+  % if 'gtest' in lib.transitive_deps or lib.name == 'gtest':  # TODO(jtattermusch): avoid special case based on target name
       third_party/googletest/googletest/include
       third_party/googletest/googletest
       third_party/googletest/googlemock/include
@@ -777,7 +777,7 @@
   % endfor
   )
   % endif
-  % if lib.name in ["gpr"]:
+  % if lib.name in ["gpr"]:  # TODO(jtattermusch): avoid special case based on target name
   if(_gRPC_PLATFORM_ANDROID)
     target_link_libraries(gpr
       android
