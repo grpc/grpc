@@ -75,13 +75,16 @@ TEST(XdsStatsWatcherTest, WaitForRpcStatsResponse) {
   LoadBalancerStatsResponse expected;
   expected.mutable_rpcs_by_peer()->insert({{"peer1", 3}, {"peer2", 1}});
   expected.mutable_metadatas_by_peer()->insert({
-      {"peer1", BuildMetadatas({
-                    {{"k1", "v1"}, {"k2", "v2"}, {"k1", "t1", true}},
-                    {{"k1", "v4"}},
-                    {},
-                })},
+      {"peer1",
+       BuildMetadatas({
+           {{"k1", "v1", false}, {"k2", "v2", false}, {"k1", "t1", true}},
+           {{"k1", "v4", false}},
+           {},
+       })},
       {"peer2",
-       BuildMetadatas({{{"k1", "v5"}, {"k2", "v6"}, {"k1", "t5", true}}})},
+       BuildMetadatas({
+           {{"k1", "v5", false}, {"k2", "v6", false}, {"k1", "t5", true}},
+       })},
   });
   (*expected.mutable_rpcs_by_method())["UnaryCall"]
       .mutable_rpcs_by_peer()
@@ -102,11 +105,13 @@ TEST(XdsStatsWatcherTest, WaitForRpcStatsResponseIgnoresCase) {
   LoadBalancerStatsResponse expected;
   expected.mutable_rpcs_by_peer()->insert({{"peer1", 2}, {"peer2", 1}});
   expected.mutable_metadatas_by_peer()->insert({
-      {"peer1",
-       BuildMetadatas({
-           {{"K1", "v1"}, {"k2", "v2"}, {"K1", "t1", true}, {"k2", "t2", true}},
-           {},
-       })},
+      {"peer1", BuildMetadatas({
+                    {{"K1", "v1", false},
+                     {"k2", "v2", false},
+                     {"K1", "t1", true},
+                     {"k2", "t2", true}},
+                    {},
+                })},
       {"peer2", BuildMetadatas({{{"K2", "v6", true}, {"k1", "v5", true}}})},
   });
   (*expected.mutable_rpcs_by_method())["UnaryCall"]
@@ -129,9 +134,9 @@ TEST(XdsStatsWatcherTest, WaitForRpcStatsResponseReturnsAll) {
   expected.mutable_rpcs_by_peer()->insert({{"peer1", 2}, {"peer2", 1}});
   expected.mutable_metadatas_by_peer()->insert({
       {"peer1", BuildMetadatas({
-                    {{"K1", "v1"},
-                     {"k2", "v2"},
-                     {"k3", "v3"},
+                    {{"K1", "v1", false},
+                     {"k2", "v2", false},
+                     {"k3", "v3", false},
                      {"K1", "t1", true},
                      {"k2", "t2", true}},
                     {},
