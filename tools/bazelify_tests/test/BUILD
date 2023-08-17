@@ -13,7 +13,7 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_package")
-load("//tools/bazelify_tests:build_defs.bzl", "grpc_run_bazel_distribtest_test", "grpc_run_cpp_distribtest_test", "grpc_run_tests_harness_test")
+load("//tools/bazelify_tests:build_defs.bzl", "grpc_run_cpp_distribtest_test", "grpc_run_tests_harness_test")
 load(":portability_tests.bzl", "generate_run_tests_portability_tests")
 load(":bazel_distribtests.bzl", "generate_bazel_distribtests")
 
