@@ -390,6 +390,7 @@ class ChannelArgs {
     }
 
     std::string ToString() const;
+    std::string GetSourceString() const;
 
     grpc_arg MakeCArg(const char* name) const;
 
