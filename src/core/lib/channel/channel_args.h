@@ -442,8 +442,8 @@ class ChannelArgs {
 
   const Value* Get(absl::string_view name) const;
   GRPC_MUST_USE_RESULT ChannelArgs Set(absl::string_view name,
-                                       Pointer value) const;
-  GRPC_MUST_USE_RESULT ChannelArgs Set(absl::string_view name, int value) const;
+                                       Pointer value, grpc_core::SourceLocation location = grpc_core::SourceLocation()) const;
+  GRPC_MUST_USE_RESULT ChannelArgs Set(absl::string_view name, int value, grpc_core::SourceLocation location = grpc_core::SourceLocation()) const;
   GRPC_MUST_USE_RESULT ChannelArgs Set(absl::string_view name,
                                        absl::string_view value) const;
   GRPC_MUST_USE_RESULT ChannelArgs Set(absl::string_view name,
