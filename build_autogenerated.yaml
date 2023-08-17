@@ -6931,7 +6931,7 @@ targets:
   - src/core/ext/transport/chaotic_good/client_transport.h
   - src/core/ext/transport/chaotic_good/frame.h
   - src/core/ext/transport/chaotic_good/frame_header.h
-  - src/core/lib/promise/detail/basic_join.h
+  - src/core/lib/promise/detail/join_state.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/join.h
   - src/core/lib/promise/mpsc.h
@@ -6948,6 +6948,8 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/transport/chaotic_good/client_transport_test.cc
   deps:
+  - gtest
+  - protobuf
   - grpc_test_util
   uses_polling: false
 - name: cmdline_test

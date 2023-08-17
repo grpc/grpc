@@ -33,7 +33,6 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/promise/activity.h"
-#include "src/core/lib/promise/detail/basic_seq.h"
 #include "src/core/lib/promise/event_engine_wakeup_scheduler.h"
 #include "src/core/lib/promise/join.h"
 #include "src/core/lib/promise/loop.h"
@@ -56,57 +55,62 @@ ClientTransport::ClientTransport(
       data_endpoint_write_buffer_(SliceBuffer()),
       hpack_compressor_(std::make_unique<HPackCompressor>()),
       event_engine_(event_engine) {
-  auto write_loop = Loop(Seq(
-      // Get next outgoing frame.
-      this->outgoing_frames_.Next(),
-      // Construct data buffers that will be sent to the endpoints.
-      [this](ClientFrame client_frame) {
-        MatchMutable(
-            &client_frame,
-            [this](ClientFragmentFrame* frame) mutable {
-              control_endpoint_write_buffer_.Append(
-                  frame->Serialize(hpack_compressor_.get()));
-              if (frame->message != nullptr) {
-                char* header_string = grpc_slice_to_c_string(
-                    control_endpoint_write_buffer_.c_slice_buffer()->slices[0]);
-                auto frame_header =
-                    FrameHeader::Parse(
-                        reinterpret_cast<const uint8_t*>(header_string))
-                        .value();
-                free(header_string);
-                std::string message_padding(frame_header.message_padding, '0');
-                Slice slice(grpc_slice_from_cpp_string(message_padding));
-                // Append message payload to data_endpoint_buffer.
-                data_endpoint_write_buffer_.Append(std::move(slice));
-                // Append message payload to data_endpoint_buffer.
-                frame->message->payload()->MoveFirstNBytesIntoSliceBuffer(
-                    frame->message->payload()->Length(),
-                    data_endpoint_write_buffer_);
-              }
-            },
-            [this](CancelFrame* frame) mutable {
-              control_endpoint_write_buffer_.Append(
-                  frame->Serialize(hpack_compressor_.get()));
-            });
-        return absl::OkStatus();
-      },
-      // Write buffers to corresponding endpoints concurrently.
-      [this]() {
-        return Join(this->control_endpoint_->Write(
-                        std::move(control_endpoint_write_buffer_)),
-                    this->data_endpoint_->Write(
-                        std::move(data_endpoint_write_buffer_)));
-      },
-      // Finish writes and return status.
-      [](std::tuple<absl::Status, absl::Status> ret) -> LoopCtl<absl::Status> {
-        // If writes failed, return failure status.
-        if (!(std::get<0>(ret).ok() || std::get<1>(ret).ok())) {
-          // TODO(ladynana): handle the promise endpoint write failures with
-          // closing the transport.
-          return absl::InternalError("Promise endpoint writes failed.");
-        }
-        return Continue();
-      }));
+  auto write_loop = Loop([this] {
+    return Seq(
+        // Get next outgoing frame.
+        this->outgoing_frames_.Next(),
+        // Construct data buffers that will be sent to the endpoints.
+        [this](ClientFrame client_frame) {
+          MatchMutable(
+              &client_frame,
+              [this](ClientFragmentFrame* frame) mutable {
+                control_endpoint_write_buffer_.Append(
+                    frame->Serialize(hpack_compressor_.get()));
+                if (frame->message != nullptr) {
+                  char* header_string = grpc_slice_to_c_string(
+                      control_endpoint_write_buffer_.c_slice_buffer()
+                          ->slices[0]);
+                  auto frame_header =
+                      FrameHeader::Parse(
+                          reinterpret_cast<const uint8_t*>(header_string))
+                          .value();
+                  free(header_string);
+                  std::string message_padding(frame_header.message_padding,
+                                              '0');
+                  Slice slice(grpc_slice_from_cpp_string(message_padding));
+                  // Append message payload to data_endpoint_buffer.
+                  data_endpoint_write_buffer_.Append(std::move(slice));
+                  // Append message payload to data_endpoint_buffer.
+                  frame->message->payload()->MoveFirstNBytesIntoSliceBuffer(
+                      frame->message->payload()->Length(),
+                      data_endpoint_write_buffer_);
+                }
+              },
+              [this](CancelFrame* frame) mutable {
+                control_endpoint_write_buffer_.Append(
+                    frame->Serialize(hpack_compressor_.get()));
+              });
+          return absl::OkStatus();
+        },
+        // Write buffers to corresponding endpoints concurrently.
+        [this]() {
+          return Join(this->control_endpoint_->Write(
+                          std::move(control_endpoint_write_buffer_)),
+                      this->data_endpoint_->Write(
+                          std::move(data_endpoint_write_buffer_)));
+        },
+        // Finish writes and return status.
+        [](std::tuple<absl::Status, absl::Status> ret)
+            -> LoopCtl<absl::Status> {
+          // If writes failed, return failure status.
+          if (!(std::get<0>(ret).ok() || std::get<1>(ret).ok())) {
+            // TODO(ladynana): handle the promise endpoint write failures with
+            // closing the transport.
+            return absl::InternalError("Promise endpoint writes failed.");
+          }
+          return Continue();
+        });
+  });
   writer_ = MakeActivity(
       // Continuously write next outgoing frames to promise endpoints.
       std::move(write_loop), EventEngineWakeupScheduler(event_engine_),

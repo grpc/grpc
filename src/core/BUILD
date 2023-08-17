@@ -5942,7 +5942,6 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "activity",
-        "basic_seq",
         "chaotic_good_frame",
         "chaotic_good_frame_header",
         "event_engine_wakeup_scheduler",
