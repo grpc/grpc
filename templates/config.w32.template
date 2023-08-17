@@ -17,7 +17,8 @@
       lib = lib_maps.get(dep, None)
       if lib:
         php_full_deps.extend(lib.transitive_deps)
-    for dep in php_full_deps:
+    # construct list of all source files, but explicitly exclude cares
+    for dep in set(php_full_deps) - set({'cares'}):
       lib = lib_maps.get(dep, None)
       if lib:
         srcs.extend(lib.src)
