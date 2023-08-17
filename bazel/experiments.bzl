@@ -21,9 +21,6 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
-            "census_test": [
-                "transport_supplies_client_latency",
-            ],
             "core_end2end_test": [
                 "event_engine_listener",
                 "promise_based_client_call",
@@ -70,9 +67,6 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
-            "census_test": [
-                "transport_supplies_client_latency",
-            ],
             "core_end2end_test": [
                 "event_engine_listener",
                 "promise_based_client_call",
@@ -121,9 +115,6 @@ EXPERIMENTS = {
         "off": {
             "cancel_ares_query_test": [
                 "event_engine_dns",
-            ],
-            "census_test": [
-                "transport_supplies_client_latency",
             ],
             "core_end2end_test": [
                 "event_engine_client",

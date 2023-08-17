@@ -235,16 +235,6 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::
          {RpcClientRoundtripLatency(),
           absl::ToDoubleMilliseconds(absl::Now() - start_time_)}},
         tags);
-    if (grpc_core::IsTransportSuppliesClientLatencyEnabled()) {
-      if (transport_stream_stats != nullptr &&
-          gpr_time_cmp(transport_stream_stats->latency,
-                       gpr_inf_future(GPR_TIMESPAN)) != 0) {
-        double latency_ms = absl::ToDoubleMilliseconds(absl::Microseconds(
-            gpr_timespec_to_micros(transport_stream_stats->latency)));
-        ::opencensus::stats::Record({{RpcClientTransportLatency(), latency_ms}},
-                                    tags);
-      }
-    }
   }
 }
 

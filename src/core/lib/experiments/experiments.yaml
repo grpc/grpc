@@ -94,11 +94,6 @@
   expiry: 2023/11/01
   owner: ctiller@google.com
   test_tags: ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test", "logging_test"]
-- name: transport_supplies_client_latency
-  description: If set, use the transport represented value for client latency in opencensus
-  expiry: 2023/09/01
-  owner: ctiller@google.com
-  test_tags: [census_test]
 - name: event_engine_listener
   description: Use EventEngine listeners instead of iomgr's grpc_tcp_server
   expiry: 2024/01/01
