@@ -30,8 +30,6 @@ set(gRPC_CORE_VERSION     "34.0.0")
 set(gRPC_CORE_SOVERSION   "34")
 set(gRPC_CPP_VERSION      "1.58.0-dev")
 set(gRPC_CPP_SOVERSION    "1.58")
-set(gRPC_CSHARP_VERSION   "2.58.0-dev")
-set(gRPC_CSHARP_SOVERSION "2.58")
 set(PACKAGE_STRING        "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME       "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT     "https://github.com/grpc/grpc/issues/")
@@ -47,7 +45,6 @@ set(gRPC_BUILD_MSVC_MP_COUNT 0 CACHE STRING "The maximum number of processes for
 # Options
 option(gRPC_BUILD_TESTS "Build tests" OFF)
 option(gRPC_BUILD_CODEGEN "Build codegen" ON)
-option(gRPC_BUILD_CSHARP_EXT "Build C# extensions" ON)
 option(gRPC_BACKWARDS_COMPATIBILITY_MODE "Build libraries that are binary compatible across a larger number of OS and libc versions" OFF)
 
 set(gRPC_INSTALL_default ON)
@@ -295,12 +292,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_IOS)
   set(_gRPC_CORE_NOSTDCXX_FLAGS -fno-exceptions -fno-rtti)
 else()
   set(_gRPC_CORE_NOSTDCXX_FLAGS "")
-endif()
-
-if (gRPC_XDS_USER_AGENT_IS_CSHARP)
-  # The value of the defines needs to contain quotes.
-  # See https://github.com/grpc/grpc/blob/fbf32836a418cc84f58786700273b65cb9174e1d/src/core/ext/xds/xds_api.cc#L854
-  add_definitions("-DGRPC_XDS_USER_AGENT_NAME_SUFFIX=\"csharp\"" "-DGRPC_XDS_USER_AGENT_VERSION_SUFFIX=\"2.58.0-dev\"")
 endif()
 
 if(UNIX AND NOT HAIKU)
