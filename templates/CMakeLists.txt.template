@@ -150,12 +150,6 @@
       private_libs.append("-l" + lib_name)
     return private_libs
 
-  def is_shared_only_lib(lib_name):
-    """Returns True if only shared library should be generated."""
-    # grpc_csharp_ext is loaded by C# runtime and it
-    # only makes sense as a shared lib.
-    return lib_name in ['grpc_csharp_ext']
-
   def get_deps(target_dict):
     # TODO(jtattermusch): remove special cases based on target names
     deps = []
@@ -732,7 +726,7 @@
   if(gRPC_BUILD_CODEGEN)
   % endif
   % endif
-  add_library(${lib.name}${' SHARED' if is_shared_only_lib(lib.name) else ''}
+  add_library(${lib.name}
   % for src in lib.src:
   % if not proto_re.match(src):
     ${src}
