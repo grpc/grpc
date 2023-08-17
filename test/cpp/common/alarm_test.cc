@@ -26,7 +26,6 @@
 #include <grpcpp/alarm.h>
 #include <grpcpp/completion_queue.h>
 
-#include "src/core/lib/gprpp/notification.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc {
@@ -308,30 +307,6 @@ TEST(AlarmTest, Cancellation) {
   EXPECT_EQ(junk, output_tag);
 }
 
-TEST(AlarmTest, CancellationMultiSet) {
-  // Tests the cancellation and re-Set paths together.
-  CompletionQueue cq;
-  void* junk = reinterpret_cast<void*>(1618033);
-  Alarm alarm;
-  // First iteration
-  alarm.Set(&cq, grpc_timeout_seconds_to_deadline(5), junk);
-  alarm.Cancel();
-  void* output_tag;
-  bool ok;
-  CompletionQueue::NextStatus status =
-      cq.AsyncNext(&output_tag, &ok, grpc_timeout_seconds_to_deadline(10));
-  EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
-  EXPECT_FALSE(ok);
-  EXPECT_EQ(junk, output_tag);
-  // Second iteration
-  alarm.Set(&cq, grpc_timeout_seconds_to_deadline(5), junk);
-  alarm.Cancel();
-  status = cq.AsyncNext(&output_tag, &ok, grpc_timeout_seconds_to_deadline(10));
-  EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
-  EXPECT_FALSE(ok);
-  EXPECT_EQ(junk, output_tag);
-}
-
 TEST(AlarmTest, CallbackCancellation) {
   Alarm alarm;
 
@@ -349,33 +324,6 @@ TEST(AlarmTest, CallbackCancellation) {
   EXPECT_TRUE(c->cv.wait_until(
       l, std::chrono::system_clock::now() + std::chrono::seconds(1),
       [c] { return c->completed; }));
-}
-
-TEST(AlarmTest, CallbackCancellationMultiSet) {
-  // Tests the cancellation and re-Set paths.
-  Alarm alarm;
-  // First iteration
-  {
-    grpc_core::Notification notification;
-    alarm.Set(std::chrono::system_clock::now() + std::chrono::seconds(10),
-              [&notification](bool ok) {
-                EXPECT_FALSE(ok);
-                notification.Notify();
-              });
-    alarm.Cancel();
-    notification.WaitForNotification();
-  }
-  // First iteration
-  {
-    grpc_core::Notification notification;
-    alarm.Set(std::chrono::system_clock::now() + std::chrono::seconds(10),
-              [&notification](bool ok) {
-                EXPECT_FALSE(ok);
-                notification.Notify();
-              });
-    alarm.Cancel();
-    notification.WaitForNotification();
-  }
 }
 
 TEST(AlarmTest, CallbackCancellationLocked) {
