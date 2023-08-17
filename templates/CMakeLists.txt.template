@@ -156,8 +156,6 @@
     deps.append("${_gRPC_BASELIB_LIBRARIES}")
     if target_dict.get('build', None) in ['protoc']:
       deps.append("${_gRPC_PROTOBUF_PROTOC_LIBRARIES}")
-    if target_dict.language == 'c++':
-      deps.append("${_gRPC_PROTOBUF_LIBRARIES}")
     deps.append("${_gRPC_ALLTARGETS_LIBRARIES}")
     for d in target_dict.get('deps', []):
       if d == 'z':
