@@ -42,7 +42,9 @@ fi
 
 # IMPORTANT: if you update the version here, other parts of infrastructure might needs updating as well
 # (e.g. sanity checks, bazel toolchains etc.)
-VERSION=${OVERRIDE_BAZEL_VERSION:-6.3.2}
+BAZELVERSION_FILE_PATH="$(dirname $0)/../.bazelversion"
+VERSION_FROM_BAZELVERSION_FILE=$(cat ${BAZELVERSION_FILE_PATH})
+VERSION=${OVERRIDE_BAZEL_VERSION:-${VERSION_FROM_BAZELVERSION_FILE}}
 echo "INFO: Running bazel wrapper (see //tools/bazel for details), bazel version $VERSION will be used instead of system-wide bazel installation." >&2
 
 # update tools/update_mirror.sh to populate the mirror with new bazel archives
