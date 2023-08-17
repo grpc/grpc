@@ -203,13 +203,16 @@ void WorkSerializer::WorkSerializerImpl::DrainQueueOwned() {
     }
     if (GetSize(prev_ref_pair) == 2) {
       // Queue drained. Give up ownership but only if queue remains empty.
+#ifndef NDEBUG
+      // Reset current_thread_ before giving up ownership to avoid TSAN
+      // race.  If we don't wind up giving up ownership, we'll set this
+      // again below before we pull the next callback out of the queue.
+      current_thread_ = std::thread::id();
+#endif
       uint64_t expected = MakeRefPair(1, 1);
       if (refs_.compare_exchange_strong(expected, MakeRefPair(0, 1),
                                         std::memory_order_acq_rel)) {
         // Queue is drained.
-#ifndef NDEBUG
-        current_thread_ = std::thread::id();
-#endif
         return;
       }
       if (GetSize(expected) == 0) {
@@ -220,6 +223,10 @@ void WorkSerializer::WorkSerializerImpl::DrainQueueOwned() {
         delete this;
         return;
       }
+#ifndef NDEBUG
+      // Didn't wind up giving up ownership, so set current_thread_ again.
+      current_thread_ = std::this_thread::get_id();
+#endif
     }
     // There is at least one callback on the queue. Pop the callback from the
     // queue and execute it.
