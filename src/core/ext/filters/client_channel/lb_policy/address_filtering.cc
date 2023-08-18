@@ -47,6 +47,7 @@ absl::StatusOr<HierarchicalAddressMap> MakeHierarchicalAddressMap(
     const absl::StatusOr<ServerAddressList>& addresses) {
   if (!addresses.ok()) return addresses.status();
   HierarchicalAddressMap result;
+  RefCountedPtr<HierarchicalPathArg> remaining_path_attr;
   for (const ServerAddress& address : *addresses) {
     const auto* path_arg = address.args().GetObject<HierarchicalPathArg>();
     if (path_arg == nullptr) continue;
@@ -58,8 +59,12 @@ absl::StatusOr<HierarchicalAddressMap> MakeHierarchicalAddressMap(
     ++it;
     if (it != path.end()) {
       std::vector<std::string> remaining_path(it, path.end());
-      args = args.SetObject(
-          MakeRefCounted<HierarchicalPathArg>(std::move(remaining_path)));
+      if (remaining_path_attr == nullptr ||
+          remaining_path_attr->path() != remaining_path) {
+        remaining_path_attr =
+            MakeRefCounted<HierarchicalPathArg>(std::move(remaining_path));
+      }
+      args = args.SetObject(remaining_path_attr);
     }
     target_list.emplace_back(address.address(), args);
   }

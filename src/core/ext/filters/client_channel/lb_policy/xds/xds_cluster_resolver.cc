@@ -764,8 +764,10 @@ ServerAddressList XdsClusterResolverLb::CreateChildPolicyAddressesLocked() {
       for (const auto& p : priority_entry.localities) {
         const auto& locality_name = p.first;
         const auto& locality = p.second;
-        std::vector<std::string> hierarchical_path = {
+        const std::vector<std::string> hierarchical_path = {
             priority_child_name, locality_name->AsHumanReadableString()};
+        auto hierarchical_path_attr =
+            MakeRefCounted<HierarchicalPathArg>(hierarchical_path);
         for (const auto& endpoint : locality.endpoints) {
           uint32_t endpoint_weight =
               locality.lb_weight *
@@ -773,8 +775,7 @@ ServerAddressList XdsClusterResolverLb::CreateChildPolicyAddressesLocked() {
           addresses.emplace_back(
               endpoint.address(),
               endpoint.args()
-                  .SetObject(
-                      MakeRefCounted<HierarchicalPathArg>(hierarchical_path))
+                  .SetObject(hierarchical_path_attr)
                   .Set(GRPC_ARG_ADDRESS_WEIGHT, endpoint_weight)
                   .SetObject(locality_name->Ref())
                   .Set(GRPC_ARG_XDS_LOCALITY_WEIGHT, locality.lb_weight));
