@@ -172,6 +172,9 @@ struct RetryFilter::CallAttemptState {
             filter->GetRetryPolicy(GetContext<grpc_call_context_element>())) {}
   const RetryMethodConfig* const retry_policy;
   Latch<absl::Status> early_return;
+  Pipe<ServerMetadataHandle> server_initial_metadata;
+  Pipe<MessageHandle> server_to_client;
+  Pipe<MessageHandle> client_to_server;
 };
 
 absl::optional<Duration> RetryFilter::MaybeRetryDuration(
@@ -208,15 +211,23 @@ absl::optional<Duration> RetryFilter::MaybeRetryDuration(
   }
 }
 
-auto RetryFilter::MakeCallAttempt(
-    bool& committed, MessageForwarder& message_forwarder,
-    const ClientMetadataHandle& initial_metadata) {
+auto RetryFilter::MakeCallAttempt(bool& committed,
+                                  MessageForwarder& message_forwarder,
+                                  const ClientMetadataHandle& initial_metadata,
+                                  Latch<grpc_polling_entity>* polling_entity) {
   auto* party = static_cast<Party*>(Activity::current());
-  CallArgs child_call_args{};
+  auto* attempt = new CallAttemptState(this);
+  CallArgs child_call_args{
+      GetContext<Arena>()->MakePooled<ClientMetadata>(),
+      ClientInitialMetadataOutstandingToken::Empty(),  // what semantics
+      polling_entity,
+      &attempt->server_initial_metadata.sender,
+      &attempt->client_to_server.receiver,
+      &attempt->server_to_client.sender};
+  *child_call_args.client_initial_metadata = initial_metadata->Copy();
   auto child_call = client_channel()->CreateLoadBalancedCallPromise(
       std::move(child_call_args), []() { Crash("on_commit not implemented"); },
       false);
-  auto* attempt = new CallAttemptState(this);
   // If per_attempt_recv_timeout is set, start a timer.
   if (attempt->retry_policy != nullptr &&
       attempt->retry_policy->per_attempt_recv_timeout().has_value()) {
