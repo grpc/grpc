@@ -553,6 +553,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/event_engine/tcp_socket_utils.cc \
     src/core/lib/event_engine/thread_local.cc \
     src/core/lib/event_engine/thread_pool/original_thread_pool.cc \
+    src/core/lib/event_engine/thread_pool/thread_count.cc \
     src/core/lib/event_engine/thread_pool/thread_pool_factory.cc \
     src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc \
     src/core/lib/event_engine/thready_event_engine/thready_event_engine.cc \
@@ -965,9 +966,15 @@ if test "$PHP_GRPC" != "no"; then
     third_party/abseil-cpp/absl/synchronization/barrier.cc \
     third_party/abseil-cpp/absl/synchronization/blocking_counter.cc \
     third_party/abseil-cpp/absl/synchronization/internal/create_thread_identity.cc \
+    third_party/abseil-cpp/absl/synchronization/internal/futex_waiter.cc \
     third_party/abseil-cpp/absl/synchronization/internal/graphcycles.cc \
+    third_party/abseil-cpp/absl/synchronization/internal/kernel_timeout.cc \
     third_party/abseil-cpp/absl/synchronization/internal/per_thread_sem.cc \
-    third_party/abseil-cpp/absl/synchronization/internal/waiter.cc \
+    third_party/abseil-cpp/absl/synchronization/internal/pthread_waiter.cc \
+    third_party/abseil-cpp/absl/synchronization/internal/sem_waiter.cc \
+    third_party/abseil-cpp/absl/synchronization/internal/stdcpp_waiter.cc \
+    third_party/abseil-cpp/absl/synchronization/internal/waiter_base.cc \
+    third_party/abseil-cpp/absl/synchronization/internal/win32_waiter.cc \
     third_party/abseil-cpp/absl/synchronization/mutex.cc \
     third_party/abseil-cpp/absl/synchronization/notification.cc \
     third_party/abseil-cpp/absl/time/civil_time.cc \
@@ -1275,7 +1282,6 @@ if test "$PHP_GRPC" != "no"; then
     third_party/re2/re2/tostring.cc \
     third_party/re2/re2/unicode_casefold.cc \
     third_party/re2/re2/unicode_groups.cc \
-    third_party/re2/util/pcre.cc \
     third_party/re2/util/rune.cc \
     third_party/re2/util/strutil.cc \
     third_party/upb/upb/base/status.c \

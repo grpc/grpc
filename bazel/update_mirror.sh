@@ -65,6 +65,10 @@ upload github.com/bazelbuild/bazel/releases/download/6.1.2/bazel-6.1.2-linux-x86
 upload github.com/bazelbuild/bazel/releases/download/6.1.2/bazel-6.1.2-darwin-x86_64
 upload github.com/bazelbuild/bazel/releases/download/6.1.2/bazel-6.1.2-windows-x86_64.exe
 
+upload github.com/bazelbuild/bazel/releases/download/6.3.2/bazel-6.3.2-linux-x86_64
+upload github.com/bazelbuild/bazel/releases/download/6.3.2/bazel-6.3.2-darwin-x86_64
+upload github.com/bazelbuild/bazel/releases/download/6.3.2/bazel-6.3.2-windows-x86_64.exe
+
 # Collect the github archives to mirror from grpc_deps.bzl
 grep -o '"https://github.com/[^"]*"' bazel/grpc_deps.bzl | sed 's/^"https:\/\///' | sed 's/"$//' | while read -r line ; do
     echo "Updating mirror for ${line}"

@@ -668,9 +668,9 @@ describe GRPC::RpcServer do
       def check_multi_req_view_of_finished_call(call)
         common_check_of_finished_server_call(call)
 
-        expect do
-          call.each_remote_read.each { |r| p r }
-        end.to raise_error(GRPC::Core::CallError)
+        l = []
+        call.each_remote_read.each { |r| l << r }
+        expect(l.size).to eq(0)
       end
 
       def common_check_of_finished_server_call(call)

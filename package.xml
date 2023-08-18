@@ -1125,6 +1125,8 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/thread_local.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/thread_pool/original_thread_pool.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/thread_pool/original_thread_pool.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/thread_pool/thread_count.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/thread_pool/thread_count.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/thread_pool/thread_pool.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/thread_pool/thread_pool_factory.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc" role="src" />
@@ -1435,8 +1437,8 @@
     <file baseinstalldir="/" name="src/core/lib/promise/detail/basic_seq.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/detail/promise_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/detail/promise_like.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/promise/detail/seq_state.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/detail/status.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/promise/detail/switch.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/exec_ctx_wakeup_scheduler.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/for_each.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/if.h" role="src" />
@@ -1832,6 +1834,7 @@
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/options.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/policy_checks.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/port.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/prefetch.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/thread_annotations.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/cleanup/cleanup.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/cleanup/internal/cleanup.h" role="src" />
@@ -2102,13 +2105,25 @@
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/create_thread_identity.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/create_thread_identity.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/futex.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/futex_waiter.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/futex_waiter.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/graphcycles.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/graphcycles.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/kernel_timeout.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/kernel_timeout.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/per_thread_sem.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/per_thread_sem.h" role="src" />
-    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/waiter.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/pthread_waiter.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/pthread_waiter.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/sem_waiter.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/sem_waiter.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/stdcpp_waiter.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/stdcpp_waiter.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/waiter.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/waiter_base.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/waiter_base.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/win32_waiter.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/internal/win32_waiter.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/mutex.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/mutex.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/synchronization/notification.cc" role="src" />
@@ -2682,18 +2697,12 @@
     <file baseinstalldir="/" name="third_party/re2/re2/unicode_groups.cc" role="src" />
     <file baseinstalldir="/" name="third_party/re2/re2/unicode_groups.h" role="src" />
     <file baseinstalldir="/" name="third_party/re2/re2/walker-inl.h" role="src" />
-    <file baseinstalldir="/" name="third_party/re2/util/benchmark.h" role="src" />
-    <file baseinstalldir="/" name="third_party/re2/util/flags.h" role="src" />
     <file baseinstalldir="/" name="third_party/re2/util/logging.h" role="src" />
-    <file baseinstalldir="/" name="third_party/re2/util/malloc_counter.h" role="src" />
     <file baseinstalldir="/" name="third_party/re2/util/mix.h" role="src" />
     <file baseinstalldir="/" name="third_party/re2/util/mutex.h" role="src" />
-    <file baseinstalldir="/" name="third_party/re2/util/pcre.cc" role="src" />
-    <file baseinstalldir="/" name="third_party/re2/util/pcre.h" role="src" />
     <file baseinstalldir="/" name="third_party/re2/util/rune.cc" role="src" />
     <file baseinstalldir="/" name="third_party/re2/util/strutil.cc" role="src" />
     <file baseinstalldir="/" name="third_party/re2/util/strutil.h" role="src" />
-    <file baseinstalldir="/" name="third_party/re2/util/test.h" role="src" />
     <file baseinstalldir="/" name="third_party/re2/util/utf.h" role="src" />
     <file baseinstalldir="/" name="third_party/re2/util/util.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/alloc.h" role="src" />
@@ -2750,7 +2759,6 @@
     <file baseinstalldir="/" name="third_party/upb/upb/message/internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/message/message.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/message/message.h" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/mini_table.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/mini_table/common.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/mini_table/common.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/mini_table/common_internal.h" role="src" />
@@ -2856,11 +2864,7 @@
     <file baseinstalldir="/" name="third_party/zlib/crc32.h" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/deflate.c" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/deflate.h" role="src" />
-    <file baseinstalldir="/" name="third_party/zlib/gzclose.c" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/gzguts.h" role="src" />
-    <file baseinstalldir="/" name="third_party/zlib/gzlib.c" role="src" />
-    <file baseinstalldir="/" name="third_party/zlib/gzread.c" role="src" />
-    <file baseinstalldir="/" name="third_party/zlib/gzwrite.c" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/infback.c" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/inffast.c" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/inffast.h" role="src" />

@@ -15,6 +15,14 @@
 FROM gcc:7
 
 RUN apt-get update && apt-get install -y curl git time wget zip && apt-get clean
+#=================
+# Setup git to access working directory across docker boundary.
+# This avoids the "fatal: detected dubious ownership in repository XYZ"
+# git error.
+
+RUN git config --global --add safe.directory '*'
+RUN git config --global protocol.file.allow always
+
 #====================
 # run_tests.py python dependencies
 
@@ -50,7 +58,7 @@ RUN python3 -m pip install twisted
 RUN apt-get update && apt-get install -y cmake && apt-get clean
 
 #=================
-# Install ccache
+# Install ccache (use slighly older release of ccache that works older compilers and cmake)
 
 # Install ccache from source since ccache 3.x packaged with most linux distributions
 # does not support Redis backend for caching.
@@ -65,12 +73,6 @@ RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/downloa
 
 
 RUN mkdir /var/local/jenkins
-
-#=================
-# Setup git to access working directory across docker boundary
-
-RUN git config --global --add safe.directory /var/local/jenkins/grpc
-RUN git config --global protocol.file.allow always
 
 
 # Define the default command.

@@ -29,9 +29,11 @@
 #include <sstream>
 #include <string>
 #include <thread>
+#include <unordered_set>
 #include <vector>
 
 #include "absl/status/status.h"
+#include "absl/types/span.h"
 
 #include <grpcpp/grpcpp.h>
 
@@ -68,15 +70,17 @@ struct StatsWatchers {
 /// Records the remote peer distribution for a given range of RPCs.
 class XdsStatsWatcher {
  public:
-  XdsStatsWatcher(int start_id, int end_id);
+  XdsStatsWatcher(int start_id, int end_id,
+                  absl::Span<const std::string> metadata_keys);
 
   // Upon the completion of an RPC, we will look at the request_id, the
   // rpc_type, and the peer the RPC was sent to in order to count
   // this RPC into the right stats bin.
-  void RpcCompleted(const AsyncClientCallResult& call, const std::string& peer);
+  void RpcCompleted(const AsyncClientCallResult& call, const std::string& peer,
+                    const std::multimap<grpc::string_ref, grpc::string_ref>&
+                        initial_metadata);
 
-  void WaitForRpcStatsResponse(LoadBalancerStatsResponse* response,
-                               int timeout_sec);
+  LoadBalancerStatsResponse WaitForRpcStatsResponse(int timeout_sec);
 
   void GetCurrentRpcStats(LoadBalancerAccumulatedStatsResponse* response,
                           StatsWatchers* stats_watchers);
@@ -96,6 +100,10 @@ class XdsStatsWatcher {
   LoadBalancerAccumulatedStatsResponse accumulated_stats_;
   std::mutex m_;
   std::condition_variable cv_;
+  std::unordered_set<std::string> metadata_keys_;
+  bool include_all_metadata_ = false;
+  std::map<std::string, LoadBalancerStatsResponse::MetadataByPeer>
+      metadata_by_peer_;
 };
 
 }  // namespace testing

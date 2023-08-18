@@ -17,8 +17,53 @@ Contains macros used for running bazelified tests.
 """
 
 load(":dockerimage_current_versions.bzl", "DOCKERIMAGE_CURRENT_VERSIONS")
+load("@bazel_toolchains//rules/exec_properties:exec_properties.bzl", "create_rbe_exec_properties_dict")
 
-def grpc_run_tests_py_test(name, args = [], data = [], size = "medium", timeout = None, tags = [], exec_compatible_with = [], flaky = None, docker_image_version = None, use_login_shell = None, prepare_script = None):
+def _dockerized_sh_test(name, srcs = [], args = [], data = [], size = "medium", timeout = None, tags = [], exec_compatible_with = [], flaky = None, docker_image_version = None, docker_run_as_root = False, env = {}):
+    """Runs sh_test under docker either via RBE or via docker sandbox."""
+    if docker_image_version:
+        image_spec = DOCKERIMAGE_CURRENT_VERSIONS.get(docker_image_version, None)
+        if not image_spec:
+            fail("Version info for docker image '%s' not found in dockerimage_current_versions.bzl" % docker_image_version)
+    else:
+        fail("docker_image_version attribute not set for dockerized test '%s'" % name)
+
+    exec_properties = create_rbe_exec_properties_dict(
+        labels = {
+            "workload": "misc",
+            "machine_size": "misc_large",
+        },
+        docker_network = "standard",
+        container_image = image_spec,
+        # TODO(jtattermusch): note that docker sandbox doesn't currently support "docker_run_as_root"
+        docker_run_as_root = docker_run_as_root,
+    )
+
+    # since the tests require special bazel args, only run them when explicitly requested
+    tags = ["manual"] + tags
+
+    # TODO(jtattermusch): find a way to ensure that action can only run under docker sandbox or remotely
+    # to avoid running it outside of a docker container by accident.
+
+    test_args = {
+        "name": name,
+        "srcs": srcs,
+        "tags": tags,
+        "args": args,
+        "flaky": flaky,
+        "data": data,
+        "size": size,
+        "env": env,
+        "timeout": timeout,
+        "exec_compatible_with": exec_compatible_with,
+        "exec_properties": exec_properties,
+    }
+
+    native.sh_test(
+        **test_args
+    )
+
+def grpc_run_tests_harness_test(name, args = [], data = [], size = "medium", timeout = None, tags = [], exec_compatible_with = [], flaky = None, docker_image_version = None, use_login_shell = None, prepare_script = None):
     """Execute an run_tests.py-harness style test under bazel.
 
     Args:
@@ -45,7 +90,7 @@ def grpc_run_tests_py_test(name, args = [], data = [], size = "medium", timeout 
     ] + args
 
     srcs = [
-        "//tools/bazelify_tests:grpc_run_tests_py_test.sh",
+        "//tools/bazelify_tests:grpc_run_tests_harness_test.sh",
     ]
 
     env = {}
@@ -65,39 +110,66 @@ def grpc_run_tests_py_test(name, args = [], data = [], size = "medium", timeout 
     # TODO(jtattermusch): find a cleaner way to toggle ccache for builds.
     env["GRPC_BUILD_ENABLE_CCACHE"] = "true"
 
-    # TODO(jtattermusch): use rbe_exec_properties helpers instead of manually specifying
-    # the properties, which is fragile.
-    exec_properties = {
-        "dockerNetwork": "standard",  # TODO(jtattermusch): look into deactivating network for some actions
-        "label:workload": "misc",  # always use a dedicated "misc" pool for running bazelified tests
-        "label:machine_size": "misc_large",  # needed to override the default value of "small".
-    }
-    if docker_image_version:
-        image_spec = DOCKERIMAGE_CURRENT_VERSIONS.get(docker_image_version, None)
-        if not image_spec:
-            fail("Version info for docker image '%s' not found in dockerimage_current_versions.bzl" % docker_image_version)
-        exec_properties["container-image"] = image_spec
+    _dockerized_sh_test(name = name, srcs = srcs, args = args, data = data, size = size, timeout = timeout, tags = tags, exec_compatible_with = exec_compatible_with, flaky = flaky, docker_image_version = docker_image_version, env = env)
 
-    # since the tests require special bazel args, only run them when explicitly requested
-    tags = ["manual"] + tags
+def grpc_run_bazel_distribtest_test(name, args = [], data = [], size = "medium", timeout = None, tags = [], exec_compatible_with = [], flaky = None, docker_image_version = None):
+    """Execute bazel distribtest under bazel (an entire bazel build/test will run in a container as a single bazel action)
 
-    # TODO(jtattermusch): find a way to ensure that action can only run under docker sandbox or remotely
-    # to avoid running it outside of a docker container by accident.
+    Args:
+        name: The name of the test.
+        args: The args to supply to the test binary.
+        data: Data dependencies.
+        size: The size of the test.
+        timeout: The test timeout.
+        tags: The tags for the test.
+        exec_compatible_with: A list of constraint values that must be
+            satisifed for the platform.
+        flaky: Whether this test is flaky.
+        docker_image_version: The docker .current_version file to use for docker containerization.
+    """
 
-    test_args = {
-        "name": name,
-        "srcs": srcs,
-        "tags": tags,
-        "args": args,
-        "flaky": flaky,
-        "data": data,
-        "size": size,
-        "env": env,
-        "timeout": timeout,
-        "exec_compatible_with": exec_compatible_with,
-        "exec_properties": exec_properties,
-    }
+    data = [
+        "//tools/bazelify_tests:grpc_repo_archive_with_submodules.tar.gz",
+    ] + data
 
-    native.sh_test(
-        **test_args
-    )
+    args = [
+        "$(location //tools/bazelify_tests:grpc_repo_archive_with_submodules.tar.gz)",
+    ] + args
+
+    srcs = [
+        "//tools/bazelify_tests:grpc_run_bazel_distribtest_test.sh",
+    ]
+    env = {}
+    _dockerized_sh_test(name = name, srcs = srcs, args = args, data = data, size = size, timeout = timeout, tags = tags, exec_compatible_with = exec_compatible_with, flaky = flaky, docker_image_version = docker_image_version, env = env)
+
+def grpc_run_cpp_distribtest_test(name, args = [], data = [], size = "medium", timeout = None, tags = [], exec_compatible_with = [], flaky = None, docker_image_version = None):
+    """Execute an C++ distribtest under bazel.
+
+    Args:
+        name: The name of the test.
+        args: The args to supply to the test binary.
+        data: Data dependencies.
+        size: The size of the test.
+        timeout: The test timeout.
+        tags: The tags for the test.
+        exec_compatible_with: A list of constraint values that must be
+            satisifed for the platform.
+        flaky: Whether this test is flaky.
+        docker_image_version: The docker .current_version file to use for docker containerization.
+    """
+
+    data = [
+        "//tools/bazelify_tests:grpc_repo_archive_with_submodules.tar.gz",
+    ] + data
+
+    args = [
+        "$(location //tools/bazelify_tests:grpc_repo_archive_with_submodules.tar.gz)",
+    ] + args
+
+    srcs = [
+        "//tools/bazelify_tests:grpc_run_cpp_distribtest_test.sh",
+    ]
+
+    # TODO(jtattermusch): revisit running docker as root (but currently some distribtests need to install stuff inside the docker container)
+    env = {}
+    _dockerized_sh_test(name = name, srcs = srcs, args = args, data = data, size = size, timeout = timeout, tags = tags, exec_compatible_with = exec_compatible_with, flaky = flaky, docker_image_version = docker_image_version, env = env, docker_run_as_root = True)

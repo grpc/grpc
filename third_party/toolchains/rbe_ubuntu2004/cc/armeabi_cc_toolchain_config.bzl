@@ -43,12 +43,12 @@ def _impl(ctx):
 
     tool_paths = [
         tool_path(name = "ar", path = "/bin/false"),
-        tool_path(name = "compat-ld", path = "/bin/false"),
         tool_path(name = "cpp", path = "/bin/false"),
         tool_path(name = "dwp", path = "/bin/false"),
         tool_path(name = "gcc", path = "/bin/false"),
         tool_path(name = "gcov", path = "/bin/false"),
         tool_path(name = "ld", path = "/bin/false"),
+        tool_path(name = "llvm-profdata", path = "/bin/false"),
         tool_path(name = "nm", path = "/bin/false"),
         tool_path(name = "objcopy", path = "/bin/false"),
         tool_path(name = "objdump", path = "/bin/false"),

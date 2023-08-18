@@ -215,7 +215,7 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     ss.dependency "#{s.name}/Interface", version
     ss.dependency 'gRPC-Core', version
-    abseil_version = '1.20230125.3'
+    abseil_version = '1.20230802.0'
     ss.dependency 'abseil/algorithm/container', abseil_version
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/core_headers', abseil_version
@@ -795,6 +795,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/event_engine/tcp_socket_utils.h',
                       'src/core/lib/event_engine/thread_local.h',
                       'src/core/lib/event_engine/thread_pool/original_thread_pool.h',
+                      'src/core/lib/event_engine/thread_pool/thread_count.h',
                       'src/core/lib/event_engine/thread_pool/thread_pool.h',
                       'src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h',
                       'src/core/lib/event_engine/thready_event_engine/thready_event_engine.h',
@@ -951,8 +952,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/promise/detail/basic_seq.h',
                       'src/core/lib/promise/detail/promise_factory.h',
                       'src/core/lib/promise/detail/promise_like.h',
+                      'src/core/lib/promise/detail/seq_state.h',
                       'src/core/lib/promise/detail/status.h',
-                      'src/core/lib/promise/detail/switch.h',
                       'src/core/lib/promise/exec_ctx_wakeup_scheduler.h',
                       'src/core/lib/promise/for_each.h',
                       'src/core/lib/promise/if.h',
@@ -1190,15 +1191,10 @@ Pod::Spec.new do |s|
                       'third_party/re2/re2/unicode_casefold.h',
                       'third_party/re2/re2/unicode_groups.h',
                       'third_party/re2/re2/walker-inl.h',
-                      'third_party/re2/util/benchmark.h',
-                      'third_party/re2/util/flags.h',
                       'third_party/re2/util/logging.h',
-                      'third_party/re2/util/malloc_counter.h',
                       'third_party/re2/util/mix.h',
                       'third_party/re2/util/mutex.h',
-                      'third_party/re2/util/pcre.h',
                       'third_party/re2/util/strutil.h',
-                      'third_party/re2/util/test.h',
                       'third_party/re2/util/utf.h',
                       'third_party/re2/util/util.h',
                       'third_party/upb/upb/alloc.h',
@@ -1240,7 +1236,6 @@ Pod::Spec.new do |s|
                       'third_party/upb/upb/message/extension_internal.h',
                       'third_party/upb/upb/message/internal.h',
                       'third_party/upb/upb/message/message.h',
-                      'third_party/upb/upb/mini_table.h',
                       'third_party/upb/upb/mini_table/common.h',
                       'third_party/upb/upb/mini_table/common_internal.h',
                       'third_party/upb/upb/mini_table/decode.h',
@@ -1310,7 +1305,18 @@ Pod::Spec.new do |s|
                       'third_party/upb/upb/wire/swap_internal.h',
                       'third_party/upb/upb/wire/types.h',
                       'third_party/utf8_range/utf8_range.h',
-                      'third_party/xxhash/xxhash.h'
+                      'third_party/xxhash/xxhash.h',
+                      'third_party/zlib/crc32.h',
+                      'third_party/zlib/deflate.h',
+                      'third_party/zlib/gzguts.h',
+                      'third_party/zlib/inffast.h',
+                      'third_party/zlib/inffixed.h',
+                      'third_party/zlib/inflate.h',
+                      'third_party/zlib/inftrees.h',
+                      'third_party/zlib/trees.h',
+                      'third_party/zlib/zconf.h',
+                      'third_party/zlib/zlib.h',
+                      'third_party/zlib/zutil.h'
 
     ss.private_header_files = 'src/core/ext/filters/backend_metrics/backend_metric_filter.h',
                               'src/core/ext/filters/backend_metrics/backend_metric_provider.h',
@@ -1845,6 +1851,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/event_engine/tcp_socket_utils.h',
                               'src/core/lib/event_engine/thread_local.h',
                               'src/core/lib/event_engine/thread_pool/original_thread_pool.h',
+                              'src/core/lib/event_engine/thread_pool/thread_count.h',
                               'src/core/lib/event_engine/thread_pool/thread_pool.h',
                               'src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h',
                               'src/core/lib/event_engine/thready_event_engine/thready_event_engine.h',
@@ -2001,8 +2008,8 @@ Pod::Spec.new do |s|
                               'src/core/lib/promise/detail/basic_seq.h',
                               'src/core/lib/promise/detail/promise_factory.h',
                               'src/core/lib/promise/detail/promise_like.h',
+                              'src/core/lib/promise/detail/seq_state.h',
                               'src/core/lib/promise/detail/status.h',
-                              'src/core/lib/promise/detail/switch.h',
                               'src/core/lib/promise/exec_ctx_wakeup_scheduler.h',
                               'src/core/lib/promise/for_each.h',
                               'src/core/lib/promise/if.h',
@@ -2193,15 +2200,10 @@ Pod::Spec.new do |s|
                               'third_party/re2/re2/unicode_casefold.h',
                               'third_party/re2/re2/unicode_groups.h',
                               'third_party/re2/re2/walker-inl.h',
-                              'third_party/re2/util/benchmark.h',
-                              'third_party/re2/util/flags.h',
                               'third_party/re2/util/logging.h',
-                              'third_party/re2/util/malloc_counter.h',
                               'third_party/re2/util/mix.h',
                               'third_party/re2/util/mutex.h',
-                              'third_party/re2/util/pcre.h',
                               'third_party/re2/util/strutil.h',
-                              'third_party/re2/util/test.h',
                               'third_party/re2/util/utf.h',
                               'third_party/re2/util/util.h',
                               'third_party/upb/upb/alloc.h',
@@ -2243,7 +2245,6 @@ Pod::Spec.new do |s|
                               'third_party/upb/upb/message/extension_internal.h',
                               'third_party/upb/upb/message/internal.h',
                               'third_party/upb/upb/message/message.h',
-                              'third_party/upb/upb/mini_table.h',
                               'third_party/upb/upb/mini_table/common.h',
                               'third_party/upb/upb/mini_table/common_internal.h',
                               'third_party/upb/upb/mini_table/decode.h',
@@ -2313,7 +2314,18 @@ Pod::Spec.new do |s|
                               'third_party/upb/upb/wire/swap_internal.h',
                               'third_party/upb/upb/wire/types.h',
                               'third_party/utf8_range/utf8_range.h',
-                              'third_party/xxhash/xxhash.h'
+                              'third_party/xxhash/xxhash.h',
+                              'third_party/zlib/crc32.h',
+                              'third_party/zlib/deflate.h',
+                              'third_party/zlib/gzguts.h',
+                              'third_party/zlib/inffast.h',
+                              'third_party/zlib/inffixed.h',
+                              'third_party/zlib/inflate.h',
+                              'third_party/zlib/inftrees.h',
+                              'third_party/zlib/trees.h',
+                              'third_party/zlib/zconf.h',
+                              'third_party/zlib/zlib.h',
+                              'third_party/zlib/zutil.h'
   end
 
   s.subspec 'Protobuf' do |ss|

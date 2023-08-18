@@ -53,6 +53,15 @@ RUN apt-get update && apt-get install -y \
   zip \
   && apt-get clean
 
+#=================
+# Setup git to access working directory across docker boundary.
+# This avoids the "fatal: detected dubious ownership in repository XYZ"
+# git error.
+
+RUN git config --global --add safe.directory '*'
+RUN git config --global protocol.file.allow always
+
+
 #====================
 # run_tests.py python dependencies
 
@@ -88,7 +97,7 @@ RUN apt-get update && apt-get -y install libc++-dev clang && apt-get clean
 # Bazel installation
 
 # Must be in sync with tools/bazel
-ENV BAZEL_VERSION 6.1.2
+ENV BAZEL_VERSION 6.3.2
 
 # The correct bazel version is already preinstalled, no need to use //tools/bazel wrapper.
 ENV DISABLE_BAZEL_WRAPPER 1

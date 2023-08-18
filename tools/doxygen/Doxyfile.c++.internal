@@ -2140,6 +2140,8 @@ src/core/lib/event_engine/thread_local.cc \
 src/core/lib/event_engine/thread_local.h \
 src/core/lib/event_engine/thread_pool/original_thread_pool.cc \
 src/core/lib/event_engine/thread_pool/original_thread_pool.h \
+src/core/lib/event_engine/thread_pool/thread_count.cc \
+src/core/lib/event_engine/thread_pool/thread_count.h \
 src/core/lib/event_engine/thread_pool/thread_pool.h \
 src/core/lib/event_engine/thread_pool/thread_pool_factory.cc \
 src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc \
@@ -2450,8 +2452,8 @@ src/core/lib/promise/context.h \
 src/core/lib/promise/detail/basic_seq.h \
 src/core/lib/promise/detail/promise_factory.h \
 src/core/lib/promise/detail/promise_like.h \
+src/core/lib/promise/detail/seq_state.h \
 src/core/lib/promise/detail/status.h \
-src/core/lib/promise/detail/switch.h \
 src/core/lib/promise/exec_ctx_wakeup_scheduler.h \
 src/core/lib/promise/for_each.h \
 src/core/lib/promise/if.h \

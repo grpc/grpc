@@ -85,7 +85,6 @@
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/detail/basic_seq.h"
 #include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/party.h"
@@ -2380,8 +2379,10 @@ grpc_error_handle MakePromiseBasedCall(grpc_call_create_args* args,
                                        grpc_call** out_call) {
   Channel* channel = args->channel.get();
 
-  auto alloc = Arena::CreateWithAlloc(channel->CallSizeEstimate(), sizeof(T),
-                                      channel->allocator());
+  const auto initial_size = channel->CallSizeEstimate();
+  global_stats().IncrementCallInitialSize(initial_size);
+  auto alloc =
+      Arena::CreateWithAlloc(initial_size, sizeof(T), channel->allocator());
   PromiseBasedCall* call = new (alloc.second) T(alloc.first, args);
   *out_call = call->c_ptr();
   GPR_DEBUG_ASSERT(Call::FromC(*out_call) == call);
@@ -3395,6 +3396,7 @@ void ServerPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
         break;
       case GRPC_OP_RECV_MESSAGE:
         if (cancelled_.load(std::memory_order_relaxed)) {
+          set_failed_before_recv_message();
           FailCompletion(completion);
           break;
         }
