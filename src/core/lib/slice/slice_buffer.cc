@@ -73,7 +73,7 @@ std::string SliceBuffer::JoinIntoString() const {
 Slice SliceBuffer::JoinIntoSlice() const {
   if (slice_buffer_.count == 0) return Slice();
   if (slice_buffer_.count == 1) return RefSlice(0);
-  grpc_slice slice = grpc_slice_malloc(slice_buffer_.length);
+  grpc_slice slice = GRPC_SLICE_MALLOC(slice_buffer_.length);
   size_t ofs = 0;
   for (size_t i = 0; i < slice_buffer_.count; i++) {
     memcpy(GRPC_SLICE_START_PTR(slice) + ofs,
