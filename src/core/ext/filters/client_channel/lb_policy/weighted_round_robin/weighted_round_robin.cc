@@ -494,9 +494,8 @@ WeightedRoundRobin::Picker::Picker(RefCountedPtr<WeightedRoundRobin> wrr,
       endpoints_.emplace_back(ep->picker(), ep->weight());
     }
   }
-  global_stats().IncrementWrrSubchannelListSize(
-      subchannel_list->num_subchannels());
-  global_stats().IncrementWrrSubchannelReadySize(subchannels_.size());
+  global_stats().IncrementWrrSubchannelListSize(endpoint_list->size());
+  global_stats().IncrementWrrSubchannelReadySize(endpoints_.size());
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
     gpr_log(GPR_INFO,
             "[WRR %p picker %p] created picker from endpoint_list=%p "
