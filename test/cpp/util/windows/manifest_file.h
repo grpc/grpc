@@ -28,6 +28,16 @@ namespace testing {
 
 std::string NormalizeFilePath(const std::string& filepath);
 
+// This class is used for handling Runfiles for a Bazel target on Windows (e.g.
+// the output of targets specified in the data attribute of the target). On
+// Linux/macOS, Bazel creates a runfiles tree which contains symlinks to the
+// actual runfiles. But on Windows, it only creates a MANIFEST file which
+// contains a list of <symlink relative path, absolute symlink target path>.
+// Thus one initializes a ManifestFile object with the filepath to a MANIFEST
+// file and uses it as a key-value datastore by querying the absolute symlink
+// target path with the imaginative symlink relative path. See
+// https://github.com/bazelbuild/bazel/issues/4261#issuecomment-350723457 for
+// more details.
 class ManifestFile {
  public:
   explicit ManifestFile(const std::string& filepath);
