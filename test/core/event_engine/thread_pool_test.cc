@@ -14,11 +14,13 @@
 
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 
+#include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <cmath>
 #include <functional>
 #include <thread>
+#include <vector>
 
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
@@ -27,6 +29,7 @@
 #include <grpc/grpc.h>
 
 #include "src/core/lib/event_engine/thread_pool/original_thread_pool.h"
+#include "src/core/lib/event_engine/thread_pool/thread_count.h"
 #include "src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/thd.h"
@@ -112,7 +115,7 @@ TYPED_TEST(ThreadPoolTest, ForkStressTest) {
     }
     runcount.fetch_add(1, std::memory_order_relaxed);
   };
-  for (int i = 0; i < expected_runcount; i++) {
+  for (auto i = 0; i < expected_runcount; i++) {
     pool.Run(inner_fn);
   }
   // simulate multiple forks at a fixed frequency
@@ -141,7 +144,7 @@ TYPED_TEST(ThreadPoolTest, StartQuiesceRaceStressTest) {
     std::unique_ptr<TypeParam> pool;
     int i;
   };
-  for (int i = 0; i < iter_count; i++) {
+  for (auto i = 0; i < iter_count; i++) {
     ThdState state{std::make_unique<TypeParam>(8), i};
     state.pool->PrepareFork();
     grpc_core::Thread t1(
@@ -209,7 +212,7 @@ TEST_F(WorkStealingThreadPoolTest, ScalesWhenBackloggedFromGlobalQueue) {
   // Ensures the pool is saturated before signaling closures to continue.
   std::atomic<int> waiters{0};
   std::atomic<bool> signaled{false};
-  for (int i = 0; i < pool_thread_count; i++) {
+  for (auto i = 0; i < pool_thread_count; i++) {
     p.Run([&]() {
       waiters.fetch_add(1);
       while (!signaled.load()) {
@@ -232,7 +235,7 @@ TEST_F(WorkStealingThreadPoolTest, ScalesWhenBackloggedFromGlobalQueue) {
 // is fixed, or the implementation is deleted, make this a typed test again.
 TEST_F(WorkStealingThreadPoolTest,
        ScalesWhenBackloggedFromSingleThreadLocalQueue) {
-  int pool_thread_count = 8;
+  constexpr int pool_thread_count = 8;
   WorkStealingThreadPool p(pool_thread_count);
   grpc_core::Notification signal;
   // Ensures the pool is saturated before signaling closures to continue.
@@ -262,16 +265,191 @@ TEST_F(WorkStealingThreadPoolTest,
 // pool, it takes around 50s to run. When that is fixed, or the implementation
 // is deleted, make this a typed test again.
 TEST_F(WorkStealingThreadPoolTest, QuiesceRaceStressTest) {
-  int cycle_count = 333;
-  int thread_count = 8;
-  int run_count = thread_count * 2;
-  for (int i = 0; i < cycle_count; i++) {
+  constexpr int cycle_count = 333;
+  constexpr int thread_count = 8;
+  constexpr int run_count = thread_count * 2;
+  for (auto i = 0; i < cycle_count; i++) {
     WorkStealingThreadPool p(thread_count);
-    for (int j = 0; j < run_count; j++) {
+    for (auto j = 0; j < run_count; j++) {
       p.Run([]() {});
     }
     p.Quiesce();
   }
+}
+
+class BusyThreadCountTest : public testing::Test {};
+
+TEST_F(BusyThreadCountTest, StressTest) {
+  // Spawns a large number of threads to concurrently increments/decrement the
+  // counters, and request count totals. Magic numbers were tuned for tests to
+  // run in a reasonable amount of time.
+  constexpr size_t thread_count = 300;
+  constexpr int run_count = 1000;
+  constexpr int increment_by = 50;
+  BusyThreadCount busy_thread_count;
+  grpc_core::Notification stop_counting;
+  std::thread counter_thread([&]() {
+    while (!stop_counting.HasBeenNotified()) {
+      busy_thread_count.count();
+    }
+  });
+  std::vector<std::thread> threads;
+  threads.reserve(thread_count);
+  for (size_t i = 0; i < thread_count; i++) {
+    threads.emplace_back([&]() {
+      for (int j = 0; j < run_count; j++) {
+        // Get a new index for every iteration.
+        // This is not the intended use, but further stress tests the NextIndex
+        // function.
+        auto thread_idx = busy_thread_count.NextIndex();
+        for (int inc = 0; inc < increment_by; inc++) {
+          busy_thread_count.Increment(thread_idx);
+        }
+        for (int inc = 0; inc < increment_by; inc++) {
+          busy_thread_count.Decrement(thread_idx);
+        }
+      }
+    });
+  }
+  for (auto& thd : threads) thd.join();
+  stop_counting.Notify();
+  counter_thread.join();
+  ASSERT_EQ(busy_thread_count.count(), 0);
+}
+
+TEST_F(BusyThreadCountTest, AutoCountStressTest) {
+  // Spawns a large number of threads to concurrently increments/decrement the
+  // counters, and request count totals. Magic numbers were tuned for tests to
+  // run in a reasonable amount of time.
+  constexpr size_t thread_count = 150;
+  constexpr int run_count = 1000;
+  constexpr int increment_by = 30;
+  BusyThreadCount busy_thread_count;
+  grpc_core::Notification stop_counting;
+  std::thread counter_thread([&]() {
+    while (!stop_counting.HasBeenNotified()) {
+      busy_thread_count.count();
+    }
+  });
+  std::vector<std::thread> threads;
+  threads.reserve(thread_count);
+  for (size_t i = 0; i < thread_count; i++) {
+    threads.emplace_back([&]() {
+      for (int j = 0; j < run_count; j++) {
+        std::vector<BusyThreadCount::AutoThreadCounter> auto_counters;
+        auto_counters.reserve(increment_by);
+        for (int ctr_count = 0; ctr_count < increment_by; ctr_count++) {
+          auto_counters.push_back(busy_thread_count.MakeAutoThreadCounter(
+              busy_thread_count.NextIndex()));
+        }
+      }
+    });
+  }
+  for (auto& thd : threads) thd.join();
+  stop_counting.Notify();
+  counter_thread.join();
+  ASSERT_EQ(busy_thread_count.count(), 0);
+}
+
+class LivingThreadCountTest : public testing::Test {};
+
+TEST_F(LivingThreadCountTest, StressTest) {
+  // Spawns a large number of threads to concurrently increments/decrement the
+  // counters, and request count totals. Magic numbers were tuned for tests to
+  // run in a reasonable amount of time.
+  constexpr size_t thread_count = 50;
+  constexpr int run_count = 1000;
+  constexpr int increment_by = 10;
+  LivingThreadCount living_thread_count;
+  grpc_core::Notification stop_counting;
+  std::thread counter_thread([&]() {
+    while (!stop_counting.HasBeenNotified()) {
+      living_thread_count.count();
+    }
+  });
+  std::vector<std::thread> threads;
+  threads.reserve(thread_count);
+  for (size_t i = 0; i < thread_count; i++) {
+    threads.emplace_back([&]() {
+      for (int j = 0; j < run_count; j++) {
+        // Get a new index for every iteration.
+        // This is not the intended use, but further stress tests the NextIndex
+        // function.
+        for (int inc = 0; inc < increment_by; inc++) {
+          living_thread_count.Increment();
+        }
+        for (int inc = 0; inc < increment_by; inc++) {
+          living_thread_count.Decrement();
+        }
+      }
+    });
+  }
+  for (auto& thd : threads) thd.join();
+  stop_counting.Notify();
+  counter_thread.join();
+  ASSERT_EQ(living_thread_count.count(), 0);
+}
+
+TEST_F(LivingThreadCountTest, AutoCountStressTest) {
+  // Spawns a large number of threads to concurrently increments/decrement the
+  // counters, and request count totals. Magic numbers were tuned for tests to
+  // run in a reasonable amount of time.
+  constexpr size_t thread_count = 50;
+  constexpr int run_count = 1000;
+  constexpr int increment_by = 10;
+  LivingThreadCount living_thread_count;
+  grpc_core::Notification stop_counting;
+  std::thread counter_thread([&]() {
+    while (!stop_counting.HasBeenNotified()) {
+      living_thread_count.count();
+    }
+  });
+  std::vector<std::thread> threads;
+  threads.reserve(thread_count);
+  for (size_t i = 0; i < thread_count; i++) {
+    threads.emplace_back([&]() {
+      for (int j = 0; j < run_count; j++) {
+        std::vector<LivingThreadCount::AutoThreadCounter> auto_counters;
+        auto_counters.reserve(increment_by);
+        for (int ctr_count = 0; ctr_count < increment_by; ctr_count++) {
+          auto_counters.push_back(living_thread_count.MakeAutoThreadCounter());
+        }
+      }
+    });
+  }
+  for (auto& thd : threads) thd.join();
+  stop_counting.Notify();
+  counter_thread.join();
+  ASSERT_EQ(living_thread_count.count(), 0);
+}
+
+TEST_F(LivingThreadCountTest, BlockUntilThreadCountTest) {
+  constexpr size_t thread_count = 100;
+  grpc_core::Notification waiting;
+  LivingThreadCount living_thread_count;
+  std::vector<std::thread> threads;
+  threads.reserve(thread_count);
+  // Start N living threads
+  for (size_t i = 0; i < thread_count; i++) {
+    threads.emplace_back([&]() {
+      auto alive = living_thread_count.MakeAutoThreadCounter();
+      waiting.WaitForNotification();
+    });
+  }
+  // Join in a separate thread
+  std::thread joiner([&]() {
+    waiting.Notify();
+    for (auto& thd : threads) thd.join();
+  });
+  {
+    auto alive = living_thread_count.MakeAutoThreadCounter();
+    living_thread_count.BlockUntilThreadCount(1,
+                                              "block until 1 thread remains");
+  }
+  living_thread_count.BlockUntilThreadCount(0,
+                                            "block until all threads are gone");
+  joiner.join();
+  ASSERT_EQ(living_thread_count.count(), 0);
 }
 
 }  // namespace experimental

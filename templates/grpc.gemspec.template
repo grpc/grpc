@@ -55,8 +55,9 @@
     for dep in ruby_deps[:]:
       ruby_deps.extend(lib_maps[dep].transitive_deps)
     for dep in ruby_deps:
-      lib = lib_maps[dep]
-      files.extend(lib.get('public_headers', []) + lib.headers + lib.src)
+      lib = lib_maps.get(dep, None)
+      if lib:
+        files.extend(lib.get('public_headers', []) + lib.headers + lib.src)
     files = sorted(set(files))
   %>
     % for file in files:

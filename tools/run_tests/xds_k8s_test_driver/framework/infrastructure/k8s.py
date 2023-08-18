@@ -20,6 +20,7 @@ import logging
 import pathlib
 import threading
 from typing import Any, Callable, List, Optional, Tuple
+import warnings
 
 from kubernetes import client
 from kubernetes import utils
@@ -105,6 +106,17 @@ class KubernetesApiManager:
         self.apps = client.AppsV1Api(self.client)
         self.core = client.CoreV1Api(self.client)
         self._apis = {self.apps, self.core}
+        # TODO(https://github.com/kubernetes-client/python/issues/2101): remove
+        #  when the issue is solved, and the kubernetes dependency is bumped.
+        warnings.filterwarnings(
+            "ignore",
+            category=DeprecationWarning,
+            module="kubernetes",
+            message=(
+                "HTTPResponse.getheaders?\\(\\) is deprecated"
+                " and will be removed in urllib3 v2.1.0."
+            ),
+        )
 
     @property
     def client(self) -> ApiClient:
@@ -416,14 +428,16 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
         try:
             retryer(self.get_service, name)
         except retryers.RetryError as retry_err:
-            framework.errors.FrameworkError.note_blanket_error_info_below(
+            result = retry_err.result()
+            note = framework.errors.FrameworkError.note_blanket_error_info_below(
                 "A k8s service wasn't assigned a NEG (Network Endpoint Group).",
                 info_below=(
                     f"Timeout {timeout} (h:mm:ss) waiting for service {name}"
                     f" to report NEG status. Last service status:\n"
-                    f"{self._pretty_format_status(retry_err.result())}"
+                    f"{self._pretty_format_status(result, highlight=False)}"
                 ),
             )
+            retry_err.add_note(note)
             raise
 
     def get_service_neg(
@@ -475,15 +489,17 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
         try:
             retryer(self.get_deployment, name)
         except retryers.RetryError as retry_err:
-            framework.errors.FrameworkError.note_blanket_error_info_below(
+            result = retry_err.result()
+            note = framework.errors.FrameworkError.note_blanket_error_info_below(
                 "The deployment didn't report one or several pods available"
                 " (ready for at least minReadySeconds).",
                 info_below=(
                     f"Timeout {timeout} (h:mm:ss) waiting for deployment {name}"
                     f" to report {count} replicas available. Last status:\n"
-                    f"{self._pretty_format_status(retry_err.result())}"
+                    f"{self._pretty_format_status(result, highlight=False)}"
                 ),
             )
+            retry_err.add_note(note)
             raise
 
     def wait_for_deployment_replica_count(
@@ -504,14 +520,15 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
             retryer(self.list_deployment_pods, deployment)
         except retryers.RetryError as retry_err:
             result = retry_err.result(default=[])
-            framework.errors.FrameworkError.note_blanket_error_info_below(
+            note = framework.errors.FrameworkError.note_blanket_error_info_below(
                 "The deployment was unable to initialize one or several pods.",
                 info_below=(
                     f"Timeout {timeout} (h:mm:ss) waiting for pod count"
                     f" {count}, got: {len(result)}. Pod statuses:\n"
-                    f"{self._pretty_format_statuses(result)}"
+                    f"{self._pretty_format_statuses(result, highlight=False)}"
                 ),
             )
+            retry_err.add_note(note)
             raise
 
     def wait_for_deployment_deleted(
@@ -555,13 +572,14 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
         try:
             retryer(self.get_pod, pod_name)
         except retryers.RetryError as retry_err:
+            result = retry_err.result()
             retry_err.add_note(
                 framework.errors.FrameworkError.note_blanket_error_info_below(
                     "The pod didn't start within expected timeout.",
                     info_below=(
                         f"Timeout {timeout} (h:mm:ss) waiting for pod"
                         f" {pod_name} to start. Pod status:\n"
-                        f"{self._pretty_format_status(retry_err.result())}"
+                        f"{self._pretty_format_status(result, highlight=False)}"
                     ),
                 )
             )
@@ -607,13 +625,22 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
         return pod_log_collector
 
     def _pretty_format_statuses(
-        self, k8s_objects: List[Optional[object]]
+        self,
+        k8s_objects: List[Optional[object]],
+        *,
+        highlight: bool = True,
     ) -> str:
         return "\n".join(
-            self._pretty_format_status(k8s_object) for k8s_object in k8s_objects
+            self._pretty_format_status(k8s_object, highlight=highlight)
+            for k8s_object in k8s_objects
         )
 
-    def _pretty_format_status(self, k8s_object: Optional[object]) -> str:
+    def _pretty_format_status(
+        self,
+        k8s_object: Optional[object],
+        *,
+        highlight: bool = True,
+    ) -> str:
         if k8s_object is None:
             return "No data"
 
@@ -628,7 +655,10 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
         # Pretty-print the status if present.
         if hasattr(k8s_object, "status"):
             try:
-                status = self._pretty_format(k8s_object.status.to_dict())
+                status = self._pretty_format(
+                    k8s_object.status.to_dict(),
+                    highlight=highlight,
+                )
             except Exception as e:  # pylint: disable=broad-except
                 # Catching all exceptions because not printing the status
                 # isn't as important as the system under test.
@@ -639,10 +669,15 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
         # Return the name of k8s object, and its pretty-printed status.
         return f"{name}:\n{status}\n"
 
-    def _pretty_format(self, data: dict) -> str:
+    def _pretty_format(
+        self,
+        data: dict,
+        *,
+        highlight: bool = True,
+    ) -> str:
         """Return a string with pretty-printed yaml data from a python dict."""
         yaml_out: str = yaml.dump(data, explicit_start=True, explicit_end=True)
-        return self._highlighter.highlight(yaml_out)
+        return self._highlighter.highlight(yaml_out) if highlight else yaml_out
 
     @classmethod
     def _check_service_neg_annotation(

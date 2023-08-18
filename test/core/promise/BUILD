@@ -315,7 +315,6 @@ grpc_cc_test(
     deps = [
         "test_wakeup_schedulers",
         "//src/core:activity",
-        "//src/core:basic_join",
         "//src/core:join",
         "//src/core:latch",
         "//src/core:seq",
@@ -335,7 +334,6 @@ grpc_cc_test(
         "//:ref_counted_ptr",
         "//src/core:activity",
         "//src/core:arena",
-        "//src/core:basic_join",
         "//src/core:event_engine_memory_allocator",
         "//src/core:for_each",
         "//src/core:join",
@@ -361,7 +359,6 @@ grpc_cc_test(
         "//:ref_counted_ptr",
         "//src/core:activity",
         "//src/core:arena",
-        "//src/core:basic_join",
         "//src/core:event_engine_memory_allocator",
         "//src/core:for_each",
         "//src/core:join",
@@ -393,7 +390,6 @@ grpc_cc_test(
         "//:grpc",
         "//:ref_counted_ptr",
         "//src/core:activity",
-        "//src/core:basic_join",
         "//src/core:event_engine_memory_allocator",
         "//src/core:join",
         "//src/core:map",
@@ -440,7 +436,6 @@ grpc_proto_fuzzer(
         "//:gpr",
         "//:promise",
         "//src/core:activity",
-        "//src/core:basic_join",
         "//src/core:join",
         "//src/core:map",
         "//src/core:poll",
@@ -464,6 +459,25 @@ grpc_cc_test(
         "//src/core:activity",
         "//src/core:exec_ctx_wakeup_scheduler",
         "//src/core:poll",
+    ],
+)
+
+grpc_cc_test(
+    name = "wait_for_callback_test",
+    srcs = ["wait_for_callback_test.cc"],
+    external_deps = [
+        "absl/status",
+        "gtest",
+    ],
+    language = "c++",
+    tags = ["promise_test"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "test_wakeup_schedulers",
+        "//src/core:map",
+        "//src/core:notification",
+        "//src/core:wait_for_callback",
     ],
 )
 
