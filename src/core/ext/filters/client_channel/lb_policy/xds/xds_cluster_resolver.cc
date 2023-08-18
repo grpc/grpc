@@ -764,10 +764,11 @@ ServerAddressList XdsClusterResolverLb::CreateChildPolicyAddressesLocked() {
       for (const auto& p : priority_entry.localities) {
         const auto& locality_name = p.first;
         const auto& locality = p.second;
-        const std::vector<std::string> hierarchical_path = {
-            priority_child_name, locality_name->AsHumanReadableString()};
+        std::vector<RefCountedStringValue> hierarchical_path = {
+            RefCountedStringValue(priority_child_name),
+            RefCountedStringValue(locality_name->AsHumanReadableString())};
         auto hierarchical_path_attr =
-            MakeRefCounted<HierarchicalPathArg>(hierarchical_path);
+            MakeRefCounted<HierarchicalPathArg>(std::move(hierarchical_path));
         for (const auto& endpoint : locality.endpoints) {
           uint32_t endpoint_weight =
               locality.lb_weight *

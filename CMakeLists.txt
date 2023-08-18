@@ -2196,6 +2196,7 @@ add_library(grpc
   src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/load_file.cc
   src/core/lib/gprpp/per_cpu.cc
+  src/core/lib/gprpp/ref_counted_string.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/gprpp/time_averaged_stats.cc
@@ -2901,6 +2902,7 @@ add_library(grpc_unsecure
   src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/load_file.cc
   src/core/lib/gprpp/per_cpu.cc
+  src/core/lib/gprpp/ref_counted_string.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/gprpp/time_averaged_stats.cc
@@ -4798,6 +4800,7 @@ add_library(grpc_authorization_provider
   src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/load_file.cc
   src/core/lib/gprpp/per_cpu.cc
+  src/core/lib/gprpp/ref_counted_string.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/gprpp/time_averaged_stats.cc
@@ -10510,6 +10513,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(endpoint_config_test
   src/core/lib/channel/channel_args.cc
   src/core/lib/event_engine/channel_args_endpoint_config.cc
+  src/core/lib/gprpp/ref_counted_string.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/surface/channel_stack_type.cc
   test/core/event_engine/endpoint_config_test.cc
@@ -12091,6 +12095,7 @@ add_executable(frame_test
   src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/load_file.cc
   src/core/lib/gprpp/per_cpu.cc
+  src/core/lib/gprpp/ref_counted_string.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/gprpp/time_averaged_stats.cc

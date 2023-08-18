@@ -1245,6 +1245,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/gprpp/posix/thd.cc )
   s.files += %w( src/core/lib/gprpp/ref_counted.h )
   s.files += %w( src/core/lib/gprpp/ref_counted_ptr.h )
+  s.files += %w( src/core/lib/gprpp/ref_counted_string.cc )
+  s.files += %w( src/core/lib/gprpp/ref_counted_string.h )
   s.files += %w( src/core/lib/gprpp/single_set_ptr.h )
   s.files += %w( src/core/lib/gprpp/sorted_pack.h )
   s.files += %w( src/core/lib/gprpp/stat.h )
