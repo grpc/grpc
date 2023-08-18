@@ -1,6 +1,4 @@
-//
-//
-// Copyright 2017 gRPC authors.
+// Copyright 2017 The gRPC Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,12 +11,15 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
-//
+
+#include <grpc/support/port_platform.h>
 
 #include <signal.h>
 #include <string.h>
+
+#ifndef GPR_WINDOWS
 #include <unistd.h>
+#endif  // GPR_WINDOWS
 
 #include <string>
 #include <thread>
@@ -43,6 +44,9 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/subprocess.h"
 #include "test/cpp/util/test_config.h"
+#ifdef GPR_WINDOWS
+#include "test/cpp/util/windows/manifest_file.h"
+#endif  // GPR_WINDOWS
 
 ABSL_FLAG(
     bool, running_under_bazel, false,
@@ -75,7 +79,6 @@ void InvokeResolverComponentTestsRunner(
     const std::string& dns_resolver_bin_path,
     const std::string& tcp_connect_bin_path) {
   int dns_server_port = grpc_pick_unused_port_or_die();
-
   SubProcess* test_driver = new SubProcess(
       {std::move(test_runner_bin_path), "--test_bin_path=" + test_bin_path,
        "--dns_server_bin_path=" + dns_server_bin_path,
@@ -89,6 +92,7 @@ void InvokeResolverComponentTestsRunner(
   gpr_cv test_driver_cv;
   gpr_cv_init(&test_driver_cv);
   int status = test_driver->Join();
+#ifndef GPR_WINDOWS
   if (WIFEXITED(status)) {
     if (WEXITSTATUS(status)) {
       grpc_core::Crash(absl::StrFormat(
@@ -104,6 +108,15 @@ void InvokeResolverComponentTestsRunner(
         "Resolver component test test-runner ended with unknown status %d",
         status));
   }
+#else
+  if (status == -1) {
+    grpc_core::Crash(absl::StrFormat(
+        "Failed to get resolver component test test-runner's exit code"));
+  } else if (status != 0) {
+    grpc_core::Crash(absl::StrFormat(
+        "Resolver component test test-runner's exited with code %d", status));
+  }
+#endif  // GPR_WINDOWS
   gpr_mu_lock(&test_driver_mu);
   gpr_cv_signal(&test_driver_cv);
   gpr_mu_unlock(&test_driver_mu);
@@ -128,6 +141,7 @@ int main(int argc, char** argv) {
     // Use bazel's TEST_SRCDIR environment variable to locate the "test data"
     // binaries.
     auto test_srcdir = grpc_core::GetEnv("TEST_SRCDIR");
+#ifndef GPR_WINDOWS
     std::string const bin_dir =
         test_srcdir.value() +
         absl::GetFlag(FLAGS_grpc_test_directory_relative_to_test_srcdir) +
@@ -141,7 +155,32 @@ int main(int argc, char** argv) {
         bin_dir + "/utils/dns_server",
         bin_dir + "/resolver_test_record_groups.yaml",
         bin_dir + "/utils/dns_resolver", bin_dir + "/utils/tcp_connect");
+#else
+    grpc::testing::ManifestFile manifest_file(
+        grpc::testing::NormalizeFilePath(test_srcdir.value()) + "\\MANIFEST");
+    grpc::testing::InvokeResolverComponentTestsRunner(
+        grpc::testing::NormalizeFilePath(
+            manifest_file.Get("com_github_grpc_grpc/test/cpp/naming/"
+                              "resolver_component_tests_runner.exe")),
+        grpc::testing::NormalizeFilePath(
+            manifest_file.Get("com_github_grpc_grpc/test/cpp/naming/" +
+                              absl::GetFlag(FLAGS_test_bin_name) + ".exe")),
+        grpc::testing::NormalizeFilePath(manifest_file.Get(
+            "com_github_grpc_grpc/test/cpp/naming/utils/dns_server.exe")),
+        grpc::testing::NormalizeFilePath(
+            manifest_file.Get("com_github_grpc_grpc/test/cpp/naming/"
+                              "resolver_test_record_groups.yaml")),
+        grpc::testing::NormalizeFilePath(manifest_file.Get(
+            "com_github_grpc_grpc/test/cpp/naming/utils/dns_resolver.exe")),
+        grpc::testing::NormalizeFilePath(manifest_file.Get(
+            "com_github_grpc_grpc/test/cpp/naming/utils/tcp_connect.exe")));
+#endif  // GPR_WINDOWS
   } else {
+#ifdef GPR_WINDOWS
+    grpc_core::Crash(
+        "Resolver component tests runner invoker does not support running "
+        "without Bazel on Windows for now.");
+#endif  // GPR_WINDOWS
     // Get the current binary's directory relative to repo root to invoke the
     // correct build config (asan/tsan/dbg, etc.).
     std::string const bin_dir = my_bin.substr(0, my_bin.rfind('/'));
