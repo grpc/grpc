@@ -241,11 +241,6 @@ absl::Status StripPadding(SliceBuffer& payload) {
 
 absl::StatusOr<Http2DataFrame> ParseDataFrame(const Http2FrameHeader& hdr,
                                               SliceBuffer& payload) {
-  if (hdr.flags & ~(kFlagEndStream | kFlagPadded)) {
-    return absl::InternalError(
-        absl::StrCat("unsupported data flags: ", hdr.ToString()));
-  }
-
   if (hdr.stream_id == 0) {
     return absl::InternalError(
         absl::StrCat("invalid stream id: ", hdr.ToString()));
@@ -262,12 +257,6 @@ absl::StatusOr<Http2DataFrame> ParseDataFrame(const Http2FrameHeader& hdr,
 
 absl::StatusOr<Http2HeaderFrame> ParseHeaderFrame(const Http2FrameHeader& hdr,
                                                   SliceBuffer& payload) {
-  if (hdr.flags &
-      ~(kFlagEndHeaders | kFlagEndStream | kFlagPriority | kFlagPadded)) {
-    return absl::InternalError(
-        absl::StrCat("unsupported header flags: ", hdr.ToString()));
-  }
-
   if (hdr.stream_id == 0) {
     return absl::InternalError(
         absl::StrCat("invalid stream id: ", hdr.ToString()));
@@ -294,11 +283,6 @@ absl::StatusOr<Http2HeaderFrame> ParseHeaderFrame(const Http2FrameHeader& hdr,
 
 absl::StatusOr<Http2ContinuationFrame> ParseContinuationFrame(
     const Http2FrameHeader& hdr, SliceBuffer& payload) {
-  if (hdr.flags & ~kFlagEndHeaders) {
-    return absl::InternalError(
-        absl::StrCat("unsupported header flags: ", hdr.ToString()));
-  }
-
   if (hdr.stream_id == 0) {
     return absl::InternalError(
         absl::StrCat("invalid stream id: ", hdr.ToString()));
@@ -311,11 +295,6 @@ absl::StatusOr<Http2ContinuationFrame> ParseContinuationFrame(
 
 absl::StatusOr<Http2RstStreamFrame> ParseRstStreamFrame(
     const Http2FrameHeader& hdr, SliceBuffer& payload) {
-  if (hdr.flags != 0) {
-    return absl::InternalError(
-        absl::StrCat("unsupported rst stream flags: ", hdr.ToString()));
-  }
-
   if (payload.Length() != 4) {
     return absl::InternalError(
         absl::StrCat("invalid rst stream payload: ", hdr.ToString()));
@@ -338,10 +317,12 @@ absl::StatusOr<Http2SettingsFrame> ParseSettingsFrame(
     return absl::InternalError(
         absl::StrCat("invalid stream id: ", hdr.ToString()));
   }
-  if (hdr.flags == kFlagAck) return Http2SettingsFrame{true, {}};
-  if (hdr.flags != 0) {
-    return absl::InternalError(
-        absl::StrCat("invalid settings flags: ", hdr.ToString()));
+  if (hdr.flags == kFlagAck) {
+    if (payload.Length() != 0) {
+      return absl::InternalError(
+          absl::StrCat("invalid settings ack length: ", hdr.ToString()));
+    }
+    return Http2SettingsFrame{true, {}};
   }
 
   if (payload.Length() % 6 != 0) {
