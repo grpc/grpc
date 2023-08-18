@@ -26,7 +26,6 @@ import unittest
 
 from absl import flags
 from absl import logging
-from absl.testing import absltest
 from google.protobuf import json_format
 import grpc
 
@@ -38,6 +37,7 @@ from framework.helpers import skips
 from framework.infrastructure import k8s
 from framework.test_app import client_app
 from framework.test_app.runners.k8s import k8s_xds_client_runner
+from framework.test_cases import base_testcase
 
 # Load existing flags
 flags.adopt_module_key_flags(xds_k8s_testcase)
@@ -268,7 +268,9 @@ class _MetaXdsUrlMapTestCase(type):
         return new_class
 
 
-class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
+class XdsUrlMapTestCase(
+    base_testcase.BaseTestCase, metaclass=_MetaXdsUrlMapTestCase
+):
     """XdsUrlMapTestCase is the base class for urlMap related tests.
 
     The subclass is expected to implement 3 methods:

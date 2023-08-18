@@ -34,7 +34,12 @@
     return "abseil/" + label[5:].replace(":", "/")
 
   def lib_and_transitive_deps(lib):
-    return list(sorted(set({lib} | set(lib_maps[lib].transitive_deps))))
+    """Return names of lib itself and all of its transitive dependencies."""
+    transitive_deps = []
+    lib_metadata = lib_maps.get(lib, None)
+    if lib_metadata:
+      transitive_deps = lib_metadata.transitive_deps
+    return list(sorted(set({lib} | set(transitive_deps))))
 
   def non_abseil_lib_and_transitive_deps(lib):
     return [l for l in lib_and_transitive_deps(lib) if not is_absl_lib(l)]
@@ -46,35 +51,30 @@
     absl_specs = set()
     for lib_name in lib_and_transitive_deps(lib):
       if is_absl_lib(lib_name): continue
-      for dep in lib_maps[lib_name].deps:
-        if is_absl_lib(dep):
-          absl_specs.add(get_absl_spec_name(dep))
+      lib_metadata = lib_maps.get(lib_name, None)
+      if lib_metadata:
+        for dep in lib_metadata.deps:
+          if is_absl_lib(dep):
+            absl_specs.add(get_absl_spec_name(dep))
     return list(sorted(absl_specs))
 
-  def list_lib_files(lib, fields):
+  def collect_files_for_libs(libs, fields):
     files = set()
-    for lib_name in non_abseil_lib_and_transitive_deps(lib):
-      lib = lib_maps[lib_name]
-      for field in fields:
-        files.update(lib.get(field, []))
+    for lib_name in libs:
+      lib = lib_maps.get(lib_name, None)
+      if lib:
+        for field in fields:
+          files.update(lib.get(field, []))
     return list(sorted(files))
 
-  # ObjectiveC doesn't use c-ares so we don't need address_sorting files at all
-  address_sorting_unwanted_files = list_lib_files("address_sorting", ("public_headers", "headers", "src"))
+  # ObjectiveC doesn't use c-ares so we don't need address_sorting and cares files at all.
+  # absl deps will be declared explicitly so we also don't need to include them.
+  grpc_full_deps = set(non_abseil_lib_and_transitive_deps("grpc")) - set({"address_sorting", "cares"})
 
-  # ObjectiveC needs to obtain re2 explicitly unlike other languages; TODO @donnadionne make ObjC more consistent with others
-  grpc_private_files = list(
-      sorted((set(list_lib_files("grpc", ("headers", "src"))) -
-              set(address_sorting_unwanted_files))
-            | set(list_lib_files("re2", ("headers", "src")))))
-  grpc_public_headers = list(
-      sorted((set(list_lib_files("grpc", ("public_headers", ))) -
-              set(address_sorting_unwanted_files))
-             | set(list_lib_files("re2", ("public_headers", )))))
-  grpc_private_headers = list(
-      sorted((set(list_lib_files("grpc", ("headers", ))) -
-              set(address_sorting_unwanted_files))
-             | set(list_lib_files("re2", ("headers", )))))
+  grpc_private_files = collect_files_for_libs(grpc_full_deps, ("headers", "src"))
+  grpc_public_headers = collect_files_for_libs(grpc_full_deps, ("public_headers", ))
+  grpc_private_headers = collect_files_for_libs(grpc_full_deps, ("headers", ))
+
   grpc_abseil_specs = list_abseil_specs("grpc")
 
   # TODO(jtattermusch): build.yaml is now generated from bazel build

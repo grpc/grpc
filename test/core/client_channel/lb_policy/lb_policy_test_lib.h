@@ -321,6 +321,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
                               const absl::Status& status = absl::OkStatus(),
                               bool validate_state_transition = true,
                               SourceLocation location = SourceLocation()) {
+      ExecCtx exec_ctx;
       if (state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
         EXPECT_FALSE(status.ok())
             << "bug in test: TRANSIENT_FAILURE must have non-OK status";
@@ -696,6 +697,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   // Applies the update on the LB policy.
   absl::Status ApplyUpdate(LoadBalancingPolicy::UpdateArgs update_args,
                            LoadBalancingPolicy* lb_policy) {
+    ExecCtx exec_ctx;
     absl::Status status;
     absl::Notification notification;
     work_serializer_->Run(

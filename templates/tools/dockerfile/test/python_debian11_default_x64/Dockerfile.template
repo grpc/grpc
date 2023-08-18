@@ -31,12 +31,11 @@
   # for Python test coverage reporting
   RUN python3.9 -m pip install coverage
 
+  # six is required by the run_tests.py test harness
+  RUN python3.9 -m pip install six
+
   <%include file="../../gcp_api_libraries.include"/>
 
   <%include file="../../cmake.include"/>
   <%include file="../../ccache.include"/>
 
-  # Fix dubious ownerhsip issue.
-  RUN git config --global --add safe.directory '*' && ${'\\'}
-  	git config --global protocol.file.allow always
-  

@@ -42,13 +42,10 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
@@ -62,15 +59,6 @@
 namespace grpc_core {
 
 TraceFlag grpc_lb_pick_first_trace(false, "pick_first");
-
-// TODO(eostroukhov): Remove once this feature is no longer experimental.
-bool ShufflePickFirstEnabled() {
-  auto value = GetEnv("GRPC_EXPERIMENTAL_PICKFIRST_LB_CONFIG");
-  if (!value.has_value()) return false;
-  bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
-  return parse_succeeded && parsed_value;
-}
 
 namespace {
 
@@ -92,13 +80,6 @@ class PickFirstConfig : public LoadBalancingPolicy::Config {
                            &PickFirstConfig::shuffle_addresses_)
             .Finish();
     return kJsonLoader;
-  }
-
-  void JsonPostLoad(const Json& /* json */, const JsonArgs& /* args */,
-                    ValidationErrors* /* errors */) {
-    if (!ShufflePickFirstEnabled()) {
-      shuffle_addresses_ = false;
-    }
   }
 
  private:
@@ -624,6 +605,7 @@ void PickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
   // with the first subchannel.
   if (!old_state.has_value()) {
     subchannel_list_->subchannels_.front().ReactToConnectivityStateLocked();
+    return;
   }
   // Ignore any other updates for subchannels we're not currently trying to
   // connect to.
