@@ -20,6 +20,8 @@
 
 #include <string.h>
 
+#include <new>
+
 #include <grpc/support/alloc.h>
 
 namespace grpc_core {

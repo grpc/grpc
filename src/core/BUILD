@@ -4517,6 +4517,7 @@ grpc_cc_library(
         "lb_policy_factory",
         "lb_policy_registry",
         "pollset_set",
+        "ref_counted_string",
         "validation_errors",
         "//:channel_arg_names",
         "//:config",
