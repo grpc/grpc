@@ -131,13 +131,6 @@ configs:
 defaults:
   abseil:
     CPPFLAGS: -g -Ithird_party/abseil-cpp
-  ares:
-    CFLAGS: -g
-    CPPFLAGS: -Ithird_party/cares/cares/include -Ithird_party/cares -Ithird_party/cares/cares
-      -fvisibility=hidden -D_GNU_SOURCE $(if $(subst Darwin,,$(SYSTEM)),,-Ithird_party/cares/config_darwin)
-      $(if $(subst FreeBSD,,$(SYSTEM)),,-Ithird_party/cares/config_freebsd) $(if $(subst
-      Linux,,$(SYSTEM)),,-Ithird_party/cares/config_linux) $(if $(subst OpenBSD,,$(SYSTEM)),,-Ithird_party/cares/config_openbsd)
-      -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX $(if $(subst MINGW32,,$(SYSTEM)),-DHAVE_CONFIG_H,)
   benchmark:
     CPPFLAGS: -Ithird_party/benchmark/include -DHAVE_POSIX_REGEX
   boringssl:
@@ -145,6 +138,13 @@ defaults:
     CPPFLAGS: -Ithird_party/boringssl-with-bazel/src/include -fvisibility=hidden -DOPENSSL_NO_ASM
       -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
     CXXFLAGS: -fno-exceptions
+  cares:
+    CFLAGS: -g
+    CPPFLAGS: -Ithird_party/cares/cares/include -Ithird_party/cares -Ithird_party/cares/cares
+      -fvisibility=hidden -D_GNU_SOURCE $(if $(subst Darwin,,$(SYSTEM)),,-Ithird_party/cares/config_darwin)
+      $(if $(subst FreeBSD,,$(SYSTEM)),,-Ithird_party/cares/config_freebsd) $(if $(subst
+      Linux,,$(SYSTEM)),,-Ithird_party/cares/config_linux) $(if $(subst OpenBSD,,$(SYSTEM)),,-Ithird_party/cares/config_openbsd)
+      -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX $(if $(subst MINGW32,,$(SYSTEM)),-DHAVE_CONFIG_H,)
   global:
     CFLAGS: -g
     COREFLAGS: -fno-exceptions
@@ -190,7 +190,7 @@ python_dependencies:
   deps:
   - grpc
   - address_sorting
-  - ares
+  - cares
   - boringssl
   - re2
   - z
@@ -198,7 +198,7 @@ ruby_gem:
   deps:
   - grpc
   - address_sorting
-  - ares
+  - cares
   - boringssl
   - re2
   - z
