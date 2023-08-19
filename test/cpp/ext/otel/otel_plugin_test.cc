@@ -69,7 +69,10 @@ class OTelPluginEnd2EndTest : public ::testing::Test {
     // of each test to avoid test results from one test carrying over to another
     // test. (Some measurements can get arbitrarily delayed.)
     auto meter_provider =
-        std::make_shared<opentelemetry::sdk::metrics::MeterProvider>();
+        std::make_shared<opentelemetry::sdk::metrics::MeterProvider>(
+            std::unique_ptr<opentelemetry::sdk::metrics::ViewRegistry>(
+                new opentelemetry::sdk::metrics::ViewRegistry()),
+            opentelemetry::sdk::resource::Resource::Create({{"key", "value"}}));
     reader_.reset(new grpc::testing::MockMetricReader);
     meter_provider->AddMetricReader(reader_);
     grpc_core::CoreConfiguration::Reset();
@@ -136,6 +139,11 @@ class OTelPluginEnd2EndTest : public ::testing::Test {
     auto deadline = absl::Now() + absl::Seconds(5);
     do {
       reader_->Collect([&](opentelemetry::sdk::metrics::ResourceMetrics& rm) {
+        auto& attributes = rm.resource_->GetAttributes().GetAttributes();
+        for (const auto& pair : attributes) {
+          gpr_log(GPR_ERROR, "%s %s", std::string(pair.first).c_str(),
+                  absl::get<std::string>(pair.second).c_str());
+        }
         for (const opentelemetry::sdk::metrics::ScopeMetrics& smd :
              rm.scope_metric_data_) {
           for (const opentelemetry::sdk::metrics::MetricData& md :

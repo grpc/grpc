@@ -22,8 +22,9 @@
 #include <grpc/support/port_platform.h>
 
 #include <string>
+#include <utility>
+#include <vector>
 
-#include "absl/container/flat_hash_map.h"
 #include "opentelemetry/sdk/common/attribute_utils.h"
 
 #include "src/core/lib/slice/slice.h"
@@ -35,23 +36,23 @@ namespace internal {
 
 class ServiceMeshLabelsInjector : public LabelsInjector {
  public:
-  ServiceMeshLabelsInjector(
+  explicit ServiceMeshLabelsInjector(
       const opentelemetry::sdk::common::AttributeMap& map);
   // Read the incoming initial metadata to get the set of labels to be added to
   // metrics.
-  absl::flat_hash_map<std::string, std::string> GetLabels(
+  std::vector<std::pair<std::string, std::string>> GetPeerLabels(
       grpc_metadata_batch* incoming_initial_metadata) override;
 
   // Get the local labels to be added to metrics. To be used when the peer
   // metadata is not available, for example, for started RPCs metric.
-  absl::flat_hash_map<std::string, std::string> GetLocalLabels() override;
+  std::vector<std::pair<std::string, std::string>> GetLocalLabels() override;
 
   // Modify the outgoing initial metadata with metadata information to be sent
   // to the peer.
-  void AddLocalLabels(grpc_metadata_batch* outgoing_initial_metadata) override;
+  void AddLabels(grpc_metadata_batch* outgoing_initial_metadata) override;
 
  private:
-  absl::flat_hash_map<std::string, std::string> local_labels_;
+  std::vector<std::pair<std::string, std::string>> local_labels_;
   grpc_core::Slice serialized_labels_to_send_;
 };
 

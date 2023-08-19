@@ -24,6 +24,7 @@
 
 #include <utility>
 
+#include "absl/container/flat_hash_map.h"
 #include "opentelemetry/metrics/meter.h"
 #include "opentelemetry/metrics/meter_provider.h"
 #include "opentelemetry/metrics/provider.h"
@@ -174,6 +175,7 @@ void OpenTelemetryPluginBuilder::BuildAndRegisterGlobal() {
         meter->CreateUInt64Histogram(std::string(
             OTelServerCallRcvdTotalCompressedMessageSizeInstrumentName()));
   }
+  g_otel_plugin_state_->labels_injector = std::move(labels_injector_);
   grpc_core::ServerCallTracerFactory::RegisterGlobal(
       new grpc::internal::OpenTelemetryServerCallTracerFactory);
   grpc_core::CoreConfiguration::RegisterBuilder(

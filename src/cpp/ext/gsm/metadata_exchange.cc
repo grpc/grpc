@@ -22,18 +22,44 @@
 
 #include <stddef.h>
 
+#include <algorithm>
+#include <unordered_map>
+
+#include "absl/meta/type_traits.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
+#include "absl/types/variant.h"
 #include "google/protobuf/struct.upb.h"
 #include "opentelemetry/sdk/resource/semantic_conventions.h"
 #include "upb/base/string_view.h"
 #include "upb/mem/arena.h"
 #include "upb/upb.hpp"
 
+#include "src/core/lib/gprpp/env.h"
+
 namespace grpc {
 namespace internal {
 
 namespace {
+
+const char kMetadataExchangeTypeKey[] = "type";
+const char kMetadataExchangePodNameKey[] = "pod_name";
+const char kMetadataExchangeContainerNameKey[] = "container_name";
+const char kMetadataExchangeNamespaceNameKey[] = "namespace_name";
+const char kMetadataExchangeClusterNameKey[] = "cluster_name";
+const char kMetadataExchangeLocationKey[] = "location";
+const char kMetadataExchangeProjectIdKey[] = "project_id";
+const char kMetadataExchangeCanonicalServiceNameKey[] =
+    "canonical_service_name";
+const char kPeerTypeAttribute[] = "peer_type";
+const char kPeerPodNameAttribute[] = "peer_pod_name";
+const char kPeerContainerNameAttribute[] = "peer_container_name";
+const char kPeerNamespaceNameAttribute[] = "peer_namespace_name";
+const char kPeerClusterNameAttribute[] = "peer_cluster_name";
+const char kPeerLocationAttribute[] = "peer_location";
+const char kPeerProjectIdAttribute[] = "peer_project_id";
+const char kPeerCanonicalServiceNameAttribute[] = "peer_canonical_service_name";
 
 upb_StringView AbslStrToUpbStr(absl::string_view str) {
   return upb_StringView_FromDataAndSize(str.data(), str.size());
@@ -55,7 +81,16 @@ void AddStringKeyValueToStructProto(google_protobuf_Struct* struct_pb,
 std::string GetStringValueFromAttributeMap(
     const opentelemetry::sdk::common::AttributeMap& map,
     absl::string_view key) {
-  return "unknown";
+  const auto& attributes = map.GetAttributes();
+  const auto it = attributes.find(std::string(key));
+  if (it == attributes.end()) {
+    return "unknown";
+  }
+  const auto* string_value = absl::get_if<std::string>(&it->second);
+  if (string_value == nullptr) {
+    return "unknown";
+  }
+  return *string_value;
 }
 
 }  // namespace
@@ -65,52 +100,56 @@ ServiceMeshLabelsInjector::ServiceMeshLabelsInjector(
   upb::Arena arena;
   auto* metadata = google_protobuf_Struct_new(arena.ptr());
   // Assume kubernetes for now
+  std::string type_value = GetStringValueFromAttributeMap(
+      map, opentelemetry::sdk::resource::SemanticConventions::kCloudPlatform);
   std::string pod_name_value = GetStringValueFromAttributeMap(
       map, opentelemetry::sdk::resource::SemanticConventions::kK8sPodName);
   std::string container_name_value = GetStringValueFromAttributeMap(
       map,
       opentelemetry::sdk::resource::SemanticConventions::kK8sContainerName);
-  std::string type_value = GetStringValueFromAttributeMap(map, "NAME");
   std::string namespace_value = GetStringValueFromAttributeMap(
       map,
       opentelemetry::sdk::resource::SemanticConventions::kK8sNamespaceName);
   std::string cluster_name_value = GetStringValueFromAttributeMap(
       map, opentelemetry::sdk::resource::SemanticConventions::kK8sClusterName);
   std::string cluster_location_value = GetStringValueFromAttributeMap(
-      map, opentelemetry::sdk::resource::SemanticConventions::kCloudRegion);
+      map, opentelemetry::sdk::resource::SemanticConventions::
+               kCloudRegion);  // if regional
+  if (cluster_location_value == "unknown") {
+    cluster_location_value = GetStringValueFromAttributeMap(
+        map, opentelemetry::sdk::resource::SemanticConventions::
+                 kCloudAvailabilityZone);  // if zonal
+  }
   std::string project_id_value = GetStringValueFromAttributeMap(
       map, opentelemetry::sdk::resource::SemanticConventions::kCloudAccountId);
   std::string canonical_service_value =
-      GetStringValueFromAttributeMap(map, "NAME");
-  // TODO(yashkt): Replace MonitoredResource values
-  AddStringKeyValueToStructProto(metadata, "POD_NAME", pod_name_value,
+      grpc_core::GetEnv("CANONICAL_SERVICE_NAME").value_or("unknown");
+  // Create metadata to be sent over wire.
+  AddStringKeyValueToStructProto(metadata, kMetadataExchangeTypeKey, type_value,
                                  arena.ptr());
-  AddStringKeyValueToStructProto(metadata, "CONTAINER_NAME",
+  AddStringKeyValueToStructProto(metadata, kMetadataExchangePodNameKey,
+                                 pod_name_value, arena.ptr());
+  AddStringKeyValueToStructProto(metadata, kMetadataExchangeContainerNameKey,
                                  container_name_value, arena.ptr());
-  AddStringKeyValueToStructProto(metadata, "TYPE", type_value, arena.ptr());
-  AddStringKeyValueToStructProto(metadata, "NAMESPACE", namespace_value,
-                                 arena.ptr());
-  AddStringKeyValueToStructProto(metadata, "CLUSTER_NAME", cluster_name_value,
-                                 arena.ptr());
-  AddStringKeyValueToStructProto(metadata, "CLUSTER_LOCATION",
+  AddStringKeyValueToStructProto(metadata, kMetadataExchangeNamespaceNameKey,
+                                 namespace_value, arena.ptr());
+  AddStringKeyValueToStructProto(metadata, kMetadataExchangeClusterNameKey,
+                                 cluster_name_value, arena.ptr());
+  AddStringKeyValueToStructProto(metadata, kMetadataExchangeLocationKey,
                                  cluster_location_value, arena.ptr());
-  AddStringKeyValueToStructProto(metadata, "PROJECT_ID", project_id_value,
-                                 arena.ptr());
-  AddStringKeyValueToStructProto(metadata, "CANONICAL_SERVICE",
+  AddStringKeyValueToStructProto(metadata, kMetadataExchangeProjectIdKey,
+                                 project_id_value, arena.ptr());
+  AddStringKeyValueToStructProto(metadata,
+                                 kMetadataExchangeCanonicalServiceNameKey,
                                  canonical_service_value, arena.ptr());
   size_t output_length;
   char* output =
       google_protobuf_Struct_serialize(metadata, arena.ptr(), &output_length);
   serialized_labels_to_send_ = grpc_core::Slice::FromCopiedString(
       absl::Base64Escape(absl::string_view(output, output_length)));
-  //   // Fill up local labels map
-  //   local_labels_["name"] = pod_name_value;
-  //   local_labels_["type"] = type_value;
-  //   local_labels_["namespace"] = namespace_value;
-  //   local_labels_["cluster_name"] = cluster_name_value;
-  //   local_labels_["cluster_location"] = cluster_location_value;
-  //   local_labels_["project_id"] = project_id_value;
-  //   local_labels_["canonical_service"] = canonical_service_value;
+  // Fill up local labels map. The rest we get from the detected Resource and
+  // from the peer.
+  local_labels_.emplace_back("canonical_service", canonical_service_value);
 }
 
 std::string GetStringValueFromUpbStruct(google_protobuf_Struct* struct_pb,
@@ -127,55 +166,67 @@ std::string GetStringValueFromUpbStruct(google_protobuf_Struct* struct_pb,
   return "unknown";
 }
 
-absl::flat_hash_map<std::string, std::string>
-ServiceMeshLabelsInjector::GetLabels(
+std::vector<std::pair<std::string, std::string>>
+ServiceMeshLabelsInjector::GetPeerLabels(
     grpc_metadata_batch* incoming_initial_metadata) {
   auto peer_metadata =
       incoming_initial_metadata->Take(grpc_core::XEnvoyPeerMetadata());
-  absl::flat_hash_map<std::string, std::string> labels_map = local_labels_;
+  std::vector<std::pair<std::string, std::string>> labels;
   if (peer_metadata.has_value()) {
     upb::Arena arena;
     auto* struct_pb = google_protobuf_Struct_parse(
         reinterpret_cast<const char*>(peer_metadata.value().data()),
         peer_metadata.value().size(), arena.ptr());
-    absl::flat_hash_map<std::string, std::string> labels_map = local_labels_;
-    labels_map.emplace("peer_name", GetStringValueFromUpbStruct(
-                                        struct_pb, "NAME", arena.ptr()));
-    labels_map.emplace("peer_type", GetStringValueFromUpbStruct(
-                                        struct_pb, "TYPE", arena.ptr()));
-    labels_map.emplace(
-        "peer_namespace",
-        GetStringValueFromUpbStruct(struct_pb, "NAMESPACE", arena.ptr()));
-    labels_map.emplace(
-        "peer_cluster_name",
-        GetStringValueFromUpbStruct(struct_pb, "CLUSTER_NAME", arena.ptr()));
-    labels_map.emplace("peer_cluster_location",
-                       GetStringValueFromUpbStruct(
-                           struct_pb, "CLUSTER_LOCATION", arena.ptr()));
-    labels_map.emplace(
-        "peer_project_id",
-        GetStringValueFromUpbStruct(struct_pb, "PROJECT_ID", arena.ptr()));
-    labels_map.emplace("peer_canonical_service",
-                       GetStringValueFromUpbStruct(
-                           struct_pb, "CANONICAL_SERVICE", arena.ptr()));
+    labels.emplace_back(kPeerTypeAttribute,
+                        GetStringValueFromUpbStruct(
+                            struct_pb, kMetadataExchangeTypeKey, arena.ptr()));
+    labels.emplace_back(
+        kPeerPodNameAttribute,
+        GetStringValueFromUpbStruct(struct_pb, kMetadataExchangePodNameKey,
+                                    arena.ptr()));
+    labels.emplace_back(
+        kPeerContainerNameAttribute,
+        GetStringValueFromUpbStruct(
+            struct_pb, kMetadataExchangeContainerNameKey, arena.ptr()));
+    labels.emplace_back(
+        kPeerNamespaceNameAttribute,
+        GetStringValueFromUpbStruct(
+            struct_pb, kMetadataExchangeNamespaceNameKey, arena.ptr()));
+    labels.emplace_back(
+        kPeerClusterNameAttribute,
+        GetStringValueFromUpbStruct(struct_pb, kMetadataExchangeClusterNameKey,
+                                    arena.ptr()));
+    labels.emplace_back(
+        kPeerLocationAttribute,
+        GetStringValueFromUpbStruct(struct_pb, kMetadataExchangeLocationKey,
+                                    arena.ptr()));
+    labels.emplace_back(
+        kPeerProjectIdAttribute,
+        GetStringValueFromUpbStruct(struct_pb, kMetadataExchangeProjectIdKey,
+                                    arena.ptr()));
+    labels.emplace_back(
+        kPeerCanonicalServiceNameAttribute,
+        GetStringValueFromUpbStruct(
+            struct_pb, kMetadataExchangeCanonicalServiceNameKey, arena.ptr()));
   } else {
-    labels_map.emplace("peer_name", "unknown");
-    labels_map.emplace("peer_type", "unknown");
-    labels_map.emplace("peer_namespace", "unknown");
-    labels_map.emplace("peer_cluster_name", "unknown");
-    labels_map.emplace("peer_cluster_location", "unknown");
-    labels_map.emplace("peer_project_id", "unknown");
-    labels_map.emplace("peer_canonical_service", "unknown");
+    labels.emplace_back(kPeerTypeAttribute, "unknown");
+    labels.emplace_back(kPeerPodNameAttribute, "unknown");
+    labels.emplace_back(kPeerContainerNameAttribute, "unknown");
+    labels.emplace_back(kPeerNamespaceNameAttribute, "unknown");
+    labels.emplace_back(kPeerClusterNameAttribute, "unknown");
+    labels.emplace_back(kPeerLocationAttribute, "unknown");
+    labels.emplace_back(kPeerProjectIdAttribute, "unknown");
+    labels.emplace_back(kPeerCanonicalServiceNameAttribute, "unknown");
   }
-  return labels_map;
+  return labels;
 }
 
-absl::flat_hash_map<std::string, std::string>
+std::vector<std::pair<std::string, std::string>>
 ServiceMeshLabelsInjector::GetLocalLabels() {
   return local_labels_;
 }
 
-void ServiceMeshLabelsInjector::AddLocalLabels(
+void ServiceMeshLabelsInjector::AddLabels(
     grpc_metadata_batch* outgoing_initial_metadata) {
   outgoing_initial_metadata->Set(grpc_core::XEnvoyPeerMetadata(),
                                  serialized_labels_to_send_.Ref());

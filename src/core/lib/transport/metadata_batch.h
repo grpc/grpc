@@ -308,7 +308,7 @@ struct GrpcTagsBinMetadata : public SimpleSliceBasedMetadata {
 // XEnvoyPeerMetadata
 struct XEnvoyPeerMetadata : public SimpleSliceBasedMetadata {
   static constexpr bool kRepeatable = false;
-  using CompressionTraits = grpc_core::StableValueCompressor;
+  using CompressionTraits = StableValueCompressor;
   static absl::string_view key() { return "x-envoy-peer-metadata"; }
 };
 

@@ -24,6 +24,8 @@
 #include <stdint.h>
 
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
@@ -68,14 +70,14 @@ class OpenTelemetryCallTracer : public grpc_core::ClientCallTracer {
     }
 
     void RecordSendInitialMetadata(
-        grpc_metadata_batch* /*send_initial_metadata*/) override {}
+        grpc_metadata_batch* send_initial_metadata) override;
     void RecordSendTrailingMetadata(
         grpc_metadata_batch* /*send_trailing_metadata*/) override {}
     void RecordSendMessage(const grpc_core::SliceBuffer& send_message) override;
     void RecordSendCompressedMessage(
         const grpc_core::SliceBuffer& send_compressed_message) override;
     void RecordReceivedInitialMetadata(
-        grpc_metadata_batch* /*recv_initial_metadata*/) override {}
+        grpc_metadata_batch* recv_initial_metadata) override;
     void RecordReceivedMessage(
         const grpc_core::SliceBuffer& recv_message) override;
     void RecordReceivedDecompressedMessage(
@@ -93,6 +95,7 @@ class OpenTelemetryCallTracer : public grpc_core::ClientCallTracer {
     const bool arena_allocated_;
     // Start time (for measuring latency).
     absl::Time start_time_;
+    std::vector<std::pair<std::string, std::string>> labels_;
   };
 
   explicit OpenTelemetryCallTracer(OpenTelemetryClientFilter* parent,

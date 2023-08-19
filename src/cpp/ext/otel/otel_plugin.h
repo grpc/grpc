@@ -25,8 +25,9 @@
 
 #include <memory>
 #include <string>
+#include <utility>
+#include <vector>
 
-#include "absl/container/flat_hash_map.h"
 #include "absl/container/flat_hash_set.h"
 #include "absl/strings/string_view.h"
 #include "opentelemetry/metrics/meter_provider.h"
@@ -37,6 +38,23 @@
 
 namespace grpc {
 namespace internal {
+
+class LabelsInjector {
+ public:
+  virtual ~LabelsInjector() {}
+  // Read the incoming initial metadata to get the set of labels to be added to
+  // metrics. (Includes the local labels.)
+  virtual std::vector<std::pair<std::string, std::string>> GetPeerLabels(
+      grpc_metadata_batch* incoming_initial_metadata) = 0;
+
+  // Get the local labels to be added to metrics. To be used when the peer
+  // metadata is not available, for example, for started RPCs metric.
+  virtual std::vector<std::pair<std::string, std::string>> GetLocalLabels() = 0;
+
+  // Modify the outgoing initial metadata with metadata information to be sent
+  // to the peer.
+  virtual void AddLabels(grpc_metadata_batch* outgoing_initial_metadata) = 0;
+};
 
 struct OTelPluginState {
   struct Client {
@@ -61,6 +79,7 @@ struct OTelPluginState {
   } server;
   opentelemetry::nostd::shared_ptr<opentelemetry::metrics::MeterProvider>
       meter_provider;
+  std::unique_ptr<LabelsInjector> labels_injector;
 };
 
 const struct OTelPluginState& OTelPluginState();
@@ -82,24 +101,6 @@ absl::string_view OTelServerCallStartedInstrumentName();
 absl::string_view OTelServerCallDurationInstrumentName();
 absl::string_view OTelServerCallSentTotalCompressedMessageSizeInstrumentName();
 absl::string_view OTelServerCallRcvdTotalCompressedMessageSizeInstrumentName();
-
-class LabelsInjector {
- public:
-  virtual ~LabelsInjector() {}
-  // Read the incoming initial metadata to get the set of labels to be added to
-  // metrics. (Includes the local labels.)
-  virtual absl::flat_hash_map<std::string, std::string> GetLabels(
-      grpc_metadata_batch* incoming_initial_metadata) = 0;
-
-  // Get the local labels to be added to metrics. To be used when the peer
-  // metadata is not available, for example, for started RPCs metric.
-  virtual absl::flat_hash_map<std::string, std::string> GetLocalLabels() = 0;
-
-  // Modify the outgoing initial metadata with metadata information to be sent
-  // to the peer.
-  virtual void AddLocalLabels(
-      grpc_metadata_batch* outgoing_initial_metadata) = 0;
-};
 
 class OpenTelemetryPluginBuilder {
  public:

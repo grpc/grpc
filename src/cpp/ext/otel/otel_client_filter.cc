@@ -20,13 +20,15 @@
 
 #include "src/cpp/ext/otel/otel_client_filter.h"
 
+#include <algorithm>
 #include <functional>
 #include <initializer_list>
+#include <iterator>
 #include <memory>
 #include <string>
 #include <utility>
+#include <vector>
 
-#include "absl/container/inlined_vector.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
@@ -100,11 +102,31 @@ OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
     : parent_(parent),
       arena_allocated_(arena_allocated),
       start_time_(absl::Now()) {
-  // TODO(yashykt): Figure out how to get this to work with absl::string_view
+  // We don't have the peer labels at this point.
+  if (OTelPluginState().labels_injector != nullptr) {
+    labels_ = OTelPluginState().labels_injector->GetLocalLabels();
+  }
+  labels_.emplace_back(OTelMethodKey(), parent_->method_);
+  labels_.emplace_back(OTelTargetKey(), parent_->parent_->target());
   if (OTelPluginState().client.attempt.started != nullptr) {
-    OTelPluginState().client.attempt.started->Add(
-        1, {{std::string(OTelMethodKey()), std::string(parent_->method_)},
-            {std::string(OTelTargetKey()), parent_->parent_->target()}});
+    OTelPluginState().client.attempt.started->Add(1, labels_);
+  }
+}
+
+void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
+    RecordReceivedInitialMetadata(grpc_metadata_batch* recv_initial_metadata) {
+  if (OTelPluginState().labels_injector != nullptr) {
+    auto peer_labels =
+        OTelPluginState().labels_injector->GetPeerLabels(recv_initial_metadata);
+    labels_.insert(labels_.end(), std::make_move_iterator(peer_labels.begin()),
+                   std::make_move_iterator(peer_labels.end()));
+  }
+}
+
+void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
+    RecordSendInitialMetadata(grpc_metadata_batch* send_initial_metadata) {
+  if (OTelPluginState().labels_injector != nullptr) {
+    OTelPluginState().labels_injector->AddLabels(send_initial_metadata);
   }
 }
 
@@ -138,13 +160,11 @@ void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
     RecordReceivedTrailingMetadata(
         absl::Status status, grpc_metadata_batch* /*recv_trailing_metadata*/,
         const grpc_transport_stream_stats* transport_stream_stats) {
-  absl::InlinedVector<std::pair<std::string, std::string>, 2> attributes = {
-      {std::string(OTelMethodKey()), std::string(parent_->method_)},
-      {std::string(OTelStatusKey()), absl::StatusCodeToString(status.code())},
-      {std::string(OTelTargetKey()), parent_->parent_->target()}};
+  labels_.emplace_back(OTelStatusKey(),
+                       absl::StatusCodeToString(status.code()));
   if (OTelPluginState().client.attempt.duration != nullptr) {
     OTelPluginState().client.attempt.duration->Record(
-        absl::ToDoubleSeconds(absl::Now() - start_time_), attributes,
+        absl::ToDoubleSeconds(absl::Now() - start_time_), labels_,
         opentelemetry::context::Context{});
   }
   if (OTelPluginState().client.attempt.sent_total_compressed_message_size !=
@@ -153,7 +173,7 @@ void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
         transport_stream_stats != nullptr
             ? transport_stream_stats->outgoing.data_bytes
             : 0,
-        attributes, opentelemetry::context::Context{});
+        labels_, opentelemetry::context::Context{});
   }
   if (OTelPluginState().client.attempt.rcvd_total_compressed_message_size !=
       nullptr) {
@@ -161,7 +181,7 @@ void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
         transport_stream_stats != nullptr
             ? transport_stream_stats->incoming.data_bytes
             : 0,
-        attributes, opentelemetry::context::Context{});
+        labels_, opentelemetry::context::Context{});
   }
 }
 
