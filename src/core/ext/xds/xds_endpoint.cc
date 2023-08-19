@@ -353,12 +353,12 @@ void DropParseAndAppend(
   drop_config->AddCategory(std::move(category), numerator);
 }
 
-absl::StatusOr<XdsEndpointResource> EdsResourceParse(
+absl::StatusOr<std::shared_ptr<const XdsEndpointResource>> EdsResourceParse(
     const XdsResourceType::DecodeContext& /*context*/,
     const envoy_config_endpoint_v3_ClusterLoadAssignment*
         cluster_load_assignment) {
   ValidationErrors errors;
-  XdsEndpointResource eds_resource;
+  auto eds_resource = std::make_shared<XdsEndpointResource>();
   // endpoints
   {
     ValidationErrors::ScopedField field(&errors, "endpoints");
@@ -374,11 +374,11 @@ absl::StatusOr<XdsEndpointResource> EdsResourceParse(
         GPR_ASSERT(parsed_locality->locality.lb_weight != 0);
         // Make sure prorities is big enough. Note that they might not
         // arrive in priority order.
-        if (eds_resource.priorities.size() < parsed_locality->priority + 1) {
-          eds_resource.priorities.resize(parsed_locality->priority + 1);
+        if (eds_resource->priorities.size() < parsed_locality->priority + 1) {
+          eds_resource->priorities.resize(parsed_locality->priority + 1);
         }
         auto& locality_map =
-            eds_resource.priorities[parsed_locality->priority].localities;
+            eds_resource->priorities[parsed_locality->priority].localities;
         auto it = locality_map.find(parsed_locality->locality.name.get());
         if (it != locality_map.end()) {
           errors.AddError(absl::StrCat(
@@ -391,8 +391,8 @@ absl::StatusOr<XdsEndpointResource> EdsResourceParse(
         }
       }
     }
-    for (size_t i = 0; i < eds_resource.priorities.size(); ++i) {
-      const auto& priority = eds_resource.priorities[i];
+    for (size_t i = 0; i < eds_resource->priorities.size(); ++i) {
+      const auto& priority = eds_resource->priorities[i];
       if (priority.localities.empty()) {
         errors.AddError(absl::StrCat("priority ", i, " empty"));
       } else {
@@ -412,7 +412,7 @@ absl::StatusOr<XdsEndpointResource> EdsResourceParse(
     }
   }
   // policy
-  eds_resource.drop_config = MakeRefCounted<XdsEndpointResource::DropConfig>();
+  eds_resource->drop_config = MakeRefCounted<XdsEndpointResource::DropConfig>();
   const auto* policy = envoy_config_endpoint_v3_ClusterLoadAssignment_policy(
       cluster_load_assignment);
   if (policy != nullptr) {
@@ -424,7 +424,7 @@ absl::StatusOr<XdsEndpointResource> EdsResourceParse(
     for (size_t i = 0; i < drop_size; ++i) {
       ValidationErrors::ScopedField field(
           &errors, absl::StrCat(".drop_overloads[", i, "]"));
-      DropParseAndAppend(drop_overload[i], eds_resource.drop_config.get(),
+      DropParseAndAppend(drop_overload[i], eds_resource->drop_config.get(),
                          &errors);
     }
   }
@@ -468,8 +468,7 @@ XdsResourceType::DecodeResult XdsEndpointResourceType::Decode(
               context.client, result.name->c_str(),
               eds_resource->ToString().c_str());
     }
-    result.resource =
-        std::make_unique<XdsEndpointResource>(std::move(*eds_resource));
+    result.resource = std::move(*eds_resource);
   }
   return result;
 }

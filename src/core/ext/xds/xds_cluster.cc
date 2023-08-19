@@ -416,18 +416,18 @@ void ParseLbPolicyConfig(const XdsResourceType::DecodeContext& context,
   }
 }
 
-absl::StatusOr<XdsClusterResource> CdsResourceParse(
+absl::StatusOr<std::shared_ptr<const XdsClusterResource>> CdsResourceParse(
     const XdsResourceType::DecodeContext& context,
     const envoy_config_cluster_v3_Cluster* cluster) {
-  XdsClusterResource cds_update;
+  auto cds_update = std::make_shared<XdsClusterResource>();
   ValidationErrors errors;
   // Check the cluster discovery type.
   if (envoy_config_cluster_v3_Cluster_type(cluster) ==
       envoy_config_cluster_v3_Cluster_EDS) {
-    cds_update.type = EdsConfigParse(cluster, &errors);
+    cds_update->type = EdsConfigParse(cluster, &errors);
   } else if (envoy_config_cluster_v3_Cluster_type(cluster) ==
              envoy_config_cluster_v3_Cluster_LOGICAL_DNS) {
-    cds_update.type = LogicalDnsParse(cluster, &errors);
+    cds_update->type = LogicalDnsParse(cluster, &errors);
   } else if (envoy_config_cluster_v3_Cluster_has_cluster_type(cluster)) {
     ValidationErrors::ScopedField field(&errors, ".cluster_type");
     const auto* custom_cluster_type =
@@ -454,7 +454,7 @@ absl::StatusOr<XdsClusterResource> CdsResourceParse(
             ".value[envoy.extensions.clusters.aggregate.v3.ClusterConfig]");
         absl::string_view serialized_config =
             UpbStringToAbsl(google_protobuf_Any_value(typed_config));
-        cds_update.type =
+        cds_update->type =
             AggregateClusterParse(context, serialized_config, &errors);
       }
     }
@@ -463,13 +463,13 @@ absl::StatusOr<XdsClusterResource> CdsResourceParse(
     errors.AddError("unknown discovery type");
   }
   // Check the LB policy.
-  ParseLbPolicyConfig(context, cluster, &cds_update, &errors);
+  ParseLbPolicyConfig(context, cluster, cds_update.get(), &errors);
   // transport_socket
   auto* transport_socket =
       envoy_config_cluster_v3_Cluster_transport_socket(cluster);
   if (transport_socket != nullptr) {
     ValidationErrors::ScopedField field(&errors, ".transport_socket");
-    cds_update.common_tls_context =
+    cds_update->common_tls_context =
         UpstreamTlsContextParse(context, transport_socket, &errors);
   }
   // Record LRS server name (if any).
@@ -480,7 +480,7 @@ absl::StatusOr<XdsClusterResource> CdsResourceParse(
       ValidationErrors::ScopedField field(&errors, ".lrs_server");
       errors.AddError("ConfigSource is not self");
     }
-    cds_update.lrs_load_reporting_server.emplace(
+    cds_update->lrs_load_reporting_server.emplace(
         static_cast<const GrpcXdsBootstrap::GrpcXdsServer&>(context.server));
   }
   // The Cluster resource encodes the circuit breaking parameters in a list of
@@ -502,7 +502,7 @@ absl::StatusOr<XdsClusterResource> CdsResourceParse(
             envoy_config_cluster_v3_CircuitBreakers_Thresholds_max_requests(
                 threshold);
         if (max_requests != nullptr) {
-          cds_update.max_concurrent_requests =
+          cds_update->max_concurrent_requests =
               google_protobuf_UInt32Value_value(max_requests);
         }
         break;
@@ -629,7 +629,7 @@ absl::StatusOr<XdsClusterResource> CdsResourceParse(
             failure_percentage_ejection;
       }
     }
-    cds_update.outlier_detection = outlier_detection_update;
+    cds_update->outlier_detection = outlier_detection_update;
   }
   // Validate override host status.
   if (XdsOverrideHostEnabled()) {
@@ -648,7 +648,7 @@ absl::StatusOr<XdsClusterResource> CdsResourceParse(
         for (size_t i = 0; i < size; ++i) {
           auto status = XdsHealthStatus::FromUpb(statuses[i]);
           if (status.has_value()) {
-            cds_update.override_host_statuses.insert(*status);
+            cds_update->override_host_statuses.insert(*status);
           }
         }
       }
@@ -705,8 +705,7 @@ XdsResourceType::DecodeResult XdsClusterResourceType::Decode(
       gpr_log(GPR_INFO, "[xds_client %p] parsed Cluster %s: %s", context.client,
               result.name->c_str(), cds_resource->ToString().c_str());
     }
-    result.resource =
-        std::make_unique<XdsClusterResource>(std::move(*cds_resource));
+    result.resource = std::move(*cds_resource);
   }
   return result;
 }

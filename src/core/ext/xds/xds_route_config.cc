@@ -1036,20 +1036,20 @@ absl::optional<XdsRouteConfigResource::Route> ParseRoute(
 
 }  // namespace
 
-XdsRouteConfigResource XdsRouteConfigResource::Parse(
+std::shared_ptr<const XdsRouteConfigResource> XdsRouteConfigResource::Parse(
     const XdsResourceType::DecodeContext& context,
     const envoy_config_route_v3_RouteConfiguration* route_config,
     ValidationErrors* errors) {
-  XdsRouteConfigResource rds_update;
+  auto rds_update = std::make_shared<XdsRouteConfigResource>();
   // Get the cluster spcifier plugin map.
   if (XdsRlsEnabled()) {
-    rds_update.cluster_specifier_plugin_map =
+    rds_update->cluster_specifier_plugin_map =
         ClusterSpecifierPluginParse(context, route_config, errors);
   }
   // Build a set of configured cluster_specifier_plugin names to make sure
   // each is actually referenced by a route action.
   std::set<absl::string_view> cluster_specifier_plugins_not_seen;
-  for (auto& plugin : rds_update.cluster_specifier_plugin_map) {
+  for (auto& plugin : rds_update->cluster_specifier_plugin_map) {
     cluster_specifier_plugins_not_seen.emplace(plugin.first);
   }
   // Get the virtual hosts.
@@ -1060,9 +1060,9 @@ XdsRouteConfigResource XdsRouteConfigResource::Parse(
   for (size_t i = 0; i < num_virtual_hosts; ++i) {
     ValidationErrors::ScopedField field(
         errors, absl::StrCat(".virtual_hosts[", i, "]"));
-    rds_update.virtual_hosts.emplace_back();
+    rds_update->virtual_hosts.emplace_back();
     XdsRouteConfigResource::VirtualHost& vhost =
-        rds_update.virtual_hosts.back();
+        rds_update->virtual_hosts.back();
     // Parse domains.
     size_t domain_size;
     upb_StringView const* domains = envoy_config_route_v3_VirtualHost_domains(
@@ -1111,7 +1111,7 @@ XdsRouteConfigResource XdsRouteConfigResource::Parse(
     for (size_t j = 0; j < num_routes; ++j) {
       ValidationErrors::ScopedField field(errors, absl::StrCat("[", j, "]"));
       auto route = ParseRoute(context, routes[j], virtual_host_retry_policy,
-                              rds_update.cluster_specifier_plugin_map,
+                              rds_update->cluster_specifier_plugin_map,
                               &cluster_specifier_plugins_not_seen, errors);
       if (route.has_value()) vhost.routes.emplace_back(std::move(*route));
     }
@@ -1119,7 +1119,7 @@ XdsRouteConfigResource XdsRouteConfigResource::Parse(
   // For cluster specifier plugins that were not used in any route action,
   // delete them from the update, since they will never be used.
   for (auto& unused_plugin : cluster_specifier_plugins_not_seen) {
-    rds_update.cluster_specifier_plugin_map.erase(std::string(unused_plugin));
+    rds_update->cluster_specifier_plugin_map.erase(std::string(unused_plugin));
   }
   return rds_update;
 }
@@ -1179,8 +1179,7 @@ XdsResourceType::DecodeResult XdsRouteConfigResourceType::Decode(
               context.client, result.name->c_str(),
               rds_update.ToString().c_str());
     }
-    result.resource =
-        std::make_unique<XdsRouteConfigResource>(std::move(rds_update));
+    result.resource = std::move(rds_update);
   }
   return result;
 }

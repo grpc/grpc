@@ -490,17 +490,18 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
   return http_connection_manager;
 }
 
-absl::StatusOr<XdsListenerResource> LdsResourceParseClient(
+absl::StatusOr<std::shared_ptr<const XdsListenerResource>>
+LdsResourceParseClient(
     const XdsResourceType::DecodeContext& context,
     const envoy_config_listener_v3_ApiListener* api_listener) {
-  XdsListenerResource lds_update;
+  auto lds_update = std::make_shared<XdsListenerResource>();
   ValidationErrors errors;
   ValidationErrors::ScopedField field(&errors, "api_listener.api_listener");
   auto* api_listener_field =
       envoy_config_listener_v3_ApiListener_api_listener(api_listener);
   auto extension = ExtractXdsExtension(context, api_listener_field, &errors);
   if (extension.has_value()) {
-    lds_update.listener = HttpConnectionManagerParse(
+    lds_update->listener = HttpConnectionManagerParse(
         /*is_client=*/true, context, std::move(*extension), &errors);
   }
   if (!errors.ok()) {
@@ -991,7 +992,8 @@ XdsListenerResource::FilterChainMap BuildFilterChainMap(
   return BuildFromInternalFilterChainMap(&internal_filter_chain_map);
 }
 
-absl::StatusOr<XdsListenerResource> LdsResourceParseServer(
+absl::StatusOr<std::shared_ptr<const XdsListenerResource>>
+LdsResourceParseServer(
     const XdsResourceType::DecodeContext& context,
     const envoy_config_listener_v3_Listener* listener) {
   ValidationErrors errors;
@@ -1054,12 +1056,12 @@ absl::StatusOr<XdsListenerResource> LdsResourceParseServer(
     return errors.status(absl::StatusCode::kInvalidArgument,
                          "errors validating server Listener");
   }
-  XdsListenerResource lds_update;
-  lds_update.listener = std::move(tcp_listener);
+  auto lds_update = std::make_shared<XdsListenerResource>();
+  lds_update->listener = std::move(tcp_listener);
   return lds_update;
 }
 
-absl::StatusOr<XdsListenerResource> LdsResourceParse(
+absl::StatusOr<std::shared_ptr<const XdsListenerResources>> LdsResourceParse(
     const XdsResourceType::DecodeContext& context,
     const envoy_config_listener_v3_Listener* listener) {
   // Check whether it's a client or server listener.
@@ -1129,8 +1131,7 @@ XdsResourceType::DecodeResult XdsListenerResourceType::Decode(
               context.client, result.name->c_str(),
               listener->ToString().c_str());
     }
-    result.resource =
-        std::make_unique<XdsListenerResource>(std::move(*listener));
+    result.resource = std::move(*listener);
   }
   return result;
 }

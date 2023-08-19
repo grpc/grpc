@@ -54,6 +54,7 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/no_delete.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/validation_errors.h"
@@ -211,7 +212,8 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
       ~EndpointWatcher() override {
         discovery_mechanism_.reset(DEBUG_LOCATION, "EndpointWatcher");
       }
-      void OnResourceChanged(XdsEndpointResource update) override {
+      void OnResourceChanged(std::shared_ptr<const XdsEndpointResource> update)
+          override {
         RefCountedPtr<EndpointWatcher> self = Ref();
         discovery_mechanism_->parent()->work_serializer()->Run(
             [self = std::move(self), update = std::move(update)]() mutable {
@@ -240,15 +242,16 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
       // Code accessing protected methods of `DiscoveryMechanism` need to be
       // in methods of this class rather than in lambdas to work around an MSVC
       // bug.
-      void OnResourceChangedHelper(XdsEndpointResource update) {
+      void OnResourceChangedHelper(
+          std::shared_ptr<const XdsEndpointResource> update) {
         std::string resolution_note;
-        if (update.priorities.empty()) {
+        if (update->priorities.empty()) {
           resolution_note = absl::StrCat(
               "EDS resource ", discovery_mechanism_->GetEdsResourceName(),
               " contains no localities");
         } else {
           std::set<std::string> empty_localities;
-          for (const auto& priority : update.priorities) {
+          for (const auto& priority : update->priorities) {
             for (const auto& p : priority.localities) {
               if (p.second.endpoints.empty()) {
                 empty_localities.insert(p.first->AsHumanReadableString());
@@ -344,7 +347,7 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
   struct DiscoveryMechanismEntry {
     OrphanablePtr<DiscoveryMechanism> discovery_mechanism;
     // Most recent update reported by the discovery mechanism.
-    absl::optional<XdsEndpointResource> latest_update;
+    RefCountedPtr<const XdsEndpointResource> latest_update;
     // Last resolution note reported by the discovery mechanism, if any.
     std::string resolution_note;
     // State used to retain child policy names for priority policy.
@@ -375,7 +378,8 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
 
   void ShutdownLocked() override;
 
-  void OnEndpointChanged(size_t index, XdsEndpointResource update,
+  void OnEndpointChanged(size_t index,
+                         std::shared_ptr<const XdsEndpointResource> update,
                          std::string resolution_note);
   void OnError(size_t index, std::string resolution_note);
   void OnResourceDoesNotExist(size_t index, std::string resolution_note);
@@ -502,14 +506,14 @@ void XdsClusterResolverLb::LogicalDNSDiscoveryMechanism::ResolverResultHandler::
     return;
   }
   // Convert resolver result to EDS update.
-  XdsEndpointResource update;
+  auto update = std::make_shared<XdsEndpointResource>();
   XdsEndpointResource::Priority::Locality locality;
   locality.name = MakeRefCounted<XdsLocalityName>("", "", "");
   locality.lb_weight = 1;
   locality.endpoints = std::move(*result.addresses);
   XdsEndpointResource::Priority priority;
   priority.localities.emplace(locality.name.get(), std::move(locality));
-  update.priorities.emplace_back(std::move(priority));
+  update->priorities.emplace_back(std::move(priority));
   lb_policy->OnEndpointChanged(index, std::move(update),
                                std::move(result.resolution_note));
 }
@@ -622,9 +626,21 @@ void XdsClusterResolverLb::ExitIdleLocked() {
   if (child_policy_ != nullptr) child_policy_->ExitIdleLocked();
 }
 
-void XdsClusterResolverLb::OnEndpointChanged(size_t index,
-                                             XdsEndpointResource update,
-                                             std::string resolution_note) {
+// We need at least one priority for each discovery mechanism, just so that we
+// have a child in which to create the xds_cluster_impl policy.  This ensures
+// that we properly handle the case of a discovery mechanism dropping 100% of
+// calls, the OnError() case, and the OnResourceDoesNotExist() case.
+const XdsEndpointResource::PriorityList* GetUpdatePriorityList(
+    const XdsEndpointResource& update) {
+  static const NoDelete<XdsEndpointResource::PriorityList>
+      kPriorityListWithEmptyPriority(1);
+  if (update->priorities.empty()) return kPriorityListWithEmptyPriority.get();
+  return &update->priorities;
+}
+
+void XdsClusterResolverLb::OnEndpointChanged(
+    size_t index, std::shared_ptr<const XdsEndpointResource> update,
+    std::string resolution_note) {
   if (shutting_down_) return;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_cluster_resolver_trace)) {
     gpr_log(GPR_INFO,
@@ -633,11 +649,8 @@ void XdsClusterResolverLb::OnEndpointChanged(size_t index,
             this, index, resolution_note.c_str());
   }
   DiscoveryMechanismEntry& discovery_entry = discovery_mechanisms_[index];
-  // We need at least one priority for each discovery mechanism, just so that we
-  // have a child in which to create the xds_cluster_impl policy.  This ensures
-  // that we properly handle the case of a discovery mechanism dropping 100% of
-  // calls, the OnError() case, and the OnResourceDoesNotExist() case.
-  if (update.priorities.empty()) update.priorities.emplace_back();
+  const XdsEndpointResource::PriorityList* priority_list =
+      GetUpdatePriorityList(*update);
   // Update priority_child_numbers, reusing old child numbers in an
   // intelligent way to avoid unnecessary churn.
   // First, build some maps from locality to child number and the reverse
@@ -646,8 +659,9 @@ void XdsClusterResolverLb::OnEndpointChanged(size_t index,
       locality_child_map;
   std::map<size_t, std::set<XdsLocalityName*, XdsLocalityName::Less>>
       child_locality_map;
-  if (discovery_entry.latest_update.has_value()) {
-    const auto& prev_priority_list = discovery_entry.latest_update->priorities;
+  if (discovery_entry.latest_update != nullptr) {
+    const auto* prev_priority_list =
+        GetUpdatePriorityList(*discovery_entry.latest_update);
     for (size_t priority = 0; priority < prev_priority_list.size();
          ++priority) {
       size_t child_number = discovery_entry.priority_child_numbers[priority];
@@ -661,8 +675,8 @@ void XdsClusterResolverLb::OnEndpointChanged(size_t index,
   }
   // Construct new list of children.
   std::vector<size_t> priority_child_numbers;
-  for (size_t priority = 0; priority < update.priorities.size(); ++priority) {
-    const auto& localities = update.priorities[priority].localities;
+  for (size_t priority = 0; priority < priority_list->size(); ++priority) {
+    const auto& localities = (*priority_list)[priority].localities;
     absl::optional<size_t> child_number;
     // If one of the localities in this priority already existed, reuse its
     // child number.
@@ -715,7 +729,7 @@ void XdsClusterResolverLb::OnEndpointChanged(size_t index,
   // will put the channel into TRANSIENT_FAILURE instead of CONNECTING
   // while we're still waiting for the other discovery mechanism(s).
   for (DiscoveryMechanismEntry& mechanism : discovery_mechanisms_) {
-    if (!mechanism.latest_update.has_value()) return;
+    if (mechanism.latest_update == nullptr) return;
   }
   // Update child policy.
   // TODO(roth): If the child policy reports an error with the update,
@@ -729,10 +743,11 @@ void XdsClusterResolverLb::OnError(size_t index, std::string resolution_note) {
           " reported error: %s",
           this, index, resolution_note.c_str());
   if (shutting_down_) return;
-  if (!discovery_mechanisms_[index].latest_update.has_value()) {
+  if (discovery_mechanisms_[index].latest_update == nullptr) {
     // Call OnEndpointChanged() with an empty update just like
     // OnResourceDoesNotExist().
-    OnEndpointChanged(index, XdsEndpointResource(), std::move(resolution_note));
+    OnEndpointChanged(index, std::make_shared<XdsEndpointResource>(),
+                      std::move(resolution_note));
   }
 }
 
@@ -744,7 +759,8 @@ void XdsClusterResolverLb::OnResourceDoesNotExist(size_t index,
           this, index, resolution_note.c_str());
   if (shutting_down_) return;
   // Call OnEndpointChanged() with an empty update.
-  OnEndpointChanged(index, XdsEndpointResource(), std::move(resolution_note));
+  OnEndpointChanged(index, std::make_shared<XdsEndpointResource>(),
+                    std::move(resolution_note));
 }
 
 //
@@ -754,11 +770,10 @@ void XdsClusterResolverLb::OnResourceDoesNotExist(size_t index,
 ServerAddressList XdsClusterResolverLb::CreateChildPolicyAddressesLocked() {
   ServerAddressList addresses;
   for (const auto& discovery_entry : discovery_mechanisms_) {
-    for (size_t priority = 0;
-         priority < discovery_entry.latest_update->priorities.size();
-         ++priority) {
-      const auto& priority_entry =
-          discovery_entry.latest_update->priorities[priority];
+    const auto* priority_list =
+        GetUpdatePriorityList(*discovery_entry.latest_update);
+    for (size_t priority = 0; priority < priority_list->size(); ++priority) {
+      const auto& priority_entry = (*priority_list)[priority];
       std::string priority_child_name =
           discovery_entry.GetChildPolicyName(priority);
       for (const auto& p : priority_entry.localities) {
@@ -800,10 +815,10 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
   Json::Object priority_children;
   Json::Array priority_priorities;
   for (const auto& discovery_entry : discovery_mechanisms_) {
+    const auto* priority_list =
+        GetUpdatePriorityList(*discovery_entry.latest_update);
     const auto& discovery_config = discovery_entry.config();
-    for (size_t priority = 0;
-         priority < discovery_entry.latest_update->priorities.size();
-         ++priority) {
+    for (size_t priority = 0; priority < priority_list->size(); ++priority) {
       // Determine what xDS LB policy to use.
       Json child_policy;
       if (!discovery_entry.discovery_mechanism->override_child_policy()
