@@ -17,23 +17,23 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_package")
 licenses(["notice"])
 
 grpc_package(
-    name="test/cpp/util/windows",
-    visibility="tests",
+    name = "test/cpp/util/windows",
+    visibility = "tests",
 )
 
 grpc_cc_library(
     name = "manifest_file",
     testonly = True,
     srcs = [
-        "manifest_file.cc"
+        "manifest_file.cc",
     ],
     hdrs = [
-        "manifest_file.h"
+        "manifest_file.h",
     ],
     external_deps = [
-        "absl/strings"
+        "absl/strings",
     ],
     deps = [
-        "//:gpr"
+        "//:gpr",
     ],
 )
