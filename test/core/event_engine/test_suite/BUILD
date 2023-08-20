@@ -50,6 +50,7 @@ grpc_cc_test(
         "//test/core/event_engine:event_engine_test_utils",
         "//test/core/event_engine/test_suite/posix:oracle_event_engine_posix",
         "//test/core/event_engine/test_suite/tests:client",
+        "//test/core/event_engine/test_suite/tests:dns",
         "//test/core/event_engine/test_suite/tests:server",
         "//test/core/event_engine/test_suite/tests:timer",
     ],
@@ -95,6 +96,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "cf_event_engine_test",
     srcs = ["cf_event_engine_test.cc"],
+    copts = ["-DGRPC_IOS_EVENT_ENGINE_CLIENT=1"],
     tags = [
         "no_linux",
         "no_windows",

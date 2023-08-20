@@ -505,6 +505,9 @@ static void perform_stream_op_locked(void* stream_op,
     gbs->recv_message = op->payload->recv_message.recv_message;
     gbs->call_failed_before_recv_message =
         op->payload->recv_message.call_failed_before_recv_message;
+    if (op->payload->recv_message.flags != nullptr) {
+      *op->payload->recv_message.flags = 0;
+    }
     GRPC_BINDER_STREAM_REF(gbs, "recv_message");
     gbt->transport_stream_receiver->RegisterRecvMessage(
         tx_code, [tx_code, gbs, gbt](absl::StatusOr<std::string> message) {

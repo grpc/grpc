@@ -7,7 +7,7 @@ grpcio==1.51.1
 grpcio-health-checking==1.48.2
 grpcio-tools==1.48.2
 grpcio-channelz==1.48.2
-kubernetes==25.3.0
+kubernetes==27.2.0
 six==1.16.0
 tenacity==6.3.1
 packaging==21.3

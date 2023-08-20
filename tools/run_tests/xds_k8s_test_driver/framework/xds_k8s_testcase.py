@@ -24,7 +24,6 @@ from types import FrameType
 from typing import Any, Callable, List, Optional, Tuple, Union
 
 from absl import flags
-from absl.testing import absltest
 from google.protobuf import json_format
 import grpc
 
@@ -46,6 +45,7 @@ from framework.test_app import client_app
 from framework.test_app import server_app
 from framework.test_app.runners.k8s import k8s_xds_client_runner
 from framework.test_app.runners.k8s import k8s_xds_server_runner
+from framework.test_cases import base_testcase
 
 logger = logging.getLogger(__name__)
 # TODO(yashkt): We will no longer need this flag once Core exposes local certs
@@ -84,7 +84,7 @@ class TdPropagationRetryableError(Exception):
     """Indicates that TD config hasn't propagated yet, and it's safe to retry"""
 
 
-class XdsKubernetesBaseTestCase(absltest.TestCase):
+class XdsKubernetesBaseTestCase(base_testcase.BaseTestCase):
     lang_spec: skips.TestConfig
     client_namespace: str
     client_runner: KubernetesClientRunner
@@ -670,7 +670,7 @@ class IsolatedXdsKubernetesTestCase(
                 client_restarts,
                 0,
                 msg=(
-                    "Client pods unexpectedly restarted"
+                    "Client container unexpectedly restarted"
                     f" {client_restarts} times during test. In most cases, this"
                     " is caused by the test client app crash."
                 ),
@@ -679,7 +679,7 @@ class IsolatedXdsKubernetesTestCase(
                 server_restarts,
                 0,
                 msg=(
-                    "Server pods unexpectedly restarted"
+                    "Server container unexpectedly restarted"
                     f" {server_restarts} times during test. In most cases, this"
                     " is caused by the test client app crash."
                 ),

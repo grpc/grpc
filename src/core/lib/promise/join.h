@@ -17,9 +17,15 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdlib.h>
+
+#include <tuple>
+#include <utility>
+
 #include "absl/meta/type_traits.h"
 
-#include "src/core/lib/promise/detail/basic_join.h"
+#include "src/core/lib/promise/detail/join_state.h"
+#include "src/core/lib/promise/map.h"
 
 namespace grpc_core {
 namespace promise_detail {
@@ -27,19 +33,36 @@ namespace promise_detail {
 struct JoinTraits {
   template <typename T>
   using ResultType = absl::remove_reference_t<T>;
-  template <typename T, typename F>
-  static auto OnResult(T result, F kontinue)
-      -> decltype(kontinue(std::move(result))) {
-    return kontinue(std::move(result));
+  template <typename T>
+  static bool IsOk(const T&) {
+    return true;
   }
   template <typename T>
-  static T Wrap(T x) {
+  static T Unwrapped(T x) {
     return x;
+  }
+  template <typename R, typename T>
+  static R EarlyReturn(T) {
+    abort();
   }
 };
 
 template <typename... Promises>
-using Join = BasicJoin<JoinTraits, Promises...>;
+class Join {
+ public:
+  explicit Join(Promises... promises) : state_(std::move(promises)...) {}
+  auto operator()() { return state_.PollOnce(); }
+
+ private:
+  JoinState<JoinTraits, Promises...> state_;
+};
+
+struct WrapInTuple {
+  template <typename T>
+  std::tuple<T> operator()(T x) {
+    return std::make_tuple(std::move(x));
+  }
+};
 
 }  // namespace promise_detail
 
@@ -48,6 +71,11 @@ using Join = BasicJoin<JoinTraits, Promises...>;
 template <typename... Promise>
 promise_detail::Join<Promise...> Join(Promise... promises) {
   return promise_detail::Join<Promise...>(std::move(promises)...);
+}
+
+template <typename F>
+auto Join(F promise) {
+  return Map(std::move(promise), promise_detail::WrapInTuple{});
 }
 
 }  // namespace grpc_core

@@ -109,6 +109,8 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\transport\\chttp2\\transport\\http_trace.cc " +
     "src\\core\\ext\\transport\\chttp2\\transport\\huffsyms.cc " +
     "src\\core\\ext\\transport\\chttp2\\transport\\parsing.cc " +
+    "src\\core\\ext\\transport\\chttp2\\transport\\ping_abuse_policy.cc " +
+    "src\\core\\ext\\transport\\chttp2\\transport\\ping_rate_policy.cc " +
     "src\\core\\ext\\transport\\chttp2\\transport\\stream_lists.cc " +
     "src\\core\\ext\\transport\\chttp2\\transport\\varint.cc " +
     "src\\core\\ext\\transport\\chttp2\\transport\\writing.cc " +
@@ -482,8 +484,10 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\debug\\stats.cc " +
     "src\\core\\lib\\debug\\stats_data.cc " +
     "src\\core\\lib\\debug\\trace.cc " +
+    "src\\core\\lib\\event_engine\\ares_resolver.cc " +
     "src\\core\\lib\\event_engine\\cf_engine\\cf_engine.cc " +
     "src\\core\\lib\\event_engine\\cf_engine\\cfstream_endpoint.cc " +
+    "src\\core\\lib\\event_engine\\cf_engine\\dns_service_resolver.cc " +
     "src\\core\\lib\\event_engine\\channel_args_endpoint_config.cc " +
     "src\\core\\lib\\event_engine\\default_event_engine.cc " +
     "src\\core\\lib\\event_engine\\default_event_engine_factory.cc " +
@@ -514,6 +518,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\event_engine\\tcp_socket_utils.cc " +
     "src\\core\\lib\\event_engine\\thread_local.cc " +
     "src\\core\\lib\\event_engine\\thread_pool\\original_thread_pool.cc " +
+    "src\\core\\lib\\event_engine\\thread_pool\\thread_count.cc " +
     "src\\core\\lib\\event_engine\\thread_pool\\thread_pool_factory.cc " +
     "src\\core\\lib\\event_engine\\thread_pool\\work_stealing_thread_pool.cc " +
     "src\\core\\lib\\event_engine\\thready_event_engine\\thready_event_engine.cc " +
@@ -926,9 +931,15 @@ if (PHP_GRPC != "no") {
     "third_party\\abseil-cpp\\absl\\synchronization\\barrier.cc " +
     "third_party\\abseil-cpp\\absl\\synchronization\\blocking_counter.cc " +
     "third_party\\abseil-cpp\\absl\\synchronization\\internal\\create_thread_identity.cc " +
+    "third_party\\abseil-cpp\\absl\\synchronization\\internal\\futex_waiter.cc " +
     "third_party\\abseil-cpp\\absl\\synchronization\\internal\\graphcycles.cc " +
+    "third_party\\abseil-cpp\\absl\\synchronization\\internal\\kernel_timeout.cc " +
     "third_party\\abseil-cpp\\absl\\synchronization\\internal\\per_thread_sem.cc " +
-    "third_party\\abseil-cpp\\absl\\synchronization\\internal\\waiter.cc " +
+    "third_party\\abseil-cpp\\absl\\synchronization\\internal\\pthread_waiter.cc " +
+    "third_party\\abseil-cpp\\absl\\synchronization\\internal\\sem_waiter.cc " +
+    "third_party\\abseil-cpp\\absl\\synchronization\\internal\\stdcpp_waiter.cc " +
+    "third_party\\abseil-cpp\\absl\\synchronization\\internal\\waiter_base.cc " +
+    "third_party\\abseil-cpp\\absl\\synchronization\\internal\\win32_waiter.cc " +
     "third_party\\abseil-cpp\\absl\\synchronization\\mutex.cc " +
     "third_party\\abseil-cpp\\absl\\synchronization\\notification.cc " +
     "third_party\\abseil-cpp\\absl\\time\\civil_time.cc " +
@@ -1236,7 +1247,6 @@ if (PHP_GRPC != "no") {
     "third_party\\re2\\re2\\tostring.cc " +
     "third_party\\re2\\re2\\unicode_casefold.cc " +
     "third_party\\re2\\re2\\unicode_groups.cc " +
-    "third_party\\re2\\util\\pcre.cc " +
     "third_party\\re2\\util\\rune.cc " +
     "third_party\\re2\\util\\strutil.cc " +
     "third_party\\upb\\upb\\base\\status.c " +
@@ -1287,10 +1297,6 @@ if (PHP_GRPC != "no") {
     "third_party\\zlib\\compress.c " +
     "third_party\\zlib\\crc32.c " +
     "third_party\\zlib\\deflate.c " +
-    "third_party\\zlib\\gzclose.c " +
-    "third_party\\zlib\\gzlib.c " +
-    "third_party\\zlib\\gzread.c " +
-    "third_party\\zlib\\gzwrite.c " +
     "third_party\\zlib\\infback.c " +
     "third_party\\zlib\\inffast.c " +
     "third_party\\zlib\\inflate.c " +

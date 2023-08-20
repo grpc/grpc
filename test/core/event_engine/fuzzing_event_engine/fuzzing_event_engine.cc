@@ -461,8 +461,8 @@ bool FuzzingEventEngine::CancelConnect(ConnectionHandle connection_handle) {
 
 bool FuzzingEventEngine::IsWorkerThread() { abort(); }
 
-std::unique_ptr<EventEngine::DNSResolver> FuzzingEventEngine::GetDNSResolver(
-    const DNSResolver::ResolverOptions&) {
+absl::StatusOr<std::unique_ptr<EventEngine::DNSResolver>>
+FuzzingEventEngine::GetDNSResolver(const DNSResolver::ResolverOptions&) {
   abort();
 }
 

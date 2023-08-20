@@ -7,7 +7,7 @@ oauth2client==4.1.0
 requests==2.25.1
 urllib3==1.26.5
 chardet==3.0.4
-certifi==2017.4.17
+certifi==2023.7.22
 idna==2.7
 gevent==22.08.0
 zope.event==4.5.0
@@ -15,3 +15,4 @@ setuptools==44.1.1
 xds-protos==0.0.11
 opencensus==0.10.0
 opencensus-ext-stackdriver==0.8.0
+absl-py==1.4.0

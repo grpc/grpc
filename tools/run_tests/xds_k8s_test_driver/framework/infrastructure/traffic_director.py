@@ -243,6 +243,12 @@ class TrafficDirectorManager:  # pylint: disable=too-many-public-methods
     def backend_service_add_neg_backends(
         self, name, zones, max_rate_per_endpoint: Optional[int] = None
     ):
+        self.backend_service_load_neg_backends(name, zones)
+        if not self.backends:
+            raise ValueError("Unexpected: no backends were loaded.")
+        self.backend_service_patch_backends(max_rate_per_endpoint)
+
+    def backend_service_load_neg_backends(self, name, zones):
         logger.info("Waiting for Network Endpoint Groups to load endpoints.")
         for zone in zones:
             backend = self.compute.wait_for_network_endpoint_group(name, zone)
@@ -250,7 +256,6 @@ class TrafficDirectorManager:  # pylint: disable=too-many-public-methods
                 'Loaded NEG "%s" in zone %s', backend.name, backend.zone
             )
             self.backends.add(backend)
-        self.backend_service_patch_backends(max_rate_per_endpoint)
 
     def backend_service_remove_neg_backends(self, name, zones):
         logger.info("Waiting for Network Endpoint Groups to load endpoints.")
@@ -282,10 +287,10 @@ class TrafficDirectorManager:  # pylint: disable=too-many-public-methods
         self.compute.backend_service_remove_all_backends(self.backend_service)
 
     def wait_for_backends_healthy_status(self):
-        logger.debug(
-            "Waiting for Backend Service %s to report all backends healthy %r",
-            self.backend_service,
-            self.backends,
+        logger.info(
+            "Waiting for Backend Service %s to report all backends healthy: %r",
+            self.backend_service.name,
+            [backend.name for backend in self.backends],
         )
         self.compute.wait_for_backends_healthy_status(
             self.backend_service, self.backends

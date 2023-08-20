@@ -36,7 +36,6 @@
 
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
-#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -46,7 +45,6 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/cpp_impl_of.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
-#include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -411,24 +409,13 @@ class Server : public InternallyRefCounted<Server>,
     if (shutdown_refs_.fetch_sub(2, std::memory_order_acq_rel) == 2) {
       MutexLock lock(&mu_global_);
       MaybeFinishShutdown();
-      // The last request in-flight during shutdown is now complete.
-      if (requests_complete_ != nullptr) {
-        GPR_ASSERT(!requests_complete_->HasBeenNotified());
-        requests_complete_->Notify();
-      }
     }
   }
-  // Returns a notification pointer to wait on if there are requests in-flight,
-  // or null.
-  Notification* ShutdownUnrefOnShutdownCall()
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_) GRPC_MUST_USE_RESULT {
+  void ShutdownUnrefOnShutdownCall() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_) {
     if (shutdown_refs_.fetch_sub(1, std::memory_order_acq_rel) == 1) {
       // There is no request in-flight.
       MaybeFinishShutdown();
-      return nullptr;
     }
-    requests_complete_ = std::make_unique<Notification>();
-    return requests_complete_.get();
   }
 
   bool ShutdownCalled() const {
@@ -479,7 +466,6 @@ class Server : public InternallyRefCounted<Server>,
   std::atomic<int> shutdown_refs_{1};
   bool shutdown_published_ ABSL_GUARDED_BY(mu_global_) = false;
   std::vector<ShutdownTag> shutdown_tags_ ABSL_GUARDED_BY(mu_global_);
-  std::unique_ptr<Notification> requests_complete_ ABSL_GUARDED_BY(mu_global_);
 
   std::list<ChannelData*> channels_;
 

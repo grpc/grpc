@@ -94,6 +94,7 @@ py_library(
         "//src/proto/grpc/testing:py_test_proto",
         "//src/python/grpcio/grpc:grpcio",
         "//src/python/grpcio_tests/tests/unit:test_common",
+        requirement("absl-py"),
     ],
 )
 

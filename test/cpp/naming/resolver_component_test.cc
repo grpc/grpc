@@ -47,7 +47,9 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/event_engine/ares_resolver.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/host_port.h"
@@ -62,22 +64,10 @@
 #include "src/core/lib/resolver/server_address.h"
 #include "test/core/util/fake_udp_and_tcp_server.h"
 #include "test/core/util/port.h"
+#include "test/core/util/socket_use_after_close_detector.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/subprocess.h"
 #include "test/cpp/util/test_config.h"
-
-// TODO(unknown): pull in different headers when enabling this
-// test on windows. Also set BAD_SOCKET_RETURN_VAL
-// to INVALID_SOCKET on windows.
-#ifdef GPR_WINDOWS
-#include "src/core/lib/iomgr/sockaddr_windows.h"
-#include "src/core/lib/iomgr/socket_windows.h"
-#include "src/core/lib/iomgr/tcp_windows.h"
-#define BAD_SOCKET_RETURN_VAL INVALID_SOCKET
-#else
-#include "src/core/lib/iomgr/sockaddr_posix.h"
-#define BAD_SOCKET_RETURN_VAL (-1)
-#endif
 
 using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 using std::vector;
@@ -255,11 +245,20 @@ void PollPollsetUntilRequestDone(ArgsStruct* args) {
     GPR_ASSERT(gpr_time_cmp(time_left, gpr_time_0(GPR_TIMESPAN)) >= 0);
     grpc_pollset_worker* worker = nullptr;
     grpc_core::ExecCtx exec_ctx;
-    GRPC_LOG_IF_ERROR(
-        "pollset_work",
-        grpc_pollset_work(
-            args->pollset, &worker,
-            grpc_core::Timestamp::FromTimespecRoundUp(NSecondDeadline(1))));
+    if (grpc_core::IsEventEngineDnsEnabled()) {
+      // This essentially becomes a condition variable.
+      GRPC_LOG_IF_ERROR(
+          "pollset_work",
+          grpc_pollset_work(
+              args->pollset, &worker,
+              grpc_core::Timestamp::FromTimespecRoundUp(deadline)));
+    } else {
+      GRPC_LOG_IF_ERROR(
+          "pollset_work",
+          grpc_pollset_work(
+              args->pollset, &worker,
+              grpc_core::Timestamp::FromTimespecRoundUp(NSecondDeadline(1))));
+    }
   }
   gpr_event_set(&args->ev, reinterpret_cast<void*>(1));
 }
@@ -291,134 +290,6 @@ void CheckLBPolicyResultLocked(const grpc_core::ChannelArgs channel_args,
     EXPECT_FALSE(lb_policy_arg.has_value());
   }
 }
-
-#ifdef GPR_WINDOWS
-void OpenAndCloseSocketsStressLoop(int phony_port, gpr_event* done_ev) {
-  sockaddr_in6 addr;
-  memset(&addr, 0, sizeof(addr));
-  addr.sin6_family = AF_INET6;
-  addr.sin6_port = htons(phony_port);
-  ((char*)&addr.sin6_addr)[15] = 1;
-  for (;;) {
-    if (gpr_event_get(done_ev)) {
-      return;
-    }
-    std::vector<int> sockets;
-    for (size_t i = 0; i < 50; i++) {
-      SOCKET s = WSASocket(AF_INET6, SOCK_STREAM, IPPROTO_TCP, nullptr, 0,
-                           WSA_FLAG_OVERLAPPED);
-      ASSERT_TRUE(s != BAD_SOCKET_RETURN_VAL)
-          << "Failed to create TCP ipv6 socket";
-      gpr_log(GPR_DEBUG, "Opened socket: %d", s);
-      char val = 1;
-      ASSERT_TRUE(setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) !=
-                  SOCKET_ERROR)
-          << "Failed to set socketopt reuseaddr. WSA error: " +
-                 std::to_string(WSAGetLastError());
-      ASSERT_TRUE(grpc_tcp_set_non_block(s) == absl::OkStatus())
-          << "Failed to set socket non-blocking";
-      ASSERT_TRUE(bind(s, (const sockaddr*)&addr, sizeof(addr)) != SOCKET_ERROR)
-          << "Failed to bind socket " + std::to_string(s) +
-                 " to [::1]:" + std::to_string(phony_port) +
-                 ". WSA error: " + std::to_string(WSAGetLastError());
-      ASSERT_TRUE(listen(s, 1) != SOCKET_ERROR)
-          << "Failed to listen on socket " + std::to_string(s) +
-                 ". WSA error: " + std::to_string(WSAGetLastError());
-      sockets.push_back(s);
-    }
-    // Do a non-blocking accept followed by a close on all of those sockets.
-    // Do this in a separate loop to try to induce a time window to hit races.
-    for (size_t i = 0; i < sockets.size(); i++) {
-      gpr_log(GPR_DEBUG, "non-blocking accept then close on %d", sockets[i]);
-      ASSERT_TRUE(accept(sockets[i], nullptr, nullptr) == INVALID_SOCKET)
-          << "Accept on phony socket unexpectedly accepted actual connection.";
-      ASSERT_TRUE(WSAGetLastError() == WSAEWOULDBLOCK)
-          << "OpenAndCloseSocketsStressLoop accept on socket " +
-                 std::to_string(sockets[i]) +
-                 " failed in "
-                 "an unexpected way. "
-                 "WSA error: " +
-                 std::to_string(WSAGetLastError()) +
-                 ". Socket use-after-close bugs are likely.";
-      ASSERT_TRUE(closesocket(sockets[i]) != SOCKET_ERROR)
-          << "Failed to close socket: " + std::to_string(sockets[i]) +
-                 ". WSA error: " + std::to_string(WSAGetLastError());
-    }
-  }
-  return;
-}
-#else
-void OpenAndCloseSocketsStressLoop(int phony_port, gpr_event* done_ev) {
-  // The goal of this loop is to catch socket
-  // "use after close" bugs within the c-ares resolver by acting
-  // like some separate thread doing I/O.
-  // It's goal is to try to hit race conditions whereby:
-  //    1) The c-ares resolver closes a socket.
-  //    2) This loop opens a socket with (coincidentally) the same handle.
-  //    3) the c-ares resolver mistakenly uses that same socket without
-  //       realizing that its closed.
-  //    4) This loop performs an operation on that socket that should
-  //       succeed but instead fails because of what the c-ares
-  //       resolver did in the meantime.
-  sockaddr_in6 addr;
-  memset(&addr, 0, sizeof(addr));
-  addr.sin6_family = AF_INET6;
-  addr.sin6_port = htons(phony_port);
-  (reinterpret_cast<char*>(&addr.sin6_addr))[15] = 1;
-  for (;;) {
-    if (gpr_event_get(done_ev)) {
-      return;
-    }
-    std::vector<int> sockets;
-    // First open a bunch of sockets, bind and listen
-    // '50' is an arbitrary number that, experimentally,
-    // has a good chance of catching bugs.
-    for (size_t i = 0; i < 50; i++) {
-      int s = socket(AF_INET6, SOCK_STREAM, 0);
-      int val = 1;
-      ASSERT_TRUE(setsockopt(s, SOL_SOCKET, SO_REUSEPORT, &val, sizeof(val)) ==
-                  0)
-          << "Failed to set socketopt reuseport";
-      ASSERT_TRUE(setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) ==
-                  0)
-          << "Failed to set socket reuseaddr";
-      ASSERT_TRUE(fcntl(s, F_SETFL, O_NONBLOCK) == 0)
-          << "Failed to set socket non-blocking";
-      ASSERT_TRUE(s != BAD_SOCKET_RETURN_VAL)
-          << "Failed to create TCP ipv6 socket";
-      gpr_log(GPR_DEBUG, "Opened fd: %d", s);
-      ASSERT_TRUE(bind(s, (const sockaddr*)&addr, sizeof(addr)) == 0)
-          << "Failed to bind socket " + std::to_string(s) +
-                 " to [::1]:" + std::to_string(phony_port) +
-                 ". errno: " + std::to_string(errno);
-      ASSERT_TRUE(listen(s, 1) == 0) << "Failed to listen on socket " +
-                                            std::to_string(s) +
-                                            ". errno: " + std::to_string(errno);
-      sockets.push_back(s);
-    }
-    // Do a non-blocking accept followed by a close on all of those sockets.
-    // Do this in a separate loop to try to induce a time window to hit races.
-    for (size_t i = 0; i < sockets.size(); i++) {
-      gpr_log(GPR_DEBUG, "non-blocking accept then close on %d", sockets[i]);
-      if (accept(sockets[i], nullptr, nullptr)) {
-        // If e.g. a "shutdown" was called on this fd from another thread,
-        // then this accept call should fail with an unexpected error.
-        ASSERT_TRUE(errno == EAGAIN || errno == EWOULDBLOCK)
-            << "OpenAndCloseSocketsStressLoop accept on socket " +
-                   std::to_string(sockets[i]) +
-                   " failed in "
-                   "an unexpected way. "
-                   "errno: " +
-                   std::to_string(errno) +
-                   ". Socket use-after-close bugs are likely.";
-      }
-      ASSERT_TRUE(close(sockets[i]) == 0)
-          << "Failed to close socket: " + std::to_string(sockets[i]) +
-                 ". errno: " + std::to_string(errno);
-    }
-  }
-}
-#endif
 
 class ResultHandler : public grpc_core::Resolver::ResultHandler {
  public:
@@ -529,7 +400,7 @@ int g_fake_non_responsive_dns_server_port = -1;
 // resolver. This is useful to effectively mock /etc/resolv.conf settings
 // (and equivalent on Windows), which unit tests don't have write permissions.
 //
-void InjectBrokenNameServerList(ares_channel channel) {
+void InjectBrokenNameServerList(ares_channel* channel) {
   struct ares_addr_port_node dns_server_addrs[2];
   memset(dns_server_addrs, 0, sizeof(dns_server_addrs));
   std::string unused_host;
@@ -558,7 +429,8 @@ void InjectBrokenNameServerList(ares_channel channel) {
   dns_server_addrs[1].tcp_port = atoi(local_dns_server_port.c_str());
   dns_server_addrs[1].udp_port = atoi(local_dns_server_port.c_str());
   dns_server_addrs[1].next = nullptr;
-  GPR_ASSERT(ares_set_servers_ports(channel, dns_server_addrs) == ARES_SUCCESS);
+  GPR_ASSERT(ares_set_servers_ports(*channel, dns_server_addrs) ==
+             ARES_SUCCESS);
 }
 
 void StartResolvingLocked(grpc_core::Resolver* r) { r->StartLocked(); }
@@ -591,7 +463,12 @@ void RunResolvesRelevantRecordsTest(
         grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
     g_fake_non_responsive_dns_server_port =
         fake_non_responsive_dns_server->port();
-    grpc_ares_test_only_inject_config = InjectBrokenNameServerList;
+    if (grpc_core::IsEventEngineDnsEnabled()) {
+      event_engine_grpc_ares_test_only_inject_config =
+          InjectBrokenNameServerList;
+    } else {
+      grpc_ares_test_only_inject_config = InjectBrokenNameServerList;
+    }
     whole_uri = absl::StrCat("dns:///", absl::GetFlag(FLAGS_target_name));
   } else if (absl::GetFlag(FLAGS_inject_broken_nameserver_list) == "False") {
     gpr_log(GPR_INFO, "Specifying authority in uris to: %s",
@@ -647,18 +524,11 @@ TEST(ResolverComponentTest, TestResolvesRelevantRecords) {
 }
 
 TEST(ResolverComponentTest, TestResolvesRelevantRecordsWithConcurrentFdStress) {
-  // Start up background stress thread
-  int phony_port = grpc_pick_unused_port_or_die();
-  gpr_event done_ev;
-  gpr_event_init(&done_ev);
-  std::thread socket_stress_thread(OpenAndCloseSocketsStressLoop, phony_port,
-                                   &done_ev);
+  grpc_core::testing::SocketUseAfterCloseDetector
+      socket_use_after_close_detector;
   // Run the resolver test
   RunResolvesRelevantRecordsTest(ResultHandler::Create,
                                  grpc_core::ChannelArgs());
-  // Shutdown and join stress thread
-  gpr_event_set(&done_ev, reinterpret_cast<void*>(1));
-  socket_stress_thread.join();
 }
 
 TEST(ResolverComponentTest, TestDoesntCrashOrHangWith1MsTimeout) {
@@ -673,13 +543,15 @@ TEST(ResolverComponentTest, TestDoesntCrashOrHangWith1MsTimeout) {
 }  // namespace
 
 int main(int argc, char** argv) {
-  grpc_init();
-  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
+  // Need before TestEnvironment construct for --grpc_experiments flag at
+  // least.
   grpc::testing::InitTest(&argc, &argv, true);
+  grpc::testing::TestEnvironment env(&argc, argv);
   if (absl::GetFlag(FLAGS_target_name).empty()) {
     grpc_core::Crash("Missing target_name param.");
   }
+  grpc_init();
   auto result = RUN_ALL_TESTS();
   grpc_shutdown();
   return result;
