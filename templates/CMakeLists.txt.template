@@ -155,11 +155,11 @@
     # grpc_csharp_ext is loaded by C# runtime and it
     # only makes sense as a shared lib.
     if lib_name in ['grpc_csharp_ext']:
-      return 'SHARED'
+      return ' SHARED'
 
     # upb always compiles as a static library on Windows
-    elif lib_name in ['upb']:
-      return '${_gRPC_STATIC_WIN32}'
+    elif lib_name in ['upb','upb_collections_lib','upb_json_lib','upb_textformat_lib']:
+      return ' ${_gRPC_STATIC_WIN32}'
 
     else:
       return ''
@@ -251,8 +251,7 @@
     return _func
 
   def add_dll_annotation_macros(lib, prefix):
-    return """
-    set_target_properties(%s PROPERTIES DEFINE_SYMBOL "%s_DLL_EXPORTS")
+    return """set_target_properties(%s PROPERTIES DEFINE_SYMBOL "%s_DLL_EXPORTS")
     if(BUILD_SHARED_LIBS)
       target_compile_definitions(%s INTERFACE %s_DLL_IMPORTS)
     endif()""" % (lib, prefix, lib, prefix)
@@ -784,7 +783,7 @@
   if(gRPC_BUILD_CODEGEN)
   % endif
   % endif
-  add_library(${lib.name} ${lib_type_for_lib(lib.name)}
+  add_library(${lib.name}${lib_type_for_lib(lib.name)}
   % for src in lib.src:
   % if not proto_re.match(src):
     ${src}
@@ -823,15 +822,15 @@
       COMPILE_PDB_OUTPUT_DIRECTORY <%text>"${CMAKE_BINARY_DIR}</%text>"
     )
     % if lib.name == 'gpr':
-      ${add_dll_annotation_macros(lib.name, 'GPR')}
+    ${add_dll_annotation_macros(lib.name, 'GPR')}
     % elif lib.name == 'grpc':
-      ${add_dll_annotation_macros(lib.name, 'GRPC')}
+    ${add_dll_annotation_macros(lib.name, 'GRPC')}
     % elif lib.name == 'grpc_unsecure':
-      ${add_dll_annotation_macros(lib.name, 'GRPC')}
+    ${add_dll_annotation_macros(lib.name, 'GRPC')}
     % elif lib.name == 'grpc++':
-      ${add_dll_annotation_macros(lib.name, 'GRPCXX')}
+    ${add_dll_annotation_macros(lib.name, 'GRPCXX')}
     % elif lib.name == 'grpc++_unsecure':
-      ${add_dll_annotation_macros(lib.name, 'GRPCXX')}
+    ${add_dll_annotation_macros(lib.name, 'GRPCXX')}
     % endif
     if(gRPC_INSTALL)
       install(FILES <%text>${CMAKE_CURRENT_BINARY_DIR}/</%text>${lib.name}.pdb
