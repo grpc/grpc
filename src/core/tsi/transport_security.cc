@@ -263,6 +263,16 @@ tsi_result tsi_handshaker_result_extract_peer(const tsi_handshaker_result* self,
   return self->vtable->extract_peer(self, peer);
 }
 
+tsi_result tsi_handshaker_result_extract_local_peer(const tsi_handshaker_result* self,
+                                              tsi_peer* local_peer) {
+  if (self == nullptr || self->vtable == nullptr || local_peer == nullptr) {
+    return TSI_INVALID_ARGUMENT;
+  }
+  memset(local_peer, 0, sizeof(tsi_peer));
+  if (self->vtable->extract_local_peer == nullptr) return TSI_UNIMPLEMENTED;
+  return self->vtable->extract_local_peer(self, local_peer);
+}
+
 tsi_result tsi_handshaker_result_get_frame_protector_type(
     const tsi_handshaker_result* self,
     tsi_frame_protector_type* frame_protector_type) {

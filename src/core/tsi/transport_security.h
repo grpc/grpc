@@ -100,6 +100,7 @@ struct tsi_handshaker {
 //
 struct tsi_handshaker_result_vtable {
   tsi_result (*extract_peer)(const tsi_handshaker_result* self, tsi_peer* peer);
+  tsi_result (*extract_local_peer)(const tsi_handshaker_result* self, tsi_peer* local_peer);
   tsi_result (*get_frame_protector_type)(
       const tsi_handshaker_result* self,
       tsi_frame_protector_type* frame_protector_type);

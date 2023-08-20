@@ -22,6 +22,7 @@
 
 #include <limits.h>
 #include <string.h>
+#include <memory>
 
 // TODO(jboeuf): refactor inet_ntop into a portability header.
 // Note: for whomever reads this and tries to refactor this, this
@@ -1253,6 +1254,57 @@ static tsi_result ssl_handshaker_result_extract_peer(
   return result;
 }
 
+static tsi_result ssl_handshaker_result_extract_local_peer(
+    const tsi_handshaker_result* self, tsi_peer* local_peer) {
+  tsi_result result = TSI_OK;
+  const unsigned char* alpn_selected = nullptr;
+  unsigned int alpn_selected_len;
+  const tsi_ssl_handshaker_result* impl =
+      reinterpret_cast<const tsi_ssl_handshaker_result*>(self);
+  X509 *local_cert = SSL_get_certificate(impl->ssl);
+  if (local_cert != nullptr) {
+    result = peer_from_x509(local_cert, 1, local_peer);
+    X509_free(local_cert);
+    if (result != TSI_OK) return result;
+  }
+#if TSI_OPENSSL_ALPN_SUPPORT
+  SSL_get0_alpn_selected(impl->ssl, &alpn_selected, &alpn_selected_len);
+#endif  // TSI_OPENSSL_ALPN_SUPPORT
+  if (alpn_selected == nullptr) {
+    // Try npn.
+    SSL_get0_next_proto_negotiated(impl->ssl, &alpn_selected,
+                                   &alpn_selected_len);
+  }
+
+  // 1 is for session reused property.
+  size_t new_property_count = local_peer->property_count + 3;
+  if (alpn_selected != nullptr) new_property_count++;
+  tsi_peer_property* new_properties = static_cast<tsi_peer_property*>(
+      gpr_zalloc(sizeof(*new_properties) * new_property_count));
+  for (size_t i = 0; i < local_peer->property_count; i++) {
+    new_properties[i] = local_peer->properties[i];
+  }
+  if (local_peer->properties != nullptr) gpr_free(local_peer->properties);
+  local_peer->properties = new_properties;
+  if (alpn_selected != nullptr) {
+    result = tsi_construct_string_peer_property(
+        TSI_SSL_ALPN_SELECTED_PROTOCOL,
+        reinterpret_cast<const char*>(alpn_selected), alpn_selected_len,
+        &local_peer->properties[local_peer->property_count]);
+    if (result != TSI_OK) return result;
+    local_peer->property_count++;
+  }
+  // Add security_level peer property.
+  result = tsi_construct_string_peer_property_from_cstring(
+      TSI_SECURITY_LEVEL_PEER_PROPERTY,
+      tsi_security_level_to_string(TSI_PRIVACY_AND_INTEGRITY),
+      &local_peer->properties[local_peer->property_count]);
+  if (result != TSI_OK) return result;
+  local_peer->property_count++;
+
+  return result;
+}
+
 static tsi_result ssl_handshaker_result_get_frame_protector_type(
     const tsi_handshaker_result* /*self*/,
     tsi_frame_protector_type* frame_protector_type) {
@@ -1326,6 +1378,7 @@ static void ssl_handshaker_result_destroy(tsi_handshaker_result* self) {
 
 static const tsi_handshaker_result_vtable handshaker_result_vtable = {
     ssl_handshaker_result_extract_peer,
+    ssl_handshaker_result_extract_local_peer,
     ssl_handshaker_result_get_frame_protector_type,
     nullptr,  // create_zero_copy_grpc_protector
     ssl_handshaker_result_create_frame_protector,
@@ -1392,6 +1445,16 @@ static tsi_result ssl_handshaker_get_result(tsi_ssl_handshaker* impl) {
   return impl->result;
 }
 
+void print_cert_info(X509 *cert) {
+    BIO *bio = BIO_new_fp(stdout, BIO_NOCLOSE);
+    X509_NAME_print_ex(bio, X509_get_subject_name(cert), 0, XN_FLAG_ONELINE);
+    BIO_puts(bio, "\n");
+    X509_NAME_print_ex(bio, X509_get_issuer_name(cert), 0, XN_FLAG_ONELINE);
+    BIO_puts(bio, "\n");
+
+    BIO_free(bio);
+}
+
 static tsi_result ssl_handshaker_do_handshake(tsi_ssl_handshaker* impl,
                                               std::string* error) {
   if (ssl_handshaker_get_result(impl) != TSI_HANDSHAKE_IN_PROGRESS) {
@@ -1402,6 +1465,11 @@ static tsi_result ssl_handshaker_do_handshake(tsi_ssl_handshaker* impl,
     // Get ready to get some bytes from SSL.
     int ssl_result = SSL_do_handshake(impl->ssl);
     ssl_result = SSL_get_error(impl->ssl, ssl_result);
+    printf("***** Handshake successful p\n");
+    X509 *server_cert = SSL_get_certificate(impl->ssl);
+    if (server_cert) {
+        X509_print_fp(stderr, server_cert);
+    }
     switch (ssl_result) {
       case SSL_ERROR_WANT_READ:
         if (BIO_pending(impl->network_io) == 0) {

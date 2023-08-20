@@ -154,6 +154,74 @@ static tsi_result handshaker_result_extract_peer(
   return ok;
 }
 
+static tsi_result handshaker_result_extract_local_peer(
+    const tsi_handshaker_result* self, tsi_peer* local_peer) {
+  if (self == nullptr || local_peer == nullptr) {
+    gpr_log(GPR_ERROR, "Invalid argument to handshaker_result_extract_peer()");
+    return TSI_INVALID_ARGUMENT;
+  }
+  alts_tsi_handshaker_result* result =
+      reinterpret_cast<alts_tsi_handshaker_result*>(
+          const_cast<tsi_handshaker_result*>(self));
+  GPR_ASSERT(kTsiAltsNumOfPeerProperties == 5);
+  tsi_result ok = tsi_construct_peer(kTsiAltsNumOfPeerProperties, local_peer);
+  int index = 0;
+  if (ok != TSI_OK) {
+    gpr_log(GPR_ERROR, "Failed to construct tsi peer");
+    return ok;
+  }
+  GPR_ASSERT(&local_peer->properties[index] != nullptr);
+  ok = tsi_construct_string_peer_property_from_cstring(
+      TSI_CERTIFICATE_TYPE_PEER_PROPERTY, TSI_ALTS_CERTIFICATE_TYPE,
+      &local_peer->properties[index]);
+  if (ok != TSI_OK) {
+    tsi_peer_destruct(local_peer);
+    gpr_log(GPR_ERROR, "Failed to set tsi peer property");
+    return ok;
+  }
+  index++;
+  GPR_ASSERT(&local_peer->properties[index] != nullptr);
+  ok = tsi_construct_string_peer_property_from_cstring(
+      TSI_ALTS_SERVICE_ACCOUNT_PEER_PROPERTY, result->peer_identity,
+      &local_peer->properties[index]);
+  if (ok != TSI_OK) {
+    tsi_peer_destruct(local_peer);
+    gpr_log(GPR_ERROR, "Failed to set tsi peer property");
+  }
+  index++;
+  GPR_ASSERT(&local_peer->properties[index] != nullptr);
+  ok = tsi_construct_string_peer_property(
+      TSI_ALTS_RPC_VERSIONS,
+      reinterpret_cast<char*>(GRPC_SLICE_START_PTR(result->rpc_versions)),
+      GRPC_SLICE_LENGTH(result->rpc_versions), &local_peer->properties[index]);
+  if (ok != TSI_OK) {
+    tsi_peer_destruct(local_peer);
+    gpr_log(GPR_ERROR, "Failed to set tsi peer property");
+  }
+  index++;
+  GPR_ASSERT(&local_peer->properties[index] != nullptr);
+  ok = tsi_construct_string_peer_property(
+      TSI_ALTS_CONTEXT,
+      reinterpret_cast<char*>(GRPC_SLICE_START_PTR(result->serialized_context)),
+      GRPC_SLICE_LENGTH(result->serialized_context), &local_peer->properties[index]);
+  if (ok != TSI_OK) {
+    tsi_peer_destruct(local_peer);
+    gpr_log(GPR_ERROR, "Failed to set tsi peer property");
+  }
+  index++;
+  GPR_ASSERT(&local_peer->properties[index] != nullptr);
+  ok = tsi_construct_string_peer_property_from_cstring(
+      TSI_SECURITY_LEVEL_PEER_PROPERTY,
+      tsi_security_level_to_string(TSI_PRIVACY_AND_INTEGRITY),
+      &local_peer->properties[index]);
+  if (ok != TSI_OK) {
+    tsi_peer_destruct(local_peer);
+    gpr_log(GPR_ERROR, "Failed to set tsi peer property");
+  }
+  GPR_ASSERT(++index == kTsiAltsNumOfPeerProperties);
+  return ok;
+}
+
 static tsi_result handshaker_result_get_frame_protector_type(
     const tsi_handshaker_result* /*self*/,
     tsi_frame_protector_type* frame_protector_type) {
@@ -257,6 +325,7 @@ static void handshaker_result_destroy(tsi_handshaker_result* self) {
 
 static const tsi_handshaker_result_vtable result_vtable = {
     handshaker_result_extract_peer,
+    handshaker_result_extract_local_peer,
     handshaker_result_get_frame_protector_type,
     handshaker_result_create_zero_copy_grpc_protector,
     handshaker_result_create_frame_protector,

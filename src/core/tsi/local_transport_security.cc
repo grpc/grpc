@@ -58,6 +58,11 @@ tsi_result handshaker_result_extract_peer(const tsi_handshaker_result* /*self*/,
   return TSI_OK;
 }
 
+tsi_result handshaker_result_extract_local_peer(const tsi_handshaker_result* /*self*/,
+                                          tsi_peer* /*peer*/) {
+  return TSI_OK;
+}
+
 tsi_result handshaker_result_get_frame_protector_type(
     const tsi_handshaker_result* /*self*/,
     tsi_frame_protector_type* frame_protector_type) {
@@ -92,6 +97,7 @@ void handshaker_result_destroy(tsi_handshaker_result* self) {
 
 const tsi_handshaker_result_vtable result_vtable = {
     handshaker_result_extract_peer,
+    handshaker_result_extract_local_peer,
     handshaker_result_get_frame_protector_type,
     nullptr,  // handshaker_result_create_zero_copy_grpc_protector
     nullptr,  // handshaker_result_create_frame_protector
