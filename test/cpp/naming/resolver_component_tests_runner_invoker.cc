@@ -55,6 +55,16 @@ ABSL_FLAG(
     "False indicates that this test is running under run_tests.py. "
     "Child process test binaries are located differently based on this flag. ");
 
+#ifdef GPR_WINDOWS
+ABSL_FLAG(bool, running_locally, false,
+          "This flag only exists on Windows and is only effective when running "
+          "under Bazel. "
+          "Set this to true (e.g. --test_arg=--running_locally=true) when "
+          "running the test locally. "
+          "This is because the RUNFILES dir behavior is different between "
+          "local run and RBE run.");
+#endif  // GPR_WINDOWS
+
 ABSL_FLAG(std::string, test_bin_name, "",
           "Name, without the preceding path, of the test binary");
 
@@ -123,24 +133,47 @@ int main(int argc, char** argv) {
         bin_dir + "/resolver_test_record_groups.yaml",
         bin_dir + "/utils/dns_resolver", bin_dir + "/utils/tcp_connect");
 #else
-    grpc::testing::ManifestFile manifest_file(
-        grpc::testing::NormalizeFilePath(test_srcdir.value()) + "\\MANIFEST");
-    grpc::testing::InvokeResolverComponentTestsRunner(
-        grpc::testing::NormalizeFilePath(
-            manifest_file.Get("com_github_grpc_grpc/test/cpp/naming/"
-                              "resolver_component_tests_runner.exe")),
-        grpc::testing::NormalizeFilePath(
-            manifest_file.Get("com_github_grpc_grpc/test/cpp/naming/" +
-                              absl::GetFlag(FLAGS_test_bin_name) + ".exe")),
-        grpc::testing::NormalizeFilePath(manifest_file.Get(
-            "com_github_grpc_grpc/test/cpp/naming/utils/dns_server.exe")),
-        grpc::testing::NormalizeFilePath(
-            manifest_file.Get("com_github_grpc_grpc/test/cpp/naming/"
-                              "resolver_test_record_groups.yaml")),
-        grpc::testing::NormalizeFilePath(manifest_file.Get(
-            "com_github_grpc_grpc/test/cpp/naming/utils/dns_resolver.exe")),
-        grpc::testing::NormalizeFilePath(manifest_file.Get(
-            "com_github_grpc_grpc/test/cpp/naming/utils/tcp_connect.exe")));
+    if (absl::GetFlag(FLAGS_running_locally)) {
+      // If running locally with Bazel, we enable the ManifestFile logic.
+      grpc::testing::ManifestFile manifest_file(
+          grpc::testing::NormalizeFilePath(test_srcdir.value()) + "\\MANIFEST");
+      grpc::testing::InvokeResolverComponentTestsRunner(
+          grpc::testing::NormalizeFilePath(
+              manifest_file.Get("com_github_grpc_grpc/test/cpp/naming/"
+                                "resolver_component_tests_runner.exe")),
+          grpc::testing::NormalizeFilePath(
+              manifest_file.Get("com_github_grpc_grpc/test/cpp/naming/" +
+                                absl::GetFlag(FLAGS_test_bin_name) + ".exe")),
+          grpc::testing::NormalizeFilePath(manifest_file.Get(
+              "com_github_grpc_grpc/test/cpp/naming/utils/dns_server.exe")),
+          grpc::testing::NormalizeFilePath(
+              manifest_file.Get("com_github_grpc_grpc/test/cpp/naming/"
+                                "resolver_test_record_groups.yaml")),
+          grpc::testing::NormalizeFilePath(manifest_file.Get(
+              "com_github_grpc_grpc/test/cpp/naming/utils/dns_resolver.exe")),
+          grpc::testing::NormalizeFilePath(manifest_file.Get(
+              "com_github_grpc_grpc/test/cpp/naming/utils/tcp_connect.exe")));
+    } else {
+      grpc::testing::InvokeResolverComponentTestsRunner(
+          grpc::testing::NormalizeFilePath(
+              test_srcdir.value() + "/com_github_grpc_grpc/test/cpp/naming/"
+                                    "resolver_component_tests_runner.exe"),
+          grpc::testing::NormalizeFilePath(
+              test_srcdir.value() + "/com_github_grpc_grpc/test/cpp/naming/" +
+              absl::GetFlag(FLAGS_test_bin_name) + ".exe"),
+          grpc::testing::NormalizeFilePath(
+              test_srcdir.value() +
+              "/com_github_grpc_grpc/test/cpp/naming/utils/dns_server.exe"),
+          grpc::testing::NormalizeFilePath(
+              test_srcdir.value() + "/com_github_grpc_grpc/test/cpp/naming/"
+                                    "resolver_test_record_groups.yaml"),
+          grpc::testing::NormalizeFilePath(
+              test_srcdir.value() +
+              "/com_github_grpc_grpc/test/cpp/naming/utils/dns_resolver.exe"),
+          grpc::testing::NormalizeFilePath(
+              test_srcdir.value() +
+              "/com_github_grpc_grpc/test/cpp/naming/utils/tcp_connect.exe"));
+    }
 #endif  // GPR_WINDOWS
   } else {
 #ifdef GPR_WINDOWS
