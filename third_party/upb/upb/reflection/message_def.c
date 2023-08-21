@@ -27,7 +27,8 @@
 
 #include "upb/hash/int_table.h"
 #include "upb/hash/str_table.h"
-#include "upb/mini_table/decode.h"
+#include "upb/mini_descriptor/decode.h"
+#include "upb/mini_descriptor/internal/modifiers.h"
 #include "upb/reflection/def.h"
 #include "upb/reflection/def_builder_internal.h"
 #include "upb/reflection/def_type.h"
@@ -499,6 +500,7 @@ void _upb_MessageDef_LinkMiniTable(upb_DefBuilder* ctx,
     UPB_ASSERT(layout_index < m->layout->field_count);
     const upb_MiniTableField* mt_f = &m->layout->fields[layout_index];
     UPB_ASSERT(upb_FieldDef_Type(f) == upb_MiniTableField_Type(mt_f));
+    UPB_ASSERT(upb_FieldDef_CType(f) == upb_MiniTableField_CType(mt_f));
     UPB_ASSERT(upb_FieldDef_HasPresence(f) ==
                upb_MiniTableField_HasPresence(mt_f));
   }

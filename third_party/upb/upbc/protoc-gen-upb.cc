@@ -689,7 +689,7 @@ void GenerateRepeatedSetters(upb::FieldDefPtr field, const DefPoolPair& pools,
       R"cc(
         UPB_INLINE $0* $1_resize_$2($1* msg, size_t size, upb_Arena* arena) {
           upb_MiniTableField field = $3;
-          return ($0*)upb_Message_ResizeArray(msg, &field, size, arena);
+          return ($0*)upb_Message_ResizeArrayUninitialized(msg, &field, size, arena);
         }
       )cc",
       CType(field), msg_name, resolved_name,
@@ -841,14 +841,7 @@ void WriteHeader(const DefPoolPair& pools, upb::FileDefPtr file,
   output(
       "#ifndef $0_UPB_H_\n"
       "#define $0_UPB_H_\n\n"
-      "#include \"upb/collections/array_internal.h\"\n"
-      "#include \"upb/collections/map_gencode_util.h\"\n"
-      "#include \"upb/message/accessors.h\"\n"
-      "#include \"upb/message/internal.h\"\n"
-      "#include \"upb/mini_table/enum_internal.h\"\n"
-      "#include \"upb/wire/decode.h\"\n"
-      "#include \"upb/wire/decode_fast.h\"\n"
-      "#include \"upb/wire/encode.h\"\n\n",
+      "#include \"upb/generated_code_support.h\"\n",
       ToPreproc(file.name()));
 
   for (int i = 0; i < file.public_dependency_count(); i++) {
@@ -1263,31 +1256,31 @@ std::string GetModeInit(const upb_MiniTableField* field32,
   uint8_t mode32 = field32->mode;
   switch (mode32 & kUpb_FieldMode_Mask) {
     case kUpb_FieldMode_Map:
-      ret = "kUpb_FieldMode_Map";
+      ret = "(int)kUpb_FieldMode_Map";
       break;
     case kUpb_FieldMode_Array:
-      ret = "kUpb_FieldMode_Array";
+      ret = "(int)kUpb_FieldMode_Array";
       break;
     case kUpb_FieldMode_Scalar:
-      ret = "kUpb_FieldMode_Scalar";
+      ret = "(int)kUpb_FieldMode_Scalar";
       break;
     default:
       break;
   }
 
   if (mode32 & kUpb_LabelFlags_IsPacked) {
-    absl::StrAppend(&ret, " | kUpb_LabelFlags_IsPacked");
+    absl::StrAppend(&ret, " | (int)kUpb_LabelFlags_IsPacked");
   }
 
   if (mode32 & kUpb_LabelFlags_IsExtension) {
-    absl::StrAppend(&ret, " | kUpb_LabelFlags_IsExtension");
+    absl::StrAppend(&ret, " | (int)kUpb_LabelFlags_IsExtension");
   }
 
   if (mode32 & kUpb_LabelFlags_IsAlternate) {
-    absl::StrAppend(&ret, " | kUpb_LabelFlags_IsAlternate");
+    absl::StrAppend(&ret, " | (int)kUpb_LabelFlags_IsAlternate");
   }
 
-  absl::StrAppend(&ret, " | (", GetFieldRep(field32, field64),
+  absl::StrAppend(&ret, " | ((int)", GetFieldRep(field32, field64),
                   " << kUpb_FieldRep_Shift)");
   return ret;
 }
@@ -1350,12 +1343,15 @@ void WriteMessage(upb::MessageDefPtr message, const DefPoolPair& pools,
   std::string subenums_array_ref = "NULL";
   const upb_MiniTable* mt_32 = pools.GetMiniTable32(message);
   const upb_MiniTable* mt_64 = pools.GetMiniTable64(message);
-  std::vector<std::string> subs;
+  std::map<int, std::string> subs;
 
   for (int i = 0; i < mt_64->field_count; i++) {
     const upb_MiniTableField* f = &mt_64->fields[i];
-    if (f->UPB_PRIVATE(submsg_index) != kUpb_NoSub) {
-      subs.push_back(GetSub(message.FindFieldByNumber(f->number)));
+    uint32_t index = f->UPB_PRIVATE(submsg_index);
+    if (index != kUpb_NoSub) {
+      auto pair =
+          subs.emplace(index, GetSub(message.FindFieldByNumber(f->number)));
+      ABSL_CHECK(pair.second);
     }
   }
 
@@ -1365,8 +1361,10 @@ void WriteMessage(upb::MessageDefPtr message, const DefPoolPair& pools,
     output("static const upb_MiniTableSub $0[$1] = {\n", submsgs_array_name,
            subs.size());
 
-    for (const auto& sub : subs) {
-      output("  $0,\n", sub);
+    int i = 0;
+    for (const auto& pair : subs) {
+      ABSL_CHECK(pair.first == i++);
+      output("  $0,\n", pair.second);
     }
 
     output("};\n\n");
@@ -1539,9 +1537,7 @@ void WriteMiniTableSource(const DefPoolPair& pools, upb::FileDefPtr file,
 
   output(
       "#include <stddef.h>\n"
-      "#include \"upb/collections/array_internal.h\"\n"
-      "#include \"upb/message/internal.h\"\n"
-      "#include \"upb/mini_table/enum_internal.h\"\n"
+      "#include \"upb/generated_code_support.h\"\n"
       "#include \"$0\"\n",
       HeaderFilename(file));
 
@@ -1633,10 +1629,7 @@ void WriteMiniDescriptorSource(const DefPoolPair& pools, upb::FileDefPtr file,
                                const Options& options, Output& output) {
   output(
       "#include <stddef.h>\n"
-      "#include \"upb/collections/array_internal.h\"\n"
-      "#include \"upb/message/internal.h\"\n"
-      "#include \"upb/mini_table/decode.h\"\n"
-      "#include \"upb/mini_table/enum_internal.h\"\n"
+      "#include \"upb/generated_code_support.h\"\n"
       "#include \"$0\"\n\n",
       HeaderFilename(file));
 

@@ -28,12 +28,10 @@
 #ifndef UPB_MESSAGE_ACCESSORS_INTERNAL_H_
 #define UPB_MESSAGE_ACCESSORS_INTERNAL_H_
 
-#include "upb/collections/array.h"
 #include "upb/collections/map_internal.h"
 #include "upb/message/extension_internal.h"
 #include "upb/message/internal.h"
-#include "upb/mini_table/common.h"
-#include "upb/mini_table/field_internal.h"
+#include "upb/mini_table/internal/field.h"
 
 // Must be last.
 #include "upb/port/def.inc"
@@ -59,6 +57,62 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+// LINT.IfChange(presence_logic)
+
+// Hasbit access ///////////////////////////////////////////////////////////////
+
+UPB_INLINE size_t _upb_hasbit_ofs(size_t idx) { return idx / 8; }
+
+UPB_INLINE char _upb_hasbit_mask(size_t idx) { return 1 << (idx % 8); }
+
+UPB_INLINE bool _upb_hasbit(const upb_Message* msg, size_t idx) {
+  return (*UPB_PTR_AT(msg, _upb_hasbit_ofs(idx), const char) &
+          _upb_hasbit_mask(idx)) != 0;
+}
+
+UPB_INLINE void _upb_sethas(const upb_Message* msg, size_t idx) {
+  (*UPB_PTR_AT(msg, _upb_hasbit_ofs(idx), char)) |= _upb_hasbit_mask(idx);
+}
+
+UPB_INLINE void _upb_clearhas(const upb_Message* msg, size_t idx) {
+  (*UPB_PTR_AT(msg, _upb_hasbit_ofs(idx), char)) &= ~_upb_hasbit_mask(idx);
+}
+
+UPB_INLINE size_t _upb_Message_Hasidx(const upb_MiniTableField* f) {
+  UPB_ASSERT(f->presence > 0);
+  return f->presence;
+}
+
+UPB_INLINE bool _upb_hasbit_field(const upb_Message* msg,
+                                  const upb_MiniTableField* f) {
+  return _upb_hasbit(msg, _upb_Message_Hasidx(f));
+}
+
+UPB_INLINE void _upb_sethas_field(const upb_Message* msg,
+                                  const upb_MiniTableField* f) {
+  _upb_sethas(msg, _upb_Message_Hasidx(f));
+}
+
+// Oneof case access ///////////////////////////////////////////////////////////
+
+UPB_INLINE size_t _upb_oneofcase_ofs(const upb_MiniTableField* f) {
+  UPB_ASSERT(f->presence < 0);
+  return ~(ptrdiff_t)f->presence;
+}
+
+UPB_INLINE uint32_t* _upb_oneofcase_field(upb_Message* msg,
+                                          const upb_MiniTableField* f) {
+  return UPB_PTR_AT(msg, _upb_oneofcase_ofs(f), uint32_t);
+}
+
+UPB_INLINE uint32_t _upb_getoneofcase_field(const upb_Message* msg,
+                                            const upb_MiniTableField* f) {
+  return *_upb_oneofcase_field((upb_Message*)msg, f);
+}
+
+// LINT.ThenChange(GoogleInternalName2)
+// LINT.ThenChange(//depot/google3/third_party/upb/js/impl/upb_bits/presence.ts:presence_logic)
 
 UPB_INLINE bool _upb_MiniTableField_InOneOf(const upb_MiniTableField* field) {
   return field->presence < 0;
@@ -296,10 +350,22 @@ UPB_INLINE void _upb_Message_ClearNonExtensionField(
                                field);
 }
 
+UPB_INLINE void _upb_Message_AssertMapIsUntagged(
+    const upb_Message* msg, const upb_MiniTableField* field) {
+  _upb_MiniTableField_CheckIsMap(field);
+#ifndef NDEBUG
+  upb_TaggedMessagePtr default_val = 0;
+  upb_TaggedMessagePtr tagged;
+  _upb_Message_GetNonExtensionField(msg, field, &default_val, &tagged);
+  UPB_ASSERT(!upb_TaggedMessagePtr_IsEmpty(tagged));
+#endif
+}
+
 UPB_INLINE upb_Map* _upb_Message_GetOrCreateMutableMap(
     upb_Message* msg, const upb_MiniTableField* field, size_t key_size,
     size_t val_size, upb_Arena* arena) {
   _upb_MiniTableField_CheckIsMap(field);
+  _upb_Message_AssertMapIsUntagged(msg, field);
   upb_Map* map = NULL;
   upb_Map* default_map_value = NULL;
   _upb_Message_GetNonExtensionField(msg, field, &default_map_value, &map);

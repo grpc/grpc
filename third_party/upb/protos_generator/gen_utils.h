@@ -28,16 +28,12 @@
 #ifndef UPB_PROTOS_GENERATOR_GEN_UTILS_H_
 #define UPB_PROTOS_GENERATOR_GEN_UTILS_H_
 
+#include <string>
 #include <vector>
 
 #include "google/protobuf/descriptor.pb.h"
-#include "absl/container/flat_hash_map.h"
-#include "absl/strings/string_view.h"
 #include "google/protobuf/compiler/code_generator.h"
-#include "google/protobuf/compiler/plugin.h"
 #include "google/protobuf/descriptor.h"
-#include "google/protobuf/wire_format.h"
-#include "protos_generator/output.h"
 
 namespace protos_generator {
 
@@ -50,35 +46,9 @@ enum class MessageClassType {
   kMessageAccess,
 };
 
-std::string ClassName(const protobuf::Descriptor* descriptor);
-std::string QualifiedClassName(const protobuf::Descriptor* descriptor);
-std::string QualifiedInternalClassName(const protobuf::Descriptor* descriptor);
-
 inline bool IsMapEntryMessage(const protobuf::Descriptor* descriptor) {
   return descriptor->options().map_entry();
 }
-std::string CppSourceFilename(const google::protobuf::FileDescriptor* file);
-std::string ForwardingHeaderFilename(const google::protobuf::FileDescriptor* file);
-std::string UpbCFilename(const google::protobuf::FileDescriptor* file);
-std::string CppHeaderFilename(const google::protobuf::FileDescriptor* file);
-
-void WriteStartNamespace(const protobuf::FileDescriptor* file, Output& output);
-void WriteEndNamespace(const protobuf::FileDescriptor* file, Output& output);
-
-std::string CppConstType(const protobuf::FieldDescriptor* field);
-std::string CppTypeParameterName(const protobuf::FieldDescriptor* field);
-
-std::string MessageBaseType(const protobuf::FieldDescriptor* field,
-                            bool is_const);
-// Generate protos::Ptr<const Model> to be used in accessors as public
-// signatures.
-std::string MessagePtrConstType(const protobuf::FieldDescriptor* field,
-                                bool is_const);
-std::string MessageCProxyType(const protobuf::FieldDescriptor* field,
-                              bool is_const);
-std::string MessageProxyType(const protobuf::FieldDescriptor* field,
-                             bool is_const);
-
 std::vector<const protobuf::EnumDescriptor*> SortedEnums(
     const protobuf::FileDescriptor* file);
 std::vector<const protobuf::Descriptor*> SortedMessages(
@@ -87,8 +57,6 @@ std::vector<const protobuf::FieldDescriptor*> SortedExtensions(
     const protobuf::FileDescriptor* file);
 std::vector<const protobuf::FieldDescriptor*> FieldNumberOrder(
     const protobuf::Descriptor* message);
-
-inline constexpr absl::string_view kNoPackageNamePrefix = "protos_";
 
 std::string ToCamelCase(const std::string& input, bool lower_first);
 
