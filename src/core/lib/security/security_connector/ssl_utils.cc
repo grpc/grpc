@@ -334,6 +334,47 @@ grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
   return ctx;
 }
 
+void grpc_add_ssl_local_peer_to_auth_context(
+    const tsi_peer* local_peer,
+    grpc_core::RefCountedPtr<grpc_auth_context> auth_context) {
+  size_t i;
+  const char* peer_identity_property_name = nullptr;
+
+  // The caller has checked the certificate type property.
+  GPR_ASSERT(local_peer->property_count >= 1);
+  const char* spiffe_data = nullptr;
+  size_t spiffe_length = 0;
+  int uri_count = 0;
+  bool has_spiffe_id = false;
+  for (i = 0; i < local_peer->property_count; i++) {
+    const tsi_peer_property* prop = &local_peer->properties[i];
+    if (prop->name == nullptr) continue;
+    if (strcmp(prop->name, TSI_X509_URI_PEER_PROPERTY) == 0) {
+      grpc_auth_context_add_property(auth_context.get(), GRPC_PEER_URI_PROPERTY_NAME,
+                                     prop->value.data, prop->value.length);
+      uri_count++;
+      absl::string_view spiffe_id(prop->value.data, prop->value.length);
+      if (IsSpiffeId(spiffe_id)) {
+        spiffe_data = prop->value.data;
+        spiffe_length = prop->value.length;
+        has_spiffe_id = true;
+      }
+    }
+  }
+  // A valid SPIFFE certificate can only have exact one URI SAN field.
+  if (has_spiffe_id) {
+    if (uri_count == 1) {
+      GPR_ASSERT(spiffe_length > 0);
+      GPR_ASSERT(spiffe_data != nullptr);
+      grpc_auth_context_add_property(auth_context.get(),
+                                     GRPC_PEER_SPIFFE_ID_PROPERTY_NAME,
+                                     spiffe_data, spiffe_length);
+    } else {
+      gpr_log(GPR_INFO, "Invalid SPIFFE ID: multiple URI SANs.");
+    }
+  }
+}
+
 static void add_shallow_auth_property_to_peer(tsi_peer* peer,
                                               const grpc_auth_property* prop,
                                               const char* tsi_prop_name) {

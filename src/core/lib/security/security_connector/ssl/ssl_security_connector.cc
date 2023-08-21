@@ -184,6 +184,11 @@ class grpc_ssl_channel_security_connector final
     tsi_peer_destruct(&peer);
   }
 
+  void enrich_auth_context(
+      tsi_peer local_peer,
+      grpc_core::RefCountedPtr<grpc_auth_context>* auth_context) override {
+  };
+
   void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
                          grpc_error_handle /*error*/) override {}
 
@@ -302,6 +307,13 @@ class grpc_ssl_server_security_connector
     tsi_peer_destruct(&peer);
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
   }
+
+  void enrich_auth_context(
+      tsi_peer local_peer,
+      grpc_core::RefCountedPtr<grpc_auth_context>* auth_context) override {
+    grpc_add_ssl_local_peer_to_auth_context(&local_peer, *auth_context);
+    tsi_peer_destruct(&local_peer);
+  };
 
   void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
                          grpc_error_handle /*error*/) override {}

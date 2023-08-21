@@ -361,8 +361,16 @@ grpc_error_handle SecurityHandshaker::CheckPeerLocked() {
     return grpc_set_tsi_error_result(
         GRPC_ERROR_CREATE("Peer extraction failed"), result);
   }
+  tsi_peer local_peer;
+  result =
+      tsi_handshaker_result_extract_local_peer(handshaker_result_, &local_peer);
+  if (result != TSI_OK) {
+    return grpc_set_tsi_error_result(
+        GRPC_ERROR_CREATE("Local peer extraction failed"), result);
+  }
   connector_->check_peer(peer, args_->endpoint, args_->args, &auth_context_,
                          &on_peer_checked_);
+  connector_->enrich_auth_context(local_peer, &auth_context_);
   grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
       auth_context_.get(), GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME);
   const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
