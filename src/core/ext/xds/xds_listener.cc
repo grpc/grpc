@@ -74,8 +74,8 @@ std::string XdsListenerResource::HttpConnectionManager::ToString() const {
       [](const std::string& rds_name) {
         return absl::StrCat("rds_name=", rds_name);
       },
-      [](const XdsRouteConfigResource& route_config) {
-        return absl::StrCat("route_config=", route_config.ToString());
+      [](const std::shared_ptr<const XdsRouteConfigResource>& route_config) {
+        return absl::StrCat("route_config=", route_config->ToString());
       }));
   contents.push_back(absl::StrCat("http_max_stream_duration=",
                                   http_max_stream_duration.ToString()));
@@ -1061,7 +1061,7 @@ LdsResourceParseServer(
   return lds_update;
 }
 
-absl::StatusOr<std::shared_ptr<const XdsListenerResources>> LdsResourceParse(
+absl::StatusOr<std::shared_ptr<const XdsListenerResource>> LdsResourceParse(
     const XdsResourceType::DecodeContext& context,
     const envoy_config_listener_v3_Listener* listener) {
   // Check whether it's a client or server listener.
@@ -1129,7 +1129,7 @@ XdsResourceType::DecodeResult XdsListenerResourceType::Decode(
     if (GRPC_TRACE_FLAG_ENABLED(*context.tracer)) {
       gpr_log(GPR_INFO, "[xds_client %p] parsed Listener %s: %s",
               context.client, result.name->c_str(),
-              listener->ToString().c_str());
+              (*listener)->ToString().c_str());
     }
     result.resource = std::move(*listener);
   }

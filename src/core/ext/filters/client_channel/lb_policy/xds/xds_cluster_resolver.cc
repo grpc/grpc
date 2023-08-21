@@ -54,7 +54,7 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/no_delete.h"
+#include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/validation_errors.h"
@@ -347,7 +347,7 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
   struct DiscoveryMechanismEntry {
     OrphanablePtr<DiscoveryMechanism> discovery_mechanism;
     // Most recent update reported by the discovery mechanism.
-    RefCountedPtr<const XdsEndpointResource> latest_update;
+    std::shared_ptr<const XdsEndpointResource> latest_update;
     // Last resolution note reported by the discovery mechanism, if any.
     std::string resolution_note;
     // State used to retain child policy names for priority policy.
@@ -630,12 +630,12 @@ void XdsClusterResolverLb::ExitIdleLocked() {
 // have a child in which to create the xds_cluster_impl policy.  This ensures
 // that we properly handle the case of a discovery mechanism dropping 100% of
 // calls, the OnError() case, and the OnResourceDoesNotExist() case.
-const XdsEndpointResource::PriorityList* GetUpdatePriorityList(
+const XdsEndpointResource::PriorityList& GetUpdatePriorityList(
     const XdsEndpointResource& update) {
-  static const NoDelete<XdsEndpointResource::PriorityList>
+  static const NoDestruct<XdsEndpointResource::PriorityList>
       kPriorityListWithEmptyPriority(1);
-  if (update->priorities.empty()) return kPriorityListWithEmptyPriority.get();
-  return &update->priorities;
+  if (update.priorities.empty()) return *kPriorityListWithEmptyPriority;
+  return update.priorities;
 }
 
 void XdsClusterResolverLb::OnEndpointChanged(
@@ -649,7 +649,7 @@ void XdsClusterResolverLb::OnEndpointChanged(
             this, index, resolution_note.c_str());
   }
   DiscoveryMechanismEntry& discovery_entry = discovery_mechanisms_[index];
-  const XdsEndpointResource::PriorityList* priority_list =
+  const XdsEndpointResource::PriorityList& priority_list =
       GetUpdatePriorityList(*update);
   // Update priority_child_numbers, reusing old child numbers in an
   // intelligent way to avoid unnecessary churn.
@@ -660,7 +660,7 @@ void XdsClusterResolverLb::OnEndpointChanged(
   std::map<size_t, std::set<XdsLocalityName*, XdsLocalityName::Less>>
       child_locality_map;
   if (discovery_entry.latest_update != nullptr) {
-    const auto* prev_priority_list =
+    const auto& prev_priority_list =
         GetUpdatePriorityList(*discovery_entry.latest_update);
     for (size_t priority = 0; priority < prev_priority_list.size();
          ++priority) {
@@ -675,8 +675,8 @@ void XdsClusterResolverLb::OnEndpointChanged(
   }
   // Construct new list of children.
   std::vector<size_t> priority_child_numbers;
-  for (size_t priority = 0; priority < priority_list->size(); ++priority) {
-    const auto& localities = (*priority_list)[priority].localities;
+  for (size_t priority = 0; priority < priority_list.size(); ++priority) {
+    const auto& localities = priority_list[priority].localities;
     absl::optional<size_t> child_number;
     // If one of the localities in this priority already existed, reuse its
     // child number.
@@ -770,10 +770,10 @@ void XdsClusterResolverLb::OnResourceDoesNotExist(size_t index,
 ServerAddressList XdsClusterResolverLb::CreateChildPolicyAddressesLocked() {
   ServerAddressList addresses;
   for (const auto& discovery_entry : discovery_mechanisms_) {
-    const auto* priority_list =
+    const auto& priority_list =
         GetUpdatePriorityList(*discovery_entry.latest_update);
-    for (size_t priority = 0; priority < priority_list->size(); ++priority) {
-      const auto& priority_entry = (*priority_list)[priority];
+    for (size_t priority = 0; priority < priority_list.size(); ++priority) {
+      const auto& priority_entry = priority_list[priority];
       std::string priority_child_name =
           discovery_entry.GetChildPolicyName(priority);
       for (const auto& p : priority_entry.localities) {
@@ -815,10 +815,10 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
   Json::Object priority_children;
   Json::Array priority_priorities;
   for (const auto& discovery_entry : discovery_mechanisms_) {
-    const auto* priority_list =
+    const auto& priority_list =
         GetUpdatePriorityList(*discovery_entry.latest_update);
     const auto& discovery_config = discovery_entry.config();
-    for (size_t priority = 0; priority < priority_list->size(); ++priority) {
+    for (size_t priority = 0; priority < priority_list.size(); ++priority) {
       // Determine what xDS LB policy to use.
       Json child_policy;
       if (!discovery_entry.discovery_mechanism->override_child_policy()

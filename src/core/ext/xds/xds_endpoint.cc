@@ -466,7 +466,7 @@ XdsResourceType::DecodeResult XdsEndpointResourceType::Decode(
     if (GRPC_TRACE_FLAG_ENABLED(*context.tracer)) {
       gpr_log(GPR_INFO, "[xds_client %p] parsed ClusterLoadAssignment %s: %s",
               context.client, result.name->c_str(),
-              eds_resource->ToString().c_str());
+              (*eds_resource)->ToString().c_str());
     }
     result.resource = std::move(*eds_resource);
   }

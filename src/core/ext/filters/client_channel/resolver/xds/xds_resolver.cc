@@ -546,7 +546,7 @@ XdsResolver::RouteConfigData::CreateMethodConfig(
   }
   // Handle xDS HTTP filters.
   const auto& hcm = absl::get<XdsListenerResource::HttpConnectionManager>(
-      resolver->current_listener_.listener);
+      resolver->current_listener_->listener);
   auto result = XdsRouting::GeneratePerHTTPFilterConfigs(
       static_cast<const GrpcXdsBootstrap&>(resolver->xds_client_->bootstrap())
           .http_filter_registry(),
@@ -674,7 +674,7 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
       static_cast<const GrpcXdsBootstrap&>(resolver_->xds_client_->bootstrap())
           .http_filter_registry();
   const auto& hcm = absl::get<XdsListenerResource::HttpConnectionManager>(
-      resolver_->current_listener_.listener);
+      resolver_->current_listener_->listener);
   for (const auto& http_filter : hcm.http_filters) {
     // Find filter.  This is guaranteed to succeed, because it's checked
     // at config validation time in the XdsApi code.
@@ -1015,7 +1015,7 @@ void XdsResolver::OnListenerUpdate(
   }
   if (xds_client_ == nullptr) return;
   const auto* hcm = absl::get_if<XdsListenerResource::HttpConnectionManager>(
-      &listener.listener);
+      &listener->listener);
   if (hcm == nullptr) {
     return OnError(lds_resource_name_,
                    absl::UnavailableError("not an API listener"));
@@ -1054,7 +1054,7 @@ void XdsResolver::OnListenerUpdate(
         }
       },
       // inlined RouteConfig
-      [&](const RefCountedPtr<const XdsRouteConfigResource>& route_config) {
+      [&](const std::shared_ptr<const XdsRouteConfigResource>& route_config) {
         // If the previous update specified an RDS resource instead of
         // having an inlined RouteConfig, we need to cancel the RDS watch.
         if (route_config_watcher_ != nullptr) {
@@ -1153,8 +1153,8 @@ XdsResolver::CreateServiceConfig() {
           "        \"childPolicy\": %s\n"
           "       }",
           cluster.first,
-          current_route_config_->cluster_specifier_plugin_map[
-              std::string(child_name)]));
+          current_route_config_->cluster_specifier_plugin_map.at(
+              std::string(child_name))));
     } else {
       absl::ConsumePrefix(&child_name, "cluster:");
       clusters.push_back(
@@ -1188,9 +1188,11 @@ void XdsResolver::GenerateResult() {
   if (current_virtual_host_ == nullptr) return;
   // First create XdsConfigSelector, which may add new entries to the cluster
   // state map, and then CreateServiceConfig for LB policies.
+  const auto& hcm = absl::get<XdsListenerResource::HttpConnectionManager>(
+      current_listener_->listener);
   auto route_config_data =
       RouteConfigData::Create(this, current_virtual_host_->routes,
-                              current_listener_.http_max_stream_duration);
+                              hcm.http_max_stream_duration);
   if (!route_config_data.ok()) {
     OnError("could not create ConfigSelector",
             absl::UnavailableError(route_config_data.status().message()));

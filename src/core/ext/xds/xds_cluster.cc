@@ -703,7 +703,7 @@ XdsResourceType::DecodeResult XdsClusterResourceType::Decode(
   } else {
     if (GRPC_TRACE_FLAG_ENABLED(*context.tracer)) {
       gpr_log(GPR_INFO, "[xds_client %p] parsed Cluster %s: %s", context.client,
-              result.name->c_str(), cds_resource->ToString().c_str());
+              result.name->c_str(), (*cds_resource)->ToString().c_str());
     }
     result.resource = std::move(*cds_resource);
   }

@@ -4498,6 +4498,7 @@ grpc_cc_library(
         "lb_policy",
         "lb_policy_factory",
         "lb_policy_registry",
+        "no_destruct",
         "pollset_set",
         "validation_errors",
         "//:channel_arg_names",

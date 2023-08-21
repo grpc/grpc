@@ -78,7 +78,7 @@ struct XdsListenerResource : public XdsResourceType::ResourceData {
             route_config);
         auto& rc2 = absl::get<std::shared_ptr<const XdsRouteConfigResource>>(
             other.route_config);
-        if (*rc1 != *rc2) return false;
+        if (!(*rc1 == *rc2)) return false;
       }
       return http_max_stream_duration == other.http_max_stream_duration &&
              http_filters == other.http_filters;
