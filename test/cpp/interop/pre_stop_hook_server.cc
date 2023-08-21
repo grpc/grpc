@@ -61,8 +61,8 @@ class HookServiceImpl final : public HookService::CallbackService {
     request_var_.SignalAll();
   }
 
-  bool ExpectRequests(size_t expected_requests_count,
-                      const absl::Duration& timeout) {
+  bool TestOnlyExpectRequests(size_t expected_requests_count,
+                              const absl::Duration& timeout) {
     grpc_core::MutexLock lock(&mu_);
     auto deadline = absl::Now() + timeout;
     while (pending_requests_.size() < expected_requests_count &&
@@ -129,8 +129,10 @@ class PreStopHookServer {
     hook_service_.SetReturnStatus(status);
   }
 
-  bool ExpectRequests(size_t expected_requests_count, absl::Duration timeout) {
-    return hook_service_.ExpectRequests(expected_requests_count, timeout);
+  bool TestOnlyExpectRequests(size_t expected_requests_count,
+                              absl::Duration timeout) {
+    return hook_service_.TestOnlyExpectRequests(expected_requests_count,
+                                                timeout);
   }
 
  private:
@@ -184,7 +186,7 @@ void PreStopHookServerManager::Return(StatusCode code,
 
 bool PreStopHookServerManager::TestOnlyExpectRequests(
     size_t expected_requests_count, const absl::Duration& timeout) {
-  return server_->ExpectRequests(expected_requests_count, timeout);
+  return server_->TestOnlyExpectRequests(expected_requests_count, timeout);
 }
 
 void PreStopHookServerManager::PreStopHookServerDeleter::operator()(
