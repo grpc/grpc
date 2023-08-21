@@ -40,7 +40,8 @@
       lib = lib_maps.get(dep, None)
       if lib:
         php_deps.extend(lib.transitive_deps)
-    for dep in php_deps:
+    # construct list of all source files, but explicitly exclude cares
+    for dep in set(php_deps) - set({'cares'}):
       lib = lib_maps.get(dep, None)
       if lib:
          srcs.extend(lib.get('public_headers', []) + lib.headers + lib.src)
