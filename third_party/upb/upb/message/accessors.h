@@ -34,11 +34,9 @@
 #include "upb/collections/map.h"
 #include "upb/collections/map_internal.h"
 #include "upb/message/accessors_internal.h"
-#include "upb/message/extension_internal.h"
 #include "upb/message/internal.h"
-#include "upb/mini_table/common.h"
-#include "upb/mini_table/enum_internal.h"
-#include "upb/mini_table/field_internal.h"
+#include "upb/mini_table/enum.h"
+#include "upb/mini_table/field.h"
 
 // Must be last.
 #include "upb/port/def.inc"
@@ -55,6 +53,13 @@ UPB_API_INLINE void upb_Message_ClearField(upb_Message* msg,
   } else {
     _upb_Message_ClearNonExtensionField(msg, field);
   }
+}
+
+UPB_API_INLINE void upb_Message_Clear(upb_Message* msg,
+                                      const upb_MiniTable* l) {
+  // Note: Can't use UPB_PTR_AT() here because we are doing pointer subtraction.
+  char* mem = (char*)msg - sizeof(upb_Message_Internal);
+  memset(mem, 0, upb_msg_sizeof(l));
 }
 
 UPB_API_INLINE bool upb_Message_HasField(const upb_Message* msg,
@@ -248,28 +253,46 @@ UPB_API_INLINE bool upb_Message_SetString(upb_Message* msg,
   return _upb_Message_SetField(msg, field, &value, a);
 }
 
-UPB_API_INLINE const upb_Message* upb_Message_GetMessage(
+UPB_API_INLINE upb_TaggedMessagePtr upb_Message_GetTaggedMessagePtr(
     const upb_Message* msg, const upb_MiniTableField* field,
     upb_Message* default_val) {
   UPB_ASSUME(upb_MiniTableField_CType(field) == kUpb_CType_Message);
   UPB_ASSUME(_upb_MiniTableField_GetRep(field) ==
              UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte));
   UPB_ASSUME(!upb_IsRepeatedOrMap(field));
-  upb_Message* ret;
-  _upb_Message_GetNonExtensionField(msg, field, &default_val, &ret);
-  return ret;
+  upb_TaggedMessagePtr tagged;
+  _upb_Message_GetNonExtensionField(msg, field, &default_val, &tagged);
+  return tagged;
 }
 
-UPB_API_INLINE void upb_Message_SetMessage(upb_Message* msg,
-                                           const upb_MiniTable* mini_table,
-                                           const upb_MiniTableField* field,
-                                           upb_Message* sub_message) {
+UPB_API_INLINE const upb_Message* upb_Message_GetMessage(
+    const upb_Message* msg, const upb_MiniTableField* field,
+    upb_Message* default_val) {
+  upb_TaggedMessagePtr tagged =
+      upb_Message_GetTaggedMessagePtr(msg, field, default_val);
+  return upb_TaggedMessagePtr_GetNonEmptyMessage(tagged);
+}
+
+// For internal use only; users cannot set tagged messages because only the
+// parser and the message copier are allowed to directly create an empty
+// message.
+UPB_API_INLINE void _upb_Message_SetTaggedMessagePtr(
+    upb_Message* msg, const upb_MiniTable* mini_table,
+    const upb_MiniTableField* field, upb_TaggedMessagePtr sub_message) {
   UPB_ASSUME(upb_MiniTableField_CType(field) == kUpb_CType_Message);
   UPB_ASSUME(_upb_MiniTableField_GetRep(field) ==
              UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte));
   UPB_ASSUME(!upb_IsRepeatedOrMap(field));
   UPB_ASSERT(mini_table->subs[field->UPB_PRIVATE(submsg_index)].submsg);
   _upb_Message_SetNonExtensionField(msg, field, &sub_message);
+}
+
+UPB_API_INLINE void upb_Message_SetMessage(upb_Message* msg,
+                                           const upb_MiniTable* mini_table,
+                                           const upb_MiniTableField* field,
+                                           upb_Message* sub_message) {
+  _upb_Message_SetTaggedMessagePtr(
+      msg, mini_table, field, _upb_TaggedMessagePtr_Pack(sub_message, false));
 }
 
 UPB_API_INLINE upb_Message* upb_Message_GetOrCreateMutableMessage(
@@ -318,34 +341,28 @@ UPB_API_INLINE upb_Array* upb_Message_GetOrCreateMutableArray(
   return array;
 }
 
-UPB_INLINE upb_Array* upb_Message_ResizeArrayUninitialized(
+UPB_API_INLINE void* upb_Message_ResizeArrayUninitialized(
     upb_Message* msg, const upb_MiniTableField* field, size_t size,
     upb_Arena* arena) {
   _upb_MiniTableField_CheckIsArray(field);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(msg, field, arena);
   if (!arr || !_upb_Array_ResizeUninitialized(arr, size, arena)) return NULL;
-  return arr;
-}
-
-// TODO: remove, migrate users to upb_Message_ResizeArrayUninitialized(), which
-// has the same semantics but a clearer name. Alternatively, if users want an
-// initialized variant, we can also offer that.
-UPB_API_INLINE void* upb_Message_ResizeArray(upb_Message* msg,
-                                             const upb_MiniTableField* field,
-                                             size_t size, upb_Arena* arena) {
-  _upb_MiniTableField_CheckIsArray(field);
-  upb_Array* arr =
-      upb_Message_ResizeArrayUninitialized(msg, field, size, arena);
   return _upb_array_ptr(arr);
 }
 
 UPB_API_INLINE const upb_Map* upb_Message_GetMap(
     const upb_Message* msg, const upb_MiniTableField* field) {
   _upb_MiniTableField_CheckIsMap(field);
+  _upb_Message_AssertMapIsUntagged(msg, field);
   upb_Map* ret;
   const upb_Map* default_val = NULL;
   _upb_Message_GetNonExtensionField(msg, field, &default_val, &ret);
   return ret;
+}
+
+UPB_API_INLINE upb_Map* upb_Message_GetMutableMap(
+    upb_Message* msg, const upb_MiniTableField* field) {
+  return (upb_Map*)upb_Message_GetMap(msg, field);
 }
 
 UPB_API_INLINE upb_Map* upb_Message_GetOrCreateMutableMap(
@@ -369,6 +386,10 @@ upb_MapInsertStatus upb_Message_InsertMapEntry(upb_Map* map,
                                                const upb_MiniTableField* field,
                                                upb_Message* map_entry_message,
                                                upb_Arena* arena);
+
+// Compares two messages by serializing them and calling memcmp().
+bool upb_Message_IsExactlyEqual(const upb_Message* m1, const upb_Message* m2,
+                                const upb_MiniTable* layout);
 
 #ifdef __cplusplus
 } /* extern "C" */

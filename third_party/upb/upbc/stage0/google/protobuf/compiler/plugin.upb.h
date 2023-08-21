@@ -9,14 +9,7 @@
 #ifndef GOOGLE_PROTOBUF_COMPILER_PLUGIN_PROTO_UPB_H_
 #define GOOGLE_PROTOBUF_COMPILER_PLUGIN_PROTO_UPB_H_
 
-#include "upb/collections/array_internal.h"
-#include "upb/collections/map_gencode_util.h"
-#include "upb/message/accessors.h"
-#include "upb/message/internal.h"
-#include "upb/mini_table/enum_internal.h"
-#include "upb/wire/decode.h"
-#include "upb/wire/decode_fast.h"
-#include "upb/wire/encode.h"
+#include "upb/generated_code_support.h"
 
 // Must be last. 
 #include "upb/port/def.inc"
@@ -278,7 +271,7 @@ UPB_INLINE upb_StringView* google_protobuf_compiler_CodeGeneratorRequest_mutable
 }
 UPB_INLINE upb_StringView* google_protobuf_compiler_CodeGeneratorRequest_resize_file_to_generate(google_protobuf_compiler_CodeGeneratorRequest* msg, size_t size, upb_Arena* arena) {
   upb_MiniTableField field = *upb_MiniTable_FindFieldByNumber(google_protobuf_compiler_CodeGeneratorRequest_msg_init(), 1);
-  return (upb_StringView*)upb_Message_ResizeArray(msg, &field, size, arena);
+  return (upb_StringView*)upb_Message_ResizeArrayUninitialized(msg, &field, size, arena);
 }
 UPB_INLINE bool google_protobuf_compiler_CodeGeneratorRequest_add_file_to_generate(google_protobuf_compiler_CodeGeneratorRequest* msg, upb_StringView val, upb_Arena* arena) {
   upb_MiniTableField field = *upb_MiniTable_FindFieldByNumber(google_protobuf_compiler_CodeGeneratorRequest_msg_init(), 1);
@@ -318,7 +311,7 @@ UPB_INLINE struct google_protobuf_FileDescriptorProto** google_protobuf_compiler
 }
 UPB_INLINE struct google_protobuf_FileDescriptorProto** google_protobuf_compiler_CodeGeneratorRequest_resize_proto_file(google_protobuf_compiler_CodeGeneratorRequest* msg, size_t size, upb_Arena* arena) {
   upb_MiniTableField field = *upb_MiniTable_FindFieldByNumber(google_protobuf_compiler_CodeGeneratorRequest_msg_init(), 15);
-  return (struct google_protobuf_FileDescriptorProto**)upb_Message_ResizeArray(msg, &field, size, arena);
+  return (struct google_protobuf_FileDescriptorProto**)upb_Message_ResizeArrayUninitialized(msg, &field, size, arena);
 }
 UPB_INLINE struct google_protobuf_FileDescriptorProto* google_protobuf_compiler_CodeGeneratorRequest_add_proto_file(google_protobuf_compiler_CodeGeneratorRequest* msg, upb_Arena* arena) {
   upb_MiniTableField field = *upb_MiniTable_FindFieldByNumber(google_protobuf_compiler_CodeGeneratorRequest_msg_init(), 15);
@@ -439,7 +432,7 @@ UPB_INLINE google_protobuf_compiler_CodeGeneratorResponse_File** google_protobuf
 }
 UPB_INLINE google_protobuf_compiler_CodeGeneratorResponse_File** google_protobuf_compiler_CodeGeneratorResponse_resize_file(google_protobuf_compiler_CodeGeneratorResponse* msg, size_t size, upb_Arena* arena) {
   upb_MiniTableField field = *upb_MiniTable_FindFieldByNumber(google_protobuf_compiler_CodeGeneratorResponse_msg_init(), 15);
-  return (google_protobuf_compiler_CodeGeneratorResponse_File**)upb_Message_ResizeArray(msg, &field, size, arena);
+  return (google_protobuf_compiler_CodeGeneratorResponse_File**)upb_Message_ResizeArrayUninitialized(msg, &field, size, arena);
 }
 UPB_INLINE struct google_protobuf_compiler_CodeGeneratorResponse_File* google_protobuf_compiler_CodeGeneratorResponse_add_file(google_protobuf_compiler_CodeGeneratorResponse* msg, upb_Arena* arena) {
   upb_MiniTableField field = *upb_MiniTable_FindFieldByNumber(google_protobuf_compiler_CodeGeneratorResponse_msg_init(), 15);

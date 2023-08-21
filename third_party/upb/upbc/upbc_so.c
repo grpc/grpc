@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2022, Google LLC
+ * Copyright (c) 2009-2021, Google LLC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,100 +25,6 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-// This disables inlining and forces all public functions to be exported to the
-// linker. It is used to generate bindings for FFIs from other languages.
-#ifndef UPB_BUILD_API
-#define UPB_BUILD_API
-#endif
+// These headers form a spanning tree for the upbc defs needed by FFI layers.
 
-#include "upb/collections/array.h"
-#include "upb/collections/map.h"
-#include "upb/message/accessors.h"
-#include "upb/message/message.h"
-#include "upb/mini_table/decode.h"
 #include "upbc/upbdev.h"
-
-// Must be last.
-#include "upb/port/def.inc"
-
-// JavaScript doesn't directly support 64-bit ints so we must split them.
-
-UPB_API_INLINE uint32_t upb_Array_GetInt64Hi(const upb_Array* array, size_t i) {
-  return (uint32_t)(upb_Array_Get(array, i).int64_val >> 32);
-}
-
-UPB_API_INLINE uint32_t upb_Array_GetInt64Lo(const upb_Array* array, size_t i) {
-  return (uint32_t)upb_Array_Get(array, i).int64_val;
-}
-
-UPB_API_INLINE void upb_Array_SetInt64Split(upb_Array* array, size_t i,
-                                            uint32_t hi, uint32_t lo) {
-  const upb_MessageValue val = {.int64_val = ((uint64_t)hi) << 32 | lo};
-  upb_Array_Set(array, i, val);
-}
-
-UPB_API_INLINE bool upb_Array_AppendInt64Split(upb_Array* array, uint32_t hi,
-                                               uint32_t lo, upb_Arena* arena) {
-  const upb_MessageValue val = {.int64_val = ((uint64_t)hi) << 32 | lo};
-  return upb_Array_Append(array, val, arena);
-}
-
-UPB_API_INLINE uint32_t upb_Array_GetUInt64Hi(const upb_Array* array,
-                                              size_t i) {
-  return (uint32_t)(upb_Array_Get(array, i).uint64_val >> 32);
-}
-
-UPB_API_INLINE uint32_t upb_Array_GetUInt64Lo(const upb_Array* array,
-                                              size_t i) {
-  return (uint32_t)upb_Array_Get(array, i).uint64_val;
-}
-
-UPB_API_INLINE void upb_Array_SetUInt64Split(upb_Array* array, size_t i,
-                                             uint32_t hi, uint32_t lo) {
-  const upb_MessageValue val = {.uint64_val = ((uint64_t)hi) << 32 | lo};
-  upb_Array_Set(array, i, val);
-}
-
-UPB_API_INLINE bool upb_Array_AppendUInt64Split(upb_Array* array, uint32_t hi,
-                                                uint32_t lo, upb_Arena* arena) {
-  const upb_MessageValue val = {.uint64_val = ((uint64_t)hi) << 32 | lo};
-  return upb_Array_Append(array, val, arena);
-}
-
-UPB_API_INLINE uint32_t upb_Message_GetInt64Hi(const upb_Message* msg,
-                                               const upb_MiniTableField* field,
-                                               uint32_t default_value) {
-  return (uint32_t)(upb_Message_GetInt64(msg, field, default_value) >> 32);
-}
-
-UPB_API_INLINE uint32_t upb_Message_GetInt64Lo(const upb_Message* msg,
-                                               const upb_MiniTableField* field,
-                                               uint32_t default_value) {
-  return (uint32_t)upb_Message_GetInt64(msg, field, default_value);
-}
-
-UPB_API_INLINE bool upb_Message_SetInt64Split(upb_Message* msg,
-                                              const upb_MiniTableField* field,
-                                              uint32_t hi, uint32_t lo,
-                                              upb_Arena* arena) {
-  return upb_Message_SetInt64(msg, field, ((int64_t)hi << 32) | lo, arena);
-}
-
-UPB_API_INLINE uint32_t upb_Message_GetUInt64Hi(const upb_Message* msg,
-                                                const upb_MiniTableField* field,
-                                                uint32_t default_value) {
-  return (uint32_t)(upb_Message_GetUInt64(msg, field, default_value) >> 32);
-}
-
-UPB_API_INLINE uint32_t upb_Message_GetUInt64Lo(const upb_Message* msg,
-                                                const upb_MiniTableField* field,
-                                                uint32_t default_value) {
-  return (uint32_t)upb_Message_GetUInt64(msg, field, default_value);
-}
-
-UPB_API_INLINE bool upb_Message_SetUInt64Split(upb_Message* msg,
-                                               const upb_MiniTableField* field,
-                                               uint32_t hi, uint32_t lo,
-                                               upb_Arena* arena) {
-  return upb_Message_SetUInt64(msg, field, ((uint64_t)hi << 32) | lo, arena);
-}
