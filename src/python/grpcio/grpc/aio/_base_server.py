@@ -197,9 +197,27 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
             :term:`metadata`.
 
         Raises:
-          Exception: An exception is always raised to signal the abortion the
-            RPC to the gRPC runtime.
+          Exception: An exception is always raised to signal the abortion of
+            the RPC to the gRPC runtime.
         """
+
+    async def abort_with_status(self, status: grpc.Status) -> NoReturn:
+        """Raises an exception to terminate the RPC with a non-OK status.
+
+        The status passed as argument will supercede any existing status code,
+        status message and trailing metadata.
+
+        This is an EXPERIMENTAL API.
+
+        Args:
+          status: A grpc.Status object. The status code in it must not be
+            StatusCode.OK.
+
+        Raises:
+          Exception: An exception is always raised to signal the abortion of
+            the RPC to the gRPC runtime.
+        """
+        await self.abort(status.code, status.details, status.trailing_metadata)
 
     @abc.abstractmethod
     def set_trailing_metadata(self, trailing_metadata: MetadataType) -> None:
