@@ -22,7 +22,6 @@
 
 #include <stddef.h>
 
-#include <algorithm>
 #include <unordered_map>
 
 #include "absl/meta/type_traits.h"
@@ -149,12 +148,15 @@ ServiceMeshLabelsInjector::ServiceMeshLabelsInjector(
       absl::Base64Escape(absl::string_view(output, output_length)));
   // Fill up local labels map. The rest we get from the detected Resource and
   // from the peer.
-  local_labels_.emplace_back("canonical_service", canonical_service_value);
+  local_labels_.emplace_back("canonical_service_name", canonical_service_value);
 }
 
 std::string GetStringValueFromUpbStruct(google_protobuf_Struct* struct_pb,
                                         absl::string_view key,
                                         upb_Arena* arena) {
+  if (struct_pb == nullptr) {
+    return "unknown";
+  }
   google_protobuf_Value* value_pb = google_protobuf_Value_new(arena);
   bool present = google_protobuf_Struct_fields_get(
       struct_pb, AbslStrToUpbStr(key), &value_pb);
@@ -172,11 +174,16 @@ ServiceMeshLabelsInjector::GetPeerLabels(
   auto peer_metadata =
       incoming_initial_metadata->Take(grpc_core::XEnvoyPeerMetadata());
   std::vector<std::pair<std::string, std::string>> labels;
+  bool metadata_found = false;
+  std::string decoded_metadata;
   if (peer_metadata.has_value()) {
+    metadata_found = absl::Base64Unescape(
+        peer_metadata.value().as_string_view(), &decoded_metadata);
+  }
+  if (metadata_found) {
     upb::Arena arena;
     auto* struct_pb = google_protobuf_Struct_parse(
-        reinterpret_cast<const char*>(peer_metadata.value().data()),
-        peer_metadata.value().size(), arena.ptr());
+        decoded_metadata.c_str(), decoded_metadata.size(), arena.ptr());
     labels.emplace_back(kPeerTypeAttribute,
                         GetStringValueFromUpbStruct(
                             struct_pb, kMetadataExchangeTypeKey, arena.ptr()));

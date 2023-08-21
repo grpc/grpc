@@ -24,7 +24,6 @@
 
 #include <utility>
 
-#include "absl/container/flat_hash_map.h"
 #include "opentelemetry/metrics/meter.h"
 #include "opentelemetry/metrics/meter_provider.h"
 #include "opentelemetry/metrics/provider.h"
