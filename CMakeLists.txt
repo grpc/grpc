@@ -3320,10 +3320,9 @@ add_library(upb
   third_party/upb/upb/mem/alloc.c
   third_party/upb/upb/mem/arena.c
   third_party/upb/upb/message/message.c
-  third_party/upb/upb/mini_table/common.c
-  third_party/upb/upb/mini_table/decode.c
-  third_party/upb/upb/mini_table/encode.c
   third_party/upb/upb/mini_table/extension_registry.c
+  third_party/upb/upb/mini_table/internal/message.c
+  third_party/upb/upb/mini_table/message.c
   third_party/upb/upb/wire/decode.c
   third_party/upb/upb/wire/decode_fast.c
   third_party/upb/upb/wire/encode.c
@@ -3388,10 +3387,9 @@ add_library(upb_collections_lib
   third_party/upb/upb/mem/alloc.c
   third_party/upb/upb/mem/arena.c
   third_party/upb/upb/message/message.c
-  third_party/upb/upb/mini_table/common.c
-  third_party/upb/upb/mini_table/decode.c
-  third_party/upb/upb/mini_table/encode.c
   third_party/upb/upb/mini_table/extension_registry.c
+  third_party/upb/upb/mini_table/internal/message.c
+  third_party/upb/upb/mini_table/message.c
 )
 
 target_compile_features(upb_collections_lib PUBLIC cxx_std_14)
@@ -3446,6 +3444,11 @@ add_library(upb_json_lib
   third_party/upb/upb/json/decode.c
   third_party/upb/upb/json/encode.c
   third_party/upb/upb/message/accessors.c
+  third_party/upb/upb/mini_descriptor/build_enum.c
+  third_party/upb/upb/mini_descriptor/decode.c
+  third_party/upb/upb/mini_descriptor/internal/base92.c
+  third_party/upb/upb/mini_descriptor/internal/encode.c
+  third_party/upb/upb/mini_descriptor/link.c
   third_party/upb/upb/reflection/def_builder.c
   third_party/upb/upb/reflection/def_pool.c
   third_party/upb/upb/reflection/def_type.c
@@ -3516,6 +3519,11 @@ endif()
 add_library(upb_textformat_lib
   src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
   third_party/upb/upb/message/accessors.c
+  third_party/upb/upb/mini_descriptor/build_enum.c
+  third_party/upb/upb/mini_descriptor/decode.c
+  third_party/upb/upb/mini_descriptor/internal/base92.c
+  third_party/upb/upb/mini_descriptor/internal/encode.c
+  third_party/upb/upb/mini_descriptor/link.c
   third_party/upb/upb/reflection/def_builder.c
   third_party/upb/upb/reflection/def_pool.c
   third_party/upb/upb/reflection/def_type.c
