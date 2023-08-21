@@ -1227,6 +1227,8 @@
     <file baseinstalldir="/" name="src/core/lib/gprpp/posix/thd.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/ref_counted.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/ref_counted_ptr.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/ref_counted_string.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/ref_counted_string.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/single_set_ptr.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/sorted_pack.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/stat.h" role="src" />

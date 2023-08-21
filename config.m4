@@ -606,6 +606,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/gprpp/posix/env.cc \
     src/core/lib/gprpp/posix/stat.cc \
     src/core/lib/gprpp/posix/thd.cc \
+    src/core/lib/gprpp/ref_counted_string.cc \
     src/core/lib/gprpp/status_helper.cc \
     src/core/lib/gprpp/strerror.cc \
     src/core/lib/gprpp/tchar.cc \
