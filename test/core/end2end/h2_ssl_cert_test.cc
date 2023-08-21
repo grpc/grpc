@@ -18,6 +18,14 @@
 
 #include <stdio.h>
 #include <string.h>
+
+#include <functional>
+#include <memory>
+#include <string>
+
+#include "absl/types/optional.h"
+#include "gtest/gtest.h"
+
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
@@ -28,12 +36,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
-#include <functional>
-#include <memory>
-#include <string>
 
-#include "absl/types/optional.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gpr/tmpfile.h"
