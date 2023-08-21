@@ -20,6 +20,7 @@
 
 #include <stddef.h>
 
+#include <memory>
 #include <utility>
 
 #include "absl/status/status.h"
