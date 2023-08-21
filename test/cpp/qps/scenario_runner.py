@@ -16,8 +16,9 @@
 """
 Local QPS benchmark runner for the OSS Benchmark loadtest configurations.
 
-This tool will run a loadtest file (generated with loadtest_config.py) locally,
-with driver client and server all in the same process. You can run the process
+This tool will run a scenario locally, either already extracted from
+scenario_config_extractor, or extracted from a benchmark loadtest config. The
+driver, client, and server all in the same process. You can run the process
 under a custom runner using the --runner_cmd="<COMMAND>" flag, and with custom
 environment variables if needed.
 
@@ -28,17 +29,27 @@ GRPC_VERBOSITY=debug \
     --config=opt \
     --cxxopt="-gmlt" \
     test/cpp/qps:scenario_runner -- \
-        --loadtest_file=/path/to/loadtest.config \
-        --runner_cmd="gdb --args"
+    --loadtest_file=/path/to/loadtest.config \
+    --runner_cmd="gdb --args"
 
 This builds the binary and runs:
-    gdb --args <bazel-bin/.../binary> -- --loadtest_config=/tmp/path/extracted_scenario_json.config
 
-Other examples:
+    gdb --args bazel-bin/.../scenario_runner -- \
+        --loadtest_config=/tmp/path/extracted_scenario_json.config
+
+        
+If you have already extracted the JSON scenario using scenario_config_exporter,
+you can replace `--loadtest_file=loadtest.yaml` with
+`--scenario_file=scenario.json`.
+
+
+Other --runner_cmd examples:
     --runner_cmd="perf record -F 777 -o $(pwd)/perf.data -g --event=cpu-cycles",
     --runner_cmd="perf stat record -o $(pwd)/perf.stat.data",
 "
 """
+
+
 import os
 import sys
 import tempfile
@@ -47,7 +58,12 @@ import subprocess
 from absl import app
 from absl import flags
 
-_LOADTEST_YAML = flags.DEFINE_string("loadtest_file", default=None, help="")
+_LOADTEST_YAML = flags.DEFINE_string(
+    "loadtest_file", default=None, help="Path to the benchmark loadtest file"
+)
+_SCENARIO_JSON = flags.DEFINE_string(
+    "scenario_file", default=None, help="Path to a scenario JSON file"
+)
 _RUNNER_CMD = flags.DEFINE_string(
     "runner_cmd",
     default="",
@@ -62,42 +78,58 @@ _RUN_ALL = flags.DEFINE_bool(
     "run_all", default=False, help="Run all scenarios in the loadtest"
 )
 
-flags.mark_flags_as_required(["loadtest_file"])
+def run_command(filename):
+    cmd = [
+        os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            "scenario_runner_cc",
+        ),
+        "--loadtest_config",
+        filename,
+    ]
+    if _RUNNER_CMD.value:
+        cmd = _RUNNER_CMD.value.split(" ") + cmd
+    print(cmd)
+    subprocess.run(cmd, check=True)
+    if _RUN_FIRST.value:
+        print("Exiting due to --run_first")
+        sys.exit(0)
 
 
-def main(args):
+def run_loadtests():
+    loadtests = []
     with open(
         os.path.join(
             os.path.dirname(os.path.abspath(__file__)), _LOADTEST_YAML.value
         )
     ) as f:
         loadtests = list(yaml.safe_load_all(f))
-        if len(loadtests) > 1 and not (_RUN_FIRST.value or _RUN_ALL.value):
-            print(
-                "The loadtest configuration contains more than one scenario. Please specify --run_first or --run_all.",
-                file=sys.stderr,
+    if len(loadtests) > 1 and not (_RUN_FIRST.value or _RUN_ALL.value):
+        print(
+            "The loadtest configuration contains more than one scenario. Please specify --run_first or --run_all.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    for loadtest in loadtests:
+        with tempfile.NamedTemporaryFile() as tmp_f:
+            tmp_f.write(
+                "".join(loadtest["spec"]["scenariosJSON"]).encode("utf-8")
             )
-            sys.exit(1)
-        for loadtest in loadtests:
-            with tempfile.NamedTemporaryFile() as tmp_f:
-                tmp_f.write(
-                    "".join(loadtest["spec"]["scenariosJSON"]).encode("utf-8")
-                )
-                tmp_f.flush()
-                cmd = [
-                    os.path.join(
-                        os.path.dirname(os.path.abspath(__file__)),
-                        "scenario_runner_cc",
-                    ),
-                    "--loadtest_config",
-                    tmp_f.name,
-                ]
-                if _RUNNER_CMD.value:
-                    cmd = _RUNNER_CMD.value.split(" ") + cmd
-                print(cmd)
-                subprocess.run(cmd, check=True)
-                if _RUN_FIRST.value:
-                    return
+            tmp_f.flush()
+            run_command(tmp_f.name)
+
+
+def run_scenario_file():
+    run_command(_SCENARIO_JSON.value)
+
+
+def main(args):
+    if _LOADTEST_YAML.value:
+        run_loadtests()
+    elif _SCENARIO_JSON.value:
+        run_scenario_file()
+    else:
+        "You must provide either a scenario.json or loadtest.yaml"
 
 
 if __name__ == "__main__":
