@@ -229,8 +229,6 @@ message LoadBalancerStatsResponse {
   message RpcMetadata {
     // metadata values for each rpc for the keys specified in
     // LoadBalancerStatsRequest.metadata_keys.
-    // metadata keys and values are returned exactly as was received
-    // from the server.
     repeated MetadataEntry metadata = 1;
   }
   message MetadataByPeer {
