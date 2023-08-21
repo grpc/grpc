@@ -30,8 +30,12 @@
 namespace grpc {
 namespace testing {
 
+// Implementation of the pre-stop hook server. An instance is created to start
+// a server and destroyed to stop one.
 class PreStopHookServer;
 
+// Interface for interacting with PreStopHookServer. Provides operations
+// required by the protocol, such as start, stop and return from the call.
 class PreStopHookServerManager {
  public:
   Status Start(int port, size_t timeout_s);
@@ -40,8 +44,9 @@ class PreStopHookServerManager {
   // Suspends the thread until there are pending requests. Returns false
   // if the necessary number of requests have not been received before the
   // timeout.
-  bool TestOnlyExpectRequests(size_t expected_requests_count,
-                              absl::Duration timeout = absl::Seconds(15));
+  bool TestOnlyExpectRequests(
+      size_t expected_requests_count,
+      const absl::Duration& timeout = absl::Seconds(15));
 
  private:
   // Custom deleter so we don't have to include PreStopHookServer in this header

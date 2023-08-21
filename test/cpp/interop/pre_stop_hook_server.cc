@@ -61,7 +61,8 @@ class HookServiceImpl final : public HookService::CallbackService {
     request_var_.SignalAll();
   }
 
-  bool ExpectRequests(size_t expected_requests_count, absl::Duration timeout) {
+  bool ExpectRequests(size_t expected_requests_count,
+                      const absl::Duration& timeout) {
     grpc_core::MutexLock lock(&mu_);
     auto deadline = absl::Now() + timeout;
     while (pending_requests_.size() < expected_requests_count &&
@@ -96,14 +97,21 @@ std::unique_ptr<Server> BuildHookServer(HookServiceImpl* service, int port) {
   return builder.BuildAndStart();
 }
 
-class PreStopHookGrpcServer {
- public:
-  explicit PreStopHookGrpcServer(std::unique_ptr<Server> server)
-      : server_(std::move(server)) {}
+}  // namespace
 
-  void Shutdown() {
+class PreStopHookServer {
+ public:
+  explicit PreStopHookServer(int port, const absl::Duration& startup_timeout)
+      : server_(BuildHookServer(&hook_service_, port)),
+        server_thread_(PreStopHookServer::ServerThread, this) {
+    WaitForState(State::kWaiting, startup_timeout);
+  }
+
+  ~PreStopHookServer() {
+    hook_service_.Stop();
     SetState(State::kShuttingDown);
     server_->Shutdown();
+    server_thread_.join();
   }
 
   State GetState() {
@@ -117,6 +125,15 @@ class PreStopHookGrpcServer {
     condition_.SignalAll();
   }
 
+  void SetReturnStatus(const Status& status) {
+    hook_service_.SetReturnStatus(status);
+  }
+
+  bool ExpectRequests(size_t expected_requests_count, absl::Duration timeout) {
+    return hook_service_.ExpectRequests(expected_requests_count, timeout);
+  }
+
+ private:
   bool WaitForState(State state, const absl::Duration& timeout) {
     grpc_core::MutexLock lock(&mu_);
     auto deadline = absl::Now() + timeout;
@@ -125,47 +142,17 @@ class PreStopHookGrpcServer {
     return state_ == state;
   }
 
-  static void ServerThread(std::shared_ptr<PreStopHookGrpcServer> server) {
+  static void ServerThread(PreStopHookServer* server) {
     server->SetState(State::kWaiting);
     server->server_->Wait();
     server->SetState(State::kDone);
   }
 
- private:
+  HookServiceImpl hook_service_;
   grpc_core::Mutex mu_;
   grpc_core::CondVar condition_ ABSL_GUARDED_BY(mu_);
   State state_ ABSL_GUARDED_BY(mu_) = State::kNew;
   std::unique_ptr<Server> server_;
-};
-
-}  // namespace
-
-class PreStopHookServer {
- public:
-  explicit PreStopHookServer(int port, const absl::Duration& timeout)
-      : server_(std::make_shared<PreStopHookGrpcServer>(
-            BuildHookServer(&hook_service_, port))),
-        server_thread_(PreStopHookGrpcServer::ServerThread, server_) {
-    server_->WaitForState(State::kWaiting, timeout);
-  }
-
-  ~PreStopHookServer() {
-    hook_service_.Stop();
-    server_->Shutdown();
-    server_thread_.join();
-  }
-
-  void SetReturnStatus(Status status) { hook_service_.SetReturnStatus(status); }
-
-  State state() { return server_->GetState(); }
-
-  bool ExpectRequests(size_t expected_requests_count, absl::Duration timeout) {
-    return hook_service_.ExpectRequests(expected_requests_count, timeout);
-  }
-
- private:
-  HookServiceImpl hook_service_;
-  std::shared_ptr<PreStopHookGrpcServer> server_;
   std::thread server_thread_;
 };
 
@@ -177,7 +164,7 @@ Status PreStopHookServerManager::Start(int port, size_t timeout_s) {
   server_ = std::unique_ptr<PreStopHookServer, PreStopHookServerDeleter>(
       new PreStopHookServer(port, absl::Seconds(timeout_s)),
       PreStopHookServerDeleter());
-  return server_->state() == State::kWaiting
+  return server_->GetState() == State::kWaiting
              ? Status::OK
              : Status(StatusCode::DEADLINE_EXCEEDED, "Server have not started");
 }
@@ -196,7 +183,7 @@ void PreStopHookServerManager::Return(StatusCode code,
 }
 
 bool PreStopHookServerManager::TestOnlyExpectRequests(
-    size_t expected_requests_count, absl::Duration timeout) {
+    size_t expected_requests_count, const absl::Duration& timeout) {
   return server_->ExpectRequests(expected_requests_count, timeout);
 }
 
