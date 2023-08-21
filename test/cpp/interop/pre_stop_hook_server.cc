@@ -53,17 +53,17 @@ class HookServiceImpl final : public HookService::CallbackService {
     grpc_core::MutexLock lock(&mu_);
     if (pending_requests_.empty()) {
       pending_status_ = status;
+    } else {
+      auto reactor = pending_requests_.begin();
+      (*reactor)->Finish(std::move(status));
+      pending_requests_.erase(reactor);
     }
-    for (auto request : pending_requests_) {
-      request->Finish(status);
-    }
-    pending_requests_.clear();
     request_var_.SignalAll();
   }
 
-  bool ExpectRequests(size_t expected_requests_count, size_t timeout_s) {
+  bool ExpectRequests(size_t expected_requests_count, absl::Duration timeout) {
     grpc_core::MutexLock lock(&mu_);
-    auto deadline = absl::Now() + absl::Seconds(timeout_s);
+    auto deadline = absl::Now() + timeout;
     while (pending_requests_.size() < expected_requests_count &&
            !request_var_.WaitWithDeadline(&mu_, deadline)) {
     }
@@ -159,8 +159,8 @@ class PreStopHookServer {
 
   State state() { return server_->GetState(); }
 
-  bool ExpectRequests(size_t expected_requests_count, size_t timeout_s) {
-    return hook_service_.ExpectRequests(expected_requests_count, timeout_s);
+  bool ExpectRequests(size_t expected_requests_count, absl::Duration timeout) {
+    return hook_service_.ExpectRequests(expected_requests_count, timeout);
   }
 
  private:
@@ -195,9 +195,9 @@ void PreStopHookServerManager::Return(StatusCode code,
   server_->SetReturnStatus(Status(code, std::string(description)));
 }
 
-bool PreStopHookServerManager::ExpectRequests(size_t expected_requests_count,
-                                              size_t timeout_s) {
-  return server_->ExpectRequests(expected_requests_count, timeout_s);
+bool PreStopHookServerManager::TestOnlyExpectRequests(
+    size_t expected_requests_count, absl::Duration timeout) {
+  return server_->ExpectRequests(expected_requests_count, timeout);
 }
 
 void PreStopHookServerManager::PreStopHookServerDeleter::operator()(

@@ -41,12 +41,13 @@ struct CallInfo {
   Empty request;
   Empty response;
 
-  Status WaitForStatus() {
+  absl::optional<Status> WaitForStatus(
+      absl::Duration timeout = absl::Seconds(1)) {
     grpc_core::MutexLock lock(&mu);
-    while (!status_.has_value()) {
-      cv.Wait(&mu);
+    if (!status_.has_value()) {
+      cv.WaitWithTimeout(&mu, timeout);
     }
-    return *status_;
+    return status_;
   }
 
   void SetStatus(const Status& status) {
@@ -73,11 +74,12 @@ TEST(PreStopHookServer, StartDoRequestStop) {
   HookService::Stub stub(std::move(channel));
   stub.async()->Hook(&info.context, &info.request, &info.response,
                      [&info](Status status) { info.SetStatus(status); });
-  ASSERT_EQ(server.ExpectRequests(1), 1);
+  ASSERT_EQ(server.TestOnlyExpectRequests(1), 1);
   server.Return(StatusCode::INTERNAL, "Just a test");
-  Status status = info.WaitForStatus();
-  EXPECT_EQ(status.error_code(), StatusCode::INTERNAL);
-  EXPECT_EQ(status.error_message(), "Just a test");
+  auto status = info.WaitForStatus();
+  ASSERT_TRUE(status.has_value());
+  EXPECT_EQ(status->error_code(), StatusCode::INTERNAL);
+  EXPECT_EQ(status->error_message(), "Just a test");
 }
 
 TEST(PreStopHookServer, StartServerWhileAlreadyRunning) {
@@ -102,10 +104,11 @@ TEST(PreStopHookServer, StopServerWhileRequestPending) {
   HookService::Stub stub(std::move(channel));
   stub.async()->Hook(&info.context, &info.request, &info.response,
                      [&info](Status status) { info.SetStatus(status); });
-  ASSERT_EQ(server.ExpectRequests(1), 1);
+  ASSERT_EQ(server.TestOnlyExpectRequests(1), 1);
   ASSERT_TRUE(server.Stop().ok());
-  Status status = info.WaitForStatus();
-  EXPECT_EQ(status.error_code(), StatusCode::ABORTED);
+  auto status = info.WaitForStatus();
+  ASSERT_TRUE(status.has_value());
+  EXPECT_EQ(status->error_code(), StatusCode::ABORTED);
 }
 
 TEST(PreStopHookServer, RespondToMultiplePendingRequests) {
@@ -120,16 +123,17 @@ TEST(PreStopHookServer, RespondToMultiplePendingRequests) {
   HookService::Stub stub(std::move(channel));
   stub.async()->Hook(&info[0].context, &info[0].request, &info[0].response,
                      [&info](Status status) { info[0].SetStatus(status); });
+  ASSERT_EQ(server.TestOnlyExpectRequests(1), 1);
   stub.async()->Hook(&info[1].context, &info[1].request, &info[1].response,
                      [&info](Status status) { info[1].SetStatus(status); });
-  server.ExpectRequests(2);
+  server.TestOnlyExpectRequests(2);
   server.Return(StatusCode::INTERNAL, "Just a test");
-  Status status = info[0].WaitForStatus();
-  EXPECT_EQ(status.error_code(), StatusCode::INTERNAL);
-  EXPECT_EQ(status.error_message(), "Just a test");
+  auto status = info[0].WaitForStatus();
+  ASSERT_TRUE(status.has_value());
+  EXPECT_EQ(status->error_code(), StatusCode::INTERNAL);
+  EXPECT_EQ(status->error_message(), "Just a test");
   status = info[1].WaitForStatus();
-  EXPECT_EQ(status.error_code(), StatusCode::INTERNAL);
-  EXPECT_EQ(status.error_message(), "Just a test");
+  EXPECT_FALSE(status.has_value());
 }
 
 TEST(PreStopHookServer, StopServerThatNotStarted) {
@@ -152,9 +156,10 @@ TEST(PreStopHookServer, SetStatusBeforeRequestReceived) {
   CallInfo info;
   stub.async()->Hook(&info.context, &info.request, &info.response,
                      [&info](Status status) { info.SetStatus(status); });
-  Status status = info.WaitForStatus();
-  EXPECT_EQ(status.error_code(), StatusCode::INTERNAL);
-  EXPECT_EQ(status.error_message(), "Just a test");
+  auto status = info.WaitForStatus();
+  ASSERT_TRUE(status.has_value());
+  EXPECT_EQ(status->error_code(), StatusCode::INTERNAL);
+  EXPECT_EQ(status->error_message(), "Just a test");
 }
 
 }  // namespace
