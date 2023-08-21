@@ -28,7 +28,6 @@
 #include <initializer_list>
 #include <map>
 #include <memory>
-#include <new>
 #include <string>
 #include <vector>
 
@@ -46,20 +45,6 @@
 
 namespace grpc_core {
 
-RefCountedPtr<RcString> RcString::Make(absl::string_view src) {
-  void* p = gpr_malloc(sizeof(Header) + src.length() + 1);
-  return RefCountedPtr<RcString>(new (p) RcString(src));
-}
-
-RcString::RcString(absl::string_view src) : header_{{}, src.length()} {
-  memcpy(payload_, src.data(), header_.length);
-  // Null terminate because we frequently need to convert to char* still to go
-  // back and forth to the old c-style api.
-  payload_[header_.length] = 0;
-}
-
-void RcString::Destroy() { gpr_free(this); }
-
 const grpc_arg_pointer_vtable ChannelArgs::Value::int_vtable_{
     // copy
     [](void* p) { return p; },
@@ -74,13 +59,15 @@ const grpc_arg_pointer_vtable ChannelArgs::Value::int_vtable_{
 
 const grpc_arg_pointer_vtable ChannelArgs::Value::string_vtable_{
     // copy
-    [](void* p) -> void* { return static_cast<RcString*>(p)->Ref().release(); },
+    [](void* p) -> void* {
+      return static_cast<RefCountedString*>(p)->Ref().release();
+    },
     // destroy
-    [](void* p) { static_cast<RcString*>(p)->Unref(); },
+    [](void* p) { static_cast<RefCountedString*>(p)->Unref(); },
     // cmp
     [](void* p1, void* p2) -> int {
-      return QsortCompare(static_cast<RcString*>(p1)->as_string_view(),
-                          static_cast<RcString*>(p2)->as_string_view());
+      return QsortCompare(static_cast<RefCountedString*>(p1)->as_string_view(),
+                          static_cast<RefCountedString*>(p2)->as_string_view());
     },
 };
 
@@ -139,7 +126,7 @@ bool ChannelArgs::WantMinimalStack() const {
   return GetBool(GRPC_ARG_MINIMAL_STACK).value_or(false);
 }
 
-ChannelArgs::ChannelArgs(AVL<RcStringValue, Value> args)
+ChannelArgs::ChannelArgs(AVL<RefCountedStringValue, Value> args)
     : args_(std::move(args)) {}
 
 ChannelArgs ChannelArgs::Set(grpc_arg arg) const {
@@ -175,8 +162,8 @@ grpc_arg ChannelArgs::Value::MakeCArg(const char* name) const {
   }
   if (rep_.c_vtable() == &string_vtable_) {
     return grpc_channel_arg_string_create(
-        c_name,
-        const_cast<char*>(static_cast<RcString*>(rep_.c_pointer())->c_str()));
+        c_name, const_cast<char*>(
+                    static_cast<RefCountedString*>(rep_.c_pointer())->c_str()));
   }
   return grpc_channel_arg_pointer_create(c_name, rep_.c_pointer(),
                                          rep_.c_vtable());
@@ -184,9 +171,10 @@ grpc_arg ChannelArgs::Value::MakeCArg(const char* name) const {
 
 ChannelArgs::CPtr ChannelArgs::ToC() const {
   std::vector<grpc_arg> c_args;
-  args_.ForEach([&c_args](const RcStringValue& key, const Value& value) {
-    c_args.push_back(value.MakeCArg(key.c_str()));
-  });
+  args_.ForEach(
+      [&c_args](const RefCountedStringValue& key, const Value& value) {
+        c_args.push_back(value.MakeCArg(key.c_str()));
+      });
   return CPtr(static_cast<const grpc_channel_args*>(
       grpc_channel_args_copy_and_add(nullptr, c_args.data(), c_args.size())));
 }
@@ -203,7 +191,7 @@ ChannelArgs ChannelArgs::Set(absl::string_view name, Value value) const {
   if (const auto* p = args_.Lookup(name)) {
     if (*p == value) return *this;  // already have this value for this key
   }
-  return ChannelArgs(args_.Add(RcStringValue(name), std::move(value)));
+  return ChannelArgs(args_.Add(RefCountedStringValue(name), std::move(value)));
 }
 
 ChannelArgs ChannelArgs::Set(absl::string_view name,
@@ -227,7 +215,7 @@ ChannelArgs ChannelArgs::Remove(absl::string_view name) const {
 ChannelArgs ChannelArgs::RemoveAllKeysWithPrefix(
     absl::string_view prefix) const {
   auto args = args_;
-  args_.ForEach([&](const RcStringValue& key, const Value&) {
+  args_.ForEach([&](const RefCountedStringValue& key, const Value&) {
     if (absl::StartsWith(key.as_string_view(), prefix)) args = args.Remove(key);
   });
   return ChannelArgs(std::move(args));
@@ -299,17 +287,18 @@ std::string ChannelArgs::Value::ToString() const {
   }
   if (rep_.c_vtable() == &string_vtable_) {
     return std::string(
-        static_cast<RcString*>(rep_.c_pointer())->as_string_view());
+        static_cast<RefCountedString*>(rep_.c_pointer())->as_string_view());
   }
   return absl::StrFormat("%p", rep_.c_pointer());
 }
 
 std::string ChannelArgs::ToString() const {
   std::vector<std::string> arg_strings;
-  args_.ForEach([&arg_strings](const RcStringValue& key, const Value& value) {
-    arg_strings.push_back(
-        absl::StrCat(key.as_string_view(), "=", value.ToString()));
-  });
+  args_.ForEach(
+      [&arg_strings](const RefCountedStringValue& key, const Value& value) {
+        arg_strings.push_back(
+            absl::StrCat(key.as_string_view(), "=", value.ToString()));
+      });
   return absl::StrCat("{", absl::StrJoin(arg_strings, ", "), "}");
 }
 
@@ -317,14 +306,15 @@ ChannelArgs ChannelArgs::UnionWith(ChannelArgs other) const {
   if (args_.Empty()) return other;
   if (other.args_.Empty()) return *this;
   if (args_.Height() <= other.args_.Height()) {
-    args_.ForEach([&other](const RcStringValue& key, const Value& value) {
-      other.args_ = other.args_.Add(key, value);
-    });
+    args_.ForEach(
+        [&other](const RefCountedStringValue& key, const Value& value) {
+          other.args_ = other.args_.Add(key, value);
+        });
     return other;
   } else {
     auto result = *this;
     other.args_.ForEach(
-        [&result](const RcStringValue& key, const Value& value) {
+        [&result](const RefCountedStringValue& key, const Value& value) {
           if (result.args_.Lookup(key) == nullptr) {
             result.args_ = result.args_.Add(key, value);
           }
@@ -335,7 +325,7 @@ ChannelArgs ChannelArgs::UnionWith(ChannelArgs other) const {
 
 ChannelArgs ChannelArgs::FuzzingReferenceUnionWith(ChannelArgs other) const {
   // DO NOT OPTIMIZE THIS!!
-  args_.ForEach([&other](const RcStringValue& key, const Value& value) {
+  args_.ForEach([&other](const RefCountedStringValue& key, const Value& value) {
     other.args_ = other.args_.Add(key, value);
   });
   return other;
