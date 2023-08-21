@@ -23,17 +23,27 @@ fi
 VERSION="$1"
 shift 1
 
-# Accept the list of test shards to run on the commandline
-TEST_SHARDS=("$@")
+# directories under test/distrib/bazel/ to test.
+TEST_DIRECTORIES=(
+  "cpp"
+  "python"
+)
+# construct list of all supported test shards
+ALL_TEST_SHARDS=("buildtest")
+for TEST_DIRECTORY in "${TEST_DIRECTORIES[@]}"
+do
+  ALL_TEST_SHARDS+=("distribtest_${TEST_DIRECTORY}")
+done
 
-# If list of shards to run hasn't been specified on the command line,
-# run all the known shards.
-if [ "${#TEST_SHARDS[@]}" == "0" ] ; then
-  TEST_SHARDS=(
-    buildtest
-    distribtest_cpp
-    distribtest_python
-  )
+# Read list of shards to run from the commandline args.
+# If ther are no args, run all the shards.
+if [ "$#" != "0" ]
+then
+  # Use remaining commandline args as test shard names.
+  TEST_SHARDS=("$@")
+else
+  # Run all supported shards.
+  TEST_SHARDS=("${ALL_TEST_SHARDS[@]}")
 fi
 
 cd "$(dirname "$0")"/../../..
@@ -61,11 +71,6 @@ EXCLUDED_TARGETS=(
 
   # Exclude bazelified tests as they contain some bazel hackery
   "-//tools/bazelify_tests/..."
-)
-
-TEST_DIRECTORIES=(
-  "cpp"
-  "python"
 )
 
 FAILED_TESTS=""
