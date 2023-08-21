@@ -30,7 +30,8 @@
 #include "test/cpp/util/test_credentials_provider.h"
 
 ABSL_FLAG(std::string, loadtest_config, "",
-          "Path to a valid gRPC benchmark loadtest config file");
+          "Path to a gRPC benchmark loadtest scenario JSON file. See "
+          "scenario_runner.py");
 
 namespace grpc {
 namespace testing {
