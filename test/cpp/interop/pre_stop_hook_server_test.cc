@@ -112,6 +112,7 @@ TEST(PreStopHookServer, StopServerWhileRequestPending) {
 }
 
 TEST(PreStopHookServer, RespondToMultiplePendingRequests) {
+  std::array<CallInfo, 2> info;
   int port = grpc_pick_unused_port_or_die();
   PreStopHookServerManager server;
   Status start_status = server.Start(port, 15);
@@ -119,7 +120,6 @@ TEST(PreStopHookServer, RespondToMultiplePendingRequests) {
   auto channel = CreateChannel(absl::StrFormat("127.0.0.1:%d", port),
                                InsecureChannelCredentials());
   ASSERT_TRUE(channel);
-  std::array<CallInfo, 2> info;
   HookService::Stub stub(std::move(channel));
   stub.async()->Hook(&info[0].context, &info[0].request, &info[0].response,
                      [&info](Status status) { info[0].SetStatus(status); });
