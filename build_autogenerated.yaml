@@ -12239,6 +12239,7 @@ targets:
   - test/cpp/interop/pre_stop_hook_server_test.cc
   - test/cpp/interop/xds_interop_server_lib.cc
   deps:
+  - gtest
   - grpc++_reflection
   - grpcpp_channelz
   - grpc_test_util
