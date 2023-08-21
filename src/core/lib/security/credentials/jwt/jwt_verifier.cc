@@ -581,7 +581,6 @@ static EVP_PKEY* pkey_from_jwk(const Json& json, const char* kty) {
       !OSSL_PARAM_BLD_push_BN(bld, "e", tmp_e) ||
       (params = OSSL_PARAM_BLD_to_param(bld)) == NULL) {
     gpr_log(GPR_ERROR, "Could not create OSSL_PARAM");
-    OSSL_PARAM_BLD_free(bld);
     goto end;
   }
 
@@ -606,6 +605,7 @@ end:
 #else
   EVP_PKEY_CTX_free(ctx);
   OSSL_PARAM_free(params);
+  OSSL_PARAM_BLD_free(bld);
 #endif
   BN_free(tmp_n);
   BN_free(tmp_e);
