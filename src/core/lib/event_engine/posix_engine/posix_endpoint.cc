@@ -602,6 +602,7 @@ void PosixEndpointImpl::HandleRead(absl::Status status) {
 bool PosixEndpointImpl::Read(absl::AnyInvocable<void(absl::Status)> on_read,
                              SliceBuffer* buffer,
                              const EventEngine::Endpoint::ReadArgs* args) {
+  grpc_core::ExecCtx exec_ctx;
   grpc_core::ReleasableMutexLock lock(&read_mu_);
   GPR_ASSERT(read_cb_ == nullptr);
   incoming_buffer_ = buffer;
@@ -1130,6 +1131,7 @@ bool PosixEndpointImpl::TcpFlush(absl::Status& status) {
 }
 
 void PosixEndpointImpl::HandleWrite(absl::Status status) {
+  grpc_core::ExecCtx exec_ctx;
   if (!status.ok()) {
     absl::AnyInvocable<void(absl::Status)> cb_ = std::move(write_cb_);
     write_cb_ = nullptr;
@@ -1159,6 +1161,7 @@ void PosixEndpointImpl::HandleWrite(absl::Status status) {
 bool PosixEndpointImpl::Write(
     absl::AnyInvocable<void(absl::Status)> on_writable, SliceBuffer* data,
     const EventEngine::Endpoint::WriteArgs* args) {
+  grpc_core::ExecCtx exec_ctx;
   absl::Status status = absl::OkStatus();
   TcpZerocopySendRecord* zerocopy_send_record = nullptr;
 
