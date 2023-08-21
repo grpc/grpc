@@ -2430,10 +2430,9 @@ LIBUPB_SRC = \
     third_party/upb/upb/mem/alloc.c \
     third_party/upb/upb/mem/arena.c \
     third_party/upb/upb/message/message.c \
-    third_party/upb/upb/mini_table/common.c \
-    third_party/upb/upb/mini_table/decode.c \
-    third_party/upb/upb/mini_table/encode.c \
     third_party/upb/upb/mini_table/extension_registry.c \
+    third_party/upb/upb/mini_table/internal/message.c \
+    third_party/upb/upb/mini_table/message.c \
     third_party/upb/upb/wire/decode.c \
     third_party/upb/upb/wire/decode_fast.c \
     third_party/upb/upb/wire/encode.c \
@@ -2492,10 +2491,9 @@ LIBUPB_COLLECTIONS_LIB_SRC = \
     third_party/upb/upb/mem/alloc.c \
     third_party/upb/upb/mem/arena.c \
     third_party/upb/upb/message/message.c \
-    third_party/upb/upb/mini_table/common.c \
-    third_party/upb/upb/mini_table/decode.c \
-    third_party/upb/upb/mini_table/encode.c \
     third_party/upb/upb/mini_table/extension_registry.c \
+    third_party/upb/upb/mini_table/internal/message.c \
+    third_party/upb/upb/mini_table/message.c \
 
 PUBLIC_HEADERS_C += \
 
@@ -2545,6 +2543,11 @@ LIBUPB_JSON_LIB_SRC = \
     third_party/upb/upb/json/decode.c \
     third_party/upb/upb/json/encode.c \
     third_party/upb/upb/message/accessors.c \
+    third_party/upb/upb/mini_descriptor/build_enum.c \
+    third_party/upb/upb/mini_descriptor/decode.c \
+    third_party/upb/upb/mini_descriptor/internal/base92.c \
+    third_party/upb/upb/mini_descriptor/internal/encode.c \
+    third_party/upb/upb/mini_descriptor/link.c \
     third_party/upb/upb/reflection/def_builder.c \
     third_party/upb/upb/reflection/def_pool.c \
     third_party/upb/upb/reflection/def_type.c \
@@ -2608,6 +2611,11 @@ endif
 LIBUPB_TEXTFORMAT_LIB_SRC = \
     src/core/ext/upb-generated/google/protobuf/descriptor.upb.c \
     third_party/upb/upb/message/accessors.c \
+    third_party/upb/upb/mini_descriptor/build_enum.c \
+    third_party/upb/upb/mini_descriptor/decode.c \
+    third_party/upb/upb/mini_descriptor/internal/base92.c \
+    third_party/upb/upb/mini_descriptor/internal/encode.c \
+    third_party/upb/upb/mini_descriptor/link.c \
     third_party/upb/upb/reflection/def_builder.c \
     third_party/upb/upb/reflection/def_pool.c \
     third_party/upb/upb/reflection/def_type.c \
@@ -2791,6 +2799,7 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/bio/bio.c \
     third_party/boringssl-with-bazel/src/crypto/bio/bio_mem.c \
     third_party/boringssl-with-bazel/src/crypto/bio/connect.c \
+    third_party/boringssl-with-bazel/src/crypto/bio/errno.c \
     third_party/boringssl-with-bazel/src/crypto/bio/fd.c \
     third_party/boringssl-with-bazel/src/crypto/bio/file.c \
     third_party/boringssl-with-bazel/src/crypto/bio/hexdump.c \
@@ -2821,15 +2830,13 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/cipher_extra/tls_cbc.c \
     third_party/boringssl-with-bazel/src/crypto/conf/conf.c \
     third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_apple.c \
-    third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_freebsd.c \
     third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_fuchsia.c \
     third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_linux.c \
     third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_openbsd.c \
+    third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_sysreg.c \
     third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_win.c \
-    third_party/boringssl-with-bazel/src/crypto/cpu_arm.c \
     third_party/boringssl-with-bazel/src/crypto/cpu_arm_freebsd.c \
     third_party/boringssl-with-bazel/src/crypto/cpu_arm_linux.c \
-    third_party/boringssl-with-bazel/src/crypto/cpu_arm_openbsd.c \
     third_party/boringssl-with-bazel/src/crypto/cpu_intel.c \
     third_party/boringssl-with-bazel/src/crypto/crypto.c \
     third_party/boringssl-with-bazel/src/crypto/curve25519/curve25519.c \
