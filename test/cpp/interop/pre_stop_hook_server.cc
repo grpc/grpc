@@ -55,7 +55,7 @@ class HookServiceImpl final : public HookService::CallbackService {
       pending_status_ = status;
     } else {
       auto reactor = pending_requests_.begin();
-      (*reactor)->Finish(std::move(status));
+      (*reactor)->Finish(status);
       pending_requests_.erase(reactor);
     }
     request_var_.SignalAll();
