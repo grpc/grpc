@@ -29,8 +29,6 @@
 
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 
 namespace grpc_core {
 

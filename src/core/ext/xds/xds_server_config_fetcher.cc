@@ -150,8 +150,8 @@ class XdsServerConfigFetcher::ListenerWatcher
     xds_client_.reset(DEBUG_LOCATION, "ListenerWatcher");
   }
 
-  void OnResourceChanged(std::shared_ptr<const XdsListenerResource> listener)
-      override;
+  void OnResourceChanged(
+      std::shared_ptr<const XdsListenerResource> listener) override;
 
   void OnError(absl::Status status) override;
 
@@ -237,8 +237,9 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager
   class RouteConfigWatcher;
   struct RdsUpdateState {
     RouteConfigWatcher* watcher;
-    absl::optional<absl::StatusOr<std::shared_ptr<
-        const XdsRouteConfigResource>>> rds_update;
+    absl::optional<
+        absl::StatusOr<std::shared_ptr<const XdsRouteConfigResource>>>
+        rds_update;
   };
 
   class XdsServerConfigSelector;

@@ -212,8 +212,8 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
       ~EndpointWatcher() override {
         discovery_mechanism_.reset(DEBUG_LOCATION, "EndpointWatcher");
       }
-      void OnResourceChanged(std::shared_ptr<const XdsEndpointResource> update)
-          override {
+      void OnResourceChanged(
+          std::shared_ptr<const XdsEndpointResource> update) override {
         RefCountedPtr<EndpointWatcher> self = Ref();
         discovery_mechanism_->parent()->work_serializer()->Run(
             [self = std::move(self), update = std::move(update)]() mutable {

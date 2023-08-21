@@ -1604,8 +1604,8 @@ void XdsClient::WatchResource(const XdsResourceType* type,
       work_serializer_.Schedule(
           [watcher, value = resource_state.resource]()
               ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) {
-            watcher->OnGenericResourceChanged(value);
-          },
+                watcher->OnGenericResourceChanged(value);
+              },
           DEBUG_LOCATION);
     } else if (resource_state.meta.client_status ==
                XdsApi::ResourceMetadata::DOES_NOT_EXIST) {

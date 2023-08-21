@@ -993,9 +993,8 @@ XdsListenerResource::FilterChainMap BuildFilterChainMap(
 }
 
 absl::StatusOr<std::shared_ptr<const XdsListenerResource>>
-LdsResourceParseServer(
-    const XdsResourceType::DecodeContext& context,
-    const envoy_config_listener_v3_Listener* listener) {
+LdsResourceParseServer(const XdsResourceType::DecodeContext& context,
+                       const envoy_config_listener_v3_Listener* listener) {
   ValidationErrors errors;
   XdsListenerResource::TcpListener tcp_listener;
   // address

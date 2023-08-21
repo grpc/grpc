@@ -143,8 +143,8 @@ class XdsResolver : public Resolver {
    public:
     explicit ListenerWatcher(RefCountedPtr<XdsResolver> resolver)
         : resolver_(std::move(resolver)) {}
-    void OnResourceChanged(std::shared_ptr<const XdsListenerResource> listener)
-        override {
+    void OnResourceChanged(
+        std::shared_ptr<const XdsListenerResource> listener) override {
       RefCountedPtr<ListenerWatcher> self = Ref();
       resolver_->work_serializer_->Run(
           [self = std::move(self), listener = std::move(listener)]() mutable {
@@ -550,8 +550,8 @@ XdsResolver::RouteConfigData::CreateMethodConfig(
   auto result = XdsRouting::GeneratePerHTTPFilterConfigs(
       static_cast<const GrpcXdsBootstrap&>(resolver->xds_client_->bootstrap())
           .http_filter_registry(),
-      hcm.http_filters, *resolver->current_virtual_host_, route,
-      cluster_weight, resolver->args_);
+      hcm.http_filters, *resolver->current_virtual_host_, route, cluster_weight,
+      resolver->args_);
   if (!result.ok()) return result.status();
   for (const auto& p : result->per_filter_configs) {
     fields.emplace_back(absl::StrCat("    \"", p.first, "\": [\n",
@@ -1190,9 +1190,8 @@ void XdsResolver::GenerateResult() {
   // state map, and then CreateServiceConfig for LB policies.
   const auto& hcm = absl::get<XdsListenerResource::HttpConnectionManager>(
       current_listener_->listener);
-  auto route_config_data =
-      RouteConfigData::Create(this, current_virtual_host_->routes,
-                              hcm.http_max_stream_duration);
+  auto route_config_data = RouteConfigData::Create(
+      this, current_virtual_host_->routes, hcm.http_max_stream_duration);
   if (!route_config_data.ok()) {
     OnError("could not create ConfigSelector",
             absl::UnavailableError(route_config_data.status().message()));
