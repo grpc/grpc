@@ -51,12 +51,13 @@ Other --runner_cmd examples:
 
 
 import os
+import subprocess
 import sys
 import tempfile
-import yaml
-import subprocess
+
 from absl import app
 from absl import flags
+import yaml
 
 _LOADTEST_YAML = flags.DEFINE_string(
     "loadtest_file", default=None, help="Path to the benchmark loadtest file"
@@ -77,6 +78,7 @@ _RUN_FIRST = flags.DEFINE_bool(
 _RUN_ALL = flags.DEFINE_bool(
     "run_all", default=False, help="Run all scenarios in the loadtest"
 )
+
 
 def run_command(filename):
     cmd = [
