@@ -19,7 +19,9 @@ class BaseError(Exception):
     """
 
 class UsageError(BaseError):
-    """Raised when the usage of API by applications is inappropriate.
+    """
+    This class is EXPERIMENTAL.
+    Raised when the usage of API by applications is inappropriate.
 
     For example, trying to invoke RPC on a closed channel, mixing two styles
     of streaming API on the client side. This exception should not be
@@ -36,4 +38,8 @@ class AbortError(BaseError):
     """
 
 class InternalError(BaseError):
-    """Raised upon unexpected errors in native code."""
+    """
+    This class is EXPERIMENTAL.
+
+    Raised upon unexpected errors in native code.
+    """

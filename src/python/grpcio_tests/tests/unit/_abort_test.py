@@ -26,9 +26,6 @@ from tests.unit.framework.common import test_constants
 
 _ABORT = "/test/abort"
 _ABORT_WITH_STATUS = "/test/AbortWithStatus"
-_ABORT_WITH_STATUS_ADDITIONAL_EXCEPTION = (
-    "/test/AbortWithStatusAdditionalException"
-)
 _INVALID_CODE = "/test/InvalidCode"
 
 _REQUEST = b"\x00\x00\x00"
@@ -72,32 +69,6 @@ def abort_with_status_unary_unary(request, servicer_context):
     raise Exception("This line should not be executed!")
 
 
-def abort_with_status_unary_unary_raise_additional_exception(
-    request, servicer_context
-):
-    # import sys; sys.stderr.write("before...\n"); sys.stderr.flush()
-    try:
-        servicer_context.abort_with_status(
-            _Status(
-                code=grpc.StatusCode.INTERNAL,
-                details=_ABORT_DETAILS,
-                trailing_metadata=_ABORT_METADATA,
-            )
-        )
-    except Exception:
-        # import sys; sys.stderr.write("except Exception in abort_with_status_unary_unary...\n"); sys.stderr.flush()
-        pass
-    finally:
-        import sys
-
-        sys.stderr.write("after in abort_with_status_unary_unary...\n")
-        sys.stderr.flush()
-        # raise Exception("Other exception happened!")
-        raise grpc.AbortError(
-            "This is an AbortError"
-        )
-
-
 def invalid_code_unary_unary(request, servicer_context):
     servicer_context.abort(
         42,
@@ -112,13 +83,6 @@ class _GenericHandler(grpc.GenericRpcHandler):
         elif handler_call_details.method == _ABORT_WITH_STATUS:
             return grpc.unary_unary_rpc_method_handler(
                 abort_with_status_unary_unary
-            )
-        elif (
-            handler_call_details.method
-            == _ABORT_WITH_STATUS_ADDITIONAL_EXCEPTION
-        ):
-            return grpc.unary_unary_rpc_method_handler(
-                abort_with_status_unary_unary_raise_additional_exception
             )
         elif handler_call_details.method == _INVALID_CODE:
             return grpc.stream_stream_rpc_method_handler(
@@ -141,7 +105,7 @@ class AbortTest(unittest.TestCase):
         self._channel.close()
         self._server.stop(0)
 
-    def a_test_abort(self):
+    def test_abort(self):
         with self.assertRaises(grpc.RpcError) as exception_context:
             self._channel.unary_unary(_ABORT)(_REQUEST)
         rpc_error = exception_context.exception
@@ -154,7 +118,7 @@ class AbortTest(unittest.TestCase):
     # all local vars. Storing the raised exception can prevent GC and stop the
     # grpc_call from being unref'ed, even after server shutdown.
     @unittest.skip("https://github.com/grpc/grpc/issues/17927")
-    def a_test_abort_does_not_leak_local_vars(self):
+    def test_abort_does_not_leak_local_vars(self):
         global do_not_leak_me  # pylint: disable=global-statement
         weak_ref = weakref.ref(do_not_leak_me)
 
@@ -168,7 +132,7 @@ class AbortTest(unittest.TestCase):
         do_not_leak_me = None
         self.assertIsNone(weak_ref())
 
-    def a_test_abort_with_status(self):
+    def test_abort_with_status(self):
         with self.assertRaises(grpc.RpcError) as exception_context:
             self._channel.unary_unary(_ABORT_WITH_STATUS)(_REQUEST)
         rpc_error = exception_context.exception
@@ -177,30 +141,13 @@ class AbortTest(unittest.TestCase):
         self.assertEqual(rpc_error.details(), _ABORT_DETAILS)
         self.assertEqual(rpc_error.trailing_metadata(), _ABORT_METADATA)
 
-    def a_test_invalid_code(self):
+    def test_invalid_code(self):
         with self.assertRaises(grpc.RpcError) as exception_context:
             self._channel.unary_unary(_INVALID_CODE)(_REQUEST)
         rpc_error = exception_context.exception
 
         self.assertEqual(rpc_error.code(), grpc.StatusCode.UNKNOWN)
         self.assertEqual(rpc_error.details(), _ABORT_DETAILS)
-
-    def test_abort_with_status_with_additional_exception(self):
-        # with self.assertLogs(level='INFO') as logger_manager:
-        with self.assertRaises(grpc.RpcError) as exception_context:
-            # import sys; sys.stderr.write(f"??? {logger_manager.output}...\n"); sys.stderr.flush()
-            self._channel.unary_unary(_ABORT_WITH_STATUS_ADDITIONAL_EXCEPTION)(
-                _REQUEST
-            )
-
-            # import sys; sys.stderr.write(f"xxx {logger_manager.output}...\n"); sys.stderr.flush()
-            # self.assertNotEqual(logger_manager.output, "")
-        rpc_error = exception_context.exception
-
-        self.assertEqual(rpc_error.code(), grpc.StatusCode.INTERNAL)
-        self.assertEqual(rpc_error.details(), _ABORT_DETAILS)
-        self.assertEqual(rpc_error.trailing_metadata(), _ABORT_METADATA)
-        self.assertLogs()
 
 
 if __name__ == "__main__":
