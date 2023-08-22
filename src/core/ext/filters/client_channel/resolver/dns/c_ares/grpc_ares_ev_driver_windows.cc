@@ -206,9 +206,8 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
 
   void RegisterForOnWriteableLocked(grpc_closure* write_closure) override {
     GRPC_CARES_TRACE_LOG(
-        "fd:|%s| RegisterForOnWriteableLocked called connect_done_: %d "
-        "last_wsa_send_result_: %d",
-        GetName(), connect_done_, last_wsa_send_result_);
+        "fd:|%s| RegisterForOnWriteableLocked called connect_done_: %d",
+        GetName(), connect_done_);
     GPR_ASSERT(write_closure_ == nullptr);
     write_closure_ = write_closure;
     if (!connect_done_) {
