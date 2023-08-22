@@ -75,7 +75,7 @@ _timedelta = datetime.timedelta
 ClientConfig = grpc_csds.ClientConfig
 # TODO(sergiitk): remove when pylint upgraded. Now it complains about
 #   "Undefined variable 'absltest'" in evaluate_test_config for some reason.
-_SkipTest = absltest.SkipTest
+_SkipTest = absltest.SkipTest  # pylint: disable=undefined-variable
 # pylint complains about signal.Signals for some reason.
 _SignalNum = Union[int, signal.Signals]  # pylint: disable=no-member
 _SignalHandler = Callable[[_SignalNum, Optional[FrameType]], Any]
