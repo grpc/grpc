@@ -22,13 +22,13 @@
 
 #include <string.h>
 
-#include <functional>
 #include <map>
 #include <memory>
 #include <unordered_set>
 
 #include <ares.h>
 
+#include "absl/functional/any_invocable.h"
 #include "absl/strings/str_format.h"
 
 #include <grpc/support/alloc.h>
@@ -110,7 +110,8 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
   };
 
   GrpcPolledFdWindows(ares_socket_t as, Mutex* mu, int address_family,
-                      int socket_type, std::function<void()> on_shutdown_locked)
+                      int socket_type,
+                      absl::AnyInvocable<void()> on_shutdown_locked)
       : mu_(mu),
         read_buf_(grpc_empty_slice()),
         write_buf_(grpc_empty_slice()),
@@ -676,7 +677,7 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
   // registrations with the following state.
   bool pending_continue_register_for_on_readable_locked_ = false;
   bool pending_continue_register_for_on_writeable_locked_ = false;
-  std::function<void()> on_shutdown_locked_;
+  absl::AnyInvocable<void()> on_shutdown_locked_;
 };
 
 class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
@@ -742,8 +743,7 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
     GRPC_CARES_TRACE_LOG(
         "fd:|%s| created with params af:%d type:%d protocol:%d",
         polled_fd->GetName(), af, type, protocol);
-    auto insert_result = self->sockets_.insert({s, polled_fd});
-    GPR_ASSERT(insert_result.second);
+    GPR_ASSERT(self->sockets_.insert({s, polled_fd}).second);
     return s;
   }
 
