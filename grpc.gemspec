@@ -2816,6 +2816,7 @@ Gem::Specification.new do |s|
   s.files += %w( third_party/upb/upb/def.hpp )
   s.files += %w( third_party/upb/upb/encode.h )
   s.files += %w( third_party/upb/upb/extension_registry.h )
+  s.files += %w( third_party/upb/upb/generated_code_support.h )
   s.files += %w( third_party/upb/upb/hash/common.c )
   s.files += %w( third_party/upb/upb/hash/common.h )
   s.files += %w( third_party/upb/upb/hash/int_table.h )
