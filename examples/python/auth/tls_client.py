@@ -29,8 +29,7 @@ _PORT = 50051
 _SERVER_ADDR_TEMPLATE = "localhost:%d"
 
 
-def send_rpc(channel):
-    stub = helloworld_pb2_grpc.GreeterStub(channel)
+def send_rpc(stub):
     request = helloworld_pb2.HelloRequest(name="you")
     try:
         response = stub.SayHello(request)
@@ -49,7 +48,8 @@ def main():
     with grpc.secure_channel(
         _SERVER_ADDR_TEMPLATE % _PORT, channel_credential
     ) as channel:
-        send_rpc(channel)
+        stub = helloworld_pb2_grpc.GreeterStub(channel)
+        send_rpc(stub)
 
 
 if __name__ == "__main__":
