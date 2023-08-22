@@ -1838,6 +1838,7 @@ let package = Package(
         "third_party/upb/upb/def.hpp",
         "third_party/upb/upb/encode.h",
         "third_party/upb/upb/extension_registry.h",
+        "third_party/upb/upb/generated_code_support.h",
         "third_party/upb/upb/hash/common.c",
         "third_party/upb/upb/hash/common.h",
         "third_party/upb/upb/hash/int_table.h",

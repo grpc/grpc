@@ -2236,6 +2236,11 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/tsi/local_transport_security.cc \
     src/core/tsi/transport_security.cc \
     src/core/tsi/transport_security_grpc.cc \
+    third_party/upb/upb/message/accessors.c \
+    third_party/upb/upb/mini_descriptor/build_enum.c \
+    third_party/upb/upb/mini_descriptor/decode.c \
+    third_party/upb/upb/mini_descriptor/internal/base92.c \
+    third_party/upb/upb/mini_descriptor/link.c \
 
 PUBLIC_HEADERS_C += \
     include/grpc/byte_buffer.h \
