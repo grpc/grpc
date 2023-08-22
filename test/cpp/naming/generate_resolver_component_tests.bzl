@@ -75,7 +75,6 @@ def generate_resolver_component_tests():
             ],
             external_deps = [
                 "absl/flags:flag",
-                "absl/strings",
             ],
             deps = [
                 "//test/cpp/util:test_util%s" % unsecure_build_config_suffix,
@@ -84,7 +83,6 @@ def generate_resolver_component_tests():
                 "//:grpc%s" % unsecure_build_config_suffix,
                 "//:gpr",
                 "//test/cpp/util:test_config",
-                "//test/cpp/util/windows:manifest_file",
             ],
             data = [
                 ":resolver_component_tests_runner",
@@ -92,7 +90,7 @@ def generate_resolver_component_tests():
                 "//test/cpp/naming/utils:dns_server",
                 "//test/cpp/naming/utils:dns_resolver",
                 "//test/cpp/naming/utils:tcp_connect",
-                "//test/cpp/naming:resolver_test_record_groups",  # include the transitive dependency so that the dns server py binary can locate this
+                "resolver_test_record_groups.yaml",  # include the transitive dependency so that the dns server py binary can locate this
             ],
             args = [
                 "--test_bin_name=resolver_component_test%s" % unsecure_build_config_suffix,
