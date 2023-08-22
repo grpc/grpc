@@ -48,7 +48,7 @@ class MetadataExchangeTest : public OTelPluginEnd2EndTest {
                  opentelemetry::sdk::resource::Resource::Create({}),
              std::unique_ptr<grpc::internal::LabelsInjector> labels_injector =
                  nullptr) {
-    OTelPluginEnd2EndTest::SetUp(metric_names, std::move(resource),
+    OTelPluginEnd2EndTest::SetUp(metric_names, resource,
                                  std::move(labels_injector));
   }
 
@@ -87,8 +87,7 @@ class MetadataExchangeTest : public OTelPluginEnd2EndTest {
     attributes.SetAttribute("k8s.cluster.name", "cluster");
     attributes.SetAttribute("cloud.region", "region");
     attributes.SetAttribute("cloud.account.id", "id");
-    return opentelemetry::sdk::resource::Resource::Create(
-        std::move(attributes));
+    return opentelemetry::sdk::resource::Resource::Create(attributes);
   }
 };
 

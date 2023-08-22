@@ -16,6 +16,9 @@
 //
 //
 
+#ifndef GRPC_TEST_CPP_EXT_OTEL_OTEL_TEST_LIBRARY_H
+#define GRPC_TEST_CPP_EXT_OTEL_OTEL_TEST_LIBRARY_H
+
 #include "absl/functional/any_invocable.h"
 #include "api/include/opentelemetry/metrics/provider.h"
 #include "gmock/gmock.h"
@@ -87,3 +90,5 @@ class OTelPluginEnd2EndTest : public ::testing::Test {
 
 }  // namespace testing
 }  // namespace grpc
+
+#endif  // GRPC_TEST_CPP_EXT_OTEL_OTEL_TEST_LIBRARY_H

@@ -45,8 +45,7 @@ void OTelPluginEnd2EndTest::SetUp(
   // test. (Some measurements can get arbitrarily delayed.)
   auto meter_provider =
       std::make_shared<opentelemetry::sdk::metrics::MeterProvider>(
-          std::unique_ptr<opentelemetry::sdk::metrics::ViewRegistry>(
-              new opentelemetry::sdk::metrics::ViewRegistry()),
+          std::make_unique<opentelemetry::sdk::metrics::ViewRegistry>(),
           std::move(resource));
   reader_.reset(new grpc::testing::MockMetricReader);
   meter_provider->AddMetricReader(reader_);

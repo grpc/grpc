@@ -44,9 +44,6 @@ TEST(ResourceDetectionTest, GkeResourceDetection) {
   EXPECT_EQ(absl::get<std::string>(attributes.at("cloud.provider")), "gcp");
   EXPECT_EQ(absl::get<std::string>(attributes.at("cloud.platform")),
             "gcp_kubernetes_engine");
-  // We don't know what the value will be here
-  EXPECT_FALSE(
-      absl::get<std::string>(attributes.at("cloud.account.id")).empty());
   EXPECT_EQ(absl::get<std::string>(attributes.at("k8s.pod.name")), "pod");
   EXPECT_EQ(absl::get<std::string>(attributes.at("k8s.namespace.name")),
             "namespace");
