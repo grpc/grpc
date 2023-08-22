@@ -183,7 +183,7 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
-    ss.dependency 'BoringSSL-GRPC', '0.0.30'
+    ss.dependency 'BoringSSL-GRPC', '0.0.31'
     ss.dependency 'abseil/algorithm/container', abseil_version
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/core_headers', abseil_version
@@ -1341,6 +1341,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/posix/thd.cc',
                       'src/core/lib/gprpp/ref_counted.h',
                       'src/core/lib/gprpp/ref_counted_ptr.h',
+                      'src/core/lib/gprpp/ref_counted_string.cc',
+                      'src/core/lib/gprpp/ref_counted_string.h',
                       'src/core/lib/gprpp/single_set_ptr.h',
                       'src/core/lib/gprpp/sorted_pack.h',
                       'src/core/lib/gprpp/stat.h',
@@ -2648,6 +2650,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/gprpp/per_cpu.h',
                               'src/core/lib/gprpp/ref_counted.h',
                               'src/core/lib/gprpp/ref_counted_ptr.h',
+                              'src/core/lib/gprpp/ref_counted_string.h',
                               'src/core/lib/gprpp/single_set_ptr.h',
                               'src/core/lib/gprpp/sorted_pack.h',
                               'src/core/lib/gprpp/stat.h',

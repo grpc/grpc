@@ -1240,6 +1240,8 @@ let package = Package(
         "src/core/lib/gprpp/posix/thd.cc",
         "src/core/lib/gprpp/ref_counted.h",
         "src/core/lib/gprpp/ref_counted_ptr.h",
+        "src/core/lib/gprpp/ref_counted_string.cc",
+        "src/core/lib/gprpp/ref_counted_string.h",
         "src/core/lib/gprpp/single_set_ptr.h",
         "src/core/lib/gprpp/sorted_pack.h",
         "src/core/lib/gprpp/stat.h",

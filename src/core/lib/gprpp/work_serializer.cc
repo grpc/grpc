@@ -119,7 +119,10 @@ void WorkSerializer::WorkSerializerImpl::Run(std::function<void()> callback,
       gpr_log(GPR_INFO, "  Executing immediately");
     }
     callback();
-    callback = nullptr;  // Delete while still holding WorkSerializer.
+    // Delete the callback while still holding the WorkSerializer, so
+    // that any refs being held by the callback via lambda captures will
+    // be destroyed inside the WorkSerializer.
+    callback = nullptr;
     DrainQueueOwned();
   } else {
     // Another thread is holding the WorkSerializer, so decrement the ownership

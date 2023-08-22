@@ -513,9 +513,7 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
         ++it->second;
       }
     }
-#ifndef NDEBUG
-    GPR_ASSERT(chand_->work_serializer_->RunningInWorkSerializer());
-#endif
+    GPR_DEBUG_ASSERT(chand_->work_serializer_->RunningInWorkSerializer());
     chand_->subchannel_wrappers_.insert(this);
   }
 
@@ -525,9 +523,7 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
               "chand=%p: destroying subchannel wrapper %p for subchannel %p",
               chand_, this, subchannel_.get());
     }
-#ifndef NDEBUG
-    GPR_ASSERT(chand_->work_serializer_->RunningInWorkSerializer());
-#endif
+    GPR_DEBUG_ASSERT(chand_->work_serializer_->RunningInWorkSerializer());
     chand_->subchannel_wrappers_.erase(this);
     if (chand_->channelz_node_ != nullptr) {
       auto* subchannel_node = subchannel_->channelz_node();
