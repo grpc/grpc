@@ -125,9 +125,6 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
     GRPC_CLOSURE_INIT(&on_tcp_connect_locked_,
                       &GrpcPolledFdWindows::OnTcpConnect, this,
                       grpc_schedule_on_exec_ctx);
-    GRPC_CLOSURE_INIT(&on_schedule_write_closure_after_delay_,
-                      &GrpcPolledFdWindows::OnScheduleWriteClosureAfterDelay,
-                      this, grpc_schedule_on_exec_ctx);
     winsocket_ = grpc_winsocket_create(as, name_.c_str());
   }
 
