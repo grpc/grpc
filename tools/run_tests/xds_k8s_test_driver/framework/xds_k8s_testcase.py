@@ -73,6 +73,9 @@ _LoadBalancerAccumulatedStatsResponse = (
 _ChannelState = grpc_channelz.ChannelState
 _timedelta = datetime.timedelta
 ClientConfig = grpc_csds.ClientConfig
+# TODO(sergiitk): remove when pylint upgraded. Now it complains about
+#   "Undefined variable 'absltest'" in evaluate_test_config for some reason.
+_SkipTest = absltest.SkipTest
 # pylint complains about signal.Signals for some reason.
 _SignalNum = Union[int, signal.Signals]  # pylint: disable=no-member
 _SignalHandler = Callable[[_SignalNum, Optional[FrameType]], Any]
@@ -98,7 +101,7 @@ def evaluate_test_config(
     )
     if not check(test_config):
         logger.info("Skipping %s", test_config)
-        raise absltest.SkipTest(f"Unsupported test config: {test_config}")
+        raise _SkipTest(f"Unsupported test config: {test_config}")
 
     logger.info("Detected language and version: %s", test_config)
     return test_config
