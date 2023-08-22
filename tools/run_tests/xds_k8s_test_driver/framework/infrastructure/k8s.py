@@ -821,14 +821,17 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
         k8s_objects: List[Optional[object]],
         *,
         highlight: bool = True,
-
     ) -> str:
         return "\n".join(
-            self._pretty_format_status(k8s_object, highlight=highlight)
+            self.pretty_format_status(k8s_object, highlight=highlight)
             for k8s_object in k8s_objects
         )
 
-    def pretty_format_status(self, k8s_object: Optional[object]) -> str:
+    def pretty_format_status(
+        self,
+        k8s_object: Optional[object],
+        highlight: bool = True,
+    ) -> str:
         if k8s_object is None:
             return "No data"
 
