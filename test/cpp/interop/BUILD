@@ -287,13 +287,9 @@ grpc_cc_library(
     name = "xds_interop_server_lib",
     testonly = True,
     srcs = [
-        "pre_stop_hook_server.cc",
         "xds_interop_server_lib.cc",
     ],
-    hdrs = [
-        "pre_stop_hook_server.h",
-        "xds_interop_server_lib.h",
-    ],
+    hdrs = ["xds_interop_server_lib.h"],
     deps = [
         "//:grpc++",
         "//:grpc++_reflection",
@@ -319,21 +315,6 @@ grpc_cc_binary(
         "//:grpc++",
         "//test/core/util:grpc_test_util",
         "//test/cpp/end2end:test_health_check_service_impl",
-        "//test/cpp/util:test_config",
-    ],
-)
-
-grpc_cc_test(
-    name = "pre_stop_hook_server_test",
-    srcs = [
-        "pre_stop_hook_server_test.cc",
-    ],
-    external_deps = ["gtest"],
-    deps = [
-        ":xds_interop_server_lib",
-        "//:grpc++",
-        "//src/proto/grpc/testing:istio_echo_proto",
-        "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_config",
     ],
 )
