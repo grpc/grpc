@@ -25,7 +25,7 @@ import sys
 import yaml
 
 with open("src/core/lib/debug/stats_data.yaml") as f:
-    attrs = yaml.safe_load(f.read(), Loader=yaml.Loader)
+    attrs = yaml.safe_load(f.read())
 
 REQUIRED_FIELDS = ["name", "doc"]
 

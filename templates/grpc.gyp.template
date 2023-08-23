@@ -139,7 +139,7 @@
     },
     'targets': [
       % for lib in libs:
-      %  if getattr(lib, 'platforms', None) is None and lib.name != 'ares' and not is_absl_lib(lib.name):
+      %  if getattr(lib, 'platforms', None) is None and lib.name != 'cares' and not is_absl_lib(lib.name):
       {
         'target_name': '${lib.name}',
         'type': 'static_library',

@@ -437,7 +437,11 @@ absl::StatusOr<bool> PrivateKeyAndCertificateMatch(
     return absl::InvalidArgumentError(
         "Conversion from PEM string to EVP_PKEY failed.");
   }
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
   bool result = EVP_PKEY_cmp(private_evp_pkey, public_evp_pkey) == 1;
+#else
+  bool result = EVP_PKEY_eq(private_evp_pkey, public_evp_pkey) == 1;
+#endif
   EVP_PKEY_free(private_evp_pkey);
   EVP_PKEY_free(public_evp_pkey);
   return result;
