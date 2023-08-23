@@ -72,11 +72,16 @@ flags.mark_flags_as_required(
 
 def require_secondary_context(filename):
     flags.mark_flag_as_required("secondary_kube_context")
+
+    def _val_not_empty(val: str) -> bool:
+        # Do not allow whitespace-only values to produce a better error.
+        return bool(val.strip())
+
     flags.register_validator(
         "secondary_kube_context",
-        lambda val: val,
+        _val_not_empty,
         message=(
-            f"{filename} requires configured secondary_kube_context to access"
+            f"{filename} requires non-empty secondary_kube_context to access"
             " the secondary k8s cluster"
         ),
     )
