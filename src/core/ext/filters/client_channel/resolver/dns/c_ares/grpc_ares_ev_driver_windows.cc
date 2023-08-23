@@ -123,6 +123,9 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
     GRPC_CLOSURE_INIT(&outer_read_closure_,
                       &GrpcPolledFdWindows::OnIocpReadable, this,
                       grpc_schedule_on_exec_ctx);
+    GRPC_CLOSURE_INIT(&outer_write_closure_,
+                      &GrpcPolledFdWindows::OnIocpWriteable, this,
+                      grpc_schedule_on_exec_ctx);
     GRPC_CLOSURE_INIT(&on_tcp_connect_locked_,
                       &GrpcPolledFdWindows::OnTcpConnect, this,
                       grpc_schedule_on_exec_ctx);
@@ -662,6 +665,7 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
   grpc_closure* read_closure_ = nullptr;
   grpc_closure* write_closure_ = nullptr;
   grpc_closure outer_read_closure_;
+  grpc_closure outer_write_closure_;
   grpc_winsocket* winsocket_;
   const std::string name_;
   bool shutdown_called_ = false;
