@@ -285,6 +285,14 @@ cdef class _AioCall(GrpcCallWrapper):
 
         return False
 
+    def set_status_with_error(self, str error_str):
+        self._set_status(AioRpcStatus(
+            StatusCode.internal,
+            'Internal error from Core',
+            (),
+            error_str,
+        ))
+
     async def unary_unary(self,
                           bytes request,
                           tuple outbound_initial_metadata):
