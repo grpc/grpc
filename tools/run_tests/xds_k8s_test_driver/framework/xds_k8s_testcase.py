@@ -118,7 +118,7 @@ class XdsKubernetesBaseTestCase(base_testcase.BaseTestCase):
     gcp_api_manager: gcp.api.GcpApiManager
     gcp_service_account: Optional[str]
     k8s_api_manager: k8s.KubernetesApiManager
-    secondary_k8s_api_manager: k8s.KubernetesApiManager
+    secondary_k8s_api_manager: Optional[k8s.KubernetesApiManager] = None
     network: str
     project: str
     resource_prefix: str
@@ -205,9 +205,10 @@ class XdsKubernetesBaseTestCase(base_testcase.BaseTestCase):
         cls.k8s_api_manager = k8s.KubernetesApiManager(
             xds_k8s_flags.KUBE_CONTEXT.value
         )
-        cls.secondary_k8s_api_manager = k8s.KubernetesApiManager(
-            xds_k8s_flags.SECONDARY_KUBE_CONTEXT.value
-        )
+        if xds_k8s_flags.SECONDARY_KUBE_CONTEXT.value is not None:
+            cls.secondary_k8s_api_manager = k8s.KubernetesApiManager(
+                xds_k8s_flags.SECONDARY_KUBE_CONTEXT.value
+            )
         cls.gcp_api_manager = gcp.api.GcpApiManager()
 
         # Other
@@ -236,7 +237,8 @@ class XdsKubernetesBaseTestCase(base_testcase.BaseTestCase):
     @classmethod
     def tearDownClass(cls):
         cls.k8s_api_manager.close()
-        cls.secondary_k8s_api_manager.close()
+        if cls.secondary_k8s_api_manager is not None:
+            cls.secondary_k8s_api_manager.close()
         cls.gcp_api_manager.close()
 
     def setUp(self):
