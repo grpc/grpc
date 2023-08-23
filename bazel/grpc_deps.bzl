@@ -243,12 +243,12 @@ def grpc_deps():
     if "com_google_protobuf" not in native.existing_rules():
         http_archive(
             name = "com_google_protobuf",
-            sha256 = "969e7a742a2442418afdbdfbaa105ed666665d23914eb2fe320e58d52b86c9fa",
-            strip_prefix = "protobuf-b256412ba0c37c54247731aec9daa9592627ad5c",
+            sha256 = "acdd22be667a7ee67f3e32ed3c038b4ce11ac2f937d3cf0a0572acd9cce07652",
+            strip_prefix = "protobuf-7b825e1ca7e8624ff249451560c714382404d1a7",
             urls = [
                 # https://github.com/protocolbuffers/protobuf/commits/v23.4
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/b256412ba0c37c54247731aec9daa9592627ad5c.tar.gz",
-                "https://github.com/protocolbuffers/protobuf/archive/b256412ba0c37c54247731aec9daa9592627ad5c.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/7b825e1ca7e8624ff249451560c714382404d1a7.tar.gz",
+                "https://github.com/protocolbuffers/protobuf/archive/7b825e1ca7e8624ff249451560c714382404d1a7.tar.gz",
             ],
             patches = [
                 "@com_github_grpc_grpc//third_party:protobuf.patch",
