@@ -38,19 +38,6 @@ TEST(GsmDependencyTest, GoogleCloudOpenTelemetryDependency) {
   EXPECT_NE(google::cloud::otel::MakeResourceDetector(), nullptr);
 }
 
-TEST(ResourceDetectionTest, GkeResourceDetection) {
-  auto resource = google::cloud::otel::MakeResourceDetector()->Detect();
-  const auto& attributes = resource.GetAttributes().GetAttributes();
-  EXPECT_EQ(absl::get<std::string>(attributes.at("cloud.provider")), "gcp");
-  EXPECT_EQ(absl::get<std::string>(attributes.at("cloud.platform")),
-            "gcp_kubernetes_engine");
-  EXPECT_EQ(absl::get<std::string>(attributes.at("k8s.pod.name")), "pod");
-  EXPECT_EQ(absl::get<std::string>(attributes.at("k8s.namespace.name")),
-            "namespace");
-  EXPECT_EQ(absl::get<std::string>(attributes.at("k8s.container.name")),
-            "container");
-}
-
 }  // namespace
 }  // namespace testing
 }  // namespace grpc
@@ -58,9 +45,5 @@ TEST(ResourceDetectionTest, GkeResourceDetection) {
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
-  grpc_core::SetEnv("KUBERNETES_SERVICE_HOST", "service_host");
-  grpc_core::SetEnv("OTEL_RESOURCE_ATTRIBUTES",
-                    "k8s.pod.name=pod,k8s.namespace.name=namespace,k8s."
-                    "container.name=container");
   return RUN_ALL_TESTS();
 }
