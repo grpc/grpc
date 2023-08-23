@@ -209,9 +209,16 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
   }
 
   void RegisterForOnWriteableLocked(grpc_closure* write_closure) override {
-    GRPC_CARES_TRACE_LOG(
-        "fd:|%s| RegisterForOnWriteableLocked called connect_done_: %d",
-        GetName(), connect_done_);
+    if (socket_type_ == SOCK_DGRAM) {
+      GRPC_CARES_TRACE_LOG("fd:|%s| RegisterForOnWriteableLocked called",
+                           GetName());
+    } else {
+      GPR_ASSERT(socket_type_ == SOCK_STREAM);
+      GRPC_CARES_TRACE_LOG(
+          "fd:|%s| RegisterForOnWriteableLocked called tcp_write_state_: %d "
+          "connect_done_: %d",
+          GetName(), tcp_write_state_, connect_done_);
+    }
     GPR_ASSERT(write_closure_ == nullptr);
     write_closure_ = write_closure;
     if (!connect_done_) {
