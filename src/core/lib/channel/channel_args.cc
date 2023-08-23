@@ -302,15 +302,13 @@ std::string ChannelArgs::ToString() const {
   return absl::StrCat("{", absl::StrJoin(arg_strings, ", "), "}");
 }
 
-std::vector<std::vector<std::string>> ChannelArgs::GetChannelArgsDebugInfo() const {
-  std::vector<std::vector<std::string>> arg_strings;
-  args_.ForEach([&arg_strings](const RcStringValue& key, const Value& value) {
-    std::vector<std::string> arg_row;
-    arg_row.push_back(key.c_str());
-    arg_row.push_back(value.ToString());
-    arg_strings.push_back(arg_row);
+std::vector<ChannelArgs::DebugStrings> ChannelArgs::DebugString() const {
+  std::vector<ChannelArgs::DebugStrings> arg_list_debug;
+  args_.ForEach([&arg_list_debug](const RefCountedStringValue& key, const Value& value) {
+    ChannelArgs::DebugStrings channel_arg(key.c_str(), value.ToString());
+    arg_list_debug.push_back(channel_arg);
   });
-  return arg_strings;
+  return arg_list_debug;
 }
 
 ChannelArgs ChannelArgs::UnionWith(ChannelArgs other) const {

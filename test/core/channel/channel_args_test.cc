@@ -226,20 +226,27 @@ TEST(ChannelArgsTest, TestGetChannelArgsDebugInfo) {
     "ptr_test", ChannelArgs::Pointer(ptr, &malloc_vtable));
   ChannelArgs channel_args_4 = channel_args_3.Set("string_test", "bar");
 
-  std::vector<std::vector<std::string>> channel_args_str = 
-    channel_args_4.GetChannelArgsDebugInfo();
+  std::vector<ChannelArgs::DebugStrings> channel_args_str = 
+    channel_args_4.DebugString();
+
   EXPECT_EQ(channel_args_str.size(), 3);
-  EXPECT_EQ(channel_args_str[0].size(), 2);
-  EXPECT_EQ(channel_args_str[1].size(), 2);
-  EXPECT_EQ(channel_args_str[2].size(), 2);
-  EXPECT_EQ(channel_args_str[0][1],"42");
-  EXPECT_EQ(channel_args_str[2][1],"bar");
+
+  EXPECT_EQ(channel_args_str[0].GetKey(),"integer_test");
+  EXPECT_EQ(channel_args_str[0].GetValue(),"42");
+
+  EXPECT_EQ(channel_args_str[1].GetKey(),"ptr_test");
+
+  EXPECT_EQ(channel_args_str[2].GetKey(),"string_test");
+  EXPECT_EQ(channel_args_str[2].GetValue(),"bar");
   
   ChannelArgs channel_args_5 = channel_args_4.Set("integer_test", 92);
-  channel_args_str = channel_args_5.GetChannelArgsDebugInfo();
+  channel_args_str = channel_args_5.DebugString();
+
   EXPECT_EQ(channel_args_str.size(), 3);
-  EXPECT_EQ(channel_args_str[0].size(), 2);
-  EXPECT_EQ(channel_args_str[0][1],"92");
+
+  EXPECT_EQ(channel_args_str[0].GetKey(),"integer_test");
+  EXPECT_EQ(channel_args_str[0].GetValue(),"92");
+
   gpr_free(ptr);
 }
 

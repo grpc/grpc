@@ -329,6 +329,16 @@ class ChannelArgs {
   using CPtr =
       std::unique_ptr<const grpc_channel_args, ChannelArgs::ChannelArgsDeleter>;
 
+  struct DebugStrings {
+  private:
+    const std::string key_;
+    const std::string value_;
+  public:
+    DebugStrings(std::string key, std::string value) : key_(key), value_(value) {}
+    std::string GetKey() { return key_; }
+    std::string GetValue() { return value_; }
+  };
+
   ChannelArgs();
   ~ChannelArgs();
   ChannelArgs(const ChannelArgs&);
@@ -474,10 +484,10 @@ class ChannelArgs {
   std::string ToString() const;
 
   // This function returns the current state of channel arguments.
-  // Each row in this vector will contain 2 strings
+  // Each row in this vector will contain Channel Argument details
   // 1. Channel argument name
   // 2. Channel argument value. This could be int, pointer or string. 
-  std::vector<std::vector<std::string>> GetChannelArgsDebugInfo() const;
+  std::vector<ChannelArgs::DebugStrings> DebugString() const;
 
  private:
   explicit ChannelArgs(AVL<RefCountedStringValue, Value> args);

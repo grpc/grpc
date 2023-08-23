@@ -1172,8 +1172,8 @@ ChannelArgs ClientChannel::MakeSubchannelArgs(
       .RemoveAllKeysWithPrefix(GRPC_ARG_NO_SUBCHANNEL_PREFIX);
 }
 
-std::vector<std::vector<std::string>> ClientChannel::GetChannelArgsDebugInfo() const {
-  return channel_args_.GetChannelArgsDebugInfo();
+std::vector<ChannelArgs::DebugStrings> ClientChannel::GetChannelArgsToString() const {
+  return channel_args_.DebugString();
 }
 
 void ClientChannel::ReprocessQueuedResolverCalls() {
