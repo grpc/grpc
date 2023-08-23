@@ -88,7 +88,8 @@ inline bool IsWorkStealingEnabled() {
 inline bool IsClientPrivacyEnabled() { return false; }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
 inline bool IsServerPrivacyEnabled() { return false; }
-inline bool IsUniqueMetadataStringsEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_UNIQUE_METADATA_STRINGS
+inline bool IsUniqueMetadataStringsEnabled() { return true; }
 inline bool IsKeepaliveFixEnabled() { return false; }
 inline bool IsKeepaliveServerFixEnabled() { return false; }
 
@@ -122,7 +123,8 @@ inline bool IsWorkStealingEnabled() {
 inline bool IsClientPrivacyEnabled() { return false; }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
 inline bool IsServerPrivacyEnabled() { return false; }
-inline bool IsUniqueMetadataStringsEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_UNIQUE_METADATA_STRINGS
+inline bool IsUniqueMetadataStringsEnabled() { return true; }
 inline bool IsKeepaliveFixEnabled() { return false; }
 inline bool IsKeepaliveServerFixEnabled() { return false; }
 
@@ -156,7 +158,8 @@ inline bool IsWorkStealingEnabled() {
 inline bool IsClientPrivacyEnabled() { return false; }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
 inline bool IsServerPrivacyEnabled() { return false; }
-inline bool IsUniqueMetadataStringsEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_UNIQUE_METADATA_STRINGS
+inline bool IsUniqueMetadataStringsEnabled() { return true; }
 inline bool IsKeepaliveFixEnabled() { return false; }
 inline bool IsKeepaliveServerFixEnabled() { return false; }
 #endif

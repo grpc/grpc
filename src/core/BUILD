@@ -490,6 +490,19 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "wait_for_callback",
+    hdrs = [
+        "lib/promise/wait_for_callback.h",
+    ],
+    external_deps = ["absl/base:core_headers"],
+    deps = [
+        "activity",
+        "poll",
+        "//:gpr",
+    ],
+)
+
+grpc_cc_library(
     name = "arena_promise",
     external_deps = ["absl/meta:type_traits"],
     language = "c++",
@@ -607,17 +620,17 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "basic_join",
-    external_deps = ["absl/utility"],
+    name = "join_state",
     language = "c++",
     public_hdrs = [
-        "lib/promise/detail/basic_join.h",
+        "lib/promise/detail/join_state.h",
     ],
     deps = [
         "bitset",
         "construct_destruct",
         "poll",
         "promise_like",
+        "//:gpr",
         "//:gpr_platform",
     ],
 )
@@ -630,7 +643,8 @@ grpc_cc_library(
         "lib/promise/join.h",
     ],
     deps = [
-        "basic_join",
+        "join_state",
+        "map",
         "//:gpr_platform",
     ],
 )
@@ -647,9 +661,9 @@ grpc_cc_library(
         "lib/promise/try_join.h",
     ],
     deps = [
-        "basic_join",
+        "join_state",
+        "map",
         "poll",
-        "promise_status",
         "//:gpr_platform",
     ],
 )
@@ -665,10 +679,6 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "basic_seq",
-    external_deps = [
-        "absl/meta:type_traits",
-        "absl/utility",
-    ],
     language = "c++",
     public_hdrs = [
         "lib/promise/detail/basic_seq.h",
@@ -676,10 +686,23 @@ grpc_cc_library(
     deps = [
         "construct_destruct",
         "poll",
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "seq_state",
+    external_deps = ["absl/base:core_headers"],
+    language = "c++",
+    public_hdrs = [
+        "lib/promise/detail/seq_state.h",
+    ],
+    deps = [
+        "construct_destruct",
+        "poll",
         "promise_factory",
         "promise_like",
-        "switch",
-        "//:gpr_platform",
+        "//:gpr",
     ],
 )
 
@@ -693,6 +716,7 @@ grpc_cc_library(
         "basic_seq",
         "poll",
         "promise_like",
+        "seq_state",
         "//:gpr_platform",
     ],
 )
@@ -713,6 +737,7 @@ grpc_cc_library(
         "poll",
         "promise_like",
         "promise_status",
+        "seq_state",
         "//:gpr_platform",
     ],
 )
@@ -936,6 +961,23 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "ref_counted_string",
+    srcs = [
+        "lib/gprpp/ref_counted_string.cc",
+    ],
+    hdrs = [
+        "lib/gprpp/ref_counted_string.h",
+    ],
+    external_deps = ["absl/strings"],
+    language = "c++",
+    deps = [
+        "ref_counted",
+        "//:gpr",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
     name = "uuid_v4",
     srcs = ["lib/gprpp/uuid_v4.cc"],
     external_deps = ["absl/strings:str_format"],
@@ -1080,7 +1122,6 @@ grpc_cc_library(
     ],
     deps = [
         "activity",
-        "basic_seq",
         "event_engine_memory_allocator",
         "exec_ctx_wakeup_scheduler",
         "experiments",
@@ -1485,6 +1526,23 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "event_engine_thread_count",
+    srcs = [
+        "lib/event_engine/thread_pool/thread_count.cc",
+    ],
+    hdrs = ["lib/event_engine/thread_pool/thread_count.h"],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/time",
+    ],
+    deps = [
+        "time",
+        "useful",
+        "//:gpr",
+    ],
+)
+
+grpc_cc_library(
     name = "event_engine_thread_pool",
     srcs = [
         "lib/event_engine/thread_pool/original_thread_pool.cc",
@@ -1505,6 +1563,7 @@ grpc_cc_library(
     deps = [
         "common_event_engine_closures",
         "event_engine_basic_work_queue",
+        "event_engine_thread_count",
         "event_engine_thread_local",
         "event_engine_trace",
         "event_engine_work_queue",
@@ -2638,6 +2697,7 @@ grpc_cc_library(
         "channel_stack_type",
         "dual_ref_counted",
         "ref_counted",
+        "ref_counted_string",
         "time",
         "useful",
         "//:channel_arg_names",
@@ -4457,6 +4517,7 @@ grpc_cc_library(
         "lb_policy_factory",
         "lb_policy_registry",
         "pollset_set",
+        "ref_counted_string",
         "validation_errors",
         "//:channel_arg_names",
         "//:config",
@@ -4611,6 +4672,7 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "ref_counted",
+        "ref_counted_string",
         "//:gpr_platform",
         "//:ref_counted_ptr",
         "//:server_address",
@@ -4707,7 +4769,6 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
-        "env",
         "grpc_lb_subchannel_list",
         "grpc_outlier_detection_header",
         "json",
@@ -4716,7 +4777,6 @@ grpc_cc_library(
         "lb_policy",
         "lb_policy_factory",
         "subchannel_interface",
-        "validation_errors",
         "//:channel_arg_names",
         "//:config",
         "//:debug_location",
@@ -4854,6 +4914,7 @@ grpc_cc_library(
         "ref_counted",
         "resolved_address",
         "static_stride_scheduler",
+        "stats_data",
         "subchannel_interface",
         "time",
         "validation_errors",
@@ -4868,6 +4929,7 @@ grpc_cc_library(
         "//:ref_counted_ptr",
         "//:server_address",
         "//:sockaddr_utils",
+        "//:stats",
         "//:work_serializer",
     ],
 )

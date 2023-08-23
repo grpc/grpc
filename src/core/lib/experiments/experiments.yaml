@@ -62,7 +62,7 @@
   test_tags: [resource_quota_test]
 - name: unconstrained_max_quota_buffer_size
   description: Discard the cap on the max free pool size for one memory allocator
-  expiry: 2023/09/01
+  expiry: 2024/02/01
   owner: ctiller@google.com
   test_tags: [resource_quota_test]
 - name: event_engine_client
@@ -156,7 +156,7 @@
     lifetimes to be extended leading to memory bloat.
   expiry: 2023/11/01
   owner: ctiller@google.com
-  test_tags: ["core_end2end_test"]
+  test_tags: []
   allow_in_fuzzing_config: true
 - name: keepalive_fix
   description:

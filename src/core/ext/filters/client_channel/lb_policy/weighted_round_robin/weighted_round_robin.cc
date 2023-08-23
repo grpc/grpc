@@ -51,6 +51,8 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/debug/stats.h"
+#include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -511,6 +513,9 @@ WeightedRoundRobin::Picker::Picker(
       subchannels_.emplace_back(sd->subchannel()->Ref(), sd->weight());
     }
   }
+  global_stats().IncrementWrrSubchannelListSize(
+      subchannel_list->num_subchannels());
+  global_stats().IncrementWrrSubchannelReadySize(subchannels_.size());
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
     gpr_log(GPR_INFO,
             "[WRR %p picker %p] created picker from subchannel_list=%p "
@@ -603,7 +608,9 @@ void WeightedRoundRobin::Picker::BuildSchedulerAndStartTimerLocked() {
   // Start timer.
   WeakRefCountedPtr<Picker> self = WeakRef();
   timer_handle_ = wrr_->channel_control_helper()->GetEventEngine()->RunAfter(
-      config_->weight_update_period(), [self = std::move(self)]() mutable {
+      config_->weight_update_period(),
+      [self = std::move(self),
+       work_serializer = wrr_->work_serializer()]() mutable {
         ApplicationCallbackExecCtx callback_exec_ctx;
         ExecCtx exec_ctx;
         {
@@ -616,8 +623,8 @@ void WeightedRoundRobin::Picker::BuildSchedulerAndStartTimerLocked() {
             self->BuildSchedulerAndStartTimerLocked();
           }
         }
-        // Release ref before ExecCtx goes out of scope.
-        self.reset();
+        // Release the picker ref inside the WorkSerializer.
+        work_serializer->Run([self = std::move(self)]() {}, DEBUG_LOCATION);
       });
 }
 
@@ -657,6 +664,7 @@ void WeightedRoundRobin::ResetBackoffLocked() {
 }
 
 absl::Status WeightedRoundRobin::UpdateLocked(UpdateArgs args) {
+  global_stats().IncrementWrrUpdates();
   config_ = std::move(args.config);
   ServerAddressList addresses;
   if (args.addresses.ok()) {

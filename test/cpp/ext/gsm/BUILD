@@ -27,6 +27,7 @@ grpc_cc_test(
         "gsm_observability_test.cc",
     ],
     external_deps = [
+        "google_cloud_cpp:experimental-opentelemetry",
         "gtest",
         "otel/sdk/src/metrics",
     ],

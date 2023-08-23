@@ -16,7 +16,7 @@
   
   <%include file="../../oss_fuzz_base.include"/>
   <%include file="../../bazel.include"/>
-  <%include file="../../git-jenkins.include"/>
+  <%include file="../../git_avoid_dubious_ownership_error.include"/>
 
   RUN apt-get install -y gdb
   
