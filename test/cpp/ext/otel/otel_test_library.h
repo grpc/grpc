@@ -55,8 +55,8 @@ class MockMetricReader : public opentelemetry::sdk::metrics::MetricReader {
 
 class OTelPluginEnd2EndTest : public ::testing::Test {
  protected:
-  using ::testing::Test::SetUp;
-  void SetUp(
+  // Note that we can't use SetUp() here since we want to send in parameters.
+  void Init(
       const absl::flat_hash_set<absl::string_view>& metric_names,
       opentelemetry::sdk::resource::Resource resource =
           opentelemetry::sdk::resource::Resource::Create({}),

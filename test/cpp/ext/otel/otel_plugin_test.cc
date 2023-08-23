@@ -46,7 +46,7 @@ TEST(OTelPluginBuildTest, SdkDependency) {
 }
 
 TEST_F(OTelPluginEnd2EndTest, ClientAttemptStarted) {
-  SetUp({grpc::internal::OTelClientAttemptStartedInstrumentName()});
+  Init({grpc::internal::OTelClientAttemptStartedInstrumentName()});
   SendRPC();
   const char* kMetricName = "grpc.client.attempt.started";
   auto data = ReadCurrentMetricsData(
@@ -74,7 +74,7 @@ TEST_F(OTelPluginEnd2EndTest, ClientAttemptStarted) {
 }
 
 TEST_F(OTelPluginEnd2EndTest, ClientAttemptDuration) {
-  SetUp({grpc::internal::OTelClientAttemptDurationInstrumentName()});
+  Init({grpc::internal::OTelClientAttemptDurationInstrumentName()});
   SendRPC();
   const char* kMetricName = "grpc.client.attempt.duration";
   auto data = ReadCurrentMetricsData(
@@ -105,8 +105,8 @@ TEST_F(OTelPluginEnd2EndTest, ClientAttemptDuration) {
 }
 
 TEST_F(OTelPluginEnd2EndTest, ClientAttemptSentTotalCompressedMessageSize) {
-  SetUp({grpc::internal::
-             OTelClientAttemptSentTotalCompressedMessageSizeInstrumentName()});
+  Init({grpc::internal::
+            OTelClientAttemptSentTotalCompressedMessageSizeInstrumentName()});
   SendRPC();
   const char* kMetricName =
       "grpc.client.attempt.sent_total_compressed_message_size";
@@ -138,8 +138,8 @@ TEST_F(OTelPluginEnd2EndTest, ClientAttemptSentTotalCompressedMessageSize) {
 }
 
 TEST_F(OTelPluginEnd2EndTest, ClientAttemptRcvdTotalCompressedMessageSize) {
-  SetUp({grpc::internal::
-             OTelClientAttemptRcvdTotalCompressedMessageSizeInstrumentName()});
+  Init({grpc::internal::
+            OTelClientAttemptRcvdTotalCompressedMessageSizeInstrumentName()});
   SendRPC();
   const char* kMetricName =
       "grpc.client.attempt.rcvd_total_compressed_message_size";
@@ -171,7 +171,7 @@ TEST_F(OTelPluginEnd2EndTest, ClientAttemptRcvdTotalCompressedMessageSize) {
 }
 
 TEST_F(OTelPluginEnd2EndTest, ServerCallStarted) {
-  SetUp({grpc::internal::OTelServerCallStartedInstrumentName()});
+  Init({grpc::internal::OTelServerCallStartedInstrumentName()});
   SendRPC();
   const char* kMetricName = "grpc.server.call.started";
   auto data = ReadCurrentMetricsData(
@@ -199,7 +199,7 @@ TEST_F(OTelPluginEnd2EndTest, ServerCallStarted) {
 }
 
 TEST_F(OTelPluginEnd2EndTest, ServerCallDuration) {
-  SetUp({grpc::internal::OTelServerCallDurationInstrumentName()});
+  Init({grpc::internal::OTelServerCallDurationInstrumentName()});
   SendRPC();
   const char* kMetricName = "grpc.server.call.duration";
   auto data = ReadCurrentMetricsData(
@@ -230,8 +230,8 @@ TEST_F(OTelPluginEnd2EndTest, ServerCallDuration) {
 }
 
 TEST_F(OTelPluginEnd2EndTest, ServerCallSentTotalCompressedMessageSize) {
-  SetUp({grpc::internal::
-             OTelServerCallSentTotalCompressedMessageSizeInstrumentName()});
+  Init({grpc::internal::
+            OTelServerCallSentTotalCompressedMessageSizeInstrumentName()});
   SendRPC();
   const char* kMetricName =
       "grpc.server.call.sent_total_compressed_message_size";
@@ -263,8 +263,8 @@ TEST_F(OTelPluginEnd2EndTest, ServerCallSentTotalCompressedMessageSize) {
 }
 
 TEST_F(OTelPluginEnd2EndTest, ServerCallRcvdTotalCompressedMessageSize) {
-  SetUp({grpc::internal::
-             OTelServerCallRcvdTotalCompressedMessageSizeInstrumentName()});
+  Init({grpc::internal::
+            OTelServerCallRcvdTotalCompressedMessageSizeInstrumentName()});
   SendRPC();
   const char* kMetricName =
       "grpc.server.call.rcvd_total_compressed_message_size";
@@ -297,7 +297,7 @@ TEST_F(OTelPluginEnd2EndTest, ServerCallRcvdTotalCompressedMessageSize) {
 
 // Make sure that things work with the global meter provider as well
 TEST_F(OTelPluginEnd2EndTest, UseGlobalMeterProvider) {
-  SetUp({grpc::internal::OTelClientAttemptStartedInstrumentName()});
+  Init({grpc::internal::OTelClientAttemptStartedInstrumentName()});
   SendRPC();
   const char* kMetricName = "grpc.client.attempt.started";
   auto data = ReadCurrentMetricsData(

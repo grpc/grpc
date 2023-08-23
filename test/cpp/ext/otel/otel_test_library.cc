@@ -35,7 +35,7 @@
 namespace grpc {
 namespace testing {
 
-void OTelPluginEnd2EndTest::SetUp(
+void OTelPluginEnd2EndTest::Init(
     const absl::flat_hash_set<absl::string_view>& metric_names,
     opentelemetry::sdk::resource::Resource resource,
     std::unique_ptr<grpc::internal::LabelsInjector> labels_injector,
@@ -86,7 +86,7 @@ void OTelPluginEnd2EndTest::TearDown() {
 }
 
 void OTelPluginEnd2EndTest::ResetStub(std::shared_ptr<Channel> channel) {
-  stub_ = EchoTestService::NewStub(channel);
+  stub_ = EchoTestService::NewStub(std::move(channel));
 }
 
 void OTelPluginEnd2EndTest::SendRPC() {
