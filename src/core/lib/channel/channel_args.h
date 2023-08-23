@@ -44,6 +44,7 @@
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/ref_counted_string.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 
@@ -220,91 +221,6 @@ struct GetObjectImpl<T, absl::enable_if_t<!WrapInSharedPtr<T>::value, void>> {
   };
 };
 
-// Immutable reference counted string
-class RcString {
- public:
-  static RefCountedPtr<RcString> Make(absl::string_view src);
-
-  RefCountedPtr<RcString> Ref() {
-    IncrementRefCount();
-    return RefCountedPtr<RcString>(this);
-  }
-  void IncrementRefCount() { header_.rc.Ref(); }
-  void Unref() {
-    if (header_.rc.Unref()) Destroy();
-  }
-
-  absl::string_view as_string_view() const {
-    return absl::string_view(payload_, header_.length);
-  }
-
-  char* c_str() { return payload_; }
-
- private:
-  explicit RcString(absl::string_view src);
-  void Destroy();
-
-  struct Header {
-    RefCount rc;
-    size_t length;
-  };
-  Header header_;
-  char payload_[];
-};
-
-// Wrapper around RefCountedPtr<RcString> to give value semantics, especially to
-// overloaded operators.
-class RcStringValue {
- public:
-  RcStringValue() : str_{} {}
-  explicit RcStringValue(absl::string_view str) : str_(RcString::Make(str)) {}
-
-  absl::string_view as_string_view() const {
-    return str_ == nullptr ? absl::string_view() : str_->as_string_view();
-  }
-
-  const char* c_str() const { return str_ == nullptr ? "" : str_->c_str(); }
-
- private:
-  RefCountedPtr<RcString> str_;
-};
-
-inline bool operator==(const RcStringValue& lhs, absl::string_view rhs) {
-  return lhs.as_string_view() == rhs;
-}
-
-inline bool operator==(absl::string_view lhs, const RcStringValue& rhs) {
-  return lhs == rhs.as_string_view();
-}
-
-inline bool operator==(const RcStringValue& lhs, const RcStringValue& rhs) {
-  return lhs.as_string_view() == rhs.as_string_view();
-}
-
-inline bool operator<(const RcStringValue& lhs, absl::string_view rhs) {
-  return lhs.as_string_view() < rhs;
-}
-
-inline bool operator<(absl::string_view lhs, const RcStringValue& rhs) {
-  return lhs < rhs.as_string_view();
-}
-
-inline bool operator<(const RcStringValue& lhs, const RcStringValue& rhs) {
-  return lhs.as_string_view() < rhs.as_string_view();
-}
-
-inline bool operator>(const RcStringValue& lhs, absl::string_view rhs) {
-  return lhs.as_string_view() > rhs;
-}
-
-inline bool operator>(absl::string_view lhs, const RcStringValue& rhs) {
-  return lhs > rhs.as_string_view();
-}
-
-inline bool operator>(const RcStringValue& lhs, const RcStringValue& rhs) {
-  return lhs.as_string_view() > rhs.as_string_view();
-}
-
 // Provide the canonical name for a type's channel arg key
 template <typename T>
 struct ChannelArgNameTraits {
@@ -370,16 +286,16 @@ class ChannelArgs {
    public:
     explicit Value(int n) : rep_(reinterpret_cast<void*>(n), &int_vtable_) {}
     explicit Value(std::string s)
-        : rep_(RcString::Make(s).release(), &string_vtable_) {}
+        : rep_(RefCountedString::Make(s).release(), &string_vtable_) {}
     explicit Value(Pointer p) : rep_(std::move(p)) {}
 
     absl::optional<int> GetIfInt() const {
       if (rep_.c_vtable() != &int_vtable_) return absl::nullopt;
       return reinterpret_cast<intptr_t>(rep_.c_pointer());
     }
-    RefCountedPtr<RcString> GetIfString() const {
+    RefCountedPtr<RefCountedString> GetIfString() const {
       if (rep_.c_vtable() != &string_vtable_) return nullptr;
-      return static_cast<RcString*>(rep_.c_pointer())->Ref();
+      return static_cast<RefCountedString*>(rep_.c_pointer())->Ref();
     }
     const Pointer* GetIfPointer() const {
       if (rep_.c_vtable() == &int_vtable_) return nullptr;
@@ -558,12 +474,12 @@ class ChannelArgs {
   std::string ToString() const;
 
  private:
-  explicit ChannelArgs(AVL<RcStringValue, Value> args);
+  explicit ChannelArgs(AVL<RefCountedStringValue, Value> args);
 
   GRPC_MUST_USE_RESULT ChannelArgs Set(absl::string_view name,
                                        Value value) const;
 
-  AVL<RcStringValue, Value> args_;
+  AVL<RefCountedStringValue, Value> args_;
 };
 
 std::ostream& operator<<(std::ostream& out, const ChannelArgs& args);

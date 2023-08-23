@@ -24,6 +24,7 @@ from types import FrameType
 from typing import Any, Callable, List, Optional, Tuple, Union
 
 from absl import flags
+from absl.testing import absltest
 from google.protobuf import json_format
 import grpc
 
@@ -80,6 +81,30 @@ _SignalHandler = Callable[[_SignalNum, Optional[FrameType]], Any]
 _TD_CONFIG_MAX_WAIT_SEC = 600
 
 
+def evaluate_test_config(
+    check: Callable[[skips.TestConfig], bool]
+) -> skips.TestConfig:
+    """Evaluates the test config check against Abseil flags.
+
+    TODO(sergiitk): split into parse_lang_spec and check_is_supported.
+    """
+    # NOTE(lidiz) a manual skip mechanism is needed because absl/flags
+    # cannot be used in the built-in test-skipping decorators. See the
+    # official FAQs:
+    # https://abseil.io/docs/python/guides/flags#faqs
+    test_config = skips.TestConfig(
+        client_lang=skips.get_lang(xds_k8s_flags.CLIENT_IMAGE.value),
+        server_lang=skips.get_lang(xds_k8s_flags.SERVER_IMAGE.value),
+        version=xds_flags.TESTING_VERSION.value,
+    )
+    if not check(test_config):
+        logger.info("Skipping %s", test_config)
+        raise absltest.SkipTest(f"Unsupported test config: {test_config}")
+
+    logger.info("Detected language and version: %s", test_config)
+    return test_config
+
+
 class TdPropagationRetryableError(Exception):
     """Indicates that TD config hasn't propagated yet, and it's safe to retry"""
 
@@ -132,7 +157,7 @@ class XdsKubernetesBaseTestCase(base_testcase.BaseTestCase):
 
         # Raises unittest.SkipTest if given client/server/version does not
         # support current test case.
-        cls.lang_spec = skips.evaluate_test_config(cls.is_supported)
+        cls.lang_spec = evaluate_test_config(cls.is_supported)
 
         # Must be called before KubernetesApiManager or GcpApiManager init.
         xds_flags.set_socket_default_timeout_from_flag()
