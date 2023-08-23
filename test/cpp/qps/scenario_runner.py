@@ -17,7 +17,7 @@
 Local QPS benchmark runner for the OSS Benchmark loadtest configurations.
 
 This tool will run a scenario locally, either already extracted from
-scenario_config_extractor, or extracted from a benchmark loadtest config. The
+scenario_config_exporter, or extracted from a benchmark loadtest config. The
 driver, client, and server all in the same process. You can run the process
 under a custom runner using the --runner_cmd="<COMMAND>" flag, and with custom
 environment variables if needed.
@@ -108,7 +108,7 @@ def run_loadtests():
         loadtests = list(yaml.safe_load_all(f))
     if len(loadtests) > 1 and not (_RUN_FIRST.value or _RUN_ALL.value):
         print(
-            "The loadtest configuration contains more than one scenario. Please specify --run_first or --run_all.",
+            "The loadtest configuration file contains more than one loadtest. Please specify --run_first or --run_all.",
             file=sys.stderr,
         )
         sys.exit(1)
