@@ -513,6 +513,7 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
         ++it->second;
       }
     }
+    GPR_DEBUG_ASSERT(chand_->work_serializer_->RunningInWorkSerializer());
     chand_->subchannel_wrappers_.insert(this);
   }
 
@@ -522,6 +523,7 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
               "chand=%p: destroying subchannel wrapper %p for subchannel %p",
               chand_, this, subchannel_.get());
     }
+    GPR_DEBUG_ASSERT(chand_->work_serializer_->RunningInWorkSerializer());
     chand_->subchannel_wrappers_.erase(this);
     if (chand_->channelz_node_ != nullptr) {
       auto* subchannel_node = subchannel_->channelz_node();
@@ -615,15 +617,16 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
           DEBUG_LOCATION);
     }
 
-    void OnConnectivityStateChange(grpc_connectivity_state state,
-                                   const absl::Status& status) override {
+    void OnConnectivityStateChange(
+        RefCountedPtr<ConnectivityStateWatcherInterface> self,
+        grpc_connectivity_state state, const absl::Status& status) override {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_trace)) {
         gpr_log(GPR_INFO,
                 "chand=%p: connectivity change for subchannel wrapper %p "
                 "subchannel %p; hopping into work_serializer",
                 parent_->chand_, parent_.get(), parent_->subchannel_.get());
       }
-      Ref().release();  // ref owned by lambda
+      self.release();  // Held by callback.
       parent_->chand_->work_serializer_->Run(
           [this, state, status]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
               *parent_->chand_->work_serializer_) {

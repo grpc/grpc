@@ -75,6 +75,11 @@ class ABSL_LOCKABLE WorkSerializer {
   // Drains the queue of callbacks.
   void DrainQueue();
 
+#ifndef NDEBUG
+  // Returns true if the current thread is running in the WorkSerializer.
+  bool RunningInWorkSerializer() const;
+#endif
+
  private:
   class WorkSerializerImpl;
 

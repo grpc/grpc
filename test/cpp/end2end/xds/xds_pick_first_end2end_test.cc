@@ -37,7 +37,6 @@
 #include "src/core/lib/gprpp/env.h"
 #include "src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/pick_first.pb.h"
-#include "test/core/util/scoped_env_var.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/connection_attempt_injector.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
@@ -80,8 +79,6 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, PickFirstTest,
                          ::testing::Values(XdsTestType()), &XdsTestType::Name);
 
 TEST_P(PickFirstTest, PickFirstConfigurationIsPropagated) {
-  grpc_core::testing::ScopedExperimentalEnvVar env_var(
-      "GRPC_EXPERIMENTAL_PICKFIRST_LB_CONFIG");
   CreateAndStartBackends(6);
   // Change cluster to use pick_first with shuffle option.
   auto cluster = default_cluster_;

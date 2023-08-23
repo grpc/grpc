@@ -111,7 +111,7 @@ RUN apt-get update && apt-get install -y jq git cmake zlib1g-dev libtinfo-dev li
 # Bazel installation
 
 # Must be in sync with tools/bazel
-ENV BAZEL_VERSION 6.1.2
+ENV BAZEL_VERSION 6.3.2
 
 # The correct bazel version is already preinstalled, no need to use //tools/bazel wrapper.
 ENV DISABLE_BAZEL_WRAPPER 1

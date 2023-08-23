@@ -13,14 +13,17 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_package")
-load("//tools/bazelify_tests:build_defs.bzl", "grpc_run_bazel_distribtest_test", "grpc_run_cpp_distribtest_test", "grpc_run_tests_harness_test")
+load("//tools/bazelify_tests:build_defs.bzl", "grpc_run_cpp_distribtest_test", "grpc_run_tests_harness_test")
 load(":portability_tests.bzl", "generate_run_tests_portability_tests")
+load(":bazel_distribtests.bzl", "generate_bazel_distribtests")
 
 licenses(["notice"])
 
 grpc_package(name = "tools/bazelify_tests/test")
 
 generate_run_tests_portability_tests(name = "portability_tests_linux")
+
+generate_bazel_distribtests(name = "bazel_distribtests_linux")
 
 # C/C++
 grpc_run_tests_harness_test(
@@ -207,30 +210,6 @@ test_suite(
         ":cpp_distribtest_cmake_linux",
         ":cpp_distribtest_cmake_module_install_linux",
         ":cpp_distribtest_cmake_pkgconfig_linux",
-    ],
-)
-
-# TODO(jtattermusch): load supported versions from //bazel/supported_versions.txt
-grpc_run_bazel_distribtest_test(
-    name = "bazel_distribtest_5.4.1",
-    size = "enormous",
-    args = ["5.4.1"],
-    docker_image_version = "tools/dockerfile/test/bazel.current_version",
-)
-
-# TODO(jtattermusch): load supported versions from //bazel/supported_versions.txt
-grpc_run_bazel_distribtest_test(
-    name = "bazel_distribtest_6.1.2",
-    size = "enormous",
-    args = ["6.1.2"],
-    docker_image_version = "tools/dockerfile/test/bazel.current_version",
-)
-
-test_suite(
-    name = "bazel_distribtests_linux",
-    tests = [
-        ":bazel_distribtest_5.4.1",
-        ":bazel_distribtest_6.1.2",
     ],
 )
 

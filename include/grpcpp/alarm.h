@@ -38,6 +38,11 @@ namespace grpc {
 /// The \a Alarm API has separate \a Set methods for CompletionQueues and
 /// callbacks, but only one can be used at any given time. After an alarm has
 /// been triggered or cancelled, the same Alarm object may reused.
+///
+/// Alarm methods are not thread-safe. Applications must ensure a strict
+/// ordering between calls to \a Set and \a Cancel. This also implies that any
+/// cancellation that occurs before the alarm has been set will have no effect
+/// on any future \a Set calls.
 class Alarm : private grpc::internal::GrpcLibrary {
  public:
   /// Create an unset Alarm.

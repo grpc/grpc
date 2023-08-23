@@ -23,10 +23,8 @@
 #include <string.h>
 
 #include <openssl/asn1.h>
-#include <openssl/base.h>
 #include <openssl/bio.h>
 #include <openssl/bn.h>
-#include <openssl/digest.h>
 #include <openssl/evp.h>
 #include <openssl/pem.h>
 #include <openssl/rsa.h>
@@ -684,16 +682,24 @@ void tsi_test_frame_protector_fixture_destroy(
 std::string GenerateSelfSignedCertificate(
     const SelfSignedCertificateOptions& options) {
   // Generate an RSA keypair.
-  RSA* rsa = RSA_new();
   BIGNUM* bignum = BN_new();
   GPR_ASSERT(BN_set_word(bignum, RSA_F4));
-  GPR_ASSERT(
-      RSA_generate_key_ex(rsa, /*key_size=*/2048, bignum, /*cb=*/nullptr));
+  BIGNUM* n = BN_new();
+  GPR_ASSERT(BN_set_word(n, 2048));
   EVP_PKEY* key = EVP_PKEY_new();
-  GPR_ASSERT(EVP_PKEY_assign_RSA(key, rsa));
   // Create the X509 object.
   X509* x509 = X509_new();
+
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
+  RSA* rsa = RSA_new();
+  GPR_ASSERT(
+      RSA_generate_key_ex(rsa, /*key_size=*/2048, bignum, /*cb=*/nullptr));
+  GPR_ASSERT(EVP_PKEY_assign_RSA(key, rsa));
+  GPR_ASSERT(X509_set_version(x509, 2));  // TODO(gtcooke94) make a const
+#else
+  key = EVP_RSA_gen(2048);
   GPR_ASSERT(X509_set_version(x509, X509_VERSION_3));
+#endif
   // Set the not_before/after fields to infinite past/future. The value for
   // infinite future is from RFC 5280 Section 4.1.2.5.1.
   ASN1_UTCTIME* infinite_past = ASN1_UTCTIME_new();
@@ -733,12 +739,18 @@ std::string GenerateSelfSignedCertificate(
   GPR_ASSERT(PEM_write_bio_X509(bio, x509));
   const uint8_t* data = nullptr;
   size_t len = 0;
+
+#ifdef OPENSSL_IS_BORINGSSL
   GPR_ASSERT(BIO_mem_contents(bio, &data, &len));
+#else
+  len = BIO_get_mem_data(bio, &data);
+#endif
   std::string pem = std::string(reinterpret_cast<const char*>(data), len);
   // Cleanup all of the OpenSSL objects and return the PEM-encoded cert.
   EVP_PKEY_free(key);
   X509_free(x509);
   BIO_free(bio);
   BN_free(bignum);
+  BN_free(n);
   return pem;
 }

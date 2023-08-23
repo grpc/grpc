@@ -33,6 +33,7 @@
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/backoff/backoff.h"
+#include "src/core/lib/event_engine/thread_pool/thread_count.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/work_queue/basic_work_queue.h"
 #include "src/core/lib/event_engine/work_queue/work_queue.h"
@@ -74,56 +75,6 @@ class WorkStealingThreadPool final : public ThreadPool {
    private:
     grpc_core::Mutex mu_;
     grpc_core::CondVar cv_ ABSL_GUARDED_BY(mu_);
-  };
-
-  // Types of thread counts.
-  // Note this is intentionally not an enum class, the keys are used as indexes
-  // into the ThreadCount's private array.
-  enum CounterType {
-    kLivingThreadCount = 0,
-    kBusyCount,
-  };
-
-  class ThreadCount {
-   public:
-    // Adds 1 to the thread count for that counter type.
-    void Add(CounterType counter_type)
-        ABSL_LOCKS_EXCLUDED(wait_mu_[counter_type]);
-    // Subtracts 1 from the thread count for that counter type.
-    void Remove(CounterType counter_type)
-        ABSL_LOCKS_EXCLUDED(wait_mu_[counter_type]);
-    // Blocks until the thread count for that type reaches `desired_threads`.
-    void BlockUntilThreadCount(CounterType counter_type, size_t desired_threads,
-                               const char* why, WorkSignal* work_signal)
-        ABSL_LOCKS_EXCLUDED(wait_mu_[counter_type]);
-    // Returns the current thread count for the tracked type.
-    size_t GetCount(CounterType counter_type)
-        ABSL_LOCKS_EXCLUDED(wait_mu_[counter_type]);
-    // Returns the current thread count for the tracked type.
-    size_t GetCountLocked(CounterType counter_type)
-        ABSL_EXCLUSIVE_LOCKS_REQUIRED(wait_mu_[counter_type]);
-
-    // Adds and removes thread counts on construction and destruction
-    class AutoThreadCount {
-     public:
-      AutoThreadCount(ThreadCount* counter, CounterType counter_type);
-      ~AutoThreadCount();
-
-     private:
-      ThreadCount* counter_;
-      CounterType counter_type_;
-    };
-
-   private:
-    // Wait for the desired count to be reached.
-    // Returns the current thread count either when the desired count is
-    // reached, or when the deadline has passed, whichever happens first.
-    size_t WaitForCountChange(CounterType counter_type, size_t desired_threads,
-                              grpc_core::Duration timeout);
-
-    grpc_core::Mutex wait_mu_[2];
-    grpc_core::CondVar wait_cv_[2];
-    size_t thread_counts_[2]{0, 0};
   };
 
   // A pool of WorkQueues that participate in work stealing.
@@ -186,7 +137,8 @@ class WorkStealingThreadPool final : public ThreadPool {
     bool IsForking();
     bool IsQuiesced();
     size_t reserve_threads() { return reserve_threads_; }
-    ThreadCount* thread_count() { return &thread_count_; }
+    BusyThreadCount* busy_thread_count() { return &busy_thread_count_; }
+    LivingThreadCount* living_thread_count() { return &living_thread_count_; }
     TheftRegistry* theft_registry() { return &theft_registry_; }
     WorkQueue* queue() { return &queue_; }
     WorkSignal* work_signal() { return &work_signal_; }
@@ -221,7 +173,8 @@ class WorkStealingThreadPool final : public ThreadPool {
     };
 
     const size_t reserve_threads_;
-    ThreadCount thread_count_;
+    BusyThreadCount busy_thread_count_;
+    LivingThreadCount living_thread_count_;
     TheftRegistry theft_registry_;
     BasicWorkQueue queue_;
     // Track shutdown and fork bits separately.
@@ -254,11 +207,11 @@ class WorkStealingThreadPool final : public ThreadPool {
     // is decremented at time of destruction. This is necessary when this thread
     // state holds the last shared_ptr keeping the pool alive.
     std::shared_ptr<WorkStealingThreadPoolImpl> pool_;
-    // auto_thread_count_ must be the second member declared, so that the thread
-    // count is decremented after all other state is cleaned up (preventing
-    // leaks).
-    ThreadCount::AutoThreadCount auto_thread_count_;
+    // auto_thread_counter_ must be declared after pool_, so that the thread
+    // count is decremented after all other pool state is cleaned up.
+    LivingThreadCount::AutoThreadCounter auto_thread_counter_;
     grpc_core::BackOff backoff_;
+    size_t busy_count_idx_;
   };
 
   const std::shared_ptr<WorkStealingThreadPoolImpl> pool_;

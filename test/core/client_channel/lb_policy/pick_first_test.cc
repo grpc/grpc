@@ -42,7 +42,6 @@
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "test/core/client_channel/lb_policy/lb_policy_test_lib.h"
-#include "test/core/util/scoped_env_var.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
@@ -486,8 +485,6 @@ TEST_F(PickFirstTest, GoesIdleWhenConnectionFailsThenCanReconnect) {
 }
 
 TEST_F(PickFirstTest, WithShuffle) {
-  testing::ScopedExperimentalEnvVar env_var(
-      "GRPC_EXPERIMENTAL_PICKFIRST_LB_CONFIG");
   constexpr std::array<absl::string_view, 6> kAddresses = {
       "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444", "ipv4:127.0.0.1:445",
       "ipv4:127.0.0.1:446", "ipv4:127.0.0.1:447", "ipv4:127.0.0.1:448"};
@@ -516,8 +513,6 @@ TEST_F(PickFirstTest, WithShuffle) {
 }
 
 TEST_F(PickFirstTest, ShufflingDisabled) {
-  testing::ScopedExperimentalEnvVar env_var(
-      "GRPC_EXPERIMENTAL_PICKFIRST_LB_CONFIG");
   constexpr std::array<absl::string_view, 6> kAddresses = {
       "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444", "ipv4:127.0.0.1:445",
       "ipv4:127.0.0.1:446", "ipv4:127.0.0.1:447", "ipv4:127.0.0.1:448"};
@@ -525,22 +520,6 @@ TEST_F(PickFirstTest, ShufflingDisabled) {
   for (size_t attempt = 0; attempt < kMaxAttempts; ++attempt) {
     absl::Status status = ApplyUpdate(
         BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy_.get());
-    EXPECT_TRUE(status.ok()) << status;
-    std::vector<absl::string_view> address_order;
-    GetOrderAddressesArePicked(kAddresses, &address_order);
-    EXPECT_THAT(address_order, ::testing::ElementsAreArray(kAddresses));
-  }
-}
-
-// TODO(eugeneo): remove when the env var no longer necessary
-TEST_F(PickFirstTest, ShufflingDisabledViaEnvVar) {
-  constexpr std::array<absl::string_view, 6> kAddresses = {
-      "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444", "ipv4:127.0.0.1:445",
-      "ipv4:127.0.0.1:446", "ipv4:127.0.0.1:447", "ipv4:127.0.0.1:448"};
-  constexpr static size_t kMaxAttempts = 5;
-  for (size_t attempt = 0; attempt < kMaxAttempts; ++attempt) {
-    absl::Status status = ApplyUpdate(
-        BuildUpdate(kAddresses, MakePickFirstConfig(true)), lb_policy_.get());
     EXPECT_TRUE(status.ok()) << status;
     std::vector<absl::string_view> address_order;
     GetOrderAddressesArePicked(kAddresses, &address_order);
