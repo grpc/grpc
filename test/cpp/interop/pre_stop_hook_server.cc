@@ -108,10 +108,17 @@ class PreStopHookServer {
   }
 
   ~PreStopHookServer() {
+    std::cerr << 11 << std::endl;
     hook_service_.Stop();
+    std::cerr << 12 << std::endl;
     SetState(State::kShuttingDown);
+    std::cerr << 13 << std::endl;
     server_->Shutdown();
+    std::cerr << 14 << std::endl;
+    WaitForState(State::kDone, absl::Seconds(5));
+    std::cerr << 15 << std::endl;
     server_thread_.join();
+    std::cerr << 16 << std::endl;
   }
 
   State GetState() {

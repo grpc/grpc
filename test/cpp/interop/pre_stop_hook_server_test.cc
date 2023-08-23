@@ -112,7 +112,6 @@ TEST(PreStopHookServer, StopServerWhileRequestPending) {
 }
 
 TEST(PreStopHookServer, RespondToMultiplePendingRequests) {
-  std::array<CallInfo, 2> info;
   int port = grpc_pick_unused_port_or_die();
   PreStopHookServerManager server;
   Status start_status = server.Start(port, 15);
@@ -121,18 +120,21 @@ TEST(PreStopHookServer, RespondToMultiplePendingRequests) {
                                InsecureChannelCredentials());
   ASSERT_TRUE(channel);
   HookService::Stub stub(std::move(channel));
-  stub.async()->Hook(&info[0].context, &info[0].request, &info[0].response,
-                     [&info](Status status) { info[0].SetStatus(status); });
+  auto info = std::make_shared<std::array<CallInfo, 2>>();
+  stub.async()->Hook(&info->at(0).context, &info->at(0).request,
+                     &info->at(0).response,
+                     [info](Status status) { info->at(0).SetStatus(status); });
   ASSERT_EQ(server.TestOnlyExpectRequests(1), 1);
-  stub.async()->Hook(&info[1].context, &info[1].request, &info[1].response,
-                     [&info](Status status) { info[1].SetStatus(status); });
+  stub.async()->Hook(&info->at(1).context, &info->at(1).request,
+                     &info->at(1).response,
+                     [info](Status status) { info->at(1).SetStatus(status); });
   server.TestOnlyExpectRequests(2);
   server.Return(StatusCode::INTERNAL, "Just a test");
-  auto status = info[0].WaitForStatus();
+  auto status = info->at(0).WaitForStatus();
   ASSERT_TRUE(status.has_value());
   EXPECT_EQ(status->error_code(), StatusCode::INTERNAL);
   EXPECT_EQ(status->error_message(), "Just a test");
-  status = info[1].WaitForStatus();
+  status = info->at(1).WaitForStatus();
   EXPECT_FALSE(status.has_value());
 }
 
@@ -155,8 +157,14 @@ TEST(PreStopHookServer, SetStatusBeforeRequestReceived) {
   HookService::Stub stub(std::move(channel));
   CallInfo info;
   stub.async()->Hook(&info.context, &info.request, &info.response,
-                     [&info](Status status) { info.SetStatus(status); });
+                     [&info](Status status) {
+                       std::cerr << 1 << std::endl;
+                       info.SetStatus(status);
+                       std::cerr << 2 << std::endl;
+                     });
+  std::cerr << 3 << std::endl;
   auto status = info.WaitForStatus();
+  std::cerr << 4 << std::endl;
   ASSERT_TRUE(status.has_value());
   EXPECT_EQ(status->error_code(), StatusCode::INTERNAL);
   EXPECT_EQ(status->error_message(), "Just a test");
