@@ -1227,6 +1227,8 @@
     <file baseinstalldir="/" name="src/core/lib/gprpp/posix/thd.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/ref_counted.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/ref_counted_ptr.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/ref_counted_string.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/ref_counted_string.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/single_set_ptr.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/sorted_pack.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/stat.h" role="src" />
@@ -2208,6 +2210,7 @@
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/bio/bio.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/bio/bio_mem.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/bio/connect.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/bio/errno.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/bio/fd.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/bio/file.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/bio/hexdump.c" role="src" />
@@ -2244,16 +2247,14 @@
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/conf/conf_def.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/conf/internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_apple.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_freebsd.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_fuchsia.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_linux.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_openbsd.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_sysreg.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_win.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/cpu_arm.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/cpu_arm_freebsd.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/cpu_arm_linux.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/cpu_arm_linux.h" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/cpu_arm_openbsd.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/cpu_intel.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/crypto.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/curve25519/curve25519.c" role="src" />

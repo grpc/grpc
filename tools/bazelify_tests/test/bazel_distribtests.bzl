@@ -19,6 +19,12 @@ Generates portability tests.
 load("supported_bazel_versions.bzl", "SUPPORTED_BAZEL_VERSIONS")
 load("//tools/bazelify_tests:build_defs.bzl", "grpc_run_bazel_distribtest_test")
 
+_TEST_SHARDS = [
+    "buildtest",
+    "distribtest_cpp",
+    "distribtest_python",
+]
+
 def generate_bazel_distribtests(name):
     """Generates the bazel distribtests.
 
@@ -28,14 +34,15 @@ def generate_bazel_distribtests(name):
     test_names = []
 
     for bazel_version in SUPPORTED_BAZEL_VERSIONS:
-        test_name = "bazel_distribtest_%s" % bazel_version
-        grpc_run_bazel_distribtest_test(
-            name = test_name,
-            size = "enormous",
-            args = [bazel_version],
-            docker_image_version = "tools/dockerfile/test/bazel.current_version",
-        )
-        test_names.append(test_name)
+        for shard_name in _TEST_SHARDS:
+            test_name = "bazel_distribtest_%s_%s" % (bazel_version, shard_name)
+            grpc_run_bazel_distribtest_test(
+                name = test_name,
+                size = "enormous",
+                args = [bazel_version, shard_name],
+                docker_image_version = "tools/dockerfile/test/bazel.current_version",
+            )
+            test_names.append(test_name)
 
     # Generate test suite that allows easily running all bazel distribtests.
     native.test_suite(

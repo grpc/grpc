@@ -142,6 +142,7 @@ EXTERNAL_DEPS = {
     "openssl/err.h": "libcrypto",
     "openssl/evp.h": "libcrypto",
     "openssl/hmac.h": "libcrypto",
+    "openssl/param_build.h": "libcrypto",
     "openssl/pem.h": "libcrypto",
     "openssl/rsa.h": "libcrypto",
     "openssl/sha.h": "libcrypto",
