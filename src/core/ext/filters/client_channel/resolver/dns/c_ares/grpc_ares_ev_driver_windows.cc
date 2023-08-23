@@ -783,7 +783,7 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
                                 from_len);
   }
 
-  static int CloseSocket(SOCKET s, void* user_data) { return 0; }
+  static int CloseSocket(SOCKET /* s */, void* /* user_data */) { return 0; }
 
   const struct ares_socket_functions kCustomSockFuncs = {
       &GrpcPolledFdFactoryWindows::Socket /* socket */,
