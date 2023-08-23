@@ -127,7 +127,7 @@ class Server : public InternallyRefCounted<Server>,
 
   const ChannelArgs& channel_args() const { return channel_args_; }
 
-  std::vector<ChannelArgs::DebugStrings> GetChannelArgsToString() const;
+  std::vector<ChannelArgs::DebugStrings> ChannelArgsToString() const;
 
   channelz::ServerNode* channelz_node() const { return channelz_node_.get(); }
 

@@ -170,7 +170,7 @@ class ClientChannel {
       const RefCountedPtr<SubchannelPoolInterface>& subchannel_pool,
       const std::string& channel_default_authority);
 
-  std::vector<ChannelArgs::DebugStrings> GetChannelArgsToString() const;
+  std::vector<ChannelArgs::DebugStrings> ChannelArgsToString() const;
 
  private:
   class CallData;
