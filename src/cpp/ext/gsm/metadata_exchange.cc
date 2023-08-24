@@ -43,27 +43,33 @@ namespace internal {
 namespace {
 
 // The keys that will be used in the Metadata Exchange between local and remote.
-const absl::string_view kMetadataExchangeTypeKey = "type";
-const absl::string_view kMetadataExchangePodNameKey = "pod_name";
-const absl::string_view kMetadataExchangeContainerNameKey = "container_name";
-const absl::string_view kMetadataExchangeNamespaceNameKey = "namespace_name";
-const absl::string_view kMetadataExchangeClusterNameKey = "cluster_name";
-const absl::string_view kMetadataExchangeLocationKey = "location";
-const absl::string_view kMetadataExchangeProjectIdKey = "project_id";
-const absl::string_view kMetadataExchangeCanonicalServiceNameKey =
-    "canonical_service_name";
+constexpr absl::string_view kMetadataExchangeTypeKey = "type";
+constexpr absl::string_view kMetadataExchangePodNameKey = "pod_name";
+constexpr absl::string_view kMetadataExchangeContainerNameKey =
+    "container_name";
+constexpr absl::string_view kMetadataExchangeNamespaceNameKey =
+    "namespace_name";
+constexpr absl::string_view kMetadataExchangeClusterNameKey = "cluster_name";
+constexpr absl::string_view kMetadataExchangeLocationKey = "location";
+constexpr absl::string_view kMetadataExchangeProjectIdKey = "project_id";
+constexpr absl::string_view kMetadataExchangeCanonicalServiceKey =
+    "canonical_service";
 // The keys that will be used for the peer attributes when recording metrics.
-const absl::string_view kPeerTypeAttribute = "gsm.remote_type";
-const absl::string_view kPeerPodNameAttribute = "gsm.remote_pod_name";
-const absl::string_view kPeerContainerNameAttribute =
-    "gsm.remote_container_name";
-const absl::string_view kPeerNamespaceNameAttribute =
-    "gsm.remote_namespace_name";
-const absl::string_view kPeerClusterNameAttribute = "gsm.remote_cluster_name";
-const absl::string_view kPeerLocationAttribute = "gsm.remote_location";
-const absl::string_view kPeerProjectIdAttribute = "gsm.remote_project_id";
-const absl::string_view kPeerCanonicalServiceNameAttribute =
-    "gsm.remote_canonical_service_name";
+constexpr absl::string_view kPeerTypeAttribute = "gsm.remote_workload_type";
+constexpr absl::string_view kPeerPodNameAttribute =
+    "gsm.remote_workload_pod_name";
+constexpr absl::string_view kPeerContainerNameAttribute =
+    "gsm.remote_workload_container_name";
+constexpr absl::string_view kPeerNamespaceNameAttribute =
+    "gsm.remote_workload_namespace_name";
+constexpr absl::string_view kPeerClusterNameAttribute =
+    "gsm.remote_workload_cluster_name";
+constexpr absl::string_view kPeerLocationAttribute =
+    "gsm.remote_workload_location";
+constexpr absl::string_view kPeerProjectIdAttribute =
+    "gsm.remote_workload_project_id";
+constexpr absl::string_view kPeerCanonicalServiceAttribute =
+    "gsm.remote_workload_canonical_service";
 
 upb_StringView AbslStrToUpbStr(absl::string_view str) {
   return upb_StringView_FromDataAndSize(str.data(), str.size());
@@ -160,8 +166,7 @@ ServiceMeshLabelsInjector::ServiceMeshLabelsInjector(
                                  cluster_location_value, arena.ptr());
   AddStringKeyValueToStructProto(metadata, kMetadataExchangeProjectIdKey,
                                  project_id_value, arena.ptr());
-  AddStringKeyValueToStructProto(metadata,
-                                 kMetadataExchangeCanonicalServiceNameKey,
+  AddStringKeyValueToStructProto(metadata, kMetadataExchangeCanonicalServiceKey,
                                  canonical_service_value, arena.ptr());
   size_t output_length;
   char* output =
@@ -217,9 +222,9 @@ ServiceMeshLabelsInjector::GetPeerLabels(
       GetStringValueFromUpbStruct(struct_pb, kMetadataExchangeProjectIdKey,
                                   arena.ptr()));
   labels.emplace_back(
-      kPeerCanonicalServiceNameAttribute,
+      kPeerCanonicalServiceAttribute,
       GetStringValueFromUpbStruct(
-          struct_pb, kMetadataExchangeCanonicalServiceNameKey, arena.ptr()));
+          struct_pb, kMetadataExchangeCanonicalServiceKey, arena.ptr()));
   return labels;
 }
 
