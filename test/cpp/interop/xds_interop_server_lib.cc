@@ -41,6 +41,7 @@
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
 #include "test/cpp/end2end/test_health_check_service_impl.h"
+#include "test/cpp/interop/pre_stop_hook_server.h"
 
 namespace grpc {
 namespace testing {
@@ -113,8 +114,10 @@ class TestServiceImpl : public TestService::Service {
 class XdsUpdateHealthServiceImpl : public XdsUpdateHealthService::Service {
  public:
   explicit XdsUpdateHealthServiceImpl(
-      HealthCheckServiceImpl* health_check_service)
-      : health_check_service_(health_check_service) {}
+      HealthCheckServiceImpl* health_check_service,
+      std::unique_ptr<PreStopHookServerManager> pre_stop_hook_server)
+      : health_check_service_(health_check_service),
+        pre_stop_hook_server_(std::move(pre_stop_hook_server)) {}
 
   Status SetServing(ServerContext* /* context */, const Empty* /* request */,
                     Empty* /* response */) override {
@@ -130,8 +133,29 @@ class XdsUpdateHealthServiceImpl : public XdsUpdateHealthService::Service {
     return Status::OK;
   }
 
+  Status SendHookRequest(ServerContext* /* context */,
+                         const HookRequest* request,
+                         HookResponse* /* response */) override {
+    switch (request->command()) {
+      case HookRequestCommand::START:
+        return pre_stop_hook_server_->Start(request->server_port(), 30 /* s */);
+      case HookRequestCommand::STOP:
+        return pre_stop_hook_server_->Stop();
+      case HookRequestCommand::RETURN:
+        pre_stop_hook_server_->Return(
+            static_cast<StatusCode>(request->grpc_code_to_return()),
+            request->grpc_status_description());
+        return Status::OK;
+      default:
+        return Status(
+            StatusCode::INVALID_ARGUMENT,
+            absl::StrFormat("Invalid command %d", request->command()));
+    }
+  }
+
  private:
   HealthCheckServiceImpl* const health_check_service_;
+  std::unique_ptr<PreStopHookServerManager> pre_stop_hook_server_;
 };
 }  // namespace
 
@@ -189,7 +213,8 @@ void RunServer(bool secure_mode, const int port, const int maintenance_port,
   health_check_service.SetStatus(
       "grpc.testing.XdsUpdateHealthService",
       grpc::health::v1::HealthCheckResponse::SERVING);
-  XdsUpdateHealthServiceImpl update_health_service(&health_check_service);
+  XdsUpdateHealthServiceImpl update_health_service(
+      &health_check_service, std::make_unique<PreStopHookServerManager>());
 
   grpc::reflection::InitProtoReflectionServerBuilderPlugin();
   ServerBuilder builder;

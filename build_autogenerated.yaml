@@ -756,6 +756,7 @@ libs:
   - src/core/lib/gprpp/per_cpu.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
+  - src/core/lib/gprpp/ref_counted_string.h
   - src/core/lib/gprpp/single_set_ptr.h
   - src/core/lib/gprpp/sorted_pack.h
   - src/core/lib/gprpp/status_helper.h
@@ -1550,6 +1551,7 @@ libs:
   - src/core/lib/experiments/experiments.cc
   - src/core/lib/gprpp/load_file.cc
   - src/core/lib/gprpp/per_cpu.cc
+  - src/core/lib/gprpp/ref_counted_string.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/gprpp/time_averaged_stats.cc
@@ -2161,6 +2163,7 @@ libs:
   - src/core/lib/gprpp/per_cpu.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
+  - src/core/lib/gprpp/ref_counted_string.h
   - src/core/lib/gprpp/single_set_ptr.h
   - src/core/lib/gprpp/sorted_pack.h
   - src/core/lib/gprpp/status_helper.h
@@ -2562,6 +2565,7 @@ libs:
   - src/core/lib/experiments/experiments.cc
   - src/core/lib/gprpp/load_file.cc
   - src/core/lib/gprpp/per_cpu.cc
+  - src/core/lib/gprpp/ref_counted_string.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/gprpp/time_averaged_stats.cc
@@ -4125,6 +4129,7 @@ libs:
   - src/core/lib/gprpp/per_cpu.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
+  - src/core/lib/gprpp/ref_counted_string.h
   - src/core/lib/gprpp/sorted_pack.h
   - src/core/lib/gprpp/status_helper.h
   - src/core/lib/gprpp/table.h
@@ -4406,6 +4411,7 @@ libs:
   - src/core/lib/experiments/experiments.cc
   - src/core/lib/gprpp/load_file.cc
   - src/core/lib/gprpp/per_cpu.cc
+  - src/core/lib/gprpp/ref_counted_string.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/gprpp/time_averaged_stats.cc
@@ -7644,11 +7650,13 @@ targets:
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
+  - src/core/lib/gprpp/ref_counted_string.h
   - src/core/lib/gprpp/time.h
   - src/core/lib/surface/channel_stack_type.h
   src:
   - src/core/lib/channel/channel_args.cc
   - src/core/lib/event_engine/channel_args_endpoint_config.cc
+  - src/core/lib/gprpp/ref_counted_string.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/surface/channel_stack_type.cc
   - test/core/event_engine/endpoint_config_test.cc
@@ -11658,6 +11666,37 @@ targets:
   platforms:
   - linux
   - posix
+- name: pre_stop_hook_server_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/cpp/server/csds/csds.h
+  - test/cpp/end2end/test_health_check_service_impl.h
+  - test/cpp/interop/pre_stop_hook_server.h
+  - test/cpp/interop/xds_interop_server_lib.h
+  src:
+  - src/proto/grpc/health/v1/health.proto
+  - src/proto/grpc/testing/empty.proto
+  - src/proto/grpc/testing/istio_echo.proto
+  - src/proto/grpc/testing/messages.proto
+  - src/proto/grpc/testing/test.proto
+  - src/proto/grpc/testing/xds/v3/base.proto
+  - src/proto/grpc/testing/xds/v3/config_dump.proto
+  - src/proto/grpc/testing/xds/v3/csds.proto
+  - src/proto/grpc/testing/xds/v3/percent.proto
+  - src/cpp/server/admin/admin_services.cc
+  - src/cpp/server/csds/csds.cc
+  - test/cpp/end2end/test_health_check_service_impl.cc
+  - test/cpp/interop/pre_stop_hook_server.cc
+  - test/cpp/interop/pre_stop_hook_server_test.cc
+  - test/cpp/interop/xds_interop_server_lib.cc
+  deps:
+  - gtest
+  - grpc++_reflection
+  - grpcpp_channelz
+  - grpc_test_util
+  - grpc++_test_config
 - name: prioritized_race_test
   gtest: true
   build: test
@@ -15406,6 +15445,7 @@ targets:
   - src/core/lib/gprpp/per_cpu.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
+  - src/core/lib/gprpp/ref_counted_string.h
   - src/core/lib/gprpp/sorted_pack.h
   - src/core/lib/gprpp/status_helper.h
   - src/core/lib/gprpp/table.h
@@ -15669,6 +15709,7 @@ targets:
   - src/core/lib/experiments/experiments.cc
   - src/core/lib/gprpp/load_file.cc
   - src/core/lib/gprpp/per_cpu.cc
+  - src/core/lib/gprpp/ref_counted_string.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/gprpp/time_averaged_stats.cc
@@ -17571,6 +17612,7 @@ targets:
   headers:
   - src/cpp/server/csds/csds.h
   - test/cpp/end2end/test_health_check_service_impl.h
+  - test/cpp/interop/pre_stop_hook_server.h
   - test/cpp/interop/xds_interop_server_lib.h
   src:
   - src/proto/grpc/health/v1/health.proto
@@ -17584,6 +17626,7 @@ targets:
   - src/cpp/server/admin/admin_services.cc
   - src/cpp/server/csds/csds.cc
   - test/cpp/end2end/test_health_check_service_impl.cc
+  - test/cpp/interop/pre_stop_hook_server.cc
   - test/cpp/interop/xds_interop_server.cc
   - test/cpp/interop/xds_interop_server_lib.cc
   deps:
@@ -17598,6 +17641,7 @@ targets:
   headers:
   - src/cpp/server/csds/csds.h
   - test/cpp/end2end/test_health_check_service_impl.h
+  - test/cpp/interop/pre_stop_hook_server.h
   - test/cpp/interop/xds_interop_server_lib.h
   src:
   - src/proto/grpc/health/v1/health.proto
@@ -17612,6 +17656,7 @@ targets:
   - src/cpp/server/admin/admin_services.cc
   - src/cpp/server/csds/csds.cc
   - test/cpp/end2end/test_health_check_service_impl.cc
+  - test/cpp/interop/pre_stop_hook_server.cc
   - test/cpp/interop/xds_interop_server_lib.cc
   - test/cpp/interop/xds_interop_server_test.cc
   deps:

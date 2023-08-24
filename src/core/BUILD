@@ -961,6 +961,23 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "ref_counted_string",
+    srcs = [
+        "lib/gprpp/ref_counted_string.cc",
+    ],
+    hdrs = [
+        "lib/gprpp/ref_counted_string.h",
+    ],
+    external_deps = ["absl/strings"],
+    language = "c++",
+    deps = [
+        "ref_counted",
+        "//:gpr",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
     name = "uuid_v4",
     srcs = ["lib/gprpp/uuid_v4.cc"],
     external_deps = ["absl/strings:str_format"],
@@ -2680,6 +2697,7 @@ grpc_cc_library(
         "channel_stack_type",
         "dual_ref_counted",
         "ref_counted",
+        "ref_counted_string",
         "time",
         "useful",
         "//:channel_arg_names",
@@ -4499,6 +4517,7 @@ grpc_cc_library(
         "lb_policy_factory",
         "lb_policy_registry",
         "pollset_set",
+        "ref_counted_string",
         "validation_errors",
         "//:channel_arg_names",
         "//:config",
@@ -4653,6 +4672,7 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "ref_counted",
+        "ref_counted_string",
         "//:gpr_platform",
         "//:ref_counted_ptr",
         "//:server_address",

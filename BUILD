@@ -211,11 +211,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "goku"  # @unused
+g_stands_for = "generative"  # @unused
 
-core_version = "34.0.0"  # @unused
+core_version = "35.0.0"  # @unused
 
-version = "1.58.0-dev"  # @unused
+version = "1.59.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -1585,6 +1585,7 @@ grpc_cc_library(
         "//src/core:promise_status",
         "//src/core:race",
         "//src/core:ref_counted",
+        "//src/core:ref_counted_string",
         "//src/core:resolved_address",
         "//src/core:resource_quota",
         "//src/core:resource_quota_trace",
