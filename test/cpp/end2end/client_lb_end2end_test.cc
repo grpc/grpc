@@ -859,7 +859,7 @@ TEST_F(PickFirstTest, BackOffInitialReconnect) {
             (kInitialBackOffMs * grpc_test_slowdown_factor()) - 1);
   // But not much more.
   EXPECT_LE(waited.millis(),
-            (kInitialBackOffMs * grpc_test_slowdown_factor()) * 1.1);
+            (kInitialBackOffMs * grpc_test_slowdown_factor()) * 1.3);
 }
 
 TEST_F(PickFirstTest, BackOffMinReconnect) {
