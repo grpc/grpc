@@ -123,6 +123,9 @@ int main(int argc, char** argv) {
         bin_dir + "/resolver_test_record_groups.yaml",
         bin_dir + "/utils/dns_resolver", bin_dir + "/utils/tcp_connect");
 #else
+// TODO(yijiem): Misusing the GRPC_PORT_ISOLATED_RUNTIME preprocessor symbol as
+// an indication whether the test is running on RBE or not. Find a better way of
+// doing this.
 #ifndef GRPC_PORT_ISOLATED_RUNTIME
     gpr_log(GPR_ERROR,
             "You are invoking the test locally with Bazel, you may need to "
