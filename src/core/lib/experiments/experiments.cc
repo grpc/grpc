@@ -101,11 +101,6 @@ const char* const description_keepalive_server_fix =
     "Allows overriding keepalive_permit_without_calls for servers. Refer "
     "https://github.com/grpc/grpc/pull/33917 for more information.";
 const char* const additional_constraints_keepalive_server_fix = "{}";
-#ifdef NDEBUG
-const bool kDefaultForDebugOnly = false;
-#else
-const bool kDefaultForDebugOnly = true;
-#endif
 }  // namespace
 
 namespace grpc_core {
@@ -145,7 +140,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"event_engine_dns", description_event_engine_dns,
      additional_constraints_event_engine_dns, false, false},
     {"work_stealing", description_work_stealing,
-     additional_constraints_work_stealing, kDefaultForDebugOnly, false},
+     additional_constraints_work_stealing, true, false},
     {"client_privacy", description_client_privacy,
      additional_constraints_client_privacy, false, false},
     {"canary_client_privacy", description_canary_client_privacy,
@@ -243,11 +238,6 @@ const char* const description_keepalive_server_fix =
     "Allows overriding keepalive_permit_without_calls for servers. Refer "
     "https://github.com/grpc/grpc/pull/33917 for more information.";
 const char* const additional_constraints_keepalive_server_fix = "{}";
-#ifdef NDEBUG
-const bool kDefaultForDebugOnly = false;
-#else
-const bool kDefaultForDebugOnly = true;
-#endif
 }  // namespace
 
 namespace grpc_core {
@@ -287,7 +277,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"event_engine_dns", description_event_engine_dns,
      additional_constraints_event_engine_dns, false, false},
     {"work_stealing", description_work_stealing,
-     additional_constraints_work_stealing, kDefaultForDebugOnly, false},
+     additional_constraints_work_stealing, true, false},
     {"client_privacy", description_client_privacy,
      additional_constraints_client_privacy, false, false},
     {"canary_client_privacy", description_canary_client_privacy,
@@ -385,11 +375,6 @@ const char* const description_keepalive_server_fix =
     "Allows overriding keepalive_permit_without_calls for servers. Refer "
     "https://github.com/grpc/grpc/pull/33917 for more information.";
 const char* const additional_constraints_keepalive_server_fix = "{}";
-#ifdef NDEBUG
-const bool kDefaultForDebugOnly = false;
-#else
-const bool kDefaultForDebugOnly = true;
-#endif
 }  // namespace
 
 namespace grpc_core {
@@ -429,7 +414,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"event_engine_dns", description_event_engine_dns,
      additional_constraints_event_engine_dns, false, false},
     {"work_stealing", description_work_stealing,
-     additional_constraints_work_stealing, kDefaultForDebugOnly, false},
+     additional_constraints_work_stealing, true, false},
     {"client_privacy", description_client_privacy,
      additional_constraints_client_privacy, false, false},
     {"canary_client_privacy", description_canary_client_privacy,

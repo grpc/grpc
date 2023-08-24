@@ -75,16 +75,8 @@ inline bool IsEventEngineListenerEnabled() { return false; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsTraceRecordCallopsEnabled() { return false; }
 inline bool IsEventEngineDnsEnabled() { return false; }
-#ifndef NDEBUG
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_STEALING
-#endif
-inline bool IsWorkStealingEnabled() {
-#ifdef NDEBUG
-  return false;
-#else
-  return true;
-#endif
-}
+inline bool IsWorkStealingEnabled() { return true; }
 inline bool IsClientPrivacyEnabled() { return false; }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
 inline bool IsServerPrivacyEnabled() { return false; }
@@ -110,16 +102,8 @@ inline bool IsEventEngineListenerEnabled() { return false; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsTraceRecordCallopsEnabled() { return false; }
 inline bool IsEventEngineDnsEnabled() { return false; }
-#ifndef NDEBUG
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_STEALING
-#endif
-inline bool IsWorkStealingEnabled() {
-#ifdef NDEBUG
-  return false;
-#else
-  return true;
-#endif
-}
+inline bool IsWorkStealingEnabled() { return true; }
 inline bool IsClientPrivacyEnabled() { return false; }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
 inline bool IsServerPrivacyEnabled() { return false; }
@@ -145,16 +129,8 @@ inline bool IsEventEngineListenerEnabled() { return false; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsTraceRecordCallopsEnabled() { return false; }
 inline bool IsEventEngineDnsEnabled() { return false; }
-#ifndef NDEBUG
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_STEALING
-#endif
-inline bool IsWorkStealingEnabled() {
-#ifdef NDEBUG
-  return false;
-#else
-  return true;
-#endif
-}
+inline bool IsWorkStealingEnabled() { return true; }
 inline bool IsClientPrivacyEnabled() { return false; }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
 inline bool IsServerPrivacyEnabled() { return false; }
