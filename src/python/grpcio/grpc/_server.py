@@ -460,6 +460,7 @@ class _RequestIterator(object):
         elif (
             self._state.request is None
             and _RECEIVE_MESSAGE_TOKEN not in self._state.due
+            and _RECEIVE_CLOSE_ON_SERVER_TOKEN not in self._state.due
         ):
             raise StopIteration()
         else:
