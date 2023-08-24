@@ -54,9 +54,9 @@ struct LoopTraits<absl::StatusOr<LoopCtl<T>>> {
   using Result = absl::StatusOr<T>;
   static LoopCtl<Result> ToLoopCtl(absl::StatusOr<LoopCtl<T>> value) {
     if (!value.ok()) return value.status();
-    const auto& inner = *value;
+    auto& inner = *value;
     if (absl::holds_alternative<Continue>(inner)) return Continue{};
-    return absl::get<T>(inner);
+    return absl::get<T>(std::move(inner));
   }
 };
 
