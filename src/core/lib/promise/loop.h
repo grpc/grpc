@@ -104,7 +104,7 @@ class Loop {
       if (auto* p = promise_result.value_if_ready()) {
         //  - then if it's Continue, destroy the promise and recreate a new one
         //  from our factory.
-        auto lc = LoopTraits<PromiseResult>::ToLoopCtl(*p);
+        auto lc = LoopTraits<PromiseResult>::ToLoopCtl(std::move(*p));
         if (absl::holds_alternative<Continue>(lc)) {
           Destruct(&promise_);
           Construct(&promise_, factory_.Make());
