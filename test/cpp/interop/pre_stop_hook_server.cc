@@ -35,30 +35,13 @@ class HookServiceImpl final : public HookService::CallbackService {
   ServerUnaryReactor* Hook(CallbackServerContext* context,
                            const Empty* /* request */,
                            Empty* /* reply */) override {
-    grpc_core::MutexLock lock(&mu_);
     auto reactor = context->DefaultReactor();
-    if (pending_status_) {
-      reactor->Finish(std::move(*pending_status_));
-      pending_status_ = absl::nullopt;
-    } else if (done_) {
-      reactor->Finish(Status(StatusCode::ABORTED, "Shutting down"));
-    } else {
-      pending_requests_.push_back(reactor);
-    }
-    request_var_.SignalAll();
+    MatchRequestsAndStatuses(reactor, absl::nullopt);
     return reactor;
   }
 
   void SetReturnStatus(const Status& status) {
-    grpc_core::MutexLock lock(&mu_);
-    if (pending_requests_.empty()) {
-      pending_status_ = status;
-    } else {
-      auto reactor = pending_requests_.begin();
-      (*reactor)->Finish(status);
-      pending_requests_.erase(reactor);
-    }
-    request_var_.SignalAll();
+    MatchRequestsAndStatuses(absl::nullopt, status);
   }
 
   bool TestOnlyExpectRequests(size_t expected_requests_count,
@@ -72,18 +55,40 @@ class HookServiceImpl final : public HookService::CallbackService {
   }
 
   void Stop() {
-    grpc_core::MutexLock lock(&mu_);
-    for (auto request : pending_requests_) {
-      request->Finish(Status(StatusCode::ABORTED, "Shutting down"));
+    {
+      grpc_core::MutexLock lock(&mu_);
+      done_ = true;
     }
-    pending_requests_.clear();
+    MatchRequestsAndStatuses(absl::nullopt, absl::nullopt);
   }
 
  private:
+  void MatchRequestsAndStatuses(absl::optional<ServerUnaryReactor*> new_request,
+                                absl::optional<Status> new_status) {
+    grpc_core::MutexLock lock(&mu_);
+    if (new_request.has_value()) {
+      pending_requests_.push_back(*new_request);
+    }
+    if (new_status.has_value()) {
+      pending_statuses_.push_back(std::move(*new_status));
+    }
+    while (!pending_requests_.empty() && !pending_statuses_.empty()) {
+      pending_requests_.front()->Finish(std::move(pending_statuses_.front()));
+      pending_requests_.erase(pending_requests_.begin());
+      pending_statuses_.erase(pending_statuses_.begin());
+    }
+    while (!pending_requests_.empty() && done_) {
+      pending_requests_.front()->Finish(
+          Status(StatusCode::ABORTED, "Shutting down"));
+      pending_requests_.erase(pending_requests_.begin());
+    }
+    request_var_.SignalAll();
+  }
+
   grpc_core::Mutex mu_;
   grpc_core::CondVar request_var_ ABSL_GUARDED_BY(&mu_);
-  absl::optional<Status> pending_status_ ABSL_GUARDED_BY(&mu_);
   std::vector<ServerUnaryReactor*> pending_requests_ ABSL_GUARDED_BY(&mu_);
+  std::vector<Status> pending_statuses_ ABSL_GUARDED_BY(&mu_);
   bool done_ ABSL_GUARDED_BY(&mu_) = false;
 };
 
@@ -108,17 +113,11 @@ class PreStopHookServer {
   }
 
   ~PreStopHookServer() {
-    std::cerr << 11 << std::endl;
     hook_service_.Stop();
-    std::cerr << 12 << std::endl;
     SetState(State::kShuttingDown);
-    std::cerr << 13 << std::endl;
     server_->Shutdown();
-    std::cerr << 14 << std::endl;
     WaitForState(State::kDone, absl::Seconds(5));
-    std::cerr << 15 << std::endl;
-    server_thread_.join();
-    std::cerr << 16 << std::endl;
+    server_thread_.detach();
   }
 
   State GetState() {
