@@ -30,6 +30,7 @@ XdsTestServer = server_app.XdsTestServer
 logger = logging.getLogger(__name__)
 
 
+# TODO(sergiitk): [GAMMA] Move into framework/test_cases
 class GammaXdsKubernetesTestCase(xds_k8s_testcase.RegularXdsKubernetesTestCase):
     server_runner: GammaServerRunner
     mesh_name: str
@@ -43,6 +44,7 @@ class GammaXdsKubernetesTestCase(xds_k8s_testcase.RegularXdsKubernetesTestCase):
         # Random suffix per test.
         self.createRandomSuffix()
 
+        # TODO(sergiitk): [GAMMA] Make a TD-manager-less base test case
         # TD Manager
         self.td = self.initTrafficDirectorManager()
 
@@ -70,6 +72,7 @@ class GammaXdsKubernetesTestCase(xds_k8s_testcase.RegularXdsKubernetesTestCase):
         self.force_cleanup = True
         self.force_cleanup_namespace = True
 
+    # TODO(sergiitk): [GAMMA] Make a TD-manager-less base test case
     def initTrafficDirectorManager(
         self,
     ) -> td_gamma.TrafficDirectorGammaManager:

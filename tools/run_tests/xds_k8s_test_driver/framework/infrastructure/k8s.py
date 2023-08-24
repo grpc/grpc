@@ -163,7 +163,7 @@ class KubernetesApiManager:
 
     def close(self):
         # self.dynamic_client
-        # TODO(sergiitk): what to do with dynamic clients?
+        # TODO(sergiitk): [GAMMA] what to do with dynamic clients?
         self.client.close()
 
     def reload(self):
@@ -175,7 +175,7 @@ class KubernetesApiManager:
         for api in self._apis:
             api.api_client = self._client
 
-        # TODO(sergiitk): what to do with dynamic apis?
+        # TODO(sergiitk): [GAMMA] what to do with dynamic apis?
 
     @classmethod
     def _new_client_from_context(cls, context: str) -> "client.ApiClient":
@@ -202,7 +202,8 @@ class KubernetesApiManager:
             self._dynamic_apis.add(k8s_api.group_version)
             return k8s_api
         except dynamic_exc.ResourceNotFoundError as err:
-            # TODO(sergiitk): add retries if static client retries not apply.
+            # TODO(sergiitk): [GAMMA] add retries if static client
+            #   retries not apply.
             raise RuntimeError(
                 "Couldn't discover k8s API %s, resource %s", api_version, kind
             ) from err
@@ -266,6 +267,9 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
     def _get_dynamic_api(self, api_version, kind) -> dynamic_res.Resource:
         group, _, version = api_version.partition("/")
 
+        # TODO(sergiitk): [GAMMA] Needs to be improved. This all is very clunky
+        #  when considered together with _get_dynamic_api and api_gke_mesh,
+        #  api_grpc_route.
         if group == "net.gke.io":
             if kind == "TDMesh":
                 return self._api.gke_tdmesh(version)
@@ -363,7 +367,7 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
             err.headers,
         )
 
-        # TODO(sergiitk): let dynamic/exception parse this instead?
+        # TODO(sergiitk): [GAMMA] let dynamic/exception parse this instead?
         code: int = err.status
         body = err.body.lower() if err.body else ""
 

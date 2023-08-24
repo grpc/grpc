@@ -13,5 +13,7 @@ spec:
       from: All
     kinds:
     - group: net.gke.io
+      # This is intentionally incorrect and should be set to GRPCRoute.
+      # TODO(sergiitk): [GAMMA] Change when the fix is ready.
       kind: TDGRPCRoute
 ...

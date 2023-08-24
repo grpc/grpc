@@ -14,6 +14,7 @@
 import framework.infrastructure.traffic_director as td_base
 
 
+# TODO(sergiitk): [GAMMA] make a TD-manager-less base test case.
 class TrafficDirectorGammaManager(td_base.TrafficDirectorManager):
     """Gamma."""
 
