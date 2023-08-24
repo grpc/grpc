@@ -107,7 +107,6 @@ class KubernetesApiManager:
     apps: client.AppsV1Api
     core: client.CoreV1Api
     _apis: set[object]
-    # "net.gke.io"
     _dynamic_apis: set[str]
 
     def __init__(self, context: str):

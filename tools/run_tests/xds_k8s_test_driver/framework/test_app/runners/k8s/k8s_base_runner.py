@@ -258,7 +258,7 @@ class KubernetesBaseRunner(base_runner.BaseRunner, metaclass=ABCMeta):
         **kwargs,
     ) -> object:
         template_file = self._template_file_from_name(template_name)
-        logger.info("Loading k8s manifest template: %s", template_file)
+        logger.debug("Loading k8s manifest template: %s", template_file)
 
         yaml_doc = self._render_template(template_file, **kwargs)
         logger.info(
