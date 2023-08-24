@@ -1,4 +1,4 @@
-# Copyright 2015 gRPC authors.
+# Copyright 2023 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,8 +11,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Discover and run all unit tests recursively."""
 
-# AUTO-GENERATED FROM `$REPO_ROOT/templates/tools/distrib/python/grpcio_tools/grpc_version.py.template`!!!
+import pathlib
 
-VERSION = '1.59.0.dev0'
-PROTOBUF_VERSION = '3.23.4'
+from absl.testing import absltest
+
+
+def load_tests(loader: absltest.TestLoader, unused_tests, unused_pattern):
+    unit_tests_root = pathlib.Path(__file__).parent
+    return loader.discover(f"{unit_tests_root}", pattern="*_test.py")
+
+
+if __name__ == "__main__":
+    absltest.main()

@@ -111,8 +111,7 @@ TEST(PreStopHookServer, StopServerWhileRequestPending) {
   EXPECT_EQ(status->error_code(), StatusCode::ABORTED);
 }
 
-TEST(PreStopHookServer, RespondToMultiplePendingRequests) {
-  std::array<CallInfo, 2> info;
+TEST(PreStopHookServer, MultipleRequests) {
   int port = grpc_pick_unused_port_or_die();
   PreStopHookServerManager server;
   Status start_status = server.Start(port, 15);
@@ -121,19 +120,29 @@ TEST(PreStopHookServer, RespondToMultiplePendingRequests) {
                                InsecureChannelCredentials());
   ASSERT_TRUE(channel);
   HookService::Stub stub(std::move(channel));
-  stub.async()->Hook(&info[0].context, &info[0].request, &info[0].response,
-                     [&info](Status status) { info[0].SetStatus(status); });
-  ASSERT_EQ(server.TestOnlyExpectRequests(1), 1);
-  stub.async()->Hook(&info[1].context, &info[1].request, &info[1].response,
-                     [&info](Status status) { info[1].SetStatus(status); });
-  server.TestOnlyExpectRequests(2);
-  server.Return(StatusCode::INTERNAL, "Just a test");
-  auto status = info[0].WaitForStatus();
+  CallInfo info1, info2, info3;
+  server.Return(StatusCode::INTERNAL, "First");
+  stub.async()->Hook(&info1.context, &info1.request, &info1.response,
+                     [&](Status status) { info1.SetStatus(status); });
+  auto status = info1.WaitForStatus();
   ASSERT_TRUE(status.has_value());
   EXPECT_EQ(status->error_code(), StatusCode::INTERNAL);
-  EXPECT_EQ(status->error_message(), "Just a test");
-  status = info[1].WaitForStatus();
-  EXPECT_FALSE(status.has_value());
+  EXPECT_EQ(status->error_message(), "First");
+  stub.async()->Hook(&info2.context, &info2.request, &info2.response,
+                     [&](Status status) { info2.SetStatus(status); });
+  ASSERT_EQ(server.TestOnlyExpectRequests(1, absl::Milliseconds(500)), 1);
+  stub.async()->Hook(&info3.context, &info3.request, &info3.response,
+                     [&](Status status) { info3.SetStatus(status); });
+  server.Return(StatusCode::RESOURCE_EXHAUSTED, "Second");
+  server.Return(StatusCode::DEADLINE_EXCEEDED, "Third");
+  status = info2.WaitForStatus();
+  ASSERT_TRUE(status.has_value());
+  EXPECT_EQ(status->error_code(), StatusCode::RESOURCE_EXHAUSTED);
+  EXPECT_EQ(status->error_message(), "Second");
+  status = info3.WaitForStatus();
+  ASSERT_TRUE(status.has_value());
+  EXPECT_EQ(status->error_code(), StatusCode::DEADLINE_EXCEEDED);
+  EXPECT_EQ(status->error_message(), "Third");
 }
 
 TEST(PreStopHookServer, StopServerThatNotStarted) {
@@ -169,8 +178,6 @@ TEST(PreStopHookServer, SetStatusBeforeRequestReceived) {
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(&argc, argv);
-  grpc_init();
   auto result = RUN_ALL_TESTS();
-  grpc_shutdown();
   return result;
 }

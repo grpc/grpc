@@ -25,11 +25,11 @@
 cmake_minimum_required(VERSION 3.8)
 
 set(PACKAGE_NAME          "grpc")
-set(PACKAGE_VERSION       "1.58.0-dev")
-set(gRPC_CORE_VERSION     "34.0.0")
-set(gRPC_CORE_SOVERSION   "34")
-set(gRPC_CPP_VERSION      "1.58.0-dev")
-set(gRPC_CPP_SOVERSION    "1.58")
+set(PACKAGE_VERSION       "1.59.0-dev")
+set(gRPC_CORE_VERSION     "35.0.0")
+set(gRPC_CORE_SOVERSION   "35")
+set(gRPC_CPP_VERSION      "1.59.0-dev")
+set(gRPC_CPP_SOVERSION    "1.59")
 set(PACKAGE_STRING        "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME       "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT     "https://github.com/grpc/grpc/issues/")
@@ -301,6 +301,24 @@ if(UNIX AND NOT HAIKU)
   set(_gRPC_ALLTARGETS_LIBRARIES ${CMAKE_DL_LIBS} m Threads::Threads)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     set(_gRPC_ALLTARGETS_LIBRARIES ${_gRPC_ALLTARGETS_LIBRARIES} rt)
+  endif()
+endif()
+
+include(CheckCXXSourceCompiles)
+
+if(UNIX OR APPLE)
+  # Some systems require the __STDC_FORMAT_MACROS macro to be defined
+  # to get the fixed-width integer type formatter macros.
+  check_cxx_source_compiles("#include <inttypes.h>
+  #include <cstdio>
+  int main()
+  {
+    int64_t i64{};
+    std::printf(\"%\" PRId64, i64);
+  }"
+  HAVE_STDC_FORMAT_MACROS)
+  if(NOT HAVE_STDC_FORMAT_MACROS)
+    add_definitions(-D__STDC_FORMAT_MACROS)
   endif()
 endif()
 
