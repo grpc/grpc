@@ -54,7 +54,7 @@ def make_client_runner(
     gcp_api_manager: gcp.api.GcpApiManager,
     port_forwarding: bool = False,
     reuse_namespace: bool = True,
-    secure: bool = False,
+    mode: str = "default",
 ) -> KubernetesClientRunner:
     # KubernetesClientRunner arguments.
     runner_kwargs = dict(
@@ -71,7 +71,7 @@ def make_client_runner(
         debug_use_port_forwarding=port_forwarding,
     )
 
-    if secure:
+    if mode == "secure":
         runner_kwargs.update(
             deployment_template="client-secure.deployment.yaml"
         )

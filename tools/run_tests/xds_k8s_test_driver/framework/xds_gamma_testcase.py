@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import logging
-from typing import List
 
 from framework.infrastructure import k8s
 import framework.infrastructure.traffic_director_gamma as td_gamma
@@ -38,8 +37,15 @@ class GammaXdsKubernetesTestCase(xds_k8s_testcase.RegularXdsKubernetesTestCase):
 
     def setUp(self):
         """Hook method for setting up the test fixture before exercising it."""
-        # Skip a class.
+        # TODO(sergiitk): [GAMMA] Remove when refactored to be TD-manager-less.
+        # pylint: disable=bad-super-call
+        # Skips RegularXdsKubernetesTestCase and IsolatedXdsKubernetesTestCase
+        # and calls setUp on XdsKubernetesBaseTestCase.
+        # IsolatedXdsKubernetesTestCase randomizes server_xds_port when it's 0,
+        # and in GAMMA we always need it unset.
+        # Calls XdsKubernetesBaseTestCase.setUp():
         super(xds_k8s_testcase.IsolatedXdsKubernetesTestCase, self).setUp()
+        # pylint: enable=bad-super-call
 
         # Random suffix per test.
         self.createRandomSuffix()

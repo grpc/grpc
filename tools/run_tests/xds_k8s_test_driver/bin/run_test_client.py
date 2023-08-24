@@ -38,8 +38,16 @@ logger = logging.getLogger(__name__)
 _CMD = flags.DEFINE_enum(
     "cmd", default="run", enum_values=["run", "cleanup"], help="Command"
 )
-_SECURE = flags.DEFINE_bool(
-    "secure", default=False, help="Run client in the secure mode"
+_MODE = flags.DEFINE_enum(
+    "mode",
+    default="default",
+    enum_values=[
+        "default",
+        "secure",
+        # Uncomment if gamma-specific changes added to the client.
+        # "gamma",
+    ],
+    help="Select client mode",
 )
 _QPS = flags.DEFINE_integer("qps", default=25, help="Queries per second")
 _PRINT_RESPONSE = flags.DEFINE_bool(

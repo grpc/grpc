@@ -18,5 +18,5 @@ import framework.infrastructure.traffic_director as td_base
 class TrafficDirectorGammaManager(td_base.TrafficDirectorManager):
     """Gamma."""
 
-    def cleanup(self, *, force=False):
+    def cleanup(self, *, force=False):  # pylint: disable=unused-argument
         return True

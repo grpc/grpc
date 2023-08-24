@@ -137,7 +137,7 @@ class KubernetesApiManager:
     def dynamic_client(self) -> dynamic.DynamicClient:
         return self._dynamic_client
 
-    @functools.cache
+    @functools.cache  # pylint: disable=no-member
     def gke_tdmesh(self, version: str) -> dynamic_res.Resource:
         api_name = "net.gke.io"
         kind = "TDMesh"
@@ -149,7 +149,7 @@ class KubernetesApiManager:
 
         return self._load_dynamic_api(api_name, version, kind)
 
-    @functools.cache
+    @functools.cache  # pylint: disable=no-member
     def grpc_route(self, version: str) -> dynamic_res.Resource:
         api_name = "gateway.networking.k8s.io"
         kind = "GRPCRoute"
@@ -162,7 +162,6 @@ class KubernetesApiManager:
         return self._load_dynamic_api(api_name, version, kind)
 
     def close(self):
-        # self.dynamic_client
         # TODO(sergiitk): [GAMMA] what to do with dynamic clients?
         self.client.close()
 
@@ -205,7 +204,7 @@ class KubernetesApiManager:
             # TODO(sergiitk): [GAMMA] add retries if static client
             #   retries not apply.
             raise RuntimeError(
-                "Couldn't discover k8s API %s, resource %s", api_version, kind
+                f"Couldn't discover k8s API {api_version}, resource {kind}",
             ) from err
 
 
@@ -263,7 +262,7 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
         api = self._get_dynamic_api(manifest["apiVersion"], manifest["kind"])
         return api.create(manifest)
 
-    @functools.cache
+    @functools.cache  # pylint: disable=no-member
     def _get_dynamic_api(self, api_version, kind) -> dynamic_res.Resource:
         group, _, version = api_version.partition("/")
 

@@ -65,6 +65,7 @@ class GammaServerRunner(KubernetesServerRunner):
         debug_use_port_forwarding: bool = False,
         enable_workload_identity: bool = True,
     ):
+        # pylint: disable=too-many-locals
         super().__init__(
             k8s_namespace,
             deployment_name=deployment_name,
@@ -100,6 +101,7 @@ class GammaServerRunner(KubernetesServerRunner):
         secure_mode: bool = False,
         replica_count: int = 1,
         log_to_stdout: bool = False,
+        bootstrap_version: Optional[str] = None,
     ) -> List[XdsTestServer]:
         if not maintenance_port:
             maintenance_port = self._get_default_maintenance_port(secure_mode)
