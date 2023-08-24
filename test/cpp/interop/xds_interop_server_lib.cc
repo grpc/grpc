@@ -63,8 +63,8 @@ constexpr absl::string_view kRpcBehaviorMetadataKey = "rpc-behavior";
 constexpr absl::string_view kErrorCodeRpcBehavior = "error-code-";
 constexpr absl::string_view kHostnameRpcBehaviorFilter = "hostname=";
 
-std::set<std::string> GetRpcBehaviorMetadata(ServerContext* context) {
-  std::set<std::string> rpc_behaviors;
+std::vector<std::string> GetRpcBehaviorMetadata(ServerContext* context) {
+  std::vector<std::string> rpc_behaviors;
   auto rpc_behavior_metadata =
       context->client_metadata().equal_range(grpc::string_ref(
           kRpcBehaviorMetadataKey.data(), kRpcBehaviorMetadataKey.length()));
@@ -73,7 +73,7 @@ std::set<std::string> GetRpcBehaviorMetadata(ServerContext* context) {
     auto value = metadata->second;
     for (auto behavior :
          absl::StrSplit(absl::string_view(value.data(), value.length()), ',')) {
-      rpc_behaviors.emplace(behavior);
+      rpc_behaviors.emplace_back(behavior);
     }
   }
   return rpc_behaviors;
