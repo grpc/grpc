@@ -161,7 +161,10 @@ main() {
   # Run tests
   cd "${TEST_DRIVER_FULL_DIR}"
   local failed_tests=0
-  test_suites=("baseline_test" "security_test" "authz_test")
+  test_suites=(
+    "gamma.baseline_test"
+    # "gamma.session_affinity_test"
+  )
   for test in "${test_suites[@]}"; do
     run_test $test || (( ++failed_tests ))
   done
