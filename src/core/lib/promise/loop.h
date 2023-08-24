@@ -111,7 +111,7 @@ class Loop {
           continue;
         }
         //  - otherwise there's our result... return it out.
-        return absl::get<Result>(lc);
+        return absl::get<Result>(std::move(lc));
       } else {
         // Otherwise the inner promise was pending, so we are pending.
         return Pending();
