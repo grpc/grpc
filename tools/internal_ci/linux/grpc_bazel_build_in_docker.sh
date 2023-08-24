@@ -24,7 +24,7 @@ python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path bazel_
 bazel_build_with_strict_warnings/bazel_wrapper \
   --bazelrc=tools/remote_build/include/test_locally_with_resultstore_results.bazelrc \
   build \
-  --define=use_strict_warning=true \
+  --define=use_strict_warning=clang \
   -- \
   :all \
   //src/core/... \

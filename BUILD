@@ -204,8 +204,13 @@ config_setting(
 )
 
 config_setting(
-    name = "use_strict_warning",
-    values = {"define": "use_strict_warning=true"},
+    name = "use_strict_warning_for_clang",
+    values = {"define": "use_strict_warning=clang"},
+)
+
+config_setting(
+    name = "use_strict_warning_for_gcc",
+    values = {"define": "use_strict_warning=gcc"},
 )
 
 python_config_settings()

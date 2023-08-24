@@ -16,8 +16,8 @@
 Includes default copts.
 """
 
-# This is a list of llvm flags to be used when being built with use_strict_warning=1
-GRPC_LLVM_WARNING_FLAGS = [
+# This is a list of clang flags to be used when being built with use_strict_warning=clang
+GRPC_CLANG_WARNING_FLAGS = [
     # Enable all & extra warnings
     "-Wall",
     "-Wextra",
@@ -57,7 +57,16 @@ GRPC_LLVM_WARNING_FLAGS = [
     "-Wno-unused-function",
 ]
 
+# This is a list of gcc flags to be used when being built with use_strict_warning=gcc
+GRPC_GCC_WARNING_FLAGS = [
+    # Enable all & extra warnings
+    "-Wall",
+    # Consider warnings as errors
+    "-Werror",
+]
+
 GRPC_DEFAULT_COPTS = select({
-    "//:use_strict_warning": GRPC_LLVM_WARNING_FLAGS + ["-DUSE_STRICT_WARNING=1"],
+    "//:use_strict_warning_for_clang": GRPC_CLANG_WARNING_FLAGS + ["-DUSE_STRICT_WARNING=1"],
+    "//:use_strict_warning_for_gcc": GRPC_GCC_WARNING_FLAGS + ["-DUSE_STRICT_WARNING=1"],
     "//conditions:default": [],
 })
