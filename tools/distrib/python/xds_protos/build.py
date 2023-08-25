@@ -168,7 +168,7 @@ def main():
             package_path = os.path.relpath(root, WORK_DIR)
             create_init_file(root, package_path)
 
-    # Generate test file
+    # Generate xds_protos __init.py__
     with open(os.path.join(WORK_DIR, INIT_FILE_NAME), "w") as f:
         f.writelines(TEST_IMPORTS)
 
