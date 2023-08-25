@@ -19,17 +19,10 @@ https://github.com/envoyproxy/envoy/blob/main/api/envoy/service/status/v3/csds.p
 import logging
 from typing import Optional
 
-# Envoy protos provided by PyPI package xds-protos
-# Needs to import the generated Python file to load descriptors
-# pylint: disable=unused-import
-from envoy.extensions.filters.common.fault.v3 import fault_pb2 as _
-from envoy.extensions.filters.http.fault.v3 import fault_pb2 as _
-from envoy.extensions.filters.http.router.v3 import router_pb2 as _
-from envoy.extensions.filters.network.http_connection_manager.v3 import (
-    http_connection_manager_pb2 as _,
-)
+# Needed to load the descriptors so that Any is parsed
+# TODO(sergiitk): replace with import xds_protos when it works
+import framework.rpc.xds_protos_imports  # pylint: disable=unused-import
 
-# pylint: enable=unused-import
 from envoy.service.status.v3 import csds_pb2
 from envoy.service.status.v3 import csds_pb2_grpc
 import grpc
