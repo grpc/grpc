@@ -500,6 +500,7 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
   int ConnectUDP(WSAErrorContext* wsa_error_ctx, const struct sockaddr* target,
                  ares_socklen_t target_len) {
     GRPC_CARES_TRACE_LOG("fd:%s ConnectUDP", GetName());
+    GPR_ASSERT(!connect_done_);
     GPR_ASSERT(wsa_connect_error_ == 0);
     SOCKET s = grpc_winsocket_wrapped_socket(winsocket_);
     int out =
