@@ -24,7 +24,7 @@
 namespace grpc {
 namespace experimental {
 
-CertificateProviderInterface::~CertificateProviderInterface() {};
+CertificateProviderInterface::~CertificateProviderInterface(){};
 
 StaticDataCertificateProvider::StaticDataCertificateProvider(
     const std::string& root_certificate,
