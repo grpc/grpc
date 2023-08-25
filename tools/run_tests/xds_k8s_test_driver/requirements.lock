@@ -3,10 +3,10 @@ PyYAML==6.0
 absl-py==0.15.0
 google-api-python-client==1.12.11
 google-cloud-secret-manager==2.15.1
-grpcio==1.54.2
-grpcio-health-checking==1.54.2
-grpcio-tools==1.54.2
-grpcio-channelz==1.54.2
+grpcio==1.57.0
+grpcio-health-checking==1.57.0
+grpcio-tools==1.57.0
+grpcio-channelz==1.57.0
 kubernetes==27.2.0
 six==1.16.0
 tenacity==6.3.1
