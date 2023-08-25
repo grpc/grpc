@@ -458,7 +458,7 @@ def targets():
             "linux",
             "x64",
             "debian10",
-            ruby_version="ruby_2_6",
+            ruby_version="ruby_2_7",
             source=True,
             presubmit=True,
         ),
