@@ -10,7 +10,7 @@ grpcio-channelz==1.48.2
 kubernetes==27.2.0
 six==1.16.0
 tenacity==6.3.1
-packaging==21.3
+packaging==23.1
 Pygments==2.14.0
 python-dateutil==2.8.2
 protobuf==3.20.3

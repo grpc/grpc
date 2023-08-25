@@ -68,3 +68,27 @@ flags.mark_flags_as_required(
         "client_image",
     ]
 )
+
+
+def require_secondary_context(filename: str):
+    """
+    Makes secondary_kube_context flag required and adds the non-empty validator.
+
+    Typical usage example:
+
+      xds_k8s_flags.require_secondary_context(__file__)
+    """
+    flags.mark_flag_as_required("secondary_kube_context")
+
+    def _val_not_empty(val: str) -> bool:
+        # Do not allow whitespace-only values to produce a better error.
+        return bool(val.strip())
+
+    flags.register_validator(
+        "secondary_kube_context",
+        _val_not_empty,
+        message=(
+            f"{filename} requires non-empty secondary_kube_context to access"
+            " the secondary k8s cluster"
+        ),
+    )
