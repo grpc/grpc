@@ -13,8 +13,8 @@
  <date>2019-09-24</date>
  <time>16:06:07</time>
  <version>
-  <release>1.58.0dev</release>
-  <api>1.58.0dev</api>
+  <release>1.59.0dev</release>
+  <api>1.59.0dev</api>
  </version>
  <stability>
   <release>beta</release>
@@ -22,7 +22,7 @@
  </stability>
  <license>Apache 2.0</license>
  <notes>
-- gRPC Core 1.58.0 update
+- gRPC Core 1.59.0 update
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">

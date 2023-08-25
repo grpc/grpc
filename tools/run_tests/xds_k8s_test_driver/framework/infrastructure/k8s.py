@@ -15,6 +15,7 @@
 #   added to get around circular dependencies caused by k8s.py clashing with
 #   k8s/__init__.py
 import datetime
+import functools
 import json
 import logging
 import pathlib
@@ -23,8 +24,11 @@ from typing import Any, Callable, List, Optional, Tuple
 import warnings
 
 from kubernetes import client
+from kubernetes import dynamic
 from kubernetes import utils
 import kubernetes.config
+from kubernetes.dynamic import exceptions as dynamic_exc
+from kubernetes.dynamic import resource as dynamic_res
 import urllib3.exceptions
 import yaml
 
@@ -40,13 +44,16 @@ logger = logging.getLogger(__name__)
 _HighlighterYaml = framework.helpers.highlighter.HighlighterYaml
 PodLogCollector = k8s_log_collector.PodLogCollector
 PortForwarder = k8s_port_forwarder.PortForwarder
-ApiClient = client.ApiClient
 V1Deployment = client.V1Deployment
 V1ServiceAccount = client.V1ServiceAccount
 V1Pod = client.V1Pod
 V1PodList = client.V1PodList
 V1Service = client.V1Service
 V1Namespace = client.V1Namespace
+
+DynResourceInstance = dynamic_res.ResourceInstance
+GammaMesh = DynResourceInstance
+GammaGrpcRoute = DynResourceInstance
 
 _timedelta = datetime.timedelta
 _ApiException = client.ApiException
@@ -94,18 +101,22 @@ class NotFound(Exception):
 
 
 class KubernetesApiManager:
-    _client: ApiClient
+    _client: client.ApiClient
+    _dynamic_client: dynamic.DynamicClient
     context: str
     apps: client.AppsV1Api
     core: client.CoreV1Api
-    _apis: set
+    _apis: set[object]
+    _dynamic_apis: set[str]
 
     def __init__(self, context: str):
         self.context = context
         self._client = self._new_client_from_context(context)
+        self._dynamic_client = dynamic.DynamicClient(self._client)
         self.apps = client.AppsV1Api(self.client)
         self.core = client.CoreV1Api(self.client)
         self._apis = {self.apps, self.core}
+        self._dynamic_apis = set()
         # TODO(https://github.com/kubernetes-client/python/issues/2101): remove
         #  when the issue is solved, and the kubernetes dependency is bumped.
         warnings.filterwarnings(
@@ -119,10 +130,39 @@ class KubernetesApiManager:
         )
 
     @property
-    def client(self) -> ApiClient:
+    def client(self) -> client.ApiClient:
         return self._client
 
+    @property
+    def dynamic_client(self) -> dynamic.DynamicClient:
+        return self._dynamic_client
+
+    @functools.cache  # pylint: disable=no-member
+    def gke_tdmesh(self, version: str) -> dynamic_res.Resource:
+        api_name = "net.gke.io"
+        kind = "TDMesh"
+        supported_versions = {"v1alpha1"}
+        if version not in supported_versions:
+            raise NotImplementedError(
+                f"{kind} {api_name}/{version} not implemented."
+            )
+
+        return self._load_dynamic_api(api_name, version, kind)
+
+    @functools.cache  # pylint: disable=no-member
+    def grpc_route(self, version: str) -> dynamic_res.Resource:
+        api_name = "gateway.networking.k8s.io"
+        kind = "GRPCRoute"
+        supported_versions = {"v1alpha2"}
+        if version not in supported_versions:
+            raise NotImplementedError(
+                f"{kind} {api_name}/{version} not implemented."
+            )
+
+        return self._load_dynamic_api(api_name, version, kind)
+
     def close(self):
+        # TODO(sergiitk): [GAMMA] what to do with dynamic clients?
         self.client.close()
 
     def reload(self):
@@ -134,8 +174,10 @@ class KubernetesApiManager:
         for api in self._apis:
             api.api_client = self._client
 
-    @staticmethod
-    def _new_client_from_context(context: str) -> ApiClient:
+        # TODO(sergiitk): [GAMMA] what to do with dynamic apis?
+
+    @classmethod
+    def _new_client_from_context(cls, context: str) -> "client.ApiClient":
         client_instance = kubernetes.config.new_client_from_config(
             context=context
         )
@@ -147,6 +189,23 @@ class KubernetesApiManager:
         # TODO(sergiitk): fine-tune if we see the total wait unreasonably long.
         client_instance.configuration.retries = 10
         return client_instance
+
+    def _load_dynamic_api(
+        self, api_name: str, version: str, kind: str
+    ) -> dynamic_res.Resource:
+        api_version = f"{api_name}/{version}"
+        try:
+            k8s_api: dynamic_res.Resource = self.dynamic_client.resources.get(
+                api_version=api_version, kind=kind
+            )
+            self._dynamic_apis.add(k8s_api.group_version)
+            return k8s_api
+        except dynamic_exc.ResourceNotFoundError as err:
+            # TODO(sergiitk): [GAMMA] add retries if static client
+            #   retries not apply.
+            raise RuntimeError(
+                f"Couldn't discover k8s API {api_version}, resource {kind}",
+            ) from err
 
 
 class KubernetesNamespace:  # pylint: disable=too-many-public-methods
@@ -173,19 +232,67 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
     def name(self):
         return self._name
 
+    @functools.cached_property  # pylint: disable=no-member
+    def api_gke_mesh(self) -> dynamic_res.Resource:
+        return self._get_dynamic_api("net.gke.io/v1alpha1", "TDMesh")
+
+    @functools.cached_property  # pylint: disable=no-member
+    def api_grpc_route(self) -> dynamic_res.Resource:
+        return self._get_dynamic_api(
+            "gateway.networking.k8s.io/v1alpha2",
+            "GRPCRoute",
+        )
+
     def _refresh_auth(self):
         logger.info("Reloading k8s api client to refresh the auth.")
         self._api.reload()
 
-    def _apply_manifest(self, manifest):
-        return utils.create_from_dict(
+    def _apply_manifest_single(self, manifest) -> object:
+        k8s_objects = utils.create_from_dict(
             self._api.client, manifest, namespace=self.name
         )
+        if len(k8s_objects) != 1:
+            raise ValueError(
+                f"Expected exactly one k8s object created from"
+                f" manifest {manifest}"
+            )
+        return k8s_objects[0]
+
+    def _apply_manifest_custom_object(self, manifest) -> DynResourceInstance:
+        api = self._get_dynamic_api(manifest["apiVersion"], manifest["kind"])
+        return api.create(manifest)
+
+    @functools.cache  # pylint: disable=no-member
+    def _get_dynamic_api(self, api_version, kind) -> dynamic_res.Resource:
+        group, _, version = api_version.partition("/")
+
+        # TODO(sergiitk): [GAMMA] Needs to be improved. This all is very clunky
+        #  when considered together with _get_dynamic_api and api_gke_mesh,
+        #  api_grpc_route.
+        if group == "net.gke.io":
+            if kind == "TDMesh":
+                return self._api.gke_tdmesh(version)
+
+        elif group == "gateway.networking.k8s.io":
+            if kind == "GRPCRoute":
+                return self._api.grpc_route(version)
+
+        raise NotImplementedError(f"{kind} {api_version} not implemented.")
 
     def _get_resource(self, method: Callable[[Any], object], *args, **kwargs):
         try:
             return self._execute(method, *args, **kwargs)
         except NotFound:
+            # Instead of trowing an error when a resource doesn't exist,
+            # just return None.
+            return None
+
+    def _get_dyn_resource(
+        self, api: dynamic_res.Resource, name, *args, **kwargs
+    ) -> Optional[DynResourceInstance]:
+        try:
+            return api.get(name=name, namespace=self.name, *args, **kwargs)
+        except dynamic_exc.NotFoundError:
             # Instead of trowing an error when a resource doesn't exist,
             # just return None.
             return None
@@ -259,6 +366,7 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
             err.headers,
         )
 
+        # TODO(sergiitk): [GAMMA] let dynamic/exception parse this instead?
         code: int = err.status
         body = err.body.lower() if err.body else ""
 
@@ -323,13 +431,22 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
         except (KeyError, ValueError):
             return body
 
-    def create_single_resource(self, manifest):
-        return self._execute(self._apply_manifest, manifest)
+    def create_single_resource(self, manifest, custom_object: bool = False):
+        if custom_object:
+            return self._execute(self._apply_manifest_custom_object, manifest)
+
+        return self._execute(self._apply_manifest_single, manifest)
 
     def get_service(self, name) -> V1Service:
         return self._get_resource(
             self._api.core.read_namespaced_service, name, self.name
         )
+
+    def get_gamma_mesh(self, name) -> Optional[GammaMesh]:
+        return self._get_dyn_resource(self.api_gke_mesh, name)
+
+    def get_gamma_route(self, name) -> Optional[GammaGrpcRoute]:
+        return self._get_dyn_resource(self.api_grpc_route, name)
 
     def get_service_account(self, name) -> V1Service:
         return self._get_resource(
@@ -362,6 +479,36 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
             ),
         )
 
+    def delete_gamma_mesh(
+        self,
+        name: str,
+        grace_period_seconds=DELETE_GRACE_PERIOD_SEC,
+    ) -> None:
+        # TODO(sergiitk): [GAMMA] Can we call delete on dynamic_res.ResourceList
+        #  to avoid no-member issues due to dynamic_res.Resource proxying calls?
+        self._execute(
+            self.api_gke_mesh.delete,  # pylint: disable=no-member
+            name=name,
+            namespace=self.name,
+            propagation_policy="Foreground",
+            grace_period_seconds=grace_period_seconds,
+        )
+
+    def delete_gamma_route(
+        self,
+        name: str,
+        grace_period_seconds=DELETE_GRACE_PERIOD_SEC,
+    ) -> None:
+        # TODO(sergiitk): [GAMMA] Can we call delete on dynamic_res.ResourceList
+        #  to avoid no-member issues due to dynamic_res.Resource proxying calls?
+        self._execute(
+            self.api_grpc_route.delete,  # pylint: disable=no-member
+            name=name,
+            namespace=self.name,
+            propagation_policy="Foreground",
+            grace_period_seconds=grace_period_seconds,
+        )
+
     def get(self) -> V1Namespace:
         return self._get_resource(self._api.core.read_namespace, self.name)
 
@@ -387,6 +534,32 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
             check_result=lambda service: service is None,
         )
         retryer(self.get_service, name)
+
+    def wait_for_get_gamma_mesh_deleted(
+        self,
+        name: str,
+        timeout_sec: int = WAIT_MEDIUM_TIMEOUT_SEC,
+        wait_sec: int = WAIT_MEDIUM_SLEEP_SEC,
+    ) -> None:
+        retryer = retryers.constant_retryer(
+            wait_fixed=_timedelta(seconds=wait_sec),
+            timeout=_timedelta(seconds=timeout_sec),
+            check_result=lambda mesh: mesh is None,
+        )
+        retryer(self.get_gamma_mesh, name)
+
+    def wait_for_get_gamma_route_deleted(
+        self,
+        name: str,
+        timeout_sec: int = WAIT_SHORT_TIMEOUT_SEC,
+        wait_sec: int = WAIT_SHORT_SLEEP_SEC,
+    ) -> None:
+        retryer = retryers.constant_retryer(
+            wait_fixed=_timedelta(seconds=wait_sec),
+            timeout=_timedelta(seconds=timeout_sec),
+            check_result=lambda route: route is None,
+        )
+        retryer(self.get_gamma_route, name)
 
     def wait_for_service_account_deleted(
         self,

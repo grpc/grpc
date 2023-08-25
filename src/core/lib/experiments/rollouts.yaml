@@ -79,7 +79,7 @@
     # implemented
     windows: broken
 - name: work_stealing
-  default: debug
+  default: true
 - name: client_privacy
   default: false
 - name: canary_client_privacy
