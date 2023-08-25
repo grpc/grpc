@@ -26,6 +26,7 @@
 #include "absl/types/optional.h"
 #include "retry_filter.h"
 #include "retry_service_config.h"
+#include "retry_throttle.h"
 
 #include <grpc/event_engine/event_engine.h>
 
@@ -153,38 +154,137 @@ class RetryFilter::MessageForwarder {
 
   class Listener {
    public:
+    explicit Listener(MessageForwarder& forwarder) : forwarder_(forwarder) {}
     auto Next() {
-      return []() -> Poll<absl::optional<MessageHandle>> { abort(); };
+      return [this]() -> Poll<absl::optional<MessageHandle>> {
+        if (next_ == forwarder_.messages_.size()) {
+          forwarder_.waiting_for_messages_ =
+              Activity::current()->MakeOwningWaker();
+          return Pending{};
+        }
+        return forwarder_.messages_[next_++]->Clone();
+      };
     }
+
+   private:
+    MessageForwarder& forwarder_;
+    size_t next_ = 0;
   };
 
  private:
   std::vector<MessageHandle> messages_;
+  Waker waiting_for_messages_;
 };
 
 struct RetryFilter::CallState {
   bool sent_transparent_retry_not_seen_by_server = false;
+  bool retry_committed = false;
+  int num_attempts_completed = 0;
+  int num_attempts_started = 0;
 };
 
 struct RetryFilter::CallAttemptState {
-  explicit CallAttemptState(RetryFilter* filter)
-      : retry_policy(
-            filter->GetRetryPolicy(GetContext<grpc_call_context_element>())) {}
+  CallAttemptState(RetryFilter* filter, int attempt)
+      : attempt(attempt),
+        retry_policy(
+            filter->GetRetryPolicy(GetContext<grpc_call_context_element>())),
+        retry_throttle_data(filter->retry_throttle_data()) {}
+  const int attempt;
   const RetryMethodConfig* const retry_policy;
+  const RefCountedPtr<internal::ServerRetryThrottleData> retry_throttle_data;
   Latch<absl::Status> early_return;
   Pipe<ServerMetadataHandle> server_initial_metadata;
   Pipe<MessageHandle> server_to_client;
   Pipe<MessageHandle> client_to_server;
+
+  std::string DebugTag() const {
+    return absl::StrCat(Activity::current()->DebugTag(), " attempt=", attempt);
+  }
+  bool ShouldRetry(CallState* calld, absl::optional<grpc_status_code> status,
+                   absl::optional<Duration> server_pushback) const;
 };
+
+bool RetryFilter::CallAttemptState::ShouldRetry(
+    CallState* calld, absl::optional<grpc_status_code> status,
+    absl::optional<Duration> server_pushback) const {
+  // If no retry policy, don't retry.
+  if (retry_policy == nullptr) return false;
+  // Check status.
+  if (status.has_value()) {
+    if (GPR_LIKELY(*status == GRPC_STATUS_OK)) {
+      if (retry_throttle_data != nullptr) {
+        retry_throttle_data->RecordSuccess();
+      }
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
+        gpr_log(GPR_INFO, "%s: call succeeded", DebugTag().c_str());
+      }
+      return false;
+    }
+    // Status is not OK.  Check whether the status is retryable.
+    if (!retry_policy->retryable_status_codes().Contains(*status)) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
+        gpr_log(GPR_INFO, "%s: status %s not configured as retryable",
+                DebugTag().c_str(), grpc_status_code_to_string(*status));
+      }
+      return false;
+    }
+  }
+  // Record the failure and check whether retries are throttled.
+  // Note that it's important for this check to come after the status
+  // code check above, since we should only record failures whose statuses
+  // match the configured retryable status codes, so that we don't count
+  // things like failures due to malformed requests (INVALID_ARGUMENT).
+  // Conversely, it's important for this to come before the remaining
+  // checks, so that we don't fail to record failures due to other factors.
+  if (retry_throttle_data != nullptr && !retry_throttle_data->RecordFailure()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
+      gpr_log(GPR_INFO, "%s: retries throttled", DebugTag().c_str());
+    }
+    return false;
+  }
+  // Check whether the call is committed.
+  if (calld->retry_committed) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
+      gpr_log(GPR_INFO, "%s: retries already committed", DebugTag().c_str());
+    }
+    return false;
+  }
+  // Check whether we have retries remaining.
+  ++calld->num_attempts_completed;
+  if (calld->num_attempts_completed >= retry_policy->max_attempts()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
+      gpr_log(GPR_INFO, "chand=%s: exceeded %d retry attempts",
+              DebugTag().c_str(), retry_policy->max_attempts());
+    }
+    return false;
+  }
+  // Check server push-back.
+  if (server_pushback.has_value()) {
+    if (*server_pushback < Duration::Zero()) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
+        gpr_log(GPR_INFO, "%s: not retrying due to server push-back",
+                DebugTag().c_str());
+      }
+      return false;
+    } else {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
+        gpr_log(GPR_INFO, "%s: server push-back: retry in %" PRIu64 " ms",
+                DebugTag().c_str(), server_pushback->millis());
+      }
+    }
+  }
+  // We should retry.
+  return true;
+}
 
 absl::optional<Duration> RetryFilter::MaybeRetryDuration(
     CallState* call_state, CallAttemptState* call_attempt,
-    ServerMetadataHandle md, bool committed) {
+    const ServerMetadataHandle& md) {
   // TODO(ctiller): how to get lb drop detail here
   enum { kNoRetry, kTransparentRetry, kConfigurableRetry } retry = kNoRetry;
   // Handle transparent retries.
-  const auto stream_network_state = md->get<GrpcStreamNetworkState>();
-  if (stream_network_state.has_value() && !committed) {
+  const auto stream_network_state = md->get(GrpcStreamNetworkState());
+  if (stream_network_state.has_value() && !call_state->retry_committed) {
     // If not sent on wire, then always retry.
     // If sent on wire but not seen by server, retry exactly once.
     if (*stream_network_state == GrpcStreamNetworkState::kNotSentOnWire) {
@@ -198,7 +298,9 @@ absl::optional<Duration> RetryFilter::MaybeRetryDuration(
   }
   // If not transparently retrying, check for configurable retry.
   const auto server_pushback = md->get(GrpcRetryPushbackMsMetadata());
-  if (retry == kNoRetry && call_attempt->ShouldRetry(status, server_pushback)) {
+  if (retry == kNoRetry &&
+      call_attempt->ShouldRetry(call_state, md->get(GrpcStatusMetadata()),
+                                server_pushback)) {
     retry = kConfigurableRetry;
   }
   switch (retry) {
@@ -211,12 +313,13 @@ absl::optional<Duration> RetryFilter::MaybeRetryDuration(
   }
 }
 
-auto RetryFilter::MakeCallAttempt(bool& committed,
+auto RetryFilter::MakeCallAttempt(CallState* call_state,
                                   MessageForwarder& message_forwarder,
                                   const ClientMetadataHandle& initial_metadata,
                                   Latch<grpc_polling_entity>* polling_entity) {
   auto* party = static_cast<Party*>(Activity::current());
-  auto* attempt = new CallAttemptState(this);
+  ++call_state->num_attempts_started;
+  auto* attempt = new CallAttemptState(this, call_state->num_attempts_started);
   CallArgs child_call_args{
       GetContext<Arena>()->MakePooled<ClientMetadata>(),
       ClientInitialMetadataOutstandingToken::Empty(),  // what semantics
@@ -257,8 +360,9 @@ auto RetryFilter::MakeCallAttempt(bool& committed,
                         return server_to_client_messages->Push(std::move(msg));
                       }),
               std::move(child_call)),
-      [this, &committed](ServerMetadataHandle result) {
-        auto maybe_retry_duration = MaybeRetryDuration(result, committed);
+      [this, call_state, attempt](ServerMetadataHandle result) {
+        auto maybe_retry_duration =
+            MaybeRetryDuration(call_state, attempt, result);
         return If(
             maybe_retry_duration.has_value(),
             [maybe_retry_duration]() {

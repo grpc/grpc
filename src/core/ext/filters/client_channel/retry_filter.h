@@ -116,11 +116,13 @@ class RetryFilter {
   struct CallAttemptState;
   // Construct a promise for one call.
   ArenaPromise<ServerMetadataHandle> MakeCallPromise(CallArgs call_args);
-  auto MakeCallAttempt(bool& committed, MessageForwarder& message_forwarder,
-                       const ClientMetadataHandle& initial_metadata);
+  auto MakeCallAttempt(CallState* call_state,
+                       MessageForwarder& message_forwarder,
+                       const ClientMetadataHandle& initial_metadata,
+                       Latch<grpc_polling_entity>* polling_entity);
   absl::optional<Duration> MaybeRetryDuration(CallState* call_state,
-                                              const ServerMetadataHandle& md,
-                                              bool committed);
+                                              CallAttemptState* call_attempt,
+                                              const ServerMetadataHandle& md);
 
   ClientChannel* client_channel_;
   grpc_event_engine::experimental::EventEngine* const event_engine_;
