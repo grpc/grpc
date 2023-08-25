@@ -60,11 +60,6 @@ const char* const description_promise_based_server_call =
     "If set, use the new gRPC promise based call code when it's appropriate "
     "(ie when all filters in a stack are promise based)";
 const char* const additional_constraints_promise_based_server_call = "{}";
-const char* const description_transport_supplies_client_latency =
-    "If set, use the transport represented value for client latency in "
-    "opencensus";
-const char* const additional_constraints_transport_supplies_client_latency =
-    "{}";
 const char* const description_event_engine_listener =
     "Use EventEngine listeners instead of iomgr's grpc_tcp_server";
 const char* const additional_constraints_event_engine_listener = "{}";
@@ -127,9 +122,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_free_large_allocator, false, true},
     {"promise_based_server_call", description_promise_based_server_call,
      additional_constraints_promise_based_server_call, false, true},
-    {"transport_supplies_client_latency",
-     description_transport_supplies_client_latency,
-     additional_constraints_transport_supplies_client_latency, false, true},
     {"event_engine_listener", description_event_engine_listener,
      additional_constraints_event_engine_listener, false, true},
     {"schedule_cancellation_over_write",
@@ -197,11 +189,6 @@ const char* const description_promise_based_server_call =
     "If set, use the new gRPC promise based call code when it's appropriate "
     "(ie when all filters in a stack are promise based)";
 const char* const additional_constraints_promise_based_server_call = "{}";
-const char* const description_transport_supplies_client_latency =
-    "If set, use the transport represented value for client latency in "
-    "opencensus";
-const char* const additional_constraints_transport_supplies_client_latency =
-    "{}";
 const char* const description_event_engine_listener =
     "Use EventEngine listeners instead of iomgr's grpc_tcp_server";
 const char* const additional_constraints_event_engine_listener = "{}";
@@ -264,9 +251,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_free_large_allocator, false, true},
     {"promise_based_server_call", description_promise_based_server_call,
      additional_constraints_promise_based_server_call, false, true},
-    {"transport_supplies_client_latency",
-     description_transport_supplies_client_latency,
-     additional_constraints_transport_supplies_client_latency, false, true},
     {"event_engine_listener", description_event_engine_listener,
      additional_constraints_event_engine_listener, false, true},
     {"schedule_cancellation_over_write",
@@ -334,11 +318,6 @@ const char* const description_promise_based_server_call =
     "If set, use the new gRPC promise based call code when it's appropriate "
     "(ie when all filters in a stack are promise based)";
 const char* const additional_constraints_promise_based_server_call = "{}";
-const char* const description_transport_supplies_client_latency =
-    "If set, use the transport represented value for client latency in "
-    "opencensus";
-const char* const additional_constraints_transport_supplies_client_latency =
-    "{}";
 const char* const description_event_engine_listener =
     "Use EventEngine listeners instead of iomgr's grpc_tcp_server";
 const char* const additional_constraints_event_engine_listener = "{}";
@@ -401,9 +380,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_free_large_allocator, false, true},
     {"promise_based_server_call", description_promise_based_server_call,
      additional_constraints_promise_based_server_call, false, true},
-    {"transport_supplies_client_latency",
-     description_transport_supplies_client_latency,
-     additional_constraints_transport_supplies_client_latency, false, true},
     {"event_engine_listener", description_event_engine_listener,
      additional_constraints_event_engine_listener, false, true},
     {"schedule_cancellation_over_write",
