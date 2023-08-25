@@ -419,29 +419,11 @@ grpc_ssl_channel_security_connector_create(
     return nullptr;
   }
 
-  // const tsi_ssl_root_certs_store* root_store;
-  // if (config->pem_root_certs == nullptr) {
-  //   // Use default root certificates.
-  //   pem_root_certs = grpc_core::DefaultSslRootStore::GetPemRootCerts();
-  //   if (pem_root_certs == nullptr) {
-  //     gpr_log(GPR_ERROR, "Could not get default pem root certs.");
-  //     return nullptr;
-  //   }
-  //   root_store = grpc_core::DefaultSslRootStore::GetRootStore();
-  // } else {
-  //   pem_root_certs = config->pem_root_certs;
-  //   root_store = nullptr;
-  // }
   grpc_core::RefCountedPtr<grpc_ssl_channel_security_connector> c =
       grpc_core::MakeRefCounted<grpc_ssl_channel_security_connector>(
           std::move(channel_creds), std::move(request_metadata_creds), config,
           target_name, overridden_target_name);
   c->client_handshaker_factory_ = factory;
-  // const grpc_security_status result = c->InitializeHandshakerFactory(
-  //     config, pem_root_certs, root_store, ssl_session_cache);
-  // if (result != GRPC_SECURITY_OK) {
-  //   return nullptr;
-  // }
   return c;
 }
 
