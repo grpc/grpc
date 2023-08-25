@@ -123,7 +123,7 @@ def main(argv):
         client_namespace,
         gcp_api_manager,
         reuse_namespace=_REUSE_NAMESPACE.value,
-        secure=_SECURE.value,
+        mode=_MODE.value,
         port_forwarding=should_port_forward,
     )
 
@@ -133,12 +133,12 @@ def main(argv):
         server_target = f"{server_target}:{xds_flags.SERVER_XDS_PORT.value}"
 
     if _CMD.value == "run":
-        logger.info("Run client, secure_mode=%s", _SECURE.value)
+        logger.info("Run client, mode=%s", _MODE.value)
         client_runner.run(
             server_target=server_target,
             qps=_QPS.value,
             print_response=_PRINT_RESPONSE.value,
-            secure_mode=_SECURE.value,
+            secure_mode=_MODE.value == "secure",
             config_mesh=_CONFIG_MESH.value,
             log_to_stdout=_FOLLOW.value,
         )

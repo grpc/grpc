@@ -103,7 +103,6 @@ def main(argv):
 
     # Flags.
     should_port_forward: bool = xds_k8s_flags.DEBUG_USE_PORT_FORWARDING.value
-    mode: str = "secure" if is_secure else "default"
 
     # Setup.
     gcp_api_manager = gcp.api.GcpApiManager()
@@ -115,7 +114,7 @@ def main(argv):
         server_namespace,
         gcp_api_manager,
         port_forwarding=should_port_forward,
-        mode=mode,
+        mode=_MODE.value,
     )
     # Find server pod.
     server_pod: k8s.V1Pod = common.get_server_pod(
@@ -128,7 +127,7 @@ def main(argv):
         client_namespace,
         gcp_api_manager,
         port_forwarding=should_port_forward,
-        mode=mode,
+        mode=_MODE.value,
     )
     # Find client pod.
     client_pod: k8s.V1Pod = common.get_client_pod(
@@ -143,7 +142,7 @@ def main(argv):
         server_runner,
         server_pod,
         test_port=xds_flags.SERVER_PORT.value,
-        secure_mode=(mode == "secure"),
+        secure_mode=_MODE.value == "secure",
     )
     test_server.set_xds_address(
         xds_flags.SERVER_XDS_HOST.value, xds_flags.SERVER_XDS_PORT.value
