@@ -223,6 +223,9 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
     if (!connect_done_) {
       GPR_ASSERT(!pending_continue_register_for_on_writeable_locked_);
       pending_continue_register_for_on_writeable_locked_ = true;
+      // Register an async OnTcpConnect callback here rather than when the
+      // connect was initiated, since we are now guaranteed to hold a ref of the
+      // c-ares wrapper before write_closure_ is called.
       grpc_socket_notify_on_write(winsocket_, &on_tcp_connect_locked_);
     } else {
       ContinueRegisterForOnWriteableLocked();
