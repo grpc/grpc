@@ -195,6 +195,7 @@ class GammaServerRunner(KubernetesServerRunner):
             test_port=test_port,
             maintenance_port=maintenance_port,
             secure_mode=secure_mode,
+            bootstrap_version=bootstrap_version,
         )
 
         return self._make_servers_for_deployment(

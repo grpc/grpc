@@ -484,8 +484,10 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
         name: str,
         grace_period_seconds=DELETE_GRACE_PERIOD_SEC,
     ) -> None:
+        # TODO(sergiitk): [GAMMA] Can we call delete on dynamic_res.ResourceList
+        #  to avoid no-member issues due to dynamic_res.Resource proxying calls?
         self._execute(
-            self.api_gke_mesh.delete,
+            self.api_gke_mesh.delete,  # pylint: disable=no-member
             name=name,
             namespace=self.name,
             propagation_policy="Foreground",
@@ -497,8 +499,10 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
         name: str,
         grace_period_seconds=DELETE_GRACE_PERIOD_SEC,
     ) -> None:
+        # TODO(sergiitk): [GAMMA] Can we call delete on dynamic_res.ResourceList
+        #  to avoid no-member issues due to dynamic_res.Resource proxying calls?
         self._execute(
-            self.api_grpc_route.delete,
+            self.api_grpc_route.delete,  # pylint: disable=no-member
             name=name,
             namespace=self.name,
             propagation_policy="Foreground",
