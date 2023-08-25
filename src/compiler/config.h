@@ -41,7 +41,7 @@ namespace compiler {
 typedef GRPC_CUSTOM_CODEGENERATOR CodeGenerator;
 typedef GRPC_CUSTOM_GENERATORCONTEXT GeneratorContext;
 static inline int PluginMain(int argc, char* argv[],
-                             const CodeGenerator* generator) {
+                             CodeGenerator* generator) {
   return GRPC_CUSTOM_PLUGINMAIN(argc, argv, generator);
 }
 static inline void ParseGeneratorParameter(
