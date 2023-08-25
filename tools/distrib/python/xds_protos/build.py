@@ -55,7 +55,7 @@ WELL_KNOWN_PROTOS_INCLUDE = pkg_resources.resource_filename(
 OUTPUT_PATH = WORK_DIR
 
 # Prepare the test file generation
-TEST_FILE_NAME = "generated_file_import_test.py"
+INIT_FILE_NAME = "__init__.py"
 TEST_IMPORTS = []
 
 # The pkgutil-style namespace packaging __init__.py
@@ -162,13 +162,14 @@ def main():
         "validate",
         "xds",
         "opentelemetry",
+        "contrib",
     ]:
         for root, _, _ in os.walk(os.path.join(WORK_DIR, proto_root_module)):
             package_path = os.path.relpath(root, WORK_DIR)
             create_init_file(root, package_path)
 
     # Generate test file
-    with open(os.path.join(WORK_DIR, TEST_FILE_NAME), "w") as f:
+    with open(os.path.join(WORK_DIR, INIT_FILE_NAME), "w") as f:
         f.writelines(TEST_IMPORTS)
 
 

@@ -30,7 +30,7 @@ EXCLUDE_PYTHON_FILES = ["generated_file_import_test.py", "build.py"]
 # Use setuptools to build Python package
 with open(os.path.join(WORK_DIR, "README.rst"), "r") as f:
     LONG_DESCRIPTION = f.read()
-PACKAGES = setuptools.find_packages(where=".", exclude=EXCLUDE_PYTHON_FILES)
+PACKAGES = ["."] + setuptools.find_packages(where=".", exclude=EXCLUDE_PYTHON_FILES)
 CLASSIFIERS = [
     "Development Status :: 3 - Alpha",
     "Programming Language :: Python",
