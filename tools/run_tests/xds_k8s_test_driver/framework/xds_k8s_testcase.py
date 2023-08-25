@@ -24,6 +24,7 @@ from types import FrameType
 from typing import Any, Callable, List, Optional, Tuple, Union
 
 from absl import flags
+from absl.testing import absltest
 from google.protobuf import json_format
 import grpc
 
@@ -80,6 +81,30 @@ _SignalHandler = Callable[[_SignalNum, Optional[FrameType]], Any]
 _TD_CONFIG_MAX_WAIT_SEC = 600
 
 
+def evaluate_test_config(
+    check: Callable[[skips.TestConfig], bool]
+) -> skips.TestConfig:
+    """Evaluates the test config check against Abseil flags.
+
+    TODO(sergiitk): split into parse_lang_spec and check_is_supported.
+    """
+    # NOTE(lidiz) a manual skip mechanism is needed because absl/flags
+    # cannot be used in the built-in test-skipping decorators. See the
+    # official FAQs:
+    # https://abseil.io/docs/python/guides/flags#faqs
+    test_config = skips.TestConfig(
+        client_lang=skips.get_lang(xds_k8s_flags.CLIENT_IMAGE.value),
+        server_lang=skips.get_lang(xds_k8s_flags.SERVER_IMAGE.value),
+        version=xds_flags.TESTING_VERSION.value,
+    )
+    if not check(test_config):
+        logger.info("Skipping %s", test_config)
+        raise absltest.SkipTest(f"Unsupported test config: {test_config}")
+
+    logger.info("Detected language and version: %s", test_config)
+    return test_config
+
+
 class TdPropagationRetryableError(Exception):
     """Indicates that TD config hasn't propagated yet, and it's safe to retry"""
 
@@ -93,7 +118,7 @@ class XdsKubernetesBaseTestCase(base_testcase.BaseTestCase):
     gcp_api_manager: gcp.api.GcpApiManager
     gcp_service_account: Optional[str]
     k8s_api_manager: k8s.KubernetesApiManager
-    secondary_k8s_api_manager: k8s.KubernetesApiManager
+    secondary_k8s_api_manager: Optional[k8s.KubernetesApiManager] = None
     network: str
     project: str
     resource_prefix: str
@@ -105,7 +130,7 @@ class XdsKubernetesBaseTestCase(base_testcase.BaseTestCase):
     server_namespace: str
     server_runner: KubernetesServerRunner
     server_xds_host: str
-    server_xds_port: int
+    server_xds_port: Optional[int]
     td: TrafficDirectorManager
     td_bootstrap_image: str
     _prev_sigint_handler: Optional[_SignalHandler] = None
@@ -132,7 +157,7 @@ class XdsKubernetesBaseTestCase(base_testcase.BaseTestCase):
 
         # Raises unittest.SkipTest if given client/server/version does not
         # support current test case.
-        cls.lang_spec = skips.evaluate_test_config(cls.is_supported)
+        cls.lang_spec = evaluate_test_config(cls.is_supported)
 
         # Must be called before KubernetesApiManager or GcpApiManager init.
         xds_flags.set_socket_default_timeout_from_flag()
@@ -168,6 +193,7 @@ class XdsKubernetesBaseTestCase(base_testcase.BaseTestCase):
 
         # Test suite settings
         cls.force_cleanup = xds_flags.FORCE_CLEANUP.value
+        cls.force_cleanup_namespace = xds_flags.FORCE_CLEANUP.value
         cls.debug_use_port_forwarding = (
             xds_k8s_flags.DEBUG_USE_PORT_FORWARDING.value
         )
@@ -180,9 +206,10 @@ class XdsKubernetesBaseTestCase(base_testcase.BaseTestCase):
         cls.k8s_api_manager = k8s.KubernetesApiManager(
             xds_k8s_flags.KUBE_CONTEXT.value
         )
-        cls.secondary_k8s_api_manager = k8s.KubernetesApiManager(
-            xds_k8s_flags.SECONDARY_KUBE_CONTEXT.value
-        )
+        if xds_k8s_flags.SECONDARY_KUBE_CONTEXT.value is not None:
+            cls.secondary_k8s_api_manager = k8s.KubernetesApiManager(
+                xds_k8s_flags.SECONDARY_KUBE_CONTEXT.value
+            )
         cls.gcp_api_manager = gcp.api.GcpApiManager()
 
         # Other
@@ -211,7 +238,8 @@ class XdsKubernetesBaseTestCase(base_testcase.BaseTestCase):
     @classmethod
     def tearDownClass(cls):
         cls.k8s_api_manager.close()
-        cls.secondary_k8s_api_manager.close()
+        if cls.secondary_k8s_api_manager is not None:
+            cls.secondary_k8s_api_manager.close()
         cls.gcp_api_manager.close()
 
     def setUp(self):
@@ -585,13 +613,8 @@ class IsolatedXdsKubernetesTestCase(
         """Hook method for setting up the test fixture before exercising it."""
         super().setUp()
 
-        if self.resource_suffix_randomize:
-            self.resource_suffix = helpers_rand.random_resource_suffix()
-        logger.info(
-            "Test run resource prefix: %s, suffix: %s",
-            self.resource_prefix,
-            self.resource_suffix,
-        )
+        # Random suffix per test.
+        self.createRandomSuffix()
 
         # TD Manager
         self.td = self.initTrafficDirectorManager()
@@ -623,6 +646,15 @@ class IsolatedXdsKubernetesTestCase(
             #  but we should find a better approach.
             self.server_xds_port = self.td.find_unused_forwarding_rule_port()
             logger.info("Found unused xds port: %s", self.server_xds_port)
+
+    def createRandomSuffix(self):
+        if self.resource_suffix_randomize:
+            self.resource_suffix = helpers_rand.random_resource_suffix()
+        logger.info(
+            "Test run resource prefix: %s, suffix: %s",
+            self.resource_prefix,
+            self.resource_suffix,
+        )
 
     @abc.abstractmethod
     def initTrafficDirectorManager(self) -> TrafficDirectorManager:

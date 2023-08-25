@@ -366,13 +366,13 @@ XDS_K8S_CONFIG=./path-to-flagfile.cfg ./run.sh bin/run_td_setup.py --resource_su
 ./run.sh bin/run_td_setup.py --security=mtls
 
 # Start test server in a secure mode
-./run.sh bin/run_test_server.py --secure
+./run.sh bin/run_test_server.py --mode=secure
 
 # Add test server to the backend service
 ./run.sh bin/run_td_setup.py --cmd=backends-add
 
-# Start test client in a secure more --secure
-./run.sh bin/run_test_client.py --secure
+# Start test client in a secure more --mode=secure
+./run.sh bin/run_test_client.py --mode=secure
 ```
 
 ### Sending RPCs
@@ -432,9 +432,9 @@ Cleanup regular and security-specific resources:
 # Cleanup TD resources, with security
 ./run.sh bin/run_td_setup.py --cmd=cleanup --security=mtls
 # Stop test client (secure)
-./run.sh bin/run_test_client.py --cmd=cleanup --secure
+./run.sh bin/run_test_client.py --cmd=cleanup --mode=secure
 # Stop test server (secure), and remove the namespace
-./run.sh bin/run_test_server.py --cmd=cleanup --cleanup_namespace --secure
+./run.sh bin/run_test_server.py --cmd=cleanup --cleanup_namespace --mode=secure
 ```
 
 In addition, here's some other helpful partial cleanup commands:

@@ -219,7 +219,7 @@ message LoadBalancerStatsResponse {
   message RpcMetadata {
     // metadata values for each rpc for the keys specified in
     // LoadBalancerStatsRequest.metadata_keys.
-    // metadata keys and values are returned exactly as was recieved
+    // metadata keys and values are returned exactly as was received
     // from the server.
     repeated MetadataEntry metadata = 1;
   }
@@ -308,4 +308,24 @@ message TestOrcaReport {
   double memory_utilization = 2;
   map<string, double> request_cost = 3;
   map<string, double> utilization = 4;
+}
+
+enum HookRequestCommand {
+  // Start the HTTP endpoint
+  START = 0;
+  // Stop
+  STOP = 1;
+  // Return from HTTP GET/POST
+  RETURN = 2;
+}
+
+message HookRequest {
+  HookRequestCommand command = 1;
+  int32 grpc_code_to_return = 2;
+  string grpc_status_description = 3;
+  // Server port to listen to
+  int32 server_port = 4;
+}
+
+message HookResponse {
 }

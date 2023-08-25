@@ -75,6 +75,7 @@ def generate_resolver_component_tests():
             ],
             external_deps = [
                 "absl/flags:flag",
+                "absl/strings",
             ],
             deps = [
                 "//test/cpp/util:test_util%s" % unsecure_build_config_suffix,
@@ -83,6 +84,7 @@ def generate_resolver_component_tests():
                 "//:grpc%s" % unsecure_build_config_suffix,
                 "//:gpr",
                 "//test/cpp/util:test_config",
+                "//test/cpp/util/windows:manifest_file",
             ],
             data = [
                 ":resolver_component_tests_runner",
@@ -90,7 +92,7 @@ def generate_resolver_component_tests():
                 "//test/cpp/naming/utils:dns_server",
                 "//test/cpp/naming/utils:dns_resolver",
                 "//test/cpp/naming/utils:tcp_connect",
-                "resolver_test_record_groups.yaml",  # include the transitive dependency so that the dns server py binary can locate this
+                "//test/cpp/naming:resolver_test_record_groups",  # include the transitive dependency so that the dns server py binary can locate this
             ],
             args = [
                 "--test_bin_name=resolver_component_test%s" % unsecure_build_config_suffix,
@@ -99,5 +101,5 @@ def generate_resolver_component_tests():
             # The test is highly flaky on AWS workers that we use for running ARM64 tests.
             # The "no_arm64" tag can be used to skip it.
             # (see https://github.com/grpc/grpc/issues/25289).
-            tags = ["no_windows", "no_mac", "no_arm64", "resolver_component_tests_runner_invoker"],
+            tags = ["no_mac", "no_arm64", "resolver_component_tests_runner_invoker"],
         )
