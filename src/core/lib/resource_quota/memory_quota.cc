@@ -37,12 +37,53 @@
 
 namespace grpc_core {
 
+namespace {
 // Maximum number of bytes an allocator will request from a quota in one step.
 // Larger allocations than this will require multiple allocation requests.
-static constexpr size_t kMaxReplenishBytes = 1024 * 1024;
+constexpr size_t kMaxReplenishBytes = 1024 * 1024;
 
 // Minimum number of bytes an allocator will request from a quota in one step.
-static constexpr size_t kMinReplenishBytes = 4096;
+constexpr size_t kMinReplenishBytes = 4096;
+
+class MemoryQuotaTracker {
+ public:
+  static MemoryQuotaTracker& Get() {
+    static MemoryQuotaTracker* tracker = new MemoryQuotaTracker();
+    return *tracker;
+  }
+
+  void Add(std::shared_ptr<BasicMemoryQuota> quota) {
+    MutexLock lock(&mu_);
+    GatherAndGarbageCollect();
+    quotas_.push_back(quota);
+  }
+
+  std::vector<std::shared_ptr<BasicMemoryQuota>> All() {
+    MutexLock lock(&mu_);
+    return GatherAndGarbageCollect();
+  }
+
+ private:
+  MemoryQuotaTracker() {}
+
+  std::vector<std::shared_ptr<BasicMemoryQuota>> GatherAndGarbageCollect()
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+    std::vector<std::weak_ptr<BasicMemoryQuota>> new_quotas;
+    std::vector<std::shared_ptr<BasicMemoryQuota>> all_quotas;
+    for (const auto& quota : quotas_) {
+      auto p = quota.lock();
+      if (p == nullptr) continue;
+      new_quotas.push_back(quota);
+      all_quotas.push_back(p);
+    }
+    quotas_.swap(new_quotas);
+    return all_quotas;
+  }
+
+  Mutex mu_;
+  std::vector<std::weak_ptr<BasicMemoryQuota>> quotas_ ABSL_GUARDED_BY(mu_);
+};
+}  // namespace
 
 //
 // Reclaimer
@@ -314,8 +355,12 @@ class BasicMemoryQuota::WaitForSweepPromise {
   uint64_t token_;
 };
 
+BasicMemoryQuota::BasicMemoryQuota(std::string name) : name_(std::move(name)) {}
+
 void BasicMemoryQuota::Start() {
   auto self = shared_from_this();
+
+  MemoryQuotaTracker::Get().Add(self);
 
   // Reclamation loop:
   // basically, wait until we are in overcommit (free_bytes_ < 0), and then:
@@ -693,6 +738,10 @@ MemoryOwner MemoryQuota::CreateMemoryOwner(absl::string_view name) {
   auto impl = std::make_shared<GrpcMemoryAllocatorImpl>(
       memory_quota_, absl::StrCat(memory_quota_->name(), "/owner/", name));
   return MemoryOwner(std::move(impl));
+}
+
+std::vector<std::shared_ptr<BasicMemoryQuota>> AllMemoryQuotas() {
+  return MemoryQuotaTracker::Get().All();
 }
 
 }  // namespace grpc_core
