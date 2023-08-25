@@ -14,7 +14,7 @@ packaging==23.1
 Pygments==2.14.0
 python-dateutil==2.8.2
 protobuf==4.24.1
-xds-protos @ https://storage.googleapis.com/grpc-testing-kokoro-prod/test_result_public/prod/grpc/core/master/linux/release/grpc_collect_all_packages/982/20230824-122525/github/grpc/artifacts/xds_protos-1.58.0rc1-py3-none-any.whl#sha256=98901de3212a75bd1b410722c855fc0bf6c847352b0fc15a0170bca8d7a1e9e1
+xds-protos==1.58.0rc1
 ## The following requirements were added by pip freeze:
 cachetools==5.3.0
 certifi==2022.12.7

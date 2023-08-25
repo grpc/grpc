@@ -14,4 +14,4 @@ packaging~=23.1
 Pygments~=2.9
 python-dateutil~=2.8
 protobuf~=4.24
-xds-protos @ https://storage.googleapis.com/grpc-testing-kokoro-prod/test_result_public/prod/grpc/core/master/linux/release/grpc_collect_all_packages/982/20230824-122525/github/grpc/artifacts/xds_protos-1.58.0rc1-py3-none-any.whl
+xds-protos==1.58.0rc1
