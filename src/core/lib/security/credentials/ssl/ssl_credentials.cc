@@ -50,11 +50,6 @@ grpc_ssl_credentials::grpc_ssl_credentials(
   build_config(pem_root_certs, pem_key_cert_pair, verify_options);
   const tsi_ssl_root_certs_store* root_store;
   // TODO(gtcooke94) handle ssl_session_cache
-  grpc_security_status status = initialize_handshaker_factory(
-      &config_, pem_root_certs, root_store, nullptr);
-  if (status != GRPC_SECURITY_OK) {
-    // TODO(gtcooke94)
-  }
 }
 
 grpc_ssl_credentials::~grpc_ssl_credentials() {
@@ -67,18 +62,49 @@ grpc_ssl_credentials::~grpc_ssl_credentials() {
 }
 
 grpc_core::RefCountedPtr<grpc_channel_security_connector>
+
 grpc_ssl_credentials::create_security_connector(
     grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
     const char* target, grpc_core::ChannelArgs* args) {
   absl::optional<std::string> overridden_target_name =
       args->GetOwnedString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG);
-  auto* ssl_session_cache = args->GetObject<tsi::SslSessionLRUCache>();
+  tsi_ssl_session_cache* ssl_session_cache =
+      args->GetObject<tsi::SslSessionLRUCache>()->c_ptr();
+
+  const tsi_ssl_root_certs_store* root_store;
+  // Use default root certificates.
+  if (config_.pem_root_certs == nullptr) {
+    // TODO(gtcooke94) make sure to remove this memory
+    const char* pem_root_certs =
+        grpc_core::DefaultSslRootStore::GetPemRootCerts();
+    if (pem_root_certs == nullptr) {
+      gpr_log(GPR_ERROR, "Could not get default pem root certs.");
+      return nullptr;
+    }
+    size_t root_len = strlen(pem_root_certs);
+    char* default_roots = strcpy(new char[root_len + 1], pem_root_certs);
+    config_.pem_root_certs = default_roots;
+    gpr_log(GPR_ERROR, "Could not get default pem root certs.");
+    return nullptr;
+    root_store = grpc_core::DefaultSslRootStore::GetRootStore();
+  } else {
+    config_.pem_root_certs = config_.pem_root_certs;
+    root_store = nullptr;
+  }
+
+  grpc_security_status status = initialize_client_handshaker_factory(
+      &config_, config_.pem_root_certs, root_store, ssl_session_cache);
+  if (status != GRPC_SECURITY_OK) {
+    return nullptr;
+  }
+
   grpc_core::RefCountedPtr<grpc_channel_security_connector> sc =
       grpc_ssl_channel_security_connector_create(
           this->Ref(), std::move(call_creds), &config_, target,
           overridden_target_name.has_value() ? overridden_target_name->c_str()
                                              : nullptr,
-          ssl_session_cache == nullptr ? nullptr : ssl_session_cache->c_ptr());
+          ssl_session_cache == nullptr ? nullptr : ssl_session_cache,
+          client_handshaker_factory_);
   if (sc == nullptr) {
     return sc;
   }
@@ -126,7 +152,7 @@ void grpc_ssl_credentials::set_max_tls_version(
   config_.max_tls_version = max_tls_version;
 }
 
-grpc_security_status grpc_ssl_credentials::initialize_handshaker_factory(
+grpc_security_status grpc_ssl_credentials::initialize_client_handshaker_factory(
     const grpc_ssl_config* config, const char* pem_root_certs,
     const tsi_ssl_root_certs_store* root_store,
     tsi_ssl_session_cache* ssl_session_cache) {

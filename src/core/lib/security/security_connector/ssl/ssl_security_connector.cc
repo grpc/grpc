@@ -204,8 +204,9 @@ class grpc_ssl_channel_security_connector final
                          overridden_target_name_.c_str(), auth_context));
   }
 
- private:
   tsi_ssl_client_handshaker_factory* client_handshaker_factory_;
+
+ private:
   std::string target_name_;
   std::string overridden_target_name_;
   const verify_peer_options* verify_options_;
@@ -411,36 +412,36 @@ grpc_ssl_channel_security_connector_create(
     grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
     const grpc_ssl_config* config, const char* target_name,
     const char* overridden_target_name,
-    tsi_ssl_session_cache* ssl_session_cache) {
+    tsi_ssl_session_cache* ssl_session_cache,
+    tsi_ssl_client_handshaker_factory* factory) {
   if (config == nullptr || target_name == nullptr) {
     gpr_log(GPR_ERROR, "An ssl channel needs a config and a target name.");
     return nullptr;
   }
 
-  const char* pem_root_certs;
-  const tsi_ssl_root_certs_store* root_store;
-  if (config->pem_root_certs == nullptr) {
-    // Use default root certificates.
-    pem_root_certs = grpc_core::DefaultSslRootStore::GetPemRootCerts();
-    if (pem_root_certs == nullptr) {
-      gpr_log(GPR_ERROR, "Could not get default pem root certs.");
-      return nullptr;
-    }
-    root_store = grpc_core::DefaultSslRootStore::GetRootStore();
-  } else {
-    pem_root_certs = config->pem_root_certs;
-    root_store = nullptr;
-  }
-
+  // const tsi_ssl_root_certs_store* root_store;
+  // if (config->pem_root_certs == nullptr) {
+  //   // Use default root certificates.
+  //   pem_root_certs = grpc_core::DefaultSslRootStore::GetPemRootCerts();
+  //   if (pem_root_certs == nullptr) {
+  //     gpr_log(GPR_ERROR, "Could not get default pem root certs.");
+  //     return nullptr;
+  //   }
+  //   root_store = grpc_core::DefaultSslRootStore::GetRootStore();
+  // } else {
+  //   pem_root_certs = config->pem_root_certs;
+  //   root_store = nullptr;
+  // }
   grpc_core::RefCountedPtr<grpc_ssl_channel_security_connector> c =
       grpc_core::MakeRefCounted<grpc_ssl_channel_security_connector>(
           std::move(channel_creds), std::move(request_metadata_creds), config,
           target_name, overridden_target_name);
-  const grpc_security_status result = c->InitializeHandshakerFactory(
-      config, pem_root_certs, root_store, ssl_session_cache);
-  if (result != GRPC_SECURITY_OK) {
-    return nullptr;
-  }
+  c->client_handshaker_factory_ = factory;
+  // const grpc_security_status result = c->InitializeHandshakerFactory(
+  //     config, pem_root_certs, root_store, ssl_session_cache);
+  // if (result != GRPC_SECURITY_OK) {
+  //   return nullptr;
+  // }
   return c;
 }
 
