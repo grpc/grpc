@@ -1598,6 +1598,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/security/security_connector/load_system_roots_fallback.cc )
   s.files += %w( src/core/lib/security/security_connector/load_system_roots_supported.cc )
   s.files += %w( src/core/lib/security/security_connector/load_system_roots_supported.h )
+  s.files += %w( src/core/lib/security/security_connector/load_system_roots_windows.cc )
   s.files += %w( src/core/lib/security/security_connector/local/local_security_connector.cc )
   s.files += %w( src/core/lib/security/security_connector/local/local_security_connector.h )
   s.files += %w( src/core/lib/security/security_connector/security_connector.cc )

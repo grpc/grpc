@@ -1693,6 +1693,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/security_connector/load_system_roots_fallback.cc',
                       'src/core/lib/security/security_connector/load_system_roots_supported.cc',
                       'src/core/lib/security/security_connector/load_system_roots_supported.h',
+                      'src/core/lib/security/security_connector/load_system_roots_windows.cc',
                       'src/core/lib/security/security_connector/local/local_security_connector.cc',
                       'src/core/lib/security/security_connector/local/local_security_connector.h',
                       'src/core/lib/security/security_connector/security_connector.cc',

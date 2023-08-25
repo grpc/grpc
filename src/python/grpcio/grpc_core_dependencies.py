@@ -747,6 +747,7 @@ CORE_SOURCE_FILES = [
     'src/core/lib/security/security_connector/insecure/insecure_security_connector.cc',
     'src/core/lib/security/security_connector/load_system_roots_fallback.cc',
     'src/core/lib/security/security_connector/load_system_roots_supported.cc',
+    'src/core/lib/security/security_connector/load_system_roots_windows.cc',
     'src/core/lib/security/security_connector/local/local_security_connector.cc',
     'src/core/lib/security/security_connector/security_connector.cc',
     'src/core/lib/security/security_connector/ssl/ssl_security_connector.cc',

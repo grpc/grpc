@@ -2377,6 +2377,7 @@ add_library(grpc
   src/core/lib/security/security_connector/insecure/insecure_security_connector.cc
   src/core/lib/security/security_connector/load_system_roots_fallback.cc
   src/core/lib/security/security_connector/load_system_roots_supported.cc
+  src/core/lib/security/security_connector/load_system_roots_windows.cc
   src/core/lib/security/security_connector/local/local_security_connector.cc
   src/core/lib/security/security_connector/security_connector.cc
   src/core/lib/security/security_connector/ssl/ssl_security_connector.cc
@@ -3052,6 +3053,7 @@ add_library(grpc_unsecure
   src/core/lib/security/security_connector/insecure/insecure_security_connector.cc
   src/core/lib/security/security_connector/load_system_roots_fallback.cc
   src/core/lib/security/security_connector/load_system_roots_supported.cc
+  src/core/lib/security/security_connector/load_system_roots_windows.cc
   src/core/lib/security/security_connector/security_connector.cc
   src/core/lib/security/transport/client_auth_filter.cc
   src/core/lib/security/transport/secure_endpoint.cc
@@ -4949,6 +4951,7 @@ add_library(grpc_authorization_provider
   src/core/lib/security/credentials/tls/tls_utils.cc
   src/core/lib/security/security_connector/load_system_roots_fallback.cc
   src/core/lib/security/security_connector/load_system_roots_supported.cc
+  src/core/lib/security/security_connector/load_system_roots_windows.cc
   src/core/lib/security/security_connector/security_connector.cc
   src/core/lib/security/transport/client_auth_filter.cc
   src/core/lib/security/transport/secure_endpoint.cc
