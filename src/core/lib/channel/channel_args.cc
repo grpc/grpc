@@ -16,10 +16,13 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/channel/channel_args.h"
 
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/string_util.h>
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>
@@ -35,12 +38,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
-
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
-
 #include "src/core/lib/gpr/useful.h"
 
 namespace grpc_core {
@@ -304,10 +301,11 @@ std::string ChannelArgs::ToString() const {
 
 std::vector<ChannelArgs::DebugStrings> ChannelArgs::DebugString() const {
   std::vector<ChannelArgs::DebugStrings> arg_list_debug;
-  args_.ForEach([&arg_list_debug](const RefCountedStringValue& key, const Value& value) {
-    ChannelArgs::DebugStrings channel_arg(key.c_str(), value.ToString());
-    arg_list_debug.push_back(channel_arg);
-  });
+  args_.ForEach(
+      [&arg_list_debug](const RefCountedStringValue& key, const Value& value) {
+        ChannelArgs::DebugStrings channel_arg(key.c_str(), value.ToString());
+        arg_list_debug.push_back(channel_arg);
+      });
   return arg_list_debug;
 }
 

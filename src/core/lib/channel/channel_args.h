@@ -19,8 +19,9 @@
 #ifndef GRPC_SRC_CORE_LIB_CHANNEL_CHANNEL_ARGS_H
 #define GRPC_SRC_CORE_LIB_CHANNEL_CHANNEL_ARGS_H
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 #include <stdint.h>
 
@@ -34,10 +35,6 @@
 #include "absl/meta/type_traits.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
-
 #include "src/core/lib/avl/avl.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -330,11 +327,13 @@ class ChannelArgs {
       std::unique_ptr<const grpc_channel_args, ChannelArgs::ChannelArgsDeleter>;
 
   struct DebugStrings {
-  private:
+   private:
     const std::string key_;
     const std::string value_;
-  public:
-    DebugStrings(std::string key, std::string value) : key_(key), value_(value) {}
+
+   public:
+    DebugStrings(std::string key, std::string value)
+        : key_(key), value_(value) {}
     std::string GetKey() { return key_; }
     std::string GetValue() { return value_; }
   };

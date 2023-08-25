@@ -14,10 +14,17 @@
 // limitations under the License.
 //
 
+#include "src/core/lib/channel/channel_args.h"
+
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
+#include <grpc/support/json.h>
+#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
-
-#include "src/core/ext/filters/client_channel/client_channel.h"
-
+#include <grpc/support/string_util.h>
+#include <grpc/support/time.h>
 #include <inttypes.h>
 #include <limits.h>
 
@@ -39,18 +46,9 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/slice.h>
-#include <grpc/status.h>
-#include <grpc/support/json.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/time.h>
-
 #include "src/core/ext/filters/client_channel/backend_metric.h"
 #include "src/core/ext/filters/client_channel/backup_poller.h"
+#include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/client_channel_channelz.h"
 #include "src/core/ext/filters/client_channel/client_channel_internal.h"
 #include "src/core/ext/filters/client_channel/client_channel_service_config.h"
@@ -63,7 +61,6 @@
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/ext/filters/client_channel/subchannel_interface_internal.h"
 #include "src/core/ext/filters/deadline/deadline_filter.h"
-#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/channel/status_util.h"
@@ -1172,7 +1169,8 @@ ChannelArgs ClientChannel::MakeSubchannelArgs(
       .RemoveAllKeysWithPrefix(GRPC_ARG_NO_SUBCHANNEL_PREFIX);
 }
 
-std::vector<ChannelArgs::DebugStrings> ClientChannel::ChannelArgsToString() const {
+std::vector<ChannelArgs::DebugStrings> ClientChannel::ChannelArgsToString()
+    const {
   return channel_args_.DebugString();
 }
 
