@@ -123,7 +123,7 @@ TEST_F(MetadataExchangeTest, ClientAttemptStarted) {
 
 TEST_F(MetadataExchangeTest, ClientAttemptDuration) {
   Init(/*metric_names=*/{
-      grpc::internal::OTelClientAttemptStartedInstrumentName()});
+      grpc::internal::OTelClientAttemptDurationInstrumentName()});
   SendRPC();
   const char* kMetricName = "grpc.client.attempt.duration";
   auto data = ReadCurrentMetricsData(
@@ -147,7 +147,7 @@ TEST_F(MetadataExchangeTest, ClientAttemptDuration) {
 
 TEST_F(MetadataExchangeTest, ServerCallDuration) {
   Init(/*metric_names=*/{
-      grpc::internal::OTelClientAttemptStartedInstrumentName()});
+      grpc::internal::OTelServerCallDurationInstrumentName()});
   SendRPC();
   const char* kMetricName = "grpc.server.call.duration";
   auto data = ReadCurrentMetricsData(
