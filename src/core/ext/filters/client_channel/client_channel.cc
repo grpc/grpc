@@ -84,7 +84,6 @@
 #include "src/core/lib/load_balancing/subchannel_interface.h"
 #include "src/core/lib/promise/cancel_callback.h"
 #include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/detail/basic_seq.h"
 #include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/poll.h"

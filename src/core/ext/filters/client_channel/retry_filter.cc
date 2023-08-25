@@ -24,13 +24,11 @@
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 #include "absl/types/optional.h"
-#include "retry_filter.h"
-#include "retry_service_config.h"
-#include "retry_throttle.h"
 
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/ext/filters/client_channel/retry_filter.h"
 #include "src/core/ext/filters/client_channel/retry_filter_legacy_call_data.h"
 #include "src/core/ext/filters/client_channel/retry_service_config.h"
 #include "src/core/ext/filters/client_channel/retry_throttle.h"
@@ -386,8 +384,7 @@ ArenaPromise<ServerMetadataHandle> RetryFilter::MakeCallPromise(
 
 const grpc_channel_filter RetryFilter::kVtable = {
     RetryFilter::LegacyCallData::StartTransportStreamOpBatch,
-    [](grpc_channel_element* elem, grpc_core::CallArgs call_args,
-       grpc_core::NextPromiseFactory) {
+    [](grpc_channel_element* elem, CallArgs call_args, NextPromiseFactory) {
       return static_cast<RetryFilter*>(elem->channel_data)
           ->MakeCallPromise(std::move(call_args));
     },
