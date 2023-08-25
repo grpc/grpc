@@ -297,6 +297,13 @@ std::string ChannelArgs::Value::ToString() const {
   return absl::StrFormat("%p", rep_.c_pointer());
 }
 
+std::string ChannelArgs::Value::GetSourceLocationString() const {
+  std::string location_str(location_.file());
+  location_str += ":";
+  location_str += std::to_string(location_.line());
+  return location_str;
+}
+
 std::string ChannelArgs::ToString() const {
   std::vector<std::string> arg_strings;
   args_.ForEach(
