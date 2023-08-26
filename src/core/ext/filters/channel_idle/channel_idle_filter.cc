@@ -23,6 +23,7 @@
 #include <stdlib.h>
 
 #include <functional>
+#include <tuple>
 #include <utility>
 
 #include "absl/types/optional.h"
