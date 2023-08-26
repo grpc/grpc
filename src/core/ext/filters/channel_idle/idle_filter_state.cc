@@ -23,16 +23,18 @@ namespace grpc_core {
 IdleFilterState::IdleFilterState(bool start_timer)
     : state_(start_timer ? kTimerStarted : 0) {}
 
-void IdleFilterState::IncreaseCallCount() {
+bool IdleFilterState::IncreaseCallCount() {
   uintptr_t state = state_.load(std::memory_order_relaxed);
   uintptr_t new_state;
   do {
+    if (state & kExpiredTimer) return false;
     // Increment the counter, and flag that there's been activity.
     new_state = state;
     new_state |= kCallsStartedSinceLastTimerCheck;
     new_state += kCallIncrement;
   } while (!state_.compare_exchange_weak(
       state, new_state, std::memory_order_acq_rel, std::memory_order_relaxed));
+  return true;
 }
 
 bool IdleFilterState::DecreaseCallCount() {
@@ -53,7 +55,7 @@ bool IdleFilterState::DecreaseCallCount() {
       // does.
       start_timer = true;
       new_state |= kTimerStarted;
-      new_state &= ~kCallsInProgressShift;
+      new_state &= ~(1 << kCallsInProgressShift);
     }
   } while (!state_.compare_exchange_weak(
       state, new_state, std::memory_order_acq_rel, std::memory_order_relaxed));
@@ -87,6 +89,7 @@ bool IdleFilterState::CheckTimer() {
       // that in the updated state.
       start_timer = false;
       new_state &= ~kTimerStarted;
+      new_state |= kExpiredTimer;
     }
   } while (!state_.compare_exchange_weak(
       state, new_state, std::memory_order_acq_rel, std::memory_order_relaxed));

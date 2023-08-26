@@ -24,15 +24,16 @@
 
 namespace grpc_core {
 namespace testing {
+namespace {
 
 TEST(IdleFilterStateTest, IdlenessStartsTimer) {
   IdleFilterState s(false);
-  s.IncreaseCallCount();
+  EXPECT_TRUE(s.IncreaseCallCount());
   // First idle should start the timer
   EXPECT_TRUE(s.DecreaseCallCount());
   for (int i = 0; i < 10; i++) {
     // Next idle should not!
-    s.IncreaseCallCount();
+    EXPECT_TRUE(s.IncreaseCallCount());
     EXPECT_FALSE(s.DecreaseCallCount());
   }
 }
@@ -45,11 +46,12 @@ TEST(IdleFilterStateTest, TimerStopsAfterIdle) {
 TEST(IdleFilterStateTest, TimerKeepsGoingWithActivity) {
   IdleFilterState s(true);
   for (int i = 0; i < 10; i++) {
-    s.IncreaseCallCount();
+    EXPECT_TRUE(s.IncreaseCallCount());
     (void)s.DecreaseCallCount();
     EXPECT_TRUE(s.CheckTimer());
   }
   EXPECT_FALSE(s.CheckTimer());
+  EXPECT_FALSE(s.IncreaseCallCount());
 }
 
 TEST(IdleFilterStateTest, StressTest) {
@@ -62,10 +64,14 @@ TEST(IdleFilterStateTest, StressTest) {
     std::thread t([&] {
       int ctr = 0;
       auto increase = [&] {
-        s.IncreaseCallCount();
-        ctr++;
+        if (s.IncreaseCallCount()) {
+          ctr++;
+        } else {
+          done.store(true, std::memory_order_relaxed);
+        }
       };
       auto decrease = [&] {
+        if (ctr == 0) return;
         ctr--;
         if (s.DecreaseCallCount()) {
           thread_jumps++;
@@ -100,6 +106,7 @@ TEST(IdleFilterStateTest, StressTest) {
   for (auto& thread : threads) thread.join();
 }
 
+}  // namespace
 }  // namespace testing
 }  // namespace grpc_core
 

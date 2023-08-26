@@ -35,7 +35,9 @@ class IdleFilterState {
   IdleFilterState& operator=(const IdleFilterState&) = delete;
 
   // Increment the number of calls in progress.
-  void IncreaseCallCount();
+  // Returns true if the timer remains unexpired, false if it has expired and
+  // the call should not be permitted.
+  GRPC_MUST_USE_RESULT bool IncreaseCallCount();
 
   // Decrement the number of calls in progress.
   // Return true if we reached idle with no timer started.
@@ -54,8 +56,10 @@ class IdleFilterState {
   // Bit in state_ indicating that we've seen a call start or stop since the
   // last timer.
   static constexpr uintptr_t kCallsStartedSinceLastTimerCheck = 2;
+  // Bit in state_ indicating that we've expired the timer already
+  static constexpr uintptr_t kExpiredTimer = 4;
   // How much should we shift to get the number of calls in progress.
-  static constexpr uintptr_t kCallsInProgressShift = 2;
+  static constexpr uintptr_t kCallsInProgressShift = 3;
   // How much to increment/decrement the state_ when a call is started/stopped.
   // Ensures we don't clobber the preceding bits.
   static constexpr uintptr_t kCallIncrement = uintptr_t{1}

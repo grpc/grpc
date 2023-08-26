@@ -148,7 +148,7 @@ void MaxAgeFilter::PostInit() {
   auto run_startup = [](void* p, grpc_error_handle) {
     auto* startup = static_cast<StartupClosure*>(p);
     // Trigger idle timer
-    startup->filter->IncreaseCallCount();
+    GPR_ASSERT(startup->filter->IncreaseCallCount());
     startup->filter->DecreaseCallCount();
     grpc_transport_op* op = grpc_make_transport_op(nullptr);
     op->start_connectivity_watch.reset(
@@ -212,7 +212,10 @@ void MaxAgeFilter::PostInit() {
 ArenaPromise<ServerMetadataHandle> ChannelIdleFilter::MakeCallPromise(
     CallArgs call_args, NextPromiseFactory next_promise_factory) {
   using Decrementer = std::unique_ptr<ChannelIdleFilter, CallCountDecreaser>;
-  IncreaseCallCount();
+  if (!IncreaseCallCount()) {
+    return Immediate(ServerMetadataFromStatus(
+        absl::UnavailableError("connection closed due to idleness")));
+  }
   return ArenaPromise<ServerMetadataHandle>(
       [decrementer = Decrementer(this),
        next = next_promise_factory(std::move(call_args))]() mutable
@@ -229,12 +232,12 @@ bool ChannelIdleFilter::StartTransportOp(grpc_transport_op* op) {
 void ChannelIdleFilter::Shutdown() {
   // IncreaseCallCount() introduces a phony call and prevent the timer from
   // being reset by other threads.
-  IncreaseCallCount();
+  std::ignore = IncreaseCallCount();
   activity_.Reset();
 }
 
-void ChannelIdleFilter::IncreaseCallCount() {
-  idle_filter_state_->IncreaseCallCount();
+bool ChannelIdleFilter::IncreaseCallCount() {
+  return idle_filter_state_->IncreaseCallCount();
 }
 
 void ChannelIdleFilter::DecreaseCallCount() {

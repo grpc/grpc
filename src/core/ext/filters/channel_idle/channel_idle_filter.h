@@ -69,7 +69,7 @@ class ChannelIdleFilter : public ChannelFilter {
   virtual void Shutdown();
   void CloseChannel();
 
-  void IncreaseCallCount();
+  GRPC_MUST_USE_RESULT bool IncreaseCallCount();
   void DecreaseCallCount();
 
  private:
