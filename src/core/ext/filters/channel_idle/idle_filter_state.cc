@@ -21,8 +21,6 @@
 
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/channel_idle/idle_filter_state.h"
-
 namespace grpc_core {
 
 IdleFilterState::IdleFilterState(bool start_timer)
