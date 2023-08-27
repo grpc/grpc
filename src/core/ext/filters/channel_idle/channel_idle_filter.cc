@@ -22,11 +22,13 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include <atomic>
 #include <functional>
 #include <utility>
 
 #include "absl/types/optional.h"
 
+#include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/log.h>
 
@@ -272,6 +274,31 @@ void ChannelIdleFilter::StartIdleTimer() {
 }
 
 void ChannelIdleFilter::CloseChannel() {
+  class WaitForNonReady : public AsyncConnectivityStateWatcherInterface {
+   public:
+    explicit WaitForNonReady(ChannelIdleFilter* filter)
+        : channel_stack_(filter->channel_stack()->Ref()), filter_(filter) {}
+    ~WaitForNonReady() override = default;
+
+    void OnConnectivityStateChange(grpc_connectivity_state new_state,
+                                   const absl::Status&) override {
+      if (new_state == GRPC_CHANNEL_READY) return;
+      if (filter_->idle_filter_state_->ResetTimerExpiry()) {
+        filter_->StartIdleTimer();
+      }
+    }
+
+   private:
+    RefCountedPtr<grpc_channel_stack> channel_stack_;
+    ChannelIdleFilter* filter_;
+  };
+  if (idle_filter_state_->StartNonIdleWatch()) {
+    grpc_transport_op* op = grpc_make_transport_op(nullptr);
+    op->start_connectivity_watch.reset(new WaitForNonReady(this));
+    op->start_connectivity_watch_state = GRPC_CHANNEL_READY;
+    grpc_channel_next_op(grpc_channel_stack_element(channel_stack(), 0), op);
+  }
+
   auto* op = grpc_make_transport_op(nullptr);
   op->disconnect_with_error = grpc_error_set_int(
       GRPC_ERROR_CREATE("enter idle"),
