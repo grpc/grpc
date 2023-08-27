@@ -10316,6 +10316,7 @@ targets:
   - test/core/client_idle/idle_filter_state_test.cc
   deps:
   - gtest
+  - gpr
   uses_polling: false
 - name: if_list_test
   gtest: true

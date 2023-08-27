@@ -19,9 +19,9 @@
 #include <assert.h>
 #include <inttypes.h>
 
-#include "idle_filter_state.h"
-
 #include <grpc/support/log.h>
+
+#include "src/core/ext/filters/channel_idle/idle_filter_state.h"
 
 namespace grpc_core {
 

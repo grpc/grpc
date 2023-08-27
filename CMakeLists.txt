@@ -14477,6 +14477,7 @@ target_include_directories(idle_filter_state_test
 target_link_libraries(idle_filter_state_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  gpr
 )
 
 

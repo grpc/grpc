@@ -22,14 +22,12 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include <atomic>
 #include <functional>
 #include <tuple>
 #include <utility>
 
 #include "absl/types/optional.h"
 
-#include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/log.h>
 
