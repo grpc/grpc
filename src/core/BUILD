@@ -885,6 +885,20 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "inter_activity_pipe",
+    hdrs = [
+        "lib/promise/inter_activity_pipe.h",
+    ],
+    language = "c++",
+    deps = [
+        "activity",
+        "poll",
+        "ref_counted",
+        "//:gpr",
+    ],
+)
+
+grpc_cc_library(
     name = "promise_trace",
     srcs = [
         "lib/promise/trace.cc",
