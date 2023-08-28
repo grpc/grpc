@@ -23,7 +23,6 @@
 #include <math.h>
 #include <ruby/vm.h>
 #include <stdbool.h>
-#include <sys/time.h>
 #include <sys/types.h>
 #include <unistd.h>
 

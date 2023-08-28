@@ -21,8 +21,6 @@
 
 #include <ruby/ruby.h>
 
-#include <sys/time.h>
-
 #include <grpc/support/time.h>
 
 /* grpc_rb_mGrpcCore is the module containing the ruby wrapper GRPC classes. */
