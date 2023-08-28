@@ -1675,15 +1675,15 @@ void XdsClient::CancelResourceWatch(const XdsResourceType* type,
   // Delete watchers after releasing mutex to avoid deadlock, in case
   // deleting the watcher triggers another call into XdsClient.
   std::vector<RefCountedPtr<ResourceWatcherInterface>> watchers_to_delete;
-  auto delete_watcher_from = [&](
-      std::map<ResourceWatcherInterface*,
-               RefCountedPtr<ResourceWatcherInterface>>& map) {
-    auto it = map.find(watcher);
-    if (it != map.end()) {
-      watchers_to_delete.push_back(std::move(it->second));
-      map.erase(it);
-    }
-  };
+  auto delete_watcher_from =
+      [&](std::map<ResourceWatcherInterface*,
+                   RefCountedPtr<ResourceWatcherInterface>>& map) {
+        auto it = map.find(watcher);
+        if (it != map.end()) {
+          watchers_to_delete.push_back(std::move(it->second));
+          map.erase(it);
+        }
+      };
   MutexLock lock(&mu_);
   // We cannot be sure whether the watcher is in invalid_watchers_ or in
   // authority_state_map_, so we check both, just to be safe.
