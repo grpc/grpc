@@ -96,6 +96,9 @@ class FakeUdpAndTcpServer {
   static ProcessReadResult CloseSocketUponCloseFromPeer(int bytes_received_size,
                                                         int read_error, int s);
 
+  static ProcessReadResult Send1ByteAfterDelay(int bytes_received_size,
+                                               int read_error, int s);
+
   void ReadFromUdpSocket();
 
   // Run a loop that periodically, every 10 ms:
@@ -118,6 +121,7 @@ class FakeUdpAndTcpServer {
    private:
     int fd_;
     int total_bytes_sent_ = 0;
+    absl::optional<absl::Time> bytes_received_;
   };
 
   int accept_socket_;
