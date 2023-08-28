@@ -5744,7 +5744,7 @@ grpc_cc_library(
         "transport_fwd",
         "unique_type_name",
         "//:channel_arg_names",
-        "//:chttp2_frame",
+        "//:chttp2_legacy_frame",
         "//:config",
         "//:debug_location",
         "//:exec_ctx",
