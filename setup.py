@@ -25,7 +25,6 @@ UnixCCompiler.src_extensions.append(".S")
 del UnixCCompiler
 
 from distutils import cygwinccompiler
-from setuptools import Extension
 import os
 import os.path
 import pathlib
@@ -40,6 +39,7 @@ import sysconfig
 
 import _metadata
 import pkg_resources
+from setuptools import Extension
 from setuptools.command import egg_info
 
 # Redirect the manifest template from MANIFEST.in to PYTHON-MANIFEST.in.

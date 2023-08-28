@@ -13,7 +13,6 @@
 # limitations under the License.
 
 from distutils import cygwinccompiler
-from setuptools import Extension
 import errno
 import os
 import os.path
@@ -28,6 +27,7 @@ import sysconfig
 
 import pkg_resources
 import setuptools
+from setuptools import Extension
 from setuptools.command import build_ext
 
 # TODO(atash) add flag to disable Cython use
