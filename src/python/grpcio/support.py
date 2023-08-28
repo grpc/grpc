@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from distutils import errors
+from setuptools import errors
 import os
 import os.path
 import shutil

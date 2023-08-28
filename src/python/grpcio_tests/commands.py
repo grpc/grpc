@@ -13,7 +13,7 @@
 # limitations under the License.
 """Provides distutils command classes for the gRPC Python setup process."""
 
-from distutils import errors as _errors
+from setuptools import errors as _errors
 import glob
 import os
 import os.path
@@ -305,7 +305,7 @@ class RunInterop(test.test):
 
     def finalize_options(self):
         if self.client and self.server:
-            raise _errors.DistutilsOptionError(
+            raise _errors.OptionError(
                 "you may only specify one of client or server"
             )
 
