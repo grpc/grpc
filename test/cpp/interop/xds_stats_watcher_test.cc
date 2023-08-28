@@ -54,8 +54,8 @@ LoadBalancerStatsResponse::MetadataByPeer BuildMetadatas(
       entry->set_key(key_value.key);
       entry->set_value(key_value.value);
       entry->set_type(key_value.is_trailing
-                          ? LoadBalancerStatsResponse::Trailing
-                          : LoadBalancerStatsResponse::Initial);
+                          ? LoadBalancerStatsResponse::TRAILING
+                          : LoadBalancerStatsResponse::INITIAL);
     }
   }
   return metadata_by_peer;

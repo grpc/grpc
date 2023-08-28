@@ -84,9 +84,9 @@ void XdsStatsWatcher::RpcCompleted(
         rpcs_by_type_[call.rpc_type][peer]++;
         auto* rpc_metadata = metadata_by_peer_[peer].add_rpc_metadata();
         AddRpcMetadata(rpc_metadata, metadata_keys_, include_all_metadata_,
-                       initial_metadata, LoadBalancerStatsResponse::Initial);
+                       initial_metadata, LoadBalancerStatsResponse::INITIAL);
         AddRpcMetadata(rpc_metadata, metadata_keys_, include_all_metadata_,
-                       trailing_metadata, LoadBalancerStatsResponse::Trailing);
+                       trailing_metadata, LoadBalancerStatsResponse::TRAILING);
       }
       rpcs_needed_--;
       // Report accumulated stats.
