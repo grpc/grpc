@@ -74,6 +74,8 @@ _LoadBalancerAccumulatedStatsResponse = (
 _ChannelState = grpc_channelz.ChannelState
 _timedelta = datetime.timedelta
 ClientConfig = grpc_csds.ClientConfig
+RpcMetadata = grpc_testing.LoadBalancerStatsResponse.RpcMetadata
+MetadataByPeer: list[str, RpcMetadata]
 # pylint complains about signal.Signals for some reason.
 _SignalNum = Union[int, signal.Signals]  # pylint: disable=no-member
 _SignalHandler = Callable[[_SignalNum, Optional[FrameType]], Any]
@@ -310,9 +312,23 @@ class XdsKubernetesBaseTestCase(base_testcase.BaseTestCase):
         # Remove backends from the Backend Service
         self.td.backend_service_remove_neg_backends(neg_name, neg_zones)
 
+    def parseMetadata(
+        self, metadatas_by_peer: dict[str, "MetadataByPeer"]
+    ) -> dict[str]:
+        cookies = dict()
+        p = ""
+        for peer, metadatas in metadatas_by_peer.items():
+            p = peer
+            for metadatas in metadatas.rpc_metadata:
+                for metadata in metadatas.metadata:
+                    if metadata.key == "cookie":
+                        cookies[peer] = metadata.value
+        return cookies
+
+
     def assertSuccessfulRpcs(
         self, test_client: XdsTestClient, num_rpcs: int = 100
-    ):
+    ) -> dict[str]:
         lb_stats = self.getClientRpcStats(test_client, num_rpcs)
         self.assertAllBackendsReceivedRpcs(lb_stats)
         failed = int(lb_stats.num_failures)
@@ -321,6 +337,9 @@ class XdsKubernetesBaseTestCase(base_testcase.BaseTestCase):
             0,
             msg=f"Expected all RPCs to succeed: {failed} of {num_rpcs} failed",
         )
+        if lb_stats.metadatas_by_peer is None:
+            return None
+        return self.parseMetadata(lb_stats.metadatas_by_peer)
 
     @staticmethod
     def diffAccumulatedStatsPerMethod(

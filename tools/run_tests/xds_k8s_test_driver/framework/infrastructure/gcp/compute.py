@@ -60,6 +60,9 @@ class ComputeV1(
         HTTP2 = enum.auto()
         GRPC = enum.auto()
 
+    class SessionAffinityProtocol(enum.Enum):
+        HTTP = enum.auto()
+
     def create_health_check(
         self,
         name: str,

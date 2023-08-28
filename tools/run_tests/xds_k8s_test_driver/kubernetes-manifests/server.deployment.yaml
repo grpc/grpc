@@ -55,6 +55,7 @@ spec:
           requests:
             cpu: 100m
             memory: 512Mi
+        terminationGracePeriodSeconds: 600
       initContainers:
         - name: grpc-td-init
           image: ${td_bootstrap_image}

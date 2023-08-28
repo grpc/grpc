@@ -59,6 +59,7 @@ class LoadBalancerStatsServiceClient(framework.rpc.grpc.GrpcClientHelper):
         *,
         num_rpcs: int,
         timeout_sec: Optional[int] = STATS_PARTIAL_RESULTS_TIMEOUT_SEC,
+        metadata_keys: list[str] = None,
     ) -> LoadBalancerStatsResponse:
         if timeout_sec is None:
             timeout_sec = self.STATS_PARTIAL_RESULTS_TIMEOUT_SEC
@@ -66,7 +67,9 @@ class LoadBalancerStatsServiceClient(framework.rpc.grpc.GrpcClientHelper):
         return self.call_unary_with_deadline(
             rpc="GetClientStats",
             req=_LoadBalancerStatsRequest(
-                num_rpcs=num_rpcs, timeout_sec=timeout_sec
+                num_rpcs=num_rpcs,
+                timeout_sec=timeout_sec,
+                metadata_keys=metadata_keys,
             ),
             deadline_sec=timeout_sec,
             log_level=logging.INFO,

@@ -96,7 +96,7 @@ class GammaXdsKubernetesTestCase(xds_k8s_testcase.RegularXdsKubernetesTestCase):
             k8s.KubernetesNamespace(
                 self.k8s_api_manager, self.server_namespace
             ),
-            mesh_name=self.mesh_name,
+#           mesh_name=self.mesh_name,
             server_xds_host=self.server_xds_host,
             deployment_name=self.server_name,
             image_name=self.server_image,
@@ -114,5 +114,6 @@ class GammaXdsKubernetesTestCase(xds_k8s_testcase.RegularXdsKubernetesTestCase):
         self, test_server: XdsTestServer, **kwargs
     ) -> XdsTestClient:
         return super().startTestClient(
-            test_server, config_mesh=self.mesh_name_td
+            # test_server, config_mesh=self.mesh_name_td
+            test_server
         )

@@ -1,0 +1,27 @@
+---
+kind: HTTPRoute
+apiVersion: gateway.networking.k8s.io/v1beta1
+metadata:
+  name: ${route_name}
+  namespace: ${namespace_name}
+  labels:
+    owner: xds-k8s-interop-test
+spec:
+  parentRefs:
+  - name: ${service_name_1}
+    kind: Service
+  rules:
+  - matches:
+    - path:
+        type: Exact
+        value: /grpc.testing.TestService/UnaryCall
+    filters:
+      - type: ExtensionRef
+        extensionRef:
+          group: networking.gke.io
+          kind: GCPSessionAffinityFilter
+          name: ${session_affinity_filter_name}
+    backendRefs:
+    - name: ${service_name_2}
+      port: 50051
+...

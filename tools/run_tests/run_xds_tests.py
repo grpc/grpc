@@ -427,7 +427,7 @@ _SPONGE_LOG_NAME = "sponge_log.log"
 _SPONGE_XML_NAME = "sponge_log.xml"
 
 
-def get_client_stats(num_rpcs, timeout_sec):
+def get_client_stats(num_rpcs, timeout_sec, metadata):
     if CLIENT_HOSTS:
         hosts = CLIENT_HOSTS
     else:
@@ -440,6 +440,7 @@ def get_client_stats(num_rpcs, timeout_sec):
             request = messages_pb2.LoadBalancerStatsRequest()
             request.num_rpcs = num_rpcs
             request.timeout_sec = timeout_sec
+            request.metadata = metadata
             rpc_timeout = timeout_sec + _CONNECTION_TIMEOUT_SEC
             logger.debug(
                 "Invoking GetClientStats RPC to %s:%d:", host, args.stats_port

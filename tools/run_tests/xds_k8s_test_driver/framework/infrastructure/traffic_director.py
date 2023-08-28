@@ -26,10 +26,12 @@ logger = logging.getLogger(__name__)
 _ComputeV1 = gcp.compute.ComputeV1
 GcpResource = _ComputeV1.GcpResource
 HealthCheckProtocol = _ComputeV1.HealthCheckProtocol
+SessionAffinityProtocol = _ComputeV1.SessionAffinityProtocol
 ZonalGcpResource = _ComputeV1.ZonalGcpResource
 BackendServiceProtocol = _ComputeV1.BackendServiceProtocol
 _BackendGRPC = BackendServiceProtocol.GRPC
 _HealthCheckGRPC = HealthCheckProtocol.GRPC
+_SessionAffinityHTTP = SessionAffinityProtocol.HTTP
 
 # Network Security
 _NetworkSecurityV1Beta1 = gcp.network_security.NetworkSecurityV1Beta1
@@ -65,6 +67,7 @@ class TrafficDirectorManager:  # pylint: disable=too-many-public-methods
     FORWARDING_RULE_NAME = "forwarding-rule"
     ALTERNATIVE_FORWARDING_RULE_NAME = "forwarding-rule-alt"
     FIREWALL_RULE_NAME = "allow-health-checks"
+    SESSION_AFFINITY_NAME = "session-affinity-policy"
 
     def __init__(
         self,
@@ -198,6 +201,34 @@ class TrafficDirectorManager:  # pylint: disable=too-many-public-methods
         logger.info('Deleting Health Check "%s"', name)
         self.compute.delete_health_check(name)
         self.health_check = None
+
+    def create_session_affinity_policy(
+        self,
+        protocol: Optional[SessionAffinityProtocol] = _SessionAffinityHTTP,
+    ):
+        if self.session_affinity_policy:
+            raise ValueError(
+                f"Session affinity policy {self.session_affinity_policy.name} "
+                "already created, delete it first"
+            )
+        if protocol is None:
+            protocol = _SessionAffinityHTTP
+
+        name = self.make_resource_name(self.SESSION_AFFINITY_NAME)
+        logger.info('Creating %s Session Affinity Policy "%s"', protocol.name, name)
+        resource = self.compute.create_session_affinity_policy(name, protocol)
+        self.session_affinity_policy = resource
+
+    def delete_session_affinity_policy(self, force=False):
+        if force:
+            name = self.make_resource_name(self.SESSION_AFFINITY_NAME)
+        elif self.session_affinity_policy:
+            name = self.session_affinity_policy.name
+        else:
+            return
+        logger.info('Deleting Session Affinity Policy "%s"', name)
+        self.compute.delete_session_affinity_policy(name)
+        self.session_affinity_policy = None
 
     def create_backend_service(
         self,
