@@ -81,8 +81,6 @@ grpc_ssl_credentials::create_security_connector(
     size_t root_len = strlen(pem_root_certs);
     char* default_roots = strcpy(new char[root_len + 1], pem_root_certs);
     config_.pem_root_certs = default_roots;
-    gpr_log(GPR_ERROR, "Could not get default pem root certs.");
-    return nullptr;
     root_store = grpc_core::DefaultSslRootStore::GetRootStore();
   } else {
     config_.pem_root_certs = config_.pem_root_certs;
