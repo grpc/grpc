@@ -1672,10 +1672,22 @@ void XdsClient::CancelResourceWatch(const XdsResourceType* type,
                                     ResourceWatcherInterface* watcher,
                                     bool delay_unsubscription) {
   auto resource_name = ParseXdsResourceName(name, type);
+  // Delete watchers after releasing mutex to avoid deadlock, in case
+  // deleting the watcher triggers another call into XdsClient.
+  std::vector<RefCountedPtr<ResourceWatcherInterface>> watchers_to_delete;
+  auto delete_watcher_from = [&](
+      std::map<ResourceWatcherInterface*,
+               RefCountedPtr<ResourceWatcherInterface>>& map) {
+    auto it = map.find(watcher);
+    if (it != map.end()) {
+      watchers_to_delete.push_back(std::move(it->second));
+      map.erase(it);
+    }
+  };
   MutexLock lock(&mu_);
   // We cannot be sure whether the watcher is in invalid_watchers_ or in
   // authority_state_map_, so we check both, just to be safe.
-  invalid_watchers_.erase(watcher);
+  delete_watcher_from(invalid_watchers_);
   // Find authority.
   if (!resource_name.ok()) return;
   auto authority_it = authority_state_map_.find(resource_name->authority);
@@ -1690,7 +1702,7 @@ void XdsClient::CancelResourceWatch(const XdsResourceType* type,
   if (resource_it == type_map.end()) return;
   ResourceState& resource_state = resource_it->second;
   // Remove watcher.
-  resource_state.watchers.erase(watcher);
+  delete_watcher_from(resource_state.watchers);
   // Clean up empty map entries, if any.
   if (resource_state.watchers.empty()) {
     if (resource_state.ignored_deletion) {
