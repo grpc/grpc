@@ -21,7 +21,10 @@ from typing import Optional
 
 # Needed to load the descriptors so that Any is parsed
 # TODO(sergiitk): replace with import xds_protos when it works
+# isort: off
 import framework.rpc.xds_protos_imports  # pylint: disable=unused-import
+
+# isort: on
 
 from envoy.service.status.v3 import csds_pb2
 from envoy.service.status.v3 import csds_pb2_grpc

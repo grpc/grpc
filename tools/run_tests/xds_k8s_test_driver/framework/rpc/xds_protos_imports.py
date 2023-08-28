@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Envoy protos provided by PyPI package xds-protos"""
-# pylint: disable=unused-import
+# pylint: disable=unused-import,ungrouped-imports
+# isort: off
 
 from envoy.config.health_checker.redis.v2 import redis_pb2
 from envoy.config.listener.v3 import listener_components_pb2
