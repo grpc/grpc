@@ -22,6 +22,7 @@
 
 #include <string.h>
 
+#include <cstddef>
 #include <string>
 #include <utility>
 
@@ -65,8 +66,9 @@ grpc_ssl_credentials::create_security_connector(
     const char* target, grpc_core::ChannelArgs* args) {
   absl::optional<std::string> overridden_target_name =
       args->GetOwnedString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG);
-  tsi_ssl_session_cache* ssl_session_cache =
-      args->GetObject<tsi::SslSessionLRUCache>()->c_ptr();
+  auto* ssl_session_cache = args->GetObject < tsi : SslSessionLRUCache > ();
+  tsi_ssl_session_cache* tsi_ssl_session_cache =
+      ssl_session_cache == nullptr ? nullptr : ssl_session_cache->c_ptr();
 
   const tsi_ssl_root_certs_store* root_store;
   // Use default root certificates.
@@ -88,7 +90,7 @@ grpc_ssl_credentials::create_security_connector(
   }
 
   grpc_security_status status = initialize_client_handshaker_factory(
-      &config_, config_.pem_root_certs, root_store, ssl_session_cache);
+      &config_, config_.pem_root_certs, root_store, tsi_ssl_session_cache);
   if (status != GRPC_SECURITY_OK) {
     return nullptr;
   }
