@@ -20,21 +20,26 @@
 #define GRPC_SRC_CPP_EXT_OTEL_KEY_VALUE_ITERABLE_H
 
 #include <grpc/support/port_platform.h>
+
 #include <stddef.h>
-#include <vector>
+
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "absl/strings/string_view.h"
-#include "opentelemetry/common/key_value_iterable.h"
 #include "absl/types/variant.h"
 #include "opentelemetry/common/attribute_value.h"
+#include "opentelemetry/common/key_value_iterable.h"
 #include "opentelemetry/nostd/function_ref.h"
 #include "opentelemetry/nostd/string_view.h"
 
 namespace grpc {
 namespace internal {
 
+// An iterable class based on opentelemetry::common::KeyValueIterable that
+// allows gRPC to store attribute values as absl::variant<absl::string_view,
+// std::string> and avoiding an allocation in cases where possible.
 class KeyValueIterable : public opentelemetry::common::KeyValueIterable {
  public:
   explicit KeyValueIterable(

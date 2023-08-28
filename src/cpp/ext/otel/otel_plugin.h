@@ -44,7 +44,7 @@ class LabelsInjector {
   virtual ~LabelsInjector() {}
   // Read the incoming initial metadata to get the set of labels to be added to
   // metrics. (Does not include the local labels.)
-  virtual std::vector<std::pair<std::string, std::string>> GetPeerLabels(
+  virtual std::vector<std::pair<absl::string_view, std::string>> GetPeerLabels(
       grpc_metadata_batch* incoming_initial_metadata) = 0;
 
   // Get the local labels to be added to metrics. To be used when the peer

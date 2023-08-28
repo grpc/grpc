@@ -178,12 +178,12 @@ ServiceMeshLabelsInjector::ServiceMeshLabelsInjector(
   // TODO(yashykt): Add mesh_id
 }
 
-std::vector<std::pair<std::string, std::string>>
+std::vector<std::pair<absl::string_view, std::string>>
 ServiceMeshLabelsInjector::GetPeerLabels(
     grpc_metadata_batch* incoming_initial_metadata) {
   auto remote_metadata =
       incoming_initial_metadata->Take(grpc_core::XEnvoyPeerMetadata());
-  std::vector<std::pair<std::string, std::string>> labels;
+  std::vector<std::pair<absl::string_view, std::string>> labels;
   upb::Arena arena;
   google_protobuf_Struct* struct_pb = nullptr;
   if (remote_metadata.has_value()) {
