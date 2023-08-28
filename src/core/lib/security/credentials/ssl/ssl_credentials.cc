@@ -16,20 +16,24 @@
 //
 //
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/security/credentials/ssl/ssl_credentials.h"
 
-#include <grpc/support/port_platform.h>
 #include <string.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
+
 #include <cstddef>
 #include <string>
 #include <utility>
 
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
+
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
@@ -63,7 +67,7 @@ grpc_ssl_credentials::create_security_connector(
     const char* target, grpc_core::ChannelArgs* args) {
   absl::optional<std::string> overridden_target_name =
       args->GetOwnedString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG);
-  auto* ssl_session_cache = args->GetObject < tsi : SslSessionLRUCache > ();
+  auto* ssl_session_cache = args->GetObject<tsi::SslSessionLRUCache>();
   tsi_ssl_session_cache* tsi_ssl_session_cache =
       ssl_session_cache == nullptr ? nullptr : ssl_session_cache->c_ptr();
 
