@@ -228,7 +228,7 @@ ServiceMeshLabelsInjector::GetPeerLabels(
   return labels;
 }
 
-std::vector<std::pair<std::string, std::string>>
+std::vector<std::pair<absl::string_view, absl::string_view>>
 ServiceMeshLabelsInjector::GetLocalLabels() {
   return local_labels_;
 }

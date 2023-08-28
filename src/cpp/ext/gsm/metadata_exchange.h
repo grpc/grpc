@@ -20,16 +20,15 @@
 #define GRPC_SRC_CPP_EXT_GSM_METADATA_EXCHANGE_H
 
 #include <grpc/support/port_platform.h>
-
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "opentelemetry/sdk/common/attribute_utils.h"
-
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/cpp/ext/otel/otel_plugin.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc {
 namespace internal {
@@ -45,14 +44,15 @@ class ServiceMeshLabelsInjector : public LabelsInjector {
 
   // Get the local labels to be added to metrics. To be used when the peer
   // metadata is not available, for example, for started RPCs metric.
-  std::vector<std::pair<std::string, std::string>> GetLocalLabels() override;
+  std::vector<std::pair<absl::string_view, absl::string_view>> GetLocalLabels()
+      override;
 
   // Modify the outgoing initial metadata with metadata information to be sent
   // to the peer.
   void AddLabels(grpc_metadata_batch* outgoing_initial_metadata) override;
 
  private:
-  std::vector<std::pair<std::string, std::string>> local_labels_;
+  std::vector<std::pair<absl::string_view, absl::string_view>> local_labels_;
   grpc_core::Slice serialized_labels_to_send_;
 };
 

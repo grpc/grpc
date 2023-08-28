@@ -16,10 +16,9 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/cpp/ext/otel/otel_server_call_tracer.h"
 
+#include <grpc/support/port_platform.h>
 #include <algorithm>
 #include <initializer_list>
 #include <iterator>
@@ -36,13 +35,14 @@
 #include "absl/time/time.h"
 #include "opentelemetry/context/context.h"
 #include "opentelemetry/metrics/sync_instruments.h"
-
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/cpp/ext/otel/key_value_iterable.h"
 #include "src/cpp/ext/otel/otel_plugin.h"
+#include "absl/types/variant.h"
 
 namespace grpc {
 namespace internal {
@@ -56,7 +56,10 @@ class OpenTelemetryServerCallTracer : public grpc_core::ServerCallTracer {
   OpenTelemetryServerCallTracer() : start_time_(absl::Now()) {
     // We don't have the peer labels at this point.
     if (OTelPluginState().labels_injector != nullptr) {
-      labels_ = OTelPluginState().labels_injector->GetLocalLabels();
+      auto local_labels = OTelPluginState().labels_injector->GetLocalLabels();
+      labels_.insert(labels_.end(),
+                     std::make_move_iterator(local_labels.begin()),
+                     std::make_move_iterator(local_labels.end()));
     }
   }
 
@@ -79,7 +82,8 @@ class OpenTelemetryServerCallTracer : public grpc_core::ServerCallTracer {
   // arguments.
   void RecordSendInitialMetadata(
       grpc_metadata_batch* send_initial_metadata) override {
-    if (OTelPluginState().labels_injector != nullptr) {
+    // Only add labels to outgoing metadata if labels were received from peer.
+    if (OTelPluginState().labels_injector != nullptr && received_peer_labels_) {
       OTelPluginState().labels_injector->AddLabels(send_initial_metadata);
     }
   }
@@ -131,7 +135,10 @@ class OpenTelemetryServerCallTracer : public grpc_core::ServerCallTracer {
  private:
   absl::Time start_time_;
   absl::Duration elapsed_time_;
-  std::vector<std::pair<std::string, std::string>> labels_;
+  std::vector<std::pair<absl::string_view,
+                        absl::variant<absl::string_view, std::string>>>
+      labels_;
+  bool received_peer_labels_ = false;
 };
 
 void OpenTelemetryServerCallTracer::RecordReceivedInitialMetadata(
@@ -148,6 +155,9 @@ void OpenTelemetryServerCallTracer::RecordReceivedInitialMetadata(
   if (OTelPluginState().labels_injector != nullptr) {
     auto peer_labels =
         OTelPluginState().labels_injector->GetPeerLabels(recv_initial_metadata);
+    if (!peer_labels.empty()) {
+      received_peer_labels_ = true;
+    }
     labels_.insert(labels_.end(), std::make_move_iterator(peer_labels.begin()),
                    std::make_move_iterator(peer_labels.end()));
   }
@@ -156,7 +166,7 @@ void OpenTelemetryServerCallTracer::RecordReceivedInitialMetadata(
                                                ? authority->as_string_view()
                                                : "unknown");
   if (OTelPluginState().server.call.started != nullptr) {
-    OTelPluginState().server.call.started->Add(1, labels_);
+    OTelPluginState().server.call.started->Add(1, KeyValueIterable(&labels_));
   }
 }
 
@@ -174,20 +184,20 @@ void OpenTelemetryServerCallTracer::RecordEnd(
                            final_info->final_status)));
   if (OTelPluginState().server.call.duration != nullptr) {
     OTelPluginState().server.call.duration->Record(
-        absl::ToDoubleSeconds(elapsed_time_), labels_,
+        absl::ToDoubleSeconds(elapsed_time_), KeyValueIterable(&labels_),
         opentelemetry::context::Context{});
   }
   if (OTelPluginState().server.call.sent_total_compressed_message_size !=
       nullptr) {
     OTelPluginState().server.call.sent_total_compressed_message_size->Record(
-        final_info->stats.transport_stream_stats.outgoing.data_bytes, labels_,
-        opentelemetry::context::Context{});
+        final_info->stats.transport_stream_stats.outgoing.data_bytes,
+        KeyValueIterable(&labels_), opentelemetry::context::Context{});
   }
   if (OTelPluginState().server.call.rcvd_total_compressed_message_size !=
       nullptr) {
     OTelPluginState().server.call.rcvd_total_compressed_message_size->Record(
-        final_info->stats.transport_stream_stats.incoming.data_bytes, labels_,
-        opentelemetry::context::Context{});
+        final_info->stats.transport_stream_stats.incoming.data_bytes,
+        KeyValueIterable(&labels_), opentelemetry::context::Context{});
   }
 }
 

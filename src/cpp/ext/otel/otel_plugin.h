@@ -49,7 +49,11 @@ class LabelsInjector {
 
   // Get the local labels to be added to metrics. To be used when the peer
   // metadata is not available, for example, for started RPCs metric.
-  virtual std::vector<std::pair<std::string, std::string>> GetLocalLabels() = 0;
+  // It is the responsibility of the implementation to make sure that the
+  // backing store for the absl::string_view remains valid for the lifetime of
+  // gRPC.
+  virtual std::vector<std::pair<absl::string_view, absl::string_view>>
+  GetLocalLabels() = 0;
 
   // Modify the outgoing initial metadata with metadata information to be sent
   // to the peer.

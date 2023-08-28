@@ -36,6 +36,7 @@ grpc_cc_library(
         "otel_server_call_tracer.cc",
     ],
     hdrs = [
+        "key_value_iterable.h",
         "otel_call_tracer.h",
         "otel_client_filter.h",
         "otel_plugin.h",
@@ -50,6 +51,7 @@ grpc_cc_library(
         "absl/strings:str_format",
         "absl/time",
         "absl/types:optional",
+        "absl/types:variant",
         "otel/api",
     ],
     language = "c++",

@@ -16,10 +16,11 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/cpp/ext/otel/otel_client_filter.h"
 
+#include <grpc/support/port_platform.h>
+#include <grpc/support/log.h>
+#include <grpc/support/time.h>
 #include <algorithm>
 #include <functional>
 #include <initializer_list>
@@ -38,10 +39,6 @@
 #include "absl/types/optional.h"
 #include "opentelemetry/context/context.h"
 #include "opentelemetry/metrics/sync_instruments.h"
-
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
-
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
@@ -51,8 +48,10 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/metadata_batch.h"
+#include "src/cpp/ext/otel/key_value_iterable.h"
 #include "src/cpp/ext/otel/otel_call_tracer.h"
 #include "src/cpp/ext/otel/otel_plugin.h"
+#include "absl/types/variant.h"
 
 namespace grpc {
 namespace internal {
@@ -104,12 +103,15 @@ OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
       start_time_(absl::Now()) {
   // We don't have the peer labels at this point.
   if (OTelPluginState().labels_injector != nullptr) {
-    labels_ = OTelPluginState().labels_injector->GetLocalLabels();
+    auto local_labels = OTelPluginState().labels_injector->GetLocalLabels();
+    labels_.insert(labels_.end(), std::make_move_iterator(local_labels.begin()),
+                   std::make_move_iterator(local_labels.end()));
   }
   labels_.emplace_back(OTelMethodKey(), parent_->method_);
   labels_.emplace_back(OTelTargetKey(), parent_->parent_->target());
   if (OTelPluginState().client.attempt.started != nullptr) {
-    OTelPluginState().client.attempt.started->Add(1, labels_);
+    OTelPluginState().client.attempt.started->Add(1,
+                                                  KeyValueIterable(&labels_));
   }
 }
 
@@ -164,8 +166,8 @@ void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
                        absl::StatusCodeToString(status.code()));
   if (OTelPluginState().client.attempt.duration != nullptr) {
     OTelPluginState().client.attempt.duration->Record(
-        absl::ToDoubleSeconds(absl::Now() - start_time_), labels_,
-        opentelemetry::context::Context{});
+        absl::ToDoubleSeconds(absl::Now() - start_time_),
+        KeyValueIterable(&labels_), opentelemetry::context::Context{});
   }
   if (OTelPluginState().client.attempt.sent_total_compressed_message_size !=
       nullptr) {
@@ -173,7 +175,7 @@ void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
         transport_stream_stats != nullptr
             ? transport_stream_stats->outgoing.data_bytes
             : 0,
-        labels_, opentelemetry::context::Context{});
+        KeyValueIterable(&labels_), opentelemetry::context::Context{});
   }
   if (OTelPluginState().client.attempt.rcvd_total_compressed_message_size !=
       nullptr) {
@@ -181,7 +183,7 @@ void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
         transport_stream_stats != nullptr
             ? transport_stream_stats->incoming.data_bytes
             : 0,
-        labels_, opentelemetry::context::Context{});
+        KeyValueIterable(&labels_), opentelemetry::context::Context{});
   }
 }
 
