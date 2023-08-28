@@ -412,7 +412,6 @@ grpc_ssl_channel_security_connector_create(
     grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
     const grpc_ssl_config* config, const char* target_name,
     const char* overridden_target_name,
-    tsi_ssl_session_cache* ssl_session_cache,
     tsi_ssl_client_handshaker_factory* factory) {
   if (config == nullptr || target_name == nullptr) {
     gpr_log(GPR_ERROR, "An ssl channel needs a config and a target name.");

@@ -100,7 +100,6 @@ grpc_ssl_credentials::create_security_connector(
           this->Ref(), std::move(call_creds), &config_, target,
           overridden_target_name.has_value() ? overridden_target_name->c_str()
                                              : nullptr,
-          ssl_session_cache == nullptr ? nullptr : ssl_session_cache,
           client_handshaker_factory_);
   if (sc == nullptr) {
     return sc;
