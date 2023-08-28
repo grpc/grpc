@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from distutils import cygwinccompiler
 import errno
 import os
 import os.path
@@ -190,12 +189,6 @@ if EXTRA_ENV_LINK_ARGS is None:
         EXTRA_ENV_LINK_ARGS += " -lpthread"
         if check_linker_need_libatomic():
             EXTRA_ENV_LINK_ARGS += " -latomic"
-    elif "win32" in sys.platform and sys.version_info < (3, 5):
-        msvcr = cygwinccompiler.get_msvcr()[0]
-        EXTRA_ENV_LINK_ARGS += (
-            " -static-libgcc -static-libstdc++ -mcrtdll={msvcr}"
-            " -static -lshlwapi".format(msvcr=msvcr)
-        )
 
 EXTRA_COMPILE_ARGS = shlex.split(EXTRA_ENV_COMPILE_ARGS)
 EXTRA_LINK_ARGS = shlex.split(EXTRA_ENV_LINK_ARGS)

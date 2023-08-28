@@ -24,7 +24,6 @@ from distutils.unixccompiler import UnixCCompiler
 UnixCCompiler.src_extensions.append(".S")
 del UnixCCompiler
 
-from distutils import cygwinccompiler
 import os
 import os.path
 import pathlib
@@ -290,12 +289,6 @@ if EXTRA_ENV_LINK_ARGS is None:
         EXTRA_ENV_LINK_ARGS += " -lpthread"
         if check_linker_need_libatomic():
             EXTRA_ENV_LINK_ARGS += " -latomic"
-    elif "win32" in sys.platform and sys.version_info < (3, 5):
-        msvcr = cygwinccompiler.get_msvcr()[0]
-        EXTRA_ENV_LINK_ARGS += (
-            " -static-libgcc -static-libstdc++ -mcrtdll={msvcr}"
-            " -static -lshlwapi".format(msvcr=msvcr)
-        )
     if "linux" in sys.platform:
         EXTRA_ENV_LINK_ARGS += " -static-libgcc"
 
