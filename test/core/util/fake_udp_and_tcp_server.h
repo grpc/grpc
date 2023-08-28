@@ -96,6 +96,9 @@ class FakeUdpAndTcpServer {
   static ProcessReadResult CloseSocketUponCloseFromPeer(int bytes_received_size,
                                                         int read_error, int s);
 
+  static ProcessReadResult SendBytesUntilPeerCloses(int bytes_received_size,
+                                                    int read_error, int s);
+
   void ReadFromUdpSocket();
 
   // Run a loop that periodically, every 10 ms:

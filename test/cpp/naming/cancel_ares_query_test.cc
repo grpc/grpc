@@ -473,13 +473,14 @@ TEST_F(CancelDuringAresQuery, TestQueryFailsBecauseTcpServerClosesSocket) {
 
 TEST_F(
     CancelDuringAresQuery,
-    TestQueryTimesOutWithDataInReadBuffer) {
+    TestQueryFailsWithDataInBuffer) {
+  g_grpc_ares_test_only_force_tcp = true;
   grpc_core::testing::SocketUseAfterCloseDetector
       socket_use_after_close_detector;
   grpc_core::testing::FakeUdpAndTcpServer fake_dns_server(
       grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
           kWaitForClientToSendFirstBytes,
-      grpc_core::testing::FakeUdpAndTcpServer::Send1ByteAfterDelay);
+      grpc_core::testing::FakeUdpAndTcpServer::SendBytesUntilPeerCloses);
   grpc_status_code expected_status_code = GRPC_STATUS_UNAVAILABLE;
   // Don't really care about the deadline - we should quickly hit a DNS
   // resolution failure.
@@ -488,6 +489,7 @@ TEST_F(
   TestCancelDuringActiveQuery(
       expected_status_code, "" /* expected error message substring */,
       rpc_deadline, dns_query_timeout_ms, fake_dns_server.port());
+  g_grpc_ares_test_only_force_tcp = false;
 }
 
 }  // namespace
