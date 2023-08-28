@@ -210,36 +210,6 @@ FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer(int bytes_received_size,
   return FakeUdpAndTcpServer::ProcessReadResult::kContinueReading;
 }
 
-FakeUdpAndTcpServer::Send1ByteAfterDelay(
-    FakeUdpAndTcpServer::FakeUdpAndTcpServerPeer* peer, int bytes_received_size, int read_error) {
-  if (bytes_received_size < 0 && !ErrorIsRetryable(read_error)) {
-    gpr_log(GPR_ERROR, "Failed to receive from peer socket: %d. errno: %d", s,
-            read_error);
-    GPR_ASSERT(0);
-  }
-  if (bytes_received_size >= 0) {
-    gpr_log(GPR_DEBUG,
-            "Fake TCP server received %d bytes from peer socket: %d. Close "
-            "the "
-            "connection.",
-            bytes_received_size, peer->fd());
-    if (!bytes_received_.has_value()) {
-      bytes_received_ = absl::Now();
-    }
-  }
-  if (bytes_received_.has_value()) {
-    if (absl::Now() - *bytes_received_ > absl::Seconds(10)) {
-      GPR_ASSERT(total_bytes_sent_ == 0);
-      char buf[1] = {0};
-      total_bytes_sent = send(peer->fd(), buf, 1, 0);
-      if (total_bytes_sent == 1) {
-        return FakeUdpAndTcpServer::ProcessReadResult::kCloseSocket;
-      }
-    }
-  }
-  return FakeUdpAndTcpServer::ProcessReadResult::kContinueReading;
-}
-
 FakeUdpAndTcpServer::FakeUdpAndTcpServerPeer::FakeUdpAndTcpServerPeer(int fd)
     : fd_(fd) {}
 
@@ -312,7 +282,7 @@ void FakeUdpAndTcpServer::RunServerLoop() {
       char buf[100];
       int bytes_received_size = recv(peer->fd(), buf, 100, 0);
       FakeUdpAndTcpServer::ProcessReadResult r =
-          process_read_cb_(peer, bytes_received_size, ERRNO);
+          process_read_cb_(bytes_received_size, ERRNO, peer->fd());
       if (r == FakeUdpAndTcpServer::ProcessReadResult::kCloseSocket) {
         it = peers.erase(it);
       } else {
