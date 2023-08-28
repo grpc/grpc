@@ -25,8 +25,7 @@ UnixCCompiler.src_extensions.append(".S")
 del UnixCCompiler
 
 from distutils import cygwinccompiler
-from distutils import extension as _extension
-from distutils import util
+from setuptools import Extension
 import os
 import os.path
 import pathlib
@@ -411,7 +410,7 @@ if BUILD_WITH_BORING_SSL_ASM and not BUILD_WITH_SYSTEM_OPENSSL:
     boringssl_asm_platform = (
         BUILD_OVERRIDE_BORING_SSL_ASM_PLATFORM
         if BUILD_OVERRIDE_BORING_SSL_ASM_PLATFORM
-        else util.get_platform()
+        else sysconfig.get_platform()
     )
     # BoringSSL's gas-compatible assembly files are all internally conditioned
     # by the preprocessor. Provided the platform has a gas-compatible assembler
@@ -490,7 +489,7 @@ if "darwin" in sys.platform:
             os.environ["_PYTHON_HOST_PLATFORM"] = re.sub(
                 r"macosx-[0-9]+\.[0-9]+-(.+)",
                 r"macosx-10.10-\1",
-                util.get_platform(),
+                sysconfig.get_platform(),
             )
 
 
@@ -513,7 +512,7 @@ def cython_extensions_and_necessity():
         core_c_files = list(CORE_C_FILES)
         extra_objects = []
     extensions = [
-        _extension.Extension(
+        Extension(
             name=module_name,
             sources=(
                 [module_file]

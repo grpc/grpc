@@ -13,8 +13,7 @@
 # limitations under the License.
 
 from distutils import cygwinccompiler
-from distutils import extension
-from distutils import util
+from setuptools import Extension
 import errno
 import os
 import os.path
@@ -241,7 +240,7 @@ if "darwin" in sys.platform:
         os.environ["_PYTHON_HOST_PLATFORM"] = re.sub(
             r"macosx-[0-9]+\.[0-9]+-(.+)",
             r"macosx-10.10-\1",
-            util.get_platform(),
+            sysconfig.get_platform(),
         )
 
 
@@ -281,7 +280,7 @@ def extension_modules():
         os.path.join("grpc_root", "src", "compiler", "proto_parser_helper.cc"),
     ] + CC_FILES
 
-    plugin_ext = extension.Extension(
+    plugin_ext = Extension(
         name="grpc_tools._protoc_compiler",
         sources=plugin_sources,
         include_dirs=[
