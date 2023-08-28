@@ -366,10 +366,7 @@ static void on_readable(void* arg, grpc_error_handle error) {
   GRPC_CARES_TRACE_LOG("request:%p readable on %s", fdn->ev_driver->request,
                        fdn->grpc_polled_fd->GetName());
   if (error.ok() && !ev_driver->shutting_down) {
-    do {
-      gpr_log(GPR_INFO, "apolcyn on_readable shutdown: %d", ev_driver->shutting_down);
-      ares_process_fd(ev_driver->channel, as, ARES_SOCKET_BAD);
-    } while (fdn->grpc_polled_fd->IsFdStillReadableLocked());
+    ares_process_fd(ev_driver->channel, as, ARES_SOCKET_BAD);
   } else {
     // If error is not absl::OkStatus() or the resolution was cancelled, it
     // means the fd has been shutdown or timed out. The pending lookups made on
@@ -411,6 +408,7 @@ static void on_writable(void* arg, grpc_error_handle error) {
 // driver_closure with these filedescriptors.
 static void grpc_ares_notify_on_event_locked(grpc_ares_ev_driver* ev_driver)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(&grpc_ares_request::mu) {
+  gpr_log(GPR_INFO, "apolcyn notify on event locked shutting down: %d", ev_driver->shutting_down);
   fd_node* new_list = nullptr;
   if (!ev_driver->shutting_down) {
     ares_socket_t socks[ARES_GETSOCK_MAXNUM];
@@ -439,12 +437,21 @@ static void grpc_ares_notify_on_event_locked(grpc_ares_ev_driver* ev_driver)
         if (ARES_GETSOCK_READABLE(socks_bitmask, i) &&
             !fdn->readable_registered) {
           grpc_ares_ev_driver_ref(ev_driver);
-          GRPC_CARES_TRACE_LOG("request:%p notify read on: %s",
-                               ev_driver->request,
-                               fdn->grpc_polled_fd->GetName());
           GRPC_CLOSURE_INIT(&fdn->read_closure, on_readable, fdn,
                             grpc_schedule_on_exec_ctx);
-          fdn->grpc_polled_fd->RegisterForOnReadableLocked(&fdn->read_closure);
+          if (fdn->grpc_polled_fd->IsFdStillReadableLocked()) {
+            GRPC_CARES_TRACE_LOG("request:%p schedule direct read on: %s",
+                                 ev_driver->request,
+                                 fdn->grpc_polled_fd->GetName());
+            grpc_core::ExecCtx::Run(DEBUG_LOCATION, &fdn->read_closure,
+                                    absl::OkStatus());
+          } else {
+            GRPC_CARES_TRACE_LOG("request:%p notify read on: %s",
+                                 ev_driver->request,
+                                 fdn->grpc_polled_fd->GetName());
+            fdn->grpc_polled_fd->RegisterForOnReadableLocked(
+                &fdn->read_closure);
+          }
           fdn->readable_registered = true;
         }
         // Register write_closure if the socket is writable and write_closure
@@ -606,6 +613,7 @@ static void grpc_ares_request_unref_locked(grpc_ares_request* r)
 void grpc_ares_complete_request_locked(grpc_ares_request* r)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(r->mu) {
   // Invoke on_done callback and destroy the request
+  gpr_log(GPR_DEBUG, "apolcyn complete request"); 
   r->ev_driver = nullptr;
   if (r->addresses_out != nullptr && *r->addresses_out != nullptr) {
     grpc_cares_wrapper_address_sorting_sort(r, r->addresses_out->get());
