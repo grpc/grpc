@@ -443,7 +443,7 @@ static void grpc_ares_notify_on_event_locked(grpc_ares_ev_driver* ev_driver)
                                  ev_driver->request,
                                  fdn->grpc_polled_fd->GetName());
             grpc_core::ExecCtx::Run(DEBUG_LOCATION, &fdn->read_closure,
-                                    GRPC_ERROR_NONE);
+                                    absl::OkStatus());
           } else {
             GRPC_CARES_TRACE_LOG("request:%p notify read on: %s",
                                  ev_driver->request,
