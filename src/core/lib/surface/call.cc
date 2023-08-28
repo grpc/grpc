@@ -1120,7 +1120,10 @@ bool FilterStackCall::PrepareApplicationMetadata(size_t count,
 namespace {
 class PublishToAppEncoder {
  public:
-  explicit PublishToAppEncoder(grpc_metadata_array* dest) : dest_(dest) {}
+  explicit PublishToAppEncoder(grpc_metadata_array* dest,
+                               const grpc_metadata_batch* encoding,
+                               bool is_client)
+      : dest_(dest), encoding_(encoding), is_client_(is_client) {}
 
   void Encode(const Slice& key, const Slice& value) {
     Append(key.c_slice(), value.c_slice());
@@ -1163,12 +1166,20 @@ class PublishToAppEncoder {
   }
 
   void Append(grpc_slice key, grpc_slice value) {
+    if (dest_->count == dest_->capacity) {
+      Crash(absl::StrCat(
+          "Too many metadata entries: capacity=", dest_->capacity, " on ",
+          is_client_ ? "client" : "server", " encoding ", encoding_->count(),
+          " elements: ", encoding_->DebugString().c_str()));
+    }
     auto* mdusr = &dest_->metadata[dest_->count++];
     mdusr->key = key;
     mdusr->value = value;
   }
 
   grpc_metadata_array* const dest_;
+  const grpc_metadata_batch* const encoding_;
+  const bool is_client_;
 };
 }  // namespace
 
@@ -1185,7 +1196,7 @@ void FilterStackCall::PublishAppMetadata(grpc_metadata_batch* b,
     dest->metadata = static_cast<grpc_metadata*>(
         gpr_realloc(dest->metadata, sizeof(grpc_metadata) * dest->capacity));
   }
-  PublishToAppEncoder encoder(dest);
+  PublishToAppEncoder encoder(dest, b, is_client());
   b->Encode(&encoder);
 }
 
@@ -2652,7 +2663,8 @@ ServerCallContext* CallContext::server_call_context() {
 // PublishMetadataArray
 
 namespace {
-void PublishMetadataArray(grpc_metadata_batch* md, grpc_metadata_array* array) {
+void PublishMetadataArray(grpc_metadata_batch* md, grpc_metadata_array* array,
+                          bool is_client) {
   const auto md_count = md->count();
   if (md_count > array->capacity) {
     array->capacity =
@@ -2660,7 +2672,7 @@ void PublishMetadataArray(grpc_metadata_batch* md, grpc_metadata_array* array) {
     array->metadata = static_cast<grpc_metadata*>(
         gpr_realloc(array->metadata, sizeof(grpc_metadata) * array->capacity));
   }
-  PublishToAppEncoder encoder(array);
+  PublishToAppEncoder encoder(array, md, is_client);
   md->Encode(&encoder);
 }
 }  // namespace
@@ -2968,7 +2980,7 @@ void ClientPromiseBasedCall::StartRecvInitialMetadata(
           metadata = arena()->MakePooled<ServerMetadata>(arena());
         }
         ProcessIncomingInitialMetadata(*metadata);
-        PublishMetadataArray(metadata.get(), array);
+        PublishMetadataArray(metadata.get(), array, true);
         recv_initial_metadata_ = std::move(metadata);
         FinishOpOnCompletion(&completion, PendingOp::kReceiveInitialMetadata);
       });
@@ -3042,8 +3054,8 @@ void ClientPromiseBasedCall::StartRecvStatusOnClient(
           *op_args.error_string =
               gpr_strdup(MakeErrorString(trailing_metadata.get()).c_str());
         }
-        PublishMetadataArray(trailing_metadata.get(),
-                             op_args.trailing_metadata);
+        PublishMetadataArray(trailing_metadata.get(), op_args.trailing_metadata,
+                             true);
         recv_trailing_metadata_ = std::move(trailing_metadata);
         FinishOpOnCompletion(&completion, PendingOp::kReceiveStatusOnClient);
       });
@@ -3484,7 +3496,7 @@ ServerCallContext::MakeTopOfServerCallPromise(
   call_->set_send_deadline(call_->deadline());
   call_->ProcessIncomingInitialMetadata(*call_->client_initial_metadata_);
   PublishMetadataArray(call_->client_initial_metadata_.get(),
-                       publish_initial_metadata);
+                       publish_initial_metadata, false);
   call_->ExternalRef();
   publish(call_->c_ptr());
   return Seq(call_->server_to_client_messages_->AwaitClosed(),
