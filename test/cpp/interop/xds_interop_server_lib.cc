@@ -137,11 +137,11 @@ class XdsUpdateHealthServiceImpl : public XdsUpdateHealthService::Service {
                          const HookRequest* request,
                          HookResponse* /* response */) override {
     switch (request->command()) {
-      case HookRequestCommand::START:
+      case HookRequest::START:
         return pre_stop_hook_server_->Start(request->server_port(), 30 /* s */);
-      case HookRequestCommand::STOP:
+      case HookRequest::STOP:
         return pre_stop_hook_server_->Stop();
-      case HookRequestCommand::RETURN:
+      case HookRequest::RETURN:
         pre_stop_hook_server_->Return(
             static_cast<StatusCode>(request->grpc_code_to_return()),
             request->grpc_status_description());
