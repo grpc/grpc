@@ -3432,10 +3432,9 @@ ClientChannel::PromiseBasedLoadBalancedCall::MakeCallPromise(
       });
   client_initial_metadata_ = std::move(call_args.client_initial_metadata);
   return OnCancel(
-      Seq(TrySeq(
+      Map(TrySeq(
               // LB pick.
-              [this, call_args = std::move(call_args)]() mutable
-              -> Poll<absl::StatusOr<CallArgs>> {
+              [this]() -> Poll<absl::Status> {
                 auto result = PickSubchannel(was_queued_);
                 if (GRPC_TRACE_FLAG_ENABLED(
                         grpc_client_channel_lb_call_trace)) {
@@ -3446,16 +3445,13 @@ ClientChannel::PromiseBasedLoadBalancedCall::MakeCallPromise(
                           result.has_value() ? result->ToString().c_str()
                                              : "Pending");
                 }
-                if (!result.has_value()) return Pending{};
-                if (!result->ok()) return *result;
+                if (result == absl::nullopt) return Pending{};
+                return std::move(*result);
+              },
+              [this, call_args = std::move(call_args)]() mutable
+              -> ArenaPromise<ServerMetadataHandle> {
                 call_args.client_initial_metadata =
                     std::move(client_initial_metadata_);
-                return std::move(call_args);
-              },
-              // Start call on subchannel.
-              // TODO(roth): Is there a way to combine this with the
-              // lambda above?
-              [this](CallArgs call_args) {
                 return connected_subchannel()->MakeCallPromise(
                     std::move(call_args));
               }),
