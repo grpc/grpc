@@ -211,11 +211,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "goku"  # @unused
+g_stands_for = "generative"  # @unused
 
-core_version = "34.0.0"  # @unused
+core_version = "35.0.0"  # @unused
 
-version = "1.58.0-dev"  # @unused
+version = "1.59.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -1015,7 +1015,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "envoy_config_rbac_upb",
-        "google_type_expr_upb",
+        "google_api_expr_v1alpha1_syntax_upb",
         "gpr",
         "grpc_mock_cel",
         "//src/core:grpc_authorization_base",
@@ -1534,7 +1534,6 @@ grpc_cc_library(
         "//src/core:arena",
         "//src/core:arena_promise",
         "//src/core:atomic_utils",
-        "//src/core:basic_seq",
         "//src/core:bitset",
         "//src/core:cancel_callback",
         "//src/core:channel_args",
@@ -1586,6 +1585,7 @@ grpc_cc_library(
         "//src/core:promise_status",
         "//src/core:race",
         "//src/core:ref_counted",
+        "//src/core:ref_counted_string",
         "//src/core:resolved_address",
         "//src/core:resource_quota",
         "//src/core:resource_quota_trace",
@@ -1799,7 +1799,6 @@ grpc_cc_library(
         "//src/core:activity",
         "//src/core:arena",
         "//src/core:arena_promise",
-        "//src/core:basic_seq",
         "//src/core:channel_args",
         "//src/core:channel_fwd",
         "//src/core:closure",
@@ -2030,6 +2029,7 @@ grpc_cc_library(
         "//src/core:channel_args",
         "//src/core:channel_init",
         "//src/core:closure",
+        "//src/core:default_event_engine",
         "//src/core:error",
         "//src/core:gpr_atm",
         "//src/core:gpr_manual_constructor",
@@ -2370,7 +2370,6 @@ grpc_cc_library(
         "//src/core:channel_stack_type",
         "//src/core:context",
         "//src/core:error",
-        "//src/core:experiments",
         "//src/core:slice",
         "//src/core:slice_buffer",
         "//src/core:slice_refcount",
@@ -3689,7 +3688,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "google_type_expr_upb",
+        "google_api_expr_v1alpha1_syntax_upb",
         "gpr_public_hdrs",
     ],
 )
@@ -3729,8 +3728,30 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "chttp2_frame",
+    srcs = [
+        "//src/core:ext/transport/chttp2/transport/frame.cc",
+    ],
     hdrs = [
         "//src/core:ext/transport/chttp2/transport/frame.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/types:span",
+        "absl/types:variant",
+    ],
+    deps = [
+        "gpr",
+        "//src/core:slice",
+        "//src/core:slice_buffer",
+    ],
+)
+
+grpc_cc_library(
+    name = "chttp2_legacy_frame",
+    hdrs = [
+        "//src/core:ext/transport/chttp2/transport/legacy_frame.h",
     ],
     deps = ["gpr"],
 )
@@ -3816,7 +3837,7 @@ grpc_cc_library(
         "absl/types:variant",
     ],
     deps = [
-        "chttp2_frame",
+        "chttp2_legacy_frame",
         "gpr",
         "gpr_platform",
         "grpc_base",
@@ -3847,7 +3868,7 @@ grpc_cc_library(
     external_deps = ["absl/strings"],
     deps = [
         "chttp2_bin_encoder",
-        "chttp2_frame",
+        "chttp2_legacy_frame",
         "chttp2_varint",
         "gpr",
         "gpr_platform",
@@ -3942,7 +3963,7 @@ grpc_cc_library(
     deps = [
         "channel_arg_names",
         "chttp2_context_list_entry",
-        "chttp2_frame",
+        "chttp2_legacy_frame",
         "chttp2_varint",
         "debug_location",
         "exec_ctx",
@@ -4007,6 +4028,26 @@ grpc_cc_library(
         "gpr_platform",
         "grpc++_public_hdrs",
         "grpc_public_hdrs",
+    ],
+)
+
+grpc_cc_library(
+    name = "subprocess",
+    srcs = [
+        "//src/core:lib/gpr/subprocess_posix.cc",
+        "//src/core:lib/gpr/subprocess_windows.cc",
+    ],
+    hdrs = [
+        "//src/core:lib/gpr/subprocess.h",
+    ],
+    external_deps = [
+        "absl/strings",
+        "absl/types:span",
+    ],
+    deps = [
+        "gpr",
+        "//src/core:strerror",
+        "//src/core:tchar",
     ],
 )
 
@@ -4254,8 +4295,8 @@ grpc_upb_proto_reflection_library(
 )
 
 grpc_upb_proto_library(
-    name = "google_type_expr_upb",
-    deps = ["@com_google_googleapis//google/type:expr_proto"],
+    name = "google_api_expr_v1alpha1_syntax_upb",
+    deps = ["@com_google_googleapis//google/api/expr/v1alpha1:syntax_proto"],
 )
 
 grpc_upb_proto_library(

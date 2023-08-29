@@ -433,13 +433,15 @@ class ClientLoggingFilter final : public ChannelFilter {
                   md.get());
               return md;
             }),
-        [calld]() {
+        // TODO(yashykt/ctiller): GetContext<grpc_call_context_element> is not
+        // valid for the cancellation function requiring us to capture it here.
+        // This ought to be easy to fix once client side promises are completely
+        // rolled out.
+        [calld, ctx = GetContext<grpc_call_context_element>()]() {
           calld->LogCancel(
               /*is_client=*/true,
               static_cast<CallTracerAnnotationInterface*>(
-                  GetContext<grpc_call_context_element>()
-                      [GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE]
-                          .value));
+                  ctx[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE].value));
         });
   }
 

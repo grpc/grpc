@@ -111,7 +111,6 @@ buildConfigs() {
         --prefix="${LOAD_TEST_PREFIX}" -u "${UNIQUE_IDENTIFIER}" -u "${pool}" \
         -a pool="${pool}" --category=scalable \
         --allow_client_language=c++ --allow_server_language=c++ \
-        --allow_server_language=node \
         -o "loadtest_with_prebuilt_workers_${pool}.yaml"
 }
 
@@ -130,10 +129,10 @@ configLangArgs8core+=( -l dotnet )
 configLangArgs32core+=( -l dotnet )
 runnerLangArgs+=( -l "dotnet:${GRPC_DOTNET_REPO}:${GRPC_DOTNET_COMMIT}" )
 
-# go
-configLangArgs8core+=( -l go )
-configLangArgs32core+=( -l go )
-runnerLangArgs+=( -l "go:${GRPC_GO_REPO}:${GRPC_GO_COMMIT}" )
+# # go
+# configLangArgs8core+=( -l go )
+# configLangArgs32core+=( -l go )
+# runnerLangArgs+=( -l "go:${GRPC_GO_REPO}:${GRPC_GO_COMMIT}" )
 
 # java
 configLangArgs8core+=( -l java )
@@ -141,7 +140,7 @@ configLangArgs32core+=( -l java )
 runnerLangArgs+=( -l "java:${GRPC_JAVA_REPO}:${GRPC_JAVA_COMMIT}" )
 
 # node
-configLangArgs8core+=( -l node_purejs )  # 8-core only.
+configLangArgs8core+=( -l node )  # 8-core only.
 runnerLangArgs+=( -l "node:${GRPC_NODE_REPO}:${GRPC_NODE_COMMIT}" )
 
 # python

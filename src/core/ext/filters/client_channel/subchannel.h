@@ -176,8 +176,14 @@ class Subchannel : public DualRefCounted<Subchannel> {
     // Invoked whenever the subchannel's connectivity state changes.
     // There will be only one invocation of this method on a given watcher
     // instance at any given time.
-    virtual void OnConnectivityStateChange(grpc_connectivity_state state,
-                                           const absl::Status& status) = 0;
+    // A ref to the watcher is passed in here so that the implementation
+    // can unref it in the appropriate synchronization context (e.g.,
+    // inside a WorkSerializer).
+    // TODO(roth): Figure out a cleaner way to guarantee that the ref is
+    // released in the right context.
+    virtual void OnConnectivityStateChange(
+        RefCountedPtr<ConnectivityStateWatcherInterface> self,
+        grpc_connectivity_state state, const absl::Status& status) = 0;
 
     virtual grpc_pollset_set* interested_parties() = 0;
   };

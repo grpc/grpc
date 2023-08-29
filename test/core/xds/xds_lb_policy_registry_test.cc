@@ -18,8 +18,6 @@
 
 #include "src/core/ext/xds/xds_lb_policy_registry.h"
 
-#include <stdint.h>
-
 #include <string>
 
 #include <google/protobuf/any.pb.h>
@@ -53,7 +51,6 @@
 #include "src/proto/grpc/testing/xds/v3/round_robin.pb.h"
 #include "src/proto/grpc/testing/xds/v3/typed_struct.pb.h"
 #include "src/proto/grpc/testing/xds/v3/wrr_locality.pb.h"
-#include "test/core/util/scoped_env_var.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
@@ -450,7 +447,6 @@ TEST(WrrLocality, UnsupportedChildPolicyTypeSkipped) {
 //
 
 TEST(PickFirst, NoShuffle) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_PICKFIRST_LB_CONFIG");
   LoadBalancingPolicyProto policy;
   auto* lb_policy = policy.add_policies();
   PickFirst pick_first;
@@ -463,7 +459,6 @@ TEST(PickFirst, NoShuffle) {
 }
 
 TEST(PickFirst, Shuffle) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_PICKFIRST_LB_CONFIG");
   LoadBalancingPolicyProto policy;
   auto* lb_policy = policy.add_policies();
   PickFirst pick_first;
@@ -476,7 +471,6 @@ TEST(PickFirst, Shuffle) {
 }
 
 TEST(PickFirst, ShuffleOmitted) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_PICKFIRST_LB_CONFIG");
   LoadBalancingPolicyProto policy;
   auto* lb_policy = policy.add_policies();
   lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
@@ -484,15 +478,6 @@ TEST(PickFirst, ShuffleOmitted) {
   auto result = ConvertXdsPolicy(policy);
   ASSERT_TRUE(result.ok()) << result.status();
   EXPECT_EQ(*result, "{\"pick_first\":{\"shuffleAddressList\":false}}");
-}
-
-TEST(PickFirst, EnvVarDisabled) {
-  LoadBalancingPolicyProto policy;
-  auto* lb_policy = policy.add_policies();
-  lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
-      PickFirst());
-  auto result = ConvertXdsPolicy(policy);
-  ASSERT_FALSE(result.ok());
 }
 
 //

@@ -681,7 +681,12 @@ absl::Status PriorityLb::ChildPriority::UpdateLocked(
   UpdateArgs update_args;
   update_args.config = std::move(config);
   if (priority_policy_->addresses_.ok()) {
-    update_args.addresses = (*priority_policy_->addresses_)[name_];
+    auto it = priority_policy_->addresses_->find(name_);
+    if (it == priority_policy_->addresses_->end()) {
+      update_args.addresses.emplace();
+    } else {
+      update_args.addresses = it->second;
+    }
   } else {
     update_args.addresses = priority_policy_->addresses_.status();
   }

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package", "grpc_py_binary")
 load("//test/cpp/qps:qps_benchmark_script.bzl", "json_run_localhost_batch", "qps_json_driver_batch")
 load("//bazel:custom_exec_properties.bzl", "LARGE_MACHINE")
 
@@ -211,6 +211,29 @@ grpc_cc_binary(
         ":qps_worker_impl",
         "//:grpc++",
         "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_config",
+        "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_py_binary(
+    name = "scenario_runner",
+    testonly = True,
+    srcs = ["scenario_runner.py"],
+    data = ["scenario_runner_cc"],
+    python_version = "PY3",
+)
+
+grpc_cc_binary(
+    name = "scenario_runner_cc",
+    srcs = ["scenario_runner.cc"],
+    external_deps = [
+        "absl/flags:flag",
+    ],
+    deps = [
+        ":benchmark_config",
+        ":driver_impl",
+        "//:grpc++",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
     ],

@@ -19,6 +19,8 @@
 #include <thread>
 
 #include "absl/status/status.h"
+#include "absl/strings/str_format.h"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 #include <grpc/event_engine/event_engine.h>
@@ -78,6 +80,215 @@ TEST(CFEventEngineTest, TestConnectionCancelled) {
 
   cf_engine->CancelConnect(conn_handle);
   client_signal.WaitForNotification();
+}
+
+namespace {
+std::vector<std::string> ResolvedAddressesToStrings(
+    const std::vector<EventEngine::ResolvedAddress> addresses) {
+  std::vector<std::string> ip_strings;
+  std::transform(addresses.cbegin(), addresses.cend(),
+                 std::back_inserter(ip_strings), [](auto const& address) {
+                   return ResolvedAddressToString(address).value_or("ERROR");
+                 });
+  return ip_strings;
+}
+}  // namespace
+
+TEST(CFEventEngineTest, TestCreateDNSResolver) {
+  grpc_core::MemoryQuota memory_quota("cf_engine_test");
+  auto cf_engine = std::make_shared<CFEventEngine>();
+
+  EXPECT_TRUE(cf_engine->GetDNSResolver({}).status().ok());
+  EXPECT_TRUE(cf_engine->GetDNSResolver({.dns_server = ""}).status().ok());
+  EXPECT_EQ(
+      cf_engine->GetDNSResolver({.dns_server = "8.8.8.8"}).status().code(),
+      absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(
+      cf_engine->GetDNSResolver({.dns_server = "8.8.8.8:53"}).status().code(),
+      absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(
+      cf_engine->GetDNSResolver({.dns_server = "invalid"}).status().code(),
+      absl::StatusCode::kInvalidArgument);
+}
+
+TEST(CFEventEngineTest, TestResolveLocalhost) {
+  grpc_core::Notification resolve_signal;
+
+  auto cf_engine = std::make_shared<CFEventEngine>();
+  auto dns_resolver = cf_engine->GetDNSResolver({});
+
+  dns_resolver.value()->LookupHostname(
+      [&resolve_signal](auto result) {
+        EXPECT_TRUE(result.status().ok());
+        EXPECT_THAT(ResolvedAddressesToStrings(result.value()),
+                    testing::UnorderedElementsAre("127.0.0.1:80", "[::1]:80"));
+
+        resolve_signal.Notify();
+      },
+      "localhost", "80");
+
+  resolve_signal.WaitForNotification();
+}
+
+TEST(CFEventEngineTest, TestResolveRemote) {
+  grpc_core::Notification resolve_signal;
+
+  auto cf_engine = std::make_shared<CFEventEngine>();
+  auto dns_resolver = cf_engine->GetDNSResolver({});
+
+  dns_resolver.value()->LookupHostname(
+      [&resolve_signal](auto result) {
+        EXPECT_TRUE(result.status().ok());
+        EXPECT_THAT(ResolvedAddressesToStrings(result.value()),
+                    testing::UnorderedElementsAre("127.0.0.1:80", "[::1]:80"));
+
+        resolve_signal.Notify();
+      },
+      "localtest.me:80", "443");
+
+  resolve_signal.WaitForNotification();
+}
+
+TEST(CFEventEngineTest, TestResolveIPv4Remote) {
+  grpc_core::Notification resolve_signal;
+
+  auto cf_engine = std::make_shared<CFEventEngine>();
+  auto dns_resolver = cf_engine->GetDNSResolver({});
+
+  dns_resolver.value()->LookupHostname(
+      [&resolve_signal](auto result) {
+        EXPECT_TRUE(result.status().ok());
+        EXPECT_THAT(ResolvedAddressesToStrings(result.value()),
+                    testing::IsSubsetOf(
+                        {"1.2.3.4:80", "[64:ff9b::102:304]:80" /*NAT64*/}));
+
+        resolve_signal.Notify();
+      },
+      "1.2.3.4.nip.io:80", "");
+
+  resolve_signal.WaitForNotification();
+}
+
+TEST(CFEventEngineTest, TestResolveIPv6Remote) {
+  grpc_core::Notification resolve_signal;
+
+  auto cf_engine = std::make_shared<CFEventEngine>();
+  auto dns_resolver = cf_engine->GetDNSResolver({});
+
+  dns_resolver.value()->LookupHostname(
+      [&resolve_signal](auto result) {
+        EXPECT_TRUE(result.status().ok());
+        EXPECT_THAT(
+            ResolvedAddressesToStrings(result.value()),
+            testing::UnorderedElementsAre("[2607:f8b0:400a:801::1002]:80"));
+
+        resolve_signal.Notify();
+      },
+      "2607-f8b0-400a-801--1002.sslip.io.", "80");
+
+  resolve_signal.WaitForNotification();
+}
+
+TEST(CFEventEngineTest, TestResolveIPv4Literal) {
+  grpc_core::Notification resolve_signal;
+
+  auto cf_engine = std::make_shared<CFEventEngine>();
+  auto dns_resolver = cf_engine->GetDNSResolver({});
+
+  dns_resolver.value()->LookupHostname(
+      [&resolve_signal](auto result) {
+        EXPECT_TRUE(result.status().ok());
+        EXPECT_THAT(ResolvedAddressesToStrings(result.value()),
+                    testing::UnorderedElementsAre("1.2.3.4:443"));
+
+        resolve_signal.Notify();
+      },
+      "1.2.3.4", "https");
+
+  resolve_signal.WaitForNotification();
+}
+
+TEST(CFEventEngineTest, TestResolveIPv6Literal) {
+  grpc_core::Notification resolve_signal;
+
+  auto cf_engine = std::make_shared<CFEventEngine>();
+  auto dns_resolver = cf_engine->GetDNSResolver({});
+
+  dns_resolver.value()->LookupHostname(
+      [&resolve_signal](auto result) {
+        EXPECT_TRUE(result.status().ok());
+        EXPECT_THAT(
+            ResolvedAddressesToStrings(result.value()),
+            testing::UnorderedElementsAre("[2607:f8b0:400a:801::1002]:443"));
+
+        resolve_signal.Notify();
+      },
+      "[2607:f8b0:400a:801::1002]", "443");
+
+  resolve_signal.WaitForNotification();
+}
+
+TEST(CFEventEngineTest, TestResolveNoRecord) {
+  grpc_core::Notification resolve_signal;
+  auto cf_engine = std::make_shared<CFEventEngine>();
+  auto dns_resolver = std::move(cf_engine->GetDNSResolver({})).value();
+
+  dns_resolver->LookupHostname(
+      [&resolve_signal](auto result) {
+        EXPECT_EQ(result.status().code(), absl::StatusCode::kNotFound);
+
+        resolve_signal.Notify();
+      },
+      "nonexisting-target.dns-test.event-engine.", "443");
+
+  resolve_signal.WaitForNotification();
+}
+
+TEST(CFEventEngineTest, TestResolveCanceled) {
+  grpc_core::Notification resolve_signal;
+  auto cf_engine = std::make_shared<CFEventEngine>();
+  auto dns_resolver = std::move(cf_engine->GetDNSResolver({})).value();
+
+  dns_resolver->LookupHostname(
+      [&resolve_signal](auto result) {
+        // query may have already finished before canceling, only verity the
+        // code if status is not ok
+        if (!result.status().ok()) {
+          EXPECT_EQ(result.status().code(), absl::StatusCode::kCancelled);
+        }
+
+        resolve_signal.Notify();
+      },
+      "dont-care-since-wont-be-resolved.localtest.me", "443");
+
+  dns_resolver.reset();
+  resolve_signal.WaitForNotification();
+}
+
+TEST(CFEventEngineTest, TestResolveMany) {
+  std::atomic<int> times{10};
+  grpc_core::Notification resolve_signal;
+  auto cf_engine = std::make_shared<CFEventEngine>();
+  auto dns_resolver = std::move(cf_engine->GetDNSResolver({})).value();
+
+  for (int i = times; i >= 1; --i) {
+    dns_resolver->LookupHostname(
+        [&resolve_signal, &times, i](auto result) {
+          EXPECT_TRUE(result.status().ok());
+          EXPECT_THAT(
+              ResolvedAddressesToStrings(result.value()),
+              testing::IsSubsetOf(
+                  {absl::StrFormat("100.0.0.%d:443", i),
+                   absl::StrFormat("[64:ff9b::6400:%x]:443", i) /*NAT64*/}));
+
+          if (--times == 0) {
+            resolve_signal.Notify();
+          }
+        },
+        absl::StrFormat("100.0.0.%d.nip.io", i), "443");
+  }
+
+  resolve_signal.WaitForNotification();
 }
 
 }  // namespace experimental

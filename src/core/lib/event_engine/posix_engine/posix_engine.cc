@@ -475,6 +475,10 @@ void PosixEventEngine::Run(EventEngine::Closure* closure) {
 
 EventEngine::TaskHandle PosixEventEngine::RunAfterInternal(
     Duration when, absl::AnyInvocable<void()> cb) {
+  if (when <= Duration::zero()) {
+    Run(std::move(cb));
+    return TaskHandle::kInvalid;
+  }
   auto when_ts = ToTimestamp(timer_manager_.Now(), when);
   auto* cd = new ClosureData;
   cd->cb = std::move(cb);

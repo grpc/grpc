@@ -133,11 +133,6 @@ def _cc_library_func(ctx, name, hdrs, srcs, copts, includes, dep_ccinfos):
         unsupported_features = ctx.disabled_features,
     )
 
-    blaze_only_args = {}
-
-    if _is_google3:
-        blaze_only_args["grep_includes"] = ctx.file._grep_includes
-
     (compilation_context, compilation_outputs) = cc_common.compile(
         actions = ctx.actions,
         feature_configuration = feature_configuration,
@@ -148,7 +143,6 @@ def _cc_library_func(ctx, name, hdrs, srcs, copts, includes, dep_ccinfos):
         public_hdrs = hdrs,
         user_compile_flags = copts,
         compilation_contexts = compilation_contexts,
-        **blaze_only_args
     )
 
     # buildifier: disable=unused-variable
@@ -160,7 +154,6 @@ def _cc_library_func(ctx, name, hdrs, srcs, copts, includes, dep_ccinfos):
         compilation_outputs = compilation_outputs,
         linking_contexts = linking_contexts,
         disallow_dynamic_library = cc_common.is_enabled(feature_configuration = feature_configuration, feature_name = "targets_windows"),
-        **blaze_only_args
     )
 
     return CcInfo(
@@ -290,55 +283,119 @@ def _upb_proto_rule_impl(ctx):
         cc_info,
     ]
 
-def _upb_proto_aspect_impl(target, ctx, generator, cc_provider, file_provider):
-    proto_info = target[ProtoInfo]
-    files = _compile_upb_protos(ctx, generator, proto_info, proto_info.direct_sources)
-    deps = ctx.rule.attr.deps + getattr(ctx.attr, "_" + generator)
-    dep_ccinfos = [dep[CcInfo] for dep in deps if CcInfo in dep]
-    dep_ccinfos += [dep[UpbWrappedCcInfo].cc_info for dep in deps if UpbWrappedCcInfo in dep]
-    dep_ccinfos += [dep[_UpbDefsWrappedCcInfo].cc_info for dep in deps if _UpbDefsWrappedCcInfo in dep]
-    if generator == "upbdefs":
-        if UpbWrappedCcInfo not in target:
-            fail("Target should have UpbWrappedCcInfo provider")
-        dep_ccinfos.append(target[UpbWrappedCcInfo].cc_info)
-    cc_info = _cc_library_func(
-        ctx = ctx,
-        name = ctx.rule.attr.name + "." + generator,
-        hdrs = files.hdrs,
-        srcs = files.srcs,
-        includes = files.includes,
-        copts = ctx.attr._copts[UpbProtoLibraryCoptsInfo].copts,
-        dep_ccinfos = dep_ccinfos,
-    )
+def _generate_name(ctx, generator, thunks = False):
+    if thunks:
+        return ctx.rule.attr.name + "." + generator + ".thunks"
+    return ctx.rule.attr.name + "." + generator
 
-    if files.thunks:
-        cc_info_with_thunks = _cc_library_func(
+def _upb_proto_aspect_impl(target, ctx, generator, cc_provider, file_provider, provide_cc_shared_library_hints = True):
+    providers = []
+    if not getattr(ctx.rule.attr, "srcs", []):
+        # This target doesn't declare any sources, reexport all its deps instead.
+        srcs = []
+        hdrs = []
+        thunks = []
+        includes = []
+        cc_infos = []
+        cc_infos_with_thunks = []
+        for dep in ctx.rule.attr.deps:
+            if CcInfo in dep:
+                cc_infos.append(dep[CcInfo])
+            if UpbWrappedCcInfo in dep:
+                cc_infos.append(dep[UpbWrappedCcInfo].cc_info)
+                cc_infos_with_thunks.append(dep[UpbWrappedCcInfo].cc_info_with_thunks)
+            if _UpbDefsWrappedCcInfo in dep:
+                cc_infos.append(dep[_UpbDefsWrappedCcInfo].cc_info)
+
+            if _UpbWrappedGeneratedSrcsInfo in dep:
+                unwrapped_sources = dep[_UpbWrappedGeneratedSrcsInfo].srcs
+                srcs += unwrapped_sources.srcs
+                hdrs += unwrapped_sources.hdrs
+                thunks += unwrapped_sources.thunks
+                includes += unwrapped_sources.includes
+            if _WrappedDefsGeneratedSrcsInfo in dep:
+                unwrapped_sources = dep[_WrappedDefsGeneratedSrcsInfo].srcs
+                srcs += unwrapped_sources.srcs
+                hdrs += unwrapped_sources.hdrs
+                thunks += unwrapped_sources.thunks
+                includes += unwrapped_sources.includes
+
+        if len(cc_infos_with_thunks) > 0:
+            providers.append(cc_provider(
+                cc_info = cc_common.merge_cc_infos(direct_cc_infos = cc_infos),
+                cc_info_with_thunks = cc_common.merge_cc_infos(direct_cc_infos = cc_infos_with_thunks),
+            ))
+        else:
+            providers.append(cc_provider(cc_info = cc_common.merge_cc_infos(direct_cc_infos = cc_infos)))
+        providers.append(file_provider(srcs = GeneratedSrcsInfo(srcs = srcs, hdrs = hdrs, thunks = thunks, includes = includes)))
+    else:
+        proto_info = target[ProtoInfo]
+        files = _compile_upb_protos(ctx, generator, proto_info, proto_info.direct_sources)
+        deps = ctx.rule.attr.deps + getattr(ctx.attr, "_" + generator)
+        dep_ccinfos = [dep[CcInfo] for dep in deps if CcInfo in dep]
+        dep_ccinfos += [dep[UpbWrappedCcInfo].cc_info for dep in deps if UpbWrappedCcInfo in dep]
+        dep_ccinfos += [dep[_UpbDefsWrappedCcInfo].cc_info for dep in deps if _UpbDefsWrappedCcInfo in dep]
+        if generator == "upbdefs":
+            if UpbWrappedCcInfo not in target:
+                fail("Target should have UpbWrappedCcInfo provider")
+            dep_ccinfos.append(target[UpbWrappedCcInfo].cc_info)
+
+        cc_info = _cc_library_func(
             ctx = ctx,
-            name = ctx.rule.attr.name + "." + generator + ".thunks",
-            hdrs = [],
-            srcs = files.thunks,
+            name = _generate_name(ctx, generator),
+            hdrs = files.hdrs,
+            srcs = files.srcs,
             includes = files.includes,
             copts = ctx.attr._copts[UpbProtoLibraryCoptsInfo].copts,
-            dep_ccinfos = dep_ccinfos + [cc_info],
+            dep_ccinfos = dep_ccinfos,
         )
-        wrapped_cc_info = cc_provider(
-            cc_info = cc_info,
-            cc_info_with_thunks = cc_info_with_thunks,
-        )
-    else:
-        wrapped_cc_info = cc_provider(
-            cc_info = cc_info,
-        )
-    return [
-        wrapped_cc_info,
-        file_provider(srcs = files),
-    ]
+
+        if files.thunks:
+            cc_info_with_thunks = _cc_library_func(
+                ctx = ctx,
+                name = _generate_name(ctx, generator, files.thunks),
+                hdrs = [],
+                srcs = files.thunks,
+                includes = files.includes,
+                copts = ctx.attr._copts[UpbProtoLibraryCoptsInfo].copts,
+                dep_ccinfos = dep_ccinfos + [cc_info],
+            )
+            wrapped_cc_info = cc_provider(
+                cc_info = cc_info,
+                cc_info_with_thunks = cc_info_with_thunks,
+            )
+        else:
+            wrapped_cc_info = cc_provider(
+                cc_info = cc_info,
+            )
+        providers += [
+            wrapped_cc_info,
+            file_provider(srcs = files),
+        ]
+
+    if generator not in _GENERATORS:
+        fail("Please add new generator '{}' to _GENERATORS list".format(generator))
+
+    possible_owners = []
+    for generator in _GENERATORS:
+        possible_owners.append(ctx.label.relative(_generate_name(ctx, generator)))
+        possible_owners.append(ctx.label.relative(_generate_name(ctx, generator, thunks = True)))
+
+    if provide_cc_shared_library_hints:
+        if hasattr(cc_common, "CcSharedLibraryHintInfo"):
+            providers.append(cc_common.CcSharedLibraryHintInfo(owners = possible_owners))
+        elif hasattr(cc_common, "CcSharedLibraryHintInfo_6_X_constructor_do_not_use"):
+            # This branch can be deleted once 6.X is not supported by upb rules
+            providers.append(cc_common.CcSharedLibraryHintInfo_6_X_constructor_do_not_use(owners = possible_owners))
+    return providers
+
+_GENERATORS = ["upb", "upbdefs"]
 
 def upb_proto_library_aspect_impl(target, ctx):
     return _upb_proto_aspect_impl(target, ctx, "upb", UpbWrappedCcInfo, _UpbWrappedGeneratedSrcsInfo)
 
 def _upb_proto_reflection_library_aspect_impl(target, ctx):
-    return _upb_proto_aspect_impl(target, ctx, "upbdefs", _UpbDefsWrappedCcInfo, _WrappedDefsGeneratedSrcsInfo)
+    return _upb_proto_aspect_impl(target, ctx, "upbdefs", _UpbDefsWrappedCcInfo, _WrappedDefsGeneratedSrcsInfo, provide_cc_shared_library_hints = False)
 
 def _maybe_add(d):
     if _is_google3:
@@ -350,6 +407,20 @@ def _maybe_add(d):
     return d
 
 # upb_proto_library() ##########################################################
+
+def _get_upb_proto_library_aspect_provides():
+    provides = [
+        UpbWrappedCcInfo,
+        _UpbWrappedGeneratedSrcsInfo,
+    ]
+
+    if hasattr(cc_common, "CcSharedLibraryHintInfo"):
+        provides.append(cc_common.CcSharedLibraryHintInfo)
+    elif hasattr(cc_common, "CcSharedLibraryHintInfo_6_X_getter_do_not_use"):
+        # This branch can be deleted once 6.X is not supported by upb rules
+        provides.append(cc_common.CcSharedLibraryHintInfo_6_X_getter_do_not_use)
+
+    return provides
 
 upb_proto_library_aspect = aspect(
     attrs = _maybe_add({
@@ -375,10 +446,7 @@ upb_proto_library_aspect = aspect(
         "_fasttable_enabled": attr.label(default = "//:fasttable_enabled"),
     }),
     implementation = upb_proto_library_aspect_impl,
-    provides = [
-        UpbWrappedCcInfo,
-        _UpbWrappedGeneratedSrcsInfo,
-    ],
+    provides = _get_upb_proto_library_aspect_provides(),
     attr_aspects = ["deps"],
     fragments = ["cpp"],
     toolchains = use_cpp_toolchain(),
@@ -395,6 +463,7 @@ upb_proto_library = rule(
             providers = [ProtoInfo],
         ),
     },
+    provides = [CcInfo],
 )
 
 # upb_proto_reflection_library() ###############################################
@@ -451,4 +520,5 @@ upb_proto_reflection_library = rule(
             providers = [ProtoInfo],
         ),
     },
+    provides = [CcInfo],
 )

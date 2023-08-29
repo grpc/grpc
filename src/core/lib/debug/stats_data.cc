@@ -54,6 +54,19 @@ Histogram_16777216_20 operator-(const Histogram_16777216_20& left,
   }
   return result;
 }
+void HistogramCollector_10000_20::Collect(Histogram_10000_20* result) const {
+  for (int i = 0; i < 20; i++) {
+    result->buckets_[i] += buckets_[i].load(std::memory_order_relaxed);
+  }
+}
+Histogram_10000_20 operator-(const Histogram_10000_20& left,
+                             const Histogram_10000_20& right) {
+  Histogram_10000_20 result;
+  for (int i = 0; i < 20; i++) {
+    result.buckets_[i] = left.buckets_[i] - right.buckets_[i];
+  }
+  return result;
+}
 void HistogramCollector_80_10::Collect(Histogram_80_10* result) const {
   for (int i = 0; i < 10; i++) {
     result->buckets_[i] += buckets_[i].load(std::memory_order_relaxed);
@@ -69,15 +82,25 @@ Histogram_80_10 operator-(const Histogram_80_10& left,
 }
 const absl::string_view
     GlobalStats::counter_name[static_cast<int>(Counter::COUNT)] = {
-        "client_calls_created",    "server_calls_created",
-        "client_channels_created", "client_subchannels_created",
-        "server_channels_created", "insecure_connections_created",
-        "syscall_write",           "syscall_read",
-        "tcp_read_alloc_8k",       "tcp_read_alloc_64k",
-        "http2_settings_writes",   "http2_pings_sent",
-        "http2_writes_begun",      "http2_transport_stalls",
-        "http2_stream_stalls",     "cq_pluck_creates",
-        "cq_next_creates",         "cq_callback_creates",
+        "client_calls_created",
+        "server_calls_created",
+        "client_channels_created",
+        "client_subchannels_created",
+        "server_channels_created",
+        "insecure_connections_created",
+        "syscall_write",
+        "syscall_read",
+        "tcp_read_alloc_8k",
+        "tcp_read_alloc_64k",
+        "http2_settings_writes",
+        "http2_pings_sent",
+        "http2_writes_begun",
+        "http2_transport_stalls",
+        "http2_stream_stalls",
+        "cq_pluck_creates",
+        "cq_next_creates",
+        "cq_callback_creates",
+        "wrr_updates",
 };
 const absl::string_view GlobalStats::counter_doc[static_cast<int>(
     Counter::COUNT)] = {
@@ -105,12 +128,15 @@ const absl::string_view GlobalStats::counter_doc[static_cast<int>(
     "usage)",
     "Number of completion queues created for cq_callback (indicates callback "
     "api usage)",
+    "Number of wrr updates that have been received",
 };
-const absl::string_view GlobalStats::histogram_name[static_cast<int>(
-    Histogram::COUNT)] = {
-    "call_initial_size",       "tcp_write_size",      "tcp_write_iov_size",
-    "tcp_read_size",           "tcp_read_offer",      "tcp_read_offer_iov_size",
-    "http2_send_message_size", "http2_metadata_size",
+const absl::string_view
+    GlobalStats::histogram_name[static_cast<int>(Histogram::COUNT)] = {
+        "call_initial_size",        "tcp_write_size",
+        "tcp_write_iov_size",       "tcp_read_size",
+        "tcp_read_offer",           "tcp_read_offer_iov_size",
+        "http2_send_message_size",  "http2_metadata_size",
+        "wrr_subchannel_list_size", "wrr_subchannel_ready_size",
 };
 const absl::string_view GlobalStats::histogram_doc[static_cast<int>(
     Histogram::COUNT)] = {
@@ -122,6 +148,8 @@ const absl::string_view GlobalStats::histogram_doc[static_cast<int>(
     "Number of byte segments offered to each syscall_read",
     "Size of messages received by HTTP2 transport",
     "Number of bytes consumed by metadata, according to HPACK accounting rules",
+    "Number of subchannels in a subchannel list at picker creation time",
+    "Number of READY subchannels in a subchannel list at picker creation time",
 };
 namespace {
 const int kStatsTable0[27] = {0,    1,     2,     4,     7,     11,   17,
@@ -138,8 +166,14 @@ const int kStatsTable2[21] = {
 const uint8_t kStatsTable3[23] = {2,  3,  3,  4,  5,  6,  7,  8,
                                   8,  9,  10, 11, 12, 12, 13, 14,
                                   15, 16, 16, 17, 18, 19, 20};
-const int kStatsTable4[11] = {0, 1, 2, 4, 7, 11, 17, 26, 38, 56, 80};
-const uint8_t kStatsTable5[9] = {3, 3, 4, 5, 6, 6, 7, 8, 9};
+const int kStatsTable4[21] = {0,   1,    2,    4,    7,    12,   19,
+                              30,  47,   74,   116,  182,  285,  445,
+                              695, 1084, 1691, 2637, 4113, 6414, 10000};
+const uint8_t kStatsTable5[23] = {3,  3,  4,  5,  5,  6,  7,  8,
+                                  9,  9,  10, 11, 12, 12, 13, 14,
+                                  15, 15, 16, 17, 18, 18, 19};
+const int kStatsTable6[11] = {0, 1, 2, 4, 7, 11, 17, 26, 38, 56, 80};
+const uint8_t kStatsTable7[9] = {3, 3, 4, 5, 6, 6, 7, 8, 9};
 }  // namespace
 int Histogram_65536_26::BucketFor(int value) {
   if (value < 3) {
@@ -179,6 +213,29 @@ int Histogram_16777216_20::BucketFor(int value) {
     }
   }
 }
+int Histogram_10000_20::BucketFor(int value) {
+  if (value < 3) {
+    if (value < 0) {
+      return 0;
+    } else {
+      return value;
+    }
+  } else {
+    if (value < 6145) {
+      DblUint val;
+      val.dbl = value;
+      const int bucket =
+          kStatsTable5[((val.uint - 4613937818241073152ull) >> 51)];
+      return bucket - (value < kStatsTable4[bucket]);
+    } else {
+      if (value < 6414) {
+        return 18;
+      } else {
+        return 19;
+      }
+    }
+  }
+}
 int Histogram_80_10::BucketFor(int value) {
   if (value < 3) {
     if (value < 0) {
@@ -191,8 +248,8 @@ int Histogram_80_10::BucketFor(int value) {
       DblUint val;
       val.dbl = value;
       const int bucket =
-          kStatsTable5[((val.uint - 4613937818241073152ull) >> 51)];
-      return bucket - (value < kStatsTable4[bucket]);
+          kStatsTable7[((val.uint - 4613937818241073152ull) >> 51)];
+      return bucket - (value < kStatsTable6[bucket]);
     } else {
       if (value < 56) {
         return 8;
@@ -220,7 +277,8 @@ GlobalStats::GlobalStats()
       http2_stream_stalls{0},
       cq_pluck_creates{0},
       cq_next_creates{0},
-      cq_callback_creates{0} {}
+      cq_callback_creates{0},
+      wrr_updates{0} {}
 HistogramView GlobalStats::histogram(Histogram which) const {
   switch (which) {
     default:
@@ -232,7 +290,7 @@ HistogramView GlobalStats::histogram(Histogram which) const {
       return HistogramView{&Histogram_16777216_20::BucketFor, kStatsTable2, 20,
                            tcp_write_size.buckets()};
     case Histogram::kTcpWriteIovSize:
-      return HistogramView{&Histogram_80_10::BucketFor, kStatsTable4, 10,
+      return HistogramView{&Histogram_80_10::BucketFor, kStatsTable6, 10,
                            tcp_write_iov_size.buckets()};
     case Histogram::kTcpReadSize:
       return HistogramView{&Histogram_16777216_20::BucketFor, kStatsTable2, 20,
@@ -241,7 +299,7 @@ HistogramView GlobalStats::histogram(Histogram which) const {
       return HistogramView{&Histogram_16777216_20::BucketFor, kStatsTable2, 20,
                            tcp_read_offer.buckets()};
     case Histogram::kTcpReadOfferIovSize:
-      return HistogramView{&Histogram_80_10::BucketFor, kStatsTable4, 10,
+      return HistogramView{&Histogram_80_10::BucketFor, kStatsTable6, 10,
                            tcp_read_offer_iov_size.buckets()};
     case Histogram::kHttp2SendMessageSize:
       return HistogramView{&Histogram_16777216_20::BucketFor, kStatsTable2, 20,
@@ -249,6 +307,12 @@ HistogramView GlobalStats::histogram(Histogram which) const {
     case Histogram::kHttp2MetadataSize:
       return HistogramView{&Histogram_65536_26::BucketFor, kStatsTable0, 26,
                            http2_metadata_size.buckets()};
+    case Histogram::kWrrSubchannelListSize:
+      return HistogramView{&Histogram_10000_20::BucketFor, kStatsTable4, 20,
+                           wrr_subchannel_list_size.buckets()};
+    case Histogram::kWrrSubchannelReadySize:
+      return HistogramView{&Histogram_10000_20::BucketFor, kStatsTable4, 20,
+                           wrr_subchannel_ready_size.buckets()};
   }
 }
 std::unique_ptr<GlobalStats> GlobalStatsCollector::Collect() const {
@@ -288,6 +352,7 @@ std::unique_ptr<GlobalStats> GlobalStatsCollector::Collect() const {
         data.cq_next_creates.load(std::memory_order_relaxed);
     result->cq_callback_creates +=
         data.cq_callback_creates.load(std::memory_order_relaxed);
+    result->wrr_updates += data.wrr_updates.load(std::memory_order_relaxed);
     data.call_initial_size.Collect(&result->call_initial_size);
     data.tcp_write_size.Collect(&result->tcp_write_size);
     data.tcp_write_iov_size.Collect(&result->tcp_write_iov_size);
@@ -296,6 +361,8 @@ std::unique_ptr<GlobalStats> GlobalStatsCollector::Collect() const {
     data.tcp_read_offer_iov_size.Collect(&result->tcp_read_offer_iov_size);
     data.http2_send_message_size.Collect(&result->http2_send_message_size);
     data.http2_metadata_size.Collect(&result->http2_metadata_size);
+    data.wrr_subchannel_list_size.Collect(&result->wrr_subchannel_list_size);
+    data.wrr_subchannel_ready_size.Collect(&result->wrr_subchannel_ready_size);
   }
   return result;
 }
@@ -327,6 +394,7 @@ std::unique_ptr<GlobalStats> GlobalStats::Diff(const GlobalStats& other) const {
   result->cq_pluck_creates = cq_pluck_creates - other.cq_pluck_creates;
   result->cq_next_creates = cq_next_creates - other.cq_next_creates;
   result->cq_callback_creates = cq_callback_creates - other.cq_callback_creates;
+  result->wrr_updates = wrr_updates - other.wrr_updates;
   result->call_initial_size = call_initial_size - other.call_initial_size;
   result->tcp_write_size = tcp_write_size - other.tcp_write_size;
   result->tcp_write_iov_size = tcp_write_iov_size - other.tcp_write_iov_size;
@@ -337,6 +405,10 @@ std::unique_ptr<GlobalStats> GlobalStats::Diff(const GlobalStats& other) const {
   result->http2_send_message_size =
       http2_send_message_size - other.http2_send_message_size;
   result->http2_metadata_size = http2_metadata_size - other.http2_metadata_size;
+  result->wrr_subchannel_list_size =
+      wrr_subchannel_list_size - other.wrr_subchannel_list_size;
+  result->wrr_subchannel_ready_size =
+      wrr_subchannel_ready_size - other.wrr_subchannel_ready_size;
   return result;
 }
 }  // namespace grpc_core

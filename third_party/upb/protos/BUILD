@@ -32,21 +32,63 @@ load(
     "upb_cc_proto_library_copts",
 )
 
+# begin:google_only
+# package(default_applicable_licenses = ["//:license"])
+# end:google_only
+
 licenses(["notice"])
 
 cc_library(
-    name = "protos",
-    srcs = ["protos.cc"],
-    hdrs = ["protos.h"],
+    name = "repeated_field",
+    hdrs = [
+        "repeated_field.h",
+        "repeated_field_iterator.h",
+    ],
     copts = UPB_DEFAULT_CPPOPTS,
     visibility = ["//visibility:public"],
     deps = [
+        ":protos",
+        ":protos_traits",
+        "//:collections_internal",
+        "//:message_copy",
+        "//:mini_table",
+        "//:port",
+        "//:upb",
+        "@com_google_absl//absl/base:core_headers",
+        "@com_google_absl//absl/strings",
+    ],
+)
+
+cc_library(
+    name = "protos",
+    srcs = [
+        "protos.cc",
+    ],
+    hdrs = [
+        "protos.h",
+    ],
+    copts = UPB_DEFAULT_CPPOPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:message_copy",
+        "//:message_promote",
         "//:mini_table",
         "//:upb",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
+        "@com_google_absl//absl/strings",
         "@com_google_absl//absl/strings:str_format",
     ],
+)
+
+# Internally used type traits.
+cc_library(
+    name = "protos_traits",
+    hdrs = [
+        "protos_traits.h",
+    ],
+    copts = UPB_DEFAULT_CPPOPTS,
+    visibility = ["//visibility:private"],
 )
 
 cc_library(
@@ -75,6 +117,7 @@ cc_library(
     deps = [
         ":protos",
         ":protos_internal",
+        ":repeated_field",
     ],
 )
 
@@ -95,4 +138,13 @@ upb_cc_proto_library_copts(
     name = "upb_cc_proto_library_copts__for_generated_code_only_do_not_use",
     copts = UPB_DEFAULT_CPPOPTS,
     visibility = ["//visibility:public"],
+)
+
+cc_test(
+    name = "repeated_field_iterator_test",
+    srcs = ["repeated_field_iterator_test.cc"],
+    deps = [
+        ":repeated_field",
+        "@com_google_googletest//:gtest_main",
+    ],
 )

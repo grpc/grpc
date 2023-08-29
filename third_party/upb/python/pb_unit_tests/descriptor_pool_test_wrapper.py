@@ -26,10 +26,6 @@
 import unittest
 from google.protobuf.internal.descriptor_pool_test import *
 
-# This is testing that certain methods unconditionally throw TypeError.
-# In the new extension we simply don't define them at all.
-AddDescriptorTest.testAddTypeError.__unittest_expecting_failure__ = True
-
 SecondaryDescriptorFromDescriptorDB.testErrorCollector.__unittest_expecting_failure__ = True
 
 # begin:github_only

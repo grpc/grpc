@@ -459,7 +459,7 @@ class TcpZerocopySendCtx {
   std::unordered_map<uint32_t, TcpZerocopySendRecord*> ctx_lookup_;
   bool memory_limited_ = false;
   bool is_in_write_ = false;
-  OMemState zcopy_enobuf_state_;
+  OMemState zcopy_enobuf_state_ = OMemState::OPEN;
 };
 
 }  // namespace grpc_core
@@ -1057,7 +1057,7 @@ static void maybe_make_read_slices(grpc_tcp* tcp)
   static const int kBigAlloc = 64 * 1024;
   static const int kSmallAlloc = 8 * 1024;
   if (tcp->incoming_buffer->length <
-      static_cast<size_t>(tcp->min_progress_size)) {
+      std::max<size_t>(tcp->min_progress_size, 1)) {
     size_t allocate_length = tcp->min_progress_size;
     const size_t target_length = static_cast<size_t>(tcp->target_length);
     // If memory pressure is low and we think there will be more than
@@ -1067,8 +1067,8 @@ static void maybe_make_read_slices(grpc_tcp* tcp)
     if (low_memory_pressure && target_length > allocate_length) {
       allocate_length = target_length;
     }
-    int extra_wanted =
-        allocate_length - static_cast<int>(tcp->incoming_buffer->length);
+    int extra_wanted = std::max<int>(
+        1, allocate_length - static_cast<int>(tcp->incoming_buffer->length));
     if (extra_wanted >=
         (low_memory_pressure ? kSmallAlloc * 3 / 2 : kBigAlloc)) {
       while (extra_wanted > 0) {

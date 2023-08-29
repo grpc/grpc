@@ -17,7 +17,11 @@ set -ex
 # Purpose: Run the C++ "dashboard" benchmarks for a set of gRPC-core experiments.
 #
 # To run the benchmarks, add your experiment to the set below.
-GRPC_EXPERIMENTS=("event_engine_listener" "work_stealing" "event_engine_listener,work_stealing")
+declare -a GRPC_EXPERIMENTS=(
+    "event_engine_listener"
+    "event_engine_client"
+    "event_engine_client,event_engine_listener"
+)
 
 # Enter the gRPC repo root.
 cd "$(dirname "$0")/../../.."
