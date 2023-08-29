@@ -7,9 +7,7 @@
  * regenerated. */
 
 #include <stddef.h>
-#include "upb/collections/array_internal.h"
-#include "upb/message/internal.h"
-#include "upb/mini_table/enum_internal.h"
+#include "upb/generated_code_support.h"
 #include "envoy/annotations/resource.upb.h"
 #include "google/protobuf/descriptor.upb.h"
 
@@ -17,7 +15,7 @@
 #include "upb/port/def.inc"
 
 static const upb_MiniTableField envoy_annotations_ResourceAnnotation__fields[1] = {
-  {1, 0, 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {1, 0, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy_annotations_ResourceAnnotation_msg_init = {
@@ -37,7 +35,7 @@ static const upb_MiniTable *messages_layout[1] = {
 extern const upb_MiniTable envoy_annotations_ResourceAnnotation_msg_init;
 extern const upb_MiniTable google_protobuf_ServiceOptions_msg_init;
 const upb_MiniTableExtension envoy_annotations_resource_ext = {
-  {265073217, 0, 0, 0, 11, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsExtension | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
+  {265073217, 0, 0, 0, 11, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
   &google_protobuf_ServiceOptions_msg_init,
   {.submsg = &envoy_annotations_ResourceAnnotation_msg_init},
 

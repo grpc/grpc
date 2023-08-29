@@ -106,11 +106,11 @@ run_test() {
   set -x
   python3 -m "tests.${test_name}" \
     --flagfile="${TEST_DRIVER_FLAGFILE}" \
+    --flagfile="config/gamma.cfg" \
     --kube_context="${KUBE_CONTEXT}" \
     --server_image="${SERVER_IMAGE_NAME}:${GIT_COMMIT}" \
     --client_image="${CLIENT_IMAGE_NAME}:${GIT_COMMIT}" \
     --testing_version="${TESTING_VERSION}" \
-    --nocheck_local_certs \
     --force_cleanup \
     --collect_app_logs \
     --log_dir="${out_dir}" \
@@ -139,9 +139,6 @@ run_test() {
 #   Writes the output of test execution to stdout, stderr
 #######################################
 main() {
-  # TODO(sergiitk): Just a stub to create a Kokoro job. Remove tests are ready.
-  exit 0
-
   local script_dir
   script_dir="$(dirname "$0")"
 
@@ -162,7 +159,7 @@ main() {
   cd "${TEST_DRIVER_FULL_DIR}"
   local failed_tests=0
   test_suites=(
-    "gamma.baseline_test"
+    "gamma.gamma_baseline_test"
     # "gamma.session_affinity_test"
   )
   for test in "${test_suites[@]}"; do
