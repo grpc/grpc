@@ -478,7 +478,7 @@ TEST_F(CancelDuringAresQuery, TestQueryFailsWithDataRemainingInReadBuffer) {
   grpc_core::testing::FakeUdpAndTcpServer fake_dns_server_zero_streamer(
       grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
           kWaitForClientToSendFirstBytes,
-      grpc_core::testing::FakeUdpAndTcpServer::SendBytesUntilPeerCloses);
+      grpc_core::testing::FakeUdpAndTcpServer::SendThreeAllZeroBytes);
   grpc_status_code expected_status_code = GRPC_STATUS_UNAVAILABLE;
   // Don't really care about the deadline - we'll hit a DNS
   // resolution failure quickly.
