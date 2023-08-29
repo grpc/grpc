@@ -383,12 +383,12 @@ def grpc_deps():
     if "upb" not in native.existing_rules():
         http_archive(
             name = "upb",
-            sha256 = "a74ab35fcfa6c63252ffdae607cda50c0384097c160fa536b835af38284790e9",
-            strip_prefix = "upb-ea4e825d22c9ae0031d59ec5e86dc85bb50cbbcb",
+            sha256 = "af3f2651b8f27d92d086fc373af6194d4ba702e29e27cbc691fa8926561aa056",
+            strip_prefix = "upb-cc36926cffb00f0e8dd33bc9511c8e7354f09d0c",
             urls = [
                 # https://github.com/protocolbuffers/upb/commits/24.x
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/upb/archive/ea4e825d22c9ae0031d59ec5e86dc85bb50cbbcb.tar.gz",
-                "https://github.com/protocolbuffers/upb/archive/ea4e825d22c9ae0031d59ec5e86dc85bb50cbbcb.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/upb/archive/cc36926cffb00f0e8dd33bc9511c8e7354f09d0c.tar.gz",
+                "https://github.com/protocolbuffers/upb/archive/cc36926cffb00f0e8dd33bc9511c8e7354f09d0c.tar.gz",
             ],
         )
 
