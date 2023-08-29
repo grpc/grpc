@@ -29,6 +29,7 @@ import pkg_resources
 import setuptools
 from setuptools.command import build_ext
 
+import grpc
 import grpc_version
 
 PYTHON_STEM = os.path.realpath(os.path.dirname(__file__))
@@ -99,22 +100,26 @@ def check_linker_need_libatomic():
     return cpp_test.returncode == 0
 
 
-def _find_files_with_extension(directory: str, extension: str):
+def _find_files_with_extension(directory: str, extension: str, name_only: bool = False):
     """Finds all files in a directory with the specified extension.
 
     Args:
-    directory: The directory to search.
-    extension: The file extension to find.
+        directory: The directory to search.
+        extension: The file extension to find.
+        name_only: Wether to only return file name.
 
     Returns:
-    A list of file paths that match the specified extension.
+        A list of file paths or file names that match the specified extension.
     """
 
     files = []
     for filename in os.listdir(directory):
         filepath = os.path.join(directory, filename)
         if os.path.isfile(filepath) and filename.endswith(extension):
-            files.append(filepath)
+            if name_only:
+                files.append(filename)
+            else:
+                files.append(filepath)
 
     return files
 
@@ -188,8 +193,20 @@ EXTRA_COMPILE_ARGS = shlex.split(EXTRA_ENV_COMPILE_ARGS)
 
 # Instead of building anything from source, grpc_observability take dependency on
 # cygrpc shared objet library.
+# print ("Checking path for cygrpc.so:")
+# print(grpc._cython.__path__)
+# CYGRPC_SO_PATH = os.path.realpath(grpc._cython.__path__[0])
+# print (CYGRPC_SO_PATH)
+# so_files = _find_files_with_extension(CYGRPC_SO_PATH, 'so', name_only=True)
+# CYGRPC_SO_FILE = so_files[0]
+
+
+CYGRPC_SO_PATH = '/usr/local/google/home/xuanwn/.pyenv/versions/3.10.9/envs/310env/lib/python3.10/site-packages/grpc/_cython'
+# CYGRPC_SO_PATH = '/usr/local/google/home/xuanwn/.pyenv'
+CYGRPC_SO_FILE = 'cygrpc.cpython-310-x86_64-linux-gnu.so'
 EXTRA_ENV_LINK_ARGS += (
-    f" -L{CYGRPC_SO_PATH} -l:{CYGRPC_SO_FILE} -Wl,-rpath,{CYGRPC_SO_PATH}"
+    # f" -L{CYGRPC_SO_PATH} -l:{CYGRPC_SO_FILE} -Wl,-rpath,{CYGRPC_SO_PATH}"
+    f" -L{CYGRPC_SO_PATH} -l:{CYGRPC_SO_FILE} -Wl,--no-as-needed"
 )
 
 EXTRA_LINK_ARGS = shlex.split(EXTRA_ENV_LINK_ARGS)
