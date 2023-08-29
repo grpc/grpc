@@ -1057,7 +1057,6 @@ src/core/ext/transport/chttp2/transport/decode_huff.cc \
 src/core/ext/transport/chttp2/transport/decode_huff.h \
 src/core/ext/transport/chttp2/transport/flow_control.cc \
 src/core/ext/transport/chttp2/transport/flow_control.h \
-src/core/ext/transport/chttp2/transport/frame.h \
 src/core/ext/transport/chttp2/transport/frame_data.cc \
 src/core/ext/transport/chttp2/transport/frame_data.h \
 src/core/ext/transport/chttp2/transport/frame_goaway.cc \
@@ -1088,6 +1087,7 @@ src/core/ext/transport/chttp2/transport/http_trace.h \
 src/core/ext/transport/chttp2/transport/huffsyms.cc \
 src/core/ext/transport/chttp2/transport/huffsyms.h \
 src/core/ext/transport/chttp2/transport/internal.h \
+src/core/ext/transport/chttp2/transport/legacy_frame.h \
 src/core/ext/transport/chttp2/transport/parsing.cc \
 src/core/ext/transport/chttp2/transport/ping_abuse_policy.cc \
 src/core/ext/transport/chttp2/transport/ping_abuse_policy.h \
