@@ -214,8 +214,14 @@ FakeUdpAndTcpServer::ProcessReadResult
 FakeUdpAndTcpServer::SendThreeAllZeroBytes(int bytes_received_size,
                                            int read_error, int s) {
   if (bytes_received_size < 0 && !ErrorIsRetryable(read_error)) {
-    gpr_log(GPR_ERROR, "Read failed from peer socket: %d. errno: %d", s,
+    gpr_log(GPR_ERROR, "Failed to receive from peer socket: %d. errno: %d", s,
             read_error);
+    GPR_ASSERT(0);
+  }
+  if (bytes_received_size == 0) {
+    // The peer has shut down the connection.
+    gpr_log(GPR_DEBUG, "Fake TCP server received 0 bytes from peer socket: %d.",
+            s);
     return FakeUdpAndTcpServer::ProcessReadResult::kCloseSocket;
   }
   char buf[3] = {0, 0, 0};
