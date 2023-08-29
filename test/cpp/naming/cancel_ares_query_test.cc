@@ -472,7 +472,11 @@ TEST_F(CancelDuringAresQuery, TestQueryFailsBecauseTcpServerClosesSocket) {
 }
 
 TEST_F(CancelDuringAresQuery, TestQueryFailsWithDataRemainingInReadBuffer) {
-  g_grpc_ares_test_only_force_tcp = true;
+  if (grpc_core::IsEventEngineDnsEnabled()) {
+    g_event_engine_grpc_ares_test_only_force_tcp = true;
+  } else {
+    g_grpc_ares_test_only_force_tcp = true;
+  }
   grpc_core::testing::SocketUseAfterCloseDetector
       socket_use_after_close_detector;
   grpc_core::testing::FakeUdpAndTcpServer fake_dns_server_zero_streamer(
@@ -487,7 +491,11 @@ TEST_F(CancelDuringAresQuery, TestQueryFailsWithDataRemainingInReadBuffer) {
   TestCancelDuringActiveQuery(
       expected_status_code, "" /* expected error message substring */,
       rpc_deadline, dns_query_timeout_ms, fake_dns_server_zero_streamer.port());
-  g_grpc_ares_test_only_force_tcp = false;
+  if (grpc_core::IsEventEngineDnsEnabled()) {
+    g_event_engine_grpc_ares_test_only_force_tcp = false;
+  } else {
+    g_grpc_ares_test_only_force_tcp = false;
+  }
 }
 
 }  // namespace
