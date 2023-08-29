@@ -471,6 +471,39 @@ TEST_F(CancelDuringAresQuery, TestQueryFailsBecauseTcpServerClosesSocket) {
   }
 }
 
+// This test is meant to repro a bug noticed in internal issue b/297538255.
+// The general issue is the loop in
+// https://github.com/grpc/grpc/blob/f6a994229e72bc771963706de7a0cd8aa9150bb6/src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc#L371.
+// The problem with that loop is that c-ares *can* in certain situations stop caring about the fd
+// being processed without reading all of the data out of the read buffer. In
+// that case, we keep looping because IsFdStillReadableLocked() keeps returning
+// true, but we never make progress. Meanwhile, we are holding a lock which
+// prevents cancellation or timeouts from kicking in, and thus we spin-loop
+// forever.
+//
+// At the time of writing, this test case illustrates one way to hit that bug. It
+// works as follows:
+//   1) We force c-ares to use TCP for its DNS queries
+//   2) We stand up a fake DNS server that, for each incoming connection, sends
+//      three all-zero bytes and then closes the socket.
+//   3) When the c-ares library receives the three-zero-byte response from the
+//      DNS server, it parses the first two-bytes as a length field:
+//      https://github.com/c-ares/c-ares/blob/6360e96b5cf8e5980c887ce58ef727e53d77243a/src/lib/ares_process.c#L410.
+//   4) Because the first two bytes were zero, c-ares attempts to malloc a
+//      zero-length buffer:
+//      https://github.com/c-ares/c-ares/blob/6360e96b5cf8e5980c887ce58ef727e53d77243a/src/lib/ares_process.c#L428.
+//   5) Because malloc(0) returns NULL, c-ares invokes handle_error and stops
+//      reading on the socket:
+//      https://github.com/c-ares/c-ares/blob/6360e96b5cf8e5980c887ce58ef727e53d77243a/src/lib/ares_process.c#L430.
+//   6) Because we overwrite the socket "close" method, c-ares attempt to close
+//      the socket in handle_error does nothing except for removing the socket
+//      from ARES_GETSOCK_READABLE:
+//      https://github.com/grpc/grpc/blob/f6a994229e72bc771963706de7a0cd8aa9150bb6/src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc#L156.
+//   7) Because there is still one byte left in the TCP read buffer,
+//      IsFdStillReadableLocked will keep returning true:
+//      https://github.com/grpc/grpc/blob/f6a994229e72bc771963706de7a0cd8aa9150bb6/src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc#L82.
+//      But c-ares will never try to read from that socket again, so we have an
+//      infinite busy loop.
 TEST_F(CancelDuringAresQuery, TestQueryFailsWithDataRemainingInReadBuffer) {
   if (grpc_core::IsEventEngineDnsEnabled()) {
     g_event_engine_grpc_ares_test_only_force_tcp = true;
