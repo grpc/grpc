@@ -479,18 +479,18 @@ TEST_F(CancelDuringAresQuery, TestQueryFailsWithDataRemainingInReadBuffer) {
   }
   grpc_core::testing::SocketUseAfterCloseDetector
       socket_use_after_close_detector;
-  grpc_core::testing::FakeUdpAndTcpServer fake_dns_server_zero_streamer(
+  grpc_core::testing::FakeUdpAndTcpServer fake_dns_server(
       grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
           kWaitForClientToSendFirstBytes,
       grpc_core::testing::FakeUdpAndTcpServer::SendThreeAllZeroBytes);
   grpc_status_code expected_status_code = GRPC_STATUS_UNAVAILABLE;
   // Don't really care about the deadline - we'll hit a DNS
-  // resolution failure quickly.
+  // resolution failure quickly in any case.
   gpr_timespec rpc_deadline = grpc_timeout_seconds_to_deadline(100);
-  int dns_query_timeout_ms = 100;  // set a short query timeout
+  int dns_query_timeout_ms = -1;  // don't set query timeout
   TestCancelDuringActiveQuery(
       expected_status_code, "" /* expected error message substring */,
-      rpc_deadline, dns_query_timeout_ms, fake_dns_server_zero_streamer.port());
+      rpc_deadline, dns_query_timeout_ms, fake_dns_server.port());
   if (grpc_core::IsEventEngineDnsEnabled()) {
     g_event_engine_grpc_ares_test_only_force_tcp = false;
   } else {
