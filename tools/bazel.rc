@@ -22,6 +22,10 @@ build --host_copt=-DGRPC_BAZEL_BUILD
 build --action_env=GRPC_BAZEL_RUNTIME=1
 build --define=use_fast_cpp_protos=true
 
+# TODO(veblush): Remove these once upb is upgraded to 25.x or later
+build --copt=-Wno-typedef-redefinition
+build --host_copt=-Wno-typedef-redefinition
+
 build:opt --compilation_mode=opt
 build:opt --copt=-Wframe-larger-than=16384
 
