@@ -163,7 +163,7 @@ main() {
   cd "${TEST_DRIVER_FULL_DIR}"
   local failed_tests=0
   test_suites=(
-    "gamma.baseline_test"
+    "gamma.gamma_baseline_test"
     # "gamma.session_affinity_test"
   )
   for test in "${test_suites[@]}"; do
