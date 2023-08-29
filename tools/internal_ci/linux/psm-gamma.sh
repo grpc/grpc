@@ -154,9 +154,7 @@ main() {
   else
     local_setup_test_driver "${script_dir}"
   fi
-
   build_docker_images_if_needed
-
   # Run tests
   cd "${TEST_DRIVER_FULL_DIR}"
   local failed_tests=0
