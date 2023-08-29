@@ -209,7 +209,8 @@ class TestClient {
                 : call->result.simple_response.hostname();
         for (auto watcher : stats_watchers_->watchers) {
           watcher->RpcCompleted(call->result, hostname,
-                                call->context.GetServerInitialMetadata());
+                                call->context.GetServerInitialMetadata(),
+                                call->context.GetServerTrailingMetadata());
         }
       }
 

@@ -187,15 +187,11 @@ TEST_F(OTelPluginEnd2EndTest, ServerCallStarted) {
   ASSERT_NE(server_started_value, nullptr);
   ASSERT_EQ(*server_started_value, 1);
   const auto& attributes = data[kMetricName][0].attributes.GetAttributes();
-  EXPECT_EQ(attributes.size(), 2);
+  EXPECT_EQ(attributes.size(), 1);
   const auto* method_value =
       absl::get_if<std::string>(&attributes.at("grpc.method"));
   ASSERT_NE(method_value, nullptr);
   EXPECT_EQ(*method_value, kMethodName);
-  const auto* authority_value =
-      absl::get_if<std::string>(&attributes.at("grpc.authority"));
-  ASSERT_NE(authority_value, nullptr);
-  EXPECT_EQ(*authority_value, server_address_);
 }
 
 TEST_F(OTelPluginEnd2EndTest, ServerCallDuration) {
@@ -214,15 +210,11 @@ TEST_F(OTelPluginEnd2EndTest, ServerCallDuration) {
   ASSERT_NE(point_data, nullptr);
   ASSERT_EQ(point_data->count_, 1);
   const auto& attributes = data[kMetricName][0].attributes.GetAttributes();
-  EXPECT_EQ(attributes.size(), 3);
+  EXPECT_EQ(attributes.size(), 2);
   const auto* method_value =
       absl::get_if<std::string>(&attributes.at("grpc.method"));
   ASSERT_NE(method_value, nullptr);
   EXPECT_EQ(*method_value, kMethodName);
-  const auto* authority_value =
-      absl::get_if<std::string>(&attributes.at("grpc.authority"));
-  ASSERT_NE(authority_value, nullptr);
-  EXPECT_EQ(*authority_value, server_address_);
   const auto* status_value =
       absl::get_if<std::string>(&attributes.at("grpc.status"));
   ASSERT_NE(status_value, nullptr);
@@ -247,15 +239,11 @@ TEST_F(OTelPluginEnd2EndTest, ServerCallSentTotalCompressedMessageSize) {
   ASSERT_NE(point_data, nullptr);
   EXPECT_EQ(point_data->count_, 1);
   const auto& attributes = data[kMetricName][0].attributes.GetAttributes();
-  EXPECT_EQ(attributes.size(), 3);
+  EXPECT_EQ(attributes.size(), 2);
   const auto* method_value =
       absl::get_if<std::string>(&attributes.at("grpc.method"));
   ASSERT_NE(method_value, nullptr);
   EXPECT_EQ(*method_value, kMethodName);
-  const auto* authority_value =
-      absl::get_if<std::string>(&attributes.at("grpc.authority"));
-  ASSERT_NE(authority_value, nullptr);
-  EXPECT_EQ(*authority_value, server_address_);
   const auto* status_value =
       absl::get_if<std::string>(&attributes.at("grpc.status"));
   ASSERT_NE(status_value, nullptr);
@@ -280,15 +268,11 @@ TEST_F(OTelPluginEnd2EndTest, ServerCallRcvdTotalCompressedMessageSize) {
   ASSERT_NE(point_data, nullptr);
   ASSERT_EQ(point_data->count_, 1);
   const auto& attributes = data[kMetricName][0].attributes.GetAttributes();
-  EXPECT_EQ(attributes.size(), 3);
+  EXPECT_EQ(attributes.size(), 2);
   const auto* method_value =
       absl::get_if<std::string>(&attributes.at("grpc.method"));
   ASSERT_NE(method_value, nullptr);
   EXPECT_EQ(*method_value, kMethodName);
-  const auto* authority_value =
-      absl::get_if<std::string>(&attributes.at("grpc.authority"));
-  ASSERT_NE(authority_value, nullptr);
-  EXPECT_EQ(*authority_value, server_address_);
   const auto* status_value =
       absl::get_if<std::string>(&attributes.at("grpc.status"));
   ASSERT_NE(status_value, nullptr);

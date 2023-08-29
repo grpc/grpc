@@ -211,11 +211,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "goku"  # @unused
+g_stands_for = "generative"  # @unused
 
-core_version = "34.0.0"  # @unused
+core_version = "35.0.0"  # @unused
 
-version = "1.58.0-dev"  # @unused
+version = "1.59.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -2370,7 +2370,6 @@ grpc_cc_library(
         "//src/core:channel_stack_type",
         "//src/core:context",
         "//src/core:error",
-        "//src/core:experiments",
         "//src/core:slice",
         "//src/core:slice_buffer",
         "//src/core:slice_refcount",
@@ -3719,8 +3718,30 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "chttp2_frame",
+    srcs = [
+        "//src/core:ext/transport/chttp2/transport/frame.cc",
+    ],
     hdrs = [
         "//src/core:ext/transport/chttp2/transport/frame.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/types:span",
+        "absl/types:variant",
+    ],
+    deps = [
+        "gpr",
+        "//src/core:slice",
+        "//src/core:slice_buffer",
+    ],
+)
+
+grpc_cc_library(
+    name = "chttp2_legacy_frame",
+    hdrs = [
+        "//src/core:ext/transport/chttp2/transport/legacy_frame.h",
     ],
     deps = ["gpr"],
 )
@@ -3806,7 +3827,7 @@ grpc_cc_library(
         "absl/types:variant",
     ],
     deps = [
-        "chttp2_frame",
+        "chttp2_legacy_frame",
         "gpr",
         "gpr_platform",
         "grpc_base",
@@ -3837,7 +3858,7 @@ grpc_cc_library(
     external_deps = ["absl/strings"],
     deps = [
         "chttp2_bin_encoder",
-        "chttp2_frame",
+        "chttp2_legacy_frame",
         "chttp2_varint",
         "gpr",
         "gpr_platform",
@@ -3932,7 +3953,7 @@ grpc_cc_library(
     deps = [
         "channel_arg_names",
         "chttp2_context_list_entry",
-        "chttp2_frame",
+        "chttp2_legacy_frame",
         "chttp2_varint",
         "debug_location",
         "exec_ctx",

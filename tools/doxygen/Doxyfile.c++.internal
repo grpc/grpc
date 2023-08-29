@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.58.0-dev
+PROJECT_NUMBER         = 1.59.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -1281,7 +1281,6 @@ src/core/ext/transport/chttp2/transport/decode_huff.cc \
 src/core/ext/transport/chttp2/transport/decode_huff.h \
 src/core/ext/transport/chttp2/transport/flow_control.cc \
 src/core/ext/transport/chttp2/transport/flow_control.h \
-src/core/ext/transport/chttp2/transport/frame.h \
 src/core/ext/transport/chttp2/transport/frame_data.cc \
 src/core/ext/transport/chttp2/transport/frame_data.h \
 src/core/ext/transport/chttp2/transport/frame_goaway.cc \
@@ -1312,6 +1311,7 @@ src/core/ext/transport/chttp2/transport/http_trace.h \
 src/core/ext/transport/chttp2/transport/huffsyms.cc \
 src/core/ext/transport/chttp2/transport/huffsyms.h \
 src/core/ext/transport/chttp2/transport/internal.h \
+src/core/ext/transport/chttp2/transport/legacy_frame.h \
 src/core/ext/transport/chttp2/transport/parsing.cc \
 src/core/ext/transport/chttp2/transport/ping_abuse_policy.cc \
 src/core/ext/transport/chttp2/transport/ping_abuse_policy.h \
@@ -2831,6 +2831,9 @@ src/cpp/util/byte_buffer_cc.cc \
 src/cpp/util/status.cc \
 src/cpp/util/string_ref.cc \
 src/cpp/util/time_cc.cc \
+third_party/upb/upb/generated_code_support.h \
+third_party/upb/upb/port/def.inc \
+third_party/upb/upb/port/undef.inc \
 third_party/xxhash/xxhash.h
 
 # This tag can be used to specify the character encoding of the source files
