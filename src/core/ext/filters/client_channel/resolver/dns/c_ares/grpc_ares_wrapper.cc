@@ -408,7 +408,6 @@ static void on_writable(void* arg, grpc_error_handle error) {
 // driver_closure with these filedescriptors.
 static void grpc_ares_notify_on_event_locked(grpc_ares_ev_driver* ev_driver)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(&grpc_ares_request::mu) {
-  gpr_log(GPR_INFO, "apolcyn notify on event locked shutting down: %d", ev_driver->shutting_down);
   fd_node* new_list = nullptr;
   if (!ev_driver->shutting_down) {
     ares_socket_t socks[ARES_GETSOCK_MAXNUM];
@@ -613,7 +612,6 @@ static void grpc_ares_request_unref_locked(grpc_ares_request* r)
 void grpc_ares_complete_request_locked(grpc_ares_request* r)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(r->mu) {
   // Invoke on_done callback and destroy the request
-  gpr_log(GPR_DEBUG, "apolcyn complete request"); 
   r->ev_driver = nullptr;
   if (r->addresses_out != nullptr && *r->addresses_out != nullptr) {
     grpc_cares_wrapper_address_sorting_sort(r, r->addresses_out->get());

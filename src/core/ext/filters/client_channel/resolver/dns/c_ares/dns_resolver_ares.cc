@@ -236,7 +236,6 @@ void AresClientChannelDNSResolver::AresRequestWrapper::OnHostnameResolved(
     MutexLock lock(&self->on_resolved_mu_);
     self->hostname_request_.reset();
     result = self->OnResolvedLocked(error);
-    gpr_log(GPR_DEBUG, "apolcyn result.addresses: %s", result->addresses.status().ToString().c_str());
   }
   if (result.has_value()) {
     self->resolver_->OnRequestComplete(std::move(*result));
@@ -298,9 +297,6 @@ AresClientChannelDNSResolver::AresRequestWrapper::OnResolvedLocked(
   // and service config independently of each other.
   if (addresses_ != nullptr || balancer_addresses_ != nullptr) {
     if (addresses_ != nullptr) {
-      for (int i = 0; i < addresses_->size(); i++) {
-        gpr_log(GPR_DEBUG, "apolcyn OnResolved addresses_[%d]: %s", i, (*addresses_)[i].ToString().c_str());
-      }
       result.addresses = std::move(*addresses_);
     } else {
       result.addresses = ServerAddressList();

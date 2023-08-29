@@ -211,8 +211,8 @@ FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer(int bytes_received_size,
 }
 
 FakeUdpAndTcpServer::ProcessReadResult
-FakeUdpAndTcpServer::SendBytesUntilPeerCloses(int bytes_received_size,
-                                              int read_error, int s) {
+FakeUdpAndTcpServer::SendThreeAllZeroBytes(int bytes_received_size,
+                                           int read_error, int s) {
   gpr_log(GPR_DEBUG,
           "apolcyn here");
   if (bytes_received_size < 0 && !ErrorIsRetryable(read_error)) {
@@ -298,7 +298,6 @@ void FakeUdpAndTcpServer::RunServerLoop() {
       }
       char buf[100];
       int bytes_received_size = recv(peer->fd(), buf, 100, 0);
-      gpr_log(GPR_ERROR, "apolcyn recv on conn");
       FakeUdpAndTcpServer::ProcessReadResult r =
           process_read_cb_(bytes_received_size, ERRNO, peer->fd());
       if (r == FakeUdpAndTcpServer::ProcessReadResult::kCloseSocket) {
