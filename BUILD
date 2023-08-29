@@ -3087,6 +3087,7 @@ grpc_cc_library(
         "//src/core:pollset_set",
         "//src/core:proxy_mapper",
         "//src/core:proxy_mapper_registry",
+        "//src/core:race",
         "//src/core:ref_counted",
         "//src/core:resolved_address",
         "//src/core:resource_quota",

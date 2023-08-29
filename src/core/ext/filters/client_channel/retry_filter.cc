@@ -42,6 +42,7 @@
 #include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/party.h"
+#include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/sleep.h"
 #include "src/core/lib/service_config/service_config.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
@@ -148,21 +149,41 @@ const RetryMethodConfig* RetryFilter::GetRetryPolicy(
       svc_cfg_call_data->GetMethodParsedConfig(service_config_parser_index_));
 }
 
-class RetryFilter::MessageForwarder {
+namespace {
+
+class MessageForwarder {
  public:
-  void Push(MessageHandle msg) { messages_.emplace_back(std::move(msg)); }
+  auto Push(MessageHandle msg) {
+    return [this, msg = std::move(msg)]() mutable -> Poll<Empty> {
+      GPR_ASSERT(!closed_);
+      if (committed_ && !buffered_messages_.empty()) {
+        return waiting_for_write_.pending();
+      }
+      buffered_messages_.emplace_back(std::move(msg));
+      waiting_for_read_.Wake();
+      return Empty{};
+    };
+  }
 
   class Listener {
    public:
     explicit Listener(MessageForwarder& forwarder) : forwarder_(forwarder) {}
     auto Next() {
       return [this]() -> Poll<absl::optional<MessageHandle>> {
-        if (next_ == forwarder_.messages_.size()) {
-          forwarder_.waiting_for_messages_ =
-              Activity::current()->MakeOwningWaker();
-          return Pending{};
+        if (next_ == forwarder_.buffered_messages_.size()) {
+          if (forwarder_.closed_) {
+            return absl::nullopt;
+          } else {
+            return forwarder_.waiting_for_read_.pending();
+          }
         }
-        return forwarder_.messages_[next_++]->Clone();
+        auto msg = std::move(forwarder_.buffered_messages_[next_++]);
+        if (forwarder_.committed_ &&
+            next_ == forwarder_.buffered_messages_.size()) {
+          forwarder_.buffered_messages_.clear();
+          next_ = 0;
+        }
+        return msg;
       };
     }
 
@@ -171,16 +192,24 @@ class RetryFilter::MessageForwarder {
     size_t next_ = 0;
   };
 
+  bool committed() const { return committed_; }
+  void Commit() { committed_ = true; }
+
  private:
-  std::vector<MessageHandle> messages_;
-  Waker waiting_for_messages_;
+  std::vector<MessageHandle> buffered_messages_;
+  IntraActivityWaiter waiting_for_read_;
+  IntraActivityWaiter waiting_for_write_;
+  bool closed_ = false;
+  bool committed_ = false;
 };
+}  // namespace
 
 struct RetryFilter::CallState {
+  PipeSender<MessageHandle>* const server_to_client_messages;
   bool sent_transparent_retry_not_seen_by_server = false;
-  bool retry_committed = false;
   int num_attempts_completed = 0;
   int num_attempts_started = 0;
+  MessageForwarder forwarder;
 };
 
 struct RetryFilter::CallAttemptState {
@@ -192,7 +221,7 @@ struct RetryFilter::CallAttemptState {
   const int attempt;
   const RetryMethodConfig* const retry_policy;
   const RefCountedPtr<internal::ServerRetryThrottleData> retry_throttle_data;
-  Latch<absl::Status> early_return;
+  Latch<ServerMetadataHandle> early_return;
   Pipe<ServerMetadataHandle> server_initial_metadata;
   Pipe<MessageHandle> server_to_client;
   Pipe<MessageHandle> client_to_server;
@@ -243,7 +272,7 @@ bool RetryFilter::CallAttemptState::ShouldRetry(
     return false;
   }
   // Check whether the call is committed.
-  if (calld->retry_committed) {
+  if (calld->forwarder.committed()) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
       gpr_log(GPR_INFO, "%s: retries already committed", DebugTag().c_str());
     }
@@ -284,7 +313,7 @@ absl::optional<Duration> RetryFilter::MaybeRetryDuration(
   enum { kNoRetry, kTransparentRetry, kConfigurableRetry } retry = kNoRetry;
   // Handle transparent retries.
   const auto stream_network_state = md->get(GrpcStreamNetworkState());
-  if (stream_network_state.has_value() && !call_state->retry_committed) {
+  if (stream_network_state.has_value() && !call_state->forwarder.committed()) {
     // If not sent on wire, then always retry.
     // If sent on wire but not seen by server, retry exactly once.
     if (*stream_network_state == GrpcStreamNetworkState::kNotSentOnWire) {
@@ -314,7 +343,6 @@ absl::optional<Duration> RetryFilter::MaybeRetryDuration(
 }
 
 auto RetryFilter::MakeCallAttempt(CallState* call_state,
-                                  MessageForwarder& message_forwarder,
                                   const ClientMetadataHandle& initial_metadata,
                                   Latch<grpc_polling_entity>* polling_entity) {
   auto* party = static_cast<Party*>(Activity::current());
@@ -340,47 +368,75 @@ auto RetryFilter::MakeCallAttempt(CallState* call_state,
               attempt->retry_policy->per_attempt_recv_timeout().value()),
         [attempt](absl::Status) {
           if (!attempt->early_return.is_set()) {
-            attempt->early_return.Set(
-                absl::CancelledError("retry perAttemptRecvTimeout exceeded"));
+            attempt->early_return.Set(ServerMetadataFromStatus(
+                absl::CancelledError("retry perAttemptRecvTimeout exceeded")));
           }
         });
   }
+  party->Spawn("attempt_recv",
+               Seq(
+                   attempt->server_initial_metadata.receiver.Next(),
+                   [call_state](NextResult<ServerMetadataHandle> md) mutable {
+                     if (md.has_value() &&
+                         !(*md)->get(GrpcTrailersOnly()).value_or(false)) {
+                       call_state->forwarder.Commit();
+                     }
+                     return absl::OkStatus();
+                   },
+                   ForEach(std::move(attempt->server_to_client.receiver),
+                           [call_state](MessageHandle msg) {
+                             return Map(
+                                 call_state->server_to_client_messages->Push(
+                                     std::move(msg)),
+                                 [](bool r) {
+                                   if (r) return absl::OkStatus();
+                                   return absl::CancelledError();
+                                 });
+                           })),
+               [attempt](absl::Status status) {
+                 if (status.ok()) return;
+                 if (attempt->early_return.is_set()) return;
+                 attempt->early_return.Set(ServerMetadataFromStatus(status));
+               });
+  party->Spawn("attempt_send",
+               ForEach(MessageForwarder::Listener(call_state->forwarder),
+                       [attempt](MessageHandle msg) {
+                         return Map(attempt->client_to_server.sender.Push(
+                                        std::move(msg)),
+                                    [](bool r) {
+                                      if (r) return absl::OkStatus();
+                                      return absl::CancelledError();
+                                    });
+                       }),
+               [attempt](absl::Status status) {
+                 if (status.ok()) return;
+                 if (attempt->early_return.is_set()) return;
+                 attempt->early_return.Set(ServerMetadataFromStatus(status));
+               });
   return Seq(
-      TryJoin(attempt->early_return.Wait(),
-              ForEach(MessageForwarder::Listener(),
-                      [](MessageHandle msg) {
-                        return client_to_server_messages->Push(std::move(msg));
-                      }),
-              Seq(child_call_receive_initial_metadata->Next(),
-                  [&committed](ServerMetadataHandle md) mutable {
-                    committed = true;
-                  }),
-              ForEach(child_call_receive_messages,
-                      [](MessageHandle msg) {
-                        return server_to_client_messages->Push(std::move(msg));
-                      }),
-              std::move(child_call)),
+      Race(attempt->early_return.Wait(), std::move(child_call)),
       [this, call_state, attempt](ServerMetadataHandle result) {
         auto maybe_retry_duration =
             MaybeRetryDuration(call_state, attempt, result);
         return If(
             maybe_retry_duration.has_value(),
             [maybe_retry_duration]() {
-              return Seq(Sleep(Timestamp::Now() + *maybe_retry_duration),
-                         []() { return Continue(); });
+              return Seq(
+                  Sleep(Timestamp::Now() + *maybe_retry_duration),
+                  []() -> LoopCtl<ServerMetadataHandle> { return Continue(); });
             },
-            [result = std::move(result)]() mutable {
-              return std::move(result);
-            });
+            [result = std::move(result)]() mutable
+            -> LoopCtl<ServerMetadataHandle> { return std::move(result); });
       });
 }
 
 ArenaPromise<ServerMetadataHandle> RetryFilter::MakeCallPromise(
     CallArgs call_args) {
-  return Loop([this, committed = false, message_forwarder = MessageForwarder(),
-               initial_metadata =
-                   std::move(call_args.client_initial_metadata)]() mutable {
-    return MakeCallAttempt(committed, message_forwarder, initial_metadata);
+  auto* call_state = GetContext<Arena>()->ManagedNew<CallState>();
+  return Loop([this, call_state,
+               initial_metadata = std::move(call_args.client_initial_metadata),
+               polling_entity = call_args.polling_entity]() mutable {
+    return MakeCallAttempt(call_state, initial_metadata, polling_entity);
   });
 }
 
