@@ -28,7 +28,6 @@
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
-#include "src/core/ext/filters/client_channel/retry_filter.h"
 #include "src/core/ext/filters/client_channel/retry_filter_legacy_call_data.h"
 #include "src/core/ext/filters/client_channel/retry_service_config.h"
 #include "src/core/ext/filters/client_channel/retry_throttle.h"
@@ -40,8 +39,10 @@
 #include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/party.h"
+#include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/sleep.h"
+#include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/service_config/service_config.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
 #include "src/core/lib/uri/uri_parser.h"
@@ -203,6 +204,11 @@ class MessageForwarder {
 }  // namespace
 
 struct RetryFilter::CallState {
+  CallState(PipeSender<ServerMetadataHandle>* server_initial_metadata,
+            PipeSender<MessageHandle>* server_to_client_messages)
+      : server_initial_metadata(server_initial_metadata),
+        server_to_client_messages(server_to_client_messages) {}
+  PipeSender<ServerMetadataHandle>* const server_initial_metadata;
   PipeSender<MessageHandle>* const server_to_client_messages;
   bool sent_transparent_retry_not_seen_by_server = false;
   int num_attempts_completed = 0;
@@ -346,8 +352,9 @@ auto RetryFilter::MakeCallAttempt(CallState* call_state,
   auto* party = static_cast<Party*>(Activity::current());
   ++call_state->num_attempts_started;
   auto* attempt = new CallAttemptState(this, call_state->num_attempts_started);
+  auto* arena = GetContext<Arena>();
   CallArgs child_call_args{
-      GetContext<Arena>()->MakePooled<ClientMetadata>(),
+      arena->MakePooled<ClientMetadata>(arena),
       ClientInitialMetadataOutstandingToken::Empty(),  // what semantics
       polling_entity,
       &attempt->server_initial_metadata.sender,
@@ -371,31 +378,42 @@ auto RetryFilter::MakeCallAttempt(CallState* call_state,
           }
         });
   }
-  party->Spawn("attempt_recv",
-               Seq(
-                   attempt->server_initial_metadata.receiver.Next(),
-                   [call_state](NextResult<ServerMetadataHandle> md) mutable {
-                     if (md.has_value() &&
-                         !(*md)->get(GrpcTrailersOnly()).value_or(false)) {
-                       call_state->forwarder.Commit();
-                     }
-                     return absl::OkStatus();
-                   },
-                   ForEach(std::move(attempt->server_to_client.receiver),
-                           [call_state](MessageHandle msg) {
-                             return Map(
-                                 call_state->server_to_client_messages->Push(
-                                     std::move(msg)),
-                                 [](bool r) {
-                                   if (r) return absl::OkStatus();
-                                   return absl::CancelledError();
-                                 });
-                           })),
-               [attempt](absl::Status status) {
-                 if (status.ok()) return;
-                 if (attempt->early_return.is_set()) return;
-                 attempt->early_return.Set(ServerMetadataFromStatus(status));
-               });
+  party->Spawn(
+      "attempt_recv",
+      Seq(attempt->server_initial_metadata.receiver.Next(),
+          [call_state, attempt](NextResult<ServerMetadataHandle> md) mutable {
+            const bool has_initial_metadata =
+                md.has_value() &&
+                !(*md)->get(GrpcTrailersOnly()).value_or(false);
+            if (has_initial_metadata) {
+              call_state->forwarder.Commit();
+            }
+            return If(
+                has_initial_metadata,
+                TrySeq(
+                    Map(call_state->server_initial_metadata->Push(
+                            std::move(*md)),
+                        [](bool r) {
+                          if (r) return absl::OkStatus();
+                          return absl::CancelledError();
+                        }),
+                    ForEach(std::move(attempt->server_to_client.receiver),
+                            [call_state](MessageHandle msg) {
+                              return Map(
+                                  call_state->server_to_client_messages->Push(
+                                      std::move(msg)),
+                                  [](bool r) {
+                                    if (r) return absl::OkStatus();
+                                    return absl::CancelledError();
+                                  });
+                            })),
+                Immediate(absl::OkStatus()));
+          }),
+      [attempt](absl::Status status) {
+        if (status.ok()) return;
+        if (attempt->early_return.is_set()) return;
+        attempt->early_return.Set(ServerMetadataFromStatus(status));
+      });
   party->Spawn("attempt_send",
                ForEach(MessageForwarder::Listener(call_state->forwarder),
                        [attempt](MessageHandle msg) {
@@ -430,7 +448,8 @@ auto RetryFilter::MakeCallAttempt(CallState* call_state,
 
 ArenaPromise<ServerMetadataHandle> RetryFilter::MakeCallPromise(
     CallArgs call_args) {
-  auto* call_state = GetContext<Arena>()->ManagedNew<CallState>();
+  auto* call_state = GetContext<Arena>()->ManagedNew<CallState>(
+      call_args.server_initial_metadata, call_args.server_to_client_messages);
   return Loop([this, call_state,
                initial_metadata = std::move(call_args.client_initial_metadata),
                polling_entity = call_args.polling_entity]() mutable {
