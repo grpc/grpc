@@ -208,4 +208,7 @@ swift_package:
   - grpc_authorization_provider
   - gpr
   - upb
+  - upb_json_lib
+  - upb_textformat_lib
+  - utf8_range_lib
   - re2
