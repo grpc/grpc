@@ -152,6 +152,10 @@ grpc_security_status grpc_ssl_credentials::initialize_client_handshaker_factory(
     const grpc_ssl_config* config, const char* pem_root_certs,
     const tsi_ssl_root_certs_store* root_store,
     tsi_ssl_session_cache* ssl_session_cache) {
+  if (client_handshaker_factory_ != nullptr) {
+    return GRPC_SECURITY_OK;
+  }
+
   bool has_key_cert_pair = config->pem_key_cert_pair != nullptr &&
                            config->pem_key_cert_pair->private_key != nullptr &&
                            config->pem_key_cert_pair->cert_chain != nullptr;
