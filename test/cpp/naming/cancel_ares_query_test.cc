@@ -474,15 +474,15 @@ TEST_F(CancelDuringAresQuery, TestQueryFailsBecauseTcpServerClosesSocket) {
 // This test is meant to repro a bug noticed in internal issue b/297538255.
 // The general issue is the loop in
 // https://github.com/grpc/grpc/blob/f6a994229e72bc771963706de7a0cd8aa9150bb6/src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc#L371.
-// The problem with that loop is that c-ares *can* in certain situations stop caring about the fd
-// being processed without reading all of the data out of the read buffer. In
-// that case, we keep looping because IsFdStillReadableLocked() keeps returning
-// true, but we never make progress. Meanwhile, we are holding a lock which
-// prevents cancellation or timeouts from kicking in, and thus we spin-loop
-// forever.
+// The problem with that loop is that c-ares *can* in certain situations stop
+// caring about the fd being processed without reading all of the data out of
+// the read buffer. In that case, we keep looping because
+// IsFdStillReadableLocked() keeps returning true, but we never make progress.
+// Meanwhile, we are holding a lock which prevents cancellation or timeouts from
+// kicking in, and thus we spin-loop forever.
 //
-// At the time of writing, this test case illustrates one way to hit that bug. It
-// works as follows:
+// At the time of writing, this test case illustrates one way to hit that bug.
+// It works as follows:
 //   1) We force c-ares to use TCP for its DNS queries
 //   2) We stand up a fake DNS server that, for each incoming connection, sends
 //      three all-zero bytes and then closes the socket.
