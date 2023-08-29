@@ -24,21 +24,22 @@ namespace testing {
 
 namespace {
 
-LoadBalancerStatsResponse::RpcMetadata BuildRpcMetadata(
+void AddRpcMetadata(
+    LoadBalancerStatsResponse::RpcMetadata* rpc_metadata,
     const std::unordered_set<std::string>& included_keys, bool include_all_keys,
-    const std::multimap<grpc::string_ref, grpc::string_ref>& initial_metadata) {
-  LoadBalancerStatsResponse::RpcMetadata rpc_metadata;
-  for (const auto& key_value : initial_metadata) {
+    const std::multimap<grpc::string_ref, grpc::string_ref>& metadata,
+    LoadBalancerStatsResponse::MetadataType type) {
+  for (const auto& key_value : metadata) {
     absl::string_view key(key_value.first.data(), key_value.first.length());
     if (include_all_keys ||
         included_keys.find(absl::AsciiStrToLower(key)) != included_keys.end()) {
-      auto entry = rpc_metadata.add_metadata();
+      auto entry = rpc_metadata->add_metadata();
       entry->set_key(key);
       entry->set_value(absl::string_view(key_value.second.data(),
                                          key_value.second.length()));
+      entry->set_type(type);
     }
   }
-  return rpc_metadata;
 }
 
 std::unordered_set<std::string> ToLowerCase(
@@ -65,7 +66,9 @@ XdsStatsWatcher::XdsStatsWatcher(int start_id, int end_id,
 
 void XdsStatsWatcher::RpcCompleted(
     const AsyncClientCallResult& call, const std::string& peer,
-    const std::multimap<grpc::string_ref, grpc::string_ref>& initial_metadata) {
+    const std::multimap<grpc::string_ref, grpc::string_ref>& initial_metadata,
+    const std::multimap<grpc::string_ref, grpc::string_ref>&
+        trailing_metadata) {
   // We count RPCs for global watcher or if the request_id falls into the
   // watcher's interested range of request ids.
   if ((start_id_ == 0 && end_id_ == 0) ||
@@ -79,8 +82,11 @@ void XdsStatsWatcher::RpcCompleted(
         // RPC is counted into both per-peer bin and per-method-per-peer bin.
         rpcs_by_peer_[peer]++;
         rpcs_by_type_[call.rpc_type][peer]++;
-        *metadata_by_peer_[peer].add_rpc_metadata() = BuildRpcMetadata(
-            metadata_keys_, include_all_metadata_, initial_metadata);
+        auto* rpc_metadata = metadata_by_peer_[peer].add_rpc_metadata();
+        AddRpcMetadata(rpc_metadata, metadata_keys_, include_all_metadata_,
+                       initial_metadata, LoadBalancerStatsResponse::INITIAL);
+        AddRpcMetadata(rpc_metadata, metadata_keys_, include_all_metadata_,
+                       trailing_metadata, LoadBalancerStatsResponse::TRAILING);
       }
       rpcs_needed_--;
       // Report accumulated stats.

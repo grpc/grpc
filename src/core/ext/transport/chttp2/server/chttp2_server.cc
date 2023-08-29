@@ -49,8 +49,8 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
-#include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
+#include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channelz.h"

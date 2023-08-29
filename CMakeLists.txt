@@ -919,6 +919,7 @@ if(gRPC_BUILD_TESTS)
     add_dependencies(buildtests_cxx client_ssl_test)
   endif()
   add_dependencies(buildtests_cxx client_streaming_test)
+  add_dependencies(buildtests_cxx client_transport_test)
   add_dependencies(buildtests_cxx cmdline_test)
   add_dependencies(buildtests_cxx codegen_test_full)
   add_dependencies(buildtests_cxx codegen_test_minimal)
@@ -1002,7 +1003,6 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx format_request_test)
   add_dependencies(buildtests_cxx frame_handler_test)
   add_dependencies(buildtests_cxx frame_header_test)
-  add_dependencies(buildtests_cxx frame_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx fuzzing_event_engine_test)
   endif()
@@ -1349,6 +1349,8 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx test_core_security_credentials_test)
   add_dependencies(buildtests_cxx test_core_slice_slice_buffer_test)
   add_dependencies(buildtests_cxx test_core_slice_slice_test)
+  add_dependencies(buildtests_cxx test_core_transport_chaotic_good_frame_test)
+  add_dependencies(buildtests_cxx test_core_transport_chttp2_frame_test)
   add_dependencies(buildtests_cxx test_cpp_client_credentials_test)
   add_dependencies(buildtests_cxx test_cpp_server_credentials_test)
   add_dependencies(buildtests_cxx test_cpp_util_slice_test)
@@ -9199,6 +9201,49 @@ target_link_libraries(client_streaming_test
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(client_transport_test
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/lib/transport/promise_endpoint.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  test/core/transport/chaotic_good/client_transport_test.cc
+)
+target_compile_features(client_transport_test PUBLIC cxx_std_14)
+target_include_directories(client_transport_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(client_transport_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(cmdline_test
   test/core/util/cmdline.cc
   test/core/util/cmdline_test.cc
@@ -12015,295 +12060,6 @@ target_link_libraries(frame_header_test
   gtest
   absl::status
   absl::statusor
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(frame_test
-  src/core/ext/transport/chaotic_good/frame.cc
-  src/core/ext/transport/chaotic_good/frame_header.cc
-  src/core/ext/transport/chttp2/transport/bin_encoder.cc
-  src/core/ext/transport/chttp2/transport/decode_huff.cc
-  src/core/ext/transport/chttp2/transport/hpack_encoder.cc
-  src/core/ext/transport/chttp2/transport/hpack_encoder_table.cc
-  src/core/ext/transport/chttp2/transport/hpack_parse_result.cc
-  src/core/ext/transport/chttp2/transport/hpack_parser.cc
-  src/core/ext/transport/chttp2/transport/hpack_parser_table.cc
-  src/core/ext/transport/chttp2/transport/http_trace.cc
-  src/core/ext/transport/chttp2/transport/huffsyms.cc
-  src/core/ext/transport/chttp2/transport/varint.cc
-  src/core/ext/upb-generated/google/protobuf/any.upb.c
-  src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
-  src/core/ext/upb-generated/google/rpc/status.upb.c
-  src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
-  src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c
-  src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
-  src/core/lib/address_utils/parse_address.cc
-  src/core/lib/address_utils/sockaddr_utils.cc
-  src/core/lib/backoff/backoff.cc
-  src/core/lib/backoff/random_early_detection.cc
-  src/core/lib/channel/call_tracer.cc
-  src/core/lib/channel/channel_args.cc
-  src/core/lib/channel/channel_args_preconditioning.cc
-  src/core/lib/channel/channel_stack.cc
-  src/core/lib/channel/channel_stack_builder.cc
-  src/core/lib/channel/channel_stack_builder_impl.cc
-  src/core/lib/channel/channel_trace.cc
-  src/core/lib/channel/channelz.cc
-  src/core/lib/channel/channelz_registry.cc
-  src/core/lib/channel/connected_channel.cc
-  src/core/lib/channel/promise_based_filter.cc
-  src/core/lib/channel/server_call_tracer_filter.cc
-  src/core/lib/channel/status_util.cc
-  src/core/lib/compression/compression.cc
-  src/core/lib/compression/compression_internal.cc
-  src/core/lib/compression/message_compress.cc
-  src/core/lib/config/core_configuration.cc
-  src/core/lib/debug/event_log.cc
-  src/core/lib/debug/histogram_view.cc
-  src/core/lib/debug/stats.cc
-  src/core/lib/debug/stats_data.cc
-  src/core/lib/debug/trace.cc
-  src/core/lib/event_engine/ares_resolver.cc
-  src/core/lib/event_engine/cf_engine/cf_engine.cc
-  src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc
-  src/core/lib/event_engine/cf_engine/dns_service_resolver.cc
-  src/core/lib/event_engine/channel_args_endpoint_config.cc
-  src/core/lib/event_engine/default_event_engine.cc
-  src/core/lib/event_engine/default_event_engine_factory.cc
-  src/core/lib/event_engine/event_engine.cc
-  src/core/lib/event_engine/forkable.cc
-  src/core/lib/event_engine/memory_allocator.cc
-  src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc
-  src/core/lib/event_engine/posix_engine/ev_poll_posix.cc
-  src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc
-  src/core/lib/event_engine/posix_engine/internal_errqueue.cc
-  src/core/lib/event_engine/posix_engine/lockfree_event.cc
-  src/core/lib/event_engine/posix_engine/posix_endpoint.cc
-  src/core/lib/event_engine/posix_engine/posix_engine.cc
-  src/core/lib/event_engine/posix_engine/posix_engine_listener.cc
-  src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc
-  src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
-  src/core/lib/event_engine/posix_engine/timer.cc
-  src/core/lib/event_engine/posix_engine/timer_heap.cc
-  src/core/lib/event_engine/posix_engine/timer_manager.cc
-  src/core/lib/event_engine/posix_engine/traced_buffer_list.cc
-  src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.cc
-  src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.cc
-  src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.cc
-  src/core/lib/event_engine/resolved_address.cc
-  src/core/lib/event_engine/shim.cc
-  src/core/lib/event_engine/slice.cc
-  src/core/lib/event_engine/slice_buffer.cc
-  src/core/lib/event_engine/tcp_socket_utils.cc
-  src/core/lib/event_engine/thread_pool/original_thread_pool.cc
-  src/core/lib/event_engine/thread_pool/thread_count.cc
-  src/core/lib/event_engine/thread_pool/thread_pool_factory.cc
-  src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
-  src/core/lib/event_engine/thready_event_engine/thready_event_engine.cc
-  src/core/lib/event_engine/time_util.cc
-  src/core/lib/event_engine/trace.cc
-  src/core/lib/event_engine/utils.cc
-  src/core/lib/event_engine/windows/iocp.cc
-  src/core/lib/event_engine/windows/win_socket.cc
-  src/core/lib/event_engine/windows/windows_endpoint.cc
-  src/core/lib/event_engine/windows/windows_engine.cc
-  src/core/lib/event_engine/windows/windows_listener.cc
-  src/core/lib/event_engine/work_queue/basic_work_queue.cc
-  src/core/lib/experiments/config.cc
-  src/core/lib/experiments/experiments.cc
-  src/core/lib/gprpp/load_file.cc
-  src/core/lib/gprpp/per_cpu.cc
-  src/core/lib/gprpp/ref_counted_string.cc
-  src/core/lib/gprpp/status_helper.cc
-  src/core/lib/gprpp/time.cc
-  src/core/lib/gprpp/time_averaged_stats.cc
-  src/core/lib/gprpp/validation_errors.cc
-  src/core/lib/gprpp/work_serializer.cc
-  src/core/lib/handshaker/proxy_mapper_registry.cc
-  src/core/lib/iomgr/buffer_list.cc
-  src/core/lib/iomgr/call_combiner.cc
-  src/core/lib/iomgr/cfstream_handle.cc
-  src/core/lib/iomgr/closure.cc
-  src/core/lib/iomgr/combiner.cc
-  src/core/lib/iomgr/dualstack_socket_posix.cc
-  src/core/lib/iomgr/endpoint.cc
-  src/core/lib/iomgr/endpoint_cfstream.cc
-  src/core/lib/iomgr/endpoint_pair_posix.cc
-  src/core/lib/iomgr/endpoint_pair_windows.cc
-  src/core/lib/iomgr/error.cc
-  src/core/lib/iomgr/error_cfstream.cc
-  src/core/lib/iomgr/ev_apple.cc
-  src/core/lib/iomgr/ev_epoll1_linux.cc
-  src/core/lib/iomgr/ev_poll_posix.cc
-  src/core/lib/iomgr/ev_posix.cc
-  src/core/lib/iomgr/ev_windows.cc
-  src/core/lib/iomgr/event_engine_shims/closure.cc
-  src/core/lib/iomgr/event_engine_shims/endpoint.cc
-  src/core/lib/iomgr/event_engine_shims/tcp_client.cc
-  src/core/lib/iomgr/exec_ctx.cc
-  src/core/lib/iomgr/executor.cc
-  src/core/lib/iomgr/fork_posix.cc
-  src/core/lib/iomgr/fork_windows.cc
-  src/core/lib/iomgr/gethostname_fallback.cc
-  src/core/lib/iomgr/gethostname_host_name_max.cc
-  src/core/lib/iomgr/gethostname_sysconf.cc
-  src/core/lib/iomgr/grpc_if_nametoindex_posix.cc
-  src/core/lib/iomgr/grpc_if_nametoindex_unsupported.cc
-  src/core/lib/iomgr/internal_errqueue.cc
-  src/core/lib/iomgr/iocp_windows.cc
-  src/core/lib/iomgr/iomgr.cc
-  src/core/lib/iomgr/iomgr_internal.cc
-  src/core/lib/iomgr/iomgr_posix.cc
-  src/core/lib/iomgr/iomgr_posix_cfstream.cc
-  src/core/lib/iomgr/iomgr_windows.cc
-  src/core/lib/iomgr/load_file.cc
-  src/core/lib/iomgr/lockfree_event.cc
-  src/core/lib/iomgr/polling_entity.cc
-  src/core/lib/iomgr/pollset.cc
-  src/core/lib/iomgr/pollset_set.cc
-  src/core/lib/iomgr/pollset_set_windows.cc
-  src/core/lib/iomgr/pollset_windows.cc
-  src/core/lib/iomgr/resolve_address.cc
-  src/core/lib/iomgr/resolve_address_posix.cc
-  src/core/lib/iomgr/resolve_address_windows.cc
-  src/core/lib/iomgr/sockaddr_utils_posix.cc
-  src/core/lib/iomgr/socket_factory_posix.cc
-  src/core/lib/iomgr/socket_mutator.cc
-  src/core/lib/iomgr/socket_utils_common_posix.cc
-  src/core/lib/iomgr/socket_utils_linux.cc
-  src/core/lib/iomgr/socket_utils_posix.cc
-  src/core/lib/iomgr/socket_utils_windows.cc
-  src/core/lib/iomgr/socket_windows.cc
-  src/core/lib/iomgr/systemd_utils.cc
-  src/core/lib/iomgr/tcp_client.cc
-  src/core/lib/iomgr/tcp_client_cfstream.cc
-  src/core/lib/iomgr/tcp_client_posix.cc
-  src/core/lib/iomgr/tcp_client_windows.cc
-  src/core/lib/iomgr/tcp_posix.cc
-  src/core/lib/iomgr/tcp_server.cc
-  src/core/lib/iomgr/tcp_server_posix.cc
-  src/core/lib/iomgr/tcp_server_utils_posix_common.cc
-  src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.cc
-  src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc
-  src/core/lib/iomgr/tcp_server_windows.cc
-  src/core/lib/iomgr/tcp_windows.cc
-  src/core/lib/iomgr/timer.cc
-  src/core/lib/iomgr/timer_generic.cc
-  src/core/lib/iomgr/timer_heap.cc
-  src/core/lib/iomgr/timer_manager.cc
-  src/core/lib/iomgr/unix_sockets_posix.cc
-  src/core/lib/iomgr/unix_sockets_posix_noop.cc
-  src/core/lib/iomgr/vsock.cc
-  src/core/lib/iomgr/wakeup_fd_eventfd.cc
-  src/core/lib/iomgr/wakeup_fd_nospecial.cc
-  src/core/lib/iomgr/wakeup_fd_pipe.cc
-  src/core/lib/iomgr/wakeup_fd_posix.cc
-  src/core/lib/json/json_writer.cc
-  src/core/lib/load_balancing/lb_policy.cc
-  src/core/lib/load_balancing/lb_policy_registry.cc
-  src/core/lib/promise/activity.cc
-  src/core/lib/promise/party.cc
-  src/core/lib/promise/trace.cc
-  src/core/lib/resolver/resolver.cc
-  src/core/lib/resolver/resolver_registry.cc
-  src/core/lib/resolver/server_address.cc
-  src/core/lib/resource_quota/api.cc
-  src/core/lib/resource_quota/arena.cc
-  src/core/lib/resource_quota/memory_quota.cc
-  src/core/lib/resource_quota/periodic_update.cc
-  src/core/lib/resource_quota/resource_quota.cc
-  src/core/lib/resource_quota/thread_quota.cc
-  src/core/lib/resource_quota/trace.cc
-  src/core/lib/security/certificate_provider/certificate_provider_registry.cc
-  src/core/lib/security/credentials/alts/check_gcp_environment.cc
-  src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc
-  src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc
-  src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc
-  src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc
-  src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc
-  src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
-  src/core/lib/service_config/service_config_parser.cc
-  src/core/lib/slice/b64.cc
-  src/core/lib/slice/percent_encoding.cc
-  src/core/lib/slice/slice.cc
-  src/core/lib/slice/slice_buffer.cc
-  src/core/lib/slice/slice_refcount.cc
-  src/core/lib/slice/slice_string_helpers.cc
-  src/core/lib/surface/api_trace.cc
-  src/core/lib/surface/builtins.cc
-  src/core/lib/surface/byte_buffer.cc
-  src/core/lib/surface/byte_buffer_reader.cc
-  src/core/lib/surface/call.cc
-  src/core/lib/surface/call_details.cc
-  src/core/lib/surface/call_log_batch.cc
-  src/core/lib/surface/call_trace.cc
-  src/core/lib/surface/channel.cc
-  src/core/lib/surface/channel_init.cc
-  src/core/lib/surface/channel_ping.cc
-  src/core/lib/surface/channel_stack_type.cc
-  src/core/lib/surface/completion_queue.cc
-  src/core/lib/surface/completion_queue_factory.cc
-  src/core/lib/surface/event_string.cc
-  src/core/lib/surface/init_internally.cc
-  src/core/lib/surface/lame_client.cc
-  src/core/lib/surface/metadata_array.cc
-  src/core/lib/surface/server.cc
-  src/core/lib/surface/validate_metadata.cc
-  src/core/lib/surface/version.cc
-  src/core/lib/transport/batch_builder.cc
-  src/core/lib/transport/connectivity_state.cc
-  src/core/lib/transport/error_utils.cc
-  src/core/lib/transport/handshaker_registry.cc
-  src/core/lib/transport/metadata_batch.cc
-  src/core/lib/transport/parsed_metadata.cc
-  src/core/lib/transport/status_conversion.cc
-  src/core/lib/transport/timeout_encoding.cc
-  src/core/lib/transport/transport.cc
-  src/core/lib/transport/transport_op_string.cc
-  src/core/lib/uri/uri_parser.cc
-  src/core/tsi/alts/handshaker/transport_security_common_api.cc
-  test/core/transport/chaotic_good/frame_test.cc
-)
-target_compile_features(frame_test PUBLIC cxx_std_14)
-target_include_directories(frame_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(frame_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  gtest
-  upb
-  ${_gRPC_ZLIB_LIBRARIES}
-  absl::cleanup
-  absl::flat_hash_map
-  absl::flat_hash_set
-  absl::inlined_vector
-  absl::function_ref
-  absl::hash
-  absl::type_traits
-  absl::statusor
-  absl::span
-  absl::utility
-  ${_gRPC_CARES_LIBRARIES}
-  gpr
 )
 
 
@@ -23889,6 +23645,337 @@ target_link_libraries(test_core_slice_slice_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(test_core_transport_chaotic_good_frame_test
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chttp2/transport/bin_encoder.cc
+  src/core/ext/transport/chttp2/transport/decode_huff.cc
+  src/core/ext/transport/chttp2/transport/hpack_encoder.cc
+  src/core/ext/transport/chttp2/transport/hpack_encoder_table.cc
+  src/core/ext/transport/chttp2/transport/hpack_parse_result.cc
+  src/core/ext/transport/chttp2/transport/hpack_parser.cc
+  src/core/ext/transport/chttp2/transport/hpack_parser_table.cc
+  src/core/ext/transport/chttp2/transport/http_trace.cc
+  src/core/ext/transport/chttp2/transport/huffsyms.cc
+  src/core/ext/transport/chttp2/transport/varint.cc
+  src/core/ext/upb-generated/google/protobuf/any.upb.c
+  src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
+  src/core/ext/upb-generated/google/rpc/status.upb.c
+  src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
+  src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c
+  src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
+  src/core/lib/address_utils/parse_address.cc
+  src/core/lib/address_utils/sockaddr_utils.cc
+  src/core/lib/backoff/backoff.cc
+  src/core/lib/backoff/random_early_detection.cc
+  src/core/lib/channel/call_tracer.cc
+  src/core/lib/channel/channel_args.cc
+  src/core/lib/channel/channel_args_preconditioning.cc
+  src/core/lib/channel/channel_stack.cc
+  src/core/lib/channel/channel_stack_builder.cc
+  src/core/lib/channel/channel_stack_builder_impl.cc
+  src/core/lib/channel/channel_trace.cc
+  src/core/lib/channel/channelz.cc
+  src/core/lib/channel/channelz_registry.cc
+  src/core/lib/channel/connected_channel.cc
+  src/core/lib/channel/promise_based_filter.cc
+  src/core/lib/channel/server_call_tracer_filter.cc
+  src/core/lib/channel/status_util.cc
+  src/core/lib/compression/compression.cc
+  src/core/lib/compression/compression_internal.cc
+  src/core/lib/compression/message_compress.cc
+  src/core/lib/config/core_configuration.cc
+  src/core/lib/debug/event_log.cc
+  src/core/lib/debug/histogram_view.cc
+  src/core/lib/debug/stats.cc
+  src/core/lib/debug/stats_data.cc
+  src/core/lib/debug/trace.cc
+  src/core/lib/event_engine/ares_resolver.cc
+  src/core/lib/event_engine/cf_engine/cf_engine.cc
+  src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc
+  src/core/lib/event_engine/cf_engine/dns_service_resolver.cc
+  src/core/lib/event_engine/channel_args_endpoint_config.cc
+  src/core/lib/event_engine/default_event_engine.cc
+  src/core/lib/event_engine/default_event_engine_factory.cc
+  src/core/lib/event_engine/event_engine.cc
+  src/core/lib/event_engine/forkable.cc
+  src/core/lib/event_engine/memory_allocator.cc
+  src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc
+  src/core/lib/event_engine/posix_engine/ev_poll_posix.cc
+  src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc
+  src/core/lib/event_engine/posix_engine/internal_errqueue.cc
+  src/core/lib/event_engine/posix_engine/lockfree_event.cc
+  src/core/lib/event_engine/posix_engine/posix_endpoint.cc
+  src/core/lib/event_engine/posix_engine/posix_engine.cc
+  src/core/lib/event_engine/posix_engine/posix_engine_listener.cc
+  src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc
+  src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
+  src/core/lib/event_engine/posix_engine/timer.cc
+  src/core/lib/event_engine/posix_engine/timer_heap.cc
+  src/core/lib/event_engine/posix_engine/timer_manager.cc
+  src/core/lib/event_engine/posix_engine/traced_buffer_list.cc
+  src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.cc
+  src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.cc
+  src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.cc
+  src/core/lib/event_engine/resolved_address.cc
+  src/core/lib/event_engine/shim.cc
+  src/core/lib/event_engine/slice.cc
+  src/core/lib/event_engine/slice_buffer.cc
+  src/core/lib/event_engine/tcp_socket_utils.cc
+  src/core/lib/event_engine/thread_pool/original_thread_pool.cc
+  src/core/lib/event_engine/thread_pool/thread_count.cc
+  src/core/lib/event_engine/thread_pool/thread_pool_factory.cc
+  src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
+  src/core/lib/event_engine/thready_event_engine/thready_event_engine.cc
+  src/core/lib/event_engine/time_util.cc
+  src/core/lib/event_engine/trace.cc
+  src/core/lib/event_engine/utils.cc
+  src/core/lib/event_engine/windows/iocp.cc
+  src/core/lib/event_engine/windows/win_socket.cc
+  src/core/lib/event_engine/windows/windows_endpoint.cc
+  src/core/lib/event_engine/windows/windows_engine.cc
+  src/core/lib/event_engine/windows/windows_listener.cc
+  src/core/lib/event_engine/work_queue/basic_work_queue.cc
+  src/core/lib/experiments/config.cc
+  src/core/lib/experiments/experiments.cc
+  src/core/lib/gprpp/load_file.cc
+  src/core/lib/gprpp/per_cpu.cc
+  src/core/lib/gprpp/ref_counted_string.cc
+  src/core/lib/gprpp/status_helper.cc
+  src/core/lib/gprpp/time.cc
+  src/core/lib/gprpp/time_averaged_stats.cc
+  src/core/lib/gprpp/validation_errors.cc
+  src/core/lib/gprpp/work_serializer.cc
+  src/core/lib/handshaker/proxy_mapper_registry.cc
+  src/core/lib/iomgr/buffer_list.cc
+  src/core/lib/iomgr/call_combiner.cc
+  src/core/lib/iomgr/cfstream_handle.cc
+  src/core/lib/iomgr/closure.cc
+  src/core/lib/iomgr/combiner.cc
+  src/core/lib/iomgr/dualstack_socket_posix.cc
+  src/core/lib/iomgr/endpoint.cc
+  src/core/lib/iomgr/endpoint_cfstream.cc
+  src/core/lib/iomgr/endpoint_pair_posix.cc
+  src/core/lib/iomgr/endpoint_pair_windows.cc
+  src/core/lib/iomgr/error.cc
+  src/core/lib/iomgr/error_cfstream.cc
+  src/core/lib/iomgr/ev_apple.cc
+  src/core/lib/iomgr/ev_epoll1_linux.cc
+  src/core/lib/iomgr/ev_poll_posix.cc
+  src/core/lib/iomgr/ev_posix.cc
+  src/core/lib/iomgr/ev_windows.cc
+  src/core/lib/iomgr/event_engine_shims/closure.cc
+  src/core/lib/iomgr/event_engine_shims/endpoint.cc
+  src/core/lib/iomgr/event_engine_shims/tcp_client.cc
+  src/core/lib/iomgr/exec_ctx.cc
+  src/core/lib/iomgr/executor.cc
+  src/core/lib/iomgr/fork_posix.cc
+  src/core/lib/iomgr/fork_windows.cc
+  src/core/lib/iomgr/gethostname_fallback.cc
+  src/core/lib/iomgr/gethostname_host_name_max.cc
+  src/core/lib/iomgr/gethostname_sysconf.cc
+  src/core/lib/iomgr/grpc_if_nametoindex_posix.cc
+  src/core/lib/iomgr/grpc_if_nametoindex_unsupported.cc
+  src/core/lib/iomgr/internal_errqueue.cc
+  src/core/lib/iomgr/iocp_windows.cc
+  src/core/lib/iomgr/iomgr.cc
+  src/core/lib/iomgr/iomgr_internal.cc
+  src/core/lib/iomgr/iomgr_posix.cc
+  src/core/lib/iomgr/iomgr_posix_cfstream.cc
+  src/core/lib/iomgr/iomgr_windows.cc
+  src/core/lib/iomgr/load_file.cc
+  src/core/lib/iomgr/lockfree_event.cc
+  src/core/lib/iomgr/polling_entity.cc
+  src/core/lib/iomgr/pollset.cc
+  src/core/lib/iomgr/pollset_set.cc
+  src/core/lib/iomgr/pollset_set_windows.cc
+  src/core/lib/iomgr/pollset_windows.cc
+  src/core/lib/iomgr/resolve_address.cc
+  src/core/lib/iomgr/resolve_address_posix.cc
+  src/core/lib/iomgr/resolve_address_windows.cc
+  src/core/lib/iomgr/sockaddr_utils_posix.cc
+  src/core/lib/iomgr/socket_factory_posix.cc
+  src/core/lib/iomgr/socket_mutator.cc
+  src/core/lib/iomgr/socket_utils_common_posix.cc
+  src/core/lib/iomgr/socket_utils_linux.cc
+  src/core/lib/iomgr/socket_utils_posix.cc
+  src/core/lib/iomgr/socket_utils_windows.cc
+  src/core/lib/iomgr/socket_windows.cc
+  src/core/lib/iomgr/systemd_utils.cc
+  src/core/lib/iomgr/tcp_client.cc
+  src/core/lib/iomgr/tcp_client_cfstream.cc
+  src/core/lib/iomgr/tcp_client_posix.cc
+  src/core/lib/iomgr/tcp_client_windows.cc
+  src/core/lib/iomgr/tcp_posix.cc
+  src/core/lib/iomgr/tcp_server.cc
+  src/core/lib/iomgr/tcp_server_posix.cc
+  src/core/lib/iomgr/tcp_server_utils_posix_common.cc
+  src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.cc
+  src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc
+  src/core/lib/iomgr/tcp_server_windows.cc
+  src/core/lib/iomgr/tcp_windows.cc
+  src/core/lib/iomgr/timer.cc
+  src/core/lib/iomgr/timer_generic.cc
+  src/core/lib/iomgr/timer_heap.cc
+  src/core/lib/iomgr/timer_manager.cc
+  src/core/lib/iomgr/unix_sockets_posix.cc
+  src/core/lib/iomgr/unix_sockets_posix_noop.cc
+  src/core/lib/iomgr/vsock.cc
+  src/core/lib/iomgr/wakeup_fd_eventfd.cc
+  src/core/lib/iomgr/wakeup_fd_nospecial.cc
+  src/core/lib/iomgr/wakeup_fd_pipe.cc
+  src/core/lib/iomgr/wakeup_fd_posix.cc
+  src/core/lib/json/json_writer.cc
+  src/core/lib/load_balancing/lb_policy.cc
+  src/core/lib/load_balancing/lb_policy_registry.cc
+  src/core/lib/promise/activity.cc
+  src/core/lib/promise/party.cc
+  src/core/lib/promise/trace.cc
+  src/core/lib/resolver/resolver.cc
+  src/core/lib/resolver/resolver_registry.cc
+  src/core/lib/resolver/server_address.cc
+  src/core/lib/resource_quota/api.cc
+  src/core/lib/resource_quota/arena.cc
+  src/core/lib/resource_quota/memory_quota.cc
+  src/core/lib/resource_quota/periodic_update.cc
+  src/core/lib/resource_quota/resource_quota.cc
+  src/core/lib/resource_quota/thread_quota.cc
+  src/core/lib/resource_quota/trace.cc
+  src/core/lib/security/certificate_provider/certificate_provider_registry.cc
+  src/core/lib/security/credentials/alts/check_gcp_environment.cc
+  src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc
+  src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc
+  src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc
+  src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc
+  src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc
+  src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
+  src/core/lib/service_config/service_config_parser.cc
+  src/core/lib/slice/b64.cc
+  src/core/lib/slice/percent_encoding.cc
+  src/core/lib/slice/slice.cc
+  src/core/lib/slice/slice_buffer.cc
+  src/core/lib/slice/slice_refcount.cc
+  src/core/lib/slice/slice_string_helpers.cc
+  src/core/lib/surface/api_trace.cc
+  src/core/lib/surface/builtins.cc
+  src/core/lib/surface/byte_buffer.cc
+  src/core/lib/surface/byte_buffer_reader.cc
+  src/core/lib/surface/call.cc
+  src/core/lib/surface/call_details.cc
+  src/core/lib/surface/call_log_batch.cc
+  src/core/lib/surface/call_trace.cc
+  src/core/lib/surface/channel.cc
+  src/core/lib/surface/channel_init.cc
+  src/core/lib/surface/channel_ping.cc
+  src/core/lib/surface/channel_stack_type.cc
+  src/core/lib/surface/completion_queue.cc
+  src/core/lib/surface/completion_queue_factory.cc
+  src/core/lib/surface/event_string.cc
+  src/core/lib/surface/init_internally.cc
+  src/core/lib/surface/lame_client.cc
+  src/core/lib/surface/metadata_array.cc
+  src/core/lib/surface/server.cc
+  src/core/lib/surface/validate_metadata.cc
+  src/core/lib/surface/version.cc
+  src/core/lib/transport/batch_builder.cc
+  src/core/lib/transport/connectivity_state.cc
+  src/core/lib/transport/error_utils.cc
+  src/core/lib/transport/handshaker_registry.cc
+  src/core/lib/transport/metadata_batch.cc
+  src/core/lib/transport/parsed_metadata.cc
+  src/core/lib/transport/status_conversion.cc
+  src/core/lib/transport/timeout_encoding.cc
+  src/core/lib/transport/transport.cc
+  src/core/lib/transport/transport_op_string.cc
+  src/core/lib/uri/uri_parser.cc
+  src/core/tsi/alts/handshaker/transport_security_common_api.cc
+  test/core/transport/chaotic_good/frame_test.cc
+)
+target_compile_features(test_core_transport_chaotic_good_frame_test PUBLIC cxx_std_14)
+target_include_directories(test_core_transport_chaotic_good_frame_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(test_core_transport_chaotic_good_frame_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  upb
+  ${_gRPC_ZLIB_LIBRARIES}
+  absl::cleanup
+  absl::flat_hash_map
+  absl::flat_hash_set
+  absl::inlined_vector
+  absl::function_ref
+  absl::hash
+  absl::type_traits
+  absl::statusor
+  absl::span
+  absl::utility
+  ${_gRPC_CARES_LIBRARIES}
+  gpr
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(test_core_transport_chttp2_frame_test
+  src/core/ext/transport/chttp2/transport/frame.cc
+  src/core/lib/debug/trace.cc
+  src/core/lib/slice/slice.cc
+  src/core/lib/slice/slice_buffer.cc
+  src/core/lib/slice/slice_refcount.cc
+  src/core/lib/slice/slice_string_helpers.cc
+  test/core/transport/chttp2/frame_test.cc
+)
+target_compile_features(test_core_transport_chttp2_frame_test PUBLIC cxx_std_14)
+target_include_directories(test_core_transport_chttp2_frame_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(test_core_transport_chttp2_frame_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  absl::hash
+  absl::statusor
+  absl::span
+  gpr
 )
 
 

@@ -4516,6 +4516,7 @@ grpc_cc_library(
         "lb_policy",
         "lb_policy_factory",
         "lb_policy_registry",
+        "no_destruct",
         "pollset_set",
         "ref_counted_string",
         "validation_errors",
@@ -5743,7 +5744,7 @@ grpc_cc_library(
         "transport_fwd",
         "unique_type_name",
         "//:channel_arg_names",
-        "//:chttp2_frame",
+        "//:chttp2_legacy_frame",
         "//:config",
         "//:debug_location",
         "//:exec_ctx",
@@ -5973,6 +5974,43 @@ grpc_cc_library(
         "slice_buffer",
         "//:event_engine_base_hdrs",
         "//:gpr",
+    ],
+)
+
+grpc_cc_library(
+    name = "chaotic_good_client_transport",
+    srcs = [
+        "ext/transport/chaotic_good/client_transport.cc",
+    ],
+    hdrs = [
+        "ext/transport/chaotic_good/client_transport.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/types:variant",
+    ],
+    language = "c++",
+    deps = [
+        "activity",
+        "chaotic_good_frame",
+        "chaotic_good_frame_header",
+        "event_engine_wakeup_scheduler",
+        "for_each",
+        "grpc_promise_endpoint",
+        "join",
+        "loop",
+        "match",
+        "mpsc",
+        "pipe",
+        "seq",
+        "slice",
+        "slice_buffer",
+        "//:gpr",
+        "//:gpr_platform",
+        "//:grpc_base",
+        "//:hpack_encoder",
     ],
 )
 
