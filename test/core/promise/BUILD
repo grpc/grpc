@@ -404,6 +404,10 @@ grpc_cc_test(
 grpc_cc_test(
     name = "inter_activity_pipe_test",
     srcs = ["inter_activity_pipe_test.cc"],
+    external_deps = [
+        "absl/status",
+        "gtest",
+    ],
     language = "c++",
     tags = ["promise_test"],
     uses_event_engine = False,
