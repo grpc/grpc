@@ -52,4 +52,9 @@ grpc_cc_test(
     ],
 )
 
+filegroup(
+    name = "resolver_test_record_groups",
+    srcs = ["resolver_test_record_groups.yaml"],
+)
+
 generate_resolver_component_tests()
