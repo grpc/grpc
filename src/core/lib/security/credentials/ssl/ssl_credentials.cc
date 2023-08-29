@@ -58,6 +58,7 @@ grpc_ssl_credentials::~grpc_ssl_credentials() {
     config_.verify_options.verify_peer_destruct(
         config_.verify_options.verify_peer_callback_userdata);
   }
+  tsi_ssl_client_handshaker_factory_unref(client_handshaker_factory_);
 }
 
 grpc_core::RefCountedPtr<grpc_channel_security_connector>

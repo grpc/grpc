@@ -95,10 +95,6 @@ class grpc_ssl_channel_security_connector final
     target_name_ = std::string(host);
   }
 
-  ~grpc_ssl_channel_security_connector() override {
-    tsi_ssl_client_handshaker_factory_unref(client_handshaker_factory_);
-  }
-
   grpc_security_status InitializeHandshakerFactory(
       const grpc_ssl_config* config, const char* pem_root_certs,
       const tsi_ssl_root_certs_store* root_store,
@@ -204,7 +200,7 @@ class grpc_ssl_channel_security_connector final
                          overridden_target_name_.c_str(), auth_context));
   }
 
-  tsi_ssl_client_handshaker_factory* client_handshaker_factory_;
+  tsi_ssl_client_handshaker_factory* client_handshaker_factory_ = nullptr;
 
  private:
   std::string target_name_;
