@@ -25,8 +25,41 @@ import subprocess
 GRPCIO_OBSERVABILITY_ROOT_PREFIX = "src/python/grpcio_observability/"
 
 # cygrpc.so build from bazel
-CYGRPC_SO_PATH = os.path.dirname(os.path.abspath(__file__))
-CYGRPC_SO_FILE = "_cygrpc.so"
+# CYGRPC_SO_PATH = os.path.dirname(os.path.abspath(__file__))
+# import sys; sys.stderr.write(f"CYGRPC_SO_PATH: {CYGRPC_SO_PATH}\n"); sys.stderr.flush()
+# CYGRPC_SO_FILE = "_cygrpc.so"
+
+import grpc
+def _find_files_with_extension(directory: str, extension: str, name_only: bool = False):
+    """Finds all files in a directory with the specified extension.
+
+    Args:
+        directory: The directory to search.
+        extension: The file extension to find.
+        name_only: Wether to only return file name.
+
+    Returns:
+        A list of file paths or file names that match the specified extension.
+    """
+
+    files = []
+    for filename in os.listdir(directory):
+        filepath = os.path.join(directory, filename)
+        if os.path.isfile(filepath) and filename.endswith(extension):
+            if name_only:
+                files.append(filename)
+            else:
+                files.append(filepath)
+
+    return files
+print ("Checking path for cygrpc.so:")
+print(grpc._cython.__path__)
+CYGRPC_SO_PATH = os.path.realpath(grpc._cython.__path__[0])
+print (f"CYGRPC_SO_PATH: {CYGRPC_SO_PATH}")
+so_files = _find_files_with_extension(CYGRPC_SO_PATH, 'so', name_only=True)
+CYGRPC_SO_FILE = so_files[0]
+print (f"CYGRPC_SO_FILE: {CYGRPC_SO_FILE}")
+
 
 # Pairs of (source, target) directories to copy
 # from the grpc repo root to the grpcio_observability build root.
@@ -38,6 +71,7 @@ COPY_FILES_SOURCE_TARGET_PAIRS = [
         "src/core/ext/filters/client_channel/lb_policy",
         "grpc_root/src/core/ext/filters/client_channel/lb_policy",
     ),
+    ("src/cpp/ext/filters/census", "grpc_root/src/cpp/ext/filters/census"),
 ]
 
 # grpc repo root
@@ -79,6 +113,25 @@ def _bazel_build(query):
     subprocess.check_output([BAZEL_BUILD, query])
 
 
+def find_files_with_extension(directory: str, extension: str):
+    """Finds all files in a directory with the specified extension.
+
+    Args:
+    directory: The directory to search.
+    extension: The file extension to find.
+
+    Returns:
+    A list of file paths that match the specified extension.
+    """
+
+    files = []
+    for filename in os.listdir(directory):
+        filepath = os.path.join(directory, filename)
+        if os.path.isfile(filepath) and filename.endswith(extension):
+            files.append(filepath)
+
+    return files
+
 def main():
     os.chdir(GRPC_ROOT)
 
@@ -99,22 +152,22 @@ def main():
 
     # Step 2:
     # Use bazel to build _cygrpc.so and save it to proper location.
-    _bazel_build("//src/python/grpcio/grpc/_cython:cygrpc")
+    # _bazel_build("//src/python/grpcio/grpc/_cython:cygrpc")
 
-    _source_dir = os.path.join(
-        GRPC_ROOT,
-        "bazel-bin",
-        "src",
-        "python",
-        "grpcio",
-        "grpc",
-        "_cython",
-        "cygrpc.so",
-    )
-    source_file = os.path.abspath(_source_dir)
-    target_file = os.path.abspath(os.path.join(CYGRPC_SO_PATH, CYGRPC_SO_FILE))
-    print("Copying %s to %s" % (source_file, target_file))
-    shutil.copyfile(source_file, target_file)
+    # _source_dir = os.path.join(
+    #     GRPC_ROOT,
+    #     "bazel-bin",
+    #     "src",
+    #     "python",
+    #     "grpcio",
+    #     "grpc",
+    #     "_cython",
+    #     "cygrpc.so",
+    # )
+    # source_file = os.path.abspath(_source_dir)
+    # target_file = os.path.abspath(os.path.join(CYGRPC_SO_PATH, CYGRPC_SO_FILE))
+    # print("Copying %s to %s" % (source_file, target_file))
+    # shutil.copyfile(source_file, target_file)
 
 
 if __name__ == "__main__":
