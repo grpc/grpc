@@ -103,13 +103,15 @@ run_test() {
   local test_name="${1:?Usage: run_test test_name}"
   local out_dir="${TEST_XML_OUTPUT_DIR}/${test_name}"
   mkdir -pv "${out_dir}"
+  # --server_image="${SERVER_IMAGE_NAME}:${GIT_COMMIT}" \
+  # --client_image="${CLIENT_IMAGE_NAME}:${GIT_COMMIT}" \
   set -x
   python3 -m "tests.${test_name}" \
     --flagfile="${TEST_DRIVER_FLAGFILE}" \
     --kube_context="${KUBE_CONTEXT}" \
-    --server_image="${SERVER_IMAGE_NAME}:${GIT_COMMIT}" \
-    --client_image="${CLIENT_IMAGE_NAME}:${GIT_COMMIT}" \
     --testing_version="${TESTING_VERSION}" \
+    --server_image=gcr.io/grpc-testing/xds-interop/java-server:v1.57.x \
+    --client_image=gcr.io/grpc-testing/xds-interop/java-client:v1.57.x \
     --nocheck_local_certs \
     --force_cleanup \
     --collect_app_logs \
@@ -139,9 +141,6 @@ run_test() {
 #   Writes the output of test execution to stdout, stderr
 #######################################
 main() {
-  # TODO(sergiitk): Just a stub to create a Kokoro job. Remove tests are ready.
-  exit 0
-
   local script_dir
   script_dir="$(dirname "$0")"
 
@@ -157,7 +156,9 @@ main() {
   else
     local_setup_test_driver "${script_dir}"
   fi
-  build_docker_images_if_needed
+
+  # build_docker_images_if_needed
+
   # Run tests
   cd "${TEST_DRIVER_FULL_DIR}"
   local failed_tests=0
