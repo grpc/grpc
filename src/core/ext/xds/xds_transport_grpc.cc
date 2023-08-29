@@ -302,7 +302,15 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::Orphan() {
     GPR_ASSERT(client_channel != nullptr);
     client_channel->RemoveConnectivityWatcher(watcher_);
   }
-  Unref();
+  // Do an async hop before unreffing.  This avoids a deadlock upon
+  // shutdown in the case where the xDS channel is itself an xDS channel
+  // (e.g., when using one control plane to find another control plane).
+  grpc_event_engine::experimental::GetDefaultEventEngine()->Run(
+      [this]() {
+        ApplicationCallbackExecCtx application_exec_ctx;
+        ExecCtx exec_ctx;
+        Unref();
+      });
 }
 
 OrphanablePtr<XdsTransportFactory::XdsTransport::StreamingCall>
