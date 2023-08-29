@@ -224,7 +224,7 @@ FakeUdpAndTcpServer::SendBytesUntilPeerCloses(int bytes_received_size,
   int bytes_sent = send(s, buf, sizeof(buf), 0);
   gpr_log(GPR_DEBUG,
           "Fake TCP server sent %d bytes {%x, %x, %x} on peer socket: %d.", bytes_sent, buf[0], buf[1], buf[2], s);
-  return FakeUdpAndTcpServer::ProcessReadResult::kContinueReading;
+  return FakeUdpAndTcpServer::ProcessReadResult::kCloseSocket;
 }
 
 FakeUdpAndTcpServer::FakeUdpAndTcpServerPeer::FakeUdpAndTcpServerPeer(int fd)
