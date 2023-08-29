@@ -108,9 +108,9 @@ run_test() {
     --flagfile="${TEST_DRIVER_FLAGFILE}" \
     --flagfile="config/gamma.cfg" \
     --kube_context="${KUBE_CONTEXT}" \
-    --testing_version="${TESTING_VERSION}" \
     --server_image="${SERVER_IMAGE_NAME}:${GIT_COMMIT}" \
     --client_image="${CLIENT_IMAGE_NAME}:${GIT_COMMIT}" \
+    --testing_version="${TESTING_VERSION}" \
     --force_cleanup \
     --collect_app_logs \
     --log_dir="${out_dir}" \
