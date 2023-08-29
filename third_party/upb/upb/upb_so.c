@@ -25,23 +25,10 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef UPB_MINI_TABLE_FILE_INTERNAL_H_
-#define UPB_MINI_TABLE_FILE_INTERNAL_H_
+// These headers form a spanning tree for the upb defs needed by FFI layers.
 
-#include "upb/mini_table/types.h"
-
-// Must be last.
-#include "upb/port/def.inc"
-
-struct upb_MiniTableFile {
-  const upb_MiniTable** msgs;
-  const upb_MiniTableEnum** enums;
-  const upb_MiniTableExtension** exts;
-  int msg_count;
-  int enum_count;
-  int ext_count;
-};
-
-#include "upb/port/undef.inc"
-
-#endif /* UPB_MINI_TABLE_FILE_INTERNAL_H_ */
+#include "upb/collections/array_split64.h"
+#include "upb/collections/map.h"
+#include "upb/message/accessors_split64.h"
+#include "upb/message/message.h"
+#include "upb/mini_descriptor/decode.h"

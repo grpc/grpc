@@ -25,6 +25,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "upb/mini_descriptor/internal/encode.hpp"
+
 #include <string_view>
 #include <vector>
 
@@ -32,11 +34,11 @@
 #include "gtest/gtest.h"
 #include "absl/container/flat_hash_set.h"
 #include "google/protobuf/descriptor.h"
-#include "upb/message/internal.h"
-#include "upb/mini_table/common_internal.h"
-#include "upb/mini_table/decode.h"
-#include "upb/mini_table/encode_internal.hpp"
-#include "upb/mini_table/enum_internal.h"
+#include "upb/message/accessors_internal.h"
+#include "upb/mini_descriptor/decode.h"
+#include "upb/mini_descriptor/internal/base92.h"
+#include "upb/mini_descriptor/internal/modifiers.h"
+#include "upb/mini_table/enum.h"
 #include "upb/upb.hpp"
 #include "upb/wire/decode.h"
 
@@ -239,7 +241,7 @@ TEST(MiniTableEnumTest, Enum) {
   }
 }
 
-TEST_P(MiniTableTest, SubsInitializedToNull) {
+TEST_P(MiniTableTest, SubsInitializedToEmpty) {
   upb::Arena arena;
   upb::MtDataEncoder e;
   // Create mini table with 2 message fields.
@@ -251,8 +253,8 @@ TEST_P(MiniTableTest, SubsInitializedToNull) {
       e.data().data(), e.data().size(), GetParam(), arena.ptr(), status.ptr());
   ASSERT_NE(nullptr, table);
   EXPECT_EQ(table->field_count, 2);
-  EXPECT_EQ(table->subs[0].submsg, nullptr);
-  EXPECT_EQ(table->subs[1].submsg, nullptr);
+  EXPECT_EQ(table->subs[0].submsg, &_kUpb_MiniTable_Empty);
+  EXPECT_EQ(table->subs[1].submsg, &_kUpb_MiniTable_Empty);
 }
 
 TEST(MiniTableEnumTest, PositiveAndNegative) {

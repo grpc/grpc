@@ -15,17 +15,17 @@ def upb_deps():
         _github_archive,
         name = "com_google_absl",
         repo = "https://github.com/abseil/abseil-cpp",
-        commit = "c2435f8342c2d0ed8101cb43adfd605fdc52dca2",  # Abseil LTS 20230125.3
-        sha256 = "ea1d31db00eb37e607bfda17ffac09064670ddf05da067944c4766f517876390",
+        commit = "29bf8085f3bf17b84d30e34b3d7ff8248fda404e",  # Abseil LTS 20230802
+        sha256 = "f4871f2982e29496f4ddd598ccd5a87fea42f23c49b5e5eb459d57eab91df9d9",
     )
 
     maybe(
         _github_archive,
         name = "com_google_protobuf",
         repo = "https://github.com/protocolbuffers/protobuf",
-        commit = "571fae48b0370722e26abb267da5699694ca46e8",
-        sha256 = "74bc7f6ed83927ba2e32fc60ebab9aac28ab40ddffd8922a271a259f4f79911b",
+        commit = "3094b492468caafcdb61c132dab636cc3c87773f",
         patches = ["@upb//bazel:protobuf.patch"],
+        sha256 = "6b5cc54bbc598efc56cc88ca484b205a4559c336f49ea9a59fe654862ed96b4a",
     )
 
     maybe(
@@ -57,8 +57,11 @@ def upb_deps():
     maybe(
         http_archive,
         name = "bazel_skylib",
-        strip_prefix = "bazel-skylib-main",
-        urls = ["https://github.com/bazelbuild/bazel-skylib/archive/main.tar.gz"],
+        urls = [
+            "https://mirror.bazel.build/github.com/bazelbuild/bazel-skylib/releases/download/1.3.0/bazel-skylib-1.3.0.tar.gz",
+            "https://github.com/bazelbuild/bazel-skylib/releases/download/1.3.0/bazel-skylib-1.3.0.tar.gz",
+        ],
+        sha256 = "74d544d96f4a5bb630d465ca8bbcfe231e3594e5aae57e1edbf17a6eb3ca2506",
     )
 
     #Python Downloads

@@ -25,14 +25,15 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef UPB_MINI_TABLE_SUB_INTERNAL_H_
-#define UPB_MINI_TABLE_SUB_INTERNAL_H_
+#ifndef UPB_MINI_TABLE_INTERNAL_SUB_H_
+#define UPB_MINI_TABLE_INTERNAL_SUB_H_
 
-#include "upb/mini_table/types.h"
+#include "upb/mini_table/internal/enum.h"
+#include "upb/mini_table/internal/message.h"
 
 union upb_MiniTableSub {
-  const upb_MiniTable* submsg;
-  const upb_MiniTableEnum* subenum;
+  const struct upb_MiniTable* submsg;
+  const struct upb_MiniTableEnum* subenum;
 };
 
-#endif /* UPB_MINI_TABLE_SUB_INTERNAL_H_ */
+#endif /* UPB_MINI_TABLE_INTERNAL_SUB_H_ */

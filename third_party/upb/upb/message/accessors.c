@@ -31,7 +31,7 @@
 #include "upb/collections/array_internal.h"
 #include "upb/collections/map.h"
 #include "upb/message/message.h"
-#include "upb/mini_table/field_internal.h"
+#include "upb/mini_table/field.h"
 #include "upb/wire/common.h"
 #include "upb/wire/decode.h"
 #include "upb/wire/encode.h"
@@ -65,4 +65,28 @@ upb_MapInsertStatus upb_Message_InsertMapEntry(upb_Map* map,
   _upb_Message_GetField(map_entry_message, map_entry_value_field, &default_val,
                         &map_entry_value);
   return upb_Map_Insert(map, map_entry_key, map_entry_value, arena);
+}
+
+bool upb_Message_IsExactlyEqual(const upb_Message* m1, const upb_Message* m2,
+                                const upb_MiniTable* layout) {
+  if (m1 == m2) return true;
+
+  int opts = kUpb_EncodeOption_SkipUnknown | kUpb_EncodeOption_Deterministic;
+  upb_Arena* a = upb_Arena_New();
+
+  // Compare deterministically serialized payloads with no unknown fields.
+  size_t size1, size2;
+  char *data1, *data2;
+  upb_EncodeStatus status1 = upb_Encode(m1, layout, opts, a, &data1, &size1);
+  upb_EncodeStatus status2 = upb_Encode(m2, layout, opts, a, &data2, &size2);
+
+  if (status1 != kUpb_EncodeStatus_Ok || status2 != kUpb_EncodeStatus_Ok) {
+    // TODO(salo): How should we fail here? (In Ruby we throw an exception.)
+    upb_Arena_Free(a);
+    return false;
+  }
+
+  const bool ret = (size1 == size2) && (memcmp(data1, data2, size1) == 0);
+  upb_Arena_Free(a);
+  return ret;
 }
