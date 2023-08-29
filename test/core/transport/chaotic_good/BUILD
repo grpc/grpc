@@ -83,7 +83,9 @@ grpc_cc_test(
     srcs = ["client_transport_test.cc"],
     external_deps = [
         "absl/functional:any_invocable",
+        "absl/status:statusor",
         "absl/strings:str_format",
+        "absl/types:optional",
         "gtest",
     ],
     language = "C++",
@@ -91,6 +93,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:grpc",
+        "//:grpc_public_hdrs",
         "//:iomgr_timer",
         "//:ref_counted_ptr",
         "//src/core:activity",

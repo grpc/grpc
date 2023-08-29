@@ -20,18 +20,23 @@
 
 #include <algorithm>  // IWYU pragma: keep
 #include <memory>
+#include <string>  // IWYU pragma: keep
 #include <tuple>
 #include <vector>  // IWYU pragma: keep
 
 #include "absl/functional/any_invocable.h"
+#include "absl/status/statusor.h"     // IWYU pragma: keep
 #include "absl/strings/str_format.h"  // IWYU pragma: keep
+#include "absl/types/optional.h"      // IWYU pragma: keep
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
+#include <grpc/event_engine/slice.h>  // IWYU pragma: keep
 #include <grpc/event_engine/slice_buffer.h>
 #include <grpc/grpc.h>
+#include <grpc/status.h>  // IWYU pragma: keep
 
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/timer_manager.h"
@@ -45,6 +50,8 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/lib/slice/slice_internal.h"      // IWYU pragma: keep
+#include "src/core/lib/transport/metadata_batch.h"  // IWYU pragma: keep
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 
