@@ -95,39 +95,6 @@ class grpc_ssl_channel_security_connector final
     target_name_ = std::string(host);
   }
 
-  grpc_security_status InitializeHandshakerFactory(
-      const grpc_ssl_config* config, const char* pem_root_certs,
-      const tsi_ssl_root_certs_store* root_store,
-      tsi_ssl_session_cache* ssl_session_cache) {
-    bool has_key_cert_pair =
-        config->pem_key_cert_pair != nullptr &&
-        config->pem_key_cert_pair->private_key != nullptr &&
-        config->pem_key_cert_pair->cert_chain != nullptr;
-    tsi_ssl_client_handshaker_options options;
-    GPR_DEBUG_ASSERT(pem_root_certs != nullptr);
-    options.pem_root_certs = pem_root_certs;
-    options.root_store = root_store;
-    options.alpn_protocols =
-        grpc_fill_alpn_protocol_strings(&options.num_alpn_protocols);
-    if (has_key_cert_pair) {
-      options.pem_key_cert_pair = config->pem_key_cert_pair;
-    }
-    options.cipher_suites = grpc_get_ssl_cipher_suites();
-    options.session_cache = ssl_session_cache;
-    options.min_tls_version = grpc_get_tsi_tls_version(config->min_tls_version);
-    options.max_tls_version = grpc_get_tsi_tls_version(config->max_tls_version);
-    const tsi_result result =
-        tsi_create_ssl_client_handshaker_factory_with_options(
-            &options, &client_handshaker_factory_);
-    gpr_free(options.alpn_protocols);
-    if (result != TSI_OK) {
-      gpr_log(GPR_ERROR, "Handshaker factory creation failed with %s.",
-              tsi_result_to_string(result));
-      return GRPC_SECURITY_ERROR;
-    }
-    return GRPC_SECURITY_OK;
-  }
-
   void add_handshakers(const grpc_core::ChannelArgs& args,
                        grpc_pollset_set* /*interested_parties*/,
                        grpc_core::HandshakeManager* handshake_mgr) override {
