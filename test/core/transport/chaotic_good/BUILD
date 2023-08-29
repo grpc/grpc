@@ -96,6 +96,7 @@ grpc_cc_test(
         "//src/core:activity",
         "//src/core:arena",
         "//src/core:chaotic_good_client_transport",
+        "//src/core:event_engine_wakeup_scheduler",
         "//src/core:join",
         "//src/core:memory_quota",
         "//src/core:pipe",
@@ -105,6 +106,5 @@ grpc_cc_test(
         "//src/core:slice_buffer",
         "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto",
-        "//test/core/promise:test_wakeup_schedulers",
     ],
 )

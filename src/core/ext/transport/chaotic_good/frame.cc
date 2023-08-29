@@ -25,12 +25,17 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 
+#include <grpc/event_engine/memory_allocator.h>
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/gprpp/no_destruct.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/status_helper.h"
+#include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 
@@ -115,7 +120,11 @@ absl::StatusOr<Arena::PoolPtr<Metadata>> ReadMetadata(
     uint32_t stream_id, bool is_header, bool is_client) {
   if (!maybe_slices.ok()) return maybe_slices.status();
   auto& slices = *maybe_slices;
-  Arena::PoolPtr<Metadata> metadata;
+  MemoryAllocator memory_allocator = MemoryAllocator(
+      ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
+          "read_metadata"));
+  auto arena = MakeScopedArena(1024, &memory_allocator);
+  Arena::PoolPtr<Metadata> metadata = arena->MakePooled<Metadata>(arena.get());
   parser->BeginFrame(
       metadata.get(), std::numeric_limits<uint32_t>::max(),
       std::numeric_limits<uint32_t>::max(),
@@ -207,10 +216,15 @@ absl::Status ServerFragmentFrame::Deserialize(HPackParser* parser,
     auto r = ReadMetadata<ServerMetadata>(parser, deserializer.ReceiveHeaders(),
                                           header.stream_id, true, false);
     if (!r.ok()) return r.status();
+    GPR_ASSERT(r.value() != nullptr);
+    headers = std::move(r.value());
   }
   if (header.flags.is_set(1)) {
     auto r = ReadMetadata<ServerMetadata>(
         parser, deserializer.ReceiveTrailers(), header.stream_id, false, false);
+    if (!r.ok()) return r.status();
+    GPR_ASSERT(r.value() != nullptr);
+    trailers = std::move(r.value());
   }
   return deserializer.Finish();
 }
