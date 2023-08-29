@@ -471,9 +471,7 @@ TEST_F(CancelDuringAresQuery, TestQueryFailsBecauseTcpServerClosesSocket) {
   }
 }
 
-TEST_F(
-    CancelDuringAresQuery,
-    TestQueryFailsWithDataRemainingInReadBuffer) {
+TEST_F(CancelDuringAresQuery, TestQueryFailsWithDataRemainingInReadBuffer) {
   g_grpc_ares_test_only_force_tcp = true;
   grpc_core::testing::SocketUseAfterCloseDetector
       socket_use_after_close_detector;

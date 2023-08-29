@@ -213,8 +213,6 @@ FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer(int bytes_received_size,
 FakeUdpAndTcpServer::ProcessReadResult
 FakeUdpAndTcpServer::SendThreeAllZeroBytes(int bytes_received_size,
                                            int read_error, int s) {
-  gpr_log(GPR_DEBUG,
-          "apolcyn here");
   if (bytes_received_size < 0 && !ErrorIsRetryable(read_error)) {
     gpr_log(GPR_ERROR, "Read failed from peer socket: %d. errno: %d", s,
             read_error);
@@ -223,7 +221,8 @@ FakeUdpAndTcpServer::SendThreeAllZeroBytes(int bytes_received_size,
   char buf[3] = {0, 0, 0};
   int bytes_sent = send(s, buf, sizeof(buf), 0);
   gpr_log(GPR_DEBUG,
-          "Fake TCP server sent %d bytes {%x, %x, %x} on peer socket: %d.", bytes_sent, buf[0], buf[1], buf[2], s);
+          "Fake TCP server sent %d all-zero bytes on peer socket: %d.",
+          bytes_sent, s);
   return FakeUdpAndTcpServer::ProcessReadResult::kCloseSocket;
 }
 
