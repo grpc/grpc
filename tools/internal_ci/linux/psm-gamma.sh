@@ -108,11 +108,11 @@ run_test() {
   set -x
   python3 -m "tests.${test_name}" \
     --flagfile="${TEST_DRIVER_FLAGFILE}" \
+    --flagfile="config/gamma.cfg" \
     --kube_context="${KUBE_CONTEXT}" \
     --testing_version="${TESTING_VERSION}" \
     --server_image=gcr.io/grpc-testing/xds-interop/java-server:v1.57.x \
     --client_image=gcr.io/grpc-testing/xds-interop/java-client:v1.57.x \
-    --nocheck_local_certs \
     --force_cleanup \
     --collect_app_logs \
     --log_dir="${out_dir}" \
