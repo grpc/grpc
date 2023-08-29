@@ -35,6 +35,7 @@
 #include "opentelemetry/nostd/shared_ptr.h"
 
 #include "src/core/lib/transport/metadata_batch.h"
+#include "src/cpp/ext/otel/labels_iterable.h"
 
 namespace grpc {
 namespace internal {
@@ -44,7 +45,7 @@ class LabelsInjector {
   virtual ~LabelsInjector() {}
   // Read the incoming initial metadata to get the set of labels to be added to
   // metrics. (Does not include the local labels.)
-  virtual std::vector<std::pair<absl::string_view, std::string>> GetPeerLabels(
+  virtual std::unique_ptr<LabelsIterable> GetPeerLabels(
       grpc_metadata_batch* incoming_initial_metadata) = 0;
 
   // Get the local labels to be added to metrics. To be used when the peer
@@ -52,8 +53,7 @@ class LabelsInjector {
   // It is the responsibility of the implementation to make sure that the
   // backing store for the absl::string_view remains valid for the lifetime of
   // gRPC.
-  virtual std::vector<std::pair<absl::string_view, absl::string_view>>
-  GetLocalLabels() = 0;
+  virtual std::unique_ptr<LabelsIterable> GetLocalLabels() = 0;
 
   // Modify the outgoing initial metadata with metadata information to be sent
   // to the peer.

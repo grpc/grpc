@@ -22,6 +22,7 @@
 
 #include <stddef.h>
 
+#include <algorithm>
 #include <unordered_map>
 
 #include "absl/meta/type_traits.h"
@@ -70,7 +71,8 @@ constexpr absl::string_view kPeerProjectIdAttribute =
     "gsm.remote_workload_project_id";
 constexpr absl::string_view kPeerCanonicalServiceAttribute =
     "gsm.remote_workload_canonical_service";
-
+// Type values used by Google Cloud Resource Detector
+constexpr absl::string_view kGkeType = "gcp_kubernetes_engine";
 upb_StringView AbslStrToUpbStr(absl::string_view str) {
   return upb_StringView_FromDataAndSize(str.data(), str.size());
 }
@@ -120,6 +122,114 @@ absl::string_view GetStringValueFromUpbStruct(google_protobuf_Struct* struct_pb,
   return "unknown";
 }
 
+class LocalLabelsIterable : public LabelsIterable {
+ public:
+  explicit LocalLabelsIterable(
+      const std::vector<std::pair<absl::string_view, std::string>>& labels)
+      : labels_(labels) {}
+
+  absl::optional<std::pair<absl::string_view, absl::string_view>> Next()
+      override {
+    if (pos_ >= labels_.size()) {
+      return absl::nullopt;
+    }
+    return labels_[pos_];
+  }
+
+  size_t size() const override { return labels_.size(); }
+
+ private:
+  size_t pos_ = 0;
+  const std::vector<std::pair<absl::string_view, std::string>>& labels_;
+};
+
+class PeerLabelsIterable : public LabelsIterable {
+ public:
+  explicit PeerLabelsIterable(grpc_core::Slice remote_metadata) {
+    std::string decoded_metadata;
+    bool metadata_decoded = absl::Base64Unescape(
+        remote_metadata.as_string_view(), &decoded_metadata);
+    if (metadata_decoded) {
+      struct_pb_ = google_protobuf_Struct_parse(
+          decoded_metadata.c_str(), decoded_metadata.size(), arena_.ptr());
+      type_ = GetStringValueFromUpbStruct(struct_pb_, kMetadataExchangeTypeKey,
+                                          arena_.ptr());
+    }
+  }
+
+  absl::optional<std::pair<absl::string_view, absl::string_view>> Next()
+      override {
+    if (struct_pb_ == nullptr) {
+      return absl::nullopt;
+    }
+    if (pos_ == 0) {
+      return std::make_pair(kPeerTypeAttribute, type_);
+    }
+    // Only handle GKE type for now.
+    if (type_ != kGkeType) {
+      return absl::nullopt;
+    }
+    switch (pos_) {
+      case 1:
+        return std::make_pair(
+            kPeerPodNameAttribute,
+            GetStringValueFromUpbStruct(struct_pb_, kMetadataExchangePodNameKey,
+                                        arena_.ptr()));
+      case 2:
+        return std::make_pair(
+            kPeerContainerNameAttribute,
+            GetStringValueFromUpbStruct(
+                struct_pb_, kMetadataExchangeContainerNameKey, arena_.ptr()));
+      case 3:
+        return std::make_pair(
+            kPeerNamespaceNameAttribute,
+            GetStringValueFromUpbStruct(
+                struct_pb_, kMetadataExchangeNamespaceNameKey, arena_.ptr()));
+      case 4:
+        return std::make_pair(
+            kPeerClusterNameAttribute,
+            GetStringValueFromUpbStruct(
+                struct_pb_, kMetadataExchangeClusterNameKey, arena_.ptr()));
+      case 5:
+        return std::make_pair(
+            kPeerLocationAttribute,
+            GetStringValueFromUpbStruct(
+                struct_pb_, kMetadataExchangeLocationKey, arena_.ptr()));
+      case 6:
+        return std::make_pair(
+            kPeerProjectIdAttribute,
+            GetStringValueFromUpbStruct(
+                struct_pb_, kMetadataExchangeProjectIdKey, arena_.ptr()));
+      case 7:
+        return std::make_pair(
+            kPeerCanonicalServiceAttribute,
+            GetStringValueFromUpbStruct(struct_pb_,
+                                        kMetadataExchangeCanonicalServiceKey,
+                                        arena_.ptr()));
+      default:
+        return absl::nullopt;
+    }
+  }
+
+  // This is unused by OTel at present, so we don't care about optimizing this
+  // path as long as it's correct.
+  size_t size() const override {
+    if (struct_pb_ == nullptr) {
+      return 0;
+    }
+    if (type_ != kGkeType) {
+      return 1;
+    }
+    return 8;
+  }
+
+ private:
+  upb::Arena arena_;
+  google_protobuf_Struct* struct_pb_ = nullptr;
+  absl::string_view type_;
+  uint32_t pos_ = 0;
+};
+
 }  // namespace
 
 ServiceMeshLabelsInjector::ServiceMeshLabelsInjector(
@@ -154,20 +264,25 @@ ServiceMeshLabelsInjector::ServiceMeshLabelsInjector(
   // Create metadata to be sent over wire.
   AddStringKeyValueToStructProto(metadata, kMetadataExchangeTypeKey, type_value,
                                  arena.ptr());
-  AddStringKeyValueToStructProto(metadata, kMetadataExchangePodNameKey,
-                                 pod_name_value, arena.ptr());
-  AddStringKeyValueToStructProto(metadata, kMetadataExchangeContainerNameKey,
-                                 container_name_value, arena.ptr());
-  AddStringKeyValueToStructProto(metadata, kMetadataExchangeNamespaceNameKey,
-                                 namespace_value, arena.ptr());
-  AddStringKeyValueToStructProto(metadata, kMetadataExchangeClusterNameKey,
-                                 cluster_name_value, arena.ptr());
-  AddStringKeyValueToStructProto(metadata, kMetadataExchangeLocationKey,
-                                 cluster_location_value, arena.ptr());
-  AddStringKeyValueToStructProto(metadata, kMetadataExchangeProjectIdKey,
-                                 project_id_value, arena.ptr());
-  AddStringKeyValueToStructProto(metadata, kMetadataExchangeCanonicalServiceKey,
-                                 canonical_service_value, arena.ptr());
+  // Only handle GKE for now
+  if (type_value != kGkeType) {
+    AddStringKeyValueToStructProto(metadata, kMetadataExchangePodNameKey,
+                                   pod_name_value, arena.ptr());
+    AddStringKeyValueToStructProto(metadata, kMetadataExchangeContainerNameKey,
+                                   container_name_value, arena.ptr());
+    AddStringKeyValueToStructProto(metadata, kMetadataExchangeNamespaceNameKey,
+                                   namespace_value, arena.ptr());
+    AddStringKeyValueToStructProto(metadata, kMetadataExchangeClusterNameKey,
+                                   cluster_name_value, arena.ptr());
+    AddStringKeyValueToStructProto(metadata, kMetadataExchangeLocationKey,
+                                   cluster_location_value, arena.ptr());
+    AddStringKeyValueToStructProto(metadata, kMetadataExchangeProjectIdKey,
+                                   project_id_value, arena.ptr());
+    AddStringKeyValueToStructProto(metadata,
+                                   kMetadataExchangeCanonicalServiceKey,
+                                   canonical_service_value, arena.ptr());
+  }
+
   size_t output_length;
   char* output =
       google_protobuf_Struct_serialize(metadata, arena.ptr(), &output_length);
@@ -178,59 +293,18 @@ ServiceMeshLabelsInjector::ServiceMeshLabelsInjector(
   // TODO(yashykt): Add mesh_id
 }
 
-std::vector<std::pair<absl::string_view, std::string>>
-ServiceMeshLabelsInjector::GetPeerLabels(
+std::unique_ptr<LabelsIterable> ServiceMeshLabelsInjector::GetPeerLabels(
     grpc_metadata_batch* incoming_initial_metadata) {
-  auto remote_metadata =
+  auto peer_metadata =
       incoming_initial_metadata->Take(grpc_core::XEnvoyPeerMetadata());
-  std::vector<std::pair<absl::string_view, std::string>> labels;
-  upb::Arena arena;
-  google_protobuf_Struct* struct_pb = nullptr;
-  if (remote_metadata.has_value()) {
-    std::string decoded_metadata;
-    bool metadata_decoded = absl::Base64Unescape(
-        remote_metadata.value().as_string_view(), &decoded_metadata);
-    if (metadata_decoded) {
-      struct_pb = google_protobuf_Struct_parse(
-          decoded_metadata.c_str(), decoded_metadata.size(), arena.ptr());
-    }
+  if (!peer_metadata.has_value()) {
+    return nullptr;
   }
-  labels.emplace_back(kPeerTypeAttribute,
-                      GetStringValueFromUpbStruct(
-                          struct_pb, kMetadataExchangeTypeKey, arena.ptr()));
-  labels.emplace_back(kPeerPodNameAttribute,
-                      GetStringValueFromUpbStruct(
-                          struct_pb, kMetadataExchangePodNameKey, arena.ptr()));
-  labels.emplace_back(
-      kPeerContainerNameAttribute,
-      GetStringValueFromUpbStruct(struct_pb, kMetadataExchangeContainerNameKey,
-                                  arena.ptr()));
-  labels.emplace_back(
-      kPeerNamespaceNameAttribute,
-      GetStringValueFromUpbStruct(struct_pb, kMetadataExchangeNamespaceNameKey,
-                                  arena.ptr()));
-  labels.emplace_back(
-      kPeerClusterNameAttribute,
-      GetStringValueFromUpbStruct(struct_pb, kMetadataExchangeClusterNameKey,
-                                  arena.ptr()));
-  labels.emplace_back(
-      kPeerLocationAttribute,
-      GetStringValueFromUpbStruct(struct_pb, kMetadataExchangeLocationKey,
-                                  arena.ptr()));
-  labels.emplace_back(
-      kPeerProjectIdAttribute,
-      GetStringValueFromUpbStruct(struct_pb, kMetadataExchangeProjectIdKey,
-                                  arena.ptr()));
-  labels.emplace_back(
-      kPeerCanonicalServiceAttribute,
-      GetStringValueFromUpbStruct(
-          struct_pb, kMetadataExchangeCanonicalServiceKey, arena.ptr()));
-  return labels;
+  return std::make_unique<PeerLabelsIterable>(std::move(peer_metadata).value());
 }
 
-std::vector<std::pair<absl::string_view, absl::string_view>>
-ServiceMeshLabelsInjector::GetLocalLabels() {
-  return local_labels_;
+std::unique_ptr<LabelsIterable> ServiceMeshLabelsInjector::GetLocalLabels() {
+  return std::make_unique<LocalLabelsIterable>(local_labels_);
 }
 
 void ServiceMeshLabelsInjector::AddLabels(

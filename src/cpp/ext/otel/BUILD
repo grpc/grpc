@@ -34,9 +34,10 @@ grpc_cc_library(
         "otel_client_filter.cc",
         "otel_plugin.cc",
         "otel_server_call_tracer.cc",
+        "labels_iterable.cc",
     ],
     hdrs = [
-        "key_value_iterable.h",
+        "labels_iterable.h",
         "otel_call_tracer.h",
         "otel_client_filter.h",
         "otel_plugin.h",

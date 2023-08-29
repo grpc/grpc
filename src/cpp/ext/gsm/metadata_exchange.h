@@ -30,6 +30,7 @@
 
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/metadata_batch.h"
+#include "src/cpp/ext/otel/labels_iterable.h"
 #include "src/cpp/ext/otel/otel_plugin.h"
 
 namespace grpc {
@@ -41,20 +42,19 @@ class ServiceMeshLabelsInjector : public LabelsInjector {
       const opentelemetry::sdk::common::AttributeMap& map);
   // Read the incoming initial metadata to get the set of labels to be added to
   // metrics.
-  std::vector<std::pair<absl::string_view, std::string>> GetPeerLabels(
+  std::unique_ptr<LabelsIterable> GetPeerLabels(
       grpc_metadata_batch* incoming_initial_metadata) override;
 
   // Get the local labels to be added to metrics. To be used when the peer
   // metadata is not available, for example, for started RPCs metric.
-  std::vector<std::pair<absl::string_view, absl::string_view>> GetLocalLabels()
-      override;
+  std::unique_ptr<LabelsIterable> GetLocalLabels() override;
 
   // Modify the outgoing initial metadata with metadata information to be sent
   // to the peer.
   void AddLabels(grpc_metadata_batch* outgoing_initial_metadata) override;
 
  private:
-  std::vector<std::pair<absl::string_view, absl::string_view>> local_labels_;
+  std::vector<std::pair<absl::string_view, std::string>> local_labels_;
   grpc_core::Slice serialized_labels_to_send_;
 };
 

@@ -52,7 +52,7 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/metadata_batch.h"
-#include "src/cpp/ext/otel/key_value_iterable.h"
+#include "src/cpp/ext/otel/labels_iterable.h"
 #include "src/cpp/ext/otel/otel_call_tracer.h"
 #include "src/cpp/ext/otel/otel_plugin.h"
 
@@ -106,25 +106,21 @@ OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
       start_time_(absl::Now()) {
   // We don't have the peer labels at this point.
   if (OTelPluginState().labels_injector != nullptr) {
-    auto local_labels = OTelPluginState().labels_injector->GetLocalLabels();
-    labels_.insert(labels_.end(), std::make_move_iterator(local_labels.begin()),
-                   std::make_move_iterator(local_labels.end()));
+    local_labels_ = OTelPluginState().labels_injector->GetLocalLabels();
   }
-  labels_.emplace_back(OTelMethodKey(), parent_->method_);
-  labels_.emplace_back(OTelTargetKey(), parent_->parent_->target());
   if (OTelPluginState().client.attempt.started != nullptr) {
-    OTelPluginState().client.attempt.started->Add(1,
-                                                  KeyValueIterable(&labels_));
+    OTelPluginState().client.attempt.started->Add(
+        1, KeyValueIterable(local_labels_.get(), nullptr,
+                            {{OTelMethodKey(), parent_->method_},
+                             {OTelTargetKey(), parent_->parent_->target()}}));
   }
 }
 
 void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
     RecordReceivedInitialMetadata(grpc_metadata_batch* recv_initial_metadata) {
   if (OTelPluginState().labels_injector != nullptr) {
-    auto peer_labels =
+    peer_labels_ =
         OTelPluginState().labels_injector->GetPeerLabels(recv_initial_metadata);
-    labels_.insert(labels_.end(), std::make_move_iterator(peer_labels.begin()),
-                   std::make_move_iterator(peer_labels.end()));
   }
 }
 
@@ -165,12 +161,15 @@ void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
     RecordReceivedTrailingMetadata(
         absl::Status status, grpc_metadata_batch* /*recv_trailing_metadata*/,
         const grpc_transport_stream_stats* transport_stream_stats) {
-  labels_.emplace_back(OTelStatusKey(),
-                       absl::StatusCodeToString(status.code()));
+  KeyValueIterable labels(
+      local_labels_.get(), peer_labels_.get(),
+      {{OTelMethodKey(), parent_->method_},
+       {OTelTargetKey(), parent_->parent_->target()},
+       {OTelStatusKey(), absl::StatusCodeToString(status.code())}});
   if (OTelPluginState().client.attempt.duration != nullptr) {
     OTelPluginState().client.attempt.duration->Record(
-        absl::ToDoubleSeconds(absl::Now() - start_time_),
-        KeyValueIterable(&labels_), opentelemetry::context::Context{});
+        absl::ToDoubleSeconds(absl::Now() - start_time_), labels,
+        opentelemetry::context::Context{});
   }
   if (OTelPluginState().client.attempt.sent_total_compressed_message_size !=
       nullptr) {
@@ -178,7 +177,7 @@ void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
         transport_stream_stats != nullptr
             ? transport_stream_stats->outgoing.data_bytes
             : 0,
-        KeyValueIterable(&labels_), opentelemetry::context::Context{});
+        labels, opentelemetry::context::Context{});
   }
   if (OTelPluginState().client.attempt.rcvd_total_compressed_message_size !=
       nullptr) {
@@ -186,7 +185,7 @@ void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
         transport_stream_stats != nullptr
             ? transport_stream_stats->incoming.data_bytes
             : 0,
-        KeyValueIterable(&labels_), opentelemetry::context::Context{});
+        labels, opentelemetry::context::Context{});
   }
 }
 

@@ -28,6 +28,7 @@
 #include <vector>
 
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 #include "absl/types/variant.h"
 #include "opentelemetry/common/attribute_value.h"
 #include "opentelemetry/common/key_value_iterable.h"
@@ -37,42 +38,50 @@
 namespace grpc {
 namespace internal {
 
+// An iterable container interface that can be used as a return type for the
+// OTel plugin's label injector.
+class LabelsIterable {
+ public:
+  virtual ~LabelsIterable() = default;
+
+  virtual absl::optional<std::pair<absl::string_view, absl::string_view>>
+  Next() = 0;
+
+  virtual size_t size() const = 0;
+};
+
 // An iterable class based on opentelemetry::common::KeyValueIterable that
 // allows gRPC to store attribute values as absl::variant<absl::string_view,
 // std::string> and avoiding an allocation in cases where possible.
 class KeyValueIterable : public opentelemetry::common::KeyValueIterable {
  public:
   explicit KeyValueIterable(
-      std::vector<std::pair<absl::string_view,
-                            absl::variant<absl::string_view, std::string>>>*
-          labels)
-      : labels_(labels) {}
+      LabelsIterable* local_labels_iterable,
+      LabelsIterable* peer_labels_iterable,
+      std::initializer_list<std::pair<absl::string_view, absl::string_view>>
+          additional_labels)
+      : local_labels_iterable_(local_labels_iterable),
+        peer_labels_iterable_(peer_labels_iterable),
+        additional_labels_(additional_labels) {}
 
   bool ForEachKeyValue(opentelemetry::nostd::function_ref<
                        bool(opentelemetry::nostd::string_view,
                             opentelemetry::common::AttributeValue)>
-                           callback) const noexcept override {
-    for (const auto& pair : *labels_) {
-      if (!callback(opentelemetry::nostd::string_view(pair.first.data(),
-                                                      pair.first.length()),
-                    opentelemetry::common::AttributeValue(absl::visit(
-                        [](const auto& arg) {
-                          return opentelemetry::nostd::string_view(
-                              arg.data(), arg.length());
-                        },
-                        pair.second)))) {
-        return false;
-      }
-    }
-    return true;
+                           callback) const noexcept override;
+
+  size_t size() const noexcept override {
+    return (local_labels_iterable_ != nullptr ? local_labels_iterable_->size()
+                                              : 0) +
+           (peer_labels_iterable_ != nullptr ? peer_labels_iterable_->size()
+                                             : 0) +
+           additional_labels_.size();
   }
 
-  size_t size() const noexcept override { return labels_->size(); }
-
  private:
-  std::vector<std::pair<absl::string_view,
-                        absl::variant<absl::string_view, std::string>>>*
-      labels_;
+  LabelsIterable* local_labels_iterable_;
+  LabelsIterable* peer_labels_iterable_;
+  std::initializer_list<std::pair<absl::string_view, absl::string_view>>
+      additional_labels_;
 };
 
 }  // namespace internal
