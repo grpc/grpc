@@ -35,7 +35,6 @@
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/event_engine_wakeup_scheduler.h"
 #include "src/core/lib/promise/loop.h"
-#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/try_join.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
@@ -106,7 +105,10 @@ ClientTransport::ClientTransport(
               data_endpoint_->Write(std::move(data_endpoint_write_buffer_)));
         },
         // Finish writes to difference endpoints and continue the loop.
-        [](std::tuple<Empty, Empty> ret) -> LoopCtl<absl::Status> {
+        []() -> LoopCtl<absl::Status> {
+          // The write failures will be caught in TrySeq and exit loop.
+          // Therefore, only need to return Continue() in the last lambda
+          // function.
           return Continue();
         });
   });
@@ -135,11 +137,11 @@ ClientTransport::ClientTransport(
           // Read message padding and message from data endpoint.
           return TryJoin(
               control_endpoint_->Read(frame_header_->GetFrameLength()),
-              TrySeq(data_endpoint_->Read(frame_header_->message_padding),
-                     [this](SliceBuffer read_buffer) {
-                       return data_endpoint_->Read(
-                           frame_header_->message_length);
-                     }));
+              TrySeq(
+                  data_endpoint_->Read(frame_header_->message_padding), [this] {
+                    // The message_padding will be discarded here.
+                    return data_endpoint_->Read(frame_header_->message_length);
+                  }));
         },
         // Construct and send the server frame to corresponding stream.
         [this](std::tuple<SliceBuffer, SliceBuffer> ret) mutable {
