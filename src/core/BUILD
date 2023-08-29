@@ -889,12 +889,17 @@ grpc_cc_library(
     hdrs = [
         "lib/promise/inter_activity_pipe.h",
     ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/types:optional",
+    ],
     language = "c++",
     deps = [
         "activity",
         "poll",
         "ref_counted",
         "//:gpr",
+        "//:ref_counted_ptr",
     ],
 )
 
