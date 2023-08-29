@@ -78,7 +78,6 @@ class InterActivityPipe {
       if (std::exchange(closed_, true)) return;
       auto on_occupied = std::move(on_occupied_);
       auto on_available = std::move(on_available_);
-      auto on_closed = std::move(on_closed_);
       lock.Release();
       on_occupied.Wakeup();
       on_available.Wakeup();
@@ -93,7 +92,6 @@ class InterActivityPipe {
     uint8_t count_ ABSL_GUARDED_BY(mu_) = 0;
     Waker on_occupied_;
     Waker on_available_;
-    Waker on_closed_;
   };
   RefCountedPtr<Center> center_{MakeRefCounted<Center>()};
 
