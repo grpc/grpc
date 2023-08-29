@@ -3053,7 +3053,6 @@ grpc_cc_library(
         "//src/core:activity",
         "//src/core:arena",
         "//src/core:arena_promise",
-        "//src/core:basic_seq",
         "//src/core:cancel_callback",
         "//src/core:channel_args",
         "//src/core:channel_fwd",
