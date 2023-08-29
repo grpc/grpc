@@ -103,16 +103,14 @@ run_test() {
   local test_name="${1:?Usage: run_test test_name}"
   local out_dir="${TEST_XML_OUTPUT_DIR}/${test_name}"
   mkdir -pv "${out_dir}"
-  # --server_image="${SERVER_IMAGE_NAME}:${GIT_COMMIT}" \
-  # --client_image="${CLIENT_IMAGE_NAME}:${GIT_COMMIT}" \
   set -x
   python3 -m "tests.${test_name}" \
     --flagfile="${TEST_DRIVER_FLAGFILE}" \
     --flagfile="config/gamma.cfg" \
     --kube_context="${KUBE_CONTEXT}" \
     --testing_version="${TESTING_VERSION}" \
-    --server_image=gcr.io/grpc-testing/xds-interop/java-server:v1.57.x \
-    --client_image=gcr.io/grpc-testing/xds-interop/java-client:v1.57.x \
+    --server_image="${SERVER_IMAGE_NAME}:${GIT_COMMIT}" \
+    --client_image="${CLIENT_IMAGE_NAME}:${GIT_COMMIT}" \
     --force_cleanup \
     --collect_app_logs \
     --log_dir="${out_dir}" \
@@ -157,7 +155,7 @@ main() {
     local_setup_test_driver "${script_dir}"
   fi
 
-  # build_docker_images_if_needed
+  build_docker_images_if_needed
 
   # Run tests
   cd "${TEST_DRIVER_FULL_DIR}"
