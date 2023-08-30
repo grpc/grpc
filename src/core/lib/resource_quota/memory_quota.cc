@@ -54,6 +54,13 @@ class MemoryQuotaTracker {
 
   void Add(std::shared_ptr<BasicMemoryQuota> quota) {
     MutexLock lock(&mu_);
+    // Common usage is that we only create a few (one or two) quotas.
+    // We'd like to ensure that we don't OOM if more are added - and
+    // using a weak_ptr here, whilst nicely braindead, does run that
+    // risk.
+    // If usage patterns change sufficiently we'll likely want to
+    // change this class to have a more sophisticated data structure
+    // and probably a Remove() method.
     GatherAndGarbageCollect();
     quotas_.push_back(quota);
   }
