@@ -32,7 +32,10 @@ FROM python:3.9-slim-bookworm
 ENV GRPC_VERBOSITY="DEBUG"
 ENV GRPC_TRACE="xds_client,xds_resolver,xds_cluster_manager_lb,cds_lb,xds_cluster_resolver_lb,priority_lb,xds_cluster_impl_lb,weighted_target_lb,xds_server_config_fetcher,ring_hash_lb,outlier_detection_lb,xds_wrr_locality_lb,xds_override_host_lb"
 
-RUN apt-get update -y && apt-get upgrade -y
+RUN apt-get update \
+    && apt-get -y upgrade \
+    && apt-get -y autoremove \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY --from=0 /artifacts ./
 
