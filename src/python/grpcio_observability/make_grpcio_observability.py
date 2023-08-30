@@ -129,7 +129,9 @@ BAZEL_DEPS = os.path.join(
 # # the bazel target to scrape to get list of sources for the build
 BAZEL_DEPS_QUERIES = [
     # '//src/python/grpcio_observability/grpc_observability:observability',
-    '//:grpc_base',
+    # '//:grpc_base',
+    '//src/core:activity',
+    '//src/core:slice',
 ]
 
 # def protobuf_submodule_commit_hash():
@@ -187,16 +189,16 @@ def _generate_deps_file_content():
         cc_files_output += _bazel_query(query)
 
     # Collect .cc files (that will be later included in the native extension build)
-    cc_files = []
+    cc_files = set()
     for name in cc_files_output:
         if name.endswith(".cc"):
             filepath = _bazel_name_to_file_path(name)
-            # if filepath:
-            if filepath and 'abseil' in filepath:
-                cc_files.append(filepath)
+            if filepath:
+            # if filepath and 'abseil' in filepath:
+                cc_files.add(filepath)
 
     deps_file_content = DEPS_FILE_CONTENT.format(
-        cc_files=_pretty_print_list(sorted(cc_files)),
+        cc_files=_pretty_print_list(sorted(list(cc_files))),
         cc_includes=_pretty_print_list(CC_INCLUDES))
     return deps_file_content
 
