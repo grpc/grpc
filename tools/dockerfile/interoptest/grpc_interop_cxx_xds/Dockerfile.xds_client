@@ -14,7 +14,7 @@
 
 # Dockerfile for building //test/cpp/interop:xds_interop_client
 
-FROM python:3.9-slim-bullseye
+FROM python:3.9-slim-bookworm
 
 RUN apt-get update -y && apt-get upgrade -y && apt-get install -y build-essential clang curl
 
@@ -27,10 +27,13 @@ COPY . .
 RUN tools/bazel build //test/cpp/interop:xds_interop_client
 RUN cp -rL /workdir/bazel-bin/test/cpp/interop/xds_interop_client /artifacts/
 
-FROM python:3.9-slim-bullseye
-COPY --from=0 /artifacts ./
+FROM python:3.9-slim-bookworm
 
 ENV GRPC_VERBOSITY="DEBUG"
 ENV GRPC_TRACE="xds_client,xds_resolver,xds_cluster_manager_lb,cds_lb,xds_cluster_resolver_lb,priority_lb,xds_cluster_impl_lb,weighted_target_lb,xds_server_config_fetcher,ring_hash_lb,outlier_detection_lb,xds_wrr_locality_lb,xds_override_host_lb"
+
+RUN apt-get update -y && apt-get upgrade -y
+
+COPY --from=0 /artifacts ./
 
 ENTRYPOINT ["/xds_interop_client"]
