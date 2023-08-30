@@ -213,8 +213,6 @@ class PeerLabelsIterable : public LabelsIterable {
     }
   }
 
-  // This is unused by OTel at present, so we don't care about optimizing this
-  // path as long as it's correct.
   size_t size() const override {
     if (struct_pb_ == nullptr) {
       return 0;

@@ -31,7 +31,6 @@ package(
 grpc_cc_library(
     name = "otel_plugin",
     srcs = [
-        "labels_iterable.cc",
         "otel_client_filter.cc",
         "otel_plugin.cc",
         "otel_server_call_tracer.cc",
