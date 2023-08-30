@@ -27,12 +27,12 @@
 #include "absl/strings/strip.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
+#include "constants.h"
+#include "sampler.h"
 
 #include <grpc/slice.h>
 
 #include "src/core/lib/channel/channel_stack.h"
-#include "constants.h"
-#include "sampler.h"
 
 namespace grpc_observability {
 
