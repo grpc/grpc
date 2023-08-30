@@ -18,6 +18,8 @@
 
 #include <stdint.h>
 
+#include <memory>
+
 #include "absl/status/status.h"
 #include "gtest/gtest.h"
 
@@ -32,6 +34,8 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/promise/promise.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/transport.h"
 #include "test/core/end2end/end2end_tests.h"
@@ -92,7 +96,11 @@ void destroy_channel_elem(grpc_channel_element* /*elem*/) {}
 
 const grpc_channel_filter test_filter = {
     start_transport_stream_op_batch,
-    nullptr,
+    [](grpc_channel_element*, CallArgs,
+       NextPromiseFactory) -> ArenaPromise<ServerMetadataHandle> {
+      return Immediate(ServerMetadataFromStatus(
+          absl::PermissionDeniedError("Failure that's not preventable.")));
+    },
     grpc_channel_next_op,
     sizeof(call_data),
     init_call_elem,

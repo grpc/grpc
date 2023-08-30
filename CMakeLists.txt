@@ -6534,6 +6534,7 @@ target_include_directories(avl_test
 target_link_libraries(avl_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::hash
   gpr
 )
 
@@ -10629,6 +10630,7 @@ target_include_directories(endpoint_config_test
 target_link_libraries(endpoint_config_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::hash
   absl::type_traits
   absl::statusor
   gpr
@@ -15099,6 +15101,7 @@ target_include_directories(latch_test
 target_link_libraries(latch_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::hash
   absl::type_traits
   absl::statusor
   gpr
@@ -24338,6 +24341,7 @@ target_include_directories(thread_quota_test
 target_link_libraries(thread_quota_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::hash
   gpr
 )
 
@@ -25389,6 +25393,7 @@ target_include_directories(wait_for_callback_test
 target_link_libraries(wait_for_callback_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::hash
   absl::type_traits
   absl::statusor
   gpr

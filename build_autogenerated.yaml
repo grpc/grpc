@@ -5338,6 +5338,7 @@ targets:
   - test/core/avl/avl_test.cc
   deps:
   - gtest
+  - absl/hash:hash
   - gpr
   uses_polling: false
 - name: aws_request_signer_test
@@ -7774,6 +7775,7 @@ targets:
   - test/core/event_engine/endpoint_config_test.cc
   deps:
   - gtest
+  - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -10460,6 +10462,7 @@ targets:
   - test/core/promise/latch_test.cc
   deps:
   - gtest
+  - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -16259,6 +16262,7 @@ targets:
   - test/core/resource_quota/thread_quota_test.cc
   deps:
   - gtest
+  - absl/hash:hash
   - gpr
   uses_polling: false
 - name: thread_stress_test
@@ -16798,6 +16802,7 @@ targets:
   - test/core/promise/wait_for_callback_test.cc
   deps:
   - gtest
+  - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
