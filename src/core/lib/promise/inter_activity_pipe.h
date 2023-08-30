@@ -81,7 +81,6 @@ class InterActivityPipe {
       lock.Release();
       on_occupied.Wakeup();
       on_available.Wakeup();
-      on_closed.Wakeup();
     }
 
    private:
