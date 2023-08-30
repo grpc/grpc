@@ -177,18 +177,6 @@ bool Fork::Enabled() {
   return support_enabled_.load(std::memory_order_relaxed);
 }
 
-void Fork::IncExecCtxCount() {
-  if (GPR_UNLIKELY(support_enabled_.load(std::memory_order_relaxed))) {
-    DoIncExecCtxCount();
-  }
-}
-
-void Fork::DecExecCtxCount() {
-  if (GPR_UNLIKELY(support_enabled_.load(std::memory_order_relaxed))) {
-    DoDecExecCtxCount();
-  }
-}
-
 // Testing Only
 void Fork::Enable(bool enable) {
   override_enabled_ = true;

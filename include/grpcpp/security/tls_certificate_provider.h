@@ -34,7 +34,7 @@ namespace experimental {
 // implementation.
 class GRPCXX_DLL CertificateProviderInterface {
  public:
-  virtual ~CertificateProviderInterface();
+  virtual ~CertificateProviderInterface() = default;
   virtual grpc_tls_certificate_provider* c_provider() = 0;
 };
 

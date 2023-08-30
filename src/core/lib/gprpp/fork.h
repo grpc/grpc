@@ -31,7 +31,7 @@
 
 namespace grpc_core {
 
-class GRPC_DLL Fork {
+class GPR_DLL Fork {
  public:
   typedef void (*child_postfork_func)(void);
 
@@ -42,10 +42,18 @@ class GRPC_DLL Fork {
 
   // Increment the count of active ExecCtxs.
   // Will block until a pending fork is complete if one is in progress.
-  static void IncExecCtxCount();
+  static void Fork::IncExecCtxCount() {
+    if (GPR_UNLIKELY(support_enabled_.load(std::memory_order_relaxed))) {
+      DoIncExecCtxCount();
+    }
+  }
 
   // Decrement the count of active ExecCtxs
-  static void DecExecCtxCount();
+  static void Fork::DecExecCtxCount() {
+    if (GPR_UNLIKELY(support_enabled_.load(std::memory_order_relaxed))) {
+      DoDecExecCtxCount();
+    }
+  }
 
   // Provide a function that will be invoked in the child's postfork handler to
   // reset the polling engine's internal state.
