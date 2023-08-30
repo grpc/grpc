@@ -18,8 +18,6 @@
 
 #include "src/core/ext/xds/xds_lb_policy_registry.h"
 
-#include <stdint.h>
-
 #include <string>
 
 #include <google/protobuf/any.pb.h>

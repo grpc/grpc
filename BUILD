@@ -3112,6 +3112,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/container:flat_hash_set",
+        "absl/functional:any_invocable",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -3718,8 +3719,30 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "chttp2_frame",
+    srcs = [
+        "//src/core:ext/transport/chttp2/transport/frame.cc",
+    ],
     hdrs = [
         "//src/core:ext/transport/chttp2/transport/frame.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/types:span",
+        "absl/types:variant",
+    ],
+    deps = [
+        "gpr",
+        "//src/core:slice",
+        "//src/core:slice_buffer",
+    ],
+)
+
+grpc_cc_library(
+    name = "chttp2_legacy_frame",
+    hdrs = [
+        "//src/core:ext/transport/chttp2/transport/legacy_frame.h",
     ],
     deps = ["gpr"],
 )
@@ -3805,7 +3828,7 @@ grpc_cc_library(
         "absl/types:variant",
     ],
     deps = [
-        "chttp2_frame",
+        "chttp2_legacy_frame",
         "gpr",
         "gpr_platform",
         "grpc_base",
@@ -3836,7 +3859,7 @@ grpc_cc_library(
     external_deps = ["absl/strings"],
     deps = [
         "chttp2_bin_encoder",
-        "chttp2_frame",
+        "chttp2_legacy_frame",
         "chttp2_varint",
         "gpr",
         "gpr_platform",
@@ -3931,7 +3954,7 @@ grpc_cc_library(
     deps = [
         "channel_arg_names",
         "chttp2_context_list_entry",
-        "chttp2_frame",
+        "chttp2_legacy_frame",
         "chttp2_varint",
         "debug_location",
         "exec_ctx",

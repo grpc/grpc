@@ -9,15 +9,7 @@
 #ifndef ENVOY_CONFIG_TRACE_V3_TRACE_PROTO_UPB_H_
 #define ENVOY_CONFIG_TRACE_V3_TRACE_PROTO_UPB_H_
 
-#include "upb/collections/array_internal.h"
-#include "upb/collections/map_gencode_util.h"
-#include "upb/message/accessors.h"
-#include "upb/message/internal.h"
-#include "upb/mini_table/enum_internal.h"
-#include "upb/wire/decode.h"
-#include "upb/wire/decode_fast.h"
-#include "upb/wire/encode.h"
-
+#include "upb/generated_code_support.h"
 /* Public Imports. */
 #include "envoy/config/trace/v3/datadog.upb.h"
 #include "envoy/config/trace/v3/dynamic_ot.upb.h"

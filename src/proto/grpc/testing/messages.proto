@@ -214,8 +214,9 @@ message LoadBalancerStatsRequest {
 
 message LoadBalancerStatsResponse {
   enum MetadataType {
-    Initial = 0;
-    Trailing = 1;
+    UNKNOWN = 0;
+    INITIAL = 1;
+    TRAILING = 2;
   }
   message MetadataEntry {
     // Key, exactly as received from the server. Case may be different from what
@@ -223,7 +224,7 @@ message LoadBalancerStatsResponse {
     string key = 1;
     // Value, exactly as received from the server.
     string value = 2;
-    // Metadata type is either Initial or Trailing
+    // Metadata type
     MetadataType type = 3;
   }
   message RpcMetadata {
@@ -318,16 +319,17 @@ message TestOrcaReport {
   map<string, double> utilization = 4;
 }
 
-enum HookRequestCommand {
-  // Start the HTTP endpoint
-  START = 0;
-  // Stop
-  STOP = 1;
-  // Return from HTTP GET/POST
-  RETURN = 2;
-}
-
 message HookRequest {
+  enum HookRequestCommand {
+    // Default value
+    UNSPECIFIED = 0;
+    // Start the HTTP endpoint
+    START = 1;
+    // Stop
+    STOP = 2;
+    // Return from HTTP GET/POST
+    RETURN = 3;
+  }
   HookRequestCommand command = 1;
   int32 grpc_code_to_return = 2;
   string grpc_status_description = 3;
