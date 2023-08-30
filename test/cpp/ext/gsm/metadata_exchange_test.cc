@@ -138,12 +138,11 @@ TEST_F(MetadataExchangeTest, ClientAttemptDuration) {
   ASSERT_NE(point_data, nullptr);
   ASSERT_EQ(point_data->count_, 1);
   const auto& attributes = data[kMetricName][0].attributes.GetAttributes();
-  //   EXPECT_EQ(absl::get<std::string>(attributes.at("grpc.method")),
-  //   kMethodName);
-  //   EXPECT_EQ(absl::get<std::string>(attributes.at("grpc.target")),
-  //             canonical_server_address_);
-  //   EXPECT_EQ(absl::get<std::string>(attributes.at("grpc.status")), "OK");
-  //   VerifyGkeServiceMeshAttributes(attributes);
+  EXPECT_EQ(absl::get<std::string>(attributes.at("grpc.method")), kMethodName);
+  EXPECT_EQ(absl::get<std::string>(attributes.at("grpc.target")),
+            canonical_server_address_);
+  EXPECT_EQ(absl::get<std::string>(attributes.at("grpc.status")), "OK");
+  VerifyGkeServiceMeshAttributes(attributes);
 }
 
 TEST_F(MetadataExchangeTest, ServerCallDuration) {
