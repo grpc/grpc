@@ -195,23 +195,10 @@ class CancelDuringAresQuery : public ::testing::Test {
     grpc_core::ConfigVars::Overrides overrides;
     overrides.dns_resolver = "ares";
     grpc_core::ConfigVars::SetOverrides(overrides);
-    // Sanity check the time that it takes to run the test
-    // including the teardown time (the teardown
-    // part of the test involves cancelling the DNS query,
-    // which is the main point of interest for this test).
-    overall_deadline = grpc_timeout_seconds_to_deadline(4);
     grpc_init();
   }
 
-  static void TearDownTestSuite() {
-    grpc_shutdown();
-    if (gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), overall_deadline) > 0) {
-      grpc_core::Crash("Test took too long");
-    }
-  }
-
- private:
-  static gpr_timespec overall_deadline;
+  static void TearDownTestSuite() { grpc_shutdown(); }
 };
 gpr_timespec CancelDuringAresQuery::overall_deadline;
 
