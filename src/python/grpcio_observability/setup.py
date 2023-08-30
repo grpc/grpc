@@ -143,6 +143,10 @@ if EXTRA_ENV_LINK_ARGS is None:
         if check_linker_need_libatomic():
             EXTRA_ENV_LINK_ARGS += " -latomic"
 
+# This enables the standard link-time optimizer, which help us prevent some undefined symbol errors by
+# remove some unused symbols from .so file.
+EXTRA_ENV_COMPILE_ARGS += " -flto"
+
 EXTRA_COMPILE_ARGS = shlex.split(EXTRA_ENV_COMPILE_ARGS)
 EXTRA_LINK_ARGS = shlex.split(EXTRA_ENV_LINK_ARGS)
 
