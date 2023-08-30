@@ -12,16 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from distutils import cygwinccompiler
 from distutils import extension
 from distutils import util
-import errno
 import os
 import os.path
 import platform
 import re
 import shlex
-import shutil
 import subprocess
 from subprocess import PIPE
 import sys
@@ -41,8 +38,6 @@ import _parallel_compile_patch
 import observability_lib_deps
 
 import grpc_version
-
-_EXT_INIT_SYMBOL = "PyInit__protoc_compiler"
 
 _parallel_compile_patch.monkeypatch_compile_maybe()
 
@@ -132,31 +127,10 @@ if EXTRA_ENV_COMPILE_ARGS is None:
         # available dynamically
         EXTRA_ENV_COMPILE_ARGS += ' /MT'
     elif "linux" in sys.platform or "darwin" in sys.platform:
-        EXTRA_ENV_COMPILE_ARGS += ' -fno-wrapv -frtti'
+        EXTRA_ENV_COMPILE_ARGS += ' -fno-wrapv -frtti -fvisibility=hidden -fno-wrapv'
+
 if EXTRA_ENV_LINK_ARGS is None:
     EXTRA_ENV_LINK_ARGS = ''
-    # NOTE(rbellevi): Clang on Mac OS will make all static symbols (both
-    # variables and objects) global weak symbols. When a process loads the
-    # protobuf wheel's shared object library before loading *this* C extension,
-    # the runtime linker will prefer the protobuf module's version of symbols.
-    # This results in the process using a mixture of symbols from the protobuf
-    # wheel and this wheel, which may be using different versions of
-    # libprotobuf. In the case that they *are* using different versions of
-    # libprotobuf *and* there has been a change in data layout (or in other
-    # invariants) segfaults, data corruption, or "bad things" may happen.
-    #
-    # This flag ensures that on Mac, the only global symbol is the one loaded by
-    # the Python interpreter. The problematic global weak symbols become local
-    # weak symbols.  This is not required on Linux since the compiler does not
-    # produce global weak symbols. This is not required on Windows as our ".pyd"
-    # file does not contain any symbols.
-    #
-    # Finally, the leading underscore here is part of the Mach-O ABI. Unlike
-    # more modern ABIs (ELF et al.), Mach-O prepends an underscore to the names
-    # of C functions.
-    if "darwin" in sys.platform:
-        EXTRA_ENV_LINK_ARGS += ' -Wl,-exported_symbol,_{}'.format(
-            _EXT_INIT_SYMBOL)
     if "linux" in sys.platform or "darwin" in sys.platform:
         EXTRA_ENV_LINK_ARGS += ' -lpthread'
         if check_linker_need_libatomic():

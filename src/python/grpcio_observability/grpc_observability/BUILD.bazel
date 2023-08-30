@@ -77,7 +77,6 @@ py_library(
     ],
     deps = [
         ":cyobservability",
-        "//src/python/grpcio/grpc:grpcio",
         requirement("opencensus"),
         requirement("opencensus-ext-stackdriver"),
     ],
