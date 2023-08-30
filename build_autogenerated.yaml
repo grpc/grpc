@@ -8642,6 +8642,7 @@ targets:
   - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
   - src/core/lib/promise/for_each.h
   - src/core/lib/promise/if.h
+  - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/interceptor_list.h
   - src/core/lib/promise/join.h
   - src/core/lib/promise/loop.h
@@ -9979,6 +9980,35 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+- name: inter_activity_pipe_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/gprpp/atomic_utils.h
+  - src/core/lib/gprpp/orphanable.h
+  - src/core/lib/gprpp/ref_counted.h
+  - src/core/lib/gprpp/ref_counted_ptr.h
+  - src/core/lib/promise/activity.h
+  - src/core/lib/promise/context.h
+  - src/core/lib/promise/detail/basic_seq.h
+  - src/core/lib/promise/detail/promise_factory.h
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/seq_state.h
+  - src/core/lib/promise/detail/status.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/poll.h
+  - src/core/lib/promise/seq.h
+  - test/core/promise/test_wakeup_schedulers.h
+  src:
+  - src/core/lib/promise/activity.cc
+  - test/core/promise/inter_activity_pipe_test.cc
+  deps:
+  - gtest
+  - absl/meta:type_traits
+  - absl/status:statusor
+  - gpr
+  uses_polling: false
 - name: interceptor_list_test
   gtest: true
   build: test
