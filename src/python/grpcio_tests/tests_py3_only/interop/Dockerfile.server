@@ -13,12 +13,16 @@ RUN cp -rL /workdir/bazel-bin/src/python/grpcio_tests/tests_py3_only/interop/xds
 
 FROM python:3.9-slim-bookworm
 
-COPY --from=0 /artifacts ./
-
 ENV GRPC_VERBOSITY="DEBUG"
 ENV GRPC_TRACE="xds_client,xds_resolver,xds_cluster_manager_lb,cds_lb,xds_cluster_resolver_lb,priority_lb,xds_cluster_impl_lb,weighted_target_lb"
 
-RUN apt-get update -y && apt-get install -y python3
+RUN apt-get update -y \
+    && apt-get install -y python3 \
+    && apt-get -y autoremove \
+    && rm -rf /var/lib/apt/lists/*
+
 RUN ln -s /usr/bin/python3 /usr/bin/python
+
+COPY --from=0 /artifacts ./
 
 ENTRYPOINT ["/xds_interop_server"]
