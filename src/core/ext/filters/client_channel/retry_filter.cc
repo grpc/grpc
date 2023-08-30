@@ -346,6 +346,26 @@ absl::optional<Duration> RetryFilter::MaybeRetryDuration(
   }
 }
 
+namespace {
+absl::Status PushResultToStatus(bool r) {
+  if (r) return absl::OkStatus();
+  return absl::CancelledError();
+}
+
+template <typename PipeSender, typename T>
+auto FalliblePush(PipeSender* pipe, T value) {
+  return Map(pipe->Push(std::move(value)), PushResultToStatus);
+}
+
+template <typename P1, typename P2>
+auto CopyPipe(P1 from, P2* to) {
+  using ValueType = absl::remove_cvref_t<decltype(*from.Next()().value())>;
+  return ForEach(std::move(from), [to](ValueType value) {
+    return FalliblePush(to, std::move(value));
+  });
+}
+}  // namespace
+
 auto RetryFilter::MakeCallAttempt(CallState* call_state,
                                   const ClientMetadataHandle& initial_metadata,
                                   Latch<grpc_polling_entity>* polling_entity) {
@@ -385,28 +405,13 @@ auto RetryFilter::MakeCallAttempt(CallState* call_state,
             const bool has_initial_metadata =
                 md.has_value() &&
                 !(*md)->get(GrpcTrailersOnly()).value_or(false);
-            if (has_initial_metadata) {
-              call_state->forwarder.Commit();
-            }
+            if (has_initial_metadata) call_state->forwarder.Commit();
             return If(
                 has_initial_metadata,
-                TrySeq(
-                    Map(call_state->server_initial_metadata->Push(
-                            std::move(*md)),
-                        [](bool r) {
-                          if (r) return absl::OkStatus();
-                          return absl::CancelledError();
-                        }),
-                    ForEach(std::move(attempt->server_to_client.receiver),
-                            [call_state](MessageHandle msg) {
-                              return Map(
-                                  call_state->server_to_client_messages->Push(
-                                      std::move(msg)),
-                                  [](bool r) {
-                                    if (r) return absl::OkStatus();
-                                    return absl::CancelledError();
-                                  });
-                            })),
+                TrySeq(FalliblePush(call_state->server_initial_metadata,
+                                    std::move(*md)),
+                       CopyPipe(std::move(attempt->server_to_client.receiver),
+                                call_state->server_to_client_messages)),
                 Immediate(absl::OkStatus()));
           }),
       [attempt](absl::Status status) {
@@ -415,15 +420,8 @@ auto RetryFilter::MakeCallAttempt(CallState* call_state,
         attempt->early_return.Set(ServerMetadataFromStatus(status));
       });
   party->Spawn("attempt_send",
-               ForEach(MessageForwarder::Listener(call_state->forwarder),
-                       [attempt](MessageHandle msg) {
-                         return Map(attempt->client_to_server.sender.Push(
-                                        std::move(msg)),
-                                    [](bool r) {
-                                      if (r) return absl::OkStatus();
-                                      return absl::CancelledError();
-                                    });
-                       }),
+               CopyPipe(MessageForwarder::Listener(call_state->forwarder),
+                        &attempt->client_to_server.sender),
                [attempt](absl::Status status) {
                  if (status.ok()) return;
                  if (attempt->early_return.is_set()) return;
