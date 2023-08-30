@@ -459,7 +459,7 @@ class TcpZerocopySendCtx {
   std::unordered_map<uint32_t, TcpZerocopySendRecord*> ctx_lookup_;
   bool memory_limited_ = false;
   bool is_in_write_ = false;
-  OMemState zcopy_enobuf_state_;
+  OMemState zcopy_enobuf_state_ = OMemState::OPEN;
 };
 
 }  // namespace grpc_core

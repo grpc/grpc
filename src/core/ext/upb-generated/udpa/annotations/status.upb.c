@@ -7,9 +7,7 @@
  * regenerated. */
 
 #include <stddef.h>
-#include "upb/collections/array_internal.h"
-#include "upb/message/internal.h"
-#include "upb/mini_table/enum_internal.h"
+#include "upb/generated_code_support.h"
 #include "udpa/annotations/status.upb.h"
 #include "google/protobuf/descriptor.upb.h"
 
@@ -17,8 +15,8 @@
 #include "upb/port/def.inc"
 
 static const upb_MiniTableField udpa_annotations_StatusAnnotation__fields[2] = {
-  {1, 0, 0, kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
-  {2, 4, 0, kUpb_NoSub, 5, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsAlternate | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
+  {1, 0, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+  {2, 4, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable udpa_annotations_StatusAnnotation_msg_init = {
@@ -40,7 +38,7 @@ static const upb_MiniTable *messages_layout[1] = {
 extern const upb_MiniTable google_protobuf_FileOptions_msg_init;
 extern const upb_MiniTable udpa_annotations_StatusAnnotation_msg_init;
 const upb_MiniTableExtension udpa_annotations_file_status_ext = {
-  {222707719, 0, 0, 0, 11, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsExtension | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
+  {222707719, 0, 0, 0, 11, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
   &google_protobuf_FileOptions_msg_init,
   {.submsg = &udpa_annotations_StatusAnnotation_msg_init},
 

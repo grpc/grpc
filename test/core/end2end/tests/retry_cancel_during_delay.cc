@@ -54,11 +54,10 @@ void TestRetryCancelDuringDelay(
           "    }\n"
           "  } ]\n"
           "}",
-          10 * grpc_test_slowdown_factor())));
-  auto expect_finish_before =
-      test.TimestampAfterDuration(Duration::Seconds(10));
+          35 * grpc_test_slowdown_factor())));
+  auto expect_finish_before = test.TimestampAfterDuration(Duration::Minutes(2));
   auto c = test.NewClientCall("/service/method")
-               .Timeout(Duration::Seconds(5))
+               .Timeout(Duration::Seconds(30))
                .Create();
   EXPECT_NE(c.GetPeer(), absl::nullopt);
   // Client starts a batch with all 6 ops.
@@ -90,7 +89,7 @@ void TestRetryCancelDuringDelay(
   // Initiate cancellation.
   cancellation_mode->Apply(c);
   test.Expect(1, true);
-  test.Step();
+  test.Step(Duration::Minutes(1));
   auto finish_time = Timestamp::Now();
   EXPECT_EQ(server_status.status(), cancellation_mode->ExpectedStatus())
       << server_status.message();

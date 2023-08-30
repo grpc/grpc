@@ -7,9 +7,7 @@
  * regenerated. */
 
 #include <stddef.h>
-#include "upb/collections/array_internal.h"
-#include "upb/message/internal.h"
-#include "upb/mini_table/enum_internal.h"
+#include "upb/generated_code_support.h"
 #include "xds/type/matcher/v3/cel.upb.h"
 #include "xds/annotations/v3/status.upb.h"
 #include "xds/type/v3/cel.upb.h"
@@ -23,7 +21,7 @@ static const upb_MiniTableSub xds_type_matcher_v3_CelMatcher_submsgs[1] = {
 };
 
 static const upb_MiniTableField xds_type_matcher_v3_CelMatcher__fields[1] = {
-  {1, UPB_SIZE(4, 8), 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {1, UPB_SIZE(4, 8), 1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable xds_type_matcher_v3_CelMatcher_msg_init = {

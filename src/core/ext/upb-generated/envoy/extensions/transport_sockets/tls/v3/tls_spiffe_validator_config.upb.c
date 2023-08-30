@@ -7,9 +7,7 @@
  * regenerated. */
 
 #include <stddef.h>
-#include "upb/collections/array_internal.h"
-#include "upb/message/internal.h"
-#include "upb/mini_table/enum_internal.h"
+#include "upb/generated_code_support.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.upb.h"
 #include "envoy/config/core/v3/base.upb.h"
 #include "udpa/annotations/status.upb.h"
@@ -23,7 +21,7 @@ static const upb_MiniTableSub envoy_extensions_transport_sockets_tls_v3_SPIFFECe
 };
 
 static const upb_MiniTableField envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig__fields[1] = {
-  {1, 0, 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {1, 0, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_msg_init = {
@@ -41,8 +39,8 @@ static const upb_MiniTableSub envoy_extensions_transport_sockets_tls_v3_SPIFFECe
 };
 
 static const upb_MiniTableField envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain__fields[2] = {
-  {1, 8, 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-  {2, UPB_SIZE(4, 24), 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(4, 24), 1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain_msg_init = {

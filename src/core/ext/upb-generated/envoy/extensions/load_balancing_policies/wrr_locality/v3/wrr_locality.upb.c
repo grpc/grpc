@@ -7,9 +7,7 @@
  * regenerated. */
 
 #include <stddef.h>
-#include "upb/collections/array_internal.h"
-#include "upb/message/internal.h"
-#include "upb/mini_table/enum_internal.h"
+#include "upb/generated_code_support.h"
 #include "envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb.h"
 #include "envoy/config/cluster/v3/cluster.upb.h"
 #include "udpa/annotations/status.upb.h"
@@ -23,7 +21,7 @@ static const upb_MiniTableSub envoy_extensions_load_balancing_policies_wrr_local
 };
 
 static const upb_MiniTableField envoy_extensions_load_balancing_policies_wrr_locality_v3_WrrLocality__fields[1] = {
-  {1, UPB_SIZE(4, 8), 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {1, UPB_SIZE(4, 8), 1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy_extensions_load_balancing_policies_wrr_locality_v3_WrrLocality_msg_init = {
