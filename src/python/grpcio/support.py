@@ -114,7 +114,6 @@ _ERROR_DIAGNOSES = {
 
 
 def diagnose_build_ext_error(build_ext, error, formatted):
-    import sys; sys.stderr.write(f"XUAN: type of error: {type(error)}\n"); sys.stderr.flush()
     diagnostic = _ERROR_DIAGNOSES.get(type(error))
     if diagnostic is None:
         raise commands.CommandError(
