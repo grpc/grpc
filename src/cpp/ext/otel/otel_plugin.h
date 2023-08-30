@@ -25,14 +25,14 @@
 
 #include <memory>
 #include <string>
-#include <utility>
-#include <vector>
 
 #include "absl/container/flat_hash_set.h"
 #include "absl/strings/string_view.h"
 #include "opentelemetry/metrics/meter_provider.h"
 #include "opentelemetry/metrics/sync_instruments.h"
 #include "opentelemetry/nostd/shared_ptr.h"
+
+#include <grpc/status.h>
 
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/cpp/ext/otel/labels_iterable.h"
@@ -138,6 +138,8 @@ class OpenTelemetryPluginBuilder {
   std::unique_ptr<LabelsInjector> labels_injector_;
   absl::flat_hash_set<std::string> metrics_;
 };
+
+absl::string_view StatusCodeToString(grpc_status_code code);
 
 }  // namespace internal
 }  // namespace grpc

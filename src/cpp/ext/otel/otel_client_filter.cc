@@ -20,14 +20,12 @@
 
 #include "src/cpp/ext/otel/otel_client_filter.h"
 
-#include <algorithm>
+#include <array>
 #include <functional>
 #include <initializer_list>
-#include <iterator>
 #include <memory>
 #include <string>
 #include <utility>
-#include <vector>
 
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
@@ -36,10 +34,10 @@
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
-#include "absl/types/variant.h"
 #include "opentelemetry/context/context.h"
 #include "opentelemetry/metrics/sync_instruments.h"
 
+#include <grpc/status.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
@@ -109,10 +107,13 @@ OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
     local_labels_ = OTelPluginState().labels_injector->GetLocalLabels();
   }
   if (OTelPluginState().client.attempt.started != nullptr) {
-    OTelPluginState().client.attempt.started->Add(
-        1, KeyValueIterable(local_labels_.get(), nullptr,
-                            {{OTelMethodKey(), parent_->method_},
-                             {OTelTargetKey(), parent_->parent_->target()}}));
+    std::array<std::pair<absl::string_view, absl::string_view>, 2>
+        additional_labels = {{{OTelMethodKey(), parent_->method_},
+                              {OTelTargetKey(), parent_->parent_->target()}}};
+    KeyValueIterable<
+        std::array<std::pair<absl::string_view, absl::string_view>, 2>>
+        labels(local_labels_.get(), peer_labels_.get(), additional_labels);
+    OTelPluginState().client.attempt.started->Add(1, labels);
   }
 }
 
@@ -161,11 +162,15 @@ void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
     RecordReceivedTrailingMetadata(
         absl::Status status, grpc_metadata_batch* /*recv_trailing_metadata*/,
         const grpc_transport_stream_stats* transport_stream_stats) {
-  KeyValueIterable labels(
-      local_labels_.get(), peer_labels_.get(),
-      {{OTelMethodKey(), parent_->method_},
-       {OTelTargetKey(), parent_->parent_->target()},
-       {OTelStatusKey(), absl::StatusCodeToString(status.code())}});
+  std::array<std::pair<absl::string_view, absl::string_view>, 3>
+      additional_labels = {
+          {{OTelMethodKey(), parent_->method_},
+           {OTelTargetKey(), parent_->parent_->target()},
+           {OTelStatusKey(),
+            StatusCodeToString(static_cast<grpc_status_code>(status.code()))}}};
+  KeyValueIterable<
+      std::array<std::pair<absl::string_view, absl::string_view>, 3>>
+      labels(local_labels_.get(), peer_labels_.get(), additional_labels);
   if (OTelPluginState().client.attempt.duration != nullptr) {
     OTelPluginState().client.attempt.duration->Record(
         absl::ToDoubleSeconds(absl::Now() - start_time_), labels,

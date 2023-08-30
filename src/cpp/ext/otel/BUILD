@@ -31,10 +31,10 @@ package(
 grpc_cc_library(
     name = "otel_plugin",
     srcs = [
+        "labels_iterable.cc",
         "otel_client_filter.cc",
         "otel_plugin.cc",
         "otel_server_call_tracer.cc",
-        "labels_iterable.cc",
     ],
     hdrs = [
         "labels_iterable.h",
@@ -52,7 +52,6 @@ grpc_cc_library(
         "absl/strings:str_format",
         "absl/time",
         "absl/types:optional",
-        "absl/types:variant",
         "otel/api",
     ],
     language = "c++",
@@ -64,6 +63,7 @@ grpc_cc_library(
         "//:gpr_platform",
         "//:grpc_base",
         "//:grpc_client_channel",
+        "//:grpc_public_hdrs",
         "//:legacy_context",
         "//src/core:arena",
         "//src/core:arena_promise",

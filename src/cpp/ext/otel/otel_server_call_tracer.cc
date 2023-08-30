@@ -20,21 +20,17 @@
 
 #include "src/cpp/ext/otel/otel_server_call_tracer.h"
 
-#include <algorithm>
+#include <array>
 #include <initializer_list>
-#include <iterator>
 #include <memory>
 #include <string>
 #include <utility>
-#include <vector>
 
-#include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
-#include "absl/types/variant.h"
 #include "opentelemetry/context/context.h"
 #include "opentelemetry/metrics/sync_instruments.h"
 
@@ -149,10 +145,13 @@ void OpenTelemetryServerCallTracer::RecordReceivedInitialMetadata(
     peer_labels_ =
         OTelPluginState().labels_injector->GetPeerLabels(recv_initial_metadata);
   }
+  std::array<std::pair<absl::string_view, absl::string_view>, 1>
+      additional_labels = {{{OTelMethodKey(), method_}}};
   if (OTelPluginState().server.call.started != nullptr) {
     OTelPluginState().server.call.started->Add(
-        1, KeyValueIterable(local_labels_.get(), peer_labels_.get(),
-                            {{OTelMethodKey(), method_}}));
+        1, KeyValueIterable<
+               std::array<std::pair<absl::string_view, absl::string_view>, 1>>(
+               local_labels_.get(), peer_labels_.get(), additional_labels));
   }
 }
 
@@ -165,21 +164,13 @@ void OpenTelemetryServerCallTracer::RecordSendTrailingMetadata(
 
 void OpenTelemetryServerCallTracer::RecordEnd(
     const grpc_call_final_info* final_info) {
-  KeyValueIterable labels(
-      local_labels_.get(), peer_labels_.get(),
-      {{OTelMethodKey(), method_},
-       {OTelStatusKey(), absl::StatusCodeToString(static_cast<absl::StatusCode>(
-                             final_info->final_status))}});
-  // for (const auto& pair : labels_) {
-  //   gpr_log(GPR_ERROR, "%s %s", std::string(pair.first).c_str(),
-  //           absl::visit([](const auto& arg) { return std::string(arg); },
-  //                       pair.second)
-  //               .c_str());
-  //   labels.emplace_back(
-  //       std::string(pair.first),
-  //       absl::visit([](const auto& arg) { return std::string(arg); },
-  //                   pair.second));
-  // }
+  std::array<std::pair<absl::string_view, absl::string_view>, 2>
+      additional_labels = {
+          {{OTelMethodKey(), method_},
+           {OTelStatusKey(), StatusCodeToString(final_info->final_status)}}};
+  KeyValueIterable<
+      std::array<std::pair<absl::string_view, absl::string_view>, 2>>
+      labels(local_labels_.get(), peer_labels_.get(), additional_labels);
   if (OTelPluginState().server.call.duration != nullptr) {
     OTelPluginState().server.call.duration->Record(
         absl::ToDoubleSeconds(elapsed_time_), labels,

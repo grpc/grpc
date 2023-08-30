@@ -16,20 +16,17 @@
 //
 //
 
-#ifndef GRPC_SRC_CPP_EXT_OTEL_KEY_VALUE_ITERABLE_H
-#define GRPC_SRC_CPP_EXT_OTEL_KEY_VALUE_ITERABLE_H
+#ifndef GRPC_SRC_CPP_EXT_OTEL_LABELS_ITERABLE_H
+#define GRPC_SRC_CPP_EXT_OTEL_LABELS_ITERABLE_H
 
 #include <grpc/support/port_platform.h>
 
 #include <stddef.h>
 
-#include <string>
 #include <utility>
-#include <vector>
 
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-#include "absl/types/variant.h"
 #include "opentelemetry/common/attribute_value.h"
 #include "opentelemetry/common/key_value_iterable.h"
 #include "opentelemetry/nostd/function_ref.h"
@@ -48,18 +45,25 @@ class LabelsIterable {
   Next() = 0;
 
   virtual size_t size() const = 0;
+
+  // Resets position of iterator to the start.
+  virtual void ResetIteratorPosition() = 0;
 };
+
+inline opentelemetry::nostd::string_view AbslStrViewToOTelStrView(
+    absl::string_view str) {
+  return opentelemetry::nostd::string_view(str.data(), str.size());
+}
 
 // An iterable class based on opentelemetry::common::KeyValueIterable that
 // allows gRPC to store attribute values as absl::variant<absl::string_view,
 // std::string> and avoiding an allocation in cases where possible.
+template <typename T>
 class KeyValueIterable : public opentelemetry::common::KeyValueIterable {
  public:
-  explicit KeyValueIterable(
-      LabelsIterable* local_labels_iterable,
-      LabelsIterable* peer_labels_iterable,
-      std::initializer_list<std::pair<absl::string_view, absl::string_view>>
-          additional_labels)
+  explicit KeyValueIterable(LabelsIterable* local_labels_iterable,
+                            LabelsIterable* peer_labels_iterable,
+                            const T& additional_labels)
       : local_labels_iterable_(local_labels_iterable),
         peer_labels_iterable_(peer_labels_iterable),
         additional_labels_(additional_labels) {}
@@ -67,7 +71,33 @@ class KeyValueIterable : public opentelemetry::common::KeyValueIterable {
   bool ForEachKeyValue(opentelemetry::nostd::function_ref<
                        bool(opentelemetry::nostd::string_view,
                             opentelemetry::common::AttributeValue)>
-                           callback) const noexcept override;
+                           callback) const noexcept override {
+    if (local_labels_iterable_ != nullptr) {
+      local_labels_iterable_->ResetIteratorPosition();
+      while (const auto& pair = local_labels_iterable_->Next()) {
+        if (!callback(AbslStrViewToOTelStrView(pair->first),
+                      AbslStrViewToOTelStrView(pair->second))) {
+          return false;
+        }
+      }
+    }
+    if (peer_labels_iterable_ != nullptr) {
+      peer_labels_iterable_->ResetIteratorPosition();
+      while (const auto& pair = peer_labels_iterable_->Next()) {
+        if (!callback(AbslStrViewToOTelStrView(pair->first),
+                      AbslStrViewToOTelStrView(pair->second))) {
+          return false;
+        }
+      }
+    }
+    for (const auto& pair : additional_labels_) {
+      if (!callback(AbslStrViewToOTelStrView(pair.first),
+                    AbslStrViewToOTelStrView(pair.second))) {
+        return false;
+      }
+    }
+    return true;
+  }
 
   size_t size() const noexcept override {
     return (local_labels_iterable_ != nullptr ? local_labels_iterable_->size()
@@ -80,11 +110,10 @@ class KeyValueIterable : public opentelemetry::common::KeyValueIterable {
  private:
   LabelsIterable* local_labels_iterable_;
   LabelsIterable* peer_labels_iterable_;
-  std::initializer_list<std::pair<absl::string_view, absl::string_view>>
-      additional_labels_;
+  const T& additional_labels_;
 };
 
 }  // namespace internal
 }  // namespace grpc
 
-#endif  // GRPC_SRC_CPP_EXT_OTEL_KEY_VALUE_ITERABLE_H
+#endif  // GRPC_SRC_CPP_EXT_OTEL_LABELS_ITERABLE_H

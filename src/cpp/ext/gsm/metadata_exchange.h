@@ -21,6 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>

@@ -202,5 +202,48 @@ absl::flat_hash_set<std::string> OpenTelemetryPluginBuilder::BaseMetrics() {
           OTelServerCallRcvdTotalCompressedMessageSizeInstrumentName())};
 }
 
+absl::string_view StatusCodeToString(grpc_status_code code) {
+  switch (code) {
+    case GRPC_STATUS_OK:
+      return "OK";
+    case GRPC_STATUS_CANCELLED:
+      return "CANCELLED";
+    case GRPC_STATUS_UNKNOWN:
+      return "UNKNOWN";
+    case GRPC_STATUS_INVALID_ARGUMENT:
+      return "INVALID_ARGUMENT";
+    case GRPC_STATUS_DEADLINE_EXCEEDED:
+      return "DEADLINE_EXCEEDED";
+    case GRPC_STATUS_NOT_FOUND:
+      return "NOT_FOUND";
+    case GRPC_STATUS_ALREADY_EXISTS:
+      return "ALREADY_EXISTS";
+    case GRPC_STATUS_PERMISSION_DENIED:
+      return "PERMISSION_DENIED";
+    case GRPC_STATUS_UNAUTHENTICATED:
+      return "UNAUTHENTICATED";
+    case GRPC_STATUS_RESOURCE_EXHAUSTED:
+      return "RESOURCE_EXHAUSTED";
+    case GRPC_STATUS_FAILED_PRECONDITION:
+      return "FAILED_PRECONDITION";
+    case GRPC_STATUS_ABORTED:
+      return "ABORTED";
+    case GRPC_STATUS_OUT_OF_RANGE:
+      return "OUT_OF_RANGE";
+    case GRPC_STATUS_UNIMPLEMENTED:
+      return "UNIMPLEMENTED";
+    case GRPC_STATUS_INTERNAL:
+      return "INTERNAL";
+    case GRPC_STATUS_UNAVAILABLE:
+      return "UNAVAILABLE";
+    case GRPC_STATUS_DATA_LOSS:
+      return "DATA_LOSS";
+    default:
+      // gRPC wants users of this enum to include a default branch so that
+      // adding values is not a breaking change.
+      return "UNKNOWN_STATUS";
+  }
+}
+
 }  // namespace internal
 }  // namespace grpc

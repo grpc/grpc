@@ -21,8 +21,8 @@
 #include "src/cpp/ext/gsm/metadata_exchange.h"
 
 #include <stddef.h>
+#include <stdint.h>
 
-#include <algorithm>
 #include <unordered_map>
 
 #include "absl/meta/type_traits.h"
@@ -133,10 +133,12 @@ class LocalLabelsIterable : public LabelsIterable {
     if (pos_ >= labels_.size()) {
       return absl::nullopt;
     }
-    return labels_[pos_];
+    return labels_[pos_++];
   }
 
   size_t size() const override { return labels_.size(); }
+
+  void ResetIteratorPosition() override { pos_ = 0; }
 
  private:
   size_t pos_ = 0;
@@ -162,14 +164,14 @@ class PeerLabelsIterable : public LabelsIterable {
     if (struct_pb_ == nullptr) {
       return absl::nullopt;
     }
-    if (pos_ == 0) {
+    if (pos_++ == 0) {
       return std::make_pair(kPeerTypeAttribute, type_);
     }
     // Only handle GKE type for now.
     if (type_ != kGkeType) {
       return absl::nullopt;
     }
-    switch (pos_) {
+    switch (pos_ - 1) {
       case 1:
         return std::make_pair(
             kPeerPodNameAttribute,
@@ -223,6 +225,8 @@ class PeerLabelsIterable : public LabelsIterable {
     return 8;
   }
 
+  void ResetIteratorPosition() override { pos_ = 0; }
+
  private:
   upb::Arena arena_;
   google_protobuf_Struct* struct_pb_ = nullptr;
@@ -265,7 +269,7 @@ ServiceMeshLabelsInjector::ServiceMeshLabelsInjector(
   AddStringKeyValueToStructProto(metadata, kMetadataExchangeTypeKey, type_value,
                                  arena.ptr());
   // Only handle GKE for now
-  if (type_value != kGkeType) {
+  if (type_value == kGkeType) {
     AddStringKeyValueToStructProto(metadata, kMetadataExchangePodNameKey,
                                    pod_name_value, arena.ptr());
     AddStringKeyValueToStructProto(metadata, kMetadataExchangeContainerNameKey,

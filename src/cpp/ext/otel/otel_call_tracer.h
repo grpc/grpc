@@ -23,15 +23,13 @@
 
 #include <stdint.h>
 
+#include <memory>
 #include <string>
-#include <utility>
-#include <vector>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
-#include "absl/types/variant.h"
 
 #include <grpc/support/time.h>
 
