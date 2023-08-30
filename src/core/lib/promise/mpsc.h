@@ -91,6 +91,16 @@ class Center : public RefCounted<Center<T>> {
     return Pending{};
   }
 
+  bool ImmediateSend(T t) {
+    ReleasableMutexLock lock(&mu_);
+    if (receiver_closed_) return false;
+    queue_.push_back(std::move(t));
+    auto receive_waker = std::move(receive_waker_);
+    lock.Release();
+    receive_waker.Wakeup();
+    return true;
+  }
+
   // Mark that the receiver is closed.
   void ReceiverClosed() {
     MutexLock lock(&mu_);
@@ -125,6 +135,10 @@ class MpscSender {
   // will never be successfully sent).
   auto Send(T t) {
     return [this, t = std::move(t)]() mutable { return center_->PollSend(t); };
+  }
+
+  bool UnbufferedImmediateSend(T t) {
+    return center_->ImmediateSend(std::move(t));
   }
 
  private:
