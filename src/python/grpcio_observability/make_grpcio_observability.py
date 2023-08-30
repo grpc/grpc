@@ -14,8 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import print_function
-
 import errno
 import os
 import os.path
@@ -47,44 +45,20 @@ CC_FILES={cc_files}
 CC_INCLUDES={cc_includes}
 """
 
-# expose commit hash suffix and prefix for check_grpcio_tools.py
-COMMIT_HASH_PREFIX = 'PROTOBUF_SUBMODULE_VERSION="'
-COMMIT_HASH_SUFFIX = '"'
-
-EXTERNAL_LINKS = [
+# maps bazel reference to actual path
+BAZEL_REFERENCE_LINK = [
     ('@com_google_absl//', 'third_party/abseil-cpp/'),
-    # ("@com_google_protobuf//", "third_party/protobuf/"),
-    # ('@upb//:', 'third_party/upb/'),
-#     ('@utf8_range//:', 'third_party/utf8_range/'),
+    ('//src', 'grpc_root/src'),
 ]
 
 ABSL_INCLUDE = (os.path.join("third_party", "abseil-cpp"),)
-# CARES_INCLUDE = (
-#     os.path.join("third_party", "cares", "cares", "include"),
-#     os.path.join("third_party", "cares"),
-#     os.path.join("third_party", "cares", "cares"),
-# )
-# if "darwin" in sys.platform:
-#     CARES_INCLUDE += (os.path.join("third_party", "cares", "config_darwin"),)
-# if "freebsd" in sys.platform:
-#     CARES_INCLUDE += (os.path.join("third_party", "cares", "config_freebsd"),)
-# if "linux" in sys.platform:
-#     CARES_INCLUDE += (os.path.join("third_party", "cares", "config_linux"),)
-# if "openbsd" in sys.platform:
-#     CARES_INCLUDE += (os.path.join("third_party", "cares", "config_openbsd"),)
-# UPB_INCLUDE = (os.path.join("third_party", "upb"),)
-# UTF8_RANGE_INCLUDE = (os.path.join("third_party", "utf8_range"),)
 
 # will be added to include path when building grpcio_observability
 EXTENSION_INCLUDE_DIRECTORIES = (
     ABSL_INCLUDE
-    # + CARES_INCLUDE
-    # + UPB_INCLUDE
-    # + UTF8_RANGE_INCLUDE
 )
 
-CC_INCLUDES = [
-] + list(EXTENSION_INCLUDE_DIRECTORIES)
+CC_INCLUDES = list(EXTENSION_INCLUDE_DIRECTORIES)
 
 # the target directory is relative to the grpcio_observability package root.
 GRPCIO_OBSERVABILITY_ROOT_PREFIX = 'src/python/grpcio_observability/'
@@ -94,27 +68,14 @@ GRPCIO_OBSERVABILITY_ROOT_PREFIX = 'src/python/grpcio_observability/'
 COPY_FILES_SOURCE_TARGET_PAIRS = [
     ('include', 'grpc_root/include'),
     ('third_party/abseil-cpp/absl', 'third_party/abseil-cpp/absl'),
-    # ("third_party/cares/cares", "third_party/cares/cares"),
-    # ('third_party/upb/upb', 'third_party/upb/upb'),
-    # ("third_party/protobuf", "third_party/protobuf"),
     ('src/core/lib', 'grpc_root/src/core/lib'),
-    # ('src/core/tsi/alts/handshaker', 'grpc_root/src/core/tsi/alts/handshaker'),
-    # ('src/cpp/ext/filters/census', 'grpc_root/src/cpp/ext/filters/census'),
-    # ('src/cpp/ext/gcp', 'grpc_root/src/cpp/ext/gcp'),
-    # ('src/core/ext/upb-generated', 'grpc_root/src/core/ext/upb-generated'),
-    # ('src/core/ext/filters/backend_metrics', 'grpc_root/src/core/ext/filters/backend_metrics'),
     ('src/core/ext/filters/client_channel/lb_policy', 'grpc_root/src/core/ext/filters/client_channel/lb_policy'),
-    # ('src/core/ext/filters/census', 'grpc_root/src/core/ext/filters/census'),
-    # ('src/cpp/filters/census', 'grpc_root/src/cpp/filters/census'),
 ]
 
 # grpc repo root
 GRPC_ROOT = os.path.abspath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..'))
 
-# the directory under which to probe for the current protobuf commit SHA
-# GRPC_PROTOBUF_SUBMODULE_ROOT = os.path.join(GRPC_ROOT, 'third_party',
-#                                             'protobuf')
 
 # the file to generate
 GRPC_PYTHON_OBSERVABILITY_LIB_DEPS = os.path.join(GRPC_ROOT, 'src', 'python',
@@ -126,22 +87,11 @@ BAZEL_DEPS = os.path.join(
     GRPC_ROOT, "tools", "distrib", "python", "bazel_deps.sh"
 )
 
-# # the bazel target to scrape to get list of sources for the build
+# the bazel target to scrape to get list of sources for the build
 BAZEL_DEPS_QUERIES = [
-    # '//src/python/grpcio_observability/grpc_observability:observability',
-    # '//:grpc_base',
     '//src/core:activity',
     '//src/core:slice',
 ]
-
-# def protobuf_submodule_commit_hash():
-#     """Gets the commit hash for the HEAD of the protobuf submodule currently
-#      checked out."""
-#     cwd = os.getcwd()
-#     os.chdir(GRPC_PROTOBUF_SUBMODULE_ROOT)
-#     output = subprocess.check_output(['git', 'rev-parse', 'HEAD'])
-#     os.chdir(cwd)
-#     return output.decode("ascii").splitlines()[0].strip()
 
 def _bazel_query(query):
     """Runs 'bazel query' to collect source file info."""
@@ -161,21 +111,10 @@ def _pretty_print_list(items):
         formatted = formatted[:-1] + '\n' + formatted[-1]
     return formatted
 
-INTERNNEL_LINKS = [('//src', 'grpc_root/src'),
-                   ('//:src', 'grpc_root/src')]
 
 def _bazel_name_to_file_path(name):
     """Transform bazel reference to source file name."""
-    for link in EXTERNAL_LINKS:
-        if name.startswith(link[0]):
-            filepath = link[1] + name[len(link[0]):].replace(':', '/')
-
-            # For some reason, the WKT sources (such as wrappers.pb.cc)
-            # end up being reported by bazel as having an extra 'wkt/google/protobuf'
-            # in path. Removing it makes the compilation pass.
-            # TODO(jtattermusch) Get dir of this hack.
-            return filepath.replace('wkt/google/protobuf/', '')
-    for link in INTERNNEL_LINKS:
+    for link in BAZEL_REFERENCE_LINK:
         if name.startswith(link[0]):
             filepath = link[1] + name[len(link[0]):].replace(':', '/')
             return filepath
@@ -194,7 +133,6 @@ def _generate_deps_file_content():
         if name.endswith(".cc"):
             filepath = _bazel_name_to_file_path(name)
             if filepath:
-            # if filepath and 'abseil' in filepath:
                 cc_files.add(filepath)
 
     deps_file_content = DEPS_FILE_CONTENT.format(
