@@ -136,7 +136,7 @@ class LocalLabelsIterable : public LabelsIterable {
     return labels_[pos_++];
   }
 
-  size_t size() const override { return labels_.size(); }
+  size_t Size() const override { return labels_.size(); }
 
   void ResetIteratorPosition() override { pos_ = 0; }
 
@@ -213,7 +213,7 @@ class PeerLabelsIterable : public LabelsIterable {
     }
   }
 
-  size_t size() const override {
+  size_t Size() const override {
     if (struct_pb_ == nullptr) {
       return 0;
     }

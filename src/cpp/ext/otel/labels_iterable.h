@@ -44,7 +44,7 @@ class LabelsIterable {
   virtual absl::optional<std::pair<absl::string_view, absl::string_view>>
   Next() = 0;
 
-  virtual size_t size() const = 0;
+  virtual size_t Size() const = 0;
 
   // Resets position of iterator to the start.
   virtual void ResetIteratorPosition() = 0;
@@ -56,8 +56,8 @@ inline opentelemetry::nostd::string_view AbslStrViewToOTelStrView(
 }
 
 // An iterable class based on opentelemetry::common::KeyValueIterable that
-// allows gRPC to store attribute values as absl::variant<absl::string_view,
-// std::string> and avoiding an allocation in cases where possible.
+// allows gRPC to iterate on its various sources of attributes and avoid an
+// allocation in cases wherever possible.
 template <typename T>
 class KeyValueIterable : public opentelemetry::common::KeyValueIterable {
  public:
@@ -100,9 +100,9 @@ class KeyValueIterable : public opentelemetry::common::KeyValueIterable {
   }
 
   size_t size() const noexcept override {
-    return (local_labels_iterable_ != nullptr ? local_labels_iterable_->size()
+    return (local_labels_iterable_ != nullptr ? local_labels_iterable_->Size()
                                               : 0) +
-           (peer_labels_iterable_ != nullptr ? peer_labels_iterable_->size()
+           (peer_labels_iterable_ != nullptr ? peer_labels_iterable_->Size()
                                              : 0) +
            additional_labels_.size();
   }
