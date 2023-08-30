@@ -200,7 +200,6 @@ class CancelDuringAresQuery : public ::testing::Test {
 
   static void TearDownTestSuite() { grpc_shutdown(); }
 };
-gpr_timespec CancelDuringAresQuery::overall_deadline;
 
 TEST_F(CancelDuringAresQuery, TestCancelActiveDNSQuery) {
   grpc_core::ExecCtx exec_ctx;
