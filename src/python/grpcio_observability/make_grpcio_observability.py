@@ -47,40 +47,46 @@ CC_INCLUDES={cc_includes}
 
 # maps bazel reference to actual path
 BAZEL_REFERENCE_LINK = [
-    ('@com_google_absl//', 'third_party/abseil-cpp/'),
-    ('//src', 'grpc_root/src'),
+    ("@com_google_absl//", "third_party/abseil-cpp/"),
+    ("//src", "grpc_root/src"),
 ]
 
 ABSL_INCLUDE = (os.path.join("third_party", "abseil-cpp"),)
 
 # will be added to include path when building grpcio_observability
-EXTENSION_INCLUDE_DIRECTORIES = (
-    ABSL_INCLUDE
-)
+EXTENSION_INCLUDE_DIRECTORIES = ABSL_INCLUDE
 
 CC_INCLUDES = list(EXTENSION_INCLUDE_DIRECTORIES)
 
 # the target directory is relative to the grpcio_observability package root.
-GRPCIO_OBSERVABILITY_ROOT_PREFIX = 'src/python/grpcio_observability/'
+GRPCIO_OBSERVABILITY_ROOT_PREFIX = "src/python/grpcio_observability/"
 
 # Pairs of (source, target) directories to copy
 # from the grpc repo root to the grpcio_observability build root.
 COPY_FILES_SOURCE_TARGET_PAIRS = [
-    ('include', 'grpc_root/include'),
-    ('third_party/abseil-cpp/absl', 'third_party/abseil-cpp/absl'),
-    ('src/core/lib', 'grpc_root/src/core/lib'),
-    ('src/core/ext/filters/client_channel/lb_policy', 'grpc_root/src/core/ext/filters/client_channel/lb_policy'),
+    ("include", "grpc_root/include"),
+    ("third_party/abseil-cpp/absl", "third_party/abseil-cpp/absl"),
+    ("src/core/lib", "grpc_root/src/core/lib"),
+    (
+        "src/core/ext/filters/client_channel/lb_policy",
+        "grpc_root/src/core/ext/filters/client_channel/lb_policy",
+    ),
 ]
 
 # grpc repo root
 GRPC_ROOT = os.path.abspath(
-    os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..'))
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..")
+)
 
 
 # the file to generate
-GRPC_PYTHON_OBSERVABILITY_LIB_DEPS = os.path.join(GRPC_ROOT, 'src', 'python',
-                                                  'grpcio_observability',
-                                                  'observability_lib_deps.py')
+GRPC_PYTHON_OBSERVABILITY_LIB_DEPS = os.path.join(
+    GRPC_ROOT,
+    "src",
+    "python",
+    "grpcio_observability",
+    "observability_lib_deps.py",
+)
 
 # the script to run for getting dependencies
 BAZEL_DEPS = os.path.join(
@@ -89,9 +95,10 @@ BAZEL_DEPS = os.path.join(
 
 # the bazel target to scrape to get list of sources for the build
 BAZEL_DEPS_QUERIES = [
-    '//src/core:activity',
-    '//src/core:slice',
+    "//src/core:activity",
+    "//src/core:slice",
 ]
+
 
 def _bazel_query(query):
     """Runs 'bazel query' to collect source file info."""
@@ -104,11 +111,11 @@ def _pretty_print_list(items):
     """Pretty print python list"""
     formatted = pprint.pformat(items, indent=4)
     # add newline after opening bracket (and fix indent of the next line)
-    if formatted.startswith('['):
-        formatted = formatted[0] + '\n ' + formatted[1:]
+    if formatted.startswith("["):
+        formatted = formatted[0] + "\n " + formatted[1:]
     # add newline before closing bracket
-    if formatted.endswith(']'):
-        formatted = formatted[:-1] + '\n' + formatted[-1]
+    if formatted.endswith("]"):
+        formatted = formatted[:-1] + "\n" + formatted[-1]
     return formatted
 
 
@@ -116,7 +123,7 @@ def _bazel_name_to_file_path(name):
     """Transform bazel reference to source file name."""
     for link in BAZEL_REFERENCE_LINK:
         if name.startswith(link[0]):
-            filepath = link[1] + name[len(link[0]):].replace(':', '/')
+            filepath = link[1] + name[len(link[0]) :].replace(":", "/")
             return filepath
     return None
 
@@ -137,16 +144,18 @@ def _generate_deps_file_content():
 
     deps_file_content = DEPS_FILE_CONTENT.format(
         cc_files=_pretty_print_list(sorted(list(cc_files))),
-        cc_includes=_pretty_print_list(CC_INCLUDES))
+        cc_includes=_pretty_print_list(CC_INCLUDES),
+    )
     return deps_file_content
 
 
 def _copy_source_tree(source, target):
     """Copies source directory to a given target directory."""
-    print('Copying contents of %s to %s' % (source, target))
+    print("Copying contents of %s to %s" % (source, target))
     for source_dir, _, files in os.walk(source):
         target_dir = os.path.abspath(
-            os.path.join(target, os.path.relpath(source_dir, source)))
+            os.path.join(target, os.path.relpath(source_dir, source))
+        )
         try:
             os.makedirs(target_dir)
         except OSError as error:
@@ -154,9 +163,11 @@ def _copy_source_tree(source, target):
                 raise
         for relative_file in files:
             source_file = os.path.abspath(
-                os.path.join(source_dir, relative_file))
+                os.path.join(source_dir, relative_file)
+            )
             target_file = os.path.abspath(
-                os.path.join(target_dir, relative_file))
+                os.path.join(target_dir, relative_file)
+            )
             shutil.copyfile(source_file, target_file)
 
 
@@ -170,12 +181,14 @@ def main():
     for source, target in COPY_FILES_SOURCE_TARGET_PAIRS:
         # convert the slashes in the relative path to platform-specific path dividers.
         # All paths are relative to GRPC_ROOT
-        source_abs = os.path.join(GRPC_ROOT, os.path.join(*source.split('/')))
+        source_abs = os.path.join(GRPC_ROOT, os.path.join(*source.split("/")))
         # for targets, add grpcio_observability root prefix
         target = GRPCIO_OBSERVABILITY_ROOT_PREFIX + target
-        target_abs = os.path.join(GRPC_ROOT, os.path.join(*target.split('/')))
+        target_abs = os.path.join(GRPC_ROOT, os.path.join(*target.split("/")))
         _copy_source_tree(source_abs, target_abs)
-    print('The necessary source files were copied under the grpcio_observability package root.')
+    print(
+        "The necessary source files were copied under the grpcio_observability package root."
+    )
 
     # Step 2:
     # Extract build metadata from bazel build (by running "bazel query")
@@ -193,11 +206,11 @@ def main():
         traceback.print_exc(file=sys.stderr)
         return
     # If we successfully got the dependencies, truncate and rewrite the deps file.
-    with open(GRPC_PYTHON_OBSERVABILITY_LIB_DEPS, 'w') as deps_file:
+    with open(GRPC_PYTHON_OBSERVABILITY_LIB_DEPS, "w") as deps_file:
         deps_file.write(observability_lib_deps_content)
     print('File "%s" updated.' % GRPC_PYTHON_OBSERVABILITY_LIB_DEPS)
-    print('Done.')
+    print("Done.")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
