@@ -26,7 +26,6 @@
 
 #include "opentelemetry/metrics/meter.h"
 #include "opentelemetry/metrics/meter_provider.h"
-#include "opentelemetry/metrics/provider.h"
 #include "opentelemetry/nostd/shared_ptr.h"
 #include "opentelemetry/nostd/unique_ptr.h"
 
