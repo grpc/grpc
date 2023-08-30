@@ -492,8 +492,9 @@ TEST_F(CancelDuringAresQuery, TestQueryFailsBecauseTcpServerClosesSocket) {
 //   4) Because the first two bytes were zero, c-ares attempts to malloc a
 //      zero-length buffer:
 //      https://github.com/c-ares/c-ares/blob/6360e96b5cf8e5980c887ce58ef727e53d77243a/src/lib/ares_process.c#L428.
-//   5) Because malloc(0) returns NULL, c-ares invokes handle_error and stops
-//      reading on the socket:
+//   5) Because c-ares' default_malloc(0) returns NULL
+//      (https://github.com/c-ares/c-ares/blob/7f3262312f246556d8c1bdd8ccc1844847f42787/src/lib/ares_library_init.c#L38),
+//      c-ares invokes handle_error and stops reading on the socket:
 //      https://github.com/c-ares/c-ares/blob/6360e96b5cf8e5980c887ce58ef727e53d77243a/src/lib/ares_process.c#L430.
 //   6) Because we overwrite the socket "close" method, c-ares attempt to close
 //      the socket in handle_error does nothing except for removing the socket
