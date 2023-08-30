@@ -341,11 +341,9 @@ TEST_F(ClientTransportTest, AddOneStream) {
               Seq(
                   // Receive server initial metadata.
                   pipe_server_intial_metadata_.receiver.Next(),
-                  // Receiver server to client messages.
-                  [this](NextResult<ServerMetadataHandle> ret) {
-                    return pipe_server_to_client_messages_.receiver.Next();
-                  },
-                  [this](NextResult<MessageHandle> ret) {
+                  // Receive server to client messages.
+                  pipe_server_to_client_messages_.receiver.Next(),
+                  [this] {
                     // Close pipes after receive message.
                     pipe_server_to_client_messages_.sender.Close();
                     pipe_server_intial_metadata_.sender.Close();
@@ -427,10 +425,8 @@ TEST_F(ClientTransportTest, AddOneStreamWithWriteFailed) {
                   // Receive server initial metadata.
                   pipe_server_intial_metadata_.receiver.Next(),
                   // Receiver server to client messages.
-                  [this](NextResult<ServerMetadataHandle> ret) {
-                    return pipe_server_to_client_messages_.receiver.Next();
-                  },
-                  [this](NextResult<MessageHandle> ret) {
+                  pipe_server_to_client_messages_.receiver.Next(),
+                  [this] {
                     // Close pipes after receive message.
                     pipe_server_to_client_messages_.sender.Close();
                     pipe_server_intial_metadata_.sender.Close();
@@ -507,10 +503,8 @@ TEST_F(ClientTransportTest, AddOneStreamMultipleMessages) {
                   // Receive server initial metadata.
                   pipe_server_intial_metadata_.receiver.Next(),
                   // Receiver server to client messages.
-                  [this](NextResult<ServerMetadataHandle> ret) {
-                    return pipe_server_to_client_messages_.receiver.Next();
-                  },
-                  [this](NextResult<MessageHandle> ret) {
+                  pipe_server_to_client_messages_.receiver.Next(),
+                  [this] {
                     // Close pipes after receive message.
                     pipe_server_to_client_messages_.sender.Close();
                     pipe_server_intial_metadata_.sender.Close();
@@ -620,10 +614,8 @@ TEST_F(ClientTransportTest, AddMultipleStreams) {
                   // Receive server initial metadata.
                   pipe_server_intial_metadata_.receiver.Next(),
                   // Receiver server to client messages.
-                  [this](NextResult<ServerMetadataHandle> ret) {
-                    return pipe_server_to_client_messages_.receiver.Next();
-                  },
-                  [this](NextResult<MessageHandle> ret) {
+                  pipe_server_to_client_messages_.receiver.Next(),
+                  [this] {
                     // Wake up the sencond stream read after first stream read
                     // finished.
                     Wakeup();
@@ -637,11 +629,8 @@ TEST_F(ClientTransportTest, AddMultipleStreams) {
                   // Receive server initial metadata.
                   pipe_server_intial_metadata_second_.receiver.Next(),
                   // Receiver server to client messages.
-                  [this](NextResult<ServerMetadataHandle> ret) {
-                    return pipe_server_to_client_messages_second_.receiver
-                        .Next();
-                  },
-                  [this](NextResult<MessageHandle> ret) {
+                  pipe_server_to_client_messages_second_.receiver.Next(),
+                  [this] {
                     // Close pipes after receive message.
                     pipe_server_to_client_messages_second_.sender.Close();
                     pipe_server_intial_metadata_second_.sender.Close();
@@ -763,10 +752,8 @@ TEST_F(ClientTransportTest, AddMultipleStreamsMultipleMessages) {
                   // Receive server initial metadata.
                   pipe_server_intial_metadata_.receiver.Next(),
                   // Receiver server to client messages.
-                  [this](NextResult<ServerMetadataHandle> ret) {
-                    return pipe_server_to_client_messages_.receiver.Next();
-                  },
-                  [this](NextResult<MessageHandle> ret) {
+                  pipe_server_to_client_messages_.receiver.Next(),
+                  [this] {
                     // Wake up the sencond stream read after first stream read
                     // finished.
                     Wakeup();
@@ -780,11 +767,8 @@ TEST_F(ClientTransportTest, AddMultipleStreamsMultipleMessages) {
                   // Receive server initial metadata.
                   pipe_server_intial_metadata_second_.receiver.Next(),
                   // Receiver server to client messages.
-                  [this](NextResult<ServerMetadataHandle> ret) {
-                    return pipe_server_to_client_messages_second_.receiver
-                        .Next();
-                  },
-                  [this](NextResult<MessageHandle> ret) {
+                  pipe_server_to_client_messages_second_.receiver.Next(),
+                  [this] {
                     // Close pipes after receive message.
                     pipe_server_to_client_messages_second_.sender.Close();
                     pipe_server_intial_metadata_second_.sender.Close();
