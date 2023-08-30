@@ -62,8 +62,6 @@
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/transport/transport_fwd.h"
 
-struct grpc_server_config_fetcher;
-
 namespace grpc_core {
 
 extern TraceFlag grpc_server_channel_trace;
