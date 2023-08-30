@@ -12,12 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from setuptools import errors
 import os
 import os.path
 import shutil
 import sys
 import tempfile
+
+from setuptools import errors
 
 import commands
 
@@ -113,6 +114,7 @@ _ERROR_DIAGNOSES = {
 
 
 def diagnose_build_ext_error(build_ext, error, formatted):
+    import sys; sys.stderr.write(f"XUAN: type of error: {type(error)}\n"); sys.stderr.flush()
     diagnostic = _ERROR_DIAGNOSES.get(type(error))
     if diagnostic is None:
         raise commands.CommandError(

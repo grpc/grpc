@@ -13,7 +13,6 @@
 # limitations under the License.
 """Provides distutils command classes for the gRPC Python setup process."""
 
-from setuptools import errors as _errors
 import glob
 import os
 import os.path
@@ -23,6 +22,7 @@ import shutil
 import sys
 
 import setuptools
+from setuptools import errors as _errors
 from setuptools.command import build_ext
 from setuptools.command import build_py
 from setuptools.command import easy_install
