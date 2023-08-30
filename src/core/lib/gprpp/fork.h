@@ -42,14 +42,14 @@ class GPR_DLL Fork {
 
   // Increment the count of active ExecCtxs.
   // Will block until a pending fork is complete if one is in progress.
-  static void Fork::IncExecCtxCount() {
+  static void IncExecCtxCount() {
     if (GPR_UNLIKELY(support_enabled_.load(std::memory_order_relaxed))) {
       DoIncExecCtxCount();
     }
   }
 
   // Decrement the count of active ExecCtxs
-  static void Fork::DecExecCtxCount() {
+  static void DecExecCtxCount() {
     if (GPR_UNLIKELY(support_enabled_.load(std::memory_order_relaxed))) {
       DoDecExecCtxCount();
     }
