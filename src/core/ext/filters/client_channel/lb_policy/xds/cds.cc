@@ -459,7 +459,7 @@ void CdsLb::OnClusterChanged(
   if (*result) {
     if (discovery_mechanisms.empty()) {
       return OnError(name, absl::FailedPreconditionError(
-          "aggregate cluster graph has no leaf clusters"));
+                               "aggregate cluster graph has no leaf clusters"));
     }
     // LB policy is configured by aggregate cluster, not by the individual
     // underlying cluster that we may be processing an update for.
