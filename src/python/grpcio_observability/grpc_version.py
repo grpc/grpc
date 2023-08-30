@@ -11,17 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-package(default_visibility = ["//visibility:public"])
 
-py_test(
-    name = "_observability_test",
-    size = "small",
-    srcs = glob(["*.py"]),
-    imports = ["../../"],
-    main = "_observability_test.py",
-    deps = [
-        "//src/python/grpcio/grpc:grpcio",
-        "//src/python/grpcio_observability/grpc_observability:pyobservability",
-        "//src/python/grpcio_tests/tests/testing",
-    ],
-)
+# AUTO-GENERATED FROM `$REPO_ROOT/templates/src/python/grpcio_observability/grpc_version.py.template`!!!
+
+VERSION = '1.59.0.dev0'

@@ -26,11 +26,10 @@
 #include <vector>
 
 #include "absl/strings/string_view.h"
-
-#include <grpc/status.h>
-
 #include "constants.h"
 #include "python_census_context.h"
+
+#include <grpc/status.h>
 
 namespace grpc_observability {
 
