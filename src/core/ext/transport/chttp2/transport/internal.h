@@ -39,7 +39,6 @@
 
 #include "src/core/ext/transport/chttp2/transport/context_list_entry.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
-#include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/frame_goaway.h"
 #include "src/core/ext/transport/chttp2/transport/frame_ping.h"
 #include "src/core/ext/transport/chttp2/transport/frame_rst_stream.h"
@@ -48,6 +47,7 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
+#include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
 #include "src/core/ext/transport/chttp2/transport/ping_abuse_policy.h"
 #include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
 #include "src/core/lib/channel/channel_args.h"

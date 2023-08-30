@@ -81,7 +81,8 @@ void DNSServiceResolverImpl::LookupHostname(
                                /*log_errors=*/false) ||
       grpc_parse_ipv6_hostport(hostport.c_str(), &addr,
                                /*log_errors=*/false)) {
-    // Early out if the target is an ipv4 or ipv6 literal.
+    // Early out if the target is an ipv4 or ipv6 literal, otherwise dns service
+    // responses with kDNSServiceErr_NoSuchRecord
     std::vector<EventEngine::ResolvedAddress> result;
     result.emplace_back(reinterpret_cast<sockaddr*>(addr.addr), addr.len);
     engine_->Run([on_resolve = std::move(on_resolve),
@@ -154,7 +155,10 @@ void DNSServiceResolverImpl::ResolveCallback(
     return;
   }
 
-  // set received ipv4 or ipv6 response, even for kDNSServiceErr_NoSuchRecord
+  // set received ipv4 or ipv6 response, even for kDNSServiceErr_NoSuchRecord to
+  // mark that the response for the stack is received, it is possible that the
+  // one stack receives some results and the other stack gets
+  // kDNSServiceErr_NoSuchRecord error.
   if (address->sa_family == AF_INET) {
     request.has_ipv4_response = true;
   } else if (address->sa_family == AF_INET6) {
@@ -183,6 +187,9 @@ void DNSServiceResolverImpl::ResolveCallback(
         context);
   }
 
+  // received both ipv4 and ipv6 responses, and no more responses (e.g. multiple
+  // IP addresses for a domain name) are coming, finish `LookupHostname` resolve
+  // with the collected results.
   if (!(flags & kDNSServiceFlagsMoreComing) && request.has_ipv4_response &&
       request.has_ipv6_response) {
     if (request.result.empty()) {

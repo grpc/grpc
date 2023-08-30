@@ -55,6 +55,8 @@ absl::string_view OTelMethodKey() { return "grpc.method"; }
 
 absl::string_view OTelStatusKey() { return "grpc.status"; }
 
+absl::string_view OTelTargetKey() { return "grpc.target"; }
+
 absl::string_view OTelClientAttemptStartedInstrumentName() {
   return "grpc.client.attempt.started";
 }

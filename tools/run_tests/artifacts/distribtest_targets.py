@@ -458,12 +458,12 @@ def targets():
             "linux",
             "x64",
             "debian10",
-            ruby_version="ruby_2_6",
+            ruby_version="ruby_2_7",
             source=True,
             presubmit=True,
         ),
         RubyDistribTest(
-            "linux", "x64", "debian10", ruby_version="ruby_2_7", presubmit=True
+            "linux", "x64", "debian10", ruby_version="ruby_3_0", presubmit=True
         ),
         RubyDistribTest("linux", "x64", "centos7"),
         RubyDistribTest("linux", "x64", "ubuntu1604"),

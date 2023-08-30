@@ -7,9 +7,7 @@
  * regenerated. */
 
 #include <stddef.h>
-#include "upb/collections/array_internal.h"
-#include "upb/message/internal.h"
-#include "upb/mini_table/enum_internal.h"
+#include "upb/generated_code_support.h"
 #include "xds/core/v3/context_params.upb.h"
 #include "xds/annotations/v3/status.upb.h"
 
@@ -21,7 +19,7 @@ static const upb_MiniTableSub xds_core_v3_ContextParams_submsgs[1] = {
 };
 
 static const upb_MiniTableField xds_core_v3_ContextParams__fields[1] = {
-  {1, 0, 0, 0, 11, kUpb_FieldMode_Map | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {1, 0, 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable xds_core_v3_ContextParams_msg_init = {
@@ -31,8 +29,8 @@ const upb_MiniTable xds_core_v3_ContextParams_msg_init = {
 };
 
 static const upb_MiniTableField xds_core_v3_ContextParams_ParamsEntry__fields[2] = {
-  {1, 8, 0, kUpb_NoSub, 12, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsAlternate | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-  {2, UPB_SIZE(16, 24), 0, kUpb_NoSub, 12, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsAlternate | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {1, 8, 0, kUpb_NoSub, 12, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(16, 24), 0, kUpb_NoSub, 12, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable xds_core_v3_ContextParams_ParamsEntry_msg_init = {

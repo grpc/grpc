@@ -121,6 +121,7 @@ class OpenTelemetryServerCallTracer : public grpc_core::ServerCallTracer {
  private:
   grpc_core::Slice path_;
   absl::string_view method_;
+  std::string authority_;
   absl::Time start_time_;
   absl::Duration elapsed_time_;
 };
@@ -133,6 +134,15 @@ void OpenTelemetryServerCallTracer::RecordReceivedInitialMetadata(
     path_ = path->Ref();
   }
   method_ = absl::StripPrefix(path_.as_string_view(), "/");
+  const auto* authority =
+      recv_initial_metadata->get_pointer(grpc_core::HttpAuthorityMetadata());
+  // Override with host metadata if authority is absent.
+  if (authority == nullptr) {
+    authority = recv_initial_metadata->get_pointer(grpc_core::HostMetadata());
+  }
+  if (authority != nullptr) {
+    authority_ = std::string(authority->as_string_view());
+  }
   // TODO(yashykt): Figure out how to get this to work with absl::string_view
   if (OTelPluginState().server.call.started != nullptr) {
     OTelPluginState().server.call.started->Add(

@@ -57,7 +57,6 @@
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/detail/basic_seq.h"
 #include "src/core/lib/promise/detail/status.h"
 #include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/if.h"

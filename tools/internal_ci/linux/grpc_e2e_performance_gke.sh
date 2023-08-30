@@ -30,6 +30,8 @@ GRPC_GO_REPO=grpc/grpc-go
 GRPC_GO_GITREF=master
 GRPC_JAVA_REPO=grpc/grpc-java
 GRPC_JAVA_GITREF=master
+GRPC_NODE_REPO=grpc/grpc-node
+GRPC_NODE_GITREF=master
 TEST_INFRA_REPO=grpc/test-infra
 TEST_INFRA_GITREF=master
 
@@ -46,13 +48,16 @@ gcloud container clusters get-credentials benchmarks-prod2 \
 # Set up environment variables.
 LOAD_TEST_PREFIX="${KOKORO_BUILD_INITIATOR}"
 # BEGIN differentiate experimental configuration from master configuration.
-if [[ "${KOKORO_BUILD_INITIATOR%%-*}" == kokoro ]]; then
-    LOAD_TEST_PREFIX=kokoro
+if [[ "${KOKORO_BUILD_INITIATOR%%-*}" == kokoro && "${KOKORO_GITHUB_COMMIT_URL%/*}" == "https://github.com/grpc/grpc/commit" ]]; then
+    # Use "official" BQ tables only for builds initiated by Kokoro and running
+    # from grpc/grpc. These results show up in the "official" public dashboard.
+    BIGQUERY_TABLE_8CORE=e2e_benchmarks.ci_master_results_8core
+    BIGQUERY_TABLE_32CORE=e2e_benchmarks.ci_master_results_32core
+else
+    # Use experimental BQ tables otherwise.
+    BIGQUERY_TABLE_8CORE=e2e_benchmarks.experimental_results
+    BIGQUERY_TABLE_32CORE=e2e_benchmarks.experimental_results_32core
 fi
-# Use the "official" BQ tables so that the measurements will show up in the
-# "official" public dashboard.
-BIGQUERY_TABLE_8CORE=e2e_benchmarks.ci_master_results_8core
-BIGQUERY_TABLE_32CORE=e2e_benchmarks.ci_master_results_32core
 # END differentiate experimental configuration from master configuration.
 CLOUD_LOGGING_URL="https://source.cloud.google.com/results/invocations/${KOKORO_BUILD_ID}"
 PREBUILT_IMAGE_PREFIX="gcr.io/grpc-testing/e2etest/prebuilt/${LOAD_TEST_PREFIX}"
@@ -70,6 +75,7 @@ fi
 GRPC_DOTNET_COMMIT="$(git ls-remote "https://github.com/${GRPC_DOTNET_REPO}.git" "${GRPC_DOTNET_GITREF}" | cut -f1)"
 GRPC_GO_COMMIT="$(git ls-remote "https://github.com/${GRPC_GO_REPO}.git" "${GRPC_GO_GITREF}" | cut -f1)"
 GRPC_JAVA_COMMIT="$(git ls-remote "https://github.com/${GRPC_JAVA_REPO}.git" "${GRPC_JAVA_GITREF}" | cut -f1)"
+GRPC_NODE_COMMIT="$(git ls-remote "https://github.com/${GRPC_NODE_REPO}.git" "${GRPC_NODE_GITREF}" | cut -f1)"
 # Kokoro jobs run on dedicated pools.
 DRIVER_POOL=drivers-ci
 WORKER_POOL_8CORE=workers-c2-8core-ci
@@ -129,15 +135,19 @@ configLangArgs8core+=( -l dotnet )
 configLangArgs32core+=( -l dotnet )
 runnerLangArgs+=( -l "dotnet:${GRPC_DOTNET_REPO}:${GRPC_DOTNET_COMMIT}" )
 
-# go
-configLangArgs8core+=( -l go )
-configLangArgs32core+=( -l go )
-runnerLangArgs+=( -l "go:${GRPC_GO_REPO}:${GRPC_GO_COMMIT}" )
+# # go
+# configLangArgs8core+=( -l go )
+# configLangArgs32core+=( -l go )
+# runnerLangArgs+=( -l "go:${GRPC_GO_REPO}:${GRPC_GO_COMMIT}" )
 
 # java
 configLangArgs8core+=( -l java )
 configLangArgs32core+=( -l java )
 runnerLangArgs+=( -l "java:${GRPC_JAVA_REPO}:${GRPC_JAVA_COMMIT}" )
+
+# node
+configLangArgs8core+=( -l node )  # 8-core only.
+runnerLangArgs+=( -l "node:${GRPC_NODE_REPO}:${GRPC_NODE_COMMIT}" )
 
 # python
 configLangArgs8core+=( -l python )  # 8-core only.

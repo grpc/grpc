@@ -102,6 +102,7 @@ MATCHER(StatusCodeEq, "") {
 class EventEngineDNSTest : public EventEngineTest {
  protected:
   static void SetUpTestSuite() {
+#ifndef GRPC_IOS_EVENT_ENGINE_CLIENT
     std::string test_records_path = kDNSTestRecordGroupsYamlPath;
     std::string dns_server_path = kDNSServerRelPath;
     std::string dns_resolver_path = kDNSResolverRelPath;
@@ -143,12 +144,15 @@ class EventEngineDNSTest : public EventEngineTest {
     int status = health_check.Join();
     // TODO(yijiem): make this portable for Windows
     ASSERT_TRUE(WIFEXITED(status) && WEXITSTATUS(status) == 0);
+#endif  // GRPC_IOS_EVENT_ENGINE_CLIENT
   }
 
   static void TearDownTestSuite() {
+#ifndef GRPC_IOS_EVENT_ENGINE_CLIENT
     dns_server_.server_process->Interrupt();
     dns_server_.server_process->Join();
     delete dns_server_.server_process;
+#endif  // GRPC_IOS_EVENT_ENGINE_CLIENT
   }
 
   std::unique_ptr<EventEngine::DNSResolver> CreateDefaultDNSResolver() {

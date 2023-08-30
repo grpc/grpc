@@ -284,6 +284,7 @@ static void check_jwt_claim(const Json& claim, const char* expected_audience,
   ASSERT_EQ(parsed_lifetime.tv_sec, grpc_max_auth_token_lifetime().tv_sec);
 }
 
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
 static void check_jwt_signature(const char* b64_signature, RSA* rsa_key,
                                 const char* signed_data,
                                 size_t signed_data_size) {
@@ -311,6 +312,28 @@ static void check_jwt_signature(const char* b64_signature, RSA* rsa_key,
   if (key != nullptr) EVP_PKEY_free(key);
   if (md_ctx != nullptr) EVP_MD_CTX_destroy(md_ctx);
 }
+#else
+static void check_jwt_signature(const char* b64_signature, EVP_PKEY* key,
+                                const char* signed_data,
+                                size_t signed_data_size) {
+  grpc_core::ExecCtx exec_ctx;
+  EVP_MD_CTX* md_ctx = EVP_MD_CTX_create();
+
+  grpc_slice sig = grpc_base64_decode(b64_signature, 1);
+  ASSERT_FALSE(GRPC_SLICE_IS_EMPTY(sig));
+  ASSERT_EQ(GRPC_SLICE_LENGTH(sig), 128);
+
+  ASSERT_EQ(EVP_DigestVerifyInit(md_ctx, nullptr, EVP_sha256(), nullptr, key),
+            1);
+  ASSERT_EQ(EVP_DigestVerifyUpdate(md_ctx, signed_data, signed_data_size), 1);
+  ASSERT_EQ(EVP_DigestVerifyFinal(md_ctx, GRPC_SLICE_START_PTR(sig),
+                                  GRPC_SLICE_LENGTH(sig)),
+            1);
+
+  grpc_slice_unref(sig);
+  if (md_ctx != nullptr) EVP_MD_CTX_destroy(md_ctx);
+}
+#endif
 
 static char* service_account_creds_jwt_encode_and_sign(
     const grpc_auth_json_key* key) {

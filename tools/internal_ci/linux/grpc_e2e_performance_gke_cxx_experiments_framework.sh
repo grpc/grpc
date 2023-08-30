@@ -17,7 +17,11 @@ set -ex
 # Purpose: Run the C++ "dashboard" benchmarks for a set of gRPC-core experiments.
 #
 # To run the benchmarks, add your experiment to the set below.
-GRPC_EXPERIMENTS=("event_engine_listener" "work_stealing")
+declare -a GRPC_EXPERIMENTS=(
+    "event_engine_listener"
+    "event_engine_client"
+    "event_engine_client,event_engine_listener"
+)
 
 # Enter the gRPC repo root.
 cd "$(dirname "$0")/../../.."
@@ -86,14 +90,17 @@ declare -a loadtest_files=()
 # Build test configurations.
 buildConfigs() {
     local -r pool="$1"
-    local -r table="$2"
+    local -r base_table="$2"
     local -r experiment="$3"
     shift 3
+    # Multiple experiments are delimited by `__` (two underscores) in BigQuery.
+    SANITIZED_EXPERIMENT="${experiment//,/__}"
+    OUTFILE="loadtest_with_prebuilt_workers_${pool}_${SANITIZED_EXPERIMENT}.yaml"
     tools/run_tests/performance/loadtest_config.py "$@" \
         -t ./tools/run_tests/performance/templates/loadtest_template_prebuilt_cxx_experiments.yaml \
         -s driver_pool="${DRIVER_POOL}" -s driver_image= \
         -s client_pool="${pool}" -s server_pool="${pool}" \
-        -s big_query_table="${table}_${experiment}" -s timeout_seconds=900 \
+        -s big_query_table="${base_table}_${SANITIZED_EXPERIMENT}" -s timeout_seconds=900 \
         -s prebuilt_image_prefix="${PREBUILT_IMAGE_PREFIX}" \
         -s prebuilt_image_tag="${UNIQUE_IDENTIFIER}" \
         -s grpc_experiment="${experiment}" \
@@ -107,9 +114,9 @@ buildConfigs() {
         -a pool="${pool}" --category=dashboard \
         --allow_client_language=c++ --allow_server_language=c++ \
         --allow_server_language=node \
-        -o "loadtest_with_prebuilt_workers_${pool}_${experiment}.yaml"
+        -o "${OUTFILE}"
 
-    loadtest_files+=(-i "loadtest_with_prebuilt_workers_${pool}_${experiment}.yaml")
+    loadtest_files+=(-i "${OUTFILE}")
 }
 
 for experiment in "${GRPC_EXPERIMENTS[@]}"; do

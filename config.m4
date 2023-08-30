@@ -553,6 +553,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/event_engine/tcp_socket_utils.cc \
     src/core/lib/event_engine/thread_local.cc \
     src/core/lib/event_engine/thread_pool/original_thread_pool.cc \
+    src/core/lib/event_engine/thread_pool/thread_count.cc \
     src/core/lib/event_engine/thread_pool/thread_pool_factory.cc \
     src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc \
     src/core/lib/event_engine/thready_event_engine/thready_event_engine.cc \
@@ -605,6 +606,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/gprpp/posix/env.cc \
     src/core/lib/gprpp/posix/stat.cc \
     src/core/lib/gprpp/posix/thd.cc \
+    src/core/lib/gprpp/ref_counted_string.cc \
     src/core/lib/gprpp/status_helper.cc \
     src/core/lib/gprpp/strerror.cc \
     src/core/lib/gprpp/tchar.cc \
@@ -965,9 +967,15 @@ if test "$PHP_GRPC" != "no"; then
     third_party/abseil-cpp/absl/synchronization/barrier.cc \
     third_party/abseil-cpp/absl/synchronization/blocking_counter.cc \
     third_party/abseil-cpp/absl/synchronization/internal/create_thread_identity.cc \
+    third_party/abseil-cpp/absl/synchronization/internal/futex_waiter.cc \
     third_party/abseil-cpp/absl/synchronization/internal/graphcycles.cc \
+    third_party/abseil-cpp/absl/synchronization/internal/kernel_timeout.cc \
     third_party/abseil-cpp/absl/synchronization/internal/per_thread_sem.cc \
-    third_party/abseil-cpp/absl/synchronization/internal/waiter.cc \
+    third_party/abseil-cpp/absl/synchronization/internal/pthread_waiter.cc \
+    third_party/abseil-cpp/absl/synchronization/internal/sem_waiter.cc \
+    third_party/abseil-cpp/absl/synchronization/internal/stdcpp_waiter.cc \
+    third_party/abseil-cpp/absl/synchronization/internal/waiter_base.cc \
+    third_party/abseil-cpp/absl/synchronization/internal/win32_waiter.cc \
     third_party/abseil-cpp/absl/synchronization/mutex.cc \
     third_party/abseil-cpp/absl/synchronization/notification.cc \
     third_party/abseil-cpp/absl/time/civil_time.cc \
@@ -1022,6 +1030,7 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl-with-bazel/src/crypto/bio/bio.c \
     third_party/boringssl-with-bazel/src/crypto/bio/bio_mem.c \
     third_party/boringssl-with-bazel/src/crypto/bio/connect.c \
+    third_party/boringssl-with-bazel/src/crypto/bio/errno.c \
     third_party/boringssl-with-bazel/src/crypto/bio/fd.c \
     third_party/boringssl-with-bazel/src/crypto/bio/file.c \
     third_party/boringssl-with-bazel/src/crypto/bio/hexdump.c \
@@ -1052,15 +1061,13 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl-with-bazel/src/crypto/cipher_extra/tls_cbc.c \
     third_party/boringssl-with-bazel/src/crypto/conf/conf.c \
     third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_apple.c \
-    third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_freebsd.c \
     third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_fuchsia.c \
     third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_linux.c \
     third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_openbsd.c \
+    third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_sysreg.c \
     third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_win.c \
-    third_party/boringssl-with-bazel/src/crypto/cpu_arm.c \
     third_party/boringssl-with-bazel/src/crypto/cpu_arm_freebsd.c \
     third_party/boringssl-with-bazel/src/crypto/cpu_arm_linux.c \
-    third_party/boringssl-with-bazel/src/crypto/cpu_arm_openbsd.c \
     third_party/boringssl-with-bazel/src/crypto/cpu_intel.c \
     third_party/boringssl-with-bazel/src/crypto/crypto.c \
     third_party/boringssl-with-bazel/src/crypto/curve25519/curve25519.c \
@@ -1275,7 +1282,6 @@ if test "$PHP_GRPC" != "no"; then
     third_party/re2/re2/tostring.cc \
     third_party/re2/re2/unicode_casefold.cc \
     third_party/re2/re2/unicode_groups.cc \
-    third_party/re2/util/pcre.cc \
     third_party/re2/util/rune.cc \
     third_party/re2/util/strutil.cc \
     third_party/upb/upb/base/status.c \
@@ -1293,10 +1299,14 @@ if test "$PHP_GRPC" != "no"; then
     third_party/upb/upb/mem/arena.c \
     third_party/upb/upb/message/accessors.c \
     third_party/upb/upb/message/message.c \
-    third_party/upb/upb/mini_table/common.c \
-    third_party/upb/upb/mini_table/decode.c \
-    third_party/upb/upb/mini_table/encode.c \
+    third_party/upb/upb/mini_descriptor/build_enum.c \
+    third_party/upb/upb/mini_descriptor/decode.c \
+    third_party/upb/upb/mini_descriptor/internal/base92.c \
+    third_party/upb/upb/mini_descriptor/internal/encode.c \
+    third_party/upb/upb/mini_descriptor/link.c \
     third_party/upb/upb/mini_table/extension_registry.c \
+    third_party/upb/upb/mini_table/internal/message.c \
+    third_party/upb/upb/mini_table/message.c \
     third_party/upb/upb/reflection/def_builder.c \
     third_party/upb/upb/reflection/def_pool.c \
     third_party/upb/upb/reflection/def_type.c \
@@ -1327,7 +1337,7 @@ if test "$PHP_GRPC" != "no"; then
     -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DGRPC_ARES=0 \
     -DGRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK=1 \
     -DGRPC_XDS_USER_AGENT_NAME_SUFFIX='"\"PHP\""' \
-    -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"1.58.0dev\""')
+    -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"1.59.0dev\""')
 
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/backend_metrics)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/census)
@@ -1623,7 +1633,10 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/lex)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/mem)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/message)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/mini_descriptor)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/mini_descriptor/internal)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/mini_table)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/mini_table/internal)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/reflection)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/text)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/wire)

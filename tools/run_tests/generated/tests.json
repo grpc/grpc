@@ -1316,6 +1316,30 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
+    "name": "call_tracer_test",
+    "platforms": [
+      "linux",
+      "mac",
+      "posix",
+      "windows"
+    ],
+    "uses_polling": false
+  },
+  {
+    "args": [],
+    "benchmark": false,
+    "ci_platforms": [
+      "linux",
+      "mac",
+      "posix",
+      "windows"
+    ],
+    "cpu_cost": 1.0,
+    "exclude_configs": [],
+    "exclude_iomgrs": [],
+    "flaky": false,
+    "gtest": true,
+    "language": "c++",
     "name": "cancel_after_accept_test",
     "platforms": [
       "linux",
@@ -2158,6 +2182,30 @@
       "windows"
     ],
     "uses_polling": true
+  },
+  {
+    "args": [],
+    "benchmark": false,
+    "ci_platforms": [
+      "linux",
+      "mac",
+      "posix",
+      "windows"
+    ],
+    "cpu_cost": 1.0,
+    "exclude_configs": [],
+    "exclude_iomgrs": [],
+    "flaky": false,
+    "gtest": true,
+    "language": "c++",
+    "name": "client_transport_test",
+    "platforms": [
+      "linux",
+      "mac",
+      "posix",
+      "windows"
+    ],
+    "uses_polling": false
   },
   {
     "args": [],
@@ -3651,30 +3699,6 @@
     "gtest": true,
     "language": "c++",
     "name": "frame_header_test",
-    "platforms": [
-      "linux",
-      "mac",
-      "posix",
-      "windows"
-    ],
-    "uses_polling": true
-  },
-  {
-    "args": [],
-    "benchmark": false,
-    "ci_platforms": [
-      "linux",
-      "mac",
-      "posix",
-      "windows"
-    ],
-    "cpu_cost": 1.0,
-    "exclude_configs": [],
-    "exclude_iomgrs": [],
-    "flaky": false,
-    "gtest": true,
-    "language": "c++",
-    "name": "frame_test",
     "platforms": [
       "linux",
       "mac",
@@ -6612,6 +6636,30 @@
     "platforms": [
       "linux",
       "posix"
+    ],
+    "uses_polling": true
+  },
+  {
+    "args": [],
+    "benchmark": false,
+    "ci_platforms": [
+      "linux",
+      "mac",
+      "posix",
+      "windows"
+    ],
+    "cpu_cost": 1.0,
+    "exclude_configs": [],
+    "exclude_iomgrs": [],
+    "flaky": false,
+    "gtest": true,
+    "language": "c++",
+    "name": "pre_stop_hook_server_test",
+    "platforms": [
+      "linux",
+      "mac",
+      "posix",
+      "windows"
     ],
     "uses_polling": true
   },
@@ -10030,6 +10078,54 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
+    "name": "test_core_transport_chaotic_good_frame_test",
+    "platforms": [
+      "linux",
+      "mac",
+      "posix",
+      "windows"
+    ],
+    "uses_polling": true
+  },
+  {
+    "args": [],
+    "benchmark": false,
+    "ci_platforms": [
+      "linux",
+      "mac",
+      "posix",
+      "windows"
+    ],
+    "cpu_cost": 1.0,
+    "exclude_configs": [],
+    "exclude_iomgrs": [],
+    "flaky": false,
+    "gtest": true,
+    "language": "c++",
+    "name": "test_core_transport_chttp2_frame_test",
+    "platforms": [
+      "linux",
+      "mac",
+      "posix",
+      "windows"
+    ],
+    "uses_polling": false
+  },
+  {
+    "args": [],
+    "benchmark": false,
+    "ci_platforms": [
+      "linux",
+      "mac",
+      "posix",
+      "windows"
+    ],
+    "cpu_cost": 1.0,
+    "exclude_configs": [],
+    "exclude_iomgrs": [],
+    "flaky": false,
+    "gtest": true,
+    "language": "c++",
     "name": "test_cpp_client_credentials_test",
     "platforms": [
       "linux",
@@ -10745,6 +10841,30 @@
     "gtest": true,
     "language": "c++",
     "name": "varint_test",
+    "platforms": [
+      "linux",
+      "mac",
+      "posix",
+      "windows"
+    ],
+    "uses_polling": false
+  },
+  {
+    "args": [],
+    "benchmark": false,
+    "ci_platforms": [
+      "linux",
+      "mac",
+      "posix",
+      "windows"
+    ],
+    "cpu_cost": 1.0,
+    "exclude_configs": [],
+    "exclude_iomgrs": [],
+    "flaky": false,
+    "gtest": true,
+    "language": "c++",
+    "name": "wait_for_callback_test",
     "platforms": [
       "linux",
       "mac",
@@ -11480,6 +11600,30 @@
       "windows"
     ],
     "uses_polling": false
+  },
+  {
+    "args": [],
+    "benchmark": false,
+    "ci_platforms": [
+      "linux",
+      "mac",
+      "posix",
+      "windows"
+    ],
+    "cpu_cost": 1.0,
+    "exclude_configs": [],
+    "exclude_iomgrs": [],
+    "flaky": false,
+    "gtest": true,
+    "language": "c++",
+    "name": "xds_stats_watcher_test",
+    "platforms": [
+      "linux",
+      "mac",
+      "posix",
+      "windows"
+    ],
+    "uses_polling": true
   },
   {
     "args": [],

@@ -37,9 +37,9 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/config/config_vars.h"
+#include "src/core/lib/gpr/subprocess.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "test/core/util/port.h"
-#include "test/core/util/subprocess.h"
 #include "test/core/util/test_config.h"
 
 ABSL_FLAG(std::string, benchmark_names, "call,channel",

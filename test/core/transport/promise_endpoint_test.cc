@@ -30,7 +30,6 @@
 #include <grpc/event_engine/slice_buffer.h>
 
 #include "src/core/lib/promise/activity.h"
-#include "src/core/lib/promise/detail/basic_join.h"
 #include "src/core/lib/promise/join.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/slice/slice.h"

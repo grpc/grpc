@@ -246,16 +246,6 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
                      absl::ToDoubleMilliseconds(absl::Now() - start_time_),
                      context_.Labels());
   RecordIntMetric(kRpcClientCompletedRpcMeasureName, 1, context_.Labels());
-  if (grpc_core::IsTransportSuppliesClientLatencyEnabled()) {
-    if (transport_stream_stats != nullptr &&
-        gpr_time_cmp(transport_stream_stats->latency,
-                     gpr_inf_future(GPR_TIMESPAN)) != 0) {
-      double latency_ms = absl::ToDoubleMilliseconds(absl::Microseconds(
-          gpr_timespec_to_micros(transport_stream_stats->latency)));
-      RecordDoubleMetric(kRpcClientTransportLatencyMeasureName, latency_ms,
-                         context_.Labels());
-    }
-  }
 }
 
 void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::

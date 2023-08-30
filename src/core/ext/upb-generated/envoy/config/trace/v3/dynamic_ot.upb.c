@@ -7,9 +7,7 @@
  * regenerated. */
 
 #include <stddef.h>
-#include "upb/collections/array_internal.h"
-#include "upb/message/internal.h"
-#include "upb/mini_table/enum_internal.h"
+#include "upb/generated_code_support.h"
 #include "envoy/config/trace/v3/dynamic_ot.upb.h"
 #include "google/protobuf/struct.upb.h"
 #include "udpa/annotations/migrate.upb.h"
@@ -25,8 +23,8 @@ static const upb_MiniTableSub envoy_config_trace_v3_DynamicOtConfig_submsgs[1] =
 };
 
 static const upb_MiniTableField envoy_config_trace_v3_DynamicOtConfig__fields[2] = {
-  {1, 8, 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-  {2, UPB_SIZE(4, 24), 1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(4, 24), 1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy_config_trace_v3_DynamicOtConfig_msg_init = {

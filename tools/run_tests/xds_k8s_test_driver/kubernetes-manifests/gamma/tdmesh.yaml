@@ -1,0 +1,19 @@
+---
+kind: TDMesh
+apiVersion: net.gke.io/v1alpha1
+metadata:
+  name: ${mesh_name}
+  namespace: ${namespace_name}
+  labels:
+    owner: xds-k8s-interop-test
+spec:
+  gatewayClassName: gke-td
+  allowedRoutes:
+    namespaces:
+      from: All
+    kinds:
+    - group: net.gke.io
+      # This is intentionally incorrect and should be set to GRPCRoute.
+      # TODO(sergiitk): [GAMMA] Change when the fix is ready.
+      kind: TDGRPCRoute
+...

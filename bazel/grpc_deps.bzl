@@ -220,11 +220,11 @@ def grpc_deps():
             name = "boringssl",
             # Use github mirror instead of https://boringssl.googlesource.com/boringssl
             # to obtain a boringssl archive with consistent sha256
-            sha256 = "0675a4f86ce5e959703425d6f9063eaadf6b61b7f3399e77a154c0e85bad46b1",
-            strip_prefix = "boringssl-342e805bc1f5dfdd650e3f031686d6c939b095d9",
+            sha256 = "b21994a857a7aa6d5256ffe355c735ad4c286de44c6c81dfc04edc41a8feaeef",
+            strip_prefix = "boringssl-2ff4b968a7e0cfee66d9f151cb95635b43dc1d5b",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/boringssl/archive/342e805bc1f5dfdd650e3f031686d6c939b095d9.tar.gz",
-                "https://github.com/google/boringssl/archive/342e805bc1f5dfdd650e3f031686d6c939b095d9.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/boringssl/archive/2ff4b968a7e0cfee66d9f151cb95635b43dc1d5b.tar.gz",
+                "https://github.com/google/boringssl/archive/2ff4b968a7e0cfee66d9f151cb95635b43dc1d5b.tar.gz",
             ],
         )
 
@@ -243,12 +243,12 @@ def grpc_deps():
     if "com_google_protobuf" not in native.existing_rules():
         http_archive(
             name = "com_google_protobuf",
-            sha256 = "76a33e2136f23971ce46c72fd697cd94dc9f73d56ab23b753c3e16854c90ddfd",
-            strip_prefix = "protobuf-2c5fa078d8e86e5f4bd34e6f4c9ea9e8d7d4d44a",
+            sha256 = "1b46d45d9f5fff721a099bd6cd3be6717b8fa7ee3816a419f7d048ee55f9ae4c",
+            strip_prefix = "protobuf-54a2e5caa9d1a0a714fb2aa99753a1444414292a",
             urls = [
-                # https://github.com/protocolbuffers/protobuf/commits/v23.4
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/2c5fa078d8e86e5f4bd34e6f4c9ea9e8d7d4d44a.tar.gz",
-                "https://github.com/protocolbuffers/protobuf/archive/2c5fa078d8e86e5f4bd34e6f4c9ea9e8d7d4d44a.tar.gz",
+                # https://github.com/protocolbuffers/protobuf/commits/v24.2
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/54a2e5caa9d1a0a714fb2aa99753a1444414292a.tar.gz",
+                "https://github.com/protocolbuffers/protobuf/archive/54a2e5caa9d1a0a714fb2aa99753a1444414292a.tar.gz",
             ],
             patches = [
                 "@com_github_grpc_grpc//third_party:protobuf.patch",
@@ -328,11 +328,11 @@ def grpc_deps():
     if "com_google_absl" not in native.existing_rules():
         http_archive(
             name = "com_google_absl",
-            sha256 = "5366d7e7fa7ba0d915014d387b66d0d002c03236448e1ba9ef98122c13b35c36",
-            strip_prefix = "abseil-cpp-20230125.3",
+            sha256 = "59d2976af9d6ecf001a81a35749a6e551a335b949d34918cfade07737b9d93c5",
+            strip_prefix = "abseil-cpp-20230802.0",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/abseil/abseil-cpp/archive/20230125.3.tar.gz",
-                "https://github.com/abseil/abseil-cpp/archive/20230125.3.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/abseil/abseil-cpp/archive/20230802.0.tar.gz",
+                "https://github.com/abseil/abseil-cpp/archive/20230802.0.tar.gz",
             ],
         )
 
@@ -383,12 +383,12 @@ def grpc_deps():
     if "upb" not in native.existing_rules():
         http_archive(
             name = "upb",
-            sha256 = "c29fbd26eb19f388a1894099fae5ae599210be22926e1e1694c0ed1284f1c151",
-            strip_prefix = "upb-455cfdb8ae60a1763e6d924e36851c6897a781bb",
+            sha256 = "af3f2651b8f27d92d086fc373af6194d4ba702e29e27cbc691fa8926561aa056",
+            strip_prefix = "upb-cc36926cffb00f0e8dd33bc9511c8e7354f09d0c",
             urls = [
-                # https://github.com/protocolbuffers/upb/commits/23.x
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/upb/archive/455cfdb8ae60a1763e6d924e36851c6897a781bb.tar.gz",
-                "https://github.com/protocolbuffers/upb/archive/455cfdb8ae60a1763e6d924e36851c6897a781bb.tar.gz",
+                # https://github.com/protocolbuffers/upb/commits/24.x
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/upb/archive/cc36926cffb00f0e8dd33bc9511c8e7354f09d0c.tar.gz",
+                "https://github.com/protocolbuffers/upb/archive/cc36926cffb00f0e8dd33bc9511c8e7354f09d0c.tar.gz",
             ],
         )
 
@@ -438,6 +438,7 @@ def grpc_deps():
             name = "com_google_googleapis",
             sha256 = "5bb6b0253ccf64b53d6c7249625a7e3f6c3bc6402abd52d3778bfa48258703a0",
             strip_prefix = "googleapis-2f9af297c84c55c8b871ba4495e01ade42476c92",
+            build_file = Label("//bazel:googleapis.BUILD"),
             urls = [
                 "https://storage.googleapis.com/grpc-bazel-mirror/github.com/googleapis/googleapis/archive/2f9af297c84c55c8b871ba4495e01ade42476c92.tar.gz",
                 "https://github.com/googleapis/googleapis/archive/2f9af297c84c55c8b871ba4495e01ade42476c92.tar.gz",
@@ -499,6 +500,17 @@ def grpc_deps():
             ],
         )
 
+    if "google_cloud_cpp" not in native.existing_rules():
+        http_archive(
+            name = "google_cloud_cpp",
+            sha256 = "371d01b03c7e2604d671b8fa1c86710abe3b524a78bc2705a6bb4de715696755",
+            strip_prefix = "google-cloud-cpp-2.14.0",
+            urls = [
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/googleapis/google-cloud-cpp/archive/refs/tags/v2.14.0.tar.gz",
+                "https://github.com/googleapis/google-cloud-cpp/archive/refs/tags/v2.14.0.tar.gz",
+            ],
+        )
+
     grpc_python_deps()
 
 # TODO: move some dependencies from "grpc_deps" here?
@@ -533,11 +545,11 @@ def grpc_test_only_deps():
     if "com_github_yaml_pyyaml" not in native.existing_rules():
         http_archive(
             name = "com_github_yaml_pyyaml",
-            sha256 = "6b4314b1b2051ddb9d4fcd1634e1fa9c1bb4012954273c9ff3ef689f6ec6c93e",
-            strip_prefix = "pyyaml-3.12",
+            sha256 = "e34d97db6d846f5e2ad51417fd646e7ce6a3a70726ccea2a857e0580a7155f39",
+            strip_prefix = "pyyaml-6.0.1",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/yaml/pyyaml/archive/3.12.zip",
-                "https://github.com/yaml/pyyaml/archive/3.12.zip",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/yaml/pyyaml/archive/6.0.1.zip",
+                "https://github.com/yaml/pyyaml/archive/6.0.1.zip",
             ],
             build_file = "@com_github_grpc_grpc//third_party:yaml.BUILD",
         )

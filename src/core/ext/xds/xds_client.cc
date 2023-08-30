@@ -865,15 +865,12 @@ void XdsClient::ChannelState::AdsCallState::AdsResponseParser::ParseResource(
       std::string(serialized_resource), result_.version, update_time_);
   // Notify watchers.
   auto& watchers_list = resource_state.watchers;
-  auto* value =
-      result_.type->CopyResource(resource_state.resource.get()).release();
   xds_client()->work_serializer_.Schedule(
-      [watchers_list, value]()
+      [watchers_list, value = resource_state.resource]()
           ABSL_EXCLUSIVE_LOCKS_REQUIRED(&xds_client()->work_serializer_) {
             for (const auto& p : watchers_list) {
               p.first->OnGenericResourceChanged(value);
             }
-            delete value;
           },
       DEBUG_LOCATION);
 }
@@ -1604,12 +1601,11 @@ void XdsClient::WatchResource(const XdsResourceType* type,
                 "[xds_client %p] returning cached listener data for %s", this,
                 std::string(name).c_str());
       }
-      auto* value = type->CopyResource(resource_state.resource.get()).release();
       work_serializer_.Schedule(
-          [watcher, value]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) {
-            watcher->OnGenericResourceChanged(value);
-            delete value;
-          },
+          [watcher, value = resource_state.resource]()
+              ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) {
+                watcher->OnGenericResourceChanged(value);
+              },
           DEBUG_LOCATION);
     } else if (resource_state.meta.client_status ==
                XdsApi::ResourceMetadata::DOES_NOT_EXIST) {

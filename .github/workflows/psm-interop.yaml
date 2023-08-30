@@ -1,0 +1,74 @@
+name: PSM Interop
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+      - 'v1.*'
+
+permissions:
+  contents: read
+
+jobs:
+  unittest:
+    # By default, only version is printed out in parens, e.g. "unittest (3.10)"
+    # This changes it to "unittest (python3.10)"
+    name: "unittest (python${{ matrix.python_version }})"
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python_version: ["3.9", "3.10", "3.11"]
+      fail-fast: false
+    permissions:
+      pull-requests: read  # Used by paths-filter to read the diff.
+    defaults:
+      run:
+        working-directory: 'tools/run_tests/xds_k8s_test_driver'
+
+    steps:
+      - uses: actions/checkout@v3
+
+      # To add this job to required GitHub checks, it's not enough to use
+      # the on.pull_request.paths filter. For required checks, the job needs to
+      # return the success status, and not be skipped.
+      # Using paths-filter action, we skip the setup/test steps when psm interop
+      # files are unchanged, and the job returns success.
+      - uses: dorny/paths-filter@v2
+        id: paths_filter
+        with:
+          filters:  |
+            psm_interop_src:
+              - 'tools/run_tests/xds_k8s_test_driver/**'
+              - 'src/proto/grpc/testing/empty.proto'
+              - 'src/proto/grpc/testing/messages.proto'
+              - 'src/proto/grpc/testing/test.proto'
+
+      - uses: actions/setup-python@v4
+        if: ${{ steps.paths_filter.outputs.psm_interop_src == 'true' }}
+        with:
+          python-version: "${{ matrix.python_version }}"
+          cache: 'pip'
+          cache-dependency-path: 'tools/run_tests/xds_k8s_test_driver/requirements.lock'
+
+      - name: "Install requirements"
+        if: ${{ steps.paths_filter.outputs.psm_interop_src == 'true' }}
+        run: |
+          pip list
+          pip install --upgrade pip setuptools
+          pip list
+          pip install -r requirements.lock
+          pip list
+
+      - name: "Generate protos"
+        if: ${{ steps.paths_filter.outputs.psm_interop_src == 'true' }}
+        run: >
+          python -m grpc_tools.protoc --proto_path=../../../
+          --python_out=. --grpc_python_out=.
+          src/proto/grpc/testing/empty.proto
+          src/proto/grpc/testing/messages.proto
+          src/proto/grpc/testing/test.proto
+
+      - name: "Run unit tests"
+        if: ${{ steps.paths_filter.outputs.psm_interop_src == 'true' }}
+        run: python -m tests.unit
