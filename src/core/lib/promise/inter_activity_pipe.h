@@ -89,8 +89,8 @@ class InterActivityPipe {
     bool closed_ ABSL_GUARDED_BY(mu_) = false;
     uint8_t first_ ABSL_GUARDED_BY(mu_) = 0;
     uint8_t count_ ABSL_GUARDED_BY(mu_) = 0;
-    Waker on_occupied_;
-    Waker on_available_;
+    Waker on_occupied_ ABSL_GUARDED_BY(mu_);
+    Waker on_available_ ABSL_GUARDED_BY(mu_);
   };
   RefCountedPtr<Center> center_{MakeRefCounted<Center>()};
 
