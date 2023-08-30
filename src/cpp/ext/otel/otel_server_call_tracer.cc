@@ -146,8 +146,7 @@ void OpenTelemetryServerCallTracer::RecordReceivedInitialMetadata(
   // TODO(yashykt): Figure out how to get this to work with absl::string_view
   if (OTelPluginState().server.call.started != nullptr) {
     OTelPluginState().server.call.started->Add(
-        1, {{std::string(OTelMethodKey()), std::string(method_)},
-            {std::string(OTelAuthorityKey()), authority_}});
+        1, {{std::string(OTelMethodKey()), std::string(method_)}});
   }
 }
 
@@ -164,8 +163,7 @@ void OpenTelemetryServerCallTracer::RecordEnd(
       {std::string(OTelMethodKey()), std::string(method_)},
       {std::string(OTelStatusKey()),
        absl::StatusCodeToString(
-           static_cast<absl::StatusCode>(final_info->final_status))},
-      {std::string(OTelAuthorityKey()), authority_}};
+           static_cast<absl::StatusCode>(final_info->final_status))}};
   if (OTelPluginState().server.call.duration != nullptr) {
     OTelPluginState().server.call.duration->Record(
         absl::ToDoubleSeconds(elapsed_time_), attributes,

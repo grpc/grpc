@@ -7,9 +7,7 @@
  * regenerated. */
 
 #include <stddef.h>
-#include "upb/collections/array_internal.h"
-#include "upb/message/internal.h"
-#include "upb/mini_table/enum_internal.h"
+#include "upb/generated_code_support.h"
 #include "envoy/type/matcher/v3/number.upb.h"
 #include "envoy/type/v3/range.upb.h"
 #include "udpa/annotations/status.upb.h"
@@ -24,8 +22,8 @@ static const upb_MiniTableSub envoy_type_matcher_v3_DoubleMatcher_submsgs[1] = {
 };
 
 static const upb_MiniTableField envoy_type_matcher_v3_DoubleMatcher__fields[2] = {
-  {1, 8, -1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {2, 8, -1, kUpb_NoSub, 1, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
+  {1, 8, -1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {2, 8, -1, kUpb_NoSub, 1, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy_type_matcher_v3_DoubleMatcher_msg_init = {

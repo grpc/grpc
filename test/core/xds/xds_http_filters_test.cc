@@ -16,8 +16,6 @@
 
 #include "src/core/ext/xds/xds_http_filters.h"
 
-#include <stdint.h>
-
 #include <algorithm>
 #include <initializer_list>
 #include <string>
