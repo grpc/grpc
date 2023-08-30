@@ -1,4 +1,4 @@
-# Copyright 2016 gRPC authors.
+# Copyright 2023 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -243,8 +243,7 @@ setuptools.setup(
     packages=list(PACKAGES),
     python_requires='>=3.7',
     install_requires=[
-        # TODO(xuanwn): Add version requirements.
-        #  'grpcio>={version}'.format(version=grpc_version.VERSION),
+         'grpcio>={version}'.format(version=grpc_version.VERSION),
         'setuptools',
         'opencensus',
         'opencensus-ext-stackdriver',
