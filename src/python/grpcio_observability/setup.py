@@ -23,13 +23,12 @@ import sys
 import sysconfig
 
 import _parallel_compile_patch
-from make_grpcio_observability import CYGRPC_SO_FILE
-from make_grpcio_observability import CYGRPC_SO_PATH
 import pkg_resources
 import setuptools
 from setuptools.command import build_ext
 
-import grpc
+import observability_lib_deps
+
 import grpc_version
 
 PYTHON_STEM = os.path.realpath(os.path.dirname(__file__))
@@ -157,8 +156,10 @@ if EXTRA_ENV_COMPILE_ARGS is None:
         # We need to statically link the C++ Runtime, only the C runtime is
         # available dynamically
         EXTRA_ENV_COMPILE_ARGS += " /MT"
-    elif "linux" in sys.platform or "darwin" in sys.platform:
-        EXTRA_ENV_COMPILE_ARGS += " -fno-wrapv -frtti"
+    elif "linux" in sys.platform:
+        EXTRA_ENV_COMPILE_ARGS += " -fvisibility=hidden -fno-wrapv -fno-exceptions"
+    elif "darwin" in sys.platform:
+        EXTRA_ENV_COMPILE_ARGS += " -fvisibility=hidden -fno-wrapv -fno-exceptions"
 if EXTRA_ENV_LINK_ARGS is None:
     EXTRA_ENV_LINK_ARGS = ""
     # NOTE(rbellevi): Clang on Mac OS will make all static symbols (both
@@ -190,29 +191,22 @@ if EXTRA_ENV_LINK_ARGS is None:
             EXTRA_ENV_LINK_ARGS += " -latomic"
 
 EXTRA_COMPILE_ARGS = shlex.split(EXTRA_ENV_COMPILE_ARGS)
-
-# Instead of building anything from source, grpc_observability take dependency on
-# cygrpc shared objet library.
-# print ("Checking path for cygrpc.so:")
-# print(grpc._cython.__path__)
-# CYGRPC_SO_PATH = os.path.realpath(grpc._cython.__path__[0])
-# print (CYGRPC_SO_PATH)
-# so_files = _find_files_with_extension(CYGRPC_SO_PATH, 'so', name_only=True)
-# CYGRPC_SO_FILE = so_files[0]
-
-
-CYGRPC_SO_PATH = '/usr/local/google/home/xuanwn/.pyenv/versions/3.10.9/envs/310env/lib/python3.10/site-packages/grpc/_cython'
-# CYGRPC_SO_PATH = '/usr/local/google/home/xuanwn/.pyenv'
-CYGRPC_SO_FILE = 'cygrpc.cpython-310-x86_64-linux-gnu.so'
-EXTRA_ENV_LINK_ARGS += (
-    # f" -L{CYGRPC_SO_PATH} -l:{CYGRPC_SO_FILE} -Wl,-rpath,{CYGRPC_SO_PATH}"
-    f" -L{CYGRPC_SO_PATH} -l:{CYGRPC_SO_FILE} -Wl,--no-as-needed"
-)
-
 EXTRA_LINK_ARGS = shlex.split(EXTRA_ENV_LINK_ARGS)
 
 if BUILD_WITH_STATIC_LIBSTDCXX:
     EXTRA_LINK_ARGS.append("-static-libstdc++")
+
+
+CC_FILES = [os.path.normpath(cc_file) for cc_file in observability_lib_deps.CC_FILES]
+# CC_FILES = []
+# PROTO_FILES = [
+#     os.path.normpath(proto_file) for proto_file in observability_lib_deps.PROTO_FILES
+# ]
+CC_INCLUDES = [
+    os.path.normpath(include_dir) for include_dir in observability_lib_deps.CC_INCLUDES
+]
+# PROTO_INCLUDE = os.path.normpath(observability_lib_deps.PROTO_INCLUDE)
+
 
 DEFINE_MACROS = ()
 
@@ -267,6 +261,7 @@ def extension_modules():
         "grpc_root",  # For path starts with src/
         os.path.join("grpc_root", "include"),  # For core deps
         os.path.join("third_party", "abseil-cpp"),
+        os.path.join("grpc_root", "src", "core", "ext", "upb-generated"),
     ]
     plugin_sources = []
     plugin_sources += _find_files_with_extension("grpc_observability", "cc")
@@ -274,8 +269,8 @@ def extension_modules():
 
     plugin_ext = setuptools.Extension(
         name="grpc_observability._cyobservability",
-        sources=plugin_sources,
-        include_dirs=plugin_include,
+        sources=plugin_sources + CC_FILES,
+        include_dirs=plugin_include + CC_INCLUDES,
         language="c++",
         define_macros=list(DEFINE_MACROS),
         extra_compile_args=list(EXTRA_COMPILE_ARGS),
