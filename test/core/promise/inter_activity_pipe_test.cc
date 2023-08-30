@@ -17,6 +17,7 @@
 #include <gtest/gtest.h>
 
 #include "absl/status/status.h"
+#include "gtest/gtest.h"
 
 #include "src/core/lib/promise/seq.h"
 #include "test/core/promise/test_wakeup_schedulers.h"
