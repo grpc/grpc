@@ -554,5 +554,9 @@ int main(int argc, char** argv) {
   grpc_init();
   auto result = RUN_ALL_TESTS();
   grpc_shutdown();
+  if (result == 0) {
+    // TODO(apolcyn): undo test change
+    return 1;
+  }
   return result;
 }
