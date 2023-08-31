@@ -23,6 +23,7 @@
 #include <type_traits>
 #include <utility>
 
+#include "absl/base/attributes.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 
@@ -30,6 +31,7 @@
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/construct_destruct.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/poll.h"
