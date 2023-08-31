@@ -46,6 +46,7 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/latch.h"
+#include "src/core/lib/promise/seq.h"
 #include "src/core/lib/transport/transport.h"
 
 extern grpc_core::TraceFlag grpc_retry_trace;
