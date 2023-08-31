@@ -192,7 +192,10 @@ class ClientInitialMetadataOutstandingToken {
   ~ClientInitialMetadataOutstandingToken() {
     if (latch_ != nullptr) latch_->Set(false);
   }
-  void Complete(bool success) { std::exchange(latch_, nullptr)->Set(success); }
+  void Complete(bool success) {
+    if (latch_ == nullptr) return;
+    std::exchange(latch_, nullptr)->Set(success);
+  }
 
   // Returns a promise that will resolve when this object (or its moved-from
   // ancestor) is dropped.
