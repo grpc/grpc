@@ -938,6 +938,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "for_each",
     external_deps = [
+        "absl/base:core_headers",
         "absl/status",
         "absl/strings",
     ],
