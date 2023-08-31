@@ -192,12 +192,22 @@ class MessageForwarder {
   };
 
   bool committed() const { return committed_; }
-  void Commit() { committed_ = true; }
+  void Commit() {
+    committed_ = true;
+    waiting_for_commit_.Wake();
+  }
+  auto WaitForCommitted() {
+    return [this]() -> Poll<Empty> {
+      if (committed_) return Empty{};
+      return waiting_for_commit_.pending();
+    };
+  }
 
  private:
   std::vector<MessageHandle> buffered_messages_;
   IntraActivityWaiter waiting_for_read_;
   IntraActivityWaiter waiting_for_write_;
+  IntraActivityWaiter waiting_for_commit_;
   bool closed_ = false;
   bool committed_ = false;
 };
@@ -229,6 +239,7 @@ struct RetryFilter::CallAttemptState {
   Pipe<ServerMetadataHandle> server_initial_metadata;
   Pipe<MessageHandle> server_to_client;
   Pipe<MessageHandle> client_to_server;
+  Latch<void> lb_call_committed;
 
   std::string DebugTag() const {
     return absl::StrCat(Activity::current()->DebugTag(), " attempt=", attempt);
@@ -426,6 +437,17 @@ auto RetryFilter::MakeCallAttempt(CallState* call_state,
                  if (status.ok()) return;
                  if (attempt->early_return.is_set()) return;
                  attempt->early_return.Set(ServerMetadataFromStatus(status));
+               });
+  party->Spawn("attempt_lb_commit",
+               Seq(attempt->lb_call_committed.Wait(),
+                   call_state->forwarder.WaitForCommitted()),
+               [](Empty) {
+                 auto* service_config_call_data =
+                     static_cast<ClientChannelServiceConfigCallData*>(
+                         GetContext<grpc_call_context_element>()
+                             [GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA]
+                                 .value);
+                 service_config_call_data->Commit();
                });
   return Seq(
       Race(attempt->early_return.Wait(), std::move(child_call)),
