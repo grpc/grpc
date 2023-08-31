@@ -1015,11 +1015,13 @@ void Server::Orphan() {
 std::vector<std::string> Server::GetAllChannelArgumentNames() const {
   return channel_args_.GetAllChannelArgumentNames();
 }
-std::string Server::GetChannelArgumentValueToString(std::string& key) const {
+
+std::string Server::GetChannelArgumentValueToString(const std::string& key) const {
   return channel_args_.GetChannelArgumentValueToString(key);
 }
+
 absl::variant<intptr_t, std::string, const void*>
-Server::GetChannelArgumentValue(std::string& key) const {
+Server::GetChannelArgumentValue(const std::string& key) const {
   return channel_args_.GetChannelArgumentValue(key);
 }
 

@@ -222,6 +222,7 @@ TEST(ChannelArgsTest, TestGetChannelArgsDebugInfo) {
   std::string int_key = "int_key";
   std::string str_key = "str_key";
   void* ptr = gpr_malloc(42);
+
   ChannelArgs args_1;
   ChannelArgs args_2 = args_1.Set(int_key, 42);
   ChannelArgs args_3 =

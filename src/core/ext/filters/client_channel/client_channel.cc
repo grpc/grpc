@@ -1322,13 +1322,14 @@ ChannelArgs ClientChannel::MakeSubchannelArgs(
 std::vector<std::string> ClientChannel::GetAllChannelArgumentNames() const {
   return channel_args_.GetAllChannelArgumentNames();
 }
+
 std::string ClientChannel::GetChannelArgumentValueToString(
-    std::string& key) const {
+    const std::string& key) const {
   return channel_args_.GetChannelArgumentValueToString(key);
 }
 
 absl::variant<intptr_t, std::string, const void*>
-ClientChannel::GetChannelArgumentValue(std::string& key) const {
+ClientChannel::GetChannelArgumentValue(const std::string& key) const {
   return channel_args_.GetChannelArgumentValue(key);
 }
 

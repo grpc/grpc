@@ -180,7 +180,7 @@ class ClientChannel {
       const std::string& channel_default_authority);
 
   std::vector<std::string> GetAllChannelArgumentNames() const;
-  std::string GetChannelArgumentValueToString(std::string& key) const;
+  std::string GetChannelArgumentValueToString(const std::string& key) const;
   /* The lifetime of the void* is not guranteed.
     The content of void* must only be used to check for null,
     or for being equal to some other known pointer value.
@@ -188,7 +188,7 @@ class ClientChannel {
     Its life time is not guranteed by this API,
     because this API is for debug purpose only */
   absl::variant<intptr_t, std::string, const void*> GetChannelArgumentValue(
-      std::string& key) const;
+      const std::string& key) const;
 
  private:
   class CallData;

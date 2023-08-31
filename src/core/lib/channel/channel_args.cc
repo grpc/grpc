@@ -321,7 +321,7 @@ std::vector<std::string> ChannelArgs::GetAllChannelArgumentNames() const {
 }
 
 std::string ChannelArgs::GetChannelArgumentValueToString(
-    std::string& key) const {
+    const std::string& key) const {
   const Value* value = args_.Lookup(key);
   if (value != nullptr) {
     return value->ToString();
@@ -330,7 +330,7 @@ std::string ChannelArgs::GetChannelArgumentValueToString(
 }
 
 absl::variant<intptr_t, std::string, const void*>
-ChannelArgs::GetChannelArgumentValue(std::string& key) const {
+ChannelArgs::GetChannelArgumentValue(const std::string& key) const {
   const Value* value = args_.Lookup(key);
   if (value != nullptr) {
     return value->ToVariant();
