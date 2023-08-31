@@ -492,11 +492,6 @@ TEST_F(CancelDuringAresQuery, TestQueryFailsBecauseTcpServerClosesSocket) {
 //      But c-ares will never try to read from that socket again, so we have an
 //      infinite busy loop.
 TEST_F(CancelDuringAresQuery, TestQueryFailsWithDataRemainingInReadBuffer) {
-#ifdef GPR_WINDOWS
-  GTEST_SKIP() << "TODO(apolcyn): try to unskip this test on windows after "
-                  "https://github.com/grpc/grpc/pull/33965";
-  return;
-#endif
   if (grpc_core::IsEventEngineDnsEnabled()) {
     g_event_engine_grpc_ares_test_only_force_tcp = true;
   } else {
