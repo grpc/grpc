@@ -152,9 +152,15 @@ namespace {
 
 class MessageForwarder {
  public:
+  explicit MessageForwarder(size_t max_buffer_size)
+      : max_buffer_size_(max_buffer_size) {}
   auto Push(MessageHandle msg) {
     return [this, msg = std::move(msg)]() mutable -> Poll<Empty> {
       GPR_ASSERT(!closed_);
+      if (!committed_) {
+        buffered_bytes_before_commit_ += msg->payload()->Length();
+        if (buffered_bytes_before_commit_ > max_buffer_size_) Commit();
+      }
       if (committed_ && !buffered_messages_.empty()) {
         return waiting_for_write_.pending();
       }
@@ -205,6 +211,8 @@ class MessageForwarder {
 
  private:
   std::vector<MessageHandle> buffered_messages_;
+  const size_t max_buffer_size_;
+  size_t buffered_bytes_before_commit_ = 0;
   IntraActivityWaiter waiting_for_read_;
   IntraActivityWaiter waiting_for_write_;
   IntraActivityWaiter waiting_for_commit_;
@@ -214,10 +222,12 @@ class MessageForwarder {
 }  // namespace
 
 struct RetryFilter::CallState {
-  CallState(PipeSender<ServerMetadataHandle>* server_initial_metadata,
+  CallState(size_t max_buffer_size,
+            PipeSender<ServerMetadataHandle>* server_initial_metadata,
             PipeSender<MessageHandle>* server_to_client_messages)
       : server_initial_metadata(server_initial_metadata),
-        server_to_client_messages(server_to_client_messages) {}
+        server_to_client_messages(server_to_client_messages),
+        forwarder(max_buffer_size) {}
   PipeSender<ServerMetadataHandle>* const server_initial_metadata;
   PipeSender<MessageHandle>* const server_to_client_messages;
   bool sent_transparent_retry_not_seen_by_server = false;
@@ -470,7 +480,8 @@ auto RetryFilter::MakeCallAttempt(CallState* call_state,
 ArenaPromise<ServerMetadataHandle> RetryFilter::MakeCallPromise(
     CallArgs call_args) {
   auto* call_state = GetContext<Arena>()->ManagedNew<CallState>(
-      call_args.server_initial_metadata, call_args.server_to_client_messages);
+      per_rpc_retry_buffer_size(), call_args.server_initial_metadata,
+      call_args.server_to_client_messages);
   return Loop([this, call_state,
                initial_metadata = std::move(call_args.client_initial_metadata),
                polling_entity = call_args.polling_entity]() mutable {
