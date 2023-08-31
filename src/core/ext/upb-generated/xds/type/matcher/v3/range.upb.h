@@ -9,15 +9,7 @@
 #ifndef XDS_TYPE_MATCHER_V3_RANGE_PROTO_UPB_H_
 #define XDS_TYPE_MATCHER_V3_RANGE_PROTO_UPB_H_
 
-#include "upb/collections/array_internal.h"
-#include "upb/collections/map_gencode_util.h"
-#include "upb/message/accessors.h"
-#include "upb/message/internal.h"
-#include "upb/mini_table/enum_internal.h"
-#include "upb/wire/decode.h"
-#include "upb/wire/decode_fast.h"
-#include "upb/wire/encode.h"
-
+#include "upb/generated_code_support.h"
 // Must be last. 
 #include "upb/port/def.inc"
 
@@ -84,11 +76,11 @@ UPB_INLINE char* xds_type_matcher_v3_Int64RangeMatcher_serialize_ex(const xds_ty
   return ptr;
 }
 UPB_INLINE void xds_type_matcher_v3_Int64RangeMatcher_clear_range_matchers(xds_type_matcher_v3_Int64RangeMatcher* msg) {
-  const upb_MiniTableField field = {1, 0, 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, 0, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const xds_type_matcher_v3_Int64RangeMatcher_RangeMatcher* const* xds_type_matcher_v3_Int64RangeMatcher_range_matchers(const xds_type_matcher_v3_Int64RangeMatcher* msg, size_t* size) {
-  const upb_MiniTableField field = {1, 0, 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, 0, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   const upb_Array* arr = upb_Message_GetArray(msg, &field);
   if (arr) {
     if (size) *size = arr->size;
@@ -99,7 +91,7 @@ UPB_INLINE const xds_type_matcher_v3_Int64RangeMatcher_RangeMatcher* const* xds_
   }
 }
 UPB_INLINE const upb_Array* _xds_type_matcher_v3_Int64RangeMatcher_range_matchers_upb_array(const xds_type_matcher_v3_Int64RangeMatcher* msg, size_t* size) {
-  const upb_MiniTableField field = {1, 0, 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, 0, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   const upb_Array* arr = upb_Message_GetArray(msg, &field);
   if (size) {
     *size = arr ? arr->size : 0;
@@ -107,7 +99,7 @@ UPB_INLINE const upb_Array* _xds_type_matcher_v3_Int64RangeMatcher_range_matcher
   return arr;
 }
 UPB_INLINE upb_Array* _xds_type_matcher_v3_Int64RangeMatcher_range_matchers_mutable_upb_array(const xds_type_matcher_v3_Int64RangeMatcher* msg, size_t* size, upb_Arena* arena) {
-  const upb_MiniTableField field = {1, 0, 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, 0, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(
       (upb_Message*)msg, &field, arena);
   if (size) {
@@ -122,7 +114,7 @@ UPB_INLINE bool xds_type_matcher_v3_Int64RangeMatcher_has_range_matchers(const x
 }
 
 UPB_INLINE xds_type_matcher_v3_Int64RangeMatcher_RangeMatcher** xds_type_matcher_v3_Int64RangeMatcher_mutable_range_matchers(xds_type_matcher_v3_Int64RangeMatcher* msg, size_t* size) {
-  upb_MiniTableField field = {1, 0, 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_MiniTableField field = {1, 0, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Array* arr = upb_Message_GetMutableArray(msg, &field);
   if (arr) {
     if (size) *size = arr->size;
@@ -133,11 +125,11 @@ UPB_INLINE xds_type_matcher_v3_Int64RangeMatcher_RangeMatcher** xds_type_matcher
   }
 }
 UPB_INLINE xds_type_matcher_v3_Int64RangeMatcher_RangeMatcher** xds_type_matcher_v3_Int64RangeMatcher_resize_range_matchers(xds_type_matcher_v3_Int64RangeMatcher* msg, size_t size, upb_Arena* arena) {
-  upb_MiniTableField field = {1, 0, 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  return (xds_type_matcher_v3_Int64RangeMatcher_RangeMatcher**)upb_Message_ResizeArray(msg, &field, size, arena);
+  upb_MiniTableField field = {1, 0, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return (xds_type_matcher_v3_Int64RangeMatcher_RangeMatcher**)upb_Message_ResizeArrayUninitialized(msg, &field, size, arena);
 }
 UPB_INLINE struct xds_type_matcher_v3_Int64RangeMatcher_RangeMatcher* xds_type_matcher_v3_Int64RangeMatcher_add_range_matchers(xds_type_matcher_v3_Int64RangeMatcher* msg, upb_Arena* arena) {
-  upb_MiniTableField field = {1, 0, 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_MiniTableField field = {1, 0, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(msg, &field, arena);
   if (!arr || !_upb_Array_ResizeUninitialized(arr, arr->size + 1, arena)) {
     return NULL;
@@ -184,11 +176,11 @@ UPB_INLINE char* xds_type_matcher_v3_Int64RangeMatcher_RangeMatcher_serialize_ex
   return ptr;
 }
 UPB_INLINE void xds_type_matcher_v3_Int64RangeMatcher_RangeMatcher_clear_ranges(xds_type_matcher_v3_Int64RangeMatcher_RangeMatcher* msg) {
-  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const struct xds_type_v3_Int64Range* const* xds_type_matcher_v3_Int64RangeMatcher_RangeMatcher_ranges(const xds_type_matcher_v3_Int64RangeMatcher_RangeMatcher* msg, size_t* size) {
-  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   const upb_Array* arr = upb_Message_GetArray(msg, &field);
   if (arr) {
     if (size) *size = arr->size;
@@ -199,7 +191,7 @@ UPB_INLINE const struct xds_type_v3_Int64Range* const* xds_type_matcher_v3_Int64
   }
 }
 UPB_INLINE const upb_Array* _xds_type_matcher_v3_Int64RangeMatcher_RangeMatcher_ranges_upb_array(const xds_type_matcher_v3_Int64RangeMatcher_RangeMatcher* msg, size_t* size) {
-  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   const upb_Array* arr = upb_Message_GetArray(msg, &field);
   if (size) {
     *size = arr ? arr->size : 0;
@@ -207,7 +199,7 @@ UPB_INLINE const upb_Array* _xds_type_matcher_v3_Int64RangeMatcher_RangeMatcher_
   return arr;
 }
 UPB_INLINE upb_Array* _xds_type_matcher_v3_Int64RangeMatcher_RangeMatcher_ranges_mutable_upb_array(const xds_type_matcher_v3_Int64RangeMatcher_RangeMatcher* msg, size_t* size, upb_Arena* arena) {
-  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(
       (upb_Message*)msg, &field, arena);
   if (size) {
@@ -221,23 +213,23 @@ UPB_INLINE bool xds_type_matcher_v3_Int64RangeMatcher_RangeMatcher_has_ranges(co
   return size != 0;
 }
 UPB_INLINE void xds_type_matcher_v3_Int64RangeMatcher_RangeMatcher_clear_on_match(xds_type_matcher_v3_Int64RangeMatcher_RangeMatcher* msg) {
-  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 1, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 1, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const struct xds_type_matcher_v3_Matcher_OnMatch* xds_type_matcher_v3_Int64RangeMatcher_RangeMatcher_on_match(const xds_type_matcher_v3_Int64RangeMatcher_RangeMatcher* msg) {
   const struct xds_type_matcher_v3_Matcher_OnMatch* default_val = NULL;
   const struct xds_type_matcher_v3_Matcher_OnMatch* ret;
-  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 1, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 1, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool xds_type_matcher_v3_Int64RangeMatcher_RangeMatcher_has_on_match(const xds_type_matcher_v3_Int64RangeMatcher_RangeMatcher* msg) {
-  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 1, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 1, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return _upb_Message_HasNonExtensionField(msg, &field);
 }
 
 UPB_INLINE struct xds_type_v3_Int64Range** xds_type_matcher_v3_Int64RangeMatcher_RangeMatcher_mutable_ranges(xds_type_matcher_v3_Int64RangeMatcher_RangeMatcher* msg, size_t* size) {
-  upb_MiniTableField field = {1, UPB_SIZE(4, 8), 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_MiniTableField field = {1, UPB_SIZE(4, 8), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Array* arr = upb_Message_GetMutableArray(msg, &field);
   if (arr) {
     if (size) *size = arr->size;
@@ -248,11 +240,11 @@ UPB_INLINE struct xds_type_v3_Int64Range** xds_type_matcher_v3_Int64RangeMatcher
   }
 }
 UPB_INLINE struct xds_type_v3_Int64Range** xds_type_matcher_v3_Int64RangeMatcher_RangeMatcher_resize_ranges(xds_type_matcher_v3_Int64RangeMatcher_RangeMatcher* msg, size_t size, upb_Arena* arena) {
-  upb_MiniTableField field = {1, UPB_SIZE(4, 8), 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  return (struct xds_type_v3_Int64Range**)upb_Message_ResizeArray(msg, &field, size, arena);
+  upb_MiniTableField field = {1, UPB_SIZE(4, 8), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return (struct xds_type_v3_Int64Range**)upb_Message_ResizeArrayUninitialized(msg, &field, size, arena);
 }
 UPB_INLINE struct xds_type_v3_Int64Range* xds_type_matcher_v3_Int64RangeMatcher_RangeMatcher_add_ranges(xds_type_matcher_v3_Int64RangeMatcher_RangeMatcher* msg, upb_Arena* arena) {
-  upb_MiniTableField field = {1, UPB_SIZE(4, 8), 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_MiniTableField field = {1, UPB_SIZE(4, 8), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(msg, &field, arena);
   if (!arr || !_upb_Array_ResizeUninitialized(arr, arr->size + 1, arena)) {
     return NULL;
@@ -263,7 +255,7 @@ UPB_INLINE struct xds_type_v3_Int64Range* xds_type_matcher_v3_Int64RangeMatcher_
   return sub;
 }
 UPB_INLINE void xds_type_matcher_v3_Int64RangeMatcher_RangeMatcher_set_on_match(xds_type_matcher_v3_Int64RangeMatcher_RangeMatcher *msg, struct xds_type_matcher_v3_Matcher_OnMatch* value) {
-  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 1, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 1, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct xds_type_matcher_v3_Matcher_OnMatch* xds_type_matcher_v3_Int64RangeMatcher_RangeMatcher_mutable_on_match(xds_type_matcher_v3_Int64RangeMatcher_RangeMatcher* msg, upb_Arena* arena) {
@@ -311,11 +303,11 @@ UPB_INLINE char* xds_type_matcher_v3_Int32RangeMatcher_serialize_ex(const xds_ty
   return ptr;
 }
 UPB_INLINE void xds_type_matcher_v3_Int32RangeMatcher_clear_range_matchers(xds_type_matcher_v3_Int32RangeMatcher* msg) {
-  const upb_MiniTableField field = {1, 0, 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, 0, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const xds_type_matcher_v3_Int32RangeMatcher_RangeMatcher* const* xds_type_matcher_v3_Int32RangeMatcher_range_matchers(const xds_type_matcher_v3_Int32RangeMatcher* msg, size_t* size) {
-  const upb_MiniTableField field = {1, 0, 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, 0, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   const upb_Array* arr = upb_Message_GetArray(msg, &field);
   if (arr) {
     if (size) *size = arr->size;
@@ -326,7 +318,7 @@ UPB_INLINE const xds_type_matcher_v3_Int32RangeMatcher_RangeMatcher* const* xds_
   }
 }
 UPB_INLINE const upb_Array* _xds_type_matcher_v3_Int32RangeMatcher_range_matchers_upb_array(const xds_type_matcher_v3_Int32RangeMatcher* msg, size_t* size) {
-  const upb_MiniTableField field = {1, 0, 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, 0, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   const upb_Array* arr = upb_Message_GetArray(msg, &field);
   if (size) {
     *size = arr ? arr->size : 0;
@@ -334,7 +326,7 @@ UPB_INLINE const upb_Array* _xds_type_matcher_v3_Int32RangeMatcher_range_matcher
   return arr;
 }
 UPB_INLINE upb_Array* _xds_type_matcher_v3_Int32RangeMatcher_range_matchers_mutable_upb_array(const xds_type_matcher_v3_Int32RangeMatcher* msg, size_t* size, upb_Arena* arena) {
-  const upb_MiniTableField field = {1, 0, 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, 0, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(
       (upb_Message*)msg, &field, arena);
   if (size) {
@@ -349,7 +341,7 @@ UPB_INLINE bool xds_type_matcher_v3_Int32RangeMatcher_has_range_matchers(const x
 }
 
 UPB_INLINE xds_type_matcher_v3_Int32RangeMatcher_RangeMatcher** xds_type_matcher_v3_Int32RangeMatcher_mutable_range_matchers(xds_type_matcher_v3_Int32RangeMatcher* msg, size_t* size) {
-  upb_MiniTableField field = {1, 0, 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_MiniTableField field = {1, 0, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Array* arr = upb_Message_GetMutableArray(msg, &field);
   if (arr) {
     if (size) *size = arr->size;
@@ -360,11 +352,11 @@ UPB_INLINE xds_type_matcher_v3_Int32RangeMatcher_RangeMatcher** xds_type_matcher
   }
 }
 UPB_INLINE xds_type_matcher_v3_Int32RangeMatcher_RangeMatcher** xds_type_matcher_v3_Int32RangeMatcher_resize_range_matchers(xds_type_matcher_v3_Int32RangeMatcher* msg, size_t size, upb_Arena* arena) {
-  upb_MiniTableField field = {1, 0, 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  return (xds_type_matcher_v3_Int32RangeMatcher_RangeMatcher**)upb_Message_ResizeArray(msg, &field, size, arena);
+  upb_MiniTableField field = {1, 0, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return (xds_type_matcher_v3_Int32RangeMatcher_RangeMatcher**)upb_Message_ResizeArrayUninitialized(msg, &field, size, arena);
 }
 UPB_INLINE struct xds_type_matcher_v3_Int32RangeMatcher_RangeMatcher* xds_type_matcher_v3_Int32RangeMatcher_add_range_matchers(xds_type_matcher_v3_Int32RangeMatcher* msg, upb_Arena* arena) {
-  upb_MiniTableField field = {1, 0, 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_MiniTableField field = {1, 0, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(msg, &field, arena);
   if (!arr || !_upb_Array_ResizeUninitialized(arr, arr->size + 1, arena)) {
     return NULL;
@@ -411,11 +403,11 @@ UPB_INLINE char* xds_type_matcher_v3_Int32RangeMatcher_RangeMatcher_serialize_ex
   return ptr;
 }
 UPB_INLINE void xds_type_matcher_v3_Int32RangeMatcher_RangeMatcher_clear_ranges(xds_type_matcher_v3_Int32RangeMatcher_RangeMatcher* msg) {
-  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const struct xds_type_v3_Int32Range* const* xds_type_matcher_v3_Int32RangeMatcher_RangeMatcher_ranges(const xds_type_matcher_v3_Int32RangeMatcher_RangeMatcher* msg, size_t* size) {
-  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   const upb_Array* arr = upb_Message_GetArray(msg, &field);
   if (arr) {
     if (size) *size = arr->size;
@@ -426,7 +418,7 @@ UPB_INLINE const struct xds_type_v3_Int32Range* const* xds_type_matcher_v3_Int32
   }
 }
 UPB_INLINE const upb_Array* _xds_type_matcher_v3_Int32RangeMatcher_RangeMatcher_ranges_upb_array(const xds_type_matcher_v3_Int32RangeMatcher_RangeMatcher* msg, size_t* size) {
-  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   const upb_Array* arr = upb_Message_GetArray(msg, &field);
   if (size) {
     *size = arr ? arr->size : 0;
@@ -434,7 +426,7 @@ UPB_INLINE const upb_Array* _xds_type_matcher_v3_Int32RangeMatcher_RangeMatcher_
   return arr;
 }
 UPB_INLINE upb_Array* _xds_type_matcher_v3_Int32RangeMatcher_RangeMatcher_ranges_mutable_upb_array(const xds_type_matcher_v3_Int32RangeMatcher_RangeMatcher* msg, size_t* size, upb_Arena* arena) {
-  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(
       (upb_Message*)msg, &field, arena);
   if (size) {
@@ -448,23 +440,23 @@ UPB_INLINE bool xds_type_matcher_v3_Int32RangeMatcher_RangeMatcher_has_ranges(co
   return size != 0;
 }
 UPB_INLINE void xds_type_matcher_v3_Int32RangeMatcher_RangeMatcher_clear_on_match(xds_type_matcher_v3_Int32RangeMatcher_RangeMatcher* msg) {
-  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 1, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 1, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const struct xds_type_matcher_v3_Matcher_OnMatch* xds_type_matcher_v3_Int32RangeMatcher_RangeMatcher_on_match(const xds_type_matcher_v3_Int32RangeMatcher_RangeMatcher* msg) {
   const struct xds_type_matcher_v3_Matcher_OnMatch* default_val = NULL;
   const struct xds_type_matcher_v3_Matcher_OnMatch* ret;
-  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 1, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 1, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool xds_type_matcher_v3_Int32RangeMatcher_RangeMatcher_has_on_match(const xds_type_matcher_v3_Int32RangeMatcher_RangeMatcher* msg) {
-  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 1, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 1, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return _upb_Message_HasNonExtensionField(msg, &field);
 }
 
 UPB_INLINE struct xds_type_v3_Int32Range** xds_type_matcher_v3_Int32RangeMatcher_RangeMatcher_mutable_ranges(xds_type_matcher_v3_Int32RangeMatcher_RangeMatcher* msg, size_t* size) {
-  upb_MiniTableField field = {1, UPB_SIZE(4, 8), 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_MiniTableField field = {1, UPB_SIZE(4, 8), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Array* arr = upb_Message_GetMutableArray(msg, &field);
   if (arr) {
     if (size) *size = arr->size;
@@ -475,11 +467,11 @@ UPB_INLINE struct xds_type_v3_Int32Range** xds_type_matcher_v3_Int32RangeMatcher
   }
 }
 UPB_INLINE struct xds_type_v3_Int32Range** xds_type_matcher_v3_Int32RangeMatcher_RangeMatcher_resize_ranges(xds_type_matcher_v3_Int32RangeMatcher_RangeMatcher* msg, size_t size, upb_Arena* arena) {
-  upb_MiniTableField field = {1, UPB_SIZE(4, 8), 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  return (struct xds_type_v3_Int32Range**)upb_Message_ResizeArray(msg, &field, size, arena);
+  upb_MiniTableField field = {1, UPB_SIZE(4, 8), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return (struct xds_type_v3_Int32Range**)upb_Message_ResizeArrayUninitialized(msg, &field, size, arena);
 }
 UPB_INLINE struct xds_type_v3_Int32Range* xds_type_matcher_v3_Int32RangeMatcher_RangeMatcher_add_ranges(xds_type_matcher_v3_Int32RangeMatcher_RangeMatcher* msg, upb_Arena* arena) {
-  upb_MiniTableField field = {1, UPB_SIZE(4, 8), 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_MiniTableField field = {1, UPB_SIZE(4, 8), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(msg, &field, arena);
   if (!arr || !_upb_Array_ResizeUninitialized(arr, arr->size + 1, arena)) {
     return NULL;
@@ -490,7 +482,7 @@ UPB_INLINE struct xds_type_v3_Int32Range* xds_type_matcher_v3_Int32RangeMatcher_
   return sub;
 }
 UPB_INLINE void xds_type_matcher_v3_Int32RangeMatcher_RangeMatcher_set_on_match(xds_type_matcher_v3_Int32RangeMatcher_RangeMatcher *msg, struct xds_type_matcher_v3_Matcher_OnMatch* value) {
-  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 1, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 1, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct xds_type_matcher_v3_Matcher_OnMatch* xds_type_matcher_v3_Int32RangeMatcher_RangeMatcher_mutable_on_match(xds_type_matcher_v3_Int32RangeMatcher_RangeMatcher* msg, upb_Arena* arena) {
@@ -538,11 +530,11 @@ UPB_INLINE char* xds_type_matcher_v3_DoubleRangeMatcher_serialize_ex(const xds_t
   return ptr;
 }
 UPB_INLINE void xds_type_matcher_v3_DoubleRangeMatcher_clear_range_matchers(xds_type_matcher_v3_DoubleRangeMatcher* msg) {
-  const upb_MiniTableField field = {1, 0, 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, 0, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const xds_type_matcher_v3_DoubleRangeMatcher_RangeMatcher* const* xds_type_matcher_v3_DoubleRangeMatcher_range_matchers(const xds_type_matcher_v3_DoubleRangeMatcher* msg, size_t* size) {
-  const upb_MiniTableField field = {1, 0, 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, 0, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   const upb_Array* arr = upb_Message_GetArray(msg, &field);
   if (arr) {
     if (size) *size = arr->size;
@@ -553,7 +545,7 @@ UPB_INLINE const xds_type_matcher_v3_DoubleRangeMatcher_RangeMatcher* const* xds
   }
 }
 UPB_INLINE const upb_Array* _xds_type_matcher_v3_DoubleRangeMatcher_range_matchers_upb_array(const xds_type_matcher_v3_DoubleRangeMatcher* msg, size_t* size) {
-  const upb_MiniTableField field = {1, 0, 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, 0, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   const upb_Array* arr = upb_Message_GetArray(msg, &field);
   if (size) {
     *size = arr ? arr->size : 0;
@@ -561,7 +553,7 @@ UPB_INLINE const upb_Array* _xds_type_matcher_v3_DoubleRangeMatcher_range_matche
   return arr;
 }
 UPB_INLINE upb_Array* _xds_type_matcher_v3_DoubleRangeMatcher_range_matchers_mutable_upb_array(const xds_type_matcher_v3_DoubleRangeMatcher* msg, size_t* size, upb_Arena* arena) {
-  const upb_MiniTableField field = {1, 0, 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, 0, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(
       (upb_Message*)msg, &field, arena);
   if (size) {
@@ -576,7 +568,7 @@ UPB_INLINE bool xds_type_matcher_v3_DoubleRangeMatcher_has_range_matchers(const 
 }
 
 UPB_INLINE xds_type_matcher_v3_DoubleRangeMatcher_RangeMatcher** xds_type_matcher_v3_DoubleRangeMatcher_mutable_range_matchers(xds_type_matcher_v3_DoubleRangeMatcher* msg, size_t* size) {
-  upb_MiniTableField field = {1, 0, 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_MiniTableField field = {1, 0, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Array* arr = upb_Message_GetMutableArray(msg, &field);
   if (arr) {
     if (size) *size = arr->size;
@@ -587,11 +579,11 @@ UPB_INLINE xds_type_matcher_v3_DoubleRangeMatcher_RangeMatcher** xds_type_matche
   }
 }
 UPB_INLINE xds_type_matcher_v3_DoubleRangeMatcher_RangeMatcher** xds_type_matcher_v3_DoubleRangeMatcher_resize_range_matchers(xds_type_matcher_v3_DoubleRangeMatcher* msg, size_t size, upb_Arena* arena) {
-  upb_MiniTableField field = {1, 0, 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  return (xds_type_matcher_v3_DoubleRangeMatcher_RangeMatcher**)upb_Message_ResizeArray(msg, &field, size, arena);
+  upb_MiniTableField field = {1, 0, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return (xds_type_matcher_v3_DoubleRangeMatcher_RangeMatcher**)upb_Message_ResizeArrayUninitialized(msg, &field, size, arena);
 }
 UPB_INLINE struct xds_type_matcher_v3_DoubleRangeMatcher_RangeMatcher* xds_type_matcher_v3_DoubleRangeMatcher_add_range_matchers(xds_type_matcher_v3_DoubleRangeMatcher* msg, upb_Arena* arena) {
-  upb_MiniTableField field = {1, 0, 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_MiniTableField field = {1, 0, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(msg, &field, arena);
   if (!arr || !_upb_Array_ResizeUninitialized(arr, arr->size + 1, arena)) {
     return NULL;
@@ -638,11 +630,11 @@ UPB_INLINE char* xds_type_matcher_v3_DoubleRangeMatcher_RangeMatcher_serialize_e
   return ptr;
 }
 UPB_INLINE void xds_type_matcher_v3_DoubleRangeMatcher_RangeMatcher_clear_ranges(xds_type_matcher_v3_DoubleRangeMatcher_RangeMatcher* msg) {
-  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const struct xds_type_v3_DoubleRange* const* xds_type_matcher_v3_DoubleRangeMatcher_RangeMatcher_ranges(const xds_type_matcher_v3_DoubleRangeMatcher_RangeMatcher* msg, size_t* size) {
-  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   const upb_Array* arr = upb_Message_GetArray(msg, &field);
   if (arr) {
     if (size) *size = arr->size;
@@ -653,7 +645,7 @@ UPB_INLINE const struct xds_type_v3_DoubleRange* const* xds_type_matcher_v3_Doub
   }
 }
 UPB_INLINE const upb_Array* _xds_type_matcher_v3_DoubleRangeMatcher_RangeMatcher_ranges_upb_array(const xds_type_matcher_v3_DoubleRangeMatcher_RangeMatcher* msg, size_t* size) {
-  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   const upb_Array* arr = upb_Message_GetArray(msg, &field);
   if (size) {
     *size = arr ? arr->size : 0;
@@ -661,7 +653,7 @@ UPB_INLINE const upb_Array* _xds_type_matcher_v3_DoubleRangeMatcher_RangeMatcher
   return arr;
 }
 UPB_INLINE upb_Array* _xds_type_matcher_v3_DoubleRangeMatcher_RangeMatcher_ranges_mutable_upb_array(const xds_type_matcher_v3_DoubleRangeMatcher_RangeMatcher* msg, size_t* size, upb_Arena* arena) {
-  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(
       (upb_Message*)msg, &field, arena);
   if (size) {
@@ -675,23 +667,23 @@ UPB_INLINE bool xds_type_matcher_v3_DoubleRangeMatcher_RangeMatcher_has_ranges(c
   return size != 0;
 }
 UPB_INLINE void xds_type_matcher_v3_DoubleRangeMatcher_RangeMatcher_clear_on_match(xds_type_matcher_v3_DoubleRangeMatcher_RangeMatcher* msg) {
-  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 1, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 1, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const struct xds_type_matcher_v3_Matcher_OnMatch* xds_type_matcher_v3_DoubleRangeMatcher_RangeMatcher_on_match(const xds_type_matcher_v3_DoubleRangeMatcher_RangeMatcher* msg) {
   const struct xds_type_matcher_v3_Matcher_OnMatch* default_val = NULL;
   const struct xds_type_matcher_v3_Matcher_OnMatch* ret;
-  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 1, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 1, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool xds_type_matcher_v3_DoubleRangeMatcher_RangeMatcher_has_on_match(const xds_type_matcher_v3_DoubleRangeMatcher_RangeMatcher* msg) {
-  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 1, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 1, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return _upb_Message_HasNonExtensionField(msg, &field);
 }
 
 UPB_INLINE struct xds_type_v3_DoubleRange** xds_type_matcher_v3_DoubleRangeMatcher_RangeMatcher_mutable_ranges(xds_type_matcher_v3_DoubleRangeMatcher_RangeMatcher* msg, size_t* size) {
-  upb_MiniTableField field = {1, UPB_SIZE(4, 8), 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_MiniTableField field = {1, UPB_SIZE(4, 8), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Array* arr = upb_Message_GetMutableArray(msg, &field);
   if (arr) {
     if (size) *size = arr->size;
@@ -702,11 +694,11 @@ UPB_INLINE struct xds_type_v3_DoubleRange** xds_type_matcher_v3_DoubleRangeMatch
   }
 }
 UPB_INLINE struct xds_type_v3_DoubleRange** xds_type_matcher_v3_DoubleRangeMatcher_RangeMatcher_resize_ranges(xds_type_matcher_v3_DoubleRangeMatcher_RangeMatcher* msg, size_t size, upb_Arena* arena) {
-  upb_MiniTableField field = {1, UPB_SIZE(4, 8), 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  return (struct xds_type_v3_DoubleRange**)upb_Message_ResizeArray(msg, &field, size, arena);
+  upb_MiniTableField field = {1, UPB_SIZE(4, 8), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return (struct xds_type_v3_DoubleRange**)upb_Message_ResizeArrayUninitialized(msg, &field, size, arena);
 }
 UPB_INLINE struct xds_type_v3_DoubleRange* xds_type_matcher_v3_DoubleRangeMatcher_RangeMatcher_add_ranges(xds_type_matcher_v3_DoubleRangeMatcher_RangeMatcher* msg, upb_Arena* arena) {
-  upb_MiniTableField field = {1, UPB_SIZE(4, 8), 0, 0, 11, kUpb_FieldMode_Array | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_MiniTableField field = {1, UPB_SIZE(4, 8), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(msg, &field, arena);
   if (!arr || !_upb_Array_ResizeUninitialized(arr, arr->size + 1, arena)) {
     return NULL;
@@ -717,7 +709,7 @@ UPB_INLINE struct xds_type_v3_DoubleRange* xds_type_matcher_v3_DoubleRangeMatche
   return sub;
 }
 UPB_INLINE void xds_type_matcher_v3_DoubleRangeMatcher_RangeMatcher_set_on_match(xds_type_matcher_v3_DoubleRangeMatcher_RangeMatcher *msg, struct xds_type_matcher_v3_Matcher_OnMatch* value) {
-  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 1, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 1, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct xds_type_matcher_v3_Matcher_OnMatch* xds_type_matcher_v3_DoubleRangeMatcher_RangeMatcher_mutable_on_match(xds_type_matcher_v3_DoubleRangeMatcher_RangeMatcher* msg, upb_Arena* arena) {

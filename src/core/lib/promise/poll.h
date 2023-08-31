@@ -29,15 +29,13 @@ namespace grpc_core {
 // A type that signals a Promise is still pending and not yet completed.
 // Allows writing 'return Pending{}' and with automatic conversions gets
 // upgraded to a Poll<> object.
-struct Pending {
-  constexpr bool operator==(Pending) const { return true; }
-};
+struct Pending {};
+inline bool operator==(const Pending&, const Pending&) { return true; }
 
 // A type that contains no value. Useful for simulating 'void' in promises that
 // always need to return some kind of value.
-struct Empty {
-  constexpr bool operator==(Empty) const { return true; }
-};
+struct Empty {};
+inline bool operator==(const Empty&, const Empty&) { return true; }
 
 // The result of polling a Promise once.
 //
