@@ -128,7 +128,6 @@ class OpenTelemetryCallTracer : public grpc_core::ClientCallTracer {
   const OpenTelemetryClientFilter* parent_;
   // Client method.
   grpc_core::Slice path_;
-  absl::string_view method_;
   grpc_core::Arena* arena_;
   grpc_core::Mutex mu_;
   // Non-transparent attempts per call

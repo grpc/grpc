@@ -110,8 +110,10 @@ OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
   }
   if (OTelPluginState().client.attempt.started != nullptr) {
     std::array<std::pair<absl::string_view, absl::string_view>, 2>
-        additional_labels = {{{OTelMethodKey(), parent_->method_},
-                              {OTelTargetKey(), parent_->parent_->target()}}};
+        additional_labels = {
+            {{OTelMethodKey(),
+              absl::StripPrefix(parent_->path_.as_string_view(), "/")},
+             {OTelTargetKey(), parent_->parent_->target()}}};
     KeyValueIterable labels(local_labels_.get(), peer_labels_.get(),
                             additional_labels);
     OTelPluginState().client.attempt.started->Add(1, labels);
@@ -164,11 +166,13 @@ void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
         absl::Status status, grpc_metadata_batch* /*recv_trailing_metadata*/,
         const grpc_transport_stream_stats* transport_stream_stats) {
   std::array<std::pair<absl::string_view, absl::string_view>, 3>
-      additional_labels = {{{OTelMethodKey(), parent_->method_},
-                            {OTelTargetKey(), parent_->parent_->target()},
-                            {OTelStatusKey(), grpc_status_code_to_string(
-                                                  static_cast<grpc_status_code>(
-                                                      status.code()))}}};
+      additional_labels = {
+          {{OTelMethodKey(),
+            absl::StripPrefix(parent_->path_.as_string_view(), "/")},
+           {OTelTargetKey(), parent_->parent_->target()},
+           {OTelStatusKey(),
+            grpc_status_code_to_string(
+                static_cast<grpc_status_code>(status.code()))}}};
   KeyValueIterable labels(local_labels_.get(), peer_labels_.get(),
                           additional_labels);
   if (OTelPluginState().client.attempt.duration != nullptr) {
@@ -223,10 +227,7 @@ void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::RecordAnnotation(
 OpenTelemetryCallTracer::OpenTelemetryCallTracer(
     OpenTelemetryClientFilter* parent, grpc_core::Slice path,
     grpc_core::Arena* arena)
-    : parent_(parent),
-      path_(std::move(path)),
-      method_(absl::StripPrefix(path_.as_string_view(), "/")),
-      arena_(arena) {}
+    : parent_(parent), path_(std::move(path)), arena_(arena) {}
 
 OpenTelemetryCallTracer::~OpenTelemetryCallTracer() {}
 

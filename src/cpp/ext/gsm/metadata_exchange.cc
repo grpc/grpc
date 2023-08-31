@@ -175,52 +175,15 @@ class PeerLabelsIterable : public LabelsIterable {
     // Only handle GKE type for now.
     switch (type_) {
       case GcpResourceType::kGke:
-        switch (pos_) {
-          case 2:
-            return std::make_pair(
-                kPeerPodNameAttribute,
-                GetStringValueFromUpbStruct(struct_pb.struct_pb,
-                                            kMetadataExchangePodNameKey,
-                                            struct_pb.arena.ptr()));
-          case 3:
-            return std::make_pair(
-                kPeerContainerNameAttribute,
-                GetStringValueFromUpbStruct(struct_pb.struct_pb,
-                                            kMetadataExchangeContainerNameKey,
-                                            struct_pb.arena.ptr()));
-          case 4:
-            return std::make_pair(
-                kPeerNamespaceNameAttribute,
-                GetStringValueFromUpbStruct(struct_pb.struct_pb,
-                                            kMetadataExchangeNamespaceNameKey,
-                                            struct_pb.arena.ptr()));
-          case 5:
-            return std::make_pair(
-                kPeerClusterNameAttribute,
-                GetStringValueFromUpbStruct(struct_pb.struct_pb,
-                                            kMetadataExchangeClusterNameKey,
-                                            struct_pb.arena.ptr()));
-          case 6:
-            return std::make_pair(
-                kPeerLocationAttribute,
-                GetStringValueFromUpbStruct(struct_pb.struct_pb,
-                                            kMetadataExchangeLocationKey,
-                                            struct_pb.arena.ptr()));
-          case 7:
-            return std::make_pair(
-                kPeerProjectIdAttribute,
-                GetStringValueFromUpbStruct(struct_pb.struct_pb,
-                                            kMetadataExchangeProjectIdKey,
-                                            struct_pb.arena.ptr()));
-          case 8:
-            return std::make_pair(
-                kPeerCanonicalServiceAttribute,
-                GetStringValueFromUpbStruct(
-                    struct_pb.struct_pb, kMetadataExchangeCanonicalServiceKey,
-                    struct_pb.arena.ptr()));
-          default:
-            return absl::nullopt;
+        if (pos_ - 2 >= kGkeAttributeList.size()) {
+          return absl::nullopt;
         }
+        return std::make_pair(
+            kGkeAttributeList[pos_ - 2].otel_attribute,
+            GetStringValueFromUpbStruct(
+                struct_pb.struct_pb,
+                kGkeAttributeList[pos_ - 2].metadata_attribute,
+                struct_pb.arena.ptr()));
       case GcpResourceType::kUnknown:
         return absl::nullopt;
     }
@@ -240,9 +203,27 @@ class PeerLabelsIterable : public LabelsIterable {
   void ResetIteratorPosition() override { pos_ = 0; }
 
  private:
+  struct GkeAttribute {
+    absl::string_view otel_attribute;
+    absl::string_view metadata_attribute;
+  };
+
   struct StructPb {
     upb::Arena arena;
     google_protobuf_Struct* struct_pb = nullptr;
+  };
+
+  static constexpr std::array<GkeAttribute, 7> kGkeAttributeList = {
+      GkeAttribute{kPeerPodNameAttribute, kMetadataExchangePodNameKey},
+      GkeAttribute{kPeerContainerNameAttribute,
+                   kMetadataExchangeContainerNameKey},
+      GkeAttribute{kPeerNamespaceNameAttribute,
+                   kMetadataExchangeNamespaceNameKey},
+      GkeAttribute{kPeerClusterNameAttribute, kMetadataExchangeClusterNameKey},
+      GkeAttribute{kPeerLocationAttribute, kMetadataExchangeLocationKey},
+      GkeAttribute{kPeerProjectIdAttribute, kMetadataExchangeProjectIdKey},
+      GkeAttribute{kPeerCanonicalServiceAttribute,
+                   kMetadataExchangeCanonicalServiceKey},
   };
 
   StructPb& GetDecodedMetadata() const {
@@ -271,6 +252,9 @@ class PeerLabelsIterable : public LabelsIterable {
   mutable GcpResourceType type_;
   uint32_t pos_ = 0;
 };
+
+constexpr std::array<PeerLabelsIterable::GkeAttribute, 7>
+    PeerLabelsIterable::kGkeAttributeList;
 
 }  // namespace
 

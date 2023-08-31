@@ -45,7 +45,7 @@ class TestScenario {
  public:
   enum class Type : std::uint8_t { kGke, kUnknown };
 
-  TestScenario(Type type) : type_(type) {}
+  explicit TestScenario(Type type) : type_(type) {}
 
   opentelemetry::sdk::resource::Resource GetTestResource() const {
     switch (type_) {
@@ -109,27 +109,35 @@ class MetadataExchangeTest
     if (!local_only) {
       switch (GetParam().type()) {
         case TestScenario::Type::kGke:
+          gpr_log(GPR_ERROR, "here");
           EXPECT_EQ(
               absl::get<std::string>(attributes.at("gsm.remote_workload_type")),
               "gcp_kubernetes_engine");
+          gpr_log(GPR_ERROR, "here");
           EXPECT_EQ(absl::get<std::string>(
                         attributes.at("gsm.remote_workload_pod_name")),
                     "pod");
+          gpr_log(GPR_ERROR, "here");
           EXPECT_EQ(absl::get<std::string>(
                         attributes.at("gsm.remote_workload_container_name")),
                     "container");
+          gpr_log(GPR_ERROR, "here");
           EXPECT_EQ(absl::get<std::string>(
                         attributes.at("gsm.remote_workload_namespace_name")),
                     "namespace");
+          gpr_log(GPR_ERROR, "here");
           EXPECT_EQ(absl::get<std::string>(
                         attributes.at("gsm.remote_workload_cluster_name")),
                     "cluster");
+          gpr_log(GPR_ERROR, "here");
           EXPECT_EQ(absl::get<std::string>(
                         attributes.at("gsm.remote_workload_location")),
                     "region");
+          gpr_log(GPR_ERROR, "here");
           EXPECT_EQ(absl::get<std::string>(
                         attributes.at("gsm.remote_workload_project_id")),
                     "id");
+          gpr_log(GPR_ERROR, "here");
           EXPECT_EQ(absl::get<std::string>(
                         attributes.at("gsm.remote_workload_canonical_service")),
                     "canonical_service");

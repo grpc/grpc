@@ -135,7 +135,6 @@ class OpenTelemetryServerCallTracer : public grpc_core::ServerCallTracer {
   absl::Time start_time_;
   absl::Duration elapsed_time_;
   grpc_core::Slice path_;
-  absl::string_view method_;
   std::unique_ptr<LabelsIterable> local_labels_;
   std::unique_ptr<LabelsIterable> peer_labels_;
 };
@@ -144,13 +143,13 @@ void OpenTelemetryServerCallTracer::RecordReceivedInitialMetadata(
     grpc_metadata_batch* recv_initial_metadata) {
   path_ =
       recv_initial_metadata->get_pointer(grpc_core::HttpPathMetadata())->Ref();
-  method_ = absl::StripPrefix(path_.as_string_view(), "/");
   if (OTelPluginState().labels_injector != nullptr) {
     peer_labels_ =
         OTelPluginState().labels_injector->GetPeerLabels(recv_initial_metadata);
   }
   std::array<std::pair<absl::string_view, absl::string_view>, 1>
-      additional_labels = {{{OTelMethodKey(), method_}}};
+      additional_labels = {
+          {{OTelMethodKey(), absl::StripPrefix(path_.as_string_view(), "/")}}};
   if (OTelPluginState().server.call.started != nullptr) {
     OTelPluginState().server.call.started->Add(
         1, KeyValueIterable(local_labels_.get(), peer_labels_.get(),
@@ -168,9 +167,10 @@ void OpenTelemetryServerCallTracer::RecordSendTrailingMetadata(
 void OpenTelemetryServerCallTracer::RecordEnd(
     const grpc_call_final_info* final_info) {
   std::array<std::pair<absl::string_view, absl::string_view>, 2>
-      additional_labels = {{{OTelMethodKey(), method_},
-                            {OTelStatusKey(), grpc_status_code_to_string(
-                                                  final_info->final_status)}}};
+      additional_labels = {
+          {{OTelMethodKey(), absl::StripPrefix(path_.as_string_view(), "/")},
+           {OTelStatusKey(),
+            grpc_status_code_to_string(final_info->final_status)}}};
   KeyValueIterable labels(local_labels_.get(), peer_labels_.get(),
                           additional_labels);
   if (OTelPluginState().server.call.duration != nullptr) {
