@@ -4779,7 +4779,6 @@ grpc_cc_library(
         "lb_policy",
         "lb_policy_factory",
         "subchannel_interface",
-        "//:channel_arg_names",
         "//:config",
         "//:debug_location",
         "//:gpr",
@@ -4788,7 +4787,6 @@ grpc_cc_library(
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:server_address",
-        "//:work_serializer",
     ],
 )
 
