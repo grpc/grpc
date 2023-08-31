@@ -38,9 +38,6 @@ if "%GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS%"=="" (
 mkdir -p %ARTIFACTS_OUT%
 set ARTIFACT_DIR=%cd%\%ARTIFACTS_OUT%
 
-@rem Set up gRPC Python tools
-python tools\distrib\python\make_grpcio_tools.py
-
 @rem Build gRPC Python extensions
 python setup.py build_ext -c %EXT_COMPILER% || goto :error
 

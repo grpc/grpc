@@ -136,9 +136,6 @@ tar xzf "${GRPCIO_TAR_GZ}" -C "${GRPCIO_STRIP_TEMPDIR}"
 )
 mv "${GRPCIO_STRIPPED_TAR_GZ}" "${GRPCIO_TAR_GZ}"
 
-# Build gRPC tools package distribution
-"${PYTHON}" tools/distrib/python/make_grpcio_tools.py
-
 # Build gRPC tools package source distribution
 ${SETARCH_CMD} "${PYTHON}" tools/distrib/python/grpcio_tools/setup.py sdist
 
