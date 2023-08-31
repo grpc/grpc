@@ -1476,6 +1476,12 @@ void FilterStackCall::BatchControl::ReceivingTrailingMetadataReady(
   GRPC_CALL_COMBINER_STOP(call_->call_combiner(),
                           "recv_trailing_metadata_ready");
   grpc_metadata_batch* md = &call_->recv_trailing_metadata_;
+  // If the call is cancelled, the ReceivingInitialMetadataReady would run
+  // before this step and set the batch error to non OK status. We must use
+  // as the final status of the rpc.
+  if (error.ok()) {
+    error = batch_error_.get();
+  }
   call_->RecvTrailingFilter(md, error);
   FinishStep(PendingOp::kRecvTrailingMetadata);
 }
