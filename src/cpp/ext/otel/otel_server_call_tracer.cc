@@ -31,15 +31,18 @@
 #include "absl/strings/strip.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
+#include "absl/types/span.h"
 #include "opentelemetry/context/context.h"
 #include "opentelemetry/metrics/sync_instruments.h"
 
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
-#include "src/cpp/ext/otel/labels_iterable.h"
+#include "src/cpp/ext/otel/key_value_iterable.h"
 #include "src/cpp/ext/otel/otel_plugin.h"
 
 namespace grpc {
@@ -131,16 +134,17 @@ class OpenTelemetryServerCallTracer : public grpc_core::ServerCallTracer {
  private:
   absl::Time start_time_;
   absl::Duration elapsed_time_;
-  std::string method_;
+  grpc_core::Slice path_;
+  absl::string_view method_;
   std::unique_ptr<LabelsIterable> local_labels_;
   std::unique_ptr<LabelsIterable> peer_labels_;
 };
 
 void OpenTelemetryServerCallTracer::RecordReceivedInitialMetadata(
     grpc_metadata_batch* recv_initial_metadata) {
-  const auto* path =
-      recv_initial_metadata->get_pointer(grpc_core::HttpPathMetadata());
-  method_ = std::string(absl::StripPrefix(path->as_string_view(), "/"));
+  path_ =
+      recv_initial_metadata->get_pointer(grpc_core::HttpPathMetadata())->Ref();
+  method_ = absl::StripPrefix(path_.as_string_view(), "/");
   if (OTelPluginState().labels_injector != nullptr) {
     peer_labels_ =
         OTelPluginState().labels_injector->GetPeerLabels(recv_initial_metadata);
@@ -165,9 +169,9 @@ void OpenTelemetryServerCallTracer::RecordSendTrailingMetadata(
 void OpenTelemetryServerCallTracer::RecordEnd(
     const grpc_call_final_info* final_info) {
   std::array<std::pair<absl::string_view, absl::string_view>, 2>
-      additional_labels = {
-          {{OTelMethodKey(), method_},
-           {OTelStatusKey(), StatusCodeToString(final_info->final_status)}}};
+      additional_labels = {{{OTelMethodKey(), method_},
+                            {OTelStatusKey(), grpc_status_code_to_string(
+                                                  final_info->final_status)}}};
   KeyValueIterable<
       std::array<std::pair<absl::string_view, absl::string_view>, 2>>
       labels(local_labels_.get(), peer_labels_.get(), additional_labels);

@@ -34,6 +34,7 @@
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
+#include "absl/types/span.h"
 #include "opentelemetry/context/context.h"
 #include "opentelemetry/metrics/sync_instruments.h"
 
@@ -44,13 +45,14 @@
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
+#include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/metadata_batch.h"
-#include "src/cpp/ext/otel/labels_iterable.h"
+#include "src/cpp/ext/otel/key_value_iterable.h"
 #include "src/cpp/ext/otel/otel_call_tracer.h"
 #include "src/cpp/ext/otel/otel_plugin.h"
 
@@ -163,11 +165,11 @@ void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
         absl::Status status, grpc_metadata_batch* /*recv_trailing_metadata*/,
         const grpc_transport_stream_stats* transport_stream_stats) {
   std::array<std::pair<absl::string_view, absl::string_view>, 3>
-      additional_labels = {
-          {{OTelMethodKey(), parent_->method_},
-           {OTelTargetKey(), parent_->parent_->target()},
-           {OTelStatusKey(),
-            StatusCodeToString(static_cast<grpc_status_code>(status.code()))}}};
+      additional_labels = {{{OTelMethodKey(), parent_->method_},
+                            {OTelTargetKey(), parent_->parent_->target()},
+                            {OTelStatusKey(), grpc_status_code_to_string(
+                                                  static_cast<grpc_status_code>(
+                                                      status.code()))}}};
   KeyValueIterable<
       std::array<std::pair<absl::string_view, absl::string_view>, 3>>
       labels(local_labels_.get(), peer_labels_.get(), additional_labels);

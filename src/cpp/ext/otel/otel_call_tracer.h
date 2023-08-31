@@ -41,8 +41,8 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
-#include "src/cpp/ext/otel/labels_iterable.h"
 #include "src/cpp/ext/otel/otel_client_filter.h"
+#include "src/cpp/ext/otel/otel_plugin.h"
 
 namespace grpc {
 namespace internal {
@@ -95,7 +95,6 @@ class OpenTelemetryCallTracer : public grpc_core::ClientCallTracer {
     const bool arena_allocated_;
     // Start time (for measuring latency).
     absl::Time start_time_;
-    std::string method_;
     std::unique_ptr<LabelsIterable> local_labels_;
     std::unique_ptr<LabelsIterable> peer_labels_;
   };

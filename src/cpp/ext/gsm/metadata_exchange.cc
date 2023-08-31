@@ -21,8 +21,8 @@
 #include "src/cpp/ext/gsm/metadata_exchange.h"
 
 #include <stddef.h>
-#include <stdint.h>
 
+#include <cstdint>
 #include <unordered_map>
 
 #include "absl/meta/type_traits.h"
@@ -73,6 +73,25 @@ constexpr absl::string_view kPeerCanonicalServiceAttribute =
     "gsm.remote_workload_canonical_service";
 // Type values used by Google Cloud Resource Detector
 constexpr absl::string_view kGkeType = "gcp_kubernetes_engine";
+
+enum class GcpResourceType : std::uint8_t { kGke, kUnknown };
+
+absl::string_view GcpResourceTypeToString(GcpResourceType type) {
+  switch (type) {
+    case GcpResourceType::kGke:
+      return kGkeType;
+    case GcpResourceType::kUnknown:
+      return "unknown";
+  };
+}
+
+GcpResourceType StringToGcpResourceType(absl::string_view type) {
+  if (type == kGkeType) {
+    return GcpResourceType::kGke;
+  }
+  return GcpResourceType::kUnknown;
+}
+
 upb_StringView AbslStrToUpbStr(absl::string_view str) {
   return upb_StringView_FromDataAndSize(str.data(), str.size());
 }
@@ -147,77 +166,78 @@ class LocalLabelsIterable : public LabelsIterable {
 
 class PeerLabelsIterable : public LabelsIterable {
  public:
-  explicit PeerLabelsIterable(grpc_core::Slice remote_metadata) {
-    std::string decoded_metadata;
-    bool metadata_decoded = absl::Base64Unescape(
-        remote_metadata.as_string_view(), &decoded_metadata);
-    if (metadata_decoded) {
-      struct_pb_ = google_protobuf_Struct_parse(
-          decoded_metadata.c_str(), decoded_metadata.size(), arena_.ptr());
-      type_ = GetStringValueFromUpbStruct(struct_pb_, kMetadataExchangeTypeKey,
-                                          arena_.ptr());
-    }
-  }
+  explicit PeerLabelsIterable(grpc_core::Slice remote_metadata)
+      : metadata_(std::move(remote_metadata)) {}
 
   absl::optional<std::pair<absl::string_view, absl::string_view>> Next()
       override {
-    if (struct_pb_ == nullptr) {
+    auto& struct_pb = GetDecodedMetadata();
+    if (struct_pb.struct_pb == nullptr) {
       return absl::nullopt;
     }
-    if (pos_++ == 0) {
-      return std::make_pair(kPeerTypeAttribute, type_);
+    if (++pos_ == 1) {
+      return std::make_pair(kPeerTypeAttribute, GcpResourceTypeToString(type_));
     }
     // Only handle GKE type for now.
-    if (type_ != kGkeType) {
-      return absl::nullopt;
-    }
-    switch (pos_ - 1) {
-      case 1:
-        return std::make_pair(
-            kPeerPodNameAttribute,
-            GetStringValueFromUpbStruct(struct_pb_, kMetadataExchangePodNameKey,
-                                        arena_.ptr()));
-      case 2:
-        return std::make_pair(
-            kPeerContainerNameAttribute,
-            GetStringValueFromUpbStruct(
-                struct_pb_, kMetadataExchangeContainerNameKey, arena_.ptr()));
-      case 3:
-        return std::make_pair(
-            kPeerNamespaceNameAttribute,
-            GetStringValueFromUpbStruct(
-                struct_pb_, kMetadataExchangeNamespaceNameKey, arena_.ptr()));
-      case 4:
-        return std::make_pair(
-            kPeerClusterNameAttribute,
-            GetStringValueFromUpbStruct(
-                struct_pb_, kMetadataExchangeClusterNameKey, arena_.ptr()));
-      case 5:
-        return std::make_pair(
-            kPeerLocationAttribute,
-            GetStringValueFromUpbStruct(
-                struct_pb_, kMetadataExchangeLocationKey, arena_.ptr()));
-      case 6:
-        return std::make_pair(
-            kPeerProjectIdAttribute,
-            GetStringValueFromUpbStruct(
-                struct_pb_, kMetadataExchangeProjectIdKey, arena_.ptr()));
-      case 7:
-        return std::make_pair(
-            kPeerCanonicalServiceAttribute,
-            GetStringValueFromUpbStruct(struct_pb_,
-                                        kMetadataExchangeCanonicalServiceKey,
-                                        arena_.ptr()));
-      default:
+    switch (type_) {
+      case GcpResourceType::kGke:
+        switch (pos_) {
+          case 2:
+            return std::make_pair(
+                kPeerPodNameAttribute,
+                GetStringValueFromUpbStruct(struct_pb.struct_pb,
+                                            kMetadataExchangePodNameKey,
+                                            struct_pb.arena.ptr()));
+          case 3:
+            return std::make_pair(
+                kPeerContainerNameAttribute,
+                GetStringValueFromUpbStruct(struct_pb.struct_pb,
+                                            kMetadataExchangeContainerNameKey,
+                                            struct_pb.arena.ptr()));
+          case 4:
+            return std::make_pair(
+                kPeerNamespaceNameAttribute,
+                GetStringValueFromUpbStruct(struct_pb.struct_pb,
+                                            kMetadataExchangeNamespaceNameKey,
+                                            struct_pb.arena.ptr()));
+          case 5:
+            return std::make_pair(
+                kPeerClusterNameAttribute,
+                GetStringValueFromUpbStruct(struct_pb.struct_pb,
+                                            kMetadataExchangeClusterNameKey,
+                                            struct_pb.arena.ptr()));
+          case 6:
+            return std::make_pair(
+                kPeerLocationAttribute,
+                GetStringValueFromUpbStruct(struct_pb.struct_pb,
+                                            kMetadataExchangeLocationKey,
+                                            struct_pb.arena.ptr()));
+          case 7:
+            return std::make_pair(
+                kPeerProjectIdAttribute,
+                GetStringValueFromUpbStruct(struct_pb.struct_pb,
+                                            kMetadataExchangeProjectIdKey,
+                                            struct_pb.arena.ptr()));
+          case 8:
+            return std::make_pair(
+                kPeerCanonicalServiceAttribute,
+                GetStringValueFromUpbStruct(
+                    struct_pb.struct_pb, kMetadataExchangeCanonicalServiceKey,
+                    struct_pb.arena.ptr()));
+          default:
+            return absl::nullopt;
+        }
+      case GcpResourceType::kUnknown:
         return absl::nullopt;
     }
   }
 
   size_t Size() const override {
-    if (struct_pb_ == nullptr) {
+    auto& struct_pb = GetDecodedMetadata();
+    if (struct_pb.struct_pb == nullptr) {
       return 0;
     }
-    if (type_ != kGkeType) {
+    if (type_ != GcpResourceType::kGke) {
       return 1;
     }
     return 8;
@@ -226,9 +246,35 @@ class PeerLabelsIterable : public LabelsIterable {
   void ResetIteratorPosition() override { pos_ = 0; }
 
  private:
-  upb::Arena arena_;
-  google_protobuf_Struct* struct_pb_ = nullptr;
-  absl::string_view type_;
+  struct StructPb {
+    upb::Arena arena;
+    google_protobuf_Struct* struct_pb = nullptr;
+  };
+
+  StructPb& GetDecodedMetadata() const {
+    auto* slice = absl::get_if<grpc_core::Slice>(&metadata_);
+    if (slice == nullptr) {
+      return absl::get<StructPb>(metadata_);
+    }
+    std::string decoded_metadata;
+    bool metadata_decoded =
+        absl::Base64Unescape(slice->as_string_view(), &decoded_metadata);
+    metadata_ = StructPb{};
+    auto& struct_pb = absl::get<StructPb>(metadata_);
+    if (metadata_decoded) {
+      struct_pb.struct_pb = google_protobuf_Struct_parse(
+          decoded_metadata.c_str(), decoded_metadata.size(),
+          struct_pb.arena.ptr());
+      type_ = StringToGcpResourceType(GetStringValueFromUpbStruct(
+          struct_pb.struct_pb, kMetadataExchangeTypeKey,
+          struct_pb.arena.ptr()));
+    }
+    return struct_pb;
+  }
+
+  // Holds either the metadata slice or the decoded proto struct.
+  mutable absl::variant<grpc_core::Slice, StructPb> metadata_;
+  mutable GcpResourceType type_;
   uint32_t pos_ = 0;
 };
 
@@ -302,7 +348,7 @@ std::unique_ptr<LabelsIterable> ServiceMeshLabelsInjector::GetPeerLabels(
   if (!peer_metadata.has_value()) {
     return nullptr;
   }
-  return std::make_unique<PeerLabelsIterable>(std::move(peer_metadata).value());
+  return std::make_unique<PeerLabelsIterable>(*std::move(peer_metadata));
 }
 
 std::unique_ptr<LabelsIterable> ServiceMeshLabelsInjector::GetLocalLabels() {

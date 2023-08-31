@@ -21,25 +21,44 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
 #include <stdint.h>
 
 #include <memory>
 #include <string>
+#include <utility>
 
 #include "absl/container/flat_hash_set.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 #include "opentelemetry/metrics/meter_provider.h"
 #include "opentelemetry/metrics/sync_instruments.h"
 #include "opentelemetry/nostd/shared_ptr.h"
 
-#include <grpc/status.h>
-
 #include "src/core/lib/transport/metadata_batch.h"
-#include "src/cpp/ext/otel/labels_iterable.h"
 
 namespace grpc {
 namespace internal {
 
+// An iterable container interface that can be used as a return type for the
+// OTel plugin's label injector.
+class LabelsIterable {
+ public:
+  virtual ~LabelsIterable() = default;
+
+  // Returns the key-value label at the current position or absl::nullopt if the
+  // iterator has reached the end.
+  virtual absl::optional<std::pair<absl::string_view, absl::string_view>>
+  Next() = 0;
+
+  virtual size_t Size() const = 0;
+
+  // Resets position of iterator to the start.
+  virtual void ResetIteratorPosition() = 0;
+};
+
+// An interface that allows you to add additional labels on the calls traced
+// through the OTel plugin.
 class LabelsInjector {
  public:
   virtual ~LabelsInjector() {}
@@ -138,8 +157,6 @@ class OpenTelemetryPluginBuilder {
   std::unique_ptr<LabelsInjector> labels_injector_;
   absl::flat_hash_set<std::string> metrics_;
 };
-
-absl::string_view StatusCodeToString(grpc_status_code code);
 
 }  // namespace internal
 }  // namespace grpc
