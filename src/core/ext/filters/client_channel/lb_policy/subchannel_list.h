@@ -30,11 +30,9 @@
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
 
-#include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/client_channel/client_channel_internal.h"
 #include "src/core/ext/filters/client_channel/lb_policy/health_check_client.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -322,13 +320,12 @@ template <typename SubchannelListType, typename SubchannelDataType>
 void SubchannelData<SubchannelListType, SubchannelDataType>::
     StartConnectivityWatchLocked(const ChannelArgs& args) {
   if (GPR_UNLIKELY(subchannel_list_->tracer() != nullptr)) {
-    gpr_log(
-        GPR_INFO,
-        "[%s %p] subchannel list %p index %" PRIuPTR " of %" PRIuPTR
-        " (subchannel %p): starting watch",
-        subchannel_list_->tracer(), subchannel_list_->policy(),
-        subchannel_list_, Index(), subchannel_list_->num_subchannels(),
-        subchannel_.get());
+    gpr_log(GPR_INFO,
+            "[%s %p] subchannel list %p index %" PRIuPTR " of %" PRIuPTR
+            " (subchannel %p): starting watch",
+            subchannel_list_->tracer(), subchannel_list_->policy(),
+            subchannel_list_, Index(), subchannel_list_->num_subchannels(),
+            subchannel_.get());
   }
   GPR_ASSERT(health_watcher_ == nullptr);
   auto watcher = std::make_unique<Watcher>(
