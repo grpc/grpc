@@ -339,7 +339,6 @@ class Gather(setuptools.Command):
     def run(self):
         pass
 
-
 class Clean(setuptools.Command):
     """Command to clean build artifacts."""
 

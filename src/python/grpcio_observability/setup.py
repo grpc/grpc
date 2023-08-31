@@ -76,9 +76,9 @@ def check_linker_need_libatomic():
         b"#include <atomic>\n"
         + b"int main() { return std::atomic<int64_t>{}; }"
     )
-    cxx = os.environ.get("CXX", "c++")
+    cxx = shlex.split(os.environ.get("CXX", "c++"))
     cpp_test = subprocess.Popen(
-        [cxx, "-x", "c++", "-std=c++14", "-"],
+        cxx + ["-x", "c++", "-std=c++14", "-"],
         stdin=PIPE,
         stdout=PIPE,
         stderr=PIPE,
@@ -89,7 +89,7 @@ def check_linker_need_libatomic():
     # Double-check to see if -latomic actually can solve the problem.
     # https://github.com/grpc/grpc/issues/22491
     cpp_test = subprocess.Popen(
-        [cxx, "-x", "c++", "-std=c++14", "-", "-latomic"],
+        cxx + ["-x", "c++", "-std=c++14", "-", "-latomic"],
         stdin=PIPE,
         stdout=PIPE,
         stderr=PIPE,
@@ -145,7 +145,10 @@ if EXTRA_ENV_LINK_ARGS is None:
 
 # This enables the standard link-time optimizer, which help us prevent some undefined symbol errors by
 # remove some unused symbols from .so file.
-EXTRA_ENV_COMPILE_ARGS += " -flto"
+if "win32" in sys.platform:
+    EXTRA_ENV_COMPILE_ARGS += " /O2"
+else:
+    EXTRA_ENV_COMPILE_ARGS += " -flto"
 
 EXTRA_COMPILE_ARGS = shlex.split(EXTRA_ENV_COMPILE_ARGS)
 EXTRA_LINK_ARGS = shlex.split(EXTRA_ENV_LINK_ARGS)

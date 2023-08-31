@@ -91,5 +91,6 @@
   "tests.unit.beta._implementations_test.ChannelCredentialsTest",
   "tests.unit.beta._not_found_test.NotFoundTest",
   "tests.unit.beta._utilities_test.ChannelConnectivityTest",
-  "tests.unit.framework.foundation._logging_pool_test.LoggingPoolTest"
+  "tests.unit.framework.foundation._logging_pool_test.LoggingPoolTest",
+  "tests.observability._observability_test.ObservabilityTest"
 ]

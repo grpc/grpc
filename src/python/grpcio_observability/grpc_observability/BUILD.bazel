@@ -38,7 +38,6 @@ cc_library(
     ],
     includes = ["."],
     deps = [
-        #TODO(xuanwn): Confirm only referenced code is inlcuded in shared object library
         "//:grpc_base",
     ],
 )
