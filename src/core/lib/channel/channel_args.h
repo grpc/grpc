@@ -31,6 +31,7 @@
 #include <type_traits>
 #include <utility>
 
+#include "absl/functional/function_ref.h"
 #include "absl/meta/type_traits.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
