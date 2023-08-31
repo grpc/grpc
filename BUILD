@@ -3080,6 +3080,7 @@ grpc_cc_library(
         "//src/core:lb_policy",
         "//src/core:lb_policy_registry",
         "//src/core:loop",
+        "//src/core:map",
         "//src/core:memory_quota",
         "//src/core:pipe",
         "//src/core:poll",
@@ -3126,6 +3127,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/container:flat_hash_set",
+        "absl/functional:any_invocable",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",

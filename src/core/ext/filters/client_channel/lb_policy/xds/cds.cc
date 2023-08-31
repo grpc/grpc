@@ -457,6 +457,10 @@ void CdsLb::OnClusterChanged(
     return OnError(name, result.status());
   }
   if (*result) {
+    if (discovery_mechanisms.empty()) {
+      return OnError(name, absl::FailedPreconditionError(
+                               "aggregate cluster graph has no leaf clusters"));
+    }
     // LB policy is configured by aggregate cluster, not by the individual
     // underlying cluster that we may be processing an update for.
     auto it = watchers_.find(config_->cluster());
