@@ -414,8 +414,8 @@ auto RetryFilter::MakeCallAttempt(CallState* call_state,
       &attempt->server_to_client.sender};
   *child_call_args.client_initial_metadata = initial_metadata->Copy();
   auto child_call = client_channel()->CreateLoadBalancedCallPromise(
-      std::move(child_call_args), []() { Crash("on_commit not implemented"); },
-      false);
+      std::move(child_call_args),
+      [attempt]() { attempt->lb_call_committed.Set(); }, false);
   Party::BulkSpawner spawner(party);
   // If per_attempt_recv_timeout is set, start a timer.
   if (attempt->retry_policy != nullptr &&

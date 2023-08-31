@@ -65,14 +65,17 @@ class ForEach {
   using Result =
       typename PollTraits<decltype(std::declval<ActionPromise>()())>::Type;
   ForEach(Reader reader, Action action)
-      : reader_(std::move(reader)), action_factory_(std::move(action)) {
-    Construct(&reader_next_, reader_.Next());
-  }
+      : reader_(std::move(reader)), action_factory_(std::move(action)) {}
   ~ForEach() {
-    if (reading_next_) {
-      Destruct(&reader_next_);
-    } else {
-      Destruct(&in_action_);
+    switch (state_) {
+      case State::kInitial:
+        break;
+      case State::kReaderNext:
+        Destruct(&reader_next_);
+        break;
+      case State::kInAction:
+        Destruct(&in_action_);
+        break;
     }
   }
 
@@ -81,25 +84,38 @@ class ForEach {
   ForEach(ForEach&& other) noexcept
       : reader_(std::move(other.reader_)),
         action_factory_(std::move(other.action_factory_)) {
-    GPR_DEBUG_ASSERT(reading_next_);
-    GPR_DEBUG_ASSERT(other.reading_next_);
-    Construct(&reader_next_, std::move(other.reader_next_));
+    GPR_DEBUG_ASSERT(state_ == State::kInitial);
+    GPR_DEBUG_ASSERT(other.state_ == State::kInitial);
   }
   ForEach& operator=(ForEach&& other) noexcept {
-    GPR_DEBUG_ASSERT(reading_next_);
-    GPR_DEBUG_ASSERT(other.reading_next_);
+    GPR_DEBUG_ASSERT(state_ == State::kInitial);
+    GPR_DEBUG_ASSERT(other.state_ == State::kInitial);
     reader_ = std::move(other.reader_);
     action_factory_ = std::move(other.action_factory_);
-    reader_next_ = std::move(other.reader_next_);
     return *this;
   }
 
   Poll<Result> operator()() {
-    if (reading_next_) return PollReaderNext();
-    return PollAction();
+    switch (state_) {
+      case State::kInitial:
+        Construct(&reader_next_, reader_.Next());
+        state_ = State::kReaderNext;
+        ABSL_FALLTHROUGH_INTENDED;
+      case State::kReaderNext:
+        return PollReaderNext();
+      case State::kInAction:
+        return PollAction();
+    }
+    GPR_UNREACHABLE_CODE(Crash("unreachable"));
   }
 
  private:
+  enum class State : uint8_t {
+    kInitial,
+    kReaderNext,
+    kInAction,
+  };
+
   struct InAction {
     InAction(ActionPromise promise, ReaderResult result)
         : promise(std::move(promise)), result(std::move(result)) {}
@@ -126,7 +142,7 @@ class ForEach {
         Destruct(&reader_next_);
         auto action = action_factory_.Make(std::move(**p));
         Construct(&in_action_, std::move(action), std::move(*p));
-        reading_next_ = false;
+        state_ = State::kInAction;
         return PollAction();
       } else {
         return Done<Result>::Make();
@@ -144,7 +160,7 @@ class ForEach {
       if (p->ok()) {
         Destruct(&in_action_);
         Construct(&reader_next_, reader_.Next());
-        reading_next_ = true;
+        state_ = State::kReaderNext;
         return PollReaderNext();
       } else {
         return std::move(*p);
@@ -155,7 +171,7 @@ class ForEach {
 
   GPR_NO_UNIQUE_ADDRESS Reader reader_;
   GPR_NO_UNIQUE_ADDRESS ActionFactory action_factory_;
-  bool reading_next_ = true;
+  State state_ = State::kInitial;
   union {
     ReaderNext reader_next_;
     InAction in_action_;
