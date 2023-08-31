@@ -32,7 +32,7 @@ for dir in $DIRS
 do
   for glob in $GLOB
   do
-    files="$files `find ${CLANG_FORMAT_ROOT}/$dir -name $glob -and -not -name '*.generated.*' -and -not -name '*.upb.h' -and -not -name '*.upb.c' -and -not -name '*.upbdefs.h' -and -not -name '*.upbdefs.c' -and -not -name '*.pb.h' -and -not -name '*.pb.c' -and -not -name '*.pb.cc' -and -not -name '*.pbobjc.h' -and -not -name '*.pbobjc.m' -and -not -name '*.pbrpc.h' -and -not -name '*.pbrpc.m' -and -not -name end2end_tests.cc -and -not -name grpc_shadow_boringssl.h -and -not -name grpc_tls_credentials_options.h -and -not -name grpc_tls_credentials_options_comparator_test.cc`"
+    files="$files `find ${CLANG_FORMAT_ROOT}/$dir -name $glob -and -not -name '*.generated.*' -and -not -name '*.upb.h' -and -not -name '*.upb.c' -and -not -name '*.upbdefs.h' -and -not -name '*.upbdefs.c' -and -not -name '*.pb.h' -and -not -name '*.pb.c' -and -not -name '*.pb.cc' -and -not -name '*.pbobjc.h' -and -not -name '*.pbobjc.m' -and -not -name '*.pbrpc.h' -and -not -name '*.pbrpc.m' -and -not -name end2end_tests.cc -and -not -name grpc_shadow_boringssl.h -and -not -name grpc_tls_credentials_options.h -and -not -name grpc_tls_credentials_options_comparator_test.cc  -and -not -path 'tools/distrib/python/grpcio_tools/third_party/*'`"
   done
 done
 
