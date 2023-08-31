@@ -33,22 +33,13 @@
 
 namespace grpc_core {
 
-namespace {
-bool IsEverythingBelowClientChannelPromiseSafe(const ChannelArgs& args) {
-  return !args.GetBool(GRPC_ARG_ENABLE_RETRIES).value_or(true);
-}
-}  // namespace
-
 void BuildClientChannelConfiguration(CoreConfiguration::Builder* builder) {
   internal::ClientChannelServiceConfigParser::Register(builder);
   internal::RetryServiceConfigParser::Register(builder);
   builder->channel_init()->RegisterStage(
       GRPC_CLIENT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
       [](ChannelStackBuilder* builder) {
-        builder->AppendFilter(
-            IsEverythingBelowClientChannelPromiseSafe(builder->channel_args())
-                ? &ClientChannel::kFilterVtableWithPromises
-                : &ClientChannel::kFilterVtableWithoutPromises);
+        builder->AppendFilter(&ClientChannel::kFilterVtable);
         return true;
       });
 }
