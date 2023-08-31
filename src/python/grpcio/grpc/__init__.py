@@ -312,7 +312,7 @@ class Status(abc.ABC):
 #############################  gRPC Exceptions  ################################
 
 
-class RpcError(Exception):
+class RpcError(BaseError):
     """Raised by the gRPC library to indicate non-OK-status RPC termination."""
 
 
