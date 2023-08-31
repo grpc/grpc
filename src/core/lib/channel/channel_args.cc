@@ -335,7 +335,7 @@ ChannelArgs::GetChannelArgumentValue(const std::string& key) const {
   if (value != nullptr) {
     return value->ToVariant();
   }
-  return false;
+  return 0;
 }
 
 ChannelArgs ChannelArgs::UnionWith(ChannelArgs other) const {
