@@ -41,50 +41,34 @@ namespace grpc {
 namespace testing {
 namespace {
 
-class MetadataExchangeTest : public OTelPluginEnd2EndTest {
- protected:
-  void Init(const absl::flat_hash_set<absl::string_view>& metric_names) {
-    OTelPluginEnd2EndTest::Init(
-        metric_names, /*resource=*/TestGkeResource(),
-        /*labels_injector=*/
-        std::make_unique<grpc::internal::ServiceMeshLabelsInjector>(
-            TestGkeResource().GetAttributes()));
-  }
+class TestScenario {
+ public:
+  enum class Type : std::uint8_t { kGke, kUnknown };
 
-  void VerifyGkeServiceMeshAttributes(
-      const std::map<std::string,
-                     opentelemetry::sdk::common::OwnedAttributeValue>&
-          attributes,
-      bool local_only = false) {
-    if (!local_only) {
-      EXPECT_EQ(
-          absl::get<std::string>(attributes.at("gsm.remote_workload_type")),
-          "gcp_kubernetes_engine");
-      EXPECT_EQ(
-          absl::get<std::string>(attributes.at("gsm.remote_workload_pod_name")),
-          "pod");
-      EXPECT_EQ(absl::get<std::string>(
-                    attributes.at("gsm.remote_workload_container_name")),
-                "container");
-      EXPECT_EQ(absl::get<std::string>(
-                    attributes.at("gsm.remote_workload_namespace_name")),
-                "namespace");
-      EXPECT_EQ(absl::get<std::string>(
-                    attributes.at("gsm.remote_workload_cluster_name")),
-                "cluster");
-      EXPECT_EQ(
-          absl::get<std::string>(attributes.at("gsm.remote_workload_location")),
-          "region");
-      EXPECT_EQ(absl::get<std::string>(
-                    attributes.at("gsm.remote_workload_project_id")),
-                "id");
-      EXPECT_EQ(absl::get<std::string>(
-                    attributes.at("gsm.remote_workload_canonical_service")),
-                "canonical_service");
+  TestScenario(Type type) : type_(type) {}
+
+  opentelemetry::sdk::resource::Resource GetTestResource() const {
+    switch (type_) {
+      case Type::kGke:
+        return TestGkeResource();
+      case Type::kUnknown:
+        return TestUnknownResource();
     }
   }
 
-  opentelemetry::sdk::resource::Resource TestGkeResource() {
+  static std::string Name(const ::testing::TestParamInfo<TestScenario>& info) {
+    switch (info.param.type_) {
+      case Type::kGke:
+        return "gke";
+      case Type::kUnknown:
+        return "unknown";
+    }
+  }
+
+  Type type() const { return type_; }
+
+ private:
+  static opentelemetry::sdk::resource::Resource TestGkeResource() {
     opentelemetry::sdk::common::AttributeMap attributes;
     attributes.SetAttribute("cloud.platform", "gcp_kubernetes_engine");
     attributes.SetAttribute("k8s.pod.name", "pod");
@@ -95,9 +79,72 @@ class MetadataExchangeTest : public OTelPluginEnd2EndTest {
     attributes.SetAttribute("cloud.account.id", "id");
     return opentelemetry::sdk::resource::Resource::Create(attributes);
   }
+
+  static opentelemetry::sdk::resource::Resource TestUnknownResource() {
+    opentelemetry::sdk::common::AttributeMap attributes;
+    attributes.SetAttribute("cloud.platform", "random");
+    return opentelemetry::sdk::resource::Resource::Create(attributes);
+  }
+
+  Type type_;
 };
 
-TEST_F(MetadataExchangeTest, ClientAttemptStarted) {
+class MetadataExchangeTest
+    : public OTelPluginEnd2EndTest,
+      public ::testing::WithParamInterface<TestScenario> {
+ protected:
+  void Init(const absl::flat_hash_set<absl::string_view>& metric_names) {
+    OTelPluginEnd2EndTest::Init(
+        metric_names, /*resource=*/GetParam().GetTestResource(),
+        /*labels_injector=*/
+        std::make_unique<grpc::internal::ServiceMeshLabelsInjector>(
+            GetParam().GetTestResource().GetAttributes()));
+  }
+
+  void VerifyGkeServiceMeshAttributes(
+      const std::map<std::string,
+                     opentelemetry::sdk::common::OwnedAttributeValue>&
+          attributes,
+      bool local_only = false) {
+    if (!local_only) {
+      switch (GetParam().type()) {
+        case TestScenario::Type::kGke:
+          EXPECT_EQ(
+              absl::get<std::string>(attributes.at("gsm.remote_workload_type")),
+              "gcp_kubernetes_engine");
+          EXPECT_EQ(absl::get<std::string>(
+                        attributes.at("gsm.remote_workload_pod_name")),
+                    "pod");
+          EXPECT_EQ(absl::get<std::string>(
+                        attributes.at("gsm.remote_workload_container_name")),
+                    "container");
+          EXPECT_EQ(absl::get<std::string>(
+                        attributes.at("gsm.remote_workload_namespace_name")),
+                    "namespace");
+          EXPECT_EQ(absl::get<std::string>(
+                        attributes.at("gsm.remote_workload_cluster_name")),
+                    "cluster");
+          EXPECT_EQ(absl::get<std::string>(
+                        attributes.at("gsm.remote_workload_location")),
+                    "region");
+          EXPECT_EQ(absl::get<std::string>(
+                        attributes.at("gsm.remote_workload_project_id")),
+                    "id");
+          EXPECT_EQ(absl::get<std::string>(
+                        attributes.at("gsm.remote_workload_canonical_service")),
+                    "canonical_service");
+          break;
+        case TestScenario::Type::kUnknown:
+          EXPECT_EQ(
+              absl::get<std::string>(attributes.at("gsm.remote_workload_type")),
+              "random");
+          break;
+      }
+    }
+  }
+};
+
+TEST_P(MetadataExchangeTest, ClientAttemptStarted) {
   Init(/*metric_names=*/{
       grpc::internal::OTelClientAttemptStartedInstrumentName()});
   SendRPC();
@@ -121,7 +168,7 @@ TEST_F(MetadataExchangeTest, ClientAttemptStarted) {
   VerifyGkeServiceMeshAttributes(attributes, /*local_only=*/true);
 }
 
-TEST_F(MetadataExchangeTest, ClientAttemptDuration) {
+TEST_P(MetadataExchangeTest, ClientAttemptDuration) {
   Init(/*metric_names=*/{
       grpc::internal::OTelClientAttemptDurationInstrumentName()});
   SendRPC();
@@ -145,7 +192,7 @@ TEST_F(MetadataExchangeTest, ClientAttemptDuration) {
   VerifyGkeServiceMeshAttributes(attributes);
 }
 
-TEST_F(MetadataExchangeTest, ServerCallDuration) {
+TEST_P(MetadataExchangeTest, ServerCallDuration) {
   Init(/*metric_names=*/{
       grpc::internal::OTelServerCallDurationInstrumentName()});
   SendRPC();
@@ -166,6 +213,12 @@ TEST_F(MetadataExchangeTest, ServerCallDuration) {
   EXPECT_EQ(absl::get<std::string>(attributes.at("grpc.status")), "OK");
   VerifyGkeServiceMeshAttributes(attributes);
 }
+
+INSTANTIATE_TEST_SUITE_P(
+    MetadataExchange, MetadataExchangeTest,
+    ::testing::Values(TestScenario(TestScenario::Type::kGke),
+                      TestScenario(TestScenario::Type::kUnknown)),
+    &TestScenario::Name);
 
 }  // namespace
 }  // namespace testing

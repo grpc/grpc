@@ -112,9 +112,8 @@ OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
     std::array<std::pair<absl::string_view, absl::string_view>, 2>
         additional_labels = {{{OTelMethodKey(), parent_->method_},
                               {OTelTargetKey(), parent_->parent_->target()}}};
-    KeyValueIterable<
-        std::array<std::pair<absl::string_view, absl::string_view>, 2>>
-        labels(local_labels_.get(), peer_labels_.get(), additional_labels);
+    KeyValueIterable labels(local_labels_.get(), peer_labels_.get(),
+                            additional_labels);
     OTelPluginState().client.attempt.started->Add(1, labels);
   }
 }
@@ -170,9 +169,8 @@ void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
                             {OTelStatusKey(), grpc_status_code_to_string(
                                                   static_cast<grpc_status_code>(
                                                       status.code()))}}};
-  KeyValueIterable<
-      std::array<std::pair<absl::string_view, absl::string_view>, 3>>
-      labels(local_labels_.get(), peer_labels_.get(), additional_labels);
+  KeyValueIterable labels(local_labels_.get(), peer_labels_.get(),
+                          additional_labels);
   if (OTelPluginState().client.attempt.duration != nullptr) {
     OTelPluginState().client.attempt.duration->Record(
         absl::ToDoubleSeconds(absl::Now() - start_time_), labels,

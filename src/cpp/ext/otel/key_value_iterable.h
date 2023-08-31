@@ -46,7 +46,6 @@ inline opentelemetry::nostd::string_view AbslStrViewToOTelStrView(
 // An iterable class based on opentelemetry::common::KeyValueIterable that
 // allows gRPC to iterate on its various sources of attributes and avoid an
 // allocation in cases wherever possible.
-template <typename T>
 class KeyValueIterable : public opentelemetry::common::KeyValueIterable {
  public:
   explicit KeyValueIterable(

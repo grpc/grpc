@@ -153,9 +153,8 @@ void OpenTelemetryServerCallTracer::RecordReceivedInitialMetadata(
       additional_labels = {{{OTelMethodKey(), method_}}};
   if (OTelPluginState().server.call.started != nullptr) {
     OTelPluginState().server.call.started->Add(
-        1, KeyValueIterable<
-               std::array<std::pair<absl::string_view, absl::string_view>, 1>>(
-               local_labels_.get(), peer_labels_.get(), additional_labels));
+        1, KeyValueIterable(local_labels_.get(), peer_labels_.get(),
+                            additional_labels));
   }
 }
 
@@ -172,9 +171,8 @@ void OpenTelemetryServerCallTracer::RecordEnd(
       additional_labels = {{{OTelMethodKey(), method_},
                             {OTelStatusKey(), grpc_status_code_to_string(
                                                   final_info->final_status)}}};
-  KeyValueIterable<
-      std::array<std::pair<absl::string_view, absl::string_view>, 2>>
-      labels(local_labels_.get(), peer_labels_.get(), additional_labels);
+  KeyValueIterable labels(local_labels_.get(), peer_labels_.get(),
+                          additional_labels);
   if (OTelPluginState().server.call.duration != nullptr) {
     OTelPluginState().server.call.duration->Record(
         absl::ToDoubleSeconds(elapsed_time_), labels,

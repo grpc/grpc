@@ -76,15 +76,6 @@ constexpr absl::string_view kGkeType = "gcp_kubernetes_engine";
 
 enum class GcpResourceType : std::uint8_t { kGke, kUnknown };
 
-absl::string_view GcpResourceTypeToString(GcpResourceType type) {
-  switch (type) {
-    case GcpResourceType::kGke:
-      return kGkeType;
-    case GcpResourceType::kUnknown:
-      return "unknown";
-  };
-}
-
 GcpResourceType StringToGcpResourceType(absl::string_view type) {
   if (type == kGkeType) {
     return GcpResourceType::kGke;
@@ -176,7 +167,10 @@ class PeerLabelsIterable : public LabelsIterable {
       return absl::nullopt;
     }
     if (++pos_ == 1) {
-      return std::make_pair(kPeerTypeAttribute, GcpResourceTypeToString(type_));
+      return std::make_pair(kPeerTypeAttribute,
+                            GetStringValueFromUpbStruct(
+                                struct_pb.struct_pb, kMetadataExchangeTypeKey,
+                                struct_pb.arena.ptr()));
     }
     // Only handle GKE type for now.
     switch (type_) {
