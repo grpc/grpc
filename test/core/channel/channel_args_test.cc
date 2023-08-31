@@ -16,6 +16,8 @@
 //
 //
 
+#include "src/core/lib/channel/channel_args.h"
+
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/impl/channel_arg_names.h>
@@ -23,8 +25,9 @@
 #include <grpc/support/log.h>
 #include <string.h>
 
+#include <variant>
+
 #include "gtest/gtest.h"
-#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -216,33 +219,38 @@ TEST(ChannelArgsTest, TestGetChannelArgsDebugInfo) {
       [](void* p1, void* p2) { return QsortCompare(p1, p2); },
   };
 
+  std::string int_key = "int_key";
+  std::string str_key = "str_key";
   void* ptr = gpr_malloc(42);
-  ChannelArgs channel_args_1;
-  ChannelArgs channel_args_2 = channel_args_1.Set("integer_test", 42);
-  ChannelArgs channel_args_3 =
-      channel_args_2.Set("ptr_test", ChannelArgs::Pointer(ptr, &malloc_vtable));
-  ChannelArgs channel_args_4 = channel_args_3.Set("string_test", "bar");
+  ChannelArgs args_1;
+  ChannelArgs args_2 = args_1.Set(int_key, 42);
+  ChannelArgs args_3 =
+      args_2.Set("ptr_key", ChannelArgs::Pointer(ptr, &malloc_vtable));
+  ChannelArgs args_4 = args_3.Set(str_key, "bar");
 
-  std::vector<ChannelArgs::DebugStrings> channel_args_str =
-      channel_args_4.DebugString();
+  std::vector<std::string> args_keys = args_4.GetAllChannelArgumentNames();
 
-  EXPECT_EQ(channel_args_str.size(), 3);
+  EXPECT_EQ(args_keys.size(), 3);
 
-  EXPECT_EQ(channel_args_str[0].GetKey(), "integer_test");
-  EXPECT_EQ(channel_args_str[0].GetValue(), "42");
+  EXPECT_EQ(args_keys[0], int_key);
+  EXPECT_EQ(args_keys[1], "ptr_key");
+  EXPECT_EQ(args_keys[2], str_key);
 
-  EXPECT_EQ(channel_args_str[1].GetKey(), "ptr_test");
+  EXPECT_EQ(args_4.GetChannelArgumentValueToString(int_key), "42");
+  EXPECT_EQ(args_4.GetChannelArgumentValueToString(str_key), "bar");
 
-  EXPECT_EQ(channel_args_str[2].GetKey(), "string_test");
-  EXPECT_EQ(channel_args_str[2].GetValue(), "bar");
+  EXPECT_EQ(absl::get<intptr_t>(args_4.GetChannelArgumentValue(int_key)), 42);
+  EXPECT_EQ(absl::get<std::string>(args_4.GetChannelArgumentValue(str_key)),
+            "bar");
 
-  ChannelArgs channel_args_5 = channel_args_4.Set("integer_test", 92);
-  channel_args_str = channel_args_5.DebugString();
+  ChannelArgs args_5 = args_4.Set(int_key, 92);
+  args_keys = args_5.GetAllChannelArgumentNames();
 
-  EXPECT_EQ(channel_args_str.size(), 3);
+  EXPECT_EQ(args_keys.size(), 3);
 
-  EXPECT_EQ(channel_args_str[0].GetKey(), "integer_test");
-  EXPECT_EQ(channel_args_str[0].GetValue(), "92");
+  EXPECT_EQ(args_keys[0], int_key);
+  EXPECT_EQ(args_5.GetChannelArgumentValueToString(int_key), "92");
+  EXPECT_EQ(absl::get<intptr_t>(args_5.GetChannelArgumentValue(int_key)), 92);
 
   gpr_free(ptr);
 }

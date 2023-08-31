@@ -289,6 +289,18 @@ std::string ChannelArgs::Value::ToString() const {
   return absl::StrFormat("%p", rep_.c_pointer());
 }
 
+absl::variant<intptr_t, std::string, const void*>
+ChannelArgs::Value::ToVariant() const {
+  if (rep_.c_vtable() == &int_vtable_) {
+    return reinterpret_cast<intptr_t>(rep_.c_pointer());
+  }
+  if (rep_.c_vtable() == &string_vtable_) {
+    return std::string(
+        static_cast<RefCountedString*>(rep_.c_pointer())->as_string_view());
+  }
+  return reinterpret_cast<void*>(rep_.c_pointer());
+}
+
 std::string ChannelArgs::ToString() const {
   std::vector<std::string> arg_strings;
   args_.ForEach(
@@ -299,14 +311,31 @@ std::string ChannelArgs::ToString() const {
   return absl::StrCat("{", absl::StrJoin(arg_strings, ", "), "}");
 }
 
-std::vector<ChannelArgs::DebugStrings> ChannelArgs::DebugString() const {
-  std::vector<ChannelArgs::DebugStrings> arg_list_debug;
+std::vector<std::string> ChannelArgs::GetAllChannelArgumentNames() const {
+  std::vector<std::string> arg_strings;
   args_.ForEach(
-      [&arg_list_debug](const RefCountedStringValue& key, const Value& value) {
-        ChannelArgs::DebugStrings channel_arg(key.c_str(), value.ToString());
-        arg_list_debug.push_back(channel_arg);
+      [&arg_strings](const RefCountedStringValue& key, const Value& value) {
+        arg_strings.push_back(key.c_str());
       });
-  return arg_list_debug;
+  return arg_strings;
+}
+
+std::string ChannelArgs::GetChannelArgumentValueToString(
+    std::string& key) const {
+  const Value* value = args_.Lookup(key);
+  if (value != nullptr) {
+    return value->ToString();
+  }
+  return "";
+}
+
+absl::variant<intptr_t, std::string, const void*>
+ChannelArgs::GetChannelArgumentValue(std::string& key) const {
+  const Value* value = args_.Lookup(key);
+  if (value != nullptr) {
+    return value->ToVariant();
+  }
+  return false;
 }
 
 ChannelArgs ChannelArgs::UnionWith(ChannelArgs other) const {

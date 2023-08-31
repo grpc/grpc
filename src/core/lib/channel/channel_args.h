@@ -31,6 +31,7 @@
 #include <string>
 #include <type_traits>
 #include <utility>
+#include <variant>
 
 #include "absl/meta/type_traits.h"
 #include "absl/strings/string_view.h"
@@ -301,6 +302,7 @@ class ChannelArgs {
     }
 
     std::string ToString() const;
+    absl::variant<intptr_t, std::string, const void*> ToVariant() const;
 
     grpc_arg MakeCArg(const char* name) const;
 
@@ -325,18 +327,6 @@ class ChannelArgs {
   };
   using CPtr =
       std::unique_ptr<const grpc_channel_args, ChannelArgs::ChannelArgsDeleter>;
-
-  struct DebugStrings {
-   private:
-    const std::string key_;
-    const std::string value_;
-
-   public:
-    DebugStrings(std::string key, std::string value)
-        : key_(key), value_(value) {}
-    std::string GetKey() { return key_; }
-    std::string GetValue() { return value_; }
-  };
 
   ChannelArgs();
   ~ChannelArgs();
@@ -482,8 +472,16 @@ class ChannelArgs {
   bool WantMinimalStack() const;
   std::string ToString() const;
 
-  // This function returns the current state of channel arguments.
-  std::vector<ChannelArgs::DebugStrings> DebugString() const;
+  std::vector<std::string> GetAllChannelArgumentNames() const;
+  std::string GetChannelArgumentValueToString(std::string& key) const;
+  /* The lifetime of the void* is not guranteed.
+    The content of void* must only be used to check for null,
+    or for being equal to some other known pointer value.
+    Do not use the pointer to access the thing it points to.
+    Its life time is not guranteed by this API,
+    because this API is for debug purpose only */
+  absl::variant<intptr_t, std::string, const void*> GetChannelArgumentValue(
+      std::string& key) const;
 
  private:
   explicit ChannelArgs(AVL<RefCountedStringValue, Value> args);

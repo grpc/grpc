@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 
-#include "src/core/lib/channel/channel_args.h"
+#include "src/core/ext/filters/client_channel/client_channel.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/channel_arg_names.h>
@@ -48,7 +48,6 @@
 #include "absl/types/variant.h"
 #include "src/core/ext/filters/client_channel/backend_metric.h"
 #include "src/core/ext/filters/client_channel/backup_poller.h"
-#include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/client_channel_channelz.h"
 #include "src/core/ext/filters/client_channel/client_channel_internal.h"
 #include "src/core/ext/filters/client_channel/client_channel_service_config.h"
@@ -61,6 +60,7 @@
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/ext/filters/client_channel/subchannel_interface_internal.h"
 #include "src/core/ext/filters/deadline/deadline_filter.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/channel/status_util.h"
@@ -1319,9 +1319,17 @@ ChannelArgs ClientChannel::MakeSubchannelArgs(
       .RemoveAllKeysWithPrefix(GRPC_ARG_NO_SUBCHANNEL_PREFIX);
 }
 
-std::vector<ChannelArgs::DebugStrings> ClientChannel::ChannelArgsToString()
-    const {
-  return channel_args_.DebugString();
+std::vector<std::string> ClientChannel::GetAllChannelArgumentNames() const {
+  return channel_args_.GetAllChannelArgumentNames();
+}
+std::string ClientChannel::GetChannelArgumentValueToString(
+    std::string& key) const {
+  return channel_args_.GetChannelArgumentValueToString(key);
+}
+
+absl::variant<intptr_t, std::string, const void*>
+ClientChannel::GetChannelArgumentValue(std::string& key) const {
+  return channel_args_.GetChannelArgumentValue(key);
 }
 
 void ClientChannel::ReprocessQueuedResolverCalls() {

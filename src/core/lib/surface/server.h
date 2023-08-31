@@ -17,8 +17,10 @@
 #ifndef GRPC_SRC_CORE_LIB_SURFACE_SERVER_H
 #define GRPC_SRC_CORE_LIB_SURFACE_SERVER_H
 
+#include <grpc/grpc.h>
+#include <grpc/slice.h>
 #include <grpc/support/port_platform.h>
-
+#include <grpc/support/time.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -33,11 +35,6 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
-
-#include <grpc/grpc.h>
-#include <grpc/slice.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -125,7 +122,16 @@ class Server : public InternallyRefCounted<Server>,
 
   const ChannelArgs& channel_args() const { return channel_args_; }
 
-  std::vector<ChannelArgs::DebugStrings> ChannelArgsToString() const;
+  std::vector<std::string> GetAllChannelArgumentNames() const;
+  std::string GetChannelArgumentValueToString(std::string& key) const;
+  /* The lifetime of the void* is not guranteed.
+    The content of void* must only be used to check for null,
+    or for being equal to some other known pointer value.
+    Do not use the pointer to access the thing it points to.
+    Its life time is not guranteed by this API,
+    because this API is for debug purpose only */
+  absl::variant<intptr_t, std::string, const void*> GetChannelArgumentValue(
+      std::string& key) const;
 
   channelz::ServerNode* channelz_node() const { return channelz_node_.get(); }
 

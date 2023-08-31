@@ -14,10 +14,16 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/surface/server.h"
 
+#include <grpc/byte_buffer.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/impl/connectivity_state.h>
+#include <grpc/status.h>
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/time.h>
 #include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
@@ -36,15 +42,6 @@
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
-
-#include <grpc/byte_buffer.h>
-#include <grpc/grpc.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/impl/connectivity_state.h>
-#include <grpc/status.h>
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/channel/channel_trace.h"
@@ -1015,9 +1012,15 @@ void Server::Orphan() {
   Unref();
 }
 
-std::vector<ChannelArgs::DebugStrings> Server::ChannelArgsToString()
-const {
-  return channel_args_.DebugString();
+std::vector<std::string> Server::GetAllChannelArgumentNames() const {
+  return channel_args_.GetAllChannelArgumentNames();
+}
+std::string Server::GetChannelArgumentValueToString(std::string& key) const {
+  return channel_args_.GetChannelArgumentValueToString(key);
+}
+absl::variant<intptr_t, std::string, const void*>
+Server::GetChannelArgumentValue(std::string& key) const {
+  return channel_args_.GetChannelArgumentValue(key);
 }
 
 grpc_call_error Server::ValidateServerRequest(

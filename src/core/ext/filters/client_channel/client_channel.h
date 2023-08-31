@@ -17,8 +17,9 @@
 #ifndef GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CLIENT_CHANNEL_H
 #define GRPC_SRC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CLIENT_CHANNEL_H
 
+#include <grpc/grpc.h>
+#include <grpc/impl/connectivity_state.h>
 #include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 
 #include <atomic>
@@ -33,10 +34,6 @@
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#include <grpc/grpc.h>
-#include <grpc/impl/connectivity_state.h>
-
 #include "src/core/ext/filters/client_channel/client_channel_factory.h"
 #include "src/core/ext/filters/client_channel/config_selector.h"
 #include "src/core/ext/filters/client_channel/dynamic_filters.h"
@@ -182,7 +179,16 @@ class ClientChannel {
       const RefCountedPtr<SubchannelPoolInterface>& subchannel_pool,
       const std::string& channel_default_authority);
 
-  std::vector<ChannelArgs::DebugStrings> ChannelArgsToString() const;
+  std::vector<std::string> GetAllChannelArgumentNames() const;
+  std::string GetChannelArgumentValueToString(std::string& key) const;
+  /* The lifetime of the void* is not guranteed.
+    The content of void* must only be used to check for null,
+    or for being equal to some other known pointer value.
+    Do not use the pointer to access the thing it points to.
+    Its life time is not guranteed by this API,
+    because this API is for debug purpose only */
+  absl::variant<intptr_t, std::string, const void*> GetChannelArgumentValue(
+      std::string& key) const;
 
  private:
   class CallData;
