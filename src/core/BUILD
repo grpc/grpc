@@ -2702,6 +2702,7 @@ grpc_cc_library(
         "lib/channel/channel_args.h",
     ],
     external_deps = [
+        "absl/functional:function_ref",
         "absl/meta:type_traits",
         "absl/strings",
         "absl/strings:str_format",
