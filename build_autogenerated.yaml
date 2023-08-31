@@ -10007,6 +10007,7 @@ targets:
   - test/core/promise/inter_activity_pipe_test.cc
   deps:
   - gtest
+  - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
