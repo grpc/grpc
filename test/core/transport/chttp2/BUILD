@@ -146,6 +146,19 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "frame_test",
+    srcs = ["frame_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:chttp2_frame",
+        "//src/core:http2_errors",
+    ],
+)
+
+grpc_cc_test(
     name = "bin_encoder_test",
     srcs = ["bin_encoder_test.cc"],
     external_deps = ["gtest"],

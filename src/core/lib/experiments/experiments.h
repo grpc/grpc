@@ -70,7 +70,6 @@ inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsPromiseBasedClientCallEnabled() { return false; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
 inline bool IsPromiseBasedServerCallEnabled() { return false; }
-inline bool IsTransportSuppliesClientLatencyEnabled() { return false; }
 inline bool IsEventEngineListenerEnabled() { return false; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsTraceRecordCallopsEnabled() { return false; }
@@ -97,7 +96,6 @@ inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsPromiseBasedClientCallEnabled() { return false; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
 inline bool IsPromiseBasedServerCallEnabled() { return false; }
-inline bool IsTransportSuppliesClientLatencyEnabled() { return false; }
 inline bool IsEventEngineListenerEnabled() { return false; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsTraceRecordCallopsEnabled() { return false; }
@@ -124,7 +122,6 @@ inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsPromiseBasedClientCallEnabled() { return false; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
 inline bool IsPromiseBasedServerCallEnabled() { return false; }
-inline bool IsTransportSuppliesClientLatencyEnabled() { return false; }
 inline bool IsEventEngineListenerEnabled() { return false; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsTraceRecordCallopsEnabled() { return false; }
@@ -165,36 +162,32 @@ inline bool IsPromiseBasedClientCallEnabled() { return IsExperimentEnabled(7); }
 inline bool IsFreeLargeAllocatorEnabled() { return IsExperimentEnabled(8); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_SERVER_CALL
 inline bool IsPromiseBasedServerCallEnabled() { return IsExperimentEnabled(9); }
-#define GRPC_EXPERIMENT_IS_INCLUDED_TRANSPORT_SUPPLIES_CLIENT_LATENCY
-inline bool IsTransportSuppliesClientLatencyEnabled() {
-  return IsExperimentEnabled(10);
-}
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_LISTENER
-inline bool IsEventEngineListenerEnabled() { return IsExperimentEnabled(11); }
+inline bool IsEventEngineListenerEnabled() { return IsExperimentEnabled(10); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SCHEDULE_CANCELLATION_OVER_WRITE
 inline bool IsScheduleCancellationOverWriteEnabled() {
-  return IsExperimentEnabled(12);
+  return IsExperimentEnabled(11);
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_TRACE_RECORD_CALLOPS
-inline bool IsTraceRecordCallopsEnabled() { return IsExperimentEnabled(13); }
+inline bool IsTraceRecordCallopsEnabled() { return IsExperimentEnabled(12); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_DNS
-inline bool IsEventEngineDnsEnabled() { return IsExperimentEnabled(14); }
+inline bool IsEventEngineDnsEnabled() { return IsExperimentEnabled(13); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_STEALING
-inline bool IsWorkStealingEnabled() { return IsExperimentEnabled(15); }
+inline bool IsWorkStealingEnabled() { return IsExperimentEnabled(14); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_PRIVACY
-inline bool IsClientPrivacyEnabled() { return IsExperimentEnabled(16); }
+inline bool IsClientPrivacyEnabled() { return IsExperimentEnabled(15); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CANARY_CLIENT_PRIVACY
-inline bool IsCanaryClientPrivacyEnabled() { return IsExperimentEnabled(17); }
+inline bool IsCanaryClientPrivacyEnabled() { return IsExperimentEnabled(16); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_PRIVACY
-inline bool IsServerPrivacyEnabled() { return IsExperimentEnabled(18); }
+inline bool IsServerPrivacyEnabled() { return IsExperimentEnabled(17); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_UNIQUE_METADATA_STRINGS
-inline bool IsUniqueMetadataStringsEnabled() { return IsExperimentEnabled(19); }
+inline bool IsUniqueMetadataStringsEnabled() { return IsExperimentEnabled(18); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_KEEPALIVE_FIX
-inline bool IsKeepaliveFixEnabled() { return IsExperimentEnabled(20); }
+inline bool IsKeepaliveFixEnabled() { return IsExperimentEnabled(19); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_KEEPALIVE_SERVER_FIX
-inline bool IsKeepaliveServerFixEnabled() { return IsExperimentEnabled(21); }
+inline bool IsKeepaliveServerFixEnabled() { return IsExperimentEnabled(20); }
 
-constexpr const size_t kNumExperiments = 22;
+constexpr const size_t kNumExperiments = 21;
 extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];
 
 #endif

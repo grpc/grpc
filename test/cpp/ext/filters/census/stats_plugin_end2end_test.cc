@@ -261,25 +261,6 @@ TEST_F(StatsPluginEnd2EndTest, Latency) {
               ::testing::Property(&Distribution::mean,
                                   ::testing::Lt(client_latency))))));
 
-  // Transport time is a subinterval of total latency.
-  if (grpc_core::IsTransportSuppliesClientLatencyEnabled()) {
-    const auto client_transport_latency =
-        client_transport_latency_view.GetData()
-            .distribution_data()
-            .find({client_method_name_})
-            ->second.mean();
-    EXPECT_THAT(
-        client_server_latency_view.GetData().distribution_data(),
-        ::testing::UnorderedElementsAre(::testing::Pair(
-            ::testing::ElementsAre(client_method_name_),
-            ::testing::AllOf(
-                ::testing::Property(&Distribution::count, 1),
-                ::testing::Property(&Distribution::mean, ::testing::Gt(0.0)),
-                ::testing::Property(
-                    &Distribution::mean,
-                    ::testing::Lt(client_transport_latency))))));
-  }
-
   // client api latency should be less than max time but greater than client
   // roundtrip (attempt) latency view.
   EXPECT_THAT(

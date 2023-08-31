@@ -35,11 +35,9 @@ void BatchBuilder::PendingCompletion::CompletionCallback(
   auto* pc = static_cast<PendingCompletion*>(self);
   auto* party = pc->batch->party.get();
   if (grpc_call_trace.enabled()) {
-    gpr_log(
-        GPR_DEBUG, "%sFinish batch-component %s for %s: status=%s",
-        pc->batch->DebugPrefix(party).c_str(), std::string(pc->name()).c_str(),
-        grpc_transport_stream_op_batch_string(&pc->batch->batch, false).c_str(),
-        error.ToString().c_str());
+    gpr_log(GPR_DEBUG, "%sFinish batch-component %s: status=%s",
+            pc->batch->DebugPrefix(party).c_str(),
+            std::string(pc->name()).c_str(), error.ToString().c_str());
   }
   party->Spawn(
       "batch-completion",
