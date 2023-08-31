@@ -35,6 +35,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
+#include "channel_args.h"
 
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/alloc.h>
@@ -281,6 +282,14 @@ absl::optional<bool> ChannelArgs::GetBool(absl::string_view name) const {
   }
 }
 
+void ChannelArgs::ForEach(
+    absl::FunctionRef<void(absl::string_view, const Value&)> callback) const {
+  args_.ForEach(
+      [callback](const RefCountedStringValue& key, const Value& value) {
+        callback(key.as_string_view(), value);
+      });
+}
+
 std::string ChannelArgs::Value::ToString() const {
   if (rep_.c_vtable() == &int_vtable_) {
     return std::to_string(reinterpret_cast<intptr_t>(rep_.c_pointer()));
@@ -294,11 +303,9 @@ std::string ChannelArgs::Value::ToString() const {
 
 std::string ChannelArgs::ToString() const {
   std::vector<std::string> arg_strings;
-  args_.ForEach(
-      [&arg_strings](const RefCountedStringValue& key, const Value& value) {
-        arg_strings.push_back(
-            absl::StrCat(key.as_string_view(), "=", value.ToString()));
-      });
+  ForEach([&arg_strings](absl::string_view key, const Value& value) {
+    arg_strings.push_back(absl::StrCat(key, "=", value.ToString()));
+  });
   return absl::StrCat("{", absl::StrJoin(arg_strings, ", "), "}");
 }
 
