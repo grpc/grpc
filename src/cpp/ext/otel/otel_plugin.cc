@@ -165,7 +165,6 @@ void OpenTelemetryPluginBuilder::BuildAndRegisterGlobal() {
             OTelServerCallRcvdTotalCompressedMessageSizeInstrumentName()));
   }
   g_otel_plugin_state_->meter_provider = std::move(meter_provider);
-
   grpc_core::ServerCallTracerFactory::RegisterGlobal(
       new grpc::internal::OpenTelemetryServerCallTracerFactory);
   grpc_core::CoreConfiguration::RegisterBuilder(
