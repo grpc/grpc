@@ -19,6 +19,7 @@
 #include "src/core/ext/filters/client_channel/retry_filter.h"
 
 #include <string>
+#include <utility>
 
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
@@ -172,20 +173,30 @@ class MessageForwarder {
 
   class Listener {
    public:
-    explicit Listener(MessageForwarder& forwarder) : forwarder_(forwarder) {}
+    explicit Listener(MessageForwarder& forwarder) : forwarder_(&forwarder) {}
+    Listener(const Listener&) = delete;
+    Listener& operator=(const Listener&) = delete;
+    Listener(Listener&& other) noexcept
+        : forwarder_(std::exchange(other.forwarder_, nullptr)),
+          next_(other.next_) {}
+    Listener& operator=(Listener&& other) noexcept {
+      forwarder_ = std::exchange(other.forwarder_, nullptr);
+      next_ = other.next_;
+      return *this;
+    }
     auto Next() {
       return [this]() -> Poll<absl::optional<MessageHandle>> {
-        if (next_ == forwarder_.buffered_messages_.size()) {
-          if (forwarder_.closed_) {
+        if (next_ == forwarder_->buffered_messages_.size()) {
+          if (forwarder_->closed_) {
             return absl::nullopt;
           } else {
-            return forwarder_.waiting_for_read_.pending();
+            return forwarder_->waiting_for_read_.pending();
           }
         }
-        auto msg = std::move(forwarder_.buffered_messages_[next_++]);
-        if (forwarder_.committed_ &&
-            next_ == forwarder_.buffered_messages_.size()) {
-          forwarder_.buffered_messages_.clear();
+        auto msg = std::move(forwarder_->buffered_messages_[next_++]);
+        if (forwarder_->committed_ &&
+            next_ == forwarder_->buffered_messages_.size()) {
+          forwarder_->buffered_messages_.clear();
           next_ = 0;
         }
         return msg;
@@ -193,7 +204,7 @@ class MessageForwarder {
     }
 
    private:
-    MessageForwarder& forwarder_;
+    MessageForwarder* forwarder_;
     size_t next_ = 0;
   };
 
