@@ -435,6 +435,10 @@ auto RetryFilter::MakeCallAttempt(CallState* call_state,
       &attempt->client_to_server.receiver,
       &attempt->server_to_client.sender};
   *child_call_args.client_initial_metadata = initial_metadata->Copy();
+  if (call_state->num_attempts_completed > 0) {
+    child_call_args.client_initial_metadata->Set(
+        GrpcPreviousRpcAttemptsMetadata(), call_state->num_attempts_completed);
+  }
   auto child_call = client_channel()->CreateLoadBalancedCallPromise(
       std::move(child_call_args),
       [attempt]() { attempt->lb_call_committed.Set(); }, false);
