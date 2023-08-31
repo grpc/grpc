@@ -151,7 +151,7 @@ ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_observability/setup.py sdist
 # shellcheck disable=SC2086
 ${SETARCH_CMD} "${PYTHON}" tools/distrib/python/grpcio_tools/setup.py bdist_wheel $WHEEL_PLAT_NAME_FLAG
 
-${SETARCH_CMD} "${PYTHON}" src/python/grpcio_observability/setup.py bdist_wheel $WHEEL_PLAT_NAME_FLAG
+${SETARCH_CMD} "${PYTHON}" src/python/grpcio_observability/setup.py bdist_wheel
 
 # run twine check before auditwheel, because auditwheel puts the repaired wheels into
 # the artifacts output dir.
