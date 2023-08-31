@@ -395,10 +395,11 @@ auto RetryFilter::MakeCallAttempt(CallState* call_state,
   auto child_call = client_channel()->CreateLoadBalancedCallPromise(
       std::move(child_call_args), []() { Crash("on_commit not implemented"); },
       false);
+  Party::BulkSpawner spawner(party);
   // If per_attempt_recv_timeout is set, start a timer.
   if (attempt->retry_policy != nullptr &&
       attempt->retry_policy->per_attempt_recv_timeout().has_value()) {
-    party->Spawn(
+    spawner.Spawn(
         "per_attempt_recv_timeout",
         Sleep(Timestamp::Now() +
               attempt->retry_policy->per_attempt_recv_timeout().value()),
@@ -409,7 +410,7 @@ auto RetryFilter::MakeCallAttempt(CallState* call_state,
           }
         });
   }
-  party->Spawn(
+  spawner.Spawn(
       "attempt_recv",
       Seq(attempt->server_initial_metadata.receiver.Next(),
           [call_state, attempt](NextResult<ServerMetadataHandle> md) mutable {
@@ -430,25 +431,25 @@ auto RetryFilter::MakeCallAttempt(CallState* call_state,
         if (attempt->early_return.is_set()) return;
         attempt->early_return.Set(ServerMetadataFromStatus(status));
       });
-  party->Spawn("attempt_send",
-               CopyPipe(MessageForwarder::Listener(call_state->forwarder),
-                        &attempt->client_to_server.sender),
-               [attempt](absl::Status status) {
-                 if (status.ok()) return;
-                 if (attempt->early_return.is_set()) return;
-                 attempt->early_return.Set(ServerMetadataFromStatus(status));
-               });
-  party->Spawn("attempt_lb_commit",
-               Seq(attempt->lb_call_committed.Wait(),
-                   call_state->forwarder.WaitForCommitted()),
-               [](Empty) {
-                 auto* service_config_call_data =
-                     static_cast<ClientChannelServiceConfigCallData*>(
-                         GetContext<grpc_call_context_element>()
-                             [GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA]
-                                 .value);
-                 service_config_call_data->Commit();
-               });
+  spawner.Spawn("attempt_send",
+                CopyPipe(MessageForwarder::Listener(call_state->forwarder),
+                         &attempt->client_to_server.sender),
+                [attempt](absl::Status status) {
+                  if (status.ok()) return;
+                  if (attempt->early_return.is_set()) return;
+                  attempt->early_return.Set(ServerMetadataFromStatus(status));
+                });
+  spawner.Spawn("attempt_lb_commit",
+                Seq(attempt->lb_call_committed.Wait(),
+                    call_state->forwarder.WaitForCommitted()),
+                [](Empty) {
+                  auto* service_config_call_data =
+                      static_cast<ClientChannelServiceConfigCallData*>(
+                          GetContext<grpc_call_context_element>()
+                              [GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA]
+                                  .value);
+                  service_config_call_data->Commit();
+                });
   return Seq(
       Race(attempt->early_return.Wait(), std::move(child_call)),
       [this, call_state, attempt](ServerMetadataHandle result) {
