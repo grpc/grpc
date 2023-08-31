@@ -174,8 +174,9 @@ def main():
     os.chdir(GRPC_ROOT)
 
     # Step 1:
-    # In order to be able to build the grpcio_observability package, we need the source code for the plugins
-    # and its dependencies to be available under the build root of the grpcio_observability package.
+    # In order to be able to build the grpcio_observability package, we need the source
+    # code for the plugins and its dependencies to be available under the build root of
+    # the grpcio_observability package.
     # So we simply copy all the necessary files where the build will expect them to be.
     for source, target in COPY_FILES_SOURCE_TARGET_PAIRS:
         # convert the slashes in the relative path to platform-specific path dividers.
@@ -192,8 +193,7 @@ def main():
     # Step 2:
     # Extract build metadata from bazel build (by running "bazel query")
     # and populate the observability_lib_deps.py file with python-readable data structure
-    # that will be used by grpcio_observability's setup.py (so it knows how to configure
-    # the native build for the codegen plugin)
+    # that will be used by grpcio_observability's setup.py.
     try:
         print('Invoking "bazel query" to gather the dependencies.')
         observability_lib_deps_content = _generate_deps_file_content()
