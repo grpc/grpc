@@ -257,8 +257,7 @@ TEST_F(OutlierDetectionTest, DoesNotWorkWithPickFirst) {
   EXPECT_TRUE(status.ok()) << status;
   // LB policy should have created a subchannel for the first address with
   // the GRPC_ARG_INHIBIT_HEALTH_CHECKING channel arg.
-  auto* subchannel = FindSubchannel(
-      kAddresses[0], ChannelArgs().Set(GRPC_ARG_INHIBIT_HEALTH_CHECKING, true));
+  auto* subchannel = FindSubchannel(kAddresses[0]);
   ASSERT_NE(subchannel, nullptr);
   // When the LB policy receives the subchannel's initial connectivity
   // state notification (IDLE), it will request a connection.

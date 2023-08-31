@@ -4770,8 +4770,9 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
-        "grpc_lb_subchannel_list",
         "grpc_outlier_detection_header",
+        "health_check_client",
+        "iomgr_fwd",
         "json",
         "json_args",
         "json_object_loader",
