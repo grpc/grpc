@@ -200,6 +200,7 @@ grpc_cc_test(
     name = "ref_counted_ptr_test",
     srcs = ["ref_counted_ptr_test.cc"],
     external_deps = [
+        "absl/container:flat_hash_set",
         "gtest",
     ],
     language = "C++",

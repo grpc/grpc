@@ -70,7 +70,8 @@ popd
 # Get list of submodules from the .gitmodules file since for "git submodule foreach"
 # we'd need to be in a git workspace (and that's not the case when running
 # distribtests as a bazel action)
-grep 'path = ' .gitmodules | sed 's/^.*path = //' | xargs rm -rf
+# TODO(veblush): Remove upb exception
+grep 'path = ' .gitmodules | sed 's/^.*path = //' | grep -v 'third_party/upb' | xargs rm -rf
 
 # Install gRPC
 # TODO(jtattermusch): avoid the need for setting utf8_range_DIR

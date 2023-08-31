@@ -38,6 +38,7 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -126,6 +127,7 @@ class CallContext {
 
   grpc_call_stats* call_stats() { return &call_stats_; }
   gpr_atm* peer_string_atm_ptr();
+  gpr_cycle_counter call_start_time() { return start_time_; }
 
   ServerCallContext* server_call_context();
 
@@ -139,6 +141,7 @@ class CallContext {
   // TODO(ctiller): remove this once transport APIs are promise based and we
   // don't need refcounting here.
   PromiseBasedCall* const call_;
+  gpr_cycle_counter start_time_ = gpr_get_cycle_counter();
   // Is this call traced?
   bool traced_ = false;
 };
