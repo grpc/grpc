@@ -22,6 +22,7 @@
 
 #include <stddef.h>
 
+#include <array>
 #include <cstdint>
 #include <unordered_map>
 
