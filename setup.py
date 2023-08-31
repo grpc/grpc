@@ -124,7 +124,7 @@ BUILD_WITH_BORING_SSL_ASM = _env_bool_value(
 
 # Export this environment variable to override the platform variant that will
 # be chosen for boringssl assembly optimizations. This option is useful when
-# crosscompiling and the host platform as obtained by distutils.utils.get_platform()
+# crosscompiling and the host platform as obtained by sysconfig.get_platform()
 # doesn't match the platform we are targetting.
 # Example value: "linux-aarch64"
 BUILD_OVERRIDE_BORING_SSL_ASM_PLATFORM = os.environ.get(

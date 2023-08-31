@@ -141,7 +141,7 @@ Given protobuf include directories :code:`$INCLUDE`, an output directory
 
   $ python -m grpc_tools.protoc -I$INCLUDE --python_out=$OUTPUT --grpc_python_out=$OUTPUT $PROTO_FILES
 
-To use as a build step in distutils-based projects, you may use the provided
+To use as a build step in setuptools-based projects, you may use the provided
 command class in your :code:`setup.py`:
 
 ::
@@ -177,5 +177,4 @@ installed). One way to work around this can be found in our
 Now including :code:`grpcio-tools` in :code:`setup_requires` will provide the
 command on-setup as desired.
 
-For more information on command classes, consult :code:`distutils` and
-:code:`setuptools` documentation.
+For more information on command classes, consult :code:`setuptools` documentation.

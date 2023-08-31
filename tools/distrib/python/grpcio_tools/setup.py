@@ -220,7 +220,7 @@ if "win32" in sys.platform:
 elif "linux" in sys.platform or "darwin" in sys.platform:
     DEFINE_MACROS += (("HAVE_PTHREAD", 1),)
 
-# By default, Python3 distutils enforces compatibility of
+# By default, Python3 setuptools(distutils) enforces compatibility of
 # c plugins (.so files) with the OSX version Python was built with.
 # We need OSX 10.10, the oldest which supports C++ thread_local.
 if "darwin" in sys.platform:
