@@ -69,6 +69,9 @@ class FakeResolverResponseGenerator
   // not return anything when \a RequestReresolutionLocked() is called.
   void UnsetReresolutionResponse();
 
+  // Wait for a resolver to be present (may be asynchronous).
+  void WaitForResolver();
+
   // Tells the resolver to return a transient failure.
   void SetFailure();
 
@@ -100,6 +103,7 @@ class FakeResolverResponseGenerator
 
   // Mutex protecting the members below.
   Mutex mu_;
+  CondVar cv_;
   RefCountedPtr<FakeResolver> resolver_ ABSL_GUARDED_BY(mu_);
   Resolver::Result result_ ABSL_GUARDED_BY(mu_);
   bool has_result_ ABSL_GUARDED_BY(mu_) = false;
