@@ -18,22 +18,18 @@
 
 #include "src/core/lib/gprpp/work_serializer.h"
 
-#include <stdint.h>
-
 #include <algorithm>
-#include <atomic>
-#include <functional>
 #include <memory>
-#include <queue>
 #include <thread>
 #include <utility>
+
+#include "absl/container/inlined_vector.h"
 
 #include <grpc/support/log.h>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/mpscq.h"
-#include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
