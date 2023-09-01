@@ -35,6 +35,7 @@
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/thd.h"
+#include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/util/test_config.h"
 
 namespace {
@@ -206,6 +207,8 @@ TEST(WorkSerializerTest, CallbackDestroysWorkSerializer) {
   auto lock = std::make_shared<grpc_core::WorkSerializer>(
       grpc_event_engine::experimental::GetDefaultEventEngine());
   lock->Run([&]() { lock.reset(); }, DEBUG_LOCATION);
+  grpc_event_engine::experimental::WaitForSingleOwner(
+      grpc_event_engine::experimental::GetDefaultEventEngine());
 }
 
 // Tests additional racy conditions when the last callback triggers work
@@ -247,40 +250,44 @@ TEST(WorkSerializerTest, WorkSerializerDestructionRaceMultipleThreads) {
 
 #ifndef NDEBUG
 TEST(WorkSerializerTest, RunningInWorkSerializer) {
-  grpc_core::WorkSerializer work_serializer1(
+  auto work_serializer1 = std::make_shared<grpc_core::WorkSerializer>(
       grpc_event_engine::experimental::GetDefaultEventEngine());
-  grpc_core::WorkSerializer work_serializer2(
+  auto work_serializer2 = std::make_shared<grpc_core::WorkSerializer>(
       grpc_event_engine::experimental::GetDefaultEventEngine());
-  EXPECT_FALSE(work_serializer1.RunningInWorkSerializer());
-  EXPECT_FALSE(work_serializer2.RunningInWorkSerializer());
-  work_serializer1.Run(
-      [&]() {
-        EXPECT_TRUE(work_serializer1.RunningInWorkSerializer());
-        EXPECT_FALSE(work_serializer2.RunningInWorkSerializer());
-        work_serializer2.Run(
-            [&]() {
-              EXPECT_TRUE(work_serializer1.RunningInWorkSerializer());
-              EXPECT_TRUE(work_serializer2.RunningInWorkSerializer());
+  EXPECT_FALSE(work_serializer1->RunningInWorkSerializer());
+  EXPECT_FALSE(work_serializer2->RunningInWorkSerializer());
+  work_serializer1->Run(
+      [=]() {
+        EXPECT_TRUE(work_serializer1->RunningInWorkSerializer());
+        EXPECT_FALSE(work_serializer2->RunningInWorkSerializer());
+        work_serializer2->Run(
+            [=]() {
+              EXPECT_FALSE(work_serializer1->RunningInWorkSerializer());
+              EXPECT_TRUE(work_serializer2->RunningInWorkSerializer());
             },
             DEBUG_LOCATION);
       },
       DEBUG_LOCATION);
-  EXPECT_FALSE(work_serializer1.RunningInWorkSerializer());
-  EXPECT_FALSE(work_serializer2.RunningInWorkSerializer());
-  work_serializer2.Run(
-      [&]() {
-        EXPECT_FALSE(work_serializer1.RunningInWorkSerializer());
-        EXPECT_TRUE(work_serializer2.RunningInWorkSerializer());
-        work_serializer1.Run(
-            [&]() {
-              EXPECT_TRUE(work_serializer1.RunningInWorkSerializer());
-              EXPECT_TRUE(work_serializer2.RunningInWorkSerializer());
+  EXPECT_FALSE(work_serializer1->RunningInWorkSerializer());
+  EXPECT_FALSE(work_serializer2->RunningInWorkSerializer());
+  work_serializer2->Run(
+      [=]() {
+        EXPECT_FALSE(work_serializer1->RunningInWorkSerializer());
+        EXPECT_TRUE(work_serializer2->RunningInWorkSerializer());
+        work_serializer1->Run(
+            [=]() {
+              EXPECT_TRUE(work_serializer1->RunningInWorkSerializer());
+              EXPECT_FALSE(work_serializer2->RunningInWorkSerializer());
             },
             DEBUG_LOCATION);
       },
       DEBUG_LOCATION);
-  EXPECT_FALSE(work_serializer1.RunningInWorkSerializer());
-  EXPECT_FALSE(work_serializer2.RunningInWorkSerializer());
+  EXPECT_FALSE(work_serializer1->RunningInWorkSerializer());
+  EXPECT_FALSE(work_serializer2->RunningInWorkSerializer());
+  work_serializer1.reset();
+  work_serializer2.reset();
+  grpc_event_engine::experimental::WaitForSingleOwner(
+      grpc_event_engine::experimental::GetDefaultEventEngine());
 }
 #endif
 

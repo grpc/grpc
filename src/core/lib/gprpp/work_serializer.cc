@@ -67,25 +67,23 @@ class WorkSerializer::WorkSerializerImpl
   };
   using CallbackVector = absl::InlinedVector<CallbackWrapper, 1>;
 
-  bool Refill() ABSL_EXCLUSIVE_LOCKS_REQUIRED(processing_mu_, incoming_mu_) {
+  bool Refill() ABSL_EXCLUSIVE_LOCKS_REQUIRED(incoming_mu_) {
     incoming_callbacks_.swap(processing_callbacks_);
     std::reverse(processing_callbacks_.begin(), processing_callbacks_.end());
     return !processing_callbacks_.empty();
   }
 
-  void FirstStep() ABSL_LOCKS_EXCLUDED(incoming_mu_, processing_mu_);
-  void Step() ABSL_EXCLUSIVE_LOCKS_REQUIRED(processing_mu_)
-      ABSL_LOCKS_EXCLUDED(incoming_mu_);
+  void FirstStep();
+  void Step() ABSL_LOCKS_EXCLUDED(incoming_mu_);
 
   Mutex incoming_mu_;
-  Mutex processing_mu_ ABSL_ACQUIRED_BEFORE(incoming_mu_);
   bool running_ ABSL_GUARDED_BY(incoming_mu_) = false;
   // Queue of incoming callbacks
   CallbackVector incoming_callbacks_ ABSL_GUARDED_BY(incoming_mu_);
   // Queue of in-process callbacks, in reverse order
   // When this empties we take all of incoming_callbacks_ and reverse it
   // so we can just pop_back() to process the queue.
-  CallbackVector processing_callbacks_ ABSL_GUARDED_BY(processing_mu_);
+  CallbackVector processing_callbacks_;
   const std::shared_ptr<grpc_event_engine::experimental::EventEngine>
       event_engine_;
 
@@ -95,7 +93,6 @@ class WorkSerializer::WorkSerializerImpl
 };
 
 void WorkSerializer::WorkSerializerImpl::FirstStep() {
-  MutexLock lock(&processing_mu_);
   {
     MutexLock incoming_lock(&incoming_mu_);
     GPR_ASSERT(Refill());
@@ -104,8 +101,6 @@ void WorkSerializer::WorkSerializerImpl::FirstStep() {
 }
 
 void WorkSerializer::WorkSerializerImpl::Step() {
-  // It's safe to have processing_mu_ held here because there's no path through
-  // which processing_mu_ could be called from a callback.
 #ifndef NDEBUG
   current_thread_ = std::this_thread::get_id();
 #endif
@@ -124,7 +119,6 @@ void WorkSerializer::WorkSerializerImpl::Step() {
   event_engine_->Run([self = Ref()]() {
     ApplicationCallbackExecCtx app_exec_ctx;
     ExecCtx exec_ctx;
-    MutexLock lock(&self->processing_mu_);
     self->Step();
   });
 }
