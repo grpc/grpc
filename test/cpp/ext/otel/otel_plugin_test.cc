@@ -279,23 +279,13 @@ TEST_F(OTelPluginEnd2EndTest, ServerCallRcvdTotalCompressedMessageSize) {
   EXPECT_EQ(*status_value, "OK");
 }
 
-// Make sure that things work with the global meter provider as well
-TEST_F(OTelPluginEnd2EndTest, UseGlobalMeterProvider) {
-  Init({grpc::internal::OTelClientAttemptStartedInstrumentName()});
+// Make sure that no meter provider results in normal operations.
+TEST_F(OTelPluginEnd2EndTest, NoMeterProviderRegistered) {
+  Init({grpc::internal::OTelClientAttemptStartedInstrumentName()},
+       /*resource=*/opentelemetry::sdk::resource::Resource::Create({}),
+       /*labels_injector=*/nullptr,
+       /*test_no_meter_provider=*/true);
   SendRPC();
-  const char* kMetricName = "grpc.client.attempt.started";
-  auto data = ReadCurrentMetricsData(
-      [&](const absl::flat_hash_map<
-          std::string,
-          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
-              data) { return !data.contains(kMetricName); });
-  ASSERT_EQ(data[kMetricName].size(), 1);
-  auto point_data = absl::get_if<opentelemetry::sdk::metrics::SumPointData>(
-      &data[kMetricName][0].point_data);
-  ASSERT_NE(point_data, nullptr);
-  auto client_started_value = absl::get_if<int64_t>(&point_data->value_);
-  ASSERT_NE(client_started_value, nullptr);
-  ASSERT_EQ(*client_started_value, 1);
 }
 
 }  // namespace

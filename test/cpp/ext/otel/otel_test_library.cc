@@ -39,7 +39,7 @@ void OTelPluginEnd2EndTest::Init(
     const absl::flat_hash_set<absl::string_view>& metric_names,
     opentelemetry::sdk::resource::Resource resource,
     std::unique_ptr<grpc::internal::LabelsInjector> labels_injector,
-    bool global_meter_provider) {
+    bool test_no_meter_provider) {
   // We are resetting the MeterProvider and OpenTelemetry plugin at the start
   // of each test to avoid test results from one test carrying over to another
   // test. (Some measurements can get arbitrarily delayed.)
@@ -52,11 +52,11 @@ void OTelPluginEnd2EndTest::Init(
   grpc_core::CoreConfiguration::Reset();
   grpc::internal::OpenTelemetryPluginBuilder ot_builder;
   ot_builder.EnableMetrics(metric_names);
-  if (global_meter_provider) {
-    opentelemetry::metrics::Provider::SetMeterProvider(
-        opentelemetry::nostd::shared_ptr<opentelemetry::metrics::MeterProvider>(
-            std::move(meter_provider)));
-  } else {
+  if (!test_no_meter_provider) {
+    auto meter_provider =
+        std::make_shared<opentelemetry::sdk::metrics::MeterProvider>();
+    reader_.reset(new grpc::testing::MockMetricReader);
+    meter_provider->AddMetricReader(reader_);
     ot_builder.SetMeterProvider(std::move(meter_provider));
   }
   ot_builder.SetLabelsInjector(std::move(labels_injector));

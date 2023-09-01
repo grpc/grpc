@@ -61,7 +61,7 @@ class OTelPluginEnd2EndTest : public ::testing::Test {
       opentelemetry::sdk::resource::Resource resource =
           opentelemetry::sdk::resource::Resource::Create({}),
       std::unique_ptr<grpc::internal::LabelsInjector> labels_injector = nullptr,
-      bool global_meter_provider = false);
+      bool test_no_meter_provider = false);
 
   void TearDown() override;
 
