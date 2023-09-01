@@ -1,0 +1,44 @@
+## Populates "targets" for all names in the collection "libnames" that are
+## part of "collection".
+##
+## Note that "packagename" and "internal" while not used
+## in the function itself are referenced in the template.
+## When "internal" is true, documentation for non-public headers
+## and sources is also taken as input to Doxygen (see INPUT).
+<%namespace import="doxy_base" file="Doxyfile.base"/>
+<%def name="gen_doxyfile(libnames, packagename, collection, internal)">
+<%
+  import itertools
+  import glob
+  import os
+  targets = []
+  docpackage = packagename.replace('+', 'p').lower()
+  for libname in libnames:
+    target = None
+    for p in collection:
+      if p.name == libname:
+        target = p
+    assert(target)
+    targets.append(target)
+  srcdoc = []
+  for dirpath, dirnames, filenames in os.walk('src/%s' % docpackage):
+    for filename in filenames:
+      if os.path.splitext(filename)[1] == '.md':
+        srcdoc.append(os.path.join(dirpath, filename))
+        
+  version = settings.core_version if packagename=='Core' else settings.cpp_version
+  doxy_input = ' \\\n'.join(sorted(set(
+        itertools.chain(
+            itertools.chain.from_iterable(
+    			      target.public_headers +
+    				    ([]
+    				     if not internal
+    				     else target.headers + target.src)
+    			      for target in targets),
+            glob.glob('doc/*.md'),
+            glob.glob('doc/%s/*.md' % docpackage),
+            [] if not internal else srcdoc)
+    )))
+%>
+${doxy_base(packagename, version, doxy_input, internal)}
+</%def>

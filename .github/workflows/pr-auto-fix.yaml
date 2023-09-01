@@ -1,0 +1,103 @@
+name: PR AutoFix
+on: [push]
+permissions: {}
+jobs:
+  PRAutoFix:
+    permissions:
+      actions: write # to cancel/stop running workflows (styfle/cancel-workflow-action)
+      contents: write # to create branch (peter-evans/create-pull-request)
+      pull-requests: write # to create a PR (peter-evans/create-pull-request)
+
+    runs-on: ubuntu-latest
+    steps:
+      # Cache bazel build
+      - name: Get current time
+        uses: srfrnk/current-time@master
+        id: current-time
+        with:
+          format: YYYYWW
+      - name: Get current time
+        uses: srfrnk/current-time@master
+        id: current-time-with-day
+        with:
+          format: YYYYWWd
+      - name: Cache bazel
+        uses: actions/cache@v3
+        env:
+          cache-name: bazel-cache
+        with:
+          path: ~/.cache/bazel
+          # formattedTime here is like 2021323 - the year concatenated with the week then
+          # the day of that week.
+          # As this changes every day, we cycle to a new cache once per day, with lookup 
+          # across the week (and then the year).
+          key: ${{ runner.os }}-${{ steps.current-time-with-day.outputs.formattedTime }}
+          restore-keys: |
+            ${{ runner.os }}-${{ steps.current-time.outputs.formattedTime }}
+            ${{ runner.os }}-
+      # Cancel current runs if they're still running
+      # (saves processing on fast pushes)
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@0.9.1
+        with:
+          access_token: ${{ github.token }}
+      # Allow opt-out for some users
+      - name: Should I Stay Or Should I Go
+        uses: actions/github-script@v4
+        id: check
+        with:
+          script: |
+            // If you'd like not to run this code on your commits, add your github user id here:
+            NO_AUTOFIX_USERS = []
+            const { owner, repo } = context.repo
+            if (NO_AUTOFIX_USERS.includes(context.actor)) {
+              console.log('Cancelling');
+              const run_id = "${{ github.run_id }}";
+              await github.actions.cancelWorkflowRun({ owner, repo, run_id });
+              return 'go';
+            } else {
+              return 'stay';
+            }
+      - name: Wait for cancellation
+        run: sleep 60
+        if: steps.check.outputs.result == 'go'
+      - name: Should build?
+        run: test "${{ steps.check.outputs.result }}" = "stay"
+      # Setup to run sanity suite
+      - name: Install Python Interpreter
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.8
+      - name: Install Python Packages
+        run: |
+          pip install pyyaml mako virtualenv
+          sudo apt-get update
+          sudo apt-get install python3-dev
+      - name: Check out repository code
+        uses: actions/checkout@v3
+        with:
+          submodules: True
+      - name: Get the upstream code
+        run: |
+          cd ${{ github.workspace }}
+          git remote add upstream https://github.com/grpc/grpc
+          git fetch --no-tags --prune --progress --no-recurse-submodules --depth=1 upstream master
+      # Run the things!
+      - name: clang-tidy fixes
+        run: ANDROID_NDK_HOME= ${{ github.workspace }}/tools/distrib/clang_tidy_code.sh --fix --only-changed || true
+      - name: Run sanitize
+        run: ANDROID_NDK_HOME= ${{ github.workspace }}/tools/distrib/sanitize.sh
+      # Report back with a PR if things are broken
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v3
+        with:
+          delete-branch: true
+          branch-suffix: short-commit-hash
+          commit-message: "Automated change: Fix sanity tests"
+          title: Automated fix for ${{ github.ref }}
+          body: |
+            PanCakes to the rescue!
+
+            We noticed that our 'sanity' test was going to fail, but we think we can fix that automatically, so we put together this PR to do just that!
+
+            If you'd like to opt-out of these PR's, add yourself to NO_AUTOFIX_USERS in .github/workflows/pr-auto-fix.yaml

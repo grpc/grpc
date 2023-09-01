@@ -1,0 +1,87 @@
+#@IgnoreInspection BashAddShebang
+# Copyright 2018 The gRPC Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# bazelrc file for running gRPC tests with RBE (on Linux)
+
+import %workspace%/tools/remote_build/include/rbe_remote_execution.bazelrc
+
+# Next section is linux-specific RBE configuration
+build --crosstool_top=//third_party/toolchains:rbe_linux_default_toolchain_suite
+build --extra_toolchains=//third_party/toolchains:rbe_linux_default_cc_toolchain
+# Use custom execution platforms defined in third_party/toolchains
+build --extra_execution_platforms=//third_party/toolchains:rbe_linux_default_platform
+build --host_platform=//third_party/toolchains:rbe_linux_default_platform
+build --platforms=//third_party/toolchains:rbe_linux_default_platform
+
+# we assume the default bazel RBE build is on linux,
+# so filter out stuff that should not be built or run there.
+build --test_tag_filters=-no_linux
+build --build_tag_filters=-no_linux
+
+import %workspace%/tools/remote_build/include/test_config_common.bazelrc
+
+build --jobs=100
+
+build:opt --test_tag_filters=-noopt,-no_linux
+build:dbg --test_tag_filters=-nodbg,-no_linux
+
+# address sanitizer: most settings are already in %workspace%/.bazelrc
+# we only need a few additional ones that are Foundry specific
+build:asan --copt=-gmlt
+# use double the default value for "moderate" and "long" timeout as sanitizer
+# tests tend to be slower
+build:asan --test_timeout=60,600,1800,3600
+build:asan --test_tag_filters=-no_linux,-noasan,-qps_json_driver
+
+# memory sanitizer: most settings are already in %workspace%/.bazelrc
+# we only need a few additional ones that are Foundry specific
+build:msan --copt=-gmlt
+# "moderate" timeout 3x the default, "long" timeout 2x the default
+build:msan --test_timeout=60,900,1800,3600
+# TODO(jtattermusch): revisit the disabled tests
+build:msan --test_tag_filters=-no_linux,-nomsan,-json_run_localhost
+build:msan --cxxopt=--stdlib=libc++
+build:msan --linkopt=--stdlib=libc++
+# use MSAN-instrumented version of libc++
+# TODO(jtattermusch): include the modified LD_LIBRARY_PATH in an msan-specific
+# toolchain configuration, instead of needing to explicitly set it here.
+build:msan --action_env=LD_LIBRARY_PATH=/usr/local/libcxx-msan/lib/x86_64-unknown-linux-gnu
+
+# thread sanitizer: most settings are already in %workspace%/.bazelrc
+# we only need a few additional ones that are Foundry specific
+build:tsan --copt=-gmlt
+# use double the default value for "moderate" and "long" timeout as sanitizer
+# tests tend to be slower
+build:tsan --test_timeout=60,600,1800,3600
+build:tsan --test_tag_filters=-no_linux,-notsan,-qps_json_driver
+
+# undefined behavior sanitizer: most settings are already in %workspace%/.bazelrc
+# we only need a few additional ones that are Foundry specific
+build:ubsan --copt=-gmlt
+# use double the default value for "moderate" and "long" timeout as sanitizer
+# tests tend to be slower
+build:ubsan --test_timeout=60,600,1800,3600
+# RBE docker image only has a msan specific version of libc++, so to be able to link against it,
+# we need to involuntarily enable msan as well to be able to build. See b/200667821
+# TODO(jtattermusch): disable memory sanitizer for ubsan build as soon as possible.
+build:ubsan --copt=-fsanitize=memory
+build:ubsan --copt=-fsanitize-recover=memory
+build:ubsan --linkopt=-fsanitize=memory
+build:ubsan --cxxopt=--stdlib=libc++
+build:ubsan --action_env=MSAN_OPTIONS=halt_on_error=0
+build:ubsan --test_tag_filters=-no_linux,-noubsan
+# use MSAN-instrumented version of libc++
+# TODO(jtattermusch): run UBSAN without enabling MSAN too.
+build:ubsan --action_env=LD_LIBRARY_PATH=/usr/local/libcxx-msan/lib/x86_64-unknown-linux-gnu

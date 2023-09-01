@@ -1,0 +1,59 @@
+# Copyright 2021 The gRPC Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+py_binary(
+    name = "xds_interop_client",
+    srcs = ["xds_interop_client.py"],
+    python_version = "PY3",
+    deps = [
+        "//src/proto/grpc/testing:empty_py_pb2",
+        "//src/proto/grpc/testing:py_messages_proto",
+        "//src/proto/grpc/testing:py_test_proto",
+        "//src/proto/grpc/testing:test_py_pb2_grpc",
+        "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_admin/grpc_admin",
+        "//src/python/grpcio_channelz/grpc_channelz/v1:grpc_channelz",
+    ],
+)
+
+py_binary(
+    name = "xds_interop_server",
+    srcs = ["xds_interop_server.py"],
+    python_version = "PY3",
+    deps = [
+        "//src/proto/grpc/testing:empty_py_pb2",
+        "//src/proto/grpc/testing:py_messages_proto",
+        "//src/proto/grpc/testing:py_test_proto",
+        "//src/proto/grpc/testing:test_py_pb2_grpc",
+        "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_channelz/grpc_channelz/v1:grpc_channelz",
+        "//src/python/grpcio_health_checking/grpc_health/v1:grpc_health",
+        "//src/python/grpcio_reflection/grpc_reflection/v1alpha:grpc_reflection",
+    ],
+)
+
+py_test(
+    name = "xds_interop_client_test",
+    srcs = ["xds_interop_client_test.py"],
+    imports = ["."],
+    python_version = "PY3",
+    deps = [
+        ":xds_interop_client",
+        ":xds_interop_server",
+        "//src/proto/grpc/testing:empty_py_pb2",
+        "//src/proto/grpc/testing:py_messages_proto",
+        "//src/proto/grpc/testing:py_test_proto",
+        "//src/proto/grpc/testing:test_py_pb2_grpc",
+        "//src/python/grpcio_tests/tests/unit/framework/common",
+    ],
+)

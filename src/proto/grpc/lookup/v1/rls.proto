@@ -1,0 +1,62 @@
+// Copyright 2020 The gRPC Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package grpc.lookup.v1;
+
+option go_package = "google.golang.org/grpc/lookup/grpc_lookup_v1";
+option java_multiple_files = true;
+option java_package = "io.grpc.lookup.v1";
+option java_outer_classname = "RlsProto";
+
+message RouteLookupRequest {
+  // Target type allows the client to specify what kind of target format it
+  // would like from RLS to allow it to find the regional server, e.g. "grpc".
+  string target_type = 3;
+  // Possible reasons for making a request.
+  enum Reason {
+    REASON_UNKNOWN = 0;  // Unused
+    REASON_MISS = 1;     // No data available in local cache
+    REASON_STALE = 2;    // Data in local cache is stale
+  }
+  // Reason for making this request.
+  Reason reason = 5;
+  // For REASON_STALE, the header_data from the stale response, if any.
+  string stale_header_data = 6;
+  // Map of key values extracted via key builders for the gRPC or HTTP request.
+  map<string, string> key_map = 4;
+
+  reserved 1, 2;
+  reserved "server", "path";
+}
+
+message RouteLookupResponse {
+  // Prioritized list (best one first) of addressable entities to use
+  // for routing, using syntax requested by the request target_type.
+  // The targets will be tried in order until a healthy one is found.
+  repeated string targets = 3;
+  // Optional header value to pass along to AFE in the X-Google-RLS-Data header.
+  // Cached with "target" and sent with all requests that match the request key.
+  // Allows the RLS to pass its work product to the eventual target.
+  string header_data = 2;
+
+  reserved 1;
+  reserved "target";
+}
+
+service RouteLookupService {
+  // Lookup returns a target for a single key.
+  rpc RouteLookup(RouteLookupRequest) returns (RouteLookupResponse) {}
+}

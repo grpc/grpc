@@ -1,0 +1,54 @@
+%YAML 1.2
+--- |
+  # Copyright 2021 The gRPC Authors
+  #
+  # Licensed under the Apache License, Version 2.0 (the "License");
+  # you may not use this file except in compliance with the License.
+  # You may obtain a copy of the License at
+  #
+  #     http://www.apache.org/licenses/LICENSE-2.0
+  #
+  # Unless required by applicable law or agreed to in writing, software
+  # distributed under the License is distributed on an "AS IS" BASIS,
+  # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  # See the License for the specific language governing permissions and
+  # limitations under the License.
+  
+  FROM debian:10
+  
+  <%include file="../../apt_get_basic.include"/>
+  <%include file="../../run_tests_python_deps.include"/>
+  <%include file="../../cmake.include"/>
+  <%include file="../../run_tests_addons.include"/>
+
+  # Java required by Android SDK (using Eclipse Temurin Package)
+  RUN apt install -y wget apt-transport-https && ${'\\'}
+      mkdir -p /etc/apt/keyrings && ${'\\'}
+      wget -O - https://packages.adoptium.net/artifactory/api/gpg/key/public | tee /etc/apt/keyrings/adoptium.asc && ${'\\'}
+      echo "deb [signed-by=/etc/apt/keyrings/adoptium.asc] https://packages.adoptium.net/artifactory/deb $(awk -F= '/^VERSION_CODENAME/{print$2}' /etc/os-release) main" | tee /etc/apt/sources.list.d/adoptium.list
+  RUN apt update && apt install -y temurin-8-jdk
+
+  # Install Android SDK
+  ENV ANDROID_SDK_VERSION 4333796
+  RUN mkdir -p /opt/android-sdk && cd /opt/android-sdk && ${'\\'}
+      wget -q https://dl.google.com/android/repository/sdk-tools-linux-$ANDROID_SDK_VERSION.zip && ${'\\'}
+      unzip -q sdk-tools-linux-$ANDROID_SDK_VERSION.zip && ${'\\'}
+      rm sdk-tools-linux-$ANDROID_SDK_VERSION.zip
+  ENV ANDROID_SDK_PATH /opt/android-sdk
+  ENV ANDROID_HOME /opt/android-sdk
+  RUN yes | $ANDROID_SDK_PATH/tools/bin/sdkmanager --licenses  # accept all licenses
+
+  # Install Android NDK & CMake
+  # This is not required but desirable to reduce the time to download and the chance of download failure.
+  RUN mkdir -p ~/.android && touch ~/.android/repositories.cfg
+  RUN $ANDROID_SDK_PATH/tools/bin/sdkmanager 'ndk;25.1.8937393' 'cmake;3.10.2.4988404'
+
+  # Install gcloud
+  RUN curl -O https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-407.0.0-linux-x86_64.tar.gz && ${'\\'}
+      tar -xf google-cloud-cli-407.0.0-linux-x86_64.tar.gz && ${'\\'}
+      ./google-cloud-sdk/install.sh --bash-completion=false --path-update=true && ${'\\'}
+      rm -rf google-cloud-cli-407.0.0-linux-x86_64.tar.gz
+  RUN ln -s /google-cloud-sdk/bin/gcloud /usr/local/bin/gcloud
+
+  # Define the default command.
+  CMD ["bash"]

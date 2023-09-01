@@ -1,0 +1,218 @@
+%YAML 1.2
+--- |
+  # This file has been automatically generated from a template file.
+  # Please make modifications to `templates/gRPC-C++.podspec.template`
+  # instead. This file can be regenerated from the template by running
+  # `tools/buildgen/generate_projects.sh`.
+
+  # gRPC C++ CocoaPods podspec
+  #
+  # Copyright 2017 gRPC authors.
+  #
+  # Licensed under the Apache License, Version 2.0 (the "License");
+  # you may not use this file except in compliance with the License.
+  # You may obtain a copy of the License at
+  #
+  #     http://www.apache.org/licenses/LICENSE-2.0
+  #
+  # Unless required by applicable law or agreed to in writing, software
+  # distributed under the License is distributed on an "AS IS" BASIS,
+  # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  # See the License for the specific language governing permissions and
+  # limitations under the License.
+  <%
+  lib_maps = {lib.name: lib for lib in libs}
+  filegroup_maps = {filegroup.name: filegroup for filegroup in filegroups}
+
+  def ruby_multiline_list(files, indent):
+    return (',\n' + indent*' ').join('\'%s\'' % f for f in files)
+
+  def is_absl_lib(target_name):
+    return target_name.startswith("absl/")
+
+  def get_absl_spec_name(label):
+    # e.g. absl/apple:banana -> abseil/apple/banana
+    return "abseil/" + label[5:].replace(":", "/")
+
+  def lib_and_transitive_deps(lib):
+    """Return names of lib itself and all of its transitive dependencies."""
+    transitive_deps = []
+    lib_metadata = lib_maps.get(lib, None)
+    if lib_metadata:
+      transitive_deps = lib_metadata.transitive_deps
+    return list(sorted(set({lib} | set(transitive_deps))))
+
+  def non_abseil_lib_and_transitive_deps(lib):
+    return [l for l in lib_and_transitive_deps(lib) if not is_absl_lib(l)]
+
+  def list_abseil_specs(lib):
+    # This returns a list of abseil specs which the given lib and
+    # its non-abseil transitive dependencies depend on.
+    # As a result, internal abseil libraries are excluded from the result.
+    absl_specs = set()
+    for lib_name in lib_and_transitive_deps(lib):
+      if is_absl_lib(lib_name): continue
+      lib_metadata = lib_maps.get(lib_name, None)
+      if lib_metadata:
+        for dep in lib_metadata.deps:
+          if is_absl_lib(dep):
+            absl_specs.add(get_absl_spec_name(dep))
+    return list(sorted(absl_specs))
+
+  def collect_files_for_libs(libs, fields):
+    files = set()
+    for lib_name in libs:
+      lib = lib_maps.get(lib_name, None)
+      if lib:
+        for field in fields:
+          files.update(lib.get(field, []))
+    return list(sorted(files))
+
+  def filter_grpcpp(files):
+    return sorted([file for file in files if not file.startswith("include/grpc++")])
+
+  # ObjectiveC doesn't use c-ares so we don't need address_sorting and cares files at all.
+  # absl deps will be declared explicitly so we also don't need to include them.
+  grpc_full_deps = set(non_abseil_lib_and_transitive_deps("grpc")) - set({"address_sorting", "cares"})
+  grpc_private_headers = collect_files_for_libs(grpc_full_deps, ("headers", ))
+
+  # grpc++ dependencies minus grpc and the libraries grpc itself depends on.
+  grpcpp_full_deps = set(non_abseil_lib_and_transitive_deps("grpc++")) - set(lib_and_transitive_deps("grpc"))
+
+  # TODO(jtattermusch): build.yaml no longer has filegroups, so the files here are just hand-listed
+  # This template shouldn't be touching the filegroups anyway, so this is only a bit more fragile.
+  grpcpp_proto_files = ['include/grpcpp/impl/codegen/config_protobuf.h',
+                        'include/grpcpp/impl/codegen/proto_buffer_reader.h',
+                        'include/grpcpp/impl/codegen/proto_buffer_writer.h',
+                        'include/grpcpp/impl/codegen/proto_utils.h']
+
+  grpcpp_private_files = filter_grpcpp(
+    set(collect_files_for_libs(grpcpp_full_deps, ("headers", "src")))
+    # We exclude proto related files in this particular podspec so that we can provide a protobuf-independent lib
+    - set(grpcpp_proto_files)
+  )
+  grpcpp_private_headers = filter_grpcpp(
+    set(collect_files_for_libs(grpcpp_full_deps, ("headers", )))
+    # We exclude proto related files in this particular podspec so that we can provide a protobuf-independent lib
+    - set(grpcpp_proto_files)
+  )
+  grpcpp_public_headers = filter_grpcpp(
+    set(collect_files_for_libs(grpcpp_full_deps, ("public_headers", )))
+    # We exclude proto related files in this particular podspec so that we can provide a protobuf-independent lib
+    - set(grpcpp_proto_files)
+  )
+  grpcpp_abseil_specs = list_abseil_specs("grpc++")
+  %>
+  Pod::Spec.new do |s|
+    s.name     = 'gRPC-C++'
+    # TODO (mxyan): use version that match gRPC version when pod is stabilized
+    version = '${settings.version}'
+    s.version  = version
+    s.summary  = 'gRPC C++ library'
+    s.homepage = 'https://grpc.io'
+    s.license  = 'Apache License, Version 2.0'
+    s.authors  = { 'The gRPC contributors' => 'grpc-packages@google.com' }
+
+    s.source = {
+      :git => 'https://github.com/grpc/grpc.git',
+      :tag => "v#{version}",
+    }
+
+    s.ios.deployment_target = '10.0'
+    s.osx.deployment_target = '10.12'
+    s.tvos.deployment_target = '12.0'
+    s.watchos.deployment_target = '6.0'
+
+    s.requires_arc = false
+
+    name = 'grpcpp'
+    # Use `grpcpp` as framework name so that `#include <grpcpp/xxx.h>` works when built as
+    # framework.
+    s.module_name = name
+
+    # Add include prefix `grpcpp` so that `#include <grpcpp/xxx.h>` works when built as static
+    # library.
+    s.header_dir = name
+
+    s.pod_target_xcconfig = {
+      'HEADER_SEARCH_PATHS' => '"$(inherited)" "$(PODS_TARGET_SRCROOT)/include"',
+      'USER_HEADER_SEARCH_PATHS' => '"$(PODS_TARGET_SRCROOT)"'${"\\"}
+          ' "$(PODS_TARGET_SRCROOT)/src/core/ext/upb-generated"'${"\\"}
+          ' "$(PODS_TARGET_SRCROOT)/src/core/ext/upbdefs-generated"'${"\\"}
+          ' "$(PODS_TARGET_SRCROOT)/third_party/re2"'${"\\"}
+          ' "$(PODS_TARGET_SRCROOT)/third_party/upb"'${"\\"}
+          ' "$(PODS_TARGET_SRCROOT)/third_party/xxhash"',
+      'GCC_PREPROCESSOR_DEFINITIONS' => '"$(inherited)" "COCOAPODS=1"',
+      'CLANG_WARN_STRICT_PROTOTYPES' => 'NO',
+      'CLANG_WARN_DOCUMENTATION_COMMENTS' => 'NO',
+
+      # If we don't set these two settings, `include/grpc/support/time.h` and
+      # `src/core/lib/support/string.h` shadow the system `<time.h>` and `<string.h>`, breaking the
+      # build.
+      'USE_HEADERMAP' => 'NO',
+      'ALWAYS_SEARCH_USER_PATHS' => 'NO',
+      'CLANG_CXX_LANGUAGE_STANDARD' => 'c++14',
+    }
+
+    s.libraries = 'c++'
+    s.compiler_flags = '-Wno-comma -Wno-unreachable-code -Wno-shorten-64-to-32'
+
+    s.default_subspecs = 'Interface', 'Implementation'
+
+    # Certificates, to be able to establish TLS connections:
+    s.resource_bundles = { 'gRPCCertificates-Cpp' => ['etc/roots.pem'] }
+
+    s.header_mappings_dir = 'include/grpcpp'
+
+    s.subspec 'Interface' do |ss|
+      ss.header_mappings_dir = 'include/grpcpp'
+
+      ss.source_files = ${ruby_multiline_list(grpcpp_public_headers, 22)}
+    end
+
+    s.subspec 'Implementation' do |ss|
+      ss.header_mappings_dir = '.'
+      ss.dependency "#{s.name}/Interface", version
+      ss.dependency 'gRPC-Core', version
+      abseil_version = '1.20230802.0'
+      % for abseil_spec in grpcpp_abseil_specs:
+      ss.dependency '${abseil_spec}', abseil_version
+      % endfor
+
+      ss.source_files = ${ruby_multiline_list(sorted(grpcpp_private_files + grpc_private_headers), 22)}
+
+      ss.private_header_files = ${ruby_multiline_list(sorted(grpcpp_private_headers + grpc_private_headers), 30)}
+    end
+
+    s.subspec 'Protobuf' do |ss|
+      ss.header_mappings_dir = 'include/grpcpp'
+      ss.dependency "#{s.name}/Interface", version
+
+      ss.source_files = ${ruby_multiline_list(grpcpp_proto_files, 22)}
+    end
+
+    s.subspec 'Cronet-Interface' do |ss|
+      ss.header_mappings_dir = 'include/grpcpp'
+      ss.public_header_files = "include/grpcpp/security/cronet_credentials.h",
+                               "include/grpcpp/security/cronet_credentials_impl.h"
+      ss.source_files = "include/grpcpp/security/cronet_credentials.h",
+                        "include/grpcpp/security/cronet_credentials_impl.h"
+    end
+
+    s.subspec 'Cronet-Implementation' do |ss|
+      ss.header_mappings_dir = '.'
+      ss.dependency "#{s.name}/Cronet-Interface", version
+      ss.dependency "#{s.name}/Implementation", version
+
+      ss.dependency 'gRPC-Core/Cronet-Implementation', version
+
+      ss.source_files = "src/cpp/client/cronet_credentials.cc"
+    end
+
+    # patch include of openssl to openssl_grpc
+    s.prepare_command = <<-END_OF_COMMAND
+      set -e
+      find src/core -type f \\( -path '*.h' -or -path '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include <openssl/(.*)>;#if COCOAPODS==1\\\n  #include <openssl_grpc/\\1>\\\n#else\\\n  #include <openssl/\\1>\\\n#endif;g'
+      find src/core/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
+    END_OF_COMMAND
+  end

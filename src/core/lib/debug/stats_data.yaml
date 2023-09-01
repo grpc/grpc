@@ -1,0 +1,100 @@
+# Copyright 2017 gRPC authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Stats data declaration
+# use tools / codegen / core / gen_stats_data.py to turn this into stats_data.h
+
+# overall
+- counter: client_calls_created
+  doc: Number of client side calls created by this process
+- counter: server_calls_created
+  doc: Number of server side calls created by this process
+- histogram: call_initial_size
+  max: 65536
+  buckets: 26
+  doc: Initial size of the grpc_call arena created at call start
+- counter: client_channels_created
+  doc: Number of client channels created
+- counter: client_subchannels_created
+  doc: Number of client subchannels created
+- counter: server_channels_created
+  doc: Number of server channels created
+- counter: insecure_connections_created
+  doc: Number of insecure connections created
+# tcp
+- counter: syscall_write
+  doc: Number of write syscalls (or equivalent - eg sendmsg) made by this process
+- counter: syscall_read
+  doc: Number of read syscalls (or equivalent - eg recvmsg) made by this process
+- histogram: tcp_write_size
+  max: 16777216 # 16 meg max write tracked
+  buckets: 20
+  doc: Number of bytes offered to each syscall_write
+- histogram: tcp_write_iov_size
+  max: 80
+  buckets: 10
+  doc: Number of byte segments offered to each syscall_write
+- counter: tcp_read_alloc_8k
+  doc: Number of 8k allocations by the TCP subsystem for reading
+- counter: tcp_read_alloc_64k
+  doc: Number of 64k allocations by the TCP subsystem for reading
+- histogram: tcp_read_size
+  max: 16777216
+  buckets: 20
+  doc: Number of bytes received by each syscall_read
+- histogram: tcp_read_offer
+  max: 16777216
+  buckets: 20
+  doc: Number of bytes offered to each syscall_read
+- histogram: tcp_read_offer_iov_size
+  max: 80
+  buckets: 10
+  doc: Number of byte segments offered to each syscall_read
+# chttp2
+- histogram: http2_send_message_size
+  max: 16777216
+  buckets: 20
+  doc: Size of messages received by HTTP2 transport
+- counter: http2_settings_writes
+  doc: Number of settings frames sent
+- counter: http2_pings_sent
+  doc: Number of HTTP2 pings sent by process
+- counter: http2_writes_begun
+  doc: Number of HTTP2 writes initiated
+- counter: http2_transport_stalls
+  doc: Number of times sending was completely stalled by the transport flow control window
+- counter: http2_stream_stalls
+  doc: Number of times sending was completely stalled by the stream flow control window
+- histogram: http2_metadata_size
+  max: 65536
+  buckets: 26
+  doc: Number of bytes consumed by metadata, according to HPACK accounting rules
+# completion queues
+- counter: cq_pluck_creates
+  doc: Number of completion queues created for cq_pluck (indicates sync api usage)
+- counter: cq_next_creates
+  doc: Number of completion queues created for cq_next (indicates cq async api usage)
+- counter: cq_callback_creates
+  doc: Number of completion queues created for cq_callback (indicates callback api usage)
+# wrr
+- histogram: wrr_subchannel_list_size
+  doc: Number of subchannels in a subchannel list at picker creation time
+  max: 10000
+  buckets: 20
+- histogram: wrr_subchannel_ready_size
+  doc: Number of READY subchannels in a subchannel list at picker creation time
+  max: 10000
+  buckets: 20
+- counter: wrr_updates
+  doc: Number of wrr updates that have been received

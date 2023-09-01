@@ -1,0 +1,23 @@
+# Configuration for mac bazel test runs on CI
+# Bazel RBE doesn't currently support MacOS platform,
+# so we configure actions to execute locally,
+# but we still use RBE for build cache and to upload
+# results to ResultStore.
+
+import %workspace%/tools/remote_build/include/rbe_base_config.bazelrc
+
+# Disable uploading to build cache by default. This is to prevent
+# polluting the build cache with locally-started builds.
+# When running on CI, we will override this setting along
+# with cache silo keys that prevent the build from being broken
+# by unintentional cache hits.
+build --remote_upload_local_results=false
+
+build --test_tag_filters=-no_mac
+build --build_tag_filters=-no_mac
+
+# Dynamic link cause issues like: `dyld: malformed mach-o: load commands size (59272) > 32768`
+# https://github.com/bazelbuild/bazel/issues/9190
+build --dynamic_mode=off
+
+import %workspace%/tools/remote_build/include/test_config_common.bazelrc

@@ -1,0 +1,108 @@
+source 'https://github.com/CocoaPods/Specs.git'
+
+install! 'cocoapods', :deterministic_uuids => false
+
+# Location of gRPC's repo root relative to this file.
+GRPC_LOCAL_SRC = '../../..'
+
+def grpc_deps
+  pod 'Protobuf', :path => "#{GRPC_LOCAL_SRC}/third_party/protobuf", :inhibit_warnings => true
+
+  pod '!ProtoCompiler',            :path => "#{GRPC_LOCAL_SRC}/src/objective-c"
+  pod '!ProtoCompiler-gRPCPlugin', :path => "#{GRPC_LOCAL_SRC}/src/objective-c"
+
+  pod 'BoringSSL-GRPC',       :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c", :inhibit_warnings => true
+
+  pod 'gRPC/InternalTesting',           :path => GRPC_LOCAL_SRC
+  pod 'gRPC-Core',                      :path => GRPC_LOCAL_SRC, :inhibit_warnings => true
+  pod 'gRPC-RxLibrary',                 :path => GRPC_LOCAL_SRC
+  pod 'gRPC-ProtoRPC',                  :path => GRPC_LOCAL_SRC, :inhibit_warnings => true
+  pod 'RemoteTest', :path => "RemoteTestClient", :inhibit_warnings => true
+  pod 'Common', :path => "Common"
+end
+
+target 'TvTests' do
+  platform :tvos, '10.0'
+  grpc_deps
+end
+
+target 'MacTests' do
+  platform :osx, '10.12'
+  grpc_deps
+end
+
+%w(
+  UnitTests
+  InteropTests
+).each do |target_name|
+  target target_name do
+    platform :ios, '10.0'
+    grpc_deps
+  end
+end
+
+target 'CronetTests' do
+  platform :ios, '10.0'
+  grpc_deps
+
+  pod 'gRPC/GRPCCoreCronet',           :path => GRPC_LOCAL_SRC
+  pod 'CronetFramework', :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c"
+end
+
+target 'PerfTests' do
+  platform :ios, '10.0'
+  grpc_deps
+
+  pod 'gRPC/GRPCCoreCronet',           :path => GRPC_LOCAL_SRC
+  pod 'CronetFramework', :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c"
+end
+
+post_install do |installer|
+  installer.pods_project.targets.each do |target|
+    target.build_configurations.each do |config|
+      config.build_settings['GCC_TREAT_WARNINGS_AS_ERRORS'] = 'YES'
+      if config.name == 'Test'
+        config.build_settings['GCC_OPTIMIZATION_LEVEL'] = '0'
+        config.build_settings['SWIFT_OPTIMIZATION_LEVEL'] = '-Onone'
+      end
+    end
+
+    # CocoaPods creates duplicated library targets of gRPC-Core when the test targets include
+    # non-default subspecs of gRPC-Core. All of these library targets start with prefix 'gRPC-Core'
+    # and require the same error suppresion.
+    if target.name.start_with?('gRPC-Core')
+      target.build_configurations.each do |config|
+        # TODO(zyc): Remove this setting after the issue is resolved
+        # GPR_UNREACHABLE_CODE causes "Control may reach end of non-void
+        # function" warning
+        config.build_settings['GCC_WARN_ABOUT_RETURN_TYPE'] = 'NO'
+        # Abseil isn't free from the following warning
+        config.build_settings['GCC_WARN_64_TO_32_BIT_CONVERSION'] = 'NO'
+        config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = '$(inherited) COCOAPODS=1 GRPC_CRONET_WITH_PACKET_COALESCING=1 GRPC_CFSTREAM=1'
+      end
+    end
+
+    # Activate Cronet for the dedicated build configuration 'Cronet', which will be used solely by
+    # the test target 'InteropTestsRemoteWithCronet'
+    # Activate GRPCCall+InternalTests functions for the dedicated build configuration 'Test', which will
+    # be used by all test targets using it.
+    if /gRPC(-macOS|-iOS|-tvOS|\.|-[0-9a-f])/.match(target.name)
+      target.build_configurations.each do |config|
+        if config.name == 'Cronet'
+          config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = '$(inherited) COCOAPODS=1 GRPC_COMPILE_WITH_CRONET=1 GRPC_TEST_OBJC=1'
+        elsif config.name == 'Test'
+          config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = '$(inherited) COCOAPODS=1 GRPC_TEST_OBJC=1'
+        end
+      end
+    end
+
+    # Enable NSAssert on gRPC
+    if /(gRPC|ProtoRPC|RxLibrary)/.match(target.name)
+      target.build_configurations.each do |config|
+        if config.name != 'Release'
+          config.build_settings['ENABLE_NS_ASSERTIONS'] = 'YES'
+        end
+      end
+    end
+  end
+end

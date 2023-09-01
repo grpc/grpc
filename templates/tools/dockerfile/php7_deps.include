@@ -1,0 +1,26 @@
+#=================
+# PHP7 dependencies
+
+# PHP specific dependencies
+RUN apt-get update && apt-get install -y ${'\\'}
+  libbison-dev ${'\\'}
+  libcurl4-openssl-dev ${'\\'}
+  libgmp-dev ${'\\'}
+  libgmp3-dev ${'\\'}
+  libssl-dev ${'\\'}
+  libxml2-dev ${'\\'}
+  re2c ${'\\'}
+  zlib1g-dev ${'\\'}
+  && apt-get clean
+
+# Compile PHP7 from source
+RUN git clone https://github.com/php/php-src /var/local/git/php-src
+RUN cd /var/local/git/php-src ${'\\'}
+  && git checkout PHP-7.2.34 ${'\\'}
+  && ./buildconf --force ${'\\'}
+  && ./configure ${'\\'}
+  --with-gmp ${'\\'}
+  --with-openssl ${'\\'}
+  --with-zlib ${'\\'}
+  && make -j$(nproc) ${'\\'}
+  && make install

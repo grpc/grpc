@@ -1,0 +1,155 @@
+# Copyright 2021 The gRPC Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+load("//bazel:internal_python_rules.bzl", "internal_py_grpc_test")
+load("@grpc_python_dependencies//:requirements.bzl", "requirement")
+
+package(default_visibility = ["//visibility:public"])
+
+GRPCIO_TESTS_UNIT = [
+    "_abort_test.py",
+    "_api_test.py",
+    "_auth_context_test.py",
+    "_auth_test.py",
+    "_version_test.py",
+    "_channel_args_test.py",
+    "_channel_close_test.py",
+    "_channel_connectivity_test.py",
+    "_channel_ready_future_test.py",
+    "_compression_test.py",
+    "_contextvars_propagation_test.py",
+    "_credentials_test.py",
+    "_dns_resolver_test.py",
+    "_empty_message_test.py",
+    "_error_message_encoding_test.py",
+    # TODO(https://github.com/grpc/grpc/issues/20385) enable this test
+    # "_exit_test.py",
+    "_grpc_shutdown_test.py",
+    "_interceptor_test.py",
+    "_invalid_metadata_test.py",
+    "_invocation_defects_test.py",
+    "_local_credentials_test.py",
+    "_logging_test.py",
+    "_metadata_flags_test.py",
+    "_metadata_code_details_test.py",
+    "_metadata_test.py",
+    "_reconnect_test.py",
+    "_resource_exhausted_test.py",
+    "_rpc_part_1_test.py",
+    "_rpc_part_2_test.py",
+    "_signal_handling_test.py",
+    # TODO(ghostwriternr): To be added later.
+    # "_server_ssl_cert_config_test.py",
+    "_server_test.py",
+    "_server_shutdown_test.py",
+    "_server_wait_for_termination_test.py",
+    "_session_cache_test.py",
+    "_xds_credentials_test.py",
+]
+
+py_library(
+    name = "_tcp_proxy",
+    srcs = ["_tcp_proxy.py"],
+)
+
+py_library(
+    name = "_signal_client",
+    srcs = ["_signal_client.py"],
+    deps = [
+        requirement("gevent"),
+    ],
+)
+
+py_library(
+    name = "resources",
+    srcs = ["resources.py"],
+    data = [
+        "//src/python/grpcio_tests/tests/unit/credentials",
+    ],
+)
+
+py_library(
+    name = "test_common",
+    srcs = ["test_common.py"],
+)
+
+py_library(
+    name = "thread_pool",
+    srcs = ["thread_pool.py"],
+)
+
+py_library(
+    name = "_exit_scenarios",
+    srcs = ["_exit_scenarios.py"],
+)
+
+py_library(
+    name = "_rpc_test_helpers",
+    srcs = ["_rpc_test_helpers.py"],
+)
+
+py_library(
+    name = "_server_shutdown_scenarios",
+    srcs = ["_server_shutdown_scenarios.py"],
+)
+
+py_library(
+    name = "_from_grpc_import_star",
+    srcs = ["_from_grpc_import_star.py"],
+)
+
+[
+    internal_py_grpc_test(
+        name = test_file_name[:-3],
+        size = "small",
+        srcs = [test_file_name],
+        data = [
+            "//src/python/grpcio_tests/tests/unit/credentials",
+        ],
+        imports = ["../../"],
+        main = test_file_name,
+        deps = [
+            ":_exit_scenarios",
+            ":_from_grpc_import_star",
+            ":_rpc_test_helpers",
+            ":_server_shutdown_scenarios",
+            ":_signal_client",
+            ":_tcp_proxy",
+            ":resources",
+            ":test_common",
+            ":thread_pool",
+            "//src/python/grpcio/grpc:grpcio",
+            "//src/python/grpcio_tests/tests/testing",
+            "//src/python/grpcio_tests/tests/unit/framework/common",
+        ],
+    )
+    for test_file_name in GRPCIO_TESTS_UNIT
+]
+
+internal_py_grpc_test(
+    name = "_dynamic_stubs_test",
+    size = "small",
+    srcs = ["_dynamic_stubs_test.py"],
+    data = [
+        "data/foo/bar.proto",
+        "data/foo/bar_with_wkt.proto",
+    ],
+    imports = ["../../"],
+    main = "_dynamic_stubs_test.py",
+    deps = [
+        ":test_common",
+        "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_tests/tests/testing",
+        "//tools/distrib/python/grpcio_tools:grpc_tools",
+    ],
+)

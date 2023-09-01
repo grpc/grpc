@@ -1,0 +1,214 @@
+%YAML 1.2
+--- |
+  <%!
+    def expand_symbol_list(symbol_list):
+        return ',\n    '.join("'#define %s GRPC_SHADOW_%s'" % (symbol, symbol) for symbol in symbol_list)
+
+    import subprocess
+    boringssl_commit = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd='third_party/boringssl-with-bazel').decode().strip()
+
+    # Compress src/boringssl/boringssl_prefix_symbols.h with gzip then encode
+    # with Base64. The result is put in variable prefix_gz_b64.
+    #
+    # Note that gRPC's template parser is still using Python 2, whose gzip
+    # module does not support directly compressing bytes into bytes. Instead,
+    # we have to write the compressed bytes into a intermediate file
+    # (src/boringssl/boringssl_prefix_symbols.h.gz), read the compressed
+    # bytes from this file, then delete the intermediate file.
+    #
+    # TODO(mxyan): move to python3 style gzip compression when possible
+    def compress_boringssl_prefix_header():
+      import gzip, shutil, os, base64
+      with open('src/boringssl/boringssl_prefix_symbols.h', 'rb') as f_in, gzip.GzipFile('src/boringssl/boringssl_prefix_symbols.h.gz', 'w', mtime=0.0) as f_out:
+        shutil.copyfileobj(f_in, f_out)
+      with open('src/boringssl/boringssl_prefix_symbols.h.gz', 'rb') as f_in:
+        prefix_gz = f_in.read()
+      os.remove('src/boringssl/boringssl_prefix_symbols.h.gz')
+      prefix_gz_b64 = base64.b64encode(prefix_gz)
+      WRAP_LENGTH=80
+      prefix_gz_b64_wrapped = [prefix_gz_b64[i:i+WRAP_LENGTH] for i in range(0, len(prefix_gz_b64), WRAP_LENGTH)]
+      return prefix_gz_b64_wrapped
+  %>
+
+  # This file has been automatically generated from a template file.
+  # Please make modifications to
+  # `templates/src/objective-c/BoringSSL-GRPC.podspec.template` instead. This
+  # file can be regenerated from the template by running
+  # `tools/buildgen/generate_projects.sh`.
+
+  # BoringSSL CocoaPods podspec
+
+  # Copyright 2015, Google Inc.
+  # All rights reserved.
+  #
+  # Redistribution and use in source and binary forms, with or without
+  # modification, are permitted provided that the following conditions are
+  # met:
+  #
+  #     * Redistributions of source code must retain the above copyright
+  # notice, this list of conditions and the following disclaimer.
+  #     * Redistributions in binary form must reproduce the above
+  # copyright notice, this list of conditions and the following disclaimer
+  # in the documentation and/or other materials provided with the
+  # distribution.
+  #     * Neither the name of Google Inc. nor the names of its
+  # contributors may be used to endorse or promote products derived from
+  # this software without specific prior written permission.
+  #
+  # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  # "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  # LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+  # A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+  # OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+  # SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+  # LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+  # DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+  # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+  # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+  # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+  Pod::Spec.new do |s|
+    s.name     = 'BoringSSL-GRPC'
+    version = '0.0.31'
+    s.version  = version
+    s.summary  = 'BoringSSL is a fork of OpenSSL that is designed to meet Google\'s needs.'
+    # Adapted from the homepage:
+    s.description = <<-DESC
+      BoringSSL is a fork of OpenSSL that is designed to meet Google's needs.
+
+      Although BoringSSL is an open source project, it is not intended for general use, as OpenSSL is.
+      We don't recommend that third parties depend upon it. Doing so is likely to be frustrating
+      because there are no guarantees of API stability. Only the latest version of this pod is
+      supported, and every new version is a new major version.
+
+      We update Google libraries and programs that use BoringSSL as needed when deciding to make API
+      changes. This allows us to mostly avoid compromises in the name of compatibility. It works for
+      us, but it may not work for you.
+
+      As a Cocoapods pod, it has the advantage over OpenSSL's pods that the library doesn't need to
+      be precompiled. This eliminates the 10 - 20 minutes of wait the first time a user does "pod
+      install", lets it be used as a dynamic framework (pending solution of Cocoapods' issue #4605),
+      and works with bitcode automatically. It's also thought to be smaller than OpenSSL (which takes
+      1MB - 2MB per ARM architecture), but we don't have specific numbers yet.
+
+      BoringSSL arose because Google used OpenSSL for many years in various ways and, over time, built
+      up a large number of patches that were maintained while tracking upstream OpenSSL. As Google's
+      product portfolio became more complex, more copies of OpenSSL sprung up and the effort involved
+      in maintaining all these patches in multiple places was growing steadily.
+
+      Currently BoringSSL is the SSL library in Chrome/Chromium, Android (but it's not part of the
+      NDK) and a number of other apps/programs.
+    DESC
+    s.homepage = 'https://github.com/google/boringssl'
+    s.license  = { :type => 'Mixed', :file => 'LICENSE' }
+    # "The name and email addresses of the library maintainers, not the Podspec maintainer."
+    s.authors  = 'Adam Langley', 'David Benjamin', 'Matt Braithwaite'
+
+    s.source = {
+      :git => 'https://github.com/google/boringssl.git',
+      :commit => "${boringssl_commit}",
+    }
+
+    s.ios.deployment_target = '10.0'
+    s.osx.deployment_target = '10.12'
+    s.tvos.deployment_target = '12.0'
+    s.watchos.deployment_target = '6.0'
+
+    name = 'openssl_grpc'
+
+    # When creating a dynamic framework, name it openssl.framework instead of BoringSSL.framework.
+    # This lets users write their includes like `#include <openssl/ssl.h>` as opposed to `#include
+    # <BoringSSL/ssl.h>`.
+    s.module_name = name
+
+    # When creating a dynamic framework, copy the headers under `include/openssl/` into the root of
+    # the `Headers/` directory of the framework (i.e., not under `Headers/include/openssl`).
+    #
+    # TODO(jcanizales): Debug why this doesn't work on macOS.
+    s.header_mappings_dir = 'src/include/openssl'
+
+    # The above has an undesired effect when creating a static library: It forces users to write
+    # includes like `#include <BoringSSL/ssl.h>`. `s.header_dir` adds a path prefix to that, and
+    # because Cocoapods lets omit the pod name when including headers of static libraries, the
+    # following lets users write `#include <openssl/ssl.h>`.
+    s.header_dir = name
+
+    # We don't need to inhibit all warnings; only -Wno-shorten-64-to-32. But Cocoapods' linter doesn't
+    # want that for some reason.
+    s.compiler_flags = '-DOPENSSL_NO_ASM', '-GCC_WARN_INHIBIT_ALL_WARNINGS', '-w', '-DBORINGSSL_PREFIX=GRPC'
+    s.requires_arc = false
+
+    # Like many other C libraries, BoringSSL has its public headers under `include/<libname>/` and its
+    # sources and private headers in other directories outside `include/`. Cocoapods' linter doesn't
+    # allow any header to be listed outside the `header_mappings_dir` (even though doing so works in
+    # practice). Because we need our `header_mappings_dir` to be `include/openssl/` for the reason
+    # mentioned above, we work around the linter limitation by dividing the pod into two subspecs, one
+    # for public headers and the other for implementation. Each gets its own `header_mappings_dir`,
+    # making the linter happy.
+    s.subspec 'Interface' do |ss|
+      ss.header_mappings_dir = 'src/include/openssl'
+      ss.source_files = 'src/include/openssl/*.h'
+    end
+    s.subspec 'Implementation' do |ss|
+      ss.header_mappings_dir = 'src'
+      ss.source_files = 'src/ssl/*.{h,c,cc}',
+                        'src/ssl/**/*.{h,c,cc}',
+                        'src/crypto/*.{h,c,cc}',
+                        'src/crypto/**/*.{h,c,cc}',
+                        # We have to include fiat because spake25519 depends on it
+                        'src/third_party/fiat/*.{h,c,cc}',
+                        # Include the err_data.c pre-generated in boringssl's master-with-bazel branch
+                        'err_data.c'
+
+      ss.private_header_files = 'src/ssl/*.h',
+                                'src/ssl/**/*.h',
+                                'src/crypto/*.h',
+                                'src/crypto/**/*.h',
+                                'src/third_party/fiat/*.h'
+      # bcm.c includes other source files, creating duplicated symbols. Since it is not used, we
+      # explicitly exclude it from the pod.
+      # TODO (mxyan): Work with BoringSSL team to remove this hack.
+      ss.exclude_files = 'src/crypto/fipsmodule/bcm.c',
+                         'src/**/*_test.*',
+                         'src/**/test_*.*',
+                         'src/**/test/*.*'
+
+      ss.dependency "#{s.name}/Interface", version
+    end
+
+    s.pod_target_xcconfig = {
+      # Do not let src/include/openssl/time.h override system API
+      'USE_HEADERMAP' => 'NO',
+    }
+
+    s.prepare_command = <<-END_OF_COMMAND
+      set -e
+
+      # To avoid symbol conflict with OpenSSL, gRPC needs to rename all the BoringSSL symbols with a
+      # prefix. This is done with BoringSSL's BORINGSSL_PREFIX mechanism
+      # (https://github.com/google/boringssl/blob/75148d7abf12bdd1797fec3c5da9a21963703516/BUILDING.md#building-with-prefixed-symbols).
+      # The required prefix header file boringssl_prefix_symbols.h is not part of BoringSSL repo at
+      # this moment. It has to be generated by BoringSSL's users and be injected to BoringSSL build.
+      # gRPC generates this file in script /tools/distrib/upgrade_boringssl_objc.sh. This script
+      # outputs a gzip+base64 encoded version of boringssl_prefix_symbols.h because of Cocoapods'
+      # limit on the 'prepare_command' field length. The encoded header is generated from
+      # /src/boringssl/boringssl_prefix_symbols.h. Here we decode the content and inject the header to
+      # the correct location in BoringSSL.
+      case "$(uname)" in
+        Darwin) opts="" ;;
+             *) opts="--ignore-garbage" ;;
+      esac
+      base64 --decode $opts <<EOF | gunzip > src/include/openssl/boringssl_prefix_symbols.h
+        % for line in compress_boringssl_prefix_header():
+        ${line.decode('utf-8')}
+        % endfor
+      EOF
+
+      # We are renaming openssl to openssl_grpc so that there is no conflict with openssl if it exists
+      find . -type f \\( -path '*.h' -or -path '*.cc' -or -path '*.c' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include <openssl/;#include <openssl_grpc/;g'
+
+      # Include of boringssl_prefix_symbols.h does not follow Xcode import style. We add the package
+      # name here so that Xcode knows where to find it.
+      find . -type f \\( -path '*.h' -or -path '*.cc' -or -path '*.c' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include <boringssl_prefix_symbols.h>;#include <openssl_grpc/boringssl_prefix_symbols.h>;g'
+    END_OF_COMMAND
+  end

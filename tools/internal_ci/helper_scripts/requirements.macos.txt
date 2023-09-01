@@ -1,0 +1,6 @@
+cython<3.0.0rc1
+cryptography==3.4.6
+PyJWT==2.0.1
+pyOpenSSL==20.0.1
+PyYAML==6.0
+requests==2.25.1

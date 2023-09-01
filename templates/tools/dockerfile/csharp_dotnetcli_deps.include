@@ -1,0 +1,26 @@
+# Install .NET Core 3.1 (to be able to run the netcoreapp3.1 targets)
+RUN DOTNET_DOWNLOAD_VERSION=3.1.415 ${'\\'}
+    && DOTNET_DOWNLOAD_ARCH="$(uname -m | sed s/x86_64/x64/ | sed s/aarch64/arm64/)" ${'\\'}
+    && curl -sSL -o dotnet.tar.gz https://dotnetcli.blob.core.windows.net/dotnet/Sdk/$DOTNET_DOWNLOAD_VERSION/dotnet-sdk-$DOTNET_DOWNLOAD_VERSION-linux-$DOTNET_DOWNLOAD_ARCH.tar.gz ${'\\'}
+    && mkdir -p /usr/share/dotnet ${'\\'}
+    && tar -zxf dotnet.tar.gz -C /usr/share/dotnet ${'\\'}
+    && rm dotnet.tar.gz
+
+# Install .NET 6
+RUN DOTNET_DOWNLOAD_VERSION=6.0.100 ${'\\'}
+    && DOTNET_DOWNLOAD_ARCH="$(uname -m | sed s/x86_64/x64/ | sed s/aarch64/arm64/)" ${'\\'}
+    && curl -sSL -o dotnet.tar.gz https://dotnetcli.blob.core.windows.net/dotnet/Sdk/$DOTNET_DOWNLOAD_VERSION/dotnet-sdk-$DOTNET_DOWNLOAD_VERSION-linux-$DOTNET_DOWNLOAD_ARCH.tar.gz ${'\\'}
+    && mkdir -p /usr/share/dotnet ${'\\'}
+    && tar -zxf dotnet.tar.gz -C /usr/share/dotnet ${'\\'}
+    && rm dotnet.tar.gz
+
+# Make sure "dotnet" is on PATH
+RUN ln -s /usr/share/dotnet/dotnet /usr/bin/dotnet
+
+# Trigger the population of the local package cache
+ENV NUGET_XMLDOC_MODE skip
+RUN mkdir warmup ${'\\'}
+    && cd warmup ${'\\'}
+    && dotnet new ${'\\'}
+    && cd .. ${'\\'}
+    && rm -rf warmup

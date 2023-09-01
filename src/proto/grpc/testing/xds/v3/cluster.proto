@@ -1,0 +1,288 @@
+// Copyright 2020 The gRPC Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// Local copy of Envoy xDS proto file, used for testing only.
+
+syntax = "proto3";
+
+package envoy.config.cluster.v3;
+
+import "src/proto/grpc/testing/xds/v3/base.proto";
+import "src/proto/grpc/testing/xds/v3/config_source.proto";
+import "src/proto/grpc/testing/xds/v3/endpoint.proto";
+import "src/proto/grpc/testing/xds/v3/extension.proto";
+import "src/proto/grpc/testing/xds/v3/health_check.proto";
+import "src/proto/grpc/testing/xds/v3/outlier_detection.proto";
+
+import "google/protobuf/any.proto";
+import "google/protobuf/wrappers.proto";
+
+enum RoutingPriority {
+  DEFAULT = 0;
+  HIGH = 1;
+}
+
+message CircuitBreakers {
+  message Thresholds {
+    RoutingPriority priority = 1;
+    google.protobuf.UInt32Value max_requests = 4;
+  }
+  repeated Thresholds thresholds = 1;
+}
+
+// Extended cluster type.
+message CustomClusterType {
+  // The type of the cluster to instantiate. The name must match a supported cluster type.
+  string name = 1;
+
+  // Cluster specific configuration which depends on the cluster being instantiated.
+  // See the supported cluster for further documentation.
+  google.protobuf.Any typed_config = 2;
+}
+
+// [#protodoc-title: Cluster configuration]
+
+// Configuration for a single upstream cluster.
+// [#next-free-field: 48]
+message Cluster {
+  // Refer to :ref:`service discovery type <arch_overview_service_discovery_types>`
+  // for an explanation on each type.
+  enum DiscoveryType {
+    // Refer to the :ref:`static discovery type<arch_overview_service_discovery_types_static>`
+    // for an explanation.
+    STATIC = 0;
+
+    // Refer to the :ref:`strict DNS discovery
+    // type<arch_overview_service_discovery_types_strict_dns>`
+    // for an explanation.
+    STRICT_DNS = 1;
+
+    // Refer to the :ref:`logical DNS discovery
+    // type<arch_overview_service_discovery_types_logical_dns>`
+    // for an explanation.
+    LOGICAL_DNS = 2;
+
+    // Refer to the :ref:`service discovery type<arch_overview_service_discovery_types_eds>`
+    // for an explanation.
+    EDS = 3;
+
+    // Refer to the :ref:`original destination discovery
+    // type<arch_overview_service_discovery_types_original_destination>`
+    // for an explanation.
+    ORIGINAL_DST = 4;
+  }
+
+  // Refer to :ref:`load balancer type <arch_overview_load_balancing_types>` architecture
+  // overview section for information on each type.
+  enum LbPolicy {
+    reserved 4;
+
+    reserved "ORIGINAL_DST_LB";
+
+    // Refer to the :ref:`round robin load balancing
+    // policy<arch_overview_load_balancing_types_round_robin>`
+    // for an explanation.
+    ROUND_ROBIN = 0;
+
+    // Refer to the :ref:`least request load balancing
+    // policy<arch_overview_load_balancing_types_least_request>`
+    // for an explanation.
+    LEAST_REQUEST = 1;
+
+    // Refer to the :ref:`ring hash load balancing
+    // policy<arch_overview_load_balancing_types_ring_hash>`
+    // for an explanation.
+    RING_HASH = 2;
+
+    // Refer to the :ref:`random load balancing
+    // policy<arch_overview_load_balancing_types_random>`
+    // for an explanation.
+    RANDOM = 3;
+
+    // Refer to the :ref:`Maglev load balancing policy<arch_overview_load_balancing_types_maglev>`
+    // for an explanation.
+    MAGLEV = 5;
+
+    // This load balancer type must be specified if the configured cluster provides a cluster
+    // specific load balancer. Consult the configured cluster's documentation for whether to set
+    // this option or not.
+    CLUSTER_PROVIDED = 6;
+
+    // [#not-implemented-hide:] Use the new :ref:`load_balancing_policy
+    // <envoy_api_field_config.cluster.v3.Cluster.load_balancing_policy>` field to determine the LB policy.
+    // [#next-major-version: In the v3 API, we should consider deprecating the lb_policy field
+    // and instead using the new load_balancing_policy field as the one and only mechanism for
+    // configuring this.]
+    LOAD_BALANCING_POLICY_CONFIG = 7;
+  }
+
+  // Only valid when discovery type is EDS.
+  message EdsClusterConfig {
+    // Configuration for the source of EDS updates for this Cluster.
+    core.v3.ConfigSource eds_config = 1;
+
+    // Optional alternative to cluster name to present to EDS. This does not
+    // have the same restrictions as cluster name, i.e. it may be arbitrary
+    // length.
+    string service_name = 2;
+  }
+
+  message CommonLbConfig {
+    core.v3.HealthStatusSet override_host_status = 8;
+  }
+
+  // Supplies the name of the cluster which must be unique across all clusters.
+  // The cluster name is used when emitting
+  // :ref:`statistics <config_cluster_manager_cluster_stats>` if :ref:`alt_stat_name
+  // <envoy_api_field_config.cluster.v3.Cluster.alt_stat_name>` is not provided.
+  // Any ``:`` in the cluster name will be converted to ``_`` when emitting statistics.
+  string name = 1;
+
+  oneof cluster_discovery_type {
+    // The :ref:`service discovery type <arch_overview_service_discovery_types>`
+    // to use for resolving the cluster.
+    DiscoveryType type = 2;
+
+    // The custom cluster type.
+    CustomClusterType cluster_type = 38;
+  }
+
+  // Configuration to use for EDS updates for the Cluster.
+  EdsClusterConfig eds_cluster_config = 3;
+
+  // Specific configuration for the :ref:`RingHash<arch_overview_load_balancing_types_ring_hash>`
+  // load balancing policy.
+  message RingHashLbConfig {
+    // The hash function used to hash hosts onto the ketama ring.
+    enum HashFunction {
+      // Use `xxHash <https://github.com/Cyan4973/xxHash>`_, this is the default hash function.
+      XX_HASH = 0;
+      MURMUR_HASH_2 = 1;
+    }
+
+    reserved 2;
+
+    // Minimum hash ring size. The larger the ring is (that is, the more hashes there are for each
+    // provided host) the better the request distribution will reflect the desired weights. Defaults
+    // to 1024 entries, and limited to 8M entries. See also
+    // :ref:`maximum_ring_size<envoy_api_field_config.cluster.v3.Cluster.RingHashLbConfig.maximum_ring_size>`.
+    google.protobuf.UInt64Value minimum_ring_size = 1;
+
+    // The hash function used to hash hosts onto the ketama ring. The value defaults to
+    // :ref:`XX_HASH<envoy_api_enum_value_config.cluster.v3.Cluster.RingHashLbConfig.HashFunction.XX_HASH>`.
+    HashFunction hash_function = 3;
+
+    // Maximum hash ring size. Defaults to 8M entries, and limited to 8M entries, but can be lowered
+    // to further constrain resource use. See also
+    // :ref:`minimum_ring_size<envoy_api_field_config.cluster.v3.Cluster.RingHashLbConfig.minimum_ring_size>`.
+    google.protobuf.UInt64Value maximum_ring_size = 4;
+  }
+
+  // The :ref:`load balancer type <arch_overview_load_balancing_types>` to use
+  // when picking a host in the cluster.
+  LbPolicy lb_policy = 6;
+
+  // Setting this is required for specifying members of
+  // :ref:`STATIC<envoy_api_enum_value_config.cluster.v3.Cluster.DiscoveryType.STATIC>`,
+  // :ref:`STRICT_DNS<envoy_api_enum_value_config.cluster.v3.Cluster.DiscoveryType.STRICT_DNS>`
+  // or :ref:`LOGICAL_DNS<envoy_api_enum_value_config.cluster.v3.Cluster.DiscoveryType.LOGICAL_DNS>` clusters.
+  // This field supersedes the *hosts* field in the v2 API.
+  //
+  // .. attention::
+  //
+  //   Setting this allows non-EDS cluster types to contain embedded EDS equivalent
+  //   :ref:`endpoint assignments<envoy_api_msg_config.endpoint.v3.ClusterLoadAssignment>`.
+  //
+  endpoint.v3.ClusterLoadAssignment load_assignment = 33;
+
+  CircuitBreakers circuit_breakers = 10;
+
+  // If specified, outlier detection will be enabled for this upstream cluster.
+  // Each of the configuration values can be overridden via
+  // :ref:`runtime values <config_cluster_manager_cluster_runtime_outlier_detection>`.
+  OutlierDetection outlier_detection = 19;
+
+  // Optional configuration for the load balancing algorithm selected by
+  // LbPolicy. Currently only
+  // :ref:`RING_HASH<envoy_api_enum_value_config.cluster.v3.Cluster.LbPolicy.RING_HASH>`,
+  // Specifying ring_hash_lb_config without setting the corresponding
+  // LbPolicy will generate an error at runtime.
+  oneof lb_config {
+    // Optional configuration for the Ring Hash load balancing policy.
+    RingHashLbConfig ring_hash_lb_config = 23;
+  }
+
+  CommonLbConfig common_lb_config = 27;
+
+  // Optional custom transport socket implementation to use for upstream connections.
+  // To setup TLS, set a transport socket with name `tls` and
+  // :ref:`UpstreamTlsContexts <envoy_api_msg_extensions.transport_sockets.tls.v3.UpstreamTlsContext>` in the `typed_config`.
+  // If no transport socket configuration is specified, new connections
+  // will be set up with plaintext.
+  core.v3.TransportSocket transport_socket = 24;
+
+  // If this field is set and is supported by the client, it will supersede the value of
+  // :ref:`lb_policy<envoy_v3_api_field_config.cluster.v3.Cluster.lb_policy>`.
+  LoadBalancingPolicy load_balancing_policy = 41;
+
+  // [#not-implemented-hide:]
+  // If present, tells the client where to send load reports via LRS. If not present, the
+  // client will fall back to a client-side default, which may be either (a) don't send any
+  // load reports or (b) send load reports for all clusters to a single default server
+  // (which may be configured in the bootstrap file).
+  //
+  // Note that if multiple clusters point to the same LRS server, the client may choose to
+  // create a separate stream for each cluster or it may choose to coalesce the data for
+  // multiple clusters onto a single stream. Either way, the client must make sure to send
+  // the data for any given cluster on no more than one stream.
+  //
+  // [#next-major-version: In the v3 API, we should consider restructuring this somehow,
+  // maybe by allowing LRS to go on the ADS stream, or maybe by moving some of the negotiation
+  // from the LRS stream here.]
+  core.v3.ConfigSource lrs_server = 42;
+}
+
+// Extensible load balancing policy configuration.
+//
+// Every LB policy defined via this mechanism will be identified via a unique name using reverse
+// DNS notation. If the policy needs configuration parameters, it must define a message for its
+// own configuration, which will be stored in the config field. The name of the policy will tell
+// clients which type of message they should expect to see in the config field.
+//
+// Note that there are cases where it is useful to be able to independently select LB policies
+// for choosing a locality and for choosing an endpoint within that locality. For example, a
+// given deployment may always use the same policy to choose the locality, but for choosing the
+// endpoint within the locality, some clusters may use weighted-round-robin, while others may
+// use some sort of session-based balancing.
+//
+// This can be accomplished via hierarchical LB policies, where the parent LB policy creates a
+// child LB policy for each locality. For each request, the parent chooses the locality and then
+// delegates to the child policy for that locality to choose the endpoint within the locality.
+//
+// To facilitate this, the config message for the top-level LB policy may include a field of
+// type LoadBalancingPolicy that specifies the child policy.
+message LoadBalancingPolicy {
+  message Policy {
+    reserved 2, 1, 3;
+
+    reserved "config", "name", "typed_config";
+
+    core.v3.TypedExtensionConfig typed_extension_config = 4;
+  }
+
+  // Each client will iterate over the list in order and stop at the first policy that it
+  // supports. This provides a mechanism for starting to use new LB policies that are not yet
+  // supported by all clients.
+  repeated Policy policies = 1;
+}

@@ -1,0 +1,13 @@
+# OPENSSL_cleanse does racy access to a global
+race:OPENSSL_cleanse
+race:cleanse_ctr
+# these are legitimate races in OpenSSL, and it appears those folks are looking at it
+# https://www.mail-archive.com/openssl-dev@openssl.org/msg09019.html
+race:ssleay_rand_add
+race:ssleay_rand_bytes
+race:__sleep_for
+# protobuf has an idempotent write race in ByteSize/GetCachedSize
+# https://github.com/protocolbuffers/protobuf/issues/2169
+race:ByteSize
+race:ByteSizeLong
+race:GetCachedSize

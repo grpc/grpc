@@ -1,0 +1,46 @@
+#@IgnoreInspection BashAddShebang
+# Copyright 2022 The gRPC Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# bazelrc to configure bazel to use gRPC's main RBE instance for remote cache
+# and to upload build results to build event service (for bazel build UI results).
+# Note that remote build and test execution is left unconfigured.
+
+startup --host_jvm_args=-Dbazel.DigestFunction=SHA256
+
+# the RBE instance to use
+build --remote_instance_name=projects/grpc-testing/instances/default_instance
+
+# Enable authentication (to be able access the RBE service)
+# Bazel will use application default credentials
+# unless overridden by --google_credentials=service_account_credentials.json
+# How to setup credentials to be able to use bazel RBE locally:
+# https://cloud.google.com/remote-build-execution/docs/results-ui/getting-started-results-ui
+build --google_default_credentials
+
+# use remote cache (remote execution needs to be configured separately)
+# Note that remote cache is needed
+# not only for build speedup, but also for the test logs
+# to become available in ResultStore.
+build --remote_cache=grpcs://remotebuildexecution.googleapis.com
+
+# Set flags for uploading to BES in order to view results in the Bazel Build
+# Results UI.
+build --bes_backend=grpcs://buildeventservice.googleapis.com
+build --bes_timeout=600s
+build --bes_results_url="https://source.cloud.google.com/results/invocations/"
+build --bes_instance_name=grpc-testing
+
+# Avoid timeouts for actions that don't write output for long time (See b/143346671 and b/143134296)
+build --grpc_keepalive_time=10m

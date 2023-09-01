@@ -1,0 +1,28 @@
+FROM python:3.9-slim-bookworm
+
+RUN apt-get update -y && apt-get upgrade -y && apt-get install -y build-essential clang curl
+
+WORKDIR /workdir
+
+RUN ln -s /usr/bin/python3 /usr/bin/python
+RUN mkdir /artifacts
+
+COPY . .
+RUN tools/bazel build -c dbg //src/python/grpcio_tests/tests_py3_only/interop:xds_interop_client
+RUN cp -rL /workdir/bazel-bin/src/python/grpcio_tests/tests_py3_only/interop/xds_interop_client* /artifacts/
+
+FROM python:3.9-slim-bookworm
+
+ENV GRPC_VERBOSITY="DEBUG"
+ENV GRPC_TRACE="xds_client,xds_resolver,xds_cluster_manager_lb,cds_lb,xds_cluster_resolver_lb,priority_lb,xds_cluster_impl_lb,weighted_target_lb,ring_hash_lb,outlier_detection_lb"
+
+RUN apt-get update -y \
+  && apt-get install -y python3 \
+  && apt-get -y autoremove \
+  && rm -rf /var/lib/apt/lists/*
+
+RUN ln -s /usr/bin/python3 /usr/bin/python
+
+COPY --from=0 /artifacts ./
+
+ENTRYPOINT ["/xds_interop_client"]

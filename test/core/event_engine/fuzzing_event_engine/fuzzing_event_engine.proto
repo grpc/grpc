@@ -1,0 +1,32 @@
+// Copyright 2021 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package fuzzing_event_engine;
+
+message Actions {
+    reserved 1;
+    // How much to delay each task by, in nanoseconds.
+    repeated uint64 run_delay = 2;
+    // Order in which to bind port numbers.
+    // After this ports are assigned in order, from 1 to 65535.
+    repeated uint32 assign_ports = 3;
+    // Write size constraints for each connection, in order of creation.
+    repeated Connection connections = 4;
+};
+
+message Connection {
+    repeated uint32 write_size = 1;
+};

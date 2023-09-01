@@ -1,0 +1,38 @@
+// Copyright 2022 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// Local copy of Envoy xDS proto file, used for testing only.
+
+syntax = "proto3";
+
+package envoy.type.http.v3;
+
+import "google/protobuf/duration.proto";
+
+// [#protodoc-title: Http cookie API]
+
+// Cookie defines an API for obtaining or generating HTTP cookie.
+message Cookie {
+  // The name that will be used to obtain cookie value from downstream HTTP request or generate
+  // new cookie for downstream.
+  string name = 1;
+
+  // Duration of cookie. This will be used to set the expiry time of a new cookie when it is
+  // generated. Set this to 0 to use a session cookie.
+  google.protobuf.Duration ttl = 2;
+
+  // Path of cookie. This will be used to set the path of a new cookie when it is generated.
+  // If no path is specified here, no path will be set for the cookie.
+  string path = 3;
+}

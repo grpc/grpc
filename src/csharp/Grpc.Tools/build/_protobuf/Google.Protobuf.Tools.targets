@@ -1,0 +1,413 @@
+<?xml version="1.0"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <!-- We allow a non-C# generator be set by the user, but skip adding outputs to Compile in this case. -->
+    <Protobuf_Generator Condition=" '$(Protobuf_Generator)' == '' and '$(Language)' == 'C#' ">CSharp</Protobuf_Generator>
+    <!-- Configuration is passing the smoke test. -->
+    <Protobuf_ProjectSupported Condition=" '$(Protobuf_Generator)' != '' ">true</Protobuf_ProjectSupported>
+    <!-- Allow assembly file to be specified externally for testing by setting property _Protobuf_MsBuildAssembly -->
+    <_Protobuf_MsBuildAssembly Condition=" '$(_Protobuf_MsBuildAssembly)' == '' and '$(MSBuildRuntimeType)' == 'Core' ">netstandard1.3\Protobuf.MSBuild.dll</_Protobuf_MsBuildAssembly>
+    <_Protobuf_MsBuildAssembly Condition=" '$(_Protobuf_MsBuildAssembly)' == '' and '$(MSBuildRuntimeType)' != 'Core' ">net45\Protobuf.MSBuild.dll</_Protobuf_MsBuildAssembly>
+  </PropertyGroup>
+
+  <UsingTask AssemblyFile="$(_Protobuf_MsBuildAssembly)" TaskName="Grpc.Tools.ProtoToolsPlatform" />
+  <UsingTask AssemblyFile="$(_Protobuf_MsBuildAssembly)" TaskName="Grpc.Tools.ProtoCompilerOutputs" />
+  <UsingTask AssemblyFile="$(_Protobuf_MsBuildAssembly)" TaskName="Grpc.Tools.ProtoReadDependencies" />
+  <UsingTask AssemblyFile="$(_Protobuf_MsBuildAssembly)" TaskName="Grpc.Tools.ProtoCompile" />
+
+  <PropertyGroup Condition=" '$(Protobuf_ProjectSupported)' == 'true' ">
+    <Protobuf_IntermediatePath Condition=" '$(Protobuf_IntermediatePath)' == '' ">$(IntermediateOutputPath)</Protobuf_IntermediatePath>
+    <Protobuf_OutputPath Condition=" '$(Protobuf_OutputPath)' == '' ">$(Protobuf_IntermediatePath)</Protobuf_OutputPath>
+    <Protobuf_DepFilesPath Condition=" '$(Protobuf_DepFilesPath)' == '' ">$(Protobuf_IntermediatePath)</Protobuf_DepFilesPath>
+  </PropertyGroup>
+
+  <ItemDefinitionGroup Condition=" '$(Protobuf_ProjectSupported)' == 'true' and '$(Language)' == 'C#' ">
+    <Protobuf>
+      <Access Condition="'%(Protobuf.Access)' == '' ">Public</Access>
+      <ProtoCompile Condition="'%(Protobuf.ProtoCompile)' == '' ">True</ProtoCompile>
+      <ProtoRoot Condition="'%(Protobuf.ProtoRoot)' == '' " />
+      <CompileOutputs Condition="'%(Protobuf.CompileOutputs)' == ''">True</CompileOutputs>
+      <OutputDir Condition="'%(Protobuf.OutputDir)' == '' ">$(Protobuf_OutputPath)</OutputDir>
+      <Generator Condition="'%(Protobuf.Generator)' == '' and '$(DisableProtobufDesignTimeBuild)' != 'true' " >MSBuild:Compile</Generator>
+    </Protobuf>
+  </ItemDefinitionGroup>
+
+  <ItemGroup Condition=" '$(Protobuf_ProjectSupported)' == 'true' and '$(Language)' == 'C#' ">
+    <PropertyPageSchema Include="$(MSBuildThisFileDirectory)Protobuf.CSharp.xml">
+      <Context>File;BrowseObject</Context>
+    </PropertyPageSchema>
+    <AvailableItemName Include="Protobuf" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <!-- NET SDK: by default, do not include proto files in the directory.
+         Current Microsoft's recommendation is against globbing:
+         https://docs.microsoft.com/en-us/dotnet/core/tools/csproj#recommendation -->
+    <EnableDefaultProtobufItems Condition=" '$(EnableDefaultProtobufItems)' == '' ">false</EnableDefaultProtobufItems>
+  </PropertyGroup>
+
+  <!-- Check configuration sanity before build. -->
+  <Target Name="_Protobuf_SanityCheck" BeforeTargets="PrepareForBuild">
+    <Error
+      Condition=" '$(Protobuf_ProjectSupported)' != 'true' "
+      Text="Google.Protobuf.Tools proto compilation is only supported by default in a C# project (extension .csproj)" />
+  </Target>
+
+  <!--================================================================================
+                                     Tool path resolution
+   =================================================================================-->
+
+  <!-- Extension point for plugin packages: use Protobuf_ToolsOs and Protobuf_ToolsCpu
+       to resolve executable. Either or both may be blank, however, if resolution
+       fails; do check them before using. -->
+  <Target Name="Protobuf_ResolvePlatform">
+    <ProtoToolsPlatform>
+      <Output TaskParameter="Os" PropertyName="_Protobuf_ToolsOs"/>
+      <Output TaskParameter="Cpu" PropertyName="_Protobuf_ToolsCpu"/>
+    </ProtoToolsPlatform>
+
+    <PropertyGroup>
+      <!-- First try environment variable. -->
+      <Protobuf_ToolsOs Condition=" '$(Protobuf_ToolsOs)' == '' ">$(PROTOBUF_TOOLS_OS)</Protobuf_ToolsOs>
+      <Protobuf_ToolsCpu Condition=" '$(Protobuf_ToolsCpu)' == '' ">$(PROTOBUF_TOOLS_CPU)</Protobuf_ToolsCpu>
+      <Protobuf_ProtocFullPath Condition=" '$(Protobuf_ProtocFullPath)' == '' ">$(PROTOBUF_PROTOC)</Protobuf_ProtocFullPath>
+
+      <!-- Next try OS and CPU resolved by ProtoToolsPlatform. -->
+      <Protobuf_ToolsOs Condition=" '$(Protobuf_ToolsOs)' == '' ">$(_Protobuf_ToolsOs)</Protobuf_ToolsOs>
+      <Protobuf_ToolsCpu Condition=" '$(Protobuf_ToolsCpu)' == '' ">$(_Protobuf_ToolsCpu)</Protobuf_ToolsCpu>
+      <Protobuf_ProtocFullPath Condition=" '$(Protobuf_ProtocFullPath)' == '' and '$(Protobuf_ToolsOs)' == 'windows' "
+           >$(Protobuf_PackagedToolsPath)\$(Protobuf_ToolsOs)_$(Protobuf_ToolsCpu)\protoc.exe</Protobuf_ProtocFullPath>
+      <Protobuf_ProtocFullPath Condition=" '$(Protobuf_ProtocFullPath)' == '' "
+           >$(Protobuf_PackagedToolsPath)/$(Protobuf_ToolsOs)_$(Protobuf_ToolsCpu)/protoc</Protobuf_ProtocFullPath>
+    </PropertyGroup>
+
+    <Error Condition=" '$(DisableProtobufDesignTimeBuild)' != 'true' and '$(PROTOBUF_PROTOC)' == ''
+                        and ( '$(Protobuf_ToolsOs)' == '' or '$(Protobuf_ToolsCpu)' == '' ) "
+      Text="Google.Protobuf.Tools cannot determine host OS and CPU.&#10;Use environment variables PROTOBUF_TOOLS_OS={linux|macosx|windows} and PROTOBUF_TOOLS_CPU={x86|x64|arm64} to try the closest match to your system.&#10;You may also set PROTOBUF_PROTOC to specify full path to the host-provided compiler (v3.5+ is required)." />
+  </Target>
+
+  <!--================================================================================
+                                     Proto compilation
+   =================================================================================-->
+
+  <!-- Extension points. -->
+  <Target Name="Protobuf_BeforeCompile" />
+  <Target Name="Protobuf_AfterCompile" />
+
+  <!-- Main compile sequence. Certain steps are gated by the value $(DisableProtobufDesignTimeBuild),
+       so the sequence is good for either design time or build time. -->
+  <Target Name="Protobuf_Compile"
+          Condition=" '@(Protobuf)' != '' "
+          DependsOnTargets=" Protobuf_BeforeCompile;
+                             Protobuf_ResolvePlatform;
+                             _Protobuf_SelectFiles;
+                             Protobuf_PrepareCompile;
+                             _Protobuf_AugmentLanguageCompile;
+                             _Protobuf_CoreCompile;
+                             Protobuf_ReconcileOutputs;
+                             Protobuf_AfterCompile" />
+
+  <!-- Do proto compilation by default in a C# project. In other types, the user invoke
+       Protobuf_Compile directly where required. -->
+  <Target Name="_Protobuf_Compile_BeforeCsCompile"
+          BeforeTargets="BeforeCompile"
+          DependsOnTargets="Protobuf_Compile"
+          Condition=" '$(Language)' == 'C#' " />
+
+  <Target Name="_Protobuf_SetProtoRoot">
+    <!-- Guess .proto root for the files. Whenever the root is set for a file explicitly,
+         leave it as is. Otherwise, for files under the project directory, set the root
+         to "." for the project's directory, as it is the current when compiling; for the
+         files outside of project directory, use each .proto file's directory as the root. -->
+    <FindUnderPath Path="$(MSBuildProjectDirectory)"
+                   Files="@(Protobuf->WithMetadataValue('ProtoRoot',''))">
+      <Output TaskParameter="InPath" ItemName="_Protobuf_NoRootInProject"/>
+      <Output TaskParameter="OutOfPath" ItemName="_Protobuf_NoRootElsewhere"/>
+    </FindUnderPath>
+    <ItemGroup>
+      <!-- Files with explicit metadata. -->
+      <Protobuf_Rooted Include="@(Protobuf->HasMetadata('ProtoRoot'))" />
+      <!-- In-project files will have ProtoRoot='.'. -->
+      <Protobuf_Rooted Include="@(_Protobuf_NoRootInProject)">
+        <ProtoRoot>.</ProtoRoot>
+      </Protobuf_Rooted>
+      <!-- Out-of-project files will have respective ProtoRoot='%(RelativeDir)'. -->
+      <Protobuf_Rooted Include="@(_Protobuf_NoRootElsewhere)">
+        <ProtoRoot>%(RelativeDir)</ProtoRoot>
+        <ProtoRoot Condition=" '$(Protobuf_ProtoRoot)' != '' ">$(Protobuf_ProtoRoot)</ProtoRoot>
+      </Protobuf_Rooted>
+    </ItemGroup>
+  </Target>
+
+  <!-- Select files that should be compiled. -->
+  <Target Name="_Protobuf_SelectFiles"
+          DependsOnTargets=" _Protobuf_SetProtoRoot">
+    <ItemGroup>
+      <!-- Files with explicit metadata. -->
+      <Protobuf_Compile Include="@(Protobuf_Rooted)" />
+      <!-- Remove files not for compile. -->
+      <Protobuf_Compile Remove="@(Protobuf_Compile)" Condition=" '%(ProtoCompile)' != 'true' " />
+      <!-- Ensure invariant Source=%(Identity). -->
+      <!-- Need to Unescape otherwise errors with characters such as '@' in paths 
+          See https://github.com/grpc/grpc/issues/30746
+          and https://github.com/dotnet/msbuild/issues/8104
+      -->
+      <Protobuf_Compile>
+        <Source>$([MSBuild]::Unescape(%(Identity)))</Source>
+      </Protobuf_Compile>
+    </ItemGroup>
+  </Target>
+
+  <!-- Extension point for non-C# project. Protobuf_Generator should be supported
+       by the ProtoCompile task, but we skip inferring expected outputs. All proto
+       files will be always recompiled with a warning, unless you add expectations
+       to the Protobuf_ExpectedOutputs collection.
+
+       All inferred ExpectedOutputs will be added to code compile (C#) in a C# project
+       by default. This is controlled per-proto by the CompileOutputs metadata. -->
+  <Target Name="Protobuf_PrepareCompile" Condition=" '@(Protobuf_Compile)' != '' ">
+    <!-- Predict expected names. -->
+    <ProtoCompilerOutputs Condition=" '$(Language)' == 'C#' "
+                          Protobuf="@(Protobuf_Compile)"
+                          Generator="$(Protobuf_Generator)">
+      <Output TaskParameter="PossibleOutputs" ItemName="Protobuf_ExpectedOutputs" />
+      <Output TaskParameter="PatchedProtobuf" ItemName="_PatchedProtobuf" />
+    </ProtoCompilerOutputs>
+    <!-- Replace Protobuf_Compile with PatchedProtobuf. -->
+    <ItemGroup>
+       <Protobuf_Compile Remove="@(_PatchedProtobuf)"/>
+       <Protobuf_Compile Include ="@(_PatchedProtobuf)"/>
+    </ItemGroup>
+    <!-- Read any dependency files from previous compiles. -->
+    <ProtoReadDependencies Condition=" '$(Protobuf_DepFilesPath)' != '' and '$(DisableProtobufDesignTimeBuild)' != 'true' "
+                           Protobuf="@(Protobuf_Compile)"
+                           ProtoDepDir="$(Protobuf_DepFilesPath)" >
+      <Output TaskParameter="Dependencies" ItemName="Protobuf_Dependencies" />
+    </ProtoReadDependencies>
+  </Target>
+
+  <!-- Add all expected outputs, and only these, to language compile.  -->
+  <Target Name="_Protobuf_AugmentLanguageCompile"
+          DependsOnTargets="_Protobuf_EnforceInvariants"
+          Condition=" '$(Language)' == 'C#' ">
+    <ItemGroup>
+      <_Protobuf_CodeCompile Include="@(Protobuf_ExpectedOutputs->Distinct())"
+         Condition=" '%(Source)' != '' and '@(Protobuf_Compile->WithMetadataValue('CompileOutputs', 'true'))' != '' " />
+      <!-- Adding Distinct() is just a precaution as the CSC compiler complains if there are 
+           duplicate source files
+      -->
+      <Compile Include="@(_Protobuf_CodeCompile->Distinct())" />
+    </ItemGroup>
+  </Target>
+
+  <!-- These invariants must be kept for compile up-to-date check to work. -->
+  <Target Name="_Protobuf_EnforceInvariants">
+    <!-- Enforce Source=Identity on proto files. The 'Source' metadata is used as a common
+         key to match dependencies/expected outputs in the lists for up-to-date checks. -->
+    <!--  Need to Unescape otherwise errors with characters such as '@' in paths 
+          See https://github.com/grpc/grpc/issues/30746
+          and https://github.com/dotnet/msbuild/issues/8104
+      -->
+    <ItemGroup>
+      <Protobuf_Compile>
+        <Source>$([MSBuild]::Unescape(%(Identity)))</Source>
+      </Protobuf_Compile>
+    </ItemGroup>
+
+    <!-- Remove possible output and dependency declarations that have no Source set, or those
+         not matching any proto marked for compilation. -->
+    <ItemGroup>
+      <Protobuf_ExpectedOutputs Remove="@(Protobuf_ExpectedOutputs)" Condition=" '%(Protobuf_ExpectedOutputs.Source)' == '' " />
+      <Protobuf_ExpectedOutputs Remove="@(Protobuf_ExpectedOutputs)" Condition=" '%(Source)' != '' and '@(Protobuf_Compile)' == '' " />
+      <Protobuf_Dependencies Remove="@(Protobuf_Dependencies)" Condition=" '%(Protobuf_Dependencies.Source)' == '' " />
+      <Protobuf_Dependencies Remove="@(Protobuf_Dependencies)" Condition=" '%(Source)' != '' and '@(Protobuf_Compile)' == '' " />
+    </ItemGroup>
+  </Target>
+
+  <!-- Gather files with and without known outputs, separately. -->
+  <Target Name="_Protobuf_GatherStaleFiles"
+          Condition=" '@(Protobuf_Compile)' != '' "
+          DependsOnTargets="_Protobuf_EnforceInvariants; _Protobuf_GatherStaleSimple; _Protobuf_GatherStaleBatched">
+    <ItemGroup>
+      <!-- Drop outputs from MSBuild inference (they won't have the '_Exec' metadata).  -->
+      <_Protobuf_OutOfDateProto Remove="@(_Protobuf_OutOfDateProto->WithMetadataValue('_Exec',''))" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="_Protobuf_GatherStaleSimple">
+    <!-- Simple selection: always compile files that have no declared outputs (but warn below). -->
+    <ItemGroup>
+      <_Protobuf_OutOfDateProto Include="@(Protobuf_Compile)"
+                                Condition = " '%(Source)' != '' and '@(Protobuf_ExpectedOutputs)' == '' ">
+        <_Exec>true</_Exec>
+      </_Protobuf_OutOfDateProto>
+    </ItemGroup>
+
+    <!-- You are seeing this warning because there was no Protobuf_ExpectedOutputs items with
+         their Source attribute pointing to the proto files listed in the warning. Such files
+         will be recompiled on every build, as there is nothing to run up-to-date check against.
+         Set Protobuf_NoOrphanWarning to 'true' to suppress if this is what you want. -->
+    <Warning Condition=" '@(_Protobuf_OutOfDateProto)' != '' and '$(Protobuf_NoOrphanWarning)' != 'true' "
+             Text="The following files have no known outputs, and will be always recompiled as if out-of-date:&#10;@(_Protobuf_Orphans->'&#10;    %(Identity)', '')" />
+  </Target>
+
+  <Target Name="_Protobuf_GatherStaleBatched"
+          Inputs="@(Protobuf_Compile);%(Source);@(Protobuf_Dependencies);$(MSBuildAllProjects)"
+          Outputs="@(Protobuf_ExpectedOutputs)" >
+    <!-- The '_Exec' metadatum is set to distinguish really executed items from those MSBuild so
+         "helpfully" infers in a bucketed task. For the same reason, cannot use the intrinsic
+         ItemGroup task here. -->
+    <CreateItem Include="@(Protobuf_Compile)" AdditionalMetadata="_Exec=true">
+      <Output TaskParameter="Include" ItemName="_Protobuf_OutOfDateProto"/>
+    </CreateItem>
+  </Target>
+
+  <!-- Extension point: Plugins massage metadata into recognized metadata
+       values passed to the ProtoCompile task. -->
+  <Target Name="Protobuf_PrepareCompileOptions" Condition=" '@(Protobuf_Compile)' != '' ">
+    <ItemGroup>
+      <Protobuf_Compile>
+        <_OutputOptions Condition=" '%(Protobuf_Compile.Access)' == 'Internal' ">%(Protobuf_Compile._OutputOptions);internal_access</_OutputOptions>
+      </Protobuf_Compile>
+    </ItemGroup>
+  </Target>
+
+  <Target Name="_Protobuf_CoreCompile"
+          Condition=" '$(DisableProtobufDesignTimeBuild)' != 'true' "
+          DependsOnTargets="Protobuf_PrepareCompileOptions;_Protobuf_GatherStaleFiles">
+    <!-- Ensure output directories. -->
+    <MakeDir Directories="%(_Protobuf_OutOfDateProto.OutputDir)" />
+    <MakeDir Directories="%(_Protobuf_OutOfDateProto.GrpcOutputDir)" />
+    <MakeDir Directories="$(Protobuf_DepFilesPath)" />
+
+    <!-- Force output to the current directory if the user has set it to empty. -->
+    <ItemGroup>
+      <_Protobuf_OutOfDateProto>
+        <OutputDir Condition=" '%(OutputDir)' == '' ">.</OutputDir>
+      </_Protobuf_OutOfDateProto>
+    </ItemGroup>
+
+    <ProtoCompile Condition=" '@(_Protobuf_OutOfDateProto)' != '' "
+      ToolExe="$(Protobuf_ProtocFullPath)"
+      Generator="$(Protobuf_Generator)"
+      Protobuf="%(_Protobuf_OutOfDateProto.Source)"
+      ProtoPath="%(_Protobuf_OutOfDateProto.AdditionalImportDirs);$(Protobuf_StandardImportsPath);%(_Protobuf_OutOfDateProto.ProtoRoot)"
+      ProtoDepDir="$(Protobuf_DepFilesPath)"
+      OutputDir="%(_Protobuf_OutOfDateProto.OutputDir)"
+      OutputOptions="%(_Protobuf_OutOfDateProto.OutputOptions);%(_Protobuf_OutOfDateProto._OutputOptions)"
+      GrpcPluginExe="%(_Protobuf_OutOfDateProto.GrpcPluginExe)"
+      GrpcOutputDir="%(_Protobuf_OutOfDateProto.GrpcOutputDir)"
+      GrpcOutputOptions="%(_Protobuf_OutOfDateProto.GrpcOutputOptions);%(_Protobuf_OutOfDateProto._GrpcOutputOptions)"
+      AdditionalProtocArguments="%(_Protobuf_OutOfDateProto.AdditionalProtocArguments)"
+    >
+      <Output TaskParameter="GeneratedFiles" ItemName="_Protobuf_GeneratedFiles"/>
+    </ProtoCompile>
+
+    <!-- Compute files expected but not in fact produced by protoc. -->
+    <ItemGroup Condition=" '@(_Protobuf_OutOfDateProto)' != '' ">
+      <Protobuf_ExpectedNotGenerated Include="@(Protobuf_ExpectedOutputs)"
+                                     Condition=" '%(Source)' != '' and '@(_Protobuf_OutOfDateProto)' != '' " />
+      <Protobuf_ExpectedNotGenerated Remove="@(_Protobuf_GeneratedFiles)" />
+    </ItemGroup>
+  </Target>
+
+  <!-- Extension point. Plugins and/or unsupported projects may take special care of the
+       Protobuf_ExpectedNotGenerated list in BeforeTargets. We just silently create the
+       missing outputs so that out-of-date checks work (we do not add them to language
+       compile though). You can empty this collection in your Before targets to do nothing.
+       The target is not executed if the proto compiler is not executed. -->
+  <Target Name="Protobuf_ReconcileOutputs"
+          Condition=" '$(DisableProtobufDesignTimeBuild)' != 'true' ">
+    <!-- Warn about unexpected/missing files outside object file directory only.
+         This should have happened because build was incorrectly customized. -->
+    <FindUnderPath Path="$(BaseIntermediateOutputPath)" Files="@(Protobuf_ExpectedNotGenerated)">
+      <Output TaskParameter="InPath" ItemName="_Protobuf_ExpectedNotGeneratedInTemp"/>
+      <Output TaskParameter="OutOfPath" ItemName="_Protobuf_ExpectedNotGeneratedElsewhere"/>
+    </FindUnderPath>
+
+    <!-- Prevent unnecessary recompilation by silently creating empty files. This probably
+         has happened because a proto file with an rpc service was processed by the gRPC
+         plugin, and the user did not set GrpcOutput to None. When we treat outputs as
+         transient, we can do it permissively. -->
+    <Touch Files="@(_Protobuf_ExpectedNotGeneratedInTemp)" AlwaysCreate="true" />
+
+    <!-- Also create empty files outside of the intermediate directory, if the user wants so. -->
+    <Touch Files="@(_Protobuf_ExpectedNotGeneratedElsewhere)" AlwaysCreate="true"
+           Condition=" '$(Protobuf_TouchMissingExpected)' == 'true' "/>
+
+    <!-- You are seeing this warning because there were some Protobuf_ExpectedOutputs items
+         (outside of the transient directory under obj/) not in fact produced by protoc. -->
+    <Warning Condition=" '@(_Protobuf_ExpectedNotGeneratedElsewhere)' != '' and $(Protobuf_NoWarnMissingExpected) != 'true' "
+             Text="Some expected protoc outputs were not generated.&#10;@(_Protobuf_ExpectedNotGeneratedElsewhere->'&#10;    %(Identity)', '')" />
+  </Target>
+
+  <!--================================================================================
+                                   Proto cleanup
+   =================================================================================-->
+
+  <!-- We fully support cleanup only in a C# project. If extending the build for other
+       generators/plugins, then mostly roll your own. -->
+
+  <!-- Extension points. -->
+  <Target Name="Protobuf_BeforeClean" />
+  <Target Name="Protobuf_AfterClean" />
+
+  <!-- Main cleanup sequence. -->
+  <Target Name="Protobuf_Clean"
+          Condition=" '@(Protobuf)' != '' "
+          DependsOnTargets=" Protobuf_BeforeClean;
+                             _Protobuf_SetProtoRoot;
+                             Protobuf_PrepareClean;
+                             _Protobuf_CoreClean;
+                             Protobuf_AfterClean" />
+
+  <!-- Do proto cleanup by default in a C# project. In other types, the user should
+       invoke Protobuf_Clean directly if required. -->
+  <Target Name="_Protobuf_Clean_AfterCsClean"
+          AfterTargets="CoreClean"
+          DependsOnTargets="Protobuf_Clean"
+          Condition=" '$(Protobuf_ProjectSupported)' == 'true' and '$(Language)' == 'C#' " />
+
+  <!-- Extension point for non-C# project. ProtoCompilerOutputs is not invoked for
+       non-C# projects, since inferring protoc outputs is required, so this is a
+       no-op in other project types. In your extension target populate the
+       Protobuf_ExpectedOutputs with all possible output. An option is to include
+       all existing outputs using Include with a wildcard, if you know where to look.
+
+       Note this is like Protobuf_PrepareCompile, but uses @(Protobuf_Rooted) regardless
+       of the Compile metadata, to remove all possible outputs. Plugins should err
+       on the side of overextending the Protobuf_ExpectedOutputs here.
+
+       All ExpectedOutputs will be removed. -->
+  <Target Name="Protobuf_PrepareClean" Condition=" '@(Protobuf_Rooted)' != '' ">
+    <!-- Predict expected names. -->
+    <ProtoCompilerOutputs Condition=" '$(Language)' == 'C#' "
+                          Protobuf="@(Protobuf_Rooted)"
+                          Generator="$(Protobuf_Generator)">
+      <Output TaskParameter="PossibleOutputs" ItemName="Protobuf_ExpectedOutputs" />
+    </ProtoCompilerOutputs>
+  </Target>
+
+  <Target Name="_Protobuf_CoreClean">
+    <ItemGroup>
+      <_Protobuf_Protodep Include="$(Protobuf_DepFilesPath)*.protodep" />
+    </ItemGroup>
+    <Delete Files="@(Protobuf_ExpectedOutputs);@(_Protobuf_Protodep)" TreatErrorsAsWarnings="true" />
+  </Target>
+
+  <!--================================================================================
+                                  Design-time support
+   =================================================================================-->
+
+  <!-- Add all .proto files to the SourceFilesProjectOutputGroupOutput, so that:
+       * Visual Studio triggers a build when any of them changed;
+       * The Pack target includes .proto files into the source package.  -->
+  <Target Name="_Protobuf_SourceFilesProjectOutputGroup"
+          BeforeTargets="SourceFilesProjectOutputGroup"
+          Condition=" '@(Protobuf)' != '' " >
+    <ItemGroup>
+      <SourceFilesProjectOutputGroupOutput Include="@(Protobuf->'%(FullPath)')" />
+    </ItemGroup>
+  </Target>
+</Project>

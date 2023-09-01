@@ -1,0 +1,39 @@
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+option java_package = "ex.grpc";
+option objc_class_prefix = "HSW";
+
+package hellostreamingworld;
+
+// The greeting service definition.
+service MultiGreeter {
+  // Sends multiple greetings
+  rpc sayHello (HelloRequest) returns (stream HelloReply) {}
+}
+
+// The request message containing the user's name and how many greetings
+// they want.
+message HelloRequest {
+  string name = 1;
+  string num_greetings = 2;
+}
+
+// A response message containing a greeting
+message HelloReply {
+  string message = 1;
+}
+

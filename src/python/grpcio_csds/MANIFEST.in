@@ -1,0 +1,4 @@
+include grpc_version.py
+recursive-include grpc_csds *.py
+global-exclude *.pyc
+include LICENSE

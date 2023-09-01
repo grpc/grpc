@@ -1,0 +1,23 @@
+import %workspace%/tools/remote_build/include/rbe_remote_execution.bazelrc
+
+# Next section is windows-specific RBE configuration
+build --crosstool_top=//third_party/toolchains:rbe_windows_default_toolchain_suite
+build --extra_toolchains=//third_party/toolchains:rbe_windows_default_cc_toolchain
+# Use custom execution platforms defined in third_party/toolchains
+build --extra_execution_platforms=//third_party/toolchains:rbe_windows_default_platform
+build --host_platform=//third_party/toolchains:rbe_windows_default_platform
+build --platforms=//third_party/toolchains:rbe_windows_default_platform
+# Needs to match the location of binaries in the RBE docker container
+build --shell_executable=C:\\msys64\\usr\\bin\\bash.exe
+build --python_path="C:\\Program Files\\Python310\\python.exe"
+
+build --test_tag_filters=-no_windows
+build --build_tag_filters=-no_windows
+
+build --jobs=100
+
+# Without this the build is broken on windows RBE with bazel 6.x+
+# TODO(jtattermusch): Remove the workaround.
+build --dynamic_mode=off
+
+import %workspace%/tools/remote_build/include/test_config_common.bazelrc

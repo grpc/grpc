@@ -1,0 +1,40 @@
+#=================
+# Basic C core dependencies
+
+# C/C++ dependencies according to https://github.com/grpc/grpc/blob/master/BUILDING.md
+RUN apt-get update && apt-get install -y ${'\\'}
+  build-essential ${'\\'}
+  autoconf ${'\\'}
+  libtool ${'\\'}
+  pkg-config ${'\\'}
+  && apt-get clean
+
+# GCC
+RUN apt-get update && apt-get install -y ${'\\'}
+  gcc ${'\\'}
+  g++ ${'\\'}
+  && apt-get clean
+
+# libc6
+RUN apt-get update && apt-get install -y ${'\\'}
+  libc6 ${'\\'}
+  libc6-dbg ${'\\'}
+  libc6-dev ${'\\'}
+  && apt-get clean
+
+# Tools
+RUN apt-get update && apt-get install -y ${'\\'}
+  bzip2 ${'\\'}
+  curl ${'\\'}
+  dnsutils ${'\\'}
+  git ${'\\'}
+  lcov ${'\\'}
+  make ${'\\'}
+  strace ${'\\'}
+  time ${'\\'}
+  unzip ${'\\'}
+  wget ${'\\'}
+  zip ${'\\'}
+  && apt-get clean
+
+<%include file="git_avoid_dubious_ownership_error.include"/>

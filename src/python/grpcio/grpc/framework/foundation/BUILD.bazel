@@ -1,0 +1,60 @@
+# Copyright 2021 The gRPC Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+package(default_visibility = ["//visibility:public"])
+
+py_library(
+    name = "foundation",
+    srcs = ["__init__.py"],
+    deps = [
+        ":abandonment",
+        ":callable_util",
+        ":future",
+        ":logging_pool",
+        ":stream",
+        ":stream_util",
+    ],
+)
+
+py_library(
+    name = "abandonment",
+    srcs = ["abandonment.py"],
+)
+
+py_library(
+    name = "callable_util",
+    srcs = ["callable_util.py"],
+)
+
+py_library(
+    name = "future",
+    srcs = ["future.py"],
+)
+
+py_library(
+    name = "logging_pool",
+    srcs = ["logging_pool.py"],
+)
+
+py_library(
+    name = "stream_util",
+    srcs = ["stream_util.py"],
+    deps = [
+        ":stream",
+    ],
+)
+
+py_library(
+    name = "stream",
+    srcs = ["stream.py"],
+)

@@ -1,0 +1,16 @@
+#==================
+# Node dependencies
+
+# Install nvm
+RUN groupadd -g 999 appuser && useradd -r -u 999 -g appuser appuser
+RUN mkdir -p /home/appuser && chown appuser /home/appuser
+RUN chmod 777 /root
+USER appuser
+RUN touch ~/.profile
+RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
+# Install all versions of node that we want to test
+RUN /bin/bash -l -c "nvm install 16 && npm config set cache /tmp/npm-cache"
+RUN /bin/bash -l -c "nvm alias default 16"
+
+# Include the git workaround also for the user "appuser" we just created.
+<%include file="./git_avoid_dubious_ownership_error.include"/>

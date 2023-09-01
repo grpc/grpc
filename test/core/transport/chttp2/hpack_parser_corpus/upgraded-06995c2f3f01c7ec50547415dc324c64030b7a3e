@@ -1,0 +1,4 @@
+frames {
+  max_metadata_length: 4096
+  parse: "\x2e\x00\xa4\x63"
+}

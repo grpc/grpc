@@ -1,0 +1,49 @@
+# a set of tests that are run in parallel for sanity tests
+- script: tools/run_tests/sanity/check_absl_mutex.sh
+- script: tools/run_tests/sanity/check_bad_dependencies.sh
+- script: tools/run_tests/sanity/check_bazel_workspace.py
+- script: tools/run_tests/sanity/check_banned_filenames.py
+- script: tools/run_tests/sanity/check_buildifier.sh
+- script: tools/run_tests/sanity/check_cache_mk.sh
+- script: tools/run_tests/sanity/check_deprecated_grpc++.py
+- script: tools/run_tests/sanity/check_do_not_submit.sh
+- script: tools/run_tests/sanity/check_illegal_terms.sh
+- script: tools/run_tests/sanity/check_owners.sh
+- script: tools/run_tests/sanity/check_port_platform.py
+- script: tools/run_tests/sanity/check_include_style.py
+- script: tools/run_tests/sanity/check_qps_scenario_changes.py
+- script: tools/run_tests/sanity/check_shellcheck.sh
+- script: tools/run_tests/sanity/check_submodules.sh
+- script: tools/run_tests/sanity/check_test_filtering.py
+- script: tools/run_tests/sanity/check_testing_docker_images.sh
+- script: tools/run_tests/sanity/check_tracer_sanity.py
+- script: tools/run_tests/sanity/check_version.sh
+- script: tools/run_tests/sanity/core_banned_functions.py
+- script: tools/run_tests/sanity/core_untyped_structs.sh
+- script: tools/run_tests/sanity/cpp_banned_constructs.sh
+- script: tools/run_tests/sanity/check_package_name.py
+- script: tools/buildgen/generate_projects.sh -j 3
+  cpu_cost: 3
+- script: tools/distrib/check_copyright.py
+- script: tools/distrib/check_include_guards.py
+- script: tools/distrib/check_naked_includes.py
+- script: tools/distrib/check_trailing_newlines.sh
+- script: tools/distrib/check_upb_output.sh
+- script: tools/distrib/check_pytype.sh
+- script: tools/codegen/core/gen_grpc_tls_credentials_options.py --test
+- script: tools/distrib/clang_format_code.sh
+  cpu_cost: 1000
+- script: tools/distrib/gen_experiments_and_format.sh --check
+  cpu_cost: 1000
+- script: tools/distrib/pylint_code.sh
+- script: tools/distrib/python/check_grpcio_tools.py
+- script: tools/distrib/black_code.sh --check
+  cpu_cost: 1000
+- script: tools/distrib/isort_code.sh --diff
+  cpu_cost: 1000
+- script: tools/distrib/check_protobuf_pod_version.sh
+- script: tools/distrib/check_boringssl_prefix_symbol.sh
+- script: tools/run_tests/sanity/build_banned_constructs.sh
+- script: tools/distrib/check_redundant_namespace_qualifiers.py
+- script: tools/distrib/check_namespace_qualification.py
+- script: tools/distrib/check_path_length.py

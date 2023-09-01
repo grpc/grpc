@@ -1,0 +1,28 @@
+recursive-include src/python/grpcio/grpc *.c *.h *.inc *.py *.pyx *.pxd *.pxi *.python *.pem
+recursive-exclude src/python/grpcio/grpc/_cython *.so *.pyd
+graft src/python/grpcio/grpcio.egg-info
+graft src/core
+graft src/boringssl
+graft include/grpc
+graft third_party/abseil-cpp/absl
+graft third_party/address_sorting
+graft third_party/boringssl-with-bazel
+graft third_party/cares
+graft third_party/re2
+graft third_party/upb
+graft third_party/utf8_range
+graft third_party/xxhash
+graft third_party/zlib
+include src/python/grpcio/_parallel_compile_patch.py
+include src/python/grpcio/_spawn_patch.py
+include src/python/grpcio/commands.py
+include src/python/grpcio/grpc_version.py
+include src/python/grpcio/grpc_core_dependencies.py
+include src/python/grpcio/precompiled.py
+include src/python/grpcio/support.py
+include src/python/grpcio/README.rst
+include requirements.txt
+include etc/roots.pem
+include Makefile
+include LICENSE
+include _metadata.py

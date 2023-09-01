@@ -1,0 +1,70 @@
+%YAML 1.2
+--- |
+  // $Id$
+  // vim:ft=javascript
+
+  ARG_WITH("grpc", "grpc support", "no");
+
+  if (PHP_GRPC != "no") {
+  <%
+    srcs = []
+    srcs.extend(php_config_m4.src)
+    lib_maps = {lib.name: lib for lib in libs}
+    php_deps = php_config_m4.get('deps', [])
+    php_full_deps = []
+    for dep in php_deps:
+      php_full_deps.append(dep)
+      lib = lib_maps.get(dep, None)
+      if lib:
+        php_full_deps.extend(lib.transitive_deps)
+    # construct list of all source files, but explicitly exclude cares
+    for dep in set(php_full_deps) - set({'cares'}):
+      lib = lib_maps.get(dep, None)
+      if lib:
+        srcs.extend(lib.src)
+    srcs = sorted(set(srcs))
+  %>
+    EXTENSION("grpc",
+      % for src in srcs:
+      "${src.replace('/','\\\\')} " +
+      % endfor
+      ""
+      , null,
+      "/DOPENSSL_NO_ASM /D_GNU_SOURCE /DWIN32_LEAN_AND_MEAN "+
+      "/D_HAS_EXCEPTIONS=0 /DNOMINMAX /DGRPC_ARES=0 /D_WIN32_WINNT=0x600 "+
+      "/I"+configure_module_dirname+" "+
+      "/I"+configure_module_dirname+"\\include "+
+      "/I"+configure_module_dirname+"\\src\\core\\ext\\upb-generated "+
+      "/I"+configure_module_dirname+"\\src\\core\\ext\\upbdefs-generated "+
+      "/I"+configure_module_dirname+"\\src\\php\\ext\\grpc "+
+      "/I"+configure_module_dirname+"\\third_party\\abseil-cpp "+
+      "/I"+configure_module_dirname+"\\third_party\\address_sorting\\include "+
+      "/I"+configure_module_dirname+"\\third_party\\boringssl-with-bazel\\src\\include "+
+      "/I"+configure_module_dirname+"\\third_party\\re2 "+
+      "/I"+configure_module_dirname+"\\third_party\\upb "+
+      "/I"+configure_module_dirname+"\\third_party\\utf8_range "+
+      "/I"+configure_module_dirname+"\\third_party\\xxhash "+
+      "/I"+configure_module_dirname+"\\third_party\\zlib ");
+  <%
+    dirs = sorted(set(src[:src.rfind('/')] for src in srcs))
+    dirset = set(dirs)
+    for dir in dirs:
+      frags = dir.split('/')
+      for i in range(1, len(frags)):
+        dirset.add('/'.join(frags[:i]))
+    dirs = [d.replace('/', '\\\\') for d in sorted(dirset)]
+  %>
+    base_dir = get_define('BUILD_DIR');
+    FSO.CreateFolder(base_dir+"\\ext");
+    FSO.CreateFolder(base_dir+"\\ext\\grpc");
+    % for dir in dirs:
+    FSO.CreateFolder(base_dir+"\\ext\\grpc\\${dir}");
+    % endfor
+    _build_dirs = new Array();
+    for (i = 0; i < build_dirs.length; i++) {
+      if (build_dirs[i].indexOf('grpc') == -1) {
+        _build_dirs[_build_dirs.length] = build_dirs[i];
+      }
+    }
+    build_dirs = _build_dirs;
+  }

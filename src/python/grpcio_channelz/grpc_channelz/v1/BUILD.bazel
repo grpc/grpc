@@ -1,0 +1,40 @@
+# Copyright 2021 The gRPC Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+load("//bazel:python_rules.bzl", "py_grpc_library", "py_proto_library")
+
+package(default_visibility = ["//visibility:public"])
+
+py_proto_library(
+    name = "channelz_py_pb2",
+    imports = ["../../"],
+    deps = ["//src/proto/grpc/channelz:channelz_proto_descriptors"],
+)
+
+py_grpc_library(
+    name = "channelz_py_pb2_grpc",
+    srcs = ["//src/proto/grpc/channelz:channelz_proto_descriptors"],
+    strip_prefixes = ["src.python.grpcio_channelz."],
+    deps = [":channelz_py_pb2"],
+)
+
+py_library(
+    name = "grpc_channelz",
+    srcs = glob(["*.py"]),
+    imports = ["../../"],
+    deps = [
+        ":channelz_py_pb2",
+        ":channelz_py_pb2_grpc",
+        "//src/python/grpcio/grpc:grpcio",
+    ],
+)

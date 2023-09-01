@@ -1,0 +1,163 @@
+The test credentials (CONFIRMEDTESTKEY) have been generated with the following
+commands:
+
+Bad credentials (badclient.* / badserver.*):
+============================================
+
+These are self-signed certificates:
+
+$ openssl req -x509 -newkey rsa:2048 -keyout badserver.key -out badserver.pem \
+  -days 3650 -nodes
+
+When prompted for certificate information, everything is default except the
+common name which is set to badserver.test.google.com.
+
+
+Valid test credentials:
+=======================
+
+The ca is self-signed:
+----------------------
+
+$ openssl req -x509 -new -newkey rsa:2048 -nodes -keyout ca.key -out ca.pem \
+  -config ca-openssl.cnf -days 3650 -extensions v3_req
+When prompted for certificate information, everything is default.
+
+client is issued by CA:
+-----------------------
+
+$ openssl genrsa -out client.key.rsa 2048
+$ openssl pkcs8 -topk8 -in client.key.rsa -out client.key -nocrypt
+$ openssl req -new -key client.key -out client.csr
+
+When prompted for certificate information, everything is default except the
+common name which is set to testclient.
+
+$ openssl x509 -req -CA ca.pem -CAkey ca.key -CAcreateserial -in client.csr \
+  -out client.pem -days 3650
+
+client1 is issued by CA:
+-----------------------
+
+$ openssl genrsa -out client1.key.rsa 2048
+$ openssl pkcs8 -topk8 -in client1.key.rsa -out client1.key -nocrypt
+$ openssl req -new -key client1.key -out client1.csr
+
+When prompted for certificate information, everything is default except the
+common name which is set to testclient1.
+
+$ openssl x509 -req -CA ca.pem -CAkey ca.key -CAcreateserial -in client1.csr \
+  -out client1.pem -days 3650
+
+client2 is issued by CA:
+-----------------------
+
+$ openssl genrsa -out client2.key.rsa 2048
+$ openssl pkcs8 -topk8 -in client2.key.rsa -out client2.key -nocrypt
+$ openssl req -new -key client2.key -out client2.csr
+
+When prompted for certificate information, everything is default except the
+common name which is set to testclient2.
+
+$ openssl x509 -req -CA ca.pem -CAkey ca.key -CAcreateserial -in client2.csr \
+  -out client2.pem -days 3650
+
+client-with-spiffe is issued by CA:
+-----------------------
+
+$ openssl genrsa -out client-with-spiffe.key.rsa 2048
+$ openssl pkcs8 -topk8 -in client-with-spiffe.key.rsa -out client-with-spiffe.key -nocrypt
+$ openssl req -new -key client-with-spiffe.key -out client-with-spiffe.csr -config client-with-spiffe-openssl.cnf
+$ openssl x509 -req -CA ca.pem -CAkey ca.key -CAcreateserial -in client-with-spiffe.csr \
+  -out client-with-spiffe.pem -extensions v3_req -extfile client-with-spiffe-openssl.cnf -days 3650
+
+server0 is issued by CA:
+------------------------
+
+$ openssl genrsa -out server0.key.rsa 2048
+$ openssl pkcs8 -topk8 -in server0.key.rsa -out server0.key -nocrypt
+$ openssl req -new -key server0.key -out server0.csr
+
+When prompted for certificate information, everything is default except the
+common name which is set to *.test.google.com.au.
+
+$ openssl x509 -req -CA ca.pem -CAkey ca.key -CAcreateserial -in server0.csr \
+  -out server0.pem -days 3650
+
+server1 is issued by CA with a special config for subject alternative names:
+----------------------------------------------------------------------------
+
+$ openssl genrsa -out server1.key.rsa 2048
+$ openssl pkcs8 -topk8 -in server1.key.rsa -out server1.key -nocrypt
+$ openssl req -new -key server1.key -out server1.csr -config server1-openssl.cnf
+
+When prompted for certificate information, everything is default except the
+common name which is set to *.test.google.com.
+
+$ openssl x509 -req -CA ca.pem -CAkey ca.key -CAcreateserial -in server1.csr \
+  -out server1.pem -extensions req_ext -extfile server1-openssl.cnf -days 3650
+
+multi-domain is a self-signed certificate having multiple subject alternative
+names:
+----------------------------------------------------------------------------
+
+$ openssl genrsa -out multi-domain.key.rsa 2048
+$ openssl pkcs8 -topk8 -in multi-domain.key.rsa -out multi-domain.key -nocrypt
+$ openssl req -new -key multi-domain.key -out multi-domain.csr -config
+multi-domain-openssl.cnf
+$ openssl req -x509 -new -extensions v3_req -key multi-domain.key -out
+multi-domain.pem -days 3650 -config multi-domain-openssl.cnf
+
+
+Generate a chain with a leaf cert signed by an intermediate CA
+----------------------------------------------------------------------------
+
+The fully verified chain will be root_ca -> intermediate_ca -> leaf
+
+Generating the intermediate CA
+$ openssl genrsa -out temp.rsa 2048
+$ openssl pkcs8 -topk8 -in temp.rsa -out intermediate_ca.key -nocrypt
+$ rm temp.rsa
+$ openssl req -key intermediate_ca.key -new -out temp.csr -config intermediate.cnf
+$ openssl x509 -req -days 3650 -in temp.csr -CA ca.pem -CAkey ca.key -CAcreateserial -out intermediate_ca.pem -extfile intermediate.cnf -extensions 'v3_req'
+
+Generating the leaf and chain
+$ openssl genrsa -out temp.rsa 2048
+$ openssl pkcs8 -topk8 -in temp.rsa -out leaf_signed_by_intermediate.key -nocrypt
+$ openssl req -key leaf_signed_by_intermediate.key -new -out temp.csr -config leaf_signed_by_intermediate.cnf
+$ openssl x509 -req -days 3650 -in temp.csr -CA intermediate_ca.pem -CAkey intermediate_ca.key -CAcreateserial -out leaf_signed_by_intermediate.pem -extfile leaf_signed_by_intermediate.cnf -extensions 'v3_req'
+$ cat leaf_signed_by_intermediate.pem intermediate_ca.pem > leaf_and_intermediate_chain.pem
+
+
+
+Clean up:
+---------
+$ rm *.rsa
+$ rm *.csr
+$ rm ca.srl
+
+Sync up with other repositories
+===============================
+
+Copies of these keys exist in multiple locations across all the grpc repos
+(e.g., see the following partial list). You need to be careful when updating
+the keys.
+
+grpc-dart/interop/
+grpc-dotnet/testassets/Certs/InteropTests/
+grpc-go/testdata/
+grpc-java/testing/src/main/resources/certs/
+grpc-node/test/data/
+src/objective-c/tests/TestCertificates.bundle/
+src/php/tests/data/
+src/python/grpcio_tests/tests/interop/credentials/
+src/python/grpcio_tests/tests/unit/credentials/
+src/ruby/spec/testdata/
+test/core/end2end/data/
+
+The following keys/certs are not distributed through multiple grpc repos yet,
+since they are only used in grpc core tests:
+
+multi-domain.*
+client1.*
+client2.*

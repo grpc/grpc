@@ -1,0 +1,214 @@
+'#1': This file describes the list of targets and dependencies.
+'#2': It is used among other things to generate all of our project files.
+'#3': Please refer to the templates directory for more information.
+settings:
+  '#01': The public version number of the library.
+  '#02': ===
+  '#03': Please update the 'g_stands_for' field periodically with a new g word
+  '#04': not listed in doc/g_stands_for.md - and update that document to list the
+  '#05': new word. When doing so, please also update BUILD.
+  '#06': ===
+  '#07': Master always has a "-dev" suffix
+  '#08': Use "-preN" suffixes to identify pre-release versions
+  '#09': Per-language overrides are possible with (eg) ruby_version tag here
+  '#10': See the expand_version.py for all the quirks here
+  core_version: 35.0.0
+  csharp_major_version: 2
+  g_stands_for: generative
+  protobuf_version: 3.24.2
+  version: 1.59.0-dev
+configs:
+  asan:
+    CC: clang
+    CPPFLAGS: -O0 -fsanitize-coverage=edge,trace-pc-guard -fsanitize=address -fno-omit-frame-pointer
+      -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
+    CXX: clang++
+    LD: clang++
+    LDFLAGS: -fsanitize=address
+    LDXX: clang++
+    compile_the_world: true
+    test_environ:
+      ASAN_OPTIONS: detect_leaks=1:color=always
+      LSAN_OPTIONS: suppressions=test/core/util/lsan_suppressions.txt:report_objects=1
+  asan-noleaks:
+    CC: clang
+    CPPFLAGS: -O0 -fsanitize-coverage=edge,trace-pc-guard -fsanitize=address -fno-omit-frame-pointer
+      -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
+    CXX: clang++
+    LD: clang++
+    LDFLAGS: fsanitize=address
+    LDXX: clang++
+    compile_the_world: true
+    test_environ:
+      ASAN_OPTIONS: detect_leaks=0:color=always
+  asan-trace-cmp:
+    CC: clang
+    CPPFLAGS: -O0 -fsanitize-coverage=edge,trace-pc-guard -fsanitize-coverage=trace-cmp
+      -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument
+      -DGPR_NO_DIRECT_SYSCALLS
+    CXX: clang++
+    LD: clang++
+    LDFLAGS: -fsanitize=address
+    LDXX: clang++
+    compile_the_world: true
+    test_environ:
+      ASAN_OPTIONS: detect_leaks=1:color=always
+      LSAN_OPTIONS: suppressions=test/core/util/lsan_suppressions.txt:report_objects=1
+  c++-compat:
+    CFLAGS: -Wc++-compat
+    CPPFLAGS: -O0
+    DEFINES: _DEBUG DEBUG
+  dbg:
+    CPPFLAGS: -O0
+    DEFINES: _DEBUG DEBUG
+  gcov:
+    CC: gcc
+    CPPFLAGS: -O0 -fprofile-arcs -ftest-coverage -Wno-return-type
+    CXX: g++
+    DEFINES: _DEBUG DEBUG GPR_GCOV
+    LD: gcc
+    LDFLAGS: -fprofile-arcs -ftest-coverage -rdynamic -lstdc++
+    LDXX: g++
+  helgrind:
+    CPPFLAGS: -O0
+    DEFINES: _DEBUG DEBUG
+    LDFLAGS: -rdynamic
+    valgrind: --tool=helgrind
+  lto:
+    CPPFLAGS: -O2
+    DEFINES: NDEBUG
+  memcheck:
+    CPPFLAGS: -O0
+    DEFINES: _DEBUG DEBUG
+    LDFLAGS: -rdynamic
+    valgrind: --tool=memcheck --leak-check=full
+  msan:
+    CC: clang
+    CPPFLAGS: -O0 -stdlib=libc++ -fsanitize-coverage=edge,trace-pc-guard -fsanitize=memory
+      -fsanitize-memory-track-origins -fsanitize-memory-use-after-dtor -fno-omit-frame-pointer
+      -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-unused-command-line-argument
+      -fPIE -pie -DGPR_NO_DIRECT_SYSCALLS
+    CXX: clang++
+    DEFINES: NDEBUG
+    LD: clang++
+    LDFLAGS: -stdlib=libc++ -fsanitize=memory -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1
+      -fPIE -pie $(if $(JENKINS_BUILD),-Wl$(comma)-Ttext-segment=0x7e0000000000,)
+    LDXX: clang++
+    compile_the_world: true
+    test_environ:
+      MSAN_OPTIONS: poison_in_dtor=1
+  noexcept:
+    CPPFLAGS: -O2 -Wframe-larger-than=16384
+    CXXFLAGS: -fno-exceptions
+    DEFINES: NDEBUG
+  opt:
+    CPPFLAGS: -O2 -Wframe-larger-than=16384
+    DEFINES: NDEBUG
+  tsan:
+    CC: clang
+    CPPFLAGS: -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument
+      -DGPR_NO_DIRECT_SYSCALLS
+    CXX: clang++
+    DEFINES: GRPC_TSAN
+    LD: clang++
+    LDFLAGS: -fsanitize=thread
+    LDXX: clang++
+    compile_the_world: true
+    test_environ:
+      TSAN_OPTIONS: suppressions=test/core/util/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1
+  ubsan:
+    CC: clang
+    CPPFLAGS: -O0 -stdlib=libc++ -fsanitize-coverage=edge,trace-pc-guard -fsanitize=undefined
+      -fno-omit-frame-pointer -Wno-unused-command-line-argument -Wvarargs
+    CXX: clang++
+    DEFINES: NDEBUG GRPC_UBSAN
+    LD: clang++
+    LDFLAGS: -stdlib=libc++ -fsanitize=undefined,unsigned-integer-overflow
+    LDXX: clang++
+    compile_the_world: true
+    test_environ:
+      UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1:suppressions=test/core/util/ubsan_suppressions.txt
+defaults:
+  abseil:
+    CPPFLAGS: -g -Ithird_party/abseil-cpp
+  benchmark:
+    CPPFLAGS: -Ithird_party/benchmark/include -DHAVE_POSIX_REGEX
+  boringssl:
+    CFLAGS: -g
+    CPPFLAGS: -Ithird_party/boringssl-with-bazel/src/include -fvisibility=hidden -DOPENSSL_NO_ASM
+      -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+    CXXFLAGS: -fno-exceptions
+  cares:
+    CFLAGS: -g
+    CPPFLAGS: -Ithird_party/cares/cares/include -Ithird_party/cares -Ithird_party/cares/cares
+      -fvisibility=hidden -D_GNU_SOURCE $(if $(subst Darwin,,$(SYSTEM)),,-Ithird_party/cares/config_darwin)
+      $(if $(subst FreeBSD,,$(SYSTEM)),,-Ithird_party/cares/config_freebsd) $(if $(subst
+      Linux,,$(SYSTEM)),,-Ithird_party/cares/config_linux) $(if $(subst OpenBSD,,$(SYSTEM)),,-Ithird_party/cares/config_openbsd)
+      -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX $(if $(subst MINGW32,,$(SYSTEM)),-DHAVE_CONFIG_H,)
+  global:
+    CFLAGS: -g
+    COREFLAGS: -fno-exceptions
+    CPPFLAGS: -g -Wall -Wextra -DOSATOMIC_USE_INLINED=1 -Ithird_party/abseil-cpp -Ithird_party/re2
+      -Ithird_party/upb -Isrc/core/ext/upb-generated -Isrc/core/ext/upbdefs-generated
+      -Ithird_party/utf8_range -Ithird_party/xxhash
+    LDFLAGS: -g
+  zlib:
+    CFLAGS: -fvisibility=hidden
+    CPPFLAGS: -DHAVE_UNISTD_H
+php_config_m4:
+  deps:
+  - grpc
+  - address_sorting
+  - boringssl
+  - re2
+  - z
+  headers:
+  - src/php/ext/grpc/byte_buffer.h
+  - src/php/ext/grpc/call.h
+  - src/php/ext/grpc/call_credentials.h
+  - src/php/ext/grpc/channel.h
+  - src/php/ext/grpc/channel_credentials.h
+  - src/php/ext/grpc/completion_queue.h
+  - src/php/ext/grpc/php7_wrapper.h
+  - src/php/ext/grpc/php_grpc.h
+  - src/php/ext/grpc/server.h
+  - src/php/ext/grpc/server_credentials.h
+  - src/php/ext/grpc/timeval.h
+  - src/php/ext/grpc/version.h
+  src:
+  - src/php/ext/grpc/byte_buffer.c
+  - src/php/ext/grpc/call.c
+  - src/php/ext/grpc/call_credentials.c
+  - src/php/ext/grpc/channel.c
+  - src/php/ext/grpc/channel_credentials.c
+  - src/php/ext/grpc/completion_queue.c
+  - src/php/ext/grpc/php_grpc.c
+  - src/php/ext/grpc/server.c
+  - src/php/ext/grpc/server_credentials.c
+  - src/php/ext/grpc/timeval.c
+python_dependencies:
+  deps:
+  - grpc
+  - address_sorting
+  - cares
+  - boringssl
+  - re2
+  - z
+ruby_gem:
+  deps:
+  - grpc
+  - address_sorting
+  - cares
+  - boringssl
+  - re2
+  - z
+swift_package:
+  deps:
+  - grpc
+  - grpc_authorization_provider
+  - gpr
+  - upb
+  - upb_json_lib
+  - upb_textformat_lib
+  - utf8_range_lib
+  - re2

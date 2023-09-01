@@ -1,0 +1,74 @@
+
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package grpc.testing;
+
+option cc_enable_arenas = true;
+
+import "src/proto/grpc/testing/xds/v3/orca_load_report.proto";
+
+// Message to be echoed back serialized in trailer.
+message DebugInfo {
+  repeated string stack_entries = 1;
+  string detail = 2;
+}
+
+// Error status client expects to see.
+message ErrorStatus {
+  int32 code = 1;
+  string error_message = 2;
+  string binary_error_details = 3;
+}
+
+message RequestParams {
+  bool echo_deadline = 1;
+  int32 client_cancel_after_us = 2;
+  int32 server_cancel_after_us = 3;
+  bool echo_metadata = 4;
+  bool check_auth_context = 5;
+  int32 response_message_length = 6;
+  bool echo_peer = 7;
+  string expected_client_identity = 8; // will force check_auth_context.
+  bool skip_cancelled_check = 9;
+  string expected_transport_security_type = 10;
+  DebugInfo debug_info = 11;
+  bool server_die = 12; // Server should not see a request with this set.
+  string binary_error_details = 13;
+  ErrorStatus expected_error = 14;
+  int32 server_sleep_us = 15; // sleep when invoking server for deadline tests
+  int32 backend_channel_idx = 16; // which backend to send request to
+  bool echo_metadata_initially = 17;
+  bool server_notify_client_when_started = 18;
+  xds.data.orca.v3.OrcaLoadReport backend_metrics = 19;
+  bool echo_host_from_authority_header = 20;
+}
+
+message EchoRequest {
+  string message = 1;
+  RequestParams param = 2;
+}
+
+message ResponseParams {
+  int64 request_deadline = 1;
+  string host = 2;
+  string peer = 3;
+}
+
+message EchoResponse {
+  string message = 1;
+  ResponseParams param = 2;
+}

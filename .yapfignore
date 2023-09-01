@@ -1,0 +1,35 @@
+# this file is auto-generated
+*protoc_lib_deps.py
+
+# no need to format protoc generated files
+*_pb2*.py
+
+# no need to format build-yaml generated files
+*.gen.py
+
+# generated files from a template
+*test/cpp/naming/resolver_component_tests_runner.py
+
+# No BUILD, .bzl files
+*BUILD
+*.bzl
+*.bazelrc
+
+# No other languages
+*.bat
+*.c
+*.c++
+*.cc
+*.css
+*.go
+*.h
+*.html
+*.json
+*.md
+*.objc
+*.php
+*.proto
+*.rb
+*.sh
+*.xml
+*.yaml

@@ -1,0 +1,47 @@
+#!/bin/bash
+# Copyright 2021 The gRPC Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Source this rc script to load RVM and prepare the ruby environment
+# for building ruby artifacts.
+
+# sourcing rvm can generate a failure and we don't want to quit there
+set +ex
+# Look for rvm either in /etc/profile.d or in $HOME
+# shellcheck disable=SC1091
+[[ -s /etc/profile.d/rvm.sh ]] && source /etc/profile.d/rvm.sh
+# shellcheck disable=SC1090
+[[ -s "$HOME/.rvm/scripts/rvm" ]] && source "$HOME/.rvm/scripts/rvm"
+
+# rvm commands are very verbose and we dont want to pollute the log by echo,
+# but we want to exit if there's a failure
+set -e
+
+RUBY_VERSION=3.2.0
+echo "Installing ruby-${RUBY_VERSION}"
+time rvm install "ruby-${RUBY_VERSION}"
+echo "Setting default ruby version."
+rvm use "$RUBY_VERSION" --default
+
+# restore the original echo and exit on failure behavior
+set -ex
+
+# print current ruby version to log
+ruby --version
+
+# Bundler is required for grpc ruby artifact build.
+gem install bundler -v 2.4
+
+# log gem versions for easier debugging if things go wrong
+gem list || true

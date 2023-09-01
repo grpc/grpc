@@ -1,0 +1,89 @@
+# Copyright 2020 The gRPC Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+package(
+    default_testonly = 1,
+    default_visibility = ["//visibility:public"],
+)
+
+py_library(
+    name = "histogram",
+    srcs = ["histogram.py"],
+    srcs_version = "PY2AND3",
+    deps = [
+        "//src/proto/grpc/testing:stats_py_pb2",
+    ],
+)
+
+py_library(
+    name = "benchmark_client",
+    srcs = ["benchmark_client.py"],
+    srcs_version = "PY2AND3",
+    deps = [
+        "//src/proto/grpc/testing:benchmark_service_py_pb2_grpc",
+        "//src/proto/grpc/testing:py_messages_proto",
+        "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_tests/tests/unit:resources",
+        "//src/python/grpcio_tests/tests/unit:test_common",
+    ],
+)
+
+py_library(
+    name = "benchmark_server",
+    srcs = ["benchmark_server.py"],
+    srcs_version = "PY2AND3",
+    deps = [
+        "//src/proto/grpc/testing:benchmark_service_py_pb2_grpc",
+        "//src/proto/grpc/testing:py_messages_proto",
+    ],
+)
+
+py_library(
+    name = "client_runner",
+    srcs = ["client_runner.py"],
+    srcs_version = "PY2AND3",
+)
+
+py_library(
+    name = "worker_server",
+    srcs = ["worker_server.py"],
+    srcs_version = "PY2AND3",
+    deps = [
+        ":benchmark_client",
+        ":benchmark_server",
+        ":client_runner",
+        ":histogram",
+        "//src/proto/grpc/testing:benchmark_service_py_pb2_grpc",
+        "//src/proto/grpc/testing:control_py_pb2",
+        "//src/proto/grpc/testing:payloads_py_pb2",
+        "//src/proto/grpc/testing:stats_py_pb2",
+        "//src/proto/grpc/testing:worker_service_py_pb2_grpc",
+        "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_tests/tests/unit:resources",
+        "//src/python/grpcio_tests/tests/unit:test_common",
+    ],
+)
+
+py_binary(
+    name = "qps_worker",
+    srcs = ["qps_worker.py"],
+    imports = ["../.."],
+    srcs_version = "PY2AND3",
+    deps = [
+        ":worker_server",
+        "//src/proto/grpc/testing:worker_service_py_pb2_grpc",
+        "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_tests/tests/unit:test_common",
+    ],
+)

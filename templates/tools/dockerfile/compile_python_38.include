@@ -1,0 +1,20 @@
+#=================
+# Compile CPython 3.8.13 from source
+
+RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev && apt-get clean
+RUN apt-get update && apt-get install -y jq build-essential libffi-dev && apt-get clean
+
+RUN cd /tmp && ${'\\'}
+    wget -q https://www.python.org/ftp/python/3.8.13/Python-3.8.13.tgz && ${'\\'}
+    tar xzvf Python-3.8.13.tgz && ${'\\'}
+    cd Python-3.8.13 && ${'\\'}
+    ./configure && ${'\\'}
+    make -j4 && ${'\\'}
+    make install
+
+RUN cd /tmp && ${'\\'}
+    echo "3c49180c6b43df3519849b7e390af0b9 Python-3.8.13.tgz" > checksum.md5 && ${'\\'}
+    md5sum -c checksum.md5
+
+RUN python3.8 -m ensurepip && ${'\\'}
+    python3.8 -m pip install coverage

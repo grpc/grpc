@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+
+    <!-- Revision number of this package conventions (as if "API" version). -->
+    <Protobuf_ToolingRevision>1</Protobuf_ToolingRevision>
+
+
+    <!-- Tools - protocol buffers compiler and plugins -->
+    <Protobuf_PackagedToolsPath>$( [System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)../../tools) )</Protobuf_PackagedToolsPath>
+    <!-- Protocol buffers Well Known Types -->
+    <Protobuf_StandardImportsPath>$( [System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)../native/include) )</Protobuf_StandardImportsPath>
+  </PropertyGroup>
+
+  <!-- NET SDK projects only: include proto files by default. Other project
+       types are not setting or using $(EnableDefaultItems).
+       Note that MSBuild evaluates all ItemGroups and their conditions in the
+       final pass over the build script, so properties like EnableDefaultProtobufItems
+       here can be changed later in the project. -->
+  <ItemGroup Condition=" '$(Protobuf_ProjectSupported)' == 'true' ">
+    <Protobuf Include="**/*.proto"
+              Condition=" '$(EnableDefaultItems)' == 'true' and '$(EnableDefaultProtobufItems)' == 'true' " />
+  </ItemGroup>
+</Project>

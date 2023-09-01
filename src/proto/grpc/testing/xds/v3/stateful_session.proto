@@ -1,0 +1,44 @@
+// Copyright 2022 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// Local copy of Envoy xDS proto file, used for testing only.
+
+syntax = "proto3";
+
+package envoy.extensions.filters.http.stateful_session.v3;
+
+import "src/proto/grpc/testing/xds/v3/extension.proto";
+
+// [#protodoc-title: Stateful session filter]
+// Stateful session :ref:`configuration overview <config_http_filters_stateful_session>`.
+// [#extension: envoy.filters.http.stateful_session]
+
+message StatefulSession {
+  // Specific implementation of session state. This session state will be used to store and
+  // get address of the upstream host to which the session is assigned.
+  //
+  // [#extension-category: envoy.http.stateful_session]
+  config.core.v3.TypedExtensionConfig session_state = 1;
+}
+
+message StatefulSessionPerRoute {
+  oneof override {
+    // Disable the stateful session filter for this particular vhost or route. If disabled is
+    // specified in multiple per-filter-configs, the most specific one will be used.
+    bool disabled = 1;
+
+    // Per-route stateful session configuration that can be served by RDS or static route table.
+    StatefulSession stateful_session = 2;
+  }
+}

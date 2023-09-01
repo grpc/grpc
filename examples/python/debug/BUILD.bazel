@@ -1,0 +1,100 @@
+# Copyright 2019 The gRPC Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+package(default_testonly = 1)
+
+py_binary(
+    name = "debug_server",
+    srcs = ["debug_server.py"],
+    data = ["helloworld.proto"],
+    imports = ["."],
+    python_version = "PY3",
+    deps = [
+        "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_channelz/grpc_channelz/v1:grpc_channelz",
+        "//tools/distrib/python/grpcio_tools:grpc_tools",
+    ],
+)
+
+py_binary(
+    name = "send_message",
+    srcs = ["send_message.py"],
+    data = ["helloworld.proto"],
+    imports = ["."],
+    python_version = "PY3",
+    deps = [
+        "//src/python/grpcio/grpc:grpcio",
+        "//tools/distrib/python/grpcio_tools:grpc_tools",
+    ],
+)
+
+py_binary(
+    name = "get_stats",
+    srcs = ["get_stats.py"],
+    python_version = "PY3",
+    deps = [
+        "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_channelz/grpc_channelz/v1:grpc_channelz",
+    ],
+)
+
+py_binary(
+    name = "asyncio_debug_server",
+    srcs = ["asyncio_debug_server.py"],
+    data = ["helloworld.proto"],
+    imports = ["."],
+    python_version = "PY3",
+    deps = [
+        "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_channelz/grpc_channelz/v1:grpc_channelz",
+        "//tools/distrib/python/grpcio_tools:grpc_tools",
+    ],
+)
+
+py_binary(
+    name = "asyncio_send_message",
+    srcs = ["asyncio_send_message.py"],
+    data = ["helloworld.proto"],
+    imports = ["."],
+    python_version = "PY3",
+    deps = [
+        "//src/python/grpcio/grpc:grpcio",
+        "//tools/distrib/python/grpcio_tools:grpc_tools",
+    ],
+)
+
+py_binary(
+    name = "asyncio_get_stats",
+    srcs = ["asyncio_get_stats.py"],
+    python_version = "PY3",
+    deps = [
+        "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_channelz/grpc_channelz/v1:grpc_channelz",
+    ],
+)
+
+py_test(
+    name = "_debug_example_test",
+    srcs = ["test/_debug_example_test.py"],
+    imports = ["."],
+    python_version = "PY3",
+    deps = [
+        ":asyncio_debug_server",
+        ":asyncio_get_stats",
+        ":asyncio_send_message",
+        ":debug_server",
+        ":get_stats",
+        ":send_message",
+    ],
+)

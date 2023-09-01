@@ -1,0 +1,62 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 26
+    ndkVersion "25.1.8937393"
+    defaultConfig {
+        applicationId "io.grpc.android.interop.cpp"
+        minSdkVersion 21
+        // noinspection ExpiredTargetSDKVersion
+        targetSdkVersion 26
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        externalNativeBuild {
+            cmake {
+                // The paths to the protoc and grpc_cpp_plugin binaries on the host system (codegen
+                // is not cross-compiled to Android)
+                def protoc = project.hasProperty('protoc') ?
+                        project.property('protoc') : '/usr/local/bin/protoc'
+                def grpc_cpp_plugin = project.hasProperty('grpc_cpp_plugin') ?
+                        project.property('grpc_cpp_plugin') : '/usr/local/bin/grpc_cpp_plugin'
+
+                cppFlags "-std=c++14 -frtti -fexceptions"
+                arguments '-DANDROID_STL=c++_shared'
+                arguments '-DRUN_HAVE_POSIX_REGEX=0'
+                arguments '-DRUN_HAVE_STD_REGEX=0'
+                arguments '-DRUN_HAVE_STEADY_CLOCK=0'
+                arguments '-Dprotobuf_BUILD_PROTOC_BINARIES=off'
+                arguments '-DgRPC_BUILD_CODEGEN=off'
+                arguments '-DPROTOBUF_PROTOC_EXECUTABLE=' + protoc
+                arguments '-DgRPC_CPP_PLUGIN_EXECUTABLE=' + grpc_cpp_plugin
+                arguments '-Dprotobuf_INSTALL=OFF'
+                arguments '-Dutf8_range_ENABLE_INSTALL=OFF'
+            }
+        }
+        ndk {
+            abiFilters "armeabi-v7a", "arm64-v8a", "x86", "x86_64"
+        }
+    }
+    buildTypes {
+        debug {
+            minifyEnabled false
+        }
+        release {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+    externalNativeBuild {
+        cmake {
+            path "CMakeLists.txt"
+        }
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation 'com.android.support:appcompat-v7:26.1.0'
+    testImplementation 'junit:junit:4.12'
+    androidTestImplementation 'com.android.support.test:runner:1.0.1'
+    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.1'
+}

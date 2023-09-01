@@ -1,0 +1,148 @@
+# Copyright 2021 The gRPC Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+load("@grpc_python_dependencies//:requirements.bzl", "requirement")
+
+package(default_visibility = ["//visibility:public"])
+
+py_library(
+    name = "_intraop_test_case",
+    srcs = ["_intraop_test_case.py"],
+    imports = ["../../"],
+    deps = [
+        ":methods",
+    ],
+)
+
+py_library(
+    name = "client_lib",
+    srcs = ["client.py"],
+    imports = ["../../"],
+    deps = [
+        ":methods",
+        ":resources",
+        "//src/proto/grpc/testing:py_test_proto",
+        "//src/python/grpcio/grpc:grpcio",
+        requirement("google-auth"),
+    ],
+)
+
+py_binary(
+    name = "client",
+    srcs = ["client.py"],
+    python_version = "PY3",
+    deps = [":client_lib"],
+)
+
+py_library(
+    name = "methods",
+    srcs = ["methods.py"],
+    imports = ["../../"],
+    deps = [
+        "//src/proto/grpc/testing:empty_py_pb2",
+        "//src/proto/grpc/testing:py_messages_proto",
+        "//src/proto/grpc/testing:py_test_proto",
+        "//src/proto/grpc/testing:test_py_pb2_grpc",
+        "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_tests/tests:bazel_namespace_package_hack",
+        requirement("google-auth"),
+        requirement("requests"),
+        requirement("urllib3"),
+        requirement("chardet"),
+        requirement("certifi"),
+        requirement("idna"),
+    ],
+)
+
+py_library(
+    name = "resources",
+    srcs = ["resources.py"],
+    data = [
+        "//src/python/grpcio_tests/tests/interop/credentials",
+    ],
+)
+
+py_library(
+    name = "service",
+    srcs = ["service.py"],
+    imports = ["../../"],
+    deps = [
+        "//src/proto/grpc/testing:empty_py_pb2",
+        "//src/proto/grpc/testing:py_messages_proto",
+        "//src/proto/grpc/testing:py_test_proto",
+        "//src/python/grpcio/grpc:grpcio",
+    ],
+)
+
+py_library(
+    name = "server",
+    srcs = ["server.py"],
+    imports = ["../../"],
+    deps = [
+        ":resources",
+        ":service",
+        "//src/proto/grpc/testing:py_test_proto",
+        "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_tests/tests/unit:test_common",
+        requirement("absl-py"),
+    ],
+)
+
+py_binary(
+    name = "server_bin",
+    srcs = ["server.py"],
+    main = "server.py",
+    python_version = "PY3",
+    deps = [
+        ":server",
+        ":service",
+        "//src/proto/grpc/testing:test_py_pb2_grpc",
+    ],
+)
+
+py_test(
+    name = "_insecure_intraop_test",
+    size = "small",
+    srcs = ["_insecure_intraop_test.py"],
+    data = [
+        "//src/python/grpcio_tests/tests/unit/credentials",
+    ],
+    imports = ["../../"],
+    main = "_insecure_intraop_test.py",
+    python_version = "PY3",
+    deps = [
+        ":_intraop_test_case",
+        ":server",
+        ":service",
+        "//src/proto/grpc/testing:py_test_proto",
+        "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_tests/tests/unit:test_common",
+    ],
+)
+
+py_test(
+    name = "_secure_intraop_test",
+    size = "small",
+    srcs = ["_secure_intraop_test.py"],
+    imports = ["../../"],
+    main = "_secure_intraop_test.py",
+    python_version = "PY3",
+    deps = [
+        ":_intraop_test_case",
+        ":server",
+        ":service",
+        "//src/proto/grpc/testing:py_test_proto",
+        "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_tests/tests/unit:test_common",
+    ],
+)

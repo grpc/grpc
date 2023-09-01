@@ -1,0 +1,183 @@
+# C/C++ build outputs
+.build/
+build/
+bins
+gens
+libs
+objs
+
+# Python items
+.coverage*
+.eggs
+.pytype
+*.egg
+*.egg-info
+a.out
+cython_debug/
+dist/
+htmlcov/
+py3*/
+python_build/
+python_pylint_venv/
+src/python/grpcio_*/=*
+src/python/grpcio_*/build/
+src/python/grpcio_*/LICENSE
+src/python/grpcio_status/grpc_status/google/rpc/status.proto
+black_virtual_environment/
+isort_virtual_environment/
+
+# Node installation output
+node_modules
+src/node/extension_binary/
+
+# gcov coverage data
+reports
+coverage
+*.gcno
+
+# profiler output
+*.prof
+
+# python compiled objects
+*.pyc
+
+# eclipse project files
+.cproject
+.project
+.settings
+
+# cache for run_tests.py
+.run_tests_cache
+.preprocessed_build
+
+# emacs temp files
+*~
+
+# vim temp files
+.*.swp
+.*.swo
+
+# Makefile's cache
+cache.mk
+
+# Ruby's local gem information
+Gemfile.lock
+
+# Temporary test reports
+report.xml
+*/sponge_log.xml
+*/success_log_to_rename.xml
+latency_trace.txt
+latency_trace.*.txt
+
+# port server log
+portlog.txt
+
+# gyp generated make files
+*-gyp.mk
+out
+
+# YCM config files
+.ycm_extra_conf.py
+
+# XCode
+^build/
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+xcuserdata
+*.xccheckout
+*.moved-aside
+DerivedData
+*.hmap
+*.ipa
+*.xcuserstate
+*.DS_Store
+
+# Swift Package Manager files
+Package.resolved
+
+# Objective-C generated files
+*.pbobjc.*
+*.pbrpc.*
+src/objective-c/**/Build
+
+# Cocoapods artifacts
+Pods/
+Podfile.lock
+*.xcworkspace
+
+# Artifacts directory
+/artifacts/
+
+# Git generated files for conflicting
+*.orig
+
+# IDE specific folder for JetBrains IDEs
+.idea/
+
+# Bazel files
+bazel-*
+bazel_format_virtual_environment/
+tools/bazel-*
+
+# Bazel wrapper
+bazel_wrapper
+bazel_wrapper.bat
+bazel_wrapper.bazelrc
+
+# Debug output
+gdb.txt
+
+# ctags file
+tags
+
+# perf data
+memory_usage.csv
+perf.data
+perf.data.old
+
+# bm_diff
+bm_diff_new/
+bm_diff_old/
+bm_*.json
+bloat_diff_new/
+bloat_diff_old/
+bloaty-build/
+
+# cmake build files
+**/cmake/build/
+
+# Visual Studio Code artifacts
+.cache/*
+.vscode/*
+.history/
+
+# Clion artifacts
+cmake-build-debug/
+
+# Benchmark outputs
+BenchmarkDotNet.Artifacts/
+
+# pyenv config
+.python-version
+
+# clang JSON compilation database file
+compile_commands.json
+
+# IWYU byproducts
+compile_commands_for_iwyu.json
+iwyu.out
+iwyu_files.txt
+iwyu_files0.txt
+iwyu/
+iwyu_build/
+
+# fuzzer logs
+fuzz-*.log
+

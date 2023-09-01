@@ -1,0 +1,209 @@
+#!/bin/bash
+# Copyright 2017 gRPC authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# Source this rc script to prepare the environment for macos builds
+
+# Print basic info about the mac worker
+echo "kokoro pool: \"$KOKORO_JOB_POOL\""
+echo "OS: $(sw_vers -productName) $(sw_vers -productVersion) $(sw_vers -buildVersion)"
+echo "CPU type: $(sysctl -n machdep.cpu.brand_string)"
+echo "CPU: $(sysctl -n machdep.cpu.vendor) $(uname -m) Family $(sysctl -n machdep.cpu.family) Model $(sysctl -n machdep.cpu.brand_string)"
+echo "CPU Cores: $(sysctl -n hw.ncpu)"
+echo "Memory: $(sysctl -n hw.memsize)"
+echo "Kokoro image version: $(cat /VERSION)"
+
+# Info on disk usage and mounted volumes
+mount
+df -h /tmpfs /
+
+# show original open file limit values
+launchctl limit maxfiles
+ulimit -a
+
+# WARNING: TRY TO KEEP THIS FILE AS LEAN AS POSSIBLE
+# The rules:
+# - think twice before adding installer that takes long time (builds are already slow)
+# - do not add any steps that are flaky (builds will become flaky)
+# - try adding a dependency under a language-specific section first (reduces latency and increases build stability)
+# - only add stuff that you absolutely need for your builds to work (add comment to explain why its needed)
+
+# Disable HOMEBREW update to avoid new updates which potentially have problems.
+# Brew packages installed when Kokoro image was built tend to have less conflict.
+export HOMEBREW_NO_AUTO_UPDATE=1
+
+# Dump the brew configuration for debugging just in case. Check "Core tap HEAD" field
+# because it should be the same as below unless it's been updated.
+# - Kokoro MacOS Mojave: 27fa87c94a6cf7be40fc8f8fc96bc7c387b7781e
+brew config
+
+# Add GCP credentials for BQ access
+pip install --user google-api-python-client oauth2client six==1.16.0
+export GOOGLE_APPLICATION_CREDENTIALS=${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
+
+# If this is a PR using RUN_TESTS_FLAGS var, then add flags to filter tests
+if [ -n "$KOKORO_GITHUB_PULL_REQUEST_NUMBER" ]; then
+  export RUN_TESTS_FLAGS="--filter_pr_tests --base_branch origin/$KOKORO_GITHUB_PULL_REQUEST_TARGET_BRANCH $RUN_TESTS_FLAGS"
+fi
+
+if [ "${PREPARE_BUILD_INSTALL_DEPS_RUBY}" == "true" ]
+then
+  # Workaround for https://github.com/rvm/rvm/issues/5133
+  export CURL_CA_BUNDLE=$(pwd)/etc/roots.pem
+
+  # Fetch keys per https://rvm.io/rvm/install
+  gpg_recv_keys_success=0
+  for ((i=0;i<5;i++)); do
+    # Use the Ubuntu keyserver instead of pool.sks-keyservers.net because sks-keyservers is now deprecated.
+    GPG_KEYSERVER_ADDRESS="keyserver.ubuntu.com"
+    gpg --keyserver "hkp://${GPG_KEYSERVER_ADDRESS}" --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB \
+      && gpg_recv_keys_success=1
+    [[ "$gpg_recv_keys_success" == 1 ]] && break
+    sleep 3
+  done
+  [[ "$gpg_recv_keys_success" == 1 ]] || exit 1
+  # fix .rvm directory ownership on kokoro monterey image
+  sudo chown -R "${USER}" ~/.rvm
+  rvm get stable # Per https://stackoverflow.com/questions/65477613/rvm-where-is-ruby-3-0-0
+  # stop echoing bash commands temporarily to prevent rvm from polluting the logs
+  set +x
+  source $HOME/.rvm/scripts/rvm
+
+  RUBY_VERSION=3.2.0
+  echo "Installing ruby-${RUBY_VERSION}"
+  time rvm install "ruby-${RUBY_VERSION}"
+  echo "Setting default ruby version."
+  rvm use "$RUBY_VERSION" --default
+  echo "Updating osx-ssl-certs."
+  gem install bundler -v 2.4
+  rvm osx-ssl-certs status all
+  rvm osx-ssl-certs update all
+
+  # restore echo
+  set -x
+fi
+
+if [ "${PREPARE_BUILD_INSTALL_DEPS_OBJC}" == "true" ]
+then
+  # cocoapods
+  export LANG=en_US.UTF-8
+  # use "sudo" to avoid permission error on kokoro monterey image
+  time sudo gem install cocoapods --version 1.11.3 --no-document --user-install
+  # pre-fetch cocoapods master repo's most recent commit only
+  mkdir -p ~/.cocoapods/repos
+  time git clone --depth 1 https://github.com/CocoaPods/Specs.git ~/.cocoapods/repos/master
+
+  # Needed for ios-binary-size
+  time pip install --user -r $DIR/requirements.macos.txt
+
+  # Store intermediate build files of ObjC tests into /tmpfs
+  # TODO(jtattermusch): this has likely been done to avoid running
+  # out of disk space when running ios-binary-size tests, but
+  # it would be good to revisit.
+  mkdir /tmpfs/Build-ios-binary-size
+  ln -s /tmpfs/Build-ios-binary-size src/objective-c/examples/Sample/Build
+  mkdir -p /tmpfs/DerivedData
+  rm -rf ~/Library/Developer/Xcode/DerivedData
+  mkdir -p ~/Library/Developer/Xcode
+  ln -s /tmpfs/DerivedData ~/Library/Developer/Xcode/DerivedData
+fi
+
+if [ "${PREPARE_BUILD_INSTALL_DEPS_PYTHON}" == "true" ]
+then
+  # python
+  time pip install --user -r $DIR/requirements.macos.txt
+  time pip install --user --upgrade virtualenv Mako tox setuptools==44.1.1 twisted
+
+  # Force reinstall of python3.7 to upgrade its patch version.
+  # Kokoro mac workers come with python 3.7.3 and that version
+  # suffers from https://bugs.python.org/issue22490.
+  # See https://github.com/grpc/grpc/pull/28963.
+  time curl -O https://www.python.org/ftp/python/3.7.9/python-3.7.9-macosx10.9.pkg
+  echo "bf54a14eef23467991e8c7a88c7307762e484c024a94ec1ee292ac1db3d41fc9  python-3.7.9-macosx10.9.pkg" > /tmp/python_installer_checksum.sha256
+  shasum -c /tmp/python_installer_checksum.sha256
+  time sudo installer -pkg ./python-3.7.9-macosx10.9.pkg -target /
+  python3.7 --version
+
+  # Force reinstall of python3.8 to upgrade its patch version.
+  # Kokoro mac workers come with python 3.8.2 and that version
+  # suffers from https://bugs.python.org/issue22490.
+  # See https://github.com/grpc/grpc/pull/28963.
+  time curl -O https://www.python.org/ftp/python/3.8.10/python-3.8.10-macosx10.9.pkg
+  echo "4c65bc7534d5f07edacbe0fbd609b5734dbf3ac02f5444f9bd97963d589d8afd  python-3.8.10-macosx10.9.pkg" > /tmp/python_installer_checksum.sha256
+  shasum -c /tmp/python_installer_checksum.sha256
+  time sudo installer -pkg ./python-3.8.10-macosx10.9.pkg -target /
+  python3.8 --version
+
+  # Install Python 3.9 if it doesn't exist
+  if [ ! -f "/usr/local/bin/python3.9" ]; then
+    time curl -O https://www.python.org/ftp/python/3.9.10/python-3.9.10-macosx10.9.pkg
+    echo "732bc5c95ae127dfb6fb1bcf683509ad20c558152b63b8d5f651246f6bdfc8da  python-3.9.10-macosx10.9.pkg" > /tmp/python_installer_checksum.sha256
+    shasum -c /tmp/python_installer_checksum.sha256
+    time sudo installer -pkg ./python-3.9.10-macosx10.9.pkg -target /
+  fi
+
+  # Install Python 3.10 if it doesn't exist
+  if [ ! -f "/usr/local/bin/python3.10" ]; then
+    time curl -O https://www.python.org/ftp/python/3.10.5/python-3.10.5-macos11.pkg
+    echo "568c69b4361af1faf0ae35c4cac7236c1a332f5c  python-3.10.5-macos11.pkg" > /tmp/python_installer_checksum.sha256
+    shasum -c /tmp/python_installer_checksum.sha256
+    time sudo installer -pkg ./python-3.10.5-macos11.pkg -target /
+  fi
+
+  # Install Python 3.11 if it doesn't exist
+  if [ ! -f "/usr/local/bin/python3.11" ]; then
+    time curl -O https://www.python.org/ftp/python/3.11.0/python-3.11.0rc1-macos11.pkg
+    echo "eec3f817797b1d61f48f29b96ac0443ea19f3170  python-3.11.0rc1-macos11.pkg" > /tmp/python_installer_checksum.sha256
+    shasum -c /tmp/python_installer_checksum.sha256
+    time sudo installer -pkg ./python-3.11.0rc1-macos11.pkg -target /
+  fi
+fi
+
+if [ "${PREPARE_BUILD_INSTALL_DEPS_CSHARP}" == "true" ]
+then
+  # Disable some unwanted dotnet options
+  export NUGET_XMLDOC_MODE=skip
+  export DOTNET_SKIP_FIRST_TIME_EXPERIENCE=true
+  export DOTNET_CLI_TELEMETRY_OPTOUT=true
+  
+  # Installed versions should be kept in sync with
+  # templates/tools/dockerfile/csharp_dotnetcli_deps.include
+  time curl -O https://download.visualstudio.microsoft.com/download/pr/e0fe8c99-e33c-4d75-bd4e-2478ed3ee35a/ff06e47afc7c13bdbbaa50a9713ac772/dotnet-sdk-3.1.415-osx-x64.pkg
+  time sudo installer -pkg ./dotnet-sdk-3.1.415-osx-x64.pkg -target /
+
+  time curl -O https://download.visualstudio.microsoft.com/download/pr/14a45451-4cc9-48e1-af69-0aff75891d09/ff6e83986a2a9a535015fb3104a90a1b/dotnet-sdk-6.0.100-osx-x64.pkg
+  time sudo installer -pkg ./dotnet-sdk-6.0.100-osx-x64.pkg -target /
+fi
+
+if [ "${PREPARE_BUILD_INSTALL_DEPS_PHP}" == "true" ]
+then
+  # php7.4 should already be installed on kokoro monterey image, so this should be instantaneous.
+  time brew install php@7.4 || true
+  export LDFLAGS="-L/usr/local/opt/php@7.4/lib ${LDFLAGS}"
+  export CPPFLAGS="-I/usr/local/opt/php@7.4/include ${CPPFLAGS}"
+  export PATH="/usr/local/opt/php@7.4/bin:/usr/local/opt/php@7.4/sbin:${PATH}"
+
+  # the exit code from "brew install php@7.4" is useless
+  # so instead we check if PHP was indeed installed successfully.
+  # Failing early is better than cryptic errors later in the build process.
+  /usr/local/opt/php@7.4/bin/php --version
+
+  # Workaround for https://github.com/Homebrew/homebrew-core/issues/41081
+  mkdir -p /usr/local/lib/php/pecl
+fi
+
+# TODO(jtattermusch): better debugging of clock skew, remove once not needed
+date
+
+time git submodule update --init

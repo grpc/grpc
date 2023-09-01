@@ -1,0 +1,91 @@
+// Copyright 2021 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package promise_fuzzer;
+
+message Seq {
+    Promise first = 1;
+    repeated PromiseFactory promise_factories = 2;
+}
+
+message Join {
+    repeated Promise promises = 1;
+}
+
+message Race {
+    repeated Promise promises = 1;
+}
+
+message Last {}
+
+message PromiseFactory {
+    oneof promise_factory_type {
+        // Return a specific promise
+        Promise promise = 1;
+        // Return the result of the last thing
+        Last last = 2;
+    }
+}
+
+message Never {}
+
+message ScheduleWaker {
+  bool owning = 1;
+  int32 waker = 2;
+}
+
+message Promise {
+    oneof promise_type {
+        // Seq combinator
+        Seq seq = 1;
+        // Join combinator
+        Join join = 2;
+        // Race combinator
+        Race race = 3;
+        // Never complete
+        Never never = 4;
+        // Sleep n times, then wakeup
+        int32 sleep_first_n = 5;
+        // Cancel and be pending
+        Cancel cancel_from_inside = 6;
+        // Wait for waker n, then continue
+        ScheduleWaker wait_once_on_waker = 7;
+    }
+}
+
+message Cancel {}
+
+message Wakeup {}
+
+message Action {
+    oneof action_type {
+        // Activity::ForceWakeup
+        Wakeup force_wakeup = 1;
+        // Cancel the activity
+        Cancel cancel = 2;
+        // Flush any pending scheduled wakeups
+        Wakeup flush_wakeup = 3;
+        // Awake waker n if it exists
+        int32 awake_waker = 4;
+        // Drop waker n if it exists
+        int32 drop_waker = 5;
+    }
+}
+
+message Msg {
+    Promise promise = 1;
+    repeated Action actions = 2;
+}

@@ -1,0 +1,13 @@
+{
+  "Grpc.Tools.Tests": [
+    "Grpc.Tools.Tests.CppGeneratorTest",
+    "Grpc.Tools.Tests.CSharpGeneratorTest",
+    "Grpc.Tools.Tests.DepFileUtilTest",
+    "Grpc.Tools.Tests.GeneratorTest",
+    "Grpc.Tools.Tests.ProtoCompileBasicTest",
+    "Grpc.Tools.Tests.ProtoCompileCommandLineGeneratorTest",
+    "Grpc.Tools.Tests.ProtoCompileCommandLinePrinterTest",
+    "Grpc.Tools.Tests.ProtoToolsPlatformTaskTest",
+    "Grpc.Tools.Tests.MsBuildIntegrationTest"
+  ]
+}

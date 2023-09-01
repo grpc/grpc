@@ -1,0 +1,36 @@
+#@IgnoreInspection BashAddShebang
+# Copyright 2022 The gRPC Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# bazelrc to configure bazel to use RBE remote executors to build and run tests.
+
+import %workspace%/tools/remote_build/include/rbe_base_config.bazelrc
+
+# configure backend for remote execution
+build --remote_executor=grpcs://remotebuildexecution.googleapis.com
+
+build --spawn_strategy=remote
+build --strategy=Javac=remote
+build --strategy=Closure=remote
+build --genrule_strategy=remote
+build --remote_timeout=7200  # very large value to avoid problems like https://github.com/grpc/grpc/issues/20777
+
+# In the remote execution environment, each test gets its own docker containers
+# and port server won't be available.
+build --define GRPC_PORT_ISOLATED_RUNTIME=1
+
+# Prevents host environment variables from leaking into Bazel actions and ensures that the remote cache is shared across machines
+build --incompatible_strict_action_env=true
+# TODO(jtattermusch): is this still required for remote execution to work?
+build --action_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1

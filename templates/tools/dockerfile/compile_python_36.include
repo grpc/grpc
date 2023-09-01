@@ -1,0 +1,20 @@
+#=================
+# Compile CPython 3.6.15 from source
+
+RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev && apt-get clean
+RUN apt-get update && apt-get install -y jq build-essential libffi-dev && apt-get clean
+
+RUN cd /tmp && ${'\\'}
+    wget -q https://www.python.org/ftp/python/3.6.15/Python-3.6.15.tgz && ${'\\'}
+    tar xzvf Python-3.6.15.tgz && ${'\\'}
+    cd Python-3.6.15 && ${'\\'}
+    ./configure && ${'\\'}
+    make -j4 && ${'\\'}
+    make install
+
+RUN cd /tmp && ${'\\'}
+    echo "f9e6f91c754a604f4fc6f6c7683723fb Python-3.6.15.tgz" > checksum.md5 && ${'\\'}
+    md5sum -c checksum.md5
+
+RUN python3.6 -m ensurepip && ${'\\'}
+    python3.6 -m pip install coverage

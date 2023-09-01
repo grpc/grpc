@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <TargetFrameworks>net45;netcoreapp3.1</TargetFrameworks>
+    <OutputType>Exe</OutputType>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <Import Project="..\Grpc.Tools\SourceLink.csproj.include" />
+
+  <ItemGroup>
+    <!-- Prevent tests data files from being compiled into this project -->
+    <!-- TODO(jtattermusch): find a better solution for this. -->
+    <Compile Remove="IntegrationTests\**" />
+    <EmbeddedResource Remove="IntegrationTests\**" />
+    <None Remove="IntegrationTests\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Grpc.Tools\Grpc.Tools.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Moq" Version="4.8.3" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageReference Include="NUnit; NUnitLite" Version="3.10.1" />
+    <PackageReference Include="System.Runtime.InteropServices.RuntimeInformation" Version="4.3.0" />
+  </ItemGroup>
+
+  <PropertyGroup Condition=" '$(TargetFramework)' != 'net45' ">
+    <DefineConstants>$(DefineConstants);NETCORE</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net45' ">
+    <Reference Include="Microsoft.Build.Framework; Microsoft.Build.Utilities.v4.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' != 'net45' ">
+    <PackageReference Include="Microsoft.Build.Framework; Microsoft.Build.Utilities.Core" Version="15.6.*" />
+  </ItemGroup>
+
+</Project>

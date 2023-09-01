@@ -1,0 +1,109 @@
+// Copyright 2020 The gRPC Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// Local copy of Envoy xDS proto file, used for testing only.
+
+syntax = "proto3";
+
+package envoy.extensions.filters.network.http_connection_manager.v3;
+
+import "google/protobuf/any.proto";
+
+import "src/proto/grpc/testing/xds/v3/config_source.proto";
+import "src/proto/grpc/testing/xds/v3/extension.proto";
+import "src/proto/grpc/testing/xds/v3/protocol.proto";
+import "src/proto/grpc/testing/xds/v3/route.proto";
+
+// [#protodoc-title: HTTP connection manager]
+// HTTP connection manager :ref:`configuration overview <config_http_conn_man>`.
+// [#extension: envoy.filters.network.http_connection_manager]
+
+message HttpConnectionManager {
+  oneof route_specifier {
+    // The connection manager’s route table will be dynamically loaded via the RDS API.
+    Rds rds = 3;
+
+    // The route table for the connection manager is static and is specified in this property.
+    config.route.v3.RouteConfiguration route_config = 4;
+
+    // A route table will be dynamically assigned to each request based on request attributes
+    // (e.g., the value of a header). The "routing scopes" (i.e., route tables) and "scope keys" are
+    // specified in this message.
+    ScopedRoutes scoped_routes = 31;
+  }
+
+  // A list of individual HTTP filters that make up the filter chain for
+  // requests made to the connection manager. :ref:`Order matters <arch_overview_http_filters_ordering>`
+  // as the filters are processed sequentially as request events happen.
+  repeated HttpFilter http_filters = 5;
+
+  // Additional settings for HTTP requests handled by the connection manager. These will be
+  // applicable to both HTTP1 and HTTP2 requests.
+  config.core.v3.HttpProtocolOptions common_http_protocol_options = 35;
+
+  // The number of additional ingress proxy hops from the right side of the
+  // :ref:`config_http_conn_man_headers_x-forwarded-for` HTTP header to trust when
+  // determining the origin client's IP address. The default is zero if this option
+  // is not specified. See the documentation for
+  // :ref:`config_http_conn_man_headers_x-forwarded-for` for more information.
+  uint32 xff_num_trusted_hops = 19;
+
+  // The configuration for the original IP detection extensions.
+  //
+  // When configured the extensions will be called along with the request headers
+  // and information about the downstream connection, such as the directly connected address.
+  // Each extension will then use these parameters to decide the request's effective remote address.
+  // If an extension fails to detect the original IP address and isn't configured to reject
+  // the request, the HCM will try the remaining extensions until one succeeds or rejects
+  // the request. If the request isn't rejected nor any extension succeeds, the HCM will
+  // fallback to using the remote address.
+  //
+  // .. WARNING::
+  //    Extensions cannot be used in conjunction with :ref:`use_remote_address
+  //    <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.use_remote_address>`
+  //    nor :ref:`xff_num_trusted_hops
+  //    <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.xff_num_trusted_hops>`.
+  //
+  // [#extension-category: envoy.http.original_ip_detection]
+  repeated config.core.v3.TypedExtensionConfig original_ip_detection_extensions = 46;
+}
+
+message Rds {
+  // Configuration source specifier for RDS.
+  config.core.v3.ConfigSource config_source = 1;
+
+  // The name of the route configuration. This name will be passed to the RDS
+  // API. This allows an Envoy configuration with multiple HTTP listeners (and
+  // associated HTTP connection manager filters) to use different route
+  // configurations.
+  string route_config_name = 2;
+}
+
+message ScopedRoutes {
+}
+
+message HttpFilter {
+  // The name of the filter configuration. The name is used as a fallback to
+  // select an extension if the type of the configuration proto is not
+  // sufficient. It also serves as a resource name in ExtensionConfigDS.
+  string name = 1;
+
+  oneof config_type {
+    // Filter specific configuration which depends on the filter being instantiated. See the supported
+    // filters for further documentation.
+    google.protobuf.Any typed_config = 4;
+  }
+
+  bool is_optional = 6;
+}

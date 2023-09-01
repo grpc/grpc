@@ -1,0 +1,4 @@
+include setup.py
+include README.rst
+include LICENSE
+global-exclude *.pyc

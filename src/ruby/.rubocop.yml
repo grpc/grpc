@@ -1,0 +1,21 @@
+# This is the configuration used to check the rubocop source code.
+
+inherit_from: .rubocop_todo.yml
+
+AllCops:
+  Exclude:
+    - 'bin/apis/**/*'
+    - 'bin/math_pb.rb'
+    - 'bin/math_services_pb.rb'
+    - 'pb/grpc/health/v1/*'
+    - 'pb/test/**/*'
+    - 'end2end/lib/*'
+
+Metrics/CyclomaticComplexity:
+  Max: 9
+
+Metrics/PerceivedComplexity:
+  Max: 9
+
+Metrics/ClassLength:
+  Max: 250

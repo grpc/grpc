@@ -1,0 +1,73 @@
+[
+  {
+    "config": "asan",
+    "environ": {
+      "ASAN_OPTIONS": "detect_leaks=1:color=always",
+      "LSAN_OPTIONS": "suppressions=test/core/util/lsan_suppressions.txt:report_objects=1"
+    }
+  },
+  {
+    "config": "asan-noleaks",
+    "environ": {
+      "ASAN_OPTIONS": "detect_leaks=0:color=always"
+    }
+  },
+  {
+    "config": "asan-trace-cmp",
+    "environ": {
+      "ASAN_OPTIONS": "detect_leaks=1:color=always",
+      "LSAN_OPTIONS": "suppressions=test/core/util/lsan_suppressions.txt:report_objects=1"
+    }
+  },
+  {
+    "config": "c++-compat"
+  },
+  {
+    "config": "dbg"
+  },
+  {
+    "config": "gcov"
+  },
+  {
+    "config": "helgrind",
+    "tool_prefix": [
+      "valgrind",
+      "--tool=helgrind"
+    ]
+  },
+  {
+    "config": "lto"
+  },
+  {
+    "config": "memcheck",
+    "tool_prefix": [
+      "valgrind",
+      "--tool=memcheck",
+      "--leak-check=full"
+    ]
+  },
+  {
+    "config": "msan",
+    "environ": {
+      "MSAN_OPTIONS": "poison_in_dtor=1"
+    }
+  },
+  {
+    "config": "noexcept"
+  },
+  {
+    "config": "opt"
+  },
+  {
+    "config": "tsan",
+    "environ": {
+      "TSAN_OPTIONS": "suppressions=test/core/util/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1"
+    }
+  },
+  {
+    "config": "ubsan",
+    "environ": {
+      "UBSAN_OPTIONS": "halt_on_error=1:print_stacktrace=1:suppressions=test/core/util/ubsan_suppressions.txt"
+    }
+  }
+]

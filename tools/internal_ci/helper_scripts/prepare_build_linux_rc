@@ -1,0 +1,51 @@
+#!/bin/bash
+# Copyright 2017 gRPC authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Source this rc script to prepare the environment for linux builds
+
+# Need to increase open files limit for c tests
+ulimit -n 32768
+
+# 1. Move docker's storage location to scratch disk so we don't run out of space.
+# 2. Use container registry mirror for pulling docker images (should make downloads faster)
+#    See https://cloud.google.com/container-registry/docs/using-dockerhub-mirroring
+GRPC_DOCKER_OPTS="--data-root=/tmpfs/docker --registry-mirror=https://mirror.gcr.io"
+
+# Update global docker configuration to have GRPC_DOCKER_OPTS
+P1NAME=$(ps -p 1 -o comm=)
+if [[ $P1NAME == *"systemd"* ]];  then
+  # https://stackoverflow.com/questions/27763340
+  sudo sed -i -E "s|ExecStart=(.*)//|EnvironmentFile=/etc/default/docker\nExecStart=\nExecStart=\1// \$DOCKER_OPTS|" /lib/systemd/system/docker.service
+  sudo systemctl daemon-reload
+  echo "DOCKER_OPTS=\"${GRPC_DOCKER_OPTS}\"" | sudo tee --append /etc/default/docker
+  sudo systemctl restart docker.service
+else
+  echo "DOCKER_OPTS=\"\${DOCKER_OPTS} ${GRPC_DOCKER_OPTS}\"" | sudo tee --append /etc/default/docker
+  sudo service docker restart
+fi
+
+git submodule update --init
+
+python3 -m pip install six
+
+# Allows the test driver to spin up a GDB subprocess and have it attach to
+# another subprocess of the test driver.
+sudo bash -c 'echo "0" > /proc/sys/kernel/yama/ptrace_scope'
+
+# check whether /tmpfs is mounted correctly
+(mount | grep -q 'on /tmpfs ') || (mount; echo 'BAD KOKORO WORKER WARNING: it seems that /tmpfs volume with scratch disk is not mounted in the kokoro worker. This can result in unexpected "out of disk space" errors.')
+
+# Uncomment the following line to debug "out of disk space" errors by print available disk space every 30seconds in the background
+# bash -c "while true; do echo 'periodic background disk usage check:'; df -h / /tmpfs; sleep 30; done;" &

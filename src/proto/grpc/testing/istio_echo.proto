@@ -1,0 +1,83 @@
+// Copyright 2022 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+import "google/protobuf/wrappers.proto";
+
+package proto;
+
+service EchoTestService {
+  rpc Echo (EchoRequest) returns (EchoResponse);
+  rpc ForwardEcho (ForwardEchoRequest) returns (ForwardEchoResponse);
+}
+
+message EchoRequest {
+  string message = 1;
+}
+
+message EchoResponse {
+  string message = 1;
+}
+
+message Header {
+  string key = 1;
+  string value = 2;
+}
+
+message ForwardEchoRequest {
+  int32 count = 1;
+  int32 qps = 2;
+  int64 timeout_micros = 3;
+  string url = 4;
+  repeated Header headers = 5;
+  string message = 6;
+  // Method for the request. Valid only for HTTP
+  string method = 9;
+  // If true, requests will be sent using h2c prior knowledge
+  bool http2 = 7;
+  // If true, requests will be sent using http3
+  bool http3 = 15;
+  // If true, requests will not be sent until magic string is received
+  bool serverFirst = 8;
+  // If true, 301 redirects will be followed
+  bool followRedirects = 14;
+  // If non-empty, make the request with the corresponding cert and key.
+  string cert = 10;
+  string key = 11;
+  // If non-empty, verify the server CA
+  string caCert = 12;
+  // If non-empty, make the request with the corresponding cert and key file.
+  string certFile = 16;
+  string keyFile = 17;
+  // If non-empty, verify the server CA with the ca cert file.
+  string caCertFile = 18;
+  // Skip verifying peer's certificate.
+  bool insecureSkipVerify = 19;
+  // List of ALPNs to present. If not set, this will be automatically be set based on the protocol
+  Alpn alpn = 13;
+  // Server name (SNI) to present in TLS connections. If not set, Host will be used for http requests.
+  string serverName = 20;
+  // Expected response determines what string to look for in the response to validate TCP requests succeeded.
+  // If not set, defaults to "StatusCode=200"
+  google.protobuf.StringValue expectedResponse = 21;
+}
+
+message Alpn {
+  repeated string value = 1;
+}
+
+message ForwardEchoResponse {
+  repeated string output = 1;
+}

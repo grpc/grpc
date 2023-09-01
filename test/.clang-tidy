@@ -1,0 +1,6 @@
+---
+Checks: 'modernize-use-nullptr,google-build-namespaces,google-build-explicit-make-pair,readability-function-size,performance-*,-performance-unnecessary-copy-initialization'
+WarningsAsErrors: 'modernize-use-nullptr,google-build-namespaces,google-build-explicit-make-pair,readability-function-size,performance-*,-performance-unnecessary-copy-initialization'
+CheckOptions:
+  - key:    readability-function-size.StatementThreshold
+    value:  '450'

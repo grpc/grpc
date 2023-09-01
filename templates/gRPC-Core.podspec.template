@@ -1,0 +1,228 @@
+%YAML 1.2
+--- |
+  # This file has been automatically generated from a template file.
+  # Please make modifications to `templates/gRPC-Core.podspec.template`
+  # instead. This file can be regenerated from the template by running
+  # `tools/buildgen/generate_projects.sh`.
+
+  # gRPC Core CocoaPods podspec
+  #
+  # Copyright 2015 gRPC authors.
+  #
+  # Licensed under the Apache License, Version 2.0 (the "License");
+  # you may not use this file except in compliance with the License.
+  # You may obtain a copy of the License at
+  #
+  #     http://www.apache.org/licenses/LICENSE-2.0
+  #
+  # Unless required by applicable law or agreed to in writing, software
+  # distributed under the License is distributed on an "AS IS" BASIS,
+  # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  # See the License for the specific language governing permissions and
+  # limitations under the License.
+  <%
+  lib_maps = {lib.name: lib for lib in libs}
+
+  def ruby_multiline_list(files, indent):
+    return (',\n' + indent*' ').join('\'%s\'' % f for f in files)
+
+  def is_absl_lib(target_name):
+    return target_name.startswith("absl/")
+
+  def get_absl_spec_name(label):
+    # e.g. absl/apple:banana -> abseil/apple/banana
+    return "abseil/" + label[5:].replace(":", "/")
+
+  def lib_and_transitive_deps(lib):
+    """Return names of lib itself and all of its transitive dependencies."""
+    transitive_deps = []
+    lib_metadata = lib_maps.get(lib, None)
+    if lib_metadata:
+      transitive_deps = lib_metadata.transitive_deps
+    return list(sorted(set({lib} | set(transitive_deps))))
+
+  def non_abseil_lib_and_transitive_deps(lib):
+    return [l for l in lib_and_transitive_deps(lib) if not is_absl_lib(l)]
+
+  def list_abseil_specs(lib):
+    # This returns a list of abseil specs which the given lib and
+    # its non-abseil transitive dependencies depend on.
+    # As a result, internal abseil libraries are excluded from the result.
+    absl_specs = set()
+    for lib_name in lib_and_transitive_deps(lib):
+      if is_absl_lib(lib_name): continue
+      lib_metadata = lib_maps.get(lib_name, None)
+      if lib_metadata:
+        for dep in lib_metadata.deps:
+          if is_absl_lib(dep):
+            absl_specs.add(get_absl_spec_name(dep))
+    return list(sorted(absl_specs))
+
+  def collect_files_for_libs(libs, fields):
+    files = set()
+    for lib_name in libs:
+      lib = lib_maps.get(lib_name, None)
+      if lib:
+        for field in fields:
+          files.update(lib.get(field, []))
+    return list(sorted(files))
+
+  # ObjectiveC doesn't use c-ares so we don't need address_sorting and cares files at all.
+  # absl deps will be declared explicitly so we also don't need to include them.
+  grpc_full_deps = set(non_abseil_lib_and_transitive_deps("grpc")) - set({"address_sorting", "cares"})
+
+  grpc_private_files = collect_files_for_libs(grpc_full_deps, ("headers", "src"))
+  grpc_public_headers = collect_files_for_libs(grpc_full_deps, ("public_headers", ))
+  grpc_private_headers = collect_files_for_libs(grpc_full_deps, ("headers", ))
+
+  grpc_abseil_specs = list_abseil_specs("grpc")
+
+  # TODO(jtattermusch): build.yaml is now generated from bazel build
+  # which doesn't have an explicit "grpc_cronet" target. Until it exists
+  # we construct the list of files by taking what's in the "grpc" target
+  # and adding a few files on top of that.
+  grpc_cronet_extra_public_headers = ['include/grpc/grpc_cronet.h']
+  grpc_cronet_extra_impl_files = [
+      'src/core/ext/transport/cronet/client/secure/cronet_channel_create.cc',
+      'src/core/ext/transport/cronet/client/secure/cronet_channel_create.h',
+      'src/core/ext/transport/cronet/transport/cronet_status.cc',
+      'src/core/ext/transport/cronet/transport/cronet_status.h',
+      'src/core/ext/transport/cronet/transport/cronet_transport.cc',
+      'src/core/ext/transport/cronet/transport/cronet_transport.h',
+      'third_party/objective_c/Cronet/bidirectional_stream_c.h'
+  ]
+
+  grpc_cronet_files = list(sorted(grpc_cronet_extra_impl_files))
+  grpc_cronet_public_headers = list(sorted(grpc_cronet_extra_public_headers))
+  %>
+  Pod::Spec.new do |s|
+    s.name     = 'gRPC-Core'
+    version = '${settings.version}'
+    s.version  = version
+    s.summary  = 'Core cross-platform gRPC library, written in C'
+    s.homepage = 'https://grpc.io'
+    s.license  = 'Apache License, Version 2.0'
+    s.authors  = { 'The gRPC contributors' => 'grpc-packages@google.com' }
+
+    s.source = {
+      :git => 'https://github.com/grpc/grpc.git',
+      :tag => "v#{version}",
+      :submodules => true,
+    }
+
+    # gRPC podspecs depend on fix for https://github.com/CocoaPods/CocoaPods/issues/6024,
+    # which was released in Cocoapods v1.2.0.
+    s.cocoapods_version = '>= 1.2.0'
+
+    s.ios.deployment_target = '10.0'
+    s.osx.deployment_target = '10.12'
+    s.tvos.deployment_target = '12.0'
+    s.watchos.deployment_target = '6.0'
+
+    s.requires_arc = false
+
+    name = 'grpc'
+    abseil_version = '1.20230802.0'
+
+    # When creating a dynamic framework, name it grpc.framework instead of gRPC-Core.framework.
+    # This lets users write their includes like `#include <grpc/grpc.h>` as opposed to `#include
+    # <gRPC-Core/grpc.h>`.
+    s.module_name = name
+
+    # When creating a dynamic framework, copy the headers under `include/grpc/` into the root of
+    # the `Headers/` directory of the framework (i.e., not under `Headers/include/grpc`).
+    #
+    # TODO(jcanizales): Debug why this doesn't work on macOS.
+    s.header_mappings_dir = 'include/grpc'
+
+    # The above has an undesired effect when creating a static library: It forces users to write
+    # includes like `#include <gRPC-Core/grpc.h>`. `s.header_dir` adds a path prefix to that, and
+    # because Cocoapods lets omit the pod name when including headers of static libraries, the
+    # following lets users write `#include <grpc/grpc.h>`.
+    s.header_dir = name
+
+    # The module map created automatically by Cocoapods doesn't work for C libraries like gRPC-Core.
+    s.module_map = 'include/grpc/module.modulemap'
+
+    # To compile the library, we need the user headers search path (quoted includes) to point to the
+    # root of the repo, third_party/** and two upb generated directories, and the system headers
+    # search path (angled includes) to point to `include/`.
+    s.pod_target_xcconfig = {
+      'HEADER_SEARCH_PATHS' => '"$(inherited)" "$(PODS_TARGET_SRCROOT)/include"',
+      'USER_HEADER_SEARCH_PATHS' => '"$(PODS_TARGET_SRCROOT)"'${"\\"}
+          ' "$(PODS_TARGET_SRCROOT)/src/core/ext/upb-generated"'${"\\"}
+          ' "$(PODS_TARGET_SRCROOT)/src/core/ext/upbdefs-generated"'${"\\"}
+          ' "$(PODS_TARGET_SRCROOT)/third_party/re2"'${"\\"}
+          ' "$(PODS_TARGET_SRCROOT)/third_party/upb"'${"\\"}
+          ' "$(PODS_TARGET_SRCROOT)/third_party/utf8_range"'${"\\"}
+          ' "$(PODS_TARGET_SRCROOT)/third_party/xxhash"',
+      # If we don't set these two settings, `include/grpc/support/time.h` and
+      # `src/core/lib/gpr/string.h` shadow the system `<time.h>` and `<string.h>`, breaking the
+      # build.
+      'USE_HEADERMAP' => 'NO',
+      'ALWAYS_SEARCH_USER_PATHS' => 'NO',
+      'GCC_PREPROCESSOR_DEFINITIONS' => '"$(inherited)" "COCOAPODS=1"',
+      'CLANG_WARN_STRICT_PROTOTYPES' => 'NO',
+      'CLANG_CXX_LANGUAGE_STANDARD' => 'c++14',
+    }
+
+    s.default_subspecs = 'Interface', 'Implementation'
+    s.compiler_flags = '-DGRPC_ARES=0 -Wno-comma'
+    s.libraries = 'c++'
+
+    # Like many other C libraries, gRPC-Core has its public headers under `include/<libname>/` and its
+    # sources and private headers in other directories outside `include/`. Cocoapods' linter doesn't
+    # allow any header to be listed outside the `header_mappings_dir` (even though doing so works in
+    # practice). Because we need our `header_mappings_dir` to be `include/grpc/` for the reason
+    # mentioned above, we work around the linter limitation by dividing the pod into two subspecs, one
+    # for public headers and the other for implementation. Each gets its own `header_mappings_dir`,
+    # making the linter happy.
+    #
+    # The list of source files is generated by a template: `templates/gRPC-Core.podspec.template`. It
+    # can be regenerated from the template by running `tools/buildgen/generate_projects.sh`.
+    s.subspec 'Interface' do |ss|
+      ss.header_mappings_dir = 'include/grpc'
+
+      ss.source_files = ${ruby_multiline_list(grpc_public_headers, 22)}
+    end
+    s.subspec 'Implementation' do |ss|
+      ss.header_mappings_dir = '.'
+      ss.libraries = 'z'
+      ss.dependency "#{s.name}/Interface", version
+      ss.dependency 'BoringSSL-GRPC', '0.0.31'
+      % for abseil_spec in grpc_abseil_specs:
+      ss.dependency '${abseil_spec}', abseil_version
+      % endfor
+      ss.compiler_flags = '-DBORINGSSL_PREFIX=GRPC -Wno-unreachable-code -Wno-shorten-64-to-32'
+
+      ss.source_files = ${ruby_multiline_list(grpc_private_files, 22)}
+      ss.private_header_files = ${ruby_multiline_list(grpc_private_headers, 30)}
+    end
+
+    # CFStream is now default. Leaving this subspec only for compatibility purpose.
+    s.subspec 'CFStream-Implementation' do |ss|
+      ss.dependency "#{s.name}/Implementation", version
+    end
+
+    s.subspec 'Cronet-Interface' do |ss|
+      ss.header_mappings_dir = 'include/grpc'
+      ss.source_files = ${ruby_multiline_list(grpc_cronet_public_headers, 22)}
+    end
+
+    s.subspec 'Cronet-Implementation' do |ss|
+      ss.header_mappings_dir = '.'
+
+      ss.dependency "#{s.name}/Interface", version
+      ss.dependency "#{s.name}/Implementation", version
+      ss.dependency "#{s.name}/Cronet-Interface", version
+
+      ss.source_files = ${ruby_multiline_list(grpc_cronet_files, 22)}
+    end
+
+    # patch include of openssl to openssl_grpc
+    s.prepare_command = <<-END_OF_COMMAND
+      set -e
+      find src/core -type f \\( -path '*.h' -or -path '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include <openssl/(.*)>;#if COCOAPODS==1\\\n  #include <openssl_grpc/\\1>\\\n#else\\\n  #include <openssl/\\1>\\\n#endif;g'
+      find src/core/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
+    END_OF_COMMAND
+  end

@@ -1,0 +1,60 @@
+lang/core:
+- src/abseil-cpp/**
+- src/boringssl/**
+- src/c-ares/**
+- src/core/**
+- src/proto/**
+- src/re2/**
+- src/upb/**
+- src/zlib/**
+- include/grpc/**
+- test/core/**
+- tools/codegen/core/**
+
+lang/c++:
+- examples/cpp/**
+- src/cpp/**
+- include/grpc++/**
+- include/grpcpp/**
+- test/cpp/**
+
+area/infra:
+- .github/**
+
+lang/node:
+- examples/node/**
+- src/compiler/node*
+
+lang/ObjC:
+- examples/objective-c/**
+- src/compiler/objective_c*
+- src/objective-c/**
+
+lang/php:
+- examples/php/**
+- src/compiler/php*
+- src/php/**
+
+lang/python:
+- bazel/python_rules.bzl
+- examples/python/**
+- requirements.bazel.txt
+- src/compiler/python*
+- any:
+  - src/python/**
+  - "!src/python/grpcio/grpc_core_dependencies.py"
+
+lang/ruby:
+- examples/ruby/**
+- src/compiler/ruby*
+- src/ruby/**
+
+"lang/C#":
+- src/compiler/csharp*
+- src/csharp/**
+
+"disposition/Needs Internal Changes":
+- src/core/lib/event_engine/windows/**
+- src/core/lib/gpr/windows/**
+- src/core/lib/gprpp/windows/**
+- test/core/event_engine/windows/**

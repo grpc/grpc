@@ -1,0 +1,16 @@
+MANIFEST
+*.egg-info/
+build/
+dist/
+*.egg
+*.egg/
+*.eggs/
+*_pb2.py
+.coverage
+.coverage.*
+.cache/
+nosetests.xml
+doc/
+htmlcov/
+grpc/_cython/_credentials
+poison.c

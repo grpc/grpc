@@ -1,0 +1,341 @@
+# Template generated from load test configurations by loadtest_template.py.
+#
+# Configuration templates contain client and server configurations for multiple
+# languages, and may contain template substitution keys. These templates are
+# used to generate load test configurations by selecting clients and servers for
+# the required languages. The source files for template generation may be load
+# test configurations or load test configuration templates. Load test
+# configuration generation is performed by loadtest_config.py. See documentation
+# below:
+# https://github.com/grpc/grpc/blob/master/tools/run_tests/performance/README.md
+apiVersion: e2etest.grpc.io/v1
+kind: LoadTest
+metadata:
+  name: psm_proxyless_prebuilt_all_languages
+spec:
+  clients:
+  - language: cxx
+    pool: ${client_pool}
+    run:
+    - args:
+      - -c
+      - |
+        timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
+            /source/code/bazel-bin/test/cpp/qps/qps_worker \
+            --driver_port="${DRIVER_PORT}"
+      command:
+      - bash
+      env:
+      - name: GRPC_XDS_BOOTSTRAP
+        value: /bootstrap/bootstrap.json
+      image: ${prebuilt_image_prefix}/cxx:${prebuilt_image_tag}
+      name: main
+    - args:
+      - -default-config-path
+      - containers/runtime/xds-server/config/default_config.json
+      - -path-to-bootstrap
+      - containers/runtime/xds-server/bootstrap.json
+      command:
+      - main
+      image: ${psm_image_prefix}/xds-server:${psm_image_tag}
+      livenessProbe:
+        initialDelaySeconds: 30
+        periodSeconds: 5
+        tcpSocket:
+          port: 10000
+      name: xds-server
+  - language: go
+    pool: ${client_pool}
+    run:
+    - args:
+      - -c
+      - |
+        timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
+            /executable/bin/worker \
+            --driver_port="${DRIVER_PORT}"
+      command:
+      - bash
+      env:
+      - name: GRPC_XDS_BOOTSTRAP
+        value: /bootstrap/bootstrap.json
+      image: ${prebuilt_image_prefix}/go:${prebuilt_image_tag}
+      name: main
+    - args:
+      - -default-config-path
+      - containers/runtime/xds-server/config/default_config.json
+      - -path-to-bootstrap
+      - containers/runtime/xds-server/bootstrap.json
+      command:
+      - main
+      image: ${psm_image_prefix}/xds-server:${psm_image_tag}
+      livenessProbe:
+        initialDelaySeconds: 30
+        periodSeconds: 5
+        tcpSocket:
+          port: 10000
+      name: xds-server
+  - language: java
+    pool: ${client_pool}
+    run:
+    - args:
+      - -c
+      - |
+        timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
+            /run_scripts/run_worker.sh
+      command:
+      - bash
+      env:
+      - name: GRPC_XDS_BOOTSTRAP
+        value: /bootstrap/bootstrap.json
+      image: ${prebuilt_image_prefix}/java:${prebuilt_image_tag}
+      name: main
+    - args:
+      - -default-config-path
+      - containers/runtime/xds-server/config/default_config.json
+      - -path-to-bootstrap
+      - containers/runtime/xds-server/bootstrap.json
+      command:
+      - main
+      image: ${psm_image_prefix}/xds-server:${psm_image_tag}
+      livenessProbe:
+        initialDelaySeconds: 30
+        periodSeconds: 5
+        tcpSocket:
+          port: 10000
+      name: xds-server
+  - language: node
+    pool: ${client_pool}
+    run:
+    - args:
+      - -c
+      - |
+        timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
+            /execute/worker-linux --benchmark_impl=grpc \
+            --driver_port="${DRIVER_PORT}"
+      command:
+      - bash
+      env:
+      - name: GRPC_XDS_BOOTSTRAP
+        value: /bootstrap/bootstrap.json
+      image: ${prebuilt_image_prefix}/node:${prebuilt_image_tag}
+      name: main
+    - args:
+      - -default-config-path
+      - containers/runtime/xds-server/config/default_config.json
+      - -path-to-bootstrap
+      - containers/runtime/xds-server/bootstrap.json
+      command:
+      - main
+      image: ${psm_image_prefix}/xds-server:${psm_image_tag}
+      livenessProbe:
+        initialDelaySeconds: 30
+        periodSeconds: 5
+        tcpSocket:
+          port: 10000
+      name: xds-server
+  - language: php7
+    pool: ${client_pool}
+    run:
+    - args:
+      - -c
+      - |
+        timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
+        /run_scripts/run_worker.sh
+      command:
+      - bash
+      env:
+      - name: GRPC_XDS_BOOTSTRAP
+        value: /bootstrap/bootstrap.json
+      image: ${prebuilt_image_prefix}/php7:${prebuilt_image_tag}
+      name: main
+    - args:
+      - -default-config-path
+      - containers/runtime/xds-server/config/default_config.json
+      - -path-to-bootstrap
+      - containers/runtime/xds-server/bootstrap.json
+      command:
+      - main
+      image: ${psm_image_prefix}/xds-server:${psm_image_tag}
+      livenessProbe:
+        initialDelaySeconds: 30
+        periodSeconds: 5
+        tcpSocket:
+          port: 10000
+      name: xds-server
+  - language: php7_protobuf_c
+    pool: ${client_pool}
+    run:
+    - args:
+      - -c
+      - |
+        timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
+        /run_scripts/run_protobuf_c_worker.sh
+      command:
+      - bash
+      env:
+      - name: GRPC_XDS_BOOTSTRAP
+        value: /bootstrap/bootstrap.json
+      image: ${prebuilt_image_prefix}/php7:${prebuilt_image_tag}
+      name: main
+    - args:
+      - -default-config-path
+      - containers/runtime/xds-server/config/default_config.json
+      - -path-to-bootstrap
+      - containers/runtime/xds-server/bootstrap.json
+      command:
+      - main
+      image: ${psm_image_prefix}/xds-server:${psm_image_tag}
+      livenessProbe:
+        initialDelaySeconds: 30
+        periodSeconds: 5
+        tcpSocket:
+          port: 10000
+      name: xds-server
+  - language: python
+    pool: ${client_pool}
+    run:
+    - args:
+      - -c
+      - |
+        timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
+            /execute/qps_worker \
+            --driver_port="${DRIVER_PORT}"
+      command:
+      - bash
+      env:
+      - name: GRPC_XDS_BOOTSTRAP
+        value: /bootstrap/bootstrap.json
+      image: ${prebuilt_image_prefix}/python:${prebuilt_image_tag}
+      name: main
+    - args:
+      - -default-config-path
+      - containers/runtime/xds-server/config/default_config.json
+      - -path-to-bootstrap
+      - containers/runtime/xds-server/bootstrap.json
+      command:
+      - main
+      image: ${psm_image_prefix}/xds-server:${psm_image_tag}
+      livenessProbe:
+        initialDelaySeconds: 30
+        periodSeconds: 5
+        tcpSocket:
+          port: 10000
+      name: xds-server
+  - language: python_asyncio
+    pool: ${client_pool}
+    run:
+    - args:
+      - -c
+      - |
+        timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
+            /execute/benchmark_worker \
+            --driver_port="${DRIVER_PORT}"
+      command:
+      - bash
+      env:
+      - name: GRPC_XDS_BOOTSTRAP
+        value: /bootstrap/bootstrap.json
+      image: ${prebuilt_image_prefix}/python:${prebuilt_image_tag}
+      name: main
+    - args:
+      - -default-config-path
+      - containers/runtime/xds-server/config/default_config.json
+      - -path-to-bootstrap
+      - containers/runtime/xds-server/bootstrap.json
+      command:
+      - main
+      image: ${psm_image_prefix}/xds-server:${psm_image_tag}
+      livenessProbe:
+        initialDelaySeconds: 30
+        periodSeconds: 5
+        tcpSocket:
+          port: 10000
+      name: xds-server
+  driver:
+    language: cxx
+    pool: ${driver_pool}
+    run:
+    - image: ${driver_image}
+      name: main
+  results:
+    bigQueryTable: ${big_query_table}
+  servers:
+  - language: cxx
+    pool: ${server_pool}
+    run:
+    - args:
+      - -c
+      - |
+        timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
+            /source/code/bazel-bin/test/cpp/qps/qps_worker \
+            --driver_port="${DRIVER_PORT}" --server_port=10010
+      command:
+      - bash
+      image: ${prebuilt_image_prefix}/cxx:${prebuilt_image_tag}
+      name: main
+  - language: go
+    pool: ${server_pool}
+    run:
+    - args:
+      - -c
+      - |
+        timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
+            /executable/bin/worker \
+            --driver_port="${DRIVER_PORT}"
+      command:
+      - bash
+      image: ${prebuilt_image_prefix}/go:${prebuilt_image_tag}
+      name: main
+  - language: java
+    pool: ${server_pool}
+    run:
+    - args:
+      - -c
+      - |
+        timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
+            /run_scripts/run_worker.sh
+      command:
+      - bash
+      image: ${prebuilt_image_prefix}/java:${prebuilt_image_tag}
+      name: main
+  - language: node
+    pool: ${server_pool}
+    run:
+    - args:
+      - -c
+      - |
+        timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
+            /execute/worker-linux --benchmark_impl=grpc \
+            --driver_port="${DRIVER_PORT}"
+      command:
+      - bash
+      image: ${prebuilt_image_prefix}/node:${prebuilt_image_tag}
+      name: main
+  - language: python
+    pool: ${server_pool}
+    run:
+    - args:
+      - -c
+      - |
+        timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
+            /execute/qps_worker \
+            --driver_port="${DRIVER_PORT}"
+      command:
+      - bash
+      image: ${prebuilt_image_prefix}/python:${prebuilt_image_tag}
+      name: main
+  - language: python_asyncio
+    pool: ${server_pool}
+    run:
+    - command:
+      - bash
+      image: ${prebuilt_image_prefix}/python:${prebuilt_image_tag}
+      name: main
+      rgs:
+      - -c
+      - |
+        timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
+            /execute/benchmark_worker \
+            --driver_port="${DRIVER_PORT}"
+  timeoutSeconds: ${timeout_seconds}
+  ttlSeconds: 86400

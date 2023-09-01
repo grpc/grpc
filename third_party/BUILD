@@ -1,0 +1,16 @@
+exports_files([
+    "gtest.BUILD",
+    "zlib.BUILD",
+    "twisted.BUILD",
+    "yaml.BUILD",
+    "incremental.BUILD",
+    "zope_interface.BUILD",
+    "constantly.BUILD",
+    "cython.BUILD",
+    "six.BUILD",
+    "enum34.BUILD",
+    "futures.BUILD",
+    "protobuf.patch",
+    "rules_python.patch",
+    "protoc-gen-validate.patch",
+])

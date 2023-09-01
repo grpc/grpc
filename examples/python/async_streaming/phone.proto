@@ -1,0 +1,52 @@
+// Copyright 2020 The gRPC Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package grpc.testing;
+
+message CallInfo {
+  string session_id = 1;
+  string media = 2;
+}
+
+message CallState {
+  enum State {
+    // The default state.
+    UNDEFINED = 0;
+    // The call is newly created.
+    NEW = 1;
+    // The call is connected.
+    ACTIVE = 6;
+    // The call is finished.
+    ENDED = 7;
+  }
+  State state = 2;
+}
+
+message StreamCallRequest {
+  string phone_number = 1;
+}
+
+message StreamCallResponse {
+  oneof stream_call_response {
+    CallInfo call_info = 1;
+    CallState call_state = 2;
+  } 
+}
+
+service Phone {
+  // Makes a phone call and communicate states via a stream.
+  rpc StreamCall(stream StreamCallRequest) returns (stream StreamCallResponse);
+}

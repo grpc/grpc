@@ -1,0 +1,341 @@
+// Copyright 2015-2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// Message definitions to be used by integration test service definitions.
+
+syntax = "proto3";
+
+package grpc.testing;
+
+option java_package = "io.grpc.testing.integration";
+
+// TODO(dgq): Go back to using well-known types once
+// https://github.com/grpc/grpc/issues/6980 has been fixed.
+// import "google/protobuf/wrappers.proto";
+message BoolValue {
+  // The bool value.
+  bool value = 1;
+}
+
+// The type of payload that should be returned.
+enum PayloadType {
+  // Compressable text format.
+  COMPRESSABLE = 0;
+}
+
+// A block of data, to simply increase gRPC message size.
+message Payload {
+  // The type of data in body.
+  PayloadType type = 1;
+  // Primary contents of payload.
+  bytes body = 2;
+}
+
+// A protobuf representation for grpc status. This is used by test
+// clients to specify a status that the server should attempt to return.
+message EchoStatus {
+  int32 code = 1;
+  string message = 2;
+}
+
+// The type of route that a client took to reach a server w.r.t. gRPCLB.
+// The server must fill in "fallback" if it detects that the RPC reached
+// the server via the "gRPCLB fallback" path, and "backend" if it detects
+// that the RPC reached the server via "gRPCLB backend" path (i.e. if it got
+// the address of this server from the gRPCLB server BalanceLoad RPC). Exactly
+// how this detection is done is context and server dependent.
+enum GrpclbRouteType {
+  // Server didn't detect the route that a client took to reach it.
+  GRPCLB_ROUTE_TYPE_UNKNOWN = 0;
+  // Indicates that a client reached a server via gRPCLB fallback.
+  GRPCLB_ROUTE_TYPE_FALLBACK = 1;
+  // Indicates that a client reached a server as a gRPCLB-given backend.
+  GRPCLB_ROUTE_TYPE_BACKEND = 2;
+}
+
+// Unary request.
+message SimpleRequest {
+  // Desired payload type in the response from the server.
+  // If response_type is RANDOM, server randomly chooses one from other formats.
+  PayloadType response_type = 1;
+
+  // Desired payload size in the response from the server.
+  int32 response_size = 2;
+
+  // Optional input payload sent along with the request.
+  Payload payload = 3;
+
+  // Whether SimpleResponse should include username.
+  bool fill_username = 4;
+
+  // Whether SimpleResponse should include OAuth scope.
+  bool fill_oauth_scope = 5;
+
+  // Whether to request the server to compress the response. This field is
+  // "nullable" in order to interoperate seamlessly with clients not able to
+  // implement the full compression tests by introspecting the call to verify
+  // the response's compression status.
+  BoolValue response_compressed = 6;
+
+  // Whether server should return a given status
+  EchoStatus response_status = 7;
+
+  // Whether the server should expect this request to be compressed.
+  BoolValue expect_compressed = 8;
+
+  // Whether SimpleResponse should include server_id.
+  bool fill_server_id = 9;
+
+  // Whether SimpleResponse should include grpclb_route_type.
+  bool fill_grpclb_route_type = 10;
+
+  // If set the server should record this metrics report data for the current RPC.
+  TestOrcaReport orca_per_query_report = 11;
+}
+
+// Unary response, as configured by the request.
+message SimpleResponse {
+  // Payload to increase message size.
+  Payload payload = 1;
+  // The user the request came from, for verifying authentication was
+  // successful when the client expected it.
+  string username = 2;
+  // OAuth scope.
+  string oauth_scope = 3;
+
+  // Server ID. This must be unique among different server instances,
+  // but the same across all RPC's made to a particular server instance.
+  string server_id = 4;
+  // gRPCLB Path.
+  GrpclbRouteType grpclb_route_type = 5;
+
+  // Server hostname.
+  string hostname = 6;
+}
+
+// Client-streaming request.
+message StreamingInputCallRequest {
+  // Optional input payload sent along with the request.
+  Payload payload = 1;
+
+  // Whether the server should expect this request to be compressed. This field
+  // is "nullable" in order to interoperate seamlessly with servers not able to
+  // implement the full compression tests by introspecting the call to verify
+  // the request's compression status.
+  BoolValue expect_compressed = 2;
+
+  // Not expecting any payload from the response.
+}
+
+// Client-streaming response.
+message StreamingInputCallResponse {
+  // Aggregated size of payloads received from the client.
+  int32 aggregated_payload_size = 1;
+}
+
+// Configuration for a particular response.
+message ResponseParameters {
+  // Desired payload sizes in responses from the server.
+  int32 size = 1;
+
+  // Desired interval between consecutive responses in the response stream in
+  // microseconds.
+  int32 interval_us = 2;
+
+  // Whether to request the server to compress the response. This field is
+  // "nullable" in order to interoperate seamlessly with clients not able to
+  // implement the full compression tests by introspecting the call to verify
+  // the response's compression status.
+  BoolValue compressed = 3;
+}
+
+// Server-streaming request.
+message StreamingOutputCallRequest {
+  // Desired payload type in the response from the server.
+  // If response_type is RANDOM, the payload from each response in the stream
+  // might be of different types. This is to simulate a mixed type of payload
+  // stream.
+  PayloadType response_type = 1;
+
+  // Configuration for each expected response message.
+  repeated ResponseParameters response_parameters = 2;
+
+  // Optional input payload sent along with the request.
+  Payload payload = 3;
+
+  // Whether server should return a given status
+  EchoStatus response_status = 7;
+
+  // If set the server should update this metrics report data at the OOB server.
+  TestOrcaReport orca_oob_report = 8;
+}
+
+// Server-streaming response, as configured by the request and parameters.
+message StreamingOutputCallResponse {
+  // Payload to increase response size.
+  Payload payload = 1;
+}
+
+// For reconnect interop test only.
+// Client tells server what reconnection parameters it used.
+message ReconnectParams {
+  int32 max_reconnect_backoff_ms = 1;
+}
+
+// For reconnect interop test only.
+// Server tells client whether its reconnects are following the spec and the
+// reconnect backoffs it saw.
+message ReconnectInfo {
+  bool passed = 1;
+  repeated int32 backoff_ms = 2;
+}
+
+message LoadBalancerStatsRequest {
+  // Request stats for the next num_rpcs sent by client.
+  int32 num_rpcs = 1;
+  // If num_rpcs have not completed within timeout_sec, return partial results.
+  int32 timeout_sec = 2;
+  // Response header + trailer metadata entries we want the values of.
+  // Matching of the keys is case-insensitive as per rfc7540#section-8.1.2
+  // * (asterisk) is a special value that will return all metadata entries
+  repeated string metadata_keys = 3;
+}
+
+message LoadBalancerStatsResponse {
+  enum MetadataType {
+    UNKNOWN = 0;
+    INITIAL = 1;
+    TRAILING = 2;
+  }
+  message MetadataEntry {
+    // Key, exactly as received from the server. Case may be different from what
+    // was requested in the LoadBalancerStatsRequest)
+    string key = 1;
+    // Value, exactly as received from the server.
+    string value = 2;
+    // Metadata type
+    MetadataType type = 3;
+  }
+  message RpcMetadata {
+    // metadata values for each rpc for the keys specified in
+    // LoadBalancerStatsRequest.metadata_keys.
+    repeated MetadataEntry metadata = 1;
+  }
+  message MetadataByPeer {
+    // List of RpcMetadata in for each RPC with a given peer
+    repeated RpcMetadata rpc_metadata = 1;
+  }
+  message RpcsByPeer {
+    // The number of completed RPCs for each peer.
+    map<string, int32> rpcs_by_peer = 1;
+  }
+  // The number of completed RPCs for each peer.
+  map<string, int32> rpcs_by_peer = 1;
+  // The number of RPCs that failed to record a remote peer.
+  int32 num_failures = 2;
+  map<string, RpcsByPeer> rpcs_by_method = 3;
+  // All the metadata of all RPCs for each peer.
+  map<string, MetadataByPeer> metadatas_by_peer = 4;
+}
+
+// Request for retrieving a test client's accumulated stats.
+message LoadBalancerAccumulatedStatsRequest {}
+
+// Accumulated stats for RPCs sent by a test client.
+message LoadBalancerAccumulatedStatsResponse {
+  // The total number of RPCs have ever issued for each type.
+  // Deprecated: use stats_per_method.rpcs_started instead.
+  map<string, int32> num_rpcs_started_by_method = 1 [deprecated = true];
+  // The total number of RPCs have ever completed successfully for each type.
+  // Deprecated: use stats_per_method.result instead.
+  map<string, int32> num_rpcs_succeeded_by_method = 2 [deprecated = true];
+  // The total number of RPCs have ever failed for each type.
+  // Deprecated: use stats_per_method.result instead.
+  map<string, int32> num_rpcs_failed_by_method = 3 [deprecated = true];
+
+  message MethodStats {
+    // The number of RPCs that were started for this method.
+    int32 rpcs_started = 1;
+
+    // The number of RPCs that completed with each status for this method.  The
+    // key is the integral value of a google.rpc.Code; the value is the count.
+    map<int32, int32> result = 2;
+  }
+
+  // Per-method RPC statistics.  The key is the RpcType in string form; e.g.
+  // 'EMPTY_CALL' or 'UNARY_CALL'
+  map<string, MethodStats> stats_per_method = 4;
+}
+
+// Configurations for a test client.
+message ClientConfigureRequest {
+  // Type of RPCs to send.
+  enum RpcType {
+    EMPTY_CALL = 0;
+    UNARY_CALL = 1;
+  }
+
+  // Metadata to be attached for the given type of RPCs.
+  message Metadata {
+    RpcType type = 1;
+    string key = 2;
+    string value = 3;
+  }
+
+  // The types of RPCs the client sends.
+  repeated RpcType types = 1;
+  // The collection of custom metadata to be attached to RPCs sent by the client.
+  repeated Metadata metadata = 2;
+  // The deadline to use, in seconds, for all RPCs.  If unset or zero, the
+  // client will use the default from the command-line.
+  int32 timeout_sec = 3;
+}
+
+// Response for updating a test client's configuration.
+message ClientConfigureResponse {}
+
+message MemorySize {
+  int64 rss = 1;
+}
+
+// Metrics data the server will update and send to the client. It mirrors orca load report
+// https://github.com/cncf/xds/blob/eded343319d09f30032952beda9840bbd3dcf7ac/xds/data/orca/v3/orca_load_report.proto#L15,
+// but avoids orca dependency. Used by both per-query and out-of-band reporting tests.
+message TestOrcaReport {
+  double cpu_utilization = 1;
+  double memory_utilization = 2;
+  map<string, double> request_cost = 3;
+  map<string, double> utilization = 4;
+}
+
+message HookRequest {
+  enum HookRequestCommand {
+    // Default value
+    UNSPECIFIED = 0;
+    // Start the HTTP endpoint
+    START = 1;
+    // Stop
+    STOP = 2;
+    // Return from HTTP GET/POST
+    RETURN = 3;
+  }
+  HookRequestCommand command = 1;
+  int32 grpc_code_to_return = 2;
+  string grpc_status_description = 3;
+  // Server port to listen to
+  int32 server_port = 4;
+}
+
+message HookResponse {
+}

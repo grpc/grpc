@@ -1,0 +1,14 @@
+platform :ios, '10.0'
+
+install! 'cocoapods', :deterministic_uuids => false
+
+ROOT_DIR = '../../../..'
+
+target 'InterceptorSample' do
+  pod 'gRPC-ProtoRPC', :path => ROOT_DIR
+  pod 'gRPC', :path => ROOT_DIR
+  pod 'gRPC-Core', :path => ROOT_DIR
+  pod 'gRPC-RxLibrary', :path => ROOT_DIR
+  pod 'RemoteTest', :path => "../RemoteTestClient"
+  pod '!ProtoCompiler-gRPCPlugin', :path => "#{ROOT_DIR}/src/objective-c"
+end

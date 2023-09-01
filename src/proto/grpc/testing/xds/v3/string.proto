@@ -1,0 +1,64 @@
+// Copyright 2020 The gRPC Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// Local copy of Envoy xDS proto file, used for testing only.
+
+syntax = "proto3";
+
+package envoy.type.matcher.v3;
+
+import "src/proto/grpc/testing/xds/v3/regex.proto";
+
+message StringMatcher {
+  oneof match_pattern {
+    // The input string must match exactly the string specified here.
+    //
+    // Examples:
+    //
+    // * *abc* only matches the value *abc*.
+    string exact = 1;
+
+    // The input string must have the prefix specified here.
+    // Note: empty prefix is not allowed, please use regex instead.
+    //
+    // Examples:
+    //
+    // * *abc* matches the value *abc.xyz*
+    string prefix = 2;
+
+    // The input string must have the suffix specified here.
+    // Note: empty prefix is not allowed, please use regex instead.
+    //
+    // Examples:
+    //
+    // * *abc* matches the value *xyz.abc*
+    string suffix = 3;
+
+    // The input string must match the regular expression specified here.
+    RegexMatcher safe_regex = 5;
+
+    // The input string must have the substring specified here.
+    // Note: empty contains match is not allowed, please use regex instead.
+    //
+    // Examples:
+    //
+    // * *abc* matches the value *xyz.abc.def*
+    string contains = 7;
+  }
+
+  // If true, indicates the exact/prefix/suffix matching should be case insensitive. This has no
+  // effect for the safe_regex match.
+  // For example, the matcher *data* will match both input string *Data* and *data* if set to true.
+  bool ignore_case = 6;
+}

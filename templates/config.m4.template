@@ -1,0 +1,78 @@
+%YAML 1.2
+--- |
+  PHP_ARG_ENABLE(grpc, whether to enable grpc support,
+  [  --enable-grpc           Enable grpc support])
+
+  if test "$PHP_GRPC" != "no"; then
+    dnl Write more examples of tests here...
+
+    dnl # --with-grpc -> add include path
+    PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/include)
+    PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/src/core/ext/upb-generated)
+    PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/src/core/ext/upbdefs-generated)
+    PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/src/php/ext/grpc)
+    PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/abseil-cpp)
+    PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/address_sorting/include)
+    PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/boringssl-with-bazel/src/include)
+    PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/re2)
+    PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/upb)
+    PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/utf8_range)
+    PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/xxhash)
+
+    LIBS="-lpthread $LIBS"
+
+    CFLAGS="-std=c11 -g -O2"
+    CXXFLAGS="-std=c++14 -fno-exceptions -fno-rtti -g -O2"
+    GRPC_SHARED_LIBADD="-lpthread $GRPC_SHARED_LIBADD"
+    PHP_REQUIRE_CXX()
+    PHP_ADD_LIBRARY(pthread)
+    PHP_ADD_LIBRARY(dl,,GRPC_SHARED_LIBADD)
+    PHP_ADD_LIBRARY(dl)
+
+    case $host in
+      *darwin*)
+        PHP_ADD_LIBRARY(c++,1,GRPC_SHARED_LIBADD)
+        ;;
+      *)
+        PHP_ADD_LIBRARY(stdc++,1,GRPC_SHARED_LIBADD)
+        PHP_ADD_LIBRARY(rt,,GRPC_SHARED_LIBADD)
+        PHP_ADD_LIBRARY(rt)
+        ;;
+    esac
+
+    PHP_SUBST(GRPC_SHARED_LIBADD)
+  <%
+    srcs = []
+    srcs.extend(php_config_m4.src)
+    lib_maps = {lib.name: lib for lib in libs}
+    php_deps = php_config_m4.get('deps', [])
+    php_full_deps = []
+    for dep in php_deps:
+      php_full_deps.append(dep)
+      lib = lib_maps.get(dep, None)
+      if lib:
+        php_full_deps.extend(lib.transitive_deps)
+    # construct list of all source files, but explicitly exclude zlib and cares
+    for dep in set(php_full_deps) - set({'z', 'cares'}):
+      lib = lib_maps.get(dep, None)
+      if lib:
+        srcs.extend(lib.src)
+    srcs = sorted(set(srcs))
+  %>
+    PHP_NEW_EXTENSION(grpc,
+      % for src in srcs:
+      ${src} ${"\\"}
+      % endfor
+      , $ext_shared, , -fvisibility=hidden ${"\\"}
+      -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN ${"\\"}
+      -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DGRPC_ARES=0 ${"\\"}
+      -DGRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK=1 ${"\\"}
+      -DGRPC_XDS_USER_AGENT_NAME_SUFFIX='"\"PHP\""' ${"\\"}
+      -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"${settings.php_version.php()}\""')
+  <%
+    dirs = sorted(set(src[:src.rfind('/')] for src in srcs))
+  %>
+    % for dir in dirs:
+    PHP_ADD_BUILD_DIR($ext_builddir/${dir})
+    % endfor
+  fi
