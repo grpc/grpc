@@ -309,8 +309,8 @@ class XdsClient : public DualRefCounted<XdsClient> {
   const Duration request_timeout_;
   const bool xds_federation_enabled_;
   XdsApi api_;
-  WorkSerializer work_serializer_;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine_;
+  WorkSerializer work_serializer_;
 
   Mutex mu_;
 

@@ -20,8 +20,11 @@
 #include <grpc/support/port_platform.h>
 
 #include <functional>
+#include <memory>
 
 #include "absl/base/thread_annotations.h"
+
+#include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -44,7 +47,9 @@ namespace grpc_core {
 // invoke DrainQueue() when it is safe to invoke the callback.
 class ABSL_LOCKABLE WorkSerializer {
  public:
-  WorkSerializer();
+  explicit WorkSerializer(
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+          event_engine);
 
   ~WorkSerializer();
 

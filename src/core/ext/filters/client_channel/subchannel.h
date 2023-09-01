@@ -221,6 +221,11 @@ class Subchannel : public DualRefCounted<Subchannel> {
 
   channelz::SubchannelNode* channelz_node();
 
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine()
+      const {
+    return event_engine_;
+  }
+
   // Starts watching the subchannel's connectivity state.
   // The first callback to the watcher will be delivered ~immediately.
   // Subsequent callbacks will be delivered as the subchannel's state
@@ -333,6 +338,8 @@ class Subchannel : public DualRefCounted<Subchannel> {
   RefCountedPtr<channelz::SubchannelNode> channelz_node_;
   // Minimum connection timeout.
   Duration min_connect_timeout_;
+  // EventEngine.
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
 
   // Connection state.
   OrphanablePtr<SubchannelConnector> connector_;
@@ -373,7 +380,6 @@ class Subchannel : public DualRefCounted<Subchannel> {
   // Data producer map.
   std::map<UniqueTypeName, DataProducerInterface*> data_producer_map_
       ABSL_GUARDED_BY(mu_);
-  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
 };
 
 }  // namespace grpc_core

@@ -461,10 +461,11 @@ Subchannel::Subchannel(SubchannelKey key,
       key_(std::move(key)),
       args_(args),
       pollset_set_(grpc_pollset_set_create()),
+      event_engine_(args_.GetObjectRef<EventEngine>()),
       connector_(std::move(connector)),
       watcher_list_(this),
-      backoff_(ParseArgsForBackoffValues(args_, &min_connect_timeout_)),
-      event_engine_(args_.GetObjectRef<EventEngine>()) {
+      work_serializer_(event_engine_),
+      backoff_(ParseArgsForBackoffValues(args_, &min_connect_timeout_)) {
   // A grpc_init is added here to ensure that grpc_shutdown does not happen
   // until the subchannel is destroyed. Subchannels can persist longer than
   // channels because they maybe reused/shared among multiple channels. As a

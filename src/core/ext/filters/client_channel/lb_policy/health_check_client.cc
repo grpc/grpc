@@ -100,6 +100,8 @@ HealthProducer::HealthChecker::HealthChecker(
     absl::string_view health_check_service_name)
     : producer_(std::move(producer)),
       health_check_service_name_(health_check_service_name),
+      work_serializer_(std::make_shared<WorkSerializer>(
+                           producer_->subchannel_->event_engine())),
       state_(producer_->state_ == GRPC_CHANNEL_READY ? GRPC_CHANNEL_CONNECTING
                                                      : producer_->state_),
       status_(producer_->status_) {

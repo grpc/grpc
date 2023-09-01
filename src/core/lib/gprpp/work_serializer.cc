@@ -32,6 +32,7 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/mpscq.h"
 #include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 
 namespace grpc_core {
 
@@ -43,6 +44,11 @@ DebugOnlyTraceFlag grpc_work_serializer_trace(false, "work_serializer");
 
 class WorkSerializer::WorkSerializerImpl : public Orphanable {
  public:
+  explicit WorkSerializerImpl(
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+          event_engine)
+      : event_engine_(std::move(event_engine)) {}
+
   void Run(std::function<void()> callback, const DebugLocation& location);
   void Schedule(std::function<void()> callback, const DebugLocation& location);
   void DrainQueue();
@@ -76,6 +82,8 @@ class WorkSerializer::WorkSerializerImpl : public Orphanable {
   // the lock to the work serializer.
   void DrainQueueOwned();
 
+  void RunNextCallbackFromQueue();
+
   // First 16 bits indicate ownership of the WorkSerializer, next 48 bits are
   // queue size (i.e., refs).
   static uint64_t MakeRefPair(uint16_t owners, uint64_t size) {
@@ -88,6 +96,8 @@ class WorkSerializer::WorkSerializerImpl : public Orphanable {
   static uint64_t GetSize(uint64_t ref_pair) {
     return static_cast<uint64_t>(ref_pair & 0xffffffffffffu);
   }
+
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
 
   // An initial size of 1 keeps track of whether the work serializer has been
   // orphaned.
@@ -111,19 +121,26 @@ void WorkSerializer::WorkSerializerImpl::Run(std::function<void()> callback,
   // The work serializer should not have been orphaned.
   GPR_DEBUG_ASSERT(GetSize(prev_ref_pair) > 0);
   if (GetOwners(prev_ref_pair) == 0) {
-    // We took ownership of the WorkSerializer. Invoke callback and drain queue.
-#ifndef NDEBUG
-    current_thread_ = std::this_thread::get_id();
-#endif
     if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
-      gpr_log(GPR_INFO, "  Executing immediately");
+      gpr_log(GPR_INFO, "  Took ownership, running via EE");
     }
-    callback();
-    // Delete the callback while still holding the WorkSerializer, so
-    // that any refs being held by the callback via lambda captures will
-    // be destroyed inside the WorkSerializer.
-    callback = nullptr;
-    DrainQueueOwned();
+    // We took ownership of the WorkSerializer. Invoke callback and drain queue.
+    event_engine_->Run([this, callback = std::move(callback)]() mutable {
+      ApplicationCallbackExecCtx app_exec_ctx;
+      ExecCtx exec_ctx;
+#ifndef NDEBUG
+      current_thread_ = std::this_thread::get_id();
+#endif
+      callback();
+      // Delete the callback while still holding the WorkSerializer, so
+      // that any refs being held by the callback via lambda captures will
+      // be destroyed inside the WorkSerializer.
+      callback = nullptr;
+#ifndef NDEBUG
+      current_thread_ = std::thread::id();
+#endif
+      DrainQueueOwned();
+    });
   } else {
     // Another thread is holding the WorkSerializer, so decrement the ownership
     // count we just added and queue the callback.
@@ -190,75 +207,81 @@ void WorkSerializer::WorkSerializerImpl::DrainQueue() {
 }
 
 void WorkSerializer::WorkSerializerImpl::DrainQueueOwned() {
+  event_engine_->Run([this]() {
+    ApplicationCallbackExecCtx app_exec_ctx;
+    ExecCtx exec_ctx;
+    RunNextCallbackFromQueue();
+  });
+}
+
+void WorkSerializer::WorkSerializerImpl::RunNextCallbackFromQueue() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
     gpr_log(GPR_INFO, "WorkSerializer::DrainQueueOwned() %p", this);
   }
-  while (true) {
-    auto prev_ref_pair = refs_.fetch_sub(MakeRefPair(0, 1));
-    // It is possible that while draining the queue, the last callback ended
-    // up orphaning the work serializer. In that case, delete the object.
-    if (GetSize(prev_ref_pair) == 1) {
+  auto prev_ref_pair = refs_.fetch_sub(MakeRefPair(0, 1));
+  // It is possible that while draining the queue, the last callback ended
+  // up orphaning the work serializer. In that case, delete the object.
+  if (GetSize(prev_ref_pair) == 1) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
+      gpr_log(GPR_INFO, "  Queue Drained. Destroying");
+    }
+    delete this;
+    return;
+  }
+  if (GetSize(prev_ref_pair) == 2) {
+    // Queue drained. Give up ownership but only if queue remains empty.
+    uint64_t expected = MakeRefPair(1, 1);
+    if (refs_.compare_exchange_strong(expected, MakeRefPair(0, 1),
+                                      std::memory_order_acq_rel)) {
+      // Queue is drained.
+      return;
+    }
+    if (GetSize(expected) == 0) {
+      // WorkSerializer got orphaned while this was running
       if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
         gpr_log(GPR_INFO, "  Queue Drained. Destroying");
       }
       delete this;
       return;
     }
-    if (GetSize(prev_ref_pair) == 2) {
-      // Queue drained. Give up ownership but only if queue remains empty.
-#ifndef NDEBUG
-      // Reset current_thread_ before giving up ownership to avoid TSAN
-      // race.  If we don't wind up giving up ownership, we'll set this
-      // again below before we pull the next callback out of the queue.
-      current_thread_ = std::thread::id();
-#endif
-      uint64_t expected = MakeRefPair(1, 1);
-      if (refs_.compare_exchange_strong(expected, MakeRefPair(0, 1),
-                                        std::memory_order_acq_rel)) {
-        // Queue is drained.
-        return;
-      }
-      if (GetSize(expected) == 0) {
-        // WorkSerializer got orphaned while this was running
-        if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
-          gpr_log(GPR_INFO, "  Queue Drained. Destroying");
-        }
-        delete this;
-        return;
-      }
-#ifndef NDEBUG
-      // Didn't wind up giving up ownership, so set current_thread_ again.
-      current_thread_ = std::this_thread::get_id();
-#endif
-    }
-    // There is at least one callback on the queue. Pop the callback from the
-    // queue and execute it.
-    CallbackWrapper* cb_wrapper = nullptr;
-    bool empty_unused;
-    while ((cb_wrapper = reinterpret_cast<CallbackWrapper*>(
-                queue_.PopAndCheckEnd(&empty_unused))) == nullptr) {
-      // This can happen due to a race condition within the mpscq
-      // implementation or because of a race with Run()/Schedule().
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
-        gpr_log(GPR_INFO, "  Queue returned nullptr, trying again");
-      }
-    }
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
-      gpr_log(GPR_INFO, "  Running item %p : callback scheduled at [%s:%d]",
-              cb_wrapper, cb_wrapper->location.file(),
-              cb_wrapper->location.line());
-    }
-    cb_wrapper->callback();
-    delete cb_wrapper;
   }
+  // There is at least one callback on the queue. Pop the callback from the
+  // queue and execute it.
+  CallbackWrapper* cb_wrapper = nullptr;
+  bool empty_unused;
+  while ((cb_wrapper = reinterpret_cast<CallbackWrapper*>(
+              queue_.PopAndCheckEnd(&empty_unused))) == nullptr) {
+    // This can happen due to a race condition within the mpscq
+    // implementation or because of a race with Run()/Schedule().
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
+      gpr_log(GPR_INFO, "  Queue returned nullptr, trying again");
+    }
+  }
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
+    gpr_log(GPR_INFO, "  Running item %p : callback scheduled at [%s:%d]",
+            cb_wrapper, cb_wrapper->location.file(),
+            cb_wrapper->location.line());
+  }
+#ifndef NDEBUG
+  current_thread_ = std::this_thread::get_id();
+#endif
+  cb_wrapper->callback();
+  delete cb_wrapper;
+#ifndef NDEBUG
+  current_thread_ = std::thread::id();
+#endif
+  // Run on EE to get next element from queue.
+  DrainQueueOwned();
 }
 
 //
 // WorkSerializer
 //
 
-WorkSerializer::WorkSerializer()
-    : impl_(MakeOrphanable<WorkSerializerImpl>()) {}
+WorkSerializer::WorkSerializer(
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+        event_engine)
+    : impl_(MakeOrphanable<WorkSerializerImpl>(std::move(event_engine))) {}
 
 WorkSerializer::~WorkSerializer() {}
 
