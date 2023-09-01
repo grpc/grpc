@@ -10630,6 +10630,7 @@ target_include_directories(endpoint_config_test
 target_link_libraries(endpoint_config_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::function_ref
   absl::hash
   absl::type_traits
   absl::statusor
