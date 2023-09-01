@@ -3709,6 +3709,8 @@ grpc_cc_library(
         "ext/filters/channel_idle/channel_idle_filter.h",
     ],
     external_deps = [
+        "absl/base:core_headers",
+        "absl/random",
         "absl/status",
         "absl/status:statusor",
         "absl/types:optional",
