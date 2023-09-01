@@ -140,18 +140,21 @@ mv "${GRPCIO_STRIPPED_TAR_GZ}" "${GRPCIO_TAR_GZ}"
 # Build gRPC tools package distribution
 "${PYTHON}" tools/distrib/python/make_grpcio_tools.py
 
+# Build gRPC observability package distribution
 "${PYTHON}" src/python/grpcio_observability/make_grpcio_observability.py
 
 # Build gRPC tools package source distribution
 ${SETARCH_CMD} "${PYTHON}" tools/distrib/python/grpcio_tools/setup.py sdist
 
+# Build gRPC observability package source distribution
 ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_observability/setup.py sdist
 
 # Build gRPC tools package binary distribution
 # shellcheck disable=SC2086
 ${SETARCH_CMD} "${PYTHON}" tools/distrib/python/grpcio_tools/setup.py bdist_wheel $WHEEL_PLAT_NAME_FLAG
 
-${SETARCH_CMD} "${PYTHON}" src/python/grpcio_observability/setup.py bdist_wheel "$WHEEL_PLAT_NAME_FLAG"
+# Build gRPC observability package binary distribution
+${SETARCH_CMD} "${PYTHON}" src/python/grpcio_observability/setup.py bdist_wheel
 
 # run twine check before auditwheel, because auditwheel puts the repaired wheels into
 # the artifacts output dir.
@@ -221,7 +224,7 @@ else
   cp -r src/python/grpcio_observability/dist/*.whl "$ARTIFACT_DIR"
 fi
 
-# grpcio and grpcio-tools wheels have already been copied to artifact_dir
+# grpcio, grpcio-tools and grpcio-observability wheels have already been copied to artifact_dir
 # by "auditwheel repair", now copy the .tar.gz source archives as well.
 cp -r dist/*.tar.gz "$ARTIFACT_DIR"
 cp -r tools/distrib/python/grpcio_tools/dist/*.tar.gz "$ARTIFACT_DIR"
