@@ -179,6 +179,12 @@ class ClientChannel {
       const RefCountedPtr<SubchannelPoolInterface>& subchannel_pool,
       const std::string& channel_default_authority);
 
+    void ForEachChannelArgument(
+        absl::FunctionRef<void(absl::string_view, const grpc_core::ChannelArgs::Value&)> callback)
+        const {
+      channel_args_.ForEach(callback);
+    }
+
  private:
   class CallData;
   class FilterBasedCallData;
@@ -210,13 +216,6 @@ class ClientChannel {
                 const absl::Status& /* status */) override;
 
     void Cancel();
-
-    void ForEachChannelArgument(
-        absl::FunctionRef<void(absl::string_view, const Value&)> callback)
-        const {
-      channel_args_.ForEach(callback);
-    }
-
    private:
     // Adds the watcher to state_tracker_. Consumes the ref that is passed to it
     // from Start().

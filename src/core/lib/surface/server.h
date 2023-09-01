@@ -123,7 +123,7 @@ class Server : public InternallyRefCounted<Server>,
   const ChannelArgs& channel_args() const { return channel_args_; }
 
   void ForEachChannelArgument(
-      absl::FunctionRef<void(absl::string_view, const Value&)> callback) const {
+      absl::FunctionRef<void(absl::string_view, const grpc_core::ChannelArgs::Value&)> callback) const {
     channel_args_.ForEach(callback);
   }
 
