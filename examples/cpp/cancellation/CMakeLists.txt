@@ -19,7 +19,7 @@
 
 cmake_minimum_required(VERSION 3.8)
 
-project(Compression C CXX)
+project(Cancellation C CXX)
 
 include(../cmake/common.cmake)
 
