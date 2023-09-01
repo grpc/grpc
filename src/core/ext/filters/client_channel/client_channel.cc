@@ -1943,7 +1943,7 @@ void ClientChannel::GetChannelInfo(grpc_channel_element* elem,
 void ClientChannel::TryToConnectLocked() {
   if (lb_policy_ != nullptr) {
     lb_policy_->ExitIdleLocked();
-  } else if (resolver_ == nullptr) {
+  } else if (resolver_ == nullptr && disconnect_error_.ok()) {
     CreateResolverLocked();
   }
   GRPC_CHANNEL_STACK_UNREF(owning_stack_, "TryToConnect");
