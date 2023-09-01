@@ -122,6 +122,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
+        "//test/core/event_engine:event_engine_test_utils",
         "//src/core:channel_args",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:channel_trace_proto_helper",

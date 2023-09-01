@@ -29,6 +29,7 @@
 #include "absl/status/statusor.h"
 #include "gtest/gtest.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/impl/channel_arg_names.h>
@@ -38,12 +39,14 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channelz_registry.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_reader.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/server.h"
+#include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/channel_trace_proto_helper.h"
 
@@ -339,9 +342,17 @@ TEST_P(ChannelzChannelTest, LastCallStartedTime) {
 class ChannelzRegistryBasedTest : public ::testing::TestWithParam<size_t> {
  protected:
   // ensure we always have a fresh registry for tests.
-  void SetUp() override { ChannelzRegistry::TestOnlyReset(); }
+  void SetUp() override {
+    grpc_event_engine::experimental::WaitForSingleOwner(
+        grpc_event_engine::experimental::GetDefaultEventEngine());
+    ChannelzRegistry::TestOnlyReset();
+  }
 
-  void TearDown() override { ChannelzRegistry::TestOnlyReset(); }
+  void TearDown() override {
+    grpc_event_engine::experimental::WaitForSingleOwner(
+        grpc_event_engine::experimental::GetDefaultEventEngine());
+    ChannelzRegistry::TestOnlyReset();
+  }
 };
 
 TEST_F(ChannelzRegistryBasedTest, BasicGetTopChannelsTest) {
@@ -499,19 +510,28 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsUuidAfterCompaction) {
       even_channels.push_back(std::make_unique<ChannelFixture>());
     }
   }
-  std::string json_str = ChannelzRegistry::GetTopChannels(0);
-  auto parsed_json = JsonParse(json_str);
-  ASSERT_TRUE(parsed_json.ok()) << parsed_json.status();
-  ASSERT_EQ(parsed_json->type(), Json::Type::kObject);
-  Json channel_json;
-  auto it = parsed_json->object().find("channel");
-  if (it != parsed_json->object().end()) channel_json = it->second;
-  ValidateJsonArraySize(channel_json, kLoopIterations);
-  std::vector<intptr_t> uuids = GetUuidListFromArray(channel_json.array());
-  for (int i = 0; i < kLoopIterations; ++i) {
-    // only the even uuids will still be present.
-    EXPECT_EQ((i + 1) * 2, uuids[i]);
-  }
+  // Wait some time for things to settle out
+  Notification done;
+  grpc_event_engine::experimental::GetDefaultEventEngine()->RunAfter(
+      std::chrono::seconds(5), [&] {
+        ExecCtx exec_ctx;
+        std::string json_str = ChannelzRegistry::GetTopChannels(0);
+        auto parsed_json = JsonParse(json_str);
+        ASSERT_TRUE(parsed_json.ok()) << parsed_json.status();
+        ASSERT_EQ(parsed_json->type(), Json::Type::kObject);
+        Json channel_json;
+        auto it = parsed_json->object().find("channel");
+        if (it != parsed_json->object().end()) channel_json = it->second;
+        ValidateJsonArraySize(channel_json, kLoopIterations);
+        std::vector<intptr_t> uuids =
+            GetUuidListFromArray(channel_json.array());
+        for (int i = 0; i < kLoopIterations; ++i) {
+          // only the even uuids will still be present.
+          EXPECT_EQ((i + 1) * 2, uuids[i]);
+        }
+        done.Notify();
+      });
+  done.WaitForNotification();
 }
 
 TEST_F(ChannelzRegistryBasedTest, InternalChannelTest) {
