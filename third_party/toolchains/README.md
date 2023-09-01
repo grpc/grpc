@@ -22,7 +22,7 @@ Also see go/rbe-windows-user-guide
 
 # Windows RBE docker image
 
-The `rbe_win2019` directory contains the dockerfile to rebuild the docker image we use on RBE windows workers. See go/rbe-windows-user-guide.
+The `dockerfile/rbe_windows2019` directory contains the dockerfile to rebuild the docker image we use on RBE windows workers. See go/rbe-windows-user-guide.
 
 Note that for linux, we use a docker image under `tools/dockerfile` (since for Linux RBE docker image is simply of the testing docker images
 we maintain)
@@ -30,7 +30,7 @@ we maintain)
 ## How to rebuild the Windows RBE docker image and use it for Windows RBE
 
 On a kokoro debug windows VM, run the following:
-- `docker build -t us-docker.pkg.dev/grpc-testing/testing-images-public/rbe_windows2019 third_party/toolchains/rbe_win2019`
+- `docker build -t us-docker.pkg.dev/grpc-testing/testing-images-public/rbe_windows2019 third_party/toolchains/dockerfile/rbe_windows2019`
 - To be able to authenticate when pushing the image to GAR, run `gcloud auth configure-docker us-docker.pkg.dev`
 - `docker push us-docker.pkg.dev/grpc-testing/testing-images-public/rbe_windows2019`
 - Update the `generate_windows_rbe_configs.sh` with the newly built & pushed image's SHA256 digest.
