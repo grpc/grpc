@@ -32,15 +32,20 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "test/core/util/test_config.h"
 
 namespace {
-TEST(WorkSerializerTest, NoOp) { grpc_core::WorkSerializer lock; }
+TEST(WorkSerializerTest, NoOp) {
+  grpc_core::WorkSerializer lock(
+      grpc_event_engine::experimental::GetDefaultEventEngine());
+}
 
 TEST(WorkSerializerTest, ExecuteOneRun) {
-  grpc_core::WorkSerializer lock;
+  grpc_core::WorkSerializer lock(
+      grpc_event_engine::experimental::GetDefaultEventEngine());
   gpr_event done;
   gpr_event_init(&done);
   lock.Run([&done]() { gpr_event_set(&done, reinterpret_cast<void*>(1)); },
@@ -50,13 +55,13 @@ TEST(WorkSerializerTest, ExecuteOneRun) {
 }
 
 TEST(WorkSerializerTest, ExecuteOneScheduleAndDrain) {
-  grpc_core::WorkSerializer lock;
+  grpc_core::WorkSerializer lock(
+      grpc_event_engine::experimental::GetDefaultEventEngine());
   gpr_event done;
   gpr_event_init(&done);
-  lock.Schedule([&done]() { gpr_event_set(&done, reinterpret_cast<void*>(1)); },
-                DEBUG_LOCATION);
+  lock.Run([&done]() { gpr_event_set(&done, reinterpret_cast<void*>(1)); },
+           DEBUG_LOCATION);
   EXPECT_EQ(gpr_event_get(&done), nullptr);
-  lock.DrainQueue();
   EXPECT_TRUE(gpr_event_wait(&done, grpc_timeout_seconds_to_deadline(5)) !=
               nullptr);
 }
@@ -111,7 +116,8 @@ class TestThread {
 };
 
 TEST(WorkSerializerTest, ExecuteMany) {
-  grpc_core::WorkSerializer lock;
+  grpc_core::WorkSerializer lock(
+      grpc_event_engine::experimental::GetDefaultEventEngine());
   {
     std::vector<std::unique_ptr<TestThread>> threads;
     for (size_t i = 0; i < 10; ++i) {
@@ -148,7 +154,7 @@ class TestThreadScheduleAndDrain {
         ExecutionArgs* c = new ExecutionArgs;
         c->counter = &self->counter_;
         c->value = n++;
-        self->lock_->Schedule(
+        self->lock_->Run(
             [c]() {
               EXPECT_TRUE(*c->counter == c->value - 1);
               *c->counter = c->value;
@@ -156,7 +162,6 @@ class TestThreadScheduleAndDrain {
             },
             DEBUG_LOCATION);
       }
-      self->lock_->DrainQueue();
       // sleep for a little bit, to test other threads picking up the load
       gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(100));
     }
@@ -172,7 +177,8 @@ class TestThreadScheduleAndDrain {
 };
 
 TEST(WorkSerializerTest, ExecuteManyScheduleAndDrain) {
-  grpc_core::WorkSerializer lock;
+  grpc_core::WorkSerializer lock(
+      grpc_event_engine::experimental::GetDefaultEventEngine());
   {
     std::vector<std::unique_ptr<TestThreadScheduleAndDrain>> threads;
     for (size_t i = 0; i < 10; ++i) {
@@ -182,7 +188,8 @@ TEST(WorkSerializerTest, ExecuteManyScheduleAndDrain) {
 }
 
 TEST(WorkSerializerTest, ExecuteManyMixedRunScheduleAndDrain) {
-  grpc_core::WorkSerializer lock;
+  grpc_core::WorkSerializer lock(
+      grpc_event_engine::experimental::GetDefaultEventEngine());
   {
     std::vector<std::unique_ptr<TestThread>> run_threads;
     std::vector<std::unique_ptr<TestThreadScheduleAndDrain>> schedule_threads;
@@ -196,7 +203,8 @@ TEST(WorkSerializerTest, ExecuteManyMixedRunScheduleAndDrain) {
 
 // Tests that work serializers allow destruction from the last callback
 TEST(WorkSerializerTest, CallbackDestroysWorkSerializer) {
-  auto lock = std::make_shared<grpc_core::WorkSerializer>();
+  auto lock = std::make_shared<grpc_core::WorkSerializer>(
+      grpc_event_engine::experimental::GetDefaultEventEngine());
   lock->Run([&]() { lock.reset(); }, DEBUG_LOCATION);
 }
 
@@ -204,7 +212,8 @@ TEST(WorkSerializerTest, CallbackDestroysWorkSerializer) {
 // serializer destruction.
 TEST(WorkSerializerTest, WorkSerializerDestructionRace) {
   for (int i = 0; i < 1000; ++i) {
-    auto lock = std::make_shared<grpc_core::WorkSerializer>();
+    auto lock = std::make_shared<grpc_core::WorkSerializer>(
+        grpc_event_engine::experimental::GetDefaultEventEngine());
     grpc_core::Notification notification;
     std::thread t1([&]() {
       notification.WaitForNotification();
@@ -218,7 +227,8 @@ TEST(WorkSerializerTest, WorkSerializerDestructionRace) {
 // Tests racy conditions when the last callback triggers work
 // serializer destruction.
 TEST(WorkSerializerTest, WorkSerializerDestructionRaceMultipleThreads) {
-  auto lock = std::make_shared<grpc_core::WorkSerializer>();
+  auto lock = std::make_shared<grpc_core::WorkSerializer>(
+      grpc_event_engine::experimental::GetDefaultEventEngine());
   absl::Barrier barrier(11);
   std::vector<std::thread> threads;
   threads.reserve(10);
@@ -237,8 +247,10 @@ TEST(WorkSerializerTest, WorkSerializerDestructionRaceMultipleThreads) {
 
 #ifndef NDEBUG
 TEST(WorkSerializerTest, RunningInWorkSerializer) {
-  grpc_core::WorkSerializer work_serializer1;
-  grpc_core::WorkSerializer work_serializer2;
+  grpc_core::WorkSerializer work_serializer1(
+      grpc_event_engine::experimental::GetDefaultEventEngine());
+  grpc_core::WorkSerializer work_serializer2(
+      grpc_event_engine::experimental::GetDefaultEventEngine());
   EXPECT_FALSE(work_serializer1.RunningInWorkSerializer());
   EXPECT_FALSE(work_serializer2.RunningInWorkSerializer());
   work_serializer1.Run(

@@ -552,7 +552,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   };
 
   LoadBalancingPolicyTest()
-      : work_serializer_(std::make_shared<WorkSerializer>()) {}
+      : work_serializer_(std::make_shared<WorkSerializer>(
+            grpc_event_engine::experimental::GetDefaultEventEngine())) {}
 
   void TearDown() override {
     // Note: Can't safely trigger this from inside the FakeHelper dtor,

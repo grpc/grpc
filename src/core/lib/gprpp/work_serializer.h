@@ -23,6 +23,8 @@
 
 #include "absl/base/thread_annotations.h"
 
+#include <grpc/event_engine/event_engine.h>
+
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 
@@ -44,7 +46,9 @@ namespace grpc_core {
 // invoke DrainQueue() when it is safe to invoke the callback.
 class ABSL_LOCKABLE WorkSerializer {
  public:
-  WorkSerializer();
+  explicit WorkSerializer(
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+          event_engine);
 
   ~WorkSerializer();
 
@@ -67,13 +71,7 @@ class ABSL_LOCKABLE WorkSerializer {
   //
   // TODO(yashkt): Replace DebugLocation with absl::SourceLocation
   // once we can start using it directly.
-  void Run(std::function<void()> callback, const DebugLocation& location);
-
-  // Schedule \a callback to be run later when the queue of callbacks is
-  // drained.
-  void Schedule(std::function<void()> callback, const DebugLocation& location);
-  // Drains the queue of callbacks.
-  void DrainQueue();
+  void Run(absl::AnyInvocable<void()> callback, DebugLocation location = {});
 
 #ifndef NDEBUG
   // Returns true if the current thread is running in the WorkSerializer.
@@ -83,7 +81,7 @@ class ABSL_LOCKABLE WorkSerializer {
  private:
   class WorkSerializerImpl;
 
-  OrphanablePtr<WorkSerializerImpl> impl_;
+  RefCountedPtr<WorkSerializerImpl> impl_;
 };
 
 }  // namespace grpc_core

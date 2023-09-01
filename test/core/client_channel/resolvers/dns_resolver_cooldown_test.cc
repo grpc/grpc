@@ -411,7 +411,8 @@ static void test_cooldown() {
 TEST(DnsResolverCooldownTest, MainTest) {
   grpc_init();
 
-  auto work_serializer = std::make_shared<grpc_core::WorkSerializer>();
+  auto work_serializer =
+      std::make_shared<grpc_core::WorkSerializer>(GetDefaultEventEngine());
   g_work_serializer = &work_serializer;
 
   g_default_dns_lookup_ares = grpc_dns_lookup_hostname_ares;

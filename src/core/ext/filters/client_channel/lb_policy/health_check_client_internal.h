@@ -35,6 +35,7 @@
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/ext/filters/client_channel/subchannel_interface_internal.h"
 #include "src/core/ext/filters/client_channel/subchannel_stream_client.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -125,7 +126,8 @@ class HealthProducer : public Subchannel::DataProducerInterface {
     WeakRefCountedPtr<HealthProducer> producer_;
     absl::string_view health_check_service_name_;
     std::shared_ptr<WorkSerializer> work_serializer_ =
-        std::make_shared<WorkSerializer>();
+        std::make_shared<WorkSerializer>(
+            grpc_event_engine::experimental::GetDefaultEventEngine());
 
     grpc_connectivity_state state_ ABSL_GUARDED_BY(&HealthProducer::mu_);
     absl::Status status_ ABSL_GUARDED_BY(&HealthProducer::mu_);
