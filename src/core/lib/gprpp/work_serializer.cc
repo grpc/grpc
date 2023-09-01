@@ -104,6 +104,11 @@ void WorkSerializer::WorkSerializerImpl::Step() {
 #ifndef NDEBUG
   current_thread_ = std::this_thread::get_id();
 #endif
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
+    auto location = processing_callbacks_.back().location;
+    gpr_log(GPR_INFO, "WorkSerializer::Step() %p Executing callback [%s:%d]",
+            this, location.file(), location.line());
+  }
   processing_callbacks_.back().callback();
   processing_callbacks_.pop_back();
 #ifndef NDEBUG
