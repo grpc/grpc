@@ -20,7 +20,6 @@
 #include "src/core/ext/filters/channel_idle/channel_idle_filter.h"
 
 #include <stdint.h>
-#include <stdlib.h>
 
 #include <functional>
 #include <utility>
@@ -38,7 +37,9 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/per_cpu.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/closure.h"
