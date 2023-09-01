@@ -28,7 +28,7 @@ wget https://github.com/bazelbuild/bazel-toolchains/releases/download/v5.1.2/rbe
 RBE_CONFIGS_GEN_TOOL_PATH="./rbe_configs_gen_windows_amd64.exe"
 
 # Actions on RBE will run under a dedicated docker image.
-WINDOWS_RBE_DOCKER_IMAGE=gcr.io/grpc-testing/rbe_windows2019@sha256:41772e8eeb9dd8c8b996bf32d58164d84b2315c8e81e634bbff5a0216b7f52fd
+WINDOWS_RBE_DOCKER_IMAGE=us-docker.pkg.dev/grpc-testing/testing-images-public/rbe_windows2019@sha256:e5b577938657d2b90530c328e09b5e165310bca676016d331f818b7c32065e33
 
 # Bazel version used for configuring
 # Needs to be one of the versions from bazel/supported_versions.txt chosen so that the result is compatible
@@ -42,9 +42,7 @@ CONFIG_OUTPUT_PATH=third_party/toolchains/rbe_windows_bazel_6.3.2_vs2019
 rm -rf "${REPO_ROOT}/${CONFIG_OUTPUT_PATH}"
 
 # Pull the RBE windows docker image first.
-# Note that you need to run "gcloud auth configure-docker gcr.io" first to be able to pull the image from gcr.io
 # TOOD(jtattermusch): investigate why pulling a docker image on windows is extremely slow.
-# TODO(jtattermusch): move the RBE windows docker image to GAR where it will be publicly accessible.
 docker pull ${WINDOWS_RBE_DOCKER_IMAGE}
 
 ${RBE_CONFIGS_GEN_TOOL_PATH} \
