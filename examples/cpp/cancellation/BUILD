@@ -20,7 +20,7 @@ cc_binary(
     defines = ["BAZEL_BUILD"],
     deps = [
         "//:grpc++",
-        "//examples/protos:keyvaluestore",
+        "//examples/protos:helloworld_cc_grpc",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/flags:parse",
     ],
@@ -32,7 +32,7 @@ cc_binary(
     defines = ["BAZEL_BUILD"],
     deps = [
         "//:grpc++",
-        "//examples/protos:keyvaluestore",
+        "//examples/protos:helloworld_cc_grpc",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/flags:parse",
     ],

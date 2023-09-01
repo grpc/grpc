@@ -1,20 +1,16 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+// Copyright 2023 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 #include <iostream>
 #include <memory>
@@ -28,9 +24,9 @@
 #include <grpcpp/grpcpp.h>
 
 #ifdef BAZEL_BUILD
-#include "examples/protos/keyvaluestore.grpc.pb.h"
+#include "examples/protos/helloworld.grpc.pb.h"
 #else
-#include "keyvaluestore.grpc.pb.h"
+#include "helloworld.grpc.pb.h"
 #endif
 
 ABSL_FLAG(uint16_t, port, 50051, "Server port for the service");
@@ -40,15 +36,15 @@ using grpc::Server;
 using grpc::ServerBidiReactor;
 using grpc::ServerBuilder;
 using grpc::Status;
-using keyvaluestore::KeyValueStore;
-using keyvaluestore::Request;
-using keyvaluestore::Response;
+using helloworld::Greeter;
+using helloworld::HelloReply;
+using helloworld::HelloRequest;
 
 // Logic behind the server's behavior.
-class KeyValueStoreServiceImpl final : public KeyValueStore::CallbackService {
-  ServerBidiReactor<Request, Response>* GetValues(
+class KeyValueStoreServiceImpl final : public Greeter::CallbackService {
+  ServerBidiReactor<HelloRequest, HelloReply>* SayHelloBidiStream(
       CallbackServerContext* context) override {
-    class Reactor : public ServerBidiReactor<Request, Response> {
+    class Reactor : public ServerBidiReactor<HelloRequest, HelloReply> {
      public:
       explicit Reactor() { StartRead(&request_); }
 
@@ -58,7 +54,7 @@ class KeyValueStoreServiceImpl final : public KeyValueStore::CallbackService {
           std::cout << "OnReadDone Cancelled!" << std::endl;
           return Finish(grpc::Status::CANCELLED);
         }
-        response_.set_value(absl::StrCat(request_.key(), " Ack"));
+        response_.set_message(absl::StrCat(request_.name(), " Ack"));
         StartWrite(&response_);
       }
 
@@ -74,8 +70,8 @@ class KeyValueStoreServiceImpl final : public KeyValueStore::CallbackService {
       void OnDone() override { delete this; }
 
      private:
-      Request request_;
-      Response response_;
+      HelloRequest request_;
+      HelloReply response_;
     };
 
     return new Reactor();
