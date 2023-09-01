@@ -20,27 +20,29 @@
 
 #include "src/cpp/ext/otel/otel_server_call_tracer.h"
 
+#include <array>
 #include <initializer_list>
 #include <memory>
 #include <string>
 #include <utility>
 
-#include "absl/container/inlined_vector.h"
-#include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
+#include "absl/types/span.h"
 #include "opentelemetry/context/context.h"
 #include "opentelemetry/metrics/sync_instruments.h"
 
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/cpp/ext/otel/key_value_iterable.h"
 #include "src/cpp/ext/otel/otel_plugin.h"
 
 namespace grpc {
@@ -52,7 +54,12 @@ namespace {
 
 class OpenTelemetryServerCallTracer : public grpc_core::ServerCallTracer {
  public:
-  OpenTelemetryServerCallTracer() : start_time_(absl::Now()) {}
+  OpenTelemetryServerCallTracer() : start_time_(absl::Now()) {
+    // We don't have the peer labels at this point.
+    if (OTelPluginState().labels_injector != nullptr) {
+      local_labels_ = OTelPluginState().labels_injector->GetLocalLabels();
+    }
+  }
 
   std::string TraceId() override {
     // Not implemented
@@ -72,7 +79,13 @@ class OpenTelemetryServerCallTracer : public grpc_core::ServerCallTracer {
   // Please refer to `grpc_transport_stream_op_batch_payload` for details on
   // arguments.
   void RecordSendInitialMetadata(
-      grpc_metadata_batch* /*send_initial_metadata*/) override {}
+      grpc_metadata_batch* send_initial_metadata) override {
+    // Only add labels to outgoing metadata if labels were received from peer.
+    if (OTelPluginState().labels_injector != nullptr &&
+        peer_labels_ != nullptr) {
+      OTelPluginState().labels_injector->AddLabels(send_initial_metadata);
+    }
+  }
 
   void RecordSendTrailingMetadata(
       grpc_metadata_batch* /*send_trailing_metadata*/) override;
@@ -119,34 +132,28 @@ class OpenTelemetryServerCallTracer : public grpc_core::ServerCallTracer {
   }
 
  private:
-  grpc_core::Slice path_;
-  absl::string_view method_;
-  std::string authority_;
   absl::Time start_time_;
   absl::Duration elapsed_time_;
+  grpc_core::Slice path_;
+  std::unique_ptr<LabelsIterable> local_labels_;
+  std::unique_ptr<LabelsIterable> peer_labels_;
 };
 
 void OpenTelemetryServerCallTracer::RecordReceivedInitialMetadata(
     grpc_metadata_batch* recv_initial_metadata) {
-  const auto* path =
-      recv_initial_metadata->get_pointer(grpc_core::HttpPathMetadata());
-  if (path != nullptr) {
-    path_ = path->Ref();
+  path_ =
+      recv_initial_metadata->get_pointer(grpc_core::HttpPathMetadata())->Ref();
+  if (OTelPluginState().labels_injector != nullptr) {
+    peer_labels_ =
+        OTelPluginState().labels_injector->GetPeerLabels(recv_initial_metadata);
   }
-  method_ = absl::StripPrefix(path_.as_string_view(), "/");
-  const auto* authority =
-      recv_initial_metadata->get_pointer(grpc_core::HttpAuthorityMetadata());
-  // Override with host metadata if authority is absent.
-  if (authority == nullptr) {
-    authority = recv_initial_metadata->get_pointer(grpc_core::HostMetadata());
-  }
-  if (authority != nullptr) {
-    authority_ = std::string(authority->as_string_view());
-  }
-  // TODO(yashykt): Figure out how to get this to work with absl::string_view
+  std::array<std::pair<absl::string_view, absl::string_view>, 1>
+      additional_labels = {
+          {{OTelMethodKey(), absl::StripPrefix(path_.as_string_view(), "/")}}};
   if (OTelPluginState().server.call.started != nullptr) {
     OTelPluginState().server.call.started->Add(
-        1, {{std::string(OTelMethodKey()), std::string(method_)}});
+        1, KeyValueIterable(local_labels_.get(), peer_labels_.get(),
+                            additional_labels));
   }
 }
 
@@ -159,27 +166,29 @@ void OpenTelemetryServerCallTracer::RecordSendTrailingMetadata(
 
 void OpenTelemetryServerCallTracer::RecordEnd(
     const grpc_call_final_info* final_info) {
-  absl::InlinedVector<std::pair<std::string, std::string>, 2> attributes = {
-      {std::string(OTelMethodKey()), std::string(method_)},
-      {std::string(OTelStatusKey()),
-       absl::StatusCodeToString(
-           static_cast<absl::StatusCode>(final_info->final_status))}};
+  std::array<std::pair<absl::string_view, absl::string_view>, 2>
+      additional_labels = {
+          {{OTelMethodKey(), absl::StripPrefix(path_.as_string_view(), "/")},
+           {OTelStatusKey(),
+            grpc_status_code_to_string(final_info->final_status)}}};
+  KeyValueIterable labels(local_labels_.get(), peer_labels_.get(),
+                          additional_labels);
   if (OTelPluginState().server.call.duration != nullptr) {
     OTelPluginState().server.call.duration->Record(
-        absl::ToDoubleSeconds(elapsed_time_), attributes,
+        absl::ToDoubleSeconds(elapsed_time_), labels,
         opentelemetry::context::Context{});
   }
   if (OTelPluginState().server.call.sent_total_compressed_message_size !=
       nullptr) {
     OTelPluginState().server.call.sent_total_compressed_message_size->Record(
-        final_info->stats.transport_stream_stats.outgoing.data_bytes,
-        attributes, opentelemetry::context::Context{});
+        final_info->stats.transport_stream_stats.outgoing.data_bytes, labels,
+        opentelemetry::context::Context{});
   }
   if (OTelPluginState().server.call.rcvd_total_compressed_message_size !=
       nullptr) {
     OTelPluginState().server.call.rcvd_total_compressed_message_size->Record(
-        final_info->stats.transport_stream_stats.incoming.data_bytes,
-        attributes, opentelemetry::context::Context{});
+        final_info->stats.transport_stream_stats.incoming.data_bytes, labels,
+        opentelemetry::context::Context{});
   }
 }
 

@@ -40,3 +40,24 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "metadata_exchange_test",
+    srcs = [
+        "metadata_exchange_test.cc",
+    ],
+    external_deps = [
+        "google_cloud_cpp:experimental-opentelemetry",
+        "gtest",
+        "otel/sdk/src/metrics",
+    ],
+    language = "C++",
+    tags = [
+    ],
+    deps = [
+        "//:grpc++",
+        "//src/cpp/ext/gsm:gsm_observability",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/ext/otel:otel_test_library",
+    ],
+)
