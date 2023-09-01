@@ -59,10 +59,12 @@ class WorkSerializer::WorkSerializerImpl
 
  private:
   struct CallbackWrapper {
-    CallbackWrapper(absl::AnyInvocable<void()> cb, DebugLocation loc)
-        : callback(std::move(cb)), location(loc) {}
+    CallbackWrapper(absl::AnyInvocable<void()> cb, uint64_t serial,
+                    DebugLocation loc)
+        : callback(std::move(cb)), serial(serial), location(loc) {}
 
     absl::AnyInvocable<void()> callback;
+    uint64_t serial;
     DebugLocation location;
   };
   using CallbackVector = absl::InlinedVector<CallbackWrapper, 1>;
@@ -77,6 +79,7 @@ class WorkSerializer::WorkSerializerImpl
   void Step() ABSL_LOCKS_EXCLUDED(incoming_mu_);
 
   Mutex incoming_mu_;
+  uint64_t serial_ ABSL_GUARDED_BY(incoming_mu_) = 0;
   bool running_ ABSL_GUARDED_BY(incoming_mu_) = false;
   // Queue of incoming callbacks
   CallbackVector incoming_callbacks_ ABSL_GUARDED_BY(incoming_mu_);
@@ -106,8 +109,10 @@ void WorkSerializer::WorkSerializerImpl::Step() {
 #endif
   if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
     auto location = processing_callbacks_.back().location;
-    gpr_log(GPR_INFO, "WorkSerializer::Step() %p Executing callback [%s:%d]",
-            this, location.file(), location.line());
+    gpr_log(GPR_INFO,
+            "WorkSerializer::Step() %p Executing callback [%s:%d] %" PRId64,
+            this, location.file(), location.line(),
+            processing_callbacks_.back().serial);
   }
   processing_callbacks_.back().callback();
   processing_callbacks_.pop_back();
@@ -130,12 +135,14 @@ void WorkSerializer::WorkSerializerImpl::Step() {
 
 void WorkSerializer::WorkSerializerImpl::Run(
     absl::AnyInvocable<void()> callback, DebugLocation location) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
-    gpr_log(GPR_INFO, "WorkSerializer::Run() %p Scheduling callback [%s:%d]",
-            this, location.file(), location.line());
-  }
   MutexLock incoming_lock(&incoming_mu_);
-  incoming_callbacks_.emplace_back(std::move(callback), location);
+  uint64_t serial = serial_++;
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
+    gpr_log(GPR_INFO,
+            "WorkSerializer::Run() %p Scheduling callback [%s:%d] %" PRId64,
+            this, location.file(), location.line(), serial);
+  }
+  incoming_callbacks_.emplace_back(std::move(callback), serial, location);
   if (!std::exchange(running_, true)) {
     event_engine_->Run([self = Ref()]() {
       ApplicationCallbackExecCtx app_exec_ctx;

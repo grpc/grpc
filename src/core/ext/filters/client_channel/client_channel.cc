@@ -41,6 +41,7 @@
 #include "absl/types/variant.h"
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
@@ -1740,6 +1741,10 @@ void ClientChannel::DestroyResolverAndLbPolicyLocked() {
 void ClientChannel::UpdateStateLocked(grpc_connectivity_state state,
                                       const absl::Status& status,
                                       const char* reason) {
+  if (state != GRPC_CHANNEL_SHUTDOWN &&
+      state_tracker_.state() == GRPC_CHANNEL_SHUTDOWN) {
+    Crash("Illegal transition SHUTDOWN -> anything");
+  }
   state_tracker_.SetState(state, status, reason);
   if (channelz_node_ != nullptr) {
     channelz_node_->SetConnectivityState(state);
