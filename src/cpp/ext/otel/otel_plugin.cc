@@ -114,12 +114,6 @@ OpenTelemetryPluginBuilder& OpenTelemetryPluginBuilder::DisableMetrics(
   return *this;
 }
 
-OpenTelemetryPluginBuilder& OpenTelemetryPluginBuilder::SetLabelsInjector(
-    std::unique_ptr<LabelsInjector> labels_injector) {
-  labels_injector_ = std::move(labels_injector);
-  return *this;
-}
-
 void OpenTelemetryPluginBuilder::BuildAndRegisterGlobal() {
   opentelemetry::nostd::shared_ptr<opentelemetry::metrics::MeterProvider>
       meter_provider = meter_provider_;
@@ -170,7 +164,6 @@ void OpenTelemetryPluginBuilder::BuildAndRegisterGlobal() {
         meter->CreateUInt64Histogram(std::string(
             OTelServerCallRcvdTotalCompressedMessageSizeInstrumentName()));
   }
-  g_otel_plugin_state_->labels_injector = std::move(labels_injector_);
   g_otel_plugin_state_->meter_provider = std::move(meter_provider);
   grpc_core::ServerCallTracerFactory::RegisterGlobal(
       new grpc::internal::OpenTelemetryServerCallTracerFactory);
