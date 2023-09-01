@@ -33,12 +33,10 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
-#include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/json.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
-#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
@@ -257,8 +255,7 @@ TEST_F(OutlierDetectionTest, DoesNotWorkWithPickFirst) {
   EXPECT_TRUE(status.ok()) << status;
   // LB policy should have created a subchannel for the first address with
   // the GRPC_ARG_INHIBIT_HEALTH_CHECKING channel arg.
-  auto* subchannel = FindSubchannel(
-      kAddresses[0], ChannelArgs().Set(GRPC_ARG_INHIBIT_HEALTH_CHECKING, true));
+  auto* subchannel = FindSubchannel(kAddresses[0]);
   ASSERT_NE(subchannel, nullptr);
   // When the LB policy receives the subchannel's initial connectivity
   // state notification (IDLE), it will request a connection.

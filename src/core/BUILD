@@ -4789,15 +4789,15 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
-        "grpc_lb_subchannel_list",
         "grpc_outlier_detection_header",
+        "health_check_client",
+        "iomgr_fwd",
         "json",
         "json_args",
         "json_object_loader",
         "lb_policy",
         "lb_policy_factory",
         "subchannel_interface",
-        "//:channel_arg_names",
         "//:config",
         "//:debug_location",
         "//:gpr",
@@ -4806,7 +4806,6 @@ grpc_cc_library(
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:server_address",
-        "//:work_serializer",
     ],
 )
 

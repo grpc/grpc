@@ -26,7 +26,6 @@
 
 #include "opentelemetry/metrics/meter.h"
 #include "opentelemetry/metrics/meter_provider.h"
-#include "opentelemetry/metrics/provider.h"
 #include "opentelemetry/nostd/shared_ptr.h"
 #include "opentelemetry/nostd/unique_ptr.h"
 
@@ -118,13 +117,12 @@ OpenTelemetryPluginBuilder& OpenTelemetryPluginBuilder::DisableMetrics(
 void OpenTelemetryPluginBuilder::BuildAndRegisterGlobal() {
   opentelemetry::nostd::shared_ptr<opentelemetry::metrics::MeterProvider>
       meter_provider = meter_provider_;
-  if (meter_provider == nullptr) {
-    meter_provider = opentelemetry::metrics::Provider::GetMeterProvider();
-  }
-  auto meter = meter_provider->GetMeter("grpc");
   delete g_otel_plugin_state_;
   g_otel_plugin_state_ = new struct OTelPluginState;
-  g_otel_plugin_state_->meter_provider = std::move(meter_provider);
+  if (meter_provider == nullptr) {
+    return;
+  }
+  auto meter = meter_provider->GetMeter("grpc");
   if (metrics_.contains(OTelClientAttemptStartedInstrumentName())) {
     g_otel_plugin_state_->client.attempt.started = meter->CreateUInt64Counter(
         std::string(OTelClientAttemptStartedInstrumentName()));
@@ -166,6 +164,7 @@ void OpenTelemetryPluginBuilder::BuildAndRegisterGlobal() {
         meter->CreateUInt64Histogram(std::string(
             OTelServerCallRcvdTotalCompressedMessageSizeInstrumentName()));
   }
+  g_otel_plugin_state_->meter_provider = std::move(meter_provider);
   grpc_core::ServerCallTracerFactory::RegisterGlobal(
       new grpc::internal::OpenTelemetryServerCallTracerFactory);
   grpc_core::CoreConfiguration::RegisterBuilder(
