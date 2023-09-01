@@ -1941,11 +1941,12 @@ void ClientChannel::GetChannelInfo(grpc_channel_element* elem,
 }
 
 void ClientChannel::TryToConnectLocked() {
-  if (disconnect_error_.ok()) return;
-  if (lb_policy_ != nullptr) {
-    lb_policy_->ExitIdleLocked();
-  } else if (resolver_ == nullptr) {
-    CreateResolverLocked();
+  if (disconnect_error_.ok()) {
+    if (lb_policy_ != nullptr) {
+      lb_policy_->ExitIdleLocked();
+    } else if (resolver_ == nullptr) {
+      CreateResolverLocked();
+    }
   }
   GRPC_CHANNEL_STACK_UNREF(owning_stack_, "TryToConnect");
 }
