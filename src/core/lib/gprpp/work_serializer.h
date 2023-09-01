@@ -19,14 +19,15 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <functional>
+#include <memory>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/functional/any_invocable.h"
 
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 
 namespace grpc_core {
 
