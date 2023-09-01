@@ -3728,6 +3728,8 @@ grpc_cc_library(
         "http2_errors",
         "idle_filter_state",
         "loop",
+        "no_destruct",
+        "per_cpu",
         "poll",
         "single_set_ptr",
         "sleep",
