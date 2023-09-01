@@ -23,7 +23,6 @@
 
 #include <stdint.h>
 
-#include <memory>
 #include <string>
 
 #include "absl/base/thread_annotations.h"
@@ -42,7 +41,6 @@
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/cpp/ext/otel/otel_client_filter.h"
-#include "src/cpp/ext/otel/otel_plugin.h"
 
 namespace grpc {
 namespace internal {
@@ -70,14 +68,14 @@ class OpenTelemetryCallTracer : public grpc_core::ClientCallTracer {
     }
 
     void RecordSendInitialMetadata(
-        grpc_metadata_batch* send_initial_metadata) override;
+        grpc_metadata_batch* /*send_initial_metadata*/) override {}
     void RecordSendTrailingMetadata(
         grpc_metadata_batch* /*send_trailing_metadata*/) override {}
     void RecordSendMessage(const grpc_core::SliceBuffer& send_message) override;
     void RecordSendCompressedMessage(
         const grpc_core::SliceBuffer& send_compressed_message) override;
     void RecordReceivedInitialMetadata(
-        grpc_metadata_batch* recv_initial_metadata) override;
+        grpc_metadata_batch* /*recv_initial_metadata*/) override {}
     void RecordReceivedMessage(
         const grpc_core::SliceBuffer& recv_message) override;
     void RecordReceivedDecompressedMessage(
@@ -95,8 +93,6 @@ class OpenTelemetryCallTracer : public grpc_core::ClientCallTracer {
     const bool arena_allocated_;
     // Start time (for measuring latency).
     absl::Time start_time_;
-    std::unique_ptr<LabelsIterable> local_labels_;
-    std::unique_ptr<LabelsIterable> peer_labels_;
   };
 
   explicit OpenTelemetryCallTracer(OpenTelemetryClientFilter* parent,
@@ -128,6 +124,7 @@ class OpenTelemetryCallTracer : public grpc_core::ClientCallTracer {
   const OpenTelemetryClientFilter* parent_;
   // Client method.
   grpc_core::Slice path_;
+  absl::string_view method_;
   grpc_core::Arena* arena_;
   grpc_core::Mutex mu_;
   // Non-transparent attempts per call

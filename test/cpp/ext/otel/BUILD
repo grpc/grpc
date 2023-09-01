@@ -12,38 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])
 
 grpc_package(
     name = "test/cpp/ext/otel",
     visibility = "tests",
-)
-
-grpc_cc_library(
-    name = "otel_test_library",
-    testonly = 1,
-    srcs = [
-        "otel_test_library.cc",
-    ],
-    hdrs = [
-        "otel_test_library.h",
-    ],
-    external_deps = [
-        "gtest",
-        "otel/api",
-        "otel/sdk/src/metrics",
-    ],
-    language = "C++",
-    tags = [
-    ],
-    deps = [
-        "//:grpc++",
-        "//src/cpp/ext/otel:otel_plugin",
-        "//test/core/util:grpc_test_util",
-        "//test/cpp/end2end:test_service_impl",
-    ],
 )
 
 grpc_cc_test(
@@ -60,7 +35,6 @@ grpc_cc_test(
     tags = [
     ],
     deps = [
-        ":otel_test_library",
         "//:grpc++",
         "//src/cpp/ext/otel:otel_plugin",
         "//test/core/util:grpc_test_util",
