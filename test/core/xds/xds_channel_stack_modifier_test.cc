@@ -99,7 +99,10 @@ TEST(XdsChannelStackModifierTest, XdsHttpFiltersInsertion) {
   builder.SetTransport(&fake_transport);
   // Construct channel stack and verify that the test filters were successfully
   // added
-  ASSERT_TRUE(CoreConfiguration::Get().channel_init().CreateStack(&builder));
+  {
+    ExecCtx exec_ctx;
+    ASSERT_TRUE(CoreConfiguration::Get().channel_init().CreateStack(&builder));
+  }
   std::vector<std::string> filters;
   for (const auto& entry : *builder.mutable_stack()) {
     filters.push_back(entry->name);
