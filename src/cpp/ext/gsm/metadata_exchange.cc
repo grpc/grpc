@@ -198,7 +198,7 @@ class PeerLabelsIterable : public LabelsIterable {
     if (type_ != GcpResourceType::kGke) {
       return 1;
     }
-    return 8;
+    return kGkeAttributeList.size();
   }
 
   void ResetIteratorPosition() override { pos_ = 0; }
