@@ -110,8 +110,8 @@ OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
             {{OTelMethodKey(),
               absl::StripPrefix(parent_->path_.as_string_view(), "/")},
              {OTelTargetKey(), parent_->parent_->target()}}};
-    // We might not have all the labels that we want at this point, so avoid
-    // recording a subset of injected labels here.
+    // We might not have all the injected labels that we want at this point, so
+    // avoid recording a subset of injected labels here.
     OTelPluginState().client.attempt.started->Add(
         1, KeyValueIterable(/*injected_labels_iterable=*/nullptr,
                             additional_labels));
