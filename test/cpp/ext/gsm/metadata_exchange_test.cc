@@ -104,43 +104,47 @@ class MetadataExchangeTest
   void VerifyGkeServiceMeshAttributes(
       const std::map<std::string,
                      opentelemetry::sdk::common::OwnedAttributeValue>&
-          attributes,
-      bool local_only = false) {
-    if (!local_only) {
-      switch (GetParam().type()) {
-        case TestScenario::Type::kGke:
-          EXPECT_EQ(
-              absl::get<std::string>(attributes.at("gsm.remote_workload_type")),
-              "gcp_kubernetes_engine");
-          EXPECT_EQ(absl::get<std::string>(
-                        attributes.at("gsm.remote_workload_pod_name")),
-                    "pod");
-          EXPECT_EQ(absl::get<std::string>(
-                        attributes.at("gsm.remote_workload_container_name")),
-                    "container");
-          EXPECT_EQ(absl::get<std::string>(
-                        attributes.at("gsm.remote_workload_namespace_name")),
-                    "namespace");
-          EXPECT_EQ(absl::get<std::string>(
-                        attributes.at("gsm.remote_workload_cluster_name")),
-                    "cluster");
-          EXPECT_EQ(absl::get<std::string>(
-                        attributes.at("gsm.remote_workload_location")),
-                    "region");
-          EXPECT_EQ(absl::get<std::string>(
-                        attributes.at("gsm.remote_workload_project_id")),
-                    "id");
-          EXPECT_EQ(absl::get<std::string>(
-                        attributes.at("gsm.remote_workload_canonical_service")),
-                    "canonical_service");
-          break;
-        case TestScenario::Type::kUnknown:
-          EXPECT_EQ(
-              absl::get<std::string>(attributes.at("gsm.remote_workload_type")),
-              "random");
-          break;
-      }
+          attributes) {
+    switch (GetParam().type()) {
+      case TestScenario::Type::kGke:
+        EXPECT_EQ(
+            absl::get<std::string>(attributes.at("gsm.remote_workload_type")),
+            "gcp_kubernetes_engine");
+        EXPECT_EQ(absl::get<std::string>(
+                      attributes.at("gsm.remote_workload_pod_name")),
+                  "pod");
+        EXPECT_EQ(absl::get<std::string>(
+                      attributes.at("gsm.remote_workload_container_name")),
+                  "container");
+        EXPECT_EQ(absl::get<std::string>(
+                      attributes.at("gsm.remote_workload_namespace_name")),
+                  "namespace");
+        EXPECT_EQ(absl::get<std::string>(
+                      attributes.at("gsm.remote_workload_cluster_name")),
+                  "cluster");
+        EXPECT_EQ(absl::get<std::string>(
+                      attributes.at("gsm.remote_workload_location")),
+                  "region");
+        EXPECT_EQ(absl::get<std::string>(
+                      attributes.at("gsm.remote_workload_project_id")),
+                  "id");
+        EXPECT_EQ(absl::get<std::string>(
+                      attributes.at("gsm.remote_workload_canonical_service")),
+                  "canonical_service");
+        break;
+      case TestScenario::Type::kUnknown:
+        EXPECT_EQ(
+            absl::get<std::string>(attributes.at("gsm.remote_workload_type")),
+            "random");
+        break;
     }
+  }
+
+  void VerifyNoServiceMeshAttributes(
+      const std::map<std::string,
+                     opentelemetry::sdk::common::OwnedAttributeValue>&
+          attributes) {
+    EXPECT_EQ(attributes.find("gsm.remote_workload_type"), attributes.end());
   }
 };
 
@@ -165,7 +169,7 @@ TEST_P(MetadataExchangeTest, ClientAttemptStarted) {
   EXPECT_EQ(absl::get<std::string>(attributes.at("grpc.method")), kMethodName);
   EXPECT_EQ(absl::get<std::string>(attributes.at("grpc.target")),
             canonical_server_address_);
-  VerifyGkeServiceMeshAttributes(attributes, /*local_only=*/true);
+  VerifyNoServiceMeshAttributes(attributes);
 }
 
 TEST_P(MetadataExchangeTest, ClientAttemptDuration) {
@@ -190,6 +194,26 @@ TEST_P(MetadataExchangeTest, ClientAttemptDuration) {
             canonical_server_address_);
   EXPECT_EQ(absl::get<std::string>(attributes.at("grpc.status")), "OK");
   VerifyGkeServiceMeshAttributes(attributes);
+}
+
+TEST_P(MetadataExchangeTest, ServerCallStarted) {
+  Init(
+      /*metric_names=*/{grpc::internal::OTelServerCallStartedInstrumentName()});
+  SendRPC();
+  const char* kMetricName = "grpc.server.call.started";
+  auto data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) { return !data.contains(kMetricName); });
+  ASSERT_EQ(data[kMetricName].size(), 1);
+  auto point_data = absl::get_if<opentelemetry::sdk::metrics::SumPointData>(
+      &data[kMetricName][0].point_data);
+  ASSERT_NE(point_data, nullptr);
+  ASSERT_EQ(absl::get<int64_t>(point_data->value_), 1);
+  const auto& attributes = data[kMetricName][0].attributes.GetAttributes();
+  EXPECT_EQ(absl::get<std::string>(attributes.at("grpc.method")), kMethodName);
+  VerifyNoServiceMeshAttributes(attributes);
 }
 
 TEST_P(MetadataExchangeTest, ServerCallDuration) {

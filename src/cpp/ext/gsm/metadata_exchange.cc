@@ -156,18 +156,25 @@ class LocalLabelsIterable : public LabelsIterable {
   const std::vector<std::pair<absl::string_view, std::string>>& labels_;
 };
 
-class PeerLabelsIterable : public LabelsIterable {
+class MeshLabelsIterable : public LabelsIterable {
  public:
-  explicit PeerLabelsIterable(grpc_core::Slice remote_metadata)
-      : metadata_(std::move(remote_metadata)) {}
+  explicit MeshLabelsIterable(
+      const std::vector<std::pair<absl::string_view, std::string>>&
+          local_labels,
+      grpc_core::Slice remote_metadata)
+      : local_labels_(local_labels), metadata_(std::move(remote_metadata)) {}
 
   absl::optional<std::pair<absl::string_view, absl::string_view>> Next()
       override {
     auto& struct_pb = GetDecodedMetadata();
+    auto local_labels_size = local_labels_.size();
+    if (pos_ < local_labels_size) {
+      return local_labels_[++pos_];
+    }
     if (struct_pb.struct_pb == nullptr) {
       return absl::nullopt;
     }
-    if (++pos_ == 1) {
+    if (++pos_ == local_labels_size + 1) {
       return std::make_pair(kPeerTypeAttribute,
                             GetStringValueFromUpbStruct(
                                 struct_pb.struct_pb, kMetadataExchangeTypeKey,
@@ -176,14 +183,15 @@ class PeerLabelsIterable : public LabelsIterable {
     // Only handle GKE type for now.
     switch (type_) {
       case GcpResourceType::kGke:
-        if (pos_ - 2 >= kGkeAttributeList.size()) {
+        if ((pos_ - 2 - local_labels_size) >= kGkeAttributeList.size()) {
           return absl::nullopt;
         }
         return std::make_pair(
-            kGkeAttributeList[pos_ - 2].otel_attribute,
+            kGkeAttributeList[pos_ - 2 - local_labels_size].otel_attribute,
             GetStringValueFromUpbStruct(
                 struct_pb.struct_pb,
-                kGkeAttributeList[pos_ - 2].metadata_attribute,
+                kGkeAttributeList[pos_ - 2 - local_labels_size]
+                    .metadata_attribute,
                 struct_pb.arena.ptr()));
       case GcpResourceType::kUnknown:
         return absl::nullopt;
@@ -193,12 +201,12 @@ class PeerLabelsIterable : public LabelsIterable {
   size_t Size() const override {
     auto& struct_pb = GetDecodedMetadata();
     if (struct_pb.struct_pb == nullptr) {
-      return 0;
+      return local_labels_.size();
     }
     if (type_ != GcpResourceType::kGke) {
-      return 1;
+      return local_labels_.size() + 1;
     }
-    return kGkeAttributeList.size();
+    return local_labels_.size() + kGkeAttributeList.size();
   }
 
   void ResetIteratorPosition() override { pos_ = 0; }
@@ -248,14 +256,15 @@ class PeerLabelsIterable : public LabelsIterable {
     return struct_pb;
   }
 
+  const std::vector<std::pair<absl::string_view, std::string>>& local_labels_;
   // Holds either the metadata slice or the decoded proto struct.
   mutable absl::variant<grpc_core::Slice, StructPb> metadata_;
   mutable GcpResourceType type_;
   uint32_t pos_ = 0;
 };
 
-constexpr std::array<PeerLabelsIterable::GkeAttribute, 7>
-    PeerLabelsIterable::kGkeAttributeList;
+constexpr std::array<MeshLabelsIterable::GkeAttribute, 7>
+    MeshLabelsIterable::kGkeAttributeList;
 
 }  // namespace
 
@@ -320,18 +329,15 @@ ServiceMeshLabelsInjector::ServiceMeshLabelsInjector(
   // TODO(yashykt): Add mesh_id
 }
 
-std::unique_ptr<LabelsIterable> ServiceMeshLabelsInjector::GetPeerLabels(
+std::unique_ptr<LabelsIterable> ServiceMeshLabelsInjector::GetLabels(
     grpc_metadata_batch* incoming_initial_metadata) {
   auto peer_metadata =
       incoming_initial_metadata->Take(grpc_core::XEnvoyPeerMetadata());
   if (!peer_metadata.has_value()) {
     return nullptr;
   }
-  return std::make_unique<PeerLabelsIterable>(*std::move(peer_metadata));
-}
-
-std::unique_ptr<LabelsIterable> ServiceMeshLabelsInjector::GetLocalLabels() {
-  return std::make_unique<LocalLabelsIterable>(local_labels_);
+  return std::make_unique<MeshLabelsIterable>(local_labels_,
+                                              *std::move(peer_metadata));
 }
 
 void ServiceMeshLabelsInjector::AddLabels(
