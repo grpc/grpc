@@ -18,6 +18,8 @@
 
 #include "src/core/lib/gprpp/work_serializer.h"
 
+#include <inttypes.h>
+
 #include <algorithm>
 #include <memory>
 #include <thread>

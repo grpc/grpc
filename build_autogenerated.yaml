@@ -15289,14 +15289,17 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/event_engine/event_engine_test_utils.h
   - test/cpp/util/channel_trace_proto_helper.h
   src:
   - src/proto/grpc/channelz/channelz.proto
   - test/core/channel/channelz_test.cc
+  - test/core/event_engine/event_engine_test_utils.cc
   - test/cpp/util/channel_trace_proto_helper.cc
   deps:
   - gtest
   - grpc++
+  - grpc_unsecure
   - grpc_test_util
 - name: test_core_end2end_channelz_test
   gtest: true
@@ -17117,11 +17120,14 @@ targets:
   build: test
   run: false
   language: c++
-  headers: []
+  headers:
+  - test/core/event_engine/event_engine_test_utils.h
   src:
+  - test/core/event_engine/event_engine_test_utils.cc
   - test/core/gprpp/work_serializer_test.cc
   deps:
   - gtest
+  - grpc_unsecure
   - grpc_test_util
   platforms:
   - linux
