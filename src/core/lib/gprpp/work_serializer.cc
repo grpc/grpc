@@ -69,10 +69,17 @@ class WorkSerializer::WorkSerializerImpl
   };
   using CallbackVector = absl::InlinedVector<CallbackWrapper, 1>;
 
-  bool Refill() ABSL_EXCLUSIVE_LOCKS_REQUIRED(incoming_mu_) {
+  bool RefillAndUpdateRunning() ABSL_LOCKS_EXCLUDED(incoming_mu_) {
+    ReleasableMutexLock lock(&incoming_mu_);
+    GPR_ASSERT(running_);
     incoming_callbacks_.swap(processing_callbacks_);
+    if (processing_callbacks_.empty()) {
+      running_ = false;
+      return false;
+    }
+    lock.Release();
     std::reverse(processing_callbacks_.begin(), processing_callbacks_.end());
-    return !processing_callbacks_.empty();
+    return true;
   }
 
   void FirstStep();
@@ -96,10 +103,7 @@ class WorkSerializer::WorkSerializerImpl
 };
 
 void WorkSerializer::WorkSerializerImpl::FirstStep() {
-  {
-    MutexLock incoming_lock(&incoming_mu_);
-    GPR_ASSERT(Refill());
-  }
+  RefillAndUpdateRunning();
   Step();
 }
 
@@ -120,11 +124,7 @@ void WorkSerializer::WorkSerializerImpl::Step() {
   current_thread_ = std::thread::id();
 #endif
   if (processing_callbacks_.empty()) {
-    MutexLock incoming_lock(&incoming_mu_);
-    if (!Refill()) {
-      running_ = false;
-      return;
-    }
+    if (!RefillAndUpdateRunning()) return;
   }
   event_engine_->Run([self = Ref()]() {
     ApplicationCallbackExecCtx app_exec_ctx;
