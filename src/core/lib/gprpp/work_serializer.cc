@@ -105,7 +105,7 @@ class WorkSerializer::WorkSerializerImpl
 };
 
 void WorkSerializer::WorkSerializerImpl::FirstStep() {
-  RefillAndUpdateRunning();
+  GPR_ASSERT(RefillAndUpdateRunning());
   Step();
 }
 
