@@ -27,7 +27,6 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "fake_resolver.h"
 
 #include <grpc/support/log.h>
 
