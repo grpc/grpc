@@ -26,6 +26,7 @@
 #include <utility>
 
 #include "absl/container/inlined_vector.h"
+#include "work_serializer.h"
 
 #include <grpc/support/log.h>
 
@@ -61,41 +62,23 @@ class WorkSerializer::WorkSerializerImpl
 
  private:
   struct CallbackWrapper {
-    CallbackWrapper(absl::AnyInvocable<void()> cb, uint64_t serial,
-                    DebugLocation loc)
-        : callback(std::move(cb)), serial(serial), location(loc) {}
+    CallbackWrapper(absl::AnyInvocable<void()> cb, DebugLocation loc)
+        : callback(std::move(cb)), location(loc) {}
 
     absl::AnyInvocable<void()> callback;
-    uint64_t serial;
     DebugLocation location;
   };
   using CallbackVector = absl::InlinedVector<CallbackWrapper, 1>;
 
-  bool RefillAndUpdateRunning() ABSL_LOCKS_EXCLUDED(incoming_mu_) {
-    ReleasableMutexLock lock(&incoming_mu_);
-    GPR_ASSERT(running_);
-    incoming_callbacks_.swap(processing_callbacks_);
-    if (processing_callbacks_.empty()) {
-      running_ = false;
-      return false;
-    }
-    lock.Release();
-    std::reverse(processing_callbacks_.begin(), processing_callbacks_.end());
-    return true;
-  }
-
+  CallbackVector GrabNextAndUpdateRunning() ABSL_LOCKS_EXCLUDED(incoming_mu_);
   void FirstStep();
-  void Step() ABSL_LOCKS_EXCLUDED(incoming_mu_);
+  void Step(CallbackVector processing, size_t i)
+      ABSL_LOCKS_EXCLUDED(incoming_mu_);
 
   Mutex incoming_mu_;
-  uint64_t serial_ ABSL_GUARDED_BY(incoming_mu_) = 0;
   bool running_ ABSL_GUARDED_BY(incoming_mu_) = false;
   // Queue of incoming callbacks
   CallbackVector incoming_callbacks_ ABSL_GUARDED_BY(incoming_mu_);
-  // Queue of in-process callbacks, in reverse order
-  // When this empties we take all of incoming_callbacks_ and reverse it
-  // so we can just pop_back() to process the queue.
-  CallbackVector processing_callbacks_;
   const std::shared_ptr<grpc_event_engine::experimental::EventEngine>
       event_engine_;
 
@@ -104,47 +87,60 @@ class WorkSerializer::WorkSerializerImpl
 #endif
 };
 
-void WorkSerializer::WorkSerializerImpl::FirstStep() {
-  GPR_ASSERT(RefillAndUpdateRunning());
-  Step();
+WorkSerializer::WorkSerializerImpl::CallbackVector
+WorkSerializer::WorkSerializerImpl::GrabNextAndUpdateRunning() {
+  MutexLock lock(&incoming_mu_);
+  GPR_ASSERT(running_);
+  CallbackVector processing;
+  processing.swap(incoming_callbacks_);
+  if (processing.empty()) {
+    running_ = false;
+  }
+  return processing;
 }
 
-void WorkSerializer::WorkSerializerImpl::Step() {
+void WorkSerializer::WorkSerializerImpl::FirstStep() {
+  Step(GrabNextAndUpdateRunning(), 0);
+}
+
+void WorkSerializer::WorkSerializerImpl::Step(CallbackVector processing,
+                                              size_t i) {
 #ifndef NDEBUG
   current_thread_ = std::this_thread::get_id();
 #endif
+  GPR_ASSERT(i < processing.size());
+  auto& processing_now = processing[i];
   if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
-    auto location = processing_callbacks_.back().location;
-    gpr_log(GPR_INFO,
-            "WorkSerializer::Step() %p Executing callback [%s:%d] %" PRId64,
-            this, location.file(), location.line(),
-            processing_callbacks_.back().serial);
+    auto location = processing_now.location;
+    gpr_log(GPR_INFO, "WorkSerializer::Step() %p Executing callback [%s:%d]",
+            this, location.file(), location.line());
   }
-  processing_callbacks_.back().callback();
-  processing_callbacks_.pop_back();
+  processing_now.callback();
+  ++i;
 #ifndef NDEBUG
   current_thread_ = std::thread::id();
 #endif
-  if (processing_callbacks_.empty()) {
-    if (!RefillAndUpdateRunning()) return;
+  if (i == processing.size()) {
+    processing = GrabNextAndUpdateRunning();
+    if (processing.empty()) return;
+    i = 0;
   }
-  event_engine_->Run([self = Ref()]() {
-    ApplicationCallbackExecCtx app_exec_ctx;
-    ExecCtx exec_ctx;
-    self->Step();
-  });
+  event_engine_->Run(
+      [self = Ref(), processing = std::move(processing), i]() mutable {
+        ApplicationCallbackExecCtx app_exec_ctx;
+        ExecCtx exec_ctx;
+        self->Step(std::move(processing), i);
+      });
 }
 
 void WorkSerializer::WorkSerializerImpl::Run(
     absl::AnyInvocable<void()> callback, DebugLocation location) {
   MutexLock incoming_lock(&incoming_mu_);
-  uint64_t serial = serial_++;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
-    gpr_log(GPR_INFO,
-            "WorkSerializer::Run() %p Scheduling callback [%s:%d] %" PRId64,
-            this, location.file(), location.line(), serial);
+    gpr_log(GPR_INFO, "WorkSerializer::Run() %p Scheduling callback [%s:%d]",
+            this, location.file(), location.line());
   }
-  incoming_callbacks_.emplace_back(std::move(callback), serial, location);
+  incoming_callbacks_.emplace_back(std::move(callback), location);
   if (!std::exchange(running_, true)) {
     event_engine_->Run([self = Ref()]() {
       ApplicationCallbackExecCtx app_exec_ctx;
