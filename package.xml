@@ -13,12 +13,12 @@
  <date>2019-09-24</date>
  <time>16:06:07</time>
  <version>
-  <release>1.58.0RC1</release>
-  <api>1.58.0RC1</api>
+  <release>1.58.0</release>
+  <api>1.58.0</api>
  </version>
  <stability>
-  <release>beta</release>
-  <api>beta</api>
+  <release>stable</release>
+  <api>stable</api>
  </stability>
  <license>Apache 2.0</license>
  <notes>
