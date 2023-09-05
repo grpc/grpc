@@ -34,6 +34,7 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/resolver/resolver_factory.h"
@@ -227,8 +228,14 @@ void FakeResolverResponseGenerator::SetResponse(Resolver::Result result) {
   }
   FakeResolverResponseSetter* arg =
       new FakeResolverResponseSetter(resolver, std::move(result));
-  resolver->work_serializer_->Run([arg]() { arg->SetResponseLocked(); },
-                                  DEBUG_LOCATION);
+  Notification done;
+  resolver->work_serializer_->Run(
+      [arg, &done]() {
+        arg->SetResponseLocked();
+        done.Notify();
+      },
+      DEBUG_LOCATION);
+  done.WaitForNotification();
 }
 
 void FakeResolverResponseGenerator::SetReresolutionResponse(

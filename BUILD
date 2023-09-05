@@ -3730,6 +3730,7 @@ grpc_cc_library(
         "work_serializer",
         "//src/core:channel_args",
         "//src/core:grpc_service_config",
+        "//src/core:notification",
         "//src/core:ref_counted",
         "//src/core:useful",
     ],
