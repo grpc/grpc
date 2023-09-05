@@ -90,3 +90,5 @@
   default: false
 - name: keepalive_server_fix
   default: false
+- name: round_robin_dualstack
+  default: true
