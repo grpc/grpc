@@ -95,6 +95,10 @@ class grpc_ssl_channel_security_connector final
     target_name_ = std::string(host);
   }
 
+  ~grpc_ssl_channel_security_connector() override {
+    tsi_ssl_client_handshaker_factory_unref(client_handshaker_factory_);
+  }
+
   void add_handshakers(const grpc_core::ChannelArgs& args,
                        grpc_pollset_set* /*interested_parties*/,
                        grpc_core::HandshakeManager* handshake_mgr) override {
@@ -375,7 +379,7 @@ grpc_ssl_channel_security_connector_create(
     grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
     const grpc_ssl_config* config, const char* target_name,
     const char* overridden_target_name,
-    tsi_ssl_client_handshaker_factory* factory) {
+    tsi_ssl_client_handshaker_factory* client_factory) {
   if (config == nullptr || target_name == nullptr) {
     gpr_log(GPR_ERROR, "An ssl channel needs a config and a target name.");
     return nullptr;
@@ -385,7 +389,8 @@ grpc_ssl_channel_security_connector_create(
       grpc_core::MakeRefCounted<grpc_ssl_channel_security_connector>(
           std::move(channel_creds), std::move(request_metadata_creds), config,
           target_name, overridden_target_name);
-  c->client_handshaker_factory_ = factory;
+  c->client_handshaker_factory_ =
+      tsi_ssl_client_handshaker_factory_ref(client_factory);
   return c;
 }
 
