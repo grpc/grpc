@@ -46,7 +46,7 @@ DebugOnlyTraceFlag grpc_work_serializer_trace(false, "work_serializer");
 //
 
 class WorkSerializer::WorkSerializerImpl
-    : public RefCounted<WorkSerializerImpl> {
+    : public RefCounted<WorkSerializerImpl, NonPolymorphicRefCount> {
  public:
   explicit WorkSerializerImpl(
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
