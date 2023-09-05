@@ -146,9 +146,9 @@ if EXTRA_ENV_LINK_ARGS is None:
 # This enables the standard link-time optimizer, which help us prevent some undefined symbol errors by
 # remove some unused symbols from .so file.
 if "win32" in sys.platform:
-    EXTRA_ENV_COMPILE_ARGS += " /LTCG"
+    EXTRA_ENV_COMPILE_ARGS += " /O2"
 else:
-    EXTRA_ENV_COMPILE_ARGS += " -O2"
+    EXTRA_ENV_COMPILE_ARGS += " -flto"
 
 EXTRA_COMPILE_ARGS = shlex.split(EXTRA_ENV_COMPILE_ARGS)
 EXTRA_LINK_ARGS = shlex.split(EXTRA_ENV_LINK_ARGS)
