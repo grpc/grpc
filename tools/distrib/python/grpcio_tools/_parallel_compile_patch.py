@@ -17,7 +17,6 @@ build_ext has lots of C/C++ files and normally them one by one.
 Enabling parallel build helps a lot.
 """
 
-import distutils.ccompiler
 import os
 
 try:
@@ -66,6 +65,11 @@ def _parallel_compile(
 
 
 def monkeypatch_compile_maybe():
-    """Monkeypatching is dumb, but the build speed gain is worth it."""
-    if BUILD_EXT_COMPILER_JOBS > 1:
+    """
+    Monkeypatching is dumb, but the build speed gain is worth it.
+    After python 3.12, we won't find distutils if SETUPTOOLS_USE_DISTUTILS=stdlib.
+    """
+    use_distutils = os.environ.get("SETUPTOOLS_USE_DISTUTILS", "")
+    if BUILD_EXT_COMPILER_JOBS > 1 and use_distutils != 'stdlib':
+        import distutils.ccompiler  # pylint: disable=wrong-import-position
         distutils.ccompiler.CCompiler.compile = _parallel_compile
