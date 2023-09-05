@@ -146,7 +146,7 @@ if EXTRA_ENV_LINK_ARGS is None:
 # This enables the standard link-time optimizer, which help us prevent some undefined symbol errors by
 # remove some unused symbols from .so file.
 if "win32" in sys.platform:
-    EXTRA_ENV_COMPILE_ARGS += " /Qipo"
+    EXTRA_ENV_COMPILE_ARGS += " /OPT:REF,ICF3"
 else:
     EXTRA_ENV_COMPILE_ARGS += " -flto"
 
