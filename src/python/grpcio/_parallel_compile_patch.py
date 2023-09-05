@@ -72,6 +72,7 @@ def monkeypatch_compile_maybe():
     After python 3.12, we won't find distutils if SETUPTOOLS_USE_DISTUTILS=stdlib.
     """
     use_distutils = os.environ.get("SETUPTOOLS_USE_DISTUTILS", "")
-    if BUILD_EXT_COMPILER_JOBS > 1 and use_distutils != 'stdlib':
+    if BUILD_EXT_COMPILER_JOBS > 1 and use_distutils != "stdlib":
         import distutils.ccompiler  # pylint: disable=wrong-import-position
+
         distutils.ccompiler.CCompiler.compile = _parallel_compile
