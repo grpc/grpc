@@ -29,8 +29,6 @@ call tools/internal_ci/helper_scripts/prepare_build_windows.bat || exit /b 1
 @rem Install bazel
 @rem Side effect of the tools/bazel script is that it downloads the correct version of bazel binary.
 mkdir C:\bazel
-@rem This is a workaround to resolve weird linker error from Bazel 6.x
-set OVERRIDE_BAZEL_VERSION=5.4.1
 bash -c "tools/bazel --version && cp tools/bazel-*.exe /c/bazel/bazel.exe"
 set PATH=C:\bazel;%PATH%
 bazel --version
