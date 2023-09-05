@@ -42,7 +42,7 @@ RUN Invoke-WebRequest "https://aka.ms/vs/16/release/vs_buildtools.exe" \
         "--quiet", "--wait", "--nocache", \
         "--add", "Microsoft.VisualStudio.Workload.VCTools", \
         "--add", "Microsoft.VisualStudio.Component.VC.Tools.x86.x64", \
-        "--add", "Microsoft.VisualStudio.Component.Windows10SDK.19041" -Wait; \
+        "--add", "Microsoft.VisualStudio.Component.Windows10SDK.20348" -Wait; \
     Remove-Item C:/TEMP/vs_buildtools.exe; \
     [Environment]::SetEnvironmentVariable(\"BAZEL_VC\", \"C:\VS\VC\", \"Machine\")
 # Install msys2 and add to path.

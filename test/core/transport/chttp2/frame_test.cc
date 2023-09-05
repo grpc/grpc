@@ -237,7 +237,24 @@ TEST(Frame, ParsePadded) {
                                         SliceBufferFromString("hello")}));
 }
 
+TEST(Frame, UnknownIgnored) {
+  // 77 = some random undefined frame
+  EXPECT_EQ(
+      ParseFrame(0, 0, 10, 77, 0, 0, 0, 0, 1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+      Http2Frame(Http2UnknownFrame{}));
+  // 2 = PRIORITY, we just ignore it
+  EXPECT_EQ(
+      ParseFrame(0, 0, 10, 2, 0, 0, 0, 0, 1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+      Http2Frame(Http2UnknownFrame{}));
+}
+
 TEST(Frame, ParseRejects) {
+  // 5 == PUSH_PROMISE
+  EXPECT_THAT(
+      ValidateFrame(0, 0, 10, 5, 0, 0, 0, 0, 1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+      StatusIs(absl::StatusCode::kInternal,
+               "push promise not supported (and SETTINGS_ENABLE_PUSH "
+               "explicitly disabled)."));
   EXPECT_THAT(ValidateFrame(0, 0, 0, 0, 0, 0, 0, 0, 0),
               StatusIs(absl::StatusCode::kInternal,
                        "invalid stream id: {DATA: flags=0, "

@@ -21,6 +21,7 @@
 #include "google/cloud/opentelemetry/resource_detector.h"
 #include "gtest/gtest.h"
 
+#include "src/core/lib/gprpp/env.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc {
