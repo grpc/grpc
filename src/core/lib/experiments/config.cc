@@ -20,6 +20,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <map>
 #include <string>
 #include <utility>
 
