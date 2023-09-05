@@ -51,9 +51,11 @@ spec:
             value: "true"
           - name: GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY
             value: "true"
+          - name: GRPC_EXPERIMENTAL_ENABLE_OUTLIER_DETECTION
+            value: "true"
           - name: GRPC_EXPERIMENTAL_XDS_CUSTOM_LB_CONFIG
             value: "true"
-          - name: GRPC_EXPERIMENTAL_ENABLE_OUTLIER_DETECTION
+          - name: GRPC_EXPERIMENTAL_XDS_ENABLE_OVERRIDE_HOST
             value: "true"
         volumeMounts:
           - mountPath: /tmp/grpc-xds/

@@ -40,6 +40,7 @@ constexpr uint8_t kFrameTypeSettings = 4;
 constexpr uint8_t kFrameTypePing = 6;
 constexpr uint8_t kFrameTypeGoaway = 7;
 constexpr uint8_t kFrameTypeWindowUpdate = 8;
+constexpr uint8_t kFrameTypePushPromise = 5;
 
 constexpr uint8_t kFlagEndStream = 1;
 constexpr uint8_t kFlagAck = 1;
@@ -175,6 +176,7 @@ class SerializeHeaderAndPayload {
   }
 
   void operator()(Http2SettingsFrame& frame) {
+    // Six bytes per setting (u16 id, u32 value)
     const size_t payload_size = 6 * frame.settings.size();
     auto hdr_and_payload =
         extra_bytes_.TakeFirst(kFrameHeaderSize + payload_size);
@@ -463,7 +465,7 @@ void Serialize(absl::Span<Http2Frame> frames, SliceBuffer& out) {
   for (auto& frame : frames) {
     // Bytes needed for framing
     buffer_needed += kFrameHeaderSize;
-    // Bytes needed for unserialized payload
+    // Bytes needed for frame payload
     buffer_needed += absl::visit(SerializeExtraBytesRequired(), frame);
   }
   SerializeHeaderAndPayload serialize(buffer_needed, out);
@@ -492,6 +494,10 @@ absl::StatusOr<Http2Frame> ParseFramePayload(const Http2FrameHeader& hdr,
       return ParseGoawayFrame(hdr, payload);
     case kFrameTypeWindowUpdate:
       return ParseWindowUpdateFrame(hdr, payload);
+    case kFrameTypePushPromise:
+      return absl::InternalError(
+          "push promise not supported (and SETTINGS_ENABLE_PUSH explicitly "
+          "disabled).");
     default:
       return Http2UnknownFrame{};
   }
