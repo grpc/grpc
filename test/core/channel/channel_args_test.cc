@@ -18,16 +18,14 @@
 
 #include "src/core/lib/channel/channel_args.h"
 
-#include <string.h>
-
-#include "gtest/gtest.h"
-
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <string.h>
 
+#include "gtest/gtest.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -60,17 +58,19 @@ TEST(ChannelArgsTest, SetGetRemove) {
   ChannelArgs e = d.Set("alpha", "beta");
   ChannelArgs f = e.Remove("answer");
   EXPECT_EQ(a.Get("answer"), nullptr);
-  EXPECT_EQ(*b.Get("answer"), ChannelArgs::Value(42));
-  EXPECT_EQ(*c.Get("answer"), ChannelArgs::Value(42));
+  grpc_core::SourceLocation location = grpc_core::SourceLocation();
+  EXPECT_EQ(*b.Get("answer"), ChannelArgs::Value(42, location));
+  EXPECT_EQ(*c.Get("answer"), ChannelArgs::Value(42, location));
   EXPECT_EQ(c.GetInt("answer"), 42);
   EXPECT_EQ(c.GetString("answer"), absl::nullopt);
   EXPECT_EQ(f.Get("answer"), nullptr);
-  EXPECT_EQ(*c.Get("foo"), ChannelArgs::Value("bar"));
+  EXPECT_EQ(*c.Get("foo"), ChannelArgs::Value("bar", location));
   EXPECT_EQ(c.GetString("foo"), "bar");
   EXPECT_EQ(c.GetString("answer"), absl::nullopt);
-  EXPECT_EQ(*d.Get("ptr"),
-            ChannelArgs::Value(ChannelArgs::Pointer(ptr, &malloc_vtable)));
-  EXPECT_EQ(*e.Get("alpha"), ChannelArgs::Value("beta"));
+  EXPECT_EQ(
+      *d.Get("ptr"),
+      ChannelArgs::Value(ChannelArgs::Pointer(ptr, &malloc_vtable), location));
+  EXPECT_EQ(*e.Get("alpha"), ChannelArgs::Value("beta", location));
   gpr_free(ptr);
 }
 
