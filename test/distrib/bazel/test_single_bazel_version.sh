@@ -61,9 +61,9 @@ EXCLUDED_TARGETS=(
   # This could be a legitmate failure due to bitrot.
   "-//src/proto/grpc/testing:test_gen_proto"
 
-  # This appears to be a legitimately broken BUILD file. There's a reference to
-  # a non-existent "link_dynamic_library.sh".
-  "-//third_party/toolchains/rbe_windows_bazel_5.2.0_vs2019:all"
+  # Analyzing windows toolchains when running on linux results in an error.
+  # Since bazel distribtests are run on linux, we exclude the windows RBE toolchains.
+  "-//third_party/toolchains/rbe_windows_bazel_6.3.2_vs2019/..."
   "-//third_party/toolchains:rbe_windows_default_toolchain_suite"
 
   # TODO(jtattermusch): add back once fixed
