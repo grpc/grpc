@@ -146,11 +146,6 @@ class MetadataExchangeTest
     }
   }
 
-  void VerifyLocalAttributes(
-      const std::map<std::string,
-                     opentelemetry::sdk::common::OwnedAttributeValue>&
-          attributes) {}
-
   void VerifyServiceMeshAttributes(
       const std::map<std::string,
                      opentelemetry::sdk::common::OwnedAttributeValue>&
