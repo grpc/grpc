@@ -166,11 +166,14 @@ bool IsTestExperimentEnabled(size_t experiment_id) {
 
 void PrintExperimentsList() {
   size_t max_experiment_length = 0;
+  std::map<absl::string_view, size_t> visitation_order;
   for (size_t i = 0; i < kNumExperiments; i++) {
     max_experiment_length =
         std::max(max_experiment_length, strlen(g_experiment_metadata[i].name));
+    visitation_order[g_experiment_metadata[i].name] = i;
   }
-  for (size_t i = 0; i < kNumExperiments; i++) {
+  for (auto name_index : visitation_order) {
+    const size_t i = name_index.second;
     gpr_log(
         GPR_DEBUG, "%s",
         absl::StrCat(
