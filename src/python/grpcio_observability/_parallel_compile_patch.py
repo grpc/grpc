@@ -18,6 +18,8 @@ Enabling parallel build helps a lot.
 """
 
 import distutils.ccompiler
+from distutils.errors import DistutilsExecError, CompileError
+import distutils._msvccompiler
 import os
 
 try:
@@ -64,8 +66,104 @@ def _parallel_compile(
     )
     return objects
 
+def _parallel_msvc_compile(
+    self,
+    sources,
+    output_dir=None,
+    macros=None,
+    include_dirs=None,
+    debug=0,
+    extra_preargs=None,
+    extra_postargs=None,
+    depends=None,
+):
+    if not self.initialized:
+        self.initialize()
+    compile_info = self._setup_compile(output_dir, macros, include_dirs,
+                                        sources, depends, extra_postargs)
+    macros, objects, extra_postargs, pp_opts, build = compile_info
+    compile_opts = extra_preargs or []
+    compile_opts.append('/c')
+    compile_opts.append('/O2')
+    print("compile_options: " + self.compile_options)
+    if debug:
+        compile_opts.extend(self.compile_options_debug)
+    else:
+        compile_opts.extend(self.compile_options)
+
+    add_cpp_opts = False
+
+    for obj in objects:
+        try:
+            src, ext = build[obj]
+        except KeyError:
+            continue
+        if debug:
+            # pass the full pathname to MSVC in debug mode,
+            # this allows the debugger to find the source file
+            # without asking the user to browse for it
+            src = os.path.abspath(src)
+
+        if ext in self._c_extensions:
+            input_opt = "/Tc" + src
+        elif ext in self._cpp_extensions:
+            input_opt = "/Tp" + src
+            add_cpp_opts = True
+        elif ext in self._rc_extensions:
+            # compile .RC to .RES file
+            input_opt = src
+            output_opt = "/fo" + obj
+            try:
+                self.spawn([self.rc] + pp_opts + [output_opt, input_opt])
+            except DistutilsExecError as msg:
+                raise CompileError(msg)
+            continue
+        elif ext in self._mc_extensions:
+            # Compile .MC to .RC file to .RES file.
+            #   * '-h dir' specifies the directory for the
+            #     generated include file
+            #   * '-r dir' specifies the target directory of the
+            #     generated RC file and the binary message resource
+            #     it includes
+            #
+            # For now (since there are no options to change this),
+            # we use the source-directory for the include file and
+            # the build directory for the RC file and message
+            # resources. This works at least for win32all.
+            h_dir = os.path.dirname(src)
+            rc_dir = os.path.dirname(obj)
+            try:
+                # first compile .MC to .RC and .H file
+                self.spawn([self.mc, '-h', h_dir, '-r', rc_dir, src])
+                base, _ = os.path.splitext(os.path.basename (src))
+                rc_file = os.path.join(rc_dir, base + '.rc')
+                # then compile .RC to .RES file
+                self.spawn([self.rc, "/fo" + obj, rc_file])
+
+            except DistutilsExecError as msg:
+                raise CompileError(msg)
+            continue
+        else:
+            # how to handle this file?
+            raise CompileError("Don't know how to compile {} to {}"
+                                .format(src, obj))
+
+        args = [self.cc] + compile_opts + pp_opts
+        if add_cpp_opts:
+            args.append('/EHsc')
+        args.append(input_opt)
+        args.append("/Fo" + obj)
+        args.extend(extra_postargs)
+
+        try:
+            self.spawn(args)
+        except DistutilsExecError as msg:
+            raise CompileError(msg)
+
+    return objects
 
 def monkeypatch_compile_maybe():
     """Monkeypatching is dumb, but the build speed gain is worth it."""
     if BUILD_EXT_COMPILER_JOBS > 1:
         distutils.ccompiler.CCompiler.compile = _parallel_compile
+    distutils._msvccompiler.MSVCCompiler.compile = _parallel_msvc_compile

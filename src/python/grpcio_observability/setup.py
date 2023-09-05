@@ -76,9 +76,9 @@ def check_linker_need_libatomic():
         b"#include <atomic>\n"
         + b"int main() { return std::atomic<int64_t>{}; }"
     )
-    cxx = os.environ.get("CXX", "c++")
+    cxx = shlex.split(os.environ.get("CXX", "c++"))
     cpp_test = subprocess.Popen(
-        [cxx, "-x", "c++", "-std=c++14", "-"],
+        cxx + ["-x", "c++", "-std=c++14", "-"],
         stdin=PIPE,
         stdout=PIPE,
         stderr=PIPE,
@@ -89,7 +89,7 @@ def check_linker_need_libatomic():
     # Double-check to see if -latomic actually can solve the problem.
     # https://github.com/grpc/grpc/issues/22491
     cpp_test = subprocess.Popen(
-        [cxx, "-x", "c++", "-std=c++14", "-", "-latomic"],
+        cxx + ["-x", "c++", "-std=c++14", "-", "-latomic"],
         stdin=PIPE,
         stdout=PIPE,
         stderr=PIPE,
@@ -148,7 +148,7 @@ if EXTRA_ENV_LINK_ARGS is None:
 if "win32" in sys.platform:
     EXTRA_ENV_COMPILE_ARGS += " /LTCG"
 else:
-    EXTRA_ENV_COMPILE_ARGS += " -flto"
+    EXTRA_ENV_COMPILE_ARGS += " -O2"
 
 EXTRA_COMPILE_ARGS = shlex.split(EXTRA_ENV_COMPILE_ARGS)
 EXTRA_LINK_ARGS = shlex.split(EXTRA_ENV_LINK_ARGS)
@@ -268,7 +268,7 @@ setuptools.setup(
     python_requires=">=3.7",
     install_requires=[
         "grpcio>={version}".format(version=grpc_version.VERSION),
-        "setuptools",
+        "setuptools>=59.6.0",
         "opencensus",
         "opencensus-ext-stackdriver",
     ],

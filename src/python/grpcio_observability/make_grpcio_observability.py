@@ -102,7 +102,7 @@ BAZEL_DEPS_QUERIES = [
 def _bazel_query(query):
     """Runs 'bazel query' to collect source file info."""
     print('Running "bazel query %s"' % query)
-    output = subprocess.check_output([BAZEL_DEPS, query])
+    output = subprocess.check_output([BAZEL_DEPS, query], shell=True)
     return output.decode("ascii").splitlines()
 
 
