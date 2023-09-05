@@ -72,9 +72,9 @@ grpc_ssl_credentials::create_security_connector(
       ssl_session_cache == nullptr ? nullptr : ssl_session_cache->c_ptr();
 
   const tsi_ssl_root_certs_store* root_store;
-  // Use default root certificates.
+  // Use default (e.g. OS) root certificates if the user did not pass any root
+  // certificates.
   if (config_.pem_root_certs == nullptr) {
-    // TODO(gtcooke94) make sure to remove this memory
     const char* pem_root_certs =
         grpc_core::DefaultSslRootStore::GetPemRootCerts();
     if (pem_root_certs == nullptr) {
