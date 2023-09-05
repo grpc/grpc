@@ -43,7 +43,8 @@ using helloworld::HelloRequest;
 
 // Requests each key in the vector and displays the key and its corresponding
 // value as a pair.
-class KeyValueStoreClient : public grpc::ClientBidiReactor<HelloRequest, HelloReply> {
+class KeyValueStoreClient
+    : public grpc::ClientBidiReactor<HelloRequest, HelloReply> {
  public:
   KeyValueStoreClient(std::shared_ptr<Channel> channel)
       : stub_(Greeter::NewStub(channel)) {
