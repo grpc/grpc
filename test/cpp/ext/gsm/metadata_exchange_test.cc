@@ -137,7 +137,7 @@ class MetadataExchangeTest
             GetParam().GetTestResource().GetAttributes()));
   }
 
-  ~MetadataExchangeTest() {
+  ~MetadataExchangeTest() override {
     grpc_core::UnsetEnv("GRPC_GCP_OBSERVABILITY_CONFIG");
     grpc_core::UnsetEnv("GRPC_XDS_BOOTSTRAP");
     if (bootstrap_file_name_ != nullptr) {

@@ -147,7 +147,7 @@ std::string GetXdsBootstrapContents() {
   return "";
 }
 
-// Returns the mesh ID by reading and parsin the bootstrap file. Returns
+// Returns the mesh ID by reading and parsing the bootstrap file. Returns
 // "unknown" if for some reason, mesh ID could not be figured out.
 std::string GetMeshId() {
   auto json = grpc_core::JsonParse(GetXdsBootstrapContents());
