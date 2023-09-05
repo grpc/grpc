@@ -18,15 +18,14 @@
 
 #include "src/core/lib/gprpp/work_serializer.h"
 
-#include <inttypes.h>
+#include <stddef.h>
 
-#include <algorithm>
 #include <memory>
 #include <thread>
+#include <type_traits>
 #include <utility>
 
 #include "absl/container/inlined_vector.h"
-#include "work_serializer.h"
 
 #include <grpc/support/log.h>
 
