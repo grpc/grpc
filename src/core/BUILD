@@ -4737,6 +4737,7 @@ grpc_cc_library(
         "//:grpc_trace",
         "//:orphanable",
         "//:ref_counted_ptr",
+        "//:sockaddr_utils",
         "//:work_serializer",
     ],
 )
@@ -4759,11 +4760,9 @@ grpc_cc_library(
         "iomgr_fwd",
         "lb_policy",
         "subchannel_interface",
-        "//:channel_arg_names",
         "//:debug_location",
         "//:gpr",
         "//:grpc_base",
-        "//:grpc_client_channel",
         "//:ref_counted_ptr",
         "//:server_address",
         "//:work_serializer",
@@ -4789,7 +4788,6 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
-        "grpc_outlier_detection_header",
         "health_check_client",
         "iomgr_fwd",
         "json",
@@ -4967,7 +4965,6 @@ grpc_cc_library(
         "time",
         "validation_errors",
         "//:gpr_platform",
-        "//:server_address",
     ],
 )
 
@@ -4994,7 +4991,6 @@ grpc_cc_library(
         "lb_policy",
         "lb_policy_factory",
         "lb_policy_registry",
-        "match",
         "pollset_set",
         "ref_counted",
         "subchannel_interface",

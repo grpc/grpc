@@ -2057,7 +2057,8 @@ TEST_F(RoundRobinTest, HealthChecking) {
   EXPECT_TRUE(WaitForChannelNotReady(channel.get()));
   CheckRpcSendFailure(DEBUG_LOCATION, stub, StatusCode::UNAVAILABLE,
                       "connections to all backends failing; last error: "
-                      "UNAVAILABLE: backend unhealthy");
+                      "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+                      "backend unhealthy");
   // Clean up.
   EnableDefaultHealthCheckService(false);
 }
@@ -2115,7 +2116,8 @@ TEST_F(RoundRobinTest, WithHealthCheckingInhibitPerChannel) {
   EXPECT_FALSE(WaitForChannelReady(channel1.get(), 1));
   CheckRpcSendFailure(DEBUG_LOCATION, stub1, StatusCode::UNAVAILABLE,
                       "connections to all backends failing; last error: "
-                      "UNAVAILABLE: backend unhealthy");
+                      "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+                      "backend unhealthy");
   // Second channel should be READY.
   EXPECT_TRUE(WaitForChannelReady(channel2.get(), 1));
   CheckRpcSendOk(DEBUG_LOCATION, stub2);
@@ -2160,7 +2162,8 @@ TEST_F(RoundRobinTest, HealthCheckingServiceNamePerChannel) {
   EXPECT_FALSE(WaitForChannelReady(channel1.get(), 1));
   CheckRpcSendFailure(DEBUG_LOCATION, stub1, StatusCode::UNAVAILABLE,
                       "connections to all backends failing; last error: "
-                      "UNAVAILABLE: backend unhealthy");
+                      "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+                      "backend unhealthy");
   // Second channel should be READY.
   EXPECT_TRUE(WaitForChannelReady(channel2.get(), 1));
   CheckRpcSendOk(DEBUG_LOCATION, stub2);
@@ -2868,10 +2871,8 @@ TEST_F(ClientLbAddressTest, Basic) {
   // Make sure that the attributes wind up on the subchannels.
   std::vector<std::string> expected;
   for (const int port : GetServersPorts()) {
-    expected.emplace_back(absl::StrCat(
-        ipv6_only_ ? "[::1]:" : "127.0.0.1:", port,
-        " args={grpc.internal.no_subchannel.outlier_detection_disable=1, "
-        "test_key=test_value}"));
+    expected.emplace_back(absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:",
+                                       port, " args={test_key=test_value}"));
   }
   EXPECT_EQ(addresses_seen(), expected);
 }
