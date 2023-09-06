@@ -268,7 +268,7 @@ setuptools.setup(
     python_requires=">=3.7",
     install_requires=[
         "grpcio>={version}".format(version=grpc_version.VERSION),
-        "setuptools>=59.6.0",
+        "setuptools",
         "opencensus",
         "opencensus-ext-stackdriver",
     ],
