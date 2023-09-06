@@ -80,6 +80,8 @@ ClientTransport::ClientTransport(
                               control_endpoint_write_buffer_.c_slice_buffer()
                                   ->slices[0])))
                           .value();
+                  // TODO(ladynana): add message_padding calculation by
+                  // accumulating bytes sent.
                   std::string message_padding(frame_header.message_padding,
                                               '0');
                   Slice slice(grpc_slice_from_cpp_string(message_padding));
@@ -147,22 +149,22 @@ ClientTransport::ClientTransport(
         [this](std::tuple<SliceBuffer, SliceBuffer> ret) mutable {
           control_endpoint_read_buffer_ = std::move(std::get<0>(ret));
           data_endpoint_read_buffer_ = std::move(std::get<1>(ret));
-          auto frame = std::make_shared<ServerFragmentFrame>();
+          ServerFragmentFrame frame;
           // Initialized to get this_cpu() info in global_stat().
           ExecCtx exec_ctx;
           // Deserialize frame from read buffer.
-          auto status = frame->Deserialize(hpack_parser_.get(), *frame_header_,
-                                           control_endpoint_read_buffer_);
+          auto status = frame.Deserialize(hpack_parser_.get(), *frame_header_,
+                                          control_endpoint_read_buffer_);
           GPR_ASSERT(status.ok());
           // Move message into frame.
-          frame->message = arena_->MakePooled<Message>(
+          frame.message = arena_->MakePooled<Message>(
               std::move(data_endpoint_read_buffer_), 0);
           std::shared_ptr<MpscSender<ServerFrame>> sender;
           {
             MutexLock lock(&mu_);
-            sender = stream_map_[frame->stream_id];
+            sender = stream_map_[frame.stream_id];
           }
-          return sender->Send(ServerFrame(std::move(*frame)));
+          return sender->Send(ServerFrame(std::move(frame)));
         },
         // Check if send frame to corresponding stream successfully.
         [](bool ret) -> LoopCtl<absl::Status> {

@@ -129,27 +129,26 @@ class ClientTransport {
                        std::move(server_to_client_messages)](
                       ServerFrame server_frame) mutable {
                     auto frame =
-                        std::make_shared<ServerFragmentFrame>(std::move(
-                            absl::get<ServerFragmentFrame>(server_frame)));
+                        std::move(absl::get<ServerFragmentFrame>(server_frame));
                     return TrySeq(
-                        If((frame->headers != nullptr),
+                        If((frame.headers != nullptr),
                            [server_initial_metadata =
                                 std::move(server_initial_metadata),
-                            headers = std::move(frame->headers)]() mutable {
+                            headers = std::move(frame.headers)]() mutable {
                              return server_initial_metadata.Push(
                                  std::move(headers));
                            },
                            [] { return false; }),
-                        If((frame->message != nullptr),
+                        If((frame.message != nullptr),
                            [server_to_client_messages =
                                 std::move(server_to_client_messages),
-                            message = std::move(frame->message)]() mutable {
+                            message = std::move(frame.message)]() mutable {
                              return server_to_client_messages.Push(
                                  std::move(message));
                            },
                            [] { return false; }),
-                        If((frame->trailers != nullptr),
-                           [trailers = std::move(frame->trailers)]() mutable
+                        If((frame.trailers != nullptr),
+                           [trailers = std::move(frame.trailers)]() mutable
                            -> LoopCtl<ServerMetadataHandle> {
                              return std::move(trailers);
                            },
