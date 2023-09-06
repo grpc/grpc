@@ -549,6 +549,14 @@ class XdsClientTest : public ::testing::Test {
       return *this;
     }
 
+    ResponseBuilder& AddInvalidResourceWrapper() {
+      auto* res = response_.add_resources();
+      res->set_type_url(
+          "type.googleapis.com/envoy.service.discovery.v3.Resource");
+      res->set_value(std::string("\0", 1));
+      return *this;
+    }
+
     ResponseBuilder& AddEmptyResource() {
       response_.add_resources();
       return *this;
@@ -1235,6 +1243,9 @@ TEST_F(XdsClientTest, ResourceValidationFailureMultipleResources) {
           // Empty resource.  Will be included in NACK but will not
           // affect any watchers.
           .AddEmptyResource()
+          // Invalid resource wrapper.  Will be included in NACK but
+          // will not affect any watchers.
+          .AddInvalidResourceWrapper()
           // foo3: JSON parsing fails, but it is wrapped in a Resource
           // wrapper, so we do know the resource's name.
           .AddInvalidResource(XdsFooResourceType::Get()->type_url(),
@@ -1287,8 +1298,10 @@ TEST_F(XdsClientTest, ResourceValidationFailureMultipleResources) {
                    "(should be \"",
                    XdsFooResourceType::Get()->type_url(),
                    "\"); "
+                   // invalid resource wrapper
+                   "resource index 3: Can't decode Resource proto wrapper; "
                    // foo3
-                   "resource index 3: foo3: "
+                   "resource index 4: foo3: "
                    "INVALID_ARGUMENT: JSON parsing failed: "
                    "[JSON parse error at index 15]]")),
                /*resource_names=*/{"foo1", "foo2", "foo3", "foo4"});
