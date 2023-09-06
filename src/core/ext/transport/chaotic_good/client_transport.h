@@ -28,10 +28,12 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
+#include "absl/types/optional.h"
 #include "absl/types/variant.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
+#include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
@@ -41,6 +43,7 @@
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/if.h"
+#include "src/core/lib/promise/inter_activity_pipe.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/mpsc.h"
 #include "src/core/lib/promise/pipe.h"
@@ -74,17 +77,18 @@ class ClientTransport {
     // At this point, the connection is set up.
     // Start sending data frames.
     uint64_t stream_id;
-    // Max buffer is set to 4, so that for stream reads each time it will queue
-    // at most 2 frames.
-    std::shared_ptr<MpscReceiver<ServerFrame>> server_frames =
-        std::make_shared<MpscReceiver<ServerFrame>>(4);
+    // Pipe queue size is set to 1, so that for stream reads each time it will
+    // queue at most 1 frame.
+    InterActivityPipe<ServerFrame, 1> server_frames;
     {
       MutexLock lock(&mu_);
       stream_id = next_stream_id_++;
       stream_map_.insert(
-          std::pair<uint32_t, std::shared_ptr<MpscSender<ServerFrame>>>(
-              stream_id, std::make_shared<MpscSender<ServerFrame>>(
-                             server_frames->MakeSender())));
+          std::pair<uint32_t,
+                    std::shared_ptr<InterActivityPipe<ServerFrame, 1>::Sender>>(
+              stream_id,
+              std::make_shared<InterActivityPipe<ServerFrame, 1>::Sender>(
+                  std::move(server_frames.sender))));
     }
     return TrySeq(
         TryJoin(
@@ -119,17 +123,18 @@ class ClientTransport {
                       std::move(*call_args.server_initial_metadata),
                   server_to_client_messages =
                       std::move(*call_args.server_to_client_messages),
-                  server_frames]() mutable {
+                  receiver = std::move(server_frames.receiver)]() mutable {
               return TrySeq(
                   // Receive incoming server frame.
-                  server_frames->Next(),
+                  receiver.Next(),
                   // Save incomming frame results to call_args.
                   [server_initial_metadata = std::move(server_initial_metadata),
                    server_to_client_messages =
                        std::move(server_to_client_messages)](
-                      ServerFrame server_frame) mutable {
-                    auto frame =
-                        std::move(absl::get<ServerFragmentFrame>(server_frame));
+                      absl::optional<ServerFrame> server_frame) mutable {
+                    GPR_ASSERT(server_frame.has_value());
+                    auto frame = std::move(
+                        absl::get<ServerFragmentFrame>(*server_frame));
                     return TrySeq(
                         If((frame.headers != nullptr),
                            [server_initial_metadata =
@@ -169,10 +174,8 @@ class ClientTransport {
   Mutex mu_;
   uint32_t next_stream_id_ ABSL_GUARDED_BY(mu_) = 1;
   // Map of stream incoming server frames, key is stream_id.
-  // TODO(ladynana) use inter-activity single-producer-single-consumer pipe once
-  // available.
-  std::map<uint32_t, std::shared_ptr<MpscSender<ServerFrame>>> stream_map_
-      ABSL_GUARDED_BY(mu_);
+  std::map<uint32_t, std::shared_ptr<InterActivityPipe<ServerFrame, 1>::Sender>>
+      stream_map_ ABSL_GUARDED_BY(mu_);
   ActivityPtr writer_;
   ActivityPtr reader_;
   std::unique_ptr<PromiseEndpoint> control_endpoint_;
