@@ -11,9 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Provides distutils command classes for the gRPC Python setup process."""
+"""Provides setuptools command classes for the gRPC Python setup process."""
 
-from distutils import errors as _errors
 import glob
 import os
 import os.path
@@ -23,6 +22,7 @@ import shutil
 import sys
 
 import setuptools
+from setuptools import errors as _errors
 from setuptools.command import build_ext
 from setuptools.command import build_py
 from setuptools.command import easy_install
@@ -305,7 +305,7 @@ class RunInterop(test.test):
 
     def finalize_options(self):
         if self.client and self.server:
-            raise _errors.DistutilsOptionError(
+            raise _errors.OptionError(
                 "you may only specify one of client or server"
             )
 

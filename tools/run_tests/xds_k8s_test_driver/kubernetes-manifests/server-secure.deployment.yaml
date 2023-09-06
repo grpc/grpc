@@ -54,6 +54,8 @@ spec:
             value: "true"
           - name: GRPC_XDS_EXPERIMENTAL_RBAC
             value: "true"
+          - name: GRPC_EXPERIMENTAL_XDS_ENABLE_OVERRIDE_HOST
+            value: "true"
         volumeMounts:
           - mountPath: /tmp/grpc-xds/
             name: grpc-td-conf

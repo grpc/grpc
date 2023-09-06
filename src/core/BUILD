@@ -885,6 +885,25 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "inter_activity_pipe",
+    hdrs = [
+        "lib/promise/inter_activity_pipe.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/types:optional",
+    ],
+    language = "c++",
+    deps = [
+        "activity",
+        "poll",
+        "ref_counted",
+        "//:gpr",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
     name = "promise_trace",
     srcs = [
         "lib/promise/trace.cc",
@@ -3690,6 +3709,8 @@ grpc_cc_library(
         "ext/filters/channel_idle/channel_idle_filter.h",
     ],
     external_deps = [
+        "absl/base:core_headers",
+        "absl/random",
         "absl/status",
         "absl/status:statusor",
         "absl/types:optional",
@@ -3704,9 +3725,12 @@ grpc_cc_library(
         "closure",
         "error",
         "exec_ctx_wakeup_scheduler",
+        "experiments",
         "http2_errors",
         "idle_filter_state",
         "loop",
+        "no_destruct",
+        "per_cpu",
         "poll",
         "single_set_ptr",
         "sleep",
@@ -4718,6 +4742,7 @@ grpc_cc_library(
         "//:grpc_trace",
         "//:orphanable",
         "//:ref_counted_ptr",
+        "//:sockaddr_utils",
         "//:work_serializer",
     ],
 )
@@ -4740,11 +4765,9 @@ grpc_cc_library(
         "iomgr_fwd",
         "lb_policy",
         "subchannel_interface",
-        "//:channel_arg_names",
         "//:debug_location",
         "//:gpr",
         "//:grpc_base",
-        "//:grpc_client_channel",
         "//:ref_counted_ptr",
         "//:server_address",
         "//:work_serializer",
@@ -4770,15 +4793,14 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
-        "grpc_lb_subchannel_list",
-        "grpc_outlier_detection_header",
+        "health_check_client",
+        "iomgr_fwd",
         "json",
         "json_args",
         "json_object_loader",
         "lb_policy",
         "lb_policy_factory",
         "subchannel_interface",
-        "//:channel_arg_names",
         "//:config",
         "//:debug_location",
         "//:gpr",
@@ -4787,7 +4809,6 @@ grpc_cc_library(
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:server_address",
-        "//:work_serializer",
     ],
 )
 
@@ -4949,7 +4970,6 @@ grpc_cc_library(
         "time",
         "validation_errors",
         "//:gpr_platform",
-        "//:server_address",
     ],
 )
 
@@ -4976,7 +4996,6 @@ grpc_cc_library(
         "lb_policy",
         "lb_policy_factory",
         "lb_policy_registry",
-        "match",
         "pollset_set",
         "ref_counted",
         "subchannel_interface",

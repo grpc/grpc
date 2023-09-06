@@ -195,25 +195,11 @@ class CancelDuringAresQuery : public ::testing::Test {
     grpc_core::ConfigVars::Overrides overrides;
     overrides.dns_resolver = "ares";
     grpc_core::ConfigVars::SetOverrides(overrides);
-    // Sanity check the time that it takes to run the test
-    // including the teardown time (the teardown
-    // part of the test involves cancelling the DNS query,
-    // which is the main point of interest for this test).
-    overall_deadline = grpc_timeout_seconds_to_deadline(4);
     grpc_init();
   }
 
-  static void TearDownTestSuite() {
-    grpc_shutdown();
-    if (gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), overall_deadline) > 0) {
-      grpc_core::Crash("Test took too long");
-    }
-  }
-
- private:
-  static gpr_timespec overall_deadline;
+  static void TearDownTestSuite() { grpc_shutdown(); }
 };
-gpr_timespec CancelDuringAresQuery::overall_deadline;
 
 TEST_F(CancelDuringAresQuery, TestCancelActiveDNSQuery) {
   grpc_core::ExecCtx exec_ctx;
@@ -464,6 +450,67 @@ TEST_F(CancelDuringAresQuery, TestQueryFailsBecauseTcpServerClosesSocket) {
   TestCancelDuringActiveQuery(expected_status_code,
                               expected_error_message_substring, rpc_deadline,
                               dns_query_timeout_ms, fake_dns_server.port());
+  if (grpc_core::IsEventEngineDnsEnabled()) {
+    g_event_engine_grpc_ares_test_only_force_tcp = false;
+  } else {
+    g_grpc_ares_test_only_force_tcp = false;
+  }
+}
+
+// This test is meant to repro a bug noticed in internal issue b/297538255.
+// The general issue is the loop in
+// https://github.com/grpc/grpc/blob/f6a994229e72bc771963706de7a0cd8aa9150bb6/src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc#L371.
+// The problem with that loop is that c-ares *can* in certain situations stop
+// caring about the fd being processed without reading all of the data out of
+// the read buffer. In that case, we keep looping because
+// IsFdStillReadableLocked() keeps returning true, but we never make progress.
+// Meanwhile, we are holding a lock which prevents cancellation or timeouts from
+// kicking in, and thus we spin-loop forever.
+//
+// At the time of writing, this test case illustrates one way to hit that bug.
+// It works as follows:
+//   1) We force c-ares to use TCP for its DNS queries
+//   2) We stand up a fake DNS server that, for each incoming connection, sends
+//      three all-zero bytes and then closes the socket.
+//   3) When the c-ares library receives the three-zero-byte response from the
+//      DNS server, it parses the first two-bytes as a length field:
+//      https://github.com/c-ares/c-ares/blob/6360e96b5cf8e5980c887ce58ef727e53d77243a/src/lib/ares_process.c#L410.
+//   4) Because the first two bytes were zero, c-ares attempts to malloc a
+//      zero-length buffer:
+//      https://github.com/c-ares/c-ares/blob/6360e96b5cf8e5980c887ce58ef727e53d77243a/src/lib/ares_process.c#L428.
+//   5) Because c-ares' default_malloc(0) returns NULL
+//      (https://github.com/c-ares/c-ares/blob/7f3262312f246556d8c1bdd8ccc1844847f42787/src/lib/ares_library_init.c#L38),
+//      c-ares invokes handle_error and stops reading on the socket:
+//      https://github.com/c-ares/c-ares/blob/6360e96b5cf8e5980c887ce58ef727e53d77243a/src/lib/ares_process.c#L430.
+//   6) Because we overwrite the socket "close" method, c-ares attempt to close
+//      the socket in handle_error does nothing except for removing the socket
+//      from ARES_GETSOCK_READABLE:
+//      https://github.com/grpc/grpc/blob/f6a994229e72bc771963706de7a0cd8aa9150bb6/src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc#L156.
+//   7) Because there is still one byte left in the TCP read buffer,
+//      IsFdStillReadableLocked will keep returning true:
+//      https://github.com/grpc/grpc/blob/f6a994229e72bc771963706de7a0cd8aa9150bb6/src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc#L82.
+//      But c-ares will never try to read from that socket again, so we have an
+//      infinite busy loop.
+TEST_F(CancelDuringAresQuery, TestQueryFailsWithDataRemainingInReadBuffer) {
+  if (grpc_core::IsEventEngineDnsEnabled()) {
+    g_event_engine_grpc_ares_test_only_force_tcp = true;
+  } else {
+    g_grpc_ares_test_only_force_tcp = true;
+  }
+  grpc_core::testing::SocketUseAfterCloseDetector
+      socket_use_after_close_detector;
+  grpc_core::testing::FakeUdpAndTcpServer fake_dns_server(
+      grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
+          kWaitForClientToSendFirstBytes,
+      grpc_core::testing::FakeUdpAndTcpServer::SendThreeAllZeroBytes);
+  grpc_status_code expected_status_code = GRPC_STATUS_UNAVAILABLE;
+  // Don't really care about the deadline - we'll hit a DNS
+  // resolution failure quickly in any case.
+  gpr_timespec rpc_deadline = grpc_timeout_seconds_to_deadline(100);
+  int dns_query_timeout_ms = -1;  // don't set query timeout
+  TestCancelDuringActiveQuery(
+      expected_status_code, "" /* expected error message substring */,
+      rpc_deadline, dns_query_timeout_ms, fake_dns_server.port());
   if (grpc_core::IsEventEngineDnsEnabled()) {
     g_event_engine_grpc_ares_test_only_force_tcp = false;
   } else {

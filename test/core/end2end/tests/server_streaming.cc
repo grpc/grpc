@@ -67,6 +67,8 @@ void ServerStreaming(CoreEnd2endTest& test, int num_messages) {
   test.Expect(104, true);
   test.Step();
 
+  gpr_log(GPR_DEBUG, "SEEN_STATUS:%d", seen_status);
+
   // Client keeps reading messages till it gets the status
   int num_messages_received = 0;
   while (true) {

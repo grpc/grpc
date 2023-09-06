@@ -96,6 +96,11 @@ const char* const description_keepalive_server_fix =
     "Allows overriding keepalive_permit_without_calls for servers. Refer "
     "https://github.com/grpc/grpc/pull/33917 for more information.";
 const char* const additional_constraints_keepalive_server_fix = "{}";
+const char* const description_jitter_max_idle =
+    "Enable jitter on connection max idle times. Historically this jitter was "
+    "only on max connection age, but it seems like this could smooth out some "
+    "herding problems.";
+const char* const additional_constraints_jitter_max_idle = "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -145,6 +150,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_keepalive_fix, false, false},
     {"keepalive_server_fix", description_keepalive_server_fix,
      additional_constraints_keepalive_server_fix, false, false},
+    {"jitter_max_idle", description_jitter_max_idle,
+     additional_constraints_jitter_max_idle, true, true},
 };
 
 }  // namespace grpc_core
@@ -225,6 +232,11 @@ const char* const description_keepalive_server_fix =
     "Allows overriding keepalive_permit_without_calls for servers. Refer "
     "https://github.com/grpc/grpc/pull/33917 for more information.";
 const char* const additional_constraints_keepalive_server_fix = "{}";
+const char* const description_jitter_max_idle =
+    "Enable jitter on connection max idle times. Historically this jitter was "
+    "only on max connection age, but it seems like this could smooth out some "
+    "herding problems.";
+const char* const additional_constraints_jitter_max_idle = "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -274,6 +286,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_keepalive_fix, false, false},
     {"keepalive_server_fix", description_keepalive_server_fix,
      additional_constraints_keepalive_server_fix, false, false},
+    {"jitter_max_idle", description_jitter_max_idle,
+     additional_constraints_jitter_max_idle, true, true},
 };
 
 }  // namespace grpc_core
@@ -354,6 +368,11 @@ const char* const description_keepalive_server_fix =
     "Allows overriding keepalive_permit_without_calls for servers. Refer "
     "https://github.com/grpc/grpc/pull/33917 for more information.";
 const char* const additional_constraints_keepalive_server_fix = "{}";
+const char* const description_jitter_max_idle =
+    "Enable jitter on connection max idle times. Historically this jitter was "
+    "only on max connection age, but it seems like this could smooth out some "
+    "herding problems.";
+const char* const additional_constraints_jitter_max_idle = "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -403,6 +422,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_keepalive_fix, false, false},
     {"keepalive_server_fix", description_keepalive_server_fix,
      additional_constraints_keepalive_server_fix, false, false},
+    {"jitter_max_idle", description_jitter_max_idle,
+     additional_constraints_jitter_max_idle, true, true},
 };
 
 }  // namespace grpc_core
