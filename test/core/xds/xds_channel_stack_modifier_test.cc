@@ -31,6 +31,7 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/transport_fwd.h"
@@ -99,7 +100,10 @@ TEST(XdsChannelStackModifierTest, XdsHttpFiltersInsertion) {
   builder.SetTransport(&fake_transport);
   // Construct channel stack and verify that the test filters were successfully
   // added
-  ASSERT_TRUE(CoreConfiguration::Get().channel_init().CreateStack(&builder));
+  {
+    ExecCtx exec_ctx;
+    ASSERT_TRUE(CoreConfiguration::Get().channel_init().CreateStack(&builder));
+  }
   std::vector<std::string> filters;
   for (const auto& entry : *builder.mutable_stack()) {
     filters.push_back(entry->name);
