@@ -4,10 +4,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>grpc.aio._channel &#8212; gRPC Python 1.57.0 documentation</title>
+    <title>grpc.aio._channel &#8212; gRPC Python 1.58.0 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=4f649999" />
     <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=8090fdca" />
-    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=a042030b"></script>
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=1651ac8f"></script>
     <script src="../../../_static/doctools.js?v=888ff710"></script>
     <script src="../../../_static/sphinx_highlight.js?v=4825356b"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
@@ -27,7 +27,7 @@
 
 
 
-<p class="blurb">1.57.0</p>
+<p class="blurb">1.58.0</p>
 
 
 
@@ -277,12 +277,11 @@
         <span class="n">compression</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">Compression</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_base_call</span><span class="o">.</span><span class="n">UnaryStreamCall</span><span class="p">[</span><span class="n">RequestType</span><span class="p">,</span> <span class="n">ResponseType</span><span class="p">]:</span>
         <span class="n">metadata</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_init_metadata</span><span class="p">(</span><span class="n">metadata</span><span class="p">,</span> <span class="n">compression</span><span class="p">)</span>
-        <span class="n">deadline</span> <span class="o">=</span> <span class="n">_timeout_to_deadline</span><span class="p">(</span><span class="n">timeout</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interceptors</span><span class="p">:</span>
             <span class="n">call</span> <span class="o">=</span> <span class="n">UnaryStreamCall</span><span class="p">(</span>
                 <span class="n">request</span><span class="p">,</span>
-                <span class="n">deadline</span><span class="p">,</span>
+                <span class="n">_timeout_to_deadline</span><span class="p">(</span><span class="n">timeout</span><span class="p">),</span>
                 <span class="n">metadata</span><span class="p">,</span>
                 <span class="n">credentials</span><span class="p">,</span>
                 <span class="n">wait_for_ready</span><span class="p">,</span>
@@ -296,7 +295,7 @@
             <span class="n">call</span> <span class="o">=</span> <span class="n">InterceptedUnaryStreamCall</span><span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_interceptors</span><span class="p">,</span>
                 <span class="n">request</span><span class="p">,</span>
-                <span class="n">deadline</span><span class="p">,</span>
+                <span class="n">timeout</span><span class="p">,</span>
                 <span class="n">metadata</span><span class="p">,</span>
                 <span class="n">credentials</span><span class="p">,</span>
                 <span class="n">wait_for_ready</span><span class="p">,</span>
@@ -323,12 +322,11 @@
         <span class="n">compression</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">Compression</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_base_call</span><span class="o">.</span><span class="n">StreamUnaryCall</span><span class="p">:</span>
         <span class="n">metadata</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_init_metadata</span><span class="p">(</span><span class="n">metadata</span><span class="p">,</span> <span class="n">compression</span><span class="p">)</span>
-        <span class="n">deadline</span> <span class="o">=</span> <span class="n">_timeout_to_deadline</span><span class="p">(</span><span class="n">timeout</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interceptors</span><span class="p">:</span>
             <span class="n">call</span> <span class="o">=</span> <span class="n">StreamUnaryCall</span><span class="p">(</span>
                 <span class="n">request_iterator</span><span class="p">,</span>
-                <span class="n">deadline</span><span class="p">,</span>
+                <span class="n">_timeout_to_deadline</span><span class="p">(</span><span class="n">timeout</span><span class="p">),</span>
                 <span class="n">metadata</span><span class="p">,</span>
                 <span class="n">credentials</span><span class="p">,</span>
                 <span class="n">wait_for_ready</span><span class="p">,</span>
@@ -342,7 +340,7 @@
             <span class="n">call</span> <span class="o">=</span> <span class="n">InterceptedStreamUnaryCall</span><span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_interceptors</span><span class="p">,</span>
                 <span class="n">request_iterator</span><span class="p">,</span>
-                <span class="n">deadline</span><span class="p">,</span>
+                <span class="n">timeout</span><span class="p">,</span>
                 <span class="n">metadata</span><span class="p">,</span>
                 <span class="n">credentials</span><span class="p">,</span>
                 <span class="n">wait_for_ready</span><span class="p">,</span>
@@ -369,12 +367,11 @@
         <span class="n">compression</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">Compression</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_base_call</span><span class="o">.</span><span class="n">StreamStreamCall</span><span class="p">:</span>
         <span class="n">metadata</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_init_metadata</span><span class="p">(</span><span class="n">metadata</span><span class="p">,</span> <span class="n">compression</span><span class="p">)</span>
-        <span class="n">deadline</span> <span class="o">=</span> <span class="n">_timeout_to_deadline</span><span class="p">(</span><span class="n">timeout</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interceptors</span><span class="p">:</span>
             <span class="n">call</span> <span class="o">=</span> <span class="n">StreamStreamCall</span><span class="p">(</span>
                 <span class="n">request_iterator</span><span class="p">,</span>
-                <span class="n">deadline</span><span class="p">,</span>
+                <span class="n">_timeout_to_deadline</span><span class="p">(</span><span class="n">timeout</span><span class="p">),</span>
                 <span class="n">metadata</span><span class="p">,</span>
                 <span class="n">credentials</span><span class="p">,</span>
                 <span class="n">wait_for_ready</span><span class="p">,</span>
@@ -388,7 +385,7 @@
             <span class="n">call</span> <span class="o">=</span> <span class="n">InterceptedStreamStreamCall</span><span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_interceptors</span><span class="p">,</span>
                 <span class="n">request_iterator</span><span class="p">,</span>
-                <span class="n">deadline</span><span class="p">,</span>
+                <span class="n">timeout</span><span class="p">,</span>
                 <span class="n">metadata</span><span class="p">,</span>
                 <span class="n">credentials</span><span class="p">,</span>
                 <span class="n">wait_for_ready</span><span class="p">,</span>

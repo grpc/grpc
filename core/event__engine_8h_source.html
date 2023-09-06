@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">34.0.0</span>
+   &#160;<span id="projectnumber">35.0.0</span>
    </div>
   </td>
  </tr>
@@ -221,42 +221,42 @@ $(function() {
 <div class="line"><a name="l00355"></a><span class="lineno">  355</span>&#160; </div>
 <div class="line"><a name="l00356"></a><span class="lineno">  356</span>&#160;    <span class="keyword">virtual</span> <a class="code" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#ae8966e8aee5db98a0380cbfc5526227b">~DNSResolver</a>() = <span class="keywordflow">default</span>;</div>
 <div class="line"><a name="l00357"></a><span class="lineno">  357</span>&#160; </div>
-<div class="line"><a name="l00369"></a><span class="lineno">  369</span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#aaaed79a28cb950311144852e00c55c7b">LookupHostname</a>(<a class="code" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#ae821bfc2fff7ccf741d8f6d1c25861ca">LookupHostnameCallback</a> on_resolve,</div>
-<div class="line"><a name="l00370"></a><span class="lineno">  370</span>&#160;                                absl::string_view name,</div>
-<div class="line"><a name="l00371"></a><span class="lineno">  371</span>&#160;                                absl::string_view default_port) = 0;</div>
-<div class="line"><a name="l00376"></a><span class="lineno">  376</span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#a6934f9edc78f329c6c95f34a4110dace">LookupSRV</a>(<a class="code" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#a9ef5cdd1a8c31ee078a7aa775a8d73b2">LookupSRVCallback</a> on_resolve,</div>
-<div class="line"><a name="l00377"></a><span class="lineno">  377</span>&#160;                           absl::string_view name) = 0;</div>
-<div class="line"><a name="l00382"></a><span class="lineno">  382</span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#a686959fe71eaba0dcaf7849a2ad37c72">LookupTXT</a>(<a class="code" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#a10f0463006effedc249bb06c810d5ffc">LookupTXTCallback</a> on_resolve,</div>
-<div class="line"><a name="l00383"></a><span class="lineno">  383</span>&#160;                           absl::string_view name) = 0;</div>
-<div class="line"><a name="l00384"></a><span class="lineno">  384</span>&#160;  };</div>
-<div class="line"><a name="l00385"></a><span class="lineno">  385</span>&#160; </div>
-<div class="line"><a name="l00393"></a><span class="lineno">  393</span>&#160;  <span class="keyword">virtual</span> <a class="code" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#aa283885518525b71339f166e15932cd1">~EventEngine</a>() = <span class="keywordflow">default</span>;</div>
-<div class="line"><a name="l00394"></a><span class="lineno">  394</span>&#160; </div>
-<div class="line"><a name="l00395"></a><span class="lineno">  395</span>&#160;  <span class="comment">// TODO(nnoble): consider whether we can remove this method before we</span></div>
-<div class="line"><a name="l00396"></a><span class="lineno">  396</span>&#160;  <span class="comment">// de-experimentalize this API.</span></div>
-<div class="line"><a name="l00397"></a><span class="lineno">  397</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">bool</span> <a class="code" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#afb9dbb26c374daf51b6460da89a7d586">IsWorkerThread</a>() = 0;</div>
-<div class="line"><a name="l00398"></a><span class="lineno">  398</span>&#160; </div>
-<div class="line"><a name="l00404"></a><span class="lineno">  404</span>&#160;  <span class="keyword">virtual</span> absl::StatusOr&lt;std::unique_ptr&lt;DNSResolver&gt;&gt; <a class="code" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a9454ccca7e1b26a2ba5dd37ebc16b4d0">GetDNSResolver</a>(</div>
-<div class="line"><a name="l00405"></a><span class="lineno">  405</span>&#160;      <span class="keyword">const</span> <a class="code" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver_1_1_resolver_options.html">DNSResolver::ResolverOptions</a>&amp; options) = 0;</div>
-<div class="line"><a name="l00406"></a><span class="lineno">  406</span>&#160; </div>
-<div class="line"><a name="l00416"></a><span class="lineno">  416</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a589e091e9af842bcda00411996d9255f">Run</a>(<a class="code" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_closure.html">Closure</a>* closure) = 0;</div>
-<div class="line"><a name="l00429"></a><span class="lineno">  429</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a589e091e9af842bcda00411996d9255f">Run</a>(absl::AnyInvocable&lt;<span class="keywordtype">void</span>()&gt; closure) = 0;</div>
-<div class="line"><a name="l00438"></a><span class="lineno">  438</span>&#160;  <span class="keyword">virtual</span> <a class="code" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_task_handle.html">TaskHandle</a> <a class="code" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a854dfb6d39d5c6106eb98d499209529a">RunAfter</a>(<a class="code" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a3380997754430d27e6b9832174184327">Duration</a> when, <a class="code" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_closure.html">Closure</a>* closure) = 0;</div>
-<div class="line"><a name="l00453"></a><span class="lineno">  453</span>&#160;  <span class="keyword">virtual</span> <a class="code" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_task_handle.html">TaskHandle</a> <a class="code" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a854dfb6d39d5c6106eb98d499209529a">RunAfter</a>(<a class="code" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a3380997754430d27e6b9832174184327">Duration</a> when,</div>
-<div class="line"><a name="l00454"></a><span class="lineno">  454</span>&#160;                              absl::AnyInvocable&lt;<span class="keywordtype">void</span>()&gt; closure) = 0;</div>
-<div class="line"><a name="l00468"></a><span class="lineno">  468</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">bool</span> <a class="code" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#aab8a579f7dc8429c8d2aa2cd81da910b">Cancel</a>(<a class="code" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_task_handle.html">TaskHandle</a> handle) = 0;</div>
-<div class="line"><a name="l00469"></a><span class="lineno">  469</span>&#160;};</div>
-<div class="line"><a name="l00470"></a><span class="lineno">  470</span>&#160; </div>
-<div class="line"><a name="l00480"></a><span class="lineno">  480</span>&#160;<span class="keywordtype">void</span> <a class="code" href="namespacegrpc__event__engine_1_1experimental.html#a94ab619b34c2c1f57c2d068d0c18907c">SetEventEngineFactory</a>(</div>
-<div class="line"><a name="l00481"></a><span class="lineno">  481</span>&#160;    absl::AnyInvocable&lt;std::unique_ptr&lt;EventEngine&gt;()&gt; factory);</div>
-<div class="line"><a name="l00482"></a><span class="lineno">  482</span>&#160; </div>
-<div class="line"><a name="l00489"></a><span class="lineno">  489</span>&#160;<span class="keywordtype">void</span> <a class="code" href="namespacegrpc__event__engine_1_1experimental.html#a61848d6441fac572b7c4ef2cc3820342">EventEngineFactoryReset</a>();</div>
-<div class="line"><a name="l00491"></a><span class="lineno">  491</span>&#160;std::unique_ptr&lt;EventEngine&gt; <a class="code" href="namespacegrpc__event__engine_1_1experimental.html#a89b1b9fe77b7e8b8aa7f31c30039a1c8">CreateEventEngine</a>();</div>
-<div class="line"><a name="l00492"></a><span class="lineno">  492</span>&#160; </div>
-<div class="line"><a name="l00493"></a><span class="lineno">  493</span>&#160;}  <span class="comment">// namespace experimental</span></div>
-<div class="line"><a name="l00494"></a><span class="lineno">  494</span>&#160;}  <span class="comment">// namespace grpc_event_engine</span></div>
-<div class="line"><a name="l00495"></a><span class="lineno">  495</span>&#160; </div>
-<div class="line"><a name="l00496"></a><span class="lineno">  496</span>&#160;<span class="preprocessor">#endif  // GRPC_EVENT_ENGINE_EVENT_ENGINE_H</span></div>
+<div class="line"><a name="l00368"></a><span class="lineno">  368</span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#aaaed79a28cb950311144852e00c55c7b">LookupHostname</a>(<a class="code" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#ae821bfc2fff7ccf741d8f6d1c25861ca">LookupHostnameCallback</a> on_resolve,</div>
+<div class="line"><a name="l00369"></a><span class="lineno">  369</span>&#160;                                absl::string_view name,</div>
+<div class="line"><a name="l00370"></a><span class="lineno">  370</span>&#160;                                absl::string_view default_port) = 0;</div>
+<div class="line"><a name="l00375"></a><span class="lineno">  375</span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#a6934f9edc78f329c6c95f34a4110dace">LookupSRV</a>(<a class="code" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#a9ef5cdd1a8c31ee078a7aa775a8d73b2">LookupSRVCallback</a> on_resolve,</div>
+<div class="line"><a name="l00376"></a><span class="lineno">  376</span>&#160;                           absl::string_view name) = 0;</div>
+<div class="line"><a name="l00381"></a><span class="lineno">  381</span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#a686959fe71eaba0dcaf7849a2ad37c72">LookupTXT</a>(<a class="code" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#a10f0463006effedc249bb06c810d5ffc">LookupTXTCallback</a> on_resolve,</div>
+<div class="line"><a name="l00382"></a><span class="lineno">  382</span>&#160;                           absl::string_view name) = 0;</div>
+<div class="line"><a name="l00383"></a><span class="lineno">  383</span>&#160;  };</div>
+<div class="line"><a name="l00384"></a><span class="lineno">  384</span>&#160; </div>
+<div class="line"><a name="l00392"></a><span class="lineno">  392</span>&#160;  <span class="keyword">virtual</span> <a class="code" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#aa283885518525b71339f166e15932cd1">~EventEngine</a>() = <span class="keywordflow">default</span>;</div>
+<div class="line"><a name="l00393"></a><span class="lineno">  393</span>&#160; </div>
+<div class="line"><a name="l00394"></a><span class="lineno">  394</span>&#160;  <span class="comment">// TODO(nnoble): consider whether we can remove this method before we</span></div>
+<div class="line"><a name="l00395"></a><span class="lineno">  395</span>&#160;  <span class="comment">// de-experimentalize this API.</span></div>
+<div class="line"><a name="l00396"></a><span class="lineno">  396</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">bool</span> <a class="code" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#afb9dbb26c374daf51b6460da89a7d586">IsWorkerThread</a>() = 0;</div>
+<div class="line"><a name="l00397"></a><span class="lineno">  397</span>&#160; </div>
+<div class="line"><a name="l00403"></a><span class="lineno">  403</span>&#160;  <span class="keyword">virtual</span> absl::StatusOr&lt;std::unique_ptr&lt;DNSResolver&gt;&gt; <a class="code" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a9454ccca7e1b26a2ba5dd37ebc16b4d0">GetDNSResolver</a>(</div>
+<div class="line"><a name="l00404"></a><span class="lineno">  404</span>&#160;      <span class="keyword">const</span> <a class="code" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver_1_1_resolver_options.html">DNSResolver::ResolverOptions</a>&amp; options) = 0;</div>
+<div class="line"><a name="l00405"></a><span class="lineno">  405</span>&#160; </div>
+<div class="line"><a name="l00415"></a><span class="lineno">  415</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a589e091e9af842bcda00411996d9255f">Run</a>(<a class="code" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_closure.html">Closure</a>* closure) = 0;</div>
+<div class="line"><a name="l00428"></a><span class="lineno">  428</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a589e091e9af842bcda00411996d9255f">Run</a>(absl::AnyInvocable&lt;<span class="keywordtype">void</span>()&gt; closure) = 0;</div>
+<div class="line"><a name="l00437"></a><span class="lineno">  437</span>&#160;  <span class="keyword">virtual</span> <a class="code" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_task_handle.html">TaskHandle</a> <a class="code" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a854dfb6d39d5c6106eb98d499209529a">RunAfter</a>(<a class="code" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a3380997754430d27e6b9832174184327">Duration</a> when, <a class="code" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_closure.html">Closure</a>* closure) = 0;</div>
+<div class="line"><a name="l00452"></a><span class="lineno">  452</span>&#160;  <span class="keyword">virtual</span> <a class="code" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_task_handle.html">TaskHandle</a> <a class="code" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a854dfb6d39d5c6106eb98d499209529a">RunAfter</a>(<a class="code" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a3380997754430d27e6b9832174184327">Duration</a> when,</div>
+<div class="line"><a name="l00453"></a><span class="lineno">  453</span>&#160;                              absl::AnyInvocable&lt;<span class="keywordtype">void</span>()&gt; closure) = 0;</div>
+<div class="line"><a name="l00467"></a><span class="lineno">  467</span>&#160;  <span class="keyword">virtual</span> <span class="keywordtype">bool</span> <a class="code" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#aab8a579f7dc8429c8d2aa2cd81da910b">Cancel</a>(<a class="code" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_task_handle.html">TaskHandle</a> handle) = 0;</div>
+<div class="line"><a name="l00468"></a><span class="lineno">  468</span>&#160;};</div>
+<div class="line"><a name="l00469"></a><span class="lineno">  469</span>&#160; </div>
+<div class="line"><a name="l00479"></a><span class="lineno">  479</span>&#160;<span class="keywordtype">void</span> <a class="code" href="namespacegrpc__event__engine_1_1experimental.html#a94ab619b34c2c1f57c2d068d0c18907c">SetEventEngineFactory</a>(</div>
+<div class="line"><a name="l00480"></a><span class="lineno">  480</span>&#160;    absl::AnyInvocable&lt;std::unique_ptr&lt;EventEngine&gt;()&gt; factory);</div>
+<div class="line"><a name="l00481"></a><span class="lineno">  481</span>&#160; </div>
+<div class="line"><a name="l00488"></a><span class="lineno">  488</span>&#160;<span class="keywordtype">void</span> <a class="code" href="namespacegrpc__event__engine_1_1experimental.html#a61848d6441fac572b7c4ef2cc3820342">EventEngineFactoryReset</a>();</div>
+<div class="line"><a name="l00490"></a><span class="lineno">  490</span>&#160;std::unique_ptr&lt;EventEngine&gt; <a class="code" href="namespacegrpc__event__engine_1_1experimental.html#a89b1b9fe77b7e8b8aa7f31c30039a1c8">CreateEventEngine</a>();</div>
+<div class="line"><a name="l00491"></a><span class="lineno">  491</span>&#160; </div>
+<div class="line"><a name="l00492"></a><span class="lineno">  492</span>&#160;}  <span class="comment">// namespace experimental</span></div>
+<div class="line"><a name="l00493"></a><span class="lineno">  493</span>&#160;}  <span class="comment">// namespace grpc_event_engine</span></div>
+<div class="line"><a name="l00494"></a><span class="lineno">  494</span>&#160; </div>
+<div class="line"><a name="l00495"></a><span class="lineno">  495</span>&#160;<span class="preprocessor">#endif  // GRPC_EVENT_ENGINE_EVENT_ENGINE_H</span></div>
 </div><!-- fragment --></div><!-- contents -->
 <div class="ttc" id="aclassgrpc__event__engine_1_1experimental_1_1_event_engine_html_a9d190fa0d2978cce36684d203830496e"><div class="ttname"><a href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a9d190fa0d2978cce36684d203830496e">grpc_event_engine::experimental::EventEngine::OnConnectCallback</a></div><div class="ttdeci">absl::AnyInvocable&lt; void(absl::StatusOr&lt; std::unique_ptr&lt; Endpoint &gt; &gt;)&gt; OnConnectCallback</div><div class="ttdoc">Called when a new connection is established.</div><div class="ttdef"><b>Definition:</b> event_engine.h:258</div></div>
 <div class="ttc" id="aclassgrpc__event__engine_1_1experimental_1_1_event_engine_html_aa283885518525b71339f166e15932cd1"><div class="ttname"><a href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#aa283885518525b71339f166e15932cd1">grpc_event_engine::experimental::EventEngine::~EventEngine</a></div><div class="ttdeci">virtual ~EventEngine()=default</div><div class="ttdoc">At time of destruction, the EventEngine must have no active responsibilities.</div></div>
@@ -335,7 +335,7 @@ $(function() {
 <div class="ttc" id="asupport_2port__platform_8h_html"><div class="ttname"><a href="support_2port__platform_8h.html">port_platform.h</a></div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Aug 14 2023 18:27:14 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Sep 6 2023 16:09:15 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

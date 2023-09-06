@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">34.0.0</span>
+   &#160;<span id="projectnumber">35.0.0</span>
    </div>
   </td>
  </tr>
@@ -122,8 +122,8 @@ $(function() {
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;  <a class="code" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html">MemoryAllocator</a>&amp; <a class="code" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html#a0f4739d241b0a83d36c4c3f649d13305">operator=</a>(<a class="code" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html">MemoryAllocator</a>&amp;&amp;) = <span class="keywordflow">default</span>;</div>
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160; </div>
 <div class="line"><a name="l00058"></a><span class="lineno"><a class="line" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html#a033dcd524d488ef75754479c46ee63af">   58</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html#a033dcd524d488ef75754479c46ee63af">Reset</a>() {</div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;    <span class="keywordflow">if</span> (allocator_ != <span class="keyword">nullptr</span>) allocator_-&gt;Shutdown();</div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;    allocator_.reset();</div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;    <span class="keyword">auto</span> a = std::move(allocator_);</div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;    <span class="keywordflow">if</span> (a != <span class="keyword">nullptr</span>) a-&gt;Shutdown();</div>
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;  }</div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160; </div>
 <div class="line"><a name="l00066"></a><span class="lineno"><a class="line" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html#a25ce3988040473e2d481d7380b633113">   66</a></span>&#160;  <span class="keywordtype">size_t</span> <a class="code" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html#a25ce3988040473e2d481d7380b633113">Reserve</a>(<a class="code" href="classgrpc__event__engine_1_1experimental_1_1_memory_request.html">MemoryRequest</a> request) { <span class="keywordflow">return</span> allocator_-&gt;Reserve(request); }</div>
@@ -287,7 +287,7 @@ $(function() {
 <div class="ttc" id="asupport_2port__platform_8h_html"><div class="ttname"><a href="support_2port__platform_8h.html">port_platform.h</a></div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Aug 14 2023 18:27:14 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Sep 6 2023 16:09:15 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>
