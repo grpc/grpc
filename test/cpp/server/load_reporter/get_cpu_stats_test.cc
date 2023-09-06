@@ -44,6 +44,9 @@ TEST(GetCpuStatsTest, Ascending) {
   const size_t kRuns = 100;
   auto prev = grpc::load_reporter::GetCpuStatsImpl();
   for (size_t i = 0; i < kRuns; ++i) {
+    // prev.first is larger than cur.first occasionally.
+    // Maybe a kernel or compiler problem.
+    sleep(1);
     auto cur = grpc::load_reporter::GetCpuStatsImpl();
     ASSERT_LE(prev.first, cur.first);
     ASSERT_LE(prev.second, cur.second);
