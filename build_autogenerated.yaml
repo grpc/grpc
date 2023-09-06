@@ -228,7 +228,7 @@ libs:
   - src/core/ext/filters/client_channel/connector.h
   - src/core/ext/filters/client_channel/dynamic_filters.h
   - src/core/ext/filters/client_channel/global_subchannel_pool.h
-  - src/core/ext/filters/client_channel/http_proxy.h
+  - src/core/ext/filters/client_channel/http_proxy_mapper.h
   - src/core/ext/filters/client_channel/lb_policy/address_filtering.h
   - src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h
   - src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h
@@ -1044,7 +1044,7 @@ libs:
   - src/core/ext/filters/client_channel/config_selector.cc
   - src/core/ext/filters/client_channel/dynamic_filters.cc
   - src/core/ext/filters/client_channel/global_subchannel_pool.cc
-  - src/core/ext/filters/client_channel/http_proxy.cc
+  - src/core/ext/filters/client_channel/http_proxy_mapper.cc
   - src/core/ext/filters/client_channel/lb_policy/address_filtering.cc
   - src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc
@@ -1974,7 +1974,7 @@ libs:
   - src/core/ext/filters/client_channel/connector.h
   - src/core/ext/filters/client_channel/dynamic_filters.h
   - src/core/ext/filters/client_channel/global_subchannel_pool.h
-  - src/core/ext/filters/client_channel/http_proxy.h
+  - src/core/ext/filters/client_channel/http_proxy_mapper.h
   - src/core/ext/filters/client_channel/lb_policy/address_filtering.h
   - src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h
   - src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h
@@ -2406,7 +2406,7 @@ libs:
   - src/core/ext/filters/client_channel/config_selector.cc
   - src/core/ext/filters/client_channel/dynamic_filters.cc
   - src/core/ext/filters/client_channel/global_subchannel_pool.cc
-  - src/core/ext/filters/client_channel/http_proxy.cc
+  - src/core/ext/filters/client_channel/http_proxy_mapper.cc
   - src/core/ext/filters/client_channel/lb_policy/address_filtering.cc
   - src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc
@@ -9825,9 +9825,10 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/util/scoped_env_var.h
   src:
-  - test/core/client_channel/http_proxy_mapper_test.cc
+  - test/core/ext/filters/client_channel/http_proxy_mapper_test.cc
   deps:
   - gtest
   - grpc_test_util
