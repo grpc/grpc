@@ -54,6 +54,11 @@ class ServiceMeshLabelsInjector : public LabelsInjector {
   grpc_core::Slice serialized_labels_to_send_;
 };
 
+// Returns the mesh ID by reading and parsing the bootstrap file. Returns
+// "unknown" if for some reason, mesh ID could not be figured out.
+// Exposed in header for test purposes.
+std::string GetMeshId();
+
 }  // namespace internal
 }  // namespace grpc
 

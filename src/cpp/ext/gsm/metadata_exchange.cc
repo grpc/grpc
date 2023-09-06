@@ -32,6 +32,7 @@
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
+#include "absl/strings/strip.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 #include "google/protobuf/struct.upb.h"
@@ -145,31 +146,6 @@ std::string GetXdsBootstrapContents() {
   }
   // No bootstrap config found.
   return "";
-}
-
-// Returns the mesh ID by reading and parsing the bootstrap file. Returns
-// "unknown" if for some reason, mesh ID could not be figured out.
-std::string GetMeshId() {
-  auto json = grpc_core::JsonParse(GetXdsBootstrapContents());
-  if (!json.ok()) {
-    return "unknown";
-  }
-  auto bootstrap = grpc_core::LoadFromJson<XdsBootstrapForGSM>(*json);
-  if (!bootstrap.ok()) {
-    return "unknown";
-  }
-  // The format of the Node ID is -
-  // projects/[GCP Project number]/networks/mesh:[Mesh ID]/nodes/[UUID]
-  std::vector<absl::string_view> parts =
-      absl::StrSplit(bootstrap->node().id(), '/');
-  if (parts.size() != 6) {
-    return "unknown";
-  }
-  absl::string_view mesh_id = parts[3];
-  if (!absl::ConsumePrefix(&mesh_id, "mesh:")) {
-    return "unknown";
-  }
-  return std::string(mesh_id);
 }
 
 GcpResourceType StringToGcpResourceType(absl::string_view type) {
@@ -339,6 +315,31 @@ constexpr std::array<MeshLabelsIterable::GkeAttribute, 7>
     MeshLabelsIterable::kGkeAttributeList;
 
 }  // namespace
+
+// Returns the mesh ID by reading and parsing the bootstrap file. Returns
+// "unknown" if for some reason, mesh ID could not be figured out.
+std::string GetMeshId() {
+  auto json = grpc_core::JsonParse(GetXdsBootstrapContents());
+  if (!json.ok()) {
+    return "unknown";
+  }
+  auto bootstrap = grpc_core::LoadFromJson<XdsBootstrapForGSM>(*json);
+  if (!bootstrap.ok()) {
+    return "unknown";
+  }
+  // The format of the Node ID is -
+  // projects/[GCP Project number]/networks/mesh:[Mesh ID]/nodes/[UUID]
+  std::vector<absl::string_view> parts =
+      absl::StrSplit(bootstrap->node().id(), '/');
+  if (parts.size() != 6) {
+    return "unknown";
+  }
+  absl::string_view mesh_id = parts[3];
+  if (!absl::ConsumePrefix(&mesh_id, "mesh:")) {
+    return "unknown";
+  }
+  return std::string(mesh_id);
+}
 
 ServiceMeshLabelsInjector::ServiceMeshLabelsInjector(
     const opentelemetry::sdk::common::AttributeMap& map) {
