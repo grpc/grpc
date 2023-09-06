@@ -47,9 +47,9 @@ PromiseEndpoint::PromiseEndpoint(
 
 PromiseEndpoint::~PromiseEndpoint() {
   // Promise endpoint close when last write result has not been polled.
-  if (write_result_.has_value()) write_result_.reset();
+  write_result_.reset();
   // Promise endpoint close when last read result has not been polled.
-  if (read_result_.has_value()) read_result_.reset();
+  read_result_.reset();
 }
 
 const grpc_event_engine::experimental::EventEngine::ResolvedAddress&

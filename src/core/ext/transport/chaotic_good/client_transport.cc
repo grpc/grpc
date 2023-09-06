@@ -139,16 +139,15 @@ ClientTransport::ClientTransport(
           // Read message padding and message from data endpoint.
           return TryJoin(
               control_endpoint_->Read(frame_header_->GetFrameLength()),
-              TrySeq(
-                  data_endpoint_->Read(frame_header_->message_padding), [this] {
-                    // The message_padding will be discarded here.
-                    return data_endpoint_->Read(frame_header_->message_length);
-                  }));
+              data_endpoint_->Read(frame_header_->message_padding +
+                                   frame_header_->message_length));
         },
         // Construct and send the server frame to corresponding stream.
         [this](std::tuple<SliceBuffer, SliceBuffer> ret) mutable {
           control_endpoint_read_buffer_ = std::move(std::get<0>(ret));
-          data_endpoint_read_buffer_ = std::move(std::get<1>(ret));
+          // Discard message padding and only keep message in data read buffer.
+          std::get<1>(ret).MoveLastNBytesIntoSliceBuffer(
+              frame_header_->message_length, data_endpoint_read_buffer_);
           ServerFragmentFrame frame;
           // Initialized to get this_cpu() info in global_stat().
           ExecCtx exec_ctx;
