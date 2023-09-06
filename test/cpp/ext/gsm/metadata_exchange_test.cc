@@ -114,7 +114,7 @@ class MetadataExchangeTest
   void Init(const absl::flat_hash_set<absl::string_view>& metric_names) {
     const char* kBootstrap =
         "{\"node\": {\"id\": "
-        "\"projects/1234567890/networks/mesh-id/nodes/"
+        "\"projects/1234567890/networks/mesh:mesh-id/nodes/"
         "01234567-89ab-4def-8123-456789abcdef\"}}";
     switch (GetParam().bootstrap_source()) {
       case TestScenario::XdsBootstrapSource::kFromFile: {

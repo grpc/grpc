@@ -159,13 +159,17 @@ std::string GetMeshId() {
     return "unknown";
   }
   // The format of the Node ID is -
-  // projects/[GCP Project number]/networks/[Mesh ID]/nodes/[UUID]
+  // projects/[GCP Project number]/networks/mesh:[Mesh ID]/nodes/[UUID]
   std::vector<absl::string_view> parts =
       absl::StrSplit(bootstrap->node().id(), '/');
   if (parts.size() != 6) {
     return "unknown";
   }
-  return std::string(parts[3]);
+  absl::string_view mesh_id = parts[3];
+  if (!absl::ConsumePrefix(&mesh_id, "mesh:")) {
+    return "unknown";
+  }
+  return std::string(mesh_id);
 }
 
 GcpResourceType StringToGcpResourceType(absl::string_view type) {
