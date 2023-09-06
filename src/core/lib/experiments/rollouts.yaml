@@ -92,3 +92,5 @@
   default: false
 - name: lazier_stream_updates
   default: true
+- name: jitter_max_idle
+  default: true
