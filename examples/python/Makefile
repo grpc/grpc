@@ -68,6 +68,10 @@ ARTIFACTS += interceptors/headers/helloworld_pb2.py
 ARTIFACTS += interceptors/headers/helloworld_pb2_grpc.py
 ARTIFACTS += interceptors/headers/helloworld_pb2.pyi
 
+ARTIFACTS += interceptors/streaming/hellostreamingworld_pb2.py
+ARTIFACTS += interceptors/streaming/hellostreamingworld_pb2_grpc.py
+ARTIFACTS += interceptors/streaming/hellostreamingworld_pb2.pyi
+
 ARTIFACTS += metadata/helloworld_pb2.py
 ARTIFACTS += metadata/helloworld_pb2_grpc.py
 ARTIFACTS += metadata/helloworld_pb2.pyi
@@ -122,6 +126,9 @@ interceptors/default_value/helloworld_pb2.py interceptors/default_value/hellowor
 
 interceptors/headers/helloworld_pb2.py interceptors/headers/helloworld_pb2_grpc.py interceptors/headers/helloworld_pb2.pyi: ../protos/helloworld.proto
 	python3 -m grpc_tools.protoc --python_out=interceptors/headers --grpc_python_out=interceptors/headers --pyi_out=interceptors/headers -I ../protos ../protos/helloworld.proto
+
+interceptors/streaming/hellostreamingworld_pb2.py interceptors/streaming/hellostreamingworld_pb2_grpc.py interceptors/streaming/hellostreamingworld_pb2.pyi: ../protos/hellostreamingworld.proto
+	python3 -m grpc_tools.protoc --python_out=interceptors/streaming --grpc_python_out=interceptors/streaming --pyi_out=interceptors/streaming -I ../protos ../protos/hellostreamingworld.proto
 
 metadata/helloworld_pb2.py metadata/helloworld_pb2_grpc.py metadata/helloworld_pb2.pyi: ../protos/helloworld.proto
 	python3 -m grpc_tools.protoc --python_out=metadata --grpc_python_out=metadata --pyi_out=metadata -I ../protos ../protos/helloworld.proto
