@@ -166,6 +166,10 @@ bool IsTestExperimentEnabled(size_t experiment_id) {
 
 void PrintExperimentsList() {
   size_t max_experiment_length = 0;
+  // Populate visitation order into a std::map so that iteration results in a
+  // lexical ordering of experiment names.
+  // The lexical ordering makes it nice and easy to find the experiment you're
+  // looking for in the output spam that we generate.
   std::map<absl::string_view, size_t> visitation_order;
   for (size_t i = 0; i < kNumExperiments; i++) {
     max_experiment_length =
