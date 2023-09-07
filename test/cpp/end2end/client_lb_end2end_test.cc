@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <algorithm>
+#include <chrono>
 #include <deque>
 #include <memory>
 #include <mutex>
@@ -634,8 +635,11 @@ TEST_F(ClientLbEnd2endTest, ChannelStateConnectingWhenResolving) {
   // Note that this call also returns IDLE, since the state change has
   // not yet occurred; it just gets triggered by this call.
   EXPECT_EQ(channel->GetState(true /* try_to_connect */), GRPC_CHANNEL_IDLE);
-  // Now that the channel is trying to connect, we should be in state
+  // Now that the channel is trying to connect, we should get to state
   // CONNECTING.
+  while (channel->GetState(false) == GRPC_CHANNEL_IDLE) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
   EXPECT_EQ(channel->GetState(false /* try_to_connect */),
             GRPC_CHANNEL_CONNECTING);
   // Return a resolver result, which allows the connection attempt to proceed.
