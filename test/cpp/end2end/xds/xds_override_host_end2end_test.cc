@@ -103,11 +103,11 @@ class OverrideHostTest : public XdsEnd2endTest {
   // is nullptr, then assign an empty filter config. This filter config is
   // required to enable the fault injection features.
   Listener BuildListenerWithStatefulSessionFilter(
-      absl::string_view cookieName = kCookieName) {
+      absl::string_view cookie_name = kCookieName) {
     StatefulSession stateful_session;
-    if (!cookieName.empty()) {
+    if (!cookie_name.empty()) {
       CookieBasedSessionState cookie_state;
-      cookie_state.mutable_cookie()->set_name(std::string(cookieName));
+      cookie_state.mutable_cookie()->set_name(std::string(cookie_name));
       stateful_session.mutable_session_state()
           ->mutable_typed_config()
           ->PackFrom(cookie_state);
@@ -449,8 +449,8 @@ TEST_P(OverrideHostTest, ClusterGoneHostStays) {
       GetAffinityCookieHeaderForBackend(DEBUG_LOCATION, 1, kNumEchoRpcs / 3));
 }
 
-TEST_P(OverrideHostTest, DisabledPerPath) {
-  const std::string kCustomCookieName = "GSSA";
+TEST_P(OverrideHostTest, EnablePerRoute) {
+  const absl::string_view kCustomCookieName = "GSSA";
   CreateAndStartBackends(2);
   RouteConfiguration route_config = default_route_config_;
   StatefulSessionPerRoute stateful_session_per_route;
