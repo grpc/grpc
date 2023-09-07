@@ -169,6 +169,13 @@
   owner: yashkt@google.com
   test_tags: []
   allow_in_fuzzing_config: false
+- name: lazier_stream_updates
+  description:
+    Allow streams to consume up to 50% of the incoming window before we
+    force send a flow control update.
+  expiry: 2024/01/23
+  owner: ctiller@google.com
+  test_tags: [flow_control_test]
 - name: jitter_max_idle
   description:
     Enable jitter on connection max idle times.
