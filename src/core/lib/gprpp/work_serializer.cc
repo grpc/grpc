@@ -20,13 +20,14 @@
 
 #include <stdint.h>
 
+#include <algorithm>
 #include <atomic>
 #include <functional>
 #include <memory>
 #include <thread>
 #include <utility>
 
-#include "orphanable.h"
+#include "absl/container/inlined_vector.h"
 #include "sync.h"
 #include "work_serializer.h"
 
@@ -38,6 +39,7 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/mpscq.h"
 #include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 
 namespace grpc_core {
 
@@ -348,6 +350,8 @@ void WorkSerializer::DispatchingWorkSerializer::Run(
 }
 
 void WorkSerializer::DispatchingWorkSerializer::Run() {
+  ApplicationCallbackExecCtx app_exec_ctx;
+  ExecCtx exec_ctx;
   auto& cb = processing_.back();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
     gpr_log(GPR_INFO, "WorkSerializer[%p] Executing callback [%s:%d]", this,

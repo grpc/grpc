@@ -20,6 +20,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <functional>
+#include <memory>
 
 #include "absl/base/thread_annotations.h"
 

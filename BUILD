@@ -2404,6 +2404,7 @@ grpc_cc_library(
     deps = [
         "debug_location",
         "event_engine_base_hdrs",
+        "exec_ctx",
         "gpr",
         "grpc_trace",
         "orphanable",

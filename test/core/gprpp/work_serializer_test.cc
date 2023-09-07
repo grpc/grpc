@@ -33,6 +33,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
