@@ -82,6 +82,9 @@ struct ClientFragmentFrame final : public FrameInterface {
     return stream_id == other.stream_id && EqHdl(headers, other.headers) &&
            end_of_stream == other.end_of_stream;
   }
+  // Shared ownership with transport.
+  std::shared_ptr<Arena> arena_;
+  void SetArena(std::shared_ptr<Arena> arena) { arena_ = arena; }
 };
 
 struct ServerFragmentFrame final : public FrameInterface {
@@ -98,6 +101,10 @@ struct ServerFragmentFrame final : public FrameInterface {
     return stream_id == other.stream_id && EqHdl(headers, other.headers) &&
            EqHdl(trailers, other.trailers);
   }
+
+  // Shared ownership with transport.
+  std::shared_ptr<Arena> arena_;
+  void SetArena(std::shared_ptr<Arena> arena) { arena_ = arena; }
 };
 
 struct CancelFrame final : public FrameInterface {

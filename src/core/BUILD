@@ -5838,9 +5838,7 @@ grpc_cc_library(
         "arena",
         "bitset",
         "chaotic_good_frame_header",
-        "memory_quota",
         "no_destruct",
-        "resource_quota",
         "slice",
         "slice_buffer",
         "status_helper",
@@ -5849,7 +5847,6 @@ grpc_cc_library(
         "//:grpc_base",
         "//:hpack_encoder",
         "//:hpack_parser",
-        "//:ref_counted_ptr",
     ],
 )
 

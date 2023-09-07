@@ -188,7 +188,7 @@ class ClientTransport {
   std::unique_ptr<HPackParser> hpack_parser_;
   std::shared_ptr<FrameHeader> frame_header_;
   MemoryAllocator memory_allocator_;
-  ScopedArenaPtr arena_;
+  std::shared_ptr<Arena> arena_;  // Shared ownership with segment frames.
   // Use to synchronize writer_ and reader_ activity with outside activities;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
 };
