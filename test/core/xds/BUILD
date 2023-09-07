@@ -278,7 +278,6 @@ grpc_cc_library(
     ],
 )
 
-
 grpc_cc_test(
     name = "xds_listener_resource_type_test",
     srcs = ["xds_listener_resource_type_test.cc"],

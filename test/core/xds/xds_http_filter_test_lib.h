@@ -13,8 +13,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_TEST_CPP_END2END_XDS_XDS_END2END_TEST_LIB_H
-#define GRPC_TEST_CPP_END2END_XDS_XDS_END2END_TEST_LIB_H
+#ifndef GRPC_TEST_CORE_XDS_XDS_HTTP_FILTER_TEST_LIB_H
+#define GRPC_TEST_CORE_XDS_XDS_HTTP_FILTER_TEST_LIB_H
 
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_client.h"
@@ -86,4 +86,4 @@ class XdsHttpFilterTest : public ::testing::Test {
 }  // namespace testing
 }  // namespace grpc_core
 
-#endif  // GRPC_TEST_CPP_END2END_XDS_XDS_END2END_TEST_LIB_H
+#endif  // GRPC_TEST_CORE_XDS_XDS_HTTP_FILTER_TEST_LIB_H
