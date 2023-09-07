@@ -116,18 +116,19 @@ TransportFlowControl::TransportFlowControl(absl::string_view name,
                           .set_integral_range(10)),
       last_pid_update_(Timestamp::Now()) {}
 
-uint32_t TransportFlowControl::MaybeSendUpdate(bool writing_anyway) {
+uint32_t TransportFlowControl::DesiredAnnounceSize(bool writing_anyway) const {
   const uint32_t target_announced_window =
       static_cast<uint32_t>(target_window());
   if ((writing_anyway || announced_window_ <= target_announced_window / 2) &&
       announced_window_ != target_announced_window) {
-    const uint32_t announce =
-        static_cast<uint32_t>(Clamp(target_announced_window - announced_window_,
-                                    int64_t{0}, kMaxWindowUpdateSize));
-    announced_window_ += announce;
-    return announce;
+    return Clamp(target_announced_window - announced_window_, int64_t{0},
+                 kMaxWindowUpdateSize);
   }
   return 0;
+}
+
+void TransportFlowControl::SentUpdate(uint32_t announce) {
+  announced_window_ += announce;
 }
 
 StreamFlowControl::StreamFlowControl(TransportFlowControl* tfc) : tfc_(tfc) {}
@@ -170,7 +171,7 @@ int64_t TransportFlowControl::target_window() const {
   return static_cast<uint32_t>(
       std::min(static_cast<int64_t>((1u << 31) - 1),
                announced_stream_total_over_incoming_window_ +
-                   target_initial_window_size_));
+                   std::max<int64_t>(1, target_initial_window_size_)));
 }
 
 FlowControlAction TransportFlowControl::UpdateAction(FlowControlAction action) {
@@ -363,17 +364,15 @@ FlowControlAction TransportFlowControl::PeriodicUpdate() {
   return UpdateAction(action);
 }
 
-uint32_t StreamFlowControl::MaybeSendUpdate() {
+void StreamFlowControl::SentUpdate(uint32_t announce) {
   TransportFlowControl::IncomingUpdateContext tfc_upd(tfc_);
-  const int64_t announce = DesiredAnnounceSize();
   pending_size_ = absl::nullopt;
   tfc_upd.UpdateAnnouncedWindowDelta(&announced_window_delta_, announce);
   GPR_ASSERT(DesiredAnnounceSize() == 0);
   std::ignore = tfc_upd.MakeAction();
-  return static_cast<uint32_t>(announce);
 }
 
-int64_t StreamFlowControl::DesiredAnnounceSize() const {
+uint32_t StreamFlowControl::DesiredAnnounceSize() const {
   int64_t desired_window_delta = [this]() {
     if (min_progress_size_ == 0) {
       if (pending_size_.has_value() &&
@@ -401,22 +400,29 @@ FlowControlAction StreamFlowControl::UpdateAction(FlowControlAction action) {
     // greater). 8kb means we don't send rapidly unnecessarily when the initial
     // window size is small.
     const int64_t hurry_up_size = std::max(
-        static_cast<int64_t>(tfc_->sent_init_window()) / 2, int64_t{8192});
+        static_cast<int64_t>(tfc_->queued_init_window()) / 2, int64_t{8192});
     if (desired_announce_size > hurry_up_size) {
       urgency = FlowControlAction::Urgency::UPDATE_IMMEDIATELY;
     }
     // min_progress_size_ > 0 means we have a reader ready to read.
     if (min_progress_size_ > 0) {
-      // If we're into initial window to receive that data we should wake up and
-      // send an update.
-      if (announced_window_delta_ < 0) {
-        urgency = FlowControlAction::Urgency::UPDATE_IMMEDIATELY;
-      } else if (announced_window_delta_ == 0 &&
-                 tfc_->sent_init_window() == 0) {
-        // Special case when initial window size is zero, meaning that
-        // announced_window_delta cannot become negative (it may already be so
-        // however).
-        urgency = FlowControlAction::Urgency::UPDATE_IMMEDIATELY;
+      if (IsLazierStreamUpdatesEnabled()) {
+        if (announced_window_delta_ <=
+            -static_cast<int64_t>(tfc_->sent_init_window()) / 2) {
+          urgency = FlowControlAction::Urgency::UPDATE_IMMEDIATELY;
+        }
+      } else {
+        // If we're into initial window to receive that data we should wake up
+        // and send an update.
+        if (announced_window_delta_ < 0) {
+          urgency = FlowControlAction::Urgency::UPDATE_IMMEDIATELY;
+        } else if (announced_window_delta_ == 0 &&
+                   tfc_->queued_init_window() == 0) {
+          // Special case when initial window size is zero, meaning that
+          // announced_window_delta cannot become negative (it may already be so
+          // however).
+          urgency = FlowControlAction::Urgency::UPDATE_IMMEDIATELY;
+        }
       }
     }
     action.set_send_stream_update(urgency);
