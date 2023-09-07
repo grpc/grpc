@@ -74,7 +74,7 @@ absl::StatusOr<OpenTelemetryClientFilter> OpenTelemetryClientFilter::Create(
   std::string target = args.GetOwnedString(GRPC_ARG_SERVER_URI).value_or("");
   // Use the original target string only if a filter on the attribute is not
   // registered or if the filter returns true, otherwise use "other".
-  if (!OTelPluginState().target_attributes_filter ||
+  if (OTelPluginState().target_attributes_filter == nullptr ||
       OTelPluginState().target_attributes_filter(target)) {
     return OpenTelemetryClientFilter(std::move(target));
   }
