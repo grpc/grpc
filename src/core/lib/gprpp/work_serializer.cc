@@ -296,6 +296,7 @@ class WorkSerializer::DispatchingWorkSerializer final
            const DebugLocation& location) override;
   void Schedule(std::function<void()> callback,
                 const DebugLocation& location) override {
+    // We always dispatch to event engine, so Schedule and Run share semantics.
     Run(callback, location);
   }
   void DrainQueue() override {}
