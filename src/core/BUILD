@@ -2627,6 +2627,7 @@ grpc_cc_library(
     hdrs = [
         "lib/surface/channel_init.h",
     ],
+    external_deps = ["absl/functional:any_invocable"],
     language = "c++",
     deps = [
         "channel_stack_type",
