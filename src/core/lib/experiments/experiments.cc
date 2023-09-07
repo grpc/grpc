@@ -96,6 +96,10 @@ const char* const description_keepalive_server_fix =
     "Allows overriding keepalive_permit_without_calls for servers. Refer "
     "https://github.com/grpc/grpc/pull/33917 for more information.";
 const char* const additional_constraints_keepalive_server_fix = "{}";
+const char* const description_lazier_stream_updates =
+    "Allow streams to consume up to 50% of the incoming window before we force "
+    "send a flow control update.";
+const char* const additional_constraints_lazier_stream_updates = "{}";
 const char* const description_jitter_max_idle =
     "Enable jitter on connection max idle times. Historically this jitter was "
     "only on max connection age, but it seems like this could smooth out some "
@@ -150,6 +154,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_keepalive_fix, false, false},
     {"keepalive_server_fix", description_keepalive_server_fix,
      additional_constraints_keepalive_server_fix, false, false},
+    {"lazier_stream_updates", description_lazier_stream_updates,
+     additional_constraints_lazier_stream_updates, true, true},
     {"jitter_max_idle", description_jitter_max_idle,
      additional_constraints_jitter_max_idle, true, true},
 };
@@ -232,6 +238,10 @@ const char* const description_keepalive_server_fix =
     "Allows overriding keepalive_permit_without_calls for servers. Refer "
     "https://github.com/grpc/grpc/pull/33917 for more information.";
 const char* const additional_constraints_keepalive_server_fix = "{}";
+const char* const description_lazier_stream_updates =
+    "Allow streams to consume up to 50% of the incoming window before we force "
+    "send a flow control update.";
+const char* const additional_constraints_lazier_stream_updates = "{}";
 const char* const description_jitter_max_idle =
     "Enable jitter on connection max idle times. Historically this jitter was "
     "only on max connection age, but it seems like this could smooth out some "
@@ -286,6 +296,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_keepalive_fix, false, false},
     {"keepalive_server_fix", description_keepalive_server_fix,
      additional_constraints_keepalive_server_fix, false, false},
+    {"lazier_stream_updates", description_lazier_stream_updates,
+     additional_constraints_lazier_stream_updates, true, true},
     {"jitter_max_idle", description_jitter_max_idle,
      additional_constraints_jitter_max_idle, true, true},
 };
@@ -368,6 +380,10 @@ const char* const description_keepalive_server_fix =
     "Allows overriding keepalive_permit_without_calls for servers. Refer "
     "https://github.com/grpc/grpc/pull/33917 for more information.";
 const char* const additional_constraints_keepalive_server_fix = "{}";
+const char* const description_lazier_stream_updates =
+    "Allow streams to consume up to 50% of the incoming window before we force "
+    "send a flow control update.";
+const char* const additional_constraints_lazier_stream_updates = "{}";
 const char* const description_jitter_max_idle =
     "Enable jitter on connection max idle times. Historically this jitter was "
     "only on max connection age, but it seems like this could smooth out some "
@@ -422,6 +438,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_keepalive_fix, false, false},
     {"keepalive_server_fix", description_keepalive_server_fix,
      additional_constraints_keepalive_server_fix, false, false},
+    {"lazier_stream_updates", description_lazier_stream_updates,
+     additional_constraints_lazier_stream_updates, true, true},
     {"jitter_max_idle", description_jitter_max_idle,
      additional_constraints_jitter_max_idle, true, true},
 };
