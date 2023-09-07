@@ -23246,6 +23246,7 @@ add_executable(test_core_channel_channelz_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.grpc.pb.h
   test/core/channel/channelz_test.cc
+  test/core/event_engine/event_engine_test_utils.cc
   test/cpp/util/channel_trace_proto_helper.cc
 )
 target_compile_features(test_core_channel_channelz_test PUBLIC cxx_std_14)
@@ -23272,6 +23273,7 @@ target_link_libraries(test_core_channel_channelz_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc++
+  grpc_unsecure
   grpc_test_util
 )
 
