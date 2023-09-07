@@ -548,8 +548,7 @@ ArenaPromise<ServerMetadataHandle> MakeClientCallPromise(
         }
         if (!done_recv_messages) {
           auto p = recv_messages();
-          auto* r = p.value_if_ready();
-          if (r) {
+          if (p.value_if_ready() != nullptr) {
             // NOTE: ignore errors here, they'll be collected in the
             // recv_trailing_metadata.
             done_recv_messages = true;
