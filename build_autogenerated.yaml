@@ -17118,11 +17118,14 @@ targets:
   build: test
   run: false
   language: c++
-  headers: []
+  headers:
+  - test/core/event_engine/event_engine_test_utils.h
   src:
+  - test/core/event_engine/event_engine_test_utils.cc
   - test/core/gprpp/work_serializer_test.cc
   deps:
   - gtest
+  - grpc_unsecure
   - grpc_test_util
   platforms:
   - linux

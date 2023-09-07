@@ -25810,6 +25810,7 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(work_serializer_test
+    test/core/event_engine/event_engine_test_utils.cc
     test/core/gprpp/work_serializer_test.cc
   )
   target_compile_features(work_serializer_test PUBLIC cxx_std_14)
@@ -25835,6 +25836,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(work_serializer_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
+    grpc_unsecure
     grpc_test_util
   )
 

@@ -2398,7 +2398,10 @@ grpc_cc_library(
     hdrs = [
         "//src/core:lib/gprpp/work_serializer.h",
     ],
-    external_deps = ["absl/base:core_headers"],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/container:inlined_vector",
+    ],
     language = "c++",
     visibility = ["@grpc:client_channel"],
     deps = [
@@ -3068,6 +3071,7 @@ grpc_cc_library(
         "//src/core:env",
         "//src/core:error",
         "//src/core:gpr_atm",
+        "//src/core:gpr_manual_constructor",
         "//src/core:grpc_backend_metric_data",
         "//src/core:grpc_deadline_filter",
         "//src/core:grpc_service_config",
