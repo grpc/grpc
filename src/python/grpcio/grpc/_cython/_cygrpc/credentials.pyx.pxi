@@ -314,7 +314,7 @@ def server_credentials_ssl_dynamic_cert_config(initial_cert_config,
   return credentials
 
 cdef grpc_ssl_certificate_config_reload_status _server_cert_config_fetcher_wrapper(
-        void* user_data, grpc_ssl_server_certificate_config **config) with gil:
+        void* user_data, grpc_ssl_server_certificate_config **config) noexcept with gil:
   # This is a credentials.ServerCertificateConfig
   cdef ServerCertificateConfig cert_config = None
   if not user_data:

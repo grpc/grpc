@@ -13,16 +13,16 @@
 # limitations under the License.
 
 # TODO(https://github.com/grpc/grpc/issues/15662): Reform this.
-cdef void* _copy_pointer(void* pointer):
+cdef void* _copy_pointer(void* pointer) noexcept:
   return pointer
 
 
 # TODO(https://github.com/grpc/grpc/issues/15662): Reform this.
-cdef void _destroy_pointer(void* pointer):
+cdef void _destroy_pointer(void* pointer) noexcept:
   pass
 
 
-cdef int _compare_pointer(void* first_pointer, void* second_pointer):
+cdef int _compare_pointer(void* first_pointer, void* second_pointer) noexcept:
   if first_pointer < second_pointer:
     return -1
   elif first_pointer > second_pointer:
