@@ -64,6 +64,9 @@ EXPERIMENTS = {
             "cpp_end2end_test": [
                 "work_serializer_dispatch",
             ],
+            "flow_control_test": [
+                "lazier_stream_updates",
+            ],
             "lb_policy_test": [
                 "work_serializer_dispatch",
             ],
@@ -118,6 +121,9 @@ EXPERIMENTS = {
             ],
             "cpp_end2end_test": [
                 "work_serializer_dispatch",
+            ],
+            "flow_control_test": [
+                "lazier_stream_updates",
             ],
             "lb_policy_test": [
                 "work_serializer_dispatch",
@@ -183,6 +189,9 @@ EXPERIMENTS = {
             ],
             "cpp_end2end_test": [
                 "work_serializer_dispatch",
+            ],
+            "flow_control_test": [
+                "lazier_stream_updates",
             ],
             "lb_policy_test": [
                 "work_serializer_dispatch",

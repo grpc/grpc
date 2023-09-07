@@ -14043,7 +14043,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(http_proxy_mapper_test
-  test/core/ext/filters/client_channel/http_proxy_mapper_test.cc
+  test/core/client_channel/http_proxy_mapper_test.cc
 )
 target_compile_features(http_proxy_mapper_test PUBLIC cxx_std_14)
 target_include_directories(http_proxy_mapper_test

@@ -2475,6 +2475,7 @@ grpc_cc_library(
     srcs = [
         "//src/core:lib/config/core_configuration.cc",
     ],
+    external_deps = ["absl/functional:any_invocable"],
     language = "c++",
     public_hdrs = [
         "//src/core:lib/config/core_configuration.h",

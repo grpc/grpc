@@ -83,6 +83,8 @@ inline bool IsServerPrivacyEnabled() { return false; }
 inline bool IsUniqueMetadataStringsEnabled() { return true; }
 inline bool IsKeepaliveFixEnabled() { return false; }
 inline bool IsKeepaliveServerFixEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_LAZIER_STREAM_UPDATES
+inline bool IsLazierStreamUpdatesEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_JITTER_MAX_IDLE
 inline bool IsJitterMaxIdleEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_DISPATCH
@@ -113,6 +115,8 @@ inline bool IsServerPrivacyEnabled() { return false; }
 inline bool IsUniqueMetadataStringsEnabled() { return true; }
 inline bool IsKeepaliveFixEnabled() { return false; }
 inline bool IsKeepaliveServerFixEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_LAZIER_STREAM_UPDATES
+inline bool IsLazierStreamUpdatesEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_JITTER_MAX_IDLE
 inline bool IsJitterMaxIdleEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_DISPATCH
@@ -143,6 +147,8 @@ inline bool IsServerPrivacyEnabled() { return false; }
 inline bool IsUniqueMetadataStringsEnabled() { return true; }
 inline bool IsKeepaliveFixEnabled() { return false; }
 inline bool IsKeepaliveServerFixEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_LAZIER_STREAM_UPDATES
+inline bool IsLazierStreamUpdatesEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_JITTER_MAX_IDLE
 inline bool IsJitterMaxIdleEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_DISPATCH
@@ -198,14 +204,16 @@ inline bool IsUniqueMetadataStringsEnabled() { return IsExperimentEnabled(18); }
 inline bool IsKeepaliveFixEnabled() { return IsExperimentEnabled(19); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_KEEPALIVE_SERVER_FIX
 inline bool IsKeepaliveServerFixEnabled() { return IsExperimentEnabled(20); }
+#define GRPC_EXPERIMENT_IS_INCLUDED_LAZIER_STREAM_UPDATES
+inline bool IsLazierStreamUpdatesEnabled() { return IsExperimentEnabled(21); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_JITTER_MAX_IDLE
-inline bool IsJitterMaxIdleEnabled() { return IsExperimentEnabled(21); }
+inline bool IsJitterMaxIdleEnabled() { return IsExperimentEnabled(22); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_DISPATCH
 inline bool IsWorkSerializerDispatchEnabled() {
-  return IsExperimentEnabled(22);
+  return IsExperimentEnabled(23);
 }
 
-constexpr const size_t kNumExperiments = 23;
+constexpr const size_t kNumExperiments = 24;
 extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];
 
 #endif
