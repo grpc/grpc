@@ -22,13 +22,16 @@
 
 #include <algorithm>
 #include <atomic>
+#include <chrono>
 #include <memory>
+#include <ratio>
 #include <vector>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "gtest/gtest.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/impl/channel_arg_names.h>
@@ -40,6 +43,7 @@
 #include "src/core/lib/channel/channelz_registry.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_reader.h"
