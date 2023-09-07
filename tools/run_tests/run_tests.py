@@ -779,9 +779,7 @@ class PythonLanguage(object):
                             + [self._TEST_COMMAND[io_platform]],
                             timeout_seconds=8 * 60,
                             environ=dict(
-                                GRPC_PYTHON_TESTRUNNER_FILTER=str(
-                                    test_case
-                                ),
+                                GRPC_PYTHON_TESTRUNNER_FILTER=str(test_case),
                                 **environment,
                             ),
                             shortname=f"{python_config.name}.{io_platform}.{test_case}",
