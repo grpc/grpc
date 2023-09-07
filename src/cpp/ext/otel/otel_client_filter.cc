@@ -70,8 +70,14 @@ const grpc_channel_filter OpenTelemetryClientFilter::kFilter =
 
 absl::StatusOr<OpenTelemetryClientFilter> OpenTelemetryClientFilter::Create(
     const grpc_core::ChannelArgs& args, ChannelFilter::Args /*filter_args*/) {
-  return OpenTelemetryClientFilter(
-      args.GetOwnedString(GRPC_ARG_SERVER_URI).value_or(""));
+  std::string target = args.GetOwnedString(GRPC_ARG_SERVER_URI).value_or("");
+  // Use the original target string only if a filter on the attribute is not
+  // registered or if the filter returns true, otherwise use "other".
+  if (!OTelPluginState().target_attributes_filter ||
+      OTelPluginState().target_attributes_filter(target)) {
+    return OpenTelemetryClientFilter(std::move(target));
+  }
+  return OpenTelemetryClientFilter("other");
 }
 
 grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle>

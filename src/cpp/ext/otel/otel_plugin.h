@@ -96,6 +96,8 @@ struct OTelPluginState {
   opentelemetry::nostd::shared_ptr<opentelemetry::metrics::MeterProvider>
       meter_provider;
   std::unique_ptr<LabelsInjector> labels_injector;
+  absl::AnyInvocable<bool(absl::string_view /*target*/) const>
+      target_attributes_filter;
 };
 
 const struct OTelPluginState& OTelPluginState();
@@ -132,6 +134,10 @@ class OpenTelemetryPluginBuilder {
   OpenTelemetryPluginBuilder& SetLabelsInjector(
       std::unique_ptr<LabelsInjector> labels_injector);
 
+  OpenTelemetryPluginBuilder& SetTargetAttributesFilter(
+      absl::AnyInvocable<bool(absl::string_view /*target*/) const>
+          target_attributes_filter);
+
   void BuildAndRegisterGlobal();
 
   // The base set of metrics -
@@ -148,6 +154,8 @@ class OpenTelemetryPluginBuilder {
  private:
   std::shared_ptr<opentelemetry::metrics::MeterProvider> meter_provider_;
   std::unique_ptr<LabelsInjector> labels_injector_;
+  absl::AnyInvocable<bool(absl::string_view /*target*/) const>
+      target_attributes_filter_;
   absl::flat_hash_set<std::string> metrics_;
 };
 
