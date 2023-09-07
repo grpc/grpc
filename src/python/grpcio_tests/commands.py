@@ -89,11 +89,12 @@ class TestLite(setuptools.Command):
         pass
 
     def run(self):
-
+        import sys; sys.stderr.write("_____calling run in TestLite\n"); sys.stderr.flush()
         import tests
 
         loader = tests.Loader()
         loader.loadTestsFromNames(["tests"])
+        import sys; sys.stderr.write(f"________loladed suite: {loader.suite}\n"); sys.stderr.flush()
         runner = tests.Runner(dedicated_threads=True)
         result = runner.run(loader.suite)
         if not result.wasSuccessful():
