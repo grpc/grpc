@@ -450,7 +450,6 @@ TEST_P(OverrideHostTest, ClusterGoneHostStays) {
 }
 
 TEST_P(OverrideHostTest, EnablePerRoute) {
-  const absl::string_view kCustomCookieName = "GSSA";
   CreateAndStartBackends(2);
   RouteConfiguration route_config = default_route_config_;
   StatefulSessionPerRoute stateful_session_per_route;
@@ -458,7 +457,7 @@ TEST_P(OverrideHostTest, EnablePerRoute) {
                             ->mutable_session_state();
   session_state->set_name("envoy.http.stateful_session.cookie");
   CookieBasedSessionState cookie_config;
-  cookie_config.mutable_cookie()->set_name(kCustomCookieName);
+  cookie_config.mutable_cookie()->set_name(kCookieName);
   session_state->mutable_typed_config()->PackFrom(cookie_config);
   auto* route = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   google::protobuf::Any any;
@@ -471,8 +470,7 @@ TEST_P(OverrideHostTest, EnablePerRoute) {
       {{"locality0", {CreateEndpoint(0), CreateEndpoint(1)}}})));
   WaitForAllBackends(DEBUG_LOCATION);
   // Get cookie for backend #0.
-  auto session_cookie = GetAffinityCookieHeaderForBackend(DEBUG_LOCATION, 0, 1,
-                                                          kCustomCookieName);
+  auto session_cookie = GetAffinityCookieHeaderForBackend(DEBUG_LOCATION, 0);
   ASSERT_FALSE(session_cookie.empty());
   // All requests go to the backend we specified
   CheckRpcSendOk(DEBUG_LOCATION, 5, RpcOptions().set_metadata(session_cookie));
