@@ -722,9 +722,11 @@ void Server::Start() {
   if (unregistered_request_matcher_ == nullptr) {
     unregistered_request_matcher_ = std::make_unique<RealRequestMatcher>(this);
   }
-  for (std::unique_ptr<RegisteredMethod>& rm : registered_methods_) {
-    if (rm->matcher == nullptr) {
-      rm->matcher = std::make_unique<RealRequestMatcher>(this);
+  for (auto& rms : registered_methods_) {
+    for (auto& rm : rms.second) {
+      if (rm->matcher == nullptr) {
+        rm->matcher = std::make_unique<RealRequestMatcher>(this);
+      }
     }
   }
   {
@@ -829,11 +831,15 @@ Server::RegisteredMethod* Server::RegisterMethod(
             "grpc_server_register_method method string cannot be NULL");
     return nullptr;
   }
-  for (std::unique_ptr<RegisteredMethod>& m : registered_methods_) {
-    if (streq(m->method, method) && streq(m->host, host)) {
-      gpr_log(GPR_ERROR, "duplicate registration for %s@%s", method,
-              host ? host : "*");
-      return nullptr;
+  uint32_t hash = MixHash32((host == nullptr) ? 0 : absl::HashOf(host),
+                            absl::HashOf(method));
+  if (!registered_methods_[hash].empty()) {
+    for (auto& rm : registered_methods_[hash]) {
+      if (streq(rm->method, method) && streq(rm->host, host)) {
+        gpr_log(GPR_ERROR, "duplicate registration for %s@%s", method,
+                host ? host : "*");
+        return nullptr;
+      }
     }
   }
   if (flags != 0) {
@@ -841,9 +847,9 @@ Server::RegisteredMethod* Server::RegisterMethod(
             flags);
     return nullptr;
   }
-  registered_methods_.emplace_back(std::make_unique<RegisteredMethod>(
+  registered_methods_[hash].emplace_back(std::make_unique<RegisteredMethod>(
       method, host, payload_handling, flags));
-  return registered_methods_.back().get();
+  return registered_methods_[hash].back().get();
 }
 
 void Server::DoneRequestEvent(void* req, grpc_cq_completion* /*c*/) {
@@ -894,9 +900,11 @@ void Server::KillPendingWorkLocked(grpc_error_handle error) {
   if (started_) {
     unregistered_request_matcher_->KillRequests(error);
     unregistered_request_matcher_->ZombifyPending();
-    for (std::unique_ptr<RegisteredMethod>& rm : registered_methods_) {
-      rm->matcher->KillRequests(error);
-      rm->matcher->ZombifyPending();
+    for (auto& rms : registered_methods_) {
+      for (auto& rm : rms.second) {
+        rm->matcher->KillRequests(error);
+        rm->matcher->ZombifyPending();
+      }
     }
   }
 }
@@ -1131,7 +1139,6 @@ class Server::ChannelData::ConnectivityWatcher
 //
 
 Server::ChannelData::~ChannelData() {
-  registered_methods_.reset();
   if (server_ != nullptr) {
     if (server_->channelz_node_ != nullptr && channelz_socket_uuid_ != 0) {
       server_->channelz_node_->RemoveChildSocket(channelz_socket_uuid_);
@@ -1156,41 +1163,6 @@ void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
   channel_ = channel;
   cq_idx_ = cq_idx;
   channelz_socket_uuid_ = channelz_socket_uuid;
-  // Build a lookup table phrased in terms of mdstr's in this channels context
-  // to quickly find registered methods.
-  size_t num_registered_methods = server_->registered_methods_.size();
-  if (num_registered_methods > 0) {
-    uint32_t max_probes = 0;
-    size_t slots = 2 * num_registered_methods;
-    registered_methods_ =
-        std::make_unique<std::vector<ChannelRegisteredMethod>>(slots);
-    for (std::unique_ptr<RegisteredMethod>& rm : server_->registered_methods_) {
-      Slice host;
-      Slice method = Slice::FromExternalString(rm->method);
-      const bool has_host = !rm->host.empty();
-      if (has_host) {
-        host = Slice::FromExternalString(rm->host.c_str());
-      }
-      uint32_t hash = MixHash32(has_host ? host.Hash() : 0, method.Hash());
-      uint32_t probes = 0;
-      for (probes = 0; (*registered_methods_)[(hash + probes) % slots]
-                           .server_registered_method != nullptr;
-           probes++) {
-      }
-      if (probes > max_probes) max_probes = probes;
-      ChannelRegisteredMethod* crm =
-          &(*registered_methods_)[(hash + probes) % slots];
-      crm->server_registered_method = rm.get();
-      crm->flags = rm->flags;
-      crm->has_host = has_host;
-      if (has_host) {
-        crm->host = std::move(host);
-      }
-      crm->method = std::move(method);
-    }
-    GPR_ASSERT(slots <= UINT32_MAX);
-    registered_method_max_probes_ = max_probes;
-  }
   // Publish channel.
   {
     MutexLock lock(&server_->mu_global_);
@@ -1209,29 +1181,21 @@ void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
   grpc_transport_perform_op(transport, op);
 }
 
-Server::ChannelRegisteredMethod* Server::ChannelData::GetRegisteredMethod(
-    const grpc_slice& host, const grpc_slice& path) {
-  if (registered_methods_ == nullptr) return nullptr;
-  // TODO(ctiller): unify these two searches
-  // check for an exact match with host
-  uint32_t hash = MixHash32(grpc_slice_hash(host), grpc_slice_hash(path));
-  for (size_t i = 0; i <= registered_method_max_probes_; i++) {
-    ChannelRegisteredMethod* rm =
-        &(*registered_methods_)[(hash + i) % registered_methods_->size()];
-    if (rm->server_registered_method == nullptr) break;
-    if (!rm->has_host) continue;
-    if (rm->host != host) continue;
+Server::RegisteredMethod* Server::ChannelData::GetRegisteredMethod(
+    const absl::string_view& host, const absl::string_view& path) {
+  if (server_->registered_methods_.empty()) return nullptr;
+  // check for an exact match with host or a wildcard method definition (no host
+  // set)
+  uint32_t hash =
+      MixHash32((host.empty()) ? 0 : absl::HashOf(host), absl::HashOf(path));
+  for (size_t i = 0; i < server_->registered_methods_[hash].size(); i++) {
+    RegisteredMethod* rm = ((server_->registered_methods_)[hash])[i].get();
     if (rm->method != path) continue;
-    return rm;
-  }
-  // check for a wildcard method definition (no host set)
-  hash = MixHash32(0, grpc_slice_hash(path));
-  for (size_t i = 0; i <= registered_method_max_probes_; i++) {
-    ChannelRegisteredMethod* rm =
-        &(*registered_methods_)[(hash + i) % registered_methods_->size()];
-    if (rm->server_registered_method == nullptr) break;
-    if (rm->has_host) continue;
-    if (rm->method != path) continue;
+    if (!host.empty()) {
+      if (rm->host.empty() || rm->host != host) continue;
+    } else {
+      if (!rm->host.empty()) continue;
+    }
     return rm;
   }
   return nullptr;
@@ -1303,13 +1267,13 @@ ArenaPromise<ServerMetadataHandle> Server::ChannelData::MakeCallPromise(
   Timestamp deadline = GetContext<CallContext>()->deadline();
   // Find request matcher.
   RequestMatcherInterface* matcher;
-  ChannelRegisteredMethod* rm =
-      chand->GetRegisteredMethod(host_ptr->c_slice(), path->c_slice());
+  RegisteredMethod* rm = chand->GetRegisteredMethod(host_ptr->as_string_view(),
+                                                    path->as_string_view());
   ArenaPromise<absl::StatusOr<NextResult<MessageHandle>>>
       maybe_read_first_message([] { return NextResult<MessageHandle>(); });
   if (rm != nullptr) {
-    matcher = rm->server_registered_method->matcher.get();
-    switch (rm->server_registered_method->payload_handling) {
+    matcher = rm->matcher.get();
+    switch (rm->payload_handling) {
       case GRPC_SRM_PAYLOAD_NONE:
         break;
       case GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER:
@@ -1563,11 +1527,11 @@ void Server::CallData::StartNewRpc(grpc_call_element* elem) {
   grpc_server_register_method_payload_handling payload_handling =
       GRPC_SRM_PAYLOAD_NONE;
   if (path_.has_value() && host_.has_value()) {
-    ChannelRegisteredMethod* rm =
-        chand->GetRegisteredMethod(host_->c_slice(), path_->c_slice());
+    RegisteredMethod* rm = chand->GetRegisteredMethod(host_->as_string_view(),
+                                                      path_->as_string_view());
     if (rm != nullptr) {
-      matcher_ = rm->server_registered_method->matcher.get();
-      payload_handling = rm->server_registered_method->payload_handling;
+      matcher_ = rm->matcher.get();
+      payload_handling = rm->payload_handling;
     }
   }
   // Start recv_message op if needed.

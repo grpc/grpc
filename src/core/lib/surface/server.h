@@ -196,14 +196,6 @@ class Server : public InternallyRefCounted<Server>,
  private:
   struct RequestedCall;
 
-  struct ChannelRegisteredMethod {
-    RegisteredMethod* server_registered_method = nullptr;
-    uint32_t flags;
-    bool has_host;
-    Slice method;
-    Slice host;
-  };
-
   class RequestMatcherInterface;
   class RealRequestMatcher;
   class AllocatingRequestMatcherBase;
@@ -224,8 +216,8 @@ class Server : public InternallyRefCounted<Server>,
     Channel* channel() const { return channel_.get(); }
     size_t cq_idx() const { return cq_idx_; }
 
-    ChannelRegisteredMethod* GetRegisteredMethod(const grpc_slice& host,
-                                                 const grpc_slice& path);
+    RegisteredMethod* GetRegisteredMethod(const absl::string_view& host,
+                                          const absl::string_view& path);
 
     // Filter vtable functions.
     static grpc_error_handle InitChannelElement(
@@ -250,12 +242,6 @@ class Server : public InternallyRefCounted<Server>,
     // where to publish new incoming calls.
     size_t cq_idx_;
     absl::optional<std::list<ChannelData*>::iterator> list_position_;
-    // A hash-table of the methods and hosts of the registered methods.
-    // TODO(vjpai): Convert this to an STL map type as opposed to a direct
-    // bucket implementation. (Consider performance impact, hash function to
-    // use, etc.)
-    std::unique_ptr<std::vector<ChannelRegisteredMethod>> registered_methods_;
-    uint32_t registered_method_max_probes_;
     grpc_closure finish_destroy_channel_closure_;
     intptr_t channelz_socket_uuid_;
   };
@@ -448,7 +434,10 @@ class Server : public InternallyRefCounted<Server>,
   bool starting_ ABSL_GUARDED_BY(mu_global_) = false;
   CondVar starting_cv_;
 
-  std::vector<std::unique_ptr<RegisteredMethod>> registered_methods_;
+  std::unordered_map<uint32_t /*hash of host and method*/,
+                     std::vector<std::unique_ptr<
+                         RegisteredMethod>> /*list of registered methods*/>
+      registered_methods_;
 
   // Request matcher for unregistered methods.
   std::unique_ptr<RequestMatcherInterface> unregistered_request_matcher_;
