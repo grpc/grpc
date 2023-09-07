@@ -209,6 +209,7 @@ class MetadataTest(unittest.TestCase):
                 _EXPECTED_TRAILING_METADATA, call.trailing_metadata()
             )
         )
+        self.assertEqual(1, 2)
 
     def testUnaryStream(self):
         multi_callable = self._channel.unary_stream(_UNARY_STREAM)
