@@ -224,7 +224,7 @@ class FakeResolverResponseGeneratorWrapper {
 
   void SetNextResolutionUponError(const std::vector<int>& ports) {
     grpc_core::ExecCtx exec_ctx;
-    response_generator_->SetReresolutionResponse(
+    response_generator_->SetReresolutionResponseSynchronously(
         BuildFakeResults(ipv6_only_, ports));
   }
 

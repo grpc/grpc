@@ -81,7 +81,18 @@ class FakeResolverResponseGenerator
   // when re-resolution is requested (via \a RequestReresolutionLocked()).
   // The new re-resolution response replaces any previous re-resolution
   // response that may have been set by a previous call.
-  void SetReresolutionResponse(Resolver::Result result);
+  // notify_when_set is an optional notification to signal when the response has
+  // been set.
+  void SetReresolutionResponseAndNotify(Resolver::Result result,
+                                        Notification* notify_when_set);
+  void SetReresolutionResponseAsync(Resolver::Result result) {
+    SetReresolutionResponseAndNotify(std::move(result), nullptr);
+  }
+  void SetReresolutionResponseSynchronously(Resolver::Result result) {
+    Notification n;
+    SetReresolutionResponseAndNotify(std::move(result), &n);
+    n.WaitForNotification();
+  }
 
   // Unsets the re-resolution response.  After this, the fake resolver will
   // not return anything when \a RequestReresolutionLocked() is called.

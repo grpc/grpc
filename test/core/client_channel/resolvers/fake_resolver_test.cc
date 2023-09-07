@@ -170,7 +170,7 @@ TEST(FakeResolverTest, FakeResolver) {
   result_handler->SetExpectedAndEvent(reresolution_result, &ev3);
   // Set reresolution_results.
   // No result will be returned until re-resolution is requested.
-  response_generator->SetReresolutionResponse(reresolution_result);
+  response_generator->SetReresolutionResponseSynchronously(reresolution_result);
   grpc_core::ExecCtx::Get()->Flush();
   // Trigger a re-resolution.
   resolver->RequestReresolutionLocked();

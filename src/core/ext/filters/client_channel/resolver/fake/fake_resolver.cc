@@ -27,6 +27,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
+#include "fake_resolver.h"
 
 #include <grpc/support/log.h>
 
@@ -236,8 +237,8 @@ void FakeResolverResponseGenerator::SetResponseAndNotify(
       DEBUG_LOCATION);
 }
 
-void FakeResolverResponseGenerator::SetReresolutionResponse(
-    Resolver::Result result) {
+void FakeResolverResponseGenerator::SetReresolutionResponseAndNotify(
+    Resolver::Result result, Notification* notify_when_set) {
   RefCountedPtr<FakeResolver> resolver;
   {
     MutexLock lock(&mu_);
@@ -247,7 +248,11 @@ void FakeResolverResponseGenerator::SetReresolutionResponse(
   FakeResolverResponseSetter* arg = new FakeResolverResponseSetter(
       resolver, std::move(result), true /* has_result */);
   resolver->work_serializer_->Run(
-      [arg]() { arg->SetReresolutionResponseLocked(); }, DEBUG_LOCATION);
+      [arg, notify_when_set]() {
+        arg->SetReresolutionResponseLocked();
+        if (notify_when_set != nullptr) notify_when_set->Notify();
+      },
+      DEBUG_LOCATION);
 }
 
 void FakeResolverResponseGenerator::UnsetReresolutionResponse() {
