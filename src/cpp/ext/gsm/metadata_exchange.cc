@@ -215,7 +215,7 @@ class MeshLabelsIterable : public LabelsIterable {
   absl::optional<std::pair<absl::string_view, absl::string_view>> Next()
       override {
     auto& struct_pb = GetDecodedMetadata();
-    auto local_labels_size = local_labels_.size();
+    size_t local_labels_size = local_labels_.size();
     if (pos_ < local_labels_size) {
       return local_labels_[pos_++];
     }
@@ -254,7 +254,7 @@ class MeshLabelsIterable : public LabelsIterable {
     if (type_ != GcpResourceType::kGke) {
       return local_labels_.size() + 1;
     }
-    return local_labels_.size() + kGkeAttributeList.size();
+    return local_labels_.size() + kGkeAttributeList.size() + 1;
   }
 
   void ResetIteratorPosition() override { pos_ = 0; }

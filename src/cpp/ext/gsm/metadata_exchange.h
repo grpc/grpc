@@ -56,7 +56,7 @@ class ServiceMeshLabelsInjector : public LabelsInjector {
 
 // Returns the mesh ID by reading and parsing the bootstrap file. Returns
 // "unknown" if for some reason, mesh ID could not be figured out.
-// Exposed in header for test purposes.
+// EXPOSED FOR TESTING PURPOSES ONLY.
 std::string GetMeshId();
 
 }  // namespace internal
