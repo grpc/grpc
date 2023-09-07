@@ -289,12 +289,12 @@ TEST_F(OTelPluginEnd2EndTest, NoMeterProviderRegistered) {
 }
 
 // Test that a channel selector returning true records metrics on the channel.
-TEST_F(OTelPluginEnd2EndTest, ChannelSelectorReturnsTrue) {
+TEST_F(OTelPluginEnd2EndTest, TargetSelectorReturnsTrue) {
   Init({grpc::internal::OTelClientAttemptStartedInstrumentName()}, /*resource=*/
        opentelemetry::sdk::resource::Resource::Create({}),
        /*labels_injector=*/nullptr,
        /*test_no_meter_provider=*/false,
-       /*channel_selector=*/
+       /*target_selector=*/
        [](absl::string_view /*target*/) { return true; });
   SendRPC();
   const char* kMetricName = "grpc.client.attempt.started";
@@ -322,14 +322,14 @@ TEST_F(OTelPluginEnd2EndTest, ChannelSelectorReturnsTrue) {
   EXPECT_EQ(*target_value, canonical_server_address_);
 }
 
-// Test that a channel selector returning false does not record metrics on the
+// Test that a target selector returning false does not record metrics on the
 // channel.
-TEST_F(OTelPluginEnd2EndTest, ChannelSelectorReturnsFalse) {
+TEST_F(OTelPluginEnd2EndTest, TargetSelectorReturnsFalse) {
   Init({grpc::internal::OTelClientAttemptStartedInstrumentName()}, /*resource=*/
        opentelemetry::sdk::resource::Resource::Create({}),
        /*labels_injector=*/nullptr,
        /*test_no_meter_provider=*/false,
-       /*channel_selector=*/
+       /*target_selector=*/
        [server_address = canonical_server_address_](
            absl::string_view /*target*/) { return false; });
   SendRPC();

@@ -41,7 +41,7 @@ void OTelPluginEnd2EndTest::Init(
     std::unique_ptr<grpc::internal::LabelsInjector> labels_injector,
     bool test_no_meter_provider,
     absl::AnyInvocable<bool(absl::string_view /*target*/) const>
-        channel_selector) {
+        target_selector) {
   // We are resetting the MeterProvider and OpenTelemetry plugin at the start
   // of each test to avoid test results from one test carrying over to another
   // test. (Some measurements can get arbitrarily delayed.)
@@ -62,7 +62,7 @@ void OTelPluginEnd2EndTest::Init(
     ot_builder.SetMeterProvider(std::move(meter_provider));
   }
   ot_builder.SetLabelsInjector(std::move(labels_injector));
-  ot_builder.SetChannelSelector(std::move(channel_selector));
+  ot_builder.SetTargetSelector(std::move(target_selector));
   ot_builder.BuildAndRegisterGlobal();
   grpc_init();
   grpc::ServerBuilder builder;
