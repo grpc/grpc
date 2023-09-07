@@ -16,29 +16,21 @@
 
 #include "src/core/ext/xds/xds_http_filters.h"
 
-#include <algorithm>
-#include <initializer_list>
 #include <string>
 #include <utility>
-#include <vector>
 
 #include <google/protobuf/any.pb.h>
 #include <google/protobuf/duration.pb.h>
 #include <google/protobuf/wrappers.pb.h>
 
 #include "absl/status/status.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/strip.h"
 #include "absl/types/variant.h"
 #include "gtest/gtest.h"
-#include "upb/reflection/def.hpp"
-#include "upb/upb.hpp"
 
 #include <grpc/grpc.h>
 #include <grpc/status.h>
 #include <grpc/support/json.h>
 #include <grpc/support/log.h>
-#include <grpcpp/impl/codegen/config_protobuf.h>
 
 #include "src/core/ext/filters/fault_injection/fault_injection_filter.h"
 #include "src/core/ext/filters/fault_injection/fault_injection_service_config_parser.h"

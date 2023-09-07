@@ -16,6 +16,8 @@
 #ifndef GRPC_TEST_CORE_XDS_XDS_HTTP_FILTER_TEST_LIB_H
 #define GRPC_TEST_CORE_XDS_XDS_HTTP_FILTER_TEST_LIB_H
 
+#include <grpcpp/impl/codegen/config_protobuf.h>
+
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_client.h"
 
