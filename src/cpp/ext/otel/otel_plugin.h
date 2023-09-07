@@ -29,6 +29,7 @@
 #include <utility>
 
 #include "absl/container/flat_hash_set.h"
+#include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "opentelemetry/metrics/meter_provider.h"
