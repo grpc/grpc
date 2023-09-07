@@ -101,6 +101,11 @@ const char* const description_jitter_max_idle =
     "only on max connection age, but it seems like this could smooth out some "
     "herding problems.";
 const char* const additional_constraints_jitter_max_idle = "{}";
+const char* const description_work_serializer_dispatch =
+    "Have the work serializer dispatch work to event engine for every "
+    "callback, instead of running things inline in the first thread that "
+    "successfully enqueues work.";
+const char* const additional_constraints_work_serializer_dispatch = "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -152,6 +157,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_keepalive_server_fix, false, false},
     {"jitter_max_idle", description_jitter_max_idle,
      additional_constraints_jitter_max_idle, true, true},
+    {"work_serializer_dispatch", description_work_serializer_dispatch,
+     additional_constraints_work_serializer_dispatch, true, true},
 };
 
 }  // namespace grpc_core
@@ -237,6 +244,11 @@ const char* const description_jitter_max_idle =
     "only on max connection age, but it seems like this could smooth out some "
     "herding problems.";
 const char* const additional_constraints_jitter_max_idle = "{}";
+const char* const description_work_serializer_dispatch =
+    "Have the work serializer dispatch work to event engine for every "
+    "callback, instead of running things inline in the first thread that "
+    "successfully enqueues work.";
+const char* const additional_constraints_work_serializer_dispatch = "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -288,6 +300,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_keepalive_server_fix, false, false},
     {"jitter_max_idle", description_jitter_max_idle,
      additional_constraints_jitter_max_idle, true, true},
+    {"work_serializer_dispatch", description_work_serializer_dispatch,
+     additional_constraints_work_serializer_dispatch, true, true},
 };
 
 }  // namespace grpc_core
@@ -373,6 +387,11 @@ const char* const description_jitter_max_idle =
     "only on max connection age, but it seems like this could smooth out some "
     "herding problems.";
 const char* const additional_constraints_jitter_max_idle = "{}";
+const char* const description_work_serializer_dispatch =
+    "Have the work serializer dispatch work to event engine for every "
+    "callback, instead of running things inline in the first thread that "
+    "successfully enqueues work.";
+const char* const additional_constraints_work_serializer_dispatch = "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -424,6 +443,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_keepalive_server_fix, false, false},
     {"jitter_max_idle", description_jitter_max_idle,
      additional_constraints_jitter_max_idle, true, true},
+    {"work_serializer_dispatch", description_work_serializer_dispatch,
+     additional_constraints_work_serializer_dispatch, true, true},
 };
 
 }  // namespace grpc_core

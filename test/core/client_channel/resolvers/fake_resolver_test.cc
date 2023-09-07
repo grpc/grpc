@@ -40,6 +40,7 @@
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/work_serializer.h"
@@ -124,7 +125,8 @@ static grpc_core::Resolver::Result create_new_resolver_result() {
 TEST(FakeResolverTest, FakeResolver) {
   grpc_core::ExecCtx exec_ctx;
   std::shared_ptr<grpc_core::WorkSerializer> work_serializer =
-      std::make_shared<grpc_core::WorkSerializer>();
+      std::make_shared<grpc_core::WorkSerializer>(
+          grpc_event_engine::experimental::GetDefaultEventEngine());
   // Create resolver.
   ResultHandler* result_handler = new ResultHandler();
   grpc_core::RefCountedPtr<grpc_core::FakeResolverResponseGenerator>

@@ -45,6 +45,7 @@ grpc_cc_test(
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
+    tags = ["lb_policy_test"],
     deps = [
         ":lb_policy_test_lib",
         "//src/core:channel_args",
@@ -61,6 +62,7 @@ grpc_cc_test(
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
+    tags = ["lb_policy_test"],
     deps = [
         ":lb_policy_test_lib",
         "//src/core:channel_args",
@@ -76,7 +78,7 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
-    tags = ["no_test_ios"],
+    tags = ["no_test_ios", "lb_policy_test"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -93,6 +95,7 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "C++",
     uses_polling = False,
+    tags = ["lb_policy_test"],
     deps = [
         ":lb_policy_test_lib",
         "//src/core:channel_args",
@@ -108,7 +111,7 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
-    tags = ["no_test_ios"],
+    tags = ["no_test_ios", "lb_policy_test"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -124,6 +127,7 @@ grpc_cc_test(
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
+    tags = ["lb_policy_test"],
     deps = [
         ":lb_policy_test_lib",
         "//src/core:grpc_lb_policy_xds_override_host",
@@ -138,7 +142,7 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
-    tags = ["no_test_ios"],
+    tags = ["no_test_ios", "lb_policy_test"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -157,6 +161,7 @@ grpc_cc_test(
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
+    tags = ["lb_policy_test"],
     deps = [
         "//src/core:static_stride_scheduler",
     ],
@@ -173,6 +178,7 @@ grpc_cc_test(
     tags = [
         "no_mac",
         "no_windows",
+        "lb_policy_test",
     ],
     uses_event_engine = False,
     uses_polling = False,
@@ -189,7 +195,7 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
-    tags = ["no_test_ios"],
+    tags = ["no_test_ios", "lb_policy_test"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -204,6 +210,7 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "C++",
     uses_polling = False,
+    tags = ["lb_policy_test"],
     deps = [
         ":lb_policy_test_lib",
         "//src/core:grpc_lb_policy_weighted_round_robin",

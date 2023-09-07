@@ -40,6 +40,7 @@
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_client_stats.h"
 #include "src/core/lib/backoff/backoff.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -56,6 +57,7 @@
 namespace grpc_core {
 
 using ::grpc_event_engine::experimental::EventEngine;
+using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
 TraceFlag grpc_xds_client_trace(false, "xds_client");
 TraceFlag grpc_xds_client_refcount_trace(false, "xds_client_refcount");
@@ -1491,6 +1493,7 @@ XdsClient::XdsClient(
       xds_federation_enabled_(XdsFederationEnabled()),
       api_(this, &grpc_xds_client_trace, bootstrap_->node(), &symtab_,
            std::move(user_agent_name), std::move(user_agent_version)),
+      work_serializer_(engine),
       engine_(std::move(engine)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO, "[xds_client %p] creating xds client", this);

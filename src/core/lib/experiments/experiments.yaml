@@ -178,3 +178,11 @@
   owner: ctiller@google.com
   test_tags: []
   allow_in_fuzzing_config: true
+- name: work_serializer_dispatch
+  description:
+    Have the work serializer dispatch work to event engine for every callback,
+    instead of running things inline in the first thread that successfully
+    enqueues work.
+  expiry: 2023/02/10
+  owner: ctiller@google.com
+  test_tags: ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test", "lb_policy_test"]

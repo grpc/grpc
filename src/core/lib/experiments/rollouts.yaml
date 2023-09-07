@@ -92,3 +92,5 @@
   default: false
 - name: jitter_max_idle
   default: true
+- name: work_serializer_dispatch
+  default: true

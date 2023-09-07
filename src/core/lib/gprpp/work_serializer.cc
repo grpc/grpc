@@ -26,9 +26,15 @@
 #include <thread>
 #include <utility>
 
+#include "orphanable.h"
+#include "sync.h"
+#include "work_serializer.h"
+
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/mpscq.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -41,18 +47,49 @@ DebugOnlyTraceFlag grpc_work_serializer_trace(false, "work_serializer");
 // WorkSerializer::WorkSerializerImpl
 //
 
-class WorkSerializer::WorkSerializerImpl : public Orphanable {
+class WorkSerializer::WorkSerializerImpl {
  public:
-  void Run(std::function<void()> callback, const DebugLocation& location);
-  void Schedule(std::function<void()> callback, const DebugLocation& location);
-  void DrainQueue();
-  void Orphan() override;
+  virtual ~WorkSerializerImpl() = default;
+  virtual void Run(std::function<void()> callback,
+                   const DebugLocation& location) = 0;
+  virtual void Schedule(std::function<void()> callback,
+                        const DebugLocation& location) = 0;
+  virtual void DrainQueue() = 0;
+  virtual void Orphan() = 0;
 
 #ifndef NDEBUG
   bool RunningInWorkSerializer() const {
     return std::this_thread::get_id() == current_thread_;
   }
 #endif
+
+ protected:
+#ifndef NDEBUG
+  void SetCurrentThread() { current_thread_ = std::this_thread::get_id(); }
+  void ClearCurrentThread() { current_thread_ = std::thread::id(); }
+#else
+  void SetCurrentThread() {}
+  void ClearCurrentThread() {}
+#endif
+
+ private:
+#ifndef NDEBUG
+  std::thread::id current_thread_;
+#endif
+};
+
+//
+// WorkSerializer::LegacyWorkSerializer
+//
+
+class WorkSerializer::LegacyWorkSerializer final : public WorkSerializerImpl {
+ public:
+  void Run(std::function<void()> callback,
+           const DebugLocation& location) override;
+  void Schedule(std::function<void()> callback,
+                const DebugLocation& location) override;
+  void DrainQueue() override;
+  void Orphan() override;
 
  private:
   struct CallbackWrapper {
@@ -93,13 +130,10 @@ class WorkSerializer::WorkSerializerImpl : public Orphanable {
   // orphaned.
   std::atomic<uint64_t> refs_{MakeRefPair(0, 1)};
   MultiProducerSingleConsumerQueue queue_;
-#ifndef NDEBUG
-  std::thread::id current_thread_;
-#endif
 };
 
-void WorkSerializer::WorkSerializerImpl::Run(std::function<void()> callback,
-                                             const DebugLocation& location) {
+void WorkSerializer::LegacyWorkSerializer::Run(std::function<void()> callback,
+                                               const DebugLocation& location) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
     gpr_log(GPR_INFO, "WorkSerializer::Run() %p Scheduling callback [%s:%d]",
             this, location.file(), location.line());
@@ -112,9 +146,7 @@ void WorkSerializer::WorkSerializerImpl::Run(std::function<void()> callback,
   GPR_DEBUG_ASSERT(GetSize(prev_ref_pair) > 0);
   if (GetOwners(prev_ref_pair) == 0) {
     // We took ownership of the WorkSerializer. Invoke callback and drain queue.
-#ifndef NDEBUG
-    current_thread_ = std::this_thread::get_id();
-#endif
+    SetCurrentThread();
     if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
       gpr_log(GPR_INFO, "  Executing immediately");
     }
@@ -137,7 +169,7 @@ void WorkSerializer::WorkSerializerImpl::Run(std::function<void()> callback,
   }
 }
 
-void WorkSerializer::WorkSerializerImpl::Schedule(
+void WorkSerializer::LegacyWorkSerializer::Schedule(
     std::function<void()> callback, const DebugLocation& location) {
   CallbackWrapper* cb_wrapper =
       new CallbackWrapper(std::move(callback), location);
@@ -150,7 +182,7 @@ void WorkSerializer::WorkSerializerImpl::Schedule(
   queue_.Push(&cb_wrapper->mpscq_node);
 }
 
-void WorkSerializer::WorkSerializerImpl::Orphan() {
+void WorkSerializer::LegacyWorkSerializer::Orphan() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
     gpr_log(GPR_INFO, "WorkSerializer::Orphan() %p", this);
   }
@@ -166,7 +198,7 @@ void WorkSerializer::WorkSerializerImpl::Orphan() {
 
 // The thread that calls this loans itself to the work serializer so as to
 // execute all the scheduled callbacks.
-void WorkSerializer::WorkSerializerImpl::DrainQueue() {
+void WorkSerializer::LegacyWorkSerializer::DrainQueue() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
     gpr_log(GPR_INFO, "WorkSerializer::DrainQueue() %p", this);
   }
@@ -175,9 +207,7 @@ void WorkSerializer::WorkSerializerImpl::DrainQueue() {
   const uint64_t prev_ref_pair =
       refs_.fetch_add(MakeRefPair(1, 1), std::memory_order_acq_rel);
   if (GetOwners(prev_ref_pair) == 0) {
-#ifndef NDEBUG
-    current_thread_ = std::this_thread::get_id();
-#endif
+    ClearCurrentThread();
     // We took ownership of the WorkSerializer. Drain the queue.
     DrainQueueOwned();
   } else {
@@ -189,7 +219,7 @@ void WorkSerializer::WorkSerializerImpl::DrainQueue() {
   }
 }
 
-void WorkSerializer::WorkSerializerImpl::DrainQueueOwned() {
+void WorkSerializer::LegacyWorkSerializer::DrainQueueOwned() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
     gpr_log(GPR_INFO, "WorkSerializer::DrainQueueOwned() %p", this);
   }
@@ -206,12 +236,10 @@ void WorkSerializer::WorkSerializerImpl::DrainQueueOwned() {
     }
     if (GetSize(prev_ref_pair) == 2) {
       // Queue drained. Give up ownership but only if queue remains empty.
-#ifndef NDEBUG
       // Reset current_thread_ before giving up ownership to avoid TSAN
       // race.  If we don't wind up giving up ownership, we'll set this
       // again below before we pull the next callback out of the queue.
-      current_thread_ = std::thread::id();
-#endif
+      ClearCurrentThread();
       uint64_t expected = MakeRefPair(1, 1);
       if (refs_.compare_exchange_strong(expected, MakeRefPair(0, 1),
                                         std::memory_order_acq_rel)) {
@@ -226,10 +254,8 @@ void WorkSerializer::WorkSerializerImpl::DrainQueueOwned() {
         delete this;
         return;
       }
-#ifndef NDEBUG
       // Didn't wind up giving up ownership, so set current_thread_ again.
-      current_thread_ = std::this_thread::get_id();
-#endif
+      SetCurrentThread();
     }
     // There is at least one callback on the queue. Pop the callback from the
     // queue and execute it.
@@ -254,13 +280,115 @@ void WorkSerializer::WorkSerializerImpl::DrainQueueOwned() {
 }
 
 //
+// WorkSerializer::DispatchingWorkSerializer
+//
+
+class WorkSerializer::DispatchingWorkSerializer final
+    : public WorkSerializerImpl,
+      private grpc_event_engine::experimental::EventEngine::Closure {
+ public:
+  explicit DispatchingWorkSerializer(
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+          event_engine)
+      : event_engine_(std::move(event_engine)) {}
+  void Run(std::function<void()> callback,
+           const DebugLocation& location) override;
+  void Schedule(std::function<void()> callback,
+                const DebugLocation& location) override {
+    Run(callback, location);
+  }
+  void DrainQueue() override {}
+  void Orphan() override;
+
+ private:
+  struct CallbackWrapper {
+    CallbackWrapper(std::function<void()> cb, const DebugLocation& loc)
+        : callback(std::move(cb)), location(loc) {}
+    std::function<void()> callback;
+    GPR_NO_UNIQUE_ADDRESS DebugLocation location;
+  };
+  using CallbackVector = absl::InlinedVector<CallbackWrapper, 1>;
+
+  void Run() override;
+
+  CallbackVector processing_;
+  const std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+      event_engine_;
+  bool running_ ABSL_GUARDED_BY(mu_) = false;
+  bool orphaned_ ABSL_GUARDED_BY(mu_) = false;
+  Mutex mu_;
+  CallbackVector incoming_ ABSL_GUARDED_BY(mu_);
+};
+
+void WorkSerializer::DispatchingWorkSerializer::Orphan() {
+  ReleasableMutexLock lock(&mu_);
+  if (!running_) {
+    lock.Release();
+    delete this;
+    return;
+  }
+  orphaned_ = true;
+}
+
+void WorkSerializer::DispatchingWorkSerializer::Run(
+    std::function<void()> callback, const DebugLocation& location) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
+    gpr_log(GPR_INFO, "WorkSerializer[%p] Scheduling callback [%s:%d]", this,
+            location.file(), location.line());
+  }
+  MutexLock lock(&mu_);
+  if (!running_) {
+    running_ = true;
+    GPR_ASSERT(processing_.empty());
+    processing_.emplace_back(std::move(callback), location);
+    event_engine_->Run(this);
+  } else {
+    incoming_.emplace_back(std::move(callback), location);
+  }
+}
+
+void WorkSerializer::DispatchingWorkSerializer::Run() {
+  auto& cb = processing_.back();
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
+    gpr_log(GPR_INFO, "WorkSerializer[%p] Executing callback [%s:%d]", this,
+            cb.location.file(), cb.location.line());
+  }
+  SetCurrentThread();
+  cb.callback();
+  processing_.pop_back();
+  ClearCurrentThread();
+  if (processing_.empty()) {
+    processing_.shrink_to_fit();
+    ReleasableMutexLock lock(&mu_);
+    processing_.swap(incoming_);
+    if (processing_.empty()) {
+      running_ = false;
+      if (orphaned_) {
+        lock.Release();
+        delete this;
+      }
+      return;
+    }
+    lock.Release();
+    std::reverse(processing_.begin(), processing_.end());
+  }
+  event_engine_->Run(this);
+}
+
+//
 // WorkSerializer
 //
 
-WorkSerializer::WorkSerializer()
-    : impl_(MakeOrphanable<WorkSerializerImpl>()) {}
+WorkSerializer::WorkSerializer(
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine)
+    : impl_(IsWorkSerializerDispatchEnabled()
+                ? OrphanablePtr<WorkSerializerImpl>(
+                      MakeOrphanable<DispatchingWorkSerializer>(
+                          std::move(event_engine)))
+                : OrphanablePtr<WorkSerializerImpl>(
+                      MakeOrphanable<LegacyWorkSerializer>())) {}
 
-WorkSerializer::~WorkSerializer() {}
+WorkSerializer::~WorkSerializer() = default;
 
 void WorkSerializer::Run(std::function<void()> callback,
                          const DebugLocation& location) {

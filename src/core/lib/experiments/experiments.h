@@ -85,6 +85,8 @@ inline bool IsKeepaliveFixEnabled() { return false; }
 inline bool IsKeepaliveServerFixEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_JITTER_MAX_IDLE
 inline bool IsJitterMaxIdleEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_DISPATCH
+inline bool IsWorkSerializerDispatchEnabled() { return true; }
 
 #elif defined(GPR_WINDOWS)
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -113,6 +115,8 @@ inline bool IsKeepaliveFixEnabled() { return false; }
 inline bool IsKeepaliveServerFixEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_JITTER_MAX_IDLE
 inline bool IsJitterMaxIdleEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_DISPATCH
+inline bool IsWorkSerializerDispatchEnabled() { return true; }
 
 #else
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -141,6 +145,8 @@ inline bool IsKeepaliveFixEnabled() { return false; }
 inline bool IsKeepaliveServerFixEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_JITTER_MAX_IDLE
 inline bool IsJitterMaxIdleEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_DISPATCH
+inline bool IsWorkSerializerDispatchEnabled() { return true; }
 #endif
 
 #else
@@ -194,8 +200,12 @@ inline bool IsKeepaliveFixEnabled() { return IsExperimentEnabled(19); }
 inline bool IsKeepaliveServerFixEnabled() { return IsExperimentEnabled(20); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_JITTER_MAX_IDLE
 inline bool IsJitterMaxIdleEnabled() { return IsExperimentEnabled(21); }
+#define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_DISPATCH
+inline bool IsWorkSerializerDispatchEnabled() {
+  return IsExperimentEnabled(22);
+}
 
-constexpr const size_t kNumExperiments = 22;
+constexpr const size_t kNumExperiments = 23;
 extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];
 
 #endif

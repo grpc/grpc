@@ -1178,7 +1178,8 @@ ClientChannel::ClientChannel(grpc_channel_element_args* args,
       interested_parties_(grpc_pollset_set_create()),
       service_config_parser_index_(
           internal::ClientChannelServiceConfigParser::ParserIndex()),
-      work_serializer_(std::make_shared<WorkSerializer>()),
+      work_serializer_(
+          std::make_shared<WorkSerializer>(*args->channel_stack->event_engine)),
       state_tracker_("client_channel", GRPC_CHANNEL_IDLE),
       subchannel_pool_(GetSubchannelPool(channel_args_)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_trace)) {
@@ -1738,6 +1739,10 @@ void ClientChannel::DestroyResolverAndLbPolicyLocked() {
 void ClientChannel::UpdateStateLocked(grpc_connectivity_state state,
                                       const absl::Status& status,
                                       const char* reason) {
+  if (state != GRPC_CHANNEL_SHUTDOWN &&
+      state_tracker_.state() == GRPC_CHANNEL_SHUTDOWN) {
+    Crash("Illegal transition SHUTDOWN -> anything");
+  }
   state_tracker_.SetState(state, status, reason);
   if (channelz_node_ != nullptr) {
     channelz_node_->SetConnectivityState(state);
@@ -1934,10 +1939,12 @@ void ClientChannel::GetChannelInfo(grpc_channel_element* elem,
 }
 
 void ClientChannel::TryToConnectLocked() {
-  if (lb_policy_ != nullptr) {
-    lb_policy_->ExitIdleLocked();
-  } else if (resolver_ == nullptr) {
-    CreateResolverLocked();
+  if (disconnect_error_.ok()) {
+    if (lb_policy_ != nullptr) {
+      lb_policy_->ExitIdleLocked();
+    } else if (resolver_ == nullptr) {
+      CreateResolverLocked();
+    }
   }
   GRPC_CHANNEL_STACK_UNREF(owning_stack_, "TryToConnect");
 }

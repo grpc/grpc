@@ -58,7 +58,17 @@ EXPERIMENTS = {
         },
         "on": {
             "core_end2end_test": [
+                "work_serializer_dispatch",
                 "work_stealing",
+            ],
+            "cpp_end2end_test": [
+                "work_serializer_dispatch",
+            ],
+            "lb_policy_test": [
+                "work_serializer_dispatch",
+            ],
+            "xds_end2end_test": [
+                "work_serializer_dispatch",
             ],
         },
     },
@@ -103,7 +113,17 @@ EXPERIMENTS = {
         },
         "on": {
             "core_end2end_test": [
+                "work_serializer_dispatch",
                 "work_stealing",
+            ],
+            "cpp_end2end_test": [
+                "work_serializer_dispatch",
+            ],
+            "lb_policy_test": [
+                "work_serializer_dispatch",
+            ],
+            "xds_end2end_test": [
+                "work_serializer_dispatch",
             ],
         },
     },
@@ -158,7 +178,17 @@ EXPERIMENTS = {
         },
         "on": {
             "core_end2end_test": [
+                "work_serializer_dispatch",
                 "work_stealing",
+            ],
+            "cpp_end2end_test": [
+                "work_serializer_dispatch",
+            ],
+            "lb_policy_test": [
+                "work_serializer_dispatch",
+            ],
+            "xds_end2end_test": [
+                "work_serializer_dispatch",
             ],
         },
     },

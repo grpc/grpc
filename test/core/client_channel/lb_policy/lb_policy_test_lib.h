@@ -633,9 +633,6 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     const absl::optional<BackendMetricData> backend_metric_data_;
   };
 
-  LoadBalancingPolicyTest()
-      : work_serializer_(std::make_shared<WorkSerializer>()) {}
-
   void TearDown() override {
     // Note: Can't safely trigger this from inside the FakeHelper dtor,
     // because if there is a picker in the queue that is holding a ref
@@ -1096,9 +1093,10 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     return &it->second;
   }
 
-  std::shared_ptr<WorkSerializer> work_serializer_;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_ =
       grpc_event_engine::experimental::GetDefaultEventEngine();
+  std::shared_ptr<WorkSerializer> work_serializer_ =
+      std::make_shared<WorkSerializer>(event_engine_);
   FakeHelper* helper_ = nullptr;
   std::map<SubchannelKey, SubchannelState> subchannel_pool_;
 };
