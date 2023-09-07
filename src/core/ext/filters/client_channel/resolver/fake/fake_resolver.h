@@ -88,6 +88,10 @@ class FakeResolverResponseGenerator
     return GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR;
   }
 
+  // Wait for a resolver to be set (setting may be happening asynchronously, so
+  // this may block - consider it test only).
+  void WaitForResolverSet();
+
   static int ChannelArgsCompare(const FakeResolverResponseGenerator* a,
                                 const FakeResolverResponseGenerator* b) {
     return QsortCompare(a, b);
@@ -100,6 +104,7 @@ class FakeResolverResponseGenerator
 
   // Mutex protecting the members below.
   Mutex mu_;
+  CondVar cv_;
   RefCountedPtr<FakeResolver> resolver_ ABSL_GUARDED_BY(mu_);
   Resolver::Result result_ ABSL_GUARDED_BY(mu_);
   bool has_result_ ABSL_GUARDED_BY(mu_) = false;

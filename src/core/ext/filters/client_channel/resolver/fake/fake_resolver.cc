@@ -289,6 +289,7 @@ void FakeResolverResponseGenerator::SetFakeResolver(
     RefCountedPtr<FakeResolver> resolver) {
   MutexLock lock(&mu_);
   resolver_ = std::move(resolver);
+  cv_.SignalAll();
   if (resolver_ == nullptr) return;
   if (has_result_) {
     FakeResolverResponseSetter* arg =
@@ -296,6 +297,13 @@ void FakeResolverResponseGenerator::SetFakeResolver(
     resolver_->work_serializer_->Run([arg]() { arg->SetResponseLocked(); },
                                      DEBUG_LOCATION);
     has_result_ = false;
+  }
+}
+
+void FakeResolverResponseGenerator::WaitForResolverSet() {
+  MutexLock lock(&mu_);
+  while (resolver_ == nullptr) {
+    cv_.Wait(&mu_);
   }
 }
 
