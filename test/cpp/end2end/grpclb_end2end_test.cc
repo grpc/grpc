@@ -605,7 +605,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Resolver::Result result = MakeResolverResult(
         balancer_address_data, backend_address_data, service_config_json);
-    response_generator_->SetResponse(std::move(result));
+    response_generator_->SetResponseSynchronously(std::move(result));
   }
 
   void SetNextReresolutionResponse(

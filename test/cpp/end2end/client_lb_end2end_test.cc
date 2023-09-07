@@ -218,7 +218,7 @@ class FakeResolverResponseGeneratorWrapper {
                          const grpc_core::ChannelArgs& per_address_args =
                              grpc_core::ChannelArgs()) {
     grpc_core::ExecCtx exec_ctx;
-    response_generator_->SetResponse(BuildFakeResults(
+    response_generator_->SetResponseSynchronously(BuildFakeResults(
         ipv6_only_, ports, service_config_json, per_address_args));
   }
 
@@ -235,7 +235,7 @@ class FakeResolverResponseGeneratorWrapper {
 
   void SetResponse(grpc_core::Resolver::Result result) {
     grpc_core::ExecCtx exec_ctx;
-    response_generator_->SetResponse(std::move(result));
+    response_generator_->SetResponseSynchronously(std::move(result));
   }
 
   grpc_core::FakeResolverResponseGenerator* Get() const {

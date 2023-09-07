@@ -25,6 +25,7 @@
 #include <grpc/grpc.h>
 
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -57,7 +58,22 @@ class FakeResolverResponseGenerator
   // instance to trigger a new resolution with the specified result. If the
   // resolver is not available yet, delays response setting until it is. This
   // can be called at most once before the resolver is available.
-  void SetResponse(Resolver::Result result);
+  // notify_when_set is an optional notification to signal when the response has
+  // been set.
+  void SetResponseAndNotify(Resolver::Result result,
+                            Notification* notify_when_set);
+
+  // Same as SetResponseAndNotify(), assume that async setting is fine
+  void SetResponseAsync(Resolver::Result result) {
+    SetResponseAndNotify(std::move(result), nullptr);
+  }
+
+  // Same as SetResponseAndNotify(), but create and wait for the notification
+  void SetResponseSynchronously(Resolver::Result result) {
+    Notification n;
+    SetResponseAndNotify(std::move(result), &n);
+    n.WaitForNotification();
+  }
 
   // Sets the re-resolution response, which is returned by the fake resolver
   // when re-resolution is requested (via \a RequestReresolutionLocked()).

@@ -145,7 +145,7 @@ TEST(FakeResolverTest, FakeResolver) {
   gpr_event ev1;
   gpr_event_init(&ev1);
   result_handler->SetExpectedAndEvent(result, &ev1);
-  response_generator->SetResponse(std::move(result));
+  response_generator->SetResponseSynchronously(std::move(result));
   grpc_core::ExecCtx::Get()->Flush();
   ASSERT_NE(gpr_event_wait(&ev1, grpc_timeout_seconds_to_deadline(5)), nullptr);
   // Test 2: update resolution.
@@ -156,7 +156,7 @@ TEST(FakeResolverTest, FakeResolver) {
   gpr_event ev2;
   gpr_event_init(&ev2);
   result_handler->SetExpectedAndEvent(result, &ev2);
-  response_generator->SetResponse(std::move(result));
+  response_generator->SetResponseSynchronously(std::move(result));
   grpc_core::ExecCtx::Get()->Flush();
   ASSERT_NE(gpr_event_wait(&ev2, grpc_timeout_seconds_to_deadline(5)), nullptr);
   // Test 3: normal re-resolution.
@@ -195,7 +195,7 @@ TEST(FakeResolverTest, FakeResolver) {
   gpr_event ev5;
   gpr_event_init(&ev5);
   result_handler->SetExpectedAndEvent(result, &ev5);
-  response_generator->SetResponse(std::move(result));
+  response_generator->SetResponseSynchronously(std::move(result));
   grpc_core::ExecCtx::Get()->Flush();
   ASSERT_NE(gpr_event_wait(&ev5, grpc_timeout_seconds_to_deadline(5)), nullptr);
   // Test 6: no-op.

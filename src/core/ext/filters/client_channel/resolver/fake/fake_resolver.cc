@@ -214,7 +214,8 @@ FakeResolverResponseGenerator::FakeResolverResponseGenerator() {}
 
 FakeResolverResponseGenerator::~FakeResolverResponseGenerator() {}
 
-void FakeResolverResponseGenerator::SetResponse(Resolver::Result result) {
+void FakeResolverResponseGenerator::SetResponseAndNotify(
+    Resolver::Result result, Notification* notify_when_set) {
   RefCountedPtr<FakeResolver> resolver;
   {
     MutexLock lock(&mu_);
@@ -227,8 +228,12 @@ void FakeResolverResponseGenerator::SetResponse(Resolver::Result result) {
   }
   FakeResolverResponseSetter* arg =
       new FakeResolverResponseSetter(resolver, std::move(result));
-  resolver->work_serializer_->Run([arg]() { arg->SetResponseLocked(); },
-                                  DEBUG_LOCATION);
+  resolver->work_serializer_->Run(
+      [arg, notify_when_set]() {
+        arg->SetResponseLocked();
+        if (notify_when_set != nullptr) notify_when_set->Notify();
+      },
+      DEBUG_LOCATION);
 }
 
 void FakeResolverResponseGenerator::SetReresolutionResponse(
