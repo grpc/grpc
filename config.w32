@@ -21,7 +21,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\filters\\client_channel\\config_selector.cc " +
     "src\\core\\ext\\filters\\client_channel\\dynamic_filters.cc " +
     "src\\core\\ext\\filters\\client_channel\\global_subchannel_pool.cc " +
-    "src\\core\\ext\\filters\\client_channel\\http_proxy.cc " +
+    "src\\core\\ext\\filters\\client_channel\\http_proxy_mapper.cc " +
     "src\\core\\ext\\filters\\client_channel\\lb_policy\\address_filtering.cc " +
     "src\\core\\ext\\filters\\client_channel\\lb_policy\\child_policy_handler.cc " +
     "src\\core\\ext\\filters\\client_channel\\lb_policy\\grpclb\\client_load_reporting_filter.cc " +
@@ -1265,10 +1265,14 @@ if (PHP_GRPC != "no") {
     "third_party\\upb\\upb\\mem\\arena.c " +
     "third_party\\upb\\upb\\message\\accessors.c " +
     "third_party\\upb\\upb\\message\\message.c " +
-    "third_party\\upb\\upb\\mini_table\\common.c " +
-    "third_party\\upb\\upb\\mini_table\\decode.c " +
-    "third_party\\upb\\upb\\mini_table\\encode.c " +
+    "third_party\\upb\\upb\\mini_descriptor\\build_enum.c " +
+    "third_party\\upb\\upb\\mini_descriptor\\decode.c " +
+    "third_party\\upb\\upb\\mini_descriptor\\internal\\base92.c " +
+    "third_party\\upb\\upb\\mini_descriptor\\internal\\encode.c " +
+    "third_party\\upb\\upb\\mini_descriptor\\link.c " +
     "third_party\\upb\\upb\\mini_table\\extension_registry.c " +
+    "third_party\\upb\\upb\\mini_table\\internal\\message.c " +
+    "third_party\\upb\\upb\\mini_table\\message.c " +
     "third_party\\upb\\upb\\reflection\\def_builder.c " +
     "third_party\\upb\\upb\\reflection\\def_pool.c " +
     "third_party\\upb\\upb\\reflection\\def_type.c " +
@@ -1780,7 +1784,10 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb\\upb\\lex");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb\\upb\\mem");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb\\upb\\message");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb\\upb\\mini_descriptor");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb\\upb\\mini_descriptor\\internal");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb\\upb\\mini_table");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb\\upb\\mini_table\\internal");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb\\upb\\reflection");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb\\upb\\text");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb\\upb\\wire");

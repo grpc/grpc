@@ -1107,8 +1107,8 @@ src/core/ext/filters/client_channel/dynamic_filters.cc \
 src/core/ext/filters/client_channel/dynamic_filters.h \
 src/core/ext/filters/client_channel/global_subchannel_pool.cc \
 src/core/ext/filters/client_channel/global_subchannel_pool.h \
-src/core/ext/filters/client_channel/http_proxy.cc \
-src/core/ext/filters/client_channel/http_proxy.h \
+src/core/ext/filters/client_channel/http_proxy_mapper.cc \
+src/core/ext/filters/client_channel/http_proxy_mapper.h \
 src/core/ext/filters/client_channel/lb_policy/address_filtering.cc \
 src/core/ext/filters/client_channel/lb_policy/address_filtering.h \
 src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h \
@@ -1281,7 +1281,6 @@ src/core/ext/transport/chttp2/transport/decode_huff.cc \
 src/core/ext/transport/chttp2/transport/decode_huff.h \
 src/core/ext/transport/chttp2/transport/flow_control.cc \
 src/core/ext/transport/chttp2/transport/flow_control.h \
-src/core/ext/transport/chttp2/transport/frame.h \
 src/core/ext/transport/chttp2/transport/frame_data.cc \
 src/core/ext/transport/chttp2/transport/frame_data.h \
 src/core/ext/transport/chttp2/transport/frame_goaway.cc \
@@ -1312,6 +1311,7 @@ src/core/ext/transport/chttp2/transport/http_trace.h \
 src/core/ext/transport/chttp2/transport/huffsyms.cc \
 src/core/ext/transport/chttp2/transport/huffsyms.h \
 src/core/ext/transport/chttp2/transport/internal.h \
+src/core/ext/transport/chttp2/transport/legacy_frame.h \
 src/core/ext/transport/chttp2/transport/parsing.cc \
 src/core/ext/transport/chttp2/transport/ping_abuse_policy.cc \
 src/core/ext/transport/chttp2/transport/ping_abuse_policy.h \
@@ -2832,6 +2832,9 @@ src/cpp/util/byte_buffer_cc.cc \
 src/cpp/util/status.cc \
 src/cpp/util/string_ref.cc \
 src/cpp/util/time_cc.cc \
+third_party/upb/upb/generated_code_support.h \
+third_party/upb/upb/port/def.inc \
+third_party/upb/upb/port/undef.inc \
 third_party/xxhash/xxhash.h
 
 # This tag can be used to specify the character encoding of the source files

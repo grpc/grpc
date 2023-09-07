@@ -7,9 +7,7 @@
  * regenerated. */
 
 #include <stddef.h>
-#include "upb/collections/array_internal.h"
-#include "upb/message/internal.h"
-#include "upb/mini_table/enum_internal.h"
+#include "upb/generated_code_support.h"
 #include "xds/core/v3/authority.upb.h"
 #include "xds/annotations/v3/status.upb.h"
 #include "validate/validate.upb.h"
@@ -18,7 +16,7 @@
 #include "upb/port/def.inc"
 
 static const upb_MiniTableField xds_core_v3_Authority__fields[1] = {
-  {1, 0, 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {1, 0, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable xds_core_v3_Authority_msg_init = {

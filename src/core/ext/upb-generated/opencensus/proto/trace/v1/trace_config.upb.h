@@ -9,15 +9,7 @@
 #ifndef OPENCENSUS_PROTO_TRACE_V1_TRACE_CONFIG_PROTO_UPB_H_
 #define OPENCENSUS_PROTO_TRACE_V1_TRACE_CONFIG_PROTO_UPB_H_
 
-#include "upb/collections/array_internal.h"
-#include "upb/collections/map_gencode_util.h"
-#include "upb/message/accessors.h"
-#include "upb/message/internal.h"
-#include "upb/mini_table/enum_internal.h"
-#include "upb/wire/decode.h"
-#include "upb/wire/decode_fast.h"
-#include "upb/wire/encode.h"
-
+#include "upb/generated_code_support.h"
 // Must be last. 
 #include "upb/port/def.inc"
 
@@ -84,101 +76,101 @@ typedef enum {
   opencensus_proto_trace_v1_TraceConfig_sampler_NOT_SET = 0
 } opencensus_proto_trace_v1_TraceConfig_sampler_oneofcases;
 UPB_INLINE opencensus_proto_trace_v1_TraceConfig_sampler_oneofcases opencensus_proto_trace_v1_TraceConfig_sampler_case(const opencensus_proto_trace_v1_TraceConfig* msg) {
-  const upb_MiniTableField field = {1, UPB_SIZE(4, 40), -1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 40), -1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return (opencensus_proto_trace_v1_TraceConfig_sampler_oneofcases)upb_Message_WhichOneofFieldNumber(msg, &field);
 }
 UPB_INLINE void opencensus_proto_trace_v1_TraceConfig_clear_probability_sampler(opencensus_proto_trace_v1_TraceConfig* msg) {
-  const upb_MiniTableField field = {1, UPB_SIZE(4, 40), -1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 40), -1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const opencensus_proto_trace_v1_ProbabilitySampler* opencensus_proto_trace_v1_TraceConfig_probability_sampler(const opencensus_proto_trace_v1_TraceConfig* msg) {
   const opencensus_proto_trace_v1_ProbabilitySampler* default_val = NULL;
   const opencensus_proto_trace_v1_ProbabilitySampler* ret;
-  const upb_MiniTableField field = {1, UPB_SIZE(4, 40), -1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 40), -1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool opencensus_proto_trace_v1_TraceConfig_has_probability_sampler(const opencensus_proto_trace_v1_TraceConfig* msg) {
-  const upb_MiniTableField field = {1, UPB_SIZE(4, 40), -1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 40), -1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return _upb_Message_HasNonExtensionField(msg, &field);
 }
 UPB_INLINE void opencensus_proto_trace_v1_TraceConfig_clear_constant_sampler(opencensus_proto_trace_v1_TraceConfig* msg) {
-  const upb_MiniTableField field = {2, UPB_SIZE(4, 40), -1, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(4, 40), -1, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const opencensus_proto_trace_v1_ConstantSampler* opencensus_proto_trace_v1_TraceConfig_constant_sampler(const opencensus_proto_trace_v1_TraceConfig* msg) {
   const opencensus_proto_trace_v1_ConstantSampler* default_val = NULL;
   const opencensus_proto_trace_v1_ConstantSampler* ret;
-  const upb_MiniTableField field = {2, UPB_SIZE(4, 40), -1, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(4, 40), -1, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool opencensus_proto_trace_v1_TraceConfig_has_constant_sampler(const opencensus_proto_trace_v1_TraceConfig* msg) {
-  const upb_MiniTableField field = {2, UPB_SIZE(4, 40), -1, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(4, 40), -1, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return _upb_Message_HasNonExtensionField(msg, &field);
 }
 UPB_INLINE void opencensus_proto_trace_v1_TraceConfig_clear_rate_limiting_sampler(opencensus_proto_trace_v1_TraceConfig* msg) {
-  const upb_MiniTableField field = {3, UPB_SIZE(4, 40), -1, 2, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(4, 40), -1, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const opencensus_proto_trace_v1_RateLimitingSampler* opencensus_proto_trace_v1_TraceConfig_rate_limiting_sampler(const opencensus_proto_trace_v1_TraceConfig* msg) {
   const opencensus_proto_trace_v1_RateLimitingSampler* default_val = NULL;
   const opencensus_proto_trace_v1_RateLimitingSampler* ret;
-  const upb_MiniTableField field = {3, UPB_SIZE(4, 40), -1, 2, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(4, 40), -1, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool opencensus_proto_trace_v1_TraceConfig_has_rate_limiting_sampler(const opencensus_proto_trace_v1_TraceConfig* msg) {
-  const upb_MiniTableField field = {3, UPB_SIZE(4, 40), -1, 2, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(4, 40), -1, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return _upb_Message_HasNonExtensionField(msg, &field);
 }
 UPB_INLINE void opencensus_proto_trace_v1_TraceConfig_clear_max_number_of_attributes(opencensus_proto_trace_v1_TraceConfig* msg) {
-  const upb_MiniTableField field = {4, 8, 0, kUpb_NoSub, 3, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {4, 8, 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE int64_t opencensus_proto_trace_v1_TraceConfig_max_number_of_attributes(const opencensus_proto_trace_v1_TraceConfig* msg) {
   int64_t default_val = (int64_t)0ll;
   int64_t ret;
-  const upb_MiniTableField field = {4, 8, 0, kUpb_NoSub, 3, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {4, 8, 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
 UPB_INLINE void opencensus_proto_trace_v1_TraceConfig_clear_max_number_of_annotations(opencensus_proto_trace_v1_TraceConfig* msg) {
-  const upb_MiniTableField field = {5, 16, 0, kUpb_NoSub, 3, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {5, 16, 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE int64_t opencensus_proto_trace_v1_TraceConfig_max_number_of_annotations(const opencensus_proto_trace_v1_TraceConfig* msg) {
   int64_t default_val = (int64_t)0ll;
   int64_t ret;
-  const upb_MiniTableField field = {5, 16, 0, kUpb_NoSub, 3, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {5, 16, 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
 UPB_INLINE void opencensus_proto_trace_v1_TraceConfig_clear_max_number_of_message_events(opencensus_proto_trace_v1_TraceConfig* msg) {
-  const upb_MiniTableField field = {6, 24, 0, kUpb_NoSub, 3, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {6, 24, 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE int64_t opencensus_proto_trace_v1_TraceConfig_max_number_of_message_events(const opencensus_proto_trace_v1_TraceConfig* msg) {
   int64_t default_val = (int64_t)0ll;
   int64_t ret;
-  const upb_MiniTableField field = {6, 24, 0, kUpb_NoSub, 3, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {6, 24, 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
 UPB_INLINE void opencensus_proto_trace_v1_TraceConfig_clear_max_number_of_links(opencensus_proto_trace_v1_TraceConfig* msg) {
-  const upb_MiniTableField field = {7, 32, 0, kUpb_NoSub, 3, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {7, 32, 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE int64_t opencensus_proto_trace_v1_TraceConfig_max_number_of_links(const opencensus_proto_trace_v1_TraceConfig* msg) {
   int64_t default_val = (int64_t)0ll;
   int64_t ret;
-  const upb_MiniTableField field = {7, 32, 0, kUpb_NoSub, 3, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {7, 32, 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
 
 UPB_INLINE void opencensus_proto_trace_v1_TraceConfig_set_probability_sampler(opencensus_proto_trace_v1_TraceConfig *msg, opencensus_proto_trace_v1_ProbabilitySampler* value) {
-  const upb_MiniTableField field = {1, UPB_SIZE(4, 40), -1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 40), -1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct opencensus_proto_trace_v1_ProbabilitySampler* opencensus_proto_trace_v1_TraceConfig_mutable_probability_sampler(opencensus_proto_trace_v1_TraceConfig* msg, upb_Arena* arena) {
@@ -190,7 +182,7 @@ UPB_INLINE struct opencensus_proto_trace_v1_ProbabilitySampler* opencensus_proto
   return sub;
 }
 UPB_INLINE void opencensus_proto_trace_v1_TraceConfig_set_constant_sampler(opencensus_proto_trace_v1_TraceConfig *msg, opencensus_proto_trace_v1_ConstantSampler* value) {
-  const upb_MiniTableField field = {2, UPB_SIZE(4, 40), -1, 1, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(4, 40), -1, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct opencensus_proto_trace_v1_ConstantSampler* opencensus_proto_trace_v1_TraceConfig_mutable_constant_sampler(opencensus_proto_trace_v1_TraceConfig* msg, upb_Arena* arena) {
@@ -202,7 +194,7 @@ UPB_INLINE struct opencensus_proto_trace_v1_ConstantSampler* opencensus_proto_tr
   return sub;
 }
 UPB_INLINE void opencensus_proto_trace_v1_TraceConfig_set_rate_limiting_sampler(opencensus_proto_trace_v1_TraceConfig *msg, opencensus_proto_trace_v1_RateLimitingSampler* value) {
-  const upb_MiniTableField field = {3, UPB_SIZE(4, 40), -1, 2, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(4, 40), -1, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct opencensus_proto_trace_v1_RateLimitingSampler* opencensus_proto_trace_v1_TraceConfig_mutable_rate_limiting_sampler(opencensus_proto_trace_v1_TraceConfig* msg, upb_Arena* arena) {
@@ -214,19 +206,19 @@ UPB_INLINE struct opencensus_proto_trace_v1_RateLimitingSampler* opencensus_prot
   return sub;
 }
 UPB_INLINE void opencensus_proto_trace_v1_TraceConfig_set_max_number_of_attributes(opencensus_proto_trace_v1_TraceConfig *msg, int64_t value) {
-  const upb_MiniTableField field = {4, 8, 0, kUpb_NoSub, 3, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {4, 8, 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
   _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void opencensus_proto_trace_v1_TraceConfig_set_max_number_of_annotations(opencensus_proto_trace_v1_TraceConfig *msg, int64_t value) {
-  const upb_MiniTableField field = {5, 16, 0, kUpb_NoSub, 3, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {5, 16, 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
   _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void opencensus_proto_trace_v1_TraceConfig_set_max_number_of_message_events(opencensus_proto_trace_v1_TraceConfig *msg, int64_t value) {
-  const upb_MiniTableField field = {6, 24, 0, kUpb_NoSub, 3, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {6, 24, 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
   _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void opencensus_proto_trace_v1_TraceConfig_set_max_number_of_links(opencensus_proto_trace_v1_TraceConfig *msg, int64_t value) {
-  const upb_MiniTableField field = {7, 32, 0, kUpb_NoSub, 3, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {7, 32, 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
   _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 
@@ -266,19 +258,19 @@ UPB_INLINE char* opencensus_proto_trace_v1_ProbabilitySampler_serialize_ex(const
   return ptr;
 }
 UPB_INLINE void opencensus_proto_trace_v1_ProbabilitySampler_clear_samplingProbability(opencensus_proto_trace_v1_ProbabilitySampler* msg) {
-  const upb_MiniTableField field = {1, 0, 0, kUpb_NoSub, 1, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, 0, 0, kUpb_NoSub, 1, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE double opencensus_proto_trace_v1_ProbabilitySampler_samplingProbability(const opencensus_proto_trace_v1_ProbabilitySampler* msg) {
   double default_val = 0;
   double ret;
-  const upb_MiniTableField field = {1, 0, 0, kUpb_NoSub, 1, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, 0, 0, kUpb_NoSub, 1, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
 
 UPB_INLINE void opencensus_proto_trace_v1_ProbabilitySampler_set_samplingProbability(opencensus_proto_trace_v1_ProbabilitySampler *msg, double value) {
-  const upb_MiniTableField field = {1, 0, 0, kUpb_NoSub, 1, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, 0, 0, kUpb_NoSub, 1, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
   _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 
@@ -318,19 +310,19 @@ UPB_INLINE char* opencensus_proto_trace_v1_ConstantSampler_serialize_ex(const op
   return ptr;
 }
 UPB_INLINE void opencensus_proto_trace_v1_ConstantSampler_clear_decision(opencensus_proto_trace_v1_ConstantSampler* msg) {
-  const upb_MiniTableField field = {1, 0, 0, kUpb_NoSub, 5, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsAlternate | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, 0, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE int32_t opencensus_proto_trace_v1_ConstantSampler_decision(const opencensus_proto_trace_v1_ConstantSampler* msg) {
   int32_t default_val = 0;
   int32_t ret;
-  const upb_MiniTableField field = {1, 0, 0, kUpb_NoSub, 5, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsAlternate | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, 0, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
 
 UPB_INLINE void opencensus_proto_trace_v1_ConstantSampler_set_decision(opencensus_proto_trace_v1_ConstantSampler *msg, int32_t value) {
-  const upb_MiniTableField field = {1, 0, 0, kUpb_NoSub, 5, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsAlternate | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, 0, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
   _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 
@@ -370,19 +362,19 @@ UPB_INLINE char* opencensus_proto_trace_v1_RateLimitingSampler_serialize_ex(cons
   return ptr;
 }
 UPB_INLINE void opencensus_proto_trace_v1_RateLimitingSampler_clear_qps(opencensus_proto_trace_v1_RateLimitingSampler* msg) {
-  const upb_MiniTableField field = {1, 0, 0, kUpb_NoSub, 3, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, 0, 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE int64_t opencensus_proto_trace_v1_RateLimitingSampler_qps(const opencensus_proto_trace_v1_RateLimitingSampler* msg) {
   int64_t default_val = (int64_t)0ll;
   int64_t ret;
-  const upb_MiniTableField field = {1, 0, 0, kUpb_NoSub, 3, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, 0, 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
 
 UPB_INLINE void opencensus_proto_trace_v1_RateLimitingSampler_set_qps(opencensus_proto_trace_v1_RateLimitingSampler *msg, int64_t value) {
-  const upb_MiniTableField field = {1, 0, 0, kUpb_NoSub, 3, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, 0, 0, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
   _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 

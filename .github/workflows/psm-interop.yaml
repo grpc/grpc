@@ -5,7 +5,6 @@ on:
   push:
     branches:
       - master
-      - 'v1.*'
 
 permissions:
   contents: read
@@ -18,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python_version: ["3.9", "3.10"]
+        python_version: ["3.9", "3.10", "3.11"]
       fail-fast: false
     permissions:
       pull-requests: read  # Used by paths-filter to read the diff.
