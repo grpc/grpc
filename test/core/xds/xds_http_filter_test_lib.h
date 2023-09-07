@@ -16,6 +16,9 @@
 #ifndef GRPC_TEST_CPP_END2END_XDS_XDS_END2END_TEST_LIB_H
 #define GRPC_TEST_CPP_END2END_XDS_XDS_END2END_TEST_LIB_H
 
+#include "src/core/ext/xds/xds_bootstrap_grpc.h"
+#include "src/core/ext/xds/xds_client.h"
+
 namespace grpc_core {
 namespace testing {
 

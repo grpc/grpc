@@ -17806,6 +17806,7 @@ targets:
   language: c++
   headers:
   - test/core/util/scoped_env_var.h
+  - test/core/xds/xds_http_filter_test_lib.h
   - test/cpp/util/cli_call.h
   - test/cpp/util/cli_credentials.h
   - test/cpp/util/config_grpc_cli.h
@@ -17816,7 +17817,6 @@ targets:
   - src/proto/grpc/reflection/v1alpha/reflection.proto
   - src/proto/grpc/testing/xds/v3/address.proto
   - src/proto/grpc/testing/xds/v3/base.proto
-  - src/proto/grpc/testing/xds/v3/cookie.proto
   - src/proto/grpc/testing/xds/v3/expr.proto
   - src/proto/grpc/testing/xds/v3/extension.proto
   - src/proto/grpc/testing/xds/v3/fault.proto
@@ -17830,11 +17830,40 @@ targets:
   - src/proto/grpc/testing/xds/v3/regex.proto
   - src/proto/grpc/testing/xds/v3/route.proto
   - src/proto/grpc/testing/xds/v3/router.proto
+  - src/proto/grpc/testing/xds/v3/string.proto
+  - test/core/xds/xds_http_filters_test.cc
+  - test/cpp/util/cli_call.cc
+  - test/cpp/util/cli_credentials.cc
+  - test/cpp/util/proto_file_parser.cc
+  - test/cpp/util/proto_reflection_descriptor_database.cc
+  - test/cpp/util/service_describer.cc
+  deps:
+  - gtest
+  - grpc++
+  - protoc
+  - grpc_test_util
+  uses_polling: false
+- name: xds_http_stateful_session_filter_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/xds/xds_http_filter_test_lib.h
+  - test/cpp/util/cli_call.h
+  - test/cpp/util/cli_credentials.h
+  - test/cpp/util/config_grpc_cli.h
+  - test/cpp/util/proto_file_parser.h
+  - test/cpp/util/proto_reflection_descriptor_database.h
+  - test/cpp/util/service_describer.h
+  src:
+  - src/proto/grpc/reflection/v1alpha/reflection.proto
+  - src/proto/grpc/testing/xds/v3/cookie.proto
+  - src/proto/grpc/testing/xds/v3/extension.proto
+  - src/proto/grpc/testing/xds/v3/router.proto
   - src/proto/grpc/testing/xds/v3/stateful_session.proto
   - src/proto/grpc/testing/xds/v3/stateful_session_cookie.proto
-  - src/proto/grpc/testing/xds/v3/string.proto
   - src/proto/grpc/testing/xds/v3/typed_struct.proto
-  - test/core/xds/xds_http_filters_test.cc
+  - test/core/xds/xds_http_stateful_session_filter_test.cc
   - test/cpp/util/cli_call.cc
   - test/cpp/util/cli_credentials.cc
   - test/cpp/util/proto_file_parser.cc
