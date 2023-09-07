@@ -288,6 +288,65 @@ TEST_F(OTelPluginEnd2EndTest, NoMeterProviderRegistered) {
   SendRPC();
 }
 
+// Test that a channel selector returning true records metrics on the channel.
+TEST_F(OTelPluginEnd2EndTest, ChannelSelectorReturnsTrue) {
+  Init({grpc::internal::OTelClientAttemptStartedInstrumentName()}, /*resource=*/
+       opentelemetry::sdk::resource::Resource::Create({}),
+       /*labels_injector=*/nullptr,
+       /*test_no_meter_provider=*/false,
+       /*channel_selector=*/
+       [](absl::string_view /*target*/) { return true; });
+  SendRPC();
+  const char* kMetricName = "grpc.client.attempt.started";
+  auto data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) { return !data.contains(kMetricName); });
+  ASSERT_EQ(data[kMetricName].size(), 1);
+  auto point_data = absl::get_if<opentelemetry::sdk::metrics::SumPointData>(
+      &data[kMetricName][0].point_data);
+  ASSERT_NE(point_data, nullptr);
+  auto client_started_value = absl::get_if<int64_t>(&point_data->value_);
+  ASSERT_NE(client_started_value, nullptr);
+  EXPECT_EQ(*client_started_value, 1);
+  const auto& attributes = data[kMetricName][0].attributes.GetAttributes();
+  EXPECT_EQ(attributes.size(), 2);
+  const auto* method_value =
+      absl::get_if<std::string>(&attributes.at("grpc.method"));
+  ASSERT_NE(method_value, nullptr);
+  EXPECT_EQ(*method_value, kMethodName);
+  const auto* target_value =
+      absl::get_if<std::string>(&attributes.at("grpc.target"));
+  ASSERT_NE(target_value, nullptr);
+  EXPECT_EQ(*target_value, canonical_server_address_);
+}
+
+// Test that a channel selector returning false does not record metrics on the
+// channel.
+TEST_F(OTelPluginEnd2EndTest, ChannelSelectorReturnsFalse) {
+  Init({grpc::internal::OTelClientAttemptStartedInstrumentName()}, /*resource=*/
+       opentelemetry::sdk::resource::Resource::Create({}),
+       /*labels_injector=*/nullptr,
+       /*test_no_meter_provider=*/false,
+       /*channel_selector=*/
+       [server_address = canonical_server_address_](
+           absl::string_view /*target*/) { return false; });
+  SendRPC();
+  auto data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+          /*data*/) {
+        // We could sleep for a second or so to make sure that the recorded
+        // metrics are not just stuck in the pipeline, but most of the time, the
+        // metrics are reported immediately, and if this test breaks, CI will
+        // capture it.
+        return false;
+      });
+  ASSERT_TRUE(data.empty());
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc

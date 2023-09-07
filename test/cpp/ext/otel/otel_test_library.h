@@ -61,7 +61,10 @@ class OTelPluginEnd2EndTest : public ::testing::Test {
       opentelemetry::sdk::resource::Resource resource =
           opentelemetry::sdk::resource::Resource::Create({}),
       std::unique_ptr<grpc::internal::LabelsInjector> labels_injector = nullptr,
-      bool test_no_meter_provider = false);
+      bool test_no_meter_provider = false,
+      absl::AnyInvocable<bool(absl::string_view /*target*/) const>
+          channel_selector =
+              absl::AnyInvocable<bool(absl::string_view) const>());
 
   void TearDown() override;
 

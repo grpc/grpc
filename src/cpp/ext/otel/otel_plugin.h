@@ -29,6 +29,7 @@
 #include <utility>
 
 #include "absl/container/flat_hash_set.h"
+#include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "opentelemetry/metrics/meter_provider.h"
@@ -139,6 +140,12 @@ class OpenTelemetryPluginBuilder {
   OpenTelemetryPluginBuilder& SetLabelsInjector(
       std::unique_ptr<LabelsInjector> labels_injector);
 
+  // If set, \a channel_selector is called once per channel to decide whether to
+  // collect metrics on the channel or not.
+  OpenTelemetryPluginBuilder& SetChannelSelector(
+      absl::AnyInvocable<bool(absl::string_view /*target*/) const>
+          channel_selector);
+
   void BuildAndRegisterGlobal();
 
   // The base set of metrics -
@@ -156,6 +163,8 @@ class OpenTelemetryPluginBuilder {
   std::shared_ptr<opentelemetry::metrics::MeterProvider> meter_provider_;
   std::unique_ptr<LabelsInjector> labels_injector_;
   absl::flat_hash_set<std::string> metrics_;
+  absl::AnyInvocable<bool(absl::string_view /*target*/) const>
+      channel_selector_;
 };
 
 }  // namespace internal
