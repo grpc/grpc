@@ -61,3 +61,19 @@ grpc_cc_test(
         "//test/cpp/ext/otel:otel_test_library",
     ],
 )
+
+grpc_cc_test(
+    name = "mesh_id_test",
+    srcs = [
+        "mesh_id_test.cc",
+    ],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//:grpc++",
+        "//src/cpp/ext/gsm:gsm_observability",
+        "//test/core/util:grpc_test_util",
+    ],
+)

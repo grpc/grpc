@@ -104,27 +104,25 @@ OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
     : parent_(parent),
       arena_allocated_(arena_allocated),
       start_time_(absl::Now()) {
-  // We don't have the peer labels at this point.
-  if (OTelPluginState().labels_injector != nullptr) {
-    local_labels_ = OTelPluginState().labels_injector->GetLocalLabels();
-  }
   if (OTelPluginState().client.attempt.started != nullptr) {
     std::array<std::pair<absl::string_view, absl::string_view>, 2>
         additional_labels = {
             {{OTelMethodKey(),
               absl::StripPrefix(parent_->path_.as_string_view(), "/")},
              {OTelTargetKey(), parent_->parent_->target()}}};
-    KeyValueIterable labels(local_labels_.get(), peer_labels_.get(),
-                            additional_labels);
-    OTelPluginState().client.attempt.started->Add(1, labels);
+    // We might not have all the injected labels that we want at this point, so
+    // avoid recording a subset of injected labels here.
+    OTelPluginState().client.attempt.started->Add(
+        1, KeyValueIterable(/*injected_labels_iterable=*/nullptr,
+                            additional_labels));
   }
 }
 
 void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
     RecordReceivedInitialMetadata(grpc_metadata_batch* recv_initial_metadata) {
   if (OTelPluginState().labels_injector != nullptr) {
-    peer_labels_ =
-        OTelPluginState().labels_injector->GetPeerLabels(recv_initial_metadata);
+    injected_labels_ =
+        OTelPluginState().labels_injector->GetLabels(recv_initial_metadata);
   }
 }
 
@@ -173,8 +171,7 @@ void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
            {OTelStatusKey(),
             grpc_status_code_to_string(
                 static_cast<grpc_status_code>(status.code()))}}};
-  KeyValueIterable labels(local_labels_.get(), peer_labels_.get(),
-                          additional_labels);
+  KeyValueIterable labels(injected_labels_.get(), additional_labels);
   if (OTelPluginState().client.attempt.duration != nullptr) {
     OTelPluginState().client.attempt.duration->Record(
         absl::ToDoubleSeconds(absl::Now() - start_time_), labels,

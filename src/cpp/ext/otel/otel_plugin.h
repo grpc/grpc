@@ -63,16 +63,9 @@ class LabelsInjector {
  public:
   virtual ~LabelsInjector() {}
   // Read the incoming initial metadata to get the set of labels to be added to
-  // metrics. (Does not include the local labels.)
-  virtual std::unique_ptr<LabelsIterable> GetPeerLabels(
+  // metrics.
+  virtual std::unique_ptr<LabelsIterable> GetLabels(
       grpc_metadata_batch* incoming_initial_metadata) = 0;
-
-  // Get the local labels to be added to metrics. To be used when the peer
-  // metadata is not available, for example, for started RPCs metric.
-  // It is the responsibility of the implementation to make sure that the
-  // backing store for the absl::string_view remains valid for the lifetime of
-  // gRPC.
-  virtual std::unique_ptr<LabelsIterable> GetLocalLabels() = 0;
 
   // Modify the outgoing initial metadata with metadata information to be sent
   // to the peer.
