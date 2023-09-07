@@ -337,13 +337,7 @@ TEST_F(OTelPluginEnd2EndTest, ChannelSelectorReturnsFalse) {
       [&](const absl::flat_hash_map<
           std::string,
           std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
-          /*data*/) {
-        // We could sleep for a second or so to make sure that the recorded
-        // metrics are not just stuck in the pipeline, but most of the time, the
-        // metrics are reported immediately, and if this test breaks, CI will
-        // capture it.
-        return false;
-      });
+          /*data*/) { return false; });
   ASSERT_TRUE(data.empty());
 }
 
