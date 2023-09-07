@@ -223,6 +223,7 @@ void FakeResolverResponseGenerator::SetResponseAndNotify(
     if (resolver_ == nullptr) {
       has_result_ = true;
       result_ = std::move(result);
+      if (notify_when_set != nullptr) notify_when_set->Notify();
       return;
     }
     resolver = resolver_->Ref();
