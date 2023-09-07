@@ -234,10 +234,30 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        ":xds_http_filter_test_lib",
         "//:gpr",
         "//:grpc",
         "//src/proto/grpc/testing/xds/v3:fault_proto",
         "//src/proto/grpc/testing/xds/v3:http_filter_rbac_proto",
+        "//src/proto/grpc/testing/xds/v3:router_proto",
+        "//src/proto/grpc/testing/xds/v3:typed_struct_proto",
+        "//test/core/util:grpc_test_util",
+        "//test/core/util:scoped_env_var",
+        "//test/cpp/util:grpc_cli_utils",
+    ],
+)
+
+grpc_cc_test(
+    name = "xds_http_stateful_session_filter_test",
+    srcs = ["xds_http_stateful_session_filter_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        ":xds_http_filter_test_lib",
+        "//:gpr",
+        "//:grpc",
         "//src/proto/grpc/testing/xds/v3:router_proto",
         "//src/proto/grpc/testing/xds/v3:stateful_session_cookie_proto",
         "//src/proto/grpc/testing/xds/v3:stateful_session_proto",
@@ -247,6 +267,19 @@ grpc_cc_test(
         "//test/cpp/util:grpc_cli_utils",
     ],
 )
+
+grpc_cc_library(
+    name = "xds_http_filter_test_lib",
+    testonly = True,
+    srcs = [],
+    hdrs = ["xds_http_filter_test_lib.h"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+    ],
+)
+
 
 grpc_cc_test(
     name = "xds_listener_resource_type_test",
