@@ -65,7 +65,7 @@ void OTelPluginEnd2EndTest::Init(
   }
   ot_builder.SetLabelsInjector(std::move(labels_injector));
   ot_builder.SetTargetSelector(std::move(target_selector));
-  ot_builder.SetTargetAttributesFilter(std::move(target_attribute_filter));
+  ot_builder.SetTargetAttributeFilter(std::move(target_attribute_filter));
   ot_builder.BuildAndRegisterGlobal();
   grpc_init();
   grpc::ServerBuilder builder;
