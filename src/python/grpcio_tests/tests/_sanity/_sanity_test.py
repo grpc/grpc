@@ -15,7 +15,6 @@
 import json
 import pkgutil
 import unittest
-import json
 
 import tests
 
@@ -40,10 +39,9 @@ class SanityTest(unittest.TestCase):
         )
 
         tests_json_string = pkgutil.get_data(self.TEST_PKG_PATH, "tests.json")
-        tests_json = tests_json_string.decode()
-        json_load = json.loads(tests_json)
+        tests_json = json.loads(tests_json_string.decode())
 
-        self.assertListEqual(json_load, test_suite_names)
+        self.assertListEqual(tests_json, test_suite_names)
 
 
 if __name__ == "__main__":

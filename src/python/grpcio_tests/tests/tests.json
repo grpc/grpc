@@ -1,8 +1,8 @@
 [
   "tests._sanity._sanity_test.SanityTest",
-  "tests.admin.test_admin.TestAdmin",
+  "tests.admin.admin_test.TestAdmin",
   "tests.channelz._channelz_servicer_test.ChannelzServicerTest",
-  "tests.csds.test_csds.TestCsds",
+  "tests.csds.csds_test.TestCsds",
   "tests.fork._fork_interop_test.ForkInteropTest",
   "tests.health_check._health_servicer_test.HealthServicerBackwardsCompatibleWatchTest",
   "tests.health_check._health_servicer_test.HealthServicerTest",
@@ -19,6 +19,7 @@
   "tests.protoc_plugin._split_definitions_test.SplitProtoMid2016ProtocStyleTest",
   "tests.protoc_plugin._split_definitions_test.SplitProtoProtoBeforeGrpcProtocStyleTest",
   "tests.protoc_plugin._split_definitions_test.SplitProtoSingleProtocExecutionProtocStyleTest",
+  "tests.protoc_plugin._split_definitions_test.WellKnownTypesTest",
   "tests.protoc_plugin.beta_python_plugin_test.PythonPluginTest",
   "tests.reflection._reflection_client_test.ReflectionClientTest",
   "tests.reflection._reflection_servicer_test.ReflectionServicerTest",
