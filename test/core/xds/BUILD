@@ -275,7 +275,7 @@ grpc_cc_library(
         "gtest",
     ],
     deps = [
-        "//:grpc++_config_proto",
+        "//:grpc",
     ],
 )
 
