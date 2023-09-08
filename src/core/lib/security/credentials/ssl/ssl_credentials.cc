@@ -66,6 +66,10 @@ grpc_ssl_credentials::grpc_ssl_credentials(
     config_.pem_root_certs = config_.pem_root_certs;
     root_store_ = nullptr;
   }
+
+  client_handshaker_initialization_status_ = InitializeClientHandshakerFactory(
+      &config_, config_.pem_root_certs, root_store_, nullptr,
+      &client_handshaker_factory_);
 }
 
 grpc_ssl_credentials::~grpc_ssl_credentials() {
@@ -92,44 +96,45 @@ grpc_ssl_credentials::create_security_connector(
   tsi_ssl_session_cache* session_cache =
       ssl_session_cache == nullptr ? nullptr : ssl_session_cache->c_ptr();
 
-  grpc_core::RefCountedPtr<grpc_channel_security_connector> sc = nullptr;
-  // We need a separate factory and ctx if there's a cache in the channel
-  // args
+  grpc_core::RefCountedPtr<grpc_channel_security_connector> security_connector =
+      nullptr;
   if (session_cache != nullptr) {
-    // Get a different client handshaker factory and give to it the security
-    // connector
+    // We need a separate factory and ctx if there's a cache in the channel
+    // args. SSL_CTX should live with the factory and that should live on the
+    // credentials. However, there is a way to configure a session cache in the
+    // channel args, so that prevents us from also keeping the session cache at
+    // the credentials level. In the case of a session cache, we still need to
+    // keep a separate factory and SSL_CTX at the subchannel/security_connector
+    // level.
     tsi_ssl_client_handshaker_factory* factory_with_cache = nullptr;
-    grpc_security_status status = initialize_client_handshaker_factory(
+    grpc_security_status status = InitializeClientHandshakerFactory(
         &config_, config_.pem_root_certs, root_store_, session_cache,
         &factory_with_cache);
     if (status != GRPC_SECURITY_OK) {
       return nullptr;
     }
-    sc = grpc_ssl_channel_security_connector_create(
+    security_connector = grpc_ssl_channel_security_connector_create(
         this->Ref(), std::move(call_creds), &config_, target,
         overridden_target_name.has_value() ? overridden_target_name->c_str()
                                            : nullptr,
         factory_with_cache);
     tsi_ssl_client_handshaker_factory_unref(factory_with_cache);
   } else {
-    grpc_security_status status = initialize_client_handshaker_factory(
-        &config_, config_.pem_root_certs, root_store_, nullptr,
-        &client_handshaker_factory_);
-    if (status != GRPC_SECURITY_OK) {
+    if (client_handshaker_initialization_status_ != GRPC_SECURITY_OK) {
       return nullptr;
     }
-    sc = grpc_ssl_channel_security_connector_create(
+    security_connector = grpc_ssl_channel_security_connector_create(
         this->Ref(), std::move(call_creds), &config_, target,
         overridden_target_name.has_value() ? overridden_target_name->c_str()
                                            : nullptr,
         client_handshaker_factory_);
   }
 
-  if (sc == nullptr) {
-    return sc;
+  if (security_connector == nullptr) {
+    return security_connector;
   }
   *args = args->Set(GRPC_ARG_HTTP2_SCHEME, "https");
-  return sc;
+  return security_connector;
 }
 
 grpc_core::UniqueTypeName grpc_ssl_credentials::Type() {
@@ -172,7 +177,7 @@ void grpc_ssl_credentials::set_max_tls_version(
   config_.max_tls_version = max_tls_version;
 }
 
-grpc_security_status grpc_ssl_credentials::initialize_client_handshaker_factory(
+grpc_security_status grpc_ssl_credentials::InitializeClientHandshakerFactory(
     const grpc_ssl_config* config, const char* pem_root_certs,
     const tsi_ssl_root_certs_store* root_store,
     tsi_ssl_session_cache* ssl_session_cache,
