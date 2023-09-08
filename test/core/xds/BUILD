@@ -275,6 +275,7 @@ grpc_cc_library(
         "gtest",
     ],
     deps = [
+        "//:gpr",
         "//:grpc",
     ],
 )
