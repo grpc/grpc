@@ -27,6 +27,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
@@ -70,8 +71,14 @@ const grpc_channel_filter OpenTelemetryClientFilter::kFilter =
 
 absl::StatusOr<OpenTelemetryClientFilter> OpenTelemetryClientFilter::Create(
     const grpc_core::ChannelArgs& args, ChannelFilter::Args /*filter_args*/) {
-  return OpenTelemetryClientFilter(
-      args.GetOwnedString(GRPC_ARG_SERVER_URI).value_or(""));
+  std::string target = args.GetOwnedString(GRPC_ARG_SERVER_URI).value_or("");
+  // Use the original target string only if a filter on the attribute is not
+  // registered or if the filter returns true, otherwise use "other".
+  if (OTelPluginState().target_attribute_filter == nullptr ||
+      OTelPluginState().target_attribute_filter(target)) {
+    return OpenTelemetryClientFilter(std::move(target));
+  }
+  return OpenTelemetryClientFilter("other");
 }
 
 grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle>
