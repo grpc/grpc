@@ -208,7 +208,7 @@ void WorkSerializer::LegacyWorkSerializer::DrainQueue() {
   const uint64_t prev_ref_pair =
       refs_.fetch_add(MakeRefPair(1, 1), std::memory_order_acq_rel);
   if (GetOwners(prev_ref_pair) == 0) {
-    ClearCurrentThread();
+    SetCurrentThread();
     // We took ownership of the WorkSerializer. Drain the queue.
     DrainQueueOwned();
   } else {
