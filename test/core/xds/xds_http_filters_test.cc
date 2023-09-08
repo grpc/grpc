@@ -1333,14 +1333,13 @@ TEST_P(XdsStatefulSessionFilterConfigTest, PathAndTtl) {
 
 TEST_P(XdsStatefulSessionFilterConfigTest, SessionStateUnset) {
   auto config = GenerateConfig(StatefulSession());
-  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
-                                       "errors validating filter config");
-  ASSERT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(
-      status.message(),
-      absl::StrCat("errors validating filter config: [field:", FieldPrefix(),
-                   ".session_state error:field not present]"))
-      << status;
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  ASSERT_TRUE(config.has_value());
+  EXPECT_EQ(config->config_proto_type_name,
+            GetParam() ? filter_->OverrideConfigProtoName()
+                       : filter_->ConfigProtoName());
+  EXPECT_EQ(config->config, Json::FromObject({})) << JsonDump(config->config);
 }
 
 TEST_P(XdsStatefulSessionFilterConfigTest, CookieNotPresent) {

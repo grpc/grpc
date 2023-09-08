@@ -77,7 +77,6 @@ Json::Object ValidateStatefulSession(
       envoy_extensions_filters_http_stateful_session_v3_StatefulSession_session_state(
           stateful_session);
   if (session_state == nullptr) {
-    errors->AddError("field not present");
     return {};
   }
   ValidationErrors::ScopedField field2(errors, ".typed_config");
