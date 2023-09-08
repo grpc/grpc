@@ -831,8 +831,9 @@ Server::RegisteredMethod* Server::RegisterMethod(
             "grpc_server_register_method method string cannot be NULL");
     return nullptr;
   }
-  uint32_t hash = MixHash32((host == nullptr) ? 0 : absl::HashOf(host),
-                            absl::HashOf(method));
+  uint32_t hash =
+      MixHash32((host == nullptr) ? 0 : absl::HashOf(std::string(host)),
+                absl::HashOf(std::string(method)));
   if (!registered_methods_[hash].empty()) {
     for (auto& rm : registered_methods_[hash]) {
       if (streq(rm->method, method) && streq(rm->host, host)) {
