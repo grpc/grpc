@@ -63,7 +63,9 @@ class OTelPluginEnd2EndTest : public ::testing::Test {
       std::unique_ptr<grpc::internal::LabelsInjector> labels_injector = nullptr,
       bool test_no_meter_provider = false,
       absl::AnyInvocable<bool(absl::string_view /*target*/) const>
-          target_selector =
+          target_selector = absl::AnyInvocable<bool(absl::string_view) const>(),
+      absl::AnyInvocable<bool(absl::string_view /*target*/) const>
+          target_attribute_filter =
               absl::AnyInvocable<bool(absl::string_view) const>());
 
   void TearDown() override;

@@ -152,6 +152,14 @@ OpenTelemetryPluginBuilder& OpenTelemetryPluginBuilder::SetTargetSelector(
   return *this;
 }
 
+OpenTelemetryPluginBuilder&
+OpenTelemetryPluginBuilder::SetTargetAttributeFilter(
+    absl::AnyInvocable<bool(absl::string_view /*target*/) const>
+        target_attribute_filter) {
+  target_attribute_filter_ = std::move(target_attribute_filter);
+  return *this;
+}
+
 void OpenTelemetryPluginBuilder::BuildAndRegisterGlobal() {
   opentelemetry::nostd::shared_ptr<opentelemetry::metrics::MeterProvider>
       meter_provider = meter_provider_;
@@ -203,6 +211,8 @@ void OpenTelemetryPluginBuilder::BuildAndRegisterGlobal() {
             OTelServerCallRcvdTotalCompressedMessageSizeInstrumentName()));
   }
   g_otel_plugin_state_->labels_injector = std::move(labels_injector_);
+  g_otel_plugin_state_->target_attribute_filter =
+      std::move(target_attribute_filter_);
   g_otel_plugin_state_->meter_provider = std::move(meter_provider);
   grpc_core::ServerCallTracerFactory::RegisterGlobal(
       new grpc::internal::OpenTelemetryServerCallTracerFactory);
