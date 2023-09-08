@@ -90,18 +90,39 @@ grpc_ssl_credentials::create_security_connector(
     root_store = nullptr;
   }
 
-  grpc_security_status status = initialize_client_handshaker_factory(
-      &config_, config_.pem_root_certs, root_store, tsi_ssl_session_cache);
-  if (status != GRPC_SECURITY_OK) {
-    return nullptr;
+  grpc_core::RefCountedPtr<grpc_channel_security_connector> sc = nullptr;
+  // We need a separate factory and ctx if there's a cache in the channel
+  // args
+  if (tsi_ssl_session_cache != nullptr) {
+    // Get a different client handshaker factory and give to it the security
+    // connector
+    tsi_ssl_client_handshaker_factory* factory_with_cache = nullptr;
+    grpc_security_status status = initialize_client_handshaker_factory(
+        &config_, config_.pem_root_certs, root_store, tsi_ssl_session_cache,
+        &factory_with_cache);
+    if (status != GRPC_SECURITY_OK) {
+      return nullptr;
+    }
+    sc = grpc_ssl_channel_security_connector_create(
+        this->Ref(), std::move(call_creds), &config_, target,
+        overridden_target_name.has_value() ? overridden_target_name->c_str()
+                                           : nullptr,
+        factory_with_cache);
+    tsi_ssl_client_handshaker_factory_unref(factory_with_cache);
+  } else {
+    grpc_security_status status = initialize_client_handshaker_factory(
+        &config_, config_.pem_root_certs, root_store, nullptr,
+        &client_handshaker_factory_);
+    if (status != GRPC_SECURITY_OK) {
+      return nullptr;
+    }
+    sc = grpc_ssl_channel_security_connector_create(
+        this->Ref(), std::move(call_creds), &config_, target,
+        overridden_target_name.has_value() ? overridden_target_name->c_str()
+                                           : nullptr,
+        client_handshaker_factory_);
   }
 
-  grpc_core::RefCountedPtr<grpc_channel_security_connector> sc =
-      grpc_ssl_channel_security_connector_create(
-          this->Ref(), std::move(call_creds), &config_, target,
-          overridden_target_name.has_value() ? overridden_target_name->c_str()
-                                             : nullptr,
-          client_handshaker_factory_);
   if (sc == nullptr) {
     return sc;
   }
@@ -152,8 +173,11 @@ void grpc_ssl_credentials::set_max_tls_version(
 grpc_security_status grpc_ssl_credentials::initialize_client_handshaker_factory(
     const grpc_ssl_config* config, const char* pem_root_certs,
     const tsi_ssl_root_certs_store* root_store,
-    tsi_ssl_session_cache* ssl_session_cache) {
-  if (client_handshaker_factory_ != nullptr) {
+    tsi_ssl_session_cache* ssl_session_cache,
+    tsi_ssl_client_handshaker_factory** handshaker_factory) {
+  // This class level factory can't have a session cache by design. If we want
+  // to init one with a cache we need to make a new one
+  if (client_handshaker_factory_ != nullptr && ssl_session_cache == nullptr) {
     return GRPC_SECURITY_OK;
   }
 
@@ -174,8 +198,8 @@ grpc_security_status grpc_ssl_credentials::initialize_client_handshaker_factory(
   options.min_tls_version = grpc_get_tsi_tls_version(config->min_tls_version);
   options.max_tls_version = grpc_get_tsi_tls_version(config->max_tls_version);
   const tsi_result result =
-      tsi_create_ssl_client_handshaker_factory_with_options(
-          &options, &client_handshaker_factory_);
+      tsi_create_ssl_client_handshaker_factory_with_options(&options,
+                                                            handshaker_factory);
   gpr_free(options.alpn_protocols);
   if (result != TSI_OK) {
     gpr_log(GPR_ERROR, "Handshaker factory creation failed with %s.",
