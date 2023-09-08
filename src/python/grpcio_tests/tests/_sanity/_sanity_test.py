@@ -44,6 +44,7 @@ class SanityTest(unittest.TestCase):
         tests_json = tests_json_string.decode()
         print(f"tests_json: {tests_json}")
 
+        self.assertEqual(2, 3)
         self.assertSequenceEqual(tests_json, test_suite_names)
 
 
