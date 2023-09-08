@@ -16,15 +16,37 @@
 #ifndef GRPC_TEST_CORE_XDS_XDS_HTTP_FILTER_TEST_LIB_H
 #define GRPC_TEST_CORE_XDS_XDS_HTTP_FILTER_TEST_LIB_H
 
+#include <algorithm>
+#include <initializer_list>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
+
 #include <google/protobuf/any.pb.h>
 
-#include "absl/strings/str_split.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
+#include "absl/strings/strip.h"
+#include "absl/types/variant.h"
 #include "gtest/gtest.h"
+#include "upb/reflection/def.hpp"
+#include "upb/upb.hpp"
 
 #include <grpcpp/impl/codegen/config_protobuf.h>
 
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_client.h"
+#include "src/core/ext/xds/xds_common_types.h"
+#include "src/core/ext/xds/xds_http_filters.h"
+#include "src/core/ext/xds/xds_resource_type.h"
+#include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/validation_errors.h"
+#include "src/core/lib/iomgr/error.h"
 
 namespace grpc_core {
 namespace testing {
