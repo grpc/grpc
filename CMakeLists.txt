@@ -442,19 +442,6 @@ set(gRPC_UPB_GEN_DUPL_SRC
   src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
 )
 
-# When building shared lib on Windows, additional missing symbols need to
-# be resolved for grpc++_unsecure. Also that build needs to be able to resolve
-# certain symbols from openssl.
-set(gRPC_ADDITIONAL_WIN_DLL_SRC
-  src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc
-  src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.cc
-  src/core/lib/surface/api_trace.cc
-  src/cpp/common/tls_certificate_provider.cc
-)
-set(gRPC_ADDITIONAL_WIN_DLL_LIBS
-  ${_gRPC_SSL_LIBRARIES}
-)
-
 endif() # BUILD_SHARED_LIBS AND WIN32
 
 # Create directory for proto source files
@@ -1515,6 +1502,7 @@ if(gRPC_BUILD_TESTS)
 endif()
 
 
+
 add_library(address_sorting
   third_party/address_sorting/address_sorting.c
   third_party/address_sorting/address_sorting_posix.c
@@ -1566,6 +1554,7 @@ if(gRPC_INSTALL)
     ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
   )
 endif()
+
 
 
 add_library(gpr
@@ -1728,6 +1717,7 @@ if(gRPC_INSTALL)
     ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
   )
 endif()
+
 
 
 add_library(grpc
@@ -2660,6 +2650,7 @@ endif()
 
 if(gRPC_BUILD_TESTS)
 
+
 add_library(grpc_test_util
   test/core/event_engine/test_init.cc
   test/core/util/build.cc
@@ -2719,6 +2710,7 @@ endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
+
 add_library(grpc_test_util_unsecure
   test/core/event_engine/test_init.cc
   test/core/util/build.cc
@@ -2775,6 +2767,7 @@ endif()
 
 
 endif()
+
 
 add_library(grpc_unsecure
   src/core/ext/filters/backend_metrics/backend_metric_filter.cc
@@ -3314,6 +3307,7 @@ endif()
 
 if(gRPC_BUILD_TESTS)
 
+
 add_library(gtest
   third_party/googletest/googlemock/src/gmock-cardinalities.cc
   third_party/googletest/googlemock/src/gmock-internal-utils.cc
@@ -3379,6 +3373,7 @@ target_link_libraries(gtest
 
 
 endif()
+
 
 add_library(upb ${_gRPC_STATIC_WIN32}
   third_party/upb/upb/base/status.c
@@ -3451,6 +3446,7 @@ if(gRPC_INSTALL)
 endif()
 
 
+
 add_library(upb_collections_lib ${_gRPC_STATIC_WIN32}
   third_party/upb/upb/base/status.c
   third_party/upb/upb/collections/array.c
@@ -3510,6 +3506,7 @@ if(gRPC_INSTALL)
     ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
   )
 endif()
+
 
 
 add_library(upb_json_lib ${_gRPC_STATIC_WIN32}
@@ -3589,6 +3586,7 @@ if(gRPC_INSTALL)
 endif()
 
 
+
 add_library(upb_textformat_lib ${_gRPC_STATIC_WIN32}
   src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
   third_party/upb/upb/message/accessors.c
@@ -3665,6 +3663,7 @@ if(gRPC_INSTALL)
 endif()
 
 
+
 add_library(utf8_range_lib
   third_party/utf8_range/naive.c
   third_party/utf8_range/range2-neon.c
@@ -3720,6 +3719,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 if(gRPC_BUILD_CODEGEN)
+
 add_library(benchmark_helpers
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
@@ -3794,6 +3794,7 @@ target_link_libraries(benchmark_helpers
 endif()
 
 endif()
+
 
 add_library(grpc++
   src/core/ext/transport/binder/client/binder_connector.cc
@@ -4130,6 +4131,7 @@ if(gRPC_INSTALL)
 endif()
 
 
+
 add_library(grpc++_alts
   src/cpp/common/alts_context.cc
   src/cpp/common/alts_util.cc
@@ -4193,6 +4195,7 @@ if(gRPC_INSTALL)
     ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
   )
 endif()
+
 
 
 add_library(grpc++_error_details
@@ -4259,6 +4262,7 @@ endif()
 
 
 if(gRPC_BUILD_CODEGEN)
+
 add_library(grpc++_reflection
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.cc
@@ -4331,6 +4335,7 @@ endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
+
 add_library(grpc++_test
   src/cpp/client/channel_test_peer.cc
 )
@@ -4396,6 +4401,7 @@ endforeach()
 endif()
 if(gRPC_BUILD_TESTS)
 
+
 add_library(grpc++_test_config
   test/cpp/util/test_config_cc.cc
 )
@@ -4441,6 +4447,7 @@ target_link_libraries(grpc++_test_config
 
 endif()
 if(gRPC_BUILD_TESTS)
+
 
 add_library(grpc++_test_util
   src/core/lib/gpr/subprocess_posix.cc
@@ -4507,6 +4514,30 @@ target_link_libraries(grpc++_test_util
 
 endif()
 
+
+# for DLL build just compile a dummy grpc++_unsecure
+# This is a temporary situation until some code restructuring
+# obviates the need to exclude this library
+if(BUILD_SHARED_LIBS AND MSVC)
+add_library(grpc++_unsecure
+  src/cpp/common/version_cc.cc
+)
+target_include_directories(grpc++_unsecure
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+foreach(_hdr
+  include/grpcpp/grpcpp.h
+)
+  string(REPLACE "include/" "" _path ${_hdr})
+  get_filename_component(_path ${_path} PATH)
+  install(FILES ${_hdr}
+    DESTINATION "${gRPC_INSTALL_INCLUDEDIR}/${_path}"
+  )
+endforeach()
+else()
 add_library(grpc++_unsecure
   src/cpp/client/channel_cc.cc
   src/cpp/client/client_callback.cc
@@ -4546,7 +4577,6 @@ add_library(grpc++_unsecure
   src/cpp/util/string_ref.cc
   src/cpp/util/time_cc.cc
   ${gRPC_UPB_GEN_DUPL_SRC}
-  ${gRPC_ADDITIONAL_WIN_DLL_SRC}
 )
 
 target_compile_features(grpc++_unsecure PUBLIC cxx_std_14)
@@ -4589,7 +4619,6 @@ target_link_libraries(grpc++_unsecure
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
-  ${gRPC_ADDITIONAL_WIN_DLL_LIBS}
 )
 
 foreach(_hdr
@@ -4800,6 +4829,7 @@ foreach(_hdr
     DESTINATION "${gRPC_INSTALL_INCLUDEDIR}/${_path}"
   )
 endforeach()
+endif() # BUILD_SHARED_LIBS AND MSVC
 
 
 if(gRPC_INSTALL)
@@ -4810,6 +4840,7 @@ if(gRPC_INSTALL)
     ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
   )
 endif()
+
 
 
 add_library(grpc_authorization_provider
@@ -5220,6 +5251,7 @@ if(gRPC_INSTALL)
 endif()
 
 
+
 add_library(grpc_plugin_support
   src/compiler/cpp_generator.cc
   src/compiler/csharp_generator.cc
@@ -5294,6 +5326,7 @@ endif()
 # grpcpp_channelz doesn't build with protobuf-lite
 # See https://github.com/grpc/grpc/issues/19473
 if(gRPC_BUILD_CODEGEN AND NOT gRPC_USE_PROTO_LITE)
+
 add_library(grpcpp_channelz
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.grpc.pb.cc
@@ -14500,6 +14533,7 @@ target_include_directories(inter_activity_pipe_test
 target_link_libraries(inter_activity_pipe_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::hash
   absl::type_traits
   absl::statusor
   gpr

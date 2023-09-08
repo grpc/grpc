@@ -528,19 +528,6 @@
     src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
   )
 
-  # When building shared lib on Windows, additional missing symbols need to
-  # be resolved for grpc++_unsecure. Also that build needs to be able to resolve
-  # certain symbols from openssl.
-  set(gRPC_ADDITIONAL_WIN_DLL_SRC
-    src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc
-    src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.cc
-    src/core/lib/surface/api_trace.cc
-    src/cpp/common/tls_certificate_provider.cc
-  )
-  set(gRPC_ADDITIONAL_WIN_DLL_LIBS
-    ${'${_gRPC_SSL_LIBRARIES}'}
-  )
-
   endif() # BUILD_SHARED_LIBS AND WIN32
 
   # Create directory for proto source files
@@ -782,6 +769,32 @@
   if(gRPC_BUILD_CODEGEN)
   % endif
   % endif
+
+  % if lib.name == 'grpc++_unsecure':
+  # for DLL build just compile a dummy grpc++_unsecure
+  # This is a temporary situation until some code restructuring
+  # obviates the need to exclude this library
+  if(BUILD_SHARED_LIBS AND MSVC)
+  add_library(grpc++_unsecure
+    src/cpp/common/version_cc.cc
+  )
+  target_include_directories(grpc++_unsecure
+    PUBLIC <%text>$<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include></%text>
+    PRIVATE
+      <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>
+  )
+
+  foreach(_hdr
+    include/grpcpp/grpcpp.h
+  )
+    string(REPLACE "include/" "" _path <%text>${_hdr})</%text>
+    get_filename_component(_path <%text>${_path}</%text> PATH)
+    install(FILES <%text>${_hdr}</%text>
+      DESTINATION <%text>"${gRPC_INSTALL_INCLUDEDIR}/${_path}"</%text>
+    )
+  endforeach()
+  else()
+  % endif
   add_library(${lib.name}${lib_type_for_lib(lib.name)}
   % for src in lib.src:
   % if not proto_re.match(src):
@@ -798,9 +811,6 @@
   % endfor
   % if lib.name in ['grpc++_alts', 'grpc++_unsecure', 'grpc++']:
     ${'${gRPC_UPB_GEN_DUPL_SRC}'}
-  % endif
-  % if lib.name in ['grpc++_unsecure']:
-    ${'${gRPC_ADDITIONAL_WIN_DLL_SRC}'}
   % endif
   )
 
@@ -865,9 +875,6 @@
   % for dep in get_deps(lib):
     ${dep}
   % endfor
-  % if lib.name in ['grpc++_unsecure']:
-    ${'${gRPC_ADDITIONAL_WIN_DLL_LIBS}'}
-  % endif
   )
   % endif
   % if lib.name in ["gpr"]:  # TODO(jtattermusch): avoid special case based on target name
@@ -901,6 +908,9 @@
   % endif
   % if any(proto_re.match(src) for src in lib.src):
   endif()
+  % endif
+  % if lib.name == 'grpc++_unsecure':
+  endif() # BUILD_SHARED_LIBS AND MSVC
   % endif
   </%def>
 
