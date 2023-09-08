@@ -273,6 +273,7 @@ grpc_cc_library(
     hdrs = ["xds_http_filter_test_lib.h"],
     external_deps = [
         "gtest",
+        "protobuf_headers",
     ],
     deps = [
         "//:gpr",
