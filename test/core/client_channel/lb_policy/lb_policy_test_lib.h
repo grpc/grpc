@@ -484,6 +484,40 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     }
 
    private:
+    // A wrapper for a picker that hops into the WorkSerializer to
+    // release the ref to the picker.
+    class PickerWrapper : public LoadBalancingPolicy::SubchannelPicker {
+     public:
+      PickerWrapper(std::shared_ptr<WorkSerializer> work_serializer,
+                    RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker)
+          : work_serializer_(std::move(work_serializer)),
+            picker_(std::move(picker)) {
+        gpr_log(GPR_INFO, "creating wrapper %p for picker %p", this,
+                picker_.get());
+      }
+
+      void Orphan() override {
+        absl::Notification notification;
+        work_serializer_->Run(
+            [notification = &notification,
+             picker = std::move(picker_)]() mutable {
+              picker.reset();
+              notification->Notify();
+            },
+            DEBUG_LOCATION);
+        notification.WaitForNotification();
+      }
+
+      LoadBalancingPolicy::PickResult Pick(
+          LoadBalancingPolicy::PickArgs args) override {
+        return picker_->Pick(std::move(args));
+      }
+
+     private:
+      std::shared_ptr<WorkSerializer> work_serializer_;
+      RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker_;
+    };
+
     // Represents an event reported by the LB policy.
     using Event = absl::variant<StateUpdate, ReresolutionRequested>;
 
@@ -524,7 +558,9 @@ class LoadBalancingPolicyTest : public ::testing::Test {
         grpc_connectivity_state state, const absl::Status& status,
         RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker) override {
       MutexLock lock(&mu_);
-      StateUpdate update{state, status, std::move(picker)};
+      StateUpdate update{
+          state, status,
+          MakeRefCounted<PickerWrapper>(work_serializer_, std::move(picker))};
       gpr_log(GPR_INFO, "state update from LB policy: %s",
               update.ToString().c_str());
       queue_.push_back(std::move(update));
@@ -649,6 +685,9 @@ class LoadBalancingPolicyTest : public ::testing::Test {
             grpc_event_engine::experimental::GetDefaultEventEngine())) {}
 
   void TearDown() override {
+    // Make sure pickers (and transitively, subchannels) are unreffed before
+    // destroying the fixture.
+    WaitForWorkSerializerToFlush();
     // Note: Can't safely trigger this from inside the FakeHelper dtor,
     // because if there is a picker in the queue that is holding a ref
     // to the LB policy, that will prevent the LB policy from being
