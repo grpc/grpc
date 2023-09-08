@@ -332,6 +332,12 @@ class LoadBalancingPolicyTest : public ::testing::Test {
             << "bug in test: " << ConnectivityStateName(state)
             << " must have OK status: " << status;
       }
+      // Updating the state in the state tracker will enqueue
+      // notifications to watchers on the WorkSerializer.  We do not
+      // want to return until all of those notifications have been
+      // delivered, so we add an additional callback to the WorkSerializer
+      // queue (which will be queued after the notifications) and wait
+      // until that additional callback has been run.
       absl::Notification notification;
       work_serializer_->Run(
           [&]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_) {
@@ -705,6 +711,14 @@ class LoadBalancingPolicyTest : public ::testing::Test {
                            LoadBalancingPolicy* lb_policy) {
     ExecCtx exec_ctx;
     absl::Status status;
+    // When the LB policy gets the update, it will create new
+    // subchannels, and it will register a connectivity state watcher
+    // for each one.  The initial connectivity state notifications for
+    // those watchers will be queued on the WorkSerializer.  We don't
+    // want to return until those notifications have been delivered to
+    // the LB policy, so we add an additional callback to the WorkSerializer
+    // queue (which will be queued after the notifications) and wait
+    // until that additional callback has been run.
     absl::Notification notification;
     work_serializer_->Run(
         [&]() {
