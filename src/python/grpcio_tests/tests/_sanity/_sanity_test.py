@@ -37,9 +37,12 @@ class SanityTest(unittest.TestCase):
                 )
             }
         )
+        for name in test_suite_names:
+            print(f"test_suite_name: {name}")
 
         tests_json_string = pkgutil.get_data(self.TEST_PKG_PATH, "tests.json")
         tests_json = tests_json_string.decode()
+        print(f"tests_json: {tests_json}")
 
         self.assertSequenceEqual(tests_json, test_suite_names)
 

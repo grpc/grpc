@@ -755,7 +755,7 @@ class PythonLanguage(object):
                         ],
                         timeout_seconds=60,
                         environ=_FORCE_ENVIRON_FOR_WRAPPERS,
-                        shortname="f{python_config.name}.xds_protos",
+                        shortname=f"{python_config.name}.xds_protos",
                     )
                 )
 
