@@ -22,6 +22,7 @@
 
 #include <limits.h>
 
+#include <type_traits>
 #include <utility>
 
 #include "opentelemetry/metrics/meter.h"
@@ -31,7 +32,9 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/lib/channel/call_tracer.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/surface/channel_stack_type.h"
@@ -88,6 +91,7 @@ absl::string_view OTelServerCallSentTotalCompressedMessageSizeInstrumentName() {
 absl::string_view OTelServerCallRcvdTotalCompressedMessageSizeInstrumentName() {
   return "grpc.server.call.rcvd_total_compressed_message_size";
 }
+
 //
 // OpenTelemetryPluginBuilder
 //
@@ -117,6 +121,21 @@ OpenTelemetryPluginBuilder& OpenTelemetryPluginBuilder::DisableMetrics(
 OpenTelemetryPluginBuilder& OpenTelemetryPluginBuilder::SetLabelsInjector(
     std::unique_ptr<LabelsInjector> labels_injector) {
   labels_injector_ = std::move(labels_injector);
+  return *this;
+}
+
+OpenTelemetryPluginBuilder& OpenTelemetryPluginBuilder::SetTargetSelector(
+    absl::AnyInvocable<bool(absl::string_view /*target*/) const>
+        target_selector) {
+  target_selector_ = std::move(target_selector);
+  return *this;
+}
+
+OpenTelemetryPluginBuilder&
+OpenTelemetryPluginBuilder::SetTargetAttributeFilter(
+    absl::AnyInvocable<bool(absl::string_view /*target*/) const>
+        target_attribute_filter) {
+  target_attribute_filter_ = std::move(target_attribute_filter);
   return *this;
 }
 
@@ -171,16 +190,27 @@ void OpenTelemetryPluginBuilder::BuildAndRegisterGlobal() {
             OTelServerCallRcvdTotalCompressedMessageSizeInstrumentName()));
   }
   g_otel_plugin_state_->labels_injector = std::move(labels_injector_);
+  g_otel_plugin_state_->target_attribute_filter =
+      std::move(target_attribute_filter_);
   g_otel_plugin_state_->meter_provider = std::move(meter_provider);
   grpc_core::ServerCallTracerFactory::RegisterGlobal(
       new grpc::internal::OpenTelemetryServerCallTracerFactory);
   grpc_core::CoreConfiguration::RegisterBuilder(
-      [](grpc_core::CoreConfiguration::Builder* builder) {
+      [target_selector = std::move(target_selector_)](
+          grpc_core::CoreConfiguration::Builder* builder) mutable {
         builder->channel_init()->RegisterStage(
             GRPC_CLIENT_CHANNEL, /*priority=*/INT_MAX,
-            [](grpc_core::ChannelStackBuilder* builder) {
-              builder->PrependFilter(
-                  &grpc::internal::OpenTelemetryClientFilter::kFilter);
+            [target_selector = std::move(target_selector)](
+                grpc_core::ChannelStackBuilder* builder) {
+              // Only register the filter if no channel selector has been set or
+              // the target selector returns true for the target.
+              if (target_selector == nullptr ||
+                  target_selector(builder->channel_args()
+                                      .GetString(GRPC_ARG_SERVER_URI)
+                                      .value_or(""))) {
+                builder->PrependFilter(
+                    &grpc::internal::OpenTelemetryClientFilter::kFilter);
+              }
               return true;
             });
       });

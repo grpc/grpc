@@ -41,12 +41,15 @@ namespace testing {
 namespace {
 using ::envoy::config::core::v3::HealthStatus;
 using ::envoy::extensions::filters::http::stateful_session::v3::StatefulSession;
+using ::envoy::extensions::filters::http::stateful_session::v3::
+    StatefulSessionPerRoute;
 using ::envoy::extensions::filters::network::http_connection_manager::v3::
     HttpFilter;
 using ::envoy::extensions::http::stateful_session::cookie::v3 ::
     CookieBasedSessionState;
 
 constexpr absl::string_view kCookieName = "grpc_session_cookie";
+constexpr absl::string_view kFilterName = "envoy.stateful_session";
 
 class OverrideHostTest : public XdsEnd2endTest {
  protected:
@@ -90,7 +93,7 @@ class OverrideHostTest : public XdsEnd2endTest {
     }
     EXPECT_EQ(values.size(), 1);
     if (values.size() == 1) {
-      return {{"cookie", absl::StrFormat("%s=%s", kCookieName, values[0])}};
+      return {{"cookie", absl::StrFormat("%s=%s", cookie_name, values[0])}};
     } else {
       return {};
     }
@@ -99,12 +102,16 @@ class OverrideHostTest : public XdsEnd2endTest {
   // Builds a Listener with Fault Injection filter config. If the http_fault
   // is nullptr, then assign an empty filter config. This filter config is
   // required to enable the fault injection features.
-  Listener BuildListenerWithStatefulSessionFilter() {
-    CookieBasedSessionState cookie_state;
-    cookie_state.mutable_cookie()->set_name(std::string(kCookieName));
+  Listener BuildListenerWithStatefulSessionFilter(
+      absl::string_view cookie_name = kCookieName) {
     StatefulSession stateful_session;
-    stateful_session.mutable_session_state()->mutable_typed_config()->PackFrom(
-        cookie_state);
+    if (!cookie_name.empty()) {
+      CookieBasedSessionState cookie_state;
+      cookie_state.mutable_cookie()->set_name(std::string(cookie_name));
+      stateful_session.mutable_session_state()
+          ->mutable_typed_config()
+          ->PackFrom(cookie_state);
+    }
     // HttpConnectionManager http_connection_manager;
     Listener listener = default_listener_;
     HttpConnectionManager http_connection_manager =
@@ -113,7 +120,7 @@ class OverrideHostTest : public XdsEnd2endTest {
     HttpFilter* session_filter =
         http_connection_manager.mutable_http_filters(0);
     *http_connection_manager.add_http_filters() = *session_filter;
-    session_filter->set_name("envoy.stateful_session");
+    session_filter->set_name(kFilterName);
     session_filter->mutable_typed_config()->PackFrom(stateful_session);
     ClientHcmAccessor().Pack(http_connection_manager, &listener);
     return listener;
@@ -125,9 +132,10 @@ class OverrideHostTest : public XdsEnd2endTest {
   // to obtain the cookie. max_requests_per_backend argument specifies
   // the number of requests per backend to send.
   std::vector<std::pair<std::string, std::string>>
-  GetAffinityCookieHeaderForBackend(grpc_core::DebugLocation debug_location,
-                                    size_t backend_index,
-                                    size_t max_requests_per_backend = 1) {
+  GetAffinityCookieHeaderForBackend(
+      grpc_core::DebugLocation debug_location, size_t backend_index,
+      size_t max_requests_per_backend = 1,
+      absl::string_view cookie_name = kCookieName) {
     EXPECT_LT(backend_index, backends_.size());
     if (backend_index >= backends_.size()) {
       return {};
@@ -149,7 +157,8 @@ class OverrideHostTest : public XdsEnd2endTest {
                      backend->backend_service2()->request_count();
       ResetBackendCounters();
       if (count == 1) {
-        return GetHeadersWithSessionCookie(server_initial_metadata);
+        return GetHeadersWithSessionCookie(server_initial_metadata,
+                                           cookie_name);
       }
     }
     ADD_FAILURE_AT(debug_location.file(), debug_location.line())
@@ -438,6 +447,34 @@ TEST_P(OverrideHostTest, ClusterGoneHostStays) {
   EXPECT_NE(
       backend1_in_cluster2_cookie,
       GetAffinityCookieHeaderForBackend(DEBUG_LOCATION, 1, kNumEchoRpcs / 3));
+}
+
+TEST_P(OverrideHostTest, EnablePerRoute) {
+  CreateAndStartBackends(2);
+  RouteConfiguration route_config = default_route_config_;
+  StatefulSessionPerRoute stateful_session_per_route;
+  auto* session_state = stateful_session_per_route.mutable_stateful_session()
+                            ->mutable_session_state();
+  session_state->set_name("envoy.http.stateful_session.cookie");
+  CookieBasedSessionState cookie_config;
+  cookie_config.mutable_cookie()->set_name(kCookieName);
+  session_state->mutable_typed_config()->PackFrom(cookie_config);
+  auto* route = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  google::protobuf::Any any;
+  any.PackFrom(stateful_session_per_route);
+  route->mutable_typed_per_filter_config()->emplace(kFilterName, any);
+  SetListenerAndRouteConfiguration(balancer_.get(),
+                                   BuildListenerWithStatefulSessionFilter(""),
+                                   route_config);
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs(
+      {{"locality0", {CreateEndpoint(0), CreateEndpoint(1)}}})));
+  WaitForAllBackends(DEBUG_LOCATION);
+  // Get cookie for backend #0.
+  auto session_cookie = GetAffinityCookieHeaderForBackend(DEBUG_LOCATION, 0);
+  ASSERT_FALSE(session_cookie.empty());
+  // All requests go to the backend we specified
+  CheckRpcSendOk(DEBUG_LOCATION, 5, RpcOptions().set_metadata(session_cookie));
+  EXPECT_EQ(backends_[0]->backend_service()->request_count(), 5);
 }
 
 }  // namespace
