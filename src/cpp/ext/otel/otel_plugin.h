@@ -135,6 +135,12 @@ class OpenTelemetryPluginBuilder {
   OpenTelemetryPluginBuilder& SetLabelsInjector(
       std::unique_ptr<LabelsInjector> labels_injector);
 
+  // If set, \a target_selector is called once per channel to decide whether to
+  // collect metrics on that target or not.
+  OpenTelemetryPluginBuilder& SetTargetSelector(
+      absl::AnyInvocable<bool(absl::string_view /*target*/) const>
+          target_selector);
+
   OpenTelemetryPluginBuilder& SetTargetAttributesFilter(
       absl::AnyInvocable<bool(absl::string_view /*target*/) const>
           target_attributes_filter);
@@ -158,6 +164,7 @@ class OpenTelemetryPluginBuilder {
   absl::AnyInvocable<bool(absl::string_view /*target*/) const>
       target_attributes_filter_;
   absl::flat_hash_set<std::string> metrics_;
+  absl::AnyInvocable<bool(absl::string_view /*target*/) const> target_selector_;
 };
 
 }  // namespace internal
