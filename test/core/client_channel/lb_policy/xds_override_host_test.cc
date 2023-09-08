@@ -338,6 +338,7 @@ TEST_F(XdsOverrideHostTest, DrainingSubchannelIsConnecting) {
   // picks where the override host is CONNECTING.  All picks without an
   // override host should not use this host.
   gpr_log(GPR_INFO, "### subchannel starts reconnecting");
+  WaitForWorkSerializerToFlush();
   EXPECT_TRUE(subchannel->ConnectionRequested());
   ExpectQueueEmpty();
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
