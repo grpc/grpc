@@ -67,6 +67,10 @@ class PickFirstTest : public LoadBalancingPolicyTest {
       std::vector<absl::string_view>* out_address_order) {
     work_serializer_->Run([&]() { lb_policy_->ExitIdleLocked(); },
                           DEBUG_LOCATION);
+    // First flush is for ExitIdle(), second flush is for the resulting
+    // subchannel connectivity state notifications.
+    WaitForWorkSerializerToFlush();
+    WaitForWorkSerializerToFlush();
     out_address_order->clear();
     // Construct a map of subchannel to address.
     // We will remove entries as each subchannel starts to connect.
@@ -445,6 +449,13 @@ TEST_F(PickFirstTest, GoesIdleWhenConnectionFailsThenCanReconnect) {
   // By checking the picker, we told the LB policy to trigger a new
   // connection attempt, so it should start over with the first
   // subchannel.
+  // Note that the picker will have enqueued the ExitIdle() call in the
+  // WorkSerializer, so the first flush will execute that call.  But
+  // executing that call will result in enqueueing subchannel
+  // connectivity state notifications, so we need to flush again to make
+  // sure all of that work is done before we continue.
+  WaitForWorkSerializerToFlush();
+  WaitForWorkSerializerToFlush();
   EXPECT_TRUE(subchannel->ConnectionRequested());
   // The subchannel starts connecting.
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);

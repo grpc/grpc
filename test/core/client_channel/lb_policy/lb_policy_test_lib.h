@@ -153,6 +153,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
         void OnConnectivityStateChange(grpc_connectivity_state new_state,
                                        const absl::Status& status) override {
+          gpr_log(GPR_INFO, "notifying watcher: state=%s status=%s",
+                  ConnectivityStateName(new_state), status.ToString().c_str());
           watcher()->OnConnectivityStateChange(new_state, status);
         }
 
@@ -330,16 +332,19 @@ class LoadBalancingPolicyTest : public ::testing::Test {
             << "bug in test: " << ConnectivityStateName(state)
             << " must have OK status: " << status;
       }
+      absl::Notification notification;
       work_serializer_->Run(
-          [this, state, status, validate_state_transition, location]()
-              ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_) {
-                if (validate_state_transition) {
-                  AssertValidConnectivityStateTransition(state_tracker_.state(),
-                                                         state, location);
-                }
-                state_tracker_.SetState(state, status, "set from test");
-              },
+          [&]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_) {
+            if (validate_state_transition) {
+              AssertValidConnectivityStateTransition(state_tracker_.state(),
+                                                     state, location);
+            }
+            state_tracker_.SetState(state, status, "set from test");
+            work_serializer_->Run([&]() { notification.Notify(); },
+                                  DEBUG_LOCATION);
+          },
           DEBUG_LOCATION);
+      notification.WaitForNotification();
     }
 
     // Indicates if any of the associated SubchannelInterface objects
@@ -700,7 +705,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     work_serializer_->Run(
         [&]() {
           status = lb_policy->UpdateLocked(std::move(update_args));
-          notification.Notify();
+          work_serializer_->Run([&]() { notification.Notify(); },
+                                DEBUG_LOCATION);
         },
         DEBUG_LOCATION);
     notification.WaitForNotification();
@@ -1091,6 +1097,14 @@ class LoadBalancingPolicyTest : public ::testing::Test {
                            std::forward_as_tuple(address, work_serializer_))
                   .first;
     return &it->second;
+  }
+
+  void WaitForWorkSerializerToFlush() {
+    gpr_log(GPR_INFO, "waiting for WorkSerializer to flush...");
+    absl::Notification notification;
+    work_serializer_->Run([&]() { notification.Notify(); }, DEBUG_LOCATION);
+    notification.WaitForNotification();
+    gpr_log(GPR_INFO, "WorkSerializer flush complete");
   }
 
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_ =
