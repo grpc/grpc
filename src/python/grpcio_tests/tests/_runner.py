@@ -134,9 +134,7 @@ class Runner(object):
         testcase_filter = os.getenv("GRPC_PYTHON_TESTRUNNER_FILTER")
         filtered_cases = []
         for case in _loader.iterate_suite_cases(suite):
-            import sys; sys.stderr.write(f"checking_case_id_starts_with: {case.id()} startswith {testcase_filter}\n")
-            # if not testcase_filter or case.id().startswith(testcase_filter):
-            if not testcase_filter or testcase_filter in case.id():
+            if not testcase_filter or case.id().startswith(testcase_filter):
                 filtered_cases.append(case)
 
         # Ensure that every test case has no collision with any other test case in
