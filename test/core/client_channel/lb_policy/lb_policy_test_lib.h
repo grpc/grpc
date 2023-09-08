@@ -649,9 +649,6 @@ class LoadBalancingPolicyTest : public ::testing::Test {
             grpc_event_engine::experimental::GetDefaultEventEngine())) {}
 
   void TearDown() override {
-    // Some policies may hop into the WorkSerializer to unref subchannels.
-    // Need to make sure this gets flushed before the test fixture is destroyed.
-    WaitForWorkSerializerToFlush();
     // Note: Can't safely trigger this from inside the FakeHelper dtor,
     // because if there is a picker in the queue that is holding a ref
     // to the LB policy, that will prevent the LB policy from being
@@ -1194,6 +1191,8 @@ class TimeAwareLoadBalancingPolicyTest : public LoadBalancingPolicyTest {
     ASSERT_NE(it->second, nullptr);
     std::move(it->second)();
     timer_callbacks_.erase(it);
+    // Flush WorkSerializer, in case the timer callback enqueued anything.
+    WaitForWorkSerializerToFlush();
   }
 
   // Called when the LB policy starts a timer.
