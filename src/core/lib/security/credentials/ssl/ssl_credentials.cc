@@ -49,6 +49,23 @@ grpc_ssl_credentials::grpc_ssl_credentials(
     const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pair,
     const grpc_ssl_verify_peer_options* verify_options) {
   build_config(pem_root_certs, pem_key_cert_pair, verify_options);
+  // Use default (e.g. OS) root certificates if the user did not pass any root
+  // certificates.
+  if (config_.pem_root_certs == nullptr) {
+    const char* pem_root_certs =
+        grpc_core::DefaultSslRootStore::GetPemRootCerts();
+    if (pem_root_certs == nullptr) {
+      gpr_log(GPR_ERROR, "Could not get default pem root certs.");
+    } else {
+      size_t root_len = strlen(pem_root_certs);
+      char* default_roots = strcpy(new char[root_len + 1], pem_root_certs);
+      config_.pem_root_certs = default_roots;
+      root_store_ = grpc_core::DefaultSslRootStore::GetRootStore();
+    }
+  } else {
+    config_.pem_root_certs = config_.pem_root_certs;
+    root_store_ = nullptr;
+  }
 }
 
 grpc_ssl_credentials::~grpc_ssl_credentials() {
@@ -65,40 +82,25 @@ grpc_core::RefCountedPtr<grpc_channel_security_connector>
 grpc_ssl_credentials::create_security_connector(
     grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
     const char* target, grpc_core::ChannelArgs* args) {
+  if (config_.pem_root_certs == nullptr) {
+    gpr_log(GPR_ERROR, "Could not get default pem root certs.");
+    return nullptr;
+  }
   absl::optional<std::string> overridden_target_name =
       args->GetOwnedString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG);
   auto* ssl_session_cache = args->GetObject<tsi::SslSessionLRUCache>();
-  tsi_ssl_session_cache* tsi_ssl_session_cache =
+  tsi_ssl_session_cache* session_cache =
       ssl_session_cache == nullptr ? nullptr : ssl_session_cache->c_ptr();
-
-  const tsi_ssl_root_certs_store* root_store;
-  // Use default (e.g. OS) root certificates if the user did not pass any root
-  // certificates.
-  if (config_.pem_root_certs == nullptr) {
-    const char* pem_root_certs =
-        grpc_core::DefaultSslRootStore::GetPemRootCerts();
-    if (pem_root_certs == nullptr) {
-      gpr_log(GPR_ERROR, "Could not get default pem root certs.");
-      return nullptr;
-    }
-    size_t root_len = strlen(pem_root_certs);
-    char* default_roots = strcpy(new char[root_len + 1], pem_root_certs);
-    config_.pem_root_certs = default_roots;
-    root_store = grpc_core::DefaultSslRootStore::GetRootStore();
-  } else {
-    config_.pem_root_certs = config_.pem_root_certs;
-    root_store = nullptr;
-  }
 
   grpc_core::RefCountedPtr<grpc_channel_security_connector> sc = nullptr;
   // We need a separate factory and ctx if there's a cache in the channel
   // args
-  if (tsi_ssl_session_cache != nullptr) {
+  if (session_cache != nullptr) {
     // Get a different client handshaker factory and give to it the security
     // connector
     tsi_ssl_client_handshaker_factory* factory_with_cache = nullptr;
     grpc_security_status status = initialize_client_handshaker_factory(
-        &config_, config_.pem_root_certs, root_store, tsi_ssl_session_cache,
+        &config_, config_.pem_root_certs, root_store_, session_cache,
         &factory_with_cache);
     if (status != GRPC_SECURITY_OK) {
       return nullptr;
@@ -111,7 +113,7 @@ grpc_ssl_credentials::create_security_connector(
     tsi_ssl_client_handshaker_factory_unref(factory_with_cache);
   } else {
     grpc_security_status status = initialize_client_handshaker_factory(
-        &config_, config_.pem_root_certs, root_store, nullptr,
+        &config_, config_.pem_root_certs, root_store_, nullptr,
         &client_handshaker_factory_);
     if (status != GRPC_SECURITY_OK) {
       return nullptr;
