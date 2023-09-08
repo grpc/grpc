@@ -33,13 +33,12 @@
 namespace grpc {
 namespace internal {
 
+// This is a no-op at present, but in the future, this object would be useful
+// for performing cleanup.
 class CsmObservability {};
 
 class CsmObservabilityBuilder {
  public:
-  // TODO(yashykt): Should this take the SDK or the API MeterProvider? Benefit
-  // of SDK MeterProvider - Can explicitly set histogram bucket boundaries, but
-  // in the next iteration of the API, we would have it there as well.
   CsmObservabilityBuilder& SetMeterProvider(
       std::shared_ptr<opentelemetry::sdk::metrics::MeterProvider>
           meter_provider);
@@ -64,8 +63,7 @@ class CsmObservabilityBuilder {
           target_selector);
 
   // Builds the CsmObservability plugin. The return status shows whether
-  // CsmObservability was successfully enabled or not. TODO(): Is the
-  // CsmObservability object useful?
+  // CsmObservability was successfully enabled or not.
   absl::StatusOr<CsmObservability> BuildAndRegister();
 
  private:

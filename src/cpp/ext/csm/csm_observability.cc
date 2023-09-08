@@ -18,9 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/status/status.h"
-
 #include "src/cpp/ext/csm/csm_observability.h"
+
 #include "src/cpp/ext/otel/otel_plugin.h"
 
 namespace grpc {
@@ -37,20 +36,26 @@ CsmObservabilityBuilder& CsmObservabilityBuilder::SetMeterProvider(
   return *this;
 }
 
-CsmObservabilityBuilder& CsmObservabilityBuilder::EnableMetrics(
-    const absl::flat_hash_set<absl::string_view>& metric_names) {
-  builder_.EnableMetrics(metric_names);
+CsmObservabilityBuilder& CsmObservabilityBuilder::EnableMetric(
+    absl::string_view metric_name) {
+  builder_.EnableMetric(metric_name);
   return *this;
 }
 
-CsmObservabilityBuilder& CsmObservabilityBuilder::DisableMetrics(
-    const absl::flat_hash_set<absl::string_view>& metric_names) {
-  builder_.DisableMetrics(metric_names);
+CsmObservabilityBuilder& CsmObservabilityBuilder::DisableMetric(
+    absl::string_view metric_name) {
+  builder_.DisableMetric(metric_name);
+  return *this;
+}
+
+CsmObservabilityBuilder& CsmObservabilityBuilder::DisableAllMetrics() {
+  builder_.DisableAllMetrics();
   return *this;
 }
 
 absl::StatusOr<CsmObservability> CsmObservabilityBuilder::BuildAndRegister() {
-  return absl::UnimplementedError("Not Implemented");
+  builder_.BuildAndRegisterGlobal();
+  return CsmObservability();
 }
 
 }  // namespace internal
