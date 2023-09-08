@@ -65,13 +65,18 @@ class PickFirstTest : public LoadBalancingPolicyTest {
   void GetOrderAddressesArePicked(
       absl::Span<const absl::string_view> addresses,
       std::vector<absl::string_view>* out_address_order) {
-    work_serializer_->Run([&]() { lb_policy_->ExitIdleLocked(); },
-                          DEBUG_LOCATION);
-    // First flush is for ExitIdle(), second flush is for the resulting
-    // subchannel connectivity state notifications.
-    WaitForWorkSerializerToFlush();
-    WaitForWorkSerializerToFlush();
     out_address_order->clear();
+    // Note: ExitIdle() will enqueue a bunch of connectivity state
+    // notifications on the WorkSerializer, and we want to wait until
+    // those are delivered to the LB policy.
+    absl::Notification notification;
+    work_serializer_->Run([&]() {
+          lb_policy_->ExitIdleLocked();
+          work_serializer_->Run([&]() { notification.Notify(); },
+                                DEBUG_LOCATION);
+        },
+        DEBUG_LOCATION);
+    notification.WaitForNotification();
     // Construct a map of subchannel to address.
     // We will remove entries as each subchannel starts to connect.
     std::map<SubchannelState*, absl::string_view> subchannels;
