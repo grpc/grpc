@@ -649,6 +649,9 @@ class LoadBalancingPolicyTest : public ::testing::Test {
             grpc_event_engine::experimental::GetDefaultEventEngine())) {}
 
   void TearDown() override {
+    // Some policies may hop into the WorkSerializer to unref subchannels.
+    // Need to make sure this gets flushed before the test fixture is destroyed.
+    WaitForWorkSerializerToFlush();
     // Note: Can't safely trigger this from inside the FakeHelper dtor,
     // because if there is a picker in the queue that is holding a ref
     // to the LB policy, that will prevent the LB policy from being
