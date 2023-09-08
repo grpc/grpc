@@ -29,6 +29,7 @@
 #include <utility>
 
 #include "absl/container/flat_hash_set.h"
+#include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "opentelemetry/metrics/meter_provider.h"
@@ -63,16 +64,9 @@ class LabelsInjector {
  public:
   virtual ~LabelsInjector() {}
   // Read the incoming initial metadata to get the set of labels to be added to
-  // metrics. (Does not include the local labels.)
-  virtual std::unique_ptr<LabelsIterable> GetPeerLabels(
+  // metrics.
+  virtual std::unique_ptr<LabelsIterable> GetLabels(
       grpc_metadata_batch* incoming_initial_metadata) = 0;
-
-  // Get the local labels to be added to metrics. To be used when the peer
-  // metadata is not available, for example, for started RPCs metric.
-  // It is the responsibility of the implementation to make sure that the
-  // backing store for the absl::string_view remains valid for the lifetime of
-  // gRPC.
-  virtual std::unique_ptr<LabelsIterable> GetLocalLabels() = 0;
 
   // Modify the outgoing initial metadata with metadata information to be sent
   // to the peer.
@@ -103,6 +97,8 @@ struct OTelPluginState {
   opentelemetry::nostd::shared_ptr<opentelemetry::metrics::MeterProvider>
       meter_provider;
   std::unique_ptr<LabelsInjector> labels_injector;
+  absl::AnyInvocable<bool(absl::string_view /*target*/) const>
+      target_attribute_filter;
 };
 
 const struct OTelPluginState& OTelPluginState();
@@ -139,6 +135,21 @@ class OpenTelemetryPluginBuilder {
   OpenTelemetryPluginBuilder& SetLabelsInjector(
       std::unique_ptr<LabelsInjector> labels_injector);
 
+  // If set, \a target_selector is called per channel to decide whether to
+  // collect metrics on that target or not.
+  OpenTelemetryPluginBuilder& SetTargetSelector(
+      absl::AnyInvocable<bool(absl::string_view /*target*/) const>
+          target_selector);
+
+  // If set, \a target_attribute_filter is called per channel to decide whether
+  // to record the target attribute on client or to replace it with "other".
+  // This helps reduce the cardinality on metrics in cases where many channels
+  // are created with different targets in the same binary (which might happen
+  // for example, if the channel target string uses IP addresses directly).
+  OpenTelemetryPluginBuilder& SetTargetAttributeFilter(
+      absl::AnyInvocable<bool(absl::string_view /*target*/) const>
+          target_attribute_filter);
+
   void BuildAndRegisterGlobal();
 
   // The base set of metrics -
@@ -155,7 +166,10 @@ class OpenTelemetryPluginBuilder {
  private:
   std::shared_ptr<opentelemetry::metrics::MeterProvider> meter_provider_;
   std::unique_ptr<LabelsInjector> labels_injector_;
+  absl::AnyInvocable<bool(absl::string_view /*target*/) const>
+      target_attribute_filter_;
   absl::flat_hash_set<std::string> metrics_;
+  absl::AnyInvocable<bool(absl::string_view /*target*/) const> target_selector_;
 };
 
 }  // namespace internal

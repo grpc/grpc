@@ -95,8 +95,7 @@ class OpenTelemetryCallTracer : public grpc_core::ClientCallTracer {
     const bool arena_allocated_;
     // Start time (for measuring latency).
     absl::Time start_time_;
-    std::unique_ptr<LabelsIterable> local_labels_;
-    std::unique_ptr<LabelsIterable> peer_labels_;
+    std::unique_ptr<LabelsIterable> injected_labels_;
   };
 
   explicit OpenTelemetryCallTracer(OpenTelemetryClientFilter* parent,
