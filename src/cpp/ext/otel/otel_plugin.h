@@ -126,7 +126,6 @@ class OpenTelemetryPluginBuilder {
   // If `SetMeterProvider()` is not called, no metrics are collected.
   OpenTelemetryPluginBuilder& SetMeterProvider(
       std::shared_ptr<opentelemetry::metrics::MeterProvider> meter_provider);
-
   // Methods to manipulate which instruments are enabled in the OTel Stats
   // Plugin. The default set of instruments are -
   // grpc.client.attempt.started
@@ -156,7 +155,6 @@ class OpenTelemetryPluginBuilder {
   OpenTelemetryPluginBuilder& SetTargetAttributeFilter(
       absl::AnyInvocable<bool(absl::string_view /*target*/) const>
           target_attribute_filter);
-
   void BuildAndRegisterGlobal();
 
  private:
