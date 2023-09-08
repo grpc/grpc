@@ -255,8 +255,6 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         ":xds_http_filter_test_lib",
-        "//:gpr",
-        "//:grpc",
         "//src/proto/grpc/testing/xds/v3:router_proto",
         "//src/proto/grpc/testing/xds/v3:stateful_session_cookie_proto",
         "//src/proto/grpc/testing/xds/v3:stateful_session_proto",
@@ -271,13 +269,11 @@ grpc_cc_library(
     testonly = True,
     srcs = [],
     hdrs = ["xds_http_filter_test_lib.h"],
-    external_deps = [
-        "gtest",
-        "protobuf_headers",
-    ],
+    external_deps = ["gtest"],
     deps = [
-        "//:gpr",
-        "//:grpc",
+        "//:grpc++_config_proto",
+        "//:xds_client",
+        "//src/core:grpc_xds_client",
     ],
 )
 
@@ -289,8 +285,6 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:gpr",
-        "//:grpc",
         "//src/core:grpc_xds_client",
         "//src/proto/grpc/testing/xds/v3:fault_proto",
         "//src/proto/grpc/testing/xds/v3:http_connection_manager_proto",

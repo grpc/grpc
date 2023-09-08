@@ -16,6 +16,11 @@
 #ifndef GRPC_TEST_CORE_XDS_XDS_HTTP_FILTER_TEST_LIB_H
 #define GRPC_TEST_CORE_XDS_XDS_HTTP_FILTER_TEST_LIB_H
 
+#include <google/protobuf/any.pb.h>
+
+#include "absl/strings/str_split.h"
+#include "gtest/gtest.h"
+
 #include <grpcpp/impl/codegen/config_protobuf.h>
 
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
