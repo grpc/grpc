@@ -95,6 +95,7 @@ class TestLite(setuptools.Command):
         loader.loadTestsFromNames(["tests"])
         runner = tests.Runner(dedicated_threads=True)
         result = runner.run(loader.suite)
+        sys.exit("Fake_Test_failure")
         if not result.wasSuccessful():
             sys.exit("Test failure")
 
