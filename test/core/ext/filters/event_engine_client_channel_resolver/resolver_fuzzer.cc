@@ -143,6 +143,12 @@ class FuzzingResolverEventEngine
   }
   bool Cancel(TaskHandle /* handle */) override { return true; }
 
+  void Run(absl::AnyInvocable<void()> fn) override {
+    runner_.Run(std::move(fn));
+  }
+
+  void Run(Closure* fn) override { runner_.Run(fn); }
+
   void Tick() { runner_.Tick(); }
 
  private:
