@@ -1185,18 +1185,21 @@ void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
 Server::RegisteredMethod* Server::ChannelData::GetRegisteredMethod(
     const absl::string_view& host, const absl::string_view& path) {
   if (server_->registered_methods_.empty()) return nullptr;
-  // check for an exact match with host or a wildcard method definition (no host
-  // set)
-  uint32_t hash =
-      MixHash32((host.empty()) ? 0 : absl::HashOf(host), absl::HashOf(path));
+  // TODO(ctiller): unify these two searches
+  // check for an exact match with host
+  uint32_t hash = MixHash32(absl::HashOf(host), absl::HashOf(path));
   for (size_t i = 0; i < server_->registered_methods_[hash].size(); i++) {
     RegisteredMethod* rm = ((server_->registered_methods_)[hash])[i].get();
     if (rm->method != path) continue;
-    if (!host.empty()) {
-      if (rm->host.empty() || rm->host != host) continue;
-    } else {
-      if (!rm->host.empty()) continue;
-    }
+    if (rm->host.empty() || rm->host != host) continue;
+    return rm;
+  }
+  // check for a wildcard method definition (no host set)
+  hash = MixHash32(0, absl::HashOf(path));
+  for (size_t i = 0; i < server_->registered_methods_[hash].size(); i++) {
+    RegisteredMethod* rm = ((server_->registered_methods_)[hash])[i].get();
+    if (rm->method != path) continue;
+    if (!rm->host.empty()) continue;
     return rm;
   }
   return nullptr;
