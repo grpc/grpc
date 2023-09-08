@@ -53,6 +53,20 @@ CsmObservabilityBuilder& CsmObservabilityBuilder::DisableAllMetrics() {
   return *this;
 }
 
+CsmObservabilityBuilder& CsmObservabilityBuilder::SetTargetSelector(
+    absl::AnyInvocable<bool(absl::string_view /*target*/) const>
+        target_selector) {
+  builder_.SetTargetSelector(std::move(target_selector));
+  return *this;
+}
+
+CsmObservabilityBuilder& CsmObservabilityBuilder::SetTargetAttributeFilter(
+    absl::AnyInvocable<bool(absl::string_view /*target*/) const>
+        target_attribute_filter) {
+  builder_.SetTargetAttributeFilter(std::move(target_attribute_filter));
+  return *this;
+}
+
 absl::StatusOr<CsmObservability> CsmObservabilityBuilder::BuildAndRegister() {
   builder_.BuildAndRegisterGlobal();
   return CsmObservability();

@@ -123,7 +123,7 @@ absl::string_view OTelServerCallRcvdTotalCompressedMessageSizeInstrumentName();
 class OpenTelemetryPluginBuilder {
  public:
   OpenTelemetryPluginBuilder();
-
+  // If `SetMeterProvider()` is not called, no metrics are collected.
   OpenTelemetryPluginBuilder& SetMeterProvider(
       std::shared_ptr<opentelemetry::metrics::MeterProvider> meter_provider);
 
@@ -140,16 +140,14 @@ class OpenTelemetryPluginBuilder {
   OpenTelemetryPluginBuilder& EnableMetric(absl::string_view metric_name);
   OpenTelemetryPluginBuilder& DisableMetric(absl::string_view metric_name);
   OpenTelemetryPluginBuilder& DisableAllMetrics();
-
+  // Allows setting a labels injector on calls traced through this plugin.
   OpenTelemetryPluginBuilder& SetLabelsInjector(
       std::unique_ptr<LabelsInjector> labels_injector);
-
   // If set, \a target_selector is called per channel to decide whether to
   // collect metrics on that target or not.
   OpenTelemetryPluginBuilder& SetTargetSelector(
       absl::AnyInvocable<bool(absl::string_view /*target*/) const>
           target_selector);
-
   // If set, \a target_attribute_filter is called per channel to decide whether
   // to record the target attribute on client or to replace it with "other".
   // This helps reduce the cardinality on metrics in cases where many channels

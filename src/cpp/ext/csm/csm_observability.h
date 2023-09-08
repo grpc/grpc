@@ -55,13 +55,19 @@ class CsmObservabilityBuilder {
   CsmObservabilityBuilder& EnableMetric(absl::string_view metric_name);
   CsmObservabilityBuilder& DisableMetric(absl::string_view metric_name);
   CsmObservabilityBuilder& DisableAllMetrics();
-
-  // If set, \a target_selector is called once per channel to decide whether to
+  // If set, \a target_selector is called per channel to decide whether to
   // collect metrics on that target or not.
   CsmObservabilityBuilder& SetTargetSelector(
       absl::AnyInvocable<bool(absl::string_view /*target*/) const>
           target_selector);
-
+  // If set, \a target_attribute_filter is called per channel to decide whether
+  // to record the target attribute on client or to replace it with "other".
+  // This helps reduce the cardinality on metrics in cases where many channels
+  // are created with different targets in the same binary (which might happen
+  // for example, if the channel target string uses IP addresses directly).
+  CsmObservabilityBuilder& SetTargetAttributeFilter(
+      absl::AnyInvocable<bool(absl::string_view /*target*/) const>
+          target_attribute_filter);
   // Builds the CsmObservability plugin. The return status shows whether
   // CsmObservability was successfully enabled or not.
   absl::StatusOr<CsmObservability> BuildAndRegister();
