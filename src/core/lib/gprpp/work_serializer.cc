@@ -28,6 +28,7 @@
 #include <utility>
 
 #include "absl/container/inlined_vector.h"
+#include "work_serializer.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
@@ -318,7 +319,20 @@ class WorkSerializer::DispatchingWorkSerializer final
   };
   using CallbackVector = absl::InlinedVector<CallbackWrapper, 1>;
 
+  // Override EventEngine::Closure
   void Run() override;
+
+  // Refill processing_ from incoming_
+  // If processing_ is empty, also update running_ and return false.
+  // If additionally orphaned, will also delete this (therefore, it's not safe
+  // to touch any member variables if Refill returns false).
+  bool Refill();
+
+  // Perform the parts of Refill that need to acquire mu_
+  // Returns a tri-state indicating whether we were refilled successfully (=>
+  // keep running), or finished, and then if we were orphaned.
+  enum class RefillResult { kRefilled, kFinished, kFinishedAndOrphaned };
+  RefillResult RefillInner();
 
   // Member variables are roughly sorted to keep processing cache lines
   // separated from incoming cache lines.
@@ -405,34 +419,53 @@ void WorkSerializer::DispatchingWorkSerializer::Run() {
   // wants to check that it's in the WorkSerializer too.
   processing_.pop_back();
   ClearCurrentThread();
-  // Check if we've drained the queue.
-  if (processing_.empty()) {
-    // Recover any memory held by processing_, so that we don't grow forever.
-    processing_.shrink_to_fit();
-    ReleasableMutexLock lock(&mu_);
-    // Swap incoming_ into processing_ - effectively lets us release memory
-    // (outside the lock) once per iteration for the storage vectors.
-    processing_.swap(incoming_);
-    // If there were no items, then we've finished running.
-    if (processing_.empty()) {
-      running_ = false;
-      // And if we're also orphaned then it's time to delete this object.
-      if (orphaned_) {
-        lock.Release();
-        delete this;
-      }
-      return;
-    }
-    // Release the mutex before we do O(n) work.
-    lock.Release();
-    // Reverse processing_ so that we can pop_back() items in the correct order.
-    // (note that this is mostly pointer swaps inside the std::function's, so
-    // should be relatively cheap even for longer lists).
-    std::reverse(processing_.begin(), processing_.end());
-  }
+  // Check if we've drained the queue and if so refill it.
+  if (processing_.empty() && !Refill()) return;
   // There's still work in processing_, so schedule ourselves again on
   // EventEngine.
   event_engine_->Run(this);
+}
+
+WorkSerializer::DispatchingWorkSerializer::RefillResult
+WorkSerializer::DispatchingWorkSerializer::RefillInner() {
+  // Recover any memory held by processing_, so that we don't grow forever.
+  // Do so before acuiring a lock so we don't cause inadvertent contention.
+  processing_.shrink_to_fit();
+  MutexLock lock(&mu_);
+  // Swap incoming_ into processing_ - effectively lets us release memory
+  // (outside the lock) once per iteration for the storage vectors.
+  processing_.swap(incoming_);
+  // If there were no items, then we've finished running.
+  if (processing_.empty()) {
+    running_ = false;
+    // And if we're also orphaned then it's time to delete this object.
+    if (orphaned_) {
+      return RefillResult::kFinishedAndOrphaned;
+    } else {
+      return RefillResult::kFinished;
+    }
+  }
+  return RefillResult::kRefilled;
+}
+
+bool WorkSerializer::DispatchingWorkSerializer::Refill() {
+  const auto result = RefillInner();
+  switch (result) {
+    case RefillResult::kRefilled:
+      // Reverse processing_ so that we can pop_back() items in the correct
+      // order. (note that this is mostly pointer swaps inside the
+      // std::function's, so should be relatively cheap even for longer lists).
+      // Do so here so we're outside of the RefillInner lock.
+      std::reverse(processing_.begin(), processing_.end());
+      return true;
+    case RefillResult::kFinished:
+      return false;
+    case RefillResult::kFinishedAndOrphaned:
+      // Orphaned and finished - finally delete this object.
+      // Here so that the mutex lock in RefillInner is released.
+      delete this;
+      return false;
+  }
 }
 
 //
