@@ -28,7 +28,6 @@
 #include <utility>
 
 #include "absl/container/inlined_vector.h"
-#include "work_serializer.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
@@ -39,6 +38,7 @@
 #include "src/core/lib/gprpp/mpscq.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
 namespace grpc_core {

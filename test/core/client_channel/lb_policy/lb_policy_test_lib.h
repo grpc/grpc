@@ -33,6 +33,7 @@
 #include <set>
 #include <string>
 #include <tuple>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -510,7 +511,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
       LoadBalancingPolicy::PickResult Pick(
           LoadBalancingPolicy::PickArgs args) override {
-        return picker_->Pick(std::move(args));
+        return picker_->Pick(args);
       }
 
      private:
