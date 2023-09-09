@@ -19,11 +19,9 @@
 
 #include <string>
 
-#include "absl/strings/string_view.h"
-
 namespace grpc_core {
 
-std::string ValidateExperimentsStringForFuzzing(absl::string_view experiments);
+std::string ValidateExperimentsStringForFuzzing(uint64_t experiments);
 
 }  // namespace grpc_core
 
