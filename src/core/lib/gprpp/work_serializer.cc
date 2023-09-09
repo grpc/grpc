@@ -344,6 +344,14 @@ class WorkSerializer::DispatchingWorkSerializer final
   enum class RefillResult { kRefilled, kFinished, kFinishedAndOrphaned };
   RefillResult RefillInner();
 
+#ifndef NDEBUG
+  void SetCurrentThread() { running_work_serializer_ = this; }
+  void ClearCurrentThread() { running_work_serializer_ = nullptr; }
+#else
+  void SetCurrentThread() {}
+  void ClearCurrentThread() {}
+#endif
+
   // Member variables are roughly sorted to keep processing cache lines
   // separated from incoming cache lines.
 
@@ -379,9 +387,11 @@ class WorkSerializer::DispatchingWorkSerializer final
 #endif
 };
 
+#ifndef NDEBUG
 thread_local WorkSerializer::DispatchingWorkSerializer*
     WorkSerializer::DispatchingWorkSerializer::running_work_serializer_ =
         nullptr;
+#endif
 
 void WorkSerializer::DispatchingWorkSerializer::Orphan() {
   ReleasableMutexLock lock(&mu_);
@@ -430,13 +440,13 @@ void WorkSerializer::DispatchingWorkSerializer::Run() {
             cb.location.file(), cb.location.line());
   }
   // Run the work item.
-  running_work_serializer_ = this;
+  SetCurrentThread();
   cb.callback();
   // pop_back here destroys the callback - freeing any resources it might hold.
   // We do so before clearing the current thread in case the callback destructor
   // wants to check that it's in the WorkSerializer too.
   processing_.pop_back();
-  running_work_serializer_ = nullptr;
+  ClearCurrentThread();
   // Check if we've drained the queue and if so refill it.
   if (processing_.empty() && !Refill()) return;
   // There's still work in processing_, so schedule ourselves again on
