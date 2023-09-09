@@ -21,7 +21,7 @@ import traceback
 import unittest
 from xml.etree import ElementTree
 
-import coverage
+# import coverage
 
 from tests import _loader
 
@@ -251,16 +251,16 @@ class CoverageResult(AugmentedResult):
 
         Additionally initializes and begins code coverage tracking."""
         super(CoverageResult, self).startTest(test)
-        self.coverage_context = coverage.Coverage(data_suffix=True)
-        self.coverage_context.start()
+        # self.coverage_context = coverage.Coverage(data_suffix=True)
+        # self.coverage_context.start()
 
     def stopTest(self, test):
         """See unittest.TestResult.stopTest.
 
         Additionally stops and deinitializes code coverage tracking."""
         super(CoverageResult, self).stopTest(test)
-        self.coverage_context.stop()
-        self.coverage_context.save()
+        # self.coverage_context.stop()
+        # self.coverage_context.save()
         self.coverage_context = None
 
 
