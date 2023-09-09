@@ -36,7 +36,7 @@
   "tests_aio.unit.secure_call_test.TestUnaryStreamSecureCall",
   "tests_aio.unit.secure_call_test.TestUnaryUnarySecureCall",
   "tests_aio.unit.server_interceptor_test.TestServerInterceptor",
-  "unit.server_test.TestServer",
+  "tests_aio.unit.server_test.TestServer",
   "tests_aio.unit.server_time_remaining_test.TestServerTimeRemaining",
   "tests_aio.unit.timeout_test.TestTimeout",
   "tests_aio.unit.wait_for_connection_test.TestWaitForConnection",
