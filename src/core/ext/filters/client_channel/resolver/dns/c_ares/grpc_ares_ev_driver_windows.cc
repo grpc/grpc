@@ -271,7 +271,7 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
 
   bool IsFdStillReadableLocked() override { return read_buf_has_data_; }
 
-  void ShutdownLocked(grpc_error_handle /* error */) override {
+  void ShutdownLocked(absl::Status /* error */) override {
     GPR_ASSERT(!shutdown_called_);
     shutdown_called_ = true;
     on_shutdown_locked_();

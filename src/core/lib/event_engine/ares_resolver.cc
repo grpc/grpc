@@ -182,6 +182,18 @@ AresResolver::CreateAresResolver(
       std::move(polled_fd_factory), std::move(event_engine), channel);
 }
 
+AresResolver::AresResolver(
+    std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
+    std::shared_ptr<EventEngine> event_engine, ares_channel channel)
+    : grpc_core::InternallyRefCounted<AresResolver>(
+          GRPC_TRACE_FLAG_ENABLED(grpc_trace_ares_resolver) ? "AresResolver"
+                                                            : nullptr),
+      channel_(channel),
+      polled_fd_factory_(std::move(polled_fd_factory)),
+      event_engine_(std::move(event_engine)) {
+  polled_fd_factory_->Initialize(&mutex_, event_engine_.get());
+}
+
 AresResolver::~AresResolver() {
   GPR_ASSERT(fd_node_list_.empty());
   GPR_ASSERT(callback_map_.empty());
@@ -332,16 +344,6 @@ void AresResolver::LookupTXT(
   CheckSocketsLocked();
   MaybeStartTimerLocked();
 }
-
-AresResolver::AresResolver(
-    std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
-    std::shared_ptr<EventEngine> event_engine, ares_channel channel)
-    : grpc_core::InternallyRefCounted<AresResolver>(
-          GRPC_TRACE_FLAG_ENABLED(grpc_trace_ares_resolver) ? "AresResolver"
-                                                            : nullptr),
-      channel_(channel),
-      polled_fd_factory_(std::move(polled_fd_factory)),
-      event_engine_(std::move(event_engine)) {}
 
 void AresResolver::CheckSocketsLocked() {
   FdNodeList new_list;
@@ -707,6 +709,6 @@ void noop_inject_channel_config(ares_channel* /*channel*/) {}
 void (*event_engine_grpc_ares_test_only_inject_config)(ares_channel* channel) =
     noop_inject_channel_config;
 
-bool g_event_engine_grpc_ares_test_only_force_tcp = false;
+bool g_event_engine_grpc_ares_test_only_force_tcp = true;
 
 #endif  // GRPC_ARES == 1

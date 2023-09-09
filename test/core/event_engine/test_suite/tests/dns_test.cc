@@ -15,6 +15,8 @@
 // IWYU pragma: no_include <ratio>
 // IWYU pragma: no_include <arpa/inet.h>
 
+#include <grpc/support/port_platform.h>
+
 #include <cstdlib>
 #include <cstring>
 #include <initializer_list>
@@ -35,6 +37,7 @@
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "test/core/event_engine/test_suite/event_engine_test_framework.h"
@@ -43,6 +46,10 @@
 #include "test/cpp/util/get_grpc_test_runfile_dir.h"
 #include "test/cpp/util/subprocess.h"
 
+#ifdef GPR_WINDOWS
+#include "test/cpp/util/windows/manifest_file.h"
+#endif  // GPR_WINDOWS
+
 namespace grpc_event_engine {
 namespace experimental {
 
@@ -50,13 +57,6 @@ void InitDNSTests() {}
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
-
-#ifdef GPR_WINDOWS
-class EventEngineDNSTest : public EventEngineTest {};
-
-// TODO(yijiem): make the test run on Windows
-TEST_F(EventEngineDNSTest, TODO) {}
-#else
 
 namespace {
 
@@ -110,13 +110,41 @@ class EventEngineDNSTest : public EventEngineTest {
     std::string health_check_path = kHealthCheckRelPath;
     absl::optional<std::string> runfile_dir = grpc::GetGrpcTestRunFileDir();
     if (runfile_dir.has_value()) {
-      // We sure need a portable filesystem lib for this to work on Windows.
       test_records_path = absl::StrJoin({*runfile_dir, test_records_path}, "/");
       dns_server_path = absl::StrJoin({*runfile_dir, dns_server_path}, "/");
       dns_resolver_path = absl::StrJoin({*runfile_dir, dns_resolver_path}, "/");
       tcp_connect_path = absl::StrJoin({*runfile_dir, tcp_connect_path}, "/");
       health_check_path = absl::StrJoin({*runfile_dir, health_check_path}, "/");
+#ifdef GPR_WINDOWS
+// TODO(yijiem): Misusing the GRPC_PORT_ISOLATED_RUNTIME preprocessor symbol as
+// an indication whether the test is running on RBE or not. Find a better way of
+// doing this.
+#ifndef GRPC_PORT_ISOLATED_RUNTIME
+      gpr_log(GPR_ERROR,
+              "You are invoking the test locally with Bazel, you may need to "
+              "invoke Bazel with --enable_runfiles=yes.");
+#endif  // GRPC_PORT_ISOLATED_RUNTIME
+      test_records_path = grpc::testing::NormalizeFilePath(test_records_path);
+      dns_server_path =
+          grpc::testing::NormalizeFilePath(dns_server_path + ".exe");
+      dns_resolver_path =
+          grpc::testing::NormalizeFilePath(dns_resolver_path + ".exe");
+      tcp_connect_path =
+          grpc::testing::NormalizeFilePath(tcp_connect_path + ".exe");
+      health_check_path =
+          grpc::testing::NormalizeFilePath(health_check_path + ".exe");
+      std::cout << test_records_path << std::endl;
+      std::cout << dns_server_path << std::endl;
+      std::cout << dns_resolver_path << std::endl;
+      std::cout << tcp_connect_path << std::endl;
+      std::cout << health_check_path << std::endl;
+#endif  // GPR_WINDOWS
     } else {
+#ifdef GPR_WINDOWS
+      grpc_core::Crash(
+          "The EventEngineDNSTest does not support running without Bazel on "
+          "Windows for now.");
+#endif  // GPR_WINDOWS
       // Invoke the .py scripts directly where they are in source code if we are
       // not running with bazel.
       dns_server_path += ".py";
@@ -142,8 +170,11 @@ class EventEngineDNSTest : public EventEngineTest {
         tcp_connect_path,
     });
     int status = health_check.Join();
-    // TODO(yijiem): make this portable for Windows
+#ifdef GPR_WINDOWS
+    ASSERT_EQ(status, 0);
+#else
     ASSERT_TRUE(WIFEXITED(status) && WEXITSTATUS(status) == 0);
+#endif  // GPR_WINDOWS
 #endif  // GRPC_IOS_EVENT_ENGINE_CLIENT
   }
 
@@ -547,5 +578,3 @@ TEST_F(EventEngineDNSTest, UnparseableHostPortsBadLocalhostWithPort) {
                           &dns_resolver_signal_, "[localhost]:1");
 }
 // END
-
-#endif  // GPR_WINDOWS

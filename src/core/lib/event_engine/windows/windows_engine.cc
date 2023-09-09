@@ -35,6 +35,7 @@
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/event_engine/utils.h"
+#include "src/core/lib/event_engine/windows/grpc_polled_fd_windows.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
 #include "src/core/lib/event_engine/windows/windows_endpoint.h"
 #include "src/core/lib/event_engine/windows/windows_engine.h"
@@ -194,10 +195,49 @@ EventEngine::TaskHandle WindowsEventEngine::RunAfterInternal(
   return handle;
 }
 
+#if GRPC_ARES == 1
+
+WindowsEventEngine::WindowsDNSResolver::WindowsDNSResolver(
+    grpc_core::OrphanablePtr<AresResolver> ares_resolver)
+    : ares_resolver_(std::move(ares_resolver)) {}
+
+void WindowsEventEngine::WindowsDNSResolver::LookupHostname(
+    LookupHostnameCallback on_resolve, absl::string_view name,
+    absl::string_view default_port) {
+  ares_resolver_->LookupHostname(name, default_port, std::move(on_resolve));
+}
+
+void WindowsEventEngine::WindowsDNSResolver::LookupSRV(
+    LookupSRVCallback on_resolve, absl::string_view name) {
+  ares_resolver_->LookupSRV(name, std::move(on_resolve));
+}
+
+void WindowsEventEngine::WindowsDNSResolver::LookupTXT(
+    LookupTXTCallback on_resolve, absl::string_view name) {
+  ares_resolver_->LookupTXT(name, std::move(on_resolve));
+}
+
+#endif  // GRPC_ARES == 1
+
 absl::StatusOr<std::unique_ptr<EventEngine::DNSResolver>>
 WindowsEventEngine::GetDNSResolver(
-    EventEngine::DNSResolver::ResolverOptions const& /*options*/) {
+    EventEngine::DNSResolver::ResolverOptions const& options) {
+#if GRPC_ARES == 1
+  auto ares_resolver = AresResolver::CreateAresResolver(
+      options.dns_server,
+      std::make_unique<GrpcPolledFdFactoryWindows>(poller()),
+      shared_from_this());
+  if (!ares_resolver.ok()) {
+    return ares_resolver.status();
+  }
+  return std::make_unique<WindowsEventEngine::WindowsDNSResolver>(
+      std::move(*ares_resolver));
+#else   // GRPC_ARES == 1
+  // TODO(yijiem): Implement a basic A/AAAA-only native resolver in
+  // WindowsEventEngine.
+  (void)options;
   grpc_core::Crash("unimplemented");
+#endif  // GRPC_ARES == 1
 }
 
 bool WindowsEventEngine::IsWorkerThread() { grpc_core::Crash("unimplemented"); }

@@ -17,6 +17,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "grpc/event_engine/event_engine.h"
+
 #if GRPC_ARES == 1
 
 #include <ares.h>
@@ -24,6 +26,7 @@
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/error.h"
 
 namespace grpc_event_engine {
@@ -47,7 +50,7 @@ class GrpcPolledFd {
   virtual bool IsFdStillReadableLocked() = 0;
   // Called once and only once. Must cause cancellation of any pending
   // read/write callbacks.
-  virtual void ShutdownLocked(grpc_error_handle error) = 0;
+  virtual void ShutdownLocked(absl::Status error) = 0;
   // Get the underlying ares_socket_t that this was created from
   virtual ares_socket_t GetWrappedAresSocketLocked() = 0;
   // A unique name, for logging
@@ -60,6 +63,10 @@ class GrpcPolledFd {
 class GrpcPolledFdFactory {
  public:
   virtual ~GrpcPolledFdFactory() {}
+  // Optionally initializes the GrpcPolledFdFactory with a grpc_core::Mutex*
+  // for synchronization between the AresResolver and the GrpcPolledFds. The
+  // Windows implementation overrides this.
+  virtual void Initialize(grpc_core::Mutex* mutex, EventEngine* event_engine) {}
   // Creates a new wrapped fd for the current platform
   virtual GrpcPolledFd* NewGrpcPolledFdLocked(ares_socket_t as) = 0;
   // Optionally configures the ares channel after creation

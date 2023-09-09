@@ -80,7 +80,7 @@ class GrpcPolledFdPosix : public GrpcPolledFd {
            bytes_available > 0;
   }
 
-  void ShutdownLocked(grpc_error_handle error) override {
+  void ShutdownLocked(absl::Status error) override {
     handle_->ShutdownHandle(error);
   }
 

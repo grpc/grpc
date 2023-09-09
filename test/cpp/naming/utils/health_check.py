@@ -25,7 +25,7 @@ def test_runner_log(msg):
 
 
 def python_args(arg_list):
-    if platform.system() == "Windows":
+    if platform.system() == "Windows" and arg_list[0].endswith('.py'):
         return [sys.executable] + arg_list
     return arg_list
 

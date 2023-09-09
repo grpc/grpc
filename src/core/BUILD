@@ -2091,6 +2091,7 @@ grpc_cc_library(
         "absl/strings",
     ],
     deps = [
+        "ares_resolver",
         "channel_args_endpoint_config",
         "common_event_engine_closures",
         "error",
@@ -2390,11 +2391,13 @@ grpc_cc_library(
     name = "ares_resolver",
     srcs = [
         "lib/event_engine/ares_resolver.cc",
+        "lib/event_engine/windows/grpc_polled_fd_windows.cc",
     ],
     hdrs = [
         "lib/event_engine/ares_resolver.h",
         "lib/event_engine/grpc_polled_fd.h",
         "lib/event_engine/posix_engine/grpc_polled_fd_posix.h",
+        "lib/event_engine/windows/grpc_polled_fd_windows.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -2410,6 +2413,7 @@ grpc_cc_library(
         "cares",
     ],
     deps = [
+        "common_event_engine_closures",
         "error",
         "event_engine_time_util",
         "grpc_sockaddr",
@@ -2418,6 +2422,7 @@ grpc_cc_library(
         "posix_event_engine_event_poller",
         "posix_event_engine_tcp_socket_utils",
         "resolved_address",
+        "windows_iocp",
         "//:debug_location",
         "//:event_engine_base_hdrs",
         "//:gpr",
