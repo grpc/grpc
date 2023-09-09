@@ -457,7 +457,7 @@ void WorkSerializer::DispatchingWorkSerializer::Run() {
 WorkSerializer::DispatchingWorkSerializer::RefillResult
 WorkSerializer::DispatchingWorkSerializer::RefillInner() {
   // Recover any memory held by processing_, so that we don't grow forever.
-  // Do so before acuiring a lock so we don't cause inadvertent contention.
+  // Do so before acquiring a lock so we don't cause inadvertent contention.
   processing_.shrink_to_fit();
   MutexLock lock(&mu_);
   // Swap incoming_ into processing_ - effectively lets us release memory
