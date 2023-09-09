@@ -3,6 +3,7 @@
   "tests.admin.admin_test.TestAdmin",
   "tests.channelz._channelz_servicer_test.ChannelzServicerTest",
   "tests.csds.csds_test.TestCsds",
+  "tests.csds.csds_test.TestCsdsStream",
   "tests.fork._fork_interop_test.ForkInteropTest",
   "tests.health_check._health_servicer_test.HealthServicerBackwardsCompatibleWatchTest",
   "tests.health_check._health_servicer_test.HealthServicerTest",
