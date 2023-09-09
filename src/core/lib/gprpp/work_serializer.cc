@@ -60,24 +60,11 @@ class WorkSerializer::WorkSerializerImpl {
   virtual void Orphan() = 0;
 
 #ifndef NDEBUG
-  bool RunningInWorkSerializer() const {
-    return std::this_thread::get_id() == current_thread_;
-  }
+  virtual bool RunningInWorkSerializer() const = 0;
 #endif
 
  protected:
-#ifndef NDEBUG
-  void SetCurrentThread() { current_thread_ = std::this_thread::get_id(); }
-  void ClearCurrentThread() { current_thread_ = std::thread::id(); }
-#else
-  void SetCurrentThread() {}
-  void ClearCurrentThread() {}
-#endif
-
  private:
-#ifndef NDEBUG
-  std::thread::id current_thread_;
-#endif
 };
 
 //
@@ -92,6 +79,12 @@ class WorkSerializer::LegacyWorkSerializer final : public WorkSerializerImpl {
                 const DebugLocation& location) override;
   void DrainQueue() override;
   void Orphan() override;
+
+#ifndef NDEBUG
+  bool RunningInWorkSerializer() const override {
+    return std::this_thread::get_id() == current_thread_;
+  }
+#endif
 
  private:
   struct CallbackWrapper {
@@ -128,10 +121,21 @@ class WorkSerializer::LegacyWorkSerializer final : public WorkSerializerImpl {
     return static_cast<uint64_t>(ref_pair & 0xffffffffffffu);
   }
 
+#ifndef NDEBUG
+  void SetCurrentThread() { current_thread_ = std::this_thread::get_id(); }
+  void ClearCurrentThread() { current_thread_ = std::thread::id(); }
+#else
+  void SetCurrentThread() {}
+  void ClearCurrentThread() {}
+#endif
+
   // An initial size of 1 keeps track of whether the work serializer has been
   // orphaned.
   std::atomic<uint64_t> refs_{MakeRefPair(0, 1)};
   MultiProducerSingleConsumerQueue queue_;
+#ifndef NDEBUG
+  std::thread::id current_thread_;
+#endif
 };
 
 void WorkSerializer::LegacyWorkSerializer::Run(std::function<void()> callback,
@@ -308,6 +312,12 @@ class WorkSerializer::DispatchingWorkSerializer final
   void DrainQueue() override {}
   void Orphan() override;
 
+#ifndef NDEBUG
+  bool RunningInWorkSerializer() const override {
+    return running_work_serializer_ == this;
+  }
+#endif
+
  private:
   // Wrapper to capture DebugLocation for the callback.
   struct CallbackWrapper {
@@ -363,7 +373,15 @@ class WorkSerializer::DispatchingWorkSerializer final
   // but as load increases we get some natural batching and the rate of mutex
   // acquisitions per work item tends towards 1.
   CallbackVector incoming_ ABSL_GUARDED_BY(mu_);
+
+#ifndef NDEBUG
+  static thread_local DispatchingWorkSerializer* running_work_serializer_;
+#endif
 };
+
+thread_local WorkSerializer::DispatchingWorkSerializer*
+    WorkSerializer::DispatchingWorkSerializer::running_work_serializer_ =
+        nullptr;
 
 void WorkSerializer::DispatchingWorkSerializer::Orphan() {
   ReleasableMutexLock lock(&mu_);
@@ -412,13 +430,13 @@ void WorkSerializer::DispatchingWorkSerializer::Run() {
             cb.location.file(), cb.location.line());
   }
   // Run the work item.
-  SetCurrentThread();
+  running_work_serializer_ = this;
   cb.callback();
   // pop_back here destroys the callback - freeing any resources it might hold.
   // We do so before clearing the current thread in case the callback destructor
   // wants to check that it's in the WorkSerializer too.
   processing_.pop_back();
-  ClearCurrentThread();
+  running_work_serializer_ = nullptr;
   // Check if we've drained the queue and if so refill it.
   if (processing_.empty() && !Refill()) return;
   // There's still work in processing_, so schedule ourselves again on
