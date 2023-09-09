@@ -343,7 +343,6 @@ class ClientChannel::PromiseBasedCallData : public ClientChannel::CallData {
                 result.has_value() ? result->ToString().c_str() : "Pending");
       }
       if (!result.has_value()) {
-        waker_ = Activity::current()->MakeNonOwningWaker();
         was_queued_ = true;
         return Pending{};
       }
@@ -364,10 +363,17 @@ class ClientChannel::PromiseBasedCallData : public ClientChannel::CallData {
     return GetContext<grpc_call_context_element>();
   }
 
-  void RetryCheckResolutionLocked() override {
+  void OnAddToQueueLocked() override
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::resolution_mu_) {
+    waker_ = Activity::current()->MakeNonOwningWaker();
+    was_queued_ = true;
+  }
+
+  void RetryCheckResolutionLocked()
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::resolution_mu_) override {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
-      gpr_log(GPR_INFO, "chand=%p calld=%p: RetryCheckResolutionLocked()",
-              chand_, this);
+      gpr_log(GPR_INFO, "chand=%p calld=%p: RetryCheckResolutionLocked(): %s",
+              chand_, this, waker_.ActivityDebugTag().c_str());
     }
     waker_.WakeupAsync();
   }
@@ -384,7 +390,7 @@ class ClientChannel::PromiseBasedCallData : public ClientChannel::CallData {
   grpc_polling_entity pollent_;
   ClientMetadataHandle client_initial_metadata_;
   bool was_queued_ = false;
-  Waker waker_;
+  Waker waker_ ABSL_GUARDED_BY(&ClientChannel::resolution_mu_);
 };
 
 //
