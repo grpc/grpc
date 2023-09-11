@@ -1564,6 +1564,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "event_engine_thread_pool",
     srcs = [
+        "lib/event_engine/thread_pool/thread_pool_factory.cc",
         "lib/event_engine/thread_pool/work_stealing_thread_pool.cc",
     ],
     hdrs = [
