@@ -11,9 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Provides distutils command classes for the gRPC Python setup process."""
+"""Provides setuptools command classes for the gRPC Python setup process."""
 
-from distutils import errors as _errors
 import glob
 import os
 import os.path
@@ -23,6 +22,7 @@ import shutil
 import sys
 
 import setuptools
+from setuptools import errors as _errors
 from setuptools.command import build_ext
 from setuptools.command import build_py
 from setuptools.command import easy_install
@@ -89,8 +89,6 @@ class TestLite(setuptools.Command):
         pass
 
     def run(self):
-        self._add_eggs_to_path()
-
         import tests
 
         loader = tests.Loader()
@@ -99,11 +97,6 @@ class TestLite(setuptools.Command):
         result = runner.run(loader.suite)
         if not result.wasSuccessful():
             sys.exit("Test failure")
-
-    def _add_eggs_to_path(self):
-        """Fetch install and test requirements"""
-        self.distribution.fetch_build_eggs(self.distribution.install_requires)
-        self.distribution.fetch_build_eggs(self.distribution.tests_require)
 
 
 class TestPy3Only(setuptools.Command):
@@ -123,7 +116,6 @@ class TestPy3Only(setuptools.Command):
         pass
 
     def run(self):
-        self._add_eggs_to_path()
         import tests
 
         loader = tests.Loader()
@@ -132,10 +124,6 @@ class TestPy3Only(setuptools.Command):
         result = runner.run(loader.suite)
         if not result.wasSuccessful():
             sys.exit("Test failure")
-
-    def _add_eggs_to_path(self):
-        self.distribution.fetch_build_eggs(self.distribution.install_requires)
-        self.distribution.fetch_build_eggs(self.distribution.tests_require)
 
 
 class TestAio(setuptools.Command):
@@ -151,8 +139,6 @@ class TestAio(setuptools.Command):
         pass
 
     def run(self):
-        self._add_eggs_to_path()
-
         import tests
 
         loader = tests.Loader()
@@ -164,11 +150,6 @@ class TestAio(setuptools.Command):
         result = runner.run(loader.suite)
         if not result.wasSuccessful():
             sys.exit("Test failure")
-
-    def _add_eggs_to_path(self):
-        """Fetch install and test requirements"""
-        self.distribution.fetch_build_eggs(self.distribution.install_requires)
-        self.distribution.fetch_build_eggs(self.distribution.tests_require)
 
 
 class TestGevent(setuptools.Command):
@@ -305,17 +286,11 @@ class RunInterop(test.test):
 
     def finalize_options(self):
         if self.client and self.server:
-            raise _errors.DistutilsOptionError(
+            raise _errors.OptionError(
                 "you may only specify one of client or server"
             )
 
     def run(self):
-        if self.distribution.install_requires:
-            self.distribution.fetch_build_eggs(
-                self.distribution.install_requires
-            )
-        if self.distribution.tests_require:
-            self.distribution.fetch_build_eggs(self.distribution.tests_require)
         if self.client:
             self.run_client()
         elif self.server:
@@ -359,12 +334,6 @@ class RunFork(test.test):
         pass
 
     def run(self):
-        if self.distribution.install_requires:
-            self.distribution.fetch_build_eggs(
-                self.distribution.install_requires
-            )
-        if self.distribution.tests_require:
-            self.distribution.fetch_build_eggs(self.distribution.tests_require)
         # We import here to ensure that our setuptools parent has had a chance to
         # edit the Python system path.
         from tests.fork import client

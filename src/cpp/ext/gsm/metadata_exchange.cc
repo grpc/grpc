@@ -22,13 +22,17 @@
 
 #include <stddef.h>
 
+#include <algorithm>
 #include <array>
 #include <cstdint>
 #include <unordered_map>
 
 #include "absl/meta/type_traits.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/escaping.h"
+#include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
+#include "absl/strings/strip.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 #include "google/protobuf/struct.upb.h"
@@ -37,7 +41,16 @@
 #include "upb/mem/arena.h"
 #include "upb/upb.hpp"
 
+#include <grpc/slice.h>
+
 #include "src/core/lib/gprpp/env.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/load_file.h"
+#include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_args.h"
+#include "src/core/lib/json/json_object_loader.h"
+#include "src/core/lib/json/json_reader.h"
+#include "src/core/lib/slice/slice_internal.h"
 
 namespace grpc {
 namespace internal {
@@ -56,6 +69,8 @@ constexpr absl::string_view kMetadataExchangeLocationKey = "location";
 constexpr absl::string_view kMetadataExchangeProjectIdKey = "project_id";
 constexpr absl::string_view kMetadataExchangeCanonicalServiceKey =
     "canonical_service";
+// The keys that will be used for the local attributes when recording metrics.
+constexpr absl::string_view kMeshIdAttribute = "gsm.mesh_id";
 // The keys that will be used for the peer attributes when recording metrics.
 constexpr absl::string_view kPeerTypeAttribute = "gsm.remote_workload_type";
 constexpr absl::string_view kPeerPodNameAttribute =
@@ -76,6 +91,62 @@ constexpr absl::string_view kPeerCanonicalServiceAttribute =
 constexpr absl::string_view kGkeType = "gcp_kubernetes_engine";
 
 enum class GcpResourceType : std::uint8_t { kGke, kUnknown };
+
+// A minimal class for helping with the information we need from the xDS
+// bootstrap file for GSM Observability reasons.
+class XdsBootstrapForGSM {
+ public:
+  class Node {
+   public:
+    const std::string& id() const { return id_; }
+
+    static const grpc_core::JsonLoaderInterface* JsonLoader(
+        const grpc_core::JsonArgs&) {
+      static const auto* loader =
+          grpc_core::JsonObjectLoader<Node>().Field("id", &Node::id_).Finish();
+      return loader;
+    }
+
+   private:
+    std::string id_;
+  };
+
+  const Node& node() const { return node_; }
+
+  static const grpc_core::JsonLoaderInterface* JsonLoader(
+      const grpc_core::JsonArgs&) {
+    static const auto* loader =
+        grpc_core::JsonObjectLoader<XdsBootstrapForGSM>()
+            .Field("node", &XdsBootstrapForGSM::node_)
+            .Finish();
+    return loader;
+  }
+
+ private:
+  Node node_;
+};
+
+// Returns an empty string if no bootstrap config is found.
+std::string GetXdsBootstrapContents() {
+  // First, try GRPC_XDS_BOOTSTRAP env var.
+  auto path = grpc_core::GetEnv("GRPC_XDS_BOOTSTRAP");
+  if (path.has_value()) {
+    grpc_slice contents;
+    grpc_error_handle error =
+        grpc_load_file(path->c_str(), /*add_null_terminator=*/true, &contents);
+    if (!error.ok()) return "";
+    std::string contents_str(grpc_core::StringViewFromSlice(contents));
+    grpc_core::CSliceUnref(contents);
+    return contents_str;
+  }
+  // Next, try GRPC_XDS_BOOTSTRAP_CONFIG env var.
+  auto env_config = grpc_core::GetEnv("GRPC_XDS_BOOTSTRAP_CONFIG");
+  if (env_config.has_value()) {
+    return std::move(*env_config);
+  }
+  // No bootstrap config found.
+  return "";
+}
 
 GcpResourceType StringToGcpResourceType(absl::string_view type) {
   if (type == kGkeType) {
@@ -133,41 +204,25 @@ absl::string_view GetStringValueFromUpbStruct(google_protobuf_Struct* struct_pb,
   return "unknown";
 }
 
-class LocalLabelsIterable : public LabelsIterable {
+class MeshLabelsIterable : public LabelsIterable {
  public:
-  explicit LocalLabelsIterable(
-      const std::vector<std::pair<absl::string_view, std::string>>& labels)
-      : labels_(labels) {}
-
-  absl::optional<std::pair<absl::string_view, absl::string_view>> Next()
-      override {
-    if (pos_ >= labels_.size()) {
-      return absl::nullopt;
-    }
-    return labels_[pos_++];
-  }
-
-  size_t Size() const override { return labels_.size(); }
-
-  void ResetIteratorPosition() override { pos_ = 0; }
-
- private:
-  size_t pos_ = 0;
-  const std::vector<std::pair<absl::string_view, std::string>>& labels_;
-};
-
-class PeerLabelsIterable : public LabelsIterable {
- public:
-  explicit PeerLabelsIterable(grpc_core::Slice remote_metadata)
-      : metadata_(std::move(remote_metadata)) {}
+  explicit MeshLabelsIterable(
+      const std::vector<std::pair<absl::string_view, std::string>>&
+          local_labels,
+      grpc_core::Slice remote_metadata)
+      : local_labels_(local_labels), metadata_(std::move(remote_metadata)) {}
 
   absl::optional<std::pair<absl::string_view, absl::string_view>> Next()
       override {
     auto& struct_pb = GetDecodedMetadata();
+    size_t local_labels_size = local_labels_.size();
+    if (pos_ < local_labels_size) {
+      return local_labels_[pos_++];
+    }
     if (struct_pb.struct_pb == nullptr) {
       return absl::nullopt;
     }
-    if (++pos_ == 1) {
+    if (++pos_ == local_labels_size + 1) {
       return std::make_pair(kPeerTypeAttribute,
                             GetStringValueFromUpbStruct(
                                 struct_pb.struct_pb, kMetadataExchangeTypeKey,
@@ -176,14 +231,15 @@ class PeerLabelsIterable : public LabelsIterable {
     // Only handle GKE type for now.
     switch (type_) {
       case GcpResourceType::kGke:
-        if (pos_ - 2 >= kGkeAttributeList.size()) {
+        if ((pos_ - 2 - local_labels_size) >= kGkeAttributeList.size()) {
           return absl::nullopt;
         }
         return std::make_pair(
-            kGkeAttributeList[pos_ - 2].otel_attribute,
+            kGkeAttributeList[pos_ - 2 - local_labels_size].otel_attribute,
             GetStringValueFromUpbStruct(
                 struct_pb.struct_pb,
-                kGkeAttributeList[pos_ - 2].metadata_attribute,
+                kGkeAttributeList[pos_ - 2 - local_labels_size]
+                    .metadata_attribute,
                 struct_pb.arena.ptr()));
       case GcpResourceType::kUnknown:
         return absl::nullopt;
@@ -193,12 +249,12 @@ class PeerLabelsIterable : public LabelsIterable {
   size_t Size() const override {
     auto& struct_pb = GetDecodedMetadata();
     if (struct_pb.struct_pb == nullptr) {
-      return 0;
+      return local_labels_.size();
     }
     if (type_ != GcpResourceType::kGke) {
-      return 1;
+      return local_labels_.size() + 1;
     }
-    return kGkeAttributeList.size();
+    return local_labels_.size() + kGkeAttributeList.size() + 1;
   }
 
   void ResetIteratorPosition() override { pos_ = 0; }
@@ -248,16 +304,42 @@ class PeerLabelsIterable : public LabelsIterable {
     return struct_pb;
   }
 
+  const std::vector<std::pair<absl::string_view, std::string>>& local_labels_;
   // Holds either the metadata slice or the decoded proto struct.
   mutable absl::variant<grpc_core::Slice, StructPb> metadata_;
   mutable GcpResourceType type_;
   uint32_t pos_ = 0;
 };
 
-constexpr std::array<PeerLabelsIterable::GkeAttribute, 7>
-    PeerLabelsIterable::kGkeAttributeList;
+constexpr std::array<MeshLabelsIterable::GkeAttribute, 7>
+    MeshLabelsIterable::kGkeAttributeList;
 
 }  // namespace
+
+// Returns the mesh ID by reading and parsing the bootstrap file. Returns
+// "unknown" if for some reason, mesh ID could not be figured out.
+std::string GetMeshId() {
+  auto json = grpc_core::JsonParse(GetXdsBootstrapContents());
+  if (!json.ok()) {
+    return "unknown";
+  }
+  auto bootstrap = grpc_core::LoadFromJson<XdsBootstrapForGSM>(*json);
+  if (!bootstrap.ok()) {
+    return "unknown";
+  }
+  // The format of the Node ID is -
+  // projects/[GCP Project number]/networks/mesh:[Mesh ID]/nodes/[UUID]
+  std::vector<absl::string_view> parts =
+      absl::StrSplit(bootstrap->node().id(), '/');
+  if (parts.size() != 6) {
+    return "unknown";
+  }
+  absl::string_view mesh_id = parts[3];
+  if (!absl::ConsumePrefix(&mesh_id, "mesh:")) {
+    return "unknown";
+  }
+  return std::string(mesh_id);
+}
 
 ServiceMeshLabelsInjector::ServiceMeshLabelsInjector(
     const opentelemetry::sdk::common::AttributeMap& map) {
@@ -317,21 +399,18 @@ ServiceMeshLabelsInjector::ServiceMeshLabelsInjector(
       absl::Base64Escape(absl::string_view(output, output_length)));
   // Fill up local labels map. The rest we get from the detected Resource and
   // from the peer.
-  // TODO(yashykt): Add mesh_id
+  local_labels_.emplace_back(kMeshIdAttribute, GetMeshId());
 }
 
-std::unique_ptr<LabelsIterable> ServiceMeshLabelsInjector::GetPeerLabels(
+std::unique_ptr<LabelsIterable> ServiceMeshLabelsInjector::GetLabels(
     grpc_metadata_batch* incoming_initial_metadata) {
   auto peer_metadata =
       incoming_initial_metadata->Take(grpc_core::XEnvoyPeerMetadata());
   if (!peer_metadata.has_value()) {
     return nullptr;
   }
-  return std::make_unique<PeerLabelsIterable>(*std::move(peer_metadata));
-}
-
-std::unique_ptr<LabelsIterable> ServiceMeshLabelsInjector::GetLocalLabels() {
-  return std::make_unique<LocalLabelsIterable>(local_labels_);
+  return std::make_unique<MeshLabelsIterable>(local_labels_,
+                                              *std::move(peer_metadata));
 }
 
 void ServiceMeshLabelsInjector::AddLabels(
