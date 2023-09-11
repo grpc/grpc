@@ -23,7 +23,6 @@
 #include "src/core/lib/iomgr/port.h"
 
 // IWYU pragma: no_include <arpa/inet.h>
-// IWYU pragma: no_include <arpa/nameser.h>
 // IWYU pragma: no_include <inttypes.h>
 // IWYU pragma: no_include <netdb.h>
 // IWYU pragma: no_include <netinet/in.h>
@@ -43,6 +42,7 @@
 #else
 #include "src/core/lib/event_engine/nameser.h"
 #endif
+// IWYU pragma: no_include <arpa/nameser.h>
 
 #include <string.h>
 
