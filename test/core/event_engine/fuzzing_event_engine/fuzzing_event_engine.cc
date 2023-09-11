@@ -189,6 +189,7 @@ void FuzzingEventEngine::TickUntil(Time t) {
 }
 
 void FuzzingEventEngine::TickUntilTimespec(gpr_timespec t) {
+  GPR_ASSERT(t.clock_type != GPR_TIMESPAN);
   TickUntil(Time() + std::chrono::seconds(t.tv_sec) +
             std::chrono::nanoseconds(t.tv_nsec));
 }
