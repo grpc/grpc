@@ -159,6 +159,8 @@ class Channel : public RefCounted<Channel>,
     return channel_stack_->EventEngine();
   }
 
+  const ChannelArgs& channel_args() const { return channel_args_; }
+
  private:
   Channel(bool is_client, bool is_promising, std::string target,
           const ChannelArgs& channel_args,
@@ -174,6 +176,7 @@ class Channel : public RefCounted<Channel>,
   MemoryAllocator allocator_;
   std::string target_;
   const RefCountedPtr<grpc_channel_stack> channel_stack_;
+  const ChannelArgs channel_args_;
 };
 
 }  // namespace grpc_core

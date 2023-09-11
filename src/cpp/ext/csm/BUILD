@@ -55,6 +55,7 @@ grpc_cc_library(
         "//:gpr_platform",
         "//:grpc_base",
         "//:protobuf_struct_upb",
+        "//src/core:channel_args",
         "//src/core:env",
         "//src/core:error",
         "//src/core:json",

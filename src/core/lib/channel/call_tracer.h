@@ -168,7 +168,8 @@ class ServerCallTracerFactory {
 
   virtual ~ServerCallTracerFactory() {}
 
-  virtual ServerCallTracer* CreateNewServerCallTracer(Arena* arena) = 0;
+  virtual ServerCallTracer* CreateNewServerCallTracer(
+      Arena* arena, const ChannelArgs& args) = 0;
 
   // Use this method to get the server call tracer factory from channel args,
   // instead of directly fetching it with `GetObject`.

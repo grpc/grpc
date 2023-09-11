@@ -22,6 +22,9 @@
 
 #include <utility>
 
+#include "absl/types/optional.h"
+
+#include "src/core/lib/channel/channel_args.h"
 #include "src/cpp/ext/otel/otel_plugin.h"
 
 namespace grpc {
@@ -70,6 +73,10 @@ CsmObservabilityBuilder& CsmObservabilityBuilder::SetTargetAttributeFilter(
 }
 
 absl::StatusOr<CsmObservability> CsmObservabilityBuilder::BuildAndRegister() {
+  builder_.SetServerSelector([](const grpc_core::ChannelArgs& args) {
+    return args.GetBool("grpc.internal.xds_server_config_fetcher")
+        .value_or(false);
+  });
   builder_.BuildAndRegisterGlobal();
   return CsmObservability();
 }

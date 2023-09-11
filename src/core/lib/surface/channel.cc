@@ -78,7 +78,8 @@ Channel::Channel(bool is_client, bool is_promising, std::string target,
                      ->memory_quota()
                      ->CreateMemoryOwner(target)),
       target_(std::move(target)),
-      channel_stack_(std::move(channel_stack)) {
+      channel_stack_(std::move(channel_stack)),
+      channel_args_(channel_args) {
   // We need to make sure that grpc_shutdown() does not shut things down
   // until after the channel is destroyed.  However, the channel may not
   // actually be destroyed by the time grpc_channel_destroy() returns,
@@ -150,7 +151,6 @@ absl::StatusOr<RefCountedPtr<Channel>> Channel::CreateWithBuilder(
     compression_options.enabled_algorithms_bitset =
         *enabled_algorithms_bitset | 1 /* always support no compression */;
   }
-
   return RefCountedPtr<Channel>(new Channel(
       grpc_channel_stack_type_is_client(builder->channel_stack_type()),
       builder->IsPromising(), std::string(builder->target()), channel_args,
