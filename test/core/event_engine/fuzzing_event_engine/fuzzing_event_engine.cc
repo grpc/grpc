@@ -25,6 +25,7 @@
 
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
+#include "fuzzing_event_engine.h"
 
 #include <grpc/event_engine/slice.h>
 #include <grpc/support/log.h>
@@ -192,6 +193,14 @@ void FuzzingEventEngine::TickUntilTimespec(gpr_timespec t) {
   GPR_ASSERT(t.clock_type != GPR_TIMESPAN);
   TickUntil(Time() + std::chrono::seconds(t.tv_sec) +
             std::chrono::nanoseconds(t.tv_nsec));
+}
+
+void FuzzingEventEngine::TickUntilTimestamp(grpc_core::Timestamp t) {
+  TickUntilTimespec(t.as_timespec(GPR_CLOCK_REALTIME));
+}
+
+void FuzzingEventEngine::TickForDuration(grpc_core::Duration d) {
+  TickUntilTimestamp(grpc_core::Timestamp::Now() + d);
 }
 
 FuzzingEventEngine::Time FuzzingEventEngine::Now() {
