@@ -173,6 +173,12 @@ SOCKET_DEFAULT_TIMEOUT = flags.DEFINE_float(
     ),
 )
 
+IS_STAGING = flags.DEFINE_bool(
+    "is_staging",
+    default=False,
+    help="If tests are running under staging environment",
+)
+
 
 def set_socket_default_timeout_from_flag() -> None:
     """A helper to configure default socket timeout from a flag.

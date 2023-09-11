@@ -17,14 +17,22 @@ import enum
 import logging
 from typing import Any, Dict, List, Optional, Set
 
+from absl import flags
 from googleapiclient import discovery
 import googleapiclient.errors
 
+from framework import xds_flags
 import framework.errors
 from framework.helpers import retryers
 from framework.infrastructure import gcp
 
 logger = logging.getLogger(__name__)
+
+DEBUG_HEADER_IN_RESPONSE = "x-encrypted-debug-headers"
+DEBUG_HEADER_KEY = "X-Return-Encrypted-Headers"
+DEBUG_HEADER_VALUE = "request_and_response"
+
+flags.adopt_module_key_flags(xds_flags)
 
 
 class ComputeV1(
@@ -579,6 +587,21 @@ class ComputeV1(
     def _execute(  # pylint: disable=arguments-differ
         self, request, *, timeout_sec=_WAIT_FOR_OPERATION_SEC
     ):
+        if xds_flags.IS_STAGING.value:
+            old_postproc = request.postproc
+
+            def _log_debug_header(resp, contents):
+                if DEBUG_HEADER_IN_RESPONSE in resp:
+                    logger.info(
+                        f"Received debug headers: {resp[DEBUG_HEADER_IN_RESPONSE]}\n"
+                    )
+                return old_postproc(resp, contents)
+
+            logger.info(
+                f"Adding debug headers for method: {request.methodId}\n"
+            )
+            request.headers[DEBUG_HEADER_KEY] = DEBUG_HEADER_VALUE
+            request.postproc = _log_debug_header
         operation = request.execute(num_retries=self._GCP_API_RETRIES)
         logger.debug("Operation %s", operation)
         return self._wait(operation["name"], timeout_sec)
