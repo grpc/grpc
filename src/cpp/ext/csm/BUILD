@@ -29,19 +29,18 @@ package(
 )
 
 grpc_cc_library(
-    name = "gsm_observability",
+    name = "csm_observability",
     srcs = [
-        "gsm_observability.cc",
+        "csm_observability.cc",
         "metadata_exchange.cc",
     ],
     hdrs = [
-        "gsm_observability.h",
+        "csm_observability.h",
         "metadata_exchange.h",
     ],
     external_deps = [
-        "absl/container:flat_hash_set",
+        "absl/functional:any_invocable",
         "absl/meta:type_traits",
-        "absl/status",
         "absl/status:statusor",
         "absl/strings",
         "absl/types:optional",
