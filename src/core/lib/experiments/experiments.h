@@ -51,7 +51,6 @@
 #include <grpc/support/port_platform.h>
 
 #include <stddef.h>
-
 #include "src/core/lib/experiments/config.h"
 
 namespace grpc_core {
@@ -163,13 +162,9 @@ inline bool IsTcpRcvLowatEnabled() { return IsExperimentEnabled(1); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PEER_STATE_BASED_FRAMING
 inline bool IsPeerStateBasedFramingEnabled() { return IsExperimentEnabled(2); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MEMORY_PRESSURE_CONTROLLER
-inline bool IsMemoryPressureControllerEnabled() {
-  return IsExperimentEnabled(3);
-}
+inline bool IsMemoryPressureControllerEnabled() { return IsExperimentEnabled(3); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_UNCONSTRAINED_MAX_QUOTA_BUFFER_SIZE
-inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() {
-  return IsExperimentEnabled(4);
-}
+inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return IsExperimentEnabled(4); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
 inline bool IsEventEngineClientEnabled() { return IsExperimentEnabled(5); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
@@ -183,9 +178,7 @@ inline bool IsPromiseBasedServerCallEnabled() { return IsExperimentEnabled(9); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_LISTENER
 inline bool IsEventEngineListenerEnabled() { return IsExperimentEnabled(10); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SCHEDULE_CANCELLATION_OVER_WRITE
-inline bool IsScheduleCancellationOverWriteEnabled() {
-  return IsExperimentEnabled(11);
-}
+inline bool IsScheduleCancellationOverWriteEnabled() { return IsExperimentEnabled(11); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_TRACE_RECORD_CALLOPS
 inline bool IsTraceRecordCallopsEnabled() { return IsExperimentEnabled(12); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_DNS
