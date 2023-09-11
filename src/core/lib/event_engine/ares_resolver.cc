@@ -33,8 +33,9 @@
 
 #if GRPC_ARES == 1
 
-#include <ares.h>
 #include <ares_version.h>
+
+#include <ares.h>
 
 #if ARES_VERSION >= 0x011200
 // c-ares 1.18.0 or later starts to provide ares_nameser.h as a public header.
