@@ -196,7 +196,10 @@ void OpenTelemetryServerCallTracer::RecordEnd(
 grpc_core::ServerCallTracer*
 OpenTelemetryServerCallTracerFactory::CreateNewServerCallTracer(
     grpc_core::Arena* arena, const grpc_core::ChannelArgs& args) {
-  return arena->ManagedNew<OpenTelemetryServerCallTracer>();
+  if (OTelPluginState().server_selector(args)) {
+    return arena->ManagedNew<OpenTelemetryServerCallTracer>();
+  }
+  return nullptr;
 }
 
 }  // namespace internal
