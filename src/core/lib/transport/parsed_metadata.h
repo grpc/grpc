@@ -403,9 +403,8 @@ ParsedMetadata<MetadataContainer>::KeyValueVTable(absl::string_view key) {
          MetadataParseErrorFn, ParsedMetadata* result) {
         auto* p = new KV{
             static_cast<KV*>(result->value_.pointer)->first.Ref(),
-            will_keep_past_request_lifetime && IsUniqueMetadataStringsEnabled()
-                ? value->TakeUniquelyOwned()
-                : std::move(*value),
+            will_keep_past_request_lifetime ? value->TakeUniquelyOwned()
+                                            : std::move(*value),
         };
         result->value_.pointer = p;
       };

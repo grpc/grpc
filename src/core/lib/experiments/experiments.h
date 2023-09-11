@@ -79,8 +79,6 @@ inline bool IsWorkStealingEnabled() { return true; }
 inline bool IsClientPrivacyEnabled() { return false; }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
 inline bool IsServerPrivacyEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_UNIQUE_METADATA_STRINGS
-inline bool IsUniqueMetadataStringsEnabled() { return true; }
 inline bool IsKeepaliveFixEnabled() { return false; }
 inline bool IsKeepaliveServerFixEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_LAZIER_STREAM_UPDATES
@@ -109,8 +107,6 @@ inline bool IsWorkStealingEnabled() { return true; }
 inline bool IsClientPrivacyEnabled() { return false; }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
 inline bool IsServerPrivacyEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_UNIQUE_METADATA_STRINGS
-inline bool IsUniqueMetadataStringsEnabled() { return true; }
 inline bool IsKeepaliveFixEnabled() { return false; }
 inline bool IsKeepaliveServerFixEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_LAZIER_STREAM_UPDATES
@@ -139,8 +135,6 @@ inline bool IsWorkStealingEnabled() { return true; }
 inline bool IsClientPrivacyEnabled() { return false; }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
 inline bool IsServerPrivacyEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_UNIQUE_METADATA_STRINGS
-inline bool IsUniqueMetadataStringsEnabled() { return true; }
 inline bool IsKeepaliveFixEnabled() { return false; }
 inline bool IsKeepaliveServerFixEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_LAZIER_STREAM_UPDATES
@@ -192,18 +186,16 @@ inline bool IsClientPrivacyEnabled() { return IsExperimentEnabled(15); }
 inline bool IsCanaryClientPrivacyEnabled() { return IsExperimentEnabled(16); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_PRIVACY
 inline bool IsServerPrivacyEnabled() { return IsExperimentEnabled(17); }
-#define GRPC_EXPERIMENT_IS_INCLUDED_UNIQUE_METADATA_STRINGS
-inline bool IsUniqueMetadataStringsEnabled() { return IsExperimentEnabled(18); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_KEEPALIVE_FIX
-inline bool IsKeepaliveFixEnabled() { return IsExperimentEnabled(19); }
+inline bool IsKeepaliveFixEnabled() { return IsExperimentEnabled(18); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_KEEPALIVE_SERVER_FIX
-inline bool IsKeepaliveServerFixEnabled() { return IsExperimentEnabled(20); }
+inline bool IsKeepaliveServerFixEnabled() { return IsExperimentEnabled(19); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_LAZIER_STREAM_UPDATES
-inline bool IsLazierStreamUpdatesEnabled() { return IsExperimentEnabled(21); }
+inline bool IsLazierStreamUpdatesEnabled() { return IsExperimentEnabled(20); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_JITTER_MAX_IDLE
-inline bool IsJitterMaxIdleEnabled() { return IsExperimentEnabled(22); }
+inline bool IsJitterMaxIdleEnabled() { return IsExperimentEnabled(21); }
 
-constexpr const size_t kNumExperiments = 23;
+constexpr const size_t kNumExperiments = 22;
 extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];
 
 #endif

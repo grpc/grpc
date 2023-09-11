@@ -84,8 +84,6 @@
   default: false
 - name: server_privacy
   default: false
-- name: unique_metadata_strings
-  default: true
 - name: keepalive_fix
   default: false
 - name: keepalive_server_fix

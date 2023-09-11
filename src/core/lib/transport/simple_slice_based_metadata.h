@@ -34,7 +34,7 @@ struct SimpleSliceBasedMetadata {
   static MementoType ParseMemento(Slice value,
                                   bool will_keep_past_request_lifetime,
                                   MetadataParseErrorFn) {
-    if (will_keep_past_request_lifetime && IsUniqueMetadataStringsEnabled()) {
+    if (will_keep_past_request_lifetime) {
       return value.TakeUniquelyOwned();
     } else {
       return value.TakeOwned();

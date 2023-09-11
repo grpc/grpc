@@ -144,15 +144,6 @@
   owner: alishananda@google.com
   test_tags: []
   allow_in_fuzzing_config: false
-- name: unique_metadata_strings
-  description:
-    Ensure a unique copy of strings from parsed metadata are taken.
-    The hypothesis here is that ref counting these are causing read buffer
-    lifetimes to be extended leading to memory bloat.
-  expiry: 2023/11/01
-  owner: ctiller@google.com
-  test_tags: []
-  allow_in_fuzzing_config: true
 - name: keepalive_fix
   description:
     Allows overriding keepalive_permit_without_calls.
