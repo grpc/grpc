@@ -155,6 +155,7 @@ then
   "${PYTHON}" -m pip install virtualenv
   "${PYTHON}" -m virtualenv venv || { "${PYTHON}" -m pip install virtualenv==20.0.23 && "${PYTHON}" -m virtualenv venv; }
   # Ensure the generated artifacts are valid using "twine check"
+  venv/bin/python -m pip install "twine<=4.0.2"
   venv/bin/python -m twine check dist/* tools/distrib/python/grpcio_tools/dist/*
   rm -rf venv/
 fi
