@@ -312,9 +312,9 @@ class WeightedRoundRobinTest : public TimeAwareLoadBalancingPolicyTest {
       } else if (run_timer_callbacks) {
         gpr_log(GPR_INFO, "running timer callback...");
         RunTimerCallback();
+        // Increment time.
+        time_cache_.IncrementBy(Duration::Seconds(1));
       }
-      // Increment time.
-      time_cache_.IncrementBy(Duration::Seconds(1));
     }
   }
 
