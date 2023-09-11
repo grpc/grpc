@@ -608,8 +608,7 @@ void WeightedRoundRobin::Picker::BuildSchedulerAndStartTimerLocked() {
   // Start timer.
   WeakRefCountedPtr<Picker> self = WeakRef();
   timer_handle_ = wrr_->channel_control_helper()->GetEventEngine()->RunAfter(
-      config_->weight_update_period(),
-      [self = std::move(self)]() mutable {
+      config_->weight_update_period(), [self = std::move(self)]() mutable {
         ApplicationCallbackExecCtx callback_exec_ctx;
         ExecCtx exec_ctx;
         {
