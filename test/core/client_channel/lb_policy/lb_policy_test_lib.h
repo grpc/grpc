@@ -20,7 +20,6 @@
 #include <grpc/support/port_platform.h>
 
 #include <stddef.h>
-#include <stdint.h>
 
 #include <algorithm>
 #include <chrono>
@@ -29,7 +28,6 @@
 #include <initializer_list>
 #include <map>
 #include <memory>
-#include <ratio>
 #include <set>
 #include <string>
 #include <tuple>
@@ -38,7 +36,6 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
@@ -88,6 +85,7 @@
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/uri/uri_parser.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
+#include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 
 namespace grpc_core {
 namespace testing {

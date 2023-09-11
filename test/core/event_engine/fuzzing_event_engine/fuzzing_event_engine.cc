@@ -25,7 +25,6 @@
 
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
-#include "fuzzing_event_engine.h"
 
 #include <grpc/event_engine/slice.h>
 #include <grpc/support/log.h>
@@ -34,6 +33,7 @@
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/time.h"
+#include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/util/port.h"
 
