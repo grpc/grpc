@@ -115,6 +115,7 @@ class WeightedRoundRobinTest : public TimeAwareLoadBalancingPolicyTest {
 
   WeightedRoundRobinTest() {
     lb_policy_ = MakeLbPolicy("weighted_round_robin");
+    SetExpectedTimerDuration(std::chrono::seconds(1));
   }
 
   RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>
@@ -317,17 +318,7 @@ class WeightedRoundRobinTest : public TimeAwareLoadBalancingPolicyTest {
     }
   }
 
-  void CheckExpectedTimerDuration(
-      grpc_event_engine::experimental::EventEngine::Duration duration)
-      override {
-    EXPECT_EQ(duration, expected_weight_update_interval_)
-        << "Expected: " << expected_weight_update_interval_.count() << "ns"
-        << "\n  Actual: " << duration.count() << "ns";
-  }
-
   OrphanablePtr<LoadBalancingPolicy> lb_policy_;
-  grpc_event_engine::experimental::EventEngine::Duration
-      expected_weight_update_interval_ = std::chrono::seconds(1);
 };
 
 TEST_F(WeightedRoundRobinTest, Basic) {
@@ -642,7 +633,7 @@ TEST_F(WeightedRoundRobinTest, HonorsOobReportingPeriod) {
 TEST_F(WeightedRoundRobinTest, HonorsWeightUpdatePeriod) {
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
-  expected_weight_update_interval_ = std::chrono::seconds(2);
+  SetExpectedTimerDuration(std::chrono::seconds(2));
   auto picker = SendInitialUpdateAndWaitForConnected(
       kAddresses, ConfigBuilder().SetWeightUpdatePeriod(Duration::Seconds(2)));
   ASSERT_NE(picker, nullptr);
@@ -660,7 +651,7 @@ TEST_F(WeightedRoundRobinTest, HonorsWeightUpdatePeriod) {
 TEST_F(WeightedRoundRobinTest, WeightUpdatePeriodLowerBound) {
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
-  expected_weight_update_interval_ = std::chrono::milliseconds(100);
+  SetExpectedTimerDuration(std::chrono::milliseconds(100));
   auto picker = SendInitialUpdateAndWaitForConnected(
       kAddresses,
       ConfigBuilder().SetWeightUpdatePeriod(Duration::Milliseconds(10)));

@@ -203,6 +203,12 @@ void FuzzingEventEngine::TickForDuration(grpc_core::Duration d) {
   TickUntilTimestamp(grpc_core::Timestamp::Now() + d);
 }
 
+void FuzzingEventEngine::SetRunAfterDurationCallback(
+    absl::AnyInvocable<void(Duration)> callback) {
+  grpc_core::MutexLock lock(&run_after_duration_callback_mu_);
+  run_after_duration_callback_ = std::move(callback);
+}
+
 FuzzingEventEngine::Time FuzzingEventEngine::Now() {
   grpc_core::MutexLock lock(&*now_mu_);
   return now_;
@@ -435,8 +441,10 @@ EventEngine::ConnectionHandle FuzzingEventEngine::Connect(
   // TODO(ctiller): do something with the timeout
   // Schedule a timer to run (with some fuzzer selected delay) the on_connect
   // callback.
-  auto task_handle = RunAfter(
-      Duration(0), [this, addr, on_connect = std::move(on_connect)]() mutable {
+  grpc_core::MutexLock lock(&*mu_);
+  auto task_handle = RunAfterLocked(
+      RunType::kRunAfter, Duration(0),
+      [this, addr, on_connect = std::move(on_connect)]() mutable {
         // Check for a legal address and extract the target port number.
         auto port = ResolvedAddressGetPort(addr);
         grpc_core::MutexLock lock(&*mu_);
@@ -490,11 +498,14 @@ FuzzingEventEngine::GetDNSResolver(const DNSResolver::ResolverOptions&) {
 }
 
 void FuzzingEventEngine::Run(Closure* closure) {
-  RunAfter(Duration::zero(), closure);
+  grpc_core::MutexLock lock(&*mu_);
+  RunAfterLocked(RunType::kRunAfter, Duration::zero(),
+                 [closure]() { closure->Run(); });
 }
 
 void FuzzingEventEngine::Run(absl::AnyInvocable<void()> closure) {
-  RunAfter(Duration::zero(), std::move(closure));
+  grpc_core::MutexLock lock(&*mu_);
+  RunAfterLocked(RunType::kRunAfter, Duration::zero(), std::move(closure));
 }
 
 EventEngine::TaskHandle FuzzingEventEngine::RunAfter(Duration when,
@@ -504,6 +515,12 @@ EventEngine::TaskHandle FuzzingEventEngine::RunAfter(Duration when,
 
 EventEngine::TaskHandle FuzzingEventEngine::RunAfter(
     Duration when, absl::AnyInvocable<void()> closure) {
+  {
+    grpc_core::MutexLock lock(&run_after_duration_callback_mu_);
+    if (run_after_duration_callback_ != nullptr) {
+      run_after_duration_callback_(when);
+    }
+  }
   grpc_core::MutexLock lock(&*mu_);
   // (b/258949216): Cap it to one year to avoid integer overflow errors.
   return RunAfterLocked(RunType::kRunAfter, std::min(when, kOneYear),

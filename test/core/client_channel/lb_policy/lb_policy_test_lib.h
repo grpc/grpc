@@ -1182,26 +1182,36 @@ class TimeAwareLoadBalancingPolicyTest : public LoadBalancingPolicyTest {
   }
 
   ~TimeAwareLoadBalancingPolicyTest() override {
-    auto* fuzzing_ee =
-        static_cast<grpc_event_engine::experimental::FuzzingEventEngine*>(
-            event_engine_.get());
-    fuzzing_ee->FuzzingDone();
+    fuzzing_event_engine()->FuzzingDone();
   }
 
   void IncrementTimeBy(Duration duration) {
-    auto* fuzzing_ee =
-        static_cast<grpc_event_engine::experimental::FuzzingEventEngine*>(
-            event_engine_.get());
-    fuzzing_ee->TickForDuration(duration);
+    fuzzing_event_engine()->TickForDuration(duration);
     // Flush WorkSerializer, in case the timer callback enqueued anything.
     WaitForWorkSerializerToFlush();
   }
 
-// FIXME
-  // Called when the LB policy starts a timer.
-  // May be overridden by subclasses.
-  virtual void CheckExpectedTimerDuration(
-      grpc_event_engine::experimental::EventEngine::Duration) {}
+  void SetExpectedTimerDuration(
+      absl::optional<grpc_event_engine::experimental::EventEngine::Duration>
+          duration) {
+    if (duration.has_value()) {
+      fuzzing_event_engine()->SetRunAfterDurationCallback(
+          [expected = *duration](
+              grpc_event_engine::experimental::EventEngine::Duration duration) {
+            EXPECT_EQ(duration, expected)
+                << "Expected: " << expected.count() << "ns\nActual: "
+                << duration.count() << "ns";
+          });
+    } else {
+      fuzzing_event_engine()->SetRunAfterDurationCallback(nullptr);
+    }
+  }
+
+  grpc_event_engine::experimental::FuzzingEventEngine* fuzzing_event_engine()
+      const {
+    return static_cast<grpc_event_engine::experimental::FuzzingEventEngine*>(
+        event_engine_.get());
+  }
 };
 
 }  // namespace testing

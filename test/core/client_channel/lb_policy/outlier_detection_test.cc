@@ -145,7 +145,9 @@ class OutlierDetectionTest : public TimeAwareLoadBalancingPolicyTest {
   };
 
   OutlierDetectionTest()
-      : lb_policy_(MakeLbPolicy("outlier_detection_experimental")) {}
+      : lb_policy_(MakeLbPolicy("outlier_detection_experimental")) {
+    SetExpectedTimerDuration(std::chrono::seconds(10));
+  }
 
   absl::optional<std::string> DoPickWithFailedCall(
       LoadBalancingPolicy::SubchannelPicker* picker) {
@@ -164,17 +166,7 @@ class OutlierDetectionTest : public TimeAwareLoadBalancingPolicyTest {
     return address;
   }
 
-  void CheckExpectedTimerDuration(
-      grpc_event_engine::experimental::EventEngine::Duration duration)
-      override {
-    EXPECT_EQ(duration, expected_internal_)
-        << "Expected: " << expected_internal_.count() << "ns"
-        << "\n  Actual: " << duration.count() << "ns";
-  }
-
   OrphanablePtr<LoadBalancingPolicy> lb_policy_;
-  grpc_event_engine::experimental::EventEngine::Duration expected_internal_ =
-      std::chrono::seconds(10);
 };
 
 TEST_F(OutlierDetectionTest, Basic) {
