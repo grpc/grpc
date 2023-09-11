@@ -74,6 +74,7 @@ CsmObservabilityBuilder& CsmObservabilityBuilder::SetTargetAttributeFilter(
 
 absl::StatusOr<CsmObservability> CsmObservabilityBuilder::BuildAndRegister() {
   builder_.SetServerSelector([](const grpc_core::ChannelArgs& args) {
+    // Directly using the channel arg string to avoid a dependency on xDS.
     return args.GetBool("grpc.internal.xds_server_config_fetcher")
         .value_or(false);
   });
