@@ -37,6 +37,29 @@ TEST(GsmDependencyTest, GoogleCloudOpenTelemetryDependency) {
   EXPECT_NE(google::cloud::otel::MakeResourceDetector(), nullptr);
 }
 
+TEST(CsmChannelTargetSelectorTest, NonXdsTargets) {
+  EXPECT_FALSE(internal::CsmChannelTargetSelector("foo.bar.google.com"));
+  EXPECT_FALSE(internal::CsmChannelTargetSelector("dns:///foo.bar.google.com"));
+  EXPECT_FALSE(
+      internal::CsmChannelTargetSelector("dns:///foo.bar.google.com:1234"));
+  EXPECT_FALSE(internal::CsmChannelTargetSelector(
+      "dns://authority/foo.bar.google.com:1234"));
+}
+
+TEST(CsmChannelTargetSelectorTest, XdsTargets) {
+  EXPECT_TRUE(internal::CsmChannelTargetSelector("xds:///foo"));
+  EXPECT_TRUE(internal::CsmChannelTargetSelector("xds:///foo.bar"));
+}
+
+TEST(CsmChannelTargetSelectorTest, XdsTargetsWithNonTDAuthority) {
+  EXPECT_FALSE(internal::CsmChannelTargetSelector("xds://authority/foo"));
+}
+
+TEST(CsmChannelTargetSelectorTest, XdsTargetsWithTDAuthority) {
+  EXPECT_TRUE(internal::CsmChannelTargetSelector(
+      "xds://traffic-director-global.xds.googleapis.com/foo"));
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc
