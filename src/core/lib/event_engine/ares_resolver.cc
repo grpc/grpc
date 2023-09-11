@@ -23,6 +23,7 @@
 #include "src/core/lib/iomgr/port.h"
 
 // IWYU pragma: no_include <arpa/inet.h>
+// IWYU pragma: no_include <arpa/nameser.h>
 // IWYU pragma: no_include <inttypes.h>
 // IWYU pragma: no_include <netdb.h>
 // IWYU pragma: no_include <netinet/in.h>
@@ -40,9 +41,8 @@
 // c-ares 1.18.0 or later starts to provide ares_nameser.h as a public header.
 #include <ares_nameser.h>
 #else
-#include "src/core/lib/event_engine/nameser.h"
+#include "src/core/lib/event_engine/nameser.h"  // IWYU pragma: keep
 #endif
-// IWYU pragma: no_include <arpa/nameser.h>
 
 #include <string.h>
 
