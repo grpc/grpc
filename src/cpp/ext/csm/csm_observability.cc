@@ -20,6 +20,8 @@
 
 #include "src/cpp/ext/csm/csm_observability.h"
 
+#include <utility>
+
 #include "src/cpp/ext/otel/otel_plugin.h"
 
 namespace grpc {

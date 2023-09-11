@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_SRC_CPP_EXT_GSM_GSM_OBSERVABILITY_H
-#define GRPC_SRC_CPP_EXT_GSM_GSM_OBSERVABILITY_H
+#ifndef GRPC_SRC_CPP_EXT_CSM_CSM_OBSERVABILITY_H
+#define GRPC_SRC_CPP_EXT_CSM_CSM_OBSERVABILITY_H
 
 #include <grpc/support/port_platform.h>
 
@@ -79,4 +79,4 @@ class CsmObservabilityBuilder {
 }  // namespace internal
 }  // namespace grpc
 
-#endif  // GRPC_SRC_CPP_EXT_GSM_GSM_OBSERVABILITY_H
+#endif  // GRPC_SRC_CPP_EXT_CSM_CSM_OBSERVABILITY_H
