@@ -25,7 +25,6 @@
 
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
-#include "fuzzing_event_engine.h"
 
 #include <grpc/event_engine/slice.h>
 #include <grpc/support/log.h>
