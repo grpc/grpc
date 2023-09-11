@@ -11346,11 +11346,14 @@ targets:
   language: c++
   headers:
   - test/core/client_channel/lb_policy/lb_policy_test_lib.h
-  - test/core/event_engine/mock_event_engine.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - test/core/client_channel/lb_policy/outlier_detection_test.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   deps:
   - gtest
+  - protobuf
   - grpc_test_util
   uses_polling: false
 - name: overload_test
@@ -11572,12 +11575,15 @@ targets:
   language: c++
   headers:
   - test/core/client_channel/lb_policy/lb_policy_test_lib.h
-  - test/core/event_engine/mock_event_engine.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/util/scoped_env_var.h
   src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - test/core/client_channel/lb_policy/pick_first_test.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   deps:
   - gtest
+  - protobuf
   - grpc_test_util
   uses_polling: false
 - name: pid_controller_test
@@ -13911,11 +13917,14 @@ targets:
   language: c++
   headers:
   - test/core/client_channel/lb_policy/lb_policy_test_lib.h
-  - test/core/event_engine/mock_event_engine.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - test/core/client_channel/lb_policy/round_robin_test.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   deps:
   - gtest
+  - protobuf
   - grpc_test_util
   uses_polling: false
 - name: secure_auth_context_test
@@ -16842,11 +16851,14 @@ targets:
   language: c++
   headers:
   - test/core/client_channel/lb_policy/lb_policy_test_lib.h
-  - test/core/event_engine/mock_event_engine.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - test/core/client_channel/lb_policy/weighted_round_robin_test.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   deps:
   - gtest
+  - protobuf
   - grpc_test_util
   uses_polling: false
 - name: win_socket_test
@@ -18160,11 +18172,14 @@ targets:
   language: c++
   headers:
   - test/core/client_channel/lb_policy/lb_policy_test_lib.h
-  - test/core/event_engine/mock_event_engine.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - test/core/client_channel/lb_policy/xds_override_host_test.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   deps:
   - gtest
+  - protobuf
   - grpc_test_util
   uses_polling: false
 - name: xds_pick_first_end2end_test

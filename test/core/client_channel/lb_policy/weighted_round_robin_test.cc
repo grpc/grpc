@@ -311,9 +311,8 @@ class WeightedRoundRobinTest : public TimeAwareLoadBalancingPolicyTest {
         if (*picker == nullptr) return false;
       } else if (run_timer_callbacks) {
         gpr_log(GPR_INFO, "running timer callback...");
-        RunTimerCallback();
-        // Increment time.
-        time_cache_.IncrementBy(Duration::Seconds(1));
+        // Increment time and run any timer callbacks.
+        IncrementTimeBy(Duration::Seconds(1));
       }
     }
   }
@@ -697,8 +696,7 @@ TEST_F(WeightedRoundRobinTest, WeightExpirationPeriod) {
       {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 3}});
   // Advance time to make weights stale and trigger the timer callback
   // to recompute weights.
-  time_cache_.IncrementBy(Duration::Seconds(2));
-  RunTimerCallback();
+  IncrementTimeBy(Duration::Seconds(2));
   // Picker should now be falling back to round-robin.
   ExpectWeightedRoundRobinPicks(
       picker.get(), {},
@@ -725,8 +723,7 @@ TEST_F(WeightedRoundRobinTest, BlackoutPeriodAfterWeightExpiration) {
       {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 3}});
   // Advance time to make weights stale and trigger the timer callback
   // to recompute weights.
-  time_cache_.IncrementBy(Duration::Seconds(2));
-  RunTimerCallback();
+  IncrementTimeBy(Duration::Seconds(2));
   // Picker should now be falling back to round-robin.
   ExpectWeightedRoundRobinPicks(
       picker.get(), {},
@@ -744,8 +741,7 @@ TEST_F(WeightedRoundRobinTest, BlackoutPeriodAfterWeightExpiration) {
       {{kAddresses[0], 3}, {kAddresses[1], 3}, {kAddresses[2], 3}});
   // Advance time past the blackout period.  This should cause the
   // weights to be used.
-  time_cache_.IncrementBy(Duration::Seconds(1));
-  RunTimerCallback();
+  IncrementTimeBy(Duration::Seconds(1));
   ExpectWeightedRoundRobinPicks(
       picker.get(), {},
       {{kAddresses[0], 3}, {kAddresses[1], 3}, {kAddresses[2], 1}});
@@ -791,8 +787,7 @@ TEST_F(WeightedRoundRobinTest, BlackoutPeriodAfterDisconnect) {
       {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 2}});
   // Advance time to exceed the blackout period and trigger the timer
   // callback to recompute weights.
-  time_cache_.IncrementBy(Duration::Seconds(1));
-  RunTimerCallback();
+  IncrementTimeBy(Duration::Seconds(1));
   ExpectWeightedRoundRobinPicks(
       picker.get(),
       {{kAddresses[0], MakeBackendMetricData(/*app_utilization=*/0.3,

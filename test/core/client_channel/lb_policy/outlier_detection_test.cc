@@ -226,8 +226,7 @@ TEST_F(OutlierDetectionTest, FailurePercentage) {
   ASSERT_TRUE(address.has_value());
   gpr_log(GPR_INFO, "### failed RPC on %s", address->c_str());
   // Advance time and run the timer callback to trigger ejection.
-  time_cache_.IncrementBy(Duration::Seconds(10));
-  RunTimerCallback();
+  IncrementTimeBy(Duration::Seconds(10));
   gpr_log(GPR_INFO, "### ejection complete");
   // Expect a re-resolution request.
   ExpectReresolutionRequest();
@@ -279,8 +278,7 @@ TEST_F(OutlierDetectionTest, DoesNotWorkWithPickFirst) {
   ASSERT_TRUE(address.has_value());
   gpr_log(GPR_INFO, "### failed RPC on %s", address->c_str());
   // Advance time and run the timer callback to trigger ejection.
-  time_cache_.IncrementBy(Duration::Seconds(10));
-  RunTimerCallback();
+  IncrementTimeBy(Duration::Seconds(10));
   gpr_log(GPR_INFO, "### ejection timer pass complete");
   // Subchannel should not be ejected.
   ExpectQueueEmpty();

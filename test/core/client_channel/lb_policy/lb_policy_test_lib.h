@@ -1175,28 +1175,29 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 class TimeAwareLoadBalancingPolicyTest : public LoadBalancingPolicyTest {
  protected:
   TimeAwareLoadBalancingPolicyTest() {
-    auto fuzzing_ee =
+    event_engine_ =
         std::make_shared<grpc_event_engine::experimental::FuzzingEventEngine>(
             grpc_event_engine::experimental::FuzzingEventEngine::Options(),
             fuzzing_event_engine::Actions());
-    // Store in base class, to make it visible to the LB policy.
-    event_engine_ = std::move(mock_ee);
   }
 
   ~TimeAwareLoadBalancingPolicyTest() override {
-    EXPECT_TRUE(timer_callbacks_.empty())
-        << "WARNING: Test did not run all timer callbacks";
-  }
-
-  void IncrementTime() {
     auto* fuzzing_ee =
         static_cast<grpc_event_engine::experimental::FuzzingEventEngine*>(
             event_engine_.get());
-    fuzzing_ee->Tick();
+    fuzzing_ee->FuzzingDone();
+  }
+
+  void IncrementTimeBy(Duration duration) {
+    auto* fuzzing_ee =
+        static_cast<grpc_event_engine::experimental::FuzzingEventEngine*>(
+            event_engine_.get());
+    fuzzing_ee->TickForDuration(duration);
     // Flush WorkSerializer, in case the timer callback enqueued anything.
     WaitForWorkSerializerToFlush();
   }
 
+// FIXME
   // Called when the LB policy starts a timer.
   // May be overridden by subclasses.
   virtual void CheckExpectedTimerDuration(
