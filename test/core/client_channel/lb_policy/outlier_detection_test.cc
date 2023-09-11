@@ -145,7 +145,9 @@ class OutlierDetectionTest : public TimeAwareLoadBalancingPolicyTest {
   };
 
   OutlierDetectionTest()
-      : lb_policy_(MakeLbPolicy("outlier_detection_experimental")) {}
+      : lb_policy_(MakeLbPolicy("outlier_detection_experimental")) {
+    SetExpectedTimerDuration(std::chrono::seconds(10));
+  }
 
   absl::optional<std::string> DoPickWithFailedCall(
       LoadBalancingPolicy::SubchannelPicker* picker) {
@@ -164,17 +166,7 @@ class OutlierDetectionTest : public TimeAwareLoadBalancingPolicyTest {
     return address;
   }
 
-  void CheckExpectedTimerDuration(
-      grpc_event_engine::experimental::EventEngine::Duration duration)
-      override {
-    EXPECT_EQ(duration, expected_internal_)
-        << "Expected: " << expected_internal_.count() << "ns"
-        << "\n  Actual: " << duration.count() << "ns";
-  }
-
   OrphanablePtr<LoadBalancingPolicy> lb_policy_;
-  grpc_event_engine::experimental::EventEngine::Duration expected_internal_ =
-      std::chrono::seconds(10);
 };
 
 TEST_F(OutlierDetectionTest, Basic) {
@@ -226,8 +218,7 @@ TEST_F(OutlierDetectionTest, FailurePercentage) {
   ASSERT_TRUE(address.has_value());
   gpr_log(GPR_INFO, "### failed RPC on %s", address->c_str());
   // Advance time and run the timer callback to trigger ejection.
-  time_cache_.IncrementBy(Duration::Seconds(10));
-  RunTimerCallback();
+  IncrementTimeBy(Duration::Seconds(10));
   gpr_log(GPR_INFO, "### ejection complete");
   // Expect a re-resolution request.
   ExpectReresolutionRequest();
@@ -279,8 +270,7 @@ TEST_F(OutlierDetectionTest, DoesNotWorkWithPickFirst) {
   ASSERT_TRUE(address.has_value());
   gpr_log(GPR_INFO, "### failed RPC on %s", address->c_str());
   // Advance time and run the timer callback to trigger ejection.
-  time_cache_.IncrementBy(Duration::Seconds(10));
-  RunTimerCallback();
+  IncrementTimeBy(Duration::Seconds(10));
   gpr_log(GPR_INFO, "### ejection timer pass complete");
   // Subchannel should not be ejected.
   ExpectQueueEmpty();

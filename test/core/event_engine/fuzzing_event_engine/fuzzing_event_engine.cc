@@ -25,6 +25,7 @@
 
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
+#include "fuzzing_event_engine.h"
 
 #include <grpc/event_engine/slice.h>
 #include <grpc/support/log.h>
@@ -178,6 +179,34 @@ void FuzzingEventEngine::TickUntilIdle() {
     }
     Tick();
   }
+}
+
+void FuzzingEventEngine::TickUntil(Time t) {
+  while (true) {
+    auto now = Now();
+    if (now >= t) break;
+    Tick(t - now);
+  }
+}
+
+void FuzzingEventEngine::TickUntilTimespec(gpr_timespec t) {
+  GPR_ASSERT(t.clock_type != GPR_TIMESPAN);
+  TickUntil(Time() + std::chrono::seconds(t.tv_sec) +
+            std::chrono::nanoseconds(t.tv_nsec));
+}
+
+void FuzzingEventEngine::TickUntilTimestamp(grpc_core::Timestamp t) {
+  TickUntilTimespec(t.as_timespec(GPR_CLOCK_REALTIME));
+}
+
+void FuzzingEventEngine::TickForDuration(grpc_core::Duration d) {
+  TickUntilTimestamp(grpc_core::Timestamp::Now() + d);
+}
+
+void FuzzingEventEngine::SetRunAfterDurationCallback(
+    absl::AnyInvocable<void(Duration)> callback) {
+  grpc_core::MutexLock lock(&run_after_duration_callback_mu_);
+  run_after_duration_callback_ = std::move(callback);
 }
 
 FuzzingEventEngine::Time FuzzingEventEngine::Now() {
@@ -412,8 +441,10 @@ EventEngine::ConnectionHandle FuzzingEventEngine::Connect(
   // TODO(ctiller): do something with the timeout
   // Schedule a timer to run (with some fuzzer selected delay) the on_connect
   // callback.
-  auto task_handle = RunAfter(
-      Duration(0), [this, addr, on_connect = std::move(on_connect)]() mutable {
+  grpc_core::MutexLock lock(&*mu_);
+  auto task_handle = RunAfterLocked(
+      RunType::kRunAfter, Duration(0),
+      [this, addr, on_connect = std::move(on_connect)]() mutable {
         // Check for a legal address and extract the target port number.
         auto port = ResolvedAddressGetPort(addr);
         grpc_core::MutexLock lock(&*mu_);
@@ -467,11 +498,14 @@ FuzzingEventEngine::GetDNSResolver(const DNSResolver::ResolverOptions&) {
 }
 
 void FuzzingEventEngine::Run(Closure* closure) {
-  RunAfter(Duration::zero(), closure);
+  grpc_core::MutexLock lock(&*mu_);
+  RunAfterLocked(RunType::kRunAfter, Duration::zero(),
+                 [closure]() { closure->Run(); });
 }
 
 void FuzzingEventEngine::Run(absl::AnyInvocable<void()> closure) {
-  RunAfter(Duration::zero(), std::move(closure));
+  grpc_core::MutexLock lock(&*mu_);
+  RunAfterLocked(RunType::kRunAfter, Duration::zero(), std::move(closure));
 }
 
 EventEngine::TaskHandle FuzzingEventEngine::RunAfter(Duration when,
@@ -481,6 +515,12 @@ EventEngine::TaskHandle FuzzingEventEngine::RunAfter(Duration when,
 
 EventEngine::TaskHandle FuzzingEventEngine::RunAfter(
     Duration when, absl::AnyInvocable<void()> closure) {
+  {
+    grpc_core::MutexLock lock(&run_after_duration_callback_mu_);
+    if (run_after_duration_callback_ != nullptr) {
+      run_after_duration_callback_(when);
+    }
+  }
   grpc_core::MutexLock lock(&*mu_);
   // (b/258949216): Cap it to one year to avoid integer overflow errors.
   return RunAfterLocked(RunType::kRunAfter, std::min(when, kOneYear),

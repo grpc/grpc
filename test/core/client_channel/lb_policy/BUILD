@@ -34,7 +34,7 @@ grpc_cc_library(
     deps = [
         "//src/core:lb_policy",
         "//src/core:subchannel_interface",
-        "//test/core/event_engine:mock_event_engine",
+        "//test/core/event_engine/fuzzing_event_engine",
     ],
 )
 

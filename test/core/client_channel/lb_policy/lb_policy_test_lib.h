@@ -33,6 +33,7 @@
 #include <set>
 #include <string>
 #include <tuple>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -86,7 +87,7 @@
 #include "src/core/lib/service_config/service_config_call_data.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/uri/uri_parser.h"
-#include "test/core/event_engine/mock_event_engine.h"
+#include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 
 namespace grpc_core {
 namespace testing {
@@ -510,7 +511,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
       LoadBalancingPolicy::PickResult Pick(
           LoadBalancingPolicy::PickArgs args) override {
-        return picker_->Pick(std::move(args));
+        return picker_->Pick(args);
       }
 
      private:
@@ -1173,72 +1174,44 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 // incrementing time and handling timer callbacks.
 class TimeAwareLoadBalancingPolicyTest : public LoadBalancingPolicyTest {
  protected:
-  // A custom time cache for which InvalidateCache() is a no-op.  This
-  // ensures that when the timer callback instantiates its own ExecCtx
-  // and therefore its own ScopedTimeCache, it continues to see the time
-  // that we are injecting in the test.
-  class TestTimeCache final : public Timestamp::ScopedSource {
-   public:
-    TestTimeCache() : cached_time_(previous()->Now()) {}
-
-    Timestamp Now() override { return cached_time_; }
-    void InvalidateCache() override {}
-
-    void IncrementBy(Duration duration) { cached_time_ += duration; }
-
-   private:
-    Timestamp cached_time_;
-  };
-
   TimeAwareLoadBalancingPolicyTest() {
-    auto mock_ee =
-        std::make_shared<grpc_event_engine::experimental::MockEventEngine>();
-    auto capture = [this](std::chrono::duration<int64_t, std::nano> duration,
-                          absl::AnyInvocable<void()> callback) {
-      CheckExpectedTimerDuration(duration);
-      intptr_t key = next_key_++;
-      timer_callbacks_[key] = std::move(callback);
-      return grpc_event_engine::experimental::EventEngine::TaskHandle{key, 0};
-    };
-    ON_CALL(*mock_ee,
-            RunAfter(::testing::_, ::testing::A<absl::AnyInvocable<void()>>()))
-        .WillByDefault(capture);
-    auto cancel =
-        [this](
-            grpc_event_engine::experimental::EventEngine::TaskHandle handle) {
-          auto it = timer_callbacks_.find(handle.keys[0]);
-          if (it == timer_callbacks_.end()) return false;
-          timer_callbacks_.erase(it);
-          return true;
-        };
-    ON_CALL(*mock_ee, Cancel(::testing::_)).WillByDefault(cancel);
-    // Store in base class, to make it visible to the LB policy.
-    event_engine_ = std::move(mock_ee);
+    event_engine_ =
+        std::make_shared<grpc_event_engine::experimental::FuzzingEventEngine>(
+            grpc_event_engine::experimental::FuzzingEventEngine::Options(),
+            fuzzing_event_engine::Actions());
   }
 
   ~TimeAwareLoadBalancingPolicyTest() override {
-    EXPECT_TRUE(timer_callbacks_.empty())
-        << "WARNING: Test did not run all timer callbacks";
+    fuzzing_event_engine()->FuzzingDone();
   }
 
-  void RunTimerCallback() {
-    ASSERT_EQ(timer_callbacks_.size(), 1UL);
-    auto it = timer_callbacks_.begin();
-    ASSERT_NE(it->second, nullptr);
-    std::move(it->second)();
-    timer_callbacks_.erase(it);
+  void IncrementTimeBy(Duration duration) {
+    fuzzing_event_engine()->TickForDuration(duration);
     // Flush WorkSerializer, in case the timer callback enqueued anything.
     WaitForWorkSerializerToFlush();
   }
 
-  // Called when the LB policy starts a timer.
-  // May be overridden by subclasses.
-  virtual void CheckExpectedTimerDuration(
-      grpc_event_engine::experimental::EventEngine::Duration) {}
+  void SetExpectedTimerDuration(
+      absl::optional<grpc_event_engine::experimental::EventEngine::Duration>
+          duration) {
+    if (duration.has_value()) {
+      fuzzing_event_engine()->SetRunAfterDurationCallback(
+          [expected = *duration](
+              grpc_event_engine::experimental::EventEngine::Duration duration) {
+            EXPECT_EQ(duration, expected)
+                << "Expected: " << expected.count() << "ns\nActual: "
+                << duration.count() << "ns";
+          });
+    } else {
+      fuzzing_event_engine()->SetRunAfterDurationCallback(nullptr);
+    }
+  }
 
-  std::map<intptr_t, absl::AnyInvocable<void()>> timer_callbacks_;
-  intptr_t next_key_ = 1;
-  TestTimeCache time_cache_;
+  grpc_event_engine::experimental::FuzzingEventEngine* fuzzing_event_engine()
+      const {
+    return static_cast<grpc_event_engine::experimental::FuzzingEventEngine*>(
+        event_engine_.get());
+  }
 };
 
 }  // namespace testing

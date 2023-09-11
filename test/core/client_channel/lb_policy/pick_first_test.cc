@@ -25,6 +25,7 @@
 
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
+#include "absl/synchronization/notification.h"
 #include "absl/types/optional.h"
 #include "absl/types/span.h"
 #include "gmock/gmock.h"
@@ -70,7 +71,8 @@ class PickFirstTest : public LoadBalancingPolicyTest {
     // notifications on the WorkSerializer, and we want to wait until
     // those are delivered to the LB policy.
     absl::Notification notification;
-    work_serializer_->Run([&]() {
+    work_serializer_->Run(
+        [&]() {
           lb_policy_->ExitIdleLocked();
           work_serializer_->Run([&]() { notification.Notify(); },
                                 DEBUG_LOCATION);
