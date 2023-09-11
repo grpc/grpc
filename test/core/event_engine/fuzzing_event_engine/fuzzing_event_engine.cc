@@ -181,22 +181,16 @@ void FuzzingEventEngine::TickUntilIdle() {
 }
 
 void FuzzingEventEngine::TickUntil(Time t) {
-  while (Now() < t) {
-    Tick();
+  while (true) {
+    auto now = Now();
+    if (now >= t) break;
+    Tick(t - now);
   }
 }
 
 void FuzzingEventEngine::TickUntilTimespec(gpr_timespec t) {
-  // Wrapper to acquire lock and elide the right clock type from the while loop
-  auto now = [clock_type = t.clock_type, this]() {
-    grpc_core::MutexLock lock(&*now_mu_);
-    return NowAsTimespec(clock_type);
-  };
-
-  // Wait until the time is reached
-  while (gpr_time_cmp(now(), t) <= 0) {
-    Tick();
-  }
+  TickUntil(Time() + std::chrono::seconds(t.tv_sec) +
+            std::chrono::nanoseconds(t.tv_nsec));
 }
 
 FuzzingEventEngine::Time FuzzingEventEngine::Now() {
