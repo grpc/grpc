@@ -33,6 +33,10 @@ namespace grpc_core {
 
 namespace {
 
+const ChannelArgs::PointerKey kGrpclbBalancerAddressesKey =
+    ChannelArgs::PointerKey::Register(GRPC_ARG_GRPCLB_BALANCER_ADDRESSES,
+                                      ChannelArgs::KeyOptions{});
+
 void* BalancerAddressesArgCopy(void* p) {
   ServerAddressList* address_list = static_cast<ServerAddressList*>(p);
   return new ServerAddressList(*address_list);
@@ -64,24 +68,15 @@ const grpc_arg_pointer_vtable kBalancerAddressesArgVtable = {
 
 }  // namespace
 
-grpc_arg CreateGrpclbBalancerAddressesArg(
-    const ServerAddressList* address_list) {
-  return grpc_channel_arg_pointer_create(
-      const_cast<char*>(GRPC_ARG_GRPCLB_BALANCER_ADDRESSES),
-      const_cast<ServerAddressList*>(address_list),
-      &kBalancerAddressesArgVtable);
-}
-
 const ServerAddressList* FindGrpclbBalancerAddressesInChannelArgs(
     const ChannelArgs& args) {
-  return args.GetPointer<const ServerAddressList>(
-      GRPC_ARG_GRPCLB_BALANCER_ADDRESSES);
+  return args.GetPointer<const ServerAddressList>(kGrpclbBalancerAddressesKey);
 }
 
 ChannelArgs SetGrpcLbBalancerAddresses(const ChannelArgs& args,
                                        ServerAddressList address_list) {
   return args.Set(
-      GRPC_ARG_GRPCLB_BALANCER_ADDRESSES,
+      kGrpclbBalancerAddressesKey,
       ChannelArgs::Pointer(new ServerAddressList(std::move(address_list)),
                            &kBalancerAddressesArgVtable));
 }

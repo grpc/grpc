@@ -31,19 +31,22 @@ namespace grpc_core {
 
 namespace {
 int g_default_max_pings_without_data = 2;
+const ChannelArgs::IntKey kMaxPingsWithoutDataKey =
+    ChannelArgs::IntKey::Register(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA,
+                                  ChannelArgs::KeyOptions{});
 }  // namespace
 
 Chttp2PingRatePolicy::Chttp2PingRatePolicy(const ChannelArgs& args,
                                            bool is_client)
     : max_pings_without_data_(
           is_client
-              ? std::max(0, args.GetInt(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA)
+              ? std::max(0, args.GetInt(kMaxPingsWithoutDataKey)
                                 .value_or(g_default_max_pings_without_data))
               : 0) {}
 
 void Chttp2PingRatePolicy::SetDefaults(const ChannelArgs& args) {
   g_default_max_pings_without_data =
-      std::max(0, args.GetInt(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA)
+      std::max(0, args.GetInt(kMaxPingsWithoutDataKey)
                       .value_or(g_default_max_pings_without_data));
 }
 

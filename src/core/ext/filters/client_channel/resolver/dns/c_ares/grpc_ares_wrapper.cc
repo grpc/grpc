@@ -28,6 +28,7 @@
 
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/surface/common_channel_args.h"
 
 // IWYU pragma: no_include <arpa/inet.h>
 // IWYU pragma: no_include <arpa/nameser.h>
@@ -676,7 +677,7 @@ static void on_hostbyname_done_locked(void* arg, int status, int /*timeouts*/,
     for (size_t i = 0; hostent->h_addr_list[i] != nullptr; ++i) {
       grpc_core::ChannelArgs args;
       if (hr->is_balancer) {
-        args = args.Set(GRPC_ARG_DEFAULT_AUTHORITY, hr->host);
+        args = args.Set(grpc_core::kDefaultAuthorityKey, hr->host);
       }
       grpc_resolved_address address;
       memset(&address, 0, sizeof(address));

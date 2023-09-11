@@ -20,6 +20,7 @@
 #include <stdlib.h>
 
 #include <algorithm>  // IWYU pragma: keep
+#include <cstdint>
 #include <utility>
 
 #include "src/core/lib/gpr/useful.h"
@@ -43,7 +44,7 @@ class AVL {
   template <typename SomethingLikeK>
   const V* Lookup(const SomethingLikeK& key) const {
     NodePtr n = Get(root_, key);
-    return n != nullptr ? &n->kv.second : nullptr;
+    return n != nullptr ? &n->value : nullptr;
   }
 
   const std::pair<K, V>* LookupBelow(const K& key) const {
@@ -70,8 +71,10 @@ class AVL {
       if (p != q) {
         if (p == nullptr) return -1;
         if (q == nullptr) return 1;
-        const int kv = QsortCompare(p->kv, q->kv);
-        if (kv != 0) return kv;
+        const int key = QsortCompare(p->key, q->key);
+        if (key != 0) return key;
+        const int value = QsortCompare(p->value, q->value);
+        if (value != 0) return value;
       } else if (p == nullptr) {
         return 0;
       }
@@ -93,20 +96,49 @@ class AVL {
     return root_->height;
   }
 
+  AVL UnionWith(AVL other) const {
+    if (Empty()) return other;
+    if (other.Empty()) return *this;
+    if (Height() <= other.Height()) {
+      ForEach([&other](const K& key, const V& value) {
+        other = other.Add(key, value);
+      });
+      return other;
+    } else {
+      auto result = *this;
+      other.ForEach([&result](const K& key, const V& value) {
+        if (result.Lookup(key) == nullptr) {
+          result = result.Add(key, value);
+        }
+      });
+      return result;
+    }
+  }
+
+  AVL FuzzingReferenceUnionWith(AVL other) const {
+    // DO NOT OPTIMIZE THIS!!
+    ForEach([&other](const K& key, const V& value) {
+      other = other.Add(key, value);
+    });
+    return other;
+  }
+
  private:
   struct Node;
 
   typedef RefCountedPtr<Node> NodePtr;
   struct Node : public RefCounted<Node, NonPolymorphicRefCount> {
-    Node(K k, V v, NodePtr l, NodePtr r, long h)
-        : kv(std::move(k), std::move(v)),
+    Node(K k, V v, NodePtr l, NodePtr r, int h)
+        : key(std::move(k)),
+          height(h),
+          value(std::move(v)),
           left(std::move(l)),
-          right(std::move(r)),
-          height(h) {}
-    const std::pair<K, V> kv;
+          right(std::move(r)) {}
+    const K key;
+    const int height;
+    const V value;
     const NodePtr left;
     const NodePtr right;
-    const long height;
   };
   NodePtr root_;
 
@@ -164,11 +196,11 @@ class AVL {
   static void ForEachImpl(const Node* n, F&& f) {
     if (n == nullptr) return;
     ForEachImpl(n->left.get(), std::forward<F>(f));
-    f(const_cast<const K&>(n->kv.first), const_cast<const V&>(n->kv.second));
+    f(const_cast<const K&>(n->key), const_cast<const V&>(n->value));
     ForEachImpl(n->right.get(), std::forward<F>(f));
   }
 
-  static long Height(const NodePtr& n) { return n != nullptr ? n->height : 0; }
+  static int Height(const NodePtr& n) { return n != nullptr ? n->height : 0; }
 
   static NodePtr MakeNode(K key, V value, const NodePtr& left,
                           const NodePtr& right) {
@@ -182,9 +214,9 @@ class AVL {
       return nullptr;
     }
 
-    if (node->kv.first > key) {
+    if (node->key > key) {
       return Get(node->left, key);
-    } else if (node->kv.first < key) {
+    } else if (node->key < key) {
       return Get(node->right, key);
     } else {
       return node;
@@ -193,9 +225,9 @@ class AVL {
 
   static NodePtr GetBelow(const NodePtr& node, const K& key) {
     if (!node) return nullptr;
-    if (node->kv.first > key) {
+    if (node->key > key) {
       return GetBelow(node->left, key);
-    } else if (node->kv.first < key) {
+    } else if (node->key < key) {
       NodePtr n = GetBelow(node->right, key);
       if (n == nullptr) n = node;
       return n;
@@ -207,7 +239,7 @@ class AVL {
   static NodePtr RotateLeft(K key, V value, const NodePtr& left,
                             const NodePtr& right) {
     return MakeNode(
-        right->kv.first, right->kv.second,
+        right->key, right->value,
         MakeNode(std::move(key), std::move(value), left, right->left),
         right->right);
   }
@@ -215,7 +247,7 @@ class AVL {
   static NodePtr RotateRight(K key, V value, const NodePtr& left,
                              const NodePtr& right) {
     return MakeNode(
-        left->kv.first, left->kv.second, left->left,
+        left->key, left->value, left->left,
         MakeNode(std::move(key), std::move(value), left->right, right));
   }
 
@@ -223,9 +255,8 @@ class AVL {
                                  const NodePtr& right) {
     // rotate_right(..., rotate_left(left), right)
     return MakeNode(
-        left->right->kv.first, left->right->kv.second,
-        MakeNode(left->kv.first, left->kv.second, left->left,
-                 left->right->left),
+        left->right->key, left->right->value,
+        MakeNode(left->key, left->value, left->left, left->right->left),
         MakeNode(std::move(key), std::move(value), left->right->right, right));
   }
 
@@ -233,10 +264,9 @@ class AVL {
                                  const NodePtr& right) {
     // rotate_left(..., left, rotate_right(right))
     return MakeNode(
-        right->left->kv.first, right->left->kv.second,
+        right->left->key, right->left->value,
         MakeNode(std::move(key), std::move(value), left, right->left->left),
-        MakeNode(right->kv.first, right->kv.second, right->left->right,
-                 right->right));
+        MakeNode(right->key, right->value, right->left->right, right->right));
   }
 
   static NodePtr Rebalance(K key, V value, const NodePtr& left,
@@ -263,12 +293,12 @@ class AVL {
     if (node == nullptr) {
       return MakeNode(std::move(key), std::move(value), nullptr, nullptr);
     }
-    if (node->kv.first < key) {
-      return Rebalance(node->kv.first, node->kv.second, node->left,
+    if (node->key < key) {
+      return Rebalance(node->key, node->value, node->left,
                        AddKey(node->right, std::move(key), std::move(value)));
     }
-    if (key < node->kv.first) {
-      return Rebalance(node->kv.first, node->kv.second,
+    if (key < node->key) {
+      return Rebalance(node->key, node->value,
                        AddKey(node->left, std::move(key), std::move(value)),
                        node->right);
     }
@@ -294,11 +324,11 @@ class AVL {
     if (node == nullptr) {
       return nullptr;
     }
-    if (key < node->kv.first) {
-      return Rebalance(node->kv.first, node->kv.second,
-                       RemoveKey(node->left, key), node->right);
-    } else if (node->kv.first < key) {
-      return Rebalance(node->kv.first, node->kv.second, node->left,
+    if (key < node->key) {
+      return Rebalance(node->key, node->value, RemoveKey(node->left, key),
+                       node->right);
+    } else if (node->key < key) {
+      return Rebalance(node->key, node->value, node->left,
                        RemoveKey(node->right, key));
     } else {
       if (node->left == nullptr) {
@@ -307,12 +337,12 @@ class AVL {
         return node->left;
       } else if (node->left->height < node->right->height) {
         NodePtr h = InOrderHead(node->right);
-        return Rebalance(h->kv.first, h->kv.second, node->left,
-                         RemoveKey(node->right, h->kv.first));
+        return Rebalance(h->key, h->value, node->left,
+                         RemoveKey(node->right, h->key));
       } else {
         NodePtr h = InOrderTail(node->left);
-        return Rebalance(h->kv.first, h->kv.second,
-                         RemoveKey(node->left, h->kv.first), node->right);
+        return Rebalance(h->key, h->value, RemoveKey(node->left, h->key),
+                         node->right);
       }
     }
     abort();

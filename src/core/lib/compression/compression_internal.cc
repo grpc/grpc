@@ -22,10 +22,13 @@
 
 #include <stdlib.h>
 
+#include <optional>
+
 #include "absl/container/inlined_vector.h"
 #include "absl/strings/ascii.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_split.h"
+#include "compression_internal.h"
 
 #include <grpc/support/log.h>
 
@@ -37,6 +40,20 @@
 #include "src/core/lib/surface/api_trace.h"
 
 namespace grpc_core {
+
+namespace {
+const ChannelArgs::IntKey kCompressionEnabledAlgorithmsBitsetKey =
+    ChannelArgs::IntKey::Register(
+        GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET,
+        ChannelArgs::KeyOptions{});
+const ChannelArgs::IntKey kCompressionDefaultAlgorithm =
+    ChannelArgs::IntKey::Register(
+        GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM,
+        ChannelArgs::KeyOptions().WithParseStringToInt(
+            [](absl::string_view algorithm) {
+              return ParseCompressionAlgorithm(algorithm);
+            }));
+}  // namespace
 
 const char* CompressionAlgorithmAsString(grpc_compression_algorithm algorithm) {
   switch (algorithm) {
@@ -170,7 +187,7 @@ CompressionAlgorithmSet CompressionAlgorithmSet::FromChannelArgs(
   static const uint32_t kEverything =
       (1u << GRPC_COMPRESS_ALGORITHMS_COUNT) - 1;
   return CompressionAlgorithmSet::FromUint32(
-      args.GetInt(GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET)
+      args.GetInt(kCompressionEnabledAlgorithmsBitsetKey)
           .value_or(kEverything));
 }
 
@@ -227,17 +244,9 @@ uint32_t CompressionAlgorithmSet::ToLegacyBitmask() const {
 
 absl::optional<grpc_compression_algorithm>
 DefaultCompressionAlgorithmFromChannelArgs(const ChannelArgs& args) {
-  auto* value = args.Get(GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM);
-  if (value == nullptr) return absl::nullopt;
-  auto ival = value->GetIfInt();
-  if (ival.has_value()) {
-    return static_cast<grpc_compression_algorithm>(*ival);
-  }
-  auto sval = value->GetIfString();
-  if (sval != nullptr) {
-    return ParseCompressionAlgorithm(sval->as_string_view());
-  }
-  return absl::nullopt;
+  auto r = args.GetInt(kCompressionDefaultAlgorithm);
+  if (!r.has_value()) return absl::nullopt;
+  return static_cast<grpc_compression_algorithm>(r.value());
 }
 
 }  // namespace grpc_core

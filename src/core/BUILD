@@ -2342,6 +2342,7 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "//:event_engine_base_hdrs",
+        "//:gpr",
         "//:gpr_platform",
     ],
 )
@@ -2725,6 +2726,17 @@ grpc_cc_library(
         "//:gpr",
         "//:ref_counted_ptr",
     ],
+)
+
+grpc_cc_library(
+    name = "common_channel_args",
+    srcs = [
+        "lib/surface/common_channel_args.cc",
+    ],
+    hdrs = [
+        "lib/surface/common_channel_args.h",
+    ],
+    deps = ["channel_args"],
 )
 
 grpc_cc_library(
