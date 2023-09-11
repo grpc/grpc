@@ -662,6 +662,12 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
     GRPC_CHANNEL_STACK_UNREF(chand_->owning_stack_, "SubchannelWrapper");
   }
 
+  void Orphan() override {
+    // Make sure we release the last ref inside the WorkSerializer, so
+    // that we can update the channel's subchannel maps.
+    chand_->work_serializer_->Run([self = WeakRef()]() {}, DEBUG_LOCATION);
+  }
+
   void WatchConnectivityState(
       std::unique_ptr<ConnectivityStateWatcherInterface> watcher) override
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_) {
@@ -2770,47 +2776,34 @@ void ClientChannel::LoadBalancedCall::AddCallToLbQueuedCallsLocked() {
 
 absl::optional<absl::Status> ClientChannel::LoadBalancedCall::PickSubchannel(
     bool was_queued) {
-  // We may accumulate multiple pickers here, because if a picker says
-  // to queue the call, we check again to see if the picker has been
-  // updated before we queue it.
-  // We need to unref pickers in the WorkSerializer.
-  std::vector<RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>> pickers;
-  auto cleanup = absl::MakeCleanup([&]() {
-    chand_->work_serializer_->Run(
-        [pickers = std::move(pickers)]() mutable {
-          for (auto& picker : pickers) {
-            picker.reset(DEBUG_LOCATION, "PickSubchannel");
-          }
-        },
-        DEBUG_LOCATION);
-  });
   // Grab mutex and take a ref to the picker.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
     gpr_log(GPR_INFO, "chand=%p lb_call=%p: grabbing LB mutex to get picker",
             chand_, this);
   }
+  RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker;
   {
     MutexLock lock(&chand_->lb_mu_);
-    pickers.emplace_back(chand_->picker_);
+    picker = chand_->picker_;
   }
   while (true) {
     // Do pick.
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
       gpr_log(GPR_INFO, "chand=%p lb_call=%p: performing pick with picker=%p",
-              chand_, this, pickers.back().get());
+              chand_, this, picker.get());
     }
     grpc_error_handle error;
-    bool pick_complete = PickSubchannelImpl(pickers.back().get(), &error);
+    bool pick_complete = PickSubchannelImpl(picker.get(), &error);
     if (!pick_complete) {
       MutexLock lock(&chand_->lb_mu_);
       // If picker has been swapped out since we grabbed it, try again.
-      if (chand_->picker_ != pickers.back()) {
+      if (picker != chand_->picker_) {
         if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
           gpr_log(GPR_INFO,
                   "chand=%p lb_call=%p: pick not complete, but picker changed",
                   chand_, this);
         }
-        pickers.emplace_back(chand_->picker_);
+        picker = chand_->picker_;
         continue;
       }
       // Otherwise queue the pick to try again later when we get a new picker.
