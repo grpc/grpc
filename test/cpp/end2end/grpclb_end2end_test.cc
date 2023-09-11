@@ -613,6 +613,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
       const std::vector<AddressData>& backend_address_data = {},
       const char* service_config_json = kDefaultServiceConfig) {
     grpc_core::ExecCtx exec_ctx;
+    response_generator_->WaitForResolverSet();
     grpc_core::Resolver::Result result = MakeResolverResult(
         balancer_address_data, backend_address_data, service_config_json);
     response_generator_->SetReresolutionResponseSynchronously(
