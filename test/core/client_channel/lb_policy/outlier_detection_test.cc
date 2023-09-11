@@ -21,7 +21,6 @@
 #include <array>
 #include <chrono>
 #include <memory>
-#include <ratio>
 #include <string>
 #include <utility>
 #include <vector>
@@ -31,7 +30,6 @@
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
 
-#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/support/json.h>
 #include <grpc/support/log.h>
