@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Provides distutils command classes for the GRPC Python setup process."""
+"""Provides setuptools command classes for the GRPC Python setup process."""
 
 # NOTE(https://github.com/grpc/grpc/issues/24028): allow setuptools to monkey
 # patch distutils
@@ -185,7 +185,7 @@ def try_cythonize(extensions, linetracing=False, mandatory=True):
     """Attempt to cythonize the extensions.
 
     Args:
-      extensions: A list of `distutils.extension.Extension`.
+      extensions: A list of `setuptools.Extension`.
       linetracing: A bool indicating whether or not to enable linetracing.
       mandatory: Whether or not having Cython-generated files is mandatory. If it
         is, extensions will be poisoned when they can't be fully generated.
@@ -337,12 +337,7 @@ class Gather(setuptools.Command):
         pass
 
     def run(self):
-        if self.install and self.distribution.install_requires:
-            self.distribution.fetch_build_eggs(
-                self.distribution.install_requires
-            )
-        if self.test and self.distribution.tests_require:
-            self.distribution.fetch_build_eggs(self.distribution.tests_require)
+        pass
 
 
 class Clean(setuptools.Command):

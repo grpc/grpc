@@ -42,12 +42,8 @@ class ServiceMeshLabelsInjector : public LabelsInjector {
       const opentelemetry::sdk::common::AttributeMap& map);
   // Read the incoming initial metadata to get the set of labels to be added to
   // metrics.
-  std::unique_ptr<LabelsIterable> GetPeerLabels(
+  std::unique_ptr<LabelsIterable> GetLabels(
       grpc_metadata_batch* incoming_initial_metadata) override;
-
-  // Get the local labels to be added to metrics. To be used when the peer
-  // metadata is not available, for example, for started RPCs metric.
-  std::unique_ptr<LabelsIterable> GetLocalLabels() override;
 
   // Modify the outgoing initial metadata with metadata information to be sent
   // to the peer.
@@ -57,6 +53,11 @@ class ServiceMeshLabelsInjector : public LabelsInjector {
   std::vector<std::pair<absl::string_view, std::string>> local_labels_;
   grpc_core::Slice serialized_labels_to_send_;
 };
+
+// Returns the mesh ID by reading and parsing the bootstrap file. Returns
+// "unknown" if for some reason, mesh ID could not be figured out.
+// EXPOSED FOR TESTING PURPOSES ONLY.
+std::string GetMeshId();
 
 }  // namespace internal
 }  // namespace grpc
