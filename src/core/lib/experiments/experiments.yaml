@@ -67,7 +67,7 @@
   test_tags: [resource_quota_test]
 - name: event_engine_client
   description: Use EventEngine clients instead of iomgr's grpc_tcp_client
-  expiry: 2024/01/01
+  expiry: 2024/01/21
   owner: hork@google.com
   test_tags: ["core_end2end_test", "event_engine_client_test"]
 - name: monitoring_experiment
