@@ -173,6 +173,7 @@ void do_round_trip(grpc_completion_queue* cq, grpc_server* server,
   error = grpc_server_request_call(server, &s, &call_details,
                                    &request_metadata_recv, cq, cq,
                                    grpc_core::CqVerifier::tag(101));
+
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(grpc_core::CqVerifier::tag(101), true);
   cqv.Verify();
@@ -320,16 +321,17 @@ TEST(H2SessionReuseTest, ConcurrentReuse) {
       ca_cert, &signed_client_key_cert_pair, nullptr, nullptr);
 
   do_round_trip(cq, server, server_addr.c_str(), cache, client_creds, false);
-  grpc_completion_queue* cq2 = grpc_completion_queue_create_for_next(nullptr);
 
-  std::thread* t1 = new std::thread([&]() -> void {
+  std::thread* thread_1 = new std::thread([&]() {
     do_round_trip(cq, server, server_addr.c_str(), cache, client_creds, true);
   });
-  std::thread* t2 = new std::thread([&]() -> void {
-    do_round_trip(cq2, server, server_addr.c_str(), cache, client_creds, true);
+  std::thread* thread_2 = new std::thread([&]() {
+    do_round_trip(cq, server, server_addr.c_str(), cache, client_creds, true);
   });
-  t1->join();
-  t2->join();
+  thread_1->join();
+  thread_2->join();
+  delete thread_1;
+  delete thread_2;
 
   grpc_ssl_session_cache_destroy(cache);
 
