@@ -59,6 +59,8 @@ class FuzzingEventEngine : public EventEngine {
                               const fuzzing_event_engine::Actions& actions);
   ~FuzzingEventEngine() override { UnsetGlobalHooks(); }
 
+  using Time = std::chrono::time_point<FuzzingEventEngine, Duration>;
+
   // Once the fuzzing work is completed, this method should be called to speed
   // quiescence.
   void FuzzingDone() ABSL_LOCKS_EXCLUDED(mu_);
@@ -67,6 +69,10 @@ class FuzzingEventEngine : public EventEngine {
       ABSL_LOCKS_EXCLUDED(mu_);
   // Repeatedly call Tick() until there is no more work to do.
   void TickUntilIdle() ABSL_LOCKS_EXCLUDED(mu_);
+  // Tick until some time
+  void TickUntil(Time t) ABSL_LOCKS_EXCLUDED(mu_);
+  // Tick until some gpr_timespec
+  void TickUntilTimespec(gpr_timespec t) ABSL_LOCKS_EXCLUDED(mu_);
 
   absl::StatusOr<std::unique_ptr<Listener>> CreateListener(
       Listener::AcceptCallback on_accept,
@@ -96,8 +102,6 @@ class FuzzingEventEngine : public EventEngine {
   TaskHandle RunAfter(Duration when, absl::AnyInvocable<void()> closure)
       ABSL_LOCKS_EXCLUDED(mu_) override;
   bool Cancel(TaskHandle handle) ABSL_LOCKS_EXCLUDED(mu_) override;
-
-  using Time = std::chrono::time_point<FuzzingEventEngine, Duration>;
 
   Time Now() ABSL_LOCKS_EXCLUDED(mu_);
 
