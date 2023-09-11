@@ -22,7 +22,7 @@
 
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/env.h"
-#include "src/cpp/ext/gsm/metadata_exchange.h"
+#include "src/cpp/ext/csm/metadata_exchange.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc {

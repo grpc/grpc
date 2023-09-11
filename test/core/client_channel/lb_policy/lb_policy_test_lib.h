@@ -1199,8 +1199,8 @@ class TimeAwareLoadBalancingPolicyTest : public LoadBalancingPolicyTest {
           [expected = *duration](
               grpc_event_engine::experimental::EventEngine::Duration duration) {
             EXPECT_EQ(duration, expected)
-                << "Expected: " << expected.count() << "ns\nActual: "
-                << duration.count() << "ns";
+                << "Expected: " << expected.count()
+                << "ns\nActual: " << duration.count() << "ns";
           });
     } else {
       fuzzing_event_engine()->SetRunAfterDurationCallback(nullptr);

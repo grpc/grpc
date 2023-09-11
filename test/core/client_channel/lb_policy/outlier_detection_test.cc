@@ -220,8 +220,6 @@ TEST_F(OutlierDetectionTest, FailurePercentage) {
   // Advance time and run the timer callback to trigger ejection.
   IncrementTimeBy(Duration::Seconds(10));
   gpr_log(GPR_INFO, "### ejection complete");
-  // Expect a re-resolution request.
-  ExpectReresolutionRequest();
   // Expect a picker update.
   std::vector<absl::string_view> remaining_addresses;
   for (const auto& addr : kAddresses) {

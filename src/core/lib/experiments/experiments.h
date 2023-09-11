@@ -87,6 +87,8 @@ inline bool IsKeepaliveServerFixEnabled() { return false; }
 inline bool IsLazierStreamUpdatesEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_JITTER_MAX_IDLE
 inline bool IsJitterMaxIdleEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_ROUND_ROBIN_DUALSTACK
+inline bool IsRoundRobinDualstackEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_DISPATCH
 inline bool IsWorkSerializerDispatchEnabled() { return true; }
 
@@ -119,6 +121,8 @@ inline bool IsKeepaliveServerFixEnabled() { return false; }
 inline bool IsLazierStreamUpdatesEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_JITTER_MAX_IDLE
 inline bool IsJitterMaxIdleEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_ROUND_ROBIN_DUALSTACK
+inline bool IsRoundRobinDualstackEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_DISPATCH
 inline bool IsWorkSerializerDispatchEnabled() { return true; }
 
@@ -151,6 +155,8 @@ inline bool IsKeepaliveServerFixEnabled() { return false; }
 inline bool IsLazierStreamUpdatesEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_JITTER_MAX_IDLE
 inline bool IsJitterMaxIdleEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_ROUND_ROBIN_DUALSTACK
+inline bool IsRoundRobinDualstackEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_DISPATCH
 inline bool IsWorkSerializerDispatchEnabled() { return true; }
 #endif
@@ -208,12 +214,14 @@ inline bool IsKeepaliveServerFixEnabled() { return IsExperimentEnabled(20); }
 inline bool IsLazierStreamUpdatesEnabled() { return IsExperimentEnabled(21); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_JITTER_MAX_IDLE
 inline bool IsJitterMaxIdleEnabled() { return IsExperimentEnabled(22); }
+#define GRPC_EXPERIMENT_IS_INCLUDED_ROUND_ROBIN_DUALSTACK
+inline bool IsRoundRobinDualstackEnabled() { return IsExperimentEnabled(23); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_DISPATCH
 inline bool IsWorkSerializerDispatchEnabled() {
-  return IsExperimentEnabled(23);
+  return IsExperimentEnabled(24);
 }
 
-constexpr const size_t kNumExperiments = 24;
+constexpr const size_t kNumExperiments = 25;
 extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];
 
 #endif

@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_SRC_CPP_EXT_GSM_METADATA_EXCHANGE_H
-#define GRPC_SRC_CPP_EXT_GSM_METADATA_EXCHANGE_H
+#ifndef GRPC_SRC_CPP_EXT_CSM_METADATA_EXCHANGE_H
+#define GRPC_SRC_CPP_EXT_CSM_METADATA_EXCHANGE_H
 
 #include <grpc/support/port_platform.h>
 
@@ -62,4 +62,4 @@ std::string GetMeshId();
 }  // namespace internal
 }  // namespace grpc
 
-#endif  // GRPC_SRC_CPP_EXT_GSM_METADATA_EXCHANGE_H
+#endif  // GRPC_SRC_CPP_EXT_CSM_METADATA_EXCHANGE_H

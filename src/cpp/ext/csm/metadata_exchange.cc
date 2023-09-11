@@ -18,7 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/cpp/ext/gsm/metadata_exchange.h"
+#include "src/cpp/ext/csm/metadata_exchange.h"
 
 #include <stddef.h>
 
