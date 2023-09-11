@@ -1070,18 +1070,30 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> ExpectRoundRobinStartup(
       absl::Span<const absl::string_view> addresses) {
     RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker;
+    // RR should have created a subchannel for each address.
     for (size_t i = 0; i < addresses.size(); ++i) {
       auto* subchannel = FindSubchannel(addresses[i]);
       EXPECT_NE(subchannel, nullptr);
       if (subchannel == nullptr) return nullptr;
+      // RR should ask each subchannel to connect.
       EXPECT_TRUE(subchannel->ConnectionRequested());
       subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+      // Expect the initial CONNECTNG update with a picker that queues.
       if (i == 0) ExpectConnectingUpdate();
+      // The connection attempts succeed.
       subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
       if (i == 0) {
+        // When the first subchannel becomes READY, accept any number of
+        // CONNECTING updates with a picker that queues followed by a READY
+        // update with a picker that repeatedly returns only the first address.
         picker = WaitForConnected();
         ExpectRoundRobinPicks(picker.get(), {addresses[0]});
       } else {
+        // When each subsequent subchannel becomes READY, we accept any number
+        // of READY updates where the picker returns only the previously
+        // connected subchannel(s) followed by a READY update where the picker
+        // returns the previously connected subchannel(s) *and* the newly
+        // connected subchannel.
         picker = WaitForRoundRobinListChange(
             absl::MakeSpan(addresses).subspan(0, i),
             absl::MakeSpan(addresses).subspan(0, i + 1));
