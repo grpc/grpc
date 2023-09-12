@@ -823,7 +823,7 @@ def _exclude_unwanted_cc_tests(tests: List[str]) -> List[str]:
         test
         for test in tests
         if not test.startswith("test/cpp/ext/otel:")
-        and not test.startswith("test/cpp/ext/gsm:")
+        and not test.startswith("test/cpp/ext/csm:")
     ]
 
     # missing opencensus/stats/stats.h
@@ -1294,6 +1294,9 @@ _BAZEL_DEPS_QUERIES = [
     'kind(bind, "//external:*")',
     # The ^ is needed to differentiate proto_library from go_proto_library
     'deps(kind("^proto_library", @envoy_api//envoy/...))',
+    # Make sure we have source info for all the targets that _expand_upb_proto_library_rules artificially adds
+    # as upb_proto_library dependencies.
+    'deps("//external:upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me")',
 ]
 
 # Step 1: run a bunch of "bazel query --output xml" queries to collect

@@ -87,7 +87,10 @@ class Loop {
     if (started_) Destruct(&promise_);
   }
 
-  Loop(Loop&& loop) noexcept : factory_(std::move(loop.factory_)) {}
+  Loop(Loop&& loop) noexcept
+      : factory_(std::move(loop.factory_)), started_(loop.started_) {
+    if (started_) Construct(&promise_, std::move(loop.promise_));
+  }
 
   Loop(const Loop& loop) = delete;
   Loop& operator=(const Loop& loop) = delete;

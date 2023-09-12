@@ -913,8 +913,8 @@ src/core/ext/filters/client_channel/dynamic_filters.cc \
 src/core/ext/filters/client_channel/dynamic_filters.h \
 src/core/ext/filters/client_channel/global_subchannel_pool.cc \
 src/core/ext/filters/client_channel/global_subchannel_pool.h \
-src/core/ext/filters/client_channel/http_proxy.cc \
-src/core/ext/filters/client_channel/http_proxy.h \
+src/core/ext/filters/client_channel/http_proxy_mapper.cc \
+src/core/ext/filters/client_channel/http_proxy_mapper.h \
 src/core/ext/filters/client_channel/lb_policy/address_filtering.cc \
 src/core/ext/filters/client_channel/lb_policy/address_filtering.h \
 src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h \
@@ -2555,6 +2555,9 @@ src/core/tsi/transport_security.h \
 src/core/tsi/transport_security_grpc.cc \
 src/core/tsi/transport_security_grpc.h \
 src/core/tsi/transport_security_interface.h \
+third_party/upb/upb/generated_code_support.h \
+third_party/upb/upb/port/def.inc \
+third_party/upb/upb/port/undef.inc \
 third_party/xxhash/xxhash.h
 
 # This tag can be used to specify the character encoding of the source files

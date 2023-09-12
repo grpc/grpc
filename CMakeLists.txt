@@ -421,7 +421,28 @@ endif()
 
 if(WIN32)
   set(_gRPC_ALLTARGETS_LIBRARIES ${_gRPC_ALLTARGETS_LIBRARIES} ws2_32 crypt32)
+  set(_gRPC_STATIC_WIN32 STATIC)
 endif()
+
+if(BUILD_SHARED_LIBS AND WIN32)
+
+# Currently for shared lib on Windows (i.e. a DLL) certain bits of source code
+# are generated from protobuf definitions by upbc. This source code does not include
+# annotations needed to export these functions from gprc.lib so we have to
+# re-include a small subset of these.
+#
+# This is not an ideal situation because these functions will be unavailable
+# to clients of grpc and the libraries that need this (e.g. grpc++) will
+# include redundant duplicate code. Hence, the duplication is only activated
+# for DLL builds - and should be completely removed when source files are
+# generated with the necessary __declspec annotations.
+set(gRPC_UPB_GEN_DUPL_SRC
+  src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
+  src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
+  src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
+)
+
+endif() # BUILD_SHARED_LIBS AND WIN32
 
 # Create directory for proto source files
 set(_gRPC_PROTO_SRCS_DIR ${CMAKE_BINARY_DIR}/protos)
@@ -1065,6 +1086,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx init_test)
   add_dependencies(buildtests_cxx initial_settings_frame_bad_client_test)
   add_dependencies(buildtests_cxx insecure_security_connector_test)
+  add_dependencies(buildtests_cxx inter_activity_pipe_test)
   add_dependencies(buildtests_cxx interceptor_list_test)
   add_dependencies(buildtests_cxx interop_client)
   add_dependencies(buildtests_cxx interop_server)
@@ -1480,6 +1502,7 @@ if(gRPC_BUILD_TESTS)
 endif()
 
 
+
 add_library(address_sorting
   third_party/address_sorting/address_sorting.c
   third_party/address_sorting/address_sorting_posix.c
@@ -1531,6 +1554,7 @@ if(gRPC_INSTALL)
     ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
   )
 endif()
+
 
 
 add_library(gpr
@@ -1593,6 +1617,10 @@ if(WIN32 AND MSVC)
   set_target_properties(gpr PROPERTIES COMPILE_PDB_NAME "gpr"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
   )
+  set_target_properties(gpr PROPERTIES DEFINE_SYMBOL "GPR_DLL_EXPORTS")
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(gpr INTERFACE GPR_DLL_IMPORTS)
+  endif()
   if(gRPC_INSTALL)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/gpr.pdb
       DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
@@ -1691,6 +1719,7 @@ if(gRPC_INSTALL)
 endif()
 
 
+
 add_library(grpc
   src/core/ext/filters/backend_metrics/backend_metric_filter.cc
   src/core/ext/filters/census/grpc_context.cc
@@ -1707,7 +1736,7 @@ add_library(grpc
   src/core/ext/filters/client_channel/config_selector.cc
   src/core/ext/filters/client_channel/dynamic_filters.cc
   src/core/ext/filters/client_channel/global_subchannel_pool.cc
-  src/core/ext/filters/client_channel/http_proxy.cc
+  src/core/ext/filters/client_channel/http_proxy_mapper.cc
   src/core/ext/filters/client_channel/lb_policy/address_filtering.cc
   src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc
@@ -2479,6 +2508,10 @@ if(WIN32 AND MSVC)
   set_target_properties(grpc PROPERTIES COMPILE_PDB_NAME "grpc"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
   )
+  set_target_properties(grpc PROPERTIES DEFINE_SYMBOL "GRPC_DLL_EXPORTS")
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(grpc INTERFACE GRPC_DLL_IMPORTS)
+  endif()
   if(gRPC_INSTALL)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/grpc.pdb
       DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
@@ -2617,6 +2650,7 @@ endif()
 
 if(gRPC_BUILD_TESTS)
 
+
 add_library(grpc_test_util
   test/core/event_engine/test_init.cc
   test/core/util/build.cc
@@ -2676,6 +2710,7 @@ endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
+
 add_library(grpc_test_util_unsecure
   test/core/event_engine/test_init.cc
   test/core/util/build.cc
@@ -2733,6 +2768,7 @@ endif()
 
 endif()
 
+
 add_library(grpc_unsecure
   src/core/ext/filters/backend_metrics/backend_metric_filter.cc
   src/core/ext/filters/census/grpc_context.cc
@@ -2749,7 +2785,7 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/config_selector.cc
   src/core/ext/filters/client_channel/dynamic_filters.cc
   src/core/ext/filters/client_channel/global_subchannel_pool.cc
-  src/core/ext/filters/client_channel/http_proxy.cc
+  src/core/ext/filters/client_channel/http_proxy_mapper.cc
   src/core/ext/filters/client_channel/lb_policy/address_filtering.cc
   src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc
@@ -3113,6 +3149,11 @@ add_library(grpc_unsecure
   src/core/tsi/local_transport_security.cc
   src/core/tsi/transport_security.cc
   src/core/tsi/transport_security_grpc.cc
+  third_party/upb/upb/message/accessors.c
+  third_party/upb/upb/mini_descriptor/build_enum.c
+  third_party/upb/upb/mini_descriptor/decode.c
+  third_party/upb/upb/mini_descriptor/internal/base92.c
+  third_party/upb/upb/mini_descriptor/link.c
 )
 
 target_compile_features(grpc_unsecure PUBLIC cxx_std_14)
@@ -3126,6 +3167,10 @@ if(WIN32 AND MSVC)
   set_target_properties(grpc_unsecure PROPERTIES COMPILE_PDB_NAME "grpc_unsecure"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
   )
+  set_target_properties(grpc_unsecure PROPERTIES DEFINE_SYMBOL "GRPC_DLL_EXPORTS")
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(grpc_unsecure INTERFACE GRPC_DLL_IMPORTS)
+  endif()
   if(gRPC_INSTALL)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/grpc_unsecure.pdb
       DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
@@ -3262,6 +3307,7 @@ endif()
 
 if(gRPC_BUILD_TESTS)
 
+
 add_library(gtest
   third_party/googletest/googlemock/src/gmock-cardinalities.cc
   third_party/googletest/googlemock/src/gmock-internal-utils.cc
@@ -3328,7 +3374,8 @@ target_link_libraries(gtest
 
 endif()
 
-add_library(upb
+
+add_library(upb ${_gRPC_STATIC_WIN32}
   third_party/upb/upb/base/status.c
   third_party/upb/upb/collections/array.c
   third_party/upb/upb/collections/map.c
@@ -3341,10 +3388,9 @@ add_library(upb
   third_party/upb/upb/mem/alloc.c
   third_party/upb/upb/mem/arena.c
   third_party/upb/upb/message/message.c
-  third_party/upb/upb/mini_table/common.c
-  third_party/upb/upb/mini_table/decode.c
-  third_party/upb/upb/mini_table/encode.c
   third_party/upb/upb/mini_table/extension_registry.c
+  third_party/upb/upb/mini_table/internal/message.c
+  third_party/upb/upb/mini_table/message.c
   third_party/upb/upb/wire/decode.c
   third_party/upb/upb/wire/decode_fast.c
   third_party/upb/upb/wire/encode.c
@@ -3400,7 +3446,8 @@ if(gRPC_INSTALL)
 endif()
 
 
-add_library(upb_collections_lib
+
+add_library(upb_collections_lib ${_gRPC_STATIC_WIN32}
   third_party/upb/upb/base/status.c
   third_party/upb/upb/collections/array.c
   third_party/upb/upb/collections/map.c
@@ -3409,10 +3456,9 @@ add_library(upb_collections_lib
   third_party/upb/upb/mem/alloc.c
   third_party/upb/upb/mem/arena.c
   third_party/upb/upb/message/message.c
-  third_party/upb/upb/mini_table/common.c
-  third_party/upb/upb/mini_table/decode.c
-  third_party/upb/upb/mini_table/encode.c
   third_party/upb/upb/mini_table/extension_registry.c
+  third_party/upb/upb/mini_table/internal/message.c
+  third_party/upb/upb/mini_table/message.c
 )
 
 target_compile_features(upb_collections_lib PUBLIC cxx_std_14)
@@ -3462,11 +3508,17 @@ if(gRPC_INSTALL)
 endif()
 
 
-add_library(upb_json_lib
+
+add_library(upb_json_lib ${_gRPC_STATIC_WIN32}
   src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
   third_party/upb/upb/json/decode.c
   third_party/upb/upb/json/encode.c
   third_party/upb/upb/message/accessors.c
+  third_party/upb/upb/mini_descriptor/build_enum.c
+  third_party/upb/upb/mini_descriptor/decode.c
+  third_party/upb/upb/mini_descriptor/internal/base92.c
+  third_party/upb/upb/mini_descriptor/internal/encode.c
+  third_party/upb/upb/mini_descriptor/link.c
   third_party/upb/upb/reflection/def_builder.c
   third_party/upb/upb/reflection/def_pool.c
   third_party/upb/upb/reflection/def_type.c
@@ -3534,9 +3586,15 @@ if(gRPC_INSTALL)
 endif()
 
 
-add_library(upb_textformat_lib
+
+add_library(upb_textformat_lib ${_gRPC_STATIC_WIN32}
   src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
   third_party/upb/upb/message/accessors.c
+  third_party/upb/upb/mini_descriptor/build_enum.c
+  third_party/upb/upb/mini_descriptor/decode.c
+  third_party/upb/upb/mini_descriptor/internal/base92.c
+  third_party/upb/upb/mini_descriptor/internal/encode.c
+  third_party/upb/upb/mini_descriptor/link.c
   third_party/upb/upb/reflection/def_builder.c
   third_party/upb/upb/reflection/def_pool.c
   third_party/upb/upb/reflection/def_type.c
@@ -3605,6 +3663,7 @@ if(gRPC_INSTALL)
 endif()
 
 
+
 add_library(utf8_range_lib
   third_party/utf8_range/naive.c
   third_party/utf8_range/range2-neon.c
@@ -3660,6 +3719,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 if(gRPC_BUILD_CODEGEN)
+
 add_library(benchmark_helpers
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
@@ -3735,6 +3795,7 @@ endif()
 
 endif()
 
+
 add_library(grpc++
   src/core/ext/transport/binder/client/binder_connector.cc
   src/core/ext/transport/binder/client/channel_create.cc
@@ -3801,6 +3862,7 @@ add_library(grpc++
   src/cpp/util/status.cc
   src/cpp/util/string_ref.cc
   src/cpp/util/time_cc.cc
+  ${gRPC_UPB_GEN_DUPL_SRC}
 )
 
 target_compile_features(grpc++ PUBLIC cxx_std_14)
@@ -3814,6 +3876,10 @@ if(WIN32 AND MSVC)
   set_target_properties(grpc++ PROPERTIES COMPILE_PDB_NAME "grpc++"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
   )
+  set_target_properties(grpc++ PROPERTIES DEFINE_SYMBOL "GRPCXX_DLL_EXPORTS")
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(grpc++ INTERFACE GRPCXX_DLL_IMPORTS)
+  endif()
   if(gRPC_INSTALL)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/grpc++.pdb
       DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
@@ -4065,9 +4131,11 @@ if(gRPC_INSTALL)
 endif()
 
 
+
 add_library(grpc++_alts
   src/cpp/common/alts_context.cc
   src/cpp/common/alts_util.cc
+  ${gRPC_UPB_GEN_DUPL_SRC}
 )
 
 target_compile_features(grpc++_alts PUBLIC cxx_std_14)
@@ -4127,6 +4195,7 @@ if(gRPC_INSTALL)
     ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
   )
 endif()
+
 
 
 add_library(grpc++_error_details
@@ -4193,6 +4262,7 @@ endif()
 
 
 if(gRPC_BUILD_CODEGEN)
+
 add_library(grpc++_reflection
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.cc
@@ -4265,6 +4335,7 @@ endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
+
 add_library(grpc++_test
   src/cpp/client/channel_test_peer.cc
 )
@@ -4330,6 +4401,7 @@ endforeach()
 endif()
 if(gRPC_BUILD_TESTS)
 
+
 add_library(grpc++_test_config
   test/cpp/util/test_config_cc.cc
 )
@@ -4375,6 +4447,7 @@ target_link_libraries(grpc++_test_config
 
 endif()
 if(gRPC_BUILD_TESTS)
+
 
 add_library(grpc++_test_util
   src/core/lib/gpr/subprocess_posix.cc
@@ -4441,6 +4514,30 @@ target_link_libraries(grpc++_test_util
 
 endif()
 
+
+# for DLL build just compile a dummy grpc++_unsecure
+# This is a temporary situation until some code restructuring
+# obviates the need to exclude this library
+if(BUILD_SHARED_LIBS AND MSVC)
+add_library(grpc++_unsecure
+  src/cpp/common/version_cc.cc
+)
+target_include_directories(grpc++_unsecure
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+foreach(_hdr
+  include/grpcpp/grpcpp.h
+)
+  string(REPLACE "include/" "" _path ${_hdr})
+  get_filename_component(_path ${_path} PATH)
+  install(FILES ${_hdr}
+    DESTINATION "${gRPC_INSTALL_INCLUDEDIR}/${_path}"
+  )
+endforeach()
+else()
 add_library(grpc++_unsecure
   src/cpp/client/channel_cc.cc
   src/cpp/client/client_callback.cc
@@ -4479,6 +4576,7 @@ add_library(grpc++_unsecure
   src/cpp/util/status.cc
   src/cpp/util/string_ref.cc
   src/cpp/util/time_cc.cc
+  ${gRPC_UPB_GEN_DUPL_SRC}
 )
 
 target_compile_features(grpc++_unsecure PUBLIC cxx_std_14)
@@ -4492,6 +4590,10 @@ if(WIN32 AND MSVC)
   set_target_properties(grpc++_unsecure PROPERTIES COMPILE_PDB_NAME "grpc++_unsecure"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
   )
+  set_target_properties(grpc++_unsecure PROPERTIES DEFINE_SYMBOL "GRPCXX_DLL_EXPORTS")
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(grpc++_unsecure INTERFACE GRPCXX_DLL_IMPORTS)
+  endif()
   if(gRPC_INSTALL)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/grpc++_unsecure.pdb
       DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
@@ -4727,6 +4829,7 @@ foreach(_hdr
     DESTINATION "${gRPC_INSTALL_INCLUDEDIR}/${_path}"
   )
 endforeach()
+endif() # BUILD_SHARED_LIBS AND MSVC
 
 
 if(gRPC_INSTALL)
@@ -4737,6 +4840,7 @@ if(gRPC_INSTALL)
     ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
   )
 endif()
+
 
 
 add_library(grpc_authorization_provider
@@ -5000,6 +5104,11 @@ add_library(grpc_authorization_provider
   src/core/tsi/alts/handshaker/transport_security_common_api.cc
   src/core/tsi/transport_security.cc
   src/core/tsi/transport_security_grpc.cc
+  third_party/upb/upb/message/accessors.c
+  third_party/upb/upb/mini_descriptor/build_enum.c
+  third_party/upb/upb/mini_descriptor/decode.c
+  third_party/upb/upb/mini_descriptor/internal/base92.c
+  third_party/upb/upb/mini_descriptor/link.c
 )
 
 target_compile_features(grpc_authorization_provider PUBLIC cxx_std_14)
@@ -5142,6 +5251,7 @@ if(gRPC_INSTALL)
 endif()
 
 
+
 add_library(grpc_plugin_support
   src/compiler/cpp_generator.cc
   src/compiler/csharp_generator.cc
@@ -5216,6 +5326,7 @@ endif()
 # grpcpp_channelz doesn't build with protobuf-lite
 # See https://github.com/grpc/grpc/issues/19473
 if(gRPC_BUILD_CODEGEN AND NOT gRPC_USE_PROTO_LITE)
+
 add_library(grpcpp_channelz
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.grpc.pb.cc
@@ -6515,6 +6626,7 @@ target_include_directories(avl_test
 target_link_libraries(avl_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::hash
   gpr
 )
 
@@ -8680,6 +8792,11 @@ add_executable(chunked_vector_test
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/gprpp/chunked_vector_test.cc
+  third_party/upb/upb/message/accessors.c
+  third_party/upb/upb/mini_descriptor/build_enum.c
+  third_party/upb/upb/mini_descriptor/decode.c
+  third_party/upb/upb/mini_descriptor/internal/base92.c
+  third_party/upb/upb/mini_descriptor/link.c
 )
 target_compile_features(chunked_vector_test PUBLIC cxx_std_14)
 target_include_directories(chunked_vector_test
@@ -10605,6 +10722,7 @@ target_include_directories(endpoint_config_test
 target_link_libraries(endpoint_config_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::hash
   absl::type_traits
   absl::statusor
   gpr
@@ -11039,6 +11157,11 @@ add_executable(exec_ctx_wakeup_scheduler_test
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/promise/exec_ctx_wakeup_scheduler_test.cc
+  third_party/upb/upb/message/accessors.c
+  third_party/upb/upb/mini_descriptor/build_enum.c
+  third_party/upb/upb/mini_descriptor/decode.c
+  third_party/upb/upb/mini_descriptor/internal/base92.c
+  third_party/upb/upb/mini_descriptor/link.c
 )
 target_compile_features(exec_ctx_wakeup_scheduler_test PUBLIC cxx_std_14)
 target_include_directories(exec_ctx_wakeup_scheduler_test
@@ -11774,6 +11897,11 @@ add_executable(flow_control_test
   src/core/lib/transport/bdp_estimator.cc
   src/core/lib/transport/pid_controller.cc
   test/core/transport/chttp2/flow_control_test.cc
+  third_party/upb/upb/message/accessors.c
+  third_party/upb/upb/mini_descriptor/build_enum.c
+  third_party/upb/upb/mini_descriptor/decode.c
+  third_party/upb/upb/mini_descriptor/internal/base92.c
+  third_party/upb/upb/mini_descriptor/link.c
 )
 target_compile_features(flow_control_test PUBLIC cxx_std_14)
 target_include_directories(flow_control_test
@@ -11840,6 +11968,11 @@ add_executable(for_each_test
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/promise/for_each_test.cc
+  third_party/upb/upb/message/accessors.c
+  third_party/upb/upb/mini_descriptor/build_enum.c
+  third_party/upb/upb/mini_descriptor/decode.c
+  third_party/upb/upb/mini_descriptor/internal/base92.c
+  third_party/upb/upb/mini_descriptor/link.c
 )
 target_compile_features(for_each_test PUBLIC cxx_std_14)
 target_include_directories(for_each_test
@@ -14373,6 +14506,43 @@ target_link_libraries(insecure_security_connector_test
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(inter_activity_pipe_test
+  src/core/lib/promise/activity.cc
+  test/core/promise/inter_activity_pipe_test.cc
+)
+target_compile_features(inter_activity_pipe_test PUBLIC cxx_std_14)
+target_include_directories(inter_activity_pipe_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(inter_activity_pipe_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  absl::hash
+  absl::type_traits
+  absl::statusor
+  gpr
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(interceptor_list_test
   src/core/ext/upb-generated/google/protobuf/any.upb.c
   src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
@@ -14402,6 +14572,11 @@ add_executable(interceptor_list_test
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/promise/interceptor_list_test.cc
+  third_party/upb/upb/message/accessors.c
+  third_party/upb/upb/mini_descriptor/build_enum.c
+  third_party/upb/upb/mini_descriptor/decode.c
+  third_party/upb/upb/mini_descriptor/internal/base92.c
+  third_party/upb/upb/mini_descriptor/link.c
 )
 target_compile_features(interceptor_list_test PUBLIC cxx_std_14)
 target_include_directories(interceptor_list_test
@@ -15019,6 +15194,7 @@ target_include_directories(latch_test
 target_link_libraries(latch_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::hash
   absl::type_traits
   absl::statusor
   gpr
@@ -15301,6 +15477,11 @@ add_executable(map_pipe_test
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/promise/map_pipe_test.cc
+  third_party/upb/upb/message/accessors.c
+  third_party/upb/upb/mini_descriptor/build_enum.c
+  third_party/upb/upb/mini_descriptor/decode.c
+  third_party/upb/upb/mini_descriptor/internal/base92.c
+  third_party/upb/upb/mini_descriptor/link.c
 )
 target_compile_features(map_pipe_test PUBLIC cxx_std_14)
 target_include_directories(map_pipe_test
@@ -16938,6 +17119,11 @@ add_executable(periodic_update_test
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/resource_quota/periodic_update_test.cc
+  third_party/upb/upb/message/accessors.c
+  third_party/upb/upb/mini_descriptor/build_enum.c
+  third_party/upb/upb/mini_descriptor/decode.c
+  third_party/upb/upb/mini_descriptor/internal/base92.c
+  third_party/upb/upb/mini_descriptor/link.c
 )
 target_compile_features(periodic_update_test PUBLIC cxx_std_14)
 target_include_directories(periodic_update_test
@@ -23893,6 +24079,11 @@ add_executable(test_core_transport_chaotic_good_frame_test
   src/core/lib/uri/uri_parser.cc
   src/core/tsi/alts/handshaker/transport_security_common_api.cc
   test/core/transport/chaotic_good/frame_test.cc
+  third_party/upb/upb/message/accessors.c
+  third_party/upb/upb/mini_descriptor/build_enum.c
+  third_party/upb/upb/mini_descriptor/decode.c
+  third_party/upb/upb/mini_descriptor/internal/base92.c
+  third_party/upb/upb/mini_descriptor/link.c
 )
 target_compile_features(test_core_transport_chaotic_good_frame_test PUBLIC cxx_std_14)
 target_include_directories(test_core_transport_chaotic_good_frame_test
@@ -24243,6 +24434,7 @@ target_include_directories(thread_quota_test
 target_link_libraries(thread_quota_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::hash
   gpr
 )
 
@@ -25294,6 +25486,7 @@ target_include_directories(wait_for_callback_test
 target_link_libraries(wait_for_callback_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::hash
   absl::type_traits
   absl::statusor
   gpr
