@@ -51,12 +51,10 @@ try:
 except ImportError:
     pass  # It's ok to not import because this is only necessary to upload results to BQ.
 
-gcp_utils_dir = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "../gcp/utils")
-)
+gcp_utils_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../gcp/utils"))
 sys.path.append(gcp_utils_dir)
 
-_ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), "../.."))
+_ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), "..", ".."))
 os.chdir(_ROOT)
 
 _FORCE_ENVIRON_FOR_WRAPPERS = {
@@ -158,9 +156,7 @@ class Config(object):
             environ=actual_environ,
             cpu_cost=cpu_cost,
             timeout_seconds=(
-                self.timeout_multiplier * timeout_seconds
-                if timeout_seconds
-                else None
+                self.timeout_multiplier * timeout_seconds if timeout_seconds else None
             ),
             flake_retries=4 if flaky or args.allow_flakes else 0,
             timeout_retries=1 if flaky or args.allow_flakes else 0,
@@ -183,9 +179,7 @@ def get_c_tests(travis, test_lang):
 
 def _check_compiler(compiler, supported_compilers):
     if compiler not in supported_compilers:
-        raise Exception(
-            "Compiler %s not supported (on this platform)." % compiler
-        )
+        raise Exception("Compiler %s not supported (on this platform)." % compiler)
 
 
 def _check_arch(arch, supported_archs):
@@ -352,8 +346,9 @@ class CLanguage(object):
             )
             for polling_strategy in polling_strategies:
                 env = {
-                    "GRPC_DEFAULT_SSL_ROOTS_FILE_PATH": _ROOT
-                    + "/src/core/tsi/test_creds/ca.pem",
+                    "GRPC_DEFAULT_SSL_ROOTS_FILE_PATH": os.path.join(
+                        _ROOT, "src", "core", "tsi", "test_creds", "ca.pem"
+                    ),
                     "GRPC_POLL_STRATEGY": polling_strategy,
                     "GRPC_VERBOSITY": "DEBUG",
                 }
@@ -522,12 +517,8 @@ class CLanguage(object):
         environ = {"GRPC_RUN_TESTS_CXX_LANGUAGE_SUFFIX": self.lang_suffix}
         if self.platform == "windows":
             environ["GRPC_CMAKE_GENERATOR"] = self._cmake_generator_windows
-            environ[
-                "GRPC_CMAKE_ARCHITECTURE"
-            ] = self._cmake_architecture_windows
-            environ[
-                "GRPC_BUILD_ACTIVATE_VS_TOOLS"
-            ] = self._activate_vs_tools_windows
+            environ["GRPC_CMAKE_ARCHITECTURE"] = self._cmake_architecture_windows
+            environ["GRPC_BUILD_ACTIVATE_VS_TOOLS"] = self._activate_vs_tools_windows
             environ[
                 "GRPC_BUILD_VS_TOOLS_ARCHITECTURE"
             ] = self._vs_tools_architecture_windows
@@ -545,9 +536,7 @@ class CLanguage(object):
             "-DCMAKE_CXX_COMPILER=clang++%s" % version_suffix,
         ]
 
-    def _compiler_options(
-        self, use_docker, compiler, cmake_configure_extra_args
-    ):
+    def _compiler_options(self, use_docker, compiler, cmake_configure_extra_args):
         """Returns docker distro and cmake configure args to use for given compiler."""
         if cmake_configure_extra_args:
             # only allow specifying extra cmake args for "vanilla" compiler
@@ -639,9 +628,7 @@ class RemoteNodeLanguage(object):
     def test_specs(self):
         if self.platform == "windows":
             return [
-                self.config.job_spec(
-                    ["tools\\run_tests\\helper_scripts\\run_node.bat"]
-                )
+                self.config.job_spec(["tools\\run_tests\\helper_scripts\\run_node.bat"])
             ]
         else:
             return [
@@ -711,9 +698,7 @@ class Php7Language(object):
 
 
 class PythonConfig(
-    collections.namedtuple(
-        "PythonConfig", ["name", "build", "run", "python_path"]
-    )
+    collections.namedtuple("PythonConfig", ["name", "build", "run", "python_path"])
 ):
     """Tuple of commands (named s.t. 'what it says on the tin' applies)"""
 
@@ -775,13 +760,10 @@ class PythonLanguage(object):
                     jobs.extend(
                         [
                             self.config.job_spec(
-                                python_config.run
-                                + [self._TEST_COMMAND[io_platform]],
+                                python_config.run + [self._TEST_COMMAND[io_platform]],
                                 timeout_seconds=8 * 60,
                                 environ=dict(
-                                    GRPC_PYTHON_TESTRUNNER_FILTER=str(
-                                        test_case
-                                    ),
+                                    GRPC_PYTHON_TESTRUNNER_FILTER=str(test_case),
                                     **environment,
                                 ),
                                 shortname=f"{python_config.name}.{io_platform}.{test_case}",
@@ -836,9 +818,7 @@ class PythonLanguage(object):
         if os.name == "nt":
             shell = ["bash"]
             builder = [
-                os.path.abspath(
-                    "tools/run_tests/helper_scripts/build_python_msys2.sh"
-                )
+                os.path.abspath("tools/run_tests/helper_scripts/build_python_msys2.sh")
             ]
             builder_prefix_arguments = ["MINGW{}".format(bits)]
             venv_relative_python = ["Scripts/python.exe"]
@@ -846,17 +826,13 @@ class PythonLanguage(object):
         else:
             shell = []
             builder = [
-                os.path.abspath(
-                    "tools/run_tests/helper_scripts/build_python.sh"
-                )
+                os.path.abspath("tools/run_tests/helper_scripts/build_python.sh")
             ]
             builder_prefix_arguments = []
             venv_relative_python = ["bin/python"]
             toolchain = ["unix"]
 
-        runner = [
-            os.path.abspath("tools/run_tests/helper_scripts/run_python.sh")
-        ]
+        runner = [os.path.abspath("tools/run_tests/helper_scripts/run_python.sh")]
 
         config_vars = _PythonConfigVars(
             shell,
@@ -1116,9 +1092,7 @@ class CSharpLanguage(object):
                 # normally, run each test as a separate process
                 for test in tests_by_assembly[assembly]:
                     cmdline = (
-                        runtime_cmd
-                        + [assembly_file, "--test=%s" % test]
-                        + nunit_args
+                        runtime_cmd + [assembly_file, "--test=%s" % test] + nunit_args
                     )
                     specs.append(
                         self.config.job_spec(
@@ -1355,35 +1329,20 @@ def _check_arch_option(arch):
         runtime_arch = platform.architecture()[0]
         if arch == "default":
             return
-        elif (
-            runtime_machine == "x86_64"
-            and runtime_arch == "64bit"
-            and arch == "x64"
-        ):
+        elif runtime_machine == "x86_64" and runtime_arch == "64bit" and arch == "x64":
+            return
+        elif runtime_machine == "x86_64" and runtime_arch == "32bit" and arch == "x86":
             return
         elif (
-            runtime_machine == "x86_64"
-            and runtime_arch == "32bit"
-            and arch == "x86"
-        ):
-            return
-        elif (
-            runtime_machine == "aarch64"
-            and runtime_arch == "64bit"
-            and arch == "arm64"
+            runtime_machine == "aarch64" and runtime_arch == "64bit" and arch == "arm64"
         ):
             return
         else:
-            print(
-                "Architecture %s does not match current runtime architecture."
-                % arch
-            )
+            print("Architecture %s does not match current runtime architecture." % arch)
             sys.exit(1)
     else:
         if args.arch != "default":
-            print(
-                "Architecture %s not supported on current platform." % args.arch
-            )
+            print("Architecture %s not supported on current platform." % args.arch)
             sys.exit(1)
 
 
@@ -1531,9 +1490,7 @@ def _build_and_run(
         else:
             # whereas otherwise, we want to shuffle things up to give all tests a
             # chance to run.
-            massaged_one_run = list(
-                one_run
-            )  # random.sample needs an indexable seq.
+            massaged_one_run = list(one_run)  # random.sample needs an indexable seq.
             num_jobs = len(massaged_one_run)
             # for a random sample, get as many as indicated by the 'sample_percent'
             # argument. By default this arg is 100, resulting in a shuffle of all
@@ -1585,8 +1542,7 @@ def _build_and_run(
                     else:
                         jobset.message(
                             "FLAKE",
-                            "%s [%d/%d runs flaked]"
-                            % (k, num_failures, num_runs),
+                            "%s [%d/%d runs flaked]" % (k, num_failures, num_runs),
                             do_newline=True,
                         )
     finally:
@@ -1607,9 +1563,7 @@ def _build_and_run(
                     resultset, args.bq_result_table, upload_extra_fields
                 )
             except NameError as e:
-                logging.warning(
-                    e
-                )  # It's fine to ignore since this is not critical
+                logging.warning(e)  # It's fine to ignore since this is not critical
         if xml_report and resultset:
             report_utils.render_junit_xml_report(
                 resultset,
@@ -1637,9 +1591,7 @@ def _build_and_run(
 
 # parse command line
 argp = argparse.ArgumentParser(description="Run grpc tests.")
-argp.add_argument(
-    "-c", "--config", choices=sorted(_CONFIGS.keys()), default="opt"
-)
+argp.add_argument("-c", "--config", choices=sorted(_CONFIGS.keys()), default="opt")
 argp.add_argument(
     "-n",
     "--runs_per_test",
@@ -1667,9 +1619,7 @@ argp.add_argument(
     default=False,
     action="store_const",
     const=True,
-    help=(
-        "When set, indicates that the script is running on CI (= not locally)."
-    ),
+    help=("When set, indicates that the script is running on CI (= not locally)."),
 )
 argp.add_argument(
     "--newline_on_success", default=False, action="store_const", const=True
@@ -1789,9 +1739,7 @@ argp.add_argument(
     default=False,
     const=True,
     action="store_const",
-    help=(
-        "Generate separate XML report for each test job (Looks better in UIs)."
-    ),
+    help=("Generate separate XML report for each test job (Looks better in UIs)."),
 )
 argp.add_argument(
     "--quiet_success",
@@ -1871,30 +1819,22 @@ if args.use_docker:
     if not args.travis:
         print("Seen --use_docker flag, will run tests under docker.")
         print("")
-        print(
-            "IMPORTANT: The changes you are testing need to be locally"
-            " committed"
-        )
-        print(
-            "because only the committed changes in the current branch will be"
-        )
+        print("IMPORTANT: The changes you are testing need to be locally" " committed")
+        print("because only the committed changes in the current branch will be")
         print("copied to the docker environment.")
         time.sleep(5)
 
     dockerfile_dirs = set([l.dockerfile_dir() for l in languages])
     if len(dockerfile_dirs) > 1:
         print(
-            "Languages to be tested require running under different docker "
-            "images."
+            "Languages to be tested require running under different docker " "images."
         )
         sys.exit(1)
     else:
         dockerfile_dir = next(iter(dockerfile_dirs))
 
     child_argv = [arg for arg in sys.argv if not arg == "--use_docker"]
-    run_tests_cmd = "python3 tools/run_tests/run_tests.py %s" % " ".join(
-        child_argv[1:]
-    )
+    run_tests_cmd = "python3 tools/run_tests/run_tests.py %s" % " ".join(child_argv[1:])
 
     env = os.environ.copy()
     env["DOCKERFILE_DIR"] = dockerfile_dir
