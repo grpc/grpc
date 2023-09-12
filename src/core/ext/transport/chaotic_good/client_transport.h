@@ -19,6 +19,7 @@
 
 #include <stdint.h>
 
+#include <cstddef>
 #include <initializer_list>  // IWYU pragma: keep
 #include <map>
 #include <memory>
@@ -77,18 +78,17 @@ class ClientTransport {
     // At this point, the connection is set up.
     // Start sending data frames.
     uint64_t stream_id;
-    // Pipe queue size is set to 1, so that for stream reads each time it will
-    // queue at most 1 frame.
-    InterActivityPipe<ServerFrame, 1> server_frames;
+    InterActivityPipe<ServerFrame, server_frame_queue_size_> server_frames;
     {
       MutexLock lock(&mu_);
       stream_id = next_stream_id_++;
       stream_map_.insert(
           std::pair<uint32_t,
-                    std::shared_ptr<InterActivityPipe<ServerFrame, 1>::Sender>>(
-              stream_id,
-              std::make_shared<InterActivityPipe<ServerFrame, 1>::Sender>(
-                  std::move(server_frames.sender))));
+                    std::shared_ptr<InterActivityPipe<
+                        ServerFrame, server_frame_queue_size_>::Sender>>(
+              stream_id, std::make_shared<InterActivityPipe<
+                             ServerFrame, server_frame_queue_size_>::Sender>(
+                             std::move(server_frames.sender))));
     }
     return TrySeq(
         TryJoin(
@@ -166,10 +166,14 @@ class ClientTransport {
   // Max buffer is set to 4, so that for stream writes each time it will queue
   // at most 2 frames.
   MpscReceiver<ClientFrame> outgoing_frames_;
+  // Queue size of each stream pipe is set to 2, so that for each stream read it
+  // will queue at most 2 frames.
+  static const size_t server_frame_queue_size_ = 2;
   Mutex mu_;
   uint32_t next_stream_id_ ABSL_GUARDED_BY(mu_) = 1;
   // Map of stream incoming server frames, key is stream_id.
-  std::map<uint32_t, std::shared_ptr<InterActivityPipe<ServerFrame, 1>::Sender>>
+  std::map<uint32_t, std::shared_ptr<InterActivityPipe<
+                         ServerFrame, server_frame_queue_size_>::Sender>>
       stream_map_ ABSL_GUARDED_BY(mu_);
   ActivityPtr writer_;
   ActivityPtr reader_;
