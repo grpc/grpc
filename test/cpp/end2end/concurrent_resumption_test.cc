@@ -55,14 +55,15 @@ class GrpcResumptionTest : public ::testing::Test {
     grpc::SslServerCredentialsOptions sslOpts;
     sslOpts.pem_key_cert_pairs.push_back(key_cert_pair);
     sslOpts.pem_root_certs = root_cert;
+    sslOpts.force_client_auth = true;
 
     grpc::ServerBuilder builder;
     TestServiceImpl service_;
 
     builder.AddListeningPort(server_addr_, grpc::SslServerCredentials(sslOpts));
-    builder.RegisterService(&service_);
+    builder.RegisterService("foo.test.google.fr", &service_);
     server_ = builder.BuildAndStart();
-    std::cout << "GREG: server waiting\n";
+    std::cout << "GREG: server waiting on " << server_addr_ << "\n";
     server_->Wait();
   }
 
@@ -81,15 +82,13 @@ class GrpcResumptionTest : public ::testing::Test {
 };
 
 TEST_F(GrpcResumptionTest, ConcurrentResumption) {
-  std::cout << "GREG: Test Start\n";
   int port = grpc_pick_unused_port_or_die();
   std::ostringstream addr;
   addr << "localhost:" << port;
   server_addr_ = addr.str();
+  std::cout << "GREG: Serving on " << server_addr_ << "\n";
   server_thread_ = new std::thread([&]() { RunServer(); });
-
-  grpc_ssl_session_cache* cache = grpc_ssl_session_cache_create_lru(16);
-  grpc_arg args[] = {grpc_ssl_session_cache_create_channel_arg(cache)};
+  sleep(1);
 
   std::string root_cert = ReadFile(kCaCertPath);
   std::string client_key = ReadFile(kClientKeyPath);
@@ -99,18 +98,11 @@ TEST_F(GrpcResumptionTest, ConcurrentResumption) {
   sslOpts.pem_private_key = client_key;
   sslOpts.pem_cert_chain = client_cert;
 
-  grpc_arg client_args_arr[] = {
-      grpc_channel_arg_string_create(
-          const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG),
-          const_cast<char*>("foo.test.google.fr")),
-      grpc_ssl_session_cache_create_channel_arg(cache),
-  };
-
-  grpc_channel_args* client_args = grpc_channel_args_copy_and_add(
-      nullptr, client_args_arr, GPR_ARRAY_SIZE(args));
-
+  grpc_ssl_session_cache* cache = grpc_ssl_session_cache_create_lru(16);
   ChannelArguments channel_args;
-  channel_args.SetChannelArgs(client_args);
+  channel_args.SetPointer(std::string(GRPC_SSL_SESSION_CACHE_ARG), cache);
+  channel_args.SetSslTargetNameOverride("foo.test.google.fr");
+
   std::shared_ptr<Channel> channel = grpc::CreateCustomChannel(
       server_addr_, grpc::SslCredentials(sslOpts), channel_args);
 
@@ -119,11 +111,13 @@ TEST_F(GrpcResumptionTest, ConcurrentResumption) {
   grpc::testing::EchoResponse* response = nullptr;
   request.set_message(kMessage);
   ClientContext context;
-  //   context.AddMetadata("key-foo", "foo2");
   context.set_deadline(grpc_timeout_milliseconds_to_deadline(100));
   std::cout << "GREG: before stub echo\n";
-  auto result = stub->Echo(&context, request, response);
+  grpc::Status result = stub->Echo(&context, request, response);
   std::cout << "GREG: after stub echo\n";
+  if (!result.ok()) {
+    std::cout << result.error_message();
+  }
   EXPECT_TRUE(result.ok());
   EXPECT_EQ(response->message(), kMessage);
 
