@@ -22,6 +22,7 @@
 
 #include "src/core/lib/iomgr/port.h"
 
+// IWYU pragma: no_include <ares_version.h>
 // IWYU pragma: no_include <arpa/inet.h>
 // IWYU pragma: no_include <arpa/nameser.h>
 // IWYU pragma: no_include <inttypes.h>
