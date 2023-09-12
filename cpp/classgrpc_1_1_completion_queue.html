@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.57.0</span>
+   &#160;<span id="projectnumber">1.58.0</span>
    </div>
   </td>
  </tr>
@@ -521,7 +521,7 @@ template&lt;typename T , typename F &gt; </div>
 <p>Client-side Read, Server-side Read, Client-side RecvInitialMetadata (which is typically included in Read if not done explicitly): <em>ok</em> indicates whether there is a valid message that got read. If not, you know that there are certainly no more messages that can ever be read from this stream. For the client-side operations, this only happens because the call is dead. For the server-sider operation, though, this could happen because the client has done a WritesDone already.</p>
 <p>Client-side Finish: <em>ok</em> should always be true</p>
 <p>Server-side AsyncNotifyWhenDone: <em>ok</em> should always be true</p>
-<p><a class="el" href="classgrpc_1_1_alarm.html">Alarm</a>: <em>ok</em> is true if it expired, false if it was canceled</p>
+<p><a class="el" href="classgrpc_1_1_alarm.html" title="Trigger a CompletionQueue event, or asynchronous callback execution, after some deadline.">Alarm</a>: <em>ok</em> is true if it expired, false if it was canceled</p>
 <dl class="section return"><dt>Returns</dt><dd>true if got an event, false if the queue is fully drained and shut down. </dd></dl>
 
 </div>
@@ -995,7 +995,7 @@ template&lt;class W &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Aug 14 2023 18:27:17 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Sep 6 2023 16:09:16 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

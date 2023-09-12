@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.57.0</span>
+   &#160;<span id="projectnumber">1.58.0</span>
    </div>
   </td>
  </tr>
@@ -73,12 +73,15 @@ $(function() {
 </div><!--header-->
 <div class="contents">
 
+<p>Trigger a <em><a class="el" href="classgrpc_1_1_completion_queue.html" title="A thin wrapper around grpc_completion_queue (see src/core/lib/surface/completion_queue....">CompletionQueue</a></em> event, or asynchronous callback execution, after some deadline.  
+ <a href="classgrpc_1_1_alarm.html#details">More...</a></p>
+
 <p><code>#include &lt;<a class="el" href="grpcpp_2alarm_8h_source.html">alarm.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a49ce7f2934d753389bd192574c509302"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_alarm.html#a49ce7f2934d753389bd192574c509302">Alarm</a> ()</td></tr>
-<tr class="memdesc:a49ce7f2934d753389bd192574c509302"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create an unset completion queue alarm.  <a href="classgrpc_1_1_alarm.html#a49ce7f2934d753389bd192574c509302">More...</a><br /></td></tr>
+<tr class="memdesc:a49ce7f2934d753389bd192574c509302"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create an unset <a class="el" href="classgrpc_1_1_alarm.html" title="Trigger a CompletionQueue event, or asynchronous callback execution, after some deadline.">Alarm</a>.  <a href="classgrpc_1_1_alarm.html#a49ce7f2934d753389bd192574c509302">More...</a><br /></td></tr>
 <tr class="separator:a49ce7f2934d753389bd192574c509302"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6c20836a5cd364d77e69e1fa5db58a61"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_alarm.html#a6c20836a5cd364d77e69e1fa5db58a61">~Alarm</a> () override</td></tr>
 <tr class="memdesc:a6c20836a5cd364d77e69e1fa5db58a61"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destroy the given completion queue alarm, cancelling it in the process.  <a href="classgrpc_1_1_alarm.html#a6c20836a5cd364d77e69e1fa5db58a61">More...</a><br /></td></tr>
@@ -109,7 +112,11 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:a5b29185d7ce797eac4cb4b33e2ce4be2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set an alarm to invoke callback <em>f</em>.  <a href="classgrpc_1_1_alarm.html#a5b29185d7ce797eac4cb4b33e2ce4be2">More...</a><br /></td></tr>
 <tr class="separator:a5b29185d7ce797eac4cb4b33e2ce4be2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><p>Trigger a <em><a class="el" href="classgrpc_1_1_completion_queue.html" title="A thin wrapper around grpc_completion_queue (see src/core/lib/surface/completion_queue....">CompletionQueue</a></em> event, or asynchronous callback execution, after some deadline. </p>
+<p>The <em><a class="el" href="classgrpc_1_1_alarm.html" title="Trigger a CompletionQueue event, or asynchronous callback execution, after some deadline.">Alarm</a></em> API has separate <em>Set</em> methods for CompletionQueues and callbacks, but only one can be used at any given time. After an alarm has been triggered or cancelled, the same <a class="el" href="classgrpc_1_1_alarm.html" title="Trigger a CompletionQueue event, or asynchronous callback execution, after some deadline.">Alarm</a> object may reused.</p>
+<p><a class="el" href="classgrpc_1_1_alarm.html" title="Trigger a CompletionQueue event, or asynchronous callback execution, after some deadline.">Alarm</a> methods are not thread-safe. Applications must ensure a strict ordering between calls to <em>Set</em> and <em>Cancel</em>. This also implies that any cancellation that occurs before the alarm has been set will have no effect on any future <em>Set</em> calls. </p>
+</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a49ce7f2934d753389bd192574c509302"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a49ce7f2934d753389bd192574c509302">&#9670;&nbsp;</a></span>Alarm() <span class="overload">[1/4]</span></h2>
 
@@ -125,7 +132,7 @@ Public Member Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Create an unset completion queue alarm. </p>
+<p>Create an unset <a class="el" href="classgrpc_1_1_alarm.html" title="Trigger a CompletionQueue event, or asynchronous callback execution, after some deadline.">Alarm</a>. </p>
 
 </div>
 </div>
@@ -426,7 +433,7 @@ template&lt;typename T &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Aug 14 2023 18:27:17 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Sep 6 2023 16:09:16 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>
