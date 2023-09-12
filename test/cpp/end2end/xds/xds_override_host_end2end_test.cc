@@ -237,6 +237,15 @@ class OverrideHostTest : public XdsEnd2endTest {
     route.mutable_typed_per_filter_config()->emplace(kFilterName, any);
     return route;
   }
+
+  static std::string CookieNames(absl::Span<const Cookie> cookies) {
+    std::vector<absl::string_view> names;
+    for (const auto& cookie : cookies) {
+      names.emplace_back(cookie.name);
+    }
+    absl::c_sort(names);
+    return absl::StrJoin(names, ", ");
+  }
 };
 
 INSTANTIATE_TEST_SUITE_P(XdsTest, OverrideHostTest,
@@ -526,16 +535,15 @@ TEST_P(OverrideHostTest, DifferentPerRoute) {
   // Disabled for "echo1" method
   auto echo1_cookie = GetCookiesForBackend(
       DEBUG_LOCATION, 0, 1, RpcOptions().set_rpc_method(METHOD_ECHO1));
-  ASSERT_EQ(echo1_cookie.empty() ? "" : echo1_cookie.front().name, "");
+  ASSERT_EQ(CookieNames(echo1_cookie), "");
   // Overridden for "echo2" method
   auto echo2_cookie = GetCookiesForBackend(
       DEBUG_LOCATION, 0, 1, RpcOptions().set_rpc_method(METHOD_ECHO2));
-  ASSERT_EQ(echo2_cookie.empty() ? "" : echo2_cookie.front().name,
-            kOverriddenCookie);
+  ASSERT_EQ(CookieNames(echo2_cookie), kOverriddenCookie);
   // Default for "echo" method
   auto echo_cookie = GetCookiesForBackend(
       DEBUG_LOCATION, 0, 1, RpcOptions().set_rpc_method(METHOD_ECHO));
-  ASSERT_EQ(echo_cookie.empty() ? "" : echo_cookie.front().name, kCookieName);
+  ASSERT_EQ(CookieNames(echo_cookie), kCookieName);
   // Echo1 endpoint ignores cookies
   CheckRpcSendOk(DEBUG_LOCATION, 6,
                  RpcOptions()
@@ -546,20 +554,23 @@ TEST_P(OverrideHostTest, DifferentPerRoute) {
                      .set_rpc_method(METHOD_ECHO1));
   EXPECT_EQ(backends_[0]->backend_service()->request_count(), 3);
   EXPECT_EQ(backends_[1]->backend_service()->request_count(), 3);
-  // Echo2 honours overwritten cookie
+  // Echo2 honours the overwritten cookie but not the cookie from the top-level
+  // config.
   backends_[0]->backend_service()->ResetCounters();
+  backends_[1]->backend_service()->ResetCounters();
   CheckRpcSendOk(DEBUG_LOCATION, 6,
                  RpcOptions()
                      .set_metadata({echo_cookie.front().cookie_header()})
                      .set_rpc_method(METHOD_ECHO2));
   EXPECT_EQ(backends_[0]->backend_service()->request_count(), 3);
+  EXPECT_EQ(backends_[1]->backend_service()->request_count(), 3);
   backends_[0]->backend_service()->ResetCounters();
   CheckRpcSendOk(DEBUG_LOCATION, 6,
                  RpcOptions()
                      .set_metadata({echo2_cookie.front().cookie_header()})
                      .set_rpc_method(METHOD_ECHO2));
   EXPECT_EQ(backends_[0]->backend_service()->request_count(), 6);
-  // Echo honours original cookie
+  // Echo honours the original cookie but not the override cookie
   backends_[0]->backend_service()->ResetCounters();
   CheckRpcSendOk(DEBUG_LOCATION, 6,
                  RpcOptions()
@@ -567,11 +578,13 @@ TEST_P(OverrideHostTest, DifferentPerRoute) {
                      .set_rpc_method(METHOD_ECHO));
   EXPECT_EQ(backends_[0]->backend_service()->request_count(), 6);
   backends_[0]->backend_service()->ResetCounters();
+  backends_[1]->backend_service()->ResetCounters();
   CheckRpcSendOk(DEBUG_LOCATION, 6,
                  RpcOptions()
                      .set_metadata({echo2_cookie.front().cookie_header()})
                      .set_rpc_method(METHOD_ECHO));
   EXPECT_EQ(backends_[0]->backend_service()->request_count(), 3);
+  EXPECT_EQ(backends_[1]->backend_service()->request_count(), 3);
 }
 
 }  // namespace
