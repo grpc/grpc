@@ -325,7 +325,7 @@ with open("src/core/lib/config/config_vars.h", "w") as H:
     print(file=H)
     print("namespace grpc_core {", file=H)
     print(file=H)
-    print("class ConfigVars {", file=H)
+    print("class GPR_DLL ConfigVars {", file=H)
     print(" public:", file=H)
     print("  struct Overrides {", file=H)
     for attr in attrs_in_packing_order:
