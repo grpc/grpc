@@ -1085,7 +1085,6 @@ let package = Package(
         "src/core/lib/event_engine/handle_containers.h",
         "src/core/lib/event_engine/memory_allocator.cc",
         "src/core/lib/event_engine/memory_allocator_factory.h",
-        "src/core/lib/event_engine/nameser.h",
         "src/core/lib/event_engine/poller.h",
         "src/core/lib/event_engine/posix.h",
         "src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc",
