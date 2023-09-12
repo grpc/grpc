@@ -105,10 +105,6 @@ const char* const description_jitter_max_idle =
     "only on max connection age, but it seems like this could smooth out some "
     "herding problems.";
 const char* const additional_constraints_jitter_max_idle = "{}";
-const char* const description_round_robin_dualstack =
-    "Change round_robin code to delegate to pick_first as per dualstack "
-    "backend design.";
-const char* const additional_constraints_round_robin_dualstack = "{}";
 const char* const description_work_serializer_dispatch =
     "Have the work serializer dispatch work to event engine for every "
     "callback, instead of running things inline in the first thread that "
@@ -167,8 +163,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_lazier_stream_updates, true, true},
     {"jitter_max_idle", description_jitter_max_idle,
      additional_constraints_jitter_max_idle, true, true},
-    {"round_robin_dualstack", description_round_robin_dualstack,
-     additional_constraints_round_robin_dualstack, true, true},
     {"work_serializer_dispatch", description_work_serializer_dispatch,
      additional_constraints_work_serializer_dispatch, true, true},
 };
@@ -260,10 +254,6 @@ const char* const description_jitter_max_idle =
     "only on max connection age, but it seems like this could smooth out some "
     "herding problems.";
 const char* const additional_constraints_jitter_max_idle = "{}";
-const char* const description_round_robin_dualstack =
-    "Change round_robin code to delegate to pick_first as per dualstack "
-    "backend design.";
-const char* const additional_constraints_round_robin_dualstack = "{}";
 const char* const description_work_serializer_dispatch =
     "Have the work serializer dispatch work to event engine for every "
     "callback, instead of running things inline in the first thread that "
@@ -322,8 +312,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_lazier_stream_updates, true, true},
     {"jitter_max_idle", description_jitter_max_idle,
      additional_constraints_jitter_max_idle, true, true},
-    {"round_robin_dualstack", description_round_robin_dualstack,
-     additional_constraints_round_robin_dualstack, true, true},
     {"work_serializer_dispatch", description_work_serializer_dispatch,
      additional_constraints_work_serializer_dispatch, true, true},
 };
@@ -415,10 +403,6 @@ const char* const description_jitter_max_idle =
     "only on max connection age, but it seems like this could smooth out some "
     "herding problems.";
 const char* const additional_constraints_jitter_max_idle = "{}";
-const char* const description_round_robin_dualstack =
-    "Change round_robin code to delegate to pick_first as per dualstack "
-    "backend design.";
-const char* const additional_constraints_round_robin_dualstack = "{}";
 const char* const description_work_serializer_dispatch =
     "Have the work serializer dispatch work to event engine for every "
     "callback, instead of running things inline in the first thread that "
@@ -477,8 +461,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_lazier_stream_updates, true, true},
     {"jitter_max_idle", description_jitter_max_idle,
      additional_constraints_jitter_max_idle, true, true},
-    {"round_robin_dualstack", description_round_robin_dualstack,
-     additional_constraints_round_robin_dualstack, true, true},
     {"work_serializer_dispatch", description_work_serializer_dispatch,
      additional_constraints_work_serializer_dispatch, true, true},
 };

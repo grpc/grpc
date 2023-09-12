@@ -2061,7 +2061,7 @@ TEST_F(RoundRobinTest, HealthChecking) {
   EXPECT_TRUE(WaitForChannelNotReady(channel.get()));
   CheckRpcSendFailure(DEBUG_LOCATION, stub, StatusCode::UNAVAILABLE,
                       "connections to all backends failing; last error: "
-                      "(ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+                      "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
                       "backend unhealthy");
   // Clean up.
   EnableDefaultHealthCheckService(false);
@@ -2120,7 +2120,7 @@ TEST_F(RoundRobinTest, WithHealthCheckingInhibitPerChannel) {
   EXPECT_FALSE(WaitForChannelReady(channel1.get(), 1));
   CheckRpcSendFailure(DEBUG_LOCATION, stub1, StatusCode::UNAVAILABLE,
                       "connections to all backends failing; last error: "
-                      "(ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+                      "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
                       "backend unhealthy");
   // Second channel should be READY.
   EXPECT_TRUE(WaitForChannelReady(channel2.get(), 1));
@@ -2166,7 +2166,7 @@ TEST_F(RoundRobinTest, HealthCheckingServiceNamePerChannel) {
   EXPECT_FALSE(WaitForChannelReady(channel1.get(), 1));
   CheckRpcSendFailure(DEBUG_LOCATION, stub1, StatusCode::UNAVAILABLE,
                       "connections to all backends failing; last error: "
-                      "(ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+                      "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
                       "backend unhealthy");
   // Second channel should be READY.
   EXPECT_TRUE(WaitForChannelReady(channel2.get(), 1));

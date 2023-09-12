@@ -351,20 +351,20 @@ class LoadBalancingPolicyTest : public ::testing::Test {
             // executed after that state notifications has been delivered.
             gpr_log(GPR_INFO,
                     "Waiting for state notifications to be delivered");
-            work_serializer_->Run([&]() {
-                gpr_log(GPR_INFO,
-                        "State notifications delivered, waiting for health "
-                        "notifications");
-                // Now the connectivity state notifications has been delivered.
-                // If the state reported was READY, then the pick_first
-                // leaf policy will have started a health watch, so we
-                // add another callback to the queue to be executed
-                // after the initial health watch notification has been
-                // delivered.
-                work_serializer_->Run([&]() { notification.Notify(); },
-                                      DEBUG_LOCATION);
-            },
-            DEBUG_LOCATION);
+            work_serializer_->Run(
+                [&]() {
+                  gpr_log(GPR_INFO,
+                          "State notifications delivered, waiting for health "
+                          "notifications");
+                  // Now the connectivity state notifications has been
+                  // delivered. If the state reported was READY, then the
+                  // pick_first leaf policy will have started a health watch, so
+                  // we add another callback to the queue to be executed after
+                  // the initial health watch notification has been delivered.
+                  work_serializer_->Run([&]() { notification.Notify(); },
+                                        DEBUG_LOCATION);
+                },
+                DEBUG_LOCATION);
           },
           DEBUG_LOCATION);
       notification.WaitForNotification();

@@ -39,6 +39,43 @@ class RoundRobinTest : public LoadBalancingPolicyTest {
  protected:
   RoundRobinTest() : lb_policy_(MakeLbPolicy("round_robin")) {}
 
+  void ExpectStartup(absl::Span<const absl::string_view> addresses) {
+    EXPECT_EQ(ApplyUpdate(BuildUpdate(addresses, nullptr), lb_policy_.get()),
+              absl::OkStatus());
+    // Expect the initial CONNECTNG update with a picker that queues.
+    ExpectConnectingUpdate();
+    // RR should have created a subchannel for each address.
+    for (size_t i = 0; i < addresses.size(); ++i) {
+      auto* subchannel = FindSubchannel(addresses[i]);
+      ASSERT_NE(subchannel, nullptr) << "Address: " << addresses[i];
+      // RR should ask each subchannel to connect.
+      EXPECT_TRUE(subchannel->ConnectionRequested());
+      // The subchannel will connect successfully.
+      subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+      subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
+      // As each subchannel becomes READY, we should get a new picker that
+      // includes the behavior.  Note that there may be any number of
+      // duplicate updates for the previous state in the queue before the
+      // update that we actually want to see.
+      if (i == 0) {
+        // When the first subchannel becomes READY, accept any number of
+        // CONNECTING updates with a picker that queues followed by a READY
+        // update with a picker that repeatedly returns only the first address.
+        auto picker = WaitForConnected();
+        ExpectRoundRobinPicks(picker.get(), {addresses[0]});
+      } else {
+        // When each subsequent subchannel becomes READY, we accept any number
+        // of READY updates where the picker returns only the previously
+        // connected subchannel(s) followed by a READY update where the picker
+        // returns the previously connected subchannel(s) *and* the newly
+        // connected subchannel.
+        WaitForRoundRobinListChange(
+            absl::MakeSpan(addresses).subspan(0, i),
+            absl::MakeSpan(addresses).subspan(0, i + 1));
+      }
+    }
+  }
+
   OrphanablePtr<LoadBalancingPolicy> lb_policy_;
 };
 
