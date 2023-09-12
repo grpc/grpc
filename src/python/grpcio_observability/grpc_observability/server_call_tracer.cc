@@ -260,7 +260,7 @@ void PythonOpenCensusServerCallTracer::RecordEnd(
 
 grpc_core::ServerCallTracer*
 PythonOpenCensusServerCallTracerFactory::CreateNewServerCallTracer(
-    grpc_core::Arena* arena, grpc_core::ChannelArgs& args) {
+    grpc_core::Arena* arena, const grpc_core::ChannelArgs& args) {
   // We don't use arena here to to ensure that memory is allocated and freed in
   // the same DLL in Windows.
   (void)arena;
