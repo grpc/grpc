@@ -60,6 +60,9 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "work_stealing",
             ],
+            "flow_control_test": [
+                "lazier_stream_updates",
+            ],
         },
     },
     "ios": {
@@ -104,6 +107,9 @@ EXPERIMENTS = {
         "on": {
             "core_end2end_test": [
                 "work_stealing",
+            ],
+            "flow_control_test": [
+                "lazier_stream_updates",
             ],
         },
     },
@@ -159,6 +165,9 @@ EXPERIMENTS = {
         "on": {
             "core_end2end_test": [
                 "work_stealing",
+            ],
+            "flow_control_test": [
+                "lazier_stream_updates",
             ],
         },
     },

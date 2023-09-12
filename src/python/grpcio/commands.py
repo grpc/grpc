@@ -337,12 +337,7 @@ class Gather(setuptools.Command):
         pass
 
     def run(self):
-        if self.install and self.distribution.install_requires:
-            self.distribution.fetch_build_eggs(
-                self.distribution.install_requires
-            )
-        if self.test and self.distribution.tests_require:
-            self.distribution.fetch_build_eggs(self.distribution.tests_require)
+        pass
 
 
 class Clean(setuptools.Command):

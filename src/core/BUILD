@@ -2394,6 +2394,7 @@ grpc_cc_library(
     hdrs = [
         "lib/event_engine/ares_resolver.h",
         "lib/event_engine/grpc_polled_fd.h",
+        "lib/event_engine/nameser.h",
         "lib/event_engine/posix_engine/grpc_polled_fd_posix.h",
     ],
     external_deps = [
@@ -2627,6 +2628,7 @@ grpc_cc_library(
     hdrs = [
         "lib/surface/channel_init.h",
     ],
+    external_deps = ["absl/functional:any_invocable"],
     language = "c++",
     deps = [
         "channel_stack_type",
@@ -4833,16 +4835,18 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "closure",
+        "delegating_helper",
         "error",
-        "grpc_lb_subchannel_list",
+        "grpc_lb_policy_pick_first",
         "grpc_service_config",
         "json",
         "json_args",
         "json_object_loader",
         "lb_policy",
         "lb_policy_factory",
+        "lb_policy_registry",
+        "pollset_set",
         "ref_counted",
-        "subchannel_interface",
         "unique_type_name",
         "validation_errors",
         "//:channel_arg_names",

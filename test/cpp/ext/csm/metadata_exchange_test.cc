@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/cpp/ext/gsm/metadata_exchange.h"
+#include "src/cpp/ext/csm/metadata_exchange.h"
 
 #include "absl/functional/any_invocable.h"
 #include "api/include/opentelemetry/metrics/provider.h"
@@ -30,8 +30,9 @@
 
 #include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/env.h"
-#include "src/cpp/ext/gsm/gsm_observability.h"
+#include "src/cpp/ext/csm/csm_observability.h"
 #include "src/cpp/ext/otel/otel_plugin.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
@@ -43,29 +44,45 @@ namespace {
 
 class TestScenario {
  public:
-  enum class Type : std::uint8_t { kGke, kUnknown };
+  enum class ResourceType : std::uint8_t { kGke, kUnknown };
+  enum class XdsBootstrapSource : std::uint8_t { kFromFile, kFromConfig };
 
-  explicit TestScenario(Type type) : type_(type) {}
+  explicit TestScenario(ResourceType type, XdsBootstrapSource bootstrap_source)
+      : type_(type), bootstrap_source_(bootstrap_source) {}
 
   opentelemetry::sdk::resource::Resource GetTestResource() const {
     switch (type_) {
-      case Type::kGke:
+      case ResourceType::kGke:
         return TestGkeResource();
-      case Type::kUnknown:
+      case ResourceType::kUnknown:
         return TestUnknownResource();
     }
   }
 
   static std::string Name(const ::testing::TestParamInfo<TestScenario>& info) {
+    std::string ret_val;
     switch (info.param.type_) {
-      case Type::kGke:
-        return "gke";
-      case Type::kUnknown:
-        return "unknown";
+      case ResourceType::kGke:
+        ret_val += "Gke";
+        break;
+      case ResourceType::kUnknown:
+        ret_val += "Unknown";
+        break;
     }
+    switch (info.param.bootstrap_source_) {
+      case TestScenario::XdsBootstrapSource::kFromFile:
+        ret_val += "BootstrapFromFile";
+        break;
+      case TestScenario::XdsBootstrapSource::kFromConfig:
+        ret_val += "BootstrapFromConfig";
+        break;
+    }
+    return ret_val;
   }
 
-  Type type() const { return type_; }
+  ResourceType type() const { return type_; }
+
+  XdsBootstrapSource bootstrap_source() const { return bootstrap_source_; }
 
  private:
   static opentelemetry::sdk::resource::Resource TestGkeResource() {
@@ -86,7 +103,8 @@ class TestScenario {
     return opentelemetry::sdk::resource::Resource::Create(attributes);
   }
 
-  Type type_;
+  ResourceType type_;
+  XdsBootstrapSource bootstrap_source_;
 };
 
 class MetadataExchangeTest
@@ -94,6 +112,24 @@ class MetadataExchangeTest
       public ::testing::WithParamInterface<TestScenario> {
  protected:
   void Init(const absl::flat_hash_set<absl::string_view>& metric_names) {
+    const char* kBootstrap =
+        "{\"node\": {\"id\": "
+        "\"projects/1234567890/networks/mesh:mesh-id/nodes/"
+        "01234567-89ab-4def-8123-456789abcdef\"}}";
+    switch (GetParam().bootstrap_source()) {
+      case TestScenario::XdsBootstrapSource::kFromFile: {
+        ASSERT_EQ(bootstrap_file_name_, nullptr);
+        FILE* bootstrap_file =
+            gpr_tmpfile("gcp_observability_config", &bootstrap_file_name_);
+        fputs(kBootstrap, bootstrap_file);
+        fclose(bootstrap_file);
+        grpc_core::SetEnv("GRPC_XDS_BOOTSTRAP", bootstrap_file_name_);
+        break;
+      }
+      case TestScenario::XdsBootstrapSource::kFromConfig:
+        grpc_core::SetEnv("GRPC_XDS_BOOTSTRAP_CONFIG", kBootstrap);
+        break;
+    }
     OTelPluginEnd2EndTest::Init(
         metric_names, /*resource=*/GetParam().GetTestResource(),
         /*labels_injector=*/
@@ -101,47 +137,64 @@ class MetadataExchangeTest
             GetParam().GetTestResource().GetAttributes()));
   }
 
-  void VerifyGkeServiceMeshAttributes(
-      const std::map<std::string,
-                     opentelemetry::sdk::common::OwnedAttributeValue>&
-          attributes,
-      bool local_only = false) {
-    if (!local_only) {
-      switch (GetParam().type()) {
-        case TestScenario::Type::kGke:
-          EXPECT_EQ(
-              absl::get<std::string>(attributes.at("gsm.remote_workload_type")),
-              "gcp_kubernetes_engine");
-          EXPECT_EQ(absl::get<std::string>(
-                        attributes.at("gsm.remote_workload_pod_name")),
-                    "pod");
-          EXPECT_EQ(absl::get<std::string>(
-                        attributes.at("gsm.remote_workload_container_name")),
-                    "container");
-          EXPECT_EQ(absl::get<std::string>(
-                        attributes.at("gsm.remote_workload_namespace_name")),
-                    "namespace");
-          EXPECT_EQ(absl::get<std::string>(
-                        attributes.at("gsm.remote_workload_cluster_name")),
-                    "cluster");
-          EXPECT_EQ(absl::get<std::string>(
-                        attributes.at("gsm.remote_workload_location")),
-                    "region");
-          EXPECT_EQ(absl::get<std::string>(
-                        attributes.at("gsm.remote_workload_project_id")),
-                    "id");
-          EXPECT_EQ(absl::get<std::string>(
-                        attributes.at("gsm.remote_workload_canonical_service")),
-                    "canonical_service");
-          break;
-        case TestScenario::Type::kUnknown:
-          EXPECT_EQ(
-              absl::get<std::string>(attributes.at("gsm.remote_workload_type")),
-              "random");
-          break;
-      }
+  ~MetadataExchangeTest() override {
+    grpc_core::UnsetEnv("GRPC_GCP_OBSERVABILITY_CONFIG");
+    grpc_core::UnsetEnv("GRPC_XDS_BOOTSTRAP");
+    if (bootstrap_file_name_ != nullptr) {
+      remove(bootstrap_file_name_);
+      gpr_free(bootstrap_file_name_);
     }
   }
+
+  void VerifyServiceMeshAttributes(
+      const std::map<std::string,
+                     opentelemetry::sdk::common::OwnedAttributeValue>&
+          attributes) {
+    EXPECT_EQ(absl::get<std::string>(attributes.at("gsm.mesh_id")), "mesh-id");
+    switch (GetParam().type()) {
+      case TestScenario::ResourceType::kGke:
+        EXPECT_EQ(
+            absl::get<std::string>(attributes.at("gsm.remote_workload_type")),
+            "gcp_kubernetes_engine");
+        EXPECT_EQ(absl::get<std::string>(
+                      attributes.at("gsm.remote_workload_pod_name")),
+                  "pod");
+        EXPECT_EQ(absl::get<std::string>(
+                      attributes.at("gsm.remote_workload_container_name")),
+                  "container");
+        EXPECT_EQ(absl::get<std::string>(
+                      attributes.at("gsm.remote_workload_namespace_name")),
+                  "namespace");
+        EXPECT_EQ(absl::get<std::string>(
+                      attributes.at("gsm.remote_workload_cluster_name")),
+                  "cluster");
+        EXPECT_EQ(absl::get<std::string>(
+                      attributes.at("gsm.remote_workload_location")),
+                  "region");
+        EXPECT_EQ(absl::get<std::string>(
+                      attributes.at("gsm.remote_workload_project_id")),
+                  "id");
+        EXPECT_EQ(absl::get<std::string>(
+                      attributes.at("gsm.remote_workload_canonical_service")),
+                  "canonical_service");
+        break;
+      case TestScenario::ResourceType::kUnknown:
+        EXPECT_EQ(
+            absl::get<std::string>(attributes.at("gsm.remote_workload_type")),
+            "random");
+        break;
+    }
+  }
+
+  void VerifyNoServiceMeshAttributes(
+      const std::map<std::string,
+                     opentelemetry::sdk::common::OwnedAttributeValue>&
+          attributes) {
+    EXPECT_EQ(attributes.find("gsm.remote_workload_type"), attributes.end());
+  }
+
+ private:
+  char* bootstrap_file_name_ = nullptr;
 };
 
 TEST_P(MetadataExchangeTest, ClientAttemptStarted) {
@@ -165,7 +218,7 @@ TEST_P(MetadataExchangeTest, ClientAttemptStarted) {
   EXPECT_EQ(absl::get<std::string>(attributes.at("grpc.method")), kMethodName);
   EXPECT_EQ(absl::get<std::string>(attributes.at("grpc.target")),
             canonical_server_address_);
-  VerifyGkeServiceMeshAttributes(attributes, /*local_only=*/true);
+  VerifyNoServiceMeshAttributes(attributes);
 }
 
 TEST_P(MetadataExchangeTest, ClientAttemptDuration) {
@@ -189,7 +242,27 @@ TEST_P(MetadataExchangeTest, ClientAttemptDuration) {
   EXPECT_EQ(absl::get<std::string>(attributes.at("grpc.target")),
             canonical_server_address_);
   EXPECT_EQ(absl::get<std::string>(attributes.at("grpc.status")), "OK");
-  VerifyGkeServiceMeshAttributes(attributes);
+  VerifyServiceMeshAttributes(attributes);
+}
+
+TEST_P(MetadataExchangeTest, ServerCallStarted) {
+  Init(
+      /*metric_names=*/{grpc::internal::OTelServerCallStartedInstrumentName()});
+  SendRPC();
+  const char* kMetricName = "grpc.server.call.started";
+  auto data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) { return !data.contains(kMetricName); });
+  ASSERT_EQ(data[kMetricName].size(), 1);
+  auto point_data = absl::get_if<opentelemetry::sdk::metrics::SumPointData>(
+      &data[kMetricName][0].point_data);
+  ASSERT_NE(point_data, nullptr);
+  ASSERT_EQ(absl::get<int64_t>(point_data->value_), 1);
+  const auto& attributes = data[kMetricName][0].attributes.GetAttributes();
+  EXPECT_EQ(absl::get<std::string>(attributes.at("grpc.method")), kMethodName);
+  VerifyNoServiceMeshAttributes(attributes);
 }
 
 TEST_P(MetadataExchangeTest, ServerCallDuration) {
@@ -211,13 +284,20 @@ TEST_P(MetadataExchangeTest, ServerCallDuration) {
   const auto& attributes = data[kMetricName][0].attributes.GetAttributes();
   EXPECT_EQ(absl::get<std::string>(attributes.at("grpc.method")), kMethodName);
   EXPECT_EQ(absl::get<std::string>(attributes.at("grpc.status")), "OK");
-  VerifyGkeServiceMeshAttributes(attributes);
+  VerifyServiceMeshAttributes(attributes);
 }
 
 INSTANTIATE_TEST_SUITE_P(
     MetadataExchange, MetadataExchangeTest,
-    ::testing::Values(TestScenario(TestScenario::Type::kGke),
-                      TestScenario(TestScenario::Type::kUnknown)),
+    ::testing::Values(
+        TestScenario(TestScenario::ResourceType::kGke,
+                     TestScenario::XdsBootstrapSource::kFromConfig),
+        TestScenario(TestScenario::ResourceType::kGke,
+                     TestScenario::XdsBootstrapSource::kFromFile),
+        TestScenario(TestScenario::ResourceType::kUnknown,
+                     TestScenario::XdsBootstrapSource::kFromConfig),
+        TestScenario(TestScenario::ResourceType::kUnknown,
+                     TestScenario::XdsBootstrapSource::kFromFile)),
     &TestScenario::Name);
 
 }  // namespace

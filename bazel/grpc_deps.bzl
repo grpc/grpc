@@ -243,12 +243,12 @@ def grpc_deps():
     if "com_google_protobuf" not in native.existing_rules():
         http_archive(
             name = "com_google_protobuf",
-            sha256 = "1b46d45d9f5fff721a099bd6cd3be6717b8fa7ee3816a419f7d048ee55f9ae4c",
-            strip_prefix = "protobuf-54a2e5caa9d1a0a714fb2aa99753a1444414292a",
+            sha256 = "c580129f1db37f0ba8b80808b530593b89187b0d5573e9471396d0513aacfee4",
+            strip_prefix = "protobuf-0d22de520bf3fdb0978a962ae90b72db2f560cef",
             urls = [
-                # https://github.com/protocolbuffers/protobuf/commits/v24.2
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/54a2e5caa9d1a0a714fb2aa99753a1444414292a.tar.gz",
-                "https://github.com/protocolbuffers/protobuf/archive/54a2e5caa9d1a0a714fb2aa99753a1444414292a.tar.gz",
+                # https://github.com/protocolbuffers/protobuf/commits/v24.3
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/0d22de520bf3fdb0978a962ae90b72db2f560cef.tar.gz",
+                "https://github.com/protocolbuffers/protobuf/archive/0d22de520bf3fdb0978a962ae90b72db2f560cef.tar.gz",
             ],
             patches = [
                 "@com_github_grpc_grpc//third_party:protobuf.patch",
@@ -383,12 +383,12 @@ def grpc_deps():
     if "upb" not in native.existing_rules():
         http_archive(
             name = "upb",
-            sha256 = "af3f2651b8f27d92d086fc373af6194d4ba702e29e27cbc691fa8926561aa056",
-            strip_prefix = "upb-cc36926cffb00f0e8dd33bc9511c8e7354f09d0c",
+            sha256 = "5147e0ab6a28421d1e49004f4a205d84f06b924585e15eaa884cfe13289165b7",
+            strip_prefix = "upb-42cd08932e364a4cde35033b73f15c30250d7c2e",
             urls = [
                 # https://github.com/protocolbuffers/upb/commits/24.x
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/upb/archive/cc36926cffb00f0e8dd33bc9511c8e7354f09d0c.tar.gz",
-                "https://github.com/protocolbuffers/upb/archive/cc36926cffb00f0e8dd33bc9511c8e7354f09d0c.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/upb/archive/42cd08932e364a4cde35033b73f15c30250d7c2e.tar.gz",
+                "https://github.com/protocolbuffers/upb/archive/42cd08932e364a4cde35033b73f15c30250d7c2e.tar.gz",
             ],
         )
 
@@ -492,11 +492,11 @@ def grpc_deps():
     if "io_opentelemetry_cpp" not in native.existing_rules():
         http_archive(
             name = "io_opentelemetry_cpp",
-            sha256 = "668de24f81c8d36d75092ad9dcb02a97cd41473adbe72485ece05e336db48249",
-            strip_prefix = "opentelemetry-cpp-1.9.1",
+            sha256 = "f30cd88bf898a5726d245eba882b8e81012021eb00df34109f4dfb203f005cea",
+            strip_prefix = "opentelemetry-cpp-1.11.0",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/open-telemetry/opentelemetry-cpp/archive/refs/tags/v1.9.1.tar.gz",
-                "https://github.com/open-telemetry/opentelemetry-cpp/archive/refs/tags/v1.9.1.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/open-telemetry/opentelemetry-cpp/archive/refs/tags/v1.11.0.tar.gz",
+                "https://github.com/open-telemetry/opentelemetry-cpp/archive/refs/tags/v1.11.0.tar.gz",
             ],
         )
 
