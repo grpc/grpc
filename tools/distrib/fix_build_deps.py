@@ -387,7 +387,7 @@ for dirname in [
     "",
     "src/core",
     "src/cpp/ext/gcp",
-    "src/cpp/ext/gsm",
+    "src/cpp/ext/csm",
     "src/cpp/ext/otel",
     "test/core/backoff",
     "test/core/experiments",
