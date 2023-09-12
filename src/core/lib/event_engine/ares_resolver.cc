@@ -33,8 +33,6 @@
 
 #if GRPC_ARES == 1
 
-#include <ares_version.h>
-
 #include <ares.h>
 
 #if ARES_VERSION >= 0x011200
