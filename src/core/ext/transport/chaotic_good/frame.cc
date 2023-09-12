@@ -213,16 +213,18 @@ absl::Status ServerFragmentFrame::Deserialize(HPackParser* parser,
         ReadMetadata<ServerMetadata>(parser, deserializer.ReceiveHeaders(),
                                      header.stream_id, true, false, arena_);
     if (!r.ok()) return r.status();
-    GPR_ASSERT(r.value() != nullptr);
-    headers = std::move(r.value());
+    if (r.value() != nullptr) {
+      headers = std::move(r.value());
+    }
   }
   if (header.flags.is_set(1)) {
     auto r =
         ReadMetadata<ServerMetadata>(parser, deserializer.ReceiveTrailers(),
                                      header.stream_id, false, false, arena_);
     if (!r.ok()) return r.status();
-    GPR_ASSERT(r.value() != nullptr);
-    trailers = std::move(r.value());
+    if (r.value() != nullptr) {
+      trailers = std::move(r.value());
+    }
   }
   return deserializer.Finish();
 }
