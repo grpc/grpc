@@ -483,15 +483,15 @@ TEST_P(OverrideHostTest, ClusterGoneHostStays) {
 }
 
 TEST_P(OverrideHostTest, EnabledInRouteConfig) {
-  CreateAndStartBackends(2);
+  CreateAndStartBackends(1);
   RouteConfiguration route_config = default_route_config_;
   *route_config.mutable_virtual_hosts(0)->mutable_routes(0) =
       BuildStatefulSessionRouteConfig("", kCookieName);
   SetListenerAndRouteConfiguration(balancer_.get(),
                                    BuildListenerWithStatefulSessionFilter(""),
                                    route_config);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs(
-      {{"locality0", {CreateEndpoint(0), CreateEndpoint(1)}}})));
+  balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(EdsResourceArgs({{"locality0", {CreateEndpoint(0)}}})));
   WaitForAllBackends(DEBUG_LOCATION);
   // Get cookie for backend #0.
   auto session_cookie = GetAffinityCookieHeaderForBackend(DEBUG_LOCATION, 0);
@@ -506,14 +506,14 @@ TEST_P(OverrideHostTest, DifferentPerRoute) {
   constexpr absl::string_view kOverriddenCookie = "overridden-cookie-name";
   CreateAndStartBackends(1);
   RouteConfiguration route_config = default_route_config_;
-  auto route = route_config.virtual_hosts(0).routes(0);
   *route_config.mutable_virtual_hosts(0)->mutable_routes(0) =
       BuildStatefulSessionRouteConfig("/grpc.testing.EchoTestService/Echo1",
                                       "");
   *route_config.mutable_virtual_hosts(0)->add_routes() =
       BuildStatefulSessionRouteConfig("/grpc.testing.EchoTestService/Echo2",
                                       kOverriddenCookie);
-  *route_config.mutable_virtual_hosts(0)->add_routes() = route;
+  *route_config.mutable_virtual_hosts(0)->add_routes() =
+      default_route_config_.virtual_hosts(0).routes(0);
   SetListenerAndRouteConfiguration(
       balancer_.get(), BuildListenerWithStatefulSessionFilter(), route_config);
   balancer_->ads_service()->SetEdsResource(
