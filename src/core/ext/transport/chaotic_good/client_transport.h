@@ -119,36 +119,31 @@ class ClientTransport {
                     }),
             // Continuously receive server frames from endpoints and save
             // results to call_args.
-            Loop([server_initial_metadata =
-                      std::move(*call_args.server_initial_metadata),
+            Loop([server_initial_metadata = call_args.server_initial_metadata,
                   server_to_client_messages =
-                      std::move(*call_args.server_to_client_messages),
+                      call_args.server_to_client_messages,
                   receiver = std::move(server_frames.receiver)]() mutable {
               return TrySeq(
                   // Receive incoming server frame.
                   receiver.Next(),
                   // Save incomming frame results to call_args.
-                  [server_initial_metadata = std::move(server_initial_metadata),
-                   server_to_client_messages =
-                       std::move(server_to_client_messages)](
+                  [server_initial_metadata, server_to_client_messages](
                       absl::optional<ServerFrame> server_frame) mutable {
                     GPR_ASSERT(server_frame.has_value());
                     auto frame = std::move(
                         absl::get<ServerFragmentFrame>(*server_frame));
                     return TrySeq(
                         If((frame.headers != nullptr),
-                           [server_initial_metadata =
-                                std::move(server_initial_metadata),
+                           [server_initial_metadata,
                             headers = std::move(frame.headers)]() mutable {
-                             return server_initial_metadata.Push(
+                             return server_initial_metadata->Push(
                                  std::move(headers));
                            },
                            [] { return false; }),
                         If((frame.message != nullptr),
-                           [server_to_client_messages =
-                                std::move(server_to_client_messages),
+                           [server_to_client_messages,
                             message = std::move(frame.message)]() mutable {
-                             return server_to_client_messages.Push(
+                             return server_to_client_messages->Push(
                                  std::move(message));
                            },
                            [] { return false; }),

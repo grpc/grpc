@@ -101,6 +101,7 @@ grpc_cc_test(
         "//src/core:chaotic_good_client_transport",
         "//src/core:event_engine_wakeup_scheduler",
         "//src/core:join",
+        "//src/core:map",
         "//src/core:memory_quota",
         "//src/core:pipe",
         "//src/core:resource_quota",

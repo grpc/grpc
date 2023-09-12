@@ -43,6 +43,7 @@
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/event_engine_wakeup_scheduler.h"
 #include "src/core/lib/promise/join.h"
+#include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -140,15 +141,15 @@ class ClientTransportTest : public ::testing::Test {
                     0x00,
                     0x00,
                     0x00,
-                    0x0f,  // header length = 15
+                    0x1a,  // header length = 26
                     0x00,
                     0x00,
                     0x00,
-                    0x10,  // message length = 16
+                    0x08,  // message length = 8
                     0x00,
                     0x00,
                     0x00,
-                    0x30,  // message padding =48
+                    0x38,  // message padding =56
                     0x00,
                     0x00,
                     0x00,
@@ -169,9 +170,12 @@ class ClientTransportTest : public ::testing::Test {
           .InSequence(control_endpoint_sequence)
           .WillOnce(WithArgs<1>(
               [](grpc_event_engine::experimental::SliceBuffer* buffer) {
-                const std::string header = {0x10, 0x0b, 0x67, 0x72, 0x70,
-                                            0x63, 0x2d, 0x73, 0x74, 0x61,
-                                            0x74, 0x75, 0x73, 0x01, 0x30};
+                // Encoded string of header ":path: /demo.Service/Step".
+                const std::string header = {
+                    0x10, 0x05, 0x3a, 0x70, 0x61, 0x74, 0x68, 0x12, 0x2f,
+                    0x64, 0x65, 0x6d, 0x6f, 0x2e, 0x53, 0x65, 0x72, 0x76,
+                    0x69, 0x63, 0x65, 0x2f, 0x53, 0x74, 0x65, 0x70};
+                // Encoded string of trailer "grpc-status: 0".
                 const std::string trailers = {0x10, 0x0b, 0x67, 0x72, 0x70,
                                               0x63, 0x2d, 0x73, 0x74, 0x61,
                                               0x74, 0x75, 0x73, 0x01, 0x30};
@@ -189,30 +193,16 @@ class ClientTransportTest : public ::testing::Test {
       EXPECT_CALL(data_endpoint_, Read)
           .InSequence(data_endpoint_sequence)
           .WillOnce(WithArgs<1>(
-              [](grpc_event_engine::experimental::SliceBuffer* buffer) {
+              [this](grpc_event_engine::experimental::SliceBuffer* buffer) {
                 const std::string message_padding = {
                     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                };
-                // Schedule mock_endpoint to read buffer.
+                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
                 grpc_event_engine::experimental::Slice slice(
-                    grpc_slice_from_cpp_string(message_padding));
-                buffer->Append(std::move(slice));
-                return true;
-              }));
-      EXPECT_CALL(data_endpoint_, Read)
-          .InSequence(data_endpoint_sequence)
-          .WillOnce(WithArgs<1>(
-              [](grpc_event_engine::experimental::SliceBuffer* buffer) {
-                const std::string messages = {
-                    0x10, 0x0b, 0x67, 0x72, 0x70, 0x63, 0x2d, 0x73,
-                    0x74, 0x61, 0x74, 0x75, 0x73, 0x01, 0x30, 0x01};
-                // Schedule mock_endpoint to read buffer.
-                grpc_event_engine::experimental::Slice slice(
-                    grpc_slice_from_cpp_string(messages));
+                    grpc_slice_from_cpp_string(message_padding + message));
                 buffer->Append(std::move(slice));
                 return true;
               }));
@@ -290,6 +280,8 @@ class ClientTransportTest : public ::testing::Test {
   Pipe<MessageHandle> pipe_server_to_client_messages_second_;
   Pipe<ServerMetadataHandle> pipe_server_intial_metadata_second_;
   std::vector<absl::AnyInvocable<void(absl::Status)>> read_callback;
+  // Added to verify received message payload.
+  const std::string message = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
 };
 
 TEST_F(ClientTransportTest, AddOneStream) {
@@ -340,10 +332,25 @@ TEST_F(ClientTransportTest, AddOneStream) {
               // Receive messages from control/data endpoints.
               Seq(
                   // Receive server initial metadata.
-                  pipe_server_intial_metadata_.receiver.Next(),
+                  Map(pipe_server_intial_metadata_.receiver.Next(),
+                      [](NextResult<ServerMetadataHandle> r) {
+                        // Expect value: ":path: /demo.Service/Step"
+                        EXPECT_TRUE(r.has_value());
+                        EXPECT_EQ(r.value()
+                                      ->get_pointer(HttpPathMetadata())
+                                      ->as_string_view(),
+                                  "/demo.Service/Step");
+                        return absl::OkStatus();
+                      }),
                   // Receive server to client messages.
-                  pipe_server_to_client_messages_.receiver.Next(),
-                  [this] {
+                  Map(pipe_server_to_client_messages_.receiver.Next(),
+                      [this](NextResult<MessageHandle> r) {
+                        EXPECT_TRUE(r.has_value());
+                        EXPECT_EQ(r.value()->payload()->JoinIntoString(),
+                                  message);
+                        return absl::OkStatus();
+                      }),
+                  [this]() {
                     // Close pipes after receive message.
                     pipe_server_to_client_messages_.sender.Close();
                     pipe_server_intial_metadata_.sender.Close();
@@ -423,9 +430,24 @@ TEST_F(ClientTransportTest, AddOneStreamWithWriteFailed) {
               // Receive messages from control/data endpoints.
               Seq(
                   // Receive server initial metadata.
-                  pipe_server_intial_metadata_.receiver.Next(),
-                  // Receiver server to client messages.
-                  pipe_server_to_client_messages_.receiver.Next(),
+                  Map(pipe_server_intial_metadata_.receiver.Next(),
+                      [](NextResult<ServerMetadataHandle> r) {
+                        // Expect value: ":path: /demo.Service/Step"
+                        EXPECT_TRUE(r.has_value());
+                        EXPECT_EQ(r.value()
+                                      ->get_pointer(HttpPathMetadata())
+                                      ->as_string_view(),
+                                  "/demo.Service/Step");
+                        return absl::OkStatus();
+                      }),
+                  // Receive server to client messages.
+                  Map(pipe_server_to_client_messages_.receiver.Next(),
+                      [this](NextResult<MessageHandle> r) {
+                        EXPECT_TRUE(r.has_value());
+                        EXPECT_EQ(r.value()->payload()->JoinIntoString(),
+                                  message);
+                        return absl::OkStatus();
+                      }),
                   [this] {
                     // Close pipes after receive message.
                     pipe_server_to_client_messages_.sender.Close();
@@ -501,9 +523,24 @@ TEST_F(ClientTransportTest, AddOneStreamMultipleMessages) {
               // Receive messages from control/data endpoints.
               Seq(
                   // Receive server initial metadata.
-                  pipe_server_intial_metadata_.receiver.Next(),
-                  // Receiver server to client messages.
-                  pipe_server_to_client_messages_.receiver.Next(),
+                  Map(pipe_server_intial_metadata_.receiver.Next(),
+                      [](NextResult<ServerMetadataHandle> r) {
+                        // Expect value: ":path: /demo.Service/Step"
+                        EXPECT_TRUE(r.has_value());
+                        EXPECT_EQ(r.value()
+                                      ->get_pointer(HttpPathMetadata())
+                                      ->as_string_view(),
+                                  "/demo.Service/Step");
+                        return absl::OkStatus();
+                      }),
+                  // Receive server to client messages.
+                  Map(pipe_server_to_client_messages_.receiver.Next(),
+                      [this](NextResult<MessageHandle> r) {
+                        EXPECT_TRUE(r.has_value());
+                        EXPECT_EQ(r.value()->payload()->JoinIntoString(),
+                                  message);
+                        return absl::OkStatus();
+                      }),
                   [this] {
                     // Close pipes after receive message.
                     pipe_server_to_client_messages_.sender.Close();
@@ -612,9 +649,24 @@ TEST_F(ClientTransportTest, AddMultipleStreams) {
               // Receive first stream's messages from control/data endpoints.
               Seq(
                   // Receive server initial metadata.
-                  pipe_server_intial_metadata_.receiver.Next(),
-                  // Receiver server to client messages.
-                  pipe_server_to_client_messages_.receiver.Next(),
+                  Map(pipe_server_intial_metadata_.receiver.Next(),
+                      [](NextResult<ServerMetadataHandle> r) {
+                        // Expect value: ":path: /demo.Service/Step"
+                        EXPECT_TRUE(r.has_value());
+                        EXPECT_EQ(r.value()
+                                      ->get_pointer(HttpPathMetadata())
+                                      ->as_string_view(),
+                                  "/demo.Service/Step");
+                        return absl::OkStatus();
+                      }),
+                  // Receive server to client messages.
+                  Map(pipe_server_to_client_messages_.receiver.Next(),
+                      [this](NextResult<MessageHandle> r) {
+                        EXPECT_TRUE(r.has_value());
+                        EXPECT_EQ(r.value()->payload()->JoinIntoString(),
+                                  message);
+                        return absl::OkStatus();
+                      }),
                   [this] {
                     // Wake up the sencond stream read after first stream read
                     // finished.
@@ -627,9 +679,24 @@ TEST_F(ClientTransportTest, AddMultipleStreams) {
               // Receive second stream's messages from control/data endpoints.
               Seq(
                   // Receive server initial metadata.
-                  pipe_server_intial_metadata_second_.receiver.Next(),
-                  // Receiver server to client messages.
-                  pipe_server_to_client_messages_second_.receiver.Next(),
+                  Map(pipe_server_intial_metadata_second_.receiver.Next(),
+                      [](NextResult<ServerMetadataHandle> r) {
+                        // Expect value: ":path: /demo.Service/Step"
+                        EXPECT_TRUE(r.has_value());
+                        EXPECT_EQ(r.value()
+                                      ->get_pointer(HttpPathMetadata())
+                                      ->as_string_view(),
+                                  "/demo.Service/Step");
+                        return absl::OkStatus();
+                      }),
+                  // Receive server to client messages.
+                  Map(pipe_server_to_client_messages_second_.receiver.Next(),
+                      [this](NextResult<MessageHandle> r) {
+                        EXPECT_TRUE(r.has_value());
+                        EXPECT_EQ(r.value()->payload()->JoinIntoString(),
+                                  message);
+                        return absl::OkStatus();
+                      }),
                   [this] {
                     // Close pipes after receive message.
                     pipe_server_to_client_messages_second_.sender.Close();
@@ -750,9 +817,24 @@ TEST_F(ClientTransportTest, AddMultipleStreamsMultipleMessages) {
               // Receive first stream's messages from control/data endpoints.
               Seq(
                   // Receive server initial metadata.
-                  pipe_server_intial_metadata_.receiver.Next(),
-                  // Receiver server to client messages.
-                  pipe_server_to_client_messages_.receiver.Next(),
+                  Map(pipe_server_intial_metadata_.receiver.Next(),
+                      [](NextResult<ServerMetadataHandle> r) {
+                        // Expect value: ":path: /demo.Service/Step"
+                        EXPECT_TRUE(r.has_value());
+                        EXPECT_EQ(r.value()
+                                      ->get_pointer(HttpPathMetadata())
+                                      ->as_string_view(),
+                                  "/demo.Service/Step");
+                        return absl::OkStatus();
+                      }),
+                  // Receive server to client messages.
+                  Map(pipe_server_to_client_messages_.receiver.Next(),
+                      [this](NextResult<MessageHandle> r) {
+                        EXPECT_TRUE(r.has_value());
+                        EXPECT_EQ(r.value()->payload()->JoinIntoString(),
+                                  message);
+                        return absl::OkStatus();
+                      }),
                   [this] {
                     // Wake up the sencond stream read after first stream read
                     // finished.
@@ -765,9 +847,24 @@ TEST_F(ClientTransportTest, AddMultipleStreamsMultipleMessages) {
               // Receive second stream's messages from control/data endpoints.
               Seq(
                   // Receive server initial metadata.
-                  pipe_server_intial_metadata_second_.receiver.Next(),
-                  // Receiver server to client messages.
-                  pipe_server_to_client_messages_second_.receiver.Next(),
+                  Map(pipe_server_intial_metadata_second_.receiver.Next(),
+                      [](NextResult<ServerMetadataHandle> r) {
+                        // Expect value: ":path: /demo.Service/Step"
+                        EXPECT_TRUE(r.has_value());
+                        EXPECT_EQ(r.value()
+                                      ->get_pointer(HttpPathMetadata())
+                                      ->as_string_view(),
+                                  "/demo.Service/Step");
+                        return absl::OkStatus();
+                      }),
+                  // Receive server to client messages.
+                  Map(pipe_server_to_client_messages_second_.receiver.Next(),
+                      [this](NextResult<MessageHandle> r) {
+                        EXPECT_TRUE(r.has_value());
+                        EXPECT_EQ(r.value()->payload()->JoinIntoString(),
+                                  message);
+                        return absl::OkStatus();
+                      }),
                   [this] {
                     // Close pipes after receive message.
                     pipe_server_to_client_messages_second_.sender.Close();
