@@ -46,3 +46,9 @@ RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/downloa
     && rm -rf ccache-4.5.1 ccache.tar.gz
 
 RUN git config --global --add safe.directory /var/local/jenkins/grpc
+
+#=================
+# Install rust
+
+# Install rust since it's required for install twine.
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
