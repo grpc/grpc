@@ -1587,6 +1587,7 @@ grpc_cc_library(
         "forkable",
         "notification",
         "time",
+        "useful",
         "//:backoff",
         "//:event_engine_base_hdrs",
         "//:gpr",

@@ -1146,6 +1146,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/event_engine/thread_pool/thread_count.cc )
   s.files += %w( src/core/lib/event_engine/thread_pool/thread_count.h )
   s.files += %w( src/core/lib/event_engine/thread_pool/thread_pool.h )
+  s.files += %w( src/core/lib/event_engine/thread_pool/thread_pool_factory.cc )
   s.files += %w( src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc )
   s.files += %w( src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h )
   s.files += %w( src/core/lib/event_engine/thready_event_engine/thready_event_engine.cc )

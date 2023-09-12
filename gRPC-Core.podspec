@@ -1241,6 +1241,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/event_engine/thread_pool/thread_count.cc',
                       'src/core/lib/event_engine/thread_pool/thread_count.h',
                       'src/core/lib/event_engine/thread_pool/thread_pool.h',
+                      'src/core/lib/event_engine/thread_pool/thread_pool_factory.cc',
                       'src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc',
                       'src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h',
                       'src/core/lib/event_engine/thready_event_engine/thready_event_engine.cc',
