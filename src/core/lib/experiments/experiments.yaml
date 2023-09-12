@@ -185,10 +185,3 @@
   owner: ctiller@google.com
   test_tags: []
   allow_in_fuzzing_config: true
-- name: round_robin_dualstack
-  description:
-    Change round_robin code to delegate to pick_first as per dualstack
-    backend design.
-  expiry: 2023/11/15
-  owner: roth@google.com
-  test_tags: []
