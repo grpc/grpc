@@ -1073,6 +1073,7 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/handle_containers.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/memory_allocator.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/memory_allocator_factory.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/nameser.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/poller.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc" role="src" />

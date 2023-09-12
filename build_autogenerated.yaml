@@ -696,6 +696,7 @@ libs:
   - src/core/lib/event_engine/grpc_polled_fd.h
   - src/core/lib/event_engine/handle_containers.h
   - src/core/lib/event_engine/memory_allocator_factory.h
+  - src/core/lib/event_engine/nameser.h
   - src/core/lib/event_engine/poller.h
   - src/core/lib/event_engine/posix.h
   - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.h
@@ -2103,6 +2104,7 @@ libs:
   - src/core/lib/event_engine/grpc_polled_fd.h
   - src/core/lib/event_engine/handle_containers.h
   - src/core/lib/event_engine/memory_allocator_factory.h
+  - src/core/lib/event_engine/nameser.h
   - src/core/lib/event_engine/poller.h
   - src/core/lib/event_engine/posix.h
   - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.h
@@ -4069,6 +4071,7 @@ libs:
   - src/core/lib/event_engine/grpc_polled_fd.h
   - src/core/lib/event_engine/handle_containers.h
   - src/core/lib/event_engine/memory_allocator_factory.h
+  - src/core/lib/event_engine/nameser.h
   - src/core/lib/event_engine/poller.h
   - src/core/lib/event_engine/posix.h
   - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.h
@@ -8718,6 +8721,7 @@ targets:
   - src/core/lib/event_engine/grpc_polled_fd.h
   - src/core/lib/event_engine/handle_containers.h
   - src/core/lib/event_engine/memory_allocator_factory.h
+  - src/core/lib/event_engine/nameser.h
   - src/core/lib/event_engine/poller.h
   - src/core/lib/event_engine/posix.h
   - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.h
