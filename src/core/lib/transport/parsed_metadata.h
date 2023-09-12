@@ -33,7 +33,6 @@
 
 #include <grpc/slice.h>
 
-#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/slice/slice.h"
 
