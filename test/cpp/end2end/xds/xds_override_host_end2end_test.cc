@@ -86,7 +86,8 @@ class OverrideHostTest : public XdsEnd2endTest {
     std::vector<Cookie> values;
     auto pair = server_initial_metadata.equal_range("set-cookie");
     for (auto it = pair.first; it != pair.second; ++it) {
-      gpr_log(GPR_INFO, "Cookie header: %s", std::string(it->second).c_str());
+      gpr_log(GPR_INFO, "set-cookie header: %s",
+              std::string(it->second).c_str());
       values.emplace_back(ParseCookie(it->second));
       EXPECT_FALSE(values.back().value.empty());
       EXPECT_THAT(values.back().attributes, ::testing::Contains("HttpOnly"));
@@ -153,6 +154,12 @@ class OverrideHostTest : public XdsEnd2endTest {
     return {};
   }
 
+  static std::pair<std::string, std::string> BuildCookieHeader(
+      const Cookie& cookie) {
+    return std::make_pair("cookie",
+                          absl::StrFormat("%s=%s", cookie.name, cookie.value));
+  }
+
   // Send requests until a desired backend is hit and returns cookie name/value
   // pairs. Empty collection is returned if the backend was never hit.
   // For weighted clusters, more than one request per backend may be necessary
@@ -168,8 +175,7 @@ class OverrideHostTest : public XdsEnd2endTest {
                                         max_requests_per_backend, options);
     for (const auto& cookie : cookies) {
       if (cookie.name == cookie_name) {
-        return std::make_pair(
-            "cookie", absl::StrFormat("%s=%s", cookie_name, cookie.value));
+        return BuildCookieHeader(cookie);
       }
     }
     return absl::nullopt;
@@ -483,15 +489,15 @@ TEST_P(OverrideHostTest, ClusterGoneHostStays) {
 }
 
 TEST_P(OverrideHostTest, EnabledInRouteConfig) {
-  CreateAndStartBackends(1);
+  CreateAndStartBackends(2);
   RouteConfiguration route_config = default_route_config_;
   *route_config.mutable_virtual_hosts(0)->mutable_routes(0) =
       BuildStatefulSessionRouteConfig("", kCookieName);
   SetListenerAndRouteConfiguration(balancer_.get(),
                                    BuildListenerWithStatefulSessionFilter(""),
                                    route_config);
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(EdsResourceArgs({{"locality0", {CreateEndpoint(0)}}})));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs(
+      {{"locality0", {CreateEndpoint(0), CreateEndpoint(1)}}})));
   WaitForAllBackends(DEBUG_LOCATION);
   // Get cookie for backend #0.
   auto session_cookie = GetAffinityCookieHeaderForBackend(DEBUG_LOCATION, 0);
@@ -504,7 +510,7 @@ TEST_P(OverrideHostTest, EnabledInRouteConfig) {
 
 TEST_P(OverrideHostTest, DifferentPerRoute) {
   constexpr absl::string_view kOverriddenCookie = "overridden-cookie-name";
-  CreateAndStartBackends(1);
+  CreateAndStartBackends(2);
   RouteConfiguration route_config = default_route_config_;
   *route_config.mutable_virtual_hosts(0)->mutable_routes(0) =
       BuildStatefulSessionRouteConfig("/grpc.testing.EchoTestService/Echo1",
@@ -516,21 +522,57 @@ TEST_P(OverrideHostTest, DifferentPerRoute) {
       default_route_config_.virtual_hosts(0).routes(0);
   SetListenerAndRouteConfiguration(
       balancer_.get(), BuildListenerWithStatefulSessionFilter(), route_config);
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(EdsResourceArgs({{"locality0", {CreateEndpoint(0)}}})));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs(
+      {{"locality0", {CreateEndpoint(0), CreateEndpoint(1)}}})));
   WaitForAllBackends(DEBUG_LOCATION);
   // Disabled for "echo1" method
-  auto cookies = GetCookiesForBackend(
+  auto echo1_cookie = GetCookiesForBackend(
       DEBUG_LOCATION, 0, 1, RpcOptions().set_rpc_method(METHOD_ECHO1));
-  ASSERT_EQ(cookies.empty() ? "" : cookies.front().name, "");
+  ASSERT_EQ(echo1_cookie.empty() ? "" : echo1_cookie.front().name, "");
   // Overridden for "echo2" method
-  cookies = GetCookiesForBackend(DEBUG_LOCATION, 0, 1,
-                                 RpcOptions().set_rpc_method(METHOD_ECHO2));
-  ASSERT_EQ(cookies.empty() ? "" : cookies.front().name, kOverriddenCookie);
+  auto echo2_cookie = GetCookiesForBackend(
+      DEBUG_LOCATION, 0, 1, RpcOptions().set_rpc_method(METHOD_ECHO2));
+  ASSERT_EQ(echo2_cookie.empty() ? "" : echo2_cookie.front().name,
+            kOverriddenCookie);
   // Default for "echo" method
-  cookies = GetCookiesForBackend(DEBUG_LOCATION, 0, 1,
-                                 RpcOptions().set_rpc_method(METHOD_ECHO));
-  ASSERT_EQ(cookies.empty() ? "" : cookies.front().name, kCookieName);
+  auto echo_cookie = GetCookiesForBackend(
+      DEBUG_LOCATION, 0, 1, RpcOptions().set_rpc_method(METHOD_ECHO));
+  ASSERT_EQ(echo_cookie.empty() ? "" : echo_cookie.front().name, kCookieName);
+  // Echo1 endpoint ignores cookies
+  CheckRpcSendOk(DEBUG_LOCATION, 6,
+                 RpcOptions()
+                     .set_metadata({
+                         BuildCookieHeader(echo_cookie.front()),
+                         BuildCookieHeader(echo2_cookie.front()),
+                     })
+                     .set_rpc_method(METHOD_ECHO1));
+  EXPECT_EQ(backends_[0]->backend_service()->request_count(), 3);
+  // Echo2 honours overwritten cookie
+  backends_[0]->backend_service()->ResetCounters();
+  CheckRpcSendOk(DEBUG_LOCATION, 6,
+                 RpcOptions()
+                     .set_metadata({BuildCookieHeader(echo_cookie.front())})
+                     .set_rpc_method(METHOD_ECHO2));
+  EXPECT_EQ(backends_[0]->backend_service()->request_count(), 3);
+  backends_[0]->backend_service()->ResetCounters();
+  CheckRpcSendOk(DEBUG_LOCATION, 6,
+                 RpcOptions()
+                     .set_metadata({BuildCookieHeader(echo2_cookie.front())})
+                     .set_rpc_method(METHOD_ECHO2));
+  EXPECT_EQ(backends_[0]->backend_service()->request_count(), 6);
+  // Echo honours original cookie
+  backends_[0]->backend_service()->ResetCounters();
+  CheckRpcSendOk(DEBUG_LOCATION, 6,
+                 RpcOptions()
+                     .set_metadata({BuildCookieHeader(echo_cookie.front())})
+                     .set_rpc_method(METHOD_ECHO));
+  EXPECT_EQ(backends_[0]->backend_service()->request_count(), 6);
+  backends_[0]->backend_service()->ResetCounters();
+  CheckRpcSendOk(DEBUG_LOCATION, 6,
+                 RpcOptions()
+                     .set_metadata({BuildCookieHeader(echo2_cookie.front())})
+                     .set_rpc_method(METHOD_ECHO));
+  EXPECT_EQ(backends_[0]->backend_service()->request_count(), 3);
 }
 
 }  // namespace
