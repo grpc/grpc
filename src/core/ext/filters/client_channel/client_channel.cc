@@ -621,6 +621,7 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
               chand, this, subchannel_.get());
     }
     GRPC_CHANNEL_STACK_REF(chand_->owning_stack_, "SubchannelWrapper");
+    GPR_DEBUG_ASSERT(chand_->work_serializer_->RunningInWorkSerializer());
     if (chand_->channelz_node_ != nullptr) {
       auto* subchannel_node = subchannel_->channelz_node();
       if (subchannel_node != nullptr) {
@@ -633,7 +634,6 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
         ++it->second;
       }
     }
-    GPR_DEBUG_ASSERT(chand_->work_serializer_->RunningInWorkSerializer());
     chand_->subchannel_wrappers_.insert(this);
   }
 
@@ -643,28 +643,34 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
               "chand=%p: destroying subchannel wrapper %p for subchannel %p",
               chand_, this, subchannel_.get());
     }
-    GPR_DEBUG_ASSERT(chand_->work_serializer_->RunningInWorkSerializer());
-    chand_->subchannel_wrappers_.erase(this);
-    if (chand_->channelz_node_ != nullptr) {
-      auto* subchannel_node = subchannel_->channelz_node();
-      if (subchannel_node != nullptr) {
-        auto it = chand_->subchannel_refcount_map_.find(subchannel_.get());
-        GPR_ASSERT(it != chand_->subchannel_refcount_map_.end());
-        --it->second;
-        if (it->second == 0) {
-          chand_->channelz_node_->RemoveChildSubchannel(
-              subchannel_node->uuid());
-          chand_->subchannel_refcount_map_.erase(it);
-        }
-      }
-    }
     GRPC_CHANNEL_STACK_UNREF(chand_->owning_stack_, "SubchannelWrapper");
   }
 
   void Orphan() override {
-    // Make sure we release the last ref inside the WorkSerializer, so
-    // that we can update the channel's subchannel maps.
-    chand_->work_serializer_->Run([self = WeakRef()]() {}, DEBUG_LOCATION);
+    // Make sure we clean up the channel's subchannel maps inside the
+    // WorkSerializer.
+    // Ref held by callback.
+    WeakRef(DEBUG_LOCATION, "subchannel map cleanup").release();
+    chand_->work_serializer_->Run(
+        [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_) {
+          chand_->subchannel_wrappers_.erase(this);
+          if (chand_->channelz_node_ != nullptr) {
+            auto* subchannel_node = subchannel_->channelz_node();
+            if (subchannel_node != nullptr) {
+              auto it =
+                  chand_->subchannel_refcount_map_.find(subchannel_.get());
+              GPR_ASSERT(it != chand_->subchannel_refcount_map_.end());
+              --it->second;
+              if (it->second == 0) {
+                chand_->channelz_node_->RemoveChildSubchannel(
+                    subchannel_node->uuid());
+                chand_->subchannel_refcount_map_.erase(it);
+              }
+            }
+          }
+          WeakUnref(DEBUG_LOCATION, "subchannel map cleanup");
+        },
+        DEBUG_LOCATION);
   }
 
   void WatchConnectivityState(
