@@ -94,5 +94,3 @@
   default: true
 - name: jitter_max_idle
   default: true
-- name: round_robin_dualstack
-  default: true

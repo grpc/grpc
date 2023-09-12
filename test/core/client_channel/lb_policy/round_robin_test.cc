@@ -42,6 +42,8 @@ class RoundRobinTest : public LoadBalancingPolicyTest {
   void ExpectStartup(absl::Span<const absl::string_view> addresses) {
     EXPECT_EQ(ApplyUpdate(BuildUpdate(addresses, nullptr), lb_policy_.get()),
               absl::OkStatus());
+    // Expect the initial CONNECTNG update with a picker that queues.
+    ExpectConnectingUpdate();
     // RR should have created a subchannel for each address.
     for (size_t i = 0; i < addresses.size(); ++i) {
       auto* subchannel = FindSubchannel(addresses[i]);
@@ -50,8 +52,6 @@ class RoundRobinTest : public LoadBalancingPolicyTest {
       EXPECT_TRUE(subchannel->ConnectionRequested());
       // The subchannel will connect successfully.
       subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
-      // Expect the initial CONNECTNG update with a picker that queues.
-      if (i == 0) ExpectConnectingUpdate();
       subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
       // As each subchannel becomes READY, we should get a new picker that
       // includes the behavior.  Note that there may be any number of

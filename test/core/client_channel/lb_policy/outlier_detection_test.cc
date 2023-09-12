@@ -229,6 +229,8 @@ TEST_F(OutlierDetectionTest, FailurePercentage) {
   time_cache_.IncrementBy(Duration::Seconds(10));
   RunTimerCallback();
   gpr_log(GPR_INFO, "### ejection complete");
+  // Expect a re-resolution request.
+  ExpectReresolutionRequest();
   // Expect a picker update.
   std::vector<absl::string_view> remaining_addresses;
   for (const auto& addr : kAddresses) {
