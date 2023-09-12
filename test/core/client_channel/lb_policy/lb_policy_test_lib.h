@@ -332,11 +332,11 @@ class LoadBalancingPolicyTest : public ::testing::Test {
             << " must have OK status: " << status;
       }
       // Updating the state in the state tracker will enqueue
-      // notifications to watchers on the WorkSerializer.  We do not
-      // want to return until all of those notifications have been
-      // delivered, so we add an additional callback to the WorkSerializer
-      // queue (which will be queued after the notifications) and wait
-      // until that additional callback has been run.
+      // notifications to watchers on the WorkSerializer.  If any
+      // subchannel reports READY, the pick_first leaf policy will then
+      // start a health watch, whose initial notification will also be
+      // scheduled on the WorkSerializer.  We don't want to return until
+      // all of those notifications have been delivered.
       absl::Notification notification;
       work_serializer_->Run(
           [&]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_) {
@@ -344,12 +344,31 @@ class LoadBalancingPolicyTest : public ::testing::Test {
               AssertValidConnectivityStateTransition(state_tracker_.state(),
                                                      state, location);
             }
+            gpr_log(GPR_INFO, "Setting state on tracker");
             state_tracker_.SetState(state, status, "set from test");
-            work_serializer_->Run([&]() { notification.Notify(); },
-                                  DEBUG_LOCATION);
+            // SetState() enqueued the connectivity state notifications for
+            // the subchannel, so we add another callback to the queue to be
+            // executed after that state notifications has been delivered.
+            gpr_log(GPR_INFO,
+                    "Waiting for state notifications to be delivered");
+            work_serializer_->Run([&]() {
+                gpr_log(GPR_INFO,
+                        "State notifications delivered, waiting for health "
+                        "notifications");
+                // Now the connectivity state notifications has been delivered.
+                // If the state reported was READY, then the pick_first
+                // leaf policy will have started a health watch, so we
+                // add another callback to the queue to be executed
+                // after the initial health watch notification has been
+                // delivered.
+                work_serializer_->Run([&]() { notification.Notify(); },
+                                      DEBUG_LOCATION);
+            },
+            DEBUG_LOCATION);
           },
           DEBUG_LOCATION);
       notification.WaitForNotification();
+      gpr_log(GPR_INFO, "Health notifications delivered");
     }
 
     // Indicates if any of the associated SubchannelInterface objects
@@ -746,22 +765,40 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     ExecCtx exec_ctx;
     absl::Status status;
     // When the LB policy gets the update, it will create new
-    // subchannels, and it will register a connectivity state watcher
-    // for each one.  The initial connectivity state notifications for
-    // those watchers will be queued on the WorkSerializer.  We don't
-    // want to return until those notifications have been delivered to
-    // the LB policy, so we add an additional callback to the WorkSerializer
-    // queue (which will be queued after the notifications) and wait
-    // until that additional callback has been run.
+    // subchannels, and it will register connectivity state watchers and
+    // optionally health watchers for each one.  We don't want to return
+    // until all the initial notifications for all of those watchers
+    // have been delivered to the LB policy.
     absl::Notification notification;
     work_serializer_->Run(
         [&]() {
           status = lb_policy->UpdateLocked(std::move(update_args));
-          work_serializer_->Run([&]() { notification.Notify(); },
-                                DEBUG_LOCATION);
+          // UpdateLocked() enqueued the initial connectivity state
+          // notifications for the subchannels, so we add another
+          // callback to the queue to be executed after those initial
+          // state notifications have been delivered.
+          gpr_log(GPR_INFO,
+                  "Applied update, waiting for initial connectivity state "
+                  "notifications");
+          work_serializer_->Run(
+              [&]() {
+                gpr_log(GPR_INFO,
+                        "Initial connectivity state notifications delivered; "
+                        "waiting for health notifications");
+                // Now that the initial state notifications have been
+                // delivered, the queue will contain the health watch
+                // notifications for any subchannels in state READY,
+                // so we add another callback to the queue to be
+                // executed after those health watch notifications have
+                // been delivered.
+                work_serializer_->Run([&]() { notification.Notify(); },
+                                      DEBUG_LOCATION);
+              },
+              DEBUG_LOCATION);
         },
         DEBUG_LOCATION);
     notification.WaitForNotification();
+    gpr_log(GPR_INFO, "health notifications delivered");
     return status;
   }
 
@@ -914,6 +951,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
           return false;  // Stop.
         },
         location);
+    gpr_log(GPR_INFO, "done waiting for expected RR addresses");
     return retval;
   }
 
@@ -1070,18 +1108,30 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> ExpectRoundRobinStartup(
       absl::Span<const absl::string_view> addresses) {
     RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker;
+    // RR should have created a subchannel for each address.
     for (size_t i = 0; i < addresses.size(); ++i) {
       auto* subchannel = FindSubchannel(addresses[i]);
       EXPECT_NE(subchannel, nullptr);
       if (subchannel == nullptr) return nullptr;
+      // RR should ask each subchannel to connect.
       EXPECT_TRUE(subchannel->ConnectionRequested());
       subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+      // Expect the initial CONNECTNG update with a picker that queues.
       if (i == 0) ExpectConnectingUpdate();
+      // The connection attempts succeed.
       subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
       if (i == 0) {
+        // When the first subchannel becomes READY, accept any number of
+        // CONNECTING updates with a picker that queues followed by a READY
+        // update with a picker that repeatedly returns only the first address.
         picker = WaitForConnected();
         ExpectRoundRobinPicks(picker.get(), {addresses[0]});
       } else {
+        // When each subsequent subchannel becomes READY, we accept any number
+        // of READY updates where the picker returns only the previously
+        // connected subchannel(s) followed by a READY update where the picker
+        // returns the previously connected subchannel(s) *and* the newly
+        // connected subchannel.
         picker = WaitForRoundRobinListChange(
             absl::MakeSpan(addresses).subspan(0, i),
             absl::MakeSpan(addresses).subspan(0, i + 1));
