@@ -21,7 +21,6 @@
 
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h"
-#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/useful.h"
 
 namespace grpc_event_engine {
