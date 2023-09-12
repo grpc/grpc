@@ -186,8 +186,6 @@ void ScheduleTwiceUntilZero(ThreadPool* p, std::atomic<int>& runcount, int n) {
 TYPED_TEST(ThreadPoolTest, CanStartLotsOfClosures) {
   TypeParam p(8);
   std::atomic<int> runcount{0};
-  // Our first thread pool implementation tried to create ~1M threads for this
-  // test.
   int branch_factor = 20;
   ScheduleTwiceUntilZero(&p, runcount, branch_factor);
   p.Quiesce();
