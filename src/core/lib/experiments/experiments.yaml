@@ -192,3 +192,10 @@
   expiry: 2023/11/15
   owner: roth@google.com
   test_tags: []
+- name: wrr_dualstack
+  description:
+    Change WRR code to delegate to pick_first as per dualstack
+    backend design.
+  expiry: 2023/11/15
+  owner: roth@google.com
+  test_tags: []

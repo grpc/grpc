@@ -109,6 +109,10 @@ const char* const description_round_robin_dualstack =
     "Change round_robin code to delegate to pick_first as per dualstack "
     "backend design.";
 const char* const additional_constraints_round_robin_dualstack = "{}";
+const char* const description_wrr_dualstack =
+    "Change WRR code to delegate to pick_first as per dualstack backend "
+    "design.";
+const char* const additional_constraints_wrr_dualstack = "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -164,6 +168,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_jitter_max_idle, true, true},
     {"round_robin_dualstack", description_round_robin_dualstack,
      additional_constraints_round_robin_dualstack, true, true},
+    {"wrr_dualstack", description_wrr_dualstack,
+     additional_constraints_wrr_dualstack, true, true},
 };
 
 }  // namespace grpc_core
@@ -257,6 +263,10 @@ const char* const description_round_robin_dualstack =
     "Change round_robin code to delegate to pick_first as per dualstack "
     "backend design.";
 const char* const additional_constraints_round_robin_dualstack = "{}";
+const char* const description_wrr_dualstack =
+    "Change WRR code to delegate to pick_first as per dualstack backend "
+    "design.";
+const char* const additional_constraints_wrr_dualstack = "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -312,6 +322,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_jitter_max_idle, true, true},
     {"round_robin_dualstack", description_round_robin_dualstack,
      additional_constraints_round_robin_dualstack, true, true},
+    {"wrr_dualstack", description_wrr_dualstack,
+     additional_constraints_wrr_dualstack, true, true},
 };
 
 }  // namespace grpc_core
@@ -405,6 +417,10 @@ const char* const description_round_robin_dualstack =
     "Change round_robin code to delegate to pick_first as per dualstack "
     "backend design.";
 const char* const additional_constraints_round_robin_dualstack = "{}";
+const char* const description_wrr_dualstack =
+    "Change WRR code to delegate to pick_first as per dualstack backend "
+    "design.";
+const char* const additional_constraints_wrr_dualstack = "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -460,6 +476,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_jitter_max_idle, true, true},
     {"round_robin_dualstack", description_round_robin_dualstack,
      additional_constraints_round_robin_dualstack, true, true},
+    {"wrr_dualstack", description_wrr_dualstack,
+     additional_constraints_wrr_dualstack, true, true},
 };
 
 }  // namespace grpc_core
