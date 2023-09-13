@@ -594,7 +594,7 @@ TEST_P(OverrideHostTest, DifferentPerRoute) {
   EXPECT_EQ(backends_[1]->backend_service()->request_count(), 3);
 }
 
-TEST_P(OverrideHostTest, SetCookieTTL) {
+TEST_P(OverrideHostTest, TTLSetsMaxAge) {
   CreateAndStartBackends(1);
   RouteConfiguration route_config = default_route_config_;
   google::protobuf::Duration ttl;
