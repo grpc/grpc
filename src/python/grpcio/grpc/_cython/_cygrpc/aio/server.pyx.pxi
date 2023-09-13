@@ -398,6 +398,7 @@ async def _finish_handler_with_unary_response(RPCState rpc_state,
     # Executes application logic
     cdef object response_message
     cdef _SyncServicerContext sync_servicer_context
+    install_context_from_request_call_event_aio(rpc_state)
 
     if _is_async_handler(unary_handler):
         # Run async method handlers in this coroutine
@@ -450,6 +451,7 @@ async def _finish_handler_with_unary_response(RPCState rpc_state,
     rpc_state.metadata_sent = True
     rpc_state.status_sent = True
     await execute_batch(rpc_state, finish_ops, loop)
+    uninstall_context()
 
 
 async def _finish_handler_with_stream_responses(RPCState rpc_state,
