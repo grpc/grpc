@@ -1141,6 +1141,7 @@ src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc \
 src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h \
 src/core/ext/filters/client_channel/lb_policy/rls/rls.cc \
 src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc \
+src/core/ext/filters/client_channel/lb_policy/subchannel_list.h \
 src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.cc \
 src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.h \
 src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/weighted_round_robin.cc \
