@@ -59,7 +59,7 @@ class OverrideHostTest : public XdsEnd2endTest {
     std::string value;
     std::set<std::string> attributes;
 
-    std::pair<std::string, std::string> cookie_header() const {
+    std::pair<std::string, std::string> Header() const {
       return std::make_pair("cookie", absl::StrFormat("%s=%s", name, value));
     }
 
@@ -173,7 +173,7 @@ class OverrideHostTest : public XdsEnd2endTest {
                                         max_requests_per_backend, options);
     for (const auto& cookie : cookies) {
       if (cookie.name == cookie_name) {
-        return cookie.cookie_header();
+        return cookie.Header();
       }
     }
     return absl::nullopt;
@@ -548,8 +548,8 @@ TEST_P(OverrideHostTest, DifferentPerRoute) {
   CheckRpcSendOk(DEBUG_LOCATION, 6,
                  RpcOptions()
                      .set_metadata({
-                         echo_cookie.front().cookie_header(),
-                         echo2_cookie.front().cookie_header(),
+                         echo_cookie.front().Header(),
+                         echo2_cookie.front().Header(),
                      })
                      .set_rpc_method(METHOD_ECHO1));
   EXPECT_EQ(backends_[0]->backend_service()->request_count(), 3);
@@ -560,28 +560,28 @@ TEST_P(OverrideHostTest, DifferentPerRoute) {
   backends_[1]->backend_service()->ResetCounters();
   CheckRpcSendOk(DEBUG_LOCATION, 6,
                  RpcOptions()
-                     .set_metadata({echo_cookie.front().cookie_header()})
+                     .set_metadata({echo_cookie.front().Header()})
                      .set_rpc_method(METHOD_ECHO2));
   EXPECT_EQ(backends_[0]->backend_service()->request_count(), 3);
   EXPECT_EQ(backends_[1]->backend_service()->request_count(), 3);
   backends_[0]->backend_service()->ResetCounters();
   CheckRpcSendOk(DEBUG_LOCATION, 6,
                  RpcOptions()
-                     .set_metadata({echo2_cookie.front().cookie_header()})
+                     .set_metadata({echo2_cookie.front().Header()})
                      .set_rpc_method(METHOD_ECHO2));
   EXPECT_EQ(backends_[0]->backend_service()->request_count(), 6);
   // Echo honours the original cookie but not the override cookie
   backends_[0]->backend_service()->ResetCounters();
   CheckRpcSendOk(DEBUG_LOCATION, 6,
                  RpcOptions()
-                     .set_metadata({echo_cookie.front().cookie_header()})
+                     .set_metadata({echo_cookie.front().Header()})
                      .set_rpc_method(METHOD_ECHO));
   EXPECT_EQ(backends_[0]->backend_service()->request_count(), 6);
   backends_[0]->backend_service()->ResetCounters();
   backends_[1]->backend_service()->ResetCounters();
   CheckRpcSendOk(DEBUG_LOCATION, 6,
                  RpcOptions()
-                     .set_metadata({echo2_cookie.front().cookie_header()})
+                     .set_metadata({echo2_cookie.front().Header()})
                      .set_rpc_method(METHOD_ECHO));
   EXPECT_EQ(backends_[0]->backend_service()->request_count(), 3);
   EXPECT_EQ(backends_[1]->backend_service()->request_count(), 3);
