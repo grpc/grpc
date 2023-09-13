@@ -80,7 +80,7 @@ GRPCAPI int grpc_is_initialized(void);
 GRPCAPI void grpc_shutdown_blocking(void);
 
 /** Return a string representing the current version of grpc */
-GRPCAPI const char* grpc_version_string(void);
+GRPCAPI GRPC_DLL const char* grpc_version_string(void);
 
 /** Return a string specifying what the 'g' in gRPC stands for */
 GRPCAPI const char* grpc_g_stands_for(void);

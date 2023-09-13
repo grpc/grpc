@@ -51,10 +51,10 @@ void ChannelResetConnectionBackoff(Channel* channel);
 }  // namespace experimental
 
 /// Channels represent a connection to an endpoint. Created by \a CreateChannel.
-class Channel final : public grpc::ChannelInterface,
-                      public grpc::internal::CallHook,
-                      public std::enable_shared_from_this<Channel>,
-                      private grpc::internal::GrpcLibrary {
+class GRPCXX_DLL Channel final : public grpc::ChannelInterface,
+                                 public grpc::internal::CallHook,
+                                 public std::enable_shared_from_this<Channel>,
+                                 private grpc::internal::GrpcLibrary {
  public:
   ~Channel() override;
 

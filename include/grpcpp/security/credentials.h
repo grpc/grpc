@@ -69,7 +69,8 @@ std::shared_ptr<ChannelCredentials> XdsCredentials(
 class ChannelCredentials : private grpc::internal::GrpcLibrary {
  public:
  protected:
-  friend std::shared_ptr<ChannelCredentials> CompositeChannelCredentials(
+  friend GRPC_DLL std::shared_ptr<ChannelCredentials>
+  CompositeChannelCredentials(
       const std::shared_ptr<ChannelCredentials>& channel_creds,
       const std::shared_ptr<CallCredentials>& call_creds);
 
@@ -129,11 +130,12 @@ class CallCredentials : private grpc::internal::GrpcLibrary {
   }
 
  protected:
-  friend std::shared_ptr<ChannelCredentials> CompositeChannelCredentials(
+  friend GRPC_DLL std::shared_ptr<ChannelCredentials>
+  CompositeChannelCredentials(
       const std::shared_ptr<ChannelCredentials>& channel_creds,
       const std::shared_ptr<CallCredentials>& call_creds);
 
-  friend std::shared_ptr<CallCredentials> CompositeCallCredentials(
+  friend GRPC_DLL std::shared_ptr<CallCredentials> CompositeCallCredentials(
       const std::shared_ptr<CallCredentials>& creds1,
       const std::shared_ptr<CallCredentials>& creds2);
 
@@ -170,10 +172,10 @@ struct SslCredentialsOptions {
 /// Using these credentials to connect to any other service may result in this
 /// service being able to impersonate your client for requests to Google
 /// services.
-std::shared_ptr<ChannelCredentials> GoogleDefaultCredentials();
+GRPC_DLL std::shared_ptr<ChannelCredentials> GoogleDefaultCredentials();
 
 /// Builds SSL Credentials given SSL specific options
-std::shared_ptr<ChannelCredentials> SslCredentials(
+GRPC_DLL std::shared_ptr<ChannelCredentials> SslCredentials(
     const SslCredentialsOptions& options);
 
 /// Builds credentials for use when running in GCE
@@ -182,7 +184,7 @@ std::shared_ptr<ChannelCredentials> SslCredentials(
 /// Using these credentials to connect to any other service may result in this
 /// service being able to impersonate your client for requests to Google
 /// services.
-std::shared_ptr<CallCredentials> GoogleComputeEngineCredentials();
+GRPC_DLL std::shared_ptr<CallCredentials> GoogleComputeEngineCredentials();
 
 constexpr long kMaxAuthTokenLifetimeSecs = 3600;
 
@@ -191,7 +193,7 @@ constexpr long kMaxAuthTokenLifetimeSecs = 3600;
 /// token_lifetime_seconds is the lifetime in seconds of each Json Web Token
 /// (JWT) created with this credentials. It should not exceed
 /// \a kMaxAuthTokenLifetimeSecs or will be cropped to this value.
-std::shared_ptr<CallCredentials> ServiceAccountJWTAccessCredentials(
+GRPC_DLL std::shared_ptr<CallCredentials> ServiceAccountJWTAccessCredentials(
     const grpc::string& json_key,
     long token_lifetime_seconds = kMaxAuthTokenLifetimeSecs);
 
@@ -203,7 +205,7 @@ std::shared_ptr<CallCredentials> ServiceAccountJWTAccessCredentials(
 /// Using these credentials to connect to any other service may result in this
 /// service being able to impersonate your client for requests to Google
 /// services.
-std::shared_ptr<CallCredentials> GoogleRefreshTokenCredentials(
+GRPC_DLL std::shared_ptr<CallCredentials> GoogleRefreshTokenCredentials(
     const grpc::string& json_refresh_token);
 
 /// Builds access token credentials.
@@ -214,7 +216,7 @@ std::shared_ptr<CallCredentials> GoogleRefreshTokenCredentials(
 /// Using these credentials to connect to any other service may result in this
 /// service being able to impersonate your client for requests to Google
 /// services.
-std::shared_ptr<CallCredentials> AccessTokenCredentials(
+GRPC_DLL std::shared_ptr<CallCredentials> AccessTokenCredentials(
     const grpc::string& access_token);
 
 /// Builds IAM credentials.
@@ -223,23 +225,23 @@ std::shared_ptr<CallCredentials> AccessTokenCredentials(
 /// Using these credentials to connect to any other service may result in this
 /// service being able to impersonate your client for requests to Google
 /// services.
-std::shared_ptr<CallCredentials> GoogleIAMCredentials(
+GRPC_DLL std::shared_ptr<CallCredentials> GoogleIAMCredentials(
     const grpc::string& authorization_token,
     const grpc::string& authority_selector);
 
 /// Combines a channel credentials and a call credentials into a composite
 /// channel credentials.
-std::shared_ptr<ChannelCredentials> CompositeChannelCredentials(
+GRPC_DLL std::shared_ptr<ChannelCredentials> CompositeChannelCredentials(
     const std::shared_ptr<ChannelCredentials>& channel_creds,
     const std::shared_ptr<CallCredentials>& call_creds);
 
 /// Combines two call credentials objects into a composite call credentials.
-std::shared_ptr<CallCredentials> CompositeCallCredentials(
+GRPC_DLL std::shared_ptr<CallCredentials> CompositeCallCredentials(
     const std::shared_ptr<CallCredentials>& creds1,
     const std::shared_ptr<CallCredentials>& creds2);
 
 /// Credentials for an unencrypted, unauthenticated channel
-std::shared_ptr<ChannelCredentials> InsecureChannelCredentials();
+GRPC_DLL std::shared_ptr<ChannelCredentials> InsecureChannelCredentials();
 
 /// User defined metadata credentials.
 class MetadataCredentialsPlugin {
@@ -274,7 +276,7 @@ std::shared_ptr<CallCredentials> MetadataCredentialsFromPlugin(
 /// Builds External Account credentials.
 /// json_string is the JSON string containing the credentials options.
 /// scopes contains the scopes to be binded with the credentials.
-std::shared_ptr<CallCredentials> ExternalAccountCredentials(
+GRPC_DLL std::shared_ptr<CallCredentials> ExternalAccountCredentials(
     const grpc::string& json_string, const std::vector<grpc::string>& scopes);
 
 namespace experimental {
@@ -296,18 +298,19 @@ struct StsCredentialsOptions {
   grpc::string actor_token_type;            // Optional.
 };
 
-grpc::Status StsCredentialsOptionsFromJson(const std::string& json_string,
-                                           StsCredentialsOptions* options);
+GRPC_DLL grpc::Status StsCredentialsOptionsFromJson(
+    const std::string& json_string, StsCredentialsOptions* options);
 
 /// Creates STS credentials options from the $STS_CREDENTIALS environment
 /// variable. This environment variable points to the path of a JSON file
 /// comforming to the schema described above.
-grpc::Status StsCredentialsOptionsFromEnv(StsCredentialsOptions* options);
+GRPC_DLL grpc::Status StsCredentialsOptionsFromEnv(
+    StsCredentialsOptions* options);
 
-std::shared_ptr<CallCredentials> StsCredentials(
+GRPC_DLL std::shared_ptr<CallCredentials> StsCredentials(
     const StsCredentialsOptions& options);
 
-std::shared_ptr<CallCredentials> MetadataCredentialsFromPlugin(
+GRPC_DLL std::shared_ptr<CallCredentials> MetadataCredentialsFromPlugin(
     std::unique_ptr<MetadataCredentialsPlugin> plugin,
     grpc_security_level min_security_level);
 
@@ -320,15 +323,15 @@ struct AltsCredentialsOptions {
 };
 
 /// Builds ALTS Credentials given ALTS specific options
-std::shared_ptr<ChannelCredentials> AltsCredentials(
+GRPC_DLL std::shared_ptr<ChannelCredentials> AltsCredentials(
     const AltsCredentialsOptions& options);
 
 /// Builds Local Credentials.
-std::shared_ptr<ChannelCredentials> LocalCredentials(
+GRPC_DLL std::shared_ptr<ChannelCredentials> LocalCredentials(
     grpc_local_connect_type type);
 
 /// Builds TLS Credentials given TLS options.
-std::shared_ptr<ChannelCredentials> TlsCredentials(
+GRPC_DLL std::shared_ptr<ChannelCredentials> TlsCredentials(
     const TlsChannelCredentialsOptions& options);
 
 }  // namespace experimental

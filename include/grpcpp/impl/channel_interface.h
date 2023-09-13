@@ -68,7 +68,7 @@ class BlockingUnaryCallImpl;
 }  // namespace internal
 
 /// Codegen interface for \a grpc::Channel.
-class ChannelInterface {
+class GRPCXX_DLL ChannelInterface {
  public:
   virtual ~ChannelInterface() {}
   /// Get the current channel state. If the channel is in IDLE and

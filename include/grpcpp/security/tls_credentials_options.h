@@ -37,7 +37,7 @@ namespace experimental {
 // Base class of configurable options specified by users to configure their
 // certain security features supported in TLS. It is used for experimental
 // purposes for now and it is subject to change.
-class TlsCredentialsOptions {
+class GRPCXX_DLL TlsCredentialsOptions {
  public:
   // Constructor for base class TlsCredentialsOptions.
   //
@@ -142,7 +142,8 @@ class TlsCredentialsOptions {
 // in the system default locations, and assume client won't provide any
 // identity certificates(single side TLS).
 // It is used for experimental purposes for now and it is subject to change.
-class TlsChannelCredentialsOptions final : public TlsCredentialsOptions {
+class GRPCXX_DLL TlsChannelCredentialsOptions final
+    : public TlsCredentialsOptions {
  public:
   // Sets the decision of whether to do a crypto check on the server certs.
   // The default is true.
@@ -153,7 +154,8 @@ class TlsChannelCredentialsOptions final : public TlsCredentialsOptions {
 
 // Contains configurable options on the server side.
 // It is used for experimental purposes for now and it is subject to change.
-class TlsServerCredentialsOptions final : public TlsCredentialsOptions {
+class GRPCXX_DLL TlsServerCredentialsOptions final
+    : public TlsCredentialsOptions {
  public:
   // Server side is required to use a provider, because server always needs to
   // use identity certs.

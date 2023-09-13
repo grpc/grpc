@@ -190,7 +190,7 @@ class PropagationOptions {
 /// \warning ClientContext instances should \em not be reused across rpcs.
 /// \warning The ClientContext instance used for creating an rpc must remain
 ///          alive and valid for the lifetime of the rpc.
-class ClientContext {
+class GRPCXX_DLL ClientContext {
  public:
   ClientContext();
   ~ClientContext();

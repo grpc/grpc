@@ -35,7 +35,7 @@ extern "C" {
 typedef uintptr_t gpr_thd_id;
 
 /** Returns the identifier of the current thread. */
-GPRAPI gpr_thd_id gpr_thd_currentid(void);
+GPRAPI GPR_DLL gpr_thd_id gpr_thd_currentid(void);
 
 #ifdef __cplusplus
 }

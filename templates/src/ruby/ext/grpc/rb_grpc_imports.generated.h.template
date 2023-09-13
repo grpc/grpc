@@ -32,7 +32,7 @@
   %endfor
 
   %for api in c_apis:
-  typedef ${api.return_type}(*${api.name}_type)(${api.arguments});
+  typedef GRPC_DLL ${api.return_type}(*${api.name}_type)(${api.arguments});
   extern ${api.name}_type ${api.name}_import;
   #define ${api.name} ${api.name}_import
   %endfor

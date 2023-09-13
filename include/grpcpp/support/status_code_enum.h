@@ -23,7 +23,7 @@
 
 namespace grpc {
 
-enum StatusCode {
+enum GRPC_DLL StatusCode {
   /// Not an error; returned on success.
   OK = 0,
 

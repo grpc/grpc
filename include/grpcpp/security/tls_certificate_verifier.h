@@ -52,7 +52,7 @@ namespace experimental {
 // Contains the verification-related information associated with a connection
 // request. Users should not directly create or destroy this request object, but
 // shall interact with it through CertificateVerifier's Verify() and Cancel().
-class TlsCustomVerificationCheckRequest {
+class GRPCXX_DLL TlsCustomVerificationCheckRequest {
  public:
   explicit TlsCustomVerificationCheckRequest(
       grpc_tls_custom_verification_check_request* request);
@@ -87,7 +87,7 @@ class TlsCustomVerificationCheckRequest {
 // verifier implementations can compose their functionality with existing
 // implementations of this interface, such as HostnameVerifier, by delegating
 // to an instance of that class.
-class CertificateVerifier {
+class GRPCXX_DLL CertificateVerifier {
  public:
   explicit CertificateVerifier(grpc_tls_certificate_verifier* v);
 
@@ -139,7 +139,7 @@ class CertificateVerifier {
 // is possible to compose an existing ExternalCertificateVerifier or
 // CertificateVerifier, inside the Verify() and Cancel() function of the new
 // custom verifier.
-class ExternalCertificateVerifier {
+class GRPCXX_DLL ExternalCertificateVerifier {
  public:
   // A factory method for creating a |CertificateVerifier| from this class. All
   // the user-implemented verifiers should use this function to be converted to
@@ -224,7 +224,7 @@ class ExternalCertificateVerifier {
 // Note: using this solely without any other authentication mechanisms on the
 // peer identity will leave your applications to the MITM(Man-In-The-Middle)
 // attacks. Users should avoid doing so in production environments.
-class NoOpCertificateVerifier : public CertificateVerifier {
+class GRPCXX_DLL NoOpCertificateVerifier : public CertificateVerifier {
  public:
   NoOpCertificateVerifier();
 };
@@ -232,7 +232,7 @@ class NoOpCertificateVerifier : public CertificateVerifier {
 // A CertificateVerifier that will perform hostname verification, to see if the
 // target name set from the client side matches the identity information
 // specified on the server's certificate.
-class HostNameCertificateVerifier : public CertificateVerifier {
+class GRPCXX_DLL HostNameCertificateVerifier : public CertificateVerifier {
  public:
   HostNameCertificateVerifier();
 };

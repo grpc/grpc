@@ -100,7 +100,7 @@ class CallOpSet;
 /// src/core/lib/surface/completion_queue.h).
 /// See \ref doc/cpp/perf_notes.md for notes on best practices for high
 /// performance servers.
-class CompletionQueue : private grpc::internal::GrpcLibrary {
+class GRPCXX_DLL CompletionQueue : private grpc::internal::GrpcLibrary {
  public:
   /// Default constructor. Implicitly creates a \a grpc_completion_queue
   /// instance.

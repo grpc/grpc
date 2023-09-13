@@ -148,7 +148,7 @@ class ProtoBufferReader : public grpc::protobuf::io::ZeroCopyInputStream {
             *slice(), GRPC_SLICE_LENGTH(*slice()) - backup_count(),
             GRPC_SLICE_LENGTH(*slice()) - backup_count() + count)));
       }
-      int64_t take = std::min(backup_count(), static_cast<int64_t>(count));
+      int64_t take = (std::min)(backup_count(), static_cast<int64_t>(count));
       set_backup_count(backup_count() - take);
       count -= take;
       if (count == 0) {

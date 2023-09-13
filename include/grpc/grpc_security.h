@@ -49,38 +49,39 @@ typedef struct grpc_auth_property {
 } grpc_auth_property;
 
 /** Returns NULL when the iterator is at the end. */
-GRPCAPI const grpc_auth_property* grpc_auth_property_iterator_next(
+GRPCAPI GRPC_DLL const grpc_auth_property* grpc_auth_property_iterator_next(
     grpc_auth_property_iterator* it);
 
 /** Iterates over the auth context. */
-GRPCAPI grpc_auth_property_iterator
+GRPCAPI GRPC_DLL grpc_auth_property_iterator
 grpc_auth_context_property_iterator(const grpc_auth_context* ctx);
 
 /** Gets the peer identity. Returns an empty iterator (first _next will return
    NULL) if the peer is not authenticated. */
-GRPCAPI grpc_auth_property_iterator
+GRPCAPI GRPC_DLL grpc_auth_property_iterator
 grpc_auth_context_peer_identity(const grpc_auth_context* ctx);
 
 /** Finds a property in the context. May return an empty iterator (first _next
    will return NULL) if no property with this name was found in the context. */
-GRPCAPI grpc_auth_property_iterator grpc_auth_context_find_properties_by_name(
-    const grpc_auth_context* ctx, const char* name);
+GRPCAPI GRPC_DLL grpc_auth_property_iterator
+grpc_auth_context_find_properties_by_name(const grpc_auth_context* ctx,
+                                          const char* name);
 
 /** Gets the name of the property that indicates the peer identity. Will return
    NULL if the peer is not authenticated. */
-GRPCAPI const char* grpc_auth_context_peer_identity_property_name(
+GRPCAPI GRPC_DLL const char* grpc_auth_context_peer_identity_property_name(
     const grpc_auth_context* ctx);
 
 /** Returns 1 if the peer is authenticated, 0 otherwise. */
-GRPCAPI int grpc_auth_context_peer_is_authenticated(
+GRPCAPI GRPC_DLL int grpc_auth_context_peer_is_authenticated(
     const grpc_auth_context* ctx);
 
 /** Gets the auth context from the call. Caller needs to call
    grpc_auth_context_release on the returned context. */
-GRPCAPI grpc_auth_context* grpc_call_auth_context(grpc_call* call);
+GRPCAPI GRPC_DLL grpc_auth_context* grpc_call_auth_context(grpc_call* call);
 
 /** Releases the auth context returned from grpc_call_auth_context. */
-GRPCAPI void grpc_auth_context_release(grpc_auth_context* context);
+GRPCAPI GRPC_DLL void grpc_auth_context_release(grpc_auth_context* context);
 
 /** --
    The following auth context methods should only be called by a server metadata
@@ -88,18 +89,18 @@ GRPCAPI void grpc_auth_context_release(grpc_auth_context* context);
    -- */
 
 /** Add a property. */
-GRPCAPI void grpc_auth_context_add_property(grpc_auth_context* ctx,
-                                            const char* name, const char* value,
-                                            size_t value_length);
+GRPCAPI GRPC_DLL void grpc_auth_context_add_property(grpc_auth_context* ctx,
+                                                     const char* name,
+                                                     const char* value,
+                                                     size_t value_length);
 
 /** Add a C string property. */
-GRPCAPI void grpc_auth_context_add_cstring_property(grpc_auth_context* ctx,
-                                                    const char* name,
-                                                    const char* value);
+GRPCAPI GRPC_DLL void grpc_auth_context_add_cstring_property(
+    grpc_auth_context* ctx, const char* name, const char* value);
 
 /** Sets the property name. Returns 1 if successful or 0 in case of failure
    (which means that no property with this name exists). */
-GRPCAPI int grpc_auth_context_set_peer_identity_property_name(
+GRPCAPI GRPC_DLL int grpc_auth_context_set_peer_identity_property_name(
     grpc_auth_context* ctx, const char* name);
 
 /** --- SSL Session Cache. ---
@@ -111,14 +112,15 @@ typedef struct grpc_ssl_session_cache grpc_ssl_session_cache;
 
 /** Create LRU cache for client-side SSL sessions with the given capacity.
     If capacity is < 1, a default capacity is used instead. */
-GRPCAPI grpc_ssl_session_cache* grpc_ssl_session_cache_create_lru(
+GRPCAPI GRPC_DLL grpc_ssl_session_cache* grpc_ssl_session_cache_create_lru(
     size_t capacity);
 
 /** Destroy SSL session cache. */
-GRPCAPI void grpc_ssl_session_cache_destroy(grpc_ssl_session_cache* cache);
+GRPCAPI GRPC_DLL void grpc_ssl_session_cache_destroy(
+    grpc_ssl_session_cache* cache);
 
 /** Create a channel arg with the given cache object. */
-GRPCAPI grpc_arg
+GRPCAPI GRPC_DLL grpc_arg
 grpc_ssl_session_cache_create_channel_arg(grpc_ssl_session_cache* cache);
 
 /** --- grpc_call_credentials object.
@@ -131,7 +133,8 @@ typedef struct grpc_call_credentials grpc_call_credentials;
 
 /** Releases a call credentials object.
    The creator of the credentials object is responsible for its release. */
-GRPCAPI void grpc_call_credentials_release(grpc_call_credentials* creds);
+GRPCAPI GRPC_DLL void grpc_call_credentials_release(
+    grpc_call_credentials* creds);
 
 /** Creates default credentials to connect to a google gRPC service.
    WARNING: Do NOT use this credentials to connect to a non-google service as
@@ -151,8 +154,8 @@ GRPCAPI void grpc_call_credentials_release(grpc_call_credentials* creds);
    call credentials object based on the Application Default Credentials
    mechanism.
 */
-GRPCAPI grpc_channel_credentials* grpc_google_default_credentials_create(
-    grpc_call_credentials* call_credentials);
+GRPCAPI GRPC_DLL grpc_channel_credentials*
+grpc_google_default_credentials_create(grpc_call_credentials* call_credentials);
 
 /** Callback for getting the SSL roots override from the application.
    In case of success, *pem_roots_certs must be set to a NULL terminated string
@@ -168,7 +171,7 @@ typedef grpc_ssl_roots_override_result (*grpc_ssl_roots_override_callback)(
    before any ssl credentials are created to have the desired side effect.
    If GRPC_DEFAULT_SSL_ROOTS_FILE_PATH environment is set to a valid path, the
    callback will not be called. */
-GRPCAPI void grpc_set_ssl_roots_override_callback(
+GRPCAPI GRPC_DLL void grpc_set_ssl_roots_override_callback(
     grpc_ssl_roots_override_callback cb);
 
 /** Object that holds a private key / certificate chain pair in PEM format. */
@@ -254,7 +257,7 @@ typedef struct {
      case verification will retain default behavior. Any settings in
      verify_options are copied during this call, so the verify_options
      object can be released afterwards. */
-GRPCAPI grpc_channel_credentials* grpc_ssl_credentials_create(
+GRPCAPI GRPC_DLL grpc_channel_credentials* grpc_ssl_credentials_create(
     const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pair,
     const verify_peer_options* verify_options, void* reserved);
 
@@ -286,37 +289,38 @@ GRPCAPI grpc_channel_credentials* grpc_ssl_credentials_create(
      case verification will retain default behavior. Any settings in
      verify_options are copied during this call, so the verify_options
      object can be released afterwards. */
-GRPCAPI grpc_channel_credentials* grpc_ssl_credentials_create_ex(
+GRPCAPI GRPC_DLL grpc_channel_credentials* grpc_ssl_credentials_create_ex(
     const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pair,
     const grpc_ssl_verify_peer_options* verify_options, void* reserved);
 
 /** Creates a composite channel credentials object. The security level of
  * resulting connection is determined by channel_creds. */
-GRPCAPI grpc_channel_credentials* grpc_composite_channel_credentials_create(
+GRPCAPI GRPC_DLL grpc_channel_credentials*
+grpc_composite_channel_credentials_create(
     grpc_channel_credentials* channel_creds, grpc_call_credentials* call_creds,
     void* reserved);
 
 /** --- composite credentials. */
 
 /** Creates a composite call credentials object. */
-GRPCAPI grpc_call_credentials* grpc_composite_call_credentials_create(
+GRPCAPI GRPC_DLL grpc_call_credentials* grpc_composite_call_credentials_create(
     grpc_call_credentials* creds1, grpc_call_credentials* creds2,
     void* reserved);
 
 /** Creates a compute engine credentials object for connecting to Google.
    WARNING: Do NOT use this credentials to connect to a non-google service as
    this could result in an oauth2 token leak. */
-GRPCAPI grpc_call_credentials* grpc_google_compute_engine_credentials_create(
-    void* reserved);
+GRPCAPI GRPC_DLL grpc_call_credentials*
+grpc_google_compute_engine_credentials_create(void* reserved);
 
-GRPCAPI gpr_timespec grpc_max_auth_token_lifetime(void);
+GRPCAPI GRPC_DLL gpr_timespec grpc_max_auth_token_lifetime(void);
 
 /** Creates a JWT credentials object. May return NULL if the input is invalid.
    - json_key is the JSON key string containing the client's private key.
    - token_lifetime is the lifetime of each Json Web Token (JWT) created with
      this credentials.  It should not exceed grpc_max_auth_token_lifetime or
      will be cropped to this value.  */
-GRPCAPI grpc_call_credentials*
+GRPCAPI GRPC_DLL grpc_call_credentials*
 grpc_service_account_jwt_access_credentials_create(const char* json_key,
                                                    gpr_timespec token_lifetime,
                                                    void* reserved);
@@ -326,8 +330,9 @@ grpc_service_account_jwt_access_credentials_create(const char* json_key,
  - scopes_string contains the scopes to be binded with the credentials.
    This API is used for experimental purposes for now and may change in the
  future. */
-GRPCAPI grpc_call_credentials* grpc_external_account_credentials_create(
-    const char* json_string, const char* scopes_string);
+GRPCAPI GRPC_DLL grpc_call_credentials*
+grpc_external_account_credentials_create(const char* json_string,
+                                         const char* scopes_string);
 
 /** Creates an Oauth2 Refresh Token credentials object for connecting to Google.
    May return NULL if the input is invalid.
@@ -335,16 +340,17 @@ GRPCAPI grpc_call_credentials* grpc_external_account_credentials_create(
    this could result in an oauth2 token leak.
    - json_refresh_token is the JSON string containing the refresh token itself
      along with a client_id and client_secret. */
-GRPCAPI grpc_call_credentials* grpc_google_refresh_token_credentials_create(
-    const char* json_refresh_token, void* reserved);
+GRPCAPI GRPC_DLL grpc_call_credentials*
+grpc_google_refresh_token_credentials_create(const char* json_refresh_token,
+                                             void* reserved);
 
 /** Creates an Oauth2 Access Token credentials with an access token that was
    acquired by an out of band mechanism. */
-GRPCAPI grpc_call_credentials* grpc_access_token_credentials_create(
+GRPCAPI GRPC_DLL grpc_call_credentials* grpc_access_token_credentials_create(
     const char* access_token, void* reserved);
 
 /** Creates an IAM credentials object for connecting to Google. */
-GRPCAPI grpc_call_credentials* grpc_google_iam_credentials_create(
+GRPCAPI GRPC_DLL grpc_call_credentials* grpc_google_iam_credentials_create(
     const char* authorization_token, const char* authority_selector,
     void* reserved);
 
@@ -370,7 +376,7 @@ typedef struct {
    IETF draft https://tools.ietf.org/html/draft-ietf-oauth-token-exchange-16.
    This API is used for experimental purposes for now and may change in the
    future. */
-GRPCAPI grpc_call_credentials* grpc_sts_credentials_create(
+GRPCAPI GRPC_DLL grpc_call_credentials* grpc_sts_credentials_create(
     const grpc_sts_credentials_options* options, void* reserved);
 
 /** Callback function to be called by the metadata credentials plugin
@@ -407,11 +413,11 @@ typedef struct {
 } grpc_auth_metadata_context;
 
 /** Performs a deep copy from \a from to \a to. **/
-GRPCAPI void grpc_auth_metadata_context_copy(grpc_auth_metadata_context* from,
-                                             grpc_auth_metadata_context* to);
+GRPCAPI GRPC_DLL void grpc_auth_metadata_context_copy(
+    grpc_auth_metadata_context* from, grpc_auth_metadata_context* to);
 
 /** Releases internal resources held by \a context. **/
-GRPCAPI void grpc_auth_metadata_context_reset(
+GRPCAPI GRPC_DLL void grpc_auth_metadata_context_reset(
     grpc_auth_metadata_context* context);
 
 /** Maximum number of metadata entries returnable by a credentials plugin via
@@ -465,7 +471,8 @@ typedef struct {
 
 /** Creates a credentials object from a plugin with a specified minimum security
  * level. */
-GRPCAPI grpc_call_credentials* grpc_metadata_credentials_create_from_plugin(
+GRPCAPI GRPC_DLL grpc_call_credentials*
+grpc_metadata_credentials_create_from_plugin(
     grpc_metadata_credentials_plugin plugin,
     grpc_security_level min_security_level, void* reserved);
 
@@ -486,14 +493,14 @@ typedef struct grpc_ssl_server_certificate_config
      and cert_chain_files parameters. It must be at least 1.
    - It is the caller's responsibility to free this object via
      grpc_ssl_server_certificate_config_destroy(). */
-GRPCAPI grpc_ssl_server_certificate_config*
+GRPCAPI GRPC_DLL grpc_ssl_server_certificate_config*
 grpc_ssl_server_certificate_config_create(
     const char* pem_root_certs,
     const grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs,
     size_t num_key_cert_pairs);
 
 /** Destroys a grpc_ssl_server_certificate_config object. */
-GRPCAPI void grpc_ssl_server_certificate_config_destroy(
+GRPCAPI GRPC_DLL void grpc_ssl_server_certificate_config_destroy(
     grpc_ssl_server_certificate_config* config);
 
 /** Callback to retrieve updated SSL server certificates, private keys, and
@@ -518,7 +525,7 @@ typedef grpc_ssl_certificate_config_reload_status (
    - force_client_auth, if set to non-zero will force the client to authenticate
      with an SSL cert. Note that this option is ignored if pem_root_certs is
      NULL. */
-GRPCAPI grpc_server_credentials* grpc_ssl_server_credentials_create(
+GRPCAPI GRPC_DLL grpc_server_credentials* grpc_ssl_server_credentials_create(
     const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs,
     size_t num_key_cert_pairs, int force_client_auth, void* reserved);
 
@@ -526,7 +533,7 @@ GRPCAPI grpc_server_credentials* grpc_ssl_server_credentials_create(
    Same as grpc_ssl_server_credentials_create method except uses
    grpc_ssl_client_certificate_request_type enum to support more ways to
    authenticate client certificates.*/
-GRPCAPI grpc_server_credentials* grpc_ssl_server_credentials_create_ex(
+GRPCAPI GRPC_DLL grpc_server_credentials* grpc_ssl_server_credentials_create_ex(
     const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs,
     size_t num_key_cert_pairs,
     grpc_ssl_client_certificate_request_type client_certificate_request,
@@ -539,7 +546,7 @@ typedef struct grpc_ssl_server_credentials_options
    the certificates and keys of the SSL server will not change during the
    server's lifetime.
    - Takes ownership of the certificate_config parameter. */
-GRPCAPI grpc_ssl_server_credentials_options*
+GRPCAPI GRPC_DLL grpc_ssl_server_credentials_options*
 grpc_ssl_server_credentials_create_options_using_config(
     grpc_ssl_client_certificate_request_type client_certificate_request,
     grpc_ssl_server_certificate_config* certificate_config);
@@ -551,18 +558,18 @@ grpc_ssl_server_credentials_create_options_using_config(
    - user_data parameter, if not NULL, contains opaque data which will be passed
      to the fetcher (see definition of
      grpc_ssl_server_certificate_config_callback). */
-GRPCAPI grpc_ssl_server_credentials_options*
+GRPCAPI GRPC_DLL grpc_ssl_server_credentials_options*
 grpc_ssl_server_credentials_create_options_using_config_fetcher(
     grpc_ssl_client_certificate_request_type client_certificate_request,
     grpc_ssl_server_certificate_config_callback cb, void* user_data);
 
 /** Destroys a grpc_ssl_server_credentials_options object. */
-GRPCAPI void grpc_ssl_server_credentials_options_destroy(
+GRPCAPI GRPC_DLL void grpc_ssl_server_credentials_options_destroy(
     grpc_ssl_server_credentials_options* options);
 
 /** Creates an SSL server_credentials object using the provided options struct.
     - Takes ownership of the options parameter. */
-GRPCAPI grpc_server_credentials*
+GRPCAPI GRPC_DLL grpc_server_credentials*
 grpc_ssl_server_credentials_create_with_options(
     grpc_ssl_server_credentials_options* options);
 
@@ -570,8 +577,8 @@ grpc_ssl_server_credentials_create_with_options(
 
 /** Sets a credentials to a call. Can only be called on the client side before
    grpc_call_start_batch. */
-GRPCAPI grpc_call_error grpc_call_set_credentials(grpc_call* call,
-                                                  grpc_call_credentials* creds);
+GRPCAPI GRPC_DLL grpc_call_error
+grpc_call_set_credentials(grpc_call* call, grpc_call_credentials* creds);
 
 /** --- Auth Metadata Processing --- */
 
@@ -602,7 +609,7 @@ typedef struct {
   void* state;
 } grpc_auth_metadata_processor;
 
-GRPCAPI void grpc_server_credentials_set_auth_metadata_processor(
+GRPCAPI GRPC_DLL void grpc_server_credentials_set_auth_metadata_processor(
     grpc_server_credentials* creds, grpc_auth_metadata_processor processor);
 
 /** --- ALTS channel/server credentials --- **/
@@ -621,14 +628,14 @@ typedef struct grpc_alts_credentials_options grpc_alts_credentials_options;
  * This method creates a grpc ALTS credentials client options instance.
  * It is used for experimental purpose for now and subject to change.
  */
-GRPCAPI grpc_alts_credentials_options*
+GRPCAPI GRPC_DLL grpc_alts_credentials_options*
 grpc_alts_credentials_client_options_create(void);
 
 /**
  * This method creates a grpc ALTS credentials server options instance.
  * It is used for experimental purpose for now and subject to change.
  */
-GRPCAPI grpc_alts_credentials_options*
+GRPCAPI GRPC_DLL grpc_alts_credentials_options*
 grpc_alts_credentials_server_options_create(void);
 
 /**
@@ -639,7 +646,8 @@ grpc_alts_credentials_server_options_create(void);
  * - options: grpc ALTS credentials options instance.
  * - service_account: service account of target endpoint.
  */
-GRPCAPI void grpc_alts_credentials_client_options_add_target_service_account(
+GRPCAPI GRPC_DLL void
+grpc_alts_credentials_client_options_add_target_service_account(
     grpc_alts_credentials_options* options, const char* service_account);
 
 /**
@@ -650,7 +658,7 @@ GRPCAPI void grpc_alts_credentials_client_options_add_target_service_account(
  * - options: a grpc_alts_credentials_options instance that needs to be
  *   destroyed.
  */
-GRPCAPI void grpc_alts_credentials_options_destroy(
+GRPCAPI GRPC_DLL void grpc_alts_credentials_options_destroy(
     grpc_alts_credentials_options* options);
 
 /**
@@ -662,7 +670,7 @@ GRPCAPI void grpc_alts_credentials_options_destroy(
  *
  * It returns the created ALTS channel credential object.
  */
-GRPCAPI grpc_channel_credentials* grpc_alts_credentials_create(
+GRPCAPI GRPC_DLL grpc_channel_credentials* grpc_alts_credentials_create(
     const grpc_alts_credentials_options* options);
 
 /**
@@ -673,7 +681,7 @@ GRPCAPI grpc_channel_credentials* grpc_alts_credentials_create(
  *
  * It returns the created ALTS server credential object.
  */
-GRPCAPI grpc_server_credentials* grpc_alts_server_credentials_create(
+GRPCAPI GRPC_DLL grpc_server_credentials* grpc_alts_server_credentials_create(
     const grpc_alts_credentials_options* options);
 
 /** --- Local channel/server credentials --- **/
@@ -688,7 +696,7 @@ GRPCAPI grpc_server_credentials* grpc_alts_server_credentials_create(
  *
  * It returns the created local channel credential object.
  */
-GRPCAPI grpc_channel_credentials* grpc_local_credentials_create(
+GRPCAPI GRPC_DLL grpc_channel_credentials* grpc_local_credentials_create(
     grpc_local_connect_type type);
 
 /**
@@ -699,7 +707,7 @@ GRPCAPI grpc_channel_credentials* grpc_local_credentials_create(
  *
  * It returns the created local server credential object.
  */
-GRPCAPI grpc_server_credentials* grpc_local_server_credentials_create(
+GRPCAPI GRPC_DLL grpc_server_credentials* grpc_local_server_credentials_create(
     grpc_local_connect_type type);
 
 /** --- TLS channel/server credentials ---
@@ -735,7 +743,7 @@ typedef struct grpc_tls_identity_pairs grpc_tls_identity_pairs;
  * Creates a grpc_tls_identity_pairs that stores a list of identity credential
  * data, including identity private key and identity certificate chain.
  */
-GRPCAPI grpc_tls_identity_pairs* grpc_tls_identity_pairs_create();
+GRPCAPI GRPC_DLL grpc_tls_identity_pairs* grpc_tls_identity_pairs_create();
 
 /**
  * EXPERIMENTAL API - Subject to change
@@ -744,9 +752,9 @@ GRPCAPI grpc_tls_identity_pairs* grpc_tls_identity_pairs_create();
  * grpc_tls_identity_pairs. This function will make an internal copy of
  * |private_key| and |cert_chain|.
  */
-GRPCAPI void grpc_tls_identity_pairs_add_pair(grpc_tls_identity_pairs* pairs,
-                                              const char* private_key,
-                                              const char* cert_chain);
+GRPCAPI GRPC_DLL void grpc_tls_identity_pairs_add_pair(
+    grpc_tls_identity_pairs* pairs, const char* private_key,
+    const char* cert_chain);
 
 /**
  * EXPERIMENTAL API - Subject to change
@@ -756,7 +764,8 @@ GRPCAPI void grpc_tls_identity_pairs_add_pair(grpc_tls_identity_pairs* pairs,
  * doesn't need to be called. Otherwise the creator of the
  * grpc_tls_identity_pairs object is responsible for its destruction.
  */
-GRPCAPI void grpc_tls_identity_pairs_destroy(grpc_tls_identity_pairs* pairs);
+GRPCAPI GRPC_DLL void grpc_tls_identity_pairs_destroy(
+    grpc_tls_identity_pairs* pairs);
 
 /**
  * EXPERIMENTAL API - Subject to change
@@ -769,7 +778,7 @@ GRPCAPI void grpc_tls_identity_pairs_destroy(grpc_tls_identity_pairs* pairs);
  * This function will make a copy of |root_certificate|.
  * The ownership of |pem_key_cert_pairs| is transferred.
  */
-GRPCAPI grpc_tls_certificate_provider*
+GRPCAPI GRPC_DLL grpc_tls_certificate_provider*
 grpc_tls_certificate_provider_static_data_create(
     const char* root_certificate, grpc_tls_identity_pairs* pem_key_cert_pairs);
 
@@ -794,7 +803,7 @@ grpc_tls_certificate_provider_static_data_create(
  *   files for updates.
  * It does not take ownership of parameters.
  */
-GRPCAPI grpc_tls_certificate_provider*
+GRPCAPI GRPC_DLL grpc_tls_certificate_provider*
 grpc_tls_certificate_provider_file_watcher_create(
     const char* private_key_path, const char* identity_certificate_path,
     const char* root_cert_path, unsigned int refresh_interval_sec);
@@ -805,7 +814,7 @@ grpc_tls_certificate_provider_file_watcher_create(
  * Releases a grpc_tls_certificate_provider object. The creator of the
  * grpc_tls_certificate_provider object is responsible for its release.
  */
-GRPCAPI void grpc_tls_certificate_provider_release(
+GRPCAPI GRPC_DLL void grpc_tls_certificate_provider_release(
     grpc_tls_certificate_provider* provider);
 
 /**
@@ -813,7 +822,8 @@ GRPCAPI void grpc_tls_certificate_provider_release(
  *
  * Creates an grpc_tls_credentials_options.
  */
-GRPCAPI grpc_tls_credentials_options* grpc_tls_credentials_options_create(void);
+GRPCAPI GRPC_DLL grpc_tls_credentials_options*
+grpc_tls_credentials_options_create(void);
 
 /**
  * EXPERIMENTAL API - Subject to change
@@ -855,7 +865,7 @@ GRPCAPI void grpc_tls_credentials_options_destroy(
  * Sets the credential provider in the options.
  * The |options| will implicitly take a new ref to the |provider|.
  */
-GRPCAPI void grpc_tls_credentials_options_set_certificate_provider(
+GRPCAPI GRPC_DLL void grpc_tls_credentials_options_set_certificate_provider(
     grpc_tls_credentials_options* options,
     grpc_tls_certificate_provider* provider);
 
@@ -871,7 +881,7 @@ GRPCAPI void grpc_tls_credentials_options_set_certificate_provider(
  * updates, and assume no root certificates needed for the server(single-side
  * TLS). Default root certs on the server side is not supported.
  */
-GRPCAPI void grpc_tls_credentials_options_watch_root_certs(
+GRPCAPI GRPC_DLL void grpc_tls_credentials_options_watch_root_certs(
     grpc_tls_credentials_options* options);
 
 /**
@@ -880,7 +890,7 @@ GRPCAPI void grpc_tls_credentials_options_watch_root_certs(
  * Sets the name of the root certificates being watched.
  * If not set, We will use a default empty string as the root certificate name.
  */
-GRPCAPI void grpc_tls_credentials_options_set_root_cert_name(
+GRPCAPI GRPC_DLL void grpc_tls_credentials_options_set_root_cert_name(
     grpc_tls_credentials_options* options, const char* root_cert_name);
 
 /**
@@ -890,7 +900,8 @@ GRPCAPI void grpc_tls_credentials_options_set_root_cert_name(
  * with name |identity_cert_name|.
  * This is required on the server side, and optional on the client side.
  */
-GRPCAPI void grpc_tls_credentials_options_watch_identity_key_cert_pairs(
+GRPCAPI GRPC_DLL void
+grpc_tls_credentials_options_watch_identity_key_cert_pairs(
     grpc_tls_credentials_options* options);
 
 /**
@@ -900,7 +911,7 @@ GRPCAPI void grpc_tls_credentials_options_watch_identity_key_cert_pairs(
  * If not set, We will use a default empty string as the identity certificate
  * name.
  */
-GRPCAPI void grpc_tls_credentials_options_set_identity_cert_name(
+GRPCAPI GRPC_DLL void grpc_tls_credentials_options_set_identity_cert_name(
     grpc_tls_credentials_options* options, const char* identity_cert_name);
 
 /**
@@ -909,7 +920,7 @@ GRPCAPI void grpc_tls_credentials_options_set_identity_cert_name(
  * Sets the options of whether to request and/or verify client certs. This shall
  * only be called on the server side.
  */
-GRPCAPI void grpc_tls_credentials_options_set_cert_request_type(
+GRPCAPI GRPC_DLL void grpc_tls_credentials_options_set_cert_request_type(
     grpc_tls_credentials_options* options,
     grpc_ssl_client_certificate_request_type type);
 
@@ -923,7 +934,7 @@ GRPCAPI void grpc_tls_credentials_options_set_cert_request_type(
  * version > 1.1.
  * It is used for experimental purpose for now and subject to change.
  */
-GRPCAPI void grpc_tls_credentials_options_set_crl_directory(
+GRPCAPI GRPC_DLL void grpc_tls_credentials_options_set_crl_directory(
     grpc_tls_credentials_options* options, const char* crl_directory);
 
 /**
@@ -932,7 +943,7 @@ GRPCAPI void grpc_tls_credentials_options_set_crl_directory(
  * Sets the options of whether to verify server certs on the client side.
  * Passing in a non-zero value indicates verifying the certs.
  */
-GRPCAPI void grpc_tls_credentials_options_set_verify_server_cert(
+GRPCAPI GRPC_DLL void grpc_tls_credentials_options_set_verify_server_cert(
     grpc_tls_credentials_options* options, int verify_server_cert);
 
 /**
@@ -949,7 +960,7 @@ GRPCAPI void grpc_tls_credentials_options_set_verify_server_cert(
  * depends on the underlying SSL library being used and on the size of the CN
  * fields of the certificates in the trust bundle.
  */
-GRPCAPI void grpc_tls_credentials_options_set_send_client_ca_list(
+GRPCAPI GRPC_DLL void grpc_tls_credentials_options_set_send_client_ca_list(
     grpc_tls_credentials_options* options, bool send_client_ca_list);
 
 /**
@@ -1158,7 +1169,7 @@ void grpc_tls_credentials_options_set_certificate_verifier(
  * call is covered by the cert that the peer presented.
  * The default is a non-zero value, which indicates performing such checks.
  */
-GRPCAPI void grpc_tls_credentials_options_set_check_call_host(
+GRPCAPI GRPC_DLL void grpc_tls_credentials_options_set_check_call_host(
     grpc_tls_credentials_options* options, int check_call_host);
 
 /**
@@ -1214,14 +1225,15 @@ grpc_server_credentials* grpc_tls_server_credentials_create(
  *
  * This method creates an insecure channel credentials object.
  */
-GRPCAPI grpc_channel_credentials* grpc_insecure_credentials_create();
+GRPCAPI GRPC_DLL grpc_channel_credentials* grpc_insecure_credentials_create();
 
 /**
  * EXPERIMENTAL API - Subject to change
  *
  * This method creates an insecure server credentials object.
  */
-GRPCAPI grpc_server_credentials* grpc_insecure_server_credentials_create();
+GRPCAPI GRPC_DLL grpc_server_credentials*
+grpc_insecure_server_credentials_create();
 
 /**
  * EXPERIMENTAL API - Subject to change
@@ -1236,7 +1248,7 @@ GRPCAPI grpc_server_credentials* grpc_insecure_server_credentials_create();
  * how to fetch credentials dynamically. Does NOT take ownership of the \a
  * fallback_credentials. (Internally takes a ref to the object.)
  */
-GRPCAPI grpc_channel_credentials* grpc_xds_credentials_create(
+GRPCAPI GRPC_DLL grpc_channel_credentials* grpc_xds_credentials_create(
     grpc_channel_credentials* fallback_credentials);
 
 /**
@@ -1250,7 +1262,7 @@ GRPCAPI grpc_channel_credentials* grpc_xds_credentials_create(
  * Does NOT take ownership of the \a fallback_credentials. (Internally takes
  * a ref to the object.)
  */
-GRPCAPI grpc_server_credentials* grpc_xds_server_credentials_create(
+GRPCAPI GRPC_DLL grpc_server_credentials* grpc_xds_server_credentials_create(
     grpc_server_credentials* fallback_credentials);
 
 /**
@@ -1272,7 +1284,7 @@ typedef struct grpc_authorization_policy_provider
  *   initialization is successful, it will be null. Caller must use gpr_free to
  *   destroy this string.
  */
-GRPCAPI grpc_authorization_policy_provider*
+GRPCAPI GRPC_DLL grpc_authorization_policy_provider*
 grpc_authorization_policy_provider_static_data_create(
     const char* authz_policy, grpc_status_code* code,
     const char** error_details);
@@ -1290,7 +1302,7 @@ grpc_authorization_policy_provider_static_data_create(
  *   initialization is successful, it will be null. Caller must use gpr_free to
  *   destroy this string.
  */
-GRPCAPI grpc_authorization_policy_provider*
+GRPCAPI GRPC_DLL grpc_authorization_policy_provider*
 grpc_authorization_policy_provider_file_watcher_create(
     const char* authz_policy_path, unsigned int refresh_interval_sec,
     grpc_status_code* code, const char** error_details);
@@ -1300,7 +1312,7 @@ grpc_authorization_policy_provider_file_watcher_create(
  * Releases grpc_authorization_policy_provider object. The creator of
  * grpc_authorization_policy_provider is responsible for its release.
  */
-GRPCAPI void grpc_authorization_policy_provider_release(
+GRPCAPI GRPC_DLL void grpc_authorization_policy_provider_release(
     grpc_authorization_policy_provider* provider);
 
 /** --- TLS session key logging. ---
@@ -1320,7 +1332,8 @@ GRPCAPI void grpc_authorization_policy_provider_release(
  * - path is a string pointing to the location where TLS session keys would be
  *   stored.
  */
-GRPCAPI void grpc_tls_credentials_options_set_tls_session_key_log_file_path(
+GRPCAPI GRPC_DLL void
+grpc_tls_credentials_options_set_tls_session_key_log_file_path(
     grpc_tls_credentials_options* options, const char* path);
 
 #ifdef __cplusplus

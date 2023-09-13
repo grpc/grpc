@@ -110,7 +110,7 @@ class CallbackUnaryCallImpl {
 };
 
 // Base class for public API classes.
-class ClientReactor {
+class GRPCXX_DLL ClientReactor {
  public:
   virtual ~ClientReactor() = default;
 
