@@ -78,8 +78,7 @@ Channel::Channel(bool is_client, bool is_promising, std::string target,
                      ->memory_quota()
                      ->CreateMemoryOwner(target)),
       target_(std::move(target)),
-      channel_stack_(std::move(channel_stack)),
-      channel_args_(channel_args) {
+      channel_stack_(std::move(channel_stack)) {
   // We need to make sure that grpc_shutdown() does not shut things down
   // until after the channel is destroyed.  However, the channel may not
   // actually be destroyed by the time grpc_channel_destroy() returns,
