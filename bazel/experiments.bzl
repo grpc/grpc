@@ -60,6 +60,9 @@ EXPERIMENTS = {
             "cpp_end2end_test": [
                 "work_serializer_dispatch",
             ],
+            "cpp_lb_end2end_test": [
+                "round_robin_delegate_to_pick_first",
+            ],
             "flow_control_test": [
                 "lazier_stream_updates",
             ],
@@ -67,6 +70,7 @@ EXPERIMENTS = {
                 "work_serializer_dispatch",
             ],
             "xds_end2end_test": [
+                "round_robin_delegate_to_pick_first",
                 "work_serializer_dispatch",
             ],
         },
@@ -114,6 +118,9 @@ EXPERIMENTS = {
             "cpp_end2end_test": [
                 "work_serializer_dispatch",
             ],
+            "cpp_lb_end2end_test": [
+                "round_robin_delegate_to_pick_first",
+            ],
             "flow_control_test": [
                 "lazier_stream_updates",
             ],
@@ -121,6 +128,7 @@ EXPERIMENTS = {
                 "work_serializer_dispatch",
             ],
             "xds_end2end_test": [
+                "round_robin_delegate_to_pick_first",
                 "work_serializer_dispatch",
             ],
         },
@@ -178,6 +186,9 @@ EXPERIMENTS = {
             "cpp_end2end_test": [
                 "work_serializer_dispatch",
             ],
+            "cpp_lb_end2end_test": [
+                "round_robin_delegate_to_pick_first",
+            ],
             "flow_control_test": [
                 "lazier_stream_updates",
             ],
@@ -185,6 +196,7 @@ EXPERIMENTS = {
                 "work_serializer_dispatch",
             ],
             "xds_end2end_test": [
+                "round_robin_delegate_to_pick_first",
                 "work_serializer_dispatch",
             ],
         },

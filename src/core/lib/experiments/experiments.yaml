@@ -195,3 +195,10 @@
   expiry: 2024/02/10
   owner: ctiller@google.com
   test_tags: ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test", "lb_policy_test"]
+- name: round_robin_delegate_to_pick_first
+  description:
+    Change round_robin code to delegate to pick_first as per dualstack
+    backend design.
+  expiry: 2023/11/15
+  owner: roth@google.com
+  test_tags: ["cpp_lb_end2end_test", "xds_end2end_test"]
