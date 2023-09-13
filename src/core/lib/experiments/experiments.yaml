@@ -67,7 +67,7 @@
   test_tags: [resource_quota_test]
 - name: event_engine_client
   description: Use EventEngine clients instead of iomgr's grpc_tcp_client
-  expiry: 2023/10/01
+  expiry: 2024/01/21
   owner: hork@google.com
   test_tags: ["core_end2end_test", "event_engine_client_test"]
 - name: monitoring_experiment
@@ -119,7 +119,7 @@
 - name: work_stealing
   description:
     If set, use a work stealing thread pool implementation in EventEngine
-  expiry: 2023/10/01
+  expiry: 2023/11/01
   owner: hork@google.com
   test_tags: ["core_end2end_test"]
   allow_in_fuzzing_config: false
@@ -185,10 +185,3 @@
   owner: ctiller@google.com
   test_tags: []
   allow_in_fuzzing_config: true
-- name: round_robin_dualstack
-  description:
-    Change round_robin code to delegate to pick_first as per dualstack
-    backend design.
-  expiry: 2023/11/15
-  owner: roth@google.com
-  test_tags: []

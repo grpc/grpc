@@ -76,6 +76,10 @@ class CsmObservabilityBuilder {
   OpenTelemetryPluginBuilder builder_;
 };
 
+// EXPOSED FOR TESTING PURPOSES ONLY
+// Returns true if the channel is a CSM channel.
+bool CsmChannelTargetSelector(absl::string_view target);
+
 }  // namespace internal
 }  // namespace grpc
 
