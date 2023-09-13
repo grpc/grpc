@@ -51,7 +51,6 @@
 #include <grpc/support/port_platform.h>
 
 #include <stddef.h>
-
 #include "src/core/lib/experiments/config.h"
 
 namespace grpc_core {
@@ -65,13 +64,13 @@ inline bool IsTestExperiment2Enabled() { return true; }
 #ifndef NDEBUG
 #define GRPC_EXPERIMENT_IS_INCLUDED_TEST_EXPERIMENT_3
 #endif
-inline bool IsTestExperiment3Enabled() {
+inline bool IsTestExperiment3Enabled() { 
 #ifdef NDEBUG
-  return false;
+return false;
 #else
-  return true;
+return true;
 #endif
-}
+ }
 #define GRPC_EXPERIMENT_IS_INCLUDED_TEST_EXPERIMENT_4
 inline bool IsTestExperiment4Enabled() { return true; }
 
@@ -81,13 +80,13 @@ inline bool IsTestExperiment2Enabled() { return false; }
 #ifndef NDEBUG
 #define GRPC_EXPERIMENT_IS_INCLUDED_TEST_EXPERIMENT_3
 #endif
-inline bool IsTestExperiment3Enabled() {
+inline bool IsTestExperiment3Enabled() { 
 #ifdef NDEBUG
-  return false;
+return false;
 #else
-  return true;
+return true;
 #endif
-}
+ }
 #define GRPC_EXPERIMENT_IS_INCLUDED_TEST_EXPERIMENT_4
 inline bool IsTestExperiment4Enabled() { return true; }
 
@@ -95,33 +94,33 @@ inline bool IsTestExperiment4Enabled() { return true; }
 #ifndef NDEBUG
 #define GRPC_EXPERIMENT_IS_INCLUDED_TEST_EXPERIMENT_1
 #endif
-inline bool IsTestExperiment1Enabled() {
+inline bool IsTestExperiment1Enabled() { 
 #ifdef NDEBUG
-  return false;
+return false;
 #else
-  return true;
+return true;
 #endif
-}
+ }
 #ifndef NDEBUG
 #define GRPC_EXPERIMENT_IS_INCLUDED_TEST_EXPERIMENT_2
 #endif
-inline bool IsTestExperiment2Enabled() {
+inline bool IsTestExperiment2Enabled() { 
 #ifdef NDEBUG
-  return false;
+return false;
 #else
-  return true;
+return true;
 #endif
-}
+ }
 #ifndef NDEBUG
 #define GRPC_EXPERIMENT_IS_INCLUDED_TEST_EXPERIMENT_3
 #endif
-inline bool IsTestExperiment3Enabled() {
+inline bool IsTestExperiment3Enabled() { 
 #ifdef NDEBUG
-  return false;
+return false;
 #else
-  return true;
+return true;
 #endif
-}
+ }
 inline bool IsTestExperiment4Enabled() { return false; }
 #endif
 

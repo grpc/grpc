@@ -81,7 +81,9 @@
     (ie when all filters in a stack are promise based)
   expiry: 2023/11/01
   owner: ctiller@google.com
-  test_tags: ["core_end2end_test", "lame_client_test"]
+  # TODO(ctiller): re-enable once we've got some more CI bandwidth
+  # test_tags: ["core_end2end_test", "lame_client_test"]
+  test_tags: []
 - name: free_large_allocator
   description: If set, return all free bytes from a "big" allocator
   expiry: 2023/11/01
