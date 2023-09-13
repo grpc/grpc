@@ -21,6 +21,7 @@ import grpc
 import hellostreamingworld_pb2
 import hellostreamingworld_pb2_grpc
 
+
 def _wrap_handler(handler, behavior_wrapper):
     factory = grpc.unary_stream_rpc_method_handler
     behavior = handler.unary_stream
@@ -47,7 +48,6 @@ def _wrap_response_iterator(interceptor_id, response_iterator):
 
 
 class ServerInterceptor(grpc.ServerInterceptor):
-
     def __init__(self, interceptor_id: str):
         self._interceptor_id = interceptor_id
 
@@ -56,7 +56,9 @@ class ServerInterceptor(grpc.ServerInterceptor):
             def _unary_stream(request, context):
                 logging.info(f"{self._interceptor_id}: before RPC")
                 response_iterator = behavior(request, context)
-                new_response_iterator = _wrap_response_iterator(self._interceptor_id, response_iterator)
+                new_response_iterator = _wrap_response_iterator(
+                    self._interceptor_id, response_iterator
+                )
                 return new_response_iterator
 
             return _unary_stream
@@ -70,7 +72,9 @@ class MultiGreeter(hellostreamingworld_pb2_grpc.MultiGreeterServicer):
         num_greetings = int(request.num_greetings)
         for i in range(num_greetings):
             logging.info(f"SayHelloServerStreaming: received request {i}")
-            yield hellostreamingworld_pb2.HelloReply(message=f"Hello number {i}, {request.name}!")
+            yield hellostreamingworld_pb2.HelloReply(
+                message=f"Hello number {i}, {request.name}!"
+            )
 
 
 def serve():
@@ -82,7 +86,9 @@ def serve():
             ServerInterceptor("interceptor3"),
         ],
     )
-    hellostreamingworld_pb2_grpc.add_MultiGreeterServicer_to_server(MultiGreeter(), server)
+    hellostreamingworld_pb2_grpc.add_MultiGreeterServicer_to_server(
+        MultiGreeter(), server
+    )
     listen_addr = "[::]:50051"
     server.add_insecure_port(listen_addr)
     server.start()

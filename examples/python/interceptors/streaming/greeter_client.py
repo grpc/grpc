@@ -20,6 +20,7 @@ import grpc
 import hellostreamingworld_pb2
 import hellostreamingworld_pb2_grpc
 
+
 def _wrap_response_iterator(interceptor_id, response_iterator):
     for i, response in enumerate(response_iterator):
         logging.info(f"{interceptor_id}: before response {i} returned")
@@ -32,10 +33,14 @@ class UnaryStreamClientInterceptor(grpc.UnaryStreamClientInterceptor):
     def __init__(self, interceptor_id):
         self._interceptor_id = interceptor_id
 
-    def intercept_unary_stream(self, continuation, client_call_details, request):
+    def intercept_unary_stream(
+        self, continuation, client_call_details, request
+    ):
         logging.info(f"{self._interceptor_id}: before RPC")
         response_iterator = continuation(client_call_details, request)
-        new_response_iterator = _wrap_response_iterator(self._interceptor_id, response_iterator)
+        new_response_iterator = _wrap_response_iterator(
+            self._interceptor_id, response_iterator
+        )
         return new_response_iterator
 
 
@@ -49,7 +54,9 @@ def run() -> None:
         )
         stub = hellostreamingworld_pb2_grpc.MultiGreeterStub(intercept_channel)
 
-        request = hellostreamingworld_pb2.HelloRequest(name="Alice", num_greetings="2")
+        request = hellostreamingworld_pb2.HelloRequest(
+            name="Alice", num_greetings="2"
+        )
         for response in stub.sayHello(request):
             logging.info(response.message)
 
