@@ -89,6 +89,7 @@ DOCKERIMAGE_CURRENT_VERSIONS = {
     "tools/dockerfile/interoptest/grpc_interop_ruby.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/grpc_interop_ruby@sha256:7b044d6848f82234dba81b38d8eca220b608f830f93b42932df59ed6fe20b24d",
     "tools/dockerfile/interoptest/lb_interop_fake_servers.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/lb_interop_fake_servers@sha256:b89a51dd9147e1293f50ee64dd719fce5929ca7894d3770a3d80dbdecb99fd52",
     "tools/dockerfile/test/android_ndk.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/android_ndk@sha256:bd97f626950e06b0e9ccc790d970e4ce377b5bd408e6ff93045e5e3b061980c9",
+    "tools/dockerfile/test/android_ndk/.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/android_ndk@sha256:64ffc5d1e117172ca4dda89720087616830996181192de25fe10e03a88f0b3e5",
     "tools/dockerfile/test/bazel.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/bazel@sha256:d3291d3129469bd4bdd58b5dd81eb6c5668548a4d6e6c8e952fb372d1874b078",
     "tools/dockerfile/test/bazel_arm64.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/bazel_arm64@sha256:1b7200c85ba8bc10529e1867a27ee81ad303ec8c8efec8bbc5863b4ee8ac6d03",
     "tools/dockerfile/test/binder_transport_apk.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/binder_transport_apk@sha256:38c1da5544c717ef0e3d3492833b0fd1ce5c70fbe71eea8a9bfb0ab0b1217f1b",
