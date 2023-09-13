@@ -441,6 +441,10 @@ set(gRPC_UPB_GEN_DUPL_SRC
   src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
   src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
 )
+set(gRPC_ADDITIONAL_DLL_SRC
+  src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc
+  src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.cc
+)
 
 endif() # BUILD_SHARED_LIBS AND WIN32
 
@@ -2396,6 +2400,7 @@ add_library(grpc
   src/core/lib/security/credentials/plugin/plugin_credentials.cc
   src/core/lib/security/credentials/ssl/ssl_credentials.cc
   src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc
+  src/core/lib/security/credentials/tls/grpc_tls_certificate_match.cc
   src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.cc
   src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.cc
   src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc
@@ -3154,6 +3159,7 @@ add_library(grpc_unsecure
   third_party/upb/upb/mini_descriptor/decode.c
   third_party/upb/upb/mini_descriptor/internal/base92.c
   third_party/upb/upb/mini_descriptor/link.c
+  ${gRPC_ADDITIONAL_DLL_SRC}
 )
 
 target_compile_features(grpc_unsecure PUBLIC cxx_std_14)
@@ -4515,29 +4521,6 @@ target_link_libraries(grpc++_test_util
 endif()
 
 
-# for DLL build just compile a dummy grpc++_unsecure
-# This is a temporary situation until some code restructuring
-# obviates the need to exclude this library
-if(BUILD_SHARED_LIBS AND MSVC)
-add_library(grpc++_unsecure
-  src/cpp/common/version_cc.cc
-)
-target_include_directories(grpc++_unsecure
-  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-)
-
-foreach(_hdr
-  include/grpcpp/grpcpp.h
-)
-  string(REPLACE "include/" "" _path ${_hdr})
-  get_filename_component(_path ${_path} PATH)
-  install(FILES ${_hdr}
-    DESTINATION "${gRPC_INSTALL_INCLUDEDIR}/${_path}"
-  )
-endforeach()
-else()
 add_library(grpc++_unsecure
   src/cpp/client/channel_cc.cc
   src/cpp/client/client_callback.cc
@@ -4829,7 +4812,6 @@ foreach(_hdr
     DESTINATION "${gRPC_INSTALL_INCLUDEDIR}/${_path}"
   )
 endforeach()
-endif() # BUILD_SHARED_LIBS AND MSVC
 
 
 if(gRPC_INSTALL)

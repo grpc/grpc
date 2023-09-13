@@ -1672,6 +1672,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/credentials/ssl/ssl_credentials.h',
                       'src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc',
                       'src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h',
+                      'src/core/lib/security/credentials/tls/grpc_tls_certificate_match.cc',
                       'src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.cc',
                       'src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h',
                       'src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.cc',
