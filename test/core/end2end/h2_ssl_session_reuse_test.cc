@@ -19,7 +19,6 @@
 #include <string.h>
 
 #include <string>
-#include <thread>
 
 #include <gtest/gtest.h>
 
@@ -90,8 +89,25 @@ grpc_server* server_create(grpc_completion_queue* cq, const char* server_addr) {
 }
 
 grpc_channel* client_create(const char* server_addr,
-                            grpc_ssl_session_cache* cache,
-                            grpc_channel_credentials* client_creds) {
+                            grpc_ssl_session_cache* cache) {
+  grpc_slice ca_slice, cert_slice, key_slice;
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
+                               grpc_load_file(CA_CERT_PATH, 1, &ca_slice)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR(
+      "load_file", grpc_load_file(CLIENT_CERT_PATH, 1, &cert_slice)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
+                               grpc_load_file(CLIENT_KEY_PATH, 1, &key_slice)));
+  const char* ca_cert =
+      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(ca_slice);
+  const char* client_cert =
+      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(cert_slice);
+  const char* client_key =
+      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(key_slice);
+  grpc_ssl_pem_key_cert_pair signed_client_key_cert_pair = {client_key,
+                                                            client_cert};
+  grpc_channel_credentials* client_creds = grpc_ssl_credentials_create(
+      ca_cert, &signed_client_key_cert_pair, nullptr, nullptr);
+
   grpc_arg args[] = {
       grpc_channel_arg_string_create(
           const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG),
@@ -105,19 +121,23 @@ grpc_channel* client_create(const char* server_addr,
   grpc_channel* client =
       grpc_channel_create(server_addr, client_creds, client_args);
   GPR_ASSERT(client != nullptr);
+  grpc_channel_credentials_release(client_creds);
 
   {
     grpc_core::ExecCtx exec_ctx;
     grpc_channel_args_destroy(client_args);
   }
+
+  grpc_slice_unref(cert_slice);
+  grpc_slice_unref(key_slice);
+  grpc_slice_unref(ca_slice);
   return client;
 }
 
 void do_round_trip(grpc_completion_queue* cq, grpc_server* server,
                    const char* server_addr, grpc_ssl_session_cache* cache,
-                   grpc_channel_credentials* client_creds,
                    bool expect_session_reuse) {
-  grpc_channel* client = client_create(server_addr, cache, client_creds);
+  grpc_channel* client = client_create(server_addr, cache);
 
   grpc_core::CqVerifier cqv(cq);
   grpc_op ops[6];
@@ -173,11 +193,9 @@ void do_round_trip(grpc_completion_queue* cq, grpc_server* server,
   error = grpc_server_request_call(server, &s, &call_details,
                                    &request_metadata_recv, cq, cq,
                                    grpc_core::CqVerifier::tag(101));
-
   GPR_ASSERT(GRPC_CALL_OK == error);
-  // cqv.Expect(grpc_core::CqVerifier::tag(101), true);
-  // cqv.Verify();
-  sleep(1);
+  cqv.Expect(grpc_core::CqVerifier::tag(101), true);
+  cqv.Verify();
 
   grpc_auth_context* auth = grpc_call_auth_context(s);
   grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
@@ -213,10 +231,9 @@ void do_round_trip(grpc_completion_queue* cq, grpc_server* server,
                                 grpc_core::CqVerifier::tag(103), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  // cqv.Expect(grpc_core::CqVerifier::tag(103), true);
-  // cqv.Expect(grpc_core::CqVerifier::tag(1), true);
-  // cqv.Verify();
-  sleep(1);
+  cqv.Expect(grpc_core::CqVerifier::tag(103), true);
+  cqv.Expect(grpc_core::CqVerifier::tag(1), true);
+  cqv.Verify();
 
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
@@ -246,28 +263,9 @@ TEST(H2SessionReuseTest, SingleReuse) {
 
   grpc_server* server = server_create(cq, server_addr.c_str());
 
-  // create client creds
-  grpc_slice ca_slice, cert_slice, key_slice;
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                               grpc_load_file(CA_CERT_PATH, 1, &ca_slice)));
-  GPR_ASSERT(GRPC_LOG_IF_ERROR(
-      "load_file", grpc_load_file(CLIENT_CERT_PATH, 1, &cert_slice)));
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                               grpc_load_file(CLIENT_KEY_PATH, 1, &key_slice)));
-  const char* ca_cert =
-      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(ca_slice);
-  const char* client_cert =
-      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(cert_slice);
-  const char* client_key =
-      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(key_slice);
-  grpc_ssl_pem_key_cert_pair signed_client_key_cert_pair = {client_key,
-                                                            client_cert};
-  grpc_channel_credentials* client_creds = grpc_ssl_credentials_create(
-      ca_cert, &signed_client_key_cert_pair, nullptr, nullptr);
-
-  do_round_trip(cq, server, server_addr.c_str(), cache, client_creds, false);
-  do_round_trip(cq, server, server_addr.c_str(), cache, client_creds, true);
-  do_round_trip(cq, server, server_addr.c_str(), cache, client_creds, true);
+  do_round_trip(cq, server, server_addr.c_str(), cache, false);
+  do_round_trip(cq, server, server_addr.c_str(), cache, true);
+  do_round_trip(cq, server, server_addr.c_str(), cache, true);
 
   grpc_ssl_session_cache_destroy(cache);
 
@@ -283,18 +281,10 @@ TEST(H2SessionReuseTest, SingleReuse) {
   } while (ev.type != GRPC_OP_COMPLETE ||
            ev.tag != grpc_core::CqVerifier::tag(1000));
   grpc_server_destroy(server);
-  grpc_channel_credentials_release(client_creds);
-  grpc_slice_unref(cert_slice);
-  grpc_slice_unref(key_slice);
-  grpc_slice_unref(ca_slice);
 
   grpc_completion_queue_shutdown(cq);
   drain_cq(cq);
   grpc_completion_queue_destroy(cq);
-}
-
-TEST(H2SessionReuseTest, ConcurrentReuse) {
-  // Make server
 }
 
 }  // namespace

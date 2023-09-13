@@ -8,6 +8,8 @@
 #include <grpcpp/create_channel.h>
 // #include <grpcpp/security/audit_logging.h>
 // #include <grpcpp/security/authorization_policy_provider.h>
+#include "absl/synchronization/notification.h"
+
 #include <grpc/grpc_security.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
@@ -49,31 +51,25 @@ std::string ReadFile(const char* file_path) {
 
 class GrpcResumptionTest : public ::testing::Test {
  protected:
-  void RunServer() {
+  void RunServer(absl::Notification* notification) {
     std::string root_cert = ReadFile(kCaCertPath);
     grpc::SslServerCredentialsOptions::PemKeyCertPair key_cert_pair = {
         ReadFile(kServerKeyPath), ReadFile(kServerCertPath)};
-    grpc::SslServerCredentialsOptions sslOpts;
-    sslOpts.pem_key_cert_pairs.push_back(key_cert_pair);
-    sslOpts.pem_root_certs = root_cert;
-    sslOpts.force_client_auth = true;
+    grpc::SslServerCredentialsOptions ssl_options;
+    ssl_options.pem_key_cert_pairs.push_back(key_cert_pair);
+    ssl_options.pem_root_certs = root_cert;
+    ssl_options.force_client_auth = true;
 
     grpc::ServerBuilder builder;
     TestServiceImpl service_;
 
-    builder.AddListeningPort(server_addr_, grpc::SslServerCredentials(sslOpts));
+    builder.AddListeningPort(server_addr_,
+                             grpc::SslServerCredentials(ssl_options));
     builder.RegisterService("foo.test.google.fr", &service_);
     server_ = builder.BuildAndStart();
+    notification->Notify();
     server_->Wait();
   }
-
-  //   void TearDown() override {
-  //     if (server_ != nullptr) {
-  //       server_->Shutdown();
-  //       server_thread_->join();
-  //     }
-  //     server_thread_ = nullptr;
-  //   }
 
   TestServiceImpl service_;
   std::unique_ptr<Server> server_;
@@ -95,7 +91,7 @@ void DoRpc(std::string server_addr, const SslCredentialsOptions& ssl_options,
   grpc::testing::EchoResponse response;
   request.set_message(kMessage);
   ClientContext context;
-  context.set_deadline(grpc_timeout_milliseconds_to_deadline(100));
+  context.set_deadline(grpc_timeout_milliseconds_to_deadline(1000));
   grpc::Status result = stub->Echo(&context, request, &response);
   if (!result.ok()) {
     std::cout << result.error_message();
@@ -114,12 +110,11 @@ void DoRpc(std::string server_addr, const SslCredentialsOptions& ssl_options,
 }
 
 TEST_F(GrpcResumptionTest, ConcurrentResumption) {
-  int port = grpc_pick_unused_port_or_die();
-  std::ostringstream addr;
-  addr << "localhost:" << port;
-  server_addr_ = addr.str();
-  server_thread_ = new std::thread([&]() { RunServer(); });
-  sleep(1);
+  server_addr_ = absl::StrCat("localhost:",
+                              std::to_string(grpc_pick_unused_port_or_die()));
+  absl::Notification notification;
+  server_thread_ = new std::thread([&]() { RunServer(&notification); });
+  notification.WaitForNotification();
 
   std::string root_cert = ReadFile(kCaCertPath);
   std::string client_key = ReadFile(kClientKeyPath);
