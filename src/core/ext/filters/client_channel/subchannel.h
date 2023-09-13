@@ -29,6 +29,7 @@
 #include "absl/status/status.h"
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
 #include <grpc/impl/connectivity_state.h>
 
 #include "src/core/ext/filters/client_channel/client_channel_channelz.h"
@@ -301,6 +302,55 @@ class Subchannel : public DualRefCounted<Subchannel> {
     std::map<ConnectivityStateWatcherInterface*,
              RefCountedPtr<ConnectivityStateWatcherInterface>>
         watchers_;
+    class InProgressNotifications : public RefCounted<InProgressNotifications> {
+     public:
+      class Active : public RefCounted<Active> {
+       public:
+        Active(grpc_connectivity_state state,
+               RefCountedPtr<InProgressNotifications> parent)
+            : state_(state), parent_(std::move(parent)) {}
+        ~Active() override {
+          MutexLock lock(&parent_->mu_);
+          if (parent_->in_progress_.front() != state_) {
+            Crash(absl::StrCat("Finishing ", ConnectivityStateName(state_),
+                               " but in progress queue is ",
+                               parent_->InProgressString()));
+          }
+          parent_->in_progress_.pop_front();
+        }
+
+       private:
+        const grpc_connectivity_state state_;
+        const RefCountedPtr<InProgressNotifications> parent_;
+      };
+
+      RefCountedPtr<Active> Begin(grpc_connectivity_state state) {
+        MutexLock lock(&mu_);
+        for (auto s : in_progress_) {
+          if (s == state) {
+            Crash(absl::StrCat("Trying to publish a state change to ", state,
+                               " but in-progress queue already contains that: ",
+                               InProgressString()));
+          }
+        }
+        in_progress_.push_back(state);
+        return MakeRefCounted<Active>(state, Ref());
+      }
+
+     private:
+      std::string InProgressString() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+        std::vector<std::string> states;
+        states.reserve(in_progress_.size());
+        for (auto s : in_progress_) {
+          states.push_back(ConnectivityStateName(s));
+        }
+        return absl::StrJoin(states, ",");
+      }
+      Mutex mu_;
+      std::deque<grpc_connectivity_state> in_progress_ ABSL_GUARDED_BY(mu_);
+    };
+    RefCountedPtr<InProgressNotifications> in_progress_ =
+        MakeRefCounted<InProgressNotifications>();
   };
 
   class ConnectedSubchannelStateWatcher;

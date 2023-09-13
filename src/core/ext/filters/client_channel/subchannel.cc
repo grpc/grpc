@@ -397,9 +397,11 @@ void Subchannel::ConnectivityStateWatcherList::RemoveWatcherLocked(
 
 void Subchannel::ConnectivityStateWatcherList::NotifyLocked(
     grpc_connectivity_state state, const absl::Status& status) {
+  if (watchers_.empty()) return;
+  auto rollout = in_progress_->Begin(state);
   for (const auto& p : watchers_) {
     subchannel_->work_serializer_.Schedule(
-        [watcher = p.second->Ref(), state, status]() mutable {
+        [watcher = p.second->Ref(), state, status, rollout]() mutable {
           auto* watcher_ptr = watcher.get();
           watcher_ptr->OnConnectivityStateChange(std::move(watcher), state,
                                                  status);
@@ -655,6 +657,7 @@ void Subchannel::RemoveDataProducer(DataProducerInterface* data_producer) {
 // Note: Must be called with a state that is different from the current state.
 void Subchannel::SetConnectivityStateLocked(grpc_connectivity_state state,
                                             const absl::Status& status) {
+  GPR_ASSERT(state_ != state);
   state_ = state;
   if (status.ok()) {
     status_ = status;
