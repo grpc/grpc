@@ -28,21 +28,22 @@ constexpr char kClientCertPath[] = "src/core/tsi/test_creds/client.pem";
 constexpr char kClientKeyPath[] = "src/core/tsi/test_creds/client.key";
 constexpr char kMessage[] = "Hello";
 
-std::string ReadFile(const char* file_path) {
+std::string ReadFile(const std::string& file_path) {
   grpc_slice slice;
-  GPR_ASSERT(
-      GRPC_LOG_IF_ERROR("load_file", grpc_load_file(file_path, 0, &slice)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
+                               grpc_load_file(file_path.c_str(), 0, &slice)));
   std::string file_contents(grpc_core::StringViewFromSlice(slice));
   grpc_slice_unref(slice);
   return file_contents;
 }
 
-class GrpcResumptionTest : public ::testing::Test {
+class SslCredentialsTest : public ::testing::Test {
  protected:
   void RunServer(absl::Notification* notification) {
     std::string root_cert = ReadFile(kCaCertPath);
     grpc::SslServerCredentialsOptions::PemKeyCertPair key_cert_pair = {
         ReadFile(kServerKeyPath), ReadFile(kServerCertPath)};
+    // TODO(gtcooke94) Parametrize this test for TLS and mTLS as well
     grpc::SslServerCredentialsOptions ssl_options;
     ssl_options.pem_key_cert_pairs.push_back(key_cert_pair);
     ssl_options.pem_root_certs = root_cert;
@@ -57,6 +58,14 @@ class GrpcResumptionTest : public ::testing::Test {
     server_ = builder.BuildAndStart();
     notification->Notify();
     server_->Wait();
+  }
+
+  void TearDown() override {
+    if (server_ != nullptr) {
+      server_->Shutdown();
+      server_thread_->join();
+      delete server_thread_;
+    }
   }
 
   TestServiceImpl service_;
@@ -79,14 +88,14 @@ void DoRpc(std::string server_addr, const SslCredentialsOptions& ssl_options,
   grpc::testing::EchoResponse response;
   request.set_message(kMessage);
   ClientContext context;
-  context.set_deadline(grpc_timeout_milliseconds_to_deadline(1000));
+  context.set_deadline(grpc_timeout_milliseconds_to_deadline(/*time_ms=*/1000));
   grpc::Status result = stub->Echo(&context, request, &response);
   EXPECT_TRUE(result.ok());
   EXPECT_EQ(response.message(), kMessage);
   std::shared_ptr<const AuthContext> auth_context = context.auth_context();
   std::vector<grpc::string_ref> properties =
       auth_context->FindPropertyValues(GRPC_SSL_SESSION_REUSED_PROPERTY);
-  ASSERT_EQ(1u, properties.size());
+  ASSERT_EQ(properties.size(), 1u);
   if (expect_session_reuse) {
     EXPECT_EQ("true", ToString(properties[0]));
   } else {
@@ -94,7 +103,7 @@ void DoRpc(std::string server_addr, const SslCredentialsOptions& ssl_options,
   }
 }
 
-TEST_F(GrpcResumptionTest, ConcurrentResumption) {
+TEST_F(SslCredentialsTest, ConcurrentResumption) {
   server_addr_ = absl::StrCat("localhost:",
                               std::to_string(grpc_pick_unused_port_or_die()));
   absl::Notification notification;
@@ -111,11 +120,12 @@ TEST_F(GrpcResumptionTest, ConcurrentResumption) {
 
   grpc_ssl_session_cache* cache = grpc_ssl_session_cache_create_lru(16);
 
-  DoRpc(server_addr_, ssl_options, cache, false);
+  DoRpc(server_addr_, ssl_options, cache, /*expect_session_reuse=*/false);
   std::vector<std::thread*> threads;
   for (int i = 0; i < 10; i++) {
-    threads.push_back(new std::thread(
-        [&]() { DoRpc(server_addr_, ssl_options, cache, true); }));
+    threads.push_back(new std::thread([&]() {
+      DoRpc(server_addr_, ssl_options, cache, /*expect_session_reuse=*/true);
+    }));
   }
   for (int i = 0; i < 10; i++) {
     threads[i]->join();
@@ -124,13 +134,8 @@ TEST_F(GrpcResumptionTest, ConcurrentResumption) {
     delete threads[i];
   }
 
-  if (server_ != nullptr) {
-    server_->Shutdown();
-    server_thread_->join();
-    delete server_thread_;
-  }
   grpc_ssl_session_cache_destroy(cache);
-}  // namespace
+}
 
 }  // namespace
 }  // namespace testing
