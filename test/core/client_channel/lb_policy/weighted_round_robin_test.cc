@@ -65,7 +65,7 @@ BackendMetricData MakeBackendMetricData(double app_utilization, double qps,
   return b;
 }
 
-class WeightedRoundRobinTest : public TimeAwareLoadBalancingPolicyTest {
+class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
  protected:
   class ConfigBuilder {
    public:
@@ -111,7 +111,8 @@ class WeightedRoundRobinTest : public TimeAwareLoadBalancingPolicyTest {
     Json::Object json_;
   };
 
-  WeightedRoundRobinTest() {
+  void SetUp() override {
+    LoadBalancingPolicyTest::SetUp();
     lb_policy_ = MakeLbPolicy("weighted_round_robin");
     SetExpectedTimerDuration(std::chrono::seconds(1));
   }
@@ -853,8 +854,5 @@ TEST_F(WeightedRoundRobinTest, ZeroErrorUtilPenalty) {
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(&argc, argv);
-  grpc_init();
-  int ret = RUN_ALL_TESTS();
-  grpc_shutdown();
-  return ret;
+  return RUN_ALL_TESTS();
 }

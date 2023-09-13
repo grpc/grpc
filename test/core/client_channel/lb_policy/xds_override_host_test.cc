@@ -47,8 +47,10 @@ namespace testing {
 namespace {
 class XdsOverrideHostTest : public LoadBalancingPolicyTest {
  protected:
-  XdsOverrideHostTest()
-      : policy_(MakeLbPolicy("xds_override_host_experimental")) {}
+  void SetUp() override {
+    LoadBalancingPolicyTest::SetUp();
+    policy_ = MakeLbPolicy("xds_override_host_experimental");
+  }
 
   static RefCountedPtr<LoadBalancingPolicy::Config> MakeXdsOverrideHostConfig(
       absl::Span<const absl::string_view> override_host_status = {"UNKNOWN",
@@ -470,8 +472,5 @@ TEST_F(XdsOverrideHostTest, OverrideHostStatus) {
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(&argc, argv);
-  grpc_init();
-  int ret = RUN_ALL_TESTS();
-  grpc_shutdown();
-  return ret;
+  return RUN_ALL_TESTS();
 }
