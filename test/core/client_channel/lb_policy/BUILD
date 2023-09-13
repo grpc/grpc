@@ -43,6 +43,9 @@ grpc_cc_test(
     srcs = ["pick_first_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
+    tags = [
+        "lb_unit_test",
+    ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -59,6 +62,9 @@ grpc_cc_test(
     srcs = ["round_robin_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
+    tags = [
+        "lb_unit_test",
+    ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -92,6 +98,9 @@ grpc_cc_test(
     srcs = ["outlier_detection_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
+    tags = [
+        "lb_unit_test",
+    ],
     uses_polling = False,
     deps = [
         ":lb_policy_test_lib",
@@ -122,6 +131,9 @@ grpc_cc_test(
     srcs = ["xds_override_host_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
+    tags = [
+        "lb_unit_test",
+    ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -203,6 +215,9 @@ grpc_cc_test(
     srcs = ["weighted_round_robin_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
+    tags = [
+        "lb_unit_test",
+    ],
     uses_polling = False,
     deps = [
         ":lb_policy_test_lib",

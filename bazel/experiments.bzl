@@ -66,6 +66,9 @@ EXPERIMENTS = {
             "flow_control_test": [
                 "lazier_stream_updates",
             ],
+            "lb_unit_test": [
+                "round_robin_delegate_to_pick_first",
+            ],
             "xds_end2end_test": [
                 "round_robin_delegate_to_pick_first",
             ],
@@ -119,6 +122,9 @@ EXPERIMENTS = {
             ],
             "flow_control_test": [
                 "lazier_stream_updates",
+            ],
+            "lb_unit_test": [
+                "round_robin_delegate_to_pick_first",
             ],
             "xds_end2end_test": [
                 "round_robin_delegate_to_pick_first",
@@ -183,6 +189,9 @@ EXPERIMENTS = {
             ],
             "flow_control_test": [
                 "lazier_stream_updates",
+            ],
+            "lb_unit_test": [
+                "round_robin_delegate_to_pick_first",
             ],
             "xds_end2end_test": [
                 "round_robin_delegate_to_pick_first",
