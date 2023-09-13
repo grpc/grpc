@@ -60,14 +60,8 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "work_stealing",
             ],
-            "cpp_lb_end2end_test": [
-                "round_robin_delegate_to_pick_first",
-            ],
             "flow_control_test": [
                 "lazier_stream_updates",
-            ],
-            "xds_end2end_test": [
-                "round_robin_delegate_to_pick_first",
             ],
         },
     },
@@ -114,14 +108,8 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "work_stealing",
             ],
-            "cpp_lb_end2end_test": [
-                "round_robin_delegate_to_pick_first",
-            ],
             "flow_control_test": [
                 "lazier_stream_updates",
-            ],
-            "xds_end2end_test": [
-                "round_robin_delegate_to_pick_first",
             ],
         },
     },
@@ -178,14 +166,8 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "work_stealing",
             ],
-            "cpp_lb_end2end_test": [
-                "round_robin_delegate_to_pick_first",
-            ],
             "flow_control_test": [
                 "lazier_stream_updates",
-            ],
-            "xds_end2end_test": [
-                "round_robin_delegate_to_pick_first",
             ],
         },
     },

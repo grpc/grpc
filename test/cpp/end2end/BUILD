@@ -513,7 +513,6 @@ grpc_cc_test(
     flaky = True,  # TODO(b/151315347)
     tags = [
         "cpp_end2end_test",
-        "cpp_lb_end2end_test",
         "no_windows",
     ],  # TODO(jtattermusch): fix test on windows
     deps = [
@@ -598,7 +597,6 @@ grpc_cc_test(
     flaky = True,  # TODO(b/150567713)
     tags = [
         "cpp_end2end_test",
-        "cpp_lb_end2end_test",
         "no_windows",
     ],  # TODO(jtattermusch): fix test on windows
     deps = [
