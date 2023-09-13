@@ -27,6 +27,7 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/ext/xds/xds_enabled_server.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/uri/uri_parser.h"
 #include "src/cpp/ext/otel/otel_plugin.h"
@@ -78,9 +79,7 @@ CsmObservabilityBuilder& CsmObservabilityBuilder::SetTargetAttributeFilter(
 
 absl::StatusOr<CsmObservability> CsmObservabilityBuilder::BuildAndRegister() {
   builder_.SetServerSelector([](const grpc_core::ChannelArgs& args) {
-    // Directly using the channel arg string to avoid a dependency on xDS.
-    return args.GetBool("grpc.internal.xds_server_config_fetcher")
-        .value_or(false);
+    return args.GetBool(GRPC_ARG_XDS_ENABLED_SERVER).value_or(false);
   });
   builder_.BuildAndRegisterGlobal();
   builder_.SetTargetSelector(CsmChannelTargetSelector);

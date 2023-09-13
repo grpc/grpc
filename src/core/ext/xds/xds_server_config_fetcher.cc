@@ -1137,8 +1137,7 @@ absl::StatusOr<ChannelArgs> XdsServerConfigFetcher::ListenerWatcher::
                 filter_chain->http_connection_manager.http_filters);
       });
   args = args.SetObject(server_config_selector_provider)
-             .SetObject(channel_stack_modifier)
-             .Set("grpc.internal.xds_server_config_fetcher", 1);
+             .SetObject(channel_stack_modifier);
   // Add XdsCertificateProvider if credentials are xDS.
   auto* server_creds = args.GetObject<grpc_server_credentials>();
   if (server_creds != nullptr &&

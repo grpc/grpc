@@ -4179,6 +4179,15 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "xds_enabled_server",
+    hdrs = [
+        "ext/xds/xds_enabled_server.h",
+    ],
+    language = "c++",
+    deps = ["//:gpr_platform"],
+)
+
+grpc_cc_library(
     name = "grpc_xds_client",
     srcs = [
         "ext/xds/certificate_provider_store.cc",
