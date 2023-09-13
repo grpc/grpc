@@ -87,6 +87,10 @@ inline bool IsKeepaliveServerFixEnabled() { return false; }
 inline bool IsLazierStreamUpdatesEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_JITTER_MAX_IDLE
 inline bool IsJitterMaxIdleEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_CHANNEL_SUBCHANNEL_WRAPPER_WORK_SERIALIZER_ORPHAN
+inline bool IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled() {
+  return true;
+}
 
 #elif defined(GPR_WINDOWS)
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -117,6 +121,10 @@ inline bool IsKeepaliveServerFixEnabled() { return false; }
 inline bool IsLazierStreamUpdatesEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_JITTER_MAX_IDLE
 inline bool IsJitterMaxIdleEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_CHANNEL_SUBCHANNEL_WRAPPER_WORK_SERIALIZER_ORPHAN
+inline bool IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled() {
+  return true;
+}
 
 #else
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -147,6 +155,10 @@ inline bool IsKeepaliveServerFixEnabled() { return false; }
 inline bool IsLazierStreamUpdatesEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_JITTER_MAX_IDLE
 inline bool IsJitterMaxIdleEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_CHANNEL_SUBCHANNEL_WRAPPER_WORK_SERIALIZER_ORPHAN
+inline bool IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled() {
+  return true;
+}
 #endif
 
 #else
@@ -202,8 +214,12 @@ inline bool IsKeepaliveServerFixEnabled() { return IsExperimentEnabled(20); }
 inline bool IsLazierStreamUpdatesEnabled() { return IsExperimentEnabled(21); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_JITTER_MAX_IDLE
 inline bool IsJitterMaxIdleEnabled() { return IsExperimentEnabled(22); }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_CHANNEL_SUBCHANNEL_WRAPPER_WORK_SERIALIZER_ORPHAN
+inline bool IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled() {
+  return IsExperimentEnabled(23);
+}
 
-constexpr const size_t kNumExperiments = 23;
+constexpr const size_t kNumExperiments = 24;
 extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];
 
 #endif

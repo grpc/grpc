@@ -105,6 +105,13 @@ const char* const description_jitter_max_idle =
     "only on max connection age, but it seems like this could smooth out some "
     "herding problems.";
 const char* const additional_constraints_jitter_max_idle = "{}";
+const char* const
+    description_client_channel_subchannel_wrapper_work_serializer_orphan =
+        "Client channel subchannel wrapper hops into WorkSerializer at "
+        "Orphan() time, rather than requiring callers to do it.";
+const char* const
+    additional_constraints_client_channel_subchannel_wrapper_work_serializer_orphan =
+        "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -158,6 +165,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_lazier_stream_updates, true, true},
     {"jitter_max_idle", description_jitter_max_idle,
      additional_constraints_jitter_max_idle, true, true},
+    {"client_channel_subchannel_wrapper_work_serializer_orphan",
+     description_client_channel_subchannel_wrapper_work_serializer_orphan,
+     additional_constraints_client_channel_subchannel_wrapper_work_serializer_orphan,
+     true, true},
 };
 
 }  // namespace grpc_core
@@ -247,6 +258,13 @@ const char* const description_jitter_max_idle =
     "only on max connection age, but it seems like this could smooth out some "
     "herding problems.";
 const char* const additional_constraints_jitter_max_idle = "{}";
+const char* const
+    description_client_channel_subchannel_wrapper_work_serializer_orphan =
+        "Client channel subchannel wrapper hops into WorkSerializer at "
+        "Orphan() time, rather than requiring callers to do it.";
+const char* const
+    additional_constraints_client_channel_subchannel_wrapper_work_serializer_orphan =
+        "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -300,6 +318,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_lazier_stream_updates, true, true},
     {"jitter_max_idle", description_jitter_max_idle,
      additional_constraints_jitter_max_idle, true, true},
+    {"client_channel_subchannel_wrapper_work_serializer_orphan",
+     description_client_channel_subchannel_wrapper_work_serializer_orphan,
+     additional_constraints_client_channel_subchannel_wrapper_work_serializer_orphan,
+     true, true},
 };
 
 }  // namespace grpc_core
@@ -389,6 +411,13 @@ const char* const description_jitter_max_idle =
     "only on max connection age, but it seems like this could smooth out some "
     "herding problems.";
 const char* const additional_constraints_jitter_max_idle = "{}";
+const char* const
+    description_client_channel_subchannel_wrapper_work_serializer_orphan =
+        "Client channel subchannel wrapper hops into WorkSerializer at "
+        "Orphan() time, rather than requiring callers to do it.";
+const char* const
+    additional_constraints_client_channel_subchannel_wrapper_work_serializer_orphan =
+        "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -442,6 +471,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_lazier_stream_updates, true, true},
     {"jitter_max_idle", description_jitter_max_idle,
      additional_constraints_jitter_max_idle, true, true},
+    {"client_channel_subchannel_wrapper_work_serializer_orphan",
+     description_client_channel_subchannel_wrapper_work_serializer_orphan,
+     additional_constraints_client_channel_subchannel_wrapper_work_serializer_orphan,
+     true, true},
 };
 
 }  // namespace grpc_core

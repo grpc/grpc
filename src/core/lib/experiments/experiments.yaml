@@ -185,3 +185,10 @@
   owner: ctiller@google.com
   test_tags: []
   allow_in_fuzzing_config: true
+- name: client_channel_subchannel_wrapper_work_serializer_orphan
+  description:
+    Client channel subchannel wrapper hops into WorkSerializer at
+    Orphan() time, rather than requiring callers to do it.
+  expiry: 2023/11/15
+  owner: roth@google.com
+  test_tags: ["cpp_lb_end2end_test", "xds_end2end_test"]

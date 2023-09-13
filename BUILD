@@ -3005,6 +3005,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/cleanup",
         "absl/container:flat_hash_set",
         "absl/container:inlined_vector",
         "absl/functional:any_invocable",
@@ -3064,6 +3065,7 @@ grpc_cc_library(
         "//src/core:dual_ref_counted",
         "//src/core:env",
         "//src/core:error",
+        "//src/core:experiments",
         "//src/core:gpr_atm",
         "//src/core:grpc_backend_metric_data",
         "//src/core:grpc_deadline_filter",

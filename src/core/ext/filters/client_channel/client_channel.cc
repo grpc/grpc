@@ -29,6 +29,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/cleanup/cleanup.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/cord.h"
@@ -68,6 +69,7 @@
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/status_helper.h"
@@ -643,10 +645,30 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
               "chand=%p: destroying subchannel wrapper %p for subchannel %p",
               chand_, this, subchannel_.get());
     }
+    if (!IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled()) {
+      chand_->subchannel_wrappers_.erase(this);
+      if (chand_->channelz_node_ != nullptr) {
+        auto* subchannel_node = subchannel_->channelz_node();
+        if (subchannel_node != nullptr) {
+          auto it =
+              chand_->subchannel_refcount_map_.find(subchannel_.get());
+          GPR_ASSERT(it != chand_->subchannel_refcount_map_.end());
+          --it->second;
+          if (it->second == 0) {
+            chand_->channelz_node_->RemoveChildSubchannel(
+                subchannel_node->uuid());
+            chand_->subchannel_refcount_map_.erase(it);
+          }
+        }
+      }
+    }
     GRPC_CHANNEL_STACK_UNREF(chand_->owning_stack_, "SubchannelWrapper");
   }
 
   void Orphan() override {
+    if (!IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled()) {
+      return;
+    }
     // Make sure we clean up the channel's subchannel maps inside the
     // WorkSerializer.
     // Ref held by callback.
@@ -740,13 +762,17 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
         : watcher_(std::move(watcher)), parent_(std::move(parent)) {}
 
     ~WatcherWrapper() override {
-      auto* parent = parent_.release();  // ref owned by lambda
-      parent->chand_->work_serializer_->Run(
-          [parent]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
-              *parent_->chand_->work_serializer_) {
-            parent->Unref(DEBUG_LOCATION, "WatcherWrapper");
-          },
-          DEBUG_LOCATION);
+      if (!IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled()) {
+        auto* parent = parent_.release();  // ref owned by lambda
+        parent->chand_->work_serializer_->Run(
+            [parent]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
+                *parent_->chand_->work_serializer_) {
+              parent->Unref(DEBUG_LOCATION, "WatcherWrapper");
+            },
+            DEBUG_LOCATION);
+        return;
+      }
+      parent_.reset(DEBUG_LOCATION, "WatcherWrapper");
     }
 
     void OnConnectivityStateChange(
@@ -2781,6 +2807,38 @@ void ClientChannel::LoadBalancedCall::AddCallToLbQueuedCallsLocked() {
 
 absl::optional<absl::Status> ClientChannel::LoadBalancedCall::PickSubchannel(
     bool was_queued) {
+  // We may accumulate multiple pickers here, because if a picker says
+  // to queue the call, we check again to see if the picker has been
+  // updated before we queue it.
+  // We need to unref pickers in the WorkSerializer.
+  std::vector<RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>> pickers;
+  auto cleanup = absl::MakeCleanup([&]() {
+    if (IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled()) {
+      return;
+    }
+    chand_->work_serializer_->Run(
+        [pickers = std::move(pickers)]() mutable {
+          for (auto& picker : pickers) {
+            picker.reset(DEBUG_LOCATION, "PickSubchannel");
+          }
+        },
+        DEBUG_LOCATION);
+  });
+  absl::AnyInvocable<void(RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>)>
+      set_picker;
+  if (!IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled()) {
+    set_picker =
+        [&](RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker) {
+          pickers.emplace_back(std::move(picker));
+        };
+
+  } else {
+    pickers.emplace_back();
+    set_picker =
+        [&](RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker) {
+          pickers[0] = std::move(picker);
+        };
+  }
   // Grab mutex and take a ref to the picker.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
     gpr_log(GPR_INFO, "chand=%p lb_call=%p: grabbing LB mutex to get picker",
@@ -2789,26 +2847,26 @@ absl::optional<absl::Status> ClientChannel::LoadBalancedCall::PickSubchannel(
   RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker;
   {
     MutexLock lock(&chand_->lb_mu_);
-    picker = chand_->picker_;
+    set_picker(chand_->picker_);
   }
   while (true) {
     // Do pick.
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
       gpr_log(GPR_INFO, "chand=%p lb_call=%p: performing pick with picker=%p",
-              chand_, this, picker.get());
+              chand_, this, pickers.back().get());
     }
     grpc_error_handle error;
-    bool pick_complete = PickSubchannelImpl(picker.get(), &error);
+    bool pick_complete = PickSubchannelImpl(pickers.back().get(), &error);
     if (!pick_complete) {
       MutexLock lock(&chand_->lb_mu_);
       // If picker has been swapped out since we grabbed it, try again.
-      if (picker != chand_->picker_) {
+      if (pickers.back() != chand_->picker_) {
         if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
           gpr_log(GPR_INFO,
                   "chand=%p lb_call=%p: pick not complete, but picker changed",
                   chand_, this);
         }
-        picker = chand_->picker_;
+        set_picker(chand_->picker_);
         continue;
       }
       // Otherwise queue the pick to try again later when we get a new picker.
