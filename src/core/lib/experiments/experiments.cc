@@ -105,14 +105,15 @@ const char* const description_jitter_max_idle =
     "only on max connection age, but it seems like this could smooth out some "
     "herding problems.";
 const char* const additional_constraints_jitter_max_idle = "{}";
-const char* const description_round_robin_dualstack =
+const char* const description_round_robin_delegate_to_pick_first =
     "Change round_robin code to delegate to pick_first as per dualstack "
     "backend design.";
-const char* const additional_constraints_round_robin_dualstack = "{}";
-const char* const description_wrr_dualstack =
+const char* const additional_constraints_round_robin_delegate_to_pick_first =
+    "{}";
+const char* const description_wrr_delegate_to_pick_first =
     "Change WRR code to delegate to pick_first as per dualstack backend "
     "design.";
-const char* const additional_constraints_wrr_dualstack = "{}";
+const char* const additional_constraints_wrr_delegate_to_pick_first = "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -166,10 +167,11 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_lazier_stream_updates, true, true},
     {"jitter_max_idle", description_jitter_max_idle,
      additional_constraints_jitter_max_idle, true, true},
-    {"round_robin_dualstack", description_round_robin_dualstack,
-     additional_constraints_round_robin_dualstack, true, true},
-    {"wrr_dualstack", description_wrr_dualstack,
-     additional_constraints_wrr_dualstack, true, true},
+    {"round_robin_delegate_to_pick_first",
+     description_round_robin_delegate_to_pick_first,
+     additional_constraints_round_robin_delegate_to_pick_first, true, true},
+    {"wrr_delegate_to_pick_first", description_wrr_delegate_to_pick_first,
+     additional_constraints_wrr_delegate_to_pick_first, false, true},
 };
 
 }  // namespace grpc_core
@@ -259,14 +261,15 @@ const char* const description_jitter_max_idle =
     "only on max connection age, but it seems like this could smooth out some "
     "herding problems.";
 const char* const additional_constraints_jitter_max_idle = "{}";
-const char* const description_round_robin_dualstack =
+const char* const description_round_robin_delegate_to_pick_first =
     "Change round_robin code to delegate to pick_first as per dualstack "
     "backend design.";
-const char* const additional_constraints_round_robin_dualstack = "{}";
-const char* const description_wrr_dualstack =
+const char* const additional_constraints_round_robin_delegate_to_pick_first =
+    "{}";
+const char* const description_wrr_delegate_to_pick_first =
     "Change WRR code to delegate to pick_first as per dualstack backend "
     "design.";
-const char* const additional_constraints_wrr_dualstack = "{}";
+const char* const additional_constraints_wrr_delegate_to_pick_first = "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -320,10 +323,11 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_lazier_stream_updates, true, true},
     {"jitter_max_idle", description_jitter_max_idle,
      additional_constraints_jitter_max_idle, true, true},
-    {"round_robin_dualstack", description_round_robin_dualstack,
-     additional_constraints_round_robin_dualstack, true, true},
-    {"wrr_dualstack", description_wrr_dualstack,
-     additional_constraints_wrr_dualstack, true, true},
+    {"round_robin_delegate_to_pick_first",
+     description_round_robin_delegate_to_pick_first,
+     additional_constraints_round_robin_delegate_to_pick_first, true, true},
+    {"wrr_delegate_to_pick_first", description_wrr_delegate_to_pick_first,
+     additional_constraints_wrr_delegate_to_pick_first, false, true},
 };
 
 }  // namespace grpc_core
@@ -413,14 +417,15 @@ const char* const description_jitter_max_idle =
     "only on max connection age, but it seems like this could smooth out some "
     "herding problems.";
 const char* const additional_constraints_jitter_max_idle = "{}";
-const char* const description_round_robin_dualstack =
+const char* const description_round_robin_delegate_to_pick_first =
     "Change round_robin code to delegate to pick_first as per dualstack "
     "backend design.";
-const char* const additional_constraints_round_robin_dualstack = "{}";
-const char* const description_wrr_dualstack =
+const char* const additional_constraints_round_robin_delegate_to_pick_first =
+    "{}";
+const char* const description_wrr_delegate_to_pick_first =
     "Change WRR code to delegate to pick_first as per dualstack backend "
     "design.";
-const char* const additional_constraints_wrr_dualstack = "{}";
+const char* const additional_constraints_wrr_delegate_to_pick_first = "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -474,10 +479,11 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_lazier_stream_updates, true, true},
     {"jitter_max_idle", description_jitter_max_idle,
      additional_constraints_jitter_max_idle, true, true},
-    {"round_robin_dualstack", description_round_robin_dualstack,
-     additional_constraints_round_robin_dualstack, true, true},
-    {"wrr_dualstack", description_wrr_dualstack,
-     additional_constraints_wrr_dualstack, true, true},
+    {"round_robin_delegate_to_pick_first",
+     description_round_robin_delegate_to_pick_first,
+     additional_constraints_round_robin_delegate_to_pick_first, true, true},
+    {"wrr_delegate_to_pick_first", description_wrr_delegate_to_pick_first,
+     additional_constraints_wrr_delegate_to_pick_first, false, true},
 };
 
 }  // namespace grpc_core

@@ -94,7 +94,7 @@
   default: true
 - name: jitter_max_idle
   default: true
-- name: round_robin_dualstack
+- name: round_robin_delegate_to_pick_first
   default: true
 - name: wrr_dualstack
   default: true

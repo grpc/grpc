@@ -4914,10 +4914,13 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
+        "experiments",
+        "grpc_lb_subchannel_list",
         "json",
         "lb_endpoint_list",
         "lb_policy",
         "lb_policy_factory",
+        "subchannel_interface",
         "//:config",
         "//:debug_location",
         "//:gpr",

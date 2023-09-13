@@ -29,6 +29,9 @@ EXPERIMENTS = {
             "cpp_end2end_test": [
                 "promise_based_server_call",
             ],
+            "cpp_lb_end2end_test": [
+                "wrr_delegate_to_pick_first",
+            ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
@@ -54,14 +57,21 @@ EXPERIMENTS = {
             ],
             "xds_end2end_test": [
                 "promise_based_server_call",
+                "wrr_delegate_to_pick_first",
             ],
         },
         "on": {
             "core_end2end_test": [
                 "work_stealing",
             ],
+            "cpp_lb_end2end_test": [
+                "round_robin_delegate_to_pick_first",
+            ],
             "flow_control_test": [
                 "lazier_stream_updates",
+            ],
+            "xds_end2end_test": [
+                "round_robin_delegate_to_pick_first",
             ],
         },
     },
@@ -77,6 +87,9 @@ EXPERIMENTS = {
             "cpp_end2end_test": [
                 "promise_based_server_call",
             ],
+            "cpp_lb_end2end_test": [
+                "wrr_delegate_to_pick_first",
+            ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
@@ -102,14 +115,21 @@ EXPERIMENTS = {
             ],
             "xds_end2end_test": [
                 "promise_based_server_call",
+                "wrr_delegate_to_pick_first",
             ],
         },
         "on": {
             "core_end2end_test": [
                 "work_stealing",
             ],
+            "cpp_lb_end2end_test": [
+                "round_robin_delegate_to_pick_first",
+            ],
             "flow_control_test": [
                 "lazier_stream_updates",
+            ],
+            "xds_end2end_test": [
+                "round_robin_delegate_to_pick_first",
             ],
         },
     },
@@ -128,6 +148,9 @@ EXPERIMENTS = {
             ],
             "cpp_end2end_test": [
                 "promise_based_server_call",
+            ],
+            "cpp_lb_end2end_test": [
+                "wrr_delegate_to_pick_first",
             ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
@@ -160,14 +183,21 @@ EXPERIMENTS = {
             ],
             "xds_end2end_test": [
                 "promise_based_server_call",
+                "wrr_delegate_to_pick_first",
             ],
         },
         "on": {
             "core_end2end_test": [
                 "work_stealing",
             ],
+            "cpp_lb_end2end_test": [
+                "round_robin_delegate_to_pick_first",
+            ],
             "flow_control_test": [
                 "lazier_stream_updates",
+            ],
+            "xds_end2end_test": [
+                "round_robin_delegate_to_pick_first",
             ],
         },
     },
