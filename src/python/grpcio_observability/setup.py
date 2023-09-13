@@ -269,8 +269,8 @@ setuptools.setup(
     install_requires=[
         "grpcio>={version}".format(version=grpc_version.VERSION),
         "setuptools",
-        "opencensus",
-        "opencensus-ext-stackdriver",
+        "opencensus==0.11.2",
+        "opencensus-ext-stackdriver==0.8.0",
     ],
     cmdclass={
         "build_ext": BuildExt,
