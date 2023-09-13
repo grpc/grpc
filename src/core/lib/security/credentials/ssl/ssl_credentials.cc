@@ -192,7 +192,12 @@ grpc_security_status grpc_ssl_credentials::InitializeClientHandshakerFactory(
                            config->pem_key_cert_pair->private_key != nullptr &&
                            config->pem_key_cert_pair->cert_chain != nullptr;
   tsi_ssl_client_handshaker_options options;
-  GPR_DEBUG_ASSERT(pem_root_certs != nullptr);
+  if (pem_root_certs == nullptr) {
+    gpr_log(
+        GPR_ERROR,
+        "Handshaker factory creation failed. pem_root_certs cannot be nullptr");
+    return GRPC_SECURITY_ERROR;
+  }
   options.pem_root_certs = pem_root_certs;
   options.root_store = root_store;
   options.alpn_protocols =
