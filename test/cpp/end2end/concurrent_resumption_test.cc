@@ -8,6 +8,7 @@
 #include <grpcpp/create_channel.h>
 // #include <grpcpp/security/audit_logging.h>
 // #include <grpcpp/security/authorization_policy_provider.h>
+#include <grpc/grpc_security.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
@@ -63,7 +64,6 @@ class GrpcResumptionTest : public ::testing::Test {
     builder.AddListeningPort(server_addr_, grpc::SslServerCredentials(sslOpts));
     builder.RegisterService("foo.test.google.fr", &service_);
     server_ = builder.BuildAndStart();
-    std::cout << "GREG: server waiting on " << server_addr_ << "\n";
     server_->Wait();
   }
 
@@ -81,54 +81,75 @@ class GrpcResumptionTest : public ::testing::Test {
   std::string server_addr_;
 };
 
+void DoRpc(std::string server_addr, const SslCredentialsOptions& ssl_options,
+           grpc_ssl_session_cache* cache, bool expect_session_reuse) {
+  ChannelArguments channel_args;
+  channel_args.SetPointer(std::string(GRPC_SSL_SESSION_CACHE_ARG), cache);
+  channel_args.SetSslTargetNameOverride("foo.test.google.fr");
+
+  std::shared_ptr<Channel> channel = grpc::CreateCustomChannel(
+      server_addr, grpc::SslCredentials(ssl_options), channel_args);
+
+  auto stub = grpc::testing::EchoTestService::NewStub(channel);
+  grpc::testing::EchoRequest request;
+  grpc::testing::EchoResponse response;
+  request.set_message(kMessage);
+  ClientContext context;
+  context.set_deadline(grpc_timeout_milliseconds_to_deadline(100));
+  grpc::Status result = stub->Echo(&context, request, &response);
+  if (!result.ok()) {
+    std::cout << result.error_message();
+  }
+  EXPECT_TRUE(result.ok());
+  EXPECT_EQ(response.message(), kMessage);
+  std::shared_ptr<const AuthContext> auth_context = context.auth_context();
+  std::vector<grpc::string_ref> properties =
+      auth_context->FindPropertyValues(GRPC_SSL_SESSION_REUSED_PROPERTY);
+  ASSERT_EQ(1u, properties.size());
+  if (expect_session_reuse) {
+    EXPECT_EQ("true", ToString(properties[0]));
+  } else {
+    EXPECT_EQ("false", ToString(properties[0]));
+  }
+}
+
 TEST_F(GrpcResumptionTest, ConcurrentResumption) {
   int port = grpc_pick_unused_port_or_die();
   std::ostringstream addr;
   addr << "localhost:" << port;
   server_addr_ = addr.str();
-  std::cout << "GREG: Serving on " << server_addr_ << "\n";
   server_thread_ = new std::thread([&]() { RunServer(); });
   sleep(1);
 
   std::string root_cert = ReadFile(kCaCertPath);
   std::string client_key = ReadFile(kClientKeyPath);
   std::string client_cert = ReadFile(kClientCertPath);
-  grpc::SslCredentialsOptions sslOpts;
-  sslOpts.pem_root_certs = root_cert;
-  sslOpts.pem_private_key = client_key;
-  sslOpts.pem_cert_chain = client_cert;
+  grpc::SslCredentialsOptions ssl_options;
+  ssl_options.pem_root_certs = root_cert;
+  ssl_options.pem_private_key = client_key;
+  ssl_options.pem_cert_chain = client_cert;
 
   grpc_ssl_session_cache* cache = grpc_ssl_session_cache_create_lru(16);
-  ChannelArguments channel_args;
-  channel_args.SetPointer(std::string(GRPC_SSL_SESSION_CACHE_ARG), cache);
-  channel_args.SetSslTargetNameOverride("foo.test.google.fr");
 
-  std::shared_ptr<Channel> channel = grpc::CreateCustomChannel(
-      server_addr_, grpc::SslCredentials(sslOpts), channel_args);
-
-  auto stub = grpc::testing::EchoTestService::NewStub(channel);
-  grpc::testing::EchoRequest request;
-  grpc::testing::EchoResponse* response = nullptr;
-  request.set_message(kMessage);
-  ClientContext context;
-  context.set_deadline(grpc_timeout_milliseconds_to_deadline(100));
-  std::cout << "GREG: before stub echo\n";
-  grpc::Status result = stub->Echo(&context, request, response);
-  std::cout << "GREG: after stub echo\n";
-  if (!result.ok()) {
-    std::cout << result.error_message();
+  DoRpc(server_addr_, ssl_options, cache, false);
+  std::vector<std::thread*> threads;
+  for (int i = 0; i < 10; i++) {
+    threads.push_back(new std::thread(
+        [&]() { DoRpc(server_addr_, ssl_options, cache, true); }));
   }
-  EXPECT_TRUE(result.ok());
-  EXPECT_EQ(response->message(), kMessage);
+  for (int i = 0; i < 10; i++) {
+    threads[i]->join();
+  }
+  for (int i = 0; i < 10; i++) {
+    delete threads[i];
+  }
 
   if (server_ != nullptr) {
     server_->Shutdown();
     server_thread_->join();
     delete server_thread_;
   }
-
-  //   grpc_channel_args_destroy(client_args);
-  //   grpc_ssl_session_cache_destroy(cache);
+  grpc_ssl_session_cache_destroy(cache);
 }  // namespace
 
 }  // namespace
