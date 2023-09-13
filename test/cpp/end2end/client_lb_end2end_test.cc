@@ -1304,6 +1304,7 @@ TEST_F(PickFirstTest, FailsEmptyResolverUpdate) {
   grpc_core::Resolver::Result result;
   result.addresses.emplace();
   result.result_health_callback = [&](absl::Status status) {
+    gpr_log(GPR_INFO, "****** RESULT HEALTH CALLBACK *******");
     EXPECT_EQ(absl::StatusCode::kUnavailable, status.code());
     EXPECT_EQ("address list must not be empty", status.message()) << status;
     notification.Notify();
@@ -1316,8 +1317,8 @@ TEST_F(PickFirstTest, FailsEmptyResolverUpdate) {
   };
   EXPECT_TRUE(
       WaitForChannelState(channel.get(), predicate, /*try_to_connect=*/true));
-  // Callback should have been run.
-  ASSERT_TRUE(notification.HasBeenNotified());
+  // Callback should run.
+  notification.WaitForNotification();
   // Return a valid address.
   gpr_log(GPR_INFO, "****** SENDING NEXT RESOLVER RESULT *******");
   StartServers(1);
@@ -1612,7 +1613,13 @@ TEST_F(RoundRobinTest, Updates) {
   ports.clear();
   ports.emplace_back(servers_[1]->port_);
   response_generator.SetNextResolution(ports);
-  WaitForServer(DEBUG_LOCATION, stub, 1);
+  WaitForServer(DEBUG_LOCATION, stub, 1, [](const Status& status) {
+    // Might get an empty address list from the previous test round if things
+    // take some time to async update.
+    EXPECT_EQ(status.error_code(), StatusCode::UNAVAILABLE);
+    EXPECT_EQ(status.error_message(),
+              "empty address list: fake resolver empty address list");
+  });
   EXPECT_EQ(GRPC_CHANNEL_READY, channel->GetState(/*try_to_connect=*/false));
   // Check LB policy name for the channel.
   EXPECT_EQ("round_robin", channel->GetLoadBalancingPolicyName());
