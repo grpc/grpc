@@ -1028,8 +1028,8 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "concurrent_resumption_test",
-    srcs = ["concurrent_resumption_test.cc"],
+    name = "ssl_credentials_test",
+    srcs = ["ssl_credentials_test.cc"],
     data = [
         "//src/core/tsi/test_creds:ca.pem",
         "//src/core/tsi/test_creds:client.key",
@@ -1040,7 +1040,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    tags = ["concurrent_resumption_test"],
+    tags = ["ssl_credentials_test"],
     deps = [
         ":test_service_impl",
         "//:gpr",
