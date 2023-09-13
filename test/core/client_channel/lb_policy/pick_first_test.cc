@@ -49,7 +49,10 @@ namespace {
 
 class PickFirstTest : public LoadBalancingPolicyTest {
  protected:
-  PickFirstTest() : lb_policy_(MakeLbPolicy("pick_first")) {}
+  void SetUp() override {
+    LoadBalancingPolicyTest::SetUp();
+    lb_policy_ = MakeLbPolicy("pick_first");
+  }
 
   static RefCountedPtr<LoadBalancingPolicy::Config> MakePickFirstConfig(
       absl::optional<bool> shuffle_address_list = absl::nullopt) {
@@ -528,8 +531,5 @@ TEST_F(PickFirstTest, ShufflingDisabled) {
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(&argc, argv);
-  grpc_init();
-  int ret = RUN_ALL_TESTS();
-  grpc_shutdown();
-  return ret;
+  return RUN_ALL_TESTS();
 }

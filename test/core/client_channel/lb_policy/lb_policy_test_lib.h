@@ -698,10 +698,25 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     const absl::optional<BackendMetricData> backend_metric_data_;
   };
 
+  void SetUp() override {
+    // Order is important here: Fuzzing EE needs to be created before
+    // grpc_init(), and the POSIX EE (which is used by the WorkSerializer)
+    // needs to be created after grpc_init().
+    fuzzing_ee_ =
+        std::make_shared<grpc_event_engine::experimental::FuzzingEventEngine>(
+            grpc_event_engine::experimental::FuzzingEventEngine::Options(),
+            fuzzing_event_engine::Actions());
+    grpc_init();
+    event_engine_ = grpc_event_engine::experimental::GetDefaultEventEngine();
+    work_serializer_ = std::make_shared<WorkSerializer>(event_engine_);
+  }
+
   void TearDown() override {
+    fuzzing_ee_->FuzzingDone();
     // Make sure pickers (and transitively, subchannels) are unreffed before
     // destroying the fixture.
     WaitForWorkSerializerToFlush();
+    work_serializer_.reset();
     // Note: Can't safely trigger this from inside the FakeHelper dtor,
     // because if there is a picker in the queue that is holding a ref
     // to the LB policy, that will prevent the LB policy from being
@@ -709,6 +724,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     // (This will cause an ASAN failure, but it will not display the
     // queued events, so the failure will be harder to diagnose.)
     helper_->ExpectQueueEmpty();
+    grpc_shutdown_blocking();
   }
 
   // Creates an LB policy of the specified name.
@@ -716,7 +732,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   // point to the FakeHelper.
   OrphanablePtr<LoadBalancingPolicy> MakeLbPolicy(absl::string_view name) {
     auto helper =
-        std::make_unique<FakeHelper>(this, work_serializer_, event_engine_);
+        std::make_unique<FakeHelper>(this, work_serializer_, fuzzing_ee_);
     helper_ = helper.get();
     LoadBalancingPolicy::Args args = {work_serializer_, std::move(helper),
                                       ChannelArgs()};
@@ -1209,32 +1225,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     gpr_log(GPR_INFO, "WorkSerializer flush complete");
   }
 
-  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_ =
-      grpc_event_engine::experimental::GetDefaultEventEngine();
-  std::shared_ptr<WorkSerializer> work_serializer_ =
-      std::make_shared<WorkSerializer>(event_engine_);
-  FakeHelper* helper_ = nullptr;
-  std::map<SubchannelKey, SubchannelState> subchannel_pool_;
-};
-
-// A subclass to be used for LB policies that start timers.
-// Injects a mock EventEngine and provides the necessary framework for
-// incrementing time and handling timer callbacks.
-class TimeAwareLoadBalancingPolicyTest : public LoadBalancingPolicyTest {
- protected:
-  TimeAwareLoadBalancingPolicyTest() {
-    event_engine_ =
-        std::make_shared<grpc_event_engine::experimental::FuzzingEventEngine>(
-            grpc_event_engine::experimental::FuzzingEventEngine::Options(),
-            fuzzing_event_engine::Actions());
-  }
-
-  ~TimeAwareLoadBalancingPolicyTest() override {
-    fuzzing_event_engine()->FuzzingDone();
-  }
-
   void IncrementTimeBy(Duration duration) {
-    fuzzing_event_engine()->TickForDuration(duration);
+    fuzzing_ee_->TickForDuration(duration);
     // Flush WorkSerializer, in case the timer callback enqueued anything.
     WaitForWorkSerializerToFlush();
   }
@@ -1243,7 +1235,7 @@ class TimeAwareLoadBalancingPolicyTest : public LoadBalancingPolicyTest {
       absl::optional<grpc_event_engine::experimental::EventEngine::Duration>
           duration) {
     if (duration.has_value()) {
-      fuzzing_event_engine()->SetRunAfterDurationCallback(
+      fuzzing_ee_->SetRunAfterDurationCallback(
           [expected = *duration](
               grpc_event_engine::experimental::EventEngine::Duration duration) {
             EXPECT_EQ(duration, expected)
@@ -1251,15 +1243,16 @@ class TimeAwareLoadBalancingPolicyTest : public LoadBalancingPolicyTest {
                 << "ns\nActual: " << duration.count() << "ns";
           });
     } else {
-      fuzzing_event_engine()->SetRunAfterDurationCallback(nullptr);
+      fuzzing_ee_->SetRunAfterDurationCallback(nullptr);
     }
   }
 
-  grpc_event_engine::experimental::FuzzingEventEngine* fuzzing_event_engine()
-      const {
-    return static_cast<grpc_event_engine::experimental::FuzzingEventEngine*>(
-        event_engine_.get());
-  }
+  std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
+      fuzzing_ee_;
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
+  std::shared_ptr<WorkSerializer> work_serializer_;
+  FakeHelper* helper_ = nullptr;
+  std::map<SubchannelKey, SubchannelState> subchannel_pool_;
 };
 
 }  // namespace testing

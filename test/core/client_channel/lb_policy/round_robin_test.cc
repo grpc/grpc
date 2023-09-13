@@ -37,7 +37,10 @@ namespace {
 
 class RoundRobinTest : public LoadBalancingPolicyTest {
  protected:
-  RoundRobinTest() : lb_policy_(MakeLbPolicy("round_robin")) {}
+  void SetUp() override {
+    LoadBalancingPolicyTest::SetUp();
+    lb_policy_ = MakeLbPolicy("round_robin");
+  }
 
   void ExpectStartup(absl::Span<const absl::string_view> addresses) {
     EXPECT_EQ(ApplyUpdate(BuildUpdate(addresses, nullptr), lb_policy_.get()),
@@ -119,8 +122,5 @@ TEST_F(RoundRobinTest, AddressUpdates) {
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(&argc, argv);
-  grpc_init();
-  int ret = RUN_ALL_TESTS();
-  grpc_shutdown();
-  return ret;
+  return RUN_ALL_TESTS();
 }

@@ -47,7 +47,7 @@ namespace grpc_core {
 namespace testing {
 namespace {
 
-class OutlierDetectionTest : public TimeAwareLoadBalancingPolicyTest {
+class OutlierDetectionTest : public LoadBalancingPolicyTest {
  protected:
   class ConfigBuilder {
    public:
@@ -142,8 +142,9 @@ class OutlierDetectionTest : public TimeAwareLoadBalancingPolicyTest {
     absl::optional<Json::Object> failure_percentage_;
   };
 
-  OutlierDetectionTest()
-      : lb_policy_(MakeLbPolicy("outlier_detection_experimental")) {
+  void SetUp() override {
+    LoadBalancingPolicyTest::SetUp();
+    lb_policy_ = MakeLbPolicy("outlier_detection_experimental");
     SetExpectedTimerDuration(std::chrono::seconds(10));
   }
 
@@ -281,8 +282,5 @@ TEST_F(OutlierDetectionTest, DoesNotWorkWithPickFirst) {
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(&argc, argv);
-  grpc_init();
-  int ret = RUN_ALL_TESTS();
-  grpc_shutdown();
-  return ret;
+  return RUN_ALL_TESTS();
 }
