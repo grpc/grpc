@@ -87,6 +87,8 @@ inline bool IsKeepaliveServerFixEnabled() { return false; }
 inline bool IsLazierStreamUpdatesEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_JITTER_MAX_IDLE
 inline bool IsJitterMaxIdleEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_ROUND_ROBIN_DELEGATE_TO_PICK_FIRST
+inline bool IsRoundRobinDelegateToPickFirstEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_CHANNEL_SUBCHANNEL_WRAPPER_WORK_SERIALIZER_ORPHAN
 inline bool IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled() {
   return true;
@@ -121,6 +123,8 @@ inline bool IsKeepaliveServerFixEnabled() { return false; }
 inline bool IsLazierStreamUpdatesEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_JITTER_MAX_IDLE
 inline bool IsJitterMaxIdleEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_ROUND_ROBIN_DELEGATE_TO_PICK_FIRST
+inline bool IsRoundRobinDelegateToPickFirstEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_CHANNEL_SUBCHANNEL_WRAPPER_WORK_SERIALIZER_ORPHAN
 inline bool IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled() {
   return true;
@@ -155,6 +159,8 @@ inline bool IsKeepaliveServerFixEnabled() { return false; }
 inline bool IsLazierStreamUpdatesEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_JITTER_MAX_IDLE
 inline bool IsJitterMaxIdleEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_ROUND_ROBIN_DELEGATE_TO_PICK_FIRST
+inline bool IsRoundRobinDelegateToPickFirstEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_CHANNEL_SUBCHANNEL_WRAPPER_WORK_SERIALIZER_ORPHAN
 inline bool IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled() {
   return true;
@@ -214,12 +220,16 @@ inline bool IsKeepaliveServerFixEnabled() { return IsExperimentEnabled(20); }
 inline bool IsLazierStreamUpdatesEnabled() { return IsExperimentEnabled(21); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_JITTER_MAX_IDLE
 inline bool IsJitterMaxIdleEnabled() { return IsExperimentEnabled(22); }
-#define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_CHANNEL_SUBCHANNEL_WRAPPER_WORK_SERIALIZER_ORPHAN
-inline bool IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled() {
+#define GRPC_EXPERIMENT_IS_INCLUDED_ROUND_ROBIN_DELEGATE_TO_PICK_FIRST
+inline bool IsRoundRobinDelegateToPickFirstEnabled() {
   return IsExperimentEnabled(23);
 }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_CHANNEL_SUBCHANNEL_WRAPPER_WORK_SERIALIZER_ORPHAN
+inline bool IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled() {
+  return IsExperimentEnabled(24);
+}
 
-constexpr const size_t kNumExperiments = 24;
+constexpr const size_t kNumExperiments = 25;
 extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];
 
 #endif

@@ -62,12 +62,14 @@ EXPERIMENTS = {
             ],
             "cpp_lb_end2end_test": [
                 "client_channel_subchannel_wrapper_work_serializer_orphan",
+                "round_robin_delegate_to_pick_first",
             ],
             "flow_control_test": [
                 "lazier_stream_updates",
             ],
             "xds_end2end_test": [
                 "client_channel_subchannel_wrapper_work_serializer_orphan",
+                "round_robin_delegate_to_pick_first",
             ],
         },
     },
@@ -116,12 +118,14 @@ EXPERIMENTS = {
             ],
             "cpp_lb_end2end_test": [
                 "client_channel_subchannel_wrapper_work_serializer_orphan",
+                "round_robin_delegate_to_pick_first",
             ],
             "flow_control_test": [
                 "lazier_stream_updates",
             ],
             "xds_end2end_test": [
                 "client_channel_subchannel_wrapper_work_serializer_orphan",
+                "round_robin_delegate_to_pick_first",
             ],
         },
     },
@@ -180,12 +184,14 @@ EXPERIMENTS = {
             ],
             "cpp_lb_end2end_test": [
                 "client_channel_subchannel_wrapper_work_serializer_orphan",
+                "round_robin_delegate_to_pick_first",
             ],
             "flow_control_test": [
                 "lazier_stream_updates",
             ],
             "xds_end2end_test": [
                 "client_channel_subchannel_wrapper_work_serializer_orphan",
+                "round_robin_delegate_to_pick_first",
             ],
         },
     },

@@ -31,7 +31,7 @@
 
 namespace grpc_core {
 
-class ConfigVars {
+class GPR_DLL ConfigVars {
  public:
   struct Overrides {
     absl::optional<int32_t> client_channel_backup_poll_interval_ms;

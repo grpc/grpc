@@ -650,8 +650,7 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
       if (chand_->channelz_node_ != nullptr) {
         auto* subchannel_node = subchannel_->channelz_node();
         if (subchannel_node != nullptr) {
-          auto it =
-              chand_->subchannel_refcount_map_.find(subchannel_.get());
+          auto it = chand_->subchannel_refcount_map_.find(subchannel_.get());
           GPR_ASSERT(it != chand_->subchannel_refcount_map_.end());
           --it->second;
           if (it->second == 0) {
