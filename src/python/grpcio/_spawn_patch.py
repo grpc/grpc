@@ -17,6 +17,8 @@ Windows has an 8191 character command line limit, but some compilers
 support an @command_file directive where command_file is a file
 containing the full command line.
 """
+# patch distutils
+import setuptools  # isort:skip
 
 from distutils import ccompiler
 import os
