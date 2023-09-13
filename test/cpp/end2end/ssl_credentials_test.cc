@@ -3,30 +3,18 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include <grpcpp/channel.h>
-#include <grpcpp/client_context.h>
-#include <grpcpp/create_channel.h>
-// #include <grpcpp/security/audit_logging.h>
-// #include <grpcpp/security/authorization_policy_provider.h>
 #include "absl/synchronization/notification.h"
 
 #include <grpc/grpc_security.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/client_context.h>
+#include <grpcpp/create_channel.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
 #include "src/core/lib/iomgr/load_file.h"
-// #include "src/core/lib/security/authorization/audit_logging.h"
-// #include
-// "src/core/lib/security/authorization/grpc_authorization_policy_provider.h"
-// #include "src/core/lib/security/credentials/fake/fake_credentials.h"
-// #include "src/cpp/client/secure_credentials.h"
-// #include "src/cpp/server/secure_server_credentials.h"
-// #include "src/proto/grpc/testing/echo.grpc.pb.h"
-// #include "test/core/util/audit_logging_utils.h"
-#include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
-#include "test/core/util/tls_utils.h"
 #include "test/cpp/end2end/test_service_impl.h"
 
 namespace grpc {
@@ -93,9 +81,6 @@ void DoRpc(std::string server_addr, const SslCredentialsOptions& ssl_options,
   ClientContext context;
   context.set_deadline(grpc_timeout_milliseconds_to_deadline(1000));
   grpc::Status result = stub->Echo(&context, request, &response);
-  if (!result.ok()) {
-    std::cout << result.error_message();
-  }
   EXPECT_TRUE(result.ok());
   EXPECT_EQ(response.message(), kMessage);
   std::shared_ptr<const AuthContext> auth_context = context.auth_context();
