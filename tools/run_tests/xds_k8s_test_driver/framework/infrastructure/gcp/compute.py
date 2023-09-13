@@ -593,13 +593,12 @@ class ComputeV1(
             def _log_debug_header(resp, contents):
                 if DEBUG_HEADER_IN_RESPONSE in resp:
                     logger.info(
-                        f"Received debug headers: {resp[DEBUG_HEADER_IN_RESPONSE]}"
+                        "Received debug headers: %s",
+                        resp[DEBUG_HEADER_IN_RESPONSE],
                     )
                 return old_postproc(resp, contents)
 
-            logger.info(
-                f"Adding debug headers for method: {request.methodId}"
-            )
+            logger.info("Adding debug headers for method: %s", request.methodId)
             request.headers[DEBUG_HEADER_KEY] = DEBUG_HEADER_VALUE
             request.postproc = _log_debug_header
         operation = request.execute(num_retries=self._GCP_API_RETRIES)
