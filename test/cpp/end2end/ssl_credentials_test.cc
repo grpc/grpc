@@ -86,12 +86,13 @@ class SslCredentialsTest : public ::testing::Test {
   }
 
   TestServiceImpl service_;
-  std::unique_ptr<Server> server_;
-  std::thread* server_thread_;
-  std::string server_addr_;
+  std::unique_ptr<Server> server_ = nullptr;
+  std::thread* server_thread_ = nullptr;
+  std::string server_addr_ = "";
 };
 
-void DoRpc(std::string server_addr, const SslCredentialsOptions& ssl_options,
+void DoRpc(const std::string& server_addr,
+           const SslCredentialsOptions& ssl_options,
            grpc_ssl_session_cache* cache, bool expect_session_reuse) {
   ChannelArguments channel_args;
   channel_args.SetPointer(std::string(GRPC_SSL_SESSION_CACHE_ARG), cache);
@@ -108,6 +109,10 @@ void DoRpc(std::string server_addr, const SslCredentialsOptions& ssl_options,
   context.set_deadline(grpc_timeout_milliseconds_to_deadline(/*time_ms=*/1000));
   grpc::Status result = stub->Echo(&context, request, &response);
   EXPECT_TRUE(result.ok());
+  if (!result.ok()) {
+    gpr_log(GPR_ERROR, "%s, %s", result.error_message().c_str(),
+            result.error_details().c_str());
+  }
   EXPECT_EQ(response.message(), kMessage);
   std::shared_ptr<const AuthContext> auth_context = context.auth_context();
   std::vector<grpc::string_ref> properties =
