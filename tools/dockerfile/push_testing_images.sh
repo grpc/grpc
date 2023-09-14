@@ -36,12 +36,55 @@ cd -
 # Login with gcloud:
 # $ gcloud auth login
 
-# Process a directory.
-# Arguments:
-#   $1 - directory containing the dockerfile
-function process_dir {
-  DOCKERFILE_DIR=$1
+# Various check that the environment is setup correctly.
+# The enviroment checks are skipped when running as a sanity check on CI.
+if [ "${CHECK_MODE}" == "" ]
+then
+  # Check that docker is installed and sudoless docker works.
+  docker run --rm -it debian:11 bash -c 'echo "sudoless docker run works!"' || \
+      (echo "Error: docker not installed or sudoless docker doesn't work?" && exit 1)
 
+  # Some of the images we build are for arm64 architecture and the easiest
+  # way of allowing them to build locally on x64 machine is to use
+  # qemu binfmt-misc hook that automatically runs arm64 binaries under
+  # an emulator.
+  # Perform a check that "qemu-user-static" with binfmt-misc hook
+  # is installed, to give an early warning (otherwise building arm64 images won't work)
+  docker run --rm -it arm64v8/debian:11 bash -c 'echo "able to run arm64 docker images with an emulator!"' || \
+      (echo "Error: can't run arm64 images under an emulator. Have you run 'sudo apt-get install qemu-user-static'?" && exit 1)
+fi
+
+ARTIFACT_REGISTRY_PREFIX=us-docker.pkg.dev/grpc-testing/testing-images-public
+
+# all dockerfile definitions we use for testing and for which we push an image to the registry
+ALL_DOCKERFILE_DIRS=(
+  tools/dockerfile/test/*
+  tools/dockerfile/grpc_artifact_*
+  tools/dockerfile/interoptest/*
+  tools/dockerfile/distribtest/*
+  third_party/rake-compiler-dock/*
+)
+
+CHECK_FAILED=""
+
+if [ "${CHECK_MODE}" != "" ]
+then
+  # Check that there are no stale .current_version files (for which the corresponding
+  # dockerfile_dir doesn't exist anymore).
+  for CURRENTVERSION_FILE in $(find tools/ third_party/rake-compiler-dock -name '*.current_version')
+  do
+    DOCKERFILE_DIR="$(echo ${CURRENTVERSION_FILE} | sed 's/.current_version$//')"
+    if [ ! -e "${DOCKERFILE_DIR}/Dockerfile" ]
+    then
+       echo "Found that ${DOCKERFILE_DIR} has '.current_version' file but there is no corresponding Dockerfile."
+       echo "Should the ${CURRENTVERSION_FILE} file be deleted?"
+       CHECK_FAILED=true
+    fi
+  done
+fi
+
+for DOCKERFILE_DIR in "${ALL_DOCKERFILE_DIRS[@]}"
+do
   # Generate image name based on Dockerfile checksum. That works well as long
   # as can count on dockerfiles being written in a way that changing the logical 
   # contents of the docker image always changes the SHA (e.g. using "ADD file" 
@@ -163,65 +206,7 @@ function process_dir {
     DOCKER_IMAGE_DIGEST_REMOTE=$(docker image inspect "${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}" | jq -e -r ".[0].RepoDigests[] | select(contains(\"${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}@\"))" | sed 's/^.*@sha256:/sha256:/')
     echo -n "${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}@${DOCKER_IMAGE_DIGEST_REMOTE}" >${DOCKERFILE_DIR}.current_version
   fi
-}
-
-
-# Various check that the environment is setup correctly.
-# The enviroment checks are skipped when running as a sanity check on CI.
-if [ "${CHECK_MODE}" == "" ]
-then
-  # Check that docker is installed and sudoless docker works.
-  docker run --rm -it debian:11 bash -c 'echo "sudoless docker run works!"' || \
-      (echo "Error: docker not installed or sudoless docker doesn't work?" && exit 1)
-
-  # Some of the images we build are for arm64 architecture and the easiest
-  # way of allowing them to build locally on x64 machine is to use
-  # qemu binfmt-misc hook that automatically runs arm64 binaries under
-  # an emulator.
-  # Perform a check that "qemu-user-static" with binfmt-misc hook
-  # is installed, to give an early warning (otherwise building arm64 images won't work)
-  docker run --rm -it -v /usr/bin/qemu-arm-static:/usr/bin/qemu-arm-static arm64v8/debian:11 bash -c 'echo "able to run arm64 docker images with an emulator!"' || \
-      (echo "Error: can't run arm64 images under an emulator. Have you run 'sudo apt-get install qemu-user-static'?" && exit 1)
-fi
-
-ARTIFACT_REGISTRY_PREFIX=us-docker.pkg.dev/grpc-testing/testing-images-public
-
-# all dockerfile definitions we use for testing and for which we push an image to the registry
-ALL_DOCKERFILE_DIRS=(
-  tools/dockerfile/test/*
-  tools/dockerfile/grpc_artifact_*
-  tools/dockerfile/interoptest/*
-  tools/dockerfile/distribtest/*
-  third_party/rake-compiler-dock/*
-)
-
-CHECK_FAILED=""
-
-if [ "${CHECK_MODE}" != "" ]
-then
-  # Check that there are no stale .current_version files (for which the corresponding
-  # dockerfile_dir doesn't exist anymore).
-  for CURRENTVERSION_FILE in $(find tools/ third_party/rake-compiler-dock -name '*.current_version')
-  do
-    DOCKERFILE_DIR="$(echo ${CURRENTVERSION_FILE} | sed 's/.current_version$//')"
-    if [ ! -e "${DOCKERFILE_DIR}/Dockerfile" ]
-    then
-       echo "Found that ${DOCKERFILE_DIR} has '.current_version' file but there is no corresponding Dockerfile."
-       echo "Should the ${CURRENTVERSION_FILE} file be deleted?"
-       CHECK_FAILED=true
-    fi
-  done
-fi
-
-if [ "$1" != "" ]
-then
-  process_dir $1
-else
-  for DOCKERFILE_DIR in "${ALL_DOCKERFILE_DIRS[@]}"
-  do
-    process_dir $DOCKERFILE_DIR
-  done
-fi
+done
 
 if [ "${CHECK_MODE}" != "" ]
 then
