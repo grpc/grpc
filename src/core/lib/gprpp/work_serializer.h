@@ -19,9 +19,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <functional>
-
 #include "absl/base/thread_annotations.h"
+#include "absl/functional/any_invocable.h"
 
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -67,11 +66,12 @@ class ABSL_LOCKABLE WorkSerializer {
   //
   // TODO(yashkt): Replace DebugLocation with absl::SourceLocation
   // once we can start using it directly.
-  void Run(std::function<void()> callback, const DebugLocation& location);
+  void Run(absl::AnyInvocable<void()> callback, const DebugLocation& location);
 
   // Schedule \a callback to be run later when the queue of callbacks is
   // drained.
-  void Schedule(std::function<void()> callback, const DebugLocation& location);
+  void Schedule(absl::AnyInvocable<void()> callback,
+                const DebugLocation& location);
   // Drains the queue of callbacks.
   void DrainQueue();
 
