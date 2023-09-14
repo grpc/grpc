@@ -150,6 +150,7 @@ absl::StatusOr<RefCountedPtr<Channel>> Channel::CreateWithBuilder(
     compression_options.enabled_algorithms_bitset =
         *enabled_algorithms_bitset | 1 /* always support no compression */;
   }
+
   return RefCountedPtr<Channel>(new Channel(
       grpc_channel_stack_type_is_client(builder->channel_stack_type()),
       builder->IsPromising(), std::string(builder->target()), channel_args,

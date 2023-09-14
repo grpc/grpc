@@ -17,8 +17,6 @@
 #ifndef GRPC_SRC_CORE_EXT_XDS_XDS_ENABLED_SERVER_H
 #define GRPC_SRC_CORE_EXT_XDS_XDS_ENABLED_SERVER_H
 
-#include <grpc/support/port_platform.h>
-
 // EXPERIMENTAL. Bool-valued channel arg used as an indicator that a server is
 // xds enabled.
 #define GRPC_ARG_XDS_ENABLED_SERVER "grpc.experimental.xds_enabled_server"
