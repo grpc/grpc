@@ -45,6 +45,7 @@ class CSharpGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
     bool internal_access = false;
     bool enable_nrt = false;
     std::string base_namespace = "";
+    bool base_namespace_present = false;
 
     // the suffix that will get appended to the name generated from the name
     // of the original .proto file
@@ -63,6 +64,7 @@ class CSharpGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
         // The option may be removed or file names generated may change
         // in the future.
         base_namespace = options[i].second;
+        base_namespace_present = true;
       } else if (options[i].first == "enable_nrt") {
         // Enable null reference types.
         // Support for enable_nrt option in this plugin is experimental.
