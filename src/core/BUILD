@@ -4184,7 +4184,6 @@ grpc_cc_library(
         "ext/xds/xds_enabled_server.h",
     ],
     language = "c++",
-    deps = ["//:gpr_platform"],
 )
 
 grpc_cc_library(
