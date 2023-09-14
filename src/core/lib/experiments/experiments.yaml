@@ -178,7 +178,7 @@
     enqueues work.
   expiry: 2024/02/10
   owner: ctiller@google.com
-  test_tags: ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test", "lb_policy_test"]
+  test_tags: ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test", "lb_unit_test"]
 - name: lazier_stream_updates
   description:
     Allow streams to consume up to 50% of the incoming window before we
@@ -201,4 +201,4 @@
     backend design.
   expiry: 2023/11/15
   owner: roth@google.com
-  test_tags: ["cpp_lb_end2end_test", "xds_end2end_test"]
+  test_tags: ["lb_unit_test", "cpp_lb_end2end_test", "xds_end2end_test"]

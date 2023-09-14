@@ -82,10 +82,12 @@ class grpc_ssl_channel_security_connector final
       grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
       grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
       const grpc_ssl_config* config, const char* target_name,
-      const char* overridden_target_name)
+      const char* overridden_target_name,
+      tsi_ssl_client_handshaker_factory* client_handshaker_factory)
       : grpc_channel_security_connector(GRPC_SSL_URL_SCHEME,
                                         std::move(channel_creds),
                                         std::move(request_metadata_creds)),
+        client_handshaker_factory_(client_handshaker_factory),
         overridden_target_name_(
             overridden_target_name == nullptr ? "" : overridden_target_name),
         verify_options_(&config->verify_options) {
@@ -97,39 +99,6 @@ class grpc_ssl_channel_security_connector final
 
   ~grpc_ssl_channel_security_connector() override {
     tsi_ssl_client_handshaker_factory_unref(client_handshaker_factory_);
-  }
-
-  grpc_security_status InitializeHandshakerFactory(
-      const grpc_ssl_config* config, const char* pem_root_certs,
-      const tsi_ssl_root_certs_store* root_store,
-      tsi_ssl_session_cache* ssl_session_cache) {
-    bool has_key_cert_pair =
-        config->pem_key_cert_pair != nullptr &&
-        config->pem_key_cert_pair->private_key != nullptr &&
-        config->pem_key_cert_pair->cert_chain != nullptr;
-    tsi_ssl_client_handshaker_options options;
-    GPR_DEBUG_ASSERT(pem_root_certs != nullptr);
-    options.pem_root_certs = pem_root_certs;
-    options.root_store = root_store;
-    options.alpn_protocols =
-        grpc_fill_alpn_protocol_strings(&options.num_alpn_protocols);
-    if (has_key_cert_pair) {
-      options.pem_key_cert_pair = config->pem_key_cert_pair;
-    }
-    options.cipher_suites = grpc_get_ssl_cipher_suites();
-    options.session_cache = ssl_session_cache;
-    options.min_tls_version = grpc_get_tsi_tls_version(config->min_tls_version);
-    options.max_tls_version = grpc_get_tsi_tls_version(config->max_tls_version);
-    const tsi_result result =
-        tsi_create_ssl_client_handshaker_factory_with_options(
-            &options, &client_handshaker_factory_);
-    gpr_free(options.alpn_protocols);
-    if (result != TSI_OK) {
-      gpr_log(GPR_ERROR, "Handshaker factory creation failed with %s.",
-              tsi_result_to_string(result));
-      return GRPC_SECURITY_ERROR;
-    }
-    return GRPC_SECURITY_OK;
   }
 
   void add_handshakers(const grpc_core::ChannelArgs& args,
@@ -205,7 +174,7 @@ class grpc_ssl_channel_security_connector final
   }
 
  private:
-  tsi_ssl_client_handshaker_factory* client_handshaker_factory_;
+  tsi_ssl_client_handshaker_factory* client_handshaker_factory_ = nullptr;
   std::string target_name_;
   std::string overridden_target_name_;
   const verify_peer_options* verify_options_;
@@ -411,36 +380,17 @@ grpc_ssl_channel_security_connector_create(
     grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
     const grpc_ssl_config* config, const char* target_name,
     const char* overridden_target_name,
-    tsi_ssl_session_cache* ssl_session_cache) {
+    tsi_ssl_client_handshaker_factory* client_factory) {
   if (config == nullptr || target_name == nullptr) {
     gpr_log(GPR_ERROR, "An ssl channel needs a config and a target name.");
     return nullptr;
   }
 
-  const char* pem_root_certs;
-  const tsi_ssl_root_certs_store* root_store;
-  if (config->pem_root_certs == nullptr) {
-    // Use default root certificates.
-    pem_root_certs = grpc_core::DefaultSslRootStore::GetPemRootCerts();
-    if (pem_root_certs == nullptr) {
-      gpr_log(GPR_ERROR, "Could not get default pem root certs.");
-      return nullptr;
-    }
-    root_store = grpc_core::DefaultSslRootStore::GetRootStore();
-  } else {
-    pem_root_certs = config->pem_root_certs;
-    root_store = nullptr;
-  }
-
   grpc_core::RefCountedPtr<grpc_ssl_channel_security_connector> c =
       grpc_core::MakeRefCounted<grpc_ssl_channel_security_connector>(
           std::move(channel_creds), std::move(request_metadata_creds), config,
-          target_name, overridden_target_name);
-  const grpc_security_status result = c->InitializeHandshakerFactory(
-      config, pem_root_certs, root_store, ssl_session_cache);
-  if (result != GRPC_SECURITY_OK) {
-    return nullptr;
-  }
+          target_name, overridden_target_name,
+          tsi_ssl_client_handshaker_factory_ref(client_factory));
   return c;
 }
 
