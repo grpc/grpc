@@ -102,6 +102,7 @@ MATCHER(StatusCodeEq, "") {
 class EventEngineDNSTest : public EventEngineTest {
  protected:
   static void SetUpTestSuite() {
+#ifndef GRPC_IOS_EVENT_ENGINE_CLIENT
     std::string test_records_path = kDNSTestRecordGroupsYamlPath;
     std::string dns_server_path = kDNSServerRelPath;
     std::string dns_resolver_path = kDNSResolverRelPath;
@@ -142,18 +143,16 @@ class EventEngineDNSTest : public EventEngineTest {
     });
     int status = health_check.Join();
     // TODO(yijiem): make this portable for Windows
-    // TODO(yijiem): remove the if block and reenable the ASSERT_TRUE below once
-    // we have added twisted to the docker images.
-    if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
-      skip_end2end_tests_ = true;
-    }
-    // ASSERT_TRUE(WIFEXITED(status) && WEXITSTATUS(status) == 0);
+    ASSERT_TRUE(WIFEXITED(status) && WEXITSTATUS(status) == 0);
+#endif  // GRPC_IOS_EVENT_ENGINE_CLIENT
   }
 
   static void TearDownTestSuite() {
+#ifndef GRPC_IOS_EVENT_ENGINE_CLIENT
     dns_server_.server_process->Interrupt();
     dns_server_.server_process->Join();
     delete dns_server_.server_process;
+#endif  // GRPC_IOS_EVENT_ENGINE_CLIENT
   }
 
   std::unique_ptr<EventEngine::DNSResolver> CreateDefaultDNSResolver() {
@@ -191,7 +190,6 @@ class EventEngineDNSTest : public EventEngineTest {
     grpc::SubProcess* server_process;
   };
   grpc_core::Notification dns_resolver_signal_;
-  static bool skip_end2end_tests_;
 
  private:
   static DNSServer dns_server_;
@@ -199,13 +197,11 @@ class EventEngineDNSTest : public EventEngineTest {
 };
 
 EventEngineDNSTest::DNSServer EventEngineDNSTest::dns_server_;
-bool EventEngineDNSTest::skip_end2end_tests_ = false;
+
+// TODO(hork): implement XFAIL for resolvers that don't support TXT or SRV
+#ifndef GRPC_IOS_EVENT_ENGINE_CLIENT
 
 TEST_F(EventEngineDNSTest, QueryNXHostname) {
-  // TODO(yijiem): remove once the docker images are fixed.
-  if (skip_end2end_tests_) {
-    GTEST_SKIP();
-  }
   auto dns_resolver = CreateDefaultDNSResolver();
   dns_resolver->LookupHostname(
       [this](auto result) {
@@ -221,10 +217,6 @@ TEST_F(EventEngineDNSTest, QueryNXHostname) {
 }
 
 TEST_F(EventEngineDNSTest, QueryWithIPLiteral) {
-  // TODO(yijiem): remove once the docker images are fixed.
-  if (skip_end2end_tests_) {
-    GTEST_SKIP();
-  }
   auto dns_resolver = CreateDefaultDNSResolver();
   dns_resolver->LookupHostname(
       [this](auto result) {
@@ -240,10 +232,6 @@ TEST_F(EventEngineDNSTest, QueryWithIPLiteral) {
 }
 
 TEST_F(EventEngineDNSTest, QueryARecord) {
-  // TODO(yijiem): remove once the docker images are fixed.
-  if (skip_end2end_tests_) {
-    GTEST_SKIP();
-  }
   auto dns_resolver = CreateDefaultDNSResolver();
   dns_resolver->LookupHostname(
       [this](auto result) {
@@ -261,10 +249,6 @@ TEST_F(EventEngineDNSTest, QueryARecord) {
 }
 
 TEST_F(EventEngineDNSTest, QueryAAAARecord) {
-  // TODO(yijiem): remove once the docker images are fixed.
-  if (skip_end2end_tests_) {
-    GTEST_SKIP();
-  }
   auto dns_resolver = CreateDefaultDNSResolver();
   dns_resolver->LookupHostname(
       [this](auto result) {
@@ -285,10 +269,6 @@ TEST_F(EventEngineDNSTest, QueryAAAARecord) {
 }
 
 TEST_F(EventEngineDNSTest, TestAddressSorting) {
-  // TODO(yijiem): remove once the docker images are fixed.
-  if (skip_end2end_tests_) {
-    GTEST_SKIP();
-  }
   auto dns_resolver = CreateDefaultDNSResolver();
   dns_resolver->LookupHostname(
       [this](auto result) {
@@ -306,10 +286,6 @@ TEST_F(EventEngineDNSTest, TestAddressSorting) {
 }
 
 TEST_F(EventEngineDNSTest, QuerySRVRecord) {
-  // TODO(yijiem): remove once the docker images are fixed.
-  if (skip_end2end_tests_) {
-    GTEST_SKIP();
-  }
   const SRVRecord kExpectedRecords[] = {
       {/*host=*/"ipv4-only-multi-target.dns-test.event-engine", /*port=*/1234,
        /*priority=*/0, /*weight=*/0},
@@ -328,10 +304,6 @@ TEST_F(EventEngineDNSTest, QuerySRVRecord) {
 }
 
 TEST_F(EventEngineDNSTest, QuerySRVRecordWithLocalhost) {
-  // TODO(yijiem): remove once the docker images are fixed.
-  if (skip_end2end_tests_) {
-    GTEST_SKIP();
-  }
   auto dns_resolver = CreateDefaultDNSResolver();
   dns_resolver->LookupSRV(
       [this](auto result) {
@@ -344,10 +316,6 @@ TEST_F(EventEngineDNSTest, QuerySRVRecordWithLocalhost) {
 }
 
 TEST_F(EventEngineDNSTest, QueryTXTRecord) {
-  // TODO(yijiem): remove once the docker images are fixed.
-  if (skip_end2end_tests_) {
-    GTEST_SKIP();
-  }
   // clang-format off
   const std::string kExpectedRecord =
       "grpc_config=[{"
@@ -377,10 +345,6 @@ TEST_F(EventEngineDNSTest, QueryTXTRecord) {
 }
 
 TEST_F(EventEngineDNSTest, QueryTXTRecordWithLocalhost) {
-  // TODO(yijiem): remove once the docker images are fixed.
-  if (skip_end2end_tests_) {
-    GTEST_SKIP();
-  }
   auto dns_resolver = CreateDefaultDNSResolver();
   dns_resolver->LookupTXT(
       [this](auto result) {
@@ -393,10 +357,6 @@ TEST_F(EventEngineDNSTest, QueryTXTRecordWithLocalhost) {
 }
 
 TEST_F(EventEngineDNSTest, TestCancelActiveDNSQuery) {
-  // TODO(yijiem): remove once the docker images are fixed.
-  if (skip_end2end_tests_) {
-    GTEST_SKIP();
-  }
   const std::string name = "dont-care-since-wont-be-resolved.test.com:1234";
   auto dns_resolver = CreateDNSResolverWithNonResponsiveServer();
   dns_resolver->LookupHostname(
@@ -412,6 +372,7 @@ TEST_F(EventEngineDNSTest, TestCancelActiveDNSQuery) {
   dns_resolver.reset();
   dns_resolver_signal_.WaitForNotification();
 }
+#endif  // GRPC_IOS_EVENT_ENGINE_CLIENT
 
 #define EXPECT_SUCCESS()           \
   do {                             \

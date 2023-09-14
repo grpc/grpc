@@ -15,12 +15,36 @@
 
 set -ex
 
-if [ "$#" != "1" ] ; then
+if [ "$#" == "0" ] ; then
     echo "Must supply bazel version to be tested." >/dev/stderr
     exit 1
 fi
 
 VERSION="$1"
+shift 1
+
+# directories under test/distrib/bazel/ to test.
+TEST_DIRECTORIES=(
+  "cpp"
+  "python"
+)
+# construct list of all supported test shards
+ALL_TEST_SHARDS=("buildtest")
+for TEST_DIRECTORY in "${TEST_DIRECTORIES[@]}"
+do
+  ALL_TEST_SHARDS+=("distribtest_${TEST_DIRECTORY}")
+done
+
+# Read list of shards to run from the commandline args.
+# If ther are no args, run all the shards.
+if [ "$#" != "0" ]
+then
+  # Use remaining commandline args as test shard names.
+  TEST_SHARDS=("$@")
+else
+  # Run all supported shards.
+  TEST_SHARDS=("${ALL_TEST_SHARDS[@]}")
+fi
 
 cd "$(dirname "$0")"/../../..
 
@@ -44,11 +68,9 @@ EXCLUDED_TARGETS=(
 
   # TODO(jtattermusch): add back once fixed
   "-//examples/android/binder/..."
-)
 
-TEST_DIRECTORIES=(
-  "cpp"
-  "python"
+  # Exclude bazelified tests as they contain some bazel hackery
+  "-//tools/bazelify_tests/..."
 )
 
 FAILED_TESTS=""
@@ -59,17 +81,31 @@ export OVERRIDE_BAZEL_WRAPPER_DOWNLOAD_DIR=/tmp
 
 ACTION_ENV_FLAG="--action_env=bazel_cache_invalidate=version_${VERSION}"
 
-tools/bazel version | grep "$VERSION" || { echo "Detected bazel version did not match expected value of $VERSION" >/dev/stderr; exit 1; }
-tools/bazel build "${ACTION_ENV_FLAG}" -- //... "${EXCLUDED_TARGETS[@]}" || FAILED_TESTS="${FAILED_TESTS}buildtest "
-tools/bazel build "${ACTION_ENV_FLAG}" --config fuzztest -- //fuzztest/... || FAILED_TESTS="${FAILED_TESTS}fuzztest_buildtest "
+for TEST_SHARD in "${TEST_SHARDS[@]}"
+do
+  SHARD_RAN=""
+  if [ "${TEST_SHARD}" == "buildtest" ] ; then
+    tools/bazel version | grep "$VERSION" || { echo "Detected bazel version did not match expected value of $VERSION" >/dev/stderr; exit 1; }
+    tools/bazel build "${ACTION_ENV_FLAG}" -- //... "${EXCLUDED_TARGETS[@]}" || FAILED_TESTS="${FAILED_TESTS}buildtest "
+    tools/bazel build "${ACTION_ENV_FLAG}" --config fuzztest -- //fuzztest/... || FAILED_TESTS="${FAILED_TESTS}fuzztest_buildtest "
+    SHARD_RAN="true"
+  fi
 
-for TEST_DIRECTORY in "${TEST_DIRECTORIES[@]}"; do
-  pushd "test/distrib/bazel/$TEST_DIRECTORY/"
+  for TEST_DIRECTORY in "${TEST_DIRECTORIES[@]}"
+  do
+    pushd "test/distrib/bazel/${TEST_DIRECTORY}/"
+    if [ "${TEST_SHARD}" == "distribtest_${TEST_DIRECTORY}" ] ; then
+      tools/bazel version | grep "$VERSION" || { echo "Detected bazel version did not match expected value of $VERSION" >/dev/stderr; exit 1; }
+      tools/bazel test "${ACTION_ENV_FLAG}" --test_output=all //:all || FAILED_TESTS="${FAILED_TESTS}distribtest_${TEST_DIRECTORY} "
+      SHARD_RAN="true"
+    fi
+    popd
+  done
 
-  tools/bazel version | grep "$VERSION" || { echo "Detected bazel version did not match expected value of $VERSION" >/dev/stderr; exit 1; }
-  tools/bazel test "${ACTION_ENV_FLAG}" --test_output=all //:all || FAILED_TESTS="${FAILED_TESTS}distribtest_${TEST_DIRECTORY} "
-
-  popd
+  if [ "${SHARD_RAN}" == "" ]; then
+    echo "Unknown shard '${TEST_SHARD}'"
+    exit 1
+  fi
 done
 
 if [ "$FAILED_TESTS" != "" ]

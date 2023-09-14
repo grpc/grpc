@@ -35,7 +35,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
-#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/json.h>
 #include <grpc/support/log.h>
@@ -56,6 +56,7 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/ref_counted_string.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/pollset_set.h"
@@ -764,8 +765,11 @@ ServerAddressList XdsClusterResolverLb::CreateChildPolicyAddressesLocked() {
       for (const auto& p : priority_entry.localities) {
         const auto& locality_name = p.first;
         const auto& locality = p.second;
-        std::vector<std::string> hierarchical_path = {
-            priority_child_name, locality_name->AsHumanReadableString()};
+        std::vector<RefCountedStringValue> hierarchical_path = {
+            RefCountedStringValue(priority_child_name),
+            RefCountedStringValue(locality_name->AsHumanReadableString())};
+        auto hierarchical_path_attr =
+            MakeRefCounted<HierarchicalPathArg>(std::move(hierarchical_path));
         for (const auto& endpoint : locality.endpoints) {
           uint32_t endpoint_weight =
               locality.lb_weight *
@@ -773,8 +777,7 @@ ServerAddressList XdsClusterResolverLb::CreateChildPolicyAddressesLocked() {
           addresses.emplace_back(
               endpoint.address(),
               endpoint.args()
-                  .SetObject(
-                      MakeRefCounted<HierarchicalPathArg>(hierarchical_path))
+                  .SetObject(hierarchical_path_attr)
                   .Set(GRPC_ARG_ADDRESS_WEIGHT, endpoint_weight)
                   .SetObject(locality_name->Ref())
                   .Set(GRPC_ARG_XDS_LOCALITY_WEIGHT, locality.lb_weight));

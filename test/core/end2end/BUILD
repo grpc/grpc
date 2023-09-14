@@ -95,6 +95,7 @@ grpc_cc_library(
     hdrs = ["fixtures/proxy.h"],
     language = "C++",
     deps = [
+        "//:channel_arg_names",
         "//:gpr",
         "//:grpc",
         "//:grpc_public_hdrs",
@@ -164,6 +165,7 @@ grpc_cc_library(
     language = "C++",
     deps = [
         "end2end_test_lib",
+        "//:channel_arg_names",
         "//:config",
         "//:exec_ctx",
         "//:gpr",
@@ -204,6 +206,7 @@ grpc_cc_library(
         "fixture_support",
         "http_proxy",
         "proxy",
+        "//:channel_arg_names",
         "//:exec_ctx",
         "//:gpr",
         "//:grpc",
@@ -472,6 +475,7 @@ grpc_cc_test(
     language = "C++",
     deps = [
         "cq_verifier",
+        "//:channel_arg_names",
         "//:exec_ctx",
         "//:gpr",
         "//:grpc_public_hdrs",
@@ -514,6 +518,7 @@ grpc_cc_test(
     language = "C++",
     deps = [
         "cq_verifier",
+        "//:channel_arg_names",
         "//:debug_location",
         "//:exec_ctx",
         "//:gpr",
@@ -586,7 +591,6 @@ grpc_cc_test(
         "absl/types:optional",
         "absl/types:variant",
         "gtest",
-        "libcrypto",
     ],
     language = "C++",
     shard_count = 10,
@@ -595,6 +599,7 @@ grpc_cc_test(
         "end2end_test_lib",
         "fixture_support",
         "ssl_test_data",
+        "//:channel_arg_names",
         "//:config_vars",
         "//:debug_location",
         "//:gpr",
@@ -627,6 +632,7 @@ grpc_cc_test(
     language = "C++",
     deps = [
         "cq_verifier",
+        "//:channel_arg_names",
         "//:config_vars",
         "//:exec_ctx",
         "//:gpr",
@@ -656,6 +662,7 @@ grpc_cc_test(
     language = "C++",
     deps = [
         "cq_verifier",
+        "//:channel_arg_names",
         "//:config_vars",
         "//:exec_ctx",
         "//:gpr",

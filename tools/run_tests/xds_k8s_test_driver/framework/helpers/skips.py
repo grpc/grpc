@@ -16,13 +16,9 @@ from dataclasses import dataclass
 import enum
 import logging
 import re
-from typing import Callable, Optional
-import unittest
+from typing import Optional
 
 from packaging import version as pkg_version
-
-from framework import xds_flags
-from framework import xds_k8s_flags
 
 logger = logging.getLogger(__name__)
 
@@ -77,9 +73,16 @@ class TestConfig:
         """
         if self.version in ("master", "dev", "dev-master", None):
             return True
+
+        # The left side is not master, so master on the right side wins.
         if another == "master":
             return False
-        return self._parse_version(self.version) >= self._parse_version(another)
+
+        # Treat "dev-VERSION" on the left side as "VERSION".
+        version: str = self.version
+        if version.startswith("dev-"):
+            version = version[4:]
+        return self._parse_version(version) >= self._parse_version(another)
 
     def __str__(self):
         return (
@@ -89,37 +92,12 @@ class TestConfig:
 
     @staticmethod
     def _parse_version(version: str) -> pkg_version.Version:
-        if version.startswith("dev-"):
-            # Treat "dev-VERSION" as "VERSION".
-            version = version[4:]
         if version.endswith(".x"):
             version = version[:-2]
         return pkg_version.Version(version)
 
 
-def _get_lang(image_name: str) -> Lang:
+def get_lang(image_name: str) -> Lang:
     return Lang.from_string(
         re.search(r"/(\w+)-(client|server):", image_name).group(1)
     )
-
-
-def evaluate_test_config(check: Callable[[TestConfig], bool]) -> TestConfig:
-    """Evaluates the test config check against Abseil flags.
-
-    TODO(sergiitk): split into parse_lang_spec and check_is_supported.
-    """
-    # NOTE(lidiz) a manual skip mechanism is needed because absl/flags
-    # cannot be used in the built-in test-skipping decorators. See the
-    # official FAQs:
-    # https://abseil.io/docs/python/guides/flags#faqs
-    test_config = TestConfig(
-        client_lang=_get_lang(xds_k8s_flags.CLIENT_IMAGE.value),
-        server_lang=_get_lang(xds_k8s_flags.SERVER_IMAGE.value),
-        version=xds_flags.TESTING_VERSION.value,
-    )
-    if not check(test_config):
-        logger.info("Skipping %s", test_config)
-        raise unittest.SkipTest(f"Unsupported test config: {test_config}")
-
-    logger.info("Detected language and version: %s", test_config)
-    return test_config

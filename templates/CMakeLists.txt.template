@@ -37,68 +37,162 @@
     return path
 
   def proto_replace_ext(filename, ext):
-      m = proto_re.match(filename)
-      if not m:
-        return filename
-      return '${_gRPC_PROTO_GENS_DIR}/' + third_party_proto_import_path(m.group(1)) + ext
+    """Replace the .proto extension with given extension."""
+    m = proto_re.match(filename)
+    if not m:
+      return filename
+    return '${_gRPC_PROTO_GENS_DIR}/' + third_party_proto_import_path(m.group(1)) + ext
 
   def is_absl_lib(lib_name):
-      return lib_name.startswith("absl/")
+    """Returns True if the library is one of the abseil libraries."""
+    return lib_name.startswith("absl/")
 
   def get_absl_dep(lib_name):
-      return lib_map[lib_name].cmake_target
+    """Gets the corresponding cmake target for given absl library."""
+    # The "cmake_target" field originates from src/abseil-cpp/preprocessed_builds.yaml.gen.py
+    return lib_map[lib_name].cmake_target
 
-  def lib_and_transitive_deps(lib):
-    return list(sorted(set({lib} | set(lib_map[lib].transitive_deps))))
+  def get_transitive_deps(lib_name):
+    """Get list of transitive deps for given library."""
+    transitive_deps = []
+    lib_metadata = lib_map.get(lib_name, None)
+    if lib_metadata:
+      transitive_deps = lib_metadata.transitive_deps
+    return list(transitive_deps)
 
   def list_abseil_pkg_targets(lib):
+    # TODO(jtattermusch): this function is odd, try to eliminate it.
     # This returns a list of abseil pkg targets which the given lib and
     # its non-abseil transitive dependencies depend on.
     # As a result, internal abseil libraries are excluded from the result.
     absl_specs = set()
-    for lib_name in lib_and_transitive_deps(lib):
+    transitive_deps_and_self = [lib] + get_transitive_deps(lib)
+    for lib_name in transitive_deps_and_self:
       if is_absl_lib(lib_name): continue
-      for dep in lib_map[lib_name].deps:
-        if is_absl_lib(dep):
-          absl_specs.add(get_absl_dep(dep).replace("::", "_"))
+      lib_metadata = lib_map.get(lib_name, None)
+      if lib_metadata:
+        for dep in lib_metadata.deps:
+          if is_absl_lib(dep):
+            absl_specs.add(get_absl_dep(dep).replace("::", "_"))
     return list(sorted(absl_specs))
 
-  def is_shared_only_lib(lib_name):
-    """Returns True if only shared library should be generated."""
-    # grpc_csharp_ext is loaded by C# runtime and it
-    # only makes sense as a shared lib.
-    return lib_name in ['grpc_csharp_ext']
+  def lib_name_to_pkgconfig_requires_private_name(lib_name):
+    """If library belongs to pkgconfig Requires.private section, return the name under which to include it."""
+    # TODO(jtattermusch): extract the metadata to a centralized location.
+    deps_to_pkgconfig_requires_private = {
+      "cares": "libcares",
+      "libssl": "openssl",
+      "re2": "re2",
+      "z": "zlib",
+    }
+    return deps_to_pkgconfig_requires_private.get(lib_name, None)
+
+  def is_pkgconfig_package(lib_name):
+    """Returns True if a pkgconfig package exists for a given library."""
+    # TODO(jtattermusch): extract the metadata to a centralized location.
+    if lib_name in ["address_sorting", "utf8_range_lib"]:
+      return False
+    if lib_name == "upb" or lib_name.startswith("upb_"):
+      # TODO(jtattermusch): Add better detection for what are the "upb" libs.
+      return False
+    return True
+
+  def get_pkgconfig_requires(lib):
+    """Returns "Requires" list for generating the pkgconfig .pc file for given library."""
+    requires = set()
+    requires.update(list_abseil_pkg_targets(lib))
+    for lib_name in get_transitive_deps(lib):
+      if not is_pkgconfig_package(lib_name):
+        # these deps go into Libs or Libs.Private
+        continue
+      if is_absl_lib(lib_name):
+        # absl libs have special handling
+        continue
+      if lib_name_to_pkgconfig_requires_private_name(lib_name) is not None:
+        # these deps go into Requires.private
+        continue
+      if lib_name == 'protobuf':
+        # TODO(jtattermusch): add better way of excluding explicit protobuf dependency.
+        continue
+      requires.add(lib_name)
+    return list(sorted(requires))
+
+  def get_pkgconfig_requires_private(lib):
+    """Returns the "Requires.private" list for generating the pkgconfig .pc file for given library."""
+    private_requires = set()
+    for lib_name in get_transitive_deps(lib):
+      if is_absl_lib(lib_name):
+        # absl deps to into Requires
+        continue
+      require_name = lib_name_to_pkgconfig_requires_private_name(lib_name)
+      if require_name:
+        private_requires.add(require_name)
+    return list(sorted(private_requires))
+
+  def get_pkgconfig_libs(lib):
+    """The "Libs" list for generating the pkgconfig .pc file for given library."""
+    libs = set()
+    # add self
+    libs.add("-l" + lib)
+    return list(sorted(libs))
+
+  def get_pkgconfig_libs_private(lib):
+    """The "Libs.private" list for generating the pkgconfig .pc file for given library."""
+    private_libs = []
+    for lib_name in get_transitive_deps(lib):
+      if is_absl_lib(lib_name):
+        # absl deps to into Requires
+        continue
+      if is_pkgconfig_package(lib_name):
+        continue
+      # Transitive deps are pre-sorted in topological order.
+      # We must maintain that order to prevent linkage errors.
+      private_libs.append("-l" + lib_name)
+    return private_libs
 
   def get_deps(target_dict):
+    # TODO(jtattermusch): remove special cases based on target names
     deps = []
-    deps.append("${_gRPC_BASELIB_LIBRARIES}")
-    if target_dict.get('build', None) in ['protoc']:
-      deps.append("${_gRPC_PROTOBUF_PROTOC_LIBRARIES}")
-    if target_dict.language == 'c++':
-      deps.append("${_gRPC_PROTOBUF_LIBRARIES}")
-    deps.append("${_gRPC_ZLIB_LIBRARIES}")
-    if target_dict['name'] in ['grpc', 'grpc_cronet', 'grpc_unsecure']:
-      deps.append("${_gRPC_CARES_LIBRARIES}")
-      deps.append("${_gRPC_ADDRESS_SORTING_LIBRARIES}")
-      deps.append("${_gRPC_RE2_LIBRARIES}")
-      deps.append("${_gRPC_UPB_LIBRARIES}")
-    # TODO(yijiem): These targets depend on grpc_base instead of grpc. Since we don't populate grpc_base as a cmake target, the sources all get collapsed into these targets. This workaround adds c-ares and/or re2 dependencies to these targets. We should clean this up.
-    if target_dict['name'] in ['frame_test']:
-      deps.append("${_gRPC_CARES_LIBRARIES}")
-    if target_dict['name'] in ['grpc_authorization_provider']:
-      deps.append("${_gRPC_CARES_LIBRARIES}")
-      deps.append("${_gRPC_RE2_LIBRARIES}")
     deps.append("${_gRPC_ALLTARGETS_LIBRARIES}")
     for d in target_dict.get('deps', []):
-      if d == 'benchmark':
+      if d == 'z':
+        deps.append("${_gRPC_ZLIB_LIBRARIES}")
+      elif d == 'address_sorting':
+        deps.append("${_gRPC_ADDRESS_SORTING_LIBRARIES}")
+      elif d == 'benchmark':
         deps.append("${_gRPC_BENCHMARK_LIBRARIES}")
       elif d == 'libssl':
         deps.append("${_gRPC_SSL_LIBRARIES}")
+      elif d == 're2':
+        deps.append("${_gRPC_RE2_LIBRARIES}")
+      elif d == 'cares':
+        deps.append("${_gRPC_CARES_LIBRARIES}")
+      elif d == 'protobuf':
+        deps.append("${_gRPC_PROTOBUF_LIBRARIES}")
+      elif d == 'protoc':
+        deps.append("${_gRPC_PROTOBUF_PROTOC_LIBRARIES}")
       elif is_absl_lib(d):
         deps.append(get_absl_dep(d))
+      # TODO(jtattermusch): add handling for upb libraries
       else:
         deps.append(d)
     return deps
+
+  def is_generate_cmake_target(lib_or_target):
+    """Returns True if a cmake target should be generated for given library/target."""
+    # TODO(jtattermusch): extract the metadata to a centralized location.
+    if lib_or_target.build not in ["all", "protoc", "tool", "test", "private"]:
+      return False
+    if lib_or_target.boringssl:
+      # Don't generate target for boringssl libs or tests
+      return False
+    if lib_or_target.name in ['cares', 'benchmark', 're2', 'xxhash', 'z']:
+      # we rely on these target to be created by external cmake builds.
+      return False
+    if is_absl_lib(lib_or_target.name):
+      # we rely on absl targets to be created by an external cmake build.
+      return False
+    return True
 
   def get_platforms_condition_begin(platforms):
     if all(platform in platforms for platform in ['linux', 'mac', 'posix', 'windows']):
@@ -166,8 +260,6 @@
   set(gRPC_CORE_SOVERSION   "${settings.core_version.major}")
   set(gRPC_CPP_VERSION      "${settings.cpp_version}")
   set(gRPC_CPP_SOVERSION    "${settings.cpp_version.major}.${settings.cpp_version.minor}")
-  set(gRPC_CSHARP_VERSION   "${settings.csharp_version}")
-  set(gRPC_CSHARP_SOVERSION "${settings.csharp_version.major}.${settings.csharp_version.minor}")
   set(PACKAGE_STRING        "<%text>${PACKAGE_NAME} ${PACKAGE_VERSION}</%text>")
   set(PACKAGE_TARNAME       "<%text>${PACKAGE_NAME}-${PACKAGE_VERSION}</%text>")
   set(PACKAGE_BUGREPORT     "https://github.com/grpc/grpc/issues/")
@@ -183,7 +275,6 @@
   # Options
   option(gRPC_BUILD_TESTS "Build tests" OFF)
   option(gRPC_BUILD_CODEGEN "Build codegen" ON)
-  option(gRPC_BUILD_CSHARP_EXT "Build C# extensions" ON)
   option(gRPC_BACKWARDS_COMPATIBILITY_MODE "Build libraries that are binary compatible across a larger number of OS and libc versions" OFF)
 
   set(gRPC_INSTALL_default ON)
@@ -326,12 +417,6 @@
     set(_gRPC_CORE_NOSTDCXX_FLAGS "")
   endif()
 
-  if (gRPC_XDS_USER_AGENT_IS_CSHARP)
-    # The value of the defines needs to contain quotes.
-    # See https://github.com/grpc/grpc/blob/fbf32836a418cc84f58786700273b65cb9174e1d/src/core/ext/xds/xds_api.cc#L854
-    add_definitions("-DGRPC_XDS_USER_AGENT_NAME_SUFFIX=\"csharp\"" "-DGRPC_XDS_USER_AGENT_VERSION_SUFFIX=\"${settings.csharp_version}\"")
-  endif()
-
   if(UNIX AND NOT HAIKU)
     # -pthread does more than -lpthread
     set(THREADS_PREFER_PTHREAD_FLAG ON)
@@ -339,6 +424,24 @@
     set(_gRPC_ALLTARGETS_LIBRARIES <%text>${CMAKE_DL_LIBS}</%text> m Threads::Threads)
     if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       set(_gRPC_ALLTARGETS_LIBRARIES <%text>${_gRPC_ALLTARGETS_LIBRARIES}</%text> rt)
+    endif()
+  endif()
+
+  include(CheckCXXSourceCompiles)
+
+  if(UNIX OR APPLE)
+    # Some systems require the __STDC_FORMAT_MACROS macro to be defined
+    # to get the fixed-width integer type formatter macros.
+    check_cxx_source_compiles("#include <inttypes.h>
+    #include <cstdio>
+    int main()
+    {
+      int64_t i64{};
+      std::printf(\"%\" PRId64, i64);
+    }"
+    HAVE_STDC_FORMAT_MACROS)
+    if(NOT HAVE_STDC_FORMAT_MACROS)
+      add_definitions(-D__STDC_FORMAT_MACROS)
     endif()
   endif()
 
@@ -382,7 +485,7 @@
   % endfor
 
   if(WIN32)
-    set(_gRPC_BASELIB_LIBRARIES ws2_32 crypt32)
+    set(_gRPC_ALLTARGETS_LIBRARIES <%text>${_gRPC_ALLTARGETS_LIBRARIES}</%text> ws2_32 crypt32)
   endif()
 
   # Create directory for proto source files
@@ -544,7 +647,7 @@
   if(gRPC_BUILD_TESTS)
     add_custom_target(buildtests_c)
     % for tgt in targets:
-    % if tgt.build == 'test' and not tgt.language == 'c++' and not tgt.get('external_deps', None) and not tgt.boringssl:
+    % if is_generate_cmake_target(tgt) and tgt.build == 'test' and not tgt.language == 'c++':
     <%block filter='platforms_condition_block(tgt.platforms)'>
     add_dependencies(buildtests_c ${tgt.name})
     </%block>
@@ -553,7 +656,7 @@
 
     add_custom_target(buildtests_cxx)
     % for tgt in targets:
-    % if tgt.build == 'test' and tgt.language == 'c++' and not tgt.get('external_deps', None) and not tgt.boringssl:
+    % if is_generate_cmake_target(tgt) and tgt.build == 'test' and tgt.language == 'c++':
     <%block filter='platforms_condition_block(tgt.platforms)'>
     add_dependencies(buildtests_cxx ${tgt.name})
     </%block>
@@ -566,19 +669,12 @@
   <%
     cmake_libs = []
     for lib in libs:
-      if lib.build not in ["all", "protoc", "tool", "test", "private"] or lib.boringssl: continue
-      if lib.get('build_system', []) and 'cmake' not in lib.get('build_system', []): continue
-      if lib.name in ['ares', 'benchmark', 're2', 'xxhash', 'z']: continue  # we build these using CMake instead
-      if is_absl_lib(lib.name): continue  # we build these using CMake instead
+      if not is_generate_cmake_target(lib): continue
       cmake_libs.append(lib)
   %>
   % for lib in cmake_libs:
   %   if lib.build in ["test", "private"]:
   if(gRPC_BUILD_TESTS)
-  ${cc_library(lib)}
-  endif()
-  %   elif lib.name in ['grpc_csharp_ext']:
-  if(gRPC_BUILD_CSHARP_EXT)
   ${cc_library(lib)}
   endif()
   %   else:
@@ -596,7 +692,7 @@
   % endfor
 
   % for tgt in targets:
-  % if tgt.build in ["all", "protoc", "tool", "test", "private"] and not tgt.boringssl:
+  % if is_generate_cmake_target(tgt):
   % if tgt.build in ["test", "private"]:
   if(gRPC_BUILD_TESTS)
   <%block filter='platforms_condition_block(tgt.platforms)'>
@@ -623,7 +719,7 @@
 
   <%def name="cc_library(lib)">
   % if any(proto_re.match(src) for src in lib.src):
-  % if lib.name == 'grpcpp_channelz':
+  % if lib.name == 'grpcpp_channelz':  # TODO(jtattermusch): remove special case based on target name
   # grpcpp_channelz doesn't build with protobuf-lite
   # See https://github.com/grpc/grpc/issues/19473
   if(gRPC_BUILD_CODEGEN AND NOT gRPC_USE_PROTO_LITE)
@@ -631,7 +727,7 @@
   if(gRPC_BUILD_CODEGEN)
   % endif
   % endif
-  add_library(${lib.name}${' SHARED' if is_shared_only_lib(lib.name) else ''}
+  add_library(${lib.name}
   % for src in lib.src:
   % if not proto_re.match(src):
     ${src}
@@ -653,9 +749,6 @@
   % if lib.language == 'c++':
     VERSION <%text>${gRPC_CPP_VERSION}</%text>
     SOVERSION <%text>${gRPC_CPP_SOVERSION}</%text>
-  % elif lib.language == 'csharp':
-    VERSION <%text>${gRPC_CSHARP_VERSION}</%text>
-    SOVERSION <%text>${gRPC_CSHARP_SOVERSION}</%text>
   % else:
     VERSION <%text>${gRPC_CORE_VERSION}</%text>
     SOVERSION <%text>${gRPC_CORE_SOVERSION}</%text>
@@ -685,7 +778,7 @@
       <%text>${_gRPC_UPB_INCLUDE_DIR}</%text>
       <%text>${_gRPC_XXHASH_INCLUDE_DIR}</%text>
       <%text>${_gRPC_ZLIB_INCLUDE_DIR}</%text>
-  % if (lib.build in ['test', 'private'] and lib.language == 'c++') or lib.name == 'end2end_tests':
+  % if 'gtest' in lib.transitive_deps or lib.name == 'gtest':  # TODO(jtattermusch): avoid special case based on target name
       third_party/googletest/googletest/include
       third_party/googletest/googletest
       third_party/googletest/googlemock/include
@@ -702,7 +795,7 @@
   % endfor
   )
   % endif
-  % if lib.name in ["gpr"]:
+  % if lib.name in ["gpr"]:  # TODO(jtattermusch): avoid special case based on target name
   if(_gRPC_PLATFORM_ANDROID)
     target_link_libraries(gpr
       android
@@ -712,7 +805,7 @@
   % endif
   % if lib.name in ["grpc", "grpc_cronet", "grpc_test_util", \
                     "grpc_test_util_unsecure", "grpc_unsecure", \
-                    "grpc++_cronet"]:
+                    "grpc++_cronet"]: # TODO(jtattermusch): remove special cases based on target names
   if(_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
     target_link_libraries(${lib.name} "-framework CoreFoundation")
   endif()
@@ -748,10 +841,6 @@
     ${proto_replace_ext(src, '.grpc.pb.h')}
   % endif
   % endfor
-  % if tgt.build == 'test' and tgt.language == 'c++':
-    third_party/googletest/googletest/src/gtest-all.cc
-    third_party/googletest/googlemock/src/gmock-all.cc
-  % endif
   )
   target_compile_features(${tgt.name} PUBLIC cxx_std_14)
   target_include_directories(${tgt.name}
@@ -766,7 +855,7 @@
       <%text>${_gRPC_UPB_INCLUDE_DIR}</%text>
       <%text>${_gRPC_XXHASH_INCLUDE_DIR}</%text>
       <%text>${_gRPC_ZLIB_INCLUDE_DIR}</%text>
-  % if tgt.build in ['test', 'private'] and tgt.language == 'c++':
+  % if 'gtest' in tgt.transitive_deps:
       third_party/googletest/googletest/include
       third_party/googletest/googletest
       third_party/googletest/googlemock/include
@@ -867,10 +956,10 @@
     "gpr"
     "gRPC platform support library"
     "<%text>${gRPC_CORE_VERSION}</%text>"
-    "${" ".join(list_abseil_pkg_targets("gpr"))}"
-    ""
-    "${" ".join(("-l" + l) for l in ["gpr"])}"
-    ""
+    "${" ".join(get_pkgconfig_requires("gpr"))}"
+    "${" ".join(get_pkgconfig_requires_private("gpr"))}"
+    "${" ".join(get_pkgconfig_libs("gpr"))}"
+    "${" ".join(get_pkgconfig_libs_private("gpr"))}"
     "gpr.pc")
 
   # grpc .pc file
@@ -878,10 +967,10 @@
     "gRPC"
     "high performance general RPC framework"
     "<%text>${gRPC_CORE_VERSION}</%text>"
-    "${" ".join(["gpr"] + list_abseil_pkg_targets("grpc"))}"
-    "${" ".join(["openssl", "re2", "libcares", "zlib"])}"
-    "${" ".join(("-l" + l) for l in ["grpc",])}"
-    "${" ".join(("-l" + l) for l in ["address_sorting", "upb"])}"
+    "${" ".join(get_pkgconfig_requires("grpc"))}"
+    "${" ".join(get_pkgconfig_requires_private("grpc"))}"
+    "${" ".join(get_pkgconfig_libs("grpc"))}"
+    "${" ".join(get_pkgconfig_libs_private("grpc"))}"
     "grpc.pc")
 
   # grpc_unsecure .pc file
@@ -889,10 +978,10 @@
     "gRPC unsecure"
     "high performance general RPC framework without SSL"
     "<%text>${gRPC_CORE_VERSION}</%text>"
-    "${" ".join(["gpr"] + list_abseil_pkg_targets("grpc_unsecure"))}"
-    "${" ".join(["re2", "libcares", "zlib"])}"
-    "${" ".join(("-l" + l) for l in ["grpc_unsecure"])}"
-    "${" ".join(("-l" + l) for l in ["address_sorting", "upb"])}"
+    "${" ".join(get_pkgconfig_requires("grpc_unsecure"))}"
+    "${" ".join(get_pkgconfig_requires_private("grpc_unsecure"))}"
+    "${" ".join(get_pkgconfig_libs("grpc_unsecure"))}"
+    "${" ".join(get_pkgconfig_libs_private("grpc_unsecure"))}"
     "grpc_unsecure.pc")
 
   # grpc++ .pc file
@@ -900,10 +989,10 @@
     "gRPC++"
     "C++ wrapper for gRPC"
     "<%text>${gRPC_CPP_VERSION}</%text>"
-    "${" ".join(["grpc"] + list_abseil_pkg_targets("grpc++"))}"
-    ""
-    "${" ".join(("-l" + l) for l in ["grpc++"])}"
-    ""
+    "${" ".join(get_pkgconfig_requires("grpc++"))}"
+    "${" ".join(get_pkgconfig_requires_private("grpc++"))}"
+    "${" ".join(get_pkgconfig_libs("grpc++"))}"
+    "${" ".join(get_pkgconfig_libs_private("grpc++"))}"
     "grpc++.pc")
 
   # grpc++_unsecure .pc file
@@ -911,8 +1000,8 @@
     "gRPC++ unsecure"
     "C++ wrapper for gRPC without SSL"
     "<%text>${gRPC_CPP_VERSION}</%text>"
-    "${" ".join(["grpc_unsecure"] + list_abseil_pkg_targets("grpc++_unsecure"))}"
-    ""
-    "${" ".join(("-l" + l) for l in ["grpc++_unsecure"])}"
-    ""
+    "${" ".join(get_pkgconfig_requires("grpc++_unsecure"))}"
+    "${" ".join(get_pkgconfig_requires_private("grpc++_unsecure"))}"
+    "${" ".join(get_pkgconfig_libs("grpc++_unsecure"))}"
+    "${" ".join(get_pkgconfig_libs_private("grpc++_unsecure"))}"
     "grpc++_unsecure.pc")

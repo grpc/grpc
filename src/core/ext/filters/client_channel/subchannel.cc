@@ -33,7 +33,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
-#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
@@ -367,8 +367,10 @@ void Subchannel::ConnectivityStateWatcherList::NotifyLocked(
     grpc_connectivity_state state, const absl::Status& status) {
   for (const auto& p : watchers_) {
     subchannel_->work_serializer_.Schedule(
-        [watcher = p.second->Ref(), state, status]() {
-          watcher->OnConnectivityStateChange(state, status);
+        [watcher = p.second->Ref(), state, status]() mutable {
+          auto* watcher_ptr = watcher.get();
+          watcher_ptr->OnConnectivityStateChange(std::move(watcher), state,
+                                                 status);
         },
         DEBUG_LOCATION);
   }
@@ -527,8 +529,10 @@ void Subchannel::WatchConnectivityState(
       grpc_pollset_set_add_pollset_set(pollset_set_, interested_parties);
     }
     work_serializer_.Schedule(
-        [watcher = watcher->Ref(), state = state_, status = status_]() {
-          watcher->OnConnectivityStateChange(state, status);
+        [watcher = watcher->Ref(), state = state_, status = status_]() mutable {
+          auto* watcher_ptr = watcher.get();
+          watcher_ptr->OnConnectivityStateChange(std::move(watcher), state,
+                                                 status);
         },
         DEBUG_LOCATION);
     watcher_list_.AddWatcherLocked(std::move(watcher));

@@ -19,6 +19,7 @@
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 
@@ -35,7 +36,7 @@ CORE_END2END_TEST(Http2SingleHopTest, SimpleDelayedRequestShort) {
                  .Set(GRPC_ARG_MAX_RECONNECT_BACKOFF_MS, 1000)
                  .Set(GRPC_ARG_MIN_RECONNECT_BACKOFF_MS, 5000));
   gpr_log(GPR_ERROR, "Create client side call");
-  auto c = NewClientCall("/foo").Timeout(Duration::Seconds(30)).Create();
+  auto c = NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
   IncomingMetadata server_initial_metadata;
   IncomingStatusOnClient server_status;
   gpr_log(GPR_ERROR, "Start initial batch");

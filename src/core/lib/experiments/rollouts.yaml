@@ -79,7 +79,7 @@
     # implemented
     windows: broken
 - name: work_stealing
-  default: false
+  default: debug
 - name: client_privacy
   default: false
 - name: canary_client_privacy
@@ -87,6 +87,8 @@
 - name: server_privacy
   default: false
 - name: unique_metadata_strings
-  default: false
+  default: true
 - name: keepalive_fix
+  default: false
+- name: keepalive_server_fix
   default: false

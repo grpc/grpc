@@ -114,9 +114,14 @@ class OpenTelemetryServerCallTracer : public grpc_core::ServerCallTracer {
     // Not implemented
   }
 
+  void RecordAnnotation(const Annotation& /*annotation*/) override {
+    // Not implemented
+  }
+
  private:
   grpc_core::Slice path_;
   absl::string_view method_;
+  std::string authority_;
   absl::Time start_time_;
   absl::Duration elapsed_time_;
 };
@@ -129,9 +134,21 @@ void OpenTelemetryServerCallTracer::RecordReceivedInitialMetadata(
     path_ = path->Ref();
   }
   method_ = absl::StripPrefix(path_.as_string_view(), "/");
+  const auto* authority =
+      recv_initial_metadata->get_pointer(grpc_core::HttpAuthorityMetadata());
+  // Override with host metadata if authority is absent.
+  if (authority == nullptr) {
+    authority = recv_initial_metadata->get_pointer(grpc_core::HostMetadata());
+  }
+  if (authority != nullptr) {
+    authority_ = std::string(authority->as_string_view());
+  }
   // TODO(yashykt): Figure out how to get this to work with absl::string_view
-  OTelPluginState().server.call.started->Add(
-      1, {{std::string(OTelMethodKey()), std::string(method_)}});
+  if (OTelPluginState().server.call.started != nullptr) {
+    OTelPluginState().server.call.started->Add(
+        1, {{std::string(OTelMethodKey()), std::string(method_)},
+            {std::string(OTelAuthorityKey()), authority_}});
+  }
 }
 
 void OpenTelemetryServerCallTracer::RecordSendTrailingMetadata(
@@ -147,16 +164,25 @@ void OpenTelemetryServerCallTracer::RecordEnd(
       {std::string(OTelMethodKey()), std::string(method_)},
       {std::string(OTelStatusKey()),
        absl::StatusCodeToString(
-           static_cast<absl::StatusCode>(final_info->final_status))}};
-  OTelPluginState().server.call.duration->Record(
-      absl::ToDoubleSeconds(elapsed_time_), attributes,
-      opentelemetry::context::Context{});
-  OTelPluginState().server.call.sent_total_compressed_message_size->Record(
-      final_info->stats.transport_stream_stats.outgoing.data_bytes, attributes,
-      opentelemetry::context::Context{});
-  OTelPluginState().server.call.rcvd_total_compressed_message_size->Record(
-      final_info->stats.transport_stream_stats.incoming.data_bytes, attributes,
-      opentelemetry::context::Context{});
+           static_cast<absl::StatusCode>(final_info->final_status))},
+      {std::string(OTelAuthorityKey()), authority_}};
+  if (OTelPluginState().server.call.duration != nullptr) {
+    OTelPluginState().server.call.duration->Record(
+        absl::ToDoubleSeconds(elapsed_time_), attributes,
+        opentelemetry::context::Context{});
+  }
+  if (OTelPluginState().server.call.sent_total_compressed_message_size !=
+      nullptr) {
+    OTelPluginState().server.call.sent_total_compressed_message_size->Record(
+        final_info->stats.transport_stream_stats.outgoing.data_bytes,
+        attributes, opentelemetry::context::Context{});
+  }
+  if (OTelPluginState().server.call.rcvd_total_compressed_message_size !=
+      nullptr) {
+    OTelPluginState().server.call.rcvd_total_compressed_message_size->Record(
+        final_info->stats.transport_stream_stats.incoming.data_bytes,
+        attributes, opentelemetry::context::Context{});
+  }
 }
 
 }  // namespace

@@ -19,6 +19,7 @@
 
 #include "src/core/ext/filters/channel_idle/channel_idle_filter.h"
 
+#include <stdint.h>
 #include <stdlib.h>
 
 #include <functional>
@@ -26,7 +27,7 @@
 
 #include "absl/types/optional.h"
 
-#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
