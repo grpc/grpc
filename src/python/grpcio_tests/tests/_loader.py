@@ -15,6 +15,7 @@
 from __future__ import absolute_import
 
 import importlib
+import logging
 import os
 import pkgutil
 import re
@@ -22,6 +23,8 @@ import sys
 import unittest
 
 import coverage
+
+logger = logging.getLogger(__name__)
 
 TEST_MODULE_REGEX = r"^.*_test$"
 
@@ -106,11 +109,15 @@ class Loader(object):
             module = None
             if module_name in sys.modules:
                 module = sys.modules[module_name]
+                self.visit_module(module)
             else:
                 spec = importer.find_spec(module_name)
                 module = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(module)
-            self.visit_module(module)
+                try:
+                    spec.loader.exec_module(module)
+                    self.visit_module(module)
+                except ModuleNotFoundError:
+                    logger.debug("Skip loading %s", module_name)
 
     def visit_module(self, module):
         """Visits the module, adding discovered tests to the test suite.
