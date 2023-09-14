@@ -33,7 +33,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
-#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
@@ -59,6 +59,8 @@
 #include "src/core/lib/handshaker/proxy_mapper_registry.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/promise/cancel_callback.h"
+#include "src/core/lib/promise/seq.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
@@ -131,6 +133,36 @@ void ConnectedSubchannel::Ping(grpc_closure* on_initiate,
 size_t ConnectedSubchannel::GetInitialCallSizeEstimate() const {
   return GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(SubchannelCall)) +
          channel_stack_->call_stack_size;
+}
+
+ArenaPromise<ServerMetadataHandle> ConnectedSubchannel::MakeCallPromise(
+    CallArgs call_args) {
+  // If not using channelz, we just need to call the channel stack.
+  if (channelz_subchannel() == nullptr) {
+    return channel_stack_->MakeClientCallPromise(std::move(call_args));
+  }
+  // Otherwise, we need to wrap the channel stack promise with code that
+  // handles the channelz updates.
+  return OnCancel(
+      Seq(channel_stack_->MakeClientCallPromise(std::move(call_args)),
+          [self = Ref()](ServerMetadataHandle metadata) {
+            channelz::SubchannelNode* channelz_subchannel =
+                self->channelz_subchannel();
+            GPR_ASSERT(channelz_subchannel != nullptr);
+            if (metadata->get(GrpcStatusMetadata())
+                    .value_or(GRPC_STATUS_UNKNOWN) != GRPC_STATUS_OK) {
+              channelz_subchannel->RecordCallFailed();
+            } else {
+              channelz_subchannel->RecordCallSucceeded();
+            }
+            return metadata;
+          }),
+      [self = Ref()]() {
+        channelz::SubchannelNode* channelz_subchannel =
+            self->channelz_subchannel();
+        GPR_ASSERT(channelz_subchannel != nullptr);
+        channelz_subchannel->RecordCallFailed();
+      });
 }
 
 //
@@ -367,8 +399,10 @@ void Subchannel::ConnectivityStateWatcherList::NotifyLocked(
     grpc_connectivity_state state, const absl::Status& status) {
   for (const auto& p : watchers_) {
     subchannel_->work_serializer_.Schedule(
-        [watcher = p.second->Ref(), state, status]() {
-          watcher->OnConnectivityStateChange(state, status);
+        [watcher = p.second->Ref(), state, status]() mutable {
+          auto* watcher_ptr = watcher.get();
+          watcher_ptr->OnConnectivityStateChange(std::move(watcher), state,
+                                                 status);
         },
         DEBUG_LOCATION);
   }
@@ -527,8 +561,10 @@ void Subchannel::WatchConnectivityState(
       grpc_pollset_set_add_pollset_set(pollset_set_, interested_parties);
     }
     work_serializer_.Schedule(
-        [watcher = watcher->Ref(), state = state_, status = status_]() {
-          watcher->OnConnectivityStateChange(state, status);
+        [watcher = watcher->Ref(), state = state_, status = status_]() mutable {
+          auto* watcher_ptr = watcher.get();
+          watcher_ptr->OnConnectivityStateChange(std::move(watcher), state,
+                                                 status);
         },
         DEBUG_LOCATION);
     watcher_list_.AddWatcherLocked(std::move(watcher));

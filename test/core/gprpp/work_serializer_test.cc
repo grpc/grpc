@@ -235,6 +235,43 @@ TEST(WorkSerializerTest, WorkSerializerDestructionRaceMultipleThreads) {
   }
 }
 
+#ifndef NDEBUG
+TEST(WorkSerializerTest, RunningInWorkSerializer) {
+  grpc_core::WorkSerializer work_serializer1;
+  grpc_core::WorkSerializer work_serializer2;
+  EXPECT_FALSE(work_serializer1.RunningInWorkSerializer());
+  EXPECT_FALSE(work_serializer2.RunningInWorkSerializer());
+  work_serializer1.Run(
+      [&]() {
+        EXPECT_TRUE(work_serializer1.RunningInWorkSerializer());
+        EXPECT_FALSE(work_serializer2.RunningInWorkSerializer());
+        work_serializer2.Run(
+            [&]() {
+              EXPECT_TRUE(work_serializer1.RunningInWorkSerializer());
+              EXPECT_TRUE(work_serializer2.RunningInWorkSerializer());
+            },
+            DEBUG_LOCATION);
+      },
+      DEBUG_LOCATION);
+  EXPECT_FALSE(work_serializer1.RunningInWorkSerializer());
+  EXPECT_FALSE(work_serializer2.RunningInWorkSerializer());
+  work_serializer2.Run(
+      [&]() {
+        EXPECT_FALSE(work_serializer1.RunningInWorkSerializer());
+        EXPECT_TRUE(work_serializer2.RunningInWorkSerializer());
+        work_serializer1.Run(
+            [&]() {
+              EXPECT_TRUE(work_serializer1.RunningInWorkSerializer());
+              EXPECT_TRUE(work_serializer2.RunningInWorkSerializer());
+            },
+            DEBUG_LOCATION);
+      },
+      DEBUG_LOCATION);
+  EXPECT_FALSE(work_serializer1.RunningInWorkSerializer());
+  EXPECT_FALSE(work_serializer2.RunningInWorkSerializer());
+}
+#endif
+
 }  // namespace
 
 int main(int argc, char** argv) {

@@ -77,7 +77,6 @@ Json::Object ValidateStatefulSession(
       envoy_extensions_filters_http_stateful_session_v3_StatefulSession_session_state(
           stateful_session);
   if (session_state == nullptr) {
-    errors->AddError("field not present");
     return {};
   }
   ValidationErrors::ScopedField field2(errors, ".typed_config");
@@ -188,9 +187,7 @@ XdsHttpStatefulSessionFilter::GenerateFilterConfigOverride(
     const auto* stateful_session =
         envoy_extensions_filters_http_stateful_session_v3_StatefulSessionPerRoute_stateful_session(
             stateful_session_per_route);
-    if (stateful_session == nullptr) {
-      errors->AddError("field not present");
-    } else {
+    if (stateful_session != nullptr) {
       config = ValidateStatefulSession(context, stateful_session, errors);
     }
   }
@@ -211,8 +208,7 @@ ChannelArgs XdsHttpStatefulSessionFilter::ModifyChannelArgs(
 absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
 XdsHttpStatefulSessionFilter::GenerateServiceConfig(
     const FilterConfig& hcm_filter_config,
-    const FilterConfig* filter_config_override,
-    absl::string_view /*filter_name*/) const {
+    const FilterConfig* filter_config_override) const {
   const Json& config = filter_config_override != nullptr
                            ? filter_config_override->config
                            : hcm_filter_config.config;

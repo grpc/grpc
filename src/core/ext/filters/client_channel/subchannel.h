@@ -54,6 +54,7 @@
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -83,6 +84,8 @@ class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
   }
 
   size_t GetInitialCallSizeEstimate() const;
+
+  ArenaPromise<ServerMetadataHandle> MakeCallPromise(CallArgs call_args);
 
  private:
   grpc_channel_stack* channel_stack_;
@@ -119,9 +122,9 @@ class SubchannelCall {
   void SetAfterCallStackDestroy(grpc_closure* closure);
 
   // Interface of RefCounted<>.
-  RefCountedPtr<SubchannelCall> Ref() GRPC_MUST_USE_RESULT;
-  RefCountedPtr<SubchannelCall> Ref(const DebugLocation& location,
-                                    const char* reason) GRPC_MUST_USE_RESULT;
+  GRPC_MUST_USE_RESULT RefCountedPtr<SubchannelCall> Ref();
+  GRPC_MUST_USE_RESULT RefCountedPtr<SubchannelCall> Ref(
+      const DebugLocation& location, const char* reason);
   // When refcount drops to 0, destroys itself and the associated call stack,
   // but does NOT free the memory because it's in the call arena.
   void Unref();
@@ -173,8 +176,14 @@ class Subchannel : public DualRefCounted<Subchannel> {
     // Invoked whenever the subchannel's connectivity state changes.
     // There will be only one invocation of this method on a given watcher
     // instance at any given time.
-    virtual void OnConnectivityStateChange(grpc_connectivity_state state,
-                                           const absl::Status& status) = 0;
+    // A ref to the watcher is passed in here so that the implementation
+    // can unref it in the appropriate synchronization context (e.g.,
+    // inside a WorkSerializer).
+    // TODO(roth): Figure out a cleaner way to guarantee that the ref is
+    // released in the right context.
+    virtual void OnConnectivityStateChange(
+        RefCountedPtr<ConnectivityStateWatcherInterface> self,
+        grpc_connectivity_state state, const absl::Status& status) = 0;
 
     virtual grpc_pollset_set* interested_parties() = 0;
   };

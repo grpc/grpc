@@ -25,7 +25,11 @@
   # for Python test coverage reporting
   RUN python3.9 -m pip install coverage
 
+  # six is required by the run_tests.py test harness
+  RUN python3.9 -m pip install six
+
   <%include file="../../gcp_api_libraries.include"/>
 
   <%include file="../../cmake.include"/>
   <%include file="../../ccache.include"/>
+

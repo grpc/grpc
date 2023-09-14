@@ -20,7 +20,6 @@
 #include <grpc/support/port_platform.h>
 
 #include <map>
-#include <string>
 #include <utility>
 #include <vector>
 
@@ -28,6 +27,7 @@
 #include "absl/strings/string_view.h"
 
 #include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/gprpp/ref_counted_string.h"
 #include "src/core/lib/resolver/endpoint_addresses.h"
 
 // The resolver returns a flat list of addresses.  When a hierarchy of
@@ -88,7 +88,7 @@ namespace grpc_core {
 // to be associated with the address.
 class HierarchicalPathArg : public RefCounted<HierarchicalPathArg> {
  public:
-  explicit HierarchicalPathArg(std::vector<std::string> path)
+  explicit HierarchicalPathArg(std::vector<RefCountedStringValue> path)
       : path_(std::move(path)) {}
 
   // Channel arg traits methods.
@@ -96,15 +96,17 @@ class HierarchicalPathArg : public RefCounted<HierarchicalPathArg> {
   static int ChannelArgsCompare(const HierarchicalPathArg* a,
                                 const HierarchicalPathArg* b);
 
-  const std::vector<std::string>& path() const { return path_; }
+  const std::vector<RefCountedStringValue>& path() const { return path_; }
 
  private:
-  std::vector<std::string> path_;
+  std::vector<RefCountedStringValue> path_;
 };
 
 // A map from the next path element to the endpoint addresses that fall
 // under that path element.
-using HierarchicalAddressMap = std::map<std::string, EndpointAddressesList>;
+using HierarchicalAddressMap =
+    std::map<RefCountedStringValue, EndpointAddressesList,
+             RefCountedStringValueLessThan>;
 
 // Splits up the addresses into a separate list for each child.
 absl::StatusOr<HierarchicalAddressMap> MakeHierarchicalAddressMap(

@@ -126,10 +126,9 @@ class TestHeaderBasedAffinity(xds_url_map_testcase.XdsUrlMapTestCase):
             ),
             1,
         )
-        self.assertLen(
-            test_client.find_subchannels_with_state(_ChannelzChannelState.IDLE),
-            2,
-        )
+
+        # Any remaining subchannels may be in any state.
+
         # Send 150 RPCs without headers. RPCs without headers will pick random
         # backends. After this, we expect to see all backends to be connected.
         rpc_distribution = self.configure_and_send(
@@ -202,10 +201,9 @@ class TestHeaderBasedAffinityMultipleHeaders(
             ),
             1,
         )
-        self.assertLen(
-            test_client.find_subchannels_with_state(_ChannelzChannelState.IDLE),
-            2,
-        )
+
+        # Any remaining subchannels may be in any state.
+
         empty_call_peer = list(
             rpc_distribution.raw["rpcsByMethod"]["EmptyCall"][
                 "rpcsByPeer"
@@ -260,10 +258,7 @@ class TestHeaderBasedAffinityMultipleHeaders(
             ),
             2,
         )
-        self.assertLen(
-            test_client.find_subchannels_with_state(_ChannelzChannelState.IDLE),
-            1,
-        )
+        # Any remaining subchannels may be in any state.
 
 
 # TODO: add more test cases

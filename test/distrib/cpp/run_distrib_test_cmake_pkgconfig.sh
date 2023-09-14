@@ -66,9 +66,12 @@ make "-j${GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS}" install
 popd
 
 # Just before installing gRPC, wipe out contents of all the submodules to simulate
-# a standalone build from an archive
-# shellcheck disable=SC2016
-git submodule foreach 'cd $toplevel; rm -rf $name'
+# a standalone build from an archive.
+# Get list of submodules from the .gitmodules file since for "git submodule foreach"
+# we'd need to be in a git workspace (and that's not the case when running
+# distribtests as a bazel action)
+# TODO(veblush): Remove upb exception
+grep 'path = ' .gitmodules | sed 's/^.*path = //' | grep -v 'third_party/upb' | xargs rm -rf
 
 # Install gRPC
 # TODO(jtattermusch): avoid the need for setting utf8_range_DIR

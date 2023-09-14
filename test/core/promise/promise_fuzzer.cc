@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <stdint.h>
+
 #include <functional>
 #include <map>
 #include <memory>
@@ -26,7 +28,6 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/promise/activity.h"
-#include "src/core/lib/promise/detail/basic_join.h"
 #include "src/core/lib/promise/join.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/poll.h"

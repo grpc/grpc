@@ -36,3 +36,5 @@ RUN apt-get update && apt-get install -y ${'\\'}
   wget ${'\\'}
   zip ${'\\'}
   && apt-get clean
+
+<%include file="git_avoid_dubious_ownership_error.include"/>

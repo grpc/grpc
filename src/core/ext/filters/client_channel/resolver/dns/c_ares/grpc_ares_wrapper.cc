@@ -24,7 +24,7 @@
 
 #include "absl/strings/string_view.h"
 
-#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/sockaddr.h"
@@ -366,9 +366,7 @@ static void on_readable(void* arg, grpc_error_handle error) {
   GRPC_CARES_TRACE_LOG("request:%p readable on %s", fdn->ev_driver->request,
                        fdn->grpc_polled_fd->GetName());
   if (error.ok() && !ev_driver->shutting_down) {
-    do {
-      ares_process_fd(ev_driver->channel, as, ARES_SOCKET_BAD);
-    } while (fdn->grpc_polled_fd->IsFdStillReadableLocked());
+    ares_process_fd(ev_driver->channel, as, ARES_SOCKET_BAD);
   } else {
     // If error is not absl::OkStatus() or the resolution was cancelled, it
     // means the fd has been shutdown or timed out. The pending lookups made on
@@ -438,12 +436,21 @@ static void grpc_ares_notify_on_event_locked(grpc_ares_ev_driver* ev_driver)
         if (ARES_GETSOCK_READABLE(socks_bitmask, i) &&
             !fdn->readable_registered) {
           grpc_ares_ev_driver_ref(ev_driver);
-          GRPC_CARES_TRACE_LOG("request:%p notify read on: %s",
-                               ev_driver->request,
-                               fdn->grpc_polled_fd->GetName());
           GRPC_CLOSURE_INIT(&fdn->read_closure, on_readable, fdn,
                             grpc_schedule_on_exec_ctx);
-          fdn->grpc_polled_fd->RegisterForOnReadableLocked(&fdn->read_closure);
+          if (fdn->grpc_polled_fd->IsFdStillReadableLocked()) {
+            GRPC_CARES_TRACE_LOG("request:%p schedule direct read on: %s",
+                                 ev_driver->request,
+                                 fdn->grpc_polled_fd->GetName());
+            grpc_core::ExecCtx::Run(DEBUG_LOCATION, &fdn->read_closure,
+                                    absl::OkStatus());
+          } else {
+            GRPC_CARES_TRACE_LOG("request:%p notify read on: %s",
+                                 ev_driver->request,
+                                 fdn->grpc_polled_fd->GetName());
+            fdn->grpc_polled_fd->RegisterForOnReadableLocked(
+                &fdn->read_closure);
+          }
           fdn->readable_registered = true;
         }
         // Register write_closure if the socket is writable and write_closure
@@ -510,10 +517,12 @@ void grpc_ares_ev_driver_start_locked(grpc_ares_ev_driver* ev_driver)
                   &ev_driver->on_ares_backup_poll_alarm_locked);
 }
 
-static void noop_inject_channel_config(ares_channel /*channel*/) {}
+static void noop_inject_channel_config(ares_channel* /*channel*/) {}
 
-void (*grpc_ares_test_only_inject_config)(ares_channel channel) =
+void (*grpc_ares_test_only_inject_config)(ares_channel* channel) =
     noop_inject_channel_config;
+
+bool g_grpc_ares_test_only_force_tcp = false;
 
 grpc_error_handle grpc_ares_ev_driver_create_locked(
     grpc_ares_ev_driver** ev_driver, grpc_pollset_set* pollset_set,
@@ -523,8 +532,11 @@ grpc_error_handle grpc_ares_ev_driver_create_locked(
   ares_options opts;
   memset(&opts, 0, sizeof(opts));
   opts.flags |= ARES_FLAG_STAYOPEN;
+  if (g_grpc_ares_test_only_force_tcp) {
+    opts.flags |= ARES_FLAG_USEVC;
+  }
   int status = ares_init_options(&(*ev_driver)->channel, &opts, ARES_OPT_FLAGS);
-  grpc_ares_test_only_inject_config((*ev_driver)->channel);
+  grpc_ares_test_only_inject_config(&(*ev_driver)->channel);
   GRPC_CARES_TRACE_LOG("request:%p grpc_ares_ev_driver_create_locked", request);
   if (status != ARES_SUCCESS) {
     grpc_error_handle err = GRPC_ERROR_CREATE(absl::StrCat(

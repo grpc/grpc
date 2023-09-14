@@ -153,6 +153,18 @@ class AioRpcError(grpc.RpcError):
     def __str__(self) -> str:
         return self._repr()
 
+    def __reduce__(self):
+        return (
+            type(self),
+            (
+                self._code,
+                self._initial_metadata,
+                self._trailing_metadata,
+                self._details,
+                self._debug_error_string,
+            ),
+        )
+
 
 def _create_rpc_error(
     initial_metadata: Metadata, status: cygrpc.AioRpcStatus
@@ -478,7 +490,8 @@ class _StreamRequestMixin(Call):
         )
         try:
             await self._cython_call.send_serialized_message(serialized_request)
-        except cygrpc.InternalError:
+        except cygrpc.InternalError as err:
+            self._cython_call.set_internal_error(str(err))
             await self._raise_for_status()
         except asyncio.CancelledError:
             if not self.cancelled():

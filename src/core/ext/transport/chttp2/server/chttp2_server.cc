@@ -43,13 +43,14 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_posix.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
-#include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
+#include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channelz.h"
@@ -209,7 +210,8 @@ class Chttp2ServerListener : public Server::ListenerInterface {
     OrphanablePtr<HandshakingState> handshaking_state_ ABSL_GUARDED_BY(&mu_);
     // Set by HandshakingState when handshaking is done and a valid transport
     // is created.
-    grpc_chttp2_transport* transport_ ABSL_GUARDED_BY(&mu_) = nullptr;
+    RefCountedPtr<grpc_chttp2_transport> transport_ ABSL_GUARDED_BY(&mu_) =
+        nullptr;
     grpc_closure on_close_;
     absl::optional<EventEngine::TaskHandle> drain_grace_timer_handle_
         ABSL_GUARDED_BY(&mu_);
@@ -246,13 +248,12 @@ class Chttp2ServerListener : public Server::ListenerInterface {
     IncrementRefCount();
   }
 
-  RefCountedPtr<Chttp2ServerListener> Ref() GRPC_MUST_USE_RESULT {
+  GRPC_MUST_USE_RESULT RefCountedPtr<Chttp2ServerListener> Ref() {
     IncrementRefCount();
     return RefCountedPtr<Chttp2ServerListener>(this);
   }
-  RefCountedPtr<Chttp2ServerListener> Ref(const DebugLocation& /* location */,
-                                          const char* /* reason */)
-      GRPC_MUST_USE_RESULT {
+  GRPC_MUST_USE_RESULT RefCountedPtr<Chttp2ServerListener> Ref(
+      const DebugLocation& /* location */, const char* /* reason */) {
     return Ref();
   }
 
@@ -419,7 +420,7 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnTimeout() {
   {
     MutexLock lock(&connection_->mu_);
     if (timer_handle_.has_value()) {
-      transport = connection_->transport_;
+      transport = connection_->transport_.get();
       timer_handle_.reset();
     }
   }
@@ -490,9 +491,7 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
           // TODO(roth): Change to static_cast<> when we C++-ify the
           // transport API.
           self->connection_->transport_ =
-              reinterpret_cast<grpc_chttp2_transport*>(transport);
-          GRPC_CHTTP2_REF_TRANSPORT(self->connection_->transport_,
-                                    "ActiveConnection");  // Held by connection_
+              reinterpret_cast<grpc_chttp2_transport*>(transport)->Ref();
           self->Ref().release();  // Held by OnReceiveSettings().
           GRPC_CLOSURE_INIT(&self->on_receive_settings_, OnReceiveSettings,
                             self, grpc_schedule_on_exec_ctx);
@@ -572,11 +571,7 @@ Chttp2ServerListener::ActiveConnection::ActiveConnection(
                     grpc_schedule_on_exec_ctx);
 }
 
-Chttp2ServerListener::ActiveConnection::~ActiveConnection() {
-  if (transport_ != nullptr) {
-    GRPC_CHTTP2_UNREF_TRANSPORT(transport_, "ActiveConnection");
-  }
-}
+Chttp2ServerListener::ActiveConnection::~ActiveConnection() {}
 
 void Chttp2ServerListener::ActiveConnection::Orphan() {
   OrphanablePtr<HandshakingState> handshaking_state;
@@ -595,7 +590,7 @@ void Chttp2ServerListener::ActiveConnection::SendGoAway() {
   {
     MutexLock lock(&mu_);
     if (transport_ != nullptr && !shutdown_) {
-      transport = transport_;
+      transport = transport_.get();
       drain_grace_timer_handle_ = event_engine_->RunAfter(
           std::max(Duration::Zero(),
                    listener_->args_
@@ -667,7 +662,7 @@ void Chttp2ServerListener::ActiveConnection::OnDrainGraceTimeExpiry() {
   {
     MutexLock lock(&mu_);
     if (drain_grace_timer_handle_.has_value()) {
-      transport = transport_;
+      transport = transport_.get();
       drain_grace_timer_handle_.reset();
     }
   }

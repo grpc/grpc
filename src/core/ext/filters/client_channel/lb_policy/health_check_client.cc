@@ -34,7 +34,7 @@
 #include "upb/base/string_view.h"
 #include "upb/upb.hpp"
 
-#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
@@ -327,9 +327,11 @@ class HealthProducer::ConnectivityWatcher
   explicit ConnectivityWatcher(WeakRefCountedPtr<HealthProducer> producer)
       : producer_(std::move(producer)) {}
 
-  void OnConnectivityStateChange(grpc_connectivity_state state,
-                                 const absl::Status& status) override {
+  void OnConnectivityStateChange(
+      RefCountedPtr<ConnectivityStateWatcherInterface> self,
+      grpc_connectivity_state state, const absl::Status& status) override {
     producer_->OnConnectivityStateChange(state, status);
+    self.reset();
   }
 
   grpc_pollset_set* interested_parties() override {

@@ -20,16 +20,11 @@ import argparse
 import collections
 import itertools
 import json
-import multiprocessing
 import os
 import pipes
 import re
-import subprocess
 import sys
-import tempfile
 import time
-import traceback
-import uuid
 
 import six
 
@@ -216,7 +211,7 @@ def archive_repo(languages):
         cmdline.append("../grpc-java")
     if "go" in languages:
         cmdline.append("../grpc-go")
-    if "node" in languages or "node_purejs" in languages:
+    if "node" in languages:
         cmdline.append("../grpc-node")
 
     archive_job = jobset.JobSpec(

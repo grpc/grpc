@@ -20,6 +20,7 @@
 #include "test/core/end2end/end2end_tests.h"
 
 #include <regex>
+#include <tuple>
 
 #include "absl/memory/memory.h"
 #include "absl/random/random.h"
@@ -136,8 +137,8 @@ grpc_op CoreEnd2endTest::IncomingMetadata::MakeOp() {
   return op;
 }
 
-std::string CoreEnd2endTest::IncomingMetadata::ToString() {
-  std::string out = "{";
+std::string CoreEnd2endTest::IncomingMetadata::GetSuccessfulStateString() {
+  std::string out = "incoming_metadata: {";
   for (size_t i = 0; i < metadata_->count; i++) {
     absl::StrAppend(&out, StringViewFromSlice(metadata_->metadata[i].key), ":",
                     StringViewFromSlice(metadata_->metadata[i].value), ",");
@@ -184,10 +185,11 @@ CoreEnd2endTest::IncomingStatusOnClient::GetTrailingMetadata(
   return FindInMetadataArray(data_->trailing_metadata, key);
 }
 
-std::string CoreEnd2endTest::IncomingStatusOnClient::ToString() {
-  std::string out =
-      absl::StrCat("{status:", data_->status,
-                   " msg:", data_->status_details.as_string_view(), " ");
+std::string
+CoreEnd2endTest::IncomingStatusOnClient::GetSuccessfulStateString() {
+  std::string out = absl::StrCat(
+      "status_on_client: status=", data_->status,
+      " msg=", data_->status_details.as_string_view(), " trailing_metadata={");
   for (size_t i = 0; i < data_->trailing_metadata.count; i++) {
     absl::StrAppend(
         &out, StringViewFromSlice(data_->trailing_metadata.metadata[i].key),
@@ -195,6 +197,11 @@ std::string CoreEnd2endTest::IncomingStatusOnClient::ToString() {
         ",");
   }
   return out + "}";
+}
+
+std::string CoreEnd2endTest::IncomingMessage::GetSuccessfulStateString() {
+  if (payload_ == nullptr) return "message: empty";
+  return absl::StrCat("message: ", payload().size(), "b uncompressed");
 }
 
 grpc_op CoreEnd2endTest::IncomingStatusOnClient::MakeOp() {
@@ -298,19 +305,22 @@ CoreEnd2endTest::Call CoreEnd2endTest::ClientCallBuilder::Create() {
     absl::optional<Slice> host;
     if (u->host.has_value()) host = Slice::FromCopiedString(*u->host);
     test_.ForceInitialized();
-    return Call(grpc_channel_create_call(
-        test_.client(), parent_call_, propagation_mask_, test_.cq(),
-        Slice::FromCopiedString(u->method).c_slice(),
-        host.has_value() ? &host->c_slice() : nullptr, deadline_, nullptr));
+    return Call(
+        grpc_channel_create_call(
+            test_.client(), parent_call_, propagation_mask_, test_.cq(),
+            Slice::FromCopiedString(u->method).c_slice(),
+            host.has_value() ? &host->c_slice() : nullptr, deadline_, nullptr),
+        &test_);
   } else {
     return Call(grpc_channel_create_registered_call(
-        test_.client(), parent_call_, propagation_mask_, test_.cq(),
-        absl::get<void*>(call_selector_), deadline_, nullptr));
+                    test_.client(), parent_call_, propagation_mask_, test_.cq(),
+                    absl::get<void*>(call_selector_), deadline_, nullptr),
+                &test_);
   }
 }
 
 CoreEnd2endTest::IncomingCall::IncomingCall(CoreEnd2endTest& test, int tag)
-    : impl_(std::make_unique<Impl>()) {
+    : impl_(std::make_unique<Impl>(&test)) {
   test.ForceInitialized();
   grpc_server_request_call(test.server(), impl_->call.call_ptr(),
                            &impl_->call_details, &impl_->request_metadata,
@@ -361,6 +371,11 @@ std::vector<absl::string_view> KeysFrom(const Map& map) {
 
 std::vector<CoreEnd2endTestRegistry::Test> CoreEnd2endTestRegistry::AllTests() {
   std::vector<Test> tests;
+  // Sort inputs to ensure outputs are deterministic
+  for (auto& suite_configs : suites_) {
+    std::sort(suite_configs.second.begin(), suite_configs.second.end(),
+              [](const auto* a, const auto* b) { return a->name < b->name; });
+  }
   for (const auto& suite_configs : suites_) {
     if (suite_configs.second.empty()) {
       CrashWithStdio(

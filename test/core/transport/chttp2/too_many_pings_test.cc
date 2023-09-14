@@ -35,6 +35,7 @@
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
@@ -250,7 +251,7 @@ grpc_status_code PerformWaitingCall(grpc_channel* channel, grpc_server* server,
   grpc_status_code status;
   grpc_call_error error;
   grpc_slice details;
-  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(15);
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(30);
   // Start a call
   c = grpc_channel_create_call(channel, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
                                grpc_slice_from_static_string("/foo"), nullptr,

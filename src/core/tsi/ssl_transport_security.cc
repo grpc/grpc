@@ -65,6 +65,7 @@
 
 // --- Constants. ---
 
+#define TSI_SSL_MAX_BIO_WRITE_ATTEMPTS 100
 #define TSI_SSL_MAX_PROTECTED_FRAME_SIZE_UPPER_BOUND 16384
 #define TSI_SSL_MAX_PROTECTED_FRAME_SIZE_LOWER_BOUND 1024
 #define TSI_SSL_HANDSHAKER_OUTGOING_BUFFER_INITIAL_SIZE 1024
@@ -147,6 +148,9 @@ static const unsigned char kSslSessionIdContext[] = {'g', 'r', 'p', 'c'};
 static int g_ssl_ex_verified_root_cert_index = -1;
 #if !defined(OPENSSL_IS_BORINGSSL) && !defined(OPENSSL_NO_ENGINE)
 static const char kSslEnginePrefix[] = "engine:";
+#endif
+#if OPENSSL_VERSION_NUMBER >= 0x30000000
+static const int kSslEcCurveNames[] = {NID_X9_62_prime256v1};
 #endif
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000
@@ -788,6 +792,7 @@ static tsi_result populate_ssl_context(
     return TSI_INVALID_ARGUMENT;
   }
   {
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
     EC_KEY* ecdh = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
     if (!SSL_CTX_set_tmp_ecdh(context, ecdh)) {
       gpr_log(GPR_ERROR, "Could not set ephemeral ECDH key.");
@@ -796,6 +801,13 @@ static tsi_result populate_ssl_context(
     }
     SSL_CTX_set_options(context, SSL_OP_SINGLE_ECDH_USE);
     EC_KEY_free(ecdh);
+#else
+    if (!SSL_CTX_set1_groups(context, kSslEcCurveNames, 1)) {
+      gpr_log(GPR_ERROR, "Could not set ephemeral ECDH key.");
+      return TSI_INTERNAL_ERROR;
+    }
+    SSL_CTX_set_options(context, SSL_OP_SINGLE_ECDH_USE);
+#endif
   }
   return TSI_OK;
 }
@@ -1538,15 +1550,35 @@ static tsi_result ssl_handshaker_next(tsi_handshaker* self,
   // If there are received bytes, process them first.
   tsi_ssl_handshaker* impl = reinterpret_cast<tsi_ssl_handshaker*>(self);
   tsi_result status = TSI_OK;
-  size_t bytes_consumed = received_bytes_size;
   size_t bytes_written = 0;
   if (received_bytes_size > 0) {
-    status = ssl_handshaker_process_bytes_from_peer(impl, received_bytes,
-                                                    &bytes_consumed, error);
-    while (status == TSI_DRAIN_BUFFER) {
-      status = ssl_handshaker_write_output_buffer(self, &bytes_written, error);
-      if (status != TSI_OK) return status;
-      status = ssl_handshaker_do_handshake(impl, error);
+    unsigned char* remaining_bytes_to_write_to_openssl =
+        const_cast<unsigned char*>(received_bytes);
+    size_t remaining_bytes_to_write_to_openssl_size = received_bytes_size;
+    size_t number_bio_write_attempts = 0;
+    while (remaining_bytes_to_write_to_openssl_size > 0 &&
+           (status == TSI_OK || status == TSI_INCOMPLETE_DATA) &&
+           number_bio_write_attempts < TSI_SSL_MAX_BIO_WRITE_ATTEMPTS) {
+      ++number_bio_write_attempts;
+      // Try to write all of the remaining bytes to the BIO.
+      size_t bytes_written_to_openssl =
+          remaining_bytes_to_write_to_openssl_size;
+      status = ssl_handshaker_process_bytes_from_peer(
+          impl, remaining_bytes_to_write_to_openssl, &bytes_written_to_openssl,
+          error);
+      // As long as the BIO is full, drive the SSL handshake to consume bytes
+      // from the BIO. If the SSL handshake returns any bytes, write them to the
+      // peer.
+      while (status == TSI_DRAIN_BUFFER) {
+        status =
+            ssl_handshaker_write_output_buffer(self, &bytes_written, error);
+        if (status != TSI_OK) return status;
+        status = ssl_handshaker_do_handshake(impl, error);
+      }
+      // Move the pointer to the first byte not yet successfully written to the
+      // BIO.
+      remaining_bytes_to_write_to_openssl_size -= bytes_written_to_openssl;
+      remaining_bytes_to_write_to_openssl += bytes_written_to_openssl;
     }
   }
   if (status != TSI_OK) return status;

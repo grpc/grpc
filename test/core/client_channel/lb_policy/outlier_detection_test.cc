@@ -37,6 +37,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
@@ -231,6 +232,7 @@ TEST_F(OutlierDetectionTest, FailurePercentage) {
   time_cache_.IncrementBy(Duration::Seconds(10));
   RunTimerCallback();
   gpr_log(GPR_INFO, "### ejection complete");
+  if (!IsRoundRobinDelegateToPickFirstEnabled()) ExpectReresolutionRequest();
   // Expect a picker update.
   std::vector<absl::string_view> remaining_addresses;
   for (const auto& addr : kAddresses) {

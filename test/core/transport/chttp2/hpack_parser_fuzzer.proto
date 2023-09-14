@@ -16,6 +16,8 @@ syntax = "proto3";
 
 package hpack_parser_fuzzer;
 
+import "test/core/util/fuzz_config_vars.proto";
+
 message Empty {}
 
 message Frame {
@@ -30,5 +32,5 @@ message Frame {
 
 message Msg {
   repeated Frame frames = 2;
+  grpc.testing.FuzzConfigVars config_vars = 3;
 }
-

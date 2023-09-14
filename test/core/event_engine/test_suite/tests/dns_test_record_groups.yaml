@@ -1,0 +1,21 @@
+resolver_tests_common_zone_name: dns-test.event-engine.
+resolver_component_tests:
+- records:
+    ipv4-only-multi-target:
+    - {TTL: '2100', data: 1.2.3.4, type: A}
+    - {TTL: '2100', data: 1.2.3.5, type: A}
+    - {TTL: '2100', data: 1.2.3.6, type: A}
+    ipv6-only-multi-target:
+    - {TTL: '2100', data: '2607:f8b0:400a:801::1002', type: AAAA}
+    - {TTL: '2100', data: '2607:f8b0:400a:801::1003', type: AAAA}
+    - {TTL: '2100', data: '2607:f8b0:400a:801::1004', type: AAAA}
+    ipv6-loopback-preferred-target:
+    - {TTL: '2100', data: '2002::1111', type: AAAA}
+    - {TTL: '2100', data: '::1', type: AAAA}
+    _grpclb._tcp.srv-multi-target:
+    - {TTL: '2100', data: 0 0 1234 ipv4-only-multi-target, type: SRV}
+    - {TTL: '2100', data: 0 0 1234 ipv6-only-multi-target, type: SRV}
+    _grpc_config.simple-service:
+    - {TTL: '2100', data: 'grpc_config=[{"serviceConfig":{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"SimpleService"}],"waitForReady":true}]}}]',
+      type: TXT}
+    - {TTL: '2100', data: 'other_config=other config', type: TXT}

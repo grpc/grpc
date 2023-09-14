@@ -63,7 +63,8 @@ PROTOC_PACKAGES=(
 
 # C#
 UNZIPPED_CSHARP_PACKAGES=$(mktemp -d)
-unzip "$INPUT_ARTIFACTS/csharp_nugets_windows_dotnetcli.zip" -d "$UNZIPPED_CSHARP_PACKAGES"
+# the "_multiplatform" suffix is to fix https://github.com/grpc/grpc/issues/32179
+unzip "$INPUT_ARTIFACTS/csharp_nugets_windows_dotnetcli_multiplatform.zip" -d "$UNZIPPED_CSHARP_PACKAGES"
 CSHARP_PACKAGES=(
   "$UNZIPPED_CSHARP_PACKAGES"/*
   "$INPUT_ARTIFACTS"/grpc_unity_package.[0-9]*.zip

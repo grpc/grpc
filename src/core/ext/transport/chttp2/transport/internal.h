@@ -26,6 +26,8 @@
 
 #include <memory>
 
+#include "absl/container/flat_hash_map.h"
+#include "absl/meta/type_traits.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
@@ -37,7 +39,6 @@
 
 #include "src/core/ext/transport/chttp2/transport/context_list_entry.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
-#include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/frame_goaway.h"
 #include "src/core/ext/transport/chttp2/transport/frame_ping.h"
 #include "src/core/ext/transport/chttp2/transport/frame_rst_stream.h"
@@ -46,7 +47,9 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
-#include "src/core/ext/transport/chttp2/transport/stream_map.h"
+#include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
+#include "src/core/ext/transport/chttp2/transport/ping_abuse_policy.h"
+#include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/debug/trace.h"
@@ -145,21 +148,14 @@ struct grpc_chttp2_ping_queue {
   grpc_closure_list lists[GRPC_CHTTP2_PCL_COUNT] = {};
   uint64_t inflight_id = 0;
 };
-struct grpc_chttp2_repeated_ping_policy {
-  int max_pings_without_data;
-  int max_ping_strikes;
-  grpc_core::Duration min_recv_ping_interval_without_data;
-};
+
 struct grpc_chttp2_repeated_ping_state {
   grpc_core::Timestamp last_ping_sent_time;
   int pings_before_data_required;
   absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
       delayed_ping_timer_handle;
 };
-struct grpc_chttp2_server_ping_recv_state {
-  grpc_core::Timestamp last_ping_recv_time;
-  int ping_strikes;
-};
+
 // deframer state for the overall http2 stream of bytes
 typedef enum {
   // prefix: one entry per http2 connection prefix byte
@@ -249,6 +245,19 @@ struct grpc_chttp2_transport : public grpc_core::KeepsGrpcInitialized {
                         grpc_endpoint* ep, bool is_client);
   ~grpc_chttp2_transport();
 
+  // Make this be able to be contained in RefCountedPtr<>
+  // Can't yet make this derive from RefCounted because we need to keep
+  // `grpc_transport base` first.
+  // TODO(ctiller): Make a transport interface.
+  void IncrementRefCount() { refs.Ref(); }
+  void Unref() {
+    if (refs.Unref()) delete this;
+  }
+  grpc_core::RefCountedPtr<grpc_chttp2_transport> Ref() {
+    IncrementRefCount();
+    return grpc_core::RefCountedPtr<grpc_chttp2_transport>(this);
+  }
+
   grpc_transport base;  // must be first
   grpc_core::RefCount refs;
   grpc_endpoint* ep;
@@ -278,7 +287,7 @@ struct grpc_chttp2_transport : public grpc_core::KeepsGrpcInitialized {
   grpc_chttp2_stream_list lists[STREAM_LIST_COUNT] = {};
 
   /// maps stream id to grpc_chttp2_stream objects
-  grpc_chttp2_stream_map stream_map;
+  absl::flat_hash_map<uint32_t, grpc_chttp2_stream*> stream_map;
 
   grpc_closure write_action_begin_locked;
   grpc_closure write_action;
@@ -342,8 +351,10 @@ struct grpc_chttp2_transport : public grpc_core::KeepsGrpcInitialized {
 
   /// ping queues for various ping insertion points
   grpc_chttp2_ping_queue ping_queue = grpc_chttp2_ping_queue();
-  grpc_chttp2_repeated_ping_policy ping_policy;
-  grpc_chttp2_repeated_ping_state ping_state;
+  grpc_core::Chttp2PingAbusePolicy ping_abuse_policy;
+  grpc_core::Chttp2PingRatePolicy ping_rate_policy;
+  absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
+      delayed_ping_timer_handle;
   uint64_t ping_ctr = 0;  // unique id for pings
   grpc_closure retry_initiate_ping_locked;
 
@@ -351,7 +362,6 @@ struct grpc_chttp2_transport : public grpc_core::KeepsGrpcInitialized {
   size_t ping_ack_count = 0;
   size_t ping_ack_capacity = 0;
   uint64_t* ping_acks = nullptr;
-  grpc_chttp2_server_ping_recv_state ping_recv_state;
 
   /// parser for headers
   grpc_core::HPackParser hpack_parser;
@@ -485,15 +495,9 @@ struct grpc_chttp2_stream {
                      const void* server_data, grpc_core::Arena* arena);
   ~grpc_chttp2_stream();
 
-  void* context;
-  grpc_chttp2_transport* t;
+  void* context = nullptr;
+  const grpc_core::RefCountedPtr<grpc_chttp2_transport> t;
   grpc_stream_refcount* refcount;
-  // Reffer is a 0-len structure, simply reffing `t` and `refcount` in its ctor
-  // before initializing the rest of the stream, to avoid cache misses. This
-  // field MUST be right after `t` and `refcount`.
-  struct Reffer {
-    explicit Reffer(grpc_chttp2_stream* s);
-  } reffer;
 
   grpc_closure destroy_stream;
   grpc_closure* destroy_stream_arg;
@@ -679,8 +683,9 @@ void grpc_chttp2_act_on_flowctl_action(
 
 inline grpc_chttp2_stream* grpc_chttp2_parsing_lookup_stream(
     grpc_chttp2_transport* t, uint32_t id) {
-  return static_cast<grpc_chttp2_stream*>(
-      grpc_chttp2_stream_map_find(&t->stream_map, id));
+  auto it = t->stream_map.find(id);
+  if (it == t->stream_map.end()) return nullptr;
+  return it->second;
 }
 grpc_chttp2_stream* grpc_chttp2_parsing_accept_stream(grpc_chttp2_transport* t,
                                                       uint32_t id);
@@ -738,43 +743,11 @@ void grpc_chttp2_stream_ref(grpc_chttp2_stream* s);
 void grpc_chttp2_stream_unref(grpc_chttp2_stream* s);
 #endif
 
-#ifndef NDEBUG
-#define GRPC_CHTTP2_REF_TRANSPORT(t, r) \
-  grpc_chttp2_ref_transport(t, r, __FILE__, __LINE__)
-#define GRPC_CHTTP2_UNREF_TRANSPORT(t, r) \
-  grpc_chttp2_unref_transport(t, r, __FILE__, __LINE__)
-inline void grpc_chttp2_unref_transport(grpc_chttp2_transport* t,
-                                        const char* reason, const char* file,
-                                        int line) {
-  if (t->refs.Unref(grpc_core::DebugLocation(file, line), reason)) {
-    delete t;
-  }
-}
-inline void grpc_chttp2_ref_transport(grpc_chttp2_transport* t,
-                                      const char* reason, const char* file,
-                                      int line) {
-  t->refs.Ref(grpc_core::DebugLocation(file, line), reason);
-}
-#else
-#define GRPC_CHTTP2_REF_TRANSPORT(t, r) grpc_chttp2_ref_transport(t)
-#define GRPC_CHTTP2_UNREF_TRANSPORT(t, r) grpc_chttp2_unref_transport(t)
-inline void grpc_chttp2_unref_transport(grpc_chttp2_transport* t) {
-  if (t->refs.Unref()) {
-    delete t;
-  }
-}
-inline void grpc_chttp2_ref_transport(grpc_chttp2_transport* t) {
-  t->refs.Ref();
-}
-#endif
-
 void grpc_chttp2_ack_ping(grpc_chttp2_transport* t, uint64_t id);
 
-/// Add a new ping strike to ping_recv_state.ping_strikes. If
-/// ping_recv_state.ping_strikes > ping_policy.max_ping_strikes, it sends GOAWAY
-/// with error code ENHANCE_YOUR_CALM and additional debug data resembling
-/// "too_many_pings" followed by immediately closing the connection.
-void grpc_chttp2_add_ping_strike(grpc_chttp2_transport* t);
+/// Sends GOAWAY with error code ENHANCE_YOUR_CALM and additional debug data
+/// resembling "too_many_pings" followed by immediately closing the connection.
+void grpc_chttp2_exceeded_ping_strikes(grpc_chttp2_transport* t);
 
 /// Resets ping clock. Should be called when flushing window updates,
 /// initial/trailing metadata or data frames. For a server, it resets the number
@@ -805,10 +778,14 @@ void grpc_chttp2_fail_pending_writes(grpc_chttp2_transport* t,
 /// initialization
 void grpc_chttp2_config_default_keepalive_args(grpc_channel_args* args,
                                                bool is_client);
+void grpc_chttp2_config_default_keepalive_args(
+    const grpc_core::ChannelArgs& channel_args, bool is_client);
 
-void grpc_chttp2_retry_initiate_ping(grpc_chttp2_transport* t);
+void grpc_chttp2_retry_initiate_ping(
+    grpc_core::RefCountedPtr<grpc_chttp2_transport> t);
 
-void schedule_bdp_ping_locked(grpc_chttp2_transport* t);
+void schedule_bdp_ping_locked(
+    grpc_core::RefCountedPtr<grpc_chttp2_transport> t);
 
 uint32_t grpc_chttp2_min_read_progress_size(grpc_chttp2_transport* t);
 

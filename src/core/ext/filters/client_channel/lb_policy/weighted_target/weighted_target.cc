@@ -339,7 +339,12 @@ absl::Status WeightedTargetLb::UpdateLocked(UpdateArgs args) {
     }
     absl::StatusOr<EndpointAddressesList> addresses;
     if (address_map.ok()) {
-      addresses = std::move((*address_map)[name]);
+      auto it = address_map->find(name);
+      if (it == address_map->end()) {
+        addresses.emplace();
+      } else {
+        addresses = std::move(it->second);
+      }
     } else {
       addresses = address_map.status();
     }

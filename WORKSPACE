@@ -96,6 +96,20 @@ load(
 
 swift_rules_dependencies()
 
+# This loads the libpfm transitive dependency.
+# See https://github.com/google/benchmark/pull/1520
+load("@com_github_google_benchmark//:bazel/benchmark_deps.bzl", "benchmark_deps")
+
+benchmark_deps()
+
+load("@io_opentelemetry_cpp//bazel:repository.bzl", "opentelemetry_cpp_deps")
+
+opentelemetry_cpp_deps()
+
+load("@io_opentelemetry_cpp//bazel:extra_deps.bzl", "opentelemetry_extra_deps")
+
+opentelemetry_extra_deps()
+
 # TODO: Enable below once https://github.com/bazel-xcode/PodToBUILD/issues/232 is resolved
 #
 #http_archive(

@@ -39,11 +39,11 @@ grpc_cc_test(
     name = "forkable_test",
     srcs = ["forkable_test.cc"],
     external_deps = [
-        "absl/time",
+        "absl/types:optional",
         "gtest",
     ],
     deps = [
-        "//:event_engine_base_hdrs",
+        "//:config_vars",
         "//:gpr",
         "//:gpr_platform",
         "//src/core:forkable",
@@ -58,7 +58,9 @@ grpc_cc_test(
         "gtest",
     ],
     deps = [
+        "//:gpr",
         "//:grpc",
+        "//src/core:event_engine_thread_count",
         "//src/core:event_engine_thread_pool",
         "//src/core:notification",
         "//test/core/util:grpc_test_util_unsecure",

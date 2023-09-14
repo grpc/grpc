@@ -88,10 +88,14 @@ env_append 'CPPFLAGS', '-DGRPC_XDS_USER_AGENT_NAME_SUFFIX="\"RUBY\""'
 
 require_relative '../../lib/grpc/version'
 env_append 'CPPFLAGS', '-DGRPC_XDS_USER_AGENT_VERSION_SUFFIX="\"' + GRPC::VERSION + '\""'
+env_append 'CPPFLAGS', '-DGRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK=1'
 
 output_dir = File.expand_path(RbConfig::CONFIG['topdir'])
 grpc_lib_dir = File.join(output_dir, 'libs', grpc_config)
 ENV['BUILDDIR'] = output_dir
+
+strip_tool = RbConfig::CONFIG['STRIP']
+strip_tool += ' -x' if apple_toolchain
 
 unless windows
   puts 'Building internal gRPC into ' + grpc_lib_dir
@@ -107,6 +111,17 @@ unless windows
   puts "Building grpc native library: #{cmd}"
   system(cmd)
   exit 1 unless $? == 0
+
+  if grpc_config == 'opt'
+    rm_obj_cmd = "rm -rf #{File.join(output_dir, 'objs')}"
+    puts "Removing grpc object files: #{rm_obj_cmd}"
+    system(rm_obj_cmd)
+    exit 1 unless $? == 0
+    strip_cmd = "#{strip_tool} #{grpc_lib_dir}/*.a"
+    puts "Stripping grpc native library: #{strip_cmd}"
+    system(strip_cmd)
+    exit 1 unless $? == 0
+  end
 end
 
 $CFLAGS << ' -DGRPC_RUBY_WINDOWS_UCRT' if windows_ucrt
@@ -172,23 +187,6 @@ output = File.join('grpc', 'grpc_c')
 puts 'Generating Makefile for ' + output
 create_makefile(output)
 
-strip_tool = RbConfig::CONFIG['STRIP']
-strip_tool += ' -x' if apple_toolchain
-
-if grpc_config == 'opt'
-  File.open('Makefile.new', 'w') do |o|
-    o.puts 'hijack: all strip'
-    o.puts
-    File.foreach('Makefile') do |i|
-      o.puts i
-    end
-    o.puts
-    o.puts 'strip: $(DLLIB)'
-    o.puts "\t$(ECHO) Stripping $(DLLIB)"
-    o.puts "\t$(Q) #{strip_tool} $(DLLIB)"
-  end
-  File.rename('Makefile.new', 'Makefile')
-end
 if ENV['GRPC_RUBY_TEST_ONLY_WORKAROUND_MAKE_INSTALL_BUG']
   # Note: this env var setting is intended to work around a problem observed
   # with the ginstall command on grpc's macos automated test infrastructure,

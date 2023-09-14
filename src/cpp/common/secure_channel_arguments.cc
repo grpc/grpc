@@ -20,6 +20,7 @@
 #include <vector>
 
 #include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpcpp/support/channel_arguments.h>
 
 namespace grpc {

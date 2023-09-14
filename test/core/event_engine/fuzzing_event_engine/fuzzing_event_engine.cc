@@ -180,6 +180,28 @@ void FuzzingEventEngine::TickUntilIdle() {
   }
 }
 
+void FuzzingEventEngine::TickUntil(Time t) {
+  while (true) {
+    auto now = Now();
+    if (now >= t) break;
+    Tick(t - now);
+  }
+}
+
+void FuzzingEventEngine::TickUntilTimespec(gpr_timespec t) {
+  GPR_ASSERT(t.clock_type != GPR_TIMESPAN);
+  TickUntil(Time() + std::chrono::seconds(t.tv_sec) +
+            std::chrono::nanoseconds(t.tv_nsec));
+}
+
+void FuzzingEventEngine::TickUntilTimestamp(grpc_core::Timestamp t) {
+  TickUntilTimespec(t.as_timespec(GPR_CLOCK_REALTIME));
+}
+
+void FuzzingEventEngine::TickForDuration(grpc_core::Duration d) {
+  TickUntilTimestamp(grpc_core::Timestamp::Now() + d);
+}
+
 FuzzingEventEngine::Time FuzzingEventEngine::Now() {
   grpc_core::MutexLock lock(&*now_mu_);
   return now_;
@@ -461,8 +483,8 @@ bool FuzzingEventEngine::CancelConnect(ConnectionHandle connection_handle) {
 
 bool FuzzingEventEngine::IsWorkerThread() { abort(); }
 
-std::unique_ptr<EventEngine::DNSResolver> FuzzingEventEngine::GetDNSResolver(
-    const DNSResolver::ResolverOptions&) {
+absl::StatusOr<std::unique_ptr<EventEngine::DNSResolver>>
+FuzzingEventEngine::GetDNSResolver(const DNSResolver::ResolverOptions&) {
   abort();
 }
 

@@ -171,7 +171,7 @@ class PosixOracleEventEngine final : public EventEngine {
     grpc_core::Crash("unimplemented");
   }
   bool IsWorkerThread() override { return false; };
-  std::unique_ptr<DNSResolver> GetDNSResolver(
+  absl::StatusOr<std::unique_ptr<DNSResolver>> GetDNSResolver(
       const DNSResolver::ResolverOptions& /*options*/) override {
     grpc_core::Crash("unimplemented");
   }
