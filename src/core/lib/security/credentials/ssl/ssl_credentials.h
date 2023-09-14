@@ -69,21 +69,7 @@ class grpc_ssl_credentials : public grpc_channel_credentials {
                     grpc_ssl_pem_key_cert_pair* pem_key_cert_pair,
                     const grpc_ssl_verify_peer_options* verify_options);
 
-  // InitializeClientHandshakerFactory constructs a client handshaker factory
-  // that is stored on this credentials object. This handshaker factory will be
-  // used when creating handshakers using these credentials except in the case
-  // that there is a session cache. If a session cache is used, a new handshaker
-  // factory will be created and used that contains that session cache.
-  grpc_security_status InitializeClientHandshakerFactory(
-      const grpc_ssl_config* config, const char* pem_root_certs,
-      const tsi_ssl_root_certs_store* root_store,
-      tsi_ssl_session_cache* ssl_session_cache,
-      tsi_ssl_client_handshaker_factory** handshaker_factory);
-
   grpc_ssl_config config_;
-  tsi_ssl_client_handshaker_factory* client_handshaker_factory_ = nullptr;
-  const tsi_ssl_root_certs_store* root_store_ = nullptr;
-  grpc_security_status client_handshaker_initialization_status_;
 };
 
 struct grpc_ssl_server_certificate_config {
