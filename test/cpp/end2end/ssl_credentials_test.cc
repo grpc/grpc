@@ -143,17 +143,15 @@ TEST_F(SslCredentialsTest, ConcurrentResumption) {
   grpc_ssl_session_cache* cache = grpc_ssl_session_cache_create_lru(16);
 
   DoRpc(server_addr_, ssl_options, cache, /*expect_session_reuse=*/false);
-  std::vector<std::thread*> threads;
+  std::vector<std::thread> threads;
+  threads.reserve(10);
   for (int i = 0; i < 10; i++) {
-    threads.push_back(new std::thread([&]() {
+    threads.push_back(std::thread([&]() {
       DoRpc(server_addr_, ssl_options, cache, /*expect_session_reuse=*/true);
     }));
   }
-  for (int i = 0; i < 10; i++) {
-    threads[i]->join();
-  }
-  for (int i = 0; i < 10; i++) {
-    delete threads[i];
+  for (auto& t : threads) {
+    t.join();
   }
 
   grpc_ssl_session_cache_destroy(cache);
