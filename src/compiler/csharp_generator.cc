@@ -715,10 +715,7 @@ void GenerateBindServiceWithBinderMethod(Printer* out,
   out->Print(
       "/// <summary>Register service method with a service "
       "binder with or without implementation. Useful when customizing the "
-      "service binding logic.\n"
-      "/// Note: this method is part of an experimental API that can change or "
-      "be "
-      "removed without any prior notice.</summary>\n");
+      "service binding logic.</summary>\n");
   out->Print(
       "/// <param name=\"serviceBinder\">Service methods will be bound by "
       "calling <c>AddMethod</c> on this object."
@@ -735,6 +732,11 @@ void GenerateBindServiceWithBinderMethod(Printer* out,
   out->Print("{\n");
   out->Indent();
 
+  // The null forgiving operator (!) is required since
+  // ServiceBinderBase.AddMethod overloads aren't annotated to allow a nullable
+  // in Grpc.Core.Api.
+  // TODO(tonydnewell) The ! should be removed in the future once an updated
+  // version of Grpc.Core.Api has been public for some time.
   for (int i = 0; i < service->method_count(); i++) {
     const MethodDescriptor* method = service->method(i);
     out->Print(
