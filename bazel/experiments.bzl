@@ -47,6 +47,9 @@ EXPERIMENTS = {
             "lame_client_test": [
                 "promise_based_client_call",
             ],
+            "lb_unit_test": [
+                "wrr_delegate_to_pick_first",
+            ],
             "logging_test": [
                 "promise_based_server_call",
             ],
@@ -69,6 +72,9 @@ EXPERIMENTS = {
             ],
             "flow_control_test": [
                 "lazier_stream_updates",
+            ],
+            "lb_unit_test": [
+                "round_robin_delegate_to_pick_first",
             ],
             "xds_end2end_test": [
                 "round_robin_delegate_to_pick_first",
@@ -105,6 +111,9 @@ EXPERIMENTS = {
             "lame_client_test": [
                 "promise_based_client_call",
             ],
+            "lb_unit_test": [
+                "wrr_delegate_to_pick_first",
+            ],
             "logging_test": [
                 "promise_based_server_call",
             ],
@@ -127,6 +136,9 @@ EXPERIMENTS = {
             ],
             "flow_control_test": [
                 "lazier_stream_updates",
+            ],
+            "lb_unit_test": [
+                "round_robin_delegate_to_pick_first",
             ],
             "xds_end2end_test": [
                 "round_robin_delegate_to_pick_first",
@@ -170,6 +182,9 @@ EXPERIMENTS = {
             "lame_client_test": [
                 "promise_based_client_call",
             ],
+            "lb_unit_test": [
+                "wrr_delegate_to_pick_first",
+            ],
             "logging_test": [
                 "promise_based_server_call",
             ],
@@ -195,6 +210,9 @@ EXPERIMENTS = {
             ],
             "flow_control_test": [
                 "lazier_stream_updates",
+            ],
+            "lb_unit_test": [
+                "round_robin_delegate_to_pick_first",
             ],
             "xds_end2end_test": [
                 "round_robin_delegate_to_pick_first",

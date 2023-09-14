@@ -191,12 +191,11 @@
     backend design.
   expiry: 2023/11/15
   owner: roth@google.com
-  test_tags: ["cpp_lb_end2end_test", "xds_end2end_test"]
+  test_tags: ["lb_unit_test", "cpp_lb_end2end_test", "xds_end2end_test"]
 - name: wrr_delegate_to_pick_first
   description:
     Change WRR code to delegate to pick_first as per dualstack
     backend design.
   expiry: 2023/11/15
   owner: roth@google.com
-  test_tags: []
-  test_tags: ["cpp_lb_end2end_test", "xds_end2end_test"]
+  test_tags: ["lb_unit_test", "cpp_lb_end2end_test", "xds_end2end_test"]
