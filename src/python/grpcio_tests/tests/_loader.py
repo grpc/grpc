@@ -103,12 +103,13 @@ class Loader(object):
         for importer, module_name, is_package in pkgutil.walk_packages(
             [package_path], prefix
         ):
-            found_module = importer.find_module(module_name)
             module = None
             if module_name in sys.modules:
                 module = sys.modules[module_name]
             else:
-                module = found_module.load_module(module_name)
+                spec = importer.find_spec(module_name)
+                module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(module)
             self.visit_module(module)
 
     def visit_module(self, module):

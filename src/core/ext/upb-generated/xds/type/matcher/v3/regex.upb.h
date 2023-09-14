@@ -9,15 +9,7 @@
 #ifndef XDS_TYPE_MATCHER_V3_REGEX_PROTO_UPB_H_
 #define XDS_TYPE_MATCHER_V3_REGEX_PROTO_UPB_H_
 
-#include "upb/collections/array_internal.h"
-#include "upb/collections/map_gencode_util.h"
-#include "upb/message/accessors.h"
-#include "upb/message/internal.h"
-#include "upb/mini_table/enum_internal.h"
-#include "upb/wire/decode.h"
-#include "upb/wire/decode_fast.h"
-#include "upb/wire/encode.h"
-
+#include "upb/generated_code_support.h"
 // Must be last. 
 #include "upb/port/def.inc"
 
@@ -72,38 +64,38 @@ typedef enum {
   xds_type_matcher_v3_RegexMatcher_engine_type_NOT_SET = 0
 } xds_type_matcher_v3_RegexMatcher_engine_type_oneofcases;
 UPB_INLINE xds_type_matcher_v3_RegexMatcher_engine_type_oneofcases xds_type_matcher_v3_RegexMatcher_engine_type_case(const xds_type_matcher_v3_RegexMatcher* msg) {
-  const upb_MiniTableField field = {1, UPB_SIZE(4, 24), -1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 24), -1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return (xds_type_matcher_v3_RegexMatcher_engine_type_oneofcases)upb_Message_WhichOneofFieldNumber(msg, &field);
 }
 UPB_INLINE void xds_type_matcher_v3_RegexMatcher_clear_google_re2(xds_type_matcher_v3_RegexMatcher* msg) {
-  const upb_MiniTableField field = {1, UPB_SIZE(4, 24), -1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 24), -1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const xds_type_matcher_v3_RegexMatcher_GoogleRE2* xds_type_matcher_v3_RegexMatcher_google_re2(const xds_type_matcher_v3_RegexMatcher* msg) {
   const xds_type_matcher_v3_RegexMatcher_GoogleRE2* default_val = NULL;
   const xds_type_matcher_v3_RegexMatcher_GoogleRE2* ret;
-  const upb_MiniTableField field = {1, UPB_SIZE(4, 24), -1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 24), -1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool xds_type_matcher_v3_RegexMatcher_has_google_re2(const xds_type_matcher_v3_RegexMatcher* msg) {
-  const upb_MiniTableField field = {1, UPB_SIZE(4, 24), -1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 24), -1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return _upb_Message_HasNonExtensionField(msg, &field);
 }
 UPB_INLINE void xds_type_matcher_v3_RegexMatcher_clear_regex(xds_type_matcher_v3_RegexMatcher* msg) {
-  const upb_MiniTableField field = {2, 8, 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE upb_StringView xds_type_matcher_v3_RegexMatcher_regex(const xds_type_matcher_v3_RegexMatcher* msg) {
   upb_StringView default_val = upb_StringView_FromString("");
   upb_StringView ret;
-  const upb_MiniTableField field = {2, 8, 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
 
 UPB_INLINE void xds_type_matcher_v3_RegexMatcher_set_google_re2(xds_type_matcher_v3_RegexMatcher *msg, xds_type_matcher_v3_RegexMatcher_GoogleRE2* value) {
-  const upb_MiniTableField field = {1, UPB_SIZE(4, 24), -1, 0, 11, kUpb_FieldMode_Scalar | (UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 24), -1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct xds_type_matcher_v3_RegexMatcher_GoogleRE2* xds_type_matcher_v3_RegexMatcher_mutable_google_re2(xds_type_matcher_v3_RegexMatcher* msg, upb_Arena* arena) {
@@ -115,7 +107,7 @@ UPB_INLINE struct xds_type_matcher_v3_RegexMatcher_GoogleRE2* xds_type_matcher_v
   return sub;
 }
 UPB_INLINE void xds_type_matcher_v3_RegexMatcher_set_regex(xds_type_matcher_v3_RegexMatcher *msg, upb_StringView value) {
-  const upb_MiniTableField field = {2, 8, 0, kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 

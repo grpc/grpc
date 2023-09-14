@@ -75,6 +75,7 @@ struct ClientFragmentFrame final : public FrameInterface {
 
   uint32_t stream_id;
   ClientMetadataHandle headers;
+  MessageHandle message;
   bool end_of_stream = false;
 
   bool operator==(const ClientFragmentFrame& other) const {

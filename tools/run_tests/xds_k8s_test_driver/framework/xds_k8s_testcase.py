@@ -118,7 +118,7 @@ class XdsKubernetesBaseTestCase(base_testcase.BaseTestCase):
     gcp_api_manager: gcp.api.GcpApiManager
     gcp_service_account: Optional[str]
     k8s_api_manager: k8s.KubernetesApiManager
-    secondary_k8s_api_manager: k8s.KubernetesApiManager
+    secondary_k8s_api_manager: Optional[k8s.KubernetesApiManager] = None
     network: str
     project: str
     resource_prefix: str
@@ -130,7 +130,7 @@ class XdsKubernetesBaseTestCase(base_testcase.BaseTestCase):
     server_namespace: str
     server_runner: KubernetesServerRunner
     server_xds_host: str
-    server_xds_port: int
+    server_xds_port: Optional[int]
     td: TrafficDirectorManager
     td_bootstrap_image: str
     _prev_sigint_handler: Optional[_SignalHandler] = None
@@ -193,6 +193,7 @@ class XdsKubernetesBaseTestCase(base_testcase.BaseTestCase):
 
         # Test suite settings
         cls.force_cleanup = xds_flags.FORCE_CLEANUP.value
+        cls.force_cleanup_namespace = xds_flags.FORCE_CLEANUP.value
         cls.debug_use_port_forwarding = (
             xds_k8s_flags.DEBUG_USE_PORT_FORWARDING.value
         )
@@ -205,9 +206,10 @@ class XdsKubernetesBaseTestCase(base_testcase.BaseTestCase):
         cls.k8s_api_manager = k8s.KubernetesApiManager(
             xds_k8s_flags.KUBE_CONTEXT.value
         )
-        cls.secondary_k8s_api_manager = k8s.KubernetesApiManager(
-            xds_k8s_flags.SECONDARY_KUBE_CONTEXT.value
-        )
+        if xds_k8s_flags.SECONDARY_KUBE_CONTEXT.value is not None:
+            cls.secondary_k8s_api_manager = k8s.KubernetesApiManager(
+                xds_k8s_flags.SECONDARY_KUBE_CONTEXT.value
+            )
         cls.gcp_api_manager = gcp.api.GcpApiManager()
 
         # Other
@@ -236,7 +238,8 @@ class XdsKubernetesBaseTestCase(base_testcase.BaseTestCase):
     @classmethod
     def tearDownClass(cls):
         cls.k8s_api_manager.close()
-        cls.secondary_k8s_api_manager.close()
+        if cls.secondary_k8s_api_manager is not None:
+            cls.secondary_k8s_api_manager.close()
         cls.gcp_api_manager.close()
 
     def setUp(self):
@@ -610,13 +613,8 @@ class IsolatedXdsKubernetesTestCase(
         """Hook method for setting up the test fixture before exercising it."""
         super().setUp()
 
-        if self.resource_suffix_randomize:
-            self.resource_suffix = helpers_rand.random_resource_suffix()
-        logger.info(
-            "Test run resource prefix: %s, suffix: %s",
-            self.resource_prefix,
-            self.resource_suffix,
-        )
+        # Random suffix per test.
+        self.createRandomSuffix()
 
         # TD Manager
         self.td = self.initTrafficDirectorManager()
@@ -648,6 +646,15 @@ class IsolatedXdsKubernetesTestCase(
             #  but we should find a better approach.
             self.server_xds_port = self.td.find_unused_forwarding_rule_port()
             logger.info("Found unused xds port: %s", self.server_xds_port)
+
+    def createRandomSuffix(self):
+        if self.resource_suffix_randomize:
+            self.resource_suffix = helpers_rand.random_resource_suffix()
+        logger.info(
+            "Test run resource prefix: %s, suffix: %s",
+            self.resource_prefix,
+            self.resource_suffix,
+        )
 
     @abc.abstractmethod
     def initTrafficDirectorManager(self) -> TrafficDirectorManager:

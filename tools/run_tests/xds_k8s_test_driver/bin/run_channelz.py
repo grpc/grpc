@@ -212,7 +212,7 @@ def main(argv):
         server_namespace,
         gcp_api_manager,
         port_forwarding=should_port_forward,
-        secure=is_secure,
+        mode="secure",
     )
     # Find server pod.
     server_pod: k8s.V1Pod = common.get_server_pod(
@@ -225,7 +225,7 @@ def main(argv):
         client_namespace,
         gcp_api_manager,
         port_forwarding=should_port_forward,
-        secure=is_secure,
+        mode="secure",
     )
     # Find client pod.
     client_pod: k8s.V1Pod = common.get_client_pod(

@@ -123,24 +123,33 @@ int main(int argc, char** argv) {
         bin_dir + "/resolver_test_record_groups.yaml",
         bin_dir + "/utils/dns_resolver", bin_dir + "/utils/tcp_connect");
 #else
-    grpc::testing::ManifestFile manifest_file(
-        grpc::testing::NormalizeFilePath(test_srcdir.value()) + "\\MANIFEST");
-    grpc::testing::InvokeResolverComponentTestsRunner(
+// TODO(yijiem): Misusing the GRPC_PORT_ISOLATED_RUNTIME preprocessor symbol as
+// an indication whether the test is running on RBE or not. Find a better way of
+// doing this.
+#ifndef GRPC_PORT_ISOLATED_RUNTIME
+    gpr_log(GPR_ERROR,
+            "You are invoking the test locally with Bazel, you may need to "
+            "invoke Bazel with --enable_runfiles=yes.");
+#endif  // GRPC_PORT_ISOLATED_RUNTIME
+    result = grpc::testing::InvokeResolverComponentTestsRunner(
         grpc::testing::NormalizeFilePath(
-            manifest_file.Get("com_github_grpc_grpc/test/cpp/naming/"
-                              "resolver_component_tests_runner.exe")),
+            test_srcdir.value() + "/com_github_grpc_grpc/test/cpp/naming/"
+                                  "resolver_component_tests_runner.exe"),
         grpc::testing::NormalizeFilePath(
-            manifest_file.Get("com_github_grpc_grpc/test/cpp/naming/" +
-                              absl::GetFlag(FLAGS_test_bin_name) + ".exe")),
-        grpc::testing::NormalizeFilePath(manifest_file.Get(
-            "com_github_grpc_grpc/test/cpp/naming/utils/dns_server.exe")),
+            test_srcdir.value() + "/com_github_grpc_grpc/test/cpp/naming/" +
+            absl::GetFlag(FLAGS_test_bin_name) + ".exe"),
         grpc::testing::NormalizeFilePath(
-            manifest_file.Get("com_github_grpc_grpc/test/cpp/naming/"
-                              "resolver_test_record_groups.yaml")),
-        grpc::testing::NormalizeFilePath(manifest_file.Get(
-            "com_github_grpc_grpc/test/cpp/naming/utils/dns_resolver.exe")),
-        grpc::testing::NormalizeFilePath(manifest_file.Get(
-            "com_github_grpc_grpc/test/cpp/naming/utils/tcp_connect.exe")));
+            test_srcdir.value() +
+            "/com_github_grpc_grpc/test/cpp/naming/utils/dns_server.exe"),
+        grpc::testing::NormalizeFilePath(
+            test_srcdir.value() + "/com_github_grpc_grpc/test/cpp/naming/"
+                                  "resolver_test_record_groups.yaml"),
+        grpc::testing::NormalizeFilePath(
+            test_srcdir.value() +
+            "/com_github_grpc_grpc/test/cpp/naming/utils/dns_resolver.exe"),
+        grpc::testing::NormalizeFilePath(
+            test_srcdir.value() +
+            "/com_github_grpc_grpc/test/cpp/naming/utils/tcp_connect.exe"));
 #endif  // GPR_WINDOWS
   } else {
 #ifdef GPR_WINDOWS

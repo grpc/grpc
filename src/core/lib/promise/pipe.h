@@ -541,7 +541,9 @@ class Next {
   Next(Next&& other) noexcept = default;
   Next& operator=(Next&& other) noexcept = default;
 
-  Poll<absl::optional<T>> operator()() { return center_->Next(); }
+  Poll<absl::optional<T>> operator()() {
+    return center_ == nullptr ? absl::nullopt : center_->Next();
+  }
 
  private:
   friend class PipeReceiver<T>;
@@ -572,29 +574,27 @@ class PipeReceiver {
   // Blocks the promise until the receiver is either closed or a message is
   // available.
   auto Next() {
-    return Seq(
-        pipe_detail::Next<T>(center_->Ref()),
-        [center = center_->Ref()](absl::optional<T> value) {
-          bool open = value.has_value();
-          bool cancelled = center->cancelled();
-          return If(
-              open,
-              [center = std::move(center), value = std::move(value)]() mutable {
-                auto run = center->Run(std::move(value));
-                return Map(std::move(run),
-                           [center = std::move(center)](
-                               absl::optional<T> value) mutable {
-                             if (value.has_value()) {
-                               center->value() = std::move(*value);
-                               return NextResult<T>(std::move(center));
-                             } else {
-                               center->MarkCancelled();
-                               return NextResult<T>(true);
-                             }
-                           });
-              },
-              [cancelled]() { return NextResult<T>(cancelled); });
-        });
+    return Seq(pipe_detail::Next<T>(center_), [center = center_](
+                                                  absl::optional<T> value) {
+      bool open = value.has_value();
+      bool cancelled = center == nullptr ? true : center->cancelled();
+      return If(
+          open,
+          [center = std::move(center), value = std::move(value)]() mutable {
+            auto run = center->Run(std::move(value));
+            return Map(std::move(run), [center = std::move(center)](
+                                           absl::optional<T> value) mutable {
+              if (value.has_value()) {
+                center->value() = std::move(*value);
+                return NextResult<T>(std::move(center));
+              } else {
+                center->MarkCancelled();
+                return NextResult<T>(true);
+              }
+            });
+          },
+          [cancelled]() { return NextResult<T>(cancelled); });
+    });
   }
 
   // Return a promise that resolves when the receiver is closed.

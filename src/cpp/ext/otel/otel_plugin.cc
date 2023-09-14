@@ -22,17 +22,19 @@
 
 #include <limits.h>
 
+#include <type_traits>
 #include <utility>
 
 #include "opentelemetry/metrics/meter.h"
 #include "opentelemetry/metrics/meter_provider.h"
-#include "opentelemetry/metrics/provider.h"
 #include "opentelemetry/nostd/shared_ptr.h"
 #include "opentelemetry/nostd/unique_ptr.h"
 
 #include <grpc/support/log.h>
 
+#include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/lib/channel/call_tracer.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/surface/channel_stack_type.h"
@@ -56,8 +58,6 @@ absl::string_view OTelMethodKey() { return "grpc.method"; }
 absl::string_view OTelStatusKey() { return "grpc.status"; }
 
 absl::string_view OTelTargetKey() { return "grpc.target"; }
-
-absl::string_view OTelAuthorityKey() { return "grpc.authority"; }
 
 absl::string_view OTelClientAttemptStartedInstrumentName() {
   return "grpc.client.attempt.started";
@@ -91,9 +91,30 @@ absl::string_view OTelServerCallSentTotalCompressedMessageSizeInstrumentName() {
 absl::string_view OTelServerCallRcvdTotalCompressedMessageSizeInstrumentName() {
   return "grpc.server.call.rcvd_total_compressed_message_size";
 }
+
+namespace {
+absl::flat_hash_set<std::string> BaseMetrics() {
+  return absl::flat_hash_set<std::string>{
+      std::string(OTelClientAttemptStartedInstrumentName()),
+      std::string(OTelClientAttemptDurationInstrumentName()),
+      std::string(
+          OTelClientAttemptSentTotalCompressedMessageSizeInstrumentName()),
+      std::string(
+          OTelClientAttemptRcvdTotalCompressedMessageSizeInstrumentName()),
+      std::string(OTelServerCallStartedInstrumentName()),
+      std::string(OTelServerCallDurationInstrumentName()),
+      std::string(OTelServerCallSentTotalCompressedMessageSizeInstrumentName()),
+      std::string(
+          OTelServerCallRcvdTotalCompressedMessageSizeInstrumentName())};
+}
+}  // namespace
+
 //
 // OpenTelemetryPluginBuilder
 //
+
+OpenTelemetryPluginBuilder::OpenTelemetryPluginBuilder()
+    : metrics_(BaseMetrics()) {}
 
 OpenTelemetryPluginBuilder& OpenTelemetryPluginBuilder::SetMeterProvider(
     std::shared_ptr<opentelemetry::metrics::MeterProvider> meter_provider) {
@@ -101,32 +122,53 @@ OpenTelemetryPluginBuilder& OpenTelemetryPluginBuilder::SetMeterProvider(
   return *this;
 }
 
-OpenTelemetryPluginBuilder& OpenTelemetryPluginBuilder::EnableMetrics(
-    const absl::flat_hash_set<absl::string_view>& metric_names) {
-  for (auto& metric_name : metric_names) {
-    metrics_.emplace(metric_name);
-  }
+OpenTelemetryPluginBuilder& OpenTelemetryPluginBuilder::EnableMetric(
+    absl::string_view metric_name) {
+  metrics_.emplace(metric_name);
   return *this;
 }
 
-OpenTelemetryPluginBuilder& OpenTelemetryPluginBuilder::DisableMetrics(
-    const absl::flat_hash_set<absl::string_view>& metric_names) {
-  for (auto& metric_name : metric_names) {
-    metrics_.erase(metric_name);
-  }
+OpenTelemetryPluginBuilder& OpenTelemetryPluginBuilder::DisableMetric(
+    absl::string_view metric_name) {
+  metrics_.erase(metric_name);
+  return *this;
+}
+
+OpenTelemetryPluginBuilder& OpenTelemetryPluginBuilder::DisableAllMetrics() {
+  metrics_.clear();
+  return *this;
+}
+
+OpenTelemetryPluginBuilder& OpenTelemetryPluginBuilder::SetLabelsInjector(
+    std::unique_ptr<LabelsInjector> labels_injector) {
+  labels_injector_ = std::move(labels_injector);
+  return *this;
+}
+
+OpenTelemetryPluginBuilder& OpenTelemetryPluginBuilder::SetTargetSelector(
+    absl::AnyInvocable<bool(absl::string_view /*target*/) const>
+        target_selector) {
+  target_selector_ = std::move(target_selector);
+  return *this;
+}
+
+OpenTelemetryPluginBuilder&
+OpenTelemetryPluginBuilder::SetTargetAttributeFilter(
+    absl::AnyInvocable<bool(absl::string_view /*target*/) const>
+        target_attribute_filter) {
+  target_attribute_filter_ = std::move(target_attribute_filter);
   return *this;
 }
 
 void OpenTelemetryPluginBuilder::BuildAndRegisterGlobal() {
   opentelemetry::nostd::shared_ptr<opentelemetry::metrics::MeterProvider>
       meter_provider = meter_provider_;
-  if (meter_provider == nullptr) {
-    meter_provider = opentelemetry::metrics::Provider::GetMeterProvider();
-  }
-  auto meter = meter_provider->GetMeter("grpc");
   delete g_otel_plugin_state_;
   g_otel_plugin_state_ = new struct OTelPluginState;
-  g_otel_plugin_state_->meter_provider = std::move(meter_provider);
+  if (meter_provider == nullptr) {
+    return;
+  }
+  auto meter = meter_provider->GetMeter("grpc");
   if (metrics_.contains(OTelClientAttemptStartedInstrumentName())) {
     g_otel_plugin_state_->client.attempt.started = meter->CreateUInt64Counter(
         std::string(OTelClientAttemptStartedInstrumentName()));
@@ -168,33 +210,31 @@ void OpenTelemetryPluginBuilder::BuildAndRegisterGlobal() {
         meter->CreateUInt64Histogram(std::string(
             OTelServerCallRcvdTotalCompressedMessageSizeInstrumentName()));
   }
+  g_otel_plugin_state_->labels_injector = std::move(labels_injector_);
+  g_otel_plugin_state_->target_attribute_filter =
+      std::move(target_attribute_filter_);
+  g_otel_plugin_state_->meter_provider = std::move(meter_provider);
   grpc_core::ServerCallTracerFactory::RegisterGlobal(
       new grpc::internal::OpenTelemetryServerCallTracerFactory);
   grpc_core::CoreConfiguration::RegisterBuilder(
-      [](grpc_core::CoreConfiguration::Builder* builder) {
+      [target_selector = std::move(target_selector_)](
+          grpc_core::CoreConfiguration::Builder* builder) mutable {
         builder->channel_init()->RegisterStage(
             GRPC_CLIENT_CHANNEL, /*priority=*/INT_MAX,
-            [](grpc_core::ChannelStackBuilder* builder) {
-              builder->PrependFilter(
-                  &grpc::internal::OpenTelemetryClientFilter::kFilter);
+            [target_selector = std::move(target_selector)](
+                grpc_core::ChannelStackBuilder* builder) {
+              // Only register the filter if no channel selector has been set or
+              // the target selector returns true for the target.
+              if (target_selector == nullptr ||
+                  target_selector(builder->channel_args()
+                                      .GetString(GRPC_ARG_SERVER_URI)
+                                      .value_or(""))) {
+                builder->PrependFilter(
+                    &grpc::internal::OpenTelemetryClientFilter::kFilter);
+              }
               return true;
             });
       });
-}
-
-absl::flat_hash_set<std::string> OpenTelemetryPluginBuilder::BaseMetrics() {
-  return absl::flat_hash_set<std::string>{
-      std::string(OTelClientAttemptStartedInstrumentName()),
-      std::string(OTelClientAttemptDurationInstrumentName()),
-      std::string(
-          OTelClientAttemptSentTotalCompressedMessageSizeInstrumentName()),
-      std::string(
-          OTelClientAttemptRcvdTotalCompressedMessageSizeInstrumentName()),
-      std::string(OTelServerCallStartedInstrumentName()),
-      std::string(OTelServerCallDurationInstrumentName()),
-      std::string(OTelServerCallSentTotalCompressedMessageSizeInstrumentName()),
-      std::string(
-          OTelServerCallRcvdTotalCompressedMessageSizeInstrumentName())};
 }
 
 }  // namespace internal

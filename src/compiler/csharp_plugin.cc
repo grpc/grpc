@@ -85,7 +85,8 @@ class CSharpGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
     // Get output file name.
     std::string file_name;
     if (!grpc_csharp_generator::ServicesFilename(
-            file, file_suffix, base_namespace, file_name, error)) {
+            file, file_suffix, base_namespace_present, base_namespace,
+            file_name, error)) {
       return false;
     }
     std::unique_ptr<grpc::protobuf::io::ZeroCopyOutputStream> output(

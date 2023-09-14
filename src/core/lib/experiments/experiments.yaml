@@ -67,7 +67,7 @@
   test_tags: [resource_quota_test]
 - name: event_engine_client
   description: Use EventEngine clients instead of iomgr's grpc_tcp_client
-  expiry: 2023/10/01
+  expiry: 2024/01/21
   owner: hork@google.com
   test_tags: ["core_end2end_test", "event_engine_client_test"]
 - name: monitoring_experiment
@@ -94,11 +94,6 @@
   expiry: 2023/11/01
   owner: ctiller@google.com
   test_tags: ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test", "logging_test"]
-- name: transport_supplies_client_latency
-  description: If set, use the transport represented value for client latency in opencensus
-  expiry: 2023/09/01
-  owner: ctiller@google.com
-  test_tags: [census_test]
 - name: event_engine_listener
   description: Use EventEngine listeners instead of iomgr's grpc_tcp_server
   expiry: 2024/01/01
@@ -124,7 +119,7 @@
 - name: work_stealing
   description:
     If set, use a work stealing thread pool implementation in EventEngine
-  expiry: 2023/10/01
+  expiry: 2023/11/01
   owner: hork@google.com
   test_tags: ["core_end2end_test"]
   allow_in_fuzzing_config: false
@@ -162,7 +157,7 @@
   description:
     Allows overriding keepalive_permit_without_calls.
     Refer https://github.com/grpc/grpc/pull/33428 for more information.
-  expiry: 2023/09/07
+  expiry: 2024/06/30
   owner: yashkt@google.com
   test_tags: []
   allow_in_fuzzing_config: false
@@ -170,7 +165,23 @@
   description:
     Allows overriding keepalive_permit_without_calls for servers.
     Refer https://github.com/grpc/grpc/pull/33917 for more information.
-  expiry: 2023/09/07
+  expiry: 2023/12/31
   owner: yashkt@google.com
   test_tags: []
   allow_in_fuzzing_config: false
+- name: lazier_stream_updates
+  description:
+    Allow streams to consume up to 50% of the incoming window before we
+    force send a flow control update.
+  expiry: 2024/01/23
+  owner: ctiller@google.com
+  test_tags: [flow_control_test]
+- name: jitter_max_idle
+  description:
+    Enable jitter on connection max idle times.
+    Historically this jitter was only on max connection age, but it seems like
+    this could smooth out some herding problems.
+  expiry: 2023/11/21
+  owner: ctiller@google.com
+  test_tags: []
+  allow_in_fuzzing_config: true

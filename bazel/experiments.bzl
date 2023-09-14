@@ -21,9 +21,6 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
-            "census_test": [
-                "transport_supplies_client_latency",
-            ],
             "core_end2end_test": [
                 "event_engine_listener",
                 "promise_based_client_call",
@@ -62,6 +59,9 @@ EXPERIMENTS = {
         "on": {
             "core_end2end_test": [
                 "work_stealing",
+            ],
+            "flow_control_test": [
+                "lazier_stream_updates",
             ],
         },
     },
@@ -69,9 +69,6 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
-            "census_test": [
-                "transport_supplies_client_latency",
-            ],
             "core_end2end_test": [
                 "event_engine_listener",
                 "promise_based_client_call",
@@ -110,6 +107,9 @@ EXPERIMENTS = {
         "on": {
             "core_end2end_test": [
                 "work_stealing",
+            ],
+            "flow_control_test": [
+                "lazier_stream_updates",
             ],
         },
     },
@@ -119,9 +119,6 @@ EXPERIMENTS = {
         "off": {
             "cancel_ares_query_test": [
                 "event_engine_dns",
-            ],
-            "census_test": [
-                "transport_supplies_client_latency",
             ],
             "core_end2end_test": [
                 "event_engine_client",
@@ -168,6 +165,9 @@ EXPERIMENTS = {
         "on": {
             "core_end2end_test": [
                 "work_stealing",
+            ],
+            "flow_control_test": [
+                "lazier_stream_updates",
             ],
         },
     },

@@ -12,11 +12,11 @@ settings:
   '#08': Use "-preN" suffixes to identify pre-release versions
   '#09': Per-language overrides are possible with (eg) ruby_version tag here
   '#10': See the expand_version.py for all the quirks here
-  core_version: 34.0.0
+  core_version: 35.0.0
   csharp_major_version: 2
-  g_stands_for: goku
-  protobuf_version: 3.23.4
-  version: 1.58.0-dev
+  g_stands_for: generative
+  protobuf_version: 3.24.3
+  version: 1.59.0-dev
 configs:
   asan:
     CC: clang
@@ -208,4 +208,7 @@ swift_package:
   - grpc_authorization_provider
   - gpr
   - upb
+  - upb_json_lib
+  - upb_textformat_lib
+  - utf8_range_lib
   - re2

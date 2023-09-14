@@ -122,7 +122,7 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   /// \a Cancel method.
   struct TaskHandle {
     intptr_t keys[2];
-    static const TaskHandle kInvalid;
+    static const GRPC_DLL TaskHandle kInvalid;
     friend bool operator==(const TaskHandle& lhs, const TaskHandle& rhs);
     friend bool operator!=(const TaskHandle& lhs, const TaskHandle& rhs);
   };
@@ -131,7 +131,7 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   /// Returned by \a Connect, and can be passed to \a CancelConnect.
   struct ConnectionHandle {
     intptr_t keys[2];
-    static const ConnectionHandle kInvalid;
+    static const GRPC_DLL ConnectionHandle kInvalid;
     friend bool operator==(const ConnectionHandle& lhs,
                            const ConnectionHandle& rhs);
     friend bool operator!=(const ConnectionHandle& lhs,
@@ -318,7 +318,7 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   ///
   /// If the associated connection has not been completed, it will be cancelled,
   /// and this method will return true. The \a OnConnectCallback will not be
-  /// called.
+  /// called, and \a on_connect will be destroyed before this method returns.
   virtual bool CancelConnect(ConnectionHandle handle) = 0;
   /// Provides asynchronous resolution.
   ///
@@ -457,13 +457,9 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   /// be cancelled, and this function will return false.
   ///
   /// If the associated closure has not been scheduled to run, it will be
-  /// cancelled, and the associated absl::AnyInvocable or \a Closure* will not
-  /// be executed. In this case, Cancel will return true.
-  ///
-  /// Implementation note: closures should be destroyed in a timely manner after
-  /// execution or cancellation (milliseconds), since any state bound to the
-  /// closure may need to be destroyed for things to progress (e.g., if a
-  /// closure holds a ref to some ref-counted object).
+  /// cancelled, and this method will return true. The associated
+  /// absl::AnyInvocable or \a Closure* will not be called. If the closure type
+  /// was an absl::AnyInvocable, it will be destroyed before the method returns.
   virtual bool Cancel(TaskHandle handle) = 0;
 };
 
