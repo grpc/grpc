@@ -24,8 +24,7 @@ namespace {
 
 class TestServerCallTracerFactory : public ServerCallTracerFactory {
  public:
-  ServerCallTracer* CreateNewServerCallTracer(
-      Arena* /*arena*/, const ChannelArgs& /*args*/) override {
+  ServerCallTracer* CreateNewServerCallTracer(Arena* /*arena*/) override {
     Crash("Not implemented");
   }
 };

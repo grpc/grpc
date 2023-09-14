@@ -196,14 +196,18 @@ void OpenTelemetryServerCallTracer::RecordEnd(
 
 grpc_core::ServerCallTracer*
 OpenTelemetryServerCallTracerFactory::CreateNewServerCallTracer(
-    grpc_core::Arena* arena, const grpc_core::ChannelArgs& args) {
+    grpc_core::Arena* arena) {
   // Create the server call tracer only if there is no server selector
   // registered or if the server selector returns true.
-  if (OTelPluginState().server_selector == nullptr ||
-      OTelPluginState().server_selector(args)) {
-    return arena->ManagedNew<OpenTelemetryServerCallTracer>();
-  }
-  return nullptr;
+  return arena->ManagedNew<OpenTelemetryServerCallTracer>();
+}
+
+bool OpenTelemetryServerCallTracerFactory::IsServerTraced(
+    const grpc_core::ChannelArgs& args) {
+  // Return true only if there is no server selector registered or if the server
+  // selector returns true.
+  return OTelPluginState().server_selector == nullptr ||
+         OTelPluginState().server_selector(args);
 }
 
 }  // namespace internal

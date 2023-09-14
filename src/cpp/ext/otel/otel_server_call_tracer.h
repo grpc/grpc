@@ -32,7 +32,9 @@ class OpenTelemetryServerCallTracerFactory
     : public grpc_core::ServerCallTracerFactory {
  public:
   grpc_core::ServerCallTracer* CreateNewServerCallTracer(
-      grpc_core::Arena* arena, const grpc_core::ChannelArgs& args) override;
+      grpc_core::Arena* arena) override;
+
+  bool IsServerTraced(const grpc_core::ChannelArgs& args) override;
 };
 
 }  // namespace internal

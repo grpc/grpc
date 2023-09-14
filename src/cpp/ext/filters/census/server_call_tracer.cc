@@ -265,7 +265,7 @@ void OpenCensusServerCallTracer::RecordEnd(
 
 grpc_core::ServerCallTracer*
 OpenCensusServerCallTracerFactory::CreateNewServerCallTracer(
-    grpc_core::Arena* arena, const grpc_core::ChannelArgs& /*args*/) {
+    grpc_core::Arena* arena) {
   return arena->ManagedNew<OpenCensusServerCallTracer>();
 }
 
