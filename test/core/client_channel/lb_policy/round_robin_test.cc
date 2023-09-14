@@ -37,13 +37,10 @@ namespace {
 
 class RoundRobinTest : public LoadBalancingPolicyTest {
  protected:
-  void SetUp() override {
-    LoadBalancingPolicyTest::SetUp();
-    lb_policy_ = MakeLbPolicy("round_robin");
-  }
+  RoundRobinTest() : LoadBalancingPolicyTest("round_robin") {}
 
   void ExpectStartup(absl::Span<const absl::string_view> addresses) {
-    EXPECT_EQ(ApplyUpdate(BuildUpdate(addresses, nullptr), lb_policy_.get()),
+    EXPECT_EQ(ApplyUpdate(BuildUpdate(addresses, nullptr), lb_policy()),
               absl::OkStatus());
     // RR should have created a subchannel for each address.
     for (size_t i = 0; i < addresses.size(); ++i) {
@@ -78,14 +75,12 @@ class RoundRobinTest : public LoadBalancingPolicyTest {
       }
     }
   }
-
-  OrphanablePtr<LoadBalancingPolicy> lb_policy_;
 };
 
 TEST_F(RoundRobinTest, Basic) {
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
-  EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, nullptr), lb_policy_.get()),
+  EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, nullptr), lb_policy()),
             absl::OkStatus());
   ExpectRoundRobinStartup(kAddresses);
 }
@@ -93,19 +88,19 @@ TEST_F(RoundRobinTest, Basic) {
 TEST_F(RoundRobinTest, AddressUpdates) {
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
-  EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, nullptr), lb_policy_.get()),
+  EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, nullptr), lb_policy()),
             absl::OkStatus());
   ExpectRoundRobinStartup(kAddresses);
   // Send update to remove address 2.
   EXPECT_EQ(
       ApplyUpdate(BuildUpdate(absl::MakeSpan(kAddresses).first(2), nullptr),
-                  lb_policy_.get()),
+                  lb_policy()),
       absl::OkStatus());
   WaitForRoundRobinListChange(kAddresses, absl::MakeSpan(kAddresses).first(2));
   // Send update to remove address 0 and re-add address 2.
   EXPECT_EQ(
       ApplyUpdate(BuildUpdate(absl::MakeSpan(kAddresses).last(2), nullptr),
-                  lb_policy_.get()),
+                  lb_policy()),
       absl::OkStatus());
   WaitForRoundRobinListChange(absl::MakeSpan(kAddresses).first(2),
                               absl::MakeSpan(kAddresses).last(2));

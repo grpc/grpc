@@ -111,9 +111,10 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
     Json::Object json_;
   };
 
+  WeightedRoundRobinTest() : LoadBalancingPolicyTest("weighted_round_robin") {}
+
   void SetUp() override {
     LoadBalancingPolicyTest::SetUp();
-    lb_policy_ = MakeLbPolicy("weighted_round_robin");
     SetExpectedTimerDuration(std::chrono::seconds(1));
   }
 
@@ -125,7 +126,7 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
       SourceLocation location = SourceLocation()) {
     if (update_addresses.empty()) update_addresses = addresses;
     EXPECT_EQ(ApplyUpdate(BuildUpdate(update_addresses, config_builder.Build()),
-                          lb_policy_.get()),
+                          lb_policy()),
               absl::OkStatus());
     // Expect the initial CONNECTNG update with a picker that queues.
     ExpectConnectingUpdate(location);
@@ -316,8 +317,6 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
       }
     }
   }
-
-  OrphanablePtr<LoadBalancingPolicy> lb_policy_;
 };
 
 TEST_F(WeightedRoundRobinTest, Basic) {
@@ -809,9 +808,9 @@ TEST_F(WeightedRoundRobinTest, BlackoutPeriodDoesNotGetResetAfterUpdate) {
                                              /*qps=*/100.0, /*eps=*/0.0)}},
       {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 3}});
   // Send a duplicate update with the same addresses and config.
-  EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, config_builder.Build()),
-                        lb_policy_.get()),
-            absl::OkStatus());
+  EXPECT_EQ(
+      ApplyUpdate(BuildUpdate(kAddresses, config_builder.Build()), lb_policy()),
+      absl::OkStatus());
   // Note that we have not advanced time, so if the update incorrectly
   // triggers resetting the blackout period, none of the weights will
   // actually be used.

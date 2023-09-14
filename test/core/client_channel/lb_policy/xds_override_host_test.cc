@@ -26,6 +26,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
 #include "gtest/gtest.h"
+#include "lb_policy_test_lib.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/json.h>
@@ -47,10 +48,8 @@ namespace testing {
 namespace {
 class XdsOverrideHostTest : public LoadBalancingPolicyTest {
  protected:
-  void SetUp() override {
-    LoadBalancingPolicyTest::SetUp();
-    policy_ = MakeLbPolicy("xds_override_host_experimental");
-  }
+  XdsOverrideHostTest()
+      : LoadBalancingPolicyTest("xds_override_host_experimental") {}
 
   static RefCountedPtr<LoadBalancingPolicy::Config> MakeXdsOverrideHostConfig(
       absl::Span<const absl::string_view> override_host_status = {"UNKNOWN",
@@ -74,7 +73,7 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
   RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>
   ExpectStartupWithRoundRobin(absl::Span<const absl::string_view> addresses) {
     EXPECT_EQ(ApplyUpdate(BuildUpdate(addresses, MakeXdsOverrideHostConfig()),
-                          policy_.get()),
+                          lb_policy()),
               absl::OkStatus());
     return ExpectRoundRobinStartup(addresses);
   }
@@ -98,7 +97,7 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
       update.addresses->push_back(MakeAddressWithHealthStatus(
           address_and_status.first, address_and_status.second));
     }
-    EXPECT_EQ(ApplyUpdate(update, policy_.get()), absl::OkStatus());
+    EXPECT_EQ(ApplyUpdate(update, lb_policy()), absl::OkStatus());
   }
 
   CallAttributes MakeOverrideHostAttribute(absl::string_view host) {
@@ -107,8 +106,6 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
         std::make_unique<XdsOverrideHostAttribute>(host));
     return override_host_attributes;
   }
-
-  OrphanablePtr<LoadBalancingPolicy> policy_;
 };
 
 TEST_F(XdsOverrideHostTest, DelegatesToChild) {
@@ -120,7 +117,7 @@ TEST_F(XdsOverrideHostTest, NoConfigReportsError) {
   EXPECT_EQ(
       ApplyUpdate(
           BuildUpdate({"ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442"}, nullptr),
-          policy_.get()),
+          lb_policy()),
       absl::InvalidArgumentError("Missing policy config"));
 }
 
@@ -166,7 +163,7 @@ TEST_F(XdsOverrideHostTest, SubchannelsComeAndGo) {
   // Some other address is gone
   EXPECT_EQ(ApplyUpdate(BuildUpdate({kAddresses[0], kAddresses[1]},
                                     MakeXdsOverrideHostConfig()),
-                        policy_.get()),
+                        lb_policy()),
             absl::OkStatus());
   // Wait for LB policy to return a new picker that uses the updated
   // addresses.  We can't use the host override for this, because then
@@ -180,7 +177,7 @@ TEST_F(XdsOverrideHostTest, SubchannelsComeAndGo) {
   // "Our" address is gone so others get returned in round-robin order
   EXPECT_EQ(ApplyUpdate(BuildUpdate({kAddresses[0], kAddresses[2]},
                                     MakeXdsOverrideHostConfig()),
-                        policy_.get()),
+                        lb_policy()),
             absl::OkStatus());
   // Wait for LB policy to return the new picker.
   // In this case, we can pass call_attributes while we wait instead of
@@ -192,7 +189,7 @@ TEST_F(XdsOverrideHostTest, SubchannelsComeAndGo) {
   // And now it is back
   EXPECT_EQ(ApplyUpdate(BuildUpdate({kAddresses[1], kAddresses[2]},
                                     MakeXdsOverrideHostConfig()),
-                        policy_.get()),
+                        lb_policy()),
             absl::OkStatus());
   // Wait for LB policy to return the new picker.
   picker = WaitForRoundRobinListChange({kAddresses[0], kAddresses[2]},

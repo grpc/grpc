@@ -35,6 +35,7 @@ grpc_cc_library(
         "//src/core:lb_policy",
         "//src/core:subchannel_interface",
         "//test/core/event_engine/fuzzing_event_engine",
+        "//test/core/event_engine:event_engine_test_utils",
     ],
 )
 

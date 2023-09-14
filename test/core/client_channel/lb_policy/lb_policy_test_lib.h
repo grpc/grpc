@@ -84,6 +84,7 @@
 #include "src/core/lib/service_config/service_config_call_data.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/uri/uri_parser.h"
+#include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 
@@ -105,9 +106,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     // given SubchannelState object.
     class FakeSubchannel : public SubchannelInterface {
      public:
-      FakeSubchannel(SubchannelState* state,
-                     std::shared_ptr<WorkSerializer> work_serializer)
-          : state_(state), work_serializer_(std::move(work_serializer)) {}
+      explicit FakeSubchannel(SubchannelState* state) : state_(state) {}
 
       ~FakeSubchannel() override {
         if (orca_watcher_ != nullptr) {
@@ -160,21 +159,10 @@ class LoadBalancingPolicyTest : public ::testing::Test {
        private:
         SubchannelInterface::ConnectivityStateWatcherInterface* watcher()
             const {
-          return Match(
-              watcher_,
-              [](const std::unique_ptr<
-                  SubchannelInterface::ConnectivityStateWatcherInterface>&
-                     watcher) { return watcher.get(); },
-              [](const std::shared_ptr<
-                  SubchannelInterface::ConnectivityStateWatcherInterface>&
-                     watcher) { return watcher.get(); });
+          return watcher_.get();
         }
 
-        absl::variant<
-            std::unique_ptr<
-                SubchannelInterface::ConnectivityStateWatcherInterface>,
-            std::shared_ptr<
-                SubchannelInterface::ConnectivityStateWatcherInterface>>
+        std::shared_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>
             watcher_;
       };
 
@@ -182,10 +170,10 @@ class LoadBalancingPolicyTest : public ::testing::Test {
           std::unique_ptr<
               SubchannelInterface::ConnectivityStateWatcherInterface>
               watcher) override
-          ABSL_EXCLUSIVE_LOCKS_REQUIRED(*state_->work_serializer_) {
+          ABSL_EXCLUSIVE_LOCKS_REQUIRED(*state_->test_->work_serializer_) {
         auto* watcher_ptr = watcher.get();
         auto watcher_wrapper = MakeOrphanable<WatcherWrapper>(
-            work_serializer_, std::move(watcher));
+            state_->work_serializer(), std::move(watcher));
         watcher_map_[watcher_ptr] = watcher_wrapper.get();
         state_->state_tracker_.AddWatcher(GRPC_CHANNEL_SHUTDOWN,
                                           std::move(watcher_wrapper));
@@ -193,7 +181,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
       void CancelConnectivityStateWatch(
           ConnectivityStateWatcherInterface* watcher) override
-          ABSL_EXCLUSIVE_LOCKS_REQUIRED(*state_->work_serializer_) {
+          ABSL_EXCLUSIVE_LOCKS_REQUIRED(*state_->test_->work_serializer_) {
         auto it = watcher_map_.find(watcher);
         if (it == watcher_map_.end()) return;
         state_->state_tracker_.RemoveWatcher(it->second);
@@ -205,8 +193,9 @@ class LoadBalancingPolicyTest : public ::testing::Test {
         state_->requested_connection_ = true;
       }
 
-      void AddDataWatcher(std::unique_ptr<DataWatcherInterface> watcher)
-          override ABSL_EXCLUSIVE_LOCKS_REQUIRED(*state_->work_serializer_) {
+      void AddDataWatcher(
+          std::unique_ptr<DataWatcherInterface> watcher) override
+          ABSL_EXCLUSIVE_LOCKS_REQUIRED(*state_->test_->work_serializer_) {
         MutexLock lock(&state_->backend_metric_watcher_mu_);
         auto* w =
             static_cast<InternalSubchannelDataWatcherInterface*>(watcher.get());
@@ -223,7 +212,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
           auto connectivity_watcher = health_watcher_->TakeWatcher();
           auto* connectivity_watcher_ptr = connectivity_watcher.get();
           auto watcher_wrapper = MakeOrphanable<WatcherWrapper>(
-              work_serializer_, std::move(connectivity_watcher));
+              state_->work_serializer(), std::move(connectivity_watcher));
           health_watcher_wrapper_ = watcher_wrapper.get();
           state_->state_tracker_.AddWatcher(GRPC_CHANNEL_SHUTDOWN,
                                             std::move(watcher_wrapper));
@@ -236,7 +225,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       }
 
       void CancelDataWatcher(DataWatcherInterface* watcher) override
-          ABSL_EXCLUSIVE_LOCKS_REQUIRED(*state_->work_serializer_) {
+          ABSL_EXCLUSIVE_LOCKS_REQUIRED(*state_->test_->work_serializer_) {
         MutexLock lock(&state_->backend_metric_watcher_mu_);
         auto* w = static_cast<InternalSubchannelDataWatcherInterface*>(watcher);
         if (w->type() == OrcaProducer::Type()) {
@@ -261,7 +250,6 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       void ResetBackoff() override {}
 
       SubchannelState* state_;
-      std::shared_ptr<WorkSerializer> work_serializer_;
       std::map<SubchannelInterface::ConnectivityStateWatcherInterface*,
                WatcherWrapper*>
           watcher_map_;
@@ -270,10 +258,9 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       std::unique_ptr<OrcaWatcher> orca_watcher_;
     };
 
-    SubchannelState(absl::string_view address,
-                    std::shared_ptr<WorkSerializer> work_serializer)
+    SubchannelState(absl::string_view address, LoadBalancingPolicyTest* test)
         : address_(address),
-          work_serializer_(std::move(work_serializer)),
+          test_(test),
           state_tracker_("LoadBalancingPolicyTest") {}
 
     const std::string& address() const { return address_; }
@@ -338,8 +325,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       // scheduled on the WorkSerializer.  We don't want to return until
       // all of those notifications have been delivered.
       absl::Notification notification;
-      work_serializer_->Run(
-          [&]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_) {
+      test_->work_serializer_->Run(
+          [&]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*test_->work_serializer_) {
             if (validate_state_transition) {
               AssertValidConnectivityStateTransition(state_tracker_.state(),
                                                      state, location);
@@ -351,7 +338,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
             // executed after that state notifications has been delivered.
             gpr_log(GPR_INFO,
                     "Waiting for state notifications to be delivered");
-            work_serializer_->Run(
+            test_->work_serializer_->Run(
                 [&]() {
                   gpr_log(GPR_INFO,
                           "State notifications delivered, waiting for health "
@@ -361,8 +348,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
                   // pick_first leaf policy will have started a health watch, so
                   // we add another callback to the queue to be executed after
                   // the initial health watch notification has been delivered.
-                  work_serializer_->Run([&]() { notification.Notify(); },
-                                        DEBUG_LOCATION);
+                  test_->work_serializer_->Run([&]() { notification.Notify(); },
+                                               DEBUG_LOCATION);
                 },
                 DEBUG_LOCATION);
           },
@@ -380,9 +367,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     }
 
     // To be invoked by FakeHelper.
-    RefCountedPtr<SubchannelInterface> CreateSubchannel(
-        std::shared_ptr<WorkSerializer> work_serializer) {
-      return MakeRefCounted<FakeSubchannel>(this, std::move(work_serializer));
+    RefCountedPtr<SubchannelInterface> CreateSubchannel() {
+      return MakeRefCounted<FakeSubchannel>(this);
     }
 
     // Sends an OOB backend metric report to all watchers.
@@ -403,10 +389,15 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       }
     }
 
+    std::shared_ptr<WorkSerializer> work_serializer() {
+      return test_->work_serializer_;
+    }
+
    private:
     const std::string address_;
-    std::shared_ptr<WorkSerializer> work_serializer_;
-    ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(*work_serializer_);
+    LoadBalancingPolicyTest* const test_;
+    ConnectivityStateTracker state_tracker_
+        ABSL_GUARDED_BY(*test_->work_serializer_);
 
     Mutex requested_connection_mu_;
     bool requested_connection_ ABSL_GUARDED_BY(&requested_connection_mu_) =
@@ -438,13 +429,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       std::string ToString() const { return "RERESOLUTION"; }
     };
 
-    FakeHelper(LoadBalancingPolicyTest* test,
-               std::shared_ptr<WorkSerializer> work_serializer,
-               std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-                   event_engine)
-        : test_(test),
-          work_serializer_(std::move(work_serializer)),
-          event_engine_(std::move(event_engine)) {}
+    explicit FakeHelper(LoadBalancingPolicyTest* test) : test_(test) {}
 
     bool QueueEmpty() {
       MutexLock lock(&mu_);
@@ -506,17 +491,16 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     // release the ref to the picker.
     class PickerWrapper : public LoadBalancingPolicy::SubchannelPicker {
      public:
-      PickerWrapper(std::shared_ptr<WorkSerializer> work_serializer,
+      PickerWrapper(LoadBalancingPolicyTest* test,
                     RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker)
-          : work_serializer_(std::move(work_serializer)),
-            picker_(std::move(picker)) {
+          : test_(test), picker_(std::move(picker)) {
         gpr_log(GPR_INFO, "creating wrapper %p for picker %p", this,
                 picker_.get());
       }
 
       void Orphan() override {
         absl::Notification notification;
-        work_serializer_->Run(
+        test_->work_serializer_->Run(
             [notification = &notification,
              picker = std::move(picker_)]() mutable {
               picker.reset();
@@ -532,7 +516,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       }
 
      private:
-      std::shared_ptr<WorkSerializer> work_serializer_;
+      LoadBalancingPolicyTest* const test_;
       RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker_;
     };
 
@@ -565,11 +549,10 @@ class LoadBalancingPolicyTest : public ::testing::Test {
         GPR_ASSERT(address_uri.ok());
         it = test_->subchannel_pool_
                  .emplace(std::piecewise_construct, std::forward_as_tuple(key),
-                          std::forward_as_tuple(std::move(*address_uri),
-                                                work_serializer_))
+                          std::forward_as_tuple(std::move(*address_uri), test_))
                  .first;
       }
-      return it->second.CreateSubchannel(work_serializer_);
+      return it->second.CreateSubchannel();
     }
 
     void UpdateState(
@@ -578,7 +561,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       MutexLock lock(&mu_);
       StateUpdate update{
           state, status,
-          MakeRefCounted<PickerWrapper>(work_serializer_, std::move(picker))};
+          MakeRefCounted<PickerWrapper>(test_, std::move(picker))};
       gpr_log(GPR_INFO, "state update from LB policy: %s",
               update.ToString().c_str());
       queue_.push_back(std::move(update));
@@ -601,14 +584,12 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     }
 
     grpc_event_engine::experimental::EventEngine* GetEventEngine() override {
-      return event_engine_.get();
+      return test_->fuzzing_ee_.get();
     }
 
     void AddTraceEvent(TraceSeverity, absl::string_view) override {}
 
     LoadBalancingPolicyTest* test_;
-    std::shared_ptr<WorkSerializer> work_serializer_;
-    std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
 
     Mutex mu_;
     std::deque<Event> queue_ ABSL_GUARDED_BY(&mu_);
@@ -698,6 +679,9 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     const absl::optional<BackendMetricData> backend_metric_data_;
   };
 
+  explicit LoadBalancingPolicyTest(absl::string_view lb_policy_name)
+      : lb_policy_name_(lb_policy_name) {}
+
   void SetUp() override {
     // Order is important here: Fuzzing EE needs to be created before
     // grpc_init(), and the POSIX EE (which is used by the WorkSerializer)
@@ -709,6 +693,14 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     grpc_init();
     event_engine_ = grpc_event_engine::experimental::GetDefaultEventEngine();
     work_serializer_ = std::make_shared<WorkSerializer>(event_engine_);
+    auto helper = std::make_unique<FakeHelper>(this);
+    helper_ = helper.get();
+    LoadBalancingPolicy::Args args = {work_serializer_, std::move(helper),
+                                      ChannelArgs()};
+    lb_policy_ =
+        CoreConfiguration::Get().lb_policy_registry().CreateLoadBalancingPolicy(
+            lb_policy_name_, std::move(args));
+    GPR_ASSERT(lb_policy_ != nullptr);
   }
 
   void TearDown() override {
@@ -724,21 +716,18 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     // (This will cause an ASAN failure, but it will not display the
     // queued events, so the failure will be harder to diagnose.)
     helper_->ExpectQueueEmpty();
+    lb_policy_.reset();
+    fuzzing_ee_->TickUntilIdle();
+    grpc_event_engine::experimental::WaitForSingleOwner(
+        std::move(event_engine_));
+    event_engine_.reset();
     grpc_shutdown_blocking();
+    fuzzing_ee_.reset();
   }
 
-  // Creates an LB policy of the specified name.
-  // Creates a new FakeHelper for the new LB policy, and sets helper_ to
-  // point to the FakeHelper.
-  OrphanablePtr<LoadBalancingPolicy> MakeLbPolicy(absl::string_view name) {
-    auto helper =
-        std::make_unique<FakeHelper>(this, work_serializer_, fuzzing_ee_);
-    helper_ = helper.get();
-    LoadBalancingPolicy::Args args = {work_serializer_, std::move(helper),
-                                      ChannelArgs()};
-    return CoreConfiguration::Get()
-        .lb_policy_registry()
-        .CreateLoadBalancingPolicy(name, std::move(args));
+  LoadBalancingPolicy* lb_policy() const {
+    GPR_ASSERT(lb_policy_ != nullptr);
+    return lb_policy_.get();
   }
 
   // Creates an LB policy config from json.
@@ -1212,7 +1201,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     SubchannelKey key(MakeAddress(address), args);
     auto it = subchannel_pool_
                   .emplace(std::piecewise_construct, std::forward_as_tuple(key),
-                           std::forward_as_tuple(address, work_serializer_))
+                           std::forward_as_tuple(address, this))
                   .first;
     return &it->second;
   }
@@ -1249,10 +1238,20 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
   std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
       fuzzing_ee_;
+  // TODO(ctiller): this is a normal event engine, yet it gets its time measure
+  // from fuzzing_ee_ -- results are likely to be a little funky, but seem to do
+  // well enough for the tests we have today.
+  // We should transition everything here to just use fuzzing_ee_, but that
+  // needs some thought on how to Tick() at appropriate times, as there are
+  // Notification objects buried everywhere in this code, and
+  // WaitForNotification is deeply incompatible with a single threaded event
+  // engine that doesn't run callbacks until its public Tick method is called.
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
   std::shared_ptr<WorkSerializer> work_serializer_;
   FakeHelper* helper_ = nullptr;
   std::map<SubchannelKey, SubchannelState> subchannel_pool_;
+  OrphanablePtr<LoadBalancingPolicy> lb_policy_;
+  const absl::string_view lb_policy_name_;
 };
 
 }  // namespace testing

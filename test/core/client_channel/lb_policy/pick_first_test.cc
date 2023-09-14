@@ -30,6 +30,7 @@
 #include "absl/types/span.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "lb_policy_test_lib.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/json.h>
@@ -49,10 +50,7 @@ namespace {
 
 class PickFirstTest : public LoadBalancingPolicyTest {
  protected:
-  void SetUp() override {
-    LoadBalancingPolicyTest::SetUp();
-    lb_policy_ = MakeLbPolicy("pick_first");
-  }
+  PickFirstTest() : LoadBalancingPolicyTest("pick_first") {}
 
   static RefCountedPtr<LoadBalancingPolicy::Config> MakePickFirstConfig(
       absl::optional<bool> shuffle_address_list = absl::nullopt) {
@@ -76,7 +74,7 @@ class PickFirstTest : public LoadBalancingPolicyTest {
     absl::Notification notification;
     work_serializer_->Run(
         [&]() {
-          lb_policy_->ExitIdleLocked();
+          lb_policy()->ExitIdleLocked();
           work_serializer_->Run([&]() { notification.Notify(); },
                                 DEBUG_LOCATION);
         },
@@ -136,8 +134,6 @@ class PickFirstTest : public LoadBalancingPolicyTest {
       subchannels.erase(subchannel);
     }
   }
-
-  OrphanablePtr<LoadBalancingPolicy> lb_policy_;
 };
 
 TEST_F(PickFirstTest, FirstAddressWorks) {
@@ -145,7 +141,7 @@ TEST_F(PickFirstTest, FirstAddressWorks) {
   constexpr std::array<absl::string_view, 2> kAddresses = {
       "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444"};
   absl::Status status = ApplyUpdate(
-      BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy_.get());
+      BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy());
   EXPECT_TRUE(status.ok()) << status;
   // LB policy should have created a subchannel for both addresses.
   auto* subchannel = FindSubchannel(kAddresses[0]);
@@ -178,7 +174,7 @@ TEST_F(PickFirstTest, FirstAddressFails) {
   constexpr std::array<absl::string_view, 2> kAddresses = {
       "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444"};
   absl::Status status = ApplyUpdate(
-      BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy_.get());
+      BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy());
   EXPECT_TRUE(status.ok()) << status;
   // LB policy should have created a subchannel for both addresses.
   auto* subchannel = FindSubchannel(kAddresses[0]);
@@ -230,7 +226,7 @@ TEST_F(PickFirstTest, FirstTwoAddressesInTransientFailureAtStart) {
                                     absl::UnavailableError("failed to connect"),
                                     /*validate_state_transition=*/false);
   absl::Status status = ApplyUpdate(
-      BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy_.get());
+      BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy());
   EXPECT_TRUE(status.ok()) << status;
   // LB policy should have created a subchannel for all addresses.
   auto* subchannel3 = FindSubchannel(kAddresses[2]);
@@ -273,7 +269,7 @@ TEST_F(PickFirstTest, AllAddressesInTransientFailureAtStart) {
                                     absl::UnavailableError("failed to connect"),
                                     /*validate_state_transition=*/false);
   absl::Status status = ApplyUpdate(
-      BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy_.get());
+      BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy());
   EXPECT_TRUE(status.ok()) << status;
   // The LB policy should request re-resolution.
   ExpectReresolutionRequest();
@@ -319,7 +315,7 @@ TEST_F(PickFirstTest, StaysInTransientFailureAfterAddressListUpdate) {
                                     absl::UnavailableError("failed to connect"),
                                     /*validate_state_transition=*/false);
   absl::Status status = ApplyUpdate(
-      BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy_.get());
+      BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy());
   EXPECT_TRUE(status.ok()) << status;
   // The LB policy should request re-resolution.
   ExpectReresolutionRequest();
@@ -338,7 +334,7 @@ TEST_F(PickFirstTest, StaysInTransientFailureAfterAddressListUpdate) {
   constexpr std::array<absl::string_view, 2> kAddresses2 = {
       kAddresses[0], "ipv4:127.0.0.1:445"};
   status = ApplyUpdate(BuildUpdate(kAddresses2, MakePickFirstConfig(false)),
-                       lb_policy_.get());
+                       lb_policy());
   EXPECT_TRUE(status.ok()) << status;
   // The LB policy should have created a subchannel for the new address.
   auto* subchannel3 = FindSubchannel(kAddresses2[1]);
@@ -363,7 +359,7 @@ TEST_F(PickFirstTest, FirstAddressGoesIdleBeforeSecondOneFails) {
   constexpr std::array<absl::string_view, 2> kAddresses = {
       "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444"};
   absl::Status status = ApplyUpdate(
-      BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy_.get());
+      BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy());
   EXPECT_TRUE(status.ok()) << status;
   // LB policy should have created a subchannel for both addresses.
   auto* subchannel = FindSubchannel(kAddresses[0]);
@@ -424,7 +420,7 @@ TEST_F(PickFirstTest, GoesIdleWhenConnectionFailsThenCanReconnect) {
   constexpr std::array<absl::string_view, 2> kAddresses = {
       "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444"};
   absl::Status status = ApplyUpdate(
-      BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy_.get());
+      BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy());
   EXPECT_TRUE(status.ok()) << status;
   // LB policy should have created a subchannel for both addresses.
   auto* subchannel = FindSubchannel(kAddresses[0]);
@@ -494,7 +490,7 @@ TEST_F(PickFirstTest, WithShuffle) {
   bool shuffled = false;
   for (size_t i = 0; i < kMaxTries; ++i) {
     absl::Status status = ApplyUpdate(
-        BuildUpdate(kAddresses, MakePickFirstConfig(true)), lb_policy_.get());
+        BuildUpdate(kAddresses, MakePickFirstConfig(true)), lb_policy());
     EXPECT_TRUE(status.ok()) << status;
     GetOrderAddressesArePicked(kAddresses, &addresses_after_update);
     if (absl::MakeConstSpan(addresses_after_update) !=
@@ -517,7 +513,7 @@ TEST_F(PickFirstTest, ShufflingDisabled) {
   constexpr static size_t kMaxAttempts = 5;
   for (size_t attempt = 0; attempt < kMaxAttempts; ++attempt) {
     absl::Status status = ApplyUpdate(
-        BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy_.get());
+        BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy());
     EXPECT_TRUE(status.ok()) << status;
     std::vector<absl::string_view> address_order;
     GetOrderAddressesArePicked(kAddresses, &address_order);

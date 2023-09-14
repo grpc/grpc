@@ -142,9 +142,11 @@ class OutlierDetectionTest : public LoadBalancingPolicyTest {
     absl::optional<Json::Object> failure_percentage_;
   };
 
+  OutlierDetectionTest()
+      : LoadBalancingPolicyTest("outlier_detection_experimental") {}
+
   void SetUp() override {
     LoadBalancingPolicyTest::SetUp();
-    lb_policy_ = MakeLbPolicy("outlier_detection_experimental");
     SetExpectedTimerDuration(std::chrono::seconds(10));
   }
 
@@ -164,15 +166,13 @@ class OutlierDetectionTest : public LoadBalancingPolicyTest {
     }
     return address;
   }
-
-  OrphanablePtr<LoadBalancingPolicy> lb_policy_;
 };
 
 TEST_F(OutlierDetectionTest, Basic) {
   constexpr absl::string_view kAddressUri = "ipv4:127.0.0.1:443";
   // Send an update containing one address.
   absl::Status status = ApplyUpdate(
-      BuildUpdate({kAddressUri}, ConfigBuilder().Build()), lb_policy_.get());
+      BuildUpdate({kAddressUri}, ConfigBuilder().Build()), lb_policy());
   EXPECT_TRUE(status.ok()) << status;
   // LB policy should have created a subchannel for the address.
   auto* subchannel = FindSubchannel(kAddressUri);
@@ -206,7 +206,7 @@ TEST_F(OutlierDetectionTest, FailurePercentage) {
                                   .SetFailurePercentageMinimumHosts(1)
                                   .SetFailurePercentageRequestVolume(1)
                                   .Build()),
-      lb_policy_.get());
+      lb_policy());
   EXPECT_TRUE(status.ok()) << status;
   // Expect normal startup.
   auto picker = ExpectRoundRobinStartup(kAddresses);
@@ -239,7 +239,7 @@ TEST_F(OutlierDetectionTest, DoesNotWorkWithPickFirst) {
                       .SetFailurePercentageRequestVolume(1)
                       .SetChildPolicy({{"pick_first", Json::FromObject({})}})
                       .Build()),
-      lb_policy_.get());
+      lb_policy());
   EXPECT_TRUE(status.ok()) << status;
   // LB policy should have created a subchannel for the first address.
   auto* subchannel = FindSubchannel(kAddresses[0]);
