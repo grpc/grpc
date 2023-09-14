@@ -2469,6 +2469,7 @@ grpc_cc_library(
     srcs = [
         "//src/core:lib/config/core_configuration.cc",
     ],
+    external_deps = ["absl/functional:any_invocable"],
     language = "c++",
     public_hdrs = [
         "//src/core:lib/config/core_configuration.h",
@@ -2963,7 +2964,7 @@ grpc_cc_library(
         "//src/core:ext/filters/client_channel/config_selector.cc",
         "//src/core:ext/filters/client_channel/dynamic_filters.cc",
         "//src/core:ext/filters/client_channel/global_subchannel_pool.cc",
-        "//src/core:ext/filters/client_channel/http_proxy.cc",
+        "//src/core:ext/filters/client_channel/http_proxy_mapper.cc",
         "//src/core:ext/filters/client_channel/lb_policy/child_policy_handler.cc",
         "//src/core:ext/filters/client_channel/lb_policy/oob_backend_metric.cc",
         "//src/core:ext/filters/client_channel/local_subchannel_pool.cc",
@@ -2988,7 +2989,7 @@ grpc_cc_library(
         "//src/core:ext/filters/client_channel/connector.h",
         "//src/core:ext/filters/client_channel/dynamic_filters.h",
         "//src/core:ext/filters/client_channel/global_subchannel_pool.h",
-        "//src/core:ext/filters/client_channel/http_proxy.h",
+        "//src/core:ext/filters/client_channel/http_proxy_mapper.h",
         "//src/core:ext/filters/client_channel/lb_policy/child_policy_handler.h",
         "//src/core:ext/filters/client_channel/lb_policy/oob_backend_metric.h",
         "//src/core:ext/filters/client_channel/lb_policy/oob_backend_metric_internal.h",

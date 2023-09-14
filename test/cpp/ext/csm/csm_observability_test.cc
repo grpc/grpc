@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/cpp/ext/gsm/gsm_observability.h"
+#include "src/cpp/ext/csm/csm_observability.h"
 
 #include "google/cloud/opentelemetry/resource_detector.h"
 #include "gtest/gtest.h"
@@ -28,14 +28,36 @@ namespace grpc {
 namespace testing {
 namespace {
 
-TEST(GsmCustomObservabilityBuilderTest, Basic) {
-  EXPECT_EQ(
-      internal::GsmCustomObservabilityBuilder().BuildAndRegister().status(),
-      absl::UnimplementedError("Not Implemented"));
+TEST(CsmObservabilityBuilderTest, Basic) {
+  EXPECT_TRUE(
+      internal::CsmObservabilityBuilder().BuildAndRegister().status().ok());
 }
 
 TEST(GsmDependencyTest, GoogleCloudOpenTelemetryDependency) {
   EXPECT_NE(google::cloud::otel::MakeResourceDetector(), nullptr);
+}
+
+TEST(CsmChannelTargetSelectorTest, NonXdsTargets) {
+  EXPECT_FALSE(internal::CsmChannelTargetSelector("foo.bar.google.com"));
+  EXPECT_FALSE(internal::CsmChannelTargetSelector("dns:///foo.bar.google.com"));
+  EXPECT_FALSE(
+      internal::CsmChannelTargetSelector("dns:///foo.bar.google.com:1234"));
+  EXPECT_FALSE(internal::CsmChannelTargetSelector(
+      "dns://authority/foo.bar.google.com:1234"));
+}
+
+TEST(CsmChannelTargetSelectorTest, XdsTargets) {
+  EXPECT_TRUE(internal::CsmChannelTargetSelector("xds:///foo"));
+  EXPECT_TRUE(internal::CsmChannelTargetSelector("xds:///foo.bar"));
+}
+
+TEST(CsmChannelTargetSelectorTest, XdsTargetsWithNonTDAuthority) {
+  EXPECT_FALSE(internal::CsmChannelTargetSelector("xds://authority/foo"));
+}
+
+TEST(CsmChannelTargetSelectorTest, XdsTargetsWithTDAuthority) {
+  EXPECT_TRUE(internal::CsmChannelTargetSelector(
+      "xds://traffic-director-global.xds.googleapis.com/foo"));
 }
 
 }  // namespace
