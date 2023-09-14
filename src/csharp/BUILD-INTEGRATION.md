@@ -79,6 +79,23 @@ For `.proto` files that are outside of the project directory a link can be added
 
 For more examples see the example project files in GitHub: https://github.com/grpc/grpc-dotnet/tree/master/examples
 
+## Sharing `.proto` files between projects
+
+As an alternative to each project generating their own code from a set of `.proto` files, you can have a shared .NET project that generates the code once, and then other projects reference the shared project.
+
+Here are a couple of examples:
+- for *gRPC for .NET* see the [Liber example](https://github.com/grpc/grpc-dotnet/tree/master/examples#liber)
+- for *gRPC C#* (legacy library) see the [RouteGuide example](https://github.com/grpc/grpc/tree/v1.46.x/examples/csharp/RouteGuide)
+
+Looking at the *Libre* example, it has three projects:
+- *Common.csproj* uses Grpc.Tools to generate messages contained in `common.proto`.
+- *Client.csproj* uses Grpc.Tools to generate the gRPC client for `greet.proto`. There is no `<Protobuf>` reference for `common.proto` because we don't want its messages generated in this project. Instead the .NET types for its messages are referenced from the common project.
+- *Server.csproj* uses Grpc.Tools to generate the gRPC service for `greet.proto`. It also references the common project.
+
+Another approach could be to have all the `.proto` files handled in the common project,
+generating the gRPC client and server code in that project, and not having any `.proto` files
+in the client and server projects. This is the approach taken by the *RouteGuide* example.
+
 # Reference
 
 ## Protobuf item metadata reference
@@ -252,6 +269,7 @@ Quick links to the examples below:
 * [Visual Studio: setting per-file `.proto` file options](#visualstudio)
 * [Bypassing Grpc.Tools to run the protocol buffers compiler explicitly](#compiler)
 * [Using Grpc.Tools with unsupported architectures](#unsupported-arch)
+* [Referencing `.proto` files that are in NuGet packages](#proto-only-nuget)
 
 ---
 ## <a name="ProtoRoot"></a>ProtoRoot - Common root for one or more `.proto` files
@@ -562,6 +580,18 @@ export GRPC_PROTOC_PLUGIN=/usr/bin/grpc_csharp_plugin
 # use the binaries pointed to by the environment variables
 dotnet build
 ```
+
+---
+
+## <a name="proto-only-nuget"></a>Referencing `.proto` files that are in NuGet packages
+
+There might be occassions when you are given a NuGet package that contains `.proto` and you want to 
+generate the code from these files, or you wish to package your own `.proto` files in NuGet package.
+
+Note: This is not the same as a NuGet package providing a library built from the code already
+generated from the `.proto` files. It is just providing the `.proto` files themselves.
+
+
 
 ---
 
