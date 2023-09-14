@@ -87,7 +87,9 @@ grpc_ssl_credentials::create_security_connector(
     grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
     const char* target, grpc_core::ChannelArgs* args) {
   if (config_.pem_root_certs == nullptr) {
-    gpr_log(GPR_ERROR, "Could not get default pem root certs.");
+    gpr_log(GPR_ERROR,
+            "No root certs in config. Client-side security connector must have "
+            "root certs.");
     return nullptr;
   }
   absl::optional<std::string> overridden_target_name =
@@ -99,7 +101,7 @@ grpc_ssl_credentials::create_security_connector(
   grpc_core::RefCountedPtr<grpc_channel_security_connector> security_connector =
       nullptr;
   if (session_cache != nullptr) {
-    // We need a separate factory and ctx if there's a cache in the channel
+    // We need a separate factory and SSL_CTX if there's a cache in the channel
     // args. SSL_CTX should live with the factory and that should live on the
     // credentials. However, there is a way to configure a session cache in the
     // channel args, so that prevents us from also keeping the session cache at
@@ -111,6 +113,9 @@ grpc_ssl_credentials::create_security_connector(
         &config_, config_.pem_root_certs, root_store_, session_cache,
         &factory_with_cache);
     if (status != GRPC_SECURITY_OK) {
+      gpr_log(GPR_ERROR,
+              "InitializeClientHandshakerFactory returned bad "
+              "status.");
       return nullptr;
     }
     security_connector = grpc_ssl_channel_security_connector_create(
