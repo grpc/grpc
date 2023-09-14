@@ -423,7 +423,10 @@
     find_package(Threads)
     set(_gRPC_ALLTARGETS_LIBRARIES <%text>${CMAKE_DL_LIBS}</%text> m Threads::Threads)
     if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
-      set(_gRPC_ALLTARGETS_LIBRARIES <%text>${_gRPC_ALLTARGETS_LIBRARIES}</%text> rt)
+      find_library(LIBRT rt)
+      if(LIBRT)
+        set(_gRPC_ALLTARGETS_LIBRARIES <%text>${_gRPC_ALLTARGETS_LIBRARIES}</%text> rt)
+      endif()
     endif()
   endif()
 
