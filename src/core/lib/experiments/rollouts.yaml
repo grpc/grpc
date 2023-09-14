@@ -79,7 +79,7 @@
 - name: work_stealing
   default: true
 - name: work_serializer_dispatch
-  default: true
+  default: false
 - name: client_privacy
   default: false
 - name: canary_client_privacy

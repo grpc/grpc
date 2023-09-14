@@ -24,9 +24,11 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "event_engine_listener",
                 "promise_based_server_call",
+                "work_serializer_dispatch",
             ],
             "cpp_end2end_test": [
                 "promise_based_server_call",
+                "work_serializer_dispatch",
             ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
@@ -40,6 +42,9 @@ EXPERIMENTS = {
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
             ],
+            "lb_policy_test": [
+                "work_serializer_dispatch",
+            ],
             "logging_test": [
                 "promise_based_server_call",
             ],
@@ -50,15 +55,12 @@ EXPERIMENTS = {
             ],
             "xds_end2end_test": [
                 "promise_based_server_call",
+                "work_serializer_dispatch",
             ],
         },
         "on": {
             "core_end2end_test": [
-                "work_serializer_dispatch",
                 "work_stealing",
-            ],
-            "cpp_end2end_test": [
-                "work_serializer_dispatch",
             ],
             "cpp_lb_end2end_test": [
                 "round_robin_delegate_to_pick_first",
@@ -66,12 +68,8 @@ EXPERIMENTS = {
             "flow_control_test": [
                 "lazier_stream_updates",
             ],
-            "lb_policy_test": [
-                "work_serializer_dispatch",
-            ],
             "xds_end2end_test": [
                 "round_robin_delegate_to_pick_first",
-                "work_serializer_dispatch",
             ],
         },
     },
@@ -82,9 +80,11 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "event_engine_listener",
                 "promise_based_server_call",
+                "work_serializer_dispatch",
             ],
             "cpp_end2end_test": [
                 "promise_based_server_call",
+                "work_serializer_dispatch",
             ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
@@ -98,6 +98,9 @@ EXPERIMENTS = {
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
             ],
+            "lb_policy_test": [
+                "work_serializer_dispatch",
+            ],
             "logging_test": [
                 "promise_based_server_call",
             ],
@@ -108,15 +111,12 @@ EXPERIMENTS = {
             ],
             "xds_end2end_test": [
                 "promise_based_server_call",
+                "work_serializer_dispatch",
             ],
         },
         "on": {
             "core_end2end_test": [
-                "work_serializer_dispatch",
                 "work_stealing",
-            ],
-            "cpp_end2end_test": [
-                "work_serializer_dispatch",
             ],
             "cpp_lb_end2end_test": [
                 "round_robin_delegate_to_pick_first",
@@ -124,12 +124,8 @@ EXPERIMENTS = {
             "flow_control_test": [
                 "lazier_stream_updates",
             ],
-            "lb_policy_test": [
-                "work_serializer_dispatch",
-            ],
             "xds_end2end_test": [
                 "round_robin_delegate_to_pick_first",
-                "work_serializer_dispatch",
             ],
         },
     },
@@ -144,9 +140,11 @@ EXPERIMENTS = {
                 "event_engine_client",
                 "event_engine_listener",
                 "promise_based_server_call",
+                "work_serializer_dispatch",
             ],
             "cpp_end2end_test": [
                 "promise_based_server_call",
+                "work_serializer_dispatch",
             ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
@@ -163,6 +161,9 @@ EXPERIMENTS = {
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
             ],
+            "lb_policy_test": [
+                "work_serializer_dispatch",
+            ],
             "logging_test": [
                 "promise_based_server_call",
             ],
@@ -176,15 +177,12 @@ EXPERIMENTS = {
             ],
             "xds_end2end_test": [
                 "promise_based_server_call",
+                "work_serializer_dispatch",
             ],
         },
         "on": {
             "core_end2end_test": [
-                "work_serializer_dispatch",
                 "work_stealing",
-            ],
-            "cpp_end2end_test": [
-                "work_serializer_dispatch",
             ],
             "cpp_lb_end2end_test": [
                 "round_robin_delegate_to_pick_first",
@@ -192,12 +190,8 @@ EXPERIMENTS = {
             "flow_control_test": [
                 "lazier_stream_updates",
             ],
-            "lb_policy_test": [
-                "work_serializer_dispatch",
-            ],
             "xds_end2end_test": [
                 "round_robin_delegate_to_pick_first",
-                "work_serializer_dispatch",
             ],
         },
     },
