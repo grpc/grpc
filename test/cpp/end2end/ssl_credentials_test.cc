@@ -88,7 +88,7 @@ class SslCredentialsTest : public ::testing::Test {
   TestServiceImpl service_;
   std::unique_ptr<Server> server_ = nullptr;
   std::thread* server_thread_ = nullptr;
-  std::string server_addr_ = "";
+  std::string server_addr_;
 };
 
 void DoRpc(const std::string& server_addr,
