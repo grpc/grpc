@@ -696,6 +696,7 @@ libs:
   - src/core/lib/event_engine/grpc_polled_fd.h
   - src/core/lib/event_engine/handle_containers.h
   - src/core/lib/event_engine/memory_allocator_factory.h
+  - src/core/lib/event_engine/nameser.h
   - src/core/lib/event_engine/poller.h
   - src/core/lib/event_engine/posix.h
   - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.h
@@ -1704,6 +1705,7 @@ libs:
   - src/core/lib/security/credentials/plugin/plugin_credentials.cc
   - src/core/lib/security/credentials/ssl/ssl_credentials.cc
   - src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc
+  - src/core/lib/security/credentials/tls/grpc_tls_certificate_match.cc
   - src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.cc
   - src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.cc
   - src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc
@@ -2106,6 +2108,7 @@ libs:
   - src/core/lib/event_engine/grpc_polled_fd.h
   - src/core/lib/event_engine/handle_containers.h
   - src/core/lib/event_engine/memory_allocator_factory.h
+  - src/core/lib/event_engine/nameser.h
   - src/core/lib/event_engine/poller.h
   - src/core/lib/event_engine/posix.h
   - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.h
@@ -4118,6 +4121,7 @@ libs:
   - src/core/lib/event_engine/grpc_polled_fd.h
   - src/core/lib/event_engine/handle_containers.h
   - src/core/lib/event_engine/memory_allocator_factory.h
+  - src/core/lib/event_engine/nameser.h
   - src/core/lib/event_engine/poller.h
   - src/core/lib/event_engine/posix.h
   - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.h
@@ -15633,6 +15637,7 @@ targets:
   - src/core/lib/event_engine/grpc_polled_fd.h
   - src/core/lib/event_engine/handle_containers.h
   - src/core/lib/event_engine/memory_allocator_factory.h
+  - src/core/lib/event_engine/nameser.h
   - src/core/lib/event_engine/poller.h
   - src/core/lib/event_engine/posix.h
   - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.h

@@ -20,8 +20,12 @@
 
 #include "src/cpp/ext/csm/csm_observability.h"
 
+#include <string>
 #include <utility>
 
+#include <grpc/support/log.h>
+
+#include "src/core/lib/uri/uri_parser.h"
 #include "src/cpp/ext/otel/otel_plugin.h"
 
 namespace grpc {
@@ -71,7 +75,26 @@ CsmObservabilityBuilder& CsmObservabilityBuilder::SetTargetAttributeFilter(
 
 absl::StatusOr<CsmObservability> CsmObservabilityBuilder::BuildAndRegister() {
   builder_.BuildAndRegisterGlobal();
+  builder_.SetTargetSelector(CsmChannelTargetSelector);
   return CsmObservability();
+}
+
+bool CsmChannelTargetSelector(absl::string_view target) {
+  auto uri = grpc_core::URI::Parse(target);
+  if (!uri.ok()) {
+    gpr_log(GPR_ERROR, "Failed to parse URI: %s", std::string(target).c_str());
+    return false;
+  }
+  // CSM channels should have an "xds" scheme
+  if (uri->scheme() != "xds") {
+    return false;
+  }
+  // If set, the authority should be TD
+  if (!uri->authority().empty() &&
+      uri->authority() != "traffic-director-global.xds.googleapis.com") {
+    return false;
+  }
+  return true;
 }
 
 }  // namespace internal
