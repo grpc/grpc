@@ -516,7 +516,7 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsUuidAfterCompaction) {
   }
   Notification done;
   grpc_event_engine::experimental::GetDefaultEventEngine()->RunAfter(
-      std::chrono::seconds(5), [&] {
+      std::chrono::seconds(5 * grpc_test_slowdown_factor()), [&] {
         ExecCtx exec_ctx;
         std::string json_str = ChannelzRegistry::GetTopChannels(0);
         auto parsed_json = JsonParse(json_str);

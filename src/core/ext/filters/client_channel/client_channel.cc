@@ -342,10 +342,7 @@ class ClientChannel::PromiseBasedCallData : public ClientChannel::CallData {
                 chand_, this, Activity::current()->DebugTag().c_str(),
                 result.has_value() ? result->ToString().c_str() : "Pending");
       }
-      if (!result.has_value()) {
-        was_queued_ = true;
-        return Pending{};
-      }
+      if (!result.has_value()) return Pending{};
       if (!result->ok()) return *result;
       call_args.client_initial_metadata = std::move(client_initial_metadata_);
       return std::move(call_args);

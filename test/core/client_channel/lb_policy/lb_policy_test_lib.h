@@ -153,15 +153,10 @@ class LoadBalancingPolicyTest : public ::testing::Test {
                                        const absl::Status& status) override {
           gpr_log(GPR_INFO, "notifying watcher: state=%s status=%s",
                   ConnectivityStateName(new_state), status.ToString().c_str());
-          watcher()->OnConnectivityStateChange(new_state, status);
+          watcher_->OnConnectivityStateChange(new_state, status);
         }
 
        private:
-        SubchannelInterface::ConnectivityStateWatcherInterface* watcher()
-            const {
-          return watcher_.get();
-        }
-
         std::shared_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>
             watcher_;
       };

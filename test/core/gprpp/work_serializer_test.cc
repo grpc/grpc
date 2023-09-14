@@ -281,6 +281,12 @@ TEST(WorkSerializerTest, RunningInWorkSerializer) {
       DEBUG_LOCATION);
   EXPECT_FALSE(work_serializer1->RunningInWorkSerializer());
   EXPECT_FALSE(work_serializer2->RunningInWorkSerializer());
+  Notification done1;
+  Notification done2;
+  work_serializer1->Run([&done1]() { done1.Notify(); }, DEBUG_LOCATION);
+  work_serializer2->Run([&done2]() { done2.Notify(); }, DEBUG_LOCATION);
+  done1.WaitForNotification();
+  done2.WaitForNotification();
 }
 #endif
 

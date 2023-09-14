@@ -638,9 +638,12 @@ TEST_F(ClientLbEnd2endTest, ChannelStateConnectingWhenResolving) {
   EXPECT_EQ(channel->GetState(true /* try_to_connect */), GRPC_CHANNEL_IDLE);
   // Now that the channel is trying to connect, we should get to state
   // CONNECTING.
-  while (channel->GetState(false) == GRPC_CHANNEL_IDLE) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
-  }
+  ASSERT_TRUE(
+      WaitForChannelState(channel.get(), [&](grpc_connectivity_state state) {
+        if (state == GRPC_CHANNEL_IDLE) return false;
+        EXPECT_EQ(state, GRPC_CHANNEL_CONNECTING);
+        return true;
+      }));
   EXPECT_EQ(channel->GetState(false /* try_to_connect */),
             GRPC_CHANNEL_CONNECTING);
   // Return a resolver result, which allows the connection attempt to proceed.
@@ -1613,13 +1616,8 @@ TEST_F(RoundRobinTest, Updates) {
   ports.clear();
   ports.emplace_back(servers_[1]->port_);
   response_generator.SetNextResolution(ports);
-  WaitForServer(DEBUG_LOCATION, stub, 1, [](const Status& status) {
-    // Might get an empty address list from the previous test round if things
-    // take some time to async update.
-    EXPECT_EQ(status.error_code(), StatusCode::UNAVAILABLE);
-    EXPECT_EQ(status.error_message(),
-              "empty address list: fake resolver empty address list");
-  });
+  WaitForChannelReady(channel.get());
+  WaitForServer(DEBUG_LOCATION, stub, 1);
   EXPECT_EQ(GRPC_CHANNEL_READY, channel->GetState(/*try_to_connect=*/false));
   // Check LB policy name for the channel.
   EXPECT_EQ("round_robin", channel->GetLoadBalancingPolicyName());

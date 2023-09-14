@@ -28,6 +28,7 @@
 #include <utility>
 
 #include "absl/container/inlined_vector.h"
+#include "orphanable.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
@@ -48,22 +49,17 @@ DebugOnlyTraceFlag grpc_work_serializer_trace(false, "work_serializer");
 // WorkSerializer::WorkSerializerImpl
 //
 
-class WorkSerializer::WorkSerializerImpl {
+class WorkSerializer::WorkSerializerImpl : public Orphanable {
  public:
-  virtual ~WorkSerializerImpl() = default;
   virtual void Run(std::function<void()> callback,
                    const DebugLocation& location) = 0;
   virtual void Schedule(std::function<void()> callback,
                         const DebugLocation& location) = 0;
   virtual void DrainQueue() = 0;
-  virtual void Orphan() = 0;
 
 #ifndef NDEBUG
   virtual bool RunningInWorkSerializer() const = 0;
 #endif
-
- protected:
- private:
 };
 
 //

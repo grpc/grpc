@@ -127,7 +127,7 @@ class HealthProducer : public Subchannel::DataProducerInterface {
     absl::string_view health_check_service_name_;
     std::shared_ptr<WorkSerializer> work_serializer_ =
         std::make_shared<WorkSerializer>(
-            grpc_event_engine::experimental::GetDefaultEventEngine());
+            producer_->subchannel_->event_engine());
 
     absl::optional<grpc_connectivity_state> state_
         ABSL_GUARDED_BY(&HealthProducer::mu_);
