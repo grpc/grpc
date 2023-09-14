@@ -171,7 +171,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_round_robin_delegate_to_pick_first,
      additional_constraints_round_robin_delegate_to_pick_first, true, true},
     {"wrr_delegate_to_pick_first", description_wrr_delegate_to_pick_first,
-     additional_constraints_wrr_delegate_to_pick_first, false, true},
+     additional_constraints_wrr_delegate_to_pick_first, true, true},
 };
 
 }  // namespace grpc_core
@@ -327,7 +327,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_round_robin_delegate_to_pick_first,
      additional_constraints_round_robin_delegate_to_pick_first, true, true},
     {"wrr_delegate_to_pick_first", description_wrr_delegate_to_pick_first,
-     additional_constraints_wrr_delegate_to_pick_first, false, true},
+     additional_constraints_wrr_delegate_to_pick_first, true, true},
 };
 
 }  // namespace grpc_core
@@ -483,7 +483,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_round_robin_delegate_to_pick_first,
      additional_constraints_round_robin_delegate_to_pick_first, true, true},
     {"wrr_delegate_to_pick_first", description_wrr_delegate_to_pick_first,
-     additional_constraints_wrr_delegate_to_pick_first, false, true},
+     additional_constraints_wrr_delegate_to_pick_first, true, true},
 };
 
 }  // namespace grpc_core

@@ -29,9 +29,6 @@ EXPERIMENTS = {
             "cpp_end2end_test": [
                 "promise_based_server_call",
             ],
-            "cpp_lb_end2end_test": [
-                "wrr_delegate_to_pick_first",
-            ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
@@ -47,9 +44,6 @@ EXPERIMENTS = {
             "lame_client_test": [
                 "promise_based_client_call",
             ],
-            "lb_unit_test": [
-                "wrr_delegate_to_pick_first",
-            ],
             "logging_test": [
                 "promise_based_server_call",
             ],
@@ -60,7 +54,6 @@ EXPERIMENTS = {
             ],
             "xds_end2end_test": [
                 "promise_based_server_call",
-                "wrr_delegate_to_pick_first",
             ],
         },
         "on": {
@@ -69,15 +62,18 @@ EXPERIMENTS = {
             ],
             "cpp_lb_end2end_test": [
                 "round_robin_delegate_to_pick_first",
+                "wrr_delegate_to_pick_first",
             ],
             "flow_control_test": [
                 "lazier_stream_updates",
             ],
             "lb_unit_test": [
                 "round_robin_delegate_to_pick_first",
+                "wrr_delegate_to_pick_first",
             ],
             "xds_end2end_test": [
                 "round_robin_delegate_to_pick_first",
+                "wrr_delegate_to_pick_first",
             ],
         },
     },
@@ -93,9 +89,6 @@ EXPERIMENTS = {
             "cpp_end2end_test": [
                 "promise_based_server_call",
             ],
-            "cpp_lb_end2end_test": [
-                "wrr_delegate_to_pick_first",
-            ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
@@ -111,9 +104,6 @@ EXPERIMENTS = {
             "lame_client_test": [
                 "promise_based_client_call",
             ],
-            "lb_unit_test": [
-                "wrr_delegate_to_pick_first",
-            ],
             "logging_test": [
                 "promise_based_server_call",
             ],
@@ -124,7 +114,6 @@ EXPERIMENTS = {
             ],
             "xds_end2end_test": [
                 "promise_based_server_call",
-                "wrr_delegate_to_pick_first",
             ],
         },
         "on": {
@@ -133,15 +122,18 @@ EXPERIMENTS = {
             ],
             "cpp_lb_end2end_test": [
                 "round_robin_delegate_to_pick_first",
+                "wrr_delegate_to_pick_first",
             ],
             "flow_control_test": [
                 "lazier_stream_updates",
             ],
             "lb_unit_test": [
                 "round_robin_delegate_to_pick_first",
+                "wrr_delegate_to_pick_first",
             ],
             "xds_end2end_test": [
                 "round_robin_delegate_to_pick_first",
+                "wrr_delegate_to_pick_first",
             ],
         },
     },
@@ -161,9 +153,6 @@ EXPERIMENTS = {
             "cpp_end2end_test": [
                 "promise_based_server_call",
             ],
-            "cpp_lb_end2end_test": [
-                "wrr_delegate_to_pick_first",
-            ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
@@ -182,9 +171,6 @@ EXPERIMENTS = {
             "lame_client_test": [
                 "promise_based_client_call",
             ],
-            "lb_unit_test": [
-                "wrr_delegate_to_pick_first",
-            ],
             "logging_test": [
                 "promise_based_server_call",
             ],
@@ -198,7 +184,6 @@ EXPERIMENTS = {
             ],
             "xds_end2end_test": [
                 "promise_based_server_call",
-                "wrr_delegate_to_pick_first",
             ],
         },
         "on": {
@@ -207,15 +192,18 @@ EXPERIMENTS = {
             ],
             "cpp_lb_end2end_test": [
                 "round_robin_delegate_to_pick_first",
+                "wrr_delegate_to_pick_first",
             ],
             "flow_control_test": [
                 "lazier_stream_updates",
             ],
             "lb_unit_test": [
                 "round_robin_delegate_to_pick_first",
+                "wrr_delegate_to_pick_first",
             ],
             "xds_end2end_test": [
                 "round_robin_delegate_to_pick_first",
+                "wrr_delegate_to_pick_first",
             ],
         },
     },

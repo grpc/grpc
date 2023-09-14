@@ -96,5 +96,5 @@
   default: true
 - name: round_robin_delegate_to_pick_first
   default: true
-- name: wrr_dualstack
+- name: wrr_delegate_to_pick_first
   default: true

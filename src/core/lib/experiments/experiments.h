@@ -89,7 +89,8 @@ inline bool IsLazierStreamUpdatesEnabled() { return true; }
 inline bool IsJitterMaxIdleEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_ROUND_ROBIN_DELEGATE_TO_PICK_FIRST
 inline bool IsRoundRobinDelegateToPickFirstEnabled() { return true; }
-inline bool IsWrrDelegateToPickFirstEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_WRR_DELEGATE_TO_PICK_FIRST
+inline bool IsWrrDelegateToPickFirstEnabled() { return true; }
 
 #elif defined(GPR_WINDOWS)
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -122,7 +123,8 @@ inline bool IsLazierStreamUpdatesEnabled() { return true; }
 inline bool IsJitterMaxIdleEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_ROUND_ROBIN_DELEGATE_TO_PICK_FIRST
 inline bool IsRoundRobinDelegateToPickFirstEnabled() { return true; }
-inline bool IsWrrDelegateToPickFirstEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_WRR_DELEGATE_TO_PICK_FIRST
+inline bool IsWrrDelegateToPickFirstEnabled() { return true; }
 
 #else
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -155,7 +157,8 @@ inline bool IsLazierStreamUpdatesEnabled() { return true; }
 inline bool IsJitterMaxIdleEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_ROUND_ROBIN_DELEGATE_TO_PICK_FIRST
 inline bool IsRoundRobinDelegateToPickFirstEnabled() { return true; }
-inline bool IsWrrDelegateToPickFirstEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_WRR_DELEGATE_TO_PICK_FIRST
+inline bool IsWrrDelegateToPickFirstEnabled() { return true; }
 #endif
 
 #else
