@@ -96,6 +96,11 @@ const char* const description_keepalive_server_fix =
     "Allows overriding keepalive_permit_without_calls for servers. Refer "
     "https://github.com/grpc/grpc/pull/33917 for more information.";
 const char* const additional_constraints_keepalive_server_fix = "{}";
+const char* const description_work_serializer_dispatch =
+    "Have the work serializer dispatch work to event engine for every "
+    "callback, instead of running things inline in the first thread that "
+    "successfully enqueues work.";
+const char* const additional_constraints_work_serializer_dispatch = "{}";
 const char* const description_lazier_stream_updates =
     "Allow streams to consume up to 50% of the incoming window before we force "
     "send a flow control update.";
@@ -105,11 +110,6 @@ const char* const description_jitter_max_idle =
     "only on max connection age, but it seems like this could smooth out some "
     "herding problems.";
 const char* const additional_constraints_jitter_max_idle = "{}";
-const char* const description_work_serializer_dispatch =
-    "Have the work serializer dispatch work to event engine for every "
-    "callback, instead of running things inline in the first thread that "
-    "successfully enqueues work.";
-const char* const additional_constraints_work_serializer_dispatch = "{}";
 const char* const description_round_robin_delegate_to_pick_first =
     "Change round_robin code to delegate to pick_first as per dualstack "
     "backend design.";
@@ -164,12 +164,12 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_keepalive_fix, false, false},
     {"keepalive_server_fix", description_keepalive_server_fix,
      additional_constraints_keepalive_server_fix, false, false},
+    {"work_serializer_dispatch", description_work_serializer_dispatch,
+     additional_constraints_work_serializer_dispatch, true, true},
     {"lazier_stream_updates", description_lazier_stream_updates,
      additional_constraints_lazier_stream_updates, true, true},
     {"jitter_max_idle", description_jitter_max_idle,
      additional_constraints_jitter_max_idle, true, true},
-    {"work_serializer_dispatch", description_work_serializer_dispatch,
-     additional_constraints_work_serializer_dispatch, true, true},
     {"round_robin_delegate_to_pick_first",
      description_round_robin_delegate_to_pick_first,
      additional_constraints_round_robin_delegate_to_pick_first, true, true},
@@ -253,6 +253,11 @@ const char* const description_keepalive_server_fix =
     "Allows overriding keepalive_permit_without_calls for servers. Refer "
     "https://github.com/grpc/grpc/pull/33917 for more information.";
 const char* const additional_constraints_keepalive_server_fix = "{}";
+const char* const description_work_serializer_dispatch =
+    "Have the work serializer dispatch work to event engine for every "
+    "callback, instead of running things inline in the first thread that "
+    "successfully enqueues work.";
+const char* const additional_constraints_work_serializer_dispatch = "{}";
 const char* const description_lazier_stream_updates =
     "Allow streams to consume up to 50% of the incoming window before we force "
     "send a flow control update.";
@@ -262,11 +267,6 @@ const char* const description_jitter_max_idle =
     "only on max connection age, but it seems like this could smooth out some "
     "herding problems.";
 const char* const additional_constraints_jitter_max_idle = "{}";
-const char* const description_work_serializer_dispatch =
-    "Have the work serializer dispatch work to event engine for every "
-    "callback, instead of running things inline in the first thread that "
-    "successfully enqueues work.";
-const char* const additional_constraints_work_serializer_dispatch = "{}";
 const char* const description_round_robin_delegate_to_pick_first =
     "Change round_robin code to delegate to pick_first as per dualstack "
     "backend design.";
@@ -321,12 +321,12 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_keepalive_fix, false, false},
     {"keepalive_server_fix", description_keepalive_server_fix,
      additional_constraints_keepalive_server_fix, false, false},
+    {"work_serializer_dispatch", description_work_serializer_dispatch,
+     additional_constraints_work_serializer_dispatch, true, true},
     {"lazier_stream_updates", description_lazier_stream_updates,
      additional_constraints_lazier_stream_updates, true, true},
     {"jitter_max_idle", description_jitter_max_idle,
      additional_constraints_jitter_max_idle, true, true},
-    {"work_serializer_dispatch", description_work_serializer_dispatch,
-     additional_constraints_work_serializer_dispatch, true, true},
     {"round_robin_delegate_to_pick_first",
      description_round_robin_delegate_to_pick_first,
      additional_constraints_round_robin_delegate_to_pick_first, true, true},
@@ -410,6 +410,11 @@ const char* const description_keepalive_server_fix =
     "Allows overriding keepalive_permit_without_calls for servers. Refer "
     "https://github.com/grpc/grpc/pull/33917 for more information.";
 const char* const additional_constraints_keepalive_server_fix = "{}";
+const char* const description_work_serializer_dispatch =
+    "Have the work serializer dispatch work to event engine for every "
+    "callback, instead of running things inline in the first thread that "
+    "successfully enqueues work.";
+const char* const additional_constraints_work_serializer_dispatch = "{}";
 const char* const description_lazier_stream_updates =
     "Allow streams to consume up to 50% of the incoming window before we force "
     "send a flow control update.";
@@ -419,11 +424,6 @@ const char* const description_jitter_max_idle =
     "only on max connection age, but it seems like this could smooth out some "
     "herding problems.";
 const char* const additional_constraints_jitter_max_idle = "{}";
-const char* const description_work_serializer_dispatch =
-    "Have the work serializer dispatch work to event engine for every "
-    "callback, instead of running things inline in the first thread that "
-    "successfully enqueues work.";
-const char* const additional_constraints_work_serializer_dispatch = "{}";
 const char* const description_round_robin_delegate_to_pick_first =
     "Change round_robin code to delegate to pick_first as per dualstack "
     "backend design.";
@@ -478,12 +478,12 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_keepalive_fix, false, false},
     {"keepalive_server_fix", description_keepalive_server_fix,
      additional_constraints_keepalive_server_fix, false, false},
+    {"work_serializer_dispatch", description_work_serializer_dispatch,
+     additional_constraints_work_serializer_dispatch, true, true},
     {"lazier_stream_updates", description_lazier_stream_updates,
      additional_constraints_lazier_stream_updates, true, true},
     {"jitter_max_idle", description_jitter_max_idle,
      additional_constraints_jitter_max_idle, true, true},
-    {"work_serializer_dispatch", description_work_serializer_dispatch,
-     additional_constraints_work_serializer_dispatch, true, true},
     {"round_robin_delegate_to_pick_first",
      description_round_robin_delegate_to_pick_first,
      additional_constraints_round_robin_delegate_to_pick_first, true, true},

@@ -78,6 +78,8 @@
     windows: broken
 - name: work_stealing
   default: true
+- name: work_serializer_dispatch
+  default: true
 - name: client_privacy
   default: false
 - name: canary_client_privacy
@@ -93,8 +95,6 @@
 - name: lazier_stream_updates
   default: true
 - name: jitter_max_idle
-  default: true
-- name: work_serializer_dispatch
   default: true
 - name: round_robin_delegate_to_pick_first
   default: true
