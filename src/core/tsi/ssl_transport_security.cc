@@ -1762,13 +1762,6 @@ void tsi_ssl_client_handshaker_factory_unref(
   tsi_ssl_handshaker_factory_unref(&factory->base);
 }
 
-tsi_ssl_client_handshaker_factory* tsi_ssl_client_handshaker_factory_ref(
-    tsi_ssl_client_handshaker_factory* client_factory) {
-  if (client_factory == nullptr) return nullptr;
-  return reinterpret_cast<tsi_ssl_client_handshaker_factory*>(
-      tsi_ssl_handshaker_factory_ref(&client_factory->base));
-}
-
 static void tsi_ssl_client_handshaker_factory_destroy(
     tsi_ssl_handshaker_factory* factory) {
   if (factory == nullptr) return;
