@@ -330,8 +330,7 @@ TEST_F(OTelPluginEnd2EndTest, TargetSelectorReturnsFalse) {
        /*labels_injector=*/nullptr,
        /*test_no_meter_provider=*/false,
        /*target_selector=*/
-       [server_address = canonical_server_address_](
-           absl::string_view /*target*/) { return false; });
+       [](absl::string_view /*target*/) { return false; });
   SendRPC();
   auto data = ReadCurrentMetricsData(
       [&](const absl::flat_hash_map<
