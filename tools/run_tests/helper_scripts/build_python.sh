@@ -177,8 +177,11 @@ $VENV_PYTHON "$ROOT/tools/distrib/python/make_grpcio_tools.py"
 pip_install_dir_and_deps "$ROOT/tools/distrib/python/grpcio_tools"
 
 # Build/install Observability
+# Observability does not support Windows.
+if [ ! "$(is_msys)" ]; then
 $VENV_PYTHON "$ROOT/src/python/grpcio_observability/make_grpcio_observability.py"
 pip_install_dir_and_deps "$ROOT/src/python/grpcio_observability"
+fi
 
 # Build/install Channelz
 $VENV_PYTHON "$ROOT/src/python/grpcio_channelz/setup.py" preprocess
