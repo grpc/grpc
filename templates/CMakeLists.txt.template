@@ -527,6 +527,10 @@
     src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
     src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
   )
+  set(gRPC_ADDITIONAL_DLL_SRC
+    src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc
+    src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.cc
+  )
 
   endif() # BUILD_SHARED_LIBS AND WIN32
 
@@ -770,31 +774,6 @@
   % endif
   % endif
 
-  % if lib.name == 'grpc++_unsecure':
-  # for DLL build just compile a dummy grpc++_unsecure
-  # This is a temporary situation until some code restructuring
-  # obviates the need to exclude this library
-  if(BUILD_SHARED_LIBS AND MSVC)
-  add_library(grpc++_unsecure
-    src/cpp/common/version_cc.cc
-  )
-  target_include_directories(grpc++_unsecure
-    PUBLIC <%text>$<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include></%text>
-    PRIVATE
-      <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>
-  )
-
-  foreach(_hdr
-    include/grpcpp/grpcpp.h
-  )
-    string(REPLACE "include/" "" _path <%text>${_hdr})</%text>
-    get_filename_component(_path <%text>${_path}</%text> PATH)
-    install(FILES <%text>${_hdr}</%text>
-      DESTINATION <%text>"${gRPC_INSTALL_INCLUDEDIR}/${_path}"</%text>
-    )
-  endforeach()
-  else()
-  % endif
   add_library(${lib.name}${lib_type_for_lib(lib.name)}
   % for src in lib.src:
   % if not proto_re.match(src):
@@ -811,6 +790,9 @@
   % endfor
   % if lib.name in ['grpc++_alts', 'grpc++_unsecure', 'grpc++']:
     ${'${gRPC_UPB_GEN_DUPL_SRC}'}
+  % endif
+  % if lib.name in ['grpc_unsecure']:
+    ${'${gRPC_ADDITIONAL_DLL_SRC}'}
   % endif
   )
 
@@ -908,9 +890,6 @@
   % endif
   % if any(proto_re.match(src) for src in lib.src):
   endif()
-  % endif
-  % if lib.name == 'grpc++_unsecure':
-  endif() # BUILD_SHARED_LIBS AND MSVC
   % endif
   </%def>
 

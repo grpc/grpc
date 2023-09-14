@@ -232,6 +232,7 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/address_filtering.h
   - src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h
   - src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h
+  - src/core/ext/filters/client_channel/lb_policy/endpoint_list.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h
@@ -696,6 +697,7 @@ libs:
   - src/core/lib/event_engine/grpc_polled_fd.h
   - src/core/lib/event_engine/handle_containers.h
   - src/core/lib/event_engine/memory_allocator_factory.h
+  - src/core/lib/event_engine/nameser.h
   - src/core/lib/event_engine/poller.h
   - src/core/lib/event_engine/posix.h
   - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.h
@@ -1047,6 +1049,7 @@ libs:
   - src/core/ext/filters/client_channel/http_proxy_mapper.cc
   - src/core/ext/filters/client_channel/lb_policy/address_filtering.cc
   - src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc
+  - src/core/ext/filters/client_channel/lb_policy/endpoint_list.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc
@@ -1704,6 +1707,7 @@ libs:
   - src/core/lib/security/credentials/plugin/plugin_credentials.cc
   - src/core/lib/security/credentials/ssl/ssl_credentials.cc
   - src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc
+  - src/core/lib/security/credentials/tls/grpc_tls_certificate_match.cc
   - src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.cc
   - src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.cc
   - src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc
@@ -1978,6 +1982,7 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/address_filtering.h
   - src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h
   - src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h
+  - src/core/ext/filters/client_channel/lb_policy/endpoint_list.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h
@@ -2106,6 +2111,7 @@ libs:
   - src/core/lib/event_engine/grpc_polled_fd.h
   - src/core/lib/event_engine/handle_containers.h
   - src/core/lib/event_engine/memory_allocator_factory.h
+  - src/core/lib/event_engine/nameser.h
   - src/core/lib/event_engine/poller.h
   - src/core/lib/event_engine/posix.h
   - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.h
@@ -2409,6 +2415,7 @@ libs:
   - src/core/ext/filters/client_channel/http_proxy_mapper.cc
   - src/core/ext/filters/client_channel/lb_policy/address_filtering.cc
   - src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc
+  - src/core/ext/filters/client_channel/lb_policy/endpoint_list.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc
@@ -4118,6 +4125,7 @@ libs:
   - src/core/lib/event_engine/grpc_polled_fd.h
   - src/core/lib/event_engine/handle_containers.h
   - src/core/lib/event_engine/memory_allocator_factory.h
+  - src/core/lib/event_engine/nameser.h
   - src/core/lib/event_engine/poller.h
   - src/core/lib/event_engine/posix.h
   - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.h
@@ -14763,38 +14771,6 @@ targets:
   - gtest
   - grpc_test_util
   uses_polling: false
-- name: ssl_credentials_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - test/core/util/cmdline.h
-  - test/core/util/evaluate_args_test_util.h
-  - test/core/util/fuzzer_util.h
-  - test/core/util/grpc_profiler.h
-  - test/core/util/histogram.h
-  - test/core/util/mock_authorization_endpoint.h
-  - test/core/util/mock_endpoint.h
-  - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
-  - test/core/util/resolve_localhost_ip46.h
-  - test/core/util/slice_splitter.h
-  - test/core/util/tracer_util.h
-  src:
-  - test/core/security/ssl_credentials_test.cc
-  - test/core/util/cmdline.cc
-  - test/core/util/fuzzer_util.cc
-  - test/core/util/grpc_profiler.cc
-  - test/core/util/histogram.cc
-  - test/core/util/mock_endpoint.cc
-  - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
-  - test/core/util/resolve_localhost_ip46.cc
-  - test/core/util/slice_splitter.cc
-  - test/core/util/tracer_util.cc
-  deps:
-  - gtest
-  - grpc_test_util
 - name: ssl_transport_security_test
   gtest: true
   build: test
@@ -15542,6 +15518,38 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+- name: test_core_security_ssl_credentials_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/tracer_util.h
+  src:
+  - test/core/security/ssl_credentials_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/tracer_util.cc
+  deps:
+  - gtest
+  - grpc_test_util
 - name: test_core_slice_slice_buffer_test
   gtest: true
   build: test
@@ -15633,6 +15641,7 @@ targets:
   - src/core/lib/event_engine/grpc_polled_fd.h
   - src/core/lib/event_engine/handle_containers.h
   - src/core/lib/event_engine/memory_allocator_factory.h
+  - src/core/lib/event_engine/nameser.h
   - src/core/lib/event_engine/poller.h
   - src/core/lib/event_engine/posix.h
   - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.h
@@ -16181,6 +16190,22 @@ targets:
   - gtest
   - grpc++
   - grpc_test_util
+- name: test_cpp_end2end_ssl_credentials_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/cpp/end2end/test_service_impl.h
+  src:
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - test/cpp/end2end/ssl_credentials_test.cc
+  - test/cpp/end2end/test_service_impl.cc
+  deps:
+  - gtest
+  - grpc++_test_util
 - name: test_cpp_server_credentials_test
   gtest: true
   build: test
