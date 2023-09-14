@@ -56,7 +56,7 @@ gcp_utils_dir = os.path.abspath(
 )
 sys.path.append(gcp_utils_dir)
 
-_ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), "..", ".."))
+_ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), "../.."))
 os.chdir(_ROOT)
 
 _FORCE_ENVIRON_FOR_WRAPPERS = {
@@ -352,9 +352,8 @@ class CLanguage(object):
             )
             for polling_strategy in polling_strategies:
                 env = {
-                    "GRPC_DEFAULT_SSL_ROOTS_FILE_PATH": os.path.join(
-                        _ROOT, "src", "core", "tsi", "test_creds", "ca.pem"
-                    ),
+                    "GRPC_DEFAULT_SSL_ROOTS_FILE_PATH": _ROOT
+                    + "/src/core/tsi/test_creds/ca.pem",
                     "GRPC_POLL_STRATEGY": polling_strategy,
                     "GRPC_VERBOSITY": "DEBUG",
                 }
