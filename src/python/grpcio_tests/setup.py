@@ -58,7 +58,6 @@ COMMAND_CLASS = {
     "run_fork": commands.RunFork,
     "run_interop": commands.RunInterop,
     "test_lite": commands.TestLite,
-    "test_gevent": commands.TestGevent,
     "test_aio": commands.TestAio,
     "test_py3_only": commands.TestPy3Only,
 }
