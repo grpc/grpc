@@ -296,7 +296,9 @@ class LoadBalancingPolicyTest : public ::testing::Test {
               << location.file() << ":" << location.line();
           break;
         case GRPC_CHANNEL_READY:
-          ASSERT_EQ(to_state, GRPC_CHANNEL_IDLE)
+          ASSERT_THAT(to_state,
+                      ::testing::AnyOf(GRPC_CHANNEL_IDLE,
+                                       GRPC_CHANNEL_TRANSIENT_FAILURE))
               << ConnectivityStateName(from_state) << "=>"
               << ConnectivityStateName(to_state) << "\n"
               << location.file() << ":" << location.line();
@@ -323,12 +325,14 @@ class LoadBalancingPolicyTest : public ::testing::Test {
                               SourceLocation location = SourceLocation()) {
       ExecCtx exec_ctx;
       if (state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-        EXPECT_FALSE(status.ok())
-            << "bug in test: TRANSIENT_FAILURE must have non-OK status";
+        EXPECT_FALSE(status.ok()) << "bug in test: TRANSIENT_FAILURE must have "
+                                  << "non-OK status\n"
+                                  << location.file() << ":" << location.line();
       } else {
         EXPECT_TRUE(status.ok())
             << "bug in test: " << ConnectivityStateName(state)
-            << " must have OK status: " << status;
+            << " must have OK status: " << status << "\n"
+            << location.file() << ":" << location.line();
       }
       work_serializer_->Run(
           [this, state, status, validate_state_transition, location]()
@@ -860,6 +864,17 @@ class LoadBalancingPolicyTest : public ::testing::Test {
         },
         location);
     return retval;
+  }
+
+  bool WaitForConnectionFailedWithStatus(
+      const absl::Status& expected_status,
+      SourceLocation location = SourceLocation()) {
+    return WaitForConnectionFailed(
+        [&](const absl::Status& status) {
+          EXPECT_EQ(status, expected_status)
+              << location.file() << ":" << location.line();
+        },
+        location);
   }
 
   // Expects a state update for the specified state and status, and then
