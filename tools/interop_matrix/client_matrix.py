@@ -284,13 +284,14 @@ LANG_RELEASE_MATRIX = {
             ("v1.49.0", ReleaseInfo(runtimes=["go1.16"])),
             ("v1.50.1", ReleaseInfo(runtimes=["go1.16"])),
             ("v1.51.0", ReleaseInfo(runtimes=["go1.16"])),
+            # NOTE: starting from release v1.52.3, use runtimes=['go1.19']
             ("v1.52.3", ReleaseInfo(runtimes=["go1.19"])),
             ("v1.53.0", ReleaseInfo(runtimes=["go1.19"])),
             ("v1.54.1", ReleaseInfo(runtimes=["go1.19"])),
             ("v1.55.0", ReleaseInfo(runtimes=["go1.19"])),
             ("v1.56.2", ReleaseInfo(runtimes=["go1.19"])),
             ("v1.57.0", ReleaseInfo(runtimes=["go1.19"])),
-            ("v1.58.0", ReleaseInfo(runtimes=["go1.19"])),
+            ("v1.58.1", ReleaseInfo(runtimes=["go1.19"])),
         ]
     ),
     "java": OrderedDict(
