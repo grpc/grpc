@@ -1126,8 +1126,6 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/tcp_socket_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/thread_local.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/thread_local.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/event_engine/thread_pool/original_thread_pool.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/event_engine/thread_pool/original_thread_pool.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/thread_pool/thread_count.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/thread_pool/thread_count.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/thread_pool/thread_pool.h" role="src" />

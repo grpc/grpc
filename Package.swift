@@ -1138,8 +1138,6 @@ let package = Package(
         "src/core/lib/event_engine/tcp_socket_utils.h",
         "src/core/lib/event_engine/thread_local.cc",
         "src/core/lib/event_engine/thread_local.h",
-        "src/core/lib/event_engine/thread_pool/original_thread_pool.cc",
-        "src/core/lib/event_engine/thread_pool/original_thread_pool.h",
         "src/core/lib/event_engine/thread_pool/thread_count.cc",
         "src/core/lib/event_engine/thread_pool/thread_count.h",
         "src/core/lib/event_engine/thread_pool/thread_pool.h",
