@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <algorithm>
+#include <chrono>
 #include <deque>
 #include <memory>
 #include <mutex>
@@ -219,13 +220,13 @@ class FakeResolverResponseGeneratorWrapper {
                          const grpc_core::ChannelArgs& per_address_args =
                              grpc_core::ChannelArgs()) {
     grpc_core::ExecCtx exec_ctx;
-    response_generator_->SetResponse(BuildFakeResults(
+    response_generator_->SetResponseSynchronously(BuildFakeResults(
         ipv6_only_, ports, service_config_json, per_address_args));
   }
 
   void SetNextResolutionUponError(const std::vector<int>& ports) {
     grpc_core::ExecCtx exec_ctx;
-    response_generator_->SetReresolutionResponse(
+    response_generator_->SetReresolutionResponseSynchronously(
         BuildFakeResults(ipv6_only_, ports));
   }
 
@@ -236,7 +237,7 @@ class FakeResolverResponseGeneratorWrapper {
 
   void SetResponse(grpc_core::Resolver::Result result) {
     grpc_core::ExecCtx exec_ctx;
-    response_generator_->SetResponse(std::move(result));
+    response_generator_->SetResponseSynchronously(std::move(result));
   }
 
   grpc_core::FakeResolverResponseGenerator* Get() const {
@@ -635,10 +636,14 @@ TEST_F(ClientLbEnd2endTest, ChannelStateConnectingWhenResolving) {
   // Note that this call also returns IDLE, since the state change has
   // not yet occurred; it just gets triggered by this call.
   EXPECT_EQ(channel->GetState(true /* try_to_connect */), GRPC_CHANNEL_IDLE);
-  // Now that the channel is trying to connect, we should be in state
+  // Now that the channel is trying to connect, we should get to state
   // CONNECTING.
-  EXPECT_EQ(channel->GetState(false /* try_to_connect */),
-            GRPC_CHANNEL_CONNECTING);
+  ASSERT_TRUE(
+      WaitForChannelState(channel.get(), [&](grpc_connectivity_state state) {
+        if (state == GRPC_CHANNEL_IDLE) return false;
+        EXPECT_EQ(state, GRPC_CHANNEL_CONNECTING);
+        return true;
+      }));
   // Return a resolver result, which allows the connection attempt to proceed.
   response_generator.SetNextResolution(GetServersPorts());
   // We should eventually transition into state READY.
@@ -1300,6 +1305,7 @@ TEST_F(PickFirstTest, FailsEmptyResolverUpdate) {
   grpc_core::Resolver::Result result;
   result.addresses.emplace();
   result.result_health_callback = [&](absl::Status status) {
+    gpr_log(GPR_INFO, "****** RESULT HEALTH CALLBACK *******");
     EXPECT_EQ(absl::StatusCode::kUnavailable, status.code());
     EXPECT_EQ("address list must not be empty", status.message()) << status;
     notification.Notify();
@@ -1312,8 +1318,8 @@ TEST_F(PickFirstTest, FailsEmptyResolverUpdate) {
   };
   EXPECT_TRUE(
       WaitForChannelState(channel.get(), predicate, /*try_to_connect=*/true));
-  // Callback should have been run.
-  ASSERT_TRUE(notification.HasBeenNotified());
+  // Callback should run.
+  notification.WaitForNotification();
   // Return a valid address.
   gpr_log(GPR_INFO, "****** SENDING NEXT RESOLVER RESULT *******");
   StartServers(1);
@@ -1608,6 +1614,7 @@ TEST_F(RoundRobinTest, Updates) {
   ports.clear();
   ports.emplace_back(servers_[1]->port_);
   response_generator.SetNextResolution(ports);
+  WaitForChannelReady(channel.get());
   WaitForServer(DEBUG_LOCATION, stub, 1);
   EXPECT_EQ(GRPC_CHANNEL_READY, channel->GetState(/*try_to_connect=*/false));
   // Check LB policy name for the channel.
