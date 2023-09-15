@@ -4728,7 +4728,6 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "closure",
-        "default_event_engine",
         "error",
         "iomgr_fwd",
         "pollset_set",

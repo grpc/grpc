@@ -42,7 +42,7 @@ EXPERIMENTS = {
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
             ],
-            "lb_policy_test": [
+            "lb_unit_test": [
                 "work_serializer_dispatch",
             ],
             "logging_test": [
@@ -101,7 +101,7 @@ EXPERIMENTS = {
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
             ],
-            "lb_policy_test": [
+            "lb_unit_test": [
                 "work_serializer_dispatch",
             ],
             "logging_test": [
@@ -167,7 +167,7 @@ EXPERIMENTS = {
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
             ],
-            "lb_policy_test": [
+            "lb_unit_test": [
                 "work_serializer_dispatch",
             ],
             "logging_test": [
