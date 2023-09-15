@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_EXT_CSM_CSM_OBSERVABILITY_H
-#define GRPC_EXT_CSM_CSM_OBSERVABILITY_H
+#ifndef GRPCPP_EXT_CSM_OBSERVABILITY_H
+#define GRPCPP_EXT_CSM_OBSERVABILITY_H
 
 #include <grpc/support/port_platform.h>
 
@@ -79,4 +79,4 @@ class CsmObservabilityBuilder {
 }  // namespace experimental
 }  // namespace grpc
 
-#endif  // GRPC_EXT_CSM_CSM_OBSERVABILITY_H
+#endif  // GRPCPP_EXT_CSM_OBSERVABILITY_H
