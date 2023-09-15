@@ -31,7 +31,9 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/container/flat_hash_map.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
@@ -426,18 +428,19 @@ class Server : public InternallyRefCounted<Server>,
   // If they are ever required to be nested, you must lock mu_global_
   // before mu_call_. This is currently used in shutdown processing
   // (ShutdownAndNotify() and MaybeFinishShutdown()).
-  Mutex mu_global_;  // mutex for server and channel state
-  Mutex mu_call_;    // mutex for call-specific state
+  Mutex mu_global_;              // mutex for server and channel state
+  Mutex mu_call_;                // mutex for call-specific state
+  Mutex registered_methods_mu_;  // mutex for registered methods map
 
   // startup synchronization: flag, signals whether we are doing the listener
   // start routine or not.
   bool starting_ ABSL_GUARDED_BY(mu_global_) = false;
   CondVar starting_cv_;
 
-  std::unordered_map<uint32_t /*hash of host and method*/,
-                     std::vector<std::unique_ptr<
-                         RegisteredMethod>> /*list of registered methods*/>
-      registered_methods_;
+  // Map of registered methods.
+  absl::flat_hash_map<uint32_t /*hash of host and method*/,
+                      std::unique_ptr<RegisteredMethod>>
+      registered_methods_ ABSL_GUARDED_BY(registered_methods_mu_);
 
   // Request matcher for unregistered methods.
   std::unique_ptr<RequestMatcherInterface> unregistered_request_matcher_;

@@ -33,6 +33,7 @@
 #include <vector>
 
 #include "absl/cleanup/cleanup.h"
+#include "absl/hash/hash.h"
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
@@ -41,6 +42,7 @@
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/connectivity_state.h>
+#include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
@@ -68,7 +70,6 @@
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
@@ -722,10 +723,11 @@ void Server::Start() {
   if (unregistered_request_matcher_ == nullptr) {
     unregistered_request_matcher_ = std::make_unique<RealRequestMatcher>(this);
   }
-  for (auto& rms : registered_methods_) {
-    for (auto& rm : rms.second) {
-      if (rm->matcher == nullptr) {
-        rm->matcher = std::make_unique<RealRequestMatcher>(this);
+  {
+    MutexLock lock(&registered_methods_mu_);
+    for (auto& rm : registered_methods_) {
+      if (rm.second->matcher == nullptr) {
+        rm.second->matcher = std::make_unique<RealRequestMatcher>(this);
       }
     }
   }
@@ -813,44 +815,31 @@ void Server::RegisterCompletionQueue(grpc_completion_queue* cq) {
   cqs_.push_back(cq);
 }
 
-namespace {
-
-bool streq(const std::string& a, const char* b) {
-  return (a.empty() && b == nullptr) ||
-         ((b != nullptr) && !strcmp(a.c_str(), b));
-}
-
-}  // namespace
-
 Server::RegisteredMethod* Server::RegisterMethod(
     const char* method, const char* host,
     grpc_server_register_method_payload_handling payload_handling,
-    uint32_t flags) {
+    uint32_t flags) ABSL_LOCKS_EXCLUDED(registered_methods_mu_) {
   if (!method) {
     gpr_log(GPR_ERROR,
             "grpc_server_register_method method string cannot be NULL");
     return nullptr;
   }
-  uint32_t hash =
-      MixHash32((host == nullptr) ? 0 : absl::HashOf(std::string(host)),
-                absl::HashOf(std::string(method)));
-  if (!registered_methods_[hash].empty()) {
-    for (auto& rm : registered_methods_[hash]) {
-      if (streq(rm->method, method) && streq(rm->host, host)) {
-        gpr_log(GPR_ERROR, "duplicate registration for %s@%s", method,
-                host ? host : "*");
-        return nullptr;
-      }
-    }
+  auto key = MixHash32((host == nullptr) ? 0 : absl::HashOf(std::string(host)),
+                       absl::HashOf(std::string(method)));
+  MutexLock lock(&registered_methods_mu_);
+  if (registered_methods_.contains(key)) {
+    gpr_log(GPR_ERROR, "duplicate registration for %s@%s", method,
+            host ? host : "*");
+    return nullptr;
   }
   if (flags != 0) {
     gpr_log(GPR_ERROR, "grpc_server_register_method invalid flags 0x%08x",
             flags);
     return nullptr;
   }
-  registered_methods_[hash].emplace_back(std::make_unique<RegisteredMethod>(
-      method, host, payload_handling, flags));
-  return registered_methods_[hash].back().get();
+  registered_methods_[key] =
+      std::make_unique<RegisteredMethod>(method, host, payload_handling, flags);
+  return registered_methods_[key].get();
 }
 
 void Server::DoneRequestEvent(void* req, grpc_cq_completion* /*c*/) {
@@ -901,11 +890,10 @@ void Server::KillPendingWorkLocked(grpc_error_handle error) {
   if (started_) {
     unregistered_request_matcher_->KillRequests(error);
     unregistered_request_matcher_->ZombifyPending();
-    for (auto& rms : registered_methods_) {
-      for (auto& rm : rms.second) {
-        rm->matcher->KillRequests(error);
-        rm->matcher->ZombifyPending();
-      }
+    MutexLock lock(&registered_methods_mu_);
+    for (auto& rm : registered_methods_) {
+      rm.second->matcher->KillRequests(error);
+      rm.second->matcher->ZombifyPending();
     }
   }
 }
@@ -1183,24 +1171,20 @@ void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
 }
 
 Server::RegisteredMethod* Server::ChannelData::GetRegisteredMethod(
-    const absl::string_view& host, const absl::string_view& path) {
+    const absl::string_view& host, const absl::string_view& path)
+    ABSL_LOCKS_EXCLUDED(registered_methods_mu_) {
+  MutexLock lock(&server_->registered_methods_mu_);
   if (server_->registered_methods_.empty()) return nullptr;
-  // TODO(ctiller): unify these two searches
-  // check for an exact match with host
-  uint32_t hash = MixHash32(absl::HashOf(host), absl::HashOf(path));
-  for (size_t i = 0; i < server_->registered_methods_[hash].size(); i++) {
-    RegisteredMethod* rm = ((server_->registered_methods_)[hash])[i].get();
-    if (rm->method != path) continue;
-    if (rm->host.empty() || rm->host != host) continue;
-    return rm;
+  // check for exact match with host
+  auto key = MixHash32(absl::HashOf(host), absl::HashOf(path));
+  ;
+  if (server_->registered_methods_.contains(key)) {
+    return server_->registered_methods_[key].get();
   }
-  // check for a wildcard method definition (no host set)
-  hash = MixHash32(0, absl::HashOf(path));
-  for (size_t i = 0; i < server_->registered_methods_[hash].size(); i++) {
-    RegisteredMethod* rm = ((server_->registered_methods_)[hash])[i].get();
-    if (rm->method != path) continue;
-    if (!rm->host.empty()) continue;
-    return rm;
+  // check for wildcard method definition (no host set)
+  key = MixHash32(0, absl::HashOf(path));
+  if (server_->registered_methods_.contains(key)) {
+    return server_->registered_methods_[key].get();
   }
   return nullptr;
 }
