@@ -13,6 +13,7 @@
 # limitations under the License.
 import logging
 
+from framework.helpers.rand import rand_string
 from framework.infrastructure import k8s
 import framework.infrastructure.traffic_director_gamma as td_gamma
 from framework.test_app import client_app
@@ -32,8 +33,7 @@ logger = logging.getLogger(__name__)
 # TODO(sergiitk): [GAMMA] Move into framework/test_cases
 class GammaXdsKubernetesTestCase(xds_k8s_testcase.RegularXdsKubernetesTestCase):
     server_runner: GammaServerRunner
-    mesh_name: str
-    mesh_name_td: str
+    frontend_service_name: str
 
     def setUp(self):
         """Hook method for setting up the test fixture before exercising it."""
@@ -55,12 +55,8 @@ class GammaXdsKubernetesTestCase(xds_k8s_testcase.RegularXdsKubernetesTestCase):
         self.td = self.initTrafficDirectorManager()
 
         # Generate unique mesh name too.
-        self.mesh_name = f"{self.resource_prefix}-mesh-{self.resource_suffix}"
-        self.mesh_name_td = f"gketd-{self.mesh_name}"
-
-        # The gamma mesh doesn't use the port.
-        self.server_xds_host = f"{self.server_xds_host}-{self.resource_suffix}"
-        self.server_xds_port = None
+        unique = rand_string()
+        self.frontend_service_name = f"{self.resource_prefix}-{self.resource_suffix.lower()}"
 
         # Test Server runner
         self.server_namespace = GammaServerRunner.make_namespace_name(
@@ -96,8 +92,7 @@ class GammaXdsKubernetesTestCase(xds_k8s_testcase.RegularXdsKubernetesTestCase):
             k8s.KubernetesNamespace(
                 self.k8s_api_manager, self.server_namespace
             ),
-#           mesh_name=self.mesh_name,
-            server_xds_host=self.server_xds_host,
+            self.frontend_service_name,
             deployment_name=self.server_name,
             image_name=self.server_image,
             td_bootstrap_image=self.td_bootstrap_image,
@@ -113,7 +108,8 @@ class GammaXdsKubernetesTestCase(xds_k8s_testcase.RegularXdsKubernetesTestCase):
     def startTestClient(
         self, test_server: XdsTestServer, **kwargs
     ) -> XdsTestClient:
+        server_target =f"xds:///{self.frontend_service_name}.svc.cluster.local:8080"
         return super().startTestClient(
-            # test_server, config_mesh=self.mesh_name_td
-            test_server
+            test_server, generate_mesh_id=True,
+            server_target=server_target
         )

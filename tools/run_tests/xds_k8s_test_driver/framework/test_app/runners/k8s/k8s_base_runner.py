@@ -443,27 +443,6 @@ class KubernetesBaseRunner(base_runner.BaseRunner, metaclass=ABCMeta):
         )
         return deployment
 
-    def _create_gamma_mesh(self, template, **kwargs) -> k8s.GammaMesh:
-        mesh = self._create_from_template(
-            template, custom_object=True, **kwargs
-        )
-        if not (isinstance(mesh, k8s.GammaMesh) and mesh.kind == "TDMesh"):
-            raise _RunnerError(
-                f"Expected ResourceInstance[TDMesh] to be created from"
-                f" manifest {template}"
-            )
-        if mesh.metadata.name != kwargs["mesh_name"]:
-            raise _RunnerError(
-                "ResourceInstance[TDMesh] created with unexpected name: "
-                f"{mesh.metadata.name}"
-            )
-        logger.debug(
-            "ResourceInstance[TDMesh] %s created at %s",
-            mesh.metadata.name,
-            mesh.metadata.creation_timestamp,
-        )
-        return mesh
-
     def _create_gamma_route(self, template, **kwargs) -> k8s.GammaHttpRoute:
         route = self._create_from_template(
             template,
@@ -582,19 +561,6 @@ class KubernetesBaseRunner(base_runner.BaseRunner, metaclass=ABCMeta):
         )
         return service
 
-
-
-    def _delete_gamma_mesh(self, name, wait_for_deletion=True):
-        logger.info("Deleting GAMMA mesh %s", name)
-        try:
-            self.k8s_namespace.delete_gamma_mesh(name)
-        except (retryers.RetryError, k8s.NotFound) as e:
-            logger.info("GAMMA mesh %s deletion failed: %s", name, e)
-            return
-
-        if wait_for_deletion:
-            self.k8s_namespace.wait_for_get_gamma_mesh_deleted(name)
-        logger.debug("GAMMA mesh %s deleted", name)
 
     def _delete_gamma_route(self, name, wait_for_deletion=True):
         logger.info("Deleting HTTPRoute %s", name)

@@ -79,6 +79,9 @@ spec:
             % if config_mesh:
             - "--config-mesh-experimental=${config_mesh}"
             % endif
+            % if generate_mesh_id:
+            - "--generate-mesh-id-experimental"
+            % endif
           resources:
             limits:
               cpu: 100m

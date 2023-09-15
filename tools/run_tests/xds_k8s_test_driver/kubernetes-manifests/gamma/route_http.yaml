@@ -8,12 +8,10 @@ metadata:
     owner: xds-k8s-interop-test
 spec:
   parentRefs:
-  - name: ${mesh_name}
+  - name: ${frontend_service_name}
     namespace: ${namespace_name}
-    group: net.gke.io
-    kind: TDMesh
-  hostnames:
-  - ${xds_server_uri}
+    group: ""
+    kind: Service
   rules:
   - matches:
     - path:
@@ -21,5 +19,5 @@ spec:
         value: /grpc.testing.TestService/UnaryCall
     backendRefs:
     - name: ${service_name}
-      port: 50051
+      port: 8080
 ...

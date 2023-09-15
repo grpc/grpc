@@ -822,10 +822,12 @@ class RegularXdsKubernetesTestCase(IsolatedXdsKubernetesTestCase):
         return test_servers
 
     def startTestClient(
-        self, test_server: XdsTestServer, **kwargs
+        self, test_server: XdsTestServer,
+	server_target=None, **kwargs
     ) -> XdsTestClient:
+        server_target = server_target or test_server.xds_uri
         test_client = self.client_runner.run(
-            server_target=test_server.xds_uri, **kwargs
+            server_target=server_target, **kwargs
         )
         test_client.wait_for_active_server_channel()
         return test_client

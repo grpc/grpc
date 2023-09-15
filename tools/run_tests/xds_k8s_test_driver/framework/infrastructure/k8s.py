@@ -169,7 +169,7 @@ class KubernetesApiManager:
     def http_route(self, version: str) -> dynamic_res.Resource:
         api_name = "gateway.networking.k8s.io"
         kind = "HTTPRoute"
-        supported_versions = {"v1beta1", "v1alpha2"}
+        supported_versions = {"v1beta1"}
         if version not in supported_versions:
             raise NotImplementedError(
                 f"{kind} {api_name}/{version} not implemented."
