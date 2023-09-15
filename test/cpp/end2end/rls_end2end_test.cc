@@ -135,7 +135,8 @@ class FakeResolverResponseGeneratorWrapper {
 
   void SetNextResolution(absl::string_view service_config_json) {
     grpc_core::ExecCtx exec_ctx;
-    response_generator_->SetResponse(BuildFakeResults(service_config_json));
+    response_generator_->SetResponseSynchronously(
+        BuildFakeResults(service_config_json));
   }
 
   grpc_core::FakeResolverResponseGenerator* Get() const {
