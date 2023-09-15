@@ -358,9 +358,10 @@ TEST(Pollers, TestReadabilityNotificationsDontGetStrandedOnOneCq) {
           grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
       {
         grpc_core::ExecCtx exec_ctx;
-        fake_resolver_response_generator->SetResponse(BuildResolverResponse(
-            {absl::StrCat("ipv4:", kSharedUnconnectableAddress),
-             absl::StrCat("ipv4:", test_server->address())}));
+        fake_resolver_response_generator->SetResponseSynchronously(
+            BuildResolverResponse(
+                {absl::StrCat("ipv4:", kSharedUnconnectableAddress),
+                 absl::StrCat("ipv4:", test_server->address())}));
       }
       args.push_back(grpc_core::FakeResolverResponseGenerator::MakeChannelArg(
           fake_resolver_response_generator.get()));
