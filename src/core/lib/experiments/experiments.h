@@ -233,10 +233,10 @@ inline bool IsRoundRobinDelegateToPickFirstEnabled() {
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_CHANNEL_SUBCHANNEL_WRAPPER_WORK_SERIALIZER_ORPHAN
 inline bool IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled() {
-  return IsExperimentEnabled(24);
+  return IsExperimentEnabled(25);
 }
 
-constexpr const size_t kNumExperiments = 25;
+constexpr const size_t kNumExperiments = 26;
 extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];
 
 #endif
