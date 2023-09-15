@@ -86,8 +86,8 @@ absl::StatusOr<CsmObservability> CsmObservabilityBuilder::BuildAndRegister() {
   builder_.SetServerSelector([](const grpc_core::ChannelArgs& args) {
     return args.GetBool(GRPC_ARG_XDS_ENABLED_SERVER).value_or(false);
   });
-  builder_.BuildAndRegisterGlobal();
   builder_.SetTargetSelector(internal::CsmChannelTargetSelector);
+  builder_.BuildAndRegisterGlobal();
   return CsmObservability();
 }
 
