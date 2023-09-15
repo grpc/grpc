@@ -484,6 +484,10 @@ class LoadBalancingPolicyTest : public ::testing::Test {
    private:
     // A wrapper for a picker that hops into the WorkSerializer to
     // release the ref to the picker.
+    // TODO(roth): Once the
+    // client_channel_subchannel_wrapper_work_serializer_orphan
+    // experiment fully lands internally, remove this hack in favor of
+    // hopping back into the WorkSerializer at FakeSubchannel destruction.
     class PickerWrapper : public LoadBalancingPolicy::SubchannelPicker {
      public:
       PickerWrapper(LoadBalancingPolicyTest* test,
