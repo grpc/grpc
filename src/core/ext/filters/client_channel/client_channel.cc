@@ -2842,7 +2842,6 @@ absl::optional<absl::Status> ClientChannel::LoadBalancedCall::PickSubchannel(
         [&](RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker) {
           pickers.emplace_back(std::move(picker));
         };
-
   } else {
     pickers.emplace_back();
     set_picker =
