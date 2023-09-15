@@ -2368,6 +2368,9 @@ grpc_cc_library(
         "lib/event_engine/default_event_engine.h",
     ],
     external_deps = ["absl/functional:any_invocable"],
+    visibility = [
+        "@grpc:alt_grpc_base_legacy",
+    ],
     deps = [
         "channel_args",
         "context",
