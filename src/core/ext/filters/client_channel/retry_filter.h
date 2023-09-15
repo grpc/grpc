@@ -41,7 +41,12 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/polling_entity.h"
+#include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/promise/latch.h"
+#include "src/core/lib/promise/seq.h"
 #include "src/core/lib/transport/transport.h"
 
 extern grpc_core::TraceFlag grpc_retry_trace;
@@ -109,6 +114,17 @@ class RetryFilter {
                                grpc_transport_op* /*op*/) {}
   static void GetChannelInfo(grpc_channel_element* /*elem*/,
                              const grpc_channel_info* /*info*/) {}
+
+  struct CallState;
+  struct CallAttemptState;
+  // Construct a promise for one call.
+  ArenaPromise<ServerMetadataHandle> MakeCallPromise(CallArgs call_args);
+  auto MakeCallAttempt(CallState* call_state,
+                       const ClientMetadataHandle& initial_metadata,
+                       Latch<grpc_polling_entity>* polling_entity);
+  absl::optional<Duration> MaybeRetryDuration(CallState* call_state,
+                                              CallAttemptState* call_attempt,
+                                              const ServerMetadataHandle& md);
 
   ClientChannel* client_channel_;
   grpc_event_engine::experimental::EventEngine* const event_engine_;

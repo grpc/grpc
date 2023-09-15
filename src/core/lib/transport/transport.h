@@ -93,6 +93,9 @@ using ServerMetadataHandle = Arena::PoolPtr<ServerMetadata>;
 using ClientMetadata = grpc_metadata_batch;
 using ClientMetadataHandle = Arena::PoolPtr<ClientMetadata>;
 
+class Message;
+using MessageHandle = Arena::PoolPtr<Message>;
+
 class Message {
  public:
   Message() = default;
@@ -107,14 +110,16 @@ class Message {
   SliceBuffer* payload() { return &payload_; }
   const SliceBuffer* payload() const { return &payload_; }
 
+  MessageHandle Clone() const {
+    return GetContext<Arena>()->MakePooled<Message>(payload_.Copy(), flags_);
+  }
+
   std::string DebugString() const;
 
  private:
   SliceBuffer payload_;
   uint32_t flags_ = 0;
 };
-
-using MessageHandle = Arena::PoolPtr<Message>;
 
 // Ok/not-ok check for trailing metadata, so that it can be used as result types
 // for TrySeq.
@@ -187,7 +192,10 @@ class ClientInitialMetadataOutstandingToken {
   ~ClientInitialMetadataOutstandingToken() {
     if (latch_ != nullptr) latch_->Set(false);
   }
-  void Complete(bool success) { std::exchange(latch_, nullptr)->Set(success); }
+  void Complete(bool success) {
+    if (latch_ == nullptr) return;
+    std::exchange(latch_, nullptr)->Set(success);
+  }
 
   // Returns a promise that will resolve when this object (or its moved-from
   // ancestor) is dropped.

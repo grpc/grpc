@@ -228,7 +228,8 @@ class ClientChannel::FilterBasedCallData : public ClientChannel::CallData {
   void PendingBatchesAdd(grpc_transport_stream_op_batch* batch);
   static void FailPendingBatchInCallCombiner(void* arg,
                                              grpc_error_handle error);
-  // A predicate type and some useful implementations for PendingBatchesFail().
+  // A predicate type and some useful implementations for
+  // PendingBatchesFail().
   typedef bool (*YieldCallCombinerPredicate)(
       const CallCombinerClosureList& closures);
   static bool YieldCallCombiner(const CallCombinerClosureList& /*closures*/) {
@@ -389,25 +390,9 @@ class ClientChannel::PromiseBasedCallData : public ClientChannel::CallData {
 // Filter vtable
 //
 
-const grpc_channel_filter ClientChannel::kFilterVtableWithPromises = {
+const grpc_channel_filter ClientChannel::kFilterVtable = {
     ClientChannel::FilterBasedCallData::StartTransportStreamOpBatch,
     ClientChannel::MakeCallPromise,
-    ClientChannel::StartTransportOp,
-    sizeof(ClientChannel::FilterBasedCallData),
-    ClientChannel::FilterBasedCallData::Init,
-    ClientChannel::FilterBasedCallData::SetPollent,
-    ClientChannel::FilterBasedCallData::Destroy,
-    sizeof(ClientChannel),
-    ClientChannel::Init,
-    grpc_channel_stack_no_post_init,
-    ClientChannel::Destroy,
-    ClientChannel::GetChannelInfo,
-    "client-channel",
-};
-
-const grpc_channel_filter ClientChannel::kFilterVtableWithoutPromises = {
-    ClientChannel::FilterBasedCallData::StartTransportStreamOpBatch,
-    nullptr,
     ClientChannel::StartTransportOp,
     sizeof(ClientChannel::FilterBasedCallData),
     ClientChannel::FilterBasedCallData::Init,
@@ -788,7 +773,8 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
             }
             // Propagate the new keepalive time to all subchannels. This is so
             // that new transports created by any subchannel (and not just the
-            // subchannel that received the GOAWAY), use the new keepalive time.
+            // subchannel that received the GOAWAY), use the new keepalive
+            // time.
             for (auto* subchannel_wrapper :
                  parent_->chand_->subchannel_wrappers_) {
               subchannel_wrapper->ThrottleKeepaliveTime(new_keepalive_time);
@@ -954,7 +940,8 @@ void ClientChannel::ExternalConnectivityWatcher::Cancel() {
 
 void ClientChannel::ExternalConnectivityWatcher::AddWatcherLocked() {
   Closure::Run(DEBUG_LOCATION, watcher_timer_init_, absl::OkStatus());
-  // Add new watcher. Pass the ref of the object from creation to OrphanablePtr.
+  // Add new watcher. Pass the ref of the object from creation to
+  // OrphanablePtr.
   chand_->state_tracker_.AddWatcher(
       initial_state_, OrphanablePtr<ConnectivityStateWatcherInterface>(this));
 }
@@ -1134,18 +1121,14 @@ class ClientChannel::ClientChannelControlHelper
 ClientChannel* ClientChannel::GetFromChannel(Channel* channel) {
   grpc_channel_element* elem =
       grpc_channel_stack_last_element(channel->channel_stack());
-  if (elem->filter != &kFilterVtableWithPromises &&
-      elem->filter != &kFilterVtableWithoutPromises) {
-    return nullptr;
-  }
+  if (elem->filter != &kFilterVtable) return nullptr;
   return static_cast<ClientChannel*>(elem->channel_data);
 }
 
 grpc_error_handle ClientChannel::Init(grpc_channel_element* elem,
                                       grpc_channel_element_args* args) {
   GPR_ASSERT(args->is_last);
-  GPR_ASSERT(elem->filter == &kFilterVtableWithPromises ||
-             elem->filter == &kFilterVtableWithoutPromises);
+  GPR_ASSERT(elem->filter == &kFilterVtable);
   grpc_error_handle error;
   new (elem->channel_data) ClientChannel(args, &error);
   return error;
@@ -1468,9 +1451,9 @@ void ClientChannel::OnResolverResultChangedLocked(Resolver::Result result) {
     service_config = std::move(*result.service_config);
     config_selector = result.args.GetObjectRef<ConfigSelector>();
   }
-  // Note: The only case in which service_config is null here is if the resolver
-  // returned a service config error and we don't have a previous service
-  // config to fall back to.
+  // Note: The only case in which service_config is null here is if the
+  // resolver returned a service config error and we don't have a previous
+  // service config to fall back to.
   if (service_config != nullptr) {
     // Extract global config for client channel.
     const internal::ClientChannelGlobalParsedConfig* parsed_service_config =
@@ -1559,8 +1542,8 @@ absl::Status ClientChannel::CreateOrUpdateLbPolicyLocked(
   update_args.config = std::move(lb_policy_config);
   update_args.resolution_note = std::move(result.resolution_note);
   // Remove the config selector from channel args so that we're not holding
-  // unnecessary refs that cause it to be destroyed somewhere other than in the
-  // WorkSerializer.
+  // unnecessary refs that cause it to be destroyed somewhere other than in
+  // the WorkSerializer.
   update_args.args = result.args.Remove(GRPC_ARG_CONFIG_SELECTOR);
   // Add health check service name to channel args.
   if (health_check_service_name.has_value()) {
@@ -2200,7 +2183,8 @@ void ClientChannel::FilterBasedCallData::StartTransportStreamOpBatch(
   }
   // If we already have a dynamic call, pass the batch down to it.
   // Note that once we have done so, we do not need to acquire the channel's
-  // resolution mutex, which is more efficient (especially for streaming calls).
+  // resolution mutex, which is more efficient (especially for streaming
+  // calls).
   if (calld->dynamic_call_ != nullptr) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
       gpr_log(GPR_INFO, "chand=%p calld=%p: starting batch on dynamic_call=%p",
@@ -2551,7 +2535,8 @@ class ClientChannel::LoadBalancedCall::Metadata
   void Add(absl::string_view key, absl::string_view value) override {
     if (batch_ == nullptr) return;
     // Gross, egregious hack to support legacy grpclb behavior.
-    // TODO(ctiller): Use a promise context for this once that plumbing is done.
+    // TODO(ctiller): Use a promise context for this once that plumbing is
+    // done.
     if (key == GrpcLbClientStatsMetadata::key()) {
       batch_->Set(
           GrpcLbClientStatsMetadata(),
@@ -3412,7 +3397,8 @@ ClientChannel::PromiseBasedLoadBalancedCall::MakeCallPromise(
   if (call_attempt_tracer() != nullptr) {
     call_attempt_tracer()->RecordSendInitialMetadata(
         call_args.client_initial_metadata.get());
-    // TODO(ctiller): Find a way to do this without registering a no-op mapper.
+    // TODO(ctiller): Find a way to do this without registering a no-op
+    // mapper.
     call_args.client_to_server_messages->InterceptAndMapWithHalfClose(
         [](MessageHandle message) { return message; },  // No-op.
         [this]() {
