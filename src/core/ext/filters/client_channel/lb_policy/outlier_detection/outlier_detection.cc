@@ -147,6 +147,8 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
 
     void AddDataWatcher(std::unique_ptr<DataWatcherInterface> watcher) override;
 
+    void CancelDataWatcher(DataWatcherInterface* watcher) override;
+
     RefCountedPtr<SubchannelState> subchannel_state() const {
       return subchannel_state_;
     }
@@ -425,6 +427,13 @@ void OutlierDetectionLb::SubchannelWrapper::AddDataWatcher(
     health_watcher->SetWatcher(std::move(watcher_wrapper));
   }
   DelegatingSubchannel::AddDataWatcher(std::move(watcher));
+}
+
+void OutlierDetectionLb::SubchannelWrapper::CancelDataWatcher(
+    DataWatcherInterface* watcher) {
+  auto* w = static_cast<InternalSubchannelDataWatcherInterface*>(watcher);
+  if (w->type() == HealthProducer::Type()) watcher_wrapper_ = nullptr;
+  DelegatingSubchannel::CancelDataWatcher(watcher);
 }
 
 //

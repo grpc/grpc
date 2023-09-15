@@ -248,6 +248,7 @@ TEST_F(OutlierDetectionTest, FailurePercentage) {
 }
 
 TEST_F(OutlierDetectionTest, MultipleAddressesPerEndpoint) {
+  if (!IsRoundRobinDelegateToPickFirstEnabled()) return;
   constexpr std::array<absl::string_view, 2> kEndpoint1Addresses = {
       "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444"};
   constexpr std::array<absl::string_view, 2> kEndpoint2Addresses = {
@@ -310,12 +311,14 @@ TEST_F(OutlierDetectionTest, MultipleAddressesPerEndpoint) {
   WaitForRoundRobinListChange(
       {kEndpoint1Addresses[0], kEndpoint2Addresses[0], kEndpoint3Addresses[0]},
       {sentinel_endpoint_addresses[0], unmodified_endpoint_address});
+  gpr_log(GPR_INFO, "### ejected endpoint removed");
   // Cause the connection to the ejected endpoint to fail, and then
   // have it reconnect to a different address.  The endpoint is still
   // ejected, so the new address should not be used.
   ExpectEndpointAddressChange(ejected_endpoint_addresses, 0, 1);
   DrainRoundRobinPickerUpdates(
       {sentinel_endpoint_addresses[0], unmodified_endpoint_address});
+  gpr_log(GPR_INFO, "### done changing address of ejected endpoint");
   // Do the same thing for the sentinel endpoint, so that we
   // know that the LB policy has seen the address change for the ejected
   // endpoint.
@@ -326,6 +329,7 @@ TEST_F(OutlierDetectionTest, MultipleAddressesPerEndpoint) {
   WaitForRoundRobinListChange(
       {unmodified_endpoint_address},
       {sentinel_endpoint_addresses[1], unmodified_endpoint_address});
+  gpr_log(GPR_INFO, "### done changing address of ejected endpoint");
   // Advance time and run the timer callback to trigger un-ejection.
   time_cache_.IncrementBy(Duration::Seconds(10));
   RunTimerCallback();

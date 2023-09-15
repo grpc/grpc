@@ -891,6 +891,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
           return false;  // Stop.
         },
         location);
+    gpr_log(GPR_INFO, "Done waiting for expected RR addresses");
     return retval;
   }
 
@@ -1114,12 +1115,14 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   void DrainRoundRobinPickerUpdates(
       absl::Span<const absl::string_view> addresses,
       SourceLocation location = SourceLocation()) {
+    gpr_log(GPR_INFO, "Draining RR picker updates...");
     while (!helper_->QueueEmpty()) {
       auto update = helper_->GetNextStateUpdate(location);
       ASSERT_TRUE(update.has_value());
       ASSERT_EQ(update->state, GRPC_CHANNEL_READY);
       ExpectRoundRobinPicks(update->picker.get(), addresses);
     }
+    gpr_log(GPR_INFO, "Done draining RR picker updates");
   }
 
   // Triggers a connection failure for the current address for an
@@ -1127,6 +1130,10 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   void ExpectEndpointAddressChange(
       absl::Span<const absl::string_view> addresses, size_t current_index,
       size_t new_index, SourceLocation location = SourceLocation()) {
+    gpr_log(GPR_INFO,
+            "Expecting endpoint address change: addresses={%s}, current_index=%"
+            PRIuPTR ", new_index=%" PRIuPTR,
+            absl::StrJoin(addresses, ", ").c_str(), current_index, new_index);
     ASSERT_LT(current_index, addresses.size());
     ASSERT_LT(new_index, addresses.size());
     // Cause current_address to become disconnected.
@@ -1150,6 +1157,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
           absl::UnavailableError("connection failed"));
       subchannel->SetConnectivityState(GRPC_CHANNEL_IDLE);
     }
+    gpr_log(GPR_INFO, "Done with endpoint address change");
   }
 
   // Requests a picker on picker and expects a Fail result.
