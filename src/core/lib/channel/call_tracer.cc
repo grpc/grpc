@@ -46,13 +46,7 @@ ServerCallTracerFactory* ServerCallTracerFactory::Get(
     const ChannelArgs& channel_args) {
   ServerCallTracerFactory* factory =
       channel_args.GetObject<ServerCallTracerFactory>();
-  if (factory == nullptr) {
-    factory = g_server_call_tracer_factory_;
-  }
-  if (factory && factory->IsServerTraced(channel_args)) {
-    return factory;
-  }
-  return nullptr;
+  return factory != nullptr ? factory : g_server_call_tracer_factory_;
 }
 
 void ServerCallTracerFactory::RegisterGlobal(ServerCallTracerFactory* factory) {

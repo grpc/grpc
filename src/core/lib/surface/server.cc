@@ -687,9 +687,7 @@ RefCountedPtr<channelz::ServerNode> CreateChannelzNode(
 }  // namespace
 
 Server::Server(const ChannelArgs& args)
-    : channel_args_(args),
-      channelz_node_(CreateChannelzNode(args)),
-      server_call_tracer_factory_(ServerCallTracerFactory::Get(args)) {}
+    : channel_args_(args), channelz_node_(CreateChannelzNode(args)) {}
 
 Server::~Server() {
   // Remove the cq pollsets from the config_fetcher.

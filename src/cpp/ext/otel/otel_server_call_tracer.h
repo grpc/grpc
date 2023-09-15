@@ -22,7 +22,6 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/call_tracer.h"
-#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/resource_quota/arena.h"
 
 namespace grpc {
@@ -33,8 +32,6 @@ class OpenTelemetryServerCallTracerFactory
  public:
   grpc_core::ServerCallTracer* CreateNewServerCallTracer(
       grpc_core::Arena* arena) override;
-
-  bool IsServerTraced(const grpc_core::ChannelArgs& args) override;
 };
 
 }  // namespace internal
