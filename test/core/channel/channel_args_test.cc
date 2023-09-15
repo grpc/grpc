@@ -18,16 +18,14 @@
 
 #include "src/core/lib/channel/channel_args.h"
 
-#include <string.h>
-
-#include "gtest/gtest.h"
-
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <string.h>
 
+#include "gtest/gtest.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -207,6 +205,60 @@ TEST(ChannelArgsTest, GetNonOwningEventEngine) {
   (void)engine;
   // p and the channel args
   ASSERT_EQ(p.use_count(), 2);
+}
+
+TEST(ChannelArgsTest, TestForEachChannelArgument) {
+  const grpc_arg_pointer_vtable malloc_vtable = {
+      // copy
+      [](void* p) { return p; },
+      // destroy
+      [](void*) {},
+      // equal
+      [](void* p1, void* p2) { return QsortCompare(p1, p2); },
+  };
+
+  constexpr absl::string_view int_key = "int_key";
+  constexpr absl::string_view ptr_key = "ptr_key";
+  constexpr absl::string_view str_key = "str_key";
+  void* ptr = gpr_malloc(42);
+
+  ChannelArgs args_1;
+  ChannelArgs args_2 = args_1.Set(int_key, 42);
+  ChannelArgs args_3 =
+      args_2.Set(ptr_key, ChannelArgs::Pointer(ptr, &malloc_vtable));
+  ChannelArgs args_4 = args_3.Set(str_key, "bar");
+
+  std::map<absl::string_view, const grpc_core::ChannelArgs::Value*>
+      args_keys;
+  auto callback = [&args_keys](absl::string_view key,
+                               const grpc_core::ChannelArgs::Value& val) {
+    args_keys[key] = &val;
+  };
+
+  args_4.ForEach(callback);
+  EXPECT_EQ(args_keys.size(), 3);
+
+  auto it = args_keys.begin();
+  EXPECT_EQ(it->first, int_key);
+  EXPECT_EQ(it->second->ToString(), "42");
+  EXPECT_EQ((++it)->first, ptr_key);
+  EXPECT_EQ((++it)->first, str_key);
+  EXPECT_EQ(it->second->ToString(), "bar");
+
+  args_keys.clear();
+
+  ChannelArgs args_5 = args_4.Set(int_key, 92);
+  args_5.ForEach(callback);
+  EXPECT_EQ(args_keys.size(), 3);
+
+  it = args_keys.begin();
+  EXPECT_EQ(it->first, int_key);
+  EXPECT_EQ(it->second->ToString(), "92");
+  EXPECT_EQ((++it)->first, ptr_key);
+  EXPECT_EQ((++it)->first, str_key);
+  EXPECT_EQ(it->second->ToString(), "bar");
+
+  gpr_free(ptr);
 }
 
 }  // namespace grpc_core

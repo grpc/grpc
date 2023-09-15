@@ -7783,6 +7783,7 @@ targets:
   - test/core/event_engine/endpoint_config_test.cc
   deps:
   - gtest
+  - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor

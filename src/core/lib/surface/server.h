@@ -17,8 +17,10 @@
 #ifndef GRPC_SRC_CORE_LIB_SURFACE_SERVER_H
 #define GRPC_SRC_CORE_LIB_SURFACE_SERVER_H
 
+#include <grpc/grpc.h>
+#include <grpc/slice.h>
 #include <grpc/support/port_platform.h>
-
+#include <grpc/support/time.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -33,11 +35,6 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
-
-#include <grpc/grpc.h>
-#include <grpc/slice.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -124,6 +121,12 @@ class Server : public InternallyRefCounted<Server>,
   void Orphan() ABSL_LOCKS_EXCLUDED(mu_global_) override;
 
   const ChannelArgs& channel_args() const { return channel_args_; }
+
+  void ForEachChannelArgument(
+      absl::FunctionRef<void(absl::string_view, const grpc_core::ChannelArgs::Value&)> callback) const {
+    channel_args_.ForEach(callback);
+  }
+
   channelz::ServerNode* channelz_node() const { return channelz_node_.get(); }
 
   // Do not call this before Start(). Returns the pollsets. The

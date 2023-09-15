@@ -473,6 +473,13 @@ class ChannelArgs {
   bool WantMinimalStack() const;
   std::string ToString() const;
 
+  // Iterate over each key/value pair, calling `callback` for each.
+  // We use a FunctionRef here because this is expected to be used for
+  // infrequent/slow path operations and so it's better to use runtime
+  // polymorphism to avoid bloating our customers binaries.
+  void ForEach(
+      absl::FunctionRef<void(absl::string_view, const Value&)> callback) const;
+
  private:
   explicit ChannelArgs(AVL<RefCountedStringValue, Value> args);
 
