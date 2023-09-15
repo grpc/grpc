@@ -57,6 +57,7 @@ grpc_cc_library(
         "//:grpc_base",
         "//:protobuf_struct_upb",
         "//:uri_parser",
+        "//src/core:channel_args",
         "//src/core:env",
         "//src/core:error",
         "//src/core:json",
@@ -64,6 +65,7 @@ grpc_cc_library(
         "//src/core:json_object_loader",
         "//src/core:json_reader",
         "//src/core:slice",
+        "//src/core:xds_enabled_server",
         "//src/cpp/ext/otel:otel_plugin",
     ],
 )
