@@ -724,7 +724,6 @@ libs:
   - src/core/lib/event_engine/resolved_address_internal.h
   - src/core/lib/event_engine/shim.h
   - src/core/lib/event_engine/tcp_socket_utils.h
-  - src/core/lib/event_engine/thread_pool/original_thread_pool.h
   - src/core/lib/event_engine/thread_pool/thread_count.h
   - src/core/lib/event_engine/thread_pool/thread_pool.h
   - src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h
@@ -1539,7 +1538,6 @@ libs:
   - src/core/lib/event_engine/slice.cc
   - src/core/lib/event_engine/slice_buffer.cc
   - src/core/lib/event_engine/tcp_socket_utils.cc
-  - src/core/lib/event_engine/thread_pool/original_thread_pool.cc
   - src/core/lib/event_engine/thread_pool/thread_count.cc
   - src/core/lib/event_engine/thread_pool/thread_pool_factory.cc
   - src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
@@ -2138,7 +2136,6 @@ libs:
   - src/core/lib/event_engine/resolved_address_internal.h
   - src/core/lib/event_engine/shim.h
   - src/core/lib/event_engine/tcp_socket_utils.h
-  - src/core/lib/event_engine/thread_pool/original_thread_pool.h
   - src/core/lib/event_engine/thread_pool/thread_count.h
   - src/core/lib/event_engine/thread_pool/thread_pool.h
   - src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h
@@ -2569,7 +2566,6 @@ libs:
   - src/core/lib/event_engine/slice.cc
   - src/core/lib/event_engine/slice_buffer.cc
   - src/core/lib/event_engine/tcp_socket_utils.cc
-  - src/core/lib/event_engine/thread_pool/original_thread_pool.cc
   - src/core/lib/event_engine/thread_pool/thread_count.cc
   - src/core/lib/event_engine/thread_pool/thread_pool_factory.cc
   - src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
@@ -4152,7 +4148,6 @@ libs:
   - src/core/lib/event_engine/resolved_address_internal.h
   - src/core/lib/event_engine/shim.h
   - src/core/lib/event_engine/tcp_socket_utils.h
-  - src/core/lib/event_engine/thread_pool/original_thread_pool.h
   - src/core/lib/event_engine/thread_pool/thread_count.h
   - src/core/lib/event_engine/thread_pool/thread_pool.h
   - src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h
@@ -4462,7 +4457,6 @@ libs:
   - src/core/lib/event_engine/slice.cc
   - src/core/lib/event_engine/slice_buffer.cc
   - src/core/lib/event_engine/tcp_socket_utils.cc
-  - src/core/lib/event_engine/thread_pool/original_thread_pool.cc
   - src/core/lib/event_engine/thread_pool/thread_count.cc
   - src/core/lib/event_engine/thread_pool/thread_pool_factory.cc
   - src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
@@ -6493,7 +6487,6 @@ targets:
   - test/core/event_engine/test_suite/tests/timer_test.cc
   deps:
   - gtest
-  - grpc_unsecure
   - grpc_test_util
   platforms:
   - linux
@@ -8847,7 +8840,6 @@ targets:
   - test/core/event_engine/test_suite/tests/timer_test.cc
   deps:
   - gtest
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
   platforms:
@@ -9499,7 +9491,6 @@ targets:
   - test/core/event_engine/event_engine_test_utils.cc
   deps:
   - gtest
-  - grpc_unsecure
   - grpc_test_util
 - name: h2_ssl_session_reuse_test
   gtest: true
@@ -11282,7 +11273,6 @@ targets:
   - test/core/event_engine/test_suite/tests/server_test.cc
   deps:
   - gtest
-  - grpc_unsecure
   - grpc_test_util
   platforms:
   - linux
@@ -11354,11 +11344,16 @@ targets:
   language: c++
   headers:
   - test/core/client_channel/lb_policy/lb_policy_test_lib.h
-  - test/core/event_engine/mock_event_engine.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - test/core/client_channel/lb_policy/outlier_detection_test.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   deps:
   - gtest
+  - protobuf
   - grpc_test_util
   uses_polling: false
 - name: overload_test
@@ -11580,12 +11575,17 @@ targets:
   language: c++
   headers:
   - test/core/client_channel/lb_policy/lb_policy_test_lib.h
-  - test/core/event_engine/mock_event_engine.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/util/scoped_env_var.h
   src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - test/core/client_channel/lb_policy/pick_first_test.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   deps:
   - gtest
+  - protobuf
   - grpc_test_util
   uses_polling: false
 - name: pid_controller_test
@@ -11850,7 +11850,6 @@ targets:
   - test/core/event_engine/test_suite/posix/oracle_event_engine_posix.cc
   deps:
   - gtest
-  - grpc_unsecure
   - grpc_test_util
   platforms:
   - linux
@@ -11885,7 +11884,6 @@ targets:
   - test/core/event_engine/test_suite/posix/oracle_event_engine_posix.cc
   deps:
   - gtest
-  - grpc_unsecure
   - grpc_test_util
   platforms:
   - linux
@@ -11917,7 +11915,6 @@ targets:
   - test/cpp/util/get_grpc_test_runfile_dir.cc
   deps:
   - gtest
-  - grpc_unsecure
   - grpc++_test_util
   platforms:
   - linux
@@ -13919,11 +13916,16 @@ targets:
   language: c++
   headers:
   - test/core/client_channel/lb_policy/lb_policy_test_lib.h
-  - test/core/event_engine/mock_event_engine.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - test/core/client_channel/lb_policy/round_robin_test.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   deps:
   - gtest
+  - protobuf
   - grpc_test_util
   uses_polling: false
 - name: secure_auth_context_test
@@ -15265,10 +15267,12 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/event_engine/event_engine_test_utils.h
   - test/cpp/util/channel_trace_proto_helper.h
   src:
   - src/proto/grpc/channelz/channelz.proto
   - test/core/channel/channelz_test.cc
+  - test/core/event_engine/event_engine_test_utils.cc
   - test/cpp/util/channel_trace_proto_helper.cc
   deps:
   - gtest
@@ -15668,7 +15672,6 @@ targets:
   - src/core/lib/event_engine/resolved_address_internal.h
   - src/core/lib/event_engine/shim.h
   - src/core/lib/event_engine/tcp_socket_utils.h
-  - src/core/lib/event_engine/thread_pool/original_thread_pool.h
   - src/core/lib/event_engine/thread_pool/thread_count.h
   - src/core/lib/event_engine/thread_pool/thread_pool.h
   - src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h
@@ -15960,7 +15963,6 @@ targets:
   - src/core/lib/event_engine/slice.cc
   - src/core/lib/event_engine/slice_buffer.cc
   - src/core/lib/event_engine/tcp_socket_utils.cc
-  - src/core/lib/event_engine/thread_pool/original_thread_pool.cc
   - src/core/lib/event_engine/thread_pool/thread_count.cc
   - src/core/lib/event_engine/thread_pool/thread_pool_factory.cc
   - src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
@@ -16331,7 +16333,6 @@ targets:
   - test/core/event_engine/test_suite/thready_posix_event_engine_test.cc
   deps:
   - gtest
-  - grpc_unsecure
   - grpc_test_util
   platforms:
   - linux
@@ -16864,11 +16865,16 @@ targets:
   language: c++
   headers:
   - test/core/client_channel/lb_policy/lb_policy_test_lib.h
-  - test/core/event_engine/mock_event_engine.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - test/core/client_channel/lb_policy/weighted_round_robin_test.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   deps:
   - gtest
+  - protobuf
   - grpc_test_util
   uses_polling: false
 - name: win_socket_test
@@ -17142,8 +17148,10 @@ targets:
   build: test
   run: false
   language: c++
-  headers: []
+  headers:
+  - test/core/event_engine/event_engine_test_utils.h
   src:
+  - test/core/event_engine/event_engine_test_utils.cc
   - test/core/gprpp/work_serializer_test.cc
   deps:
   - gtest
@@ -18179,11 +18187,16 @@ targets:
   language: c++
   headers:
   - test/core/client_channel/lb_policy/lb_policy_test_lib.h
-  - test/core/event_engine/mock_event_engine.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - test/core/client_channel/lb_policy/xds_override_host_test.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   deps:
   - gtest
+  - protobuf
   - grpc_test_util
   uses_polling: false
 - name: xds_pick_first_end2end_test

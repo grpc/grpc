@@ -96,6 +96,11 @@ const char* const description_keepalive_server_fix =
     "Allows overriding keepalive_permit_without_calls for servers. Refer "
     "https://github.com/grpc/grpc/pull/33917 for more information.";
 const char* const additional_constraints_keepalive_server_fix = "{}";
+const char* const description_work_serializer_dispatch =
+    "Have the work serializer dispatch work to event engine for every "
+    "callback, instead of running things inline in the first thread that "
+    "successfully enqueues work.";
+const char* const additional_constraints_work_serializer_dispatch = "{}";
 const char* const description_lazier_stream_updates =
     "Allow streams to consume up to 50% of the incoming window before we force "
     "send a flow control update.";
@@ -114,6 +119,13 @@ const char* const description_wrr_delegate_to_pick_first =
     "Change WRR code to delegate to pick_first as per dualstack backend "
     "design.";
 const char* const additional_constraints_wrr_delegate_to_pick_first = "{}";
+const char* const
+    description_client_channel_subchannel_wrapper_work_serializer_orphan =
+        "Client channel subchannel wrapper hops into WorkSerializer at "
+        "Orphan() time, rather than requiring callers to do it.";
+const char* const
+    additional_constraints_client_channel_subchannel_wrapper_work_serializer_orphan =
+        "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -163,6 +175,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_keepalive_fix, false, false},
     {"keepalive_server_fix", description_keepalive_server_fix,
      additional_constraints_keepalive_server_fix, false, false},
+    {"work_serializer_dispatch", description_work_serializer_dispatch,
+     additional_constraints_work_serializer_dispatch, false, true},
     {"lazier_stream_updates", description_lazier_stream_updates,
      additional_constraints_lazier_stream_updates, true, true},
     {"jitter_max_idle", description_jitter_max_idle,
@@ -172,6 +186,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_round_robin_delegate_to_pick_first, true, true},
     {"wrr_delegate_to_pick_first", description_wrr_delegate_to_pick_first,
      additional_constraints_wrr_delegate_to_pick_first, true, true},
+    {"client_channel_subchannel_wrapper_work_serializer_orphan",
+     description_client_channel_subchannel_wrapper_work_serializer_orphan,
+     additional_constraints_client_channel_subchannel_wrapper_work_serializer_orphan,
+     true, true},
 };
 
 }  // namespace grpc_core
@@ -252,6 +270,11 @@ const char* const description_keepalive_server_fix =
     "Allows overriding keepalive_permit_without_calls for servers. Refer "
     "https://github.com/grpc/grpc/pull/33917 for more information.";
 const char* const additional_constraints_keepalive_server_fix = "{}";
+const char* const description_work_serializer_dispatch =
+    "Have the work serializer dispatch work to event engine for every "
+    "callback, instead of running things inline in the first thread that "
+    "successfully enqueues work.";
+const char* const additional_constraints_work_serializer_dispatch = "{}";
 const char* const description_lazier_stream_updates =
     "Allow streams to consume up to 50% of the incoming window before we force "
     "send a flow control update.";
@@ -270,6 +293,13 @@ const char* const description_wrr_delegate_to_pick_first =
     "Change WRR code to delegate to pick_first as per dualstack backend "
     "design.";
 const char* const additional_constraints_wrr_delegate_to_pick_first = "{}";
+const char* const
+    description_client_channel_subchannel_wrapper_work_serializer_orphan =
+        "Client channel subchannel wrapper hops into WorkSerializer at "
+        "Orphan() time, rather than requiring callers to do it.";
+const char* const
+    additional_constraints_client_channel_subchannel_wrapper_work_serializer_orphan =
+        "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -319,6 +349,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_keepalive_fix, false, false},
     {"keepalive_server_fix", description_keepalive_server_fix,
      additional_constraints_keepalive_server_fix, false, false},
+    {"work_serializer_dispatch", description_work_serializer_dispatch,
+     additional_constraints_work_serializer_dispatch, false, true},
     {"lazier_stream_updates", description_lazier_stream_updates,
      additional_constraints_lazier_stream_updates, true, true},
     {"jitter_max_idle", description_jitter_max_idle,
@@ -328,6 +360,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_round_robin_delegate_to_pick_first, true, true},
     {"wrr_delegate_to_pick_first", description_wrr_delegate_to_pick_first,
      additional_constraints_wrr_delegate_to_pick_first, true, true},
+    {"client_channel_subchannel_wrapper_work_serializer_orphan",
+     description_client_channel_subchannel_wrapper_work_serializer_orphan,
+     additional_constraints_client_channel_subchannel_wrapper_work_serializer_orphan,
+     true, true},
 };
 
 }  // namespace grpc_core
@@ -408,6 +444,11 @@ const char* const description_keepalive_server_fix =
     "Allows overriding keepalive_permit_without_calls for servers. Refer "
     "https://github.com/grpc/grpc/pull/33917 for more information.";
 const char* const additional_constraints_keepalive_server_fix = "{}";
+const char* const description_work_serializer_dispatch =
+    "Have the work serializer dispatch work to event engine for every "
+    "callback, instead of running things inline in the first thread that "
+    "successfully enqueues work.";
+const char* const additional_constraints_work_serializer_dispatch = "{}";
 const char* const description_lazier_stream_updates =
     "Allow streams to consume up to 50% of the incoming window before we force "
     "send a flow control update.";
@@ -426,6 +467,13 @@ const char* const description_wrr_delegate_to_pick_first =
     "Change WRR code to delegate to pick_first as per dualstack backend "
     "design.";
 const char* const additional_constraints_wrr_delegate_to_pick_first = "{}";
+const char* const
+    description_client_channel_subchannel_wrapper_work_serializer_orphan =
+        "Client channel subchannel wrapper hops into WorkSerializer at "
+        "Orphan() time, rather than requiring callers to do it.";
+const char* const
+    additional_constraints_client_channel_subchannel_wrapper_work_serializer_orphan =
+        "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -475,6 +523,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_keepalive_fix, false, false},
     {"keepalive_server_fix", description_keepalive_server_fix,
      additional_constraints_keepalive_server_fix, false, false},
+    {"work_serializer_dispatch", description_work_serializer_dispatch,
+     additional_constraints_work_serializer_dispatch, false, true},
     {"lazier_stream_updates", description_lazier_stream_updates,
      additional_constraints_lazier_stream_updates, true, true},
     {"jitter_max_idle", description_jitter_max_idle,
@@ -484,6 +534,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_round_robin_delegate_to_pick_first, true, true},
     {"wrr_delegate_to_pick_first", description_wrr_delegate_to_pick_first,
      additional_constraints_wrr_delegate_to_pick_first, true, true},
+    {"client_channel_subchannel_wrapper_work_serializer_orphan",
+     description_client_channel_subchannel_wrapper_work_serializer_orphan,
+     additional_constraints_client_channel_subchannel_wrapper_work_serializer_orphan,
+     true, true},
 };
 
 }  // namespace grpc_core

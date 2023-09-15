@@ -2234,7 +2234,6 @@ add_library(grpc
   src/core/lib/event_engine/slice.cc
   src/core/lib/event_engine/slice_buffer.cc
   src/core/lib/event_engine/tcp_socket_utils.cc
-  src/core/lib/event_engine/thread_pool/original_thread_pool.cc
   src/core/lib/event_engine/thread_pool/thread_count.cc
   src/core/lib/event_engine/thread_pool/thread_pool_factory.cc
   src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
@@ -2949,7 +2948,6 @@ add_library(grpc_unsecure
   src/core/lib/event_engine/slice.cc
   src/core/lib/event_engine/slice_buffer.cc
   src/core/lib/event_engine/tcp_socket_utils.cc
-  src/core/lib/event_engine/thread_pool/original_thread_pool.cc
   src/core/lib/event_engine/thread_pool/thread_count.cc
   src/core/lib/event_engine/thread_pool/thread_pool_factory.cc
   src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
@@ -4892,7 +4890,6 @@ add_library(grpc_authorization_provider
   src/core/lib/event_engine/slice.cc
   src/core/lib/event_engine/slice_buffer.cc
   src/core/lib/event_engine/tcp_socket_utils.cc
-  src/core/lib/event_engine/thread_pool/original_thread_pool.cc
   src/core/lib/event_engine/thread_pool/thread_count.cc
   src/core/lib/event_engine/thread_pool/thread_pool_factory.cc
   src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
@@ -8270,7 +8267,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(cf_event_engine_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc_unsecure
     grpc_test_util
   )
 
@@ -12219,7 +12215,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(fuzzing_event_engine_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc_unsecure
     ${_gRPC_PROTOBUF_LIBRARIES}
     grpc_test_util
   )
@@ -13511,7 +13506,6 @@ target_include_directories(h2_ssl_cert_test
 target_link_libraries(h2_ssl_cert_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -16577,7 +16571,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(oracle_event_engine_posix_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc_unsecure
     grpc_test_util
   )
 
@@ -16763,7 +16756,13 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(outlier_detection_test
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
   test/core/client_channel/lb_policy/outlier_detection_test.cc
+  test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
 )
 target_compile_features(outlier_detection_test PUBLIC cxx_std_14)
 target_include_directories(outlier_detection_test
@@ -16788,6 +16787,7 @@ target_include_directories(outlier_detection_test
 target_link_libraries(outlier_detection_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 
@@ -17145,7 +17145,13 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(pick_first_test
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
   test/core/client_channel/lb_policy/pick_first_test.cc
+  test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
 )
 target_compile_features(pick_first_test PUBLIC cxx_std_14)
 target_include_directories(pick_first_test
@@ -17170,6 +17176,7 @@ target_include_directories(pick_first_test
 target_link_libraries(pick_first_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 
@@ -17584,7 +17591,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(posix_endpoint_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc_unsecure
     grpc_test_util
   )
 
@@ -17658,7 +17664,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(posix_event_engine_connect_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc_unsecure
     grpc_test_util
   )
 
@@ -17703,7 +17708,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(posix_event_engine_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc_unsecure
     grpc++_test_util
   )
 
@@ -20687,7 +20691,13 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(round_robin_test
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
   test/core/client_channel/lb_policy/round_robin_test.cc
+  test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
 )
 target_compile_features(round_robin_test PUBLIC cxx_std_14)
 target_include_directories(round_robin_test
@@ -20712,6 +20722,7 @@ target_include_directories(round_robin_test
 target_link_libraries(round_robin_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 
@@ -23280,6 +23291,7 @@ add_executable(test_core_channel_channelz_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.grpc.pb.h
   test/core/channel/channelz_test.cc
+  test/core/event_engine/event_engine_test_utils.cc
   test/cpp/util/channel_trace_proto_helper.cc
 )
 target_compile_features(test_core_channel_channelz_test PUBLIC cxx_std_14)
@@ -23896,7 +23908,6 @@ add_executable(test_core_transport_chaotic_good_frame_test
   src/core/lib/event_engine/slice.cc
   src/core/lib/event_engine/slice_buffer.cc
   src/core/lib/event_engine/tcp_socket_utils.cc
-  src/core/lib/event_engine/thread_pool/original_thread_pool.cc
   src/core/lib/event_engine/thread_pool/thread_count.cc
   src/core/lib/event_engine/thread_pool/thread_pool_factory.cc
   src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
@@ -24565,7 +24576,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(thready_posix_event_engine_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc_unsecure
     grpc_test_util
   )
 
@@ -25600,7 +25610,13 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(weighted_round_robin_test
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
   test/core/client_channel/lb_policy/weighted_round_robin_test.cc
+  test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
 )
 target_compile_features(weighted_round_robin_test PUBLIC cxx_std_14)
 target_include_directories(weighted_round_robin_test
@@ -25625,6 +25641,7 @@ target_include_directories(weighted_round_robin_test
 target_link_libraries(weighted_round_robin_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 
@@ -25937,6 +25954,7 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(work_serializer_test
+    test/core/event_engine/event_engine_test_utils.cc
     test/core/gprpp/work_serializer_test.cc
   )
   target_compile_features(work_serializer_test PUBLIC cxx_std_14)
@@ -28636,7 +28654,13 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(xds_override_host_test
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
   test/core/client_channel/lb_policy/xds_override_host_test.cc
+  test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
 )
 target_compile_features(xds_override_host_test PUBLIC cxx_std_14)
 target_include_directories(xds_override_host_test
@@ -28661,6 +28685,7 @@ target_include_directories(xds_override_host_test
 target_link_libraries(xds_override_host_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 
