@@ -18,6 +18,7 @@
 
 #include "src/core/lib/gprpp/work_serializer.h"
 
+#include <bits/chrono.h>
 #include <stdint.h>
 
 #include <algorithm>
@@ -25,6 +26,7 @@
 #include <chrono>
 #include <functional>
 #include <memory>
+#include <ratio>
 #include <thread>
 #include <utility>
 
@@ -412,6 +414,7 @@ void WorkSerializer::DispatchingWorkSerializer::Run(
     gpr_log(GPR_INFO, "WorkSerializer[%p] Scheduling callback [%s:%d]", this,
             location.file(), location.line());
   }
+  global_stats().IncrementWorkSerializerItemsEnqueued();
   MutexLock lock(&mu_);
   if (!running_) {
     // If we were previously idle, insert this callback directly into the empty
@@ -451,7 +454,11 @@ void WorkSerializer::DispatchingWorkSerializer::Run() {
   // wants to check that it's in the WorkSerializer too.
   processing_.pop_back();
   ClearCurrentThread();
-  time_running_items_ += std::chrono::steady_clock::now() - start;
+  global_stats().IncrementWorkSerializerItemsDequeued();
+  const auto work_time = std::chrono::steady_clock::now() - start;
+  global_stats().IncrementWorkSerializerWorkTimePerItemMs(
+      std::chrono::duration_cast<std::chrono::milliseconds>(work_time).count());
+  time_running_items_ += work_time;
   ++items_processed_during_run_;
   // Check if we've drained the queue and if so refill it.
   if (processing_.empty() && !Refill()) return;

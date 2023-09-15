@@ -114,6 +114,8 @@ const absl::string_view
         "cq_next_creates",
         "cq_callback_creates",
         "wrr_updates",
+        "work_serializer_items_enqueued",
+        "work_serializer_items_dequeued",
 };
 const absl::string_view GlobalStats::counter_doc[static_cast<int>(
     Counter::COUNT)] = {
@@ -142,6 +144,8 @@ const absl::string_view GlobalStats::counter_doc[static_cast<int>(
     "Number of completion queues created for cq_callback (indicates callback "
     "api usage)",
     "Number of wrr updates that have been received",
+    "Number of items enqueued onto work serializers",
+    "Number of items dequeued from work serializers",
 };
 const absl::string_view
     GlobalStats::histogram_name[static_cast<int>(Histogram::COUNT)] = {
@@ -157,6 +161,7 @@ const absl::string_view
         "wrr_subchannel_ready_size",
         "work_serializer_run_time_ms",
         "work_serializer_work_time_ms",
+        "work_serializer_work_time_per_item_ms",
         "work_serializer_items_per_run",
 };
 const absl::string_view GlobalStats::histogram_doc[static_cast<int>(
@@ -174,6 +179,7 @@ const absl::string_view GlobalStats::histogram_doc[static_cast<int>(
     "Number of milliseconds work serializers run for",
     "When running, how many milliseconds are work serializers actually doing "
     "work",
+    "How long do individual items take to process in work serializers",
     "How many callbacks are executed when a work serializer runs",
 };
 namespace {
@@ -328,7 +334,9 @@ GlobalStats::GlobalStats()
       cq_pluck_creates{0},
       cq_next_creates{0},
       cq_callback_creates{0},
-      wrr_updates{0} {}
+      wrr_updates{0},
+      work_serializer_items_enqueued{0},
+      work_serializer_items_dequeued{0} {}
 HistogramView GlobalStats::histogram(Histogram which) const {
   switch (which) {
     default:
@@ -369,6 +377,9 @@ HistogramView GlobalStats::histogram(Histogram which) const {
     case Histogram::kWorkSerializerWorkTimeMs:
       return HistogramView{&Histogram_100000_20::BucketFor, kStatsTable0, 20,
                            work_serializer_work_time_ms.buckets()};
+    case Histogram::kWorkSerializerWorkTimePerItemMs:
+      return HistogramView{&Histogram_100000_20::BucketFor, kStatsTable0, 20,
+                           work_serializer_work_time_per_item_ms.buckets()};
     case Histogram::kWorkSerializerItemsPerRun:
       return HistogramView{&Histogram_10000_20::BucketFor, kStatsTable8, 20,
                            work_serializer_items_per_run.buckets()};
@@ -412,6 +423,10 @@ std::unique_ptr<GlobalStats> GlobalStatsCollector::Collect() const {
     result->cq_callback_creates +=
         data.cq_callback_creates.load(std::memory_order_relaxed);
     result->wrr_updates += data.wrr_updates.load(std::memory_order_relaxed);
+    result->work_serializer_items_enqueued +=
+        data.work_serializer_items_enqueued.load(std::memory_order_relaxed);
+    result->work_serializer_items_dequeued +=
+        data.work_serializer_items_dequeued.load(std::memory_order_relaxed);
     data.call_initial_size.Collect(&result->call_initial_size);
     data.tcp_write_size.Collect(&result->tcp_write_size);
     data.tcp_write_iov_size.Collect(&result->tcp_write_iov_size);
@@ -426,6 +441,8 @@ std::unique_ptr<GlobalStats> GlobalStatsCollector::Collect() const {
         &result->work_serializer_run_time_ms);
     data.work_serializer_work_time_ms.Collect(
         &result->work_serializer_work_time_ms);
+    data.work_serializer_work_time_per_item_ms.Collect(
+        &result->work_serializer_work_time_per_item_ms);
     data.work_serializer_items_per_run.Collect(
         &result->work_serializer_items_per_run);
   }
@@ -460,6 +477,10 @@ std::unique_ptr<GlobalStats> GlobalStats::Diff(const GlobalStats& other) const {
   result->cq_next_creates = cq_next_creates - other.cq_next_creates;
   result->cq_callback_creates = cq_callback_creates - other.cq_callback_creates;
   result->wrr_updates = wrr_updates - other.wrr_updates;
+  result->work_serializer_items_enqueued =
+      work_serializer_items_enqueued - other.work_serializer_items_enqueued;
+  result->work_serializer_items_dequeued =
+      work_serializer_items_dequeued - other.work_serializer_items_dequeued;
   result->call_initial_size = call_initial_size - other.call_initial_size;
   result->tcp_write_size = tcp_write_size - other.tcp_write_size;
   result->tcp_write_iov_size = tcp_write_iov_size - other.tcp_write_iov_size;
@@ -478,6 +499,9 @@ std::unique_ptr<GlobalStats> GlobalStats::Diff(const GlobalStats& other) const {
       work_serializer_run_time_ms - other.work_serializer_run_time_ms;
   result->work_serializer_work_time_ms =
       work_serializer_work_time_ms - other.work_serializer_work_time_ms;
+  result->work_serializer_work_time_per_item_ms =
+      work_serializer_work_time_per_item_ms -
+      other.work_serializer_work_time_per_item_ms;
   result->work_serializer_items_per_run =
       work_serializer_items_per_run - other.work_serializer_items_per_run;
   return result;

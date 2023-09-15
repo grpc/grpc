@@ -166,6 +166,8 @@ struct GlobalStats {
     kCqNextCreates,
     kCqCallbackCreates,
     kWrrUpdates,
+    kWorkSerializerItemsEnqueued,
+    kWorkSerializerItemsDequeued,
     COUNT
   };
   enum class Histogram {
@@ -181,6 +183,7 @@ struct GlobalStats {
     kWrrSubchannelReadySize,
     kWorkSerializerRunTimeMs,
     kWorkSerializerWorkTimeMs,
+    kWorkSerializerWorkTimePerItemMs,
     kWorkSerializerItemsPerRun,
     COUNT
   };
@@ -212,6 +215,8 @@ struct GlobalStats {
       uint64_t cq_next_creates;
       uint64_t cq_callback_creates;
       uint64_t wrr_updates;
+      uint64_t work_serializer_items_enqueued;
+      uint64_t work_serializer_items_dequeued;
     };
     uint64_t counters[static_cast<int>(Counter::COUNT)];
   };
@@ -227,6 +232,7 @@ struct GlobalStats {
   Histogram_10000_20 wrr_subchannel_ready_size;
   Histogram_100000_20 work_serializer_run_time_ms;
   Histogram_100000_20 work_serializer_work_time_ms;
+  Histogram_100000_20 work_serializer_work_time_per_item_ms;
   Histogram_10000_20 work_serializer_items_per_run;
   HistogramView histogram(Histogram which) const;
   std::unique_ptr<GlobalStats> Diff(const GlobalStats& other) const;
@@ -301,6 +307,14 @@ class GlobalStatsCollector {
   void IncrementWrrUpdates() {
     data_.this_cpu().wrr_updates.fetch_add(1, std::memory_order_relaxed);
   }
+  void IncrementWorkSerializerItemsEnqueued() {
+    data_.this_cpu().work_serializer_items_enqueued.fetch_add(
+        1, std::memory_order_relaxed);
+  }
+  void IncrementWorkSerializerItemsDequeued() {
+    data_.this_cpu().work_serializer_items_dequeued.fetch_add(
+        1, std::memory_order_relaxed);
+  }
   void IncrementCallInitialSize(int value) {
     data_.this_cpu().call_initial_size.Increment(value);
   }
@@ -337,6 +351,9 @@ class GlobalStatsCollector {
   void IncrementWorkSerializerWorkTimeMs(int value) {
     data_.this_cpu().work_serializer_work_time_ms.Increment(value);
   }
+  void IncrementWorkSerializerWorkTimePerItemMs(int value) {
+    data_.this_cpu().work_serializer_work_time_per_item_ms.Increment(value);
+  }
   void IncrementWorkSerializerItemsPerRun(int value) {
     data_.this_cpu().work_serializer_items_per_run.Increment(value);
   }
@@ -362,6 +379,8 @@ class GlobalStatsCollector {
     std::atomic<uint64_t> cq_next_creates{0};
     std::atomic<uint64_t> cq_callback_creates{0};
     std::atomic<uint64_t> wrr_updates{0};
+    std::atomic<uint64_t> work_serializer_items_enqueued{0};
+    std::atomic<uint64_t> work_serializer_items_dequeued{0};
     HistogramCollector_65536_26 call_initial_size;
     HistogramCollector_16777216_20 tcp_write_size;
     HistogramCollector_80_10 tcp_write_iov_size;
@@ -374,6 +393,7 @@ class GlobalStatsCollector {
     HistogramCollector_10000_20 wrr_subchannel_ready_size;
     HistogramCollector_100000_20 work_serializer_run_time_ms;
     HistogramCollector_100000_20 work_serializer_work_time_ms;
+    HistogramCollector_100000_20 work_serializer_work_time_per_item_ms;
     HistogramCollector_10000_20 work_serializer_items_per_run;
   };
   PerCpu<Data> data_{PerCpuOptions().SetCpusPerShard(4).SetMaxShards(32)};

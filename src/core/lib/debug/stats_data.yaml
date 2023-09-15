@@ -107,7 +107,15 @@
   doc: When running, how many milliseconds are work serializers actually doing work
   max: 100000
   buckets: 20
+- histogram: work_serializer_work_time_per_item_ms
+  doc: How long do individual items take to process in work serializers
+  max: 100000
+  buckets: 20
 - histogram: work_serializer_items_per_run
   doc: How many callbacks are executed when a work serializer runs
   max: 10000
   buckets: 20
+- counter: work_serializer_items_enqueued
+  doc: Number of items enqueued onto work serializers
+- counter: work_serializer_items_dequeued
+  doc: Number of items dequeued from work serializers
