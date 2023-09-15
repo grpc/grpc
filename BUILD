@@ -2411,6 +2411,7 @@ grpc_cc_library(
         "gpr",
         "grpc_trace",
         "orphanable",
+        "stats",
         "//src/core:experiments",
     ],
 )

@@ -18,7 +18,6 @@
 
 #include "src/core/lib/gprpp/work_serializer.h"
 
-#include <bits/chrono.h>
 #include <stdint.h>
 
 #include <algorithm>
