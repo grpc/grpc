@@ -71,9 +71,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
@@ -343,7 +341,11 @@ class ClientChannel::PromiseBasedCallData : public ClientChannel::CallData {
                 chand_, this, Activity::current()->DebugTag().c_str(),
                 result.has_value() ? result->ToString().c_str() : "Pending");
       }
-      if (!result.has_value()) return Pending{};
+      if (!result.has_value()) {
+        waker_ = Activity::current()->MakeNonOwningWaker();
+        was_queued_ = true;
+        return Pending{};
+      }
       if (!result->ok()) return *result;
       call_args.client_initial_metadata = std::move(client_initial_metadata_);
       return std::move(call_args);
@@ -361,17 +363,10 @@ class ClientChannel::PromiseBasedCallData : public ClientChannel::CallData {
     return GetContext<grpc_call_context_element>();
   }
 
-  void OnAddToQueueLocked() override
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::resolution_mu_) {
-    waker_ = Activity::current()->MakeNonOwningWaker();
-    was_queued_ = true;
-  }
-
-  void RetryCheckResolutionLocked()
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::resolution_mu_) override {
+  void RetryCheckResolutionLocked() override {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
-      gpr_log(GPR_INFO, "chand=%p calld=%p: RetryCheckResolutionLocked(): %s",
-              chand_, this, waker_.ActivityDebugTag().c_str());
+      gpr_log(GPR_INFO, "chand=%p calld=%p: RetryCheckResolutionLocked()",
+              chand_, this);
     }
     waker_.WakeupAsync();
   }
@@ -388,7 +383,7 @@ class ClientChannel::PromiseBasedCallData : public ClientChannel::CallData {
   grpc_polling_entity pollent_;
   ClientMetadataHandle client_initial_metadata_;
   bool was_queued_ = false;
-  Waker waker_ ABSL_GUARDED_BY(&ClientChannel::resolution_mu_);
+  Waker waker_;
 };
 
 //
@@ -1219,8 +1214,7 @@ ClientChannel::ClientChannel(grpc_channel_element_args* args,
       interested_parties_(grpc_pollset_set_create()),
       service_config_parser_index_(
           internal::ClientChannelServiceConfigParser::ParserIndex()),
-      work_serializer_(
-          std::make_shared<WorkSerializer>(*args->channel_stack->event_engine)),
+      work_serializer_(std::make_shared<WorkSerializer>()),
       state_tracker_("client_channel", GRPC_CHANNEL_IDLE),
       subchannel_pool_(GetSubchannelPool(channel_args_)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_trace)) {
@@ -1780,10 +1774,6 @@ void ClientChannel::DestroyResolverAndLbPolicyLocked() {
 void ClientChannel::UpdateStateLocked(grpc_connectivity_state state,
                                       const absl::Status& status,
                                       const char* reason) {
-  if (state != GRPC_CHANNEL_SHUTDOWN &&
-      state_tracker_.state() == GRPC_CHANNEL_SHUTDOWN) {
-    Crash("Illegal transition SHUTDOWN -> anything");
-  }
   state_tracker_.SetState(state, status, reason);
   if (channelz_node_ != nullptr) {
     channelz_node_->SetConnectivityState(state);
@@ -1980,12 +1970,10 @@ void ClientChannel::GetChannelInfo(grpc_channel_element* elem,
 }
 
 void ClientChannel::TryToConnectLocked() {
-  if (disconnect_error_.ok()) {
-    if (lb_policy_ != nullptr) {
-      lb_policy_->ExitIdleLocked();
-    } else if (resolver_ == nullptr) {
-      CreateResolverLocked();
-    }
+  if (lb_policy_ != nullptr) {
+    lb_policy_->ExitIdleLocked();
+  } else if (resolver_ == nullptr) {
+    CreateResolverLocked();
   }
   GRPC_CHANNEL_STACK_UNREF(owning_stack_, "TryToConnect");
 }

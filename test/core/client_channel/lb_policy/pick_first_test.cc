@@ -25,7 +25,6 @@
 
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
-#include "absl/synchronization/notification.h"
 #include "absl/types/optional.h"
 #include "absl/types/span.h"
 #include "gmock/gmock.h"
@@ -35,6 +34,7 @@
 #include <grpc/support/json.h>
 
 #include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/json/json.h"
@@ -48,7 +48,7 @@ namespace {
 
 class PickFirstTest : public LoadBalancingPolicyTest {
  protected:
-  PickFirstTest() : LoadBalancingPolicyTest("pick_first") {}
+  PickFirstTest() : lb_policy_(MakeLbPolicy("pick_first")) {}
 
   static RefCountedPtr<LoadBalancingPolicy::Config> MakePickFirstConfig(
       absl::optional<bool> shuffle_address_list = absl::nullopt) {
@@ -65,19 +65,9 @@ class PickFirstTest : public LoadBalancingPolicyTest {
   void GetOrderAddressesArePicked(
       absl::Span<const absl::string_view> addresses,
       std::vector<absl::string_view>* out_address_order) {
+    work_serializer_->Run([&]() { lb_policy_->ExitIdleLocked(); },
+                          DEBUG_LOCATION);
     out_address_order->clear();
-    // Note: ExitIdle() will enqueue a bunch of connectivity state
-    // notifications on the WorkSerializer, and we want to wait until
-    // those are delivered to the LB policy.
-    absl::Notification notification;
-    work_serializer_->Run(
-        [&]() {
-          lb_policy()->ExitIdleLocked();
-          work_serializer_->Run([&]() { notification.Notify(); },
-                                DEBUG_LOCATION);
-        },
-        DEBUG_LOCATION);
-    notification.WaitForNotification();
     // Construct a map of subchannel to address.
     // We will remove entries as each subchannel starts to connect.
     std::map<SubchannelState*, absl::string_view> subchannels;
@@ -132,6 +122,8 @@ class PickFirstTest : public LoadBalancingPolicyTest {
       subchannels.erase(subchannel);
     }
   }
+
+  OrphanablePtr<LoadBalancingPolicy> lb_policy_;
 };
 
 TEST_F(PickFirstTest, FirstAddressWorks) {
@@ -139,7 +131,7 @@ TEST_F(PickFirstTest, FirstAddressWorks) {
   constexpr std::array<absl::string_view, 2> kAddresses = {
       "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444"};
   absl::Status status = ApplyUpdate(
-      BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy());
+      BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy_.get());
   EXPECT_TRUE(status.ok()) << status;
   // LB policy should have created a subchannel for both addresses.
   auto* subchannel = FindSubchannel(kAddresses[0]);
@@ -172,7 +164,7 @@ TEST_F(PickFirstTest, FirstAddressFails) {
   constexpr std::array<absl::string_view, 2> kAddresses = {
       "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444"};
   absl::Status status = ApplyUpdate(
-      BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy());
+      BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy_.get());
   EXPECT_TRUE(status.ok()) << status;
   // LB policy should have created a subchannel for both addresses.
   auto* subchannel = FindSubchannel(kAddresses[0]);
@@ -224,7 +216,7 @@ TEST_F(PickFirstTest, FirstTwoAddressesInTransientFailureAtStart) {
                                     absl::UnavailableError("failed to connect"),
                                     /*validate_state_transition=*/false);
   absl::Status status = ApplyUpdate(
-      BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy());
+      BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy_.get());
   EXPECT_TRUE(status.ok()) << status;
   // LB policy should have created a subchannel for all addresses.
   auto* subchannel3 = FindSubchannel(kAddresses[2]);
@@ -267,7 +259,7 @@ TEST_F(PickFirstTest, AllAddressesInTransientFailureAtStart) {
                                     absl::UnavailableError("failed to connect"),
                                     /*validate_state_transition=*/false);
   absl::Status status = ApplyUpdate(
-      BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy());
+      BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy_.get());
   EXPECT_TRUE(status.ok()) << status;
   // The LB policy should request re-resolution.
   ExpectReresolutionRequest();
@@ -313,7 +305,7 @@ TEST_F(PickFirstTest, StaysInTransientFailureAfterAddressListUpdate) {
                                     absl::UnavailableError("failed to connect"),
                                     /*validate_state_transition=*/false);
   absl::Status status = ApplyUpdate(
-      BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy());
+      BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy_.get());
   EXPECT_TRUE(status.ok()) << status;
   // The LB policy should request re-resolution.
   ExpectReresolutionRequest();
@@ -332,7 +324,7 @@ TEST_F(PickFirstTest, StaysInTransientFailureAfterAddressListUpdate) {
   constexpr std::array<absl::string_view, 2> kAddresses2 = {
       kAddresses[0], "ipv4:127.0.0.1:445"};
   status = ApplyUpdate(BuildUpdate(kAddresses2, MakePickFirstConfig(false)),
-                       lb_policy());
+                       lb_policy_.get());
   EXPECT_TRUE(status.ok()) << status;
   // The LB policy should have created a subchannel for the new address.
   auto* subchannel3 = FindSubchannel(kAddresses2[1]);
@@ -357,7 +349,7 @@ TEST_F(PickFirstTest, FirstAddressGoesIdleBeforeSecondOneFails) {
   constexpr std::array<absl::string_view, 2> kAddresses = {
       "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444"};
   absl::Status status = ApplyUpdate(
-      BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy());
+      BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy_.get());
   EXPECT_TRUE(status.ok()) << status;
   // LB policy should have created a subchannel for both addresses.
   auto* subchannel = FindSubchannel(kAddresses[0]);
@@ -418,7 +410,7 @@ TEST_F(PickFirstTest, GoesIdleWhenConnectionFailsThenCanReconnect) {
   constexpr std::array<absl::string_view, 2> kAddresses = {
       "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444"};
   absl::Status status = ApplyUpdate(
-      BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy());
+      BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy_.get());
   EXPECT_TRUE(status.ok()) << status;
   // LB policy should have created a subchannel for both addresses.
   auto* subchannel = FindSubchannel(kAddresses[0]);
@@ -453,13 +445,6 @@ TEST_F(PickFirstTest, GoesIdleWhenConnectionFailsThenCanReconnect) {
   // By checking the picker, we told the LB policy to trigger a new
   // connection attempt, so it should start over with the first
   // subchannel.
-  // Note that the picker will have enqueued the ExitIdle() call in the
-  // WorkSerializer, so the first flush will execute that call.  But
-  // executing that call will result in enqueueing subchannel
-  // connectivity state notifications, so we need to flush again to make
-  // sure all of that work is done before we continue.
-  WaitForWorkSerializerToFlush();
-  WaitForWorkSerializerToFlush();
   EXPECT_TRUE(subchannel->ConnectionRequested());
   // The subchannel starts connecting.
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
@@ -488,7 +473,7 @@ TEST_F(PickFirstTest, WithShuffle) {
   bool shuffled = false;
   for (size_t i = 0; i < kMaxTries; ++i) {
     absl::Status status = ApplyUpdate(
-        BuildUpdate(kAddresses, MakePickFirstConfig(true)), lb_policy());
+        BuildUpdate(kAddresses, MakePickFirstConfig(true)), lb_policy_.get());
     EXPECT_TRUE(status.ok()) << status;
     GetOrderAddressesArePicked(kAddresses, &addresses_after_update);
     if (absl::MakeConstSpan(addresses_after_update) !=
@@ -511,7 +496,7 @@ TEST_F(PickFirstTest, ShufflingDisabled) {
   constexpr static size_t kMaxAttempts = 5;
   for (size_t attempt = 0; attempt < kMaxAttempts; ++attempt) {
     absl::Status status = ApplyUpdate(
-        BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy());
+        BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy_.get());
     EXPECT_TRUE(status.ok()) << status;
     std::vector<absl::string_view> address_order;
     GetOrderAddressesArePicked(kAddresses, &address_order);
@@ -525,5 +510,8 @@ TEST_F(PickFirstTest, ShufflingDisabled) {
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(&argc, argv);
-  return RUN_ALL_TESTS();
+  grpc_init();
+  int ret = RUN_ALL_TESTS();
+  grpc_shutdown();
+  return ret;
 }

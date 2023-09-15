@@ -492,9 +492,8 @@ TEST_F(KeepaliveThrottlingTest, NewSubchannelsUseUpdatedKeepaliveTime) {
   for (int i = 0; i < 3; i++) {
     gpr_log(GPR_INFO, "Expected keepalive time : %d",
             expected_keepalive_time_sec);
-    response_generator->SetResponseSynchronously(
-        BuildResolverResult({absl::StrCat(
-            "ipv4:", i % 2 == 0 ? server_address1 : server_address2)}));
+    response_generator->SetResponse(BuildResolverResult({absl::StrCat(
+        "ipv4:", i % 2 == 0 ? server_address1 : server_address2)}));
     // ExecCtx::Flush() might not be enough to make sure that the resolver
     // result has been propagated, so sleep for a bit.
     grpc_core::ExecCtx::Get()->Flush();
@@ -507,7 +506,7 @@ TEST_F(KeepaliveThrottlingTest, NewSubchannelsUseUpdatedKeepaliveTime) {
       GPR_INFO,
       "Client keepalive time %d should now be in sync with the server settings",
       expected_keepalive_time_sec);
-  response_generator->SetResponseSynchronously(
+  response_generator->SetResponse(
       BuildResolverResult({absl::StrCat("ipv4:", server_address2)}));
   grpc_core::ExecCtx::Get()->Flush();
   gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
@@ -555,7 +554,7 @@ TEST_F(KeepaliveThrottlingTest,
   grpc_channel* channel =
       grpc_channel_create("fake:///", creds, &client_channel_args);
   grpc_channel_credentials_release(creds);
-  response_generator->SetResponseSynchronously(
+  response_generator->SetResponse(
       BuildResolverResult({absl::StrCat("ipv4:", server_address1),
                            absl::StrCat("ipv4:", server_address2)}));
   // For a single subchannel 3 GOAWAYs would be sufficient to increase the

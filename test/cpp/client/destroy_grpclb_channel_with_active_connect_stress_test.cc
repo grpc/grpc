@@ -76,7 +76,7 @@ void TryConnectAndDestroy() {
       << lb_address_result.service_config.status();
   lb_address_result.args = grpc_core::SetGrpcLbBalancerAddresses(
       grpc_core::ChannelArgs(), addresses);
-  response_generator->SetResponseAsync(lb_address_result);
+  response_generator->SetResponse(lb_address_result);
   grpc::ChannelArguments args;
   args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
                   response_generator.get());

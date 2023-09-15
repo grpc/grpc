@@ -34,8 +34,7 @@ grpc_cc_library(
     deps = [
         "//src/core:lb_policy",
         "//src/core:subchannel_interface",
-        "//test/core/event_engine:event_engine_test_utils",
-        "//test/core/event_engine/fuzzing_event_engine",
+        "//test/core/event_engine:mock_event_engine",
     ],
 )
 
@@ -83,9 +82,7 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
-    tags = [
-        "no_test_ios",
-    ],
+    tags = ["no_test_ios"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -120,9 +117,7 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
-    tags = [
-        "no_test_ios",
-    ],
+    tags = ["no_test_ios"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -155,9 +150,7 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
-    tags = [
-        "no_test_ios",
-    ],
+    tags = ["no_test_ios"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -208,9 +201,7 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
-    tags = [
-        "no_test_ios",
-    ],
+    tags = ["no_test_ios"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
