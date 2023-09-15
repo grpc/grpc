@@ -192,3 +192,10 @@
   expiry: 2023/11/15
   owner: roth@google.com
   test_tags: ["lb_unit_test", "cpp_lb_end2end_test", "xds_end2end_test"]
+- name: client_channel_subchannel_wrapper_work_serializer_orphan
+  description:
+    Client channel subchannel wrapper hops into WorkSerializer at
+    Orphan() time, rather than requiring callers to do it.
+  expiry: 2023/11/15
+  owner: roth@google.com
+  test_tags: ["lb_unit_test", "cpp_lb_end2end_test", "xds_end2end_test"]

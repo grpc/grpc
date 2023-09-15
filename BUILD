@@ -3065,6 +3065,7 @@ grpc_cc_library(
         "//src/core:dual_ref_counted",
         "//src/core:env",
         "//src/core:error",
+        "//src/core:experiments",
         "//src/core:gpr_atm",
         "//src/core:grpc_backend_metric_data",
         "//src/core:grpc_deadline_filter",
