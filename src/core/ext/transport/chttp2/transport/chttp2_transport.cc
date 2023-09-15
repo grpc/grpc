@@ -2538,8 +2538,13 @@ static void read_action_locked(
     grpc_error_handle errors[3] = {error, absl::OkStatus(), absl::OkStatus()};
     size_t requests_started = 0;
     for (; i < t->read_buffer.count && errors[1] == absl::OkStatus(); i++) {
-      errors[1] = grpc_chttp2_perform_read(t.get(), t->read_buffer.slices[i],
-                                           requests_started);
+      auto r = grpc_chttp2_perform_read(t.get(), t->read_buffer.slices[i],
+                                        requests_started);
+      if (auto* slice = absl::get_if<grpc_slice>(&r)) {
+        grpc_core::Crash("unimplemented");
+      } else {
+        errors[1] = std::move(absl::get<absl::Status>(r));
+      }
     }
     if (errors[1] != absl::OkStatus()) {
       errors[2] = try_http_parsing(t.get());

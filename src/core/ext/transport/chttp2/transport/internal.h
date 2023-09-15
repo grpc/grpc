@@ -626,11 +626,15 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
     grpc_chttp2_transport* t);
 void grpc_chttp2_end_write(grpc_chttp2_transport* t, grpc_error_handle error);
 
-/// Process one slice of incoming data; return 1 if the connection is still
-/// viable after reading, or 0 if the connection should be torn down
-grpc_error_handle grpc_chttp2_perform_read(grpc_chttp2_transport* t,
-                                           const grpc_slice& slice,
-                                           size_t& requests_started);
+/// Process one slice of incoming data
+/// Returns:
+///  - a reffed slice in the case that the read didn't finish: in this case
+///    the caller should offload the current read to a new thread and continue
+///    there
+///  - or a status in the case of a completed read
+absl::variant<grpc_slice, absl::Status> grpc_chttp2_perform_read(
+    grpc_chttp2_transport* t, const grpc_slice& slice,
+    size_t& requests_started);
 
 bool grpc_chttp2_list_add_writable_stream(grpc_chttp2_transport* t,
                                           grpc_chttp2_stream* s);
