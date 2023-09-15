@@ -170,6 +170,9 @@ class ServerCallTracerFactory {
 
   virtual ServerCallTracer* CreateNewServerCallTracer(Arena* arena) = 0;
 
+  // Returns true if a server is to be traced, false otherwise.
+  virtual bool IsServerTraced(const ChannelArgs& /*args*/) { return true; }
+
   // Use this method to get the server call tracer factory from channel args,
   // instead of directly fetching it with `GetObject`.
   static ServerCallTracerFactory* Get(const ChannelArgs& channel_args);

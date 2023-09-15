@@ -1157,6 +1157,7 @@ grpc_cc_library(
         "gpr",
         "grpc",
         "grpc++_base",
+        "//src/core:xds_enabled_server",
     ],
 )
 
