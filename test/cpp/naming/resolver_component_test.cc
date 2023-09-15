@@ -201,8 +201,7 @@ void ArgsInit(ArgsStruct* args) {
   grpc_pollset_init(args->pollset, &args->mu);
   args->pollset_set = grpc_pollset_set_create();
   grpc_pollset_set_add_pollset(args->pollset_set, args->pollset);
-  args->lock = std::make_shared<grpc_core::WorkSerializer>(
-      grpc_event_engine::experimental::GetDefaultEventEngine());
+  args->lock = std::make_shared<grpc_core::WorkSerializer>();
   args->done = false;
   args->channel_args = nullptr;
 }

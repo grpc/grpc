@@ -80,7 +80,6 @@ void run_test(bool wait_for_ready) {
                                    grpc_core::CqVerifier::tag(1), nullptr));
 
   {
-    response_generator->WaitForResolverSet();
     grpc_core::ExecCtx exec_ctx;
     response_generator->SetFailure();
   }

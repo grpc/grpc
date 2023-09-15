@@ -23,7 +23,6 @@
 #include <inttypes.h>
 
 #include <atomic>
-#include <chrono>
 #include <memory>
 #include <utility>
 
@@ -87,15 +86,10 @@ namespace grpc_event_engine {
 namespace experimental {
 
 namespace {
-// TODO(ctiller): grpc_core::Timestamp, Duration have very specific contracts
-// around time caching and around when the underlying gpr_now call can be
-// substituted out.
-// We should probably move all usage here to std::chrono to avoid weird bugs in
-// the future.
-
 // Maximum amount of time an extra thread is allowed to idle before being
 // reclaimed.
-constexpr auto kIdleThreadLimit = std::chrono::seconds(20);
+constexpr grpc_core::Duration kIdleThreadLimit =
+    grpc_core::Duration::Seconds(20);
 // Rate at which "Waiting for ..." logs should be printed while quiescing.
 constexpr size_t kBlockingQuiesceLogRateSeconds = 3;
 // Minumum time between thread creations.
@@ -430,7 +424,7 @@ bool WorkStealingThreadPool::ThreadState::Step() {
   // * the global queue is empty
   // * the steal pool returns nullptr
   bool should_run_again = false;
-  auto start_time = std::chrono::steady_clock::now();
+  grpc_core::Timestamp start_time{grpc_core::Timestamp::Now()};
   // Wait until work is available or until shut down.
   while (!pool_->IsForking()) {
     // Pull from the global queue next
@@ -458,7 +452,7 @@ bool WorkStealingThreadPool::ThreadState::Step() {
     // has been idle long enough.
     if (timed_out &&
         pool_->living_thread_count()->count() > pool_->reserve_threads() &&
-        std::chrono::steady_clock::now() - start_time > kIdleThreadLimit) {
+        grpc_core::Timestamp::Now() - start_time > kIdleThreadLimit) {
       return false;
     }
   }
