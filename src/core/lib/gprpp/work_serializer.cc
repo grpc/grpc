@@ -291,7 +291,7 @@ void WorkSerializer::LegacyWorkSerializer::DrainQueueOwned() {
 // callback in the queue when scheduling.
 class WorkSerializer::DispatchingWorkSerializer final
     : public WorkSerializerImpl,
-      private grpc_event_engine::experimental::EventEngine::Closure {
+      public grpc_event_engine::experimental::EventEngine::Closure {
  public:
   explicit DispatchingWorkSerializer(
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
@@ -306,6 +306,9 @@ class WorkSerializer::DispatchingWorkSerializer final
   }
   void DrainQueue() override {}
   void Orphan() override;
+
+  // Override EventEngine::Closure
+  void Run() override;
 
 #ifndef NDEBUG
   bool RunningInWorkSerializer() const override {
@@ -323,9 +326,6 @@ class WorkSerializer::DispatchingWorkSerializer final
     GPR_NO_UNIQUE_ADDRESS DebugLocation location;
   };
   using CallbackVector = absl::InlinedVector<CallbackWrapper, 1>;
-
-  // Override EventEngine::Closure
-  void Run() override;
 
   // Refill processing_ from incoming_
   // If processing_ is empty, also update running_ and return false.

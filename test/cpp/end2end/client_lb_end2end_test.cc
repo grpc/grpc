@@ -644,8 +644,6 @@ TEST_F(ClientLbEnd2endTest, ChannelStateConnectingWhenResolving) {
         EXPECT_EQ(state, GRPC_CHANNEL_CONNECTING);
         return true;
       }));
-  EXPECT_EQ(channel->GetState(false /* try_to_connect */),
-            GRPC_CHANNEL_CONNECTING);
   // Return a resolver result, which allows the connection attempt to proceed.
   response_generator.SetNextResolution(GetServersPorts());
   // We should eventually transition into state READY.

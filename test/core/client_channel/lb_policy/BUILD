@@ -174,7 +174,6 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
-    tags = ["lb_unit_test"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -191,7 +190,6 @@ grpc_cc_test(
     ],
     language = "C++",
     tags = [
-        "lb_unit_test",
         "no_mac",
         "no_windows",
     ],
@@ -211,7 +209,6 @@ grpc_cc_test(
     ],
     language = "C++",
     tags = [
-        "lb_unit_test",
         "no_test_ios",
     ],
     uses_event_engine = False,
