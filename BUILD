@@ -83,12 +83,13 @@ config_setting(
 
 config_setting(
     name = "android",
+    constraint_values = ["//third_party/bazel_platforms/os:android"],
     values = {"crosstool_top": "//external:android/crosstool"},
 )
 
 config_setting(
     name = "macos",
-    values = {"apple_platform_type": "macos"},
+    constraint_values = ["//third_party/bazel_platforms/os:macos"],
 )
 
 config_setting(
@@ -98,12 +99,12 @@ config_setting(
 
 config_setting(
     name = "tvos",
-    values = {"apple_platform_type": "tvos"},
+    constraint_values = ["//third_party/bazel_platforms/os:tvos"],
 )
 
 config_setting(
     name = "watchos",
-    values = {"apple_platform_type": "watchos"},
+    constraint_values = ["//third_party/bazel_platforms/os:watchos"],
 )
 
 config_setting(
