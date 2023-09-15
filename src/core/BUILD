@@ -2394,6 +2394,7 @@ grpc_cc_library(
     hdrs = [
         "lib/event_engine/ares_resolver.h",
         "lib/event_engine/grpc_polled_fd.h",
+        "lib/event_engine/nameser.h",
         "lib/event_engine/posix_engine/grpc_polled_fd_posix.h",
     ],
     external_deps = [
@@ -3300,6 +3301,7 @@ grpc_cc_library(
     name = "grpc_tls_credentials",
     srcs = [
         "lib/security/credentials/tls/grpc_tls_certificate_distributor.cc",
+        "lib/security/credentials/tls/grpc_tls_certificate_match.cc",
         "lib/security/credentials/tls/grpc_tls_certificate_provider.cc",
         "lib/security/credentials/tls/grpc_tls_certificate_verifier.cc",
         "lib/security/credentials/tls/grpc_tls_credentials_options.cc",
