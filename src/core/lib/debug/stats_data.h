@@ -30,6 +30,29 @@
 #include "src/core/lib/gprpp/per_cpu.h"
 
 namespace grpc_core {
+class HistogramCollector_100000_20;
+class Histogram_100000_20 {
+ public:
+  static int BucketFor(int value);
+  const uint64_t* buckets() const { return buckets_; }
+  friend Histogram_100000_20 operator-(const Histogram_100000_20& left,
+                                       const Histogram_100000_20& right);
+
+ private:
+  friend class HistogramCollector_100000_20;
+  uint64_t buckets_[20]{};
+};
+class HistogramCollector_100000_20 {
+ public:
+  void Increment(int value) {
+    buckets_[Histogram_100000_20::BucketFor(value)].fetch_add(
+        1, std::memory_order_relaxed);
+  }
+  void Collect(Histogram_100000_20* result) const;
+
+ private:
+  std::atomic<uint64_t> buckets_[20]{};
+};
 class HistogramCollector_65536_26;
 class Histogram_65536_26 {
  public:
@@ -76,29 +99,6 @@ class HistogramCollector_16777216_20 {
  private:
   std::atomic<uint64_t> buckets_[20]{};
 };
-class HistogramCollector_10000_20;
-class Histogram_10000_20 {
- public:
-  static int BucketFor(int value);
-  const uint64_t* buckets() const { return buckets_; }
-  friend Histogram_10000_20 operator-(const Histogram_10000_20& left,
-                                      const Histogram_10000_20& right);
-
- private:
-  friend class HistogramCollector_10000_20;
-  uint64_t buckets_[20]{};
-};
-class HistogramCollector_10000_20 {
- public:
-  void Increment(int value) {
-    buckets_[Histogram_10000_20::BucketFor(value)].fetch_add(
-        1, std::memory_order_relaxed);
-  }
-  void Collect(Histogram_10000_20* result) const;
-
- private:
-  std::atomic<uint64_t> buckets_[20]{};
-};
 class HistogramCollector_80_10;
 class Histogram_80_10 {
  public:
@@ -121,6 +121,29 @@ class HistogramCollector_80_10 {
 
  private:
   std::atomic<uint64_t> buckets_[10]{};
+};
+class HistogramCollector_10000_20;
+class Histogram_10000_20 {
+ public:
+  static int BucketFor(int value);
+  const uint64_t* buckets() const { return buckets_; }
+  friend Histogram_10000_20 operator-(const Histogram_10000_20& left,
+                                      const Histogram_10000_20& right);
+
+ private:
+  friend class HistogramCollector_10000_20;
+  uint64_t buckets_[20]{};
+};
+class HistogramCollector_10000_20 {
+ public:
+  void Increment(int value) {
+    buckets_[Histogram_10000_20::BucketFor(value)].fetch_add(
+        1, std::memory_order_relaxed);
+  }
+  void Collect(Histogram_10000_20* result) const;
+
+ private:
+  std::atomic<uint64_t> buckets_[20]{};
 };
 struct GlobalStats {
   enum class Counter {
@@ -156,6 +179,9 @@ struct GlobalStats {
     kHttp2MetadataSize,
     kWrrSubchannelListSize,
     kWrrSubchannelReadySize,
+    kWorkSerializerRunTimeMs,
+    kWorkSerializerWorkTimeMs,
+    kWorkSerializerItemsPerRun,
     COUNT
   };
   GlobalStats();
@@ -199,6 +225,9 @@ struct GlobalStats {
   Histogram_65536_26 http2_metadata_size;
   Histogram_10000_20 wrr_subchannel_list_size;
   Histogram_10000_20 wrr_subchannel_ready_size;
+  Histogram_100000_20 work_serializer_run_time_ms;
+  Histogram_100000_20 work_serializer_work_time_ms;
+  Histogram_10000_20 work_serializer_items_per_run;
   HistogramView histogram(Histogram which) const;
   std::unique_ptr<GlobalStats> Diff(const GlobalStats& other) const;
 };
@@ -302,6 +331,15 @@ class GlobalStatsCollector {
   void IncrementWrrSubchannelReadySize(int value) {
     data_.this_cpu().wrr_subchannel_ready_size.Increment(value);
   }
+  void IncrementWorkSerializerRunTimeMs(int value) {
+    data_.this_cpu().work_serializer_run_time_ms.Increment(value);
+  }
+  void IncrementWorkSerializerWorkTimeMs(int value) {
+    data_.this_cpu().work_serializer_work_time_ms.Increment(value);
+  }
+  void IncrementWorkSerializerItemsPerRun(int value) {
+    data_.this_cpu().work_serializer_items_per_run.Increment(value);
+  }
 
  private:
   struct Data {
@@ -334,6 +372,9 @@ class GlobalStatsCollector {
     HistogramCollector_65536_26 http2_metadata_size;
     HistogramCollector_10000_20 wrr_subchannel_list_size;
     HistogramCollector_10000_20 wrr_subchannel_ready_size;
+    HistogramCollector_100000_20 work_serializer_run_time_ms;
+    HistogramCollector_100000_20 work_serializer_work_time_ms;
+    HistogramCollector_10000_20 work_serializer_items_per_run;
   };
   PerCpu<Data> data_{PerCpuOptions().SetCpusPerShard(4).SetMaxShards(32)};
 };

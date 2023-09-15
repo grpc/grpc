@@ -27,6 +27,19 @@ union DblUint {
   uint64_t uint;
 };
 }  // namespace
+void HistogramCollector_100000_20::Collect(Histogram_100000_20* result) const {
+  for (int i = 0; i < 20; i++) {
+    result->buckets_[i] += buckets_[i].load(std::memory_order_relaxed);
+  }
+}
+Histogram_100000_20 operator-(const Histogram_100000_20& left,
+                              const Histogram_100000_20& right) {
+  Histogram_100000_20 result;
+  for (int i = 0; i < 20; i++) {
+    result.buckets_[i] = left.buckets_[i] - right.buckets_[i];
+  }
+  return result;
+}
 void HistogramCollector_65536_26::Collect(Histogram_65536_26* result) const {
   for (int i = 0; i < 26; i++) {
     result->buckets_[i] += buckets_[i].load(std::memory_order_relaxed);
@@ -54,19 +67,6 @@ Histogram_16777216_20 operator-(const Histogram_16777216_20& left,
   }
   return result;
 }
-void HistogramCollector_10000_20::Collect(Histogram_10000_20* result) const {
-  for (int i = 0; i < 20; i++) {
-    result->buckets_[i] += buckets_[i].load(std::memory_order_relaxed);
-  }
-}
-Histogram_10000_20 operator-(const Histogram_10000_20& left,
-                             const Histogram_10000_20& right) {
-  Histogram_10000_20 result;
-  for (int i = 0; i < 20; i++) {
-    result.buckets_[i] = left.buckets_[i] - right.buckets_[i];
-  }
-  return result;
-}
 void HistogramCollector_80_10::Collect(Histogram_80_10* result) const {
   for (int i = 0; i < 10; i++) {
     result->buckets_[i] += buckets_[i].load(std::memory_order_relaxed);
@@ -76,6 +76,19 @@ Histogram_80_10 operator-(const Histogram_80_10& left,
                           const Histogram_80_10& right) {
   Histogram_80_10 result;
   for (int i = 0; i < 10; i++) {
+    result.buckets_[i] = left.buckets_[i] - right.buckets_[i];
+  }
+  return result;
+}
+void HistogramCollector_10000_20::Collect(Histogram_10000_20* result) const {
+  for (int i = 0; i < 20; i++) {
+    result->buckets_[i] += buckets_[i].load(std::memory_order_relaxed);
+  }
+}
+Histogram_10000_20 operator-(const Histogram_10000_20& left,
+                             const Histogram_10000_20& right) {
+  Histogram_10000_20 result;
+  for (int i = 0; i < 20; i++) {
     result.buckets_[i] = left.buckets_[i] - right.buckets_[i];
   }
   return result;
@@ -132,11 +145,19 @@ const absl::string_view GlobalStats::counter_doc[static_cast<int>(
 };
 const absl::string_view
     GlobalStats::histogram_name[static_cast<int>(Histogram::COUNT)] = {
-        "call_initial_size",        "tcp_write_size",
-        "tcp_write_iov_size",       "tcp_read_size",
-        "tcp_read_offer",           "tcp_read_offer_iov_size",
-        "http2_send_message_size",  "http2_metadata_size",
-        "wrr_subchannel_list_size", "wrr_subchannel_ready_size",
+        "call_initial_size",
+        "tcp_write_size",
+        "tcp_write_iov_size",
+        "tcp_read_size",
+        "tcp_read_offer",
+        "tcp_read_offer_iov_size",
+        "http2_send_message_size",
+        "http2_metadata_size",
+        "wrr_subchannel_list_size",
+        "wrr_subchannel_ready_size",
+        "work_serializer_run_time_ms",
+        "work_serializer_work_time_ms",
+        "work_serializer_items_per_run",
 };
 const absl::string_view GlobalStats::histogram_doc[static_cast<int>(
     Histogram::COUNT)] = {
@@ -150,31 +171,60 @@ const absl::string_view GlobalStats::histogram_doc[static_cast<int>(
     "Number of bytes consumed by metadata, according to HPACK accounting rules",
     "Number of subchannels in a subchannel list at picker creation time",
     "Number of READY subchannels in a subchannel list at picker creation time",
+    "Number of milliseconds work serializers run for",
+    "When running, how many milliseconds are work serializers actually doing "
+    "work",
+    "How many callbacks are executed when a work serializer runs",
 };
 namespace {
-const int kStatsTable0[27] = {0,    1,     2,     4,     7,     11,   17,
+const int kStatsTable0[21] = {0,    1,    2,    4,     8,     15,    27,
+                              49,   89,   160,  288,   517,   928,   1666,
+                              2991, 5369, 9637, 17297, 31045, 55719, 100000};
+const uint8_t kStatsTable1[30] = {3,  3,  4,  4,  5,  6,  6,  7,  7,  8,
+                                  9,  9,  10, 10, 11, 11, 12, 13, 13, 14,
+                                  15, 15, 16, 16, 17, 17, 18, 19, 19, 20};
+const int kStatsTable2[27] = {0,    1,     2,     4,     7,     11,   17,
                               26,   40,    61,    92,    139,   210,  317,
                               478,  721,   1087,  1638,  2468,  3719, 5604,
                               8443, 12721, 19166, 28875, 43502, 65536};
-const uint8_t kStatsTable1[29] = {3,  3,  4,  5,  6,  6,  7,  8,  9,  10,
+const uint8_t kStatsTable3[29] = {3,  3,  4,  5,  6,  6,  7,  8,  9,  10,
                                   11, 11, 12, 13, 14, 15, 16, 16, 17, 18,
                                   19, 20, 21, 21, 22, 23, 24, 25, 26};
-const int kStatsTable2[21] = {
+const int kStatsTable4[21] = {
     0,     1,      3,      8,       19,      45,      106,
     250,   588,    1383,   3252,    7646,    17976,   42262,
     99359, 233593, 549177, 1291113, 3035402, 7136218, 16777216};
-const uint8_t kStatsTable3[23] = {2,  3,  3,  4,  5,  6,  7,  8,
+const uint8_t kStatsTable5[23] = {2,  3,  3,  4,  5,  6,  7,  8,
                                   8,  9,  10, 11, 12, 12, 13, 14,
                                   15, 16, 16, 17, 18, 19, 20};
-const int kStatsTable4[21] = {0,   1,    2,    4,    7,    12,   19,
-                              30,  47,   74,   116,  182,  285,  445,
-                              695, 1084, 1691, 2637, 4113, 6414, 10000};
-const uint8_t kStatsTable5[23] = {3,  3,  4,  5,  5,  6,  7,  8,
-                                  9,  9,  10, 11, 12, 12, 13, 14,
-                                  15, 15, 16, 17, 18, 18, 19};
 const int kStatsTable6[11] = {0, 1, 2, 4, 7, 11, 17, 26, 38, 56, 80};
 const uint8_t kStatsTable7[9] = {3, 3, 4, 5, 6, 6, 7, 8, 9};
+const int kStatsTable8[21] = {0,   1,    2,    4,    7,    12,   19,
+                              30,  47,   74,   116,  182,  285,  445,
+                              695, 1084, 1691, 2637, 4113, 6414, 10000};
+const uint8_t kStatsTable9[23] = {3,  3,  4,  5,  5,  6,  7,  8,
+                                  9,  9,  10, 11, 12, 12, 13, 14,
+                                  15, 15, 16, 17, 18, 18, 19};
 }  // namespace
+int Histogram_100000_20::BucketFor(int value) {
+  if (value < 3) {
+    if (value < 0) {
+      return 0;
+    } else {
+      return value;
+    }
+  } else {
+    if (value < 65537) {
+      DblUint val;
+      val.dbl = value;
+      const int bucket =
+          kStatsTable1[((val.uint - 4613937818241073152ull) >> 51)];
+      return bucket - (value < kStatsTable0[bucket]);
+    } else {
+      return 19;
+    }
+  }
+}
 int Histogram_65536_26::BucketFor(int value) {
   if (value < 3) {
     if (value < 0) {
@@ -187,8 +237,8 @@ int Histogram_65536_26::BucketFor(int value) {
       DblUint val;
       val.dbl = value;
       const int bucket =
-          kStatsTable1[((val.uint - 4613937818241073152ull) >> 51)];
-      return bucket - (value < kStatsTable0[bucket]);
+          kStatsTable3[((val.uint - 4613937818241073152ull) >> 51)];
+      return bucket - (value < kStatsTable2[bucket]);
     } else {
       return 25;
     }
@@ -206,33 +256,10 @@ int Histogram_16777216_20::BucketFor(int value) {
       DblUint val;
       val.dbl = value;
       const int bucket =
-          kStatsTable3[((val.uint - 4611686018427387904ull) >> 52)];
-      return bucket - (value < kStatsTable2[bucket]);
-    } else {
-      return 19;
-    }
-  }
-}
-int Histogram_10000_20::BucketFor(int value) {
-  if (value < 3) {
-    if (value < 0) {
-      return 0;
-    } else {
-      return value;
-    }
-  } else {
-    if (value < 6145) {
-      DblUint val;
-      val.dbl = value;
-      const int bucket =
-          kStatsTable5[((val.uint - 4613937818241073152ull) >> 51)];
+          kStatsTable5[((val.uint - 4611686018427387904ull) >> 52)];
       return bucket - (value < kStatsTable4[bucket]);
     } else {
-      if (value < 6414) {
-        return 18;
-      } else {
-        return 19;
-      }
+      return 19;
     }
   }
 }
@@ -255,6 +282,29 @@ int Histogram_80_10::BucketFor(int value) {
         return 8;
       } else {
         return 9;
+      }
+    }
+  }
+}
+int Histogram_10000_20::BucketFor(int value) {
+  if (value < 3) {
+    if (value < 0) {
+      return 0;
+    } else {
+      return value;
+    }
+  } else {
+    if (value < 6145) {
+      DblUint val;
+      val.dbl = value;
+      const int bucket =
+          kStatsTable9[((val.uint - 4613937818241073152ull) >> 51)];
+      return bucket - (value < kStatsTable8[bucket]);
+    } else {
+      if (value < 6414) {
+        return 18;
+      } else {
+        return 19;
       }
     }
   }
@@ -284,35 +334,44 @@ HistogramView GlobalStats::histogram(Histogram which) const {
     default:
       GPR_UNREACHABLE_CODE(return HistogramView());
     case Histogram::kCallInitialSize:
-      return HistogramView{&Histogram_65536_26::BucketFor, kStatsTable0, 26,
+      return HistogramView{&Histogram_65536_26::BucketFor, kStatsTable2, 26,
                            call_initial_size.buckets()};
     case Histogram::kTcpWriteSize:
-      return HistogramView{&Histogram_16777216_20::BucketFor, kStatsTable2, 20,
+      return HistogramView{&Histogram_16777216_20::BucketFor, kStatsTable4, 20,
                            tcp_write_size.buckets()};
     case Histogram::kTcpWriteIovSize:
       return HistogramView{&Histogram_80_10::BucketFor, kStatsTable6, 10,
                            tcp_write_iov_size.buckets()};
     case Histogram::kTcpReadSize:
-      return HistogramView{&Histogram_16777216_20::BucketFor, kStatsTable2, 20,
+      return HistogramView{&Histogram_16777216_20::BucketFor, kStatsTable4, 20,
                            tcp_read_size.buckets()};
     case Histogram::kTcpReadOffer:
-      return HistogramView{&Histogram_16777216_20::BucketFor, kStatsTable2, 20,
+      return HistogramView{&Histogram_16777216_20::BucketFor, kStatsTable4, 20,
                            tcp_read_offer.buckets()};
     case Histogram::kTcpReadOfferIovSize:
       return HistogramView{&Histogram_80_10::BucketFor, kStatsTable6, 10,
                            tcp_read_offer_iov_size.buckets()};
     case Histogram::kHttp2SendMessageSize:
-      return HistogramView{&Histogram_16777216_20::BucketFor, kStatsTable2, 20,
+      return HistogramView{&Histogram_16777216_20::BucketFor, kStatsTable4, 20,
                            http2_send_message_size.buckets()};
     case Histogram::kHttp2MetadataSize:
-      return HistogramView{&Histogram_65536_26::BucketFor, kStatsTable0, 26,
+      return HistogramView{&Histogram_65536_26::BucketFor, kStatsTable2, 26,
                            http2_metadata_size.buckets()};
     case Histogram::kWrrSubchannelListSize:
-      return HistogramView{&Histogram_10000_20::BucketFor, kStatsTable4, 20,
+      return HistogramView{&Histogram_10000_20::BucketFor, kStatsTable8, 20,
                            wrr_subchannel_list_size.buckets()};
     case Histogram::kWrrSubchannelReadySize:
-      return HistogramView{&Histogram_10000_20::BucketFor, kStatsTable4, 20,
+      return HistogramView{&Histogram_10000_20::BucketFor, kStatsTable8, 20,
                            wrr_subchannel_ready_size.buckets()};
+    case Histogram::kWorkSerializerRunTimeMs:
+      return HistogramView{&Histogram_100000_20::BucketFor, kStatsTable0, 20,
+                           work_serializer_run_time_ms.buckets()};
+    case Histogram::kWorkSerializerWorkTimeMs:
+      return HistogramView{&Histogram_100000_20::BucketFor, kStatsTable0, 20,
+                           work_serializer_work_time_ms.buckets()};
+    case Histogram::kWorkSerializerItemsPerRun:
+      return HistogramView{&Histogram_10000_20::BucketFor, kStatsTable8, 20,
+                           work_serializer_items_per_run.buckets()};
   }
 }
 std::unique_ptr<GlobalStats> GlobalStatsCollector::Collect() const {
@@ -363,6 +422,12 @@ std::unique_ptr<GlobalStats> GlobalStatsCollector::Collect() const {
     data.http2_metadata_size.Collect(&result->http2_metadata_size);
     data.wrr_subchannel_list_size.Collect(&result->wrr_subchannel_list_size);
     data.wrr_subchannel_ready_size.Collect(&result->wrr_subchannel_ready_size);
+    data.work_serializer_run_time_ms.Collect(
+        &result->work_serializer_run_time_ms);
+    data.work_serializer_work_time_ms.Collect(
+        &result->work_serializer_work_time_ms);
+    data.work_serializer_items_per_run.Collect(
+        &result->work_serializer_items_per_run);
   }
   return result;
 }
@@ -409,6 +474,12 @@ std::unique_ptr<GlobalStats> GlobalStats::Diff(const GlobalStats& other) const {
       wrr_subchannel_list_size - other.wrr_subchannel_list_size;
   result->wrr_subchannel_ready_size =
       wrr_subchannel_ready_size - other.wrr_subchannel_ready_size;
+  result->work_serializer_run_time_ms =
+      work_serializer_run_time_ms - other.work_serializer_run_time_ms;
+  result->work_serializer_work_time_ms =
+      work_serializer_work_time_ms - other.work_serializer_work_time_ms;
+  result->work_serializer_items_per_run =
+      work_serializer_items_per_run - other.work_serializer_items_per_run;
   return result;
 }
 }  // namespace grpc_core

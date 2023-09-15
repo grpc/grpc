@@ -98,3 +98,16 @@
   buckets: 20
 - counter: wrr_updates
   doc: Number of wrr updates that have been received
+# work serializer
+- histogram: work_serializer_run_time_ms
+  doc: Number of milliseconds work serializers run for
+  max: 100000
+  buckets: 20
+- histogram: work_serializer_work_time_ms
+  doc: When running, how many milliseconds are work serializers actually doing work
+  max: 100000
+  buckets: 20
+- histogram: work_serializer_items_per_run
+  doc: How many callbacks are executed when a work serializer runs
+  max: 10000
+  buckets: 20
