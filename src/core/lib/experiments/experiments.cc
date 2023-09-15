@@ -189,7 +189,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_client_channel_subchannel_wrapper_work_serializer_orphan,
      true, true},
     {"chttp2_batch_requests", description_chttp2_batch_requests,
-     additional_constraints_chttp2_batch_requests, false, true},
+     additional_constraints_chttp2_batch_requests, true, true},
 };
 
 }  // namespace grpc_core
@@ -363,7 +363,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_client_channel_subchannel_wrapper_work_serializer_orphan,
      true, true},
     {"chttp2_batch_requests", description_chttp2_batch_requests,
-     additional_constraints_chttp2_batch_requests, false, true},
+     additional_constraints_chttp2_batch_requests, true, true},
 };
 
 }  // namespace grpc_core
@@ -537,7 +537,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_client_channel_subchannel_wrapper_work_serializer_orphan,
      true, true},
     {"chttp2_batch_requests", description_chttp2_batch_requests,
-     additional_constraints_chttp2_batch_requests, false, true},
+     additional_constraints_chttp2_batch_requests, true, true},
 };
 
 }  // namespace grpc_core

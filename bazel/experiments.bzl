@@ -27,7 +27,6 @@ EXPERIMENTS = {
                 "work_serializer_dispatch",
             ],
             "cpp_end2end_test": [
-                "chttp2_batch_requests",
                 "promise_based_server_call",
                 "work_serializer_dispatch",
             ],
@@ -39,7 +38,6 @@ EXPERIMENTS = {
                 "event_engine_listener",
             ],
             "flow_control_test": [
-                "chttp2_batch_requests",
                 "peer_state_based_framing",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
@@ -64,11 +62,15 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "work_stealing",
             ],
+            "cpp_end2end_test": [
+                "chttp2_batch_requests",
+            ],
             "cpp_lb_end2end_test": [
                 "client_channel_subchannel_wrapper_work_serializer_orphan",
                 "round_robin_delegate_to_pick_first",
             ],
             "flow_control_test": [
+                "chttp2_batch_requests",
                 "lazier_stream_updates",
             ],
             "lb_unit_test": [
@@ -91,7 +93,6 @@ EXPERIMENTS = {
                 "work_serializer_dispatch",
             ],
             "cpp_end2end_test": [
-                "chttp2_batch_requests",
                 "promise_based_server_call",
                 "work_serializer_dispatch",
             ],
@@ -103,7 +104,6 @@ EXPERIMENTS = {
                 "event_engine_listener",
             ],
             "flow_control_test": [
-                "chttp2_batch_requests",
                 "peer_state_based_framing",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
@@ -128,11 +128,15 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "work_stealing",
             ],
+            "cpp_end2end_test": [
+                "chttp2_batch_requests",
+            ],
             "cpp_lb_end2end_test": [
                 "client_channel_subchannel_wrapper_work_serializer_orphan",
                 "round_robin_delegate_to_pick_first",
             ],
             "flow_control_test": [
+                "chttp2_batch_requests",
                 "lazier_stream_updates",
             ],
             "lb_unit_test": [
@@ -159,7 +163,6 @@ EXPERIMENTS = {
                 "work_serializer_dispatch",
             ],
             "cpp_end2end_test": [
-                "chttp2_batch_requests",
                 "promise_based_server_call",
                 "work_serializer_dispatch",
             ],
@@ -174,7 +177,6 @@ EXPERIMENTS = {
                 "event_engine_listener",
             ],
             "flow_control_test": [
-                "chttp2_batch_requests",
                 "peer_state_based_framing",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
@@ -202,11 +204,15 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "work_stealing",
             ],
+            "cpp_end2end_test": [
+                "chttp2_batch_requests",
+            ],
             "cpp_lb_end2end_test": [
                 "client_channel_subchannel_wrapper_work_serializer_orphan",
                 "round_robin_delegate_to_pick_first",
             ],
             "flow_control_test": [
+                "chttp2_batch_requests",
                 "lazier_stream_updates",
             ],
             "lb_unit_test": [

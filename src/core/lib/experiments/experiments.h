@@ -94,7 +94,8 @@ inline bool IsRoundRobinDelegateToPickFirstEnabled() { return true; }
 inline bool IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled() {
   return true;
 }
-inline bool IsChttp2BatchRequestsEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_BATCH_REQUESTS
+inline bool IsChttp2BatchRequestsEnabled() { return true; }
 
 #elif defined(GPR_WINDOWS)
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -132,7 +133,8 @@ inline bool IsRoundRobinDelegateToPickFirstEnabled() { return true; }
 inline bool IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled() {
   return true;
 }
-inline bool IsChttp2BatchRequestsEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_BATCH_REQUESTS
+inline bool IsChttp2BatchRequestsEnabled() { return true; }
 
 #else
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -170,7 +172,8 @@ inline bool IsRoundRobinDelegateToPickFirstEnabled() { return true; }
 inline bool IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled() {
   return true;
 }
-inline bool IsChttp2BatchRequestsEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_BATCH_REQUESTS
+inline bool IsChttp2BatchRequestsEnabled() { return true; }
 #endif
 
 #else
