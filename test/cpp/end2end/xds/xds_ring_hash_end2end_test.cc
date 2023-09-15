@@ -210,7 +210,7 @@ TEST_P(RingHashTest,
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Resolver::Result result;
     result.addresses = CreateAddressListFromPortList(GetBackendPorts());
-    logical_dns_cluster_resolver_response_generator_->SetResponseSynchronously(
+    logical_dns_cluster_resolver_response_generator_->SetResponse(
         std::move(result));
   }
   // Inject connection delay to make this act more realistically.
@@ -278,7 +278,7 @@ TEST_P(RingHashTest,
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Resolver::Result result;
     result.addresses = CreateAddressListFromPortList(GetBackendPorts());
-    logical_dns_cluster_resolver_response_generator_->SetResponseSynchronously(
+    logical_dns_cluster_resolver_response_generator_->SetResponse(
         std::move(result));
   }
   // Set up connection attempt injector.

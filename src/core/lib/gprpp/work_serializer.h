@@ -20,11 +20,8 @@
 #include <grpc/support/port_platform.h>
 
 #include <functional>
-#include <memory>
 
 #include "absl/base/thread_annotations.h"
-
-#include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -47,28 +44,14 @@ namespace grpc_core {
 // invoke DrainQueue() when it is safe to invoke the callback.
 class ABSL_LOCKABLE WorkSerializer {
  public:
-  explicit WorkSerializer(
-      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-          event_engine);
+  WorkSerializer();
+
   ~WorkSerializer();
 
-  WorkSerializer(const WorkSerializer&) = delete;
-  WorkSerializer& operator=(const WorkSerializer&) = delete;
-  WorkSerializer(WorkSerializer&&) noexcept = default;
-  WorkSerializer& operator=(WorkSerializer&&) noexcept = default;
-
-  // Runs a given callback on the work serializer.
-  //
-  // If experiment `work_serializer_dispatch` is enabled:
-  // The callback will be executed as an EventEngine callback, that then
-  // arranges for the next callback in the queue to execute.
-  //
-  // If experiment `work_serializer_dispatch` is NOT enabled:
-  // If there is no other thread currently executing the WorkSerializer, the
-  // callback is run immediately. In this case, the current thread is also
-  // borrowed for draining the queue for any callbacks that get added in the
-  // meantime.
-  // This behavior is deprecated and will be removed soon.
+  // Runs a given callback on the work serializer. If there is no other thread
+  // currently executing the WorkSerializer, the callback is run immediately. In
+  // this case, the current thread is also borrowed for draining the queue for
+  // any callbacks that get added in the meantime.
   //
   // If you want to use clang thread annotation to make sure that callback is
   // called by WorkSerializer only, you need to add the annotation to both the
@@ -81,6 +64,9 @@ class ABSL_LOCKABLE WorkSerializer {
   //         }, DEBUG_LOCATION);
   //   }
   //   void callback() ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer) { ... }
+  //
+  // TODO(yashkt): Replace DebugLocation with absl::SourceLocation
+  // once we can start using it directly.
   void Run(std::function<void()> callback, const DebugLocation& location);
 
   // Schedule \a callback to be run later when the queue of callbacks is
@@ -96,8 +82,6 @@ class ABSL_LOCKABLE WorkSerializer {
 
  private:
   class WorkSerializerImpl;
-  class LegacyWorkSerializer;
-  class DispatchingWorkSerializer;
 
   OrphanablePtr<WorkSerializerImpl> impl_;
 };

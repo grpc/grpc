@@ -22,6 +22,7 @@
 #include <chrono>
 #include <map>
 #include <memory>
+#include <ratio>
 #include <string>
 #include <utility>
 #include <vector>
@@ -35,12 +36,14 @@
 #include "absl/types/span.h"
 #include "gtest/gtest.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/support/json.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
 #include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/json/json.h"
@@ -64,7 +67,7 @@ BackendMetricData MakeBackendMetricData(double app_utilization, double qps,
   return b;
 }
 
-class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
+class WeightedRoundRobinTest : public TimeAwareLoadBalancingPolicyTest {
  protected:
   class ConfigBuilder {
    public:
@@ -110,11 +113,8 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
     Json::Object json_;
   };
 
-  WeightedRoundRobinTest() : LoadBalancingPolicyTest("weighted_round_robin") {}
-
-  void SetUp() override {
-    LoadBalancingPolicyTest::SetUp();
-    SetExpectedTimerDuration(std::chrono::seconds(1));
+  WeightedRoundRobinTest() {
+    lb_policy_ = MakeLbPolicy("weighted_round_robin");
   }
 
   RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>
@@ -125,7 +125,7 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
       SourceLocation location = SourceLocation()) {
     if (update_addresses.empty()) update_addresses = addresses;
     EXPECT_EQ(ApplyUpdate(BuildUpdate(update_addresses, config_builder.Build()),
-                          lb_policy()),
+                          lb_policy_.get()),
               absl::OkStatus());
     // Expect the initial CONNECTNG update with a picker that queues.
     ExpectConnectingUpdate(location);
@@ -311,11 +311,24 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
         if (*picker == nullptr) return false;
       } else if (run_timer_callbacks) {
         gpr_log(GPR_INFO, "running timer callback...");
-        // Increment time and run any timer callbacks.
-        IncrementTimeBy(Duration::Seconds(1));
+        RunTimerCallback();
       }
+      // Increment time.
+      time_cache_.IncrementBy(Duration::Seconds(1));
     }
   }
+
+  void CheckExpectedTimerDuration(
+      grpc_event_engine::experimental::EventEngine::Duration duration)
+      override {
+    EXPECT_EQ(duration, expected_weight_update_interval_)
+        << "Expected: " << expected_weight_update_interval_.count() << "ns"
+        << "\n  Actual: " << duration.count() << "ns";
+  }
+
+  OrphanablePtr<LoadBalancingPolicy> lb_policy_;
+  grpc_event_engine::experimental::EventEngine::Duration
+      expected_weight_update_interval_ = std::chrono::seconds(1);
 };
 
 TEST_F(WeightedRoundRobinTest, Basic) {
@@ -630,7 +643,7 @@ TEST_F(WeightedRoundRobinTest, HonorsOobReportingPeriod) {
 TEST_F(WeightedRoundRobinTest, HonorsWeightUpdatePeriod) {
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
-  SetExpectedTimerDuration(std::chrono::seconds(2));
+  expected_weight_update_interval_ = std::chrono::seconds(2);
   auto picker = SendInitialUpdateAndWaitForConnected(
       kAddresses, ConfigBuilder().SetWeightUpdatePeriod(Duration::Seconds(2)));
   ASSERT_NE(picker, nullptr);
@@ -648,7 +661,7 @@ TEST_F(WeightedRoundRobinTest, HonorsWeightUpdatePeriod) {
 TEST_F(WeightedRoundRobinTest, WeightUpdatePeriodLowerBound) {
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
-  SetExpectedTimerDuration(std::chrono::milliseconds(100));
+  expected_weight_update_interval_ = std::chrono::milliseconds(100);
   auto picker = SendInitialUpdateAndWaitForConnected(
       kAddresses,
       ConfigBuilder().SetWeightUpdatePeriod(Duration::Milliseconds(10)));
@@ -684,7 +697,8 @@ TEST_F(WeightedRoundRobinTest, WeightExpirationPeriod) {
       {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 3}});
   // Advance time to make weights stale and trigger the timer callback
   // to recompute weights.
-  IncrementTimeBy(Duration::Seconds(2));
+  time_cache_.IncrementBy(Duration::Seconds(2));
+  RunTimerCallback();
   // Picker should now be falling back to round-robin.
   ExpectWeightedRoundRobinPicks(
       picker.get(), {},
@@ -711,7 +725,8 @@ TEST_F(WeightedRoundRobinTest, BlackoutPeriodAfterWeightExpiration) {
       {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 3}});
   // Advance time to make weights stale and trigger the timer callback
   // to recompute weights.
-  IncrementTimeBy(Duration::Seconds(2));
+  time_cache_.IncrementBy(Duration::Seconds(2));
+  RunTimerCallback();
   // Picker should now be falling back to round-robin.
   ExpectWeightedRoundRobinPicks(
       picker.get(), {},
@@ -729,7 +744,8 @@ TEST_F(WeightedRoundRobinTest, BlackoutPeriodAfterWeightExpiration) {
       {{kAddresses[0], 3}, {kAddresses[1], 3}, {kAddresses[2], 3}});
   // Advance time past the blackout period.  This should cause the
   // weights to be used.
-  IncrementTimeBy(Duration::Seconds(1));
+  time_cache_.IncrementBy(Duration::Seconds(1));
+  RunTimerCallback();
   ExpectWeightedRoundRobinPicks(
       picker.get(), {},
       {{kAddresses[0], 3}, {kAddresses[1], 3}, {kAddresses[2], 1}});
@@ -775,7 +791,8 @@ TEST_F(WeightedRoundRobinTest, BlackoutPeriodAfterDisconnect) {
       {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 2}});
   // Advance time to exceed the blackout period and trigger the timer
   // callback to recompute weights.
-  IncrementTimeBy(Duration::Seconds(1));
+  time_cache_.IncrementBy(Duration::Seconds(1));
+  RunTimerCallback();
   ExpectWeightedRoundRobinPicks(
       picker.get(),
       {{kAddresses[0], MakeBackendMetricData(/*app_utilization=*/0.3,
@@ -807,9 +824,9 @@ TEST_F(WeightedRoundRobinTest, BlackoutPeriodDoesNotGetResetAfterUpdate) {
                                              /*qps=*/100.0, /*eps=*/0.0)}},
       {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 3}});
   // Send a duplicate update with the same addresses and config.
-  EXPECT_EQ(
-      ApplyUpdate(BuildUpdate(kAddresses, config_builder.Build()), lb_policy()),
-      absl::OkStatus());
+  EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, config_builder.Build()),
+                        lb_policy_.get()),
+            absl::OkStatus());
   // Note that we have not advanced time, so if the update incorrectly
   // triggers resetting the blackout period, none of the weights will
   // actually be used.
@@ -852,5 +869,8 @@ TEST_F(WeightedRoundRobinTest, ZeroErrorUtilPenalty) {
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(&argc, argv);
-  return RUN_ALL_TESTS();
+  grpc_init();
+  int ret = RUN_ALL_TESTS();
+  grpc_shutdown();
+  return ret;
 }

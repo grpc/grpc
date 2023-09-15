@@ -596,7 +596,6 @@ grpc_cc_test(
         "gtest",
     ],
     flaky = True,  # TODO(b/150567713)
-    shard_count = 20,
     tags = [
         "cpp_end2end_test",
         "cpp_lb_end2end_test",
