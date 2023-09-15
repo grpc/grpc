@@ -51,7 +51,6 @@
 #include <grpc/support/port_platform.h>
 
 #include <stddef.h>
-
 #include "src/core/lib/experiments/config.h"
 
 namespace grpc_core {
@@ -91,9 +90,8 @@ inline bool IsJitterMaxIdleEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_ROUND_ROBIN_DELEGATE_TO_PICK_FIRST
 inline bool IsRoundRobinDelegateToPickFirstEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_CHANNEL_SUBCHANNEL_WRAPPER_WORK_SERIALIZER_ORPHAN
-inline bool IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled() {
-  return true;
-}
+inline bool IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled() { return true; }
+inline bool IsChttp2BatchRequestsEnabled() { return false; }
 
 #elif defined(GPR_WINDOWS)
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -128,9 +126,8 @@ inline bool IsJitterMaxIdleEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_ROUND_ROBIN_DELEGATE_TO_PICK_FIRST
 inline bool IsRoundRobinDelegateToPickFirstEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_CHANNEL_SUBCHANNEL_WRAPPER_WORK_SERIALIZER_ORPHAN
-inline bool IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled() {
-  return true;
-}
+inline bool IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled() { return true; }
+inline bool IsChttp2BatchRequestsEnabled() { return false; }
 
 #else
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -165,9 +162,8 @@ inline bool IsJitterMaxIdleEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_ROUND_ROBIN_DELEGATE_TO_PICK_FIRST
 inline bool IsRoundRobinDelegateToPickFirstEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_CHANNEL_SUBCHANNEL_WRAPPER_WORK_SERIALIZER_ORPHAN
-inline bool IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled() {
-  return true;
-}
+inline bool IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled() { return true; }
+inline bool IsChttp2BatchRequestsEnabled() { return false; }
 #endif
 
 #else
@@ -178,13 +174,9 @@ inline bool IsTcpRcvLowatEnabled() { return IsExperimentEnabled(1); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PEER_STATE_BASED_FRAMING
 inline bool IsPeerStateBasedFramingEnabled() { return IsExperimentEnabled(2); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MEMORY_PRESSURE_CONTROLLER
-inline bool IsMemoryPressureControllerEnabled() {
-  return IsExperimentEnabled(3);
-}
+inline bool IsMemoryPressureControllerEnabled() { return IsExperimentEnabled(3); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_UNCONSTRAINED_MAX_QUOTA_BUFFER_SIZE
-inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() {
-  return IsExperimentEnabled(4);
-}
+inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return IsExperimentEnabled(4); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
 inline bool IsEventEngineClientEnabled() { return IsExperimentEnabled(5); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
@@ -198,9 +190,7 @@ inline bool IsPromiseBasedServerCallEnabled() { return IsExperimentEnabled(9); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_LISTENER
 inline bool IsEventEngineListenerEnabled() { return IsExperimentEnabled(10); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SCHEDULE_CANCELLATION_OVER_WRITE
-inline bool IsScheduleCancellationOverWriteEnabled() {
-  return IsExperimentEnabled(11);
-}
+inline bool IsScheduleCancellationOverWriteEnabled() { return IsExperimentEnabled(11); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_TRACE_RECORD_CALLOPS
 inline bool IsTraceRecordCallopsEnabled() { return IsExperimentEnabled(12); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_DNS
@@ -220,23 +210,19 @@ inline bool IsKeepaliveFixEnabled() { return IsExperimentEnabled(19); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_KEEPALIVE_SERVER_FIX
 inline bool IsKeepaliveServerFixEnabled() { return IsExperimentEnabled(20); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_DISPATCH
-inline bool IsWorkSerializerDispatchEnabled() {
-  return IsExperimentEnabled(21);
-}
+inline bool IsWorkSerializerDispatchEnabled() { return IsExperimentEnabled(21); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_LAZIER_STREAM_UPDATES
 inline bool IsLazierStreamUpdatesEnabled() { return IsExperimentEnabled(22); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_JITTER_MAX_IDLE
 inline bool IsJitterMaxIdleEnabled() { return IsExperimentEnabled(23); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_ROUND_ROBIN_DELEGATE_TO_PICK_FIRST
-inline bool IsRoundRobinDelegateToPickFirstEnabled() {
-  return IsExperimentEnabled(24);
-}
+inline bool IsRoundRobinDelegateToPickFirstEnabled() { return IsExperimentEnabled(24); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_CHANNEL_SUBCHANNEL_WRAPPER_WORK_SERIALIZER_ORPHAN
-inline bool IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled() {
-  return IsExperimentEnabled(25);
-}
+inline bool IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled() { return IsExperimentEnabled(25); }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_BATCH_REQUESTS
+inline bool IsChttp2BatchRequestsEnabled() { return IsExperimentEnabled(26); }
 
-constexpr const size_t kNumExperiments = 26;
+constexpr const size_t kNumExperiments = 27;
 extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];
 
 #endif
