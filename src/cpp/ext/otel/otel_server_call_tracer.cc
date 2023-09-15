@@ -26,7 +26,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/functional/any_invocable.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
@@ -198,14 +197,6 @@ grpc_core::ServerCallTracer*
 OpenTelemetryServerCallTracerFactory::CreateNewServerCallTracer(
     grpc_core::Arena* arena) {
   return arena->ManagedNew<OpenTelemetryServerCallTracer>();
-}
-
-bool OpenTelemetryServerCallTracerFactory::IsServerTraced(
-    const grpc_core::ChannelArgs& args) {
-  // Return true only if there is no server selector registered or if the server
-  // selector returns true.
-  return OTelPluginState().server_selector == nullptr ||
-         OTelPluginState().server_selector(args);
 }
 
 }  // namespace internal

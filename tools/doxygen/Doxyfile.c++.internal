@@ -1982,7 +1982,6 @@ src/core/ext/xds/xds_cluster_specifier_plugin.cc \
 src/core/ext/xds/xds_cluster_specifier_plugin.h \
 src/core/ext/xds/xds_common_types.cc \
 src/core/ext/xds/xds_common_types.h \
-src/core/ext/xds/xds_enabled_server.h \
 src/core/ext/xds/xds_endpoint.cc \
 src/core/ext/xds/xds_endpoint.h \
 src/core/ext/xds/xds_health_status.cc \

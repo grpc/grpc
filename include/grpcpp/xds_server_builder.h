@@ -23,8 +23,6 @@
 
 #include <grpcpp/server_builder.h>
 
-#include "src/core/ext/xds/xds_enabled_server.h"
-
 namespace grpc {
 
 class XdsServerServingStatusNotifierInterface {
@@ -87,7 +85,6 @@ class XdsServerBuilder : public grpc::ServerBuilder {
       args.SetInt(GRPC_ARG_SERVER_CONFIG_CHANGE_DRAIN_GRACE_TIME_MS,
                   drain_grace_time_ms_);
     }
-    args.SetInt(GRPC_ARG_XDS_ENABLED_SERVER, 1);
     grpc_channel_args c_channel_args = args.c_channel_args();
     grpc_server_config_fetcher* fetcher = grpc_server_config_fetcher_xds_create(
         {OnServingStatusUpdate, notifier_}, &c_channel_args);
