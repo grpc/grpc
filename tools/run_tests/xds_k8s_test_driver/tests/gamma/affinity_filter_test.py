@@ -28,12 +28,26 @@ _XdsTestClient = xds_k8s_testcase.XdsTestClient
 RpcTypeUnaryCall = xds_url_map_testcase.RpcTypeUnaryCall
 
 class AffinityTest(xds_gamma_testcase.GammaXdsKubernetesTestCase):
+    def parse_metadata(
+        self, metadatas_by_peer: dict[str, "MetadataByPeer"]
+    ) -> dict[str, str]:
+        # TDDO; Delete.
+        print(metadatas_by_peer)
+        cookies = dict()
+        for peer, metadatas in metadatas_by_peer.items():
+            for metadatas in metadatas.rpc_metadata:
+                for metadata in metadatas.metadata:
+                    if metadata.key.lower() == "set-cookie":
+                        cookies[peer] = metadata.value
+        return cookies
+
     def test_ping_pong(self):
         REPLICA_COUNT = 3
 
         test_servers: List[_XdsTestServer]
         with self.subTest("01_run_test_server"):
-            test_servers = self.startTestServers(replica_count=REPLICA_COUNT)
+            test_servers = self.startTestServers(replica_count=REPLICA_COUNT,
+                                                    route_template="gamma/route_http_ssafilter.yaml")
 
         with self.subTest("02_create_ssa_filter"):
             self.server_runner.createSessionAffinityFilter()
@@ -43,18 +57,17 @@ class AffinityTest(xds_gamma_testcase.GammaXdsKubernetesTestCase):
         with self.subTest("03_start_test_client"):
             test_client: _XdsTestClient = self.startTestClient(test_servers[0])
 
-        cookie = ""
-        hostname = ""
-        chosenServerIdx = None
         with self.subTest("04_send_first_RPC_and_retrieve_cookie"):
-            cookies = self.assertSuccessfulRpcs(test_client, 1)
+            lb_stats = self.assertSuccessfulRpcs(test_client, 1)
+            cookies = self.parse_metadata(lb_stats.metadatas_by_peer)
             print(cookies)
-            hostname = next(iter(cookies))
+            assert len(cookies) == 1
+            hostname = next(iter(cookies.keys()))
             cookie = cookies[hostname]
-            for idx, server in enumerate(test_servers):
-                if server.hostname == hostname:
-                    chosenServerIdx = idx
-                    break
+             
+            chosen_server_candidates = tuple(srv for srv in test_servers if srv.hostname == hostname)
+            assert len(chosen_server_candidates) == 1
+            chosen_server = chosen_server_candidates[0]
 
         with self.subTest("05_send_RPCs_with_cookie"):
             test_client.update_config.configure(
@@ -68,7 +81,7 @@ class AffinityTest(xds_gamma_testcase.GammaXdsKubernetesTestCase):
                 ),
             )
             self.assertRpcsEventuallyGoToGivenServers(
-                test_client, test_servers[chosenServerIdx:chosenServerIdx+1], 10
+                test_client, [chosen_server], 10
             )
 
 if __name__ == "__main__":

@@ -98,6 +98,7 @@ class GammaServerRunner(KubernetesServerRunner):
         replica_count: int = 1,
         log_to_stdout: bool = False,
         bootstrap_version: Optional[str] = None,
+        route_template: str = "gamma/route_http.yaml",
     ) -> List[XdsTestServer]:
         if not maintenance_port:
             maintenance_port = self._get_default_maintenance_port(secure_mode)
@@ -149,7 +150,7 @@ class GammaServerRunner(KubernetesServerRunner):
 
         # Create the route.
         self.route = self._create_gamma_route(
-            "gamma/route_http.yaml",
+            route_template,
             route_name=self.route_name,
             service_name=self.service_name,
             namespace_name=self.k8s_namespace.name,

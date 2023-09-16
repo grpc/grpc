@@ -8,7 +8,9 @@ metadata:
     owner: xds-k8s-interop-test
 spec:
   parentRefs:
-  - name: ${service_name_1}
+  - name: ${frontend_service_name}
+    namespace: ${namespace_name}
+    group: ""
     kind: Service
   rules:
   - matches:
@@ -20,8 +22,8 @@ spec:
         extensionRef:
           group: networking.gke.io
           kind: GCPSessionAffinityFilter
-          name: ${session_affinity_filter_name}
+          name: ssa-filter
     backendRefs:
-    - name: ${service_name_2}
-      port: 50051
+    - name: ${service_name}
+      port: 8080
 ...

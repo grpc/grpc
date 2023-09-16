@@ -142,18 +142,6 @@ class KubernetesApiManager:
         return self._dynamic_client
 
     @functools.cache  # pylint: disable=no-member
-    def gke_tdmesh(self, version: str) -> dynamic_res.Resource:
-        api_name = "net.gke.io"
-        kind = "TDMesh"
-        supported_versions = {"v1alpha1"}
-        if version not in supported_versions:
-            raise NotImplementedError(
-                f"{kind} {api_name}/{version} not implemented."
-            )
-
-        return self._load_dynamic_api(api_name, version, kind)
-
-    @functools.cache  # pylint: disable=no-member
     def grpc_route(self, version: str) -> dynamic_res.Resource:
         api_name = "gateway.networking.k8s.io"
         kind = "GRPCRoute"
@@ -169,7 +157,19 @@ class KubernetesApiManager:
     def http_route(self, version: str) -> dynamic_res.Resource:
         api_name = "gateway.networking.k8s.io"
         kind = "HTTPRoute"
-        supported_versions = {"v1beta1"}
+        supported_versions = {"v1alpha2", "v1beta1"}
+        if version not in supported_versions:
+            raise NotImplementedError(
+                f"{kind} {api_name}/{version} not implemented."
+            )
+
+        return self._load_dynamic_api(api_name, version, kind)
+
+    @functools.cache  # pylint: disable=no-member
+    def gcp_session_affinity_filter(self, version: str) -> dynamic_res.Resource:
+        api_name = "networking.gke.io"
+        kind = "GCPSessionAffinityFilter"
+        supported_versions = ("v1") 
         if version not in supported_versions:
             raise NotImplementedError(
                 f"{kind} {api_name}/{version} not implemented."
@@ -262,7 +262,7 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
     @functools.cached_property  # pylint: disable=no-member
     def api_http_route(self) -> dynamic_res.Resource:
         return self._get_dynamic_api(
-            "gateway.networking.k8s.io/v1alpha2",
+            "gateway.networking.k8s.io/v1beta1",
             "HTTPRoute",
         )
 
@@ -313,9 +313,10 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
         # TODO(sergiitk): [GAMMA] Needs to be improved. This all is very clunky
         #  when considered together with _get_dynamic_api and api_gke_mesh,
         #  api_grpc_route.
-        if group == "net.gke.io":
-            if kind == "TDMesh":
-                return self._api.gke_tdmesh(version)
+        if group == "networking.gke.io":
+            if kind == "GCPSessionAffinityFilter":
+                return self._api.gcp_session_affinity_filter(version)
+        
 
         elif group == "gateway.networking.k8s.io":
             if kind == "GRPCRoute":
@@ -323,7 +324,7 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
             elif kind == "HTTPRoute":
                 return self._api.http_route(version)
 
-        raise NotImplementedError(f"{kind} {api_version} not implemented.")
+        raise NotImplementedError(f"{kind} ({group}) {api_version} not implemented.")
 
     def _get_resource(self, method: Callable[[Any], object], *args, **kwargs):
         try:

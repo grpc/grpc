@@ -36,8 +36,8 @@ class GammaBaselineTest(xds_gamma_testcase.GammaXdsKubernetesTestCase):
         with self.subTest("2_start_test_client"):
             test_client: _XdsTestClient = self.startTestClient(test_server)
 
-        # with self.subTest("3_test_server_received_rpcs_from_test_client"):
-        #     self.assertSuccessfulRpcs(test_client)
+        with self.subTest("3_test_server_received_rpcs_from_test_client"):
+            self.assertSuccessfulRpcs(test_client)
 
 
 if __name__ == "__main__":
