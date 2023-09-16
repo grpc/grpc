@@ -133,7 +133,7 @@ if EXTRA_ENV_COMPILE_ARGS is None:
         EXTRA_ENV_COMPILE_ARGS += " /MT"
     elif "linux" in sys.platform or "darwin" in sys.platform:
         EXTRA_ENV_COMPILE_ARGS += (
-            " -fno-wrapv -frtti -fvisibility=hidden -fno-wrapv"
+            " -fno-wrapv -frtti -fvisibility=hidden"
         )
 
 if EXTRA_ENV_LINK_ARGS is None:
@@ -163,7 +163,25 @@ CC_INCLUDES = [
     for include_dir in observability_lib_deps.CC_INCLUDES
 ]
 
-DEFINE_MACROS = ()
+DEFINE_MACROS = (("_WIN32_WINNT", 0x600),)
+
+if "win32" in sys.platform:
+    DEFINE_MACROS += (
+        ("WIN32_LEAN_AND_MEAN", 1),
+        ("CARES_STATICLIB", 1),
+        ("GRPC_ARES", 0),
+        ("NTDDI_VERSION", 0x06000000),
+        # avoid https://github.com/abseil/abseil-cpp/issues/1425
+        ("NOMINMAX", 1),
+    )
+    if "64bit" in platform.architecture()[0]:
+        DEFINE_MACROS += (("MS_WIN64", 1),)
+    else:
+        # For some reason, this is needed to get access to inet_pton/inet_ntop
+        # on msvc, but only for 32 bits
+        DEFINE_MACROS += (("NTDDI_VERSION", 0x06000000),)
+elif "linux" in sys.platform or "darwin" in sys.platform:
+    DEFINE_MACROS += (("HAVE_PTHREAD", 1),)
 
 # Fix for Cython build issue in aarch64.
 # It's required to define this macro before include <inttypes.h>.
@@ -174,16 +192,12 @@ DEFINE_MACROS = ()
 # gcc + Bazel.
 DEFINE_MACROS += (("__STDC_FORMAT_MACROS", None),)
 
-if "win32" in sys.platform:
-    DEFINE_MACROS += (
-        ("WIN32_LEAN_AND_MEAN", 1),
-        # avoid https://github.com/abseil/abseil-cpp/issues/1425
-        ("NOMINMAX", 1),
-    )
-    if "64bit" in platform.architecture()[0]:
-        DEFINE_MACROS += (("MS_WIN64", 1),)
-elif "linux" in sys.platform or "darwin" in sys.platform:
-    DEFINE_MACROS += (("HAVE_PTHREAD", 1),)
+
+# Use `-fvisibility=hidden` will hide cython init symbol, we need that symbol exported
+# in order to import cython module.
+if "linux" in sys.platform or "darwin" in sys.platform:
+    pymodinit = 'extern "C" __attribute__((visibility ("default"))) PyObject*'
+    DEFINE_MACROS += (("PyMODINIT_FUNC", pymodinit),)
 
 # By default, Python3 distutils enforces compatibility of
 # c plugins (.so files) with the OSX version Python was built with.
@@ -241,7 +255,8 @@ def extension_modules():
     if BUILD_WITH_CYTHON:
         from Cython import Build
 
-        return Build.cythonize(extensions)
+        return Build.cythonize(extensions,
+                               compiler_directives={'language_level' : "3"})
     else:
         return extensions
 
@@ -267,7 +282,7 @@ setuptools.setup(
     python_requires=">=3.7",
     install_requires=[
         "grpcio>={version}".format(version=grpc_version.VERSION),
-        "setuptools",
+        "setuptools>=59.6.0",
         "opencensus==0.11.2",
         "opencensus-ext-stackdriver==0.8.0",
     ],

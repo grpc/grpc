@@ -22,7 +22,7 @@ import os
 from threading import Thread
 from typing import List, Mapping, Tuple, Union
 
-import _observability
+from grpc_observability import _observability
 
 # Time we wait for batch exporting census data
 # TODO(xuanwn): change interval to a more appropriate number
