@@ -195,7 +195,7 @@ std::string FrameTypeString(uint8_t frame_type, uint8_t flags) {
 }
 }  // namespace
 
-absl::variant<grpc_slice, absl::Status> grpc_chttp2_perform_read(
+absl::variant<size_t, absl::Status> grpc_chttp2_perform_read(
     grpc_chttp2_transport* t, const grpc_slice& slice,
     size_t& requests_started) {
   const uint8_t* beg = GRPC_SLICE_START_PTR(slice);
@@ -251,8 +251,9 @@ absl::variant<grpc_slice, absl::Status> grpc_chttp2_perform_read(
         return absl::OkStatus();
       }
     dts_fh_0:
-      if (requests_started > 8) {
-        return grpc_slice_sub(slice, cur - beg, end - beg);
+      if (requests_started >= 8) {
+        t->deframe_state = GRPC_DTS_FH_0;
+        return static_cast<size_t>(cur - beg);
       }
       ABSL_FALLTHROUGH_INTENDED;
     case GRPC_DTS_FH_0:

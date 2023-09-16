@@ -628,11 +628,10 @@ void grpc_chttp2_end_write(grpc_chttp2_transport* t, grpc_error_handle error);
 
 /// Process one slice of incoming data
 /// Returns:
-///  - a reffed slice in the case that the read didn't finish: in this case
-///    the caller should offload the current read to a new thread and continue
-///    there
+///  - a count of parsed bytes in the event of a partial read: the caller should
+///    offload responsibilities to another thread to continue parsing.
 ///  - or a status in the case of a completed read
-absl::variant<grpc_slice, absl::Status> grpc_chttp2_perform_read(
+absl::variant<size_t, absl::Status> grpc_chttp2_perform_read(
     grpc_chttp2_transport* t, const grpc_slice& slice,
     size_t& requests_started);
 

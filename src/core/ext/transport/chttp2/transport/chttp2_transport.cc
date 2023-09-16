@@ -47,6 +47,7 @@
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/connectivity_state.h>
+#include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
@@ -2523,25 +2524,31 @@ static void read_action(grpc_core::RefCountedPtr<grpc_chttp2_transport> t,
                     error);
 }
 
-static void read_action_locked(
+static void read_action_parse_loop_locked(
     grpc_core::RefCountedPtr<grpc_chttp2_transport> t,
     grpc_error_handle error) {
-  grpc_error_handle err = error;
-  if (!err.ok()) {
-    err = grpc_error_set_int(
-        GRPC_ERROR_CREATE_REFERENCING("Endpoint read failed", &err, 1),
-        grpc_core::StatusIntProperty::kOccurredDuringWrite, t->write_state);
-  }
-  std::swap(err, error);
   if (t->closed_with_error.ok()) {
-    size_t i = 0;
     grpc_error_handle errors[3] = {error, absl::OkStatus(), absl::OkStatus()};
     size_t requests_started = 0;
-    for (; i < t->read_buffer.count && errors[1] == absl::OkStatus(); i++) {
+    for (size_t i = 0;
+         i < t->read_buffer.count && errors[1] == absl::OkStatus(); i++) {
       auto r = grpc_chttp2_perform_read(t.get(), t->read_buffer.slices[i],
                                         requests_started);
-      if (auto* slice = absl::get_if<grpc_slice>(&r)) {
-        grpc_core::Crash("unimplemented");
+      if (auto* partial_read_size = absl::get_if<size_t>(&r)) {
+        for (size_t j = 0; j < i; j++) {
+          grpc_core::CSliceUnref(grpc_slice_buffer_take_first(&t->read_buffer));
+        }
+        grpc_slice_buffer_sub_first(
+            &t->read_buffer, *partial_read_size,
+            GRPC_SLICE_LENGTH(t->read_buffer.slices[0]));
+        t->combiner->ForceOffload();
+        auto* tp = t.get();
+        tp->combiner->Run(
+            grpc_core::InitTransportClosure<read_action_parse_loop_locked>(
+                std::move(t), &tp->read_action_locked),
+            std::move(errors[0]));
+        // Early return: we queued to retry later.
+        return;
       } else {
         errors[1] = std::move(absl::get<absl::Status>(r));
       }
@@ -2601,6 +2608,19 @@ static void read_action_locked(
       continue_read_action_locked(std::move(t));
     }
   }
+}
+
+static void read_action_locked(
+    grpc_core::RefCountedPtr<grpc_chttp2_transport> t,
+    grpc_error_handle error) {
+  grpc_error_handle err = error;
+  if (!err.ok()) {
+    err = grpc_error_set_int(
+        GRPC_ERROR_CREATE_REFERENCING("Endpoint read failed", &err, 1),
+        grpc_core::StatusIntProperty::kOccurredDuringWrite, t->write_state);
+  }
+  std::swap(err, error);
+  read_action_parse_loop_locked(std::move(t), std::move(err));
 }
 
 static void continue_read_action_locked(
