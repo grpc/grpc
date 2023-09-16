@@ -166,6 +166,7 @@ TEST(CombinerTest, TestForceOffload) {
             absl::OkStatus());
   exec_ctx.Flush();
   done.WaitForNotification();
+  GRPC_COMBINER_UNREF(lock, "test_force_offload");
 }
 
 int main(int argc, char** argv) {
