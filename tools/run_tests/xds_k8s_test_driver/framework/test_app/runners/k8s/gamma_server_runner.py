@@ -221,6 +221,7 @@ class GammaServerRunner(KubernetesServerRunner):
             session_affinity_policy_name=self.sapolicy_name,
             namespace_name=self.k8s_namespace.name,
             route_name=self.route_name,
+            service_name=self.service_name,
         )
 
     def createSessionAffinityFilter(self):

@@ -18,13 +18,19 @@ via Kubernetes CRDs and environments that configure SSA directly through the
 networkservices.googleapis.com API.
 """
 
+import datetime
+import logging
+
 from typing import Sequence, Tuple
 
+from framework.helpers import retryers
 from framework import xds_k8s_testcase
 
 _XdsKubernetesBaseTestCase = xds_k8s_testcase.XdsKubernetesBaseTestCase 
 _XdsTestServer = xds_k8s_testcase.XdsTestServer
 _XdsTestClient = xds_k8s_testcase.XdsTestClient
+
+_SET_COOKIE_MAX_WAIT_SEC = 300
 
 def get_setcookie_headers(
     metadatas_by_peer: dict[str, "MetadataByPeer"]
@@ -38,21 +44,40 @@ def get_setcookie_headers(
     return cookies
 
 
-def assert_retrieve_cookie_and_server(test: _XdsKubernetesBaseTestCase, test_client: _XdsTestClient, servers: Sequence[_XdsTestServer]) -> Tuple[str, _XdsTestServer]:
+def assert_eventually_retrieve_cookie_and_server(test: _XdsKubernetesBaseTestCase, test_client: _XdsTestClient, servers: Sequence[_XdsTestServer]) -> Tuple[str, _XdsTestServer]:
     """ Retrieves the initial cookie and corresponding server.
     
     Given a test client and set of backends for which SSA is enabled, samples
     a single RPC from the test client to the backends, with metadata collection enabled.
     The "set-cookie" header is retrieved and its contents are returned along with the
     server to which it corresponds.
+
+    Since SSA config is supplied as a separate resource from the Route resource,
+    there will be periods of time where the SSA config may not be applied. This is
+    therefore an eventually consistent function.
     """
-    lb_stats = test.assertSuccessfulRpcs(test_client, 1)
-    cookies = get_setcookie_headers(lb_stats.metadatas_by_peer)
-    test.assertLen(cookies, 1)
-    hostname = next(iter(cookies.keys()))
-    cookie = cookies[hostname]
-     
-    chosen_server_candidates = tuple(srv for srv in servers if srv.hostname == hostname)
-    test.assertLen(chosen_server_candidates, 1)
-    chosen_server = chosen_server_candidates[0]
-    return cookie, chosen_server
+    def _assert_retrieve_cookie_and_server():
+        lb_stats = test.assertSuccessfulRpcs(test_client, 1)
+        cookies = get_setcookie_headers(lb_stats.metadatas_by_peer)
+        test.assertLen(cookies, 1)
+        hostname = next(iter(cookies.keys()))
+        cookie = cookies[hostname]
+         
+        chosen_server_candidates = tuple(srv for srv in servers if srv.hostname == hostname)
+        test.assertLen(chosen_server_candidates, 1)
+        chosen_server = chosen_server_candidates[0]
+        return cookie, chosen_server
+
+    retryer = retryers.constant_retryer(
+        wait_fixed=datetime.timedelta(seconds=1),
+        timeout=datetime.timedelta(seconds=_SET_COOKIE_MAX_WAIT_SEC),
+        log_level=logging.INFO,
+    )
+    try:
+        return retryer(_assert_retrieve_cookie_and_server)
+    except retryers.RetryError as retry_error:
+        logger.exception(
+            "Rpcs did not go to expected servers before timeout %s",
+            _SET_COOKIE_MAX_WAIT_SEC,
+        )
+        raise retry_error

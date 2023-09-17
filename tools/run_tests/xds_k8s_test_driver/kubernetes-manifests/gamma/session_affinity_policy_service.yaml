@@ -11,4 +11,5 @@ spec:
     name: ${service_name}
     kind: Service
     namespace: ${namespace_name}
+    group: ""
 ...
