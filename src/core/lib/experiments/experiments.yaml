@@ -209,3 +209,9 @@
   expiry: 2023/11/15
   owner: roth@google.com
   test_tags: ["lb_unit_test", "cpp_lb_end2end_test", "xds_end2end_test"]
+- name: tarpit
+  description:
+    Support tarpitting responses to mitigate some classes of http2 attack
+  expiry: 2024/03/03
+  owner: ctiller@google.com
+  test_tags: []

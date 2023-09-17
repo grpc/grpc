@@ -827,7 +827,7 @@ static grpc_error_handle parse_frame_slice(grpc_chttp2_transport* t,
                          &unused)) {
     grpc_chttp2_parsing_become_skip_parser(t);
     if (s) {
-      grpc_chttp2_cancel_stream(t, s, err);
+      grpc_chttp2_cancel_stream(t, s, err, true);
     }
     return absl::OkStatus();
   }

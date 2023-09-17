@@ -94,6 +94,7 @@ inline bool IsRoundRobinDelegateToPickFirstEnabled() { return true; }
 inline bool IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled() {
   return true;
 }
+inline bool IsTarpitEnabled() { return false; }
 
 #elif defined(GPR_WINDOWS)
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -131,6 +132,7 @@ inline bool IsRoundRobinDelegateToPickFirstEnabled() { return true; }
 inline bool IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled() {
   return true;
 }
+inline bool IsTarpitEnabled() { return false; }
 
 #else
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -168,6 +170,7 @@ inline bool IsRoundRobinDelegateToPickFirstEnabled() { return true; }
 inline bool IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled() {
   return true;
 }
+inline bool IsTarpitEnabled() { return false; }
 #endif
 
 #else
@@ -235,8 +238,10 @@ inline bool IsRoundRobinDelegateToPickFirstEnabled() {
 inline bool IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled() {
   return IsExperimentEnabled(25);
 }
+#define GRPC_EXPERIMENT_IS_INCLUDED_TARPIT
+inline bool IsTarpitEnabled() { return IsExperimentEnabled(26); }
 
-constexpr const size_t kNumExperiments = 26;
+constexpr const size_t kNumExperiments = 27;
 extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];
 
 #endif

@@ -122,6 +122,9 @@ const char* const
 const char* const
     additional_constraints_client_channel_subchannel_wrapper_work_serializer_orphan =
         "{}";
+const char* const description_tarpit =
+    "Support tarpitting responses to mitigate some classes of http2 attack";
+const char* const additional_constraints_tarpit = "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -184,6 +187,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_client_channel_subchannel_wrapper_work_serializer_orphan,
      additional_constraints_client_channel_subchannel_wrapper_work_serializer_orphan,
      true, true},
+    {"tarpit", description_tarpit, additional_constraints_tarpit, false, true},
 };
 
 }  // namespace grpc_core
@@ -290,6 +294,9 @@ const char* const
 const char* const
     additional_constraints_client_channel_subchannel_wrapper_work_serializer_orphan =
         "{}";
+const char* const description_tarpit =
+    "Support tarpitting responses to mitigate some classes of http2 attack";
+const char* const additional_constraints_tarpit = "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -352,6 +359,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_client_channel_subchannel_wrapper_work_serializer_orphan,
      additional_constraints_client_channel_subchannel_wrapper_work_serializer_orphan,
      true, true},
+    {"tarpit", description_tarpit, additional_constraints_tarpit, false, true},
 };
 
 }  // namespace grpc_core
@@ -458,6 +466,9 @@ const char* const
 const char* const
     additional_constraints_client_channel_subchannel_wrapper_work_serializer_orphan =
         "{}";
+const char* const description_tarpit =
+    "Support tarpitting responses to mitigate some classes of http2 attack";
+const char* const additional_constraints_tarpit = "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -520,6 +531,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_client_channel_subchannel_wrapper_work_serializer_orphan,
      additional_constraints_client_channel_subchannel_wrapper_work_serializer_orphan,
      true, true},
+    {"tarpit", description_tarpit, additional_constraints_tarpit, false, true},
 };
 
 }  // namespace grpc_core

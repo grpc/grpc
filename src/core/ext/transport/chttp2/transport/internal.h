@@ -391,6 +391,10 @@ struct grpc_chttp2_transport : public grpc_core::KeepsGrpcInitialized {
   uint32_t incoming_frame_size = 0;
   uint32_t incoming_stream_id = 0;
 
+  int min_tarpit_duration_ms;
+  int max_tarpit_duration_ms;
+  bool allow_tarpit;
+
   grpc_chttp2_stream* incoming_stream = nullptr;
   // active parser
   struct Parser {
@@ -761,7 +765,7 @@ void grpc_chttp2_mark_stream_writable(grpc_chttp2_transport* t,
                                       grpc_chttp2_stream* s);
 
 void grpc_chttp2_cancel_stream(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
-                               grpc_error_handle due_to_error);
+                               grpc_error_handle due_to_error, bool tarpit);
 
 void grpc_chttp2_maybe_complete_recv_initial_metadata(grpc_chttp2_transport* t,
                                                       grpc_chttp2_stream* s);

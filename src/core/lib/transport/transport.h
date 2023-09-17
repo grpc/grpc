@@ -495,6 +495,7 @@ struct grpc_transport_stream_op_batch_payload {
     // Error contract: the transport that gets this op must cause cancel_error
     //                 to be unref'ed after processing it
     grpc_error_handle cancel_error;
+    bool tarpit = false;
   } cancel_stream;
 
   // Indexes correspond to grpc_context_index enum values

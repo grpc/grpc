@@ -370,6 +370,10 @@
 /** Configure the Differentiated Services Code Point used on outgoing packets.
  *  Integer value ranging from 0 to 63. */
 #define GRPC_ARG_DSCP "grpc.dscp"
+/** EXPERIMENTAL: control tarpitting in chttp2 */
+#define GRPC_ARG_HTTP_ALLOW_TARPIT "grpc.http.tarpit"
+#define GRPC_ARG_HTTP_TARPIT_MIN_DURATION_MS "grpc.http.tarpit_min_duration_ms"
+#define GRPC_ARG_HTTP_TARPIT_MAX_DURATION_MS "grpc.http.tarpit_max_duration_ms"
 /** \} */
 
 #endif /* GRPC_IMPL_CHANNEL_ARG_NAMES_H */
