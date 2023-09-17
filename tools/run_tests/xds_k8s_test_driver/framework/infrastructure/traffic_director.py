@@ -202,34 +202,6 @@ class TrafficDirectorManager:  # pylint: disable=too-many-public-methods
         self.compute.delete_health_check(name)
         self.health_check = None
 
-    def create_session_affinity_policy(
-        self,
-        protocol: Optional[SessionAffinityProtocol] = _SessionAffinityHTTP,
-    ):
-        if self.session_affinity_policy:
-            raise ValueError(
-                f"Session affinity policy {self.session_affinity_policy.name} "
-                "already created, delete it first"
-            )
-        if protocol is None:
-            protocol = _SessionAffinityHTTP
-
-        name = self.make_resource_name(self.SESSION_AFFINITY_NAME)
-        logger.info('Creating %s Session Affinity Policy "%s"', protocol.name, name)
-        resource = self.compute.create_session_affinity_policy(name, protocol)
-        self.session_affinity_policy = resource
-
-    def delete_session_affinity_policy(self, force=False):
-        if force:
-            name = self.make_resource_name(self.SESSION_AFFINITY_NAME)
-        elif self.session_affinity_policy:
-            name = self.session_affinity_policy.name
-        else:
-            return
-        logger.info('Deleting Session Affinity Policy "%s"', name)
-        self.compute.delete_session_affinity_policy(name)
-        self.session_affinity_policy = None
-
     def create_backend_service(
         self,
         protocol: Optional[BackendServiceProtocol] = _BackendGRPC,

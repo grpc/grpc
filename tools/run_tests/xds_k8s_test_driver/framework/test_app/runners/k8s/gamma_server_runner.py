@@ -32,6 +32,9 @@ class GammaServerRunner(KubernetesServerRunner):
     # Mutable state.
     route: Optional[k8s.GammaHttpRoute] = None
     frontend_service: Optional[k8s.V1Service] = None
+    sa_filter: Optional[k8s.GcpSessionAffinityFilter] = None
+    sa_policy: Optional[k8s.GcpSessionAffinityPolicy] = None
+    be_policy: Optional[k8s.GcpBackendPolicy] = None
 
     route_name: str
     frontend_service_name: str
@@ -61,6 +64,9 @@ class GammaServerRunner(KubernetesServerRunner):
         namespace_template: Optional[str] = None,
         debug_use_port_forwarding: bool = False,
         enable_workload_identity: bool = True,
+        safilter_name: str = "ssa-filter",
+        sapolicy_name: str = "ssa-policy",
+        bepolicy_name: str = "backend-policy",
     ):
         # pylint: disable=too-many-locals
         super().__init__(
@@ -88,6 +94,9 @@ class GammaServerRunner(KubernetesServerRunner):
 
         self.frontend_service_name = frontend_service_name
         self.route_name = route_name or f"route-{deployment_name}"
+        self.safilter_name = safilter_name
+        self.sapolicy_name = sapolicy_name
+        self.bepolicy_name = bepolicy_name
 
     def run(
         self,
@@ -206,29 +215,16 @@ class GammaServerRunner(KubernetesServerRunner):
 
         return servers
 
-    def createSessionAffinityPolicy(self, *, target_type):
-        if cmp(target_type, "route"):
-            self.sapolicy_name = "ssa-policy-route"
-            self.saPolicy = self._create_session_affinity_policy(
-                "gamma/session_affinity_policy_route.yaml",
-                session_affinity_policy_name=self.sapolicy_name,
-                namespace_name=self.k8s_namespace.name,
-                route_name=self.route_name,
-            )
-        elif cmp(target_type, "service"):
-            self.sapolicy_name = "ssa-policy-service"
-            self.saPolicy = self._create_session_affinity_policy(
-                "gamma/session_affinity_policy_service.yaml",
-                session_affinity_policy_name=self.sapolicy_name,
-                namespace_name=self.k8s_namespace.name,
-                service_name=self.service_name,
-            )
-        else:
-            return
+    def createSessionAffinityPolicy(self, manifest):
+        self.sa_policy = self._create_session_affinity_policy(
+            manifest,
+            session_affinity_policy_name=self.sapolicy_name,
+            namespace_name=self.k8s_namespace.name,
+            route_name=self.route_name,
+        )
 
     def createSessionAffinityFilter(self):
-        self.safilter_name = "ssa-filter"
-        self.saFilter = self._create_session_affinity_filter(
+        self.sa_filter = self._create_session_affinity_filter(
             "gamma/session_affinity_filter.yaml",
             session_affinity_filter_name=self.safilter_name,
             namespace_name=self.k8s_namespace.name,
@@ -236,7 +232,7 @@ class GammaServerRunner(KubernetesServerRunner):
 
     def createBackendPolicy(self, *, target_type):
         self.bepolicy_name = "be-policy"
-        self.bePolicy = self._create_backend_policy(
+        self.be_policy = self._create_backend_policy(
             "gamma/backend_policy.yaml",
             be_policy_name=self.bepolicy_name,
             namespace_name=self.k8s_namespace.name,
@@ -262,17 +258,17 @@ class GammaServerRunner(KubernetesServerRunner):
                 self._delete_deployment(self.deployment_name)
                 self.deployment = None
 
-            if self.saPolicy or force:
+            if self.sa_policy or force:
               self._delete_session_affinity_policy(self.sapolicy_name)
-              self.saPolicy = None
+              self.sa_policy = None
 
-            if self.saFitler or force:
+            if self.sa_filter or force:
               self._delete_session_affinity_filter(self.safilter_name)
-              self.saFilter = None
+              self.sa_filter = None
 
-            if self.bePolicy or force:
+            if self.be_policy or force:
               self._delete_backend_policy(self.bepolicy_name)
-              self.bePolicy = None
+              self.be_policy = None
 
             if self.enable_workload_identity and (
                 self.service_account or force

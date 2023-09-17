@@ -177,6 +177,18 @@ class KubernetesApiManager:
 
         return self._load_dynamic_api(api_name, version, kind)
 
+    @functools.cache  # pylint: disable=no-member
+    def gcp_session_affinity_policy(self, version: str) -> dynamic_res.Resource:
+        api_name = "networking.gke.io"
+        kind = "GCPSessionAffinityPolicy"
+        supported_versions = ("v1") 
+        if version not in supported_versions:
+            raise NotImplementedError(
+                f"{kind} {api_name}/{version} not implemented."
+            )
+
+        return self._load_dynamic_api(api_name, version, kind)
+
     def close(self):
         # TODO(sergiitk): [GAMMA] what to do with dynamic clients?
         self.client.close()
@@ -249,10 +261,6 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
         return self._name
 
     @functools.cached_property  # pylint: disable=no-member
-    def api_gke_mesh(self) -> dynamic_res.Resource:
-        return self._get_dynamic_api("net.gke.io/v1alpha1", "TDMesh")
-
-    @functools.cached_property  # pylint: disable=no-member
     def api_grpc_route(self) -> dynamic_res.Resource:
         return self._get_dynamic_api(
             "gateway.networking.k8s.io/v1alpha2",
@@ -267,17 +275,17 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
         )
 
     @functools.cached_property  # pylint: disable=no-member
-    def api_session_affinity_policy(self) -> dynamic_res.Resource:
-        return self._get_dynamic_api(
-            "networking.gke.io/v1",
-            "GCPSessionAffinityPolicy",
-        )
-
-    @functools.cached_property  # pylint: disable=no-member
     def api_session_affinity_filter(self) -> dynamic_res.Resource:
         return self._get_dynamic_api(
             "networking.gke.io/v1",
             "GCPSessionAffinityFilter",
+        )
+
+    @functools.cached_property  # pylint: disable=no-member
+    def api_session_affinity_policy(self) -> dynamic_res.Resource:
+        return self._get_dynamic_api(
+            "networking.gke.io/v1",
+            "GCPSessionAffinityPolicy",
         )
 
     @functools.cached_property  # pylint: disable=no-member
@@ -316,8 +324,8 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
         if group == "networking.gke.io":
             if kind == "GCPSessionAffinityFilter":
                 return self._api.gcp_session_affinity_filter(version)
-        
-
+            elif kind == "GCPSessionAffinityPolicy":
+                return self._api.gcp_session_affinity_policy(version)
         elif group == "gateway.networking.k8s.io":
             if kind == "GRPCRoute":
                 return self._api.grpc_route(version)
