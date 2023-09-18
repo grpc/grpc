@@ -1982,6 +1982,7 @@ src/core/ext/xds/xds_cluster_specifier_plugin.cc \
 src/core/ext/xds/xds_cluster_specifier_plugin.h \
 src/core/ext/xds/xds_common_types.cc \
 src/core/ext/xds/xds_common_types.h \
+src/core/ext/xds/xds_enabled_server.h \
 src/core/ext/xds/xds_endpoint.cc \
 src/core/ext/xds/xds_endpoint.h \
 src/core/ext/xds/xds_health_status.cc \
@@ -2141,8 +2142,6 @@ src/core/lib/event_engine/tcp_socket_utils.cc \
 src/core/lib/event_engine/tcp_socket_utils.h \
 src/core/lib/event_engine/thread_local.cc \
 src/core/lib/event_engine/thread_local.h \
-src/core/lib/event_engine/thread_pool/original_thread_pool.cc \
-src/core/lib/event_engine/thread_pool/original_thread_pool.h \
 src/core/lib/event_engine/thread_pool/thread_count.cc \
 src/core/lib/event_engine/thread_pool/thread_count.h \
 src/core/lib/event_engine/thread_pool/thread_pool.h \

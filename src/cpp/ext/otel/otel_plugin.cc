@@ -160,6 +160,13 @@ OpenTelemetryPluginBuilder::SetTargetAttributeFilter(
   return *this;
 }
 
+OpenTelemetryPluginBuilder& OpenTelemetryPluginBuilder::SetServerSelector(
+    absl::AnyInvocable<bool(const grpc_core::ChannelArgs& /*args*/) const>
+        server_selector) {
+  server_selector_ = std::move(server_selector);
+  return *this;
+}
+
 void OpenTelemetryPluginBuilder::BuildAndRegisterGlobal() {
   opentelemetry::nostd::shared_ptr<opentelemetry::metrics::MeterProvider>
       meter_provider = meter_provider_;
@@ -213,9 +220,10 @@ void OpenTelemetryPluginBuilder::BuildAndRegisterGlobal() {
   g_otel_plugin_state_->labels_injector = std::move(labels_injector_);
   g_otel_plugin_state_->target_attribute_filter =
       std::move(target_attribute_filter_);
+  g_otel_plugin_state_->server_selector = std::move(server_selector_);
   g_otel_plugin_state_->meter_provider = std::move(meter_provider);
   grpc_core::ServerCallTracerFactory::RegisterGlobal(
-      new grpc::internal::OpenTelemetryServerCallTracerFactory);
+      new grpc::internal::OpenTelemetryServerCallTracerFactory());
   grpc_core::CoreConfiguration::RegisterBuilder(
       [target_selector = std::move(target_selector_)](
           grpc_core::CoreConfiguration::Builder* builder) mutable {
