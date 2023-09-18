@@ -1546,14 +1546,14 @@ absl::Status WeightedRoundRobin::UpdateLocked(UpdateArgs args) {
       gpr_log(GPR_INFO, "[WRR %p] received update with address error: %s", this,
               args.addresses.status().ToString().c_str());
     }
-    // If we already have a subchannel list, then keep using the existing
+    // If we already have an endpoint list, then keep using the existing
     // list, but still report back that the update was not accepted.
     if (endpoint_list_ != nullptr) return args.addresses.status();
   }
-  // Create new subchannel list, replacing the previous pending list, if any.
+  // Create new endpoint list, replacing the previous pending list, if any.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace) &&
       latest_pending_endpoint_list_ != nullptr) {
-    gpr_log(GPR_INFO, "[WRR %p] replacing previous pending subchannel list %p",
+    gpr_log(GPR_INFO, "[WRR %p] replacing previous pending endpoint list %p",
             this, latest_pending_endpoint_list_.get());
   }
   latest_pending_endpoint_list_ =
@@ -1563,7 +1563,7 @@ absl::Status WeightedRoundRobin::UpdateLocked(UpdateArgs args) {
   if (latest_pending_endpoint_list_->size() == 0) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace) &&
         endpoint_list_ != nullptr) {
-      gpr_log(GPR_INFO, "[WRR %p] replacing previous subchannel list %p", this,
+      gpr_log(GPR_INFO, "[WRR %p] replacing previous endpoint list %p", this,
               endpoint_list_.get());
     }
     endpoint_list_ = std::move(latest_pending_endpoint_list_);
