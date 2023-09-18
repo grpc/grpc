@@ -66,7 +66,9 @@ class GammaXdsKubernetesTestCase(xds_k8s_testcase.RegularXdsKubernetesTestCase):
 
         # Generate unique mesh name too.
         unique = rand_string()
-        self.frontend_service_name = f"{self.resource_prefix}-{self.resource_suffix.lower()}"
+        self.frontend_service_name = (
+            f"{self.resource_prefix}-{self.resource_suffix.lower()}"
+        )
 
         # Test Server runner
         self.server_namespace = GammaServerRunner.make_namespace_name(
@@ -120,8 +122,7 @@ class GammaXdsKubernetesTestCase(xds_k8s_testcase.RegularXdsKubernetesTestCase):
     def startTestClient(
         self, test_server: XdsTestServer, **kwargs
     ) -> XdsTestClient:
-        server_target =f"xds:///{self.frontend_service_name}.{self.server_namespace}.svc.cluster.local:8080"
+        server_target = f"xds:///{self.frontend_service_name}.{self.server_namespace}.svc.cluster.local:8080"
         return super().startTestClient(
-            test_server, generate_mesh_id=True,
-            server_target=server_target
+            test_server, generate_mesh_id=True, server_target=server_target
         )

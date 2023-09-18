@@ -183,6 +183,7 @@ class GrpcRoute:
             meshes=None if d.get("meshes") is None else tuple(d["meshes"]),
         )
 
+
 @dataclasses.dataclass(frozen=True)
 class HttpRoute:
     @dataclasses.dataclass(frozen=True)
@@ -249,7 +250,7 @@ class HttpRoute:
     class RouteAction:
         destinations: List["HttpRoute.Destination"]
         stateful_session_affinity: Optional["HttpRoute.StatefulSessionAffinity"]
-        
+
         @classmethod
         def from_response(cls, d: Dict[str, Any]) -> "HttpRoute.RouteAction":
             destinations = (
@@ -260,17 +261,27 @@ class HttpRoute:
                 if "destinations" in d
                 else []
             )
-            stateful_session_affinity = HttpRoute.StatefulSessionAffinity.from_response(d["statefulSessionAffinity"]) if "statefulSessionAffinity" in d else None
-            return cls(destinations=destinations, stateful_session_affinity=stateful_session_affinity)
+            stateful_session_affinity = (
+                HttpRoute.StatefulSessionAffinity.from_response(
+                    d["statefulSessionAffinity"]
+                )
+                if "statefulSessionAffinity" in d
+                else None
+            )
+            return cls(
+                destinations=destinations,
+                stateful_session_affinity=stateful_session_affinity,
+            )
 
     @dataclasses.dataclass(frozen=True)
     class StatefulSessionAffinity:
         cookie_ttl: Optional[str]
 
         @classmethod
-        def from_response(cls, d: Dict[str, Any]) -> "HttpRoute.StatefulSessionAffinity":
+        def from_response(
+            cls, d: Dict[str, Any]
+        ) -> "HttpRoute.StatefulSessionAffinity":
             return cls(cookie_ttl=d.get("cookieTtl"))
-    
 
     @dataclasses.dataclass(frozen=True)
     class RouteRule:

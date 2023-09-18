@@ -140,7 +140,6 @@ class GammaServerRunner(KubernetesServerRunner):
                 self.namespace_template, namespace_name=self.k8s_namespace.name
             )
 
-
         # Reuse existing if requested, create a new deployment when missing.
         # Useful for debugging to avoid NEG loosing relation to deleted service.
         if self.reuse_service:
@@ -154,7 +153,6 @@ class GammaServerRunner(KubernetesServerRunner):
                 neg_name=self.gcp_neg_name,
                 test_port=test_port,
             )
-
 
         # Create the parentref service
         self.frontend_service = self._create_service(
@@ -267,16 +265,16 @@ class GammaServerRunner(KubernetesServerRunner):
                 self.deployment = None
 
             if self.sa_policy or force:
-              self._delete_session_affinity_policy(self.sapolicy_name)
-              self.sa_policy = None
+                self._delete_session_affinity_policy(self.sapolicy_name)
+                self.sa_policy = None
 
             if self.sa_filter or force:
-              self._delete_session_affinity_filter(self.safilter_name)
-              self.sa_filter = None
+                self._delete_session_affinity_filter(self.safilter_name)
+                self.sa_filter = None
 
             if self.be_policy or force:
-              self._delete_backend_policy(self.bepolicy_name)
-              self.be_policy = None
+                self._delete_backend_policy(self.bepolicy_name)
+                self.be_policy = None
 
             if self.enable_workload_identity and (
                 self.service_account or force

@@ -31,12 +31,15 @@ RpcTypeUnaryCall = xds_url_map_testcase.RpcTypeUnaryCall
 
 _REPLICA_COUNT = 3
 
+
 class AffinityTest(xds_gamma_testcase.GammaXdsKubernetesTestCase):
     def test_session_affinity_filter(self):
         test_servers: List[_XdsTestServer]
         with self.subTest("01_run_test_server"):
-            test_servers = self.startTestServers(replica_count=_REPLICA_COUNT,
-                                                    route_template="gamma/route_http_ssafilter.yaml")
+            test_servers = self.startTestServers(
+                replica_count=_REPLICA_COUNT,
+                route_template="gamma/route_http_ssafilter.yaml",
+            )
 
         with self.subTest("02_create_ssa_filter"):
             self.server_runner.createSessionAffinityFilter()
@@ -47,7 +50,12 @@ class AffinityTest(xds_gamma_testcase.GammaXdsKubernetesTestCase):
             test_client: _XdsTestClient = self.startTestClient(test_servers[0])
 
         with self.subTest("04_send_first_RPC_and_retrieve_cookie"):
-            cookie, chosen_server = assert_eventually_retrieve_cookie_and_server(self, test_client, test_servers)
+            (
+                cookie,
+                chosen_server,
+            ) = assert_eventually_retrieve_cookie_and_server(
+                self, test_client, test_servers
+            )
 
         with self.subTest("05_send_RPCs_with_cookie"):
             test_client.update_config.configure(
@@ -70,7 +78,9 @@ class AffinityTest(xds_gamma_testcase.GammaXdsKubernetesTestCase):
             test_servers = self.startTestServers(replica_count=_REPLICA_COUNT)
 
         with self.subTest("02_create_ssa_policy"):
-            self.server_runner.createSessionAffinityPolicy("gamma/session_affinity_policy_route.yaml")
+            self.server_runner.createSessionAffinityPolicy(
+                "gamma/session_affinity_policy_route.yaml"
+            )
 
         # Default is round robin LB policy.
 
@@ -78,7 +88,12 @@ class AffinityTest(xds_gamma_testcase.GammaXdsKubernetesTestCase):
             test_client: _XdsTestClient = self.startTestClient(test_servers[0])
 
         with self.subTest("04_send_first_RPC_and_retrieve_cookie"):
-            cookie, chosen_server = assert_eventually_retrieve_cookie_and_server(self, test_client, test_servers)
+            (
+                cookie,
+                chosen_server,
+            ) = assert_eventually_retrieve_cookie_and_server(
+                self, test_client, test_servers
+            )
 
         with self.subTest("05_send_RPCs_with_cookie"):
             test_client.update_config.configure(
@@ -101,7 +116,9 @@ class AffinityTest(xds_gamma_testcase.GammaXdsKubernetesTestCase):
             test_servers = self.startTestServers(replica_count=_REPLICA_COUNT)
 
         with self.subTest("02_create_ssa_policy"):
-            self.server_runner.createSessionAffinityPolicy("gamma/session_affinity_policy_service.yaml")
+            self.server_runner.createSessionAffinityPolicy(
+                "gamma/session_affinity_policy_service.yaml"
+            )
 
         # Default is round robin LB policy.
 
@@ -109,7 +126,12 @@ class AffinityTest(xds_gamma_testcase.GammaXdsKubernetesTestCase):
             test_client: _XdsTestClient = self.startTestClient(test_servers[0])
 
         with self.subTest("04_send_first_RPC_and_retrieve_cookie"):
-            cookie, chosen_server = assert_eventually_retrieve_cookie_and_server(self, test_client, test_servers)
+            (
+                cookie,
+                chosen_server,
+            ) = assert_eventually_retrieve_cookie_and_server(
+                self, test_client, test_servers
+            )
 
         with self.subTest("05_send_RPCs_with_cookie"):
             test_client.update_config.configure(

@@ -26,6 +26,7 @@ RpcsByPeer: Dict[str, int]
 RpcMetadata = grpc_testing.LoadBalancerStatsResponse.RpcMetadata
 MetadataByPeer: list[str, RpcMetadata]
 
+
 @functools.cache  # pylint: disable=no-member
 def status_from_int(grpc_status_int: int) -> Optional[grpc.StatusCode]:
     """Converts the integer gRPC status code to the grpc.StatusCode enum."""
@@ -152,7 +153,9 @@ class PrettyLoadBalancerStats:
             pretty_metadata = ""
             for metadatas in metadatas.rpc_metadata:
                 for metadata in metadatas.metadata:
-                    pretty_metadata += metadata.key + ": " + metadata.value + ", "
+                    pretty_metadata += (
+                        metadata.key + ": " + metadata.value + ", "
+                    )
             result[peer] = pretty_metadata
         return result
 
@@ -170,8 +173,11 @@ class PrettyLoadBalancerStats:
             num_failures=lb_stats.num_failures,
             rpcs_by_peer=cls._parse_rpcs_by_peer(lb_stats.rpcs_by_peer),
             rpcs_by_method=rpcs_by_method,
-            metadatas_by_peer=cls._parse_metadatas_by_peer(lb_stats.metadatas_by_peer),
+            metadatas_by_peer=cls._parse_metadatas_by_peer(
+                lb_stats.metadatas_by_peer
+            ),
         )
+
 
 def lb_stats_pretty(lb: grpc_testing.LoadBalancerStatsResponse) -> str:
     """Pretty print LoadBalancerStatsResponse.

@@ -26,11 +26,12 @@ from typing import Sequence, Tuple
 from framework.helpers import retryers
 from framework import xds_k8s_testcase
 
-_XdsKubernetesBaseTestCase = xds_k8s_testcase.XdsKubernetesBaseTestCase 
+_XdsKubernetesBaseTestCase = xds_k8s_testcase.XdsKubernetesBaseTestCase
 _XdsTestServer = xds_k8s_testcase.XdsTestServer
 _XdsTestClient = xds_k8s_testcase.XdsTestClient
 
 _SET_COOKIE_MAX_WAIT_SEC = 300
+
 
 def get_setcookie_headers(
     metadatas_by_peer: dict[str, "MetadataByPeer"]
@@ -44,9 +45,13 @@ def get_setcookie_headers(
     return cookies
 
 
-def assert_eventually_retrieve_cookie_and_server(test: _XdsKubernetesBaseTestCase, test_client: _XdsTestClient, servers: Sequence[_XdsTestServer]) -> Tuple[str, _XdsTestServer]:
-    """ Retrieves the initial cookie and corresponding server.
-    
+def assert_eventually_retrieve_cookie_and_server(
+    test: _XdsKubernetesBaseTestCase,
+    test_client: _XdsTestClient,
+    servers: Sequence[_XdsTestServer],
+) -> Tuple[str, _XdsTestServer]:
+    """Retrieves the initial cookie and corresponding server.
+
     Given a test client and set of backends for which SSA is enabled, samples
     a single RPC from the test client to the backends, with metadata collection enabled.
     The "set-cookie" header is retrieved and its contents are returned along with the
@@ -56,14 +61,17 @@ def assert_eventually_retrieve_cookie_and_server(test: _XdsKubernetesBaseTestCas
     there will be periods of time where the SSA config may not be applied. This is
     therefore an eventually consistent function.
     """
+
     def _assert_retrieve_cookie_and_server():
         lb_stats = test.assertSuccessfulRpcs(test_client, 1)
         cookies = get_setcookie_headers(lb_stats.metadatas_by_peer)
         test.assertLen(cookies, 1)
         hostname = next(iter(cookies.keys()))
         cookie = cookies[hostname]
-         
-        chosen_server_candidates = tuple(srv for srv in servers if srv.hostname == hostname)
+
+        chosen_server_candidates = tuple(
+            srv for srv in servers if srv.hostname == hostname
+        )
         test.assertLen(chosen_server_candidates, 1)
         chosen_server = chosen_server_candidates[0]
         return cookie, chosen_server

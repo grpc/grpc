@@ -29,6 +29,7 @@ RpcTypeUnaryCall = xds_url_map_testcase.RpcTypeUnaryCall
 
 _REPLICA_COUNT = 3
 
+
 class AppNetTest(xds_k8s_testcase.AppNetXdsKubernetesTestCase):
     def test_ping_pong(self):
         with self.subTest("0_create_health_check"):
@@ -80,13 +81,18 @@ class AppNetTest(xds_k8s_testcase.AppNetXdsKubernetesTestCase):
             self.td.create_http_route_with_content(
                 {
                     "meshes": [self.td.mesh.url],
-                    "hostnames": [f"{self.server_xds_host}:{self.server_xds_port}"],
+                    "hostnames": [
+                        f"{self.server_xds_host}:{self.server_xds_port}"
+                    ],
                     "rules": [
                         {
                             "action": {
                                 "destinations": [
                                     {
-                                        "serviceName": self.td.netsvc.resource_full_name(self.td.backend_service.name, "backendServices"),
+                                        "serviceName": self.td.netsvc.resource_full_name(
+                                            self.td.backend_service.name,
+                                            "backendServices",
+                                        ),
                                         "weight": 1,
                                     },
                                 ],
@@ -108,10 +114,17 @@ class AppNetTest(xds_k8s_testcase.AppNetXdsKubernetesTestCase):
         # Default is round robin LB policy.
 
         with self.subTest("6_start_test_client"):
-            test_client: _XdsTestClient = self.startTestClient(test_servers[0], config_mesh=self.td.mesh.name)
+            test_client: _XdsTestClient = self.startTestClient(
+                test_servers[0], config_mesh=self.td.mesh.name
+            )
 
         with self.subTest("7_send_first_RPC_and_retrieve_cookie"):
-            cookie, chosen_server = assert_eventually_retrieve_cookie_and_server(self, test_client, test_servers)
+            (
+                cookie,
+                chosen_server,
+            ) = assert_eventually_retrieve_cookie_and_server(
+                self, test_client, test_servers
+            )
 
         with self.subTest("8_send_RPCs_with_cookie"):
             test_client.update_config.configure(
@@ -127,6 +140,7 @@ class AppNetTest(xds_k8s_testcase.AppNetXdsKubernetesTestCase):
             self.assertRpcsEventuallyGoToGivenServers(
                 test_client, [chosen_server], 10
             )
+
 
 if __name__ == "__main__":
     absltest.main(failfast=True)

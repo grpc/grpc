@@ -27,6 +27,7 @@ _XdsTestServer = xds_k8s_testcase.XdsTestServer
 _XdsTestClient = xds_k8s_testcase.XdsTestClient
 RpcTypeUnaryCall = xds_url_map_testcase.RpcTypeUnaryCall
 
+
 class BaselineTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
     def test_traffic_director_grpc_setup(self):
         with self.subTest("0_create_health_check"):
@@ -46,7 +47,7 @@ class BaselineTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
 
         with self.subTest("5_start_test_server"):
             test_server: _XdsTestServer = self.startTestServers()[0]
-#
+        #
         with self.subTest("6_add_server_backends_to_backend_service"):
             self.setupServerBackends()
 
@@ -58,6 +59,7 @@ class BaselineTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
 
         with self.subTest("9_test_server_received_rpcs_from_test_client"):
             self.assertSuccessfulRpcs(test_client)
+
 
 if __name__ == "__main__":
     absltest.main(failfast=True)
