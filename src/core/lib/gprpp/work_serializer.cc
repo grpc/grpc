@@ -488,6 +488,7 @@ bool WorkSerializer::DispatchingWorkSerializer::Refill() {
       delete this;
       return false;
   }
+  GPR_UNREACHABLE_CODE(return false);
 }
 
 //

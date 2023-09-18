@@ -38,6 +38,7 @@
 #include <grpc/slice.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -133,6 +134,10 @@ class Server : public InternallyRefCounted<Server>,
 
   grpc_server_config_fetcher* config_fetcher() const {
     return config_fetcher_.get();
+  }
+
+  ServerCallTracerFactory* server_call_tracer_factory() const {
+    return server_call_tracer_factory_;
   }
 
   void set_config_fetcher(
@@ -428,6 +433,7 @@ class Server : public InternallyRefCounted<Server>,
   ChannelArgs const channel_args_;
   RefCountedPtr<channelz::ServerNode> channelz_node_;
   std::unique_ptr<grpc_server_config_fetcher> config_fetcher_;
+  ServerCallTracerFactory* const server_call_tracer_factory_;
 
   std::vector<grpc_completion_queue*> cqs_;
   std::vector<grpc_pollset*> pollsets_;

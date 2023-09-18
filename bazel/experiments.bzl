@@ -61,18 +61,24 @@ EXPERIMENTS = {
                 "work_serializer_dispatch",
             ],
             "cpp_lb_end2end_test": [
+                "client_channel_subchannel_wrapper_work_serializer_orphan",
                 "round_robin_delegate_to_pick_first",
+                "wrr_delegate_to_pick_first",
             ],
             "flow_control_test": [
                 "lazier_stream_updates",
             ],
             "lb_unit_test": [
+                "client_channel_subchannel_wrapper_work_serializer_orphan",
                 "round_robin_delegate_to_pick_first",
                 "work_serializer_dispatch",
+                "wrr_delegate_to_pick_first",
             ],
             "xds_end2end_test": [
+                "client_channel_subchannel_wrapper_work_serializer_orphan",
                 "round_robin_delegate_to_pick_first",
                 "work_serializer_dispatch",
+                "wrr_delegate_to_pick_first",
             ],
         },
     },
@@ -120,18 +126,24 @@ EXPERIMENTS = {
                 "work_serializer_dispatch",
             ],
             "cpp_lb_end2end_test": [
+                "client_channel_subchannel_wrapper_work_serializer_orphan",
                 "round_robin_delegate_to_pick_first",
+                "wrr_delegate_to_pick_first",
             ],
             "flow_control_test": [
                 "lazier_stream_updates",
             ],
             "lb_unit_test": [
+                "client_channel_subchannel_wrapper_work_serializer_orphan",
                 "round_robin_delegate_to_pick_first",
                 "work_serializer_dispatch",
+                "wrr_delegate_to_pick_first",
             ],
             "xds_end2end_test": [
+                "client_channel_subchannel_wrapper_work_serializer_orphan",
                 "round_robin_delegate_to_pick_first",
                 "work_serializer_dispatch",
+                "wrr_delegate_to_pick_first",
             ],
         },
     },
@@ -189,18 +201,24 @@ EXPERIMENTS = {
                 "work_serializer_dispatch",
             ],
             "cpp_lb_end2end_test": [
+                "client_channel_subchannel_wrapper_work_serializer_orphan",
                 "round_robin_delegate_to_pick_first",
+                "wrr_delegate_to_pick_first",
             ],
             "flow_control_test": [
                 "lazier_stream_updates",
             ],
             "lb_unit_test": [
+                "client_channel_subchannel_wrapper_work_serializer_orphan",
                 "round_robin_delegate_to_pick_first",
                 "work_serializer_dispatch",
+                "wrr_delegate_to_pick_first",
             ],
             "xds_end2end_test": [
+                "client_channel_subchannel_wrapper_work_serializer_orphan",
                 "round_robin_delegate_to_pick_first",
                 "work_serializer_dispatch",
+                "wrr_delegate_to_pick_first",
             ],
         },
     },
