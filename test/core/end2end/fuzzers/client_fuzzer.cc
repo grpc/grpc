@@ -16,6 +16,7 @@
 #include <string.h>
 
 #include <initializer_list>
+#include <memory>
 #include <string>
 
 #include "absl/status/statusor.h"
