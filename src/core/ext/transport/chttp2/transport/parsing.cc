@@ -624,7 +624,7 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
           t->incoming_stream_id));
       return init_header_skip_frame_parser(t, priority_type, is_eoh);
     } else if (GPR_UNLIKELY(
-                   t->stream_map.size() >=
+                   t->stream_map.size() + t->extra_streams >=
                    t->settings[GRPC_ACKED_SETTINGS]
                               [GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS])) {
       return GRPC_ERROR_CREATE("Max stream count exceeded");

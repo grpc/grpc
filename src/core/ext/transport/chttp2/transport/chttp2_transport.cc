@@ -43,6 +43,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "internal.h"
+#include "legacy_frame.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
@@ -2071,8 +2072,8 @@ void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_chttp2_transport* t,
   }
 }
 
-static void remove_stream(grpc_chttp2_transport* t, uint32_t id,
-                          grpc_error_handle error) {
+static grpc_chttp2_transport::RemovedStreamHandle remove_stream(
+    grpc_chttp2_transport* t, uint32_t id, grpc_error_handle error) {
   grpc_chttp2_stream* s = t->stream_map.extract(id).mapped();
   GPR_DEBUG_ASSERT(s);
   if (t->incoming_stream == s) {
@@ -2095,6 +2096,9 @@ static void remove_stream(grpc_chttp2_transport* t, uint32_t id,
   grpc_chttp2_list_remove_stalled_by_transport(t, s);
 
   maybe_start_some_streams(t);
+
+  if (t->is_client) return grpc_chttp2_transport::RemovedStreamHandle();
+  return grpc_chttp2_transport::RemovedStreamHandle(t->Ref());
 }
 
 namespace grpc_core {
@@ -2137,22 +2141,26 @@ void grpc_chttp2_cancel_stream(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
     return;
   }
 
+  if (!due_to_error.ok() && !s->seen_error) {
+    s->seen_error = true;
+  }
   if (!s->read_closed || !s->write_closed) {
     if (s->id != 0) {
       grpc_http2_error_code http_error;
       grpc_error_get_status(due_to_error, s->deadline, nullptr, nullptr,
                             &http_error, nullptr);
       grpc_core::MaybeTarpit(
-          t, tarpit, [id = s->id, http_error](grpc_chttp2_transport* t) {
+          t, tarpit,
+          [id = s->id, http_error,
+           remove_stream_handle = grpc_chttp2_mark_stream_closed(
+               t, s, 1, 1, due_to_error)](grpc_chttp2_transport* t) {
             grpc_chttp2_add_rst_stream_to_next_write(
                 t, id, static_cast<uint32_t>(http_error), nullptr);
             grpc_chttp2_initiate_write(t,
                                        GRPC_CHTTP2_INITIATE_WRITE_RST_STREAM);
           });
+      return;
     }
-  }
-  if (!due_to_error.ok() && !s->seen_error) {
-    s->seen_error = true;
   }
   grpc_chttp2_mark_stream_closed(t, s, 1, 1, due_to_error);
 }
@@ -2246,9 +2254,10 @@ void grpc_chttp2_fail_pending_writes(grpc_chttp2_transport* t,
   flush_write_list(t, s, &s->on_flow_controlled_cbs, error);
 }
 
-void grpc_chttp2_mark_stream_closed(grpc_chttp2_transport* t,
-                                    grpc_chttp2_stream* s, int close_reads,
-                                    int close_writes, grpc_error_handle error) {
+grpc_chttp2_transport::RemovedStreamHandle grpc_chttp2_mark_stream_closed(
+    grpc_chttp2_transport* t, grpc_chttp2_stream* s, int close_reads,
+    int close_writes, grpc_error_handle error) {
+  grpc_chttp2_transport::RemovedStreamHandle rsh;
   if (grpc_http_trace.enabled()) {
     gpr_log(
         GPR_DEBUG, "MARK_STREAM_CLOSED: t=%p s=%p(id=%d) %s [%s]", t, s, s->id,
@@ -2264,7 +2273,7 @@ void grpc_chttp2_mark_stream_closed(grpc_chttp2_transport* t,
       grpc_chttp2_fake_status(t, s, overall_error);
     }
     grpc_chttp2_maybe_complete_recv_trailing_metadata(t, s);
-    return;
+    return rsh;
   }
   bool closed_read = false;
   bool became_closed = false;
@@ -2282,7 +2291,7 @@ void grpc_chttp2_mark_stream_closed(grpc_chttp2_transport* t,
     became_closed = true;
     grpc_error_handle overall_error = removal_error(error, s, "Stream removed");
     if (s->id != 0) {
-      remove_stream(t, s->id, overall_error);
+      rsh = remove_stream(t, s->id, overall_error);
     } else {
       // Purge streams waiting on concurrency still waiting for id assignment
       grpc_chttp2_list_remove_waiting_for_concurrency(t, s);
@@ -2306,6 +2315,7 @@ void grpc_chttp2_mark_stream_closed(grpc_chttp2_transport* t,
     grpc_chttp2_maybe_complete_recv_trailing_metadata(t, s);
     GRPC_CHTTP2_STREAM_UNREF(s, "chttp2");
   }
+  return rsh;
 }
 
 static void close_from_api(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
@@ -2321,8 +2331,9 @@ static void close_from_api(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
       t, tarpit,
       [error = std::move(error),
        sent_initial_metadata = s->sent_initial_metadata, id = s->id,
-       grpc_status,
-       message = std::move(message)](grpc_chttp2_transport* t) mutable {
+       grpc_status, message = std::move(message),
+       remove_stream_handle = grpc_chttp2_mark_stream_closed(
+           t, s, 1, 1, error)](grpc_chttp2_transport* t) mutable {
         grpc_slice hdr;
         grpc_slice status_hdr;
         grpc_slice http_status_hdr;
@@ -2476,7 +2487,6 @@ static void close_from_api(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
         grpc_chttp2_initiate_write(t,
                                    GRPC_CHTTP2_INITIATE_WRITE_CLOSE_FROM_API);
       });
-  grpc_chttp2_mark_stream_closed(t, s, 1, 1, error);
 }
 
 static void end_all_the_calls(grpc_chttp2_transport* t,
