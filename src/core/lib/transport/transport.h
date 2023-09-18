@@ -508,7 +508,6 @@ typedef struct grpc_transport_op {
   /// connectivity monitoring - set connectivity_state to NULL to unsubscribe
   grpc_core::OrphanablePtr<grpc_core::ConnectivityStateWatcherInterface>
       start_connectivity_watch;
-  grpc_connectivity_state start_connectivity_watch_state = GRPC_CHANNEL_IDLE;
   grpc_core::ConnectivityStateWatcherInterface* stop_connectivity_watch =
       nullptr;
   /// should the transport be disconnected
@@ -519,19 +518,9 @@ typedef struct grpc_transport_op {
   /// Error contract: the transport that gets this op must cause
   ///                goaway_error to be unref'ed after processing it
   grpc_error_handle goaway_error;
-  /// set the callback for accepting new streams;
-  /// this is a permanent callback, unlike the other one-shot closures.
-  /// If true, the callback is set to set_accept_stream_fn, with its
-  /// user_data argument set to set_accept_stream_user_data
-  bool set_accept_stream = false;
   void (*set_accept_stream_fn)(void* user_data, grpc_transport* transport,
                                const void* server_data) = nullptr;
   void* set_accept_stream_user_data = nullptr;
-  /// set the callback for accepting new streams based upon promises;
-  /// this is a permanent callback, unlike the other one-shot closures.
-  /// If true, the callback is set to set_make_promise_fn, with its
-  /// user_data argument set to set_make_promise_data
-  bool set_make_promise = false;
   void (*set_make_promise_fn)(void* user_data, grpc_transport* transport,
                               const void* server_data) = nullptr;
   void* set_make_promise_user_data = nullptr;
@@ -547,8 +536,21 @@ typedef struct grpc_transport_op {
     /// Called when the ping ack is received
     grpc_closure* on_ack = nullptr;
   } send_ping;
+  grpc_connectivity_state start_connectivity_watch_state = GRPC_CHANNEL_IDLE;
   // If true, will reset the channel's connection backoff.
   bool reset_connect_backoff = false;
+
+  /// set the callback for accepting new streams;
+  /// this is a permanent callback, unlike the other one-shot closures.
+  /// If true, the callback is set to set_accept_stream_fn, with its
+  /// user_data argument set to set_accept_stream_user_data
+  bool set_accept_stream = false;
+
+  /// set the callback for accepting new streams based upon promises;
+  /// this is a permanent callback, unlike the other one-shot closures.
+  /// If true, the callback is set to set_make_promise_fn, with its
+  /// user_data argument set to set_make_promise_data
+  bool set_make_promise = false;
 
   //**************************************************************************
   // remaining fields are initialized and used at the discretion of the
