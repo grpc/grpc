@@ -47,6 +47,8 @@ spec:
             value: "/tmp/grpc-xds/td-grpc-bootstrap.json"
           - name: GRPC_XDS_EXPERIMENTAL_V3_SUPPORT
             value: "true"
+          - name: GRPC_EXPERIMENTAL_XDS_ENABLE_OVERRIDE_HOST
+            value: "true"
         volumeMounts:
           - mountPath: /tmp/grpc-xds/
             name: grpc-td-conf

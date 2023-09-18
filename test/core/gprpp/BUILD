@@ -200,6 +200,7 @@ grpc_cc_test(
     name = "ref_counted_ptr_test",
     srcs = ["ref_counted_ptr_test.cc"],
     external_deps = [
+        "absl/container:flat_hash_set",
         "gtest",
     ],
     language = "C++",
@@ -382,6 +383,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//test/core/event_engine:event_engine_test_utils",
         "//test/core/util:grpc_test_util",
     ],
 )

@@ -23,11 +23,12 @@ EXPERIMENTS = {
         "off": {
             "core_end2end_test": [
                 "event_engine_listener",
-                "promise_based_client_call",
                 "promise_based_server_call",
+                "work_serializer_dispatch",
             ],
             "cpp_end2end_test": [
                 "promise_based_server_call",
+                "work_serializer_dispatch",
             ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
@@ -41,8 +42,8 @@ EXPERIMENTS = {
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
             ],
-            "lame_client_test": [
-                "promise_based_client_call",
+            "lb_unit_test": [
+                "work_serializer_dispatch",
             ],
             "logging_test": [
                 "promise_based_server_call",
@@ -54,11 +55,30 @@ EXPERIMENTS = {
             ],
             "xds_end2end_test": [
                 "promise_based_server_call",
+                "work_serializer_dispatch",
             ],
         },
         "on": {
             "core_end2end_test": [
                 "work_stealing",
+            ],
+            "cpp_lb_end2end_test": [
+                "client_channel_subchannel_wrapper_work_serializer_orphan",
+                "round_robin_delegate_to_pick_first",
+                "wrr_delegate_to_pick_first",
+            ],
+            "flow_control_test": [
+                "lazier_stream_updates",
+            ],
+            "lb_unit_test": [
+                "client_channel_subchannel_wrapper_work_serializer_orphan",
+                "round_robin_delegate_to_pick_first",
+                "wrr_delegate_to_pick_first",
+            ],
+            "xds_end2end_test": [
+                "client_channel_subchannel_wrapper_work_serializer_orphan",
+                "round_robin_delegate_to_pick_first",
+                "wrr_delegate_to_pick_first",
             ],
         },
     },
@@ -68,11 +88,12 @@ EXPERIMENTS = {
         "off": {
             "core_end2end_test": [
                 "event_engine_listener",
-                "promise_based_client_call",
                 "promise_based_server_call",
+                "work_serializer_dispatch",
             ],
             "cpp_end2end_test": [
                 "promise_based_server_call",
+                "work_serializer_dispatch",
             ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
@@ -86,8 +107,8 @@ EXPERIMENTS = {
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
             ],
-            "lame_client_test": [
-                "promise_based_client_call",
+            "lb_unit_test": [
+                "work_serializer_dispatch",
             ],
             "logging_test": [
                 "promise_based_server_call",
@@ -99,11 +120,30 @@ EXPERIMENTS = {
             ],
             "xds_end2end_test": [
                 "promise_based_server_call",
+                "work_serializer_dispatch",
             ],
         },
         "on": {
             "core_end2end_test": [
                 "work_stealing",
+            ],
+            "cpp_lb_end2end_test": [
+                "client_channel_subchannel_wrapper_work_serializer_orphan",
+                "round_robin_delegate_to_pick_first",
+                "wrr_delegate_to_pick_first",
+            ],
+            "flow_control_test": [
+                "lazier_stream_updates",
+            ],
+            "lb_unit_test": [
+                "client_channel_subchannel_wrapper_work_serializer_orphan",
+                "round_robin_delegate_to_pick_first",
+                "wrr_delegate_to_pick_first",
+            ],
+            "xds_end2end_test": [
+                "client_channel_subchannel_wrapper_work_serializer_orphan",
+                "round_robin_delegate_to_pick_first",
+                "wrr_delegate_to_pick_first",
             ],
         },
     },
@@ -117,11 +157,12 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "event_engine_client",
                 "event_engine_listener",
-                "promise_based_client_call",
                 "promise_based_server_call",
+                "work_serializer_dispatch",
             ],
             "cpp_end2end_test": [
                 "promise_based_server_call",
+                "work_serializer_dispatch",
             ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
@@ -138,8 +179,8 @@ EXPERIMENTS = {
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
             ],
-            "lame_client_test": [
-                "promise_based_client_call",
+            "lb_unit_test": [
+                "work_serializer_dispatch",
             ],
             "logging_test": [
                 "promise_based_server_call",
@@ -154,11 +195,30 @@ EXPERIMENTS = {
             ],
             "xds_end2end_test": [
                 "promise_based_server_call",
+                "work_serializer_dispatch",
             ],
         },
         "on": {
             "core_end2end_test": [
                 "work_stealing",
+            ],
+            "cpp_lb_end2end_test": [
+                "client_channel_subchannel_wrapper_work_serializer_orphan",
+                "round_robin_delegate_to_pick_first",
+                "wrr_delegate_to_pick_first",
+            ],
+            "flow_control_test": [
+                "lazier_stream_updates",
+            ],
+            "lb_unit_test": [
+                "client_channel_subchannel_wrapper_work_serializer_orphan",
+                "round_robin_delegate_to_pick_first",
+                "wrr_delegate_to_pick_first",
+            ],
+            "xds_end2end_test": [
+                "client_channel_subchannel_wrapper_work_serializer_orphan",
+                "round_robin_delegate_to_pick_first",
+                "wrr_delegate_to_pick_first",
             ],
         },
     },

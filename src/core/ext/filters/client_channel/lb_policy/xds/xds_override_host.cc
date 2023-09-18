@@ -18,6 +18,7 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.h"
 
+#include <inttypes.h>
 #include <stddef.h>
 
 #include <algorithm>
@@ -28,6 +29,7 @@
 #include <set>
 #include <string>
 #include <tuple>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -50,6 +52,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -430,7 +433,10 @@ void XdsOverrideHostLb::ResetBackoffLocked() {
 
 absl::Status XdsOverrideHostLb::UpdateLocked(UpdateArgs args) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
-    gpr_log(GPR_INFO, "[xds_override_host_lb %p] Received update", this);
+    gpr_log(GPR_INFO,
+            "[xds_override_host_lb %p] Received update with %" PRIuPTR
+            " addresses",
+            this, args.addresses.ok() ? args.addresses->size() : 0);
   }
   auto old_config = std::move(config_);
   // Update config.
@@ -498,6 +504,10 @@ OrphanablePtr<LoadBalancingPolicy> XdsOverrideHostLb::CreateChildPolicyLocked(
 absl::StatusOr<ServerAddressList> XdsOverrideHostLb::UpdateAddressMap(
     absl::StatusOr<ServerAddressList> addresses) {
   if (!addresses.ok()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
+      gpr_log(GPR_INFO, "[xds_override_host_lb %p] address error: %s", this,
+              addresses.status().ToString().c_str());
+    }
     return addresses;
   }
   ServerAddressList return_value;
@@ -505,13 +515,30 @@ absl::StatusOr<ServerAddressList> XdsOverrideHostLb::UpdateAddressMap(
   for (const auto& address : *addresses) {
     XdsHealthStatus status = GetAddressHealthStatus(address);
     if (status.status() != XdsHealthStatus::kDraining) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
+        gpr_log(GPR_INFO,
+                "[xds_override_host_lb %p] address %s: not draining, "
+                "passing to child",
+                this, address.ToString().c_str());
+      }
       return_value.push_back(address);
     } else if (!config_->override_host_status_set().Contains(status)) {
       // Skip draining hosts if not in the override status set.
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
+        gpr_log(GPR_INFO,
+                "[xds_override_host_lb %p] address %s: draining but not in "
+                "override_host_status set -- ignoring",
+                this, address.ToString().c_str());
+      }
       continue;
     }
     auto key = grpc_sockaddr_to_uri(&address.address());
     if (key.ok()) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
+        gpr_log(GPR_INFO,
+                "[xds_override_host_lb %p] address %s: adding map key %s", this,
+                address.ToString().c_str(), key->c_str());
+      }
       addresses_for_map.emplace(std::move(*key), status);
     }
   }
@@ -519,6 +546,10 @@ absl::StatusOr<ServerAddressList> XdsOverrideHostLb::UpdateAddressMap(
     MutexLock lock(&subchannel_map_mu_);
     for (auto it = subchannel_map_.begin(); it != subchannel_map_.end();) {
       if (addresses_for_map.find(it->first) == addresses_for_map.end()) {
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
+          gpr_log(GPR_INFO, "[xds_override_host_lb %p] removing map key %s",
+                  this, it->first.c_str());
+        }
         it = subchannel_map_.erase(it);
       } else {
         ++it;
@@ -527,10 +558,20 @@ absl::StatusOr<ServerAddressList> XdsOverrideHostLb::UpdateAddressMap(
     for (const auto& key_status : addresses_for_map) {
       auto it = subchannel_map_.find(key_status.first);
       if (it == subchannel_map_.end()) {
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
+          gpr_log(GPR_INFO, "[xds_override_host_lb %p] adding map key %s", this,
+                  key_status.first.c_str());
+        }
         subchannel_map_.emplace(std::piecewise_construct,
                                 std::forward_as_tuple(key_status.first),
                                 std::forward_as_tuple(key_status.second));
       } else {
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
+          gpr_log(GPR_INFO,
+                  "[xds_override_host_lb %p] setting EDS health status for "
+                  "%s to %s",
+                  this, key_status.first.c_str(), key_status.second.ToString());
+        }
         it->second.SetEdsHealthStatus(key_status.second);
       }
     }
@@ -678,8 +719,19 @@ void XdsOverrideHostLb::SubchannelWrapper::UpdateConnectivityState(
 }
 
 void XdsOverrideHostLb::SubchannelWrapper::Orphan() {
-  key_.reset();
-  wrapped_subchannel()->CancelConnectivityStateWatch(watcher_);
+  if (!IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled()) {
+    key_.reset();
+    wrapped_subchannel()->CancelConnectivityStateWatch(watcher_);
+    return;
+  }
+  WeakRefCountedPtr<SubchannelWrapper> self = WeakRef();
+  policy_->work_serializer()->Run(
+      [self = std::move(self)]() {
+        self->key_.reset();
+        self->wrapped_subchannel()->CancelConnectivityStateWatch(
+            self->watcher_);
+      },
+      DEBUG_LOCATION);
 }
 
 grpc_pollset_set* XdsOverrideHostLb::SubchannelWrapper::

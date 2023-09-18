@@ -15,7 +15,7 @@ settings:
   core_version: 35.0.0
   csharp_major_version: 2
   g_stands_for: generative
-  protobuf_version: 3.23.4
+  protobuf_version: 3.24.3
   version: 1.59.0-dev
 configs:
   asan:
@@ -208,4 +208,7 @@ swift_package:
   - grpc_authorization_provider
   - gpr
   - upb
+  - upb_json_lib
+  - upb_textformat_lib
+  - utf8_range_lib
   - re2

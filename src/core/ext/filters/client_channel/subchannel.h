@@ -54,6 +54,7 @@
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -83,6 +84,8 @@ class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
   }
 
   size_t GetInitialCallSizeEstimate() const;
+
+  ArenaPromise<ServerMetadataHandle> MakeCallPromise(CallArgs call_args);
 
  private:
   grpc_channel_stack* channel_stack_;
@@ -218,6 +221,8 @@ class Subchannel : public DualRefCounted<Subchannel> {
 
   channelz::SubchannelNode* channelz_node();
 
+  const grpc_resolved_address& address() const { return key_.address(); }
+
   // Starts watching the subchannel's connectivity state.
   // The first callback to the watcher will be delivered ~immediately.
   // Subsequent callbacks will be delivered as the subchannel's state
@@ -266,6 +271,10 @@ class Subchannel : public DualRefCounted<Subchannel> {
   // this type is the specified producer.
   void RemoveDataProducer(DataProducerInterface* data_producer)
       ABSL_LOCKS_EXCLUDED(mu_);
+
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine() {
+    return event_engine_;
+  }
 
  private:
   // A linked list of ConnectivityStateWatcherInterfaces that are monitoring

@@ -14,7 +14,6 @@
 
 import collections
 import contextlib
-import distutils.spawn
 import errno
 import itertools
 import os

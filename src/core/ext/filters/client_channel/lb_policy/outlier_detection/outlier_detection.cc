@@ -49,8 +49,8 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -124,13 +124,12 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
   class SubchannelState;
   class SubchannelWrapper : public DelegatingSubchannel {
    public:
-    SubchannelWrapper(RefCountedPtr<SubchannelState> subchannel_state,
-                      RefCountedPtr<SubchannelInterface> subchannel,
-                      bool disable_via_raw_connectivity_watch)
+    SubchannelWrapper(std::shared_ptr<WorkSerializer> work_serializer,
+                      RefCountedPtr<SubchannelState> subchannel_state,
+                      RefCountedPtr<SubchannelInterface> subchannel)
         : DelegatingSubchannel(std::move(subchannel)),
-          subchannel_state_(std::move(subchannel_state)),
-          disable_via_raw_connectivity_watch_(
-              disable_via_raw_connectivity_watch) {
+          work_serializer_(std::move(work_serializer)),
+          subchannel_state_(std::move(subchannel_state)) {
       if (subchannel_state_ != nullptr) {
         subchannel_state_->AddSubchannel(this);
         if (subchannel_state_->ejection_time().has_value()) {
@@ -139,21 +138,26 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
       }
     }
 
-    ~SubchannelWrapper() override {
-      if (subchannel_state_ != nullptr) {
-        subchannel_state_->RemoveSubchannel(this);
+    void Orphan() override {
+      if (!IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled()) {
+        if (subchannel_state_ != nullptr) {
+          subchannel_state_->RemoveSubchannel(this);
+        }
+        return;
       }
+      WeakRefCountedPtr<SubchannelWrapper> self = WeakRef();
+      work_serializer_->Run(
+          [self = std::move(self)]() {
+            if (self->subchannel_state_ != nullptr) {
+              self->subchannel_state_->RemoveSubchannel(self.get());
+            }
+          },
+          DEBUG_LOCATION);
     }
 
     void Eject();
 
     void Uneject();
-
-    void WatchConnectivityState(
-        std::unique_ptr<ConnectivityStateWatcherInterface> watcher) override;
-
-    void CancelConnectivityStateWatch(
-        ConnectivityStateWatcherInterface* watcher) override;
 
     void AddDataWatcher(std::unique_ptr<DataWatcherInterface> watcher) override;
 
@@ -162,11 +166,6 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
     }
 
    private:
-    // TODO(roth): As a temporary hack, this needs to handle watchers
-    // stored as both unique_ptr<> and shared_ptr<>, since the former is
-    // used for raw connectivity state watches and the latter is used
-    // for health watches.  This hack will go away as part of implementing
-    // dualstack backend support.
     class WatcherWrapper
         : public SubchannelInterface::ConnectivityStateWatcherInterface {
      public:
@@ -176,16 +175,10 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
                      bool ejected)
           : watcher_(std::move(health_watcher)), ejected_(ejected) {}
 
-      WatcherWrapper(std::unique_ptr<
-                         SubchannelInterface::ConnectivityStateWatcherInterface>
-                         watcher,
-                     bool ejected)
-          : watcher_(std::move(watcher)), ejected_(ejected) {}
-
       void Eject() {
         ejected_ = true;
         if (last_seen_state_.has_value()) {
-          watcher()->OnConnectivityStateChange(
+          watcher_->OnConnectivityStateChange(
               GRPC_CHANNEL_TRANSIENT_FAILURE,
               absl::UnavailableError(
                   "subchannel ejected by outlier detection"));
@@ -195,8 +188,8 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
       void Uneject() {
         ejected_ = false;
         if (last_seen_state_.has_value()) {
-          watcher()->OnConnectivityStateChange(*last_seen_state_,
-                                               last_seen_status_);
+          watcher_->OnConnectivityStateChange(*last_seen_state_,
+                                              last_seen_status_);
         }
       }
 
@@ -211,43 +204,26 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
             status = absl::UnavailableError(
                 "subchannel ejected by outlier detection");
           }
-          watcher()->OnConnectivityStateChange(new_state, status);
+          watcher_->OnConnectivityStateChange(new_state, status);
         }
       }
 
       grpc_pollset_set* interested_parties() override {
-        return watcher()->interested_parties();
+        return watcher_->interested_parties();
       }
 
      private:
-      SubchannelInterface::ConnectivityStateWatcherInterface* watcher() const {
-        return Match(
-            watcher_,
-            [](const std::shared_ptr<
-                SubchannelInterface::ConnectivityStateWatcherInterface>&
-                   watcher) { return watcher.get(); },
-            [](const std::unique_ptr<
-                SubchannelInterface::ConnectivityStateWatcherInterface>&
-                   watcher) { return watcher.get(); });
-      }
-
-      absl::variant<std::shared_ptr<
-                        SubchannelInterface::ConnectivityStateWatcherInterface>,
-                    std::unique_ptr<
-                        SubchannelInterface::ConnectivityStateWatcherInterface>>
+      std::shared_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>
           watcher_;
       absl::optional<grpc_connectivity_state> last_seen_state_;
       absl::Status last_seen_status_;
       bool ejected_;
     };
 
+    std::shared_ptr<WorkSerializer> work_serializer_;
     RefCountedPtr<SubchannelState> subchannel_state_;
-    const bool disable_via_raw_connectivity_watch_;
     bool ejected_ = false;
-    std::map<SubchannelInterface::ConnectivityStateWatcherInterface*,
-             WatcherWrapper*>
-        watchers_;
-    WatcherWrapper* watcher_wrapper_ = nullptr;  // For health watching.
+    WatcherWrapper* watcher_wrapper_ = nullptr;
   };
 
   class SubchannelState : public RefCounted<SubchannelState> {
@@ -428,48 +404,12 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
 
 void OutlierDetectionLb::SubchannelWrapper::Eject() {
   ejected_ = true;
-  // Ejecting the subchannel may cause the child policy to cancel the watch,
-  // so we need to be prepared for the map to be modified while we are
-  // iterating.
-  for (auto it = watchers_.begin(); it != watchers_.end();) {
-    WatcherWrapper* watcher = it->second;
-    ++it;
-    watcher->Eject();
-  }
   if (watcher_wrapper_ != nullptr) watcher_wrapper_->Eject();
 }
 
 void OutlierDetectionLb::SubchannelWrapper::Uneject() {
   ejected_ = false;
-  for (auto& watcher : watchers_) {
-    watcher.second->Uneject();
-  }
   if (watcher_wrapper_ != nullptr) watcher_wrapper_->Uneject();
-}
-
-void OutlierDetectionLb::SubchannelWrapper::WatchConnectivityState(
-    std::unique_ptr<ConnectivityStateWatcherInterface> watcher) {
-  if (disable_via_raw_connectivity_watch_) {
-    wrapped_subchannel()->WatchConnectivityState(std::move(watcher));
-    return;
-  }
-  ConnectivityStateWatcherInterface* watcher_ptr = watcher.get();
-  auto watcher_wrapper =
-      std::make_unique<WatcherWrapper>(std::move(watcher), ejected_);
-  watchers_.emplace(watcher_ptr, watcher_wrapper.get());
-  wrapped_subchannel()->WatchConnectivityState(std::move(watcher_wrapper));
-}
-
-void OutlierDetectionLb::SubchannelWrapper::CancelConnectivityStateWatch(
-    ConnectivityStateWatcherInterface* watcher) {
-  if (disable_via_raw_connectivity_watch_) {
-    wrapped_subchannel()->CancelConnectivityStateWatch(watcher);
-    return;
-  }
-  auto it = watchers_.find(watcher);
-  if (it == watchers_.end()) return;
-  wrapped_subchannel()->CancelConnectivityStateWatch(it->second);
-  watchers_.erase(it);
 }
 
 void OutlierDetectionLb::SubchannelWrapper::AddDataWatcher(
@@ -777,22 +717,12 @@ OrphanablePtr<LoadBalancingPolicy> OutlierDetectionLb::CreateChildPolicyLocked(
 RefCountedPtr<SubchannelInterface> OutlierDetectionLb::Helper::CreateSubchannel(
     ServerAddress address, const ChannelArgs& args) {
   if (parent()->shutting_down_) return nullptr;
-  // If the address has the DisableOutlierDetectionAttribute attribute,
-  // ignore it for raw connectivity state updates.
-  // TODO(roth): This is a hack to prevent outlier_detection from
-  // working with pick_first, as per discussion in
-  // https://github.com/grpc/grpc/issues/32967.  Remove this as part of
-  // implementing dualstack backend support.
-  const bool disable_via_raw_connectivity_watch =
-      address.args().GetInt(GRPC_ARG_OUTLIER_DETECTION_DISABLE) == 1;
   RefCountedPtr<SubchannelState> subchannel_state;
   std::string key = MakeKeyForAddress(address);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
     gpr_log(GPR_INFO,
-            "[outlier_detection_lb %p] using key %s for subchannel "
-            "address %s, disable_via_raw_connectivity_watch=%d",
-            parent(), key.c_str(), address.ToString().c_str(),
-            disable_via_raw_connectivity_watch);
+            "[outlier_detection_lb %p] using key %s for subchannel address %s",
+            parent(), key.c_str(), address.ToString().c_str());
   }
   if (!key.empty()) {
     auto it = parent()->subchannel_state_map_.find(key);
@@ -801,10 +731,9 @@ RefCountedPtr<SubchannelInterface> OutlierDetectionLb::Helper::CreateSubchannel(
     }
   }
   auto subchannel = MakeRefCounted<SubchannelWrapper>(
-      subchannel_state,
+      parent()->work_serializer(), subchannel_state,
       parent()->channel_control_helper()->CreateSubchannel(std::move(address),
-                                                           args),
-      disable_via_raw_connectivity_watch);
+                                                           args));
   if (subchannel_state != nullptr) {
     subchannel_state->AddSubchannel(subchannel.get());
   }

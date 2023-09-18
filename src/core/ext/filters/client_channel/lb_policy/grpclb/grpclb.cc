@@ -107,6 +107,7 @@
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"
@@ -318,10 +319,22 @@ class GrpcLb : public LoadBalancingPolicy {
           lb_token_(std::move(lb_token)),
           client_stats_(std::move(client_stats)) {}
 
-    ~SubchannelWrapper() override {
-      if (!lb_policy_->shutting_down_) {
-        lb_policy_->CacheDeletedSubchannelLocked(wrapped_subchannel());
+    void Orphan() override {
+      if (!IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled()) {
+        if (!lb_policy_->shutting_down_) {
+          lb_policy_->CacheDeletedSubchannelLocked(wrapped_subchannel());
+        }
+        return;
       }
+      WeakRefCountedPtr<SubchannelWrapper> self = WeakRef();
+      lb_policy_->work_serializer()->Run(
+          [self = std::move(self)]() {
+            if (!self->lb_policy_->shutting_down_) {
+              self->lb_policy_->CacheDeletedSubchannelLocked(
+                  self->wrapped_subchannel());
+            }
+          },
+          DEBUG_LOCATION);
     }
 
     const std::string& lb_token() const { return lb_token_; }
@@ -1588,7 +1601,7 @@ absl::Status GrpcLb::UpdateBalancerChannelLocked() {
   // Pass channel creds via channel args, since the fake resolver won't
   // do this automatically.
   result.args = lb_channel_args.SetObject(std::move(channel_credentials));
-  response_generator_->SetResponse(std::move(result));
+  response_generator_->SetResponseAsync(std::move(result));
   // Return status.
   return status;
 }
