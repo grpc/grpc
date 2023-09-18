@@ -29,6 +29,7 @@
 #include <set>
 #include <string>
 #include <tuple>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -51,6 +52,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -717,8 +719,19 @@ void XdsOverrideHostLb::SubchannelWrapper::UpdateConnectivityState(
 }
 
 void XdsOverrideHostLb::SubchannelWrapper::Orphan() {
-  key_.reset();
-  wrapped_subchannel()->CancelConnectivityStateWatch(watcher_);
+  if (!IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled()) {
+    key_.reset();
+    wrapped_subchannel()->CancelConnectivityStateWatch(watcher_);
+    return;
+  }
+  WeakRefCountedPtr<SubchannelWrapper> self = WeakRef();
+  policy_->work_serializer()->Run(
+      [self = std::move(self)]() {
+        self->key_.reset();
+        self->wrapped_subchannel()->CancelConnectivityStateWatch(
+            self->watcher_);
+      },
+      DEBUG_LOCATION);
 }
 
 grpc_pollset_set* XdsOverrideHostLb::SubchannelWrapper::
