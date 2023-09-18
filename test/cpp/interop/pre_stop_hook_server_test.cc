@@ -56,6 +56,10 @@ struct CallInfo {
     cv.SignalAll();
   }
 
+  bool Completed() {
+    return WaitForStatus(absl::Seconds(0)).has_value();
+  }
+
  private:
   grpc_core::Mutex mu;
   grpc_core::CondVar cv;
@@ -74,7 +78,7 @@ TEST(PreStopHookServer, StartDoRequestStop) {
   HookService::Stub stub(std::move(channel));
   stub.async()->Hook(&info.context, &info.request, &info.response,
                      [&info](Status status) { info.SetStatus(status); });
-  ASSERT_EQ(server.TestOnlyExpectRequests(1), 1);
+  ASSERT_TRUE(server.TestOnlyExpectRequests(1));
   server.Return(StatusCode::INTERNAL, "Just a test");
   auto status = info.WaitForStatus();
   ASSERT_TRUE(status.has_value());
@@ -121,28 +125,22 @@ TEST(PreStopHookServer, MultipleRequests) {
   ASSERT_TRUE(channel);
   HookService::Stub stub(std::move(channel));
   CallInfo info1, info2, info3;
-  server.Return(StatusCode::INTERNAL, "First");
   stub.async()->Hook(&info1.context, &info1.request, &info1.response,
                      [&](Status status) { info1.SetStatus(status); });
-  auto status = info1.WaitForStatus();
-  ASSERT_TRUE(status.has_value());
-  EXPECT_EQ(status->error_code(), StatusCode::INTERNAL);
-  EXPECT_EQ(status->error_message(), "First");
+  ASSERT_FALSE(info1.Completed());
   stub.async()->Hook(&info2.context, &info2.request, &info2.response,
                      [&](Status status) { info2.SetStatus(status); });
-  ASSERT_EQ(server.TestOnlyExpectRequests(1, absl::Milliseconds(500)), 1);
+  ASSERT_FALSE(info2.Completed());
+  server.Return(StatusCode::RESOURCE_EXHAUSTED, "Second");
+  auto status = info1.WaitForStatus();
+  ASSERT_TRUE(status.has_value());
+  ASSERT_EQ(status->error_code(), StatusCode::RESOURCE_EXHAUSTED);
+  status = info2.WaitForStatus();
+  ASSERT_EQ(status->error_code(), StatusCode::RESOURCE_EXHAUSTED);
   stub.async()->Hook(&info3.context, &info3.request, &info3.response,
                      [&](Status status) { info3.SetStatus(status); });
-  server.Return(StatusCode::RESOURCE_EXHAUSTED, "Second");
-  server.Return(StatusCode::DEADLINE_EXCEEDED, "Third");
-  status = info2.WaitForStatus();
-  ASSERT_TRUE(status.has_value());
-  EXPECT_EQ(status->error_code(), StatusCode::RESOURCE_EXHAUSTED);
-  EXPECT_EQ(status->error_message(), "Second");
   status = info3.WaitForStatus();
-  ASSERT_TRUE(status.has_value());
-  EXPECT_EQ(status->error_code(), StatusCode::DEADLINE_EXCEEDED);
-  EXPECT_EQ(status->error_message(), "Third");
+  ASSERT_EQ(status->error_code(), StatusCode::RESOURCE_EXHAUSTED);
 }
 
 TEST(PreStopHookServer, StopServerThatNotStarted) {

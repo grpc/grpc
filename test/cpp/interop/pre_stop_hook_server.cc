@@ -36,14 +36,29 @@ class HookServiceImpl final : public HookService::CallbackService {
                            const Empty* /* request */,
                            Empty* /* reply */) override {
     auto reactor = context->DefaultReactor();
-    MatchRequestsAndStatuses(reactor, absl::nullopt);
+    grpc_core::MutexLock lock(&mu_);
+    if (!hanging_) {
+      reactor->Finish(status_);
+    } else {
+      pending_requests_.push_back(reactor);
+    }
+    request_var_.SignalAll();
     return reactor;
   }
 
   void SetReturnStatus(const Status& status) {
-    MatchRequestsAndStatuses(absl::nullopt, status);
+    grpc_core::MutexLock lock(&mu_);
+    hanging_ = false;
+    status_ = status;
+    while (!pending_requests_.empty()) {
+      pending_requests_.front()->Finish(status_);
+      pending_requests_.erase(pending_requests_.begin());
+    }
+    request_var_.SignalAll();
   }
 
+  // Waits up to timeout for there to be at least
+  // expected_requests_count hanging hook requests.
   bool TestOnlyExpectRequests(size_t expected_requests_count,
                               const absl::Duration& timeout) {
     grpc_core::MutexLock lock(&mu_);
@@ -55,40 +70,25 @@ class HookServiceImpl final : public HookService::CallbackService {
   }
 
   void Stop() {
-    {
-      grpc_core::MutexLock lock(&mu_);
-      done_ = true;
-    }
-    MatchRequestsAndStatuses(absl::nullopt, absl::nullopt);
-  }
-
- private:
-  void MatchRequestsAndStatuses(absl::optional<ServerUnaryReactor*> new_request,
-                                absl::optional<Status> new_status) {
     grpc_core::MutexLock lock(&mu_);
-    if (new_request.has_value()) {
-      pending_requests_.push_back(*new_request);
-    }
-    if (new_status.has_value()) {
-      pending_statuses_.push_back(std::move(*new_status));
-    }
-    while (!pending_requests_.empty() && !pending_statuses_.empty()) {
-      pending_requests_.front()->Finish(std::move(pending_statuses_.front()));
-      pending_requests_.erase(pending_requests_.begin());
-      pending_statuses_.erase(pending_statuses_.begin());
-    }
-    while (!pending_requests_.empty() && done_) {
+    done_ = true;
+    while (!pending_requests_.empty()) {
       pending_requests_.front()->Finish(
           Status(StatusCode::ABORTED, "Shutting down"));
       pending_requests_.erase(pending_requests_.begin());
     }
-    request_var_.SignalAll();
   }
+
+ private:
 
   grpc_core::Mutex mu_;
   grpc_core::CondVar request_var_ ABSL_GUARDED_BY(&mu_);
   std::vector<ServerUnaryReactor*> pending_requests_ ABSL_GUARDED_BY(&mu_);
-  std::vector<Status> pending_statuses_ ABSL_GUARDED_BY(&mu_);
+
+  // When set to false, all outstanding RPCs will be completed with the current
+  // value of status_. When set to true, all subsequent RPCs will hang.
+  bool hanging_ ABSL_GUARDED_BY(&mu_) = true;
+  Status status_ ABSL_GUARDED_BY(&mu_) = Status(StatusCode::OK, "Immediate exit.");
   bool done_ ABSL_GUARDED_BY(&mu_) = false;
 };
 
