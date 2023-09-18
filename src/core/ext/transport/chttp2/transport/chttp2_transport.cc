@@ -569,7 +569,10 @@ grpc_chttp2_transport::grpc_chttp2_transport(
                            grpc_endpoint_get_peer(ep), ":client_transport"))),
       self_reservation(
           memory_owner.MakeReservation(sizeof(grpc_chttp2_transport))),
-      combiner(grpc_combiner_create()),
+      event_engine(
+          channel_args
+              .GetObjectRef<grpc_event_engine::experimental::EventEngine>()),
+      combiner(grpc_combiner_create(event_engine)),
       state_tracker(is_client ? "client_transport" : "server_transport",
                     GRPC_CHANNEL_READY),
       is_client(is_client),
@@ -580,10 +583,7 @@ grpc_chttp2_transport::grpc_chttp2_transport(
           peer_string.as_string_view(),
           channel_args.GetBool(GRPC_ARG_HTTP2_BDP_PROBE).value_or(true),
           &memory_owner),
-      deframe_state(is_client ? GRPC_DTS_FH_0 : GRPC_DTS_CLIENT_PREFIX_0),
-      event_engine(
-          channel_args
-              .GetObjectRef<grpc_event_engine::experimental::EventEngine>()) {
+      deframe_state(is_client ? GRPC_DTS_FH_0 : GRPC_DTS_CLIENT_PREFIX_0) {
   cl = new grpc_core::ContextList();
   GPR_ASSERT(strlen(GRPC_CHTTP2_CLIENT_CONNECT_STRING) ==
              GRPC_CHTTP2_CLIENT_CONNECT_STRLEN);

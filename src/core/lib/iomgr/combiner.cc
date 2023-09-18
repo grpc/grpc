@@ -50,14 +50,11 @@ static void combiner_finally_exec(grpc_core::Combiner* lock,
                                   grpc_closure* closure,
                                   grpc_error_handle error);
 
-static void offload(void* arg, grpc_error_handle error);
-
 grpc_core::Combiner* grpc_combiner_create(void) {
   grpc_core::Combiner* lock = new grpc_core::Combiner();
   gpr_ref_init(&lock->refs, 1);
   gpr_atm_no_barrier_store(&lock->state, STATE_UNORPHANED);
   grpc_closure_list_init(&lock->final_list);
-  GRPC_CLOSURE_INIT(&lock->offload, offload, lock, nullptr);
   GRPC_COMBINER_TRACE(gpr_log(GPR_INFO, "C:%p create", lock));
   return lock;
 }
@@ -164,15 +161,14 @@ static void move_next() {
   }
 }
 
-static void offload(void* arg, grpc_error_handle /*error*/) {
-  grpc_core::Combiner* lock = static_cast<grpc_core::Combiner*>(arg);
-  push_last_on_exec_ctx(lock);
-}
-
 static void queue_offload(grpc_core::Combiner* lock) {
   move_next();
   GRPC_COMBINER_TRACE(gpr_log(GPR_INFO, "C:%p queue_offload", lock));
-  grpc_core::Executor::Run(&lock->offload, absl::OkStatus());
+  lock->event_engine->Run([lock] {
+    grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+    grpc_core::ExecCtx exec_ctx;
+    push_last_on_exec_ctx(lock);
+  });
 }
 
 bool grpc_combiner_continue_exec_ctx() {
@@ -194,14 +190,10 @@ bool grpc_combiner_continue_exec_ctx() {
                               grpc_core::ExecCtx::Get()->IsReadyToFinish(),
                               lock->time_to_execute_final_list));
 
-  // offload only if all the following conditions are true:
-  // 1. the combiner is contended and has more than one closure to execute
-  // 2. the current execution context needs to finish as soon as possible
-  // 3. the current thread is not a worker for any background poller
-  // 4. the DEFAULT executor is threaded
-  if (contended && grpc_core::ExecCtx::Get()->IsReadyToFinish() &&
-      !grpc_iomgr_platform_is_any_background_poller_thread() &&
-      grpc_core::Executor::IsThreadedDefault()) {
+  // offload only if both (1) the combiner is contended and has more than one
+  // closure to execute, and (2) the current execution context needs to finish
+  // as soon as possible
+  if (contended && grpc_core::ExecCtx::Get()->IsReadyToFinish()) {
     // this execution context wants to move on: schedule remaining work to be
     // picked up on the executor
     queue_offload(lock);

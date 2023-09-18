@@ -267,6 +267,7 @@ struct grpc_chttp2_transport : public grpc_core::KeepsGrpcInitialized {
   const grpc_core::MemoryAllocator::Reservation self_reservation;
   grpc_core::ReclamationSweep active_reclamation;
 
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine;
   grpc_core::Combiner* combiner;
 
   grpc_closure* notify_on_receive_settings = nullptr;
@@ -479,8 +480,6 @@ struct grpc_chttp2_transport : public grpc_core::KeepsGrpcInitialized {
   /// covering a write in a pollset. Such closures cannot be scheduled until
   /// we can prove that the write got scheduled.
   uint8_t closure_barrier_may_cover_write = CLOSURE_BARRIER_MAY_COVER_WRITE;
-
-  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine;
 };
 
 typedef enum {

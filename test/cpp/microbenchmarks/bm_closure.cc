@@ -59,7 +59,8 @@ static void BM_ClosureInitAgainstExecCtx(benchmark::State& state) {
 BENCHMARK(BM_ClosureInitAgainstExecCtx);
 
 static void BM_ClosureInitAgainstCombiner(benchmark::State& state) {
-  grpc_core::Combiner* combiner = grpc_combiner_create();
+  grpc_core::Combiner* combiner = grpc_combiner_create(
+      grpc_event_engine::experimental::CreateEventEngine());
   grpc_closure c;
   grpc_core::ExecCtx exec_ctx;
   for (auto _ : state) {
@@ -204,7 +205,8 @@ static void BM_TryAcquireSpinlock(benchmark::State& state) {
 BENCHMARK(BM_TryAcquireSpinlock);
 
 static void BM_ClosureSchedOnCombiner(benchmark::State& state) {
-  grpc_core::Combiner* combiner = grpc_combiner_create();
+  grpc_core::Combiner* combiner = grpc_combiner_create(
+      grpc_event_engine::experimental::CreateEventEngine());
   grpc_closure c;
   GRPC_CLOSURE_INIT(&c, DoNothing, nullptr, nullptr);
   grpc_core::ExecCtx exec_ctx;
@@ -217,7 +219,8 @@ static void BM_ClosureSchedOnCombiner(benchmark::State& state) {
 BENCHMARK(BM_ClosureSchedOnCombiner);
 
 static void BM_ClosureSched2OnCombiner(benchmark::State& state) {
-  grpc_core::Combiner* combiner = grpc_combiner_create();
+  grpc_core::Combiner* combiner = grpc_combiner_create(
+      grpc_event_engine::experimental::CreateEventEngine());
   grpc_closure c1;
   grpc_closure c2;
   GRPC_CLOSURE_INIT(&c1, DoNothing, nullptr, nullptr);
@@ -233,7 +236,8 @@ static void BM_ClosureSched2OnCombiner(benchmark::State& state) {
 BENCHMARK(BM_ClosureSched2OnCombiner);
 
 static void BM_ClosureSched3OnCombiner(benchmark::State& state) {
-  grpc_core::Combiner* combiner = grpc_combiner_create();
+  grpc_core::Combiner* combiner = grpc_combiner_create(
+      grpc_event_engine::experimental::CreateEventEngine());
   grpc_closure c1;
   grpc_closure c2;
   grpc_closure c3;
@@ -252,8 +256,10 @@ static void BM_ClosureSched3OnCombiner(benchmark::State& state) {
 BENCHMARK(BM_ClosureSched3OnCombiner);
 
 static void BM_ClosureSched2OnTwoCombiners(benchmark::State& state) {
-  grpc_core::Combiner* combiner1 = grpc_combiner_create();
-  grpc_core::Combiner* combiner2 = grpc_combiner_create();
+  grpc_core::Combiner* combiner1 = grpc_combiner_create(
+      grpc_event_engine::experimental::CreateEventEngine());
+  grpc_core::Combiner* combiner2 = grpc_combiner_create(
+      grpc_event_engine::experimental::CreateEventEngine());
   grpc_closure c1;
   grpc_closure c2;
   GRPC_CLOSURE_INIT(&c1, DoNothing, nullptr, nullptr);
@@ -270,8 +276,10 @@ static void BM_ClosureSched2OnTwoCombiners(benchmark::State& state) {
 BENCHMARK(BM_ClosureSched2OnTwoCombiners);
 
 static void BM_ClosureSched4OnTwoCombiners(benchmark::State& state) {
-  grpc_core::Combiner* combiner1 = grpc_combiner_create();
-  grpc_core::Combiner* combiner2 = grpc_combiner_create();
+  grpc_core::Combiner* combiner1 = grpc_combiner_create(
+      grpc_event_engine::experimental::CreateEventEngine());
+  grpc_core::Combiner* combiner2 = grpc_combiner_create(
+      grpc_event_engine::experimental::CreateEventEngine());
   grpc_closure c1;
   grpc_closure c2;
   grpc_closure c3;

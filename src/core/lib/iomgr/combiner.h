@@ -49,8 +49,8 @@ class Combiner {
   gpr_atm state;
   bool time_to_execute_final_list = false;
   grpc_closure_list final_list;
-  grpc_closure offload;
   gpr_refcount refs;
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine;
 };
 }  // namespace grpc_core
 
@@ -59,9 +59,9 @@ class Combiner {
 // The actual thread executing actions may change over time (but there will only
 // ever be one at a time).
 
-// Initialize the lock, with an optional workqueue to shift load to when
-// necessary
-grpc_core::Combiner* grpc_combiner_create(void);
+// Initialize the lock
+grpc_core::Combiner* grpc_combiner_create(
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine);
 
 #ifndef NDEBUG
 #define GRPC_COMBINER_DEBUG_ARGS \

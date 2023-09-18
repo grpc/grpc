@@ -715,7 +715,8 @@ grpc_binder_transport::grpc_binder_transport(
     std::unique_ptr<grpc_binder::Binder> binder, bool is_client,
     std::shared_ptr<grpc::experimental::binder::SecurityPolicy> security_policy)
     : is_client(is_client),
-      combiner(grpc_combiner_create()),
+      combiner(grpc_combiner_create(
+          grpc_event_engine::experimental::GetDefaultEventEngine())),
       state_tracker(
           is_client ? "binder_transport_client" : "binder_transport_server",
           GRPC_CHANNEL_READY),
