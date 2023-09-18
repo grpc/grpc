@@ -37,7 +37,6 @@
 #include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
-#include <grpc/slice.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
