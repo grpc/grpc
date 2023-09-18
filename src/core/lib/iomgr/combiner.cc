@@ -169,8 +169,9 @@ static void queue_offload(grpc_core::Combiner* lock) {
   GRPC_COMBINER_TRACE(gpr_log(GPR_INFO, "C:%p queue_offload", lock));
   lock->event_engine->Run([lock] {
     grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
-    grpc_core::ExecCtx exec_ctx;
+    grpc_core::ExecCtx exec_ctx(0);
     push_last_on_exec_ctx(lock);
+    exec_ctx.Flush();
   });
 }
 

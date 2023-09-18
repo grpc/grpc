@@ -23,6 +23,7 @@
 #include "absl/types/optional.h"
 
 #include <grpc/byte_buffer.h>
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>

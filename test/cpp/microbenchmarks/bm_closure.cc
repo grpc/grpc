@@ -256,10 +256,10 @@ static void BM_ClosureSched3OnCombiner(benchmark::State& state) {
 BENCHMARK(BM_ClosureSched3OnCombiner);
 
 static void BM_ClosureSched2OnTwoCombiners(benchmark::State& state) {
-  grpc_core::Combiner* combiner1 = grpc_combiner_create(
-      grpc_event_engine::experimental::CreateEventEngine());
-  grpc_core::Combiner* combiner2 = grpc_combiner_create(
-      grpc_event_engine::experimental::CreateEventEngine());
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine =
+      grpc_event_engine::experimental::CreateEventEngine();
+  grpc_core::Combiner* combiner1 = grpc_combiner_create(engine);
+  grpc_core::Combiner* combiner2 = grpc_combiner_create(engine);
   grpc_closure c1;
   grpc_closure c2;
   GRPC_CLOSURE_INIT(&c1, DoNothing, nullptr, nullptr);
@@ -276,10 +276,10 @@ static void BM_ClosureSched2OnTwoCombiners(benchmark::State& state) {
 BENCHMARK(BM_ClosureSched2OnTwoCombiners);
 
 static void BM_ClosureSched4OnTwoCombiners(benchmark::State& state) {
-  grpc_core::Combiner* combiner1 = grpc_combiner_create(
-      grpc_event_engine::experimental::CreateEventEngine());
-  grpc_core::Combiner* combiner2 = grpc_combiner_create(
-      grpc_event_engine::experimental::CreateEventEngine());
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine =
+      grpc_event_engine::experimental::CreateEventEngine();
+  grpc_core::Combiner* combiner1 = grpc_combiner_create(engine);
+  grpc_core::Combiner* combiner2 = grpc_combiner_create(engine);
   grpc_closure c1;
   grpc_closure c2;
   grpc_closure c3;
