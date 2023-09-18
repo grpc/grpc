@@ -4972,6 +4972,7 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/types:optional",
+        "absl/types:variant",
     ],
     language = "c++",
     deps = [
@@ -4982,6 +4983,7 @@ grpc_cc_library(
         "json",
         "json_args",
         "json_object_loader",
+        "lb_endpoint_list",
         "lb_policy",
         "lb_policy_factory",
         "ref_counted",
