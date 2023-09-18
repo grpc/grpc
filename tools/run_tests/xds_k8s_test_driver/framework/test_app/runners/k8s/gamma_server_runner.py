@@ -35,6 +35,8 @@ class GammaServerRunner(KubernetesServerRunner):
     sa_filter: Optional[k8s.GcpSessionAffinityFilter] = None
     sa_policy: Optional[k8s.GcpSessionAffinityPolicy] = None
     be_policy: Optional[k8s.GcpBackendPolicy] = None
+    termination_grace_period_seconds: Optional[int] = None
+    pre_stop_hook: bool = False
 
     route_name: str
     frontend_service_name: str
@@ -67,6 +69,8 @@ class GammaServerRunner(KubernetesServerRunner):
         safilter_name: str = "ssa-filter",
         sapolicy_name: str = "ssa-policy",
         bepolicy_name: str = "backend-policy",
+        termination_grace_period_seconds: Optional[int] = None,
+        pre_stop_hook: bool = False,
     ):
         # pylint: disable=too-many-locals
         super().__init__(
@@ -97,6 +101,8 @@ class GammaServerRunner(KubernetesServerRunner):
         self.safilter_name = safilter_name
         self.sapolicy_name = sapolicy_name
         self.bepolicy_name = bepolicy_name
+        self.termination_grace_period_seconds = termination_grace_period_seconds
+        self.pre_stop_hook = pre_stop_hook
 
     def run(
         self,
@@ -199,6 +205,8 @@ class GammaServerRunner(KubernetesServerRunner):
             maintenance_port=maintenance_port,
             secure_mode=secure_mode,
             bootstrap_version=bootstrap_version,
+            termination_grace_period_seconds=self.termination_grace_period_seconds,
+            pre_stop_hook=self.pre_stop_hook,
         )
 
         servers = self._make_servers_for_deployment(
@@ -231,8 +239,7 @@ class GammaServerRunner(KubernetesServerRunner):
             namespace_name=self.k8s_namespace.name,
         )
 
-    def createBackendPolicy(self, *, target_type):
-        self.bepolicy_name = "be-policy"
+    def createBackendPolicy(self):
         self.be_policy = self._create_backend_policy(
             "gamma/backend_policy.yaml",
             be_policy_name=self.bepolicy_name,

@@ -69,7 +69,7 @@ def assert_eventually_retrieve_cookie_and_server(test: _XdsKubernetesBaseTestCas
         return cookie, chosen_server
 
     retryer = retryers.constant_retryer(
-        wait_fixed=datetime.timedelta(seconds=1),
+        wait_fixed=datetime.timedelta(seconds=10),
         timeout=datetime.timedelta(seconds=_SET_COOKIE_MAX_WAIT_SEC),
         log_level=logging.INFO,
     )

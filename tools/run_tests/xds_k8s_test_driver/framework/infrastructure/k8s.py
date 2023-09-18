@@ -189,6 +189,18 @@ class KubernetesApiManager:
 
         return self._load_dynamic_api(api_name, version, kind)
 
+    @functools.cache  # pylint: disable=no-member
+    def gcp_backend_policy(self, version: str) -> dynamic_res.Resource:
+        api_name = "networking.gke.io"
+        kind = "GCPBackendPolicy"
+        supported_versions = ("v1") 
+        if version not in supported_versions:
+            raise NotImplementedError(
+                f"{kind} {api_name}/{version} not implemented."
+            )
+
+        return self._load_dynamic_api(api_name, version, kind)
+
     def close(self):
         # TODO(sergiitk): [GAMMA] what to do with dynamic clients?
         self.client.close()
@@ -261,6 +273,10 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
         return self._name
 
     @functools.cached_property  # pylint: disable=no-member
+    def api_gke_mesh(self) -> dynamic_res.Resource:
+        return self._get_dynamic_api("net.gke.io/v1alpha1", "TDMesh")
+
+    @functools.cached_property  # pylint: disable=no-member
     def api_grpc_route(self) -> dynamic_res.Resource:
         return self._get_dynamic_api(
             "gateway.networking.k8s.io/v1alpha2",
@@ -326,6 +342,8 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
                 return self._api.gcp_session_affinity_filter(version)
             elif kind == "GCPSessionAffinityPolicy":
                 return self._api.gcp_session_affinity_policy(version)
+            elif kind == "GCPBackendPolicy":
+                return self._api.gcp_backend_policy(version)
         elif group == "gateway.networking.k8s.io":
             if kind == "GRPCRoute":
                 return self._api.grpc_route(version)
@@ -610,6 +628,22 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
             namespace=self.name,
             propagation_policy="Foreground",
             grace_period_seconds=grace_period_seconds,
+        )
+
+    def delete_pod_async(
+        self,
+        name: str,
+        grace_period_seconds=DELETE_GRACE_PERIOD_SEC,
+    ) -> None:
+        self._execute(
+            self._api.core.delete_namespaced_pod,
+            name=name,
+            namespace=self.name,
+            body=client.V1DeleteOptions(
+                propagation_policy="Foreground",
+                grace_period_seconds=grace_period_seconds,
+            ),
+            async_req=True,
         )
 
     def get(self) -> V1Namespace:

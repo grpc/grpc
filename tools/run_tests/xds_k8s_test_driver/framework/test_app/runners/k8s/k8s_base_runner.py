@@ -399,6 +399,11 @@ class KubernetesBaseRunner(base_runner.BaseRunner, metaclass=ABCMeta):
         )
         return resource
 
+    def delete_pod_async(self, pod_name: str):
+        logger.info(f"Initiating deletion of pod {pod_name} in namespace {self.k8s_namespace.name}")
+        self.k8s_namespace.delete_pod_async(pod_name)
+        
+
     def _create_deployment(self, template, **kwargs) -> k8s.V1Deployment:
         # Not making deployment_name an explicit kwarg to be consistent with
         # the rest of the _create_* methods, which pass kwargs as-is
@@ -519,29 +524,29 @@ class KubernetesBaseRunner(base_runner.BaseRunner, metaclass=ABCMeta):
         return saFilter
 
     def _create_backend_policy(self, template, **kwargs) -> k8s.GcpBackendPolicy:
-        saPolicy = self._create_from_template(
+        be_policy = self._create_from_template(
             template,
             custom_object=True,
             **kwargs,
         )
         if not (
-            isinstance(bePolicy, k8s.GcpBackendPolicy) and bePolicy.kind == "GCPBackendPolicy"
+            isinstance(be_policy, k8s.GcpBackendPolicy) and be_policy.kind == "GCPBackendPolicy"
         ):
             raise _RunnerError(
                 f"Expected ResourceInstance[GCPBackendPolicy] to be"
                 f" created from manifest {template}"
             )
-        if bePolicy.metadata.name != kwargs["be_policy_name"]:
+        if be_policy.metadata.name != kwargs["be_policy_name"]:
             raise _RunnerError(
                 "ResourceInstance[GCPBackendPolicy] created with"
                 f" unexpected name: {bePolicy.metadata.name}"
             )
         logger.debug(
             "ResourceInstance[GCPBackendPolicy] %s created at %s",
-            bePolicy.metadata.name,
-            bePolicy.metadata.creation_timestamp,
+            be_policy.metadata.name,
+            be_policy.metadata.creation_timestamp,
         )
-        return bePolicy
+        return be_policy
 
     def _create_service(self, template, **kwargs) -> k8s.V1Service:
         service = self._create_from_template(template, **kwargs)
