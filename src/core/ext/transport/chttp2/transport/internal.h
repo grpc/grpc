@@ -272,16 +272,8 @@ struct grpc_chttp2_transport : public grpc_core::KeepsGrpcInitialized {
   grpc_closure* notify_on_receive_settings = nullptr;
   grpc_closure* notify_on_close = nullptr;
 
-  /// write execution state of the transport
-  grpc_chttp2_write_state write_state = GRPC_CHTTP2_WRITE_STATE_IDLE;
-
-  /// is the transport destroying itself?
-  uint8_t destroying = false;
   /// has the upper layer closed the transport?
   grpc_error_handle closed_with_error;
-
-  /// is there a read request to the endpoint outstanding?
-  uint8_t endpoint_reading = 1;
 
   /// various lists of streams
   grpc_chttp2_stream_list lists[STREAM_LIST_COUNT] = {};
@@ -315,15 +307,9 @@ struct grpc_chttp2_transport : public grpc_core::KeepsGrpcInitialized {
   grpc_slice_buffer outbuf;
   /// hpack encoding
   grpc_core::HPackCompressor hpack_compressor;
-  /// is this a client?
-  bool is_client;
 
   /// data to write next write
   grpc_slice_buffer qbuf;
-
-  /// how much data are we willing to buffer when the WRITE_BUFFER_HINT is set?
-  ///
-  uint32_t write_buffer_size = grpc_core::chttp2::kDefaultWindow;
 
   /// Set to a grpc_error object if a goaway frame is received. By default, set
   /// to absl::OkStatus()
@@ -331,10 +317,6 @@ struct grpc_chttp2_transport : public grpc_core::KeepsGrpcInitialized {
 
   grpc_chttp2_sent_goaway_state sent_goaway_state = GRPC_CHTTP2_NO_GOAWAY_SEND;
 
-  /// are the local settings dirty and need to be sent?
-  bool dirtied_local_settings = true;
-  /// have local settings been sent?
-  bool sent_local_settings = false;
   /// bitmask of setting indexes to send out
   /// Hack: it's common for implementations to assume 65536 bytes initial send
   /// window -- this should by rights be 0
@@ -389,7 +371,6 @@ struct grpc_chttp2_transport : public grpc_core::KeepsGrpcInitialized {
   bool is_first_frame = true;
   uint32_t expect_continuation_stream_id = 0;
   uint32_t incoming_frame_size = 0;
-  uint32_t incoming_stream_id = 0;
 
   grpc_chttp2_stream* incoming_stream = nullptr;
   // active parser
@@ -405,8 +386,6 @@ struct grpc_chttp2_transport : public grpc_core::KeepsGrpcInitialized {
   grpc_chttp2_write_cb* write_cb_pool = nullptr;
 
   // bdp estimator
-  bool bdp_ping_blocked =
-      false;  // Is the BDP blocked due to not receiving any data?
   grpc_closure next_bdp_ping_timer_expired_locked;
   grpc_closure start_bdp_ping_locked;
   grpc_closure finish_bdp_ping_locked;
@@ -418,19 +397,11 @@ struct grpc_chttp2_transport : public grpc_core::KeepsGrpcInitialized {
   grpc_closure_list run_after_write = GRPC_CLOSURE_LIST_INIT;
 
   // buffer pool state
-  /// have we scheduled a benign cleanup?
-  bool benign_reclaimer_registered = false;
-  /// have we scheduled a destructive cleanup?
-  bool destructive_reclaimer_registered = false;
   /// benign cleanup closure
   grpc_closure benign_reclaimer_locked;
   /// destructive cleanup closure
   grpc_closure destructive_reclaimer_locked;
 
-  /// If start_bdp_ping_locked has been called
-  bool bdp_ping_started = false;
-  // True if pings should be acked
-  bool ack_pings = true;
   // next bdp ping timer handle
   absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
       next_bdp_ping_timer_handle;
@@ -454,10 +425,6 @@ struct grpc_chttp2_transport : public grpc_core::KeepsGrpcInitialized {
   grpc_core::Duration keepalive_time;
   /// grace period for a ping to complete before watchdog kicks in
   grpc_core::Duration keepalive_timeout;
-  /// if keepalive pings are allowed when there's no outstanding streams
-  bool keepalive_permit_without_calls = false;
-  /// If start_keepalive_ping_locked has been called
-  bool keepalive_ping_started = false;
   /// keep-alive state machine state
   grpc_chttp2_keepalive_state keepalive_state;
   // Soft limit on max header size.
@@ -471,6 +438,14 @@ struct grpc_chttp2_transport : public grpc_core::KeepsGrpcInitialized {
   /// only continue reading when we are able to write to the socket again,
   /// thereby reducing the number of induced frames.
   uint32_t num_pending_induced_frames = 0;
+  uint32_t incoming_stream_id = 0;
+
+  /// how much data are we willing to buffer when the WRITE_BUFFER_HINT is set?
+  ///
+  uint32_t write_buffer_size = grpc_core::chttp2::kDefaultWindow;
+
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine;
+
   bool reading_paused_on_pending_induced_frames = false;
   /// Based on channel args, preferred_rx_crypto_frame_sizes are advertised to
   /// the peer
@@ -480,7 +455,41 @@ struct grpc_chttp2_transport : public grpc_core::KeepsGrpcInitialized {
   /// we can prove that the write got scheduled.
   uint8_t closure_barrier_may_cover_write = CLOSURE_BARRIER_MAY_COVER_WRITE;
 
-  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine;
+  /// have we scheduled a benign cleanup?
+  bool benign_reclaimer_registered = false;
+  /// have we scheduled a destructive cleanup?
+  bool destructive_reclaimer_registered = false;
+
+  /// if keepalive pings are allowed when there's no outstanding streams
+  bool keepalive_permit_without_calls = false;
+  /// If start_keepalive_ping_locked has been called
+  bool keepalive_ping_started = false;
+
+  // bdp estimator
+  bool bdp_ping_blocked =
+      false;  // Is the BDP blocked due to not receiving any data?
+
+  /// is the transport destroying itself?
+  uint8_t destroying = false;
+
+  /// is there a read request to the endpoint outstanding?
+  uint8_t endpoint_reading = 1;
+
+  /// is this a client?
+  bool is_client;
+
+  /// are the local settings dirty and need to be sent?
+  bool dirtied_local_settings = true;
+  /// have local settings been sent?
+  bool sent_local_settings = false;
+
+  /// If start_bdp_ping_locked has been called
+  bool bdp_ping_started = false;
+  // True if pings should be acked
+  bool ack_pings = true;
+
+  /// write execution state of the transport
+  grpc_chttp2_write_state write_state = GRPC_CHTTP2_WRITE_STATE_IDLE;
 };
 
 typedef enum {
@@ -503,7 +512,6 @@ struct grpc_chttp2_stream {
   grpc_closure* destroy_stream_arg;
 
   grpc_chttp2_stream_link links[STREAM_LIST_COUNT];
-  grpc_core::BitSet<STREAM_LIST_COUNT> included;
 
   /// HTTP2 stream id for this stream, or zero if one has not been assigned
   uint32_t id = 0;
@@ -529,7 +537,6 @@ struct grpc_chttp2_stream {
   grpc_metadata_batch* recv_initial_metadata;
   grpc_closure* recv_initial_metadata_ready = nullptr;
   bool* trailing_metadata_available = nullptr;
-  bool parsed_trailers_only = false;
   absl::optional<grpc_core::SliceBuffer>* recv_message = nullptr;
   uint32_t* recv_message_flags = nullptr;
   bool* call_failed_before_recv_message = nullptr;
@@ -557,29 +564,24 @@ struct grpc_chttp2_stream {
   bool eos_received = false;
   bool eos_sent = false;
 
+  grpc_core::BitSet<STREAM_LIST_COUNT> included;
+
   /// the error that resulted in this stream being read-closed
   grpc_error_handle read_closed_error;
   /// the error that resulted in this stream being write-closed
   grpc_error_handle write_closed_error;
 
   grpc_published_metadata_method published_metadata[2] = {};
-  bool final_metadata_requested = false;
 
   grpc_metadata_batch initial_metadata_buffer;
   grpc_metadata_batch trailing_metadata_buffer;
 
-  grpc_slice_buffer frame_storage;   // protected by t combiner
-  bool received_last_frame = false;  // protected by t combiner
+  grpc_slice_buffer frame_storage;  // protected by t combiner
 
   grpc_core::Timestamp deadline = grpc_core::Timestamp::InfFuture();
 
-  /// how many header frames have we received?
-  uint8_t header_frames_received = 0;
   /// number of bytes received - reset at end of parse thread execution
   int64_t received_bytes = 0;
-
-  bool sent_initial_metadata = false;
-  bool sent_trailing_metadata = false;
 
   grpc_core::chttp2::StreamFlowControl flow_control;
 
@@ -590,13 +592,25 @@ struct grpc_chttp2_stream {
   grpc_chttp2_write_cb* finish_after_write = nullptr;
   size_t sending_bytes = 0;
 
-  /// Whether the bytes needs to be traced using Fathom
-  bool traced = false;
   /// Byte counter for number of bytes written
   size_t byte_counter = 0;
 
   // time this stream was created
   gpr_timespec creation_time = gpr_now(GPR_CLOCK_MONOTONIC);
+
+  bool parsed_trailers_only = false;
+
+  bool final_metadata_requested = false;
+  bool received_last_frame = false;  // protected by t combiner
+
+  /// how many header frames have we received?
+  uint8_t header_frames_received = 0;
+
+  bool sent_initial_metadata = false;
+  bool sent_trailing_metadata = false;
+
+  /// Whether the bytes needs to be traced using Fathom
+  bool traced = false;
 };
 
 /// Transport writing call flow:

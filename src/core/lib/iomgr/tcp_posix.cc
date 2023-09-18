@@ -479,10 +479,7 @@ struct grpc_tcp {
   grpc_endpoint base;
   grpc_fd* em_fd;
   int fd;
-  // Used by the endpoint read function to distinguish the very first read call
-  // from the rest
-  bool is_first_read;
-  bool has_posted_reclaimer ABSL_GUARDED_BY(read_mu) = false;
+  int inq;  // bytes pending on the socket from the last read.
   double target_length;
   double bytes_read_this_round;
   grpc_core::RefCount refcount;
@@ -490,15 +487,12 @@ struct grpc_tcp {
 
   int min_read_chunk_size;
   int max_read_chunk_size;
-  int set_rcvlowat = 0;
 
   // garbage after the last read
   grpc_slice_buffer last_read_buffer;
 
   grpc_core::Mutex read_mu;
   grpc_slice_buffer* incoming_buffer ABSL_GUARDED_BY(read_mu) = nullptr;
-  int inq;           // bytes pending on the socket from the last read.
-  bool inq_capable;  // cache whether kernel supports inq
 
   grpc_slice_buffer* outgoing_buffer;
   // byte within outgoing_buffer->slices[0] to write next
@@ -535,17 +529,26 @@ struct grpc_tcp {
   // options for collecting timestamps are set, and is incremented with each
   // byte sent.
   int bytes_counter;
-  bool socket_ts_enabled;  // True if timestamping options are set on the socket
-                           //
-  bool ts_capable;         // Cache whether we can set timestamping options
+
+  int min_progress_size;  // A hint from upper layers specifying the minimum
+                          // number of bytes that need to be read to make
+                          // meaningful progress
+
   gpr_atm stop_error_notification;  // Set to 1 if we do not want to be notified
                                     // on errors anymore
   TcpZerocopySendCtx tcp_zerocopy_send_ctx;
   TcpZerocopySendRecord* current_zerocopy_send = nullptr;
 
-  int min_progress_size;  // A hint from upper layers specifying the minimum
-                          // number of bytes that need to be read to make
-                          // meaningful progress
+  int set_rcvlowat = 0;
+
+  // Used by the endpoint read function to distinguish the very first read call
+  // from the rest
+  bool is_first_read;
+  bool has_posted_reclaimer ABSL_GUARDED_BY(read_mu) = false;
+  bool inq_capable;        // cache whether kernel supports inq
+  bool socket_ts_enabled;  // True if timestamping options are set on the socket
+                           //
+  bool ts_capable;         // Cache whether we can set timestamping options
 };
 
 struct backup_poller {
