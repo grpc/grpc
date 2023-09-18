@@ -709,6 +709,6 @@ void noop_inject_channel_config(ares_channel* /*channel*/) {}
 void (*event_engine_grpc_ares_test_only_inject_config)(ares_channel* channel) =
     noop_inject_channel_config;
 
-bool g_event_engine_grpc_ares_test_only_force_tcp = true;
+bool g_event_engine_grpc_ares_test_only_force_tcp = false;
 
 #endif  // GRPC_ARES == 1

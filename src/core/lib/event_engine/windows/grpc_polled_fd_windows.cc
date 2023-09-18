@@ -38,8 +38,7 @@ namespace experimental {
 
 GrpcPolledFdFactoryWindows::GrpcPolledFdWindows::GrpcPolledFdWindows(
     std::unique_ptr<WinSocket> winsocket, grpc_core::Mutex* mu,
-    int address_family, int socket_type,
-    absl::AnyInvocable<void()> on_shutdown_locked, EventEngine* event_engine)
+    int address_family, int socket_type, EventEngine* event_engine)
     : mu_(mu),
       winsocket_(std::move(winsocket)),
       read_buf_(grpc_empty_slice()),
@@ -51,7 +50,6 @@ GrpcPolledFdFactoryWindows::GrpcPolledFdWindows::GrpcPolledFdWindows(
       address_family_(address_family),
       socket_type_(socket_type),
       on_tcp_connect_locked_([this]() { OnTcpConnect(); }),
-      on_shutdown_locked_(std::move(on_shutdown_locked)),
       event_engine_(event_engine) {}
 
 GrpcPolledFdFactoryWindows::GrpcPolledFdWindows::~GrpcPolledFdWindows() {
@@ -63,8 +61,7 @@ GrpcPolledFdFactoryWindows::GrpcPolledFdWindows::~GrpcPolledFdWindows() {
   GPR_ASSERT(read_closure_ == nullptr);
   GPR_ASSERT(write_closure_ == nullptr);
   if (!shutdown_called_) {
-    // This can happen if the socket was never seen by grpc ares wrapper
-    // code, i.e. if we never started I/O polling on it.
+    // This is a normal path if the request has not been externally cancelled.
     winsocket_->Shutdown(DEBUG_LOCATION, "~GrpcPolledFdWindows");
   }
 }
@@ -208,9 +205,15 @@ bool GrpcPolledFdFactoryWindows::GrpcPolledFdWindows::
 void GrpcPolledFdFactoryWindows::GrpcPolledFdWindows::ShutdownLocked(
     absl::Status error) {
   GPR_ASSERT(!shutdown_called_);
-  shutdown_called_ = true;
-  on_shutdown_locked_();
-  winsocket_->Shutdown(DEBUG_LOCATION, "GrpcPolledFdWindows::ShutdownLocked");
+  if (absl::IsCancelled(error)) {
+    GRPC_ARES_RESOLVER_TRACE_LOG("fd:|%s| ShutdownLocked", GetName());
+    shutdown_called_ = true;
+    // The socket is disconnected and closed here since this is an external
+    // cancel request, e.g. a timeout. c-ares shouldn't do anything on the
+    // socket after this point except calling close which should then destroy
+    // the GrpcPolledFdWindows object.
+    winsocket_->Shutdown(DEBUG_LOCATION, "GrpcPolledFdWindows::ShutdownLocked");
+  }
 }
 
 ares_socket_t
@@ -587,15 +590,6 @@ grpc_slice GrpcPolledFdFactoryWindows::GrpcPolledFdWindows::FlattenIovec(
 GrpcPolledFdFactoryWindows::GrpcPolledFdFactoryWindows(IOCP* iocp)
     : iocp_(iocp) {}
 
-GrpcPolledFdFactoryWindows::~GrpcPolledFdFactoryWindows() {
-  // We might still have a socket -> polled fd mappings if the socket
-  // was never seen by the grpc ares wrapper code, i.e. if we never
-  // initiated I/O polling for them.
-  for (auto& it : sockets_) {
-    delete it.second;
-  }
-}
-
 void GrpcPolledFdFactoryWindows::Initialize(grpc_core::Mutex* mutex,
                                             EventEngine* event_engine) {
   mu_ = mutex;
@@ -606,7 +600,7 @@ GrpcPolledFd* GrpcPolledFdFactoryWindows::NewGrpcPolledFdLocked(
     ares_socket_t as) {
   auto it = sockets_.find(as);
   GPR_ASSERT(it != sockets_.end());
-  return it->second;
+  return it->second.get();
 }
 
 void GrpcPolledFdFactoryWindows::ConfigureAresChannelLocked(
@@ -646,19 +640,12 @@ ares_socket_t GrpcPolledFdFactoryWindows::Socket(int af, int type, int protocol,
       return INVALID_SOCKET;
     }
   }
-  auto on_shutdown_locked = [self, s]() {
-    // grpc_winsocket_shutdown calls closesocket which invalidates our
-    // socket -> polled_fd mapping because the socket handle can be henceforth
-    // reused.
-    self->sockets_.erase(s);
-  };
-  auto polled_fd = new GrpcPolledFdWindows(self->iocp_->Watch(s), self->mu_, af,
-                                           type, std::move(on_shutdown_locked),
-                                           self->event_engine_);
+  auto polled_fd = std::make_unique<GrpcPolledFdWindows>(
+      self->iocp_->Watch(s), self->mu_, af, type, self->event_engine_);
   GRPC_ARES_RESOLVER_TRACE_LOG(
       "fd:|%s| created with params af:%d type:%d protocol:%d",
       polled_fd->GetName(), af, type, protocol);
-  GPR_ASSERT(self->sockets_.insert({s, polled_fd}).second);
+  GPR_ASSERT(self->sockets_.insert({s, std::move(polled_fd)}).second);
   return s;
 }
 
@@ -700,8 +687,13 @@ ares_ssize_t GrpcPolledFdFactoryWindows::RecvFrom(ares_socket_t as, void* data,
                               from_len);
 }
 
-int GrpcPolledFdFactoryWindows::CloseSocket(SOCKET s, void* /* user_data */) {
+int GrpcPolledFdFactoryWindows::CloseSocket(SOCKET s, void* user_data) {
   GRPC_ARES_RESOLVER_TRACE_LOG("c-ares socket: %d CloseSocket", s);
+  GrpcPolledFdFactoryWindows* self =
+      static_cast<GrpcPolledFdFactoryWindows*>(user_data);
+  auto it = self->sockets_.find(s);
+  GPR_ASSERT(it != self->sockets_.end());
+  self->sockets_.erase(it);
   return 0;
 }
 

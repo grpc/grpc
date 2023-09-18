@@ -47,8 +47,8 @@ namespace experimental {
 
 class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
  public:
-  GrpcPolledFdFactoryWindows(IOCP* iocp);
-  ~GrpcPolledFdFactoryWindows() override;
+  explicit GrpcPolledFdFactoryWindows(IOCP* iocp);
+  ~GrpcPolledFdFactoryWindows() override = default;
 
   void Initialize(grpc_core::Mutex* mutex, EventEngine* event_engine) override;
   GrpcPolledFd* NewGrpcPolledFdLocked(ares_socket_t as) override;
@@ -94,9 +94,7 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
    public:
     GrpcPolledFdWindows(std::unique_ptr<WinSocket> winsocket,
                         grpc_core::Mutex* mu, int address_family,
-                        int socket_type,
-                        absl::AnyInvocable<void()> on_shutdown_locked,
-                        EventEngine* event_engine);
+                        int socket_type, EventEngine* event_engine);
     ~GrpcPolledFdWindows() override;
 
     void RegisterForOnReadableLocked(
@@ -174,7 +172,6 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
     // registrations with the following state.
     bool pending_continue_register_for_on_readable_locked_ = false;
     bool pending_continue_register_for_on_writeable_locked_ = false;
-    absl::AnyInvocable<void()> on_shutdown_locked_;
     EventEngine* event_engine_;
   };
 
@@ -196,7 +193,7 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
   grpc_core::Mutex* mu_;
   IOCP* iocp_;
   EventEngine* event_engine_;
-  std::map<SOCKET, GrpcPolledFdWindows*> sockets_;
+  std::map<SOCKET, std::unique_ptr<GrpcPolledFdWindows>> sockets_;
 };
 
 }  // namespace experimental
