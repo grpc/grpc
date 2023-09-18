@@ -26,12 +26,10 @@ logger = logging.getLogger(__name__)
 _ComputeV1 = gcp.compute.ComputeV1
 GcpResource = _ComputeV1.GcpResource
 HealthCheckProtocol = _ComputeV1.HealthCheckProtocol
-SessionAffinityProtocol = _ComputeV1.SessionAffinityProtocol
 ZonalGcpResource = _ComputeV1.ZonalGcpResource
 BackendServiceProtocol = _ComputeV1.BackendServiceProtocol
 _BackendGRPC = BackendServiceProtocol.GRPC
 _HealthCheckGRPC = HealthCheckProtocol.GRPC
-_SessionAffinityHTTP = SessionAffinityProtocol.HTTP
 
 # Network Security
 _NetworkSecurityV1Beta1 = gcp.network_security.NetworkSecurityV1Beta1

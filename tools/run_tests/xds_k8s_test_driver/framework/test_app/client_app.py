@@ -109,7 +109,6 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
         """
         Shortcut to LoadBalancerStatsServiceClient.get_client_stats()
         """
-        logger.info("[gina] client_app.py get_load_balancer_stats")
         return self.load_balancer_stats.get_client_stats(
             num_rpcs=num_rpcs,
             timeout_sec=timeout_sec,

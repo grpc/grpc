@@ -307,9 +307,7 @@ class HttpRoute:
     meshes: Optional[Tuple[str]]
 
     @classmethod
-    def from_response(
-        cls, name: str, d: Dict[str, Any]
-    ) -> "HttpRoute.RouteRule":
+    def from_response(cls, name: str, d: Dict[str, Any]) -> "HttpRoute":
         return cls(
             name=name,
             url=d["name"],

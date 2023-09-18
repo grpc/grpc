@@ -715,7 +715,7 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
         retryer = retryers.constant_retryer(
             wait_fixed=_timedelta(seconds=wait_sec),
             timeout=_timedelta(seconds=timeout_sec),
-            check_result=lambda policy: policy is None,
+            check_result=lambda affinity_policy: affinity_policy is None,
         )
         retryer(self.get_session_affinity_policy, name)
 
@@ -728,7 +728,7 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
         retryer = retryers.constant_retryer(
             wait_fixed=_timedelta(seconds=wait_sec),
             timeout=_timedelta(seconds=timeout_sec),
-            check_result=lambda policy: policy is None,
+            check_result=lambda affinity_filter: affinity_filter is None,
         )
         retryer(self.get_session_affinity_filter, name)
 
@@ -741,7 +741,7 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
         retryer = retryers.constant_retryer(
             wait_fixed=_timedelta(seconds=wait_sec),
             timeout=_timedelta(seconds=timeout_sec),
-            check_result=lambda policy: policy is None,
+            check_result=lambda backend_policy: backend_policy is None,
         )
         retryer(self.get_backend_policy, name)
 
