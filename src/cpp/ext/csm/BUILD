@@ -37,6 +37,7 @@ grpc_cc_library(
     hdrs = [
         "csm_observability.h",
         "metadata_exchange.h",
+        "//:include/grpcpp/ext/csm_observability.h",
     ],
     external_deps = [
         "absl/functional:any_invocable",

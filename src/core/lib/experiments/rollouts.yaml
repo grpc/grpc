@@ -98,5 +98,7 @@
   default: true
 - name: round_robin_delegate_to_pick_first
   default: true
+- name: wrr_delegate_to_pick_first
+  default: true
 - name: client_channel_subchannel_wrapper_work_serializer_orphan
   default: true

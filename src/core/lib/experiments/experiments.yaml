@@ -57,7 +57,7 @@
   test_tags: ["flow_control_test"]
 - name: memory_pressure_controller
   description: New memory pressure controller
-  expiry: 2023/10/01
+  expiry: 2024/05/05
   owner: ctiller@google.com
   test_tags: [resource_quota_test]
 - name: unconstrained_max_quota_buffer_size
@@ -198,6 +198,13 @@
 - name: round_robin_delegate_to_pick_first
   description:
     Change round_robin code to delegate to pick_first as per dualstack
+    backend design.
+  expiry: 2023/11/15
+  owner: roth@google.com
+  test_tags: ["lb_unit_test", "cpp_lb_end2end_test", "xds_end2end_test"]
+- name: wrr_delegate_to_pick_first
+  description:
+    Change WRR code to delegate to pick_first as per dualstack
     backend design.
   expiry: 2023/11/15
   owner: roth@google.com

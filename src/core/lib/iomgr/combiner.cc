@@ -320,4 +320,10 @@ void Combiner::Run(grpc_closure* closure, grpc_error_handle error) {
 void Combiner::FinallyRun(grpc_closure* closure, grpc_error_handle error) {
   combiner_finally_exec(this, closure, error);
 }
+
+void Combiner::ForceOffload() {
+  gpr_atm_no_barrier_store(&initiating_exec_ctx_or_null, 0);
+  ExecCtx::Get()->SetReadyToFinishFlag();
+}
+
 }  // namespace grpc_core
