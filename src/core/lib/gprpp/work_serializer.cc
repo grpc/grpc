@@ -22,6 +22,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <chrono>
 #include <functional>
 #include <memory>
 #include <thread>
@@ -32,6 +33,8 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/debug/stats.h"
+#include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -359,6 +362,10 @@ class WorkSerializer::DispatchingWorkSerializer final
   // EventEngine instance upon which we'll do our work.
   const std::shared_ptr<grpc_event_engine::experimental::EventEngine>
       event_engine_;
+  std::chrono::steady_clock::time_point running_start_time_
+      ABSL_GUARDED_BY(mu_);
+  std::chrono::steady_clock::duration time_running_items_;
+  uint64_t items_processed_during_run_;
   // Flags containing run state:
   // - running_ goes from false->true whenever the first callback is scheduled
   //   on an idle WorkSerializer, and transitions back to false after the last
@@ -406,11 +413,15 @@ void WorkSerializer::DispatchingWorkSerializer::Run(
     gpr_log(GPR_INFO, "WorkSerializer[%p] Scheduling callback [%s:%d]", this,
             location.file(), location.line());
   }
+  global_stats().IncrementWorkSerializerItemsEnqueued();
   MutexLock lock(&mu_);
   if (!running_) {
     // If we were previously idle, insert this callback directly into the empty
     // processing_ list and start running.
     running_ = true;
+    running_start_time_ = std::chrono::steady_clock::now();
+    items_processed_during_run_ = 0;
+    time_running_items_ = std::chrono::steady_clock::duration();
     GPR_ASSERT(processing_.empty());
     processing_.emplace_back(std::move(callback), location);
     event_engine_->Run(this);
@@ -434,6 +445,7 @@ void WorkSerializer::DispatchingWorkSerializer::Run() {
             cb.location.file(), cb.location.line());
   }
   // Run the work item.
+  const auto start = std::chrono::steady_clock::now();
   SetCurrentThread();
   cb.callback();
   // pop_back here destroys the callback - freeing any resources it might hold.
@@ -441,6 +453,12 @@ void WorkSerializer::DispatchingWorkSerializer::Run() {
   // wants to check that it's in the WorkSerializer too.
   processing_.pop_back();
   ClearCurrentThread();
+  global_stats().IncrementWorkSerializerItemsDequeued();
+  const auto work_time = std::chrono::steady_clock::now() - start;
+  global_stats().IncrementWorkSerializerWorkTimePerItemMs(
+      std::chrono::duration_cast<std::chrono::milliseconds>(work_time).count());
+  time_running_items_ += work_time;
+  ++items_processed_during_run_;
   // Check if we've drained the queue and if so refill it.
   if (processing_.empty() && !Refill()) return;
   // There's still work in processing_, so schedule ourselves again on
@@ -460,6 +478,16 @@ WorkSerializer::DispatchingWorkSerializer::RefillInner() {
   // If there were no items, then we've finished running.
   if (processing_.empty()) {
     running_ = false;
+    global_stats().IncrementWorkSerializerRunTimeMs(
+        std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::steady_clock::now() - running_start_time_)
+            .count());
+    global_stats().IncrementWorkSerializerWorkTimeMs(
+        std::chrono::duration_cast<std::chrono::milliseconds>(
+            time_running_items_)
+            .count());
+    global_stats().IncrementWorkSerializerItemsPerRun(
+        items_processed_during_run_);
     // And if we're also orphaned then it's time to delete this object.
     if (orphaned_) {
       return RefillResult::kFinishedAndOrphaned;
