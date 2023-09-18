@@ -20,11 +20,10 @@ networkservices.googleapis.com API.
 
 import datetime
 import logging
-
 from typing import Sequence, Tuple
 
-from framework.helpers import retryers
 from framework import xds_k8s_testcase
+from framework.helpers import retryers
 
 _XdsKubernetesBaseTestCase = xds_k8s_testcase.XdsKubernetesBaseTestCase
 _XdsTestServer = xds_k8s_testcase.XdsTestServer

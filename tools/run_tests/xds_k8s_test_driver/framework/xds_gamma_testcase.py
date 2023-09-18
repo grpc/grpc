@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import logging
-
 from typing import Optional
 
 from framework.helpers.rand import rand_string
