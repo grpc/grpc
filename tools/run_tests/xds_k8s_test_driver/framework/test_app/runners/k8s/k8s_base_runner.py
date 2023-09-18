@@ -401,7 +401,7 @@ class KubernetesBaseRunner(base_runner.BaseRunner, metaclass=ABCMeta):
 
     def delete_pod_async(self, pod_name: str):
         logger.info(
-            f"Initiating deletion of pod {pod_name} in namespace {self.k8s_namespace.name}"
+            "Initiating deletion of pod %s in namespace %s", pod_name, self.k8s_namespace.name
         )
         self.k8s_namespace.delete_pod_async(pod_name)
 
@@ -549,7 +549,7 @@ class KubernetesBaseRunner(base_runner.BaseRunner, metaclass=ABCMeta):
         if be_policy.metadata.name != kwargs["be_policy_name"]:
             raise _RunnerError(
                 "ResourceInstance[GCPBackendPolicy] created with"
-                f" unexpected name: {bePolicy.metadata.name}"
+                f" unexpected name: {be_policy.metadata.name}"
             )
         logger.debug(
             "ResourceInstance[GCPBackendPolicy] %s created at %s",

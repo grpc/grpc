@@ -64,7 +64,6 @@ class GammaXdsKubernetesTestCase(xds_k8s_testcase.RegularXdsKubernetesTestCase):
         self.td = self.initTrafficDirectorManager()
 
         # Generate unique mesh name too.
-        unique = rand_string()
         self.frontend_service_name = (
             f"{self.resource_prefix}-{self.resource_suffix.lower()}"
         )
@@ -119,9 +118,12 @@ class GammaXdsKubernetesTestCase(xds_k8s_testcase.RegularXdsKubernetesTestCase):
         )
 
     def startTestClient(
-        self, test_server: XdsTestServer, **kwargs
+        self, test_server: XdsTestServer, server_target=None, **kwargs
     ) -> XdsTestClient:
-        server_target = f"xds:///{self.frontend_service_name}.{self.server_namespace}.svc.cluster.local:8080"
+        # GammaXdsKuberntesTestCase computes its own unlike the base class.
+        if server_target:
+            raise NotImplementedError("startTestClient does not accept server_target.")
+        server_target = f"xds:///{self.frontend_service_name}.{self.server_namespace}.svc.cluster.local:8080" # pylint: disable=line-too-long
         return super().startTestClient(
             test_server, generate_mesh_id=True, server_target=server_target
         )

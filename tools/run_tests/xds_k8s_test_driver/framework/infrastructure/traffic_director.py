@@ -44,6 +44,7 @@ _NetworkServicesV1Alpha1 = gcp.network_services.NetworkServicesV1Alpha1
 _NetworkServicesV1Beta1 = gcp.network_services.NetworkServicesV1Beta1
 EndpointPolicy = gcp.network_services.EndpointPolicy
 GrpcRoute = gcp.network_services.GrpcRoute
+HttpRoute = gcp.network_services.HttpRoute
 Mesh = gcp.network_services.Mesh
 
 # Testing metadata consts
@@ -774,6 +775,7 @@ class TrafficDirectorAppNetManager(TrafficDirectorManager):
         # Managed resources
         # TODO(gnossen) PTAL at the pylint error
         self.grpc_route: Optional[GrpcRoute] = None
+        self.http_route: Optional[HttpRoute] = None
         self.mesh: Optional[Mesh] = None
 
     def create_mesh(self) -> GcpResource:

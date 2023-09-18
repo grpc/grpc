@@ -151,8 +151,8 @@ class PrettyLoadBalancerStats:
         result = dict()
         for peer, metadatas in metadatas_by_peer.items():
             pretty_metadata = ""
-            for metadatas in metadatas.rpc_metadata:
-                for metadata in metadatas.metadata:
+            for rpc_metadatas in metadatas.rpc_metadata:
+                for metadata in rpc_metadatas.metadata:
                     pretty_metadata += (
                         metadata.key + ": " + metadata.value + ", "
                     )

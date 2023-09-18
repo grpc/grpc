@@ -104,7 +104,7 @@ class GammaServerRunner(KubernetesServerRunner):
         self.termination_grace_period_seconds = termination_grace_period_seconds
         self.pre_stop_hook = pre_stop_hook
 
-    def run(
+    def run( # pylint: disable=arguments-differ
         self,
         *,
         test_port: int = KubernetesServerRunner.DEFAULT_TEST_PORT,

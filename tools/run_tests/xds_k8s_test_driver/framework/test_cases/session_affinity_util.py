@@ -37,8 +37,8 @@ def get_setcookie_headers(
 ) -> dict[str, str]:
     cookies = dict()
     for peer, metadatas in metadatas_by_peer.items():
-        for metadatas in metadatas.rpc_metadata:
-            for metadata in metadatas.metadata:
+        for rpc_metadatas in metadatas.rpc_metadata:
+            for metadata in rpc_metadatas.metadata:
                 if metadata.key.lower() == "set-cookie":
                     cookies[peer] = metadata.value
     return cookies
@@ -83,7 +83,7 @@ def assert_eventually_retrieve_cookie_and_server(
     try:
         return retryer(_assert_retrieve_cookie_and_server)
     except retryers.RetryError as retry_error:
-        logger.exception(
+        logging.exception(
             "Rpcs did not go to expected servers before timeout %s",
             _SET_COOKIE_MAX_WAIT_SEC,
         )

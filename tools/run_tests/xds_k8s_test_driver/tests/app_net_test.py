@@ -13,12 +13,14 @@
 # limitations under the License.
 import logging
 
+from typing import List
+
 from absl import flags
 from absl.testing import absltest
 
 from framework import xds_k8s_testcase
 from framework import xds_url_map_testcase
-from framework.test_cases.session_affinity_util import *
+from framework.test_cases import session_affinity_util
 
 logger = logging.getLogger(__name__)
 flags.adopt_module_key_flags(xds_k8s_testcase)
@@ -122,7 +124,7 @@ class AppNetTest(xds_k8s_testcase.AppNetXdsKubernetesTestCase):
             (
                 cookie,
                 chosen_server,
-            ) = assert_eventually_retrieve_cookie_and_server(
+            ) = session_affinity_util.assert_eventually_retrieve_cookie_and_server(
                 self, test_client, test_servers
             )
 
