@@ -53,9 +53,9 @@ def generate_run_tests_portability_tests(name):
     # C and C++ under different compilers
     for language in ["c", "c++"]:
         compiler_configs = [
-            # TODO(b/283304471): Add 'gcc10.2_openssl102' once possible
             ["gcc_7", "", "tools/dockerfile/test/cxx_gcc_7_x64.current_version"],
             ["gcc_12", "--cmake_configure_extra_args=-DCMAKE_CXX_STANDARD=20", "tools/dockerfile/test/cxx_gcc_12_x64.current_version"],
+            ["gcc_12_openssl309", "--cmake_configure_extra_args=-DgRPC_SSL_PROVIDER=package", "tools/dockerfile/test/cxx_debian12_openssl309_x64.current_version"],
             ["gcc_musl", "", "tools/dockerfile/test/cxx_alpine_x64.current_version"],
             ["clang_6", "--cmake_configure_extra_args=-DCMAKE_C_COMPILER=clang --cmake_configure_extra_args=-DCMAKE_CXX_COMPILER=clang++", "tools/dockerfile/test/cxx_clang_6_x64.current_version"],
             ["clang_15", "--cmake_configure_extra_args=-DCMAKE_C_COMPILER=clang --cmake_configure_extra_args=-DCMAKE_CXX_COMPILER=clang++", "tools/dockerfile/test/cxx_clang_15_x64.current_version"],
