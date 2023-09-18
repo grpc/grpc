@@ -57,7 +57,7 @@
   test_tags: ["flow_control_test"]
 - name: memory_pressure_controller
   description: New memory pressure controller
-  expiry: 2023/10/01
+  expiry: 2024/05/05
   owner: ctiller@google.com
   test_tags: [resource_quota_test]
 - name: unconstrained_max_quota_buffer_size

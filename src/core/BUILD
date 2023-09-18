@@ -4032,6 +4032,7 @@ grpc_cc_library(
         "context",
         "delegating_helper",
         "error",
+        "experiments",
         "gpr_atm",
         "grpc_sockaddr",
         "json",
@@ -5042,6 +5043,7 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "delegating_helper",
+        "experiments",
         "grpc_outlier_detection_header",
         "health_check_client",
         "iomgr_fwd",
@@ -5172,6 +5174,7 @@ grpc_cc_library(
         "closure",
         "delegating_helper",
         "error",
+        "experiments",
         "grpc_stateful_session_filter",
         "grpc_xds_client",
         "iomgr_fwd",

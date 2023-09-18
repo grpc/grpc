@@ -50,8 +50,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <stddef.h>
-
 #include "src/core/lib/experiments/config.h"
 
 namespace grpc_core {
@@ -126,16 +124,30 @@ inline bool IsTestExperiment4Enabled() { return false; }
 #endif
 
 #else
+enum ExperimentIds {
+  kExperimentIdTestExperiment1,
+  kExperimentIdTestExperiment2,
+  kExperimentIdTestExperiment3,
+  kExperimentIdTestExperiment4,
+  kNumTestExperiments
+};
 #define GRPC_EXPERIMENT_IS_INCLUDED_TEST_EXPERIMENT_1
-inline bool IsTestExperiment1Enabled() { return IsTestExperimentEnabled(0); }
+inline bool IsTestExperiment1Enabled() {
+  return IsTestExperimentEnabled(kExperimentIdTestExperiment1);
+}
 #define GRPC_EXPERIMENT_IS_INCLUDED_TEST_EXPERIMENT_2
-inline bool IsTestExperiment2Enabled() { return IsTestExperimentEnabled(1); }
+inline bool IsTestExperiment2Enabled() {
+  return IsTestExperimentEnabled(kExperimentIdTestExperiment2);
+}
 #define GRPC_EXPERIMENT_IS_INCLUDED_TEST_EXPERIMENT_3
-inline bool IsTestExperiment3Enabled() { return IsTestExperimentEnabled(2); }
+inline bool IsTestExperiment3Enabled() {
+  return IsTestExperimentEnabled(kExperimentIdTestExperiment3);
+}
 #define GRPC_EXPERIMENT_IS_INCLUDED_TEST_EXPERIMENT_4
-inline bool IsTestExperiment4Enabled() { return IsTestExperimentEnabled(3); }
+inline bool IsTestExperiment4Enabled() {
+  return IsTestExperimentEnabled(kExperimentIdTestExperiment4);
+}
 
-constexpr const size_t kNumTestExperiments = 4;
 extern const ExperimentMetadata g_test_experiment_metadata[kNumTestExperiments];
 
 #endif
