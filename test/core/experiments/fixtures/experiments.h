@@ -50,8 +50,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <stddef.h>
-
 #include "src/core/lib/experiments/config.h"
 
 namespace grpc_core {

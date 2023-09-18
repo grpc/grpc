@@ -370,7 +370,6 @@ class ExperimentsCompiler(object):
             print(file=H)
             print("#include <grpc/support/port_platform.h>", file=H)
             print(file=H)
-            print("#include <stddef.h>", file=H)
             print('#include "src/core/lib/experiments/config.h"', file=H)
             print(file=H)
             print("namespace grpc_core {", file=H)
