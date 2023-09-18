@@ -14,7 +14,6 @@
 import logging
 from typing import Optional
 
-from framework.helpers.rand import rand_string
 from framework.infrastructure import k8s
 import framework.infrastructure.traffic_director_gamma as td_gamma
 from framework.test_app import client_app
