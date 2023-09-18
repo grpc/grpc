@@ -74,6 +74,7 @@
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/match.h"
@@ -696,7 +697,15 @@ XdsResolver::XdsConfigSelector::~XdsConfigSelector() {
             resolver_.get(), this);
   }
   route_config_data_.reset();
-  resolver_->MaybeRemoveUnusedClusters();
+  if (!IsWorkSerializerDispatchEnabled()) {
+    resolver_->MaybeRemoveUnusedClusters();
+    return;
+  }
+  resolver_->work_serializer_->Run(
+      [resolver = std::move(resolver_)]() {
+        resolver->MaybeRemoveUnusedClusters();
+      },
+      DEBUG_LOCATION);
 }
 
 absl::optional<uint64_t> HeaderHashHelper(
