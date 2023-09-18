@@ -292,6 +292,11 @@ if EXTRA_ENV_LINK_ARGS is None:
     if "linux" in sys.platform:
         EXTRA_ENV_LINK_ARGS += " -static-libgcc"
 
+# Explicitly link Core Foundation framework for MacOS to ensure no symbol is
+# missing when compiled using package managers like Conda.
+if "darwin" in sys.platform:
+    EXTRA_ENV_LINK_ARGS += " -framework CoreFoundation"
+
 EXTRA_COMPILE_ARGS = shlex.split(EXTRA_ENV_COMPILE_ARGS)
 EXTRA_LINK_ARGS = shlex.split(EXTRA_ENV_LINK_ARGS)
 
