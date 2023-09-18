@@ -719,7 +719,7 @@ void XdsOverrideHostLb::SubchannelWrapper::UpdateConnectivityState(
 }
 
 void XdsOverrideHostLb::SubchannelWrapper::Orphan() {
-  if (!IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled()) {
+  if (!IsWorkSerializerDispatchEnabled()) {
     key_.reset();
     wrapped_subchannel()->CancelConnectivityStateWatch(watcher_);
     return;
