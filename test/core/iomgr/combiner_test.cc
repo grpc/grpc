@@ -142,7 +142,8 @@ TEST(CombinerTest, TestExecuteFinally) {
 }
 
 TEST(CombinerTest, TestForceOffload) {
-  grpc_core::Combiner* lock = grpc_combiner_create();
+  grpc_core::Combiner* lock = grpc_combiner_create(
+      grpc_event_engine::experimental::CreateEventEngine());
   grpc_core::ExecCtx exec_ctx;
   grpc_core::Notification done;
   const auto start_thread = std::this_thread::get_id();
