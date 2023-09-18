@@ -25,7 +25,6 @@
 #include <chrono>
 #include <functional>
 #include <memory>
-#include <ratio>
 #include <thread>
 #include <utility>
 
@@ -35,6 +34,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/debug/stats.h"
+#include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/debug_location.h"
