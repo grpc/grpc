@@ -50,8 +50,11 @@ static void combiner_finally_exec(grpc_core::Combiner* lock,
                                   grpc_closure* closure,
                                   grpc_error_handle error);
 
-grpc_core::Combiner* grpc_combiner_create(void) {
+grpc_core::Combiner* grpc_combiner_create(
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+        event_engine) {
   grpc_core::Combiner* lock = new grpc_core::Combiner();
+  lock->event_engine = event_engine;
   gpr_ref_init(&lock->refs, 1);
   gpr_atm_no_barrier_store(&lock->state, STATE_UNORPHANED);
   grpc_closure_list_init(&lock->final_list);
