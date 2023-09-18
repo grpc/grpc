@@ -587,7 +587,7 @@ class ComputeV1(
     def _execute(  # pylint: disable=arguments-differ
         self, request, *, timeout_sec=_WAIT_FOR_OPERATION_SEC
     ):
-        if xds_flags.IS_STAGING.value:
+        if xds_flags.ENABLE_GFE_DEBUG_HEADER.value:
             old_postproc = request.postproc
 
             def _log_debug_header(resp, contents):

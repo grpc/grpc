@@ -173,10 +173,10 @@ SOCKET_DEFAULT_TIMEOUT = flags.DEFINE_float(
     ),
 )
 
-IS_STAGING = flags.DEFINE_bool(
-    "is_staging",
+ENABLE_GFE_DEBUG_HEADER = flags.DEFINE_bool(
+    "enable_gfe_debug_header",
     default=False,
-    help="If tests are running under staging environment",
+    help="Whether to enable GFE debug headers.",
 )
 
 
