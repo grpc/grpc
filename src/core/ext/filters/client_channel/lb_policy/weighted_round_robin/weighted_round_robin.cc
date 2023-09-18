@@ -54,6 +54,7 @@
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -623,8 +624,12 @@ void WeightedRoundRobin::Picker::BuildSchedulerAndStartTimerLocked() {
             self->BuildSchedulerAndStartTimerLocked();
           }
         }
-        // Release the picker ref inside the WorkSerializer.
-        work_serializer->Run([self = std::move(self)]() {}, DEBUG_LOCATION);
+        if (!IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled()) {
+          // Release the picker ref inside the WorkSerializer.
+          work_serializer->Run([self = std::move(self)]() {}, DEBUG_LOCATION);
+          return;
+        }
+        self.reset();
       });
 }
 

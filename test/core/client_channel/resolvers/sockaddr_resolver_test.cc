@@ -28,6 +28,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -88,7 +89,8 @@ static void test_fails(grpc_core::ResolverFactory* factory,
 }
 
 TEST(SockaddrResolverTest, MainTest) {
-  auto work_serializer = std::make_shared<grpc_core::WorkSerializer>();
+  auto work_serializer = std::make_shared<grpc_core::WorkSerializer>(
+      grpc_event_engine::experimental::GetDefaultEventEngine());
   g_work_serializer = &work_serializer;
 
   grpc_core::ResolverFactory* ipv4 = grpc_core::CoreConfiguration::Get()

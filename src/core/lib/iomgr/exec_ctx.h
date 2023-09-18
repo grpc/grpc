@@ -184,6 +184,8 @@ class GRPC_DLL ExecCtx {
     }
   }
 
+  void SetReadyToFinishFlag() { flags_ |= GRPC_EXEC_CTX_FLAG_IS_FINISHED; }
+
   Timestamp Now() { return Timestamp::Now(); }
   void InvalidateNow() { time_cache_.InvalidateCache(); }
   void SetNowIomgrShutdown() {

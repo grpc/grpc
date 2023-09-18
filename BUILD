@@ -1157,6 +1157,7 @@ grpc_cc_library(
         "gpr",
         "grpc",
         "grpc++_base",
+        "//src/core:xds_enabled_server",
     ],
 )
 
@@ -2390,6 +2391,19 @@ grpc_cc_library(
     ],
 )
 
+# This is an EXPERIMENTAL target subject to change.
+grpc_cc_library(
+    name = "grpcpp_csm_observability",
+    hdrs = [
+        "include/grpcpp/ext/csm_observability.h",
+    ],
+    language = "c++",
+    tags = ["nofixdeps"],
+    deps = [
+        "//src/cpp/ext/csm:csm_observability",
+    ],
+)
+
 grpc_cc_library(
     name = "work_serializer",
     srcs = [
@@ -2398,14 +2412,20 @@ grpc_cc_library(
     hdrs = [
         "//src/core:lib/gprpp/work_serializer.h",
     ],
-    external_deps = ["absl/base:core_headers"],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/container:inlined_vector",
+    ],
     language = "c++",
     visibility = ["@grpc:client_channel"],
     deps = [
         "debug_location",
+        "event_engine_base_hdrs",
+        "exec_ctx",
         "gpr",
         "grpc_trace",
         "orphanable",
+        "//src/core:experiments",
     ],
 )
 
@@ -3065,7 +3085,9 @@ grpc_cc_library(
         "//src/core:dual_ref_counted",
         "//src/core:env",
         "//src/core:error",
+        "//src/core:experiments",
         "//src/core:gpr_atm",
+        "//src/core:gpr_manual_constructor",
         "//src/core:grpc_backend_metric_data",
         "//src/core:grpc_deadline_filter",
         "//src/core:grpc_service_config",
@@ -3723,6 +3745,7 @@ grpc_cc_library(
         "work_serializer",
         "//src/core:channel_args",
         "//src/core:grpc_service_config",
+        "//src/core:notification",
         "//src/core:ref_counted",
         "//src/core:useful",
     ],
