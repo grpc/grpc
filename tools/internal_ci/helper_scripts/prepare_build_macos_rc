@@ -145,29 +145,20 @@ then
   time sudo installer -pkg ./python-3.8.10-macosx10.9.pkg -target /
   python3.8 --version
 
-  # Install Python 3.9 if it doesn't exist
-  if [ ! -f "/usr/local/bin/python3.9" ]; then
-    time curl -O https://www.python.org/ftp/python/3.9.10/python-3.9.10-macosx10.9.pkg
-    echo "732bc5c95ae127dfb6fb1bcf683509ad20c558152b63b8d5f651246f6bdfc8da  python-3.9.10-macosx10.9.pkg" > /tmp/python_installer_checksum.sha256
-    shasum -c /tmp/python_installer_checksum.sha256
-    time sudo installer -pkg ./python-3.9.10-macosx10.9.pkg -target /
-  fi
+  time curl -O https://www.python.org/ftp/python/3.9.10/python-3.9.10-macosx10.9.pkg
+  echo "732bc5c95ae127dfb6fb1bcf683509ad20c558152b63b8d5f651246f6bdfc8da  python-3.9.10-macosx10.9.pkg" > /tmp/python_installer_checksum.sha256
+  shasum -c /tmp/python_installer_checksum.sha256
+  time sudo installer -pkg ./python-3.9.10-macosx10.9.pkg -target /
 
-  # Install Python 3.10 if it doesn't exist
-  if [ ! -f "/usr/local/bin/python3.10" ]; then
-    time curl -O https://www.python.org/ftp/python/3.10.5/python-3.10.5-macos11.pkg
-    echo "568c69b4361af1faf0ae35c4cac7236c1a332f5c  python-3.10.5-macos11.pkg" > /tmp/python_installer_checksum.sha256
-    shasum -c /tmp/python_installer_checksum.sha256
-    time sudo installer -pkg ./python-3.10.5-macos11.pkg -target /
-  fi
+  time curl -O https://www.python.org/ftp/python/3.10.5/python-3.10.5-macos11.pkg
+  echo "568c69b4361af1faf0ae35c4cac7236c1a332f5c  python-3.10.5-macos11.pkg" > /tmp/python_installer_checksum.sha256
+  shasum -c /tmp/python_installer_checksum.sha256
+  time sudo installer -pkg ./python-3.10.5-macos11.pkg -target /
 
-  # Install Python 3.11 if it doesn't exist
-  if [ ! -f "/usr/local/bin/python3.11" ]; then
-    time curl -O https://www.python.org/ftp/python/3.11.0/python-3.11.0rc1-macos11.pkg
-    echo "eec3f817797b1d61f48f29b96ac0443ea19f3170  python-3.11.0rc1-macos11.pkg" > /tmp/python_installer_checksum.sha256
-    shasum -c /tmp/python_installer_checksum.sha256
-    time sudo installer -pkg ./python-3.11.0rc1-macos11.pkg -target /
-  fi
+  time curl -O https://www.python.org/ftp/python/3.11.0/python-3.11.0rc1-macos11.pkg
+  echo "eec3f817797b1d61f48f29b96ac0443ea19f3170  python-3.11.0rc1-macos11.pkg" > /tmp/python_installer_checksum.sha256
+  shasum -c /tmp/python_installer_checksum.sha256
+  time sudo installer -pkg ./python-3.11.0rc1-macos11.pkg -target /
 fi
 
 if [ "${PREPARE_BUILD_INSTALL_DEPS_CSHARP}" == "true" ]
