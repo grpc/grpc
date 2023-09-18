@@ -34,6 +34,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -47,7 +48,12 @@
 #include "src/core/lib/transport/transport_fwd.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/end2end/fuzzers/fuzzer_input.pb.h"
+#include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
+#include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/util/mock_endpoint.h"
+
+using ::grpc_event_engine::experimental::FuzzingEventEngine;
+using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
 bool squelch = true;
 bool leak_check = true;
@@ -68,7 +74,6 @@ DEFINE_PROTO_FUZZER(const fuzzer_input::Msg& msg) {
   });
   auto engine =
       std::dynamic_pointer_cast<FuzzingEventEngine>(GetDefaultEventEngine());
-  FuzzingEventEngine::SetGlobalNowImplEngine(engine.get());
   grpc_init();
   {
     grpc_core::ExecCtx exec_ctx;
@@ -203,5 +208,4 @@ DEFINE_PROTO_FUZZER(const fuzzer_input::Msg& msg) {
     }
   }
   grpc_shutdown_blocking();
-  FuzzingEventEngine::UnsetGlobalNowImplEngine(engine.get());
 }
