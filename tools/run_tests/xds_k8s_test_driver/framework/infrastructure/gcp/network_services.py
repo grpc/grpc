@@ -183,6 +183,130 @@ class GrpcRoute:
             meshes=None if d.get("meshes") is None else tuple(d["meshes"]),
         )
 
+@dataclasses.dataclass(frozen=True)
+class HttpRoute:
+    @dataclasses.dataclass(frozen=True)
+    class MethodMatch:
+        type: Optional[str]
+        http_service: Optional[str]
+        http_method: Optional[str]
+        case_sensitive: Optional[bool]
+
+        @classmethod
+        def from_response(cls, d: Dict[str, Any]) -> "HttpRoute.MethodMatch":
+            return cls(
+                type=d.get("type"),
+                http_service=d.get("httpService"),
+                http_method=d.get("httpMethod"),
+                case_sensitive=d.get("caseSensitive"),
+            )
+
+    @dataclasses.dataclass(frozen=True)
+    class HeaderMatch:
+        type: Optional[str]
+        key: str
+        value: str
+
+        @classmethod
+        def from_response(cls, d: Dict[str, Any]) -> "HttpRoute.HeaderMatch":
+            return cls(
+                type=d.get("type"),
+                key=d["key"],
+                value=d["value"],
+            )
+
+    @dataclasses.dataclass(frozen=True)
+    class RouteMatch:
+        method: Optional["HttpRoute.MethodMatch"]
+        headers: Tuple["HttpRoute.HeaderMatch"]
+
+        @classmethod
+        def from_response(cls, d: Dict[str, Any]) -> "HttpRoute.RouteMatch":
+            return cls(
+                method=HttpRoute.MethodMatch.from_response(d["method"])
+                if "method" in d
+                else None,
+                headers=tuple(
+                    HttpRoute.HeaderMatch.from_response(h) for h in d["headers"]
+                )
+                if "headers" in d
+                else (),
+            )
+
+    @dataclasses.dataclass(frozen=True)
+    class Destination:
+        service_name: str
+        weight: Optional[int]
+
+        @classmethod
+        def from_response(cls, d: Dict[str, Any]) -> "HttpRoute.Destination":
+            return cls(
+                service_name=d["serviceName"],
+                weight=d.get("weight"),
+            )
+
+    @dataclasses.dataclass(frozen=True)
+    class RouteAction:
+        destinations: List["HttpRoute.Destination"]
+        stateful_session_affinity: Optional["HttpRoute.StatefulSessionAffinity"]
+        
+        @classmethod
+        def from_response(cls, d: Dict[str, Any]) -> "HttpRoute.RouteAction":
+            destinations = (
+                [
+                    HttpRoute.Destination.from_response(dest)
+                    for dest in d["destinations"]
+                ]
+                if "destinations" in d
+                else []
+            )
+            stateful_session_affinity = HttpRoute.StatefulSessionAffinity.from_response(d["statefulSessionAffinity"]) if "statefulSessionAffinity" in d else None
+            return cls(destinations=destinations, stateful_session_affinity=stateful_session_affinity)
+
+    @dataclasses.dataclass(frozen=True)
+    class StatefulSessionAffinity:
+        cookie_ttl: Optional[str]
+
+        @classmethod
+        def from_response(cls, d: Dict[str, Any]) -> "HttpRoute.StatefulSessionAffinity":
+            return cls(cookie_ttl=d.get("cookieTtl"))
+    
+
+    @dataclasses.dataclass(frozen=True)
+    class RouteRule:
+        matches: List["HttpRoute.RouteMatch"]
+        action: "HttpRoute.RouteAction"
+
+        @classmethod
+        def from_response(cls, d: Dict[str, Any]) -> "HttpRoute.RouteRule":
+            matches = (
+                [HttpRoute.RouteMatch.from_response(m) for m in d["matches"]]
+                if "matches" in d
+                else []
+            )
+            return cls(
+                matches=matches,
+                action=HttpRoute.RouteAction.from_response(d["action"]),
+            )
+
+    name: str
+    url: str
+    hostnames: Tuple[str]
+    rules: Tuple["HttpRoute.RouteRule"]
+    meshes: Optional[Tuple[str]]
+
+    @classmethod
+    def from_response(
+        cls, name: str, d: Dict[str, Any]
+    ) -> "HttpRoute.RouteRule":
+        return cls(
+            name=name,
+            url=d["name"],
+            hostnames=tuple(d["hostnames"]),
+            rules=tuple(d["rules"]),
+            meshes=None if d.get("meshes") is None else tuple(d["meshes"]),
+        )
+
 
 class _NetworkServicesBase(
     gcp.api.GcpStandardCloudApiResource, metaclass=abc.ABCMeta
@@ -261,6 +385,7 @@ class NetworkServicesV1Alpha1(NetworkServicesV1Beta1):
     v1alpha1 class can always override and reimplement incompatible methods.
     """
 
+    HTTP_ROUTES = "httpRoutes"
     GRPC_ROUTES = "grpcRoutes"
     MESHES = "meshes"
 
@@ -293,6 +418,13 @@ class NetworkServicesV1Alpha1(NetworkServicesV1Beta1):
             grpcRouteId=name,
         )
 
+    def create_http_route(self, name: str, body: dict) -> GcpResource:
+        return self._create_resource(
+            collection=self._api_locations.httpRoutes(),
+            body=body,
+            httpRouteId=name,
+        )
+
     def get_grpc_route(self, name: str) -> GrpcRoute:
         full_name = self.resource_full_name(name, self.GRPC_ROUTES)
         result = self._get_resource(
@@ -300,8 +432,21 @@ class NetworkServicesV1Alpha1(NetworkServicesV1Beta1):
         )
         return GrpcRoute.from_response(name, result)
 
+    def get_http_route(self, name: str) -> GrpcRoute:
+        full_name = self.resource_full_name(name, self.HTTP_ROUTES)
+        result = self._get_resource(
+            collection=self._api_locations.httpRoutes(), full_name=full_name
+        )
+        return HttpRoute.from_response(name, result)
+
     def delete_grpc_route(self, name: str) -> bool:
         return self._delete_resource(
             collection=self._api_locations.grpcRoutes(),
             full_name=self.resource_full_name(name, self.GRPC_ROUTES),
+        )
+
+    def delete_http_route(self, name: str) -> bool:
+        return self._delete_resource(
+            collection=self._api_locations.httpRoutes(),
+            full_name=self.resource_full_name(name, self.HTTP_ROUTES),
         )
