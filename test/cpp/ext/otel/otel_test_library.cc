@@ -22,6 +22,7 @@
 #include "api/include/opentelemetry/metrics/provider.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "opentelemetry/sdk/metrics/export/metric_producer.h"
 #include "opentelemetry/sdk/metrics/meter_provider.h"
 #include "opentelemetry/sdk/metrics/metric_reader.h"
 
@@ -39,7 +40,11 @@ void OTelPluginEnd2EndTest::Init(
     const absl::flat_hash_set<absl::string_view>& metric_names,
     opentelemetry::sdk::resource::Resource resource,
     std::unique_ptr<grpc::internal::LabelsInjector> labels_injector,
-    bool test_no_meter_provider) {
+    bool test_no_meter_provider,
+    absl::AnyInvocable<bool(absl::string_view /*target*/) const>
+        target_selector,
+    absl::AnyInvocable<bool(absl::string_view /*target*/) const>
+        target_attribute_filter) {
   // We are resetting the MeterProvider and OpenTelemetry plugin at the start
   // of each test to avoid test results from one test carrying over to another
   // test. (Some measurements can get arbitrarily delayed.)
@@ -51,7 +56,10 @@ void OTelPluginEnd2EndTest::Init(
   meter_provider->AddMetricReader(reader_);
   grpc_core::CoreConfiguration::Reset();
   grpc::internal::OpenTelemetryPluginBuilder ot_builder;
-  ot_builder.EnableMetrics(metric_names);
+  ot_builder.DisableAllMetrics();
+  for (const auto& metric_name : metric_names) {
+    ot_builder.EnableMetric(metric_name);
+  }
   if (!test_no_meter_provider) {
     auto meter_provider =
         std::make_shared<opentelemetry::sdk::metrics::MeterProvider>();
@@ -60,6 +68,8 @@ void OTelPluginEnd2EndTest::Init(
     ot_builder.SetMeterProvider(std::move(meter_provider));
   }
   ot_builder.SetLabelsInjector(std::move(labels_injector));
+  ot_builder.SetTargetSelector(std::move(target_selector));
+  ot_builder.SetTargetAttributeFilter(std::move(target_attribute_filter));
   ot_builder.BuildAndRegisterGlobal();
   grpc_init();
   grpc::ServerBuilder builder;

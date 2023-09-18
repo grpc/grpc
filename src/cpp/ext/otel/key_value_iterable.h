@@ -49,30 +49,19 @@ inline opentelemetry::nostd::string_view AbslStrViewToOTelStrView(
 class KeyValueIterable : public opentelemetry::common::KeyValueIterable {
  public:
   explicit KeyValueIterable(
-      LabelsIterable* local_labels_iterable,
-      LabelsIterable* peer_labels_iterable,
+      LabelsIterable* injected_labels_iterable,
       absl::Span<const std::pair<absl::string_view, absl::string_view>>
           additional_labels)
-      : local_labels_iterable_(local_labels_iterable),
-        peer_labels_iterable_(peer_labels_iterable),
+      : injected_labels_iterable_(injected_labels_iterable),
         additional_labels_(additional_labels) {}
 
   bool ForEachKeyValue(opentelemetry::nostd::function_ref<
                        bool(opentelemetry::nostd::string_view,
                             opentelemetry::common::AttributeValue)>
                            callback) const noexcept override {
-    if (local_labels_iterable_ != nullptr) {
-      local_labels_iterable_->ResetIteratorPosition();
-      while (const auto& pair = local_labels_iterable_->Next()) {
-        if (!callback(AbslStrViewToOTelStrView(pair->first),
-                      AbslStrViewToOTelStrView(pair->second))) {
-          return false;
-        }
-      }
-    }
-    if (peer_labels_iterable_ != nullptr) {
-      peer_labels_iterable_->ResetIteratorPosition();
-      while (const auto& pair = peer_labels_iterable_->Next()) {
+    if (injected_labels_iterable_ != nullptr) {
+      injected_labels_iterable_->ResetIteratorPosition();
+      while (const auto& pair = injected_labels_iterable_->Next()) {
         if (!callback(AbslStrViewToOTelStrView(pair->first),
                       AbslStrViewToOTelStrView(pair->second))) {
           return false;
@@ -89,16 +78,14 @@ class KeyValueIterable : public opentelemetry::common::KeyValueIterable {
   }
 
   size_t size() const noexcept override {
-    return (local_labels_iterable_ != nullptr ? local_labels_iterable_->Size()
-                                              : 0) +
-           (peer_labels_iterable_ != nullptr ? peer_labels_iterable_->Size()
-                                             : 0) +
+    return (injected_labels_iterable_ != nullptr
+                ? injected_labels_iterable_->Size()
+                : 0) +
            additional_labels_.size();
   }
 
  private:
-  LabelsIterable* local_labels_iterable_;
-  LabelsIterable* peer_labels_iterable_;
+  LabelsIterable* injected_labels_iterable_;
   absl::Span<const std::pair<absl::string_view, absl::string_view>>
       additional_labels_;
 };

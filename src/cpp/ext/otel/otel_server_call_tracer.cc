@@ -26,6 +26,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/functional/any_invocable.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
@@ -54,12 +55,7 @@ namespace {
 
 class OpenTelemetryServerCallTracer : public grpc_core::ServerCallTracer {
  public:
-  OpenTelemetryServerCallTracer() : start_time_(absl::Now()) {
-    // We don't have the peer labels at this point.
-    if (OTelPluginState().labels_injector != nullptr) {
-      local_labels_ = OTelPluginState().labels_injector->GetLocalLabels();
-    }
-  }
+  OpenTelemetryServerCallTracer() : start_time_(absl::Now()) {}
 
   std::string TraceId() override {
     // Not implemented
@@ -82,7 +78,7 @@ class OpenTelemetryServerCallTracer : public grpc_core::ServerCallTracer {
       grpc_metadata_batch* send_initial_metadata) override {
     // Only add labels to outgoing metadata if labels were received from peer.
     if (OTelPluginState().labels_injector != nullptr &&
-        peer_labels_ != nullptr) {
+        injected_labels_ != nullptr) {
       OTelPluginState().labels_injector->AddLabels(send_initial_metadata);
     }
   }
@@ -135,8 +131,7 @@ class OpenTelemetryServerCallTracer : public grpc_core::ServerCallTracer {
   absl::Time start_time_;
   absl::Duration elapsed_time_;
   grpc_core::Slice path_;
-  std::unique_ptr<LabelsIterable> local_labels_;
-  std::unique_ptr<LabelsIterable> peer_labels_;
+  std::unique_ptr<LabelsIterable> injected_labels_;
 };
 
 void OpenTelemetryServerCallTracer::RecordReceivedInitialMetadata(
@@ -144,15 +139,17 @@ void OpenTelemetryServerCallTracer::RecordReceivedInitialMetadata(
   path_ =
       recv_initial_metadata->get_pointer(grpc_core::HttpPathMetadata())->Ref();
   if (OTelPluginState().labels_injector != nullptr) {
-    peer_labels_ =
-        OTelPluginState().labels_injector->GetPeerLabels(recv_initial_metadata);
+    injected_labels_ =
+        OTelPluginState().labels_injector->GetLabels(recv_initial_metadata);
   }
   std::array<std::pair<absl::string_view, absl::string_view>, 1>
       additional_labels = {
           {{OTelMethodKey(), absl::StripPrefix(path_.as_string_view(), "/")}}};
   if (OTelPluginState().server.call.started != nullptr) {
+    // We might not have all the injected labels that we want at this point, so
+    // avoid recording a subset of injected labels here.
     OTelPluginState().server.call.started->Add(
-        1, KeyValueIterable(local_labels_.get(), peer_labels_.get(),
+        1, KeyValueIterable(/*injected_labels_iterable=*/nullptr,
                             additional_labels));
   }
 }
@@ -171,8 +168,7 @@ void OpenTelemetryServerCallTracer::RecordEnd(
           {{OTelMethodKey(), absl::StripPrefix(path_.as_string_view(), "/")},
            {OTelStatusKey(),
             grpc_status_code_to_string(final_info->final_status)}}};
-  KeyValueIterable labels(local_labels_.get(), peer_labels_.get(),
-                          additional_labels);
+  KeyValueIterable labels(injected_labels_.get(), additional_labels);
   if (OTelPluginState().server.call.duration != nullptr) {
     OTelPluginState().server.call.duration->Record(
         absl::ToDoubleSeconds(elapsed_time_), labels,
@@ -202,6 +198,14 @@ grpc_core::ServerCallTracer*
 OpenTelemetryServerCallTracerFactory::CreateNewServerCallTracer(
     grpc_core::Arena* arena) {
   return arena->ManagedNew<OpenTelemetryServerCallTracer>();
+}
+
+bool OpenTelemetryServerCallTracerFactory::IsServerTraced(
+    const grpc_core::ChannelArgs& args) {
+  // Return true only if there is no server selector registered or if the server
+  // selector returns true.
+  return OTelPluginState().server_selector == nullptr ||
+         OTelPluginState().server_selector(args);
 }
 
 }  // namespace internal
