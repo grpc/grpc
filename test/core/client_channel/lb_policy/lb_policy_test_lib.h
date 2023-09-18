@@ -1205,6 +1205,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   }
 
   void WaitForWorkSerializerToFlush() {
+    ExecCtx exec_ctx;
     gpr_log(GPR_INFO, "waiting for WorkSerializer to flush...");
     absl::Notification notification;
     work_serializer_->Run([&]() { notification.Notify(); }, DEBUG_LOCATION);

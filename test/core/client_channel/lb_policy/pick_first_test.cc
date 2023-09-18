@@ -65,6 +65,7 @@ class PickFirstTest : public LoadBalancingPolicyTest {
   void GetOrderAddressesArePicked(
       absl::Span<const absl::string_view> addresses,
       std::vector<absl::string_view>* out_address_order) {
+    ExecCtx exec_ctx;
     out_address_order->clear();
     // Note: ExitIdle() will enqueue a bunch of connectivity state
     // notifications on the WorkSerializer, and we want to wait until
