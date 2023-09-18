@@ -56,9 +56,7 @@ struct CallInfo {
     cv.SignalAll();
   }
 
-  bool Completed() {
-    return WaitForStatus(absl::Seconds(0)).has_value();
-  }
+  bool Completed() { return WaitForStatus(absl::ZeroDuration()).has_value(); }
 
  private:
   grpc_core::Mutex mu;

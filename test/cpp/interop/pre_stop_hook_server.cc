@@ -80,7 +80,6 @@ class HookServiceImpl final : public HookService::CallbackService {
   }
 
  private:
-
   grpc_core::Mutex mu_;
   grpc_core::CondVar request_var_ ABSL_GUARDED_BY(&mu_);
   std::vector<ServerUnaryReactor*> pending_requests_ ABSL_GUARDED_BY(&mu_);
@@ -88,7 +87,8 @@ class HookServiceImpl final : public HookService::CallbackService {
   // When set to false, all outstanding RPCs will be completed with the current
   // value of status_. When set to true, all subsequent RPCs will hang.
   bool hanging_ ABSL_GUARDED_BY(&mu_) = true;
-  Status status_ ABSL_GUARDED_BY(&mu_) = Status(StatusCode::OK, "Immediate exit.");
+  Status status_ ABSL_GUARDED_BY(&mu_) = Status(StatusCode::OK,
+                                                "Immediate exit.");
   bool done_ ABSL_GUARDED_BY(&mu_) = false;
 };
 
