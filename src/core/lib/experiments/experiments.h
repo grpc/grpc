@@ -92,10 +92,6 @@ inline bool IsJitterMaxIdleEnabled() { return true; }
 inline bool IsRoundRobinDelegateToPickFirstEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WRR_DELEGATE_TO_PICK_FIRST
 inline bool IsWrrDelegateToPickFirstEnabled() { return true; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_CHANNEL_SUBCHANNEL_WRAPPER_WORK_SERIALIZER_ORPHAN
-inline bool IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled() {
-  return true;
-}
 
 #elif defined(GPR_WINDOWS)
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -131,10 +127,6 @@ inline bool IsJitterMaxIdleEnabled() { return true; }
 inline bool IsRoundRobinDelegateToPickFirstEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WRR_DELEGATE_TO_PICK_FIRST
 inline bool IsWrrDelegateToPickFirstEnabled() { return true; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_CHANNEL_SUBCHANNEL_WRAPPER_WORK_SERIALIZER_ORPHAN
-inline bool IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled() {
-  return true;
-}
 
 #else
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -170,10 +162,6 @@ inline bool IsJitterMaxIdleEnabled() { return true; }
 inline bool IsRoundRobinDelegateToPickFirstEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WRR_DELEGATE_TO_PICK_FIRST
 inline bool IsWrrDelegateToPickFirstEnabled() { return true; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_CHANNEL_SUBCHANNEL_WRAPPER_WORK_SERIALIZER_ORPHAN
-inline bool IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled() {
-  return true;
-}
 #endif
 
 #else
@@ -241,12 +229,8 @@ inline bool IsRoundRobinDelegateToPickFirstEnabled() {
 inline bool IsWrrDelegateToPickFirstEnabled() {
   return IsExperimentEnabled(25);
 }
-#define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_CHANNEL_SUBCHANNEL_WRAPPER_WORK_SERIALIZER_ORPHAN
-inline bool IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled() {
-  return IsExperimentEnabled(26);
-}
 
-constexpr const size_t kNumExperiments = 27;
+constexpr const size_t kNumExperiments = 26;
 extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];
 
 #endif
