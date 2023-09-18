@@ -732,8 +732,8 @@ RefCountedPtr<SubchannelInterface> OutlierDetectionLb::Helper::CreateSubchannel(
   }
   auto subchannel = MakeRefCounted<SubchannelWrapper>(
       parent()->work_serializer(), subchannel_state,
-      parent()->channel_control_helper()->CreateSubchannel(
-          std::move(address), args));
+      parent()->channel_control_helper()->CreateSubchannel(std::move(address),
+                                                           args));
   if (subchannel_state != nullptr) {
     subchannel_state->AddSubchannel(subchannel.get());
   }
