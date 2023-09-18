@@ -15,6 +15,6 @@
 
 set -ex
 
-echo "This is a dummy C++ distribtest. It acts as a tools/run_tests/task_runner.py"
+echo "This is an empty C++ distribtest. It acts as a tools/run_tests/task_runner.py"
 echo "placeholder, since the C++ distribtests are now run by tools/bazelify_tests"
 echo "and task_runner.py reports an error when no task match the filter."
