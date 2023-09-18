@@ -29,19 +29,19 @@ package(
 )
 
 grpc_cc_library(
-    name = "gsm_observability",
+    name = "csm_observability",
     srcs = [
-        "gsm_observability.cc",
+        "csm_observability.cc",
         "metadata_exchange.cc",
     ],
     hdrs = [
-        "gsm_observability.h",
+        "csm_observability.h",
         "metadata_exchange.h",
+        "//:include/grpcpp/ext/csm_observability.h",
     ],
     external_deps = [
-        "absl/container:flat_hash_set",
+        "absl/functional:any_invocable",
         "absl/meta:type_traits",
-        "absl/status",
         "absl/status:statusor",
         "absl/strings",
         "absl/types:optional",
@@ -53,9 +53,12 @@ grpc_cc_library(
     language = "c++",
     visibility = ["//:__subpackages__"],
     deps = [
+        "//:gpr",
         "//:gpr_platform",
         "//:grpc_base",
         "//:protobuf_struct_upb",
+        "//:uri_parser",
+        "//src/core:channel_args",
         "//src/core:env",
         "//src/core:error",
         "//src/core:json",
@@ -63,6 +66,7 @@ grpc_cc_library(
         "//src/core:json_object_loader",
         "//src/core:json_reader",
         "//src/core:slice",
+        "//src/core:xds_enabled_server",
         "//src/cpp/ext/otel:otel_plugin",
     ],
 )

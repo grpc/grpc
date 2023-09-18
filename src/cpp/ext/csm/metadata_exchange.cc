@@ -18,7 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/cpp/ext/gsm/metadata_exchange.h"
+#include "src/cpp/ext/csm/metadata_exchange.h"
 
 #include <stddef.h>
 
@@ -70,23 +70,23 @@ constexpr absl::string_view kMetadataExchangeProjectIdKey = "project_id";
 constexpr absl::string_view kMetadataExchangeCanonicalServiceKey =
     "canonical_service";
 // The keys that will be used for the local attributes when recording metrics.
-constexpr absl::string_view kMeshIdAttribute = "gsm.mesh_id";
+constexpr absl::string_view kMeshIdAttribute = "csm.mesh_id";
 // The keys that will be used for the peer attributes when recording metrics.
-constexpr absl::string_view kPeerTypeAttribute = "gsm.remote_workload_type";
+constexpr absl::string_view kPeerTypeAttribute = "csm.remote_workload_type";
 constexpr absl::string_view kPeerPodNameAttribute =
-    "gsm.remote_workload_pod_name";
+    "csm.remote_workload_pod_name";
 constexpr absl::string_view kPeerContainerNameAttribute =
-    "gsm.remote_workload_container_name";
+    "csm.remote_workload_container_name";
 constexpr absl::string_view kPeerNamespaceNameAttribute =
-    "gsm.remote_workload_namespace_name";
+    "csm.remote_workload_namespace_name";
 constexpr absl::string_view kPeerClusterNameAttribute =
-    "gsm.remote_workload_cluster_name";
+    "csm.remote_workload_cluster_name";
 constexpr absl::string_view kPeerLocationAttribute =
-    "gsm.remote_workload_location";
+    "csm.remote_workload_location";
 constexpr absl::string_view kPeerProjectIdAttribute =
-    "gsm.remote_workload_project_id";
+    "csm.remote_workload_project_id";
 constexpr absl::string_view kPeerCanonicalServiceAttribute =
-    "gsm.remote_workload_canonical_service";
+    "csm.remote_workload_canonical_service";
 // Type values used by Google Cloud Resource Detector
 constexpr absl::string_view kGkeType = "gcp_kubernetes_engine";
 

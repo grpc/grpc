@@ -22,6 +22,7 @@
 #include "api/include/opentelemetry/metrics/provider.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "opentelemetry/sdk/metrics/export/metric_producer.h"
 #include "opentelemetry/sdk/metrics/meter_provider.h"
 #include "opentelemetry/sdk/metrics/metric_reader.h"
 
@@ -55,7 +56,10 @@ void OTelPluginEnd2EndTest::Init(
   meter_provider->AddMetricReader(reader_);
   grpc_core::CoreConfiguration::Reset();
   grpc::internal::OpenTelemetryPluginBuilder ot_builder;
-  ot_builder.EnableMetrics(metric_names);
+  ot_builder.DisableAllMetrics();
+  for (const auto& metric_name : metric_names) {
+    ot_builder.EnableMetric(metric_name);
+  }
   if (!test_no_meter_provider) {
     auto meter_provider =
         std::make_shared<opentelemetry::sdk::metrics::MeterProvider>();
