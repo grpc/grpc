@@ -17,7 +17,6 @@ from absl import flags
 from absl.testing import absltest
 
 from framework import xds_k8s_testcase
-from framework import xds_url_map_testcase
 
 logger = logging.getLogger(__name__)
 flags.adopt_module_key_flags(xds_k8s_testcase)
@@ -25,7 +24,6 @@ flags.adopt_module_key_flags(xds_k8s_testcase)
 # Type aliases
 _XdsTestServer = xds_k8s_testcase.XdsTestServer
 _XdsTestClient = xds_k8s_testcase.XdsTestClient
-RpcTypeUnaryCall = xds_url_map_testcase.RpcTypeUnaryCall
 
 
 class BaselineTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
@@ -47,7 +45,7 @@ class BaselineTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
 
         with self.subTest("5_start_test_server"):
             test_server: _XdsTestServer = self.startTestServers()[0]
-        #
+
         with self.subTest("6_add_server_backends_to_backend_service"):
             self.setupServerBackends()
 
