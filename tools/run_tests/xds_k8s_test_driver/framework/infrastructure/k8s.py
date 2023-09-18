@@ -605,7 +605,7 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
         grace_period_seconds=DELETE_GRACE_PERIOD_SEC,
     ) -> None:
         self._execute(
-            self.api_session_affinity_policy.delete,
+            self.api_session_affinity_policy.delete,  # pylint: disable=no-member
             name=name,
             namespace=self.name,
             propagation_policy="Foreground",
@@ -618,7 +618,7 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
         grace_period_seconds=DELETE_GRACE_PERIOD_SEC,
     ) -> None:
         self._execute(
-            self.api_session_affinity_filter.delete,
+            self.api_session_affinity_filter.delete,  # pylint: disable=no-member
             name=name,
             namespace=self.name,
             propagation_policy="Foreground",
@@ -631,7 +631,7 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
         grace_period_seconds=DELETE_GRACE_PERIOD_SEC,
     ) -> None:
         self._execute(
-            self.api_backend_policy.delete,
+            self.api_backend_policy.delete,  # pylint: disable=no-member
             name=name,
             namespace=self.name,
             propagation_policy="Foreground",
