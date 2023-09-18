@@ -401,7 +401,9 @@ class KubernetesBaseRunner(base_runner.BaseRunner, metaclass=ABCMeta):
 
     def delete_pod_async(self, pod_name: str):
         logger.info(
-            "Initiating deletion of pod %s in namespace %s", pod_name, self.k8s_namespace.name
+            "Initiating deletion of pod %s in namespace %s",
+            pod_name,
+            self.k8s_namespace.name,
         )
         self.k8s_namespace.delete_pod_async(pod_name)
 

@@ -145,7 +145,9 @@ class KubernetesApiManager:
     def grpc_route(self, version: str) -> dynamic_res.Resource:
         api_name = "gateway.networking.k8s.io"
         kind = "GRPCRoute"
-        supported_versions = {"v1alpha2",}
+        supported_versions = {
+            "v1alpha2",
+        }
         if version not in supported_versions:
             raise NotImplementedError(
                 f"{kind} {api_name}/{version} not implemented."
@@ -350,7 +352,9 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
             elif kind == "HTTPRoute":
                 return self._api.http_route(version)
 
-        raise NotImplementedError(f"{kind} ({group}) {api_version} not implemented.")
+        raise NotImplementedError(
+            f"{kind} ({group}) {api_version} not implemented."
+        )
 
     def _get_resource(self, method: Callable[[Any], object], *args, **kwargs):
         try:
@@ -521,10 +525,14 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
     def get_gamma_route(self, name) -> Optional[GammaHttpRoute]:
         return self._get_dyn_resource(self.api_http_route, name)
 
-    def get_session_affinity_policy(self, name) -> Optional[GcpSessionAffinityPolicy]:
+    def get_session_affinity_policy(
+        self, name
+    ) -> Optional[GcpSessionAffinityPolicy]:
         return self._get_dyn_resource(self.api_session_affinity_policy, name)
 
-    def get_session_affinity_filter(self, name) -> Optional[GcpSessionAffinityFilter]:
+    def get_session_affinity_filter(
+        self, name
+    ) -> Optional[GcpSessionAffinityFilter]:
         return self._get_dyn_resource(self.api_session_affinity_filter, name)
 
     def get_backend_policy(self, name) -> Optional[GcpBackendPolicy]:
