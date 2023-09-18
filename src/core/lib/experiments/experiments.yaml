@@ -81,7 +81,9 @@
     (ie when all filters in a stack are promise based)
   expiry: 2023/11/01
   owner: ctiller@google.com
-  test_tags: ["core_end2end_test", "lame_client_test"]
+  # TODO(ctiller): re-enable once we've got some more CI bandwidth
+  # test_tags: ["core_end2end_test", "lame_client_test"]
+  test_tags: []
 - name: free_large_allocator
   description: If set, return all free bytes from a "big" allocator
   expiry: 2023/11/01
@@ -169,6 +171,14 @@
   owner: yashkt@google.com
   test_tags: []
   allow_in_fuzzing_config: false
+- name: work_serializer_dispatch
+  description:
+    Have the work serializer dispatch work to event engine for every callback,
+    instead of running things inline in the first thread that successfully
+    enqueues work.
+  expiry: 2024/02/10
+  owner: ctiller@google.com
+  test_tags: ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test", "lb_unit_test"]
 - name: lazier_stream_updates
   description:
     Allow streams to consume up to 50% of the incoming window before we
@@ -196,6 +206,13 @@
   description:
     Change WRR code to delegate to pick_first as per dualstack
     backend design.
+  expiry: 2023/11/15
+  owner: roth@google.com
+  test_tags: ["lb_unit_test", "cpp_lb_end2end_test", "xds_end2end_test"]
+- name: client_channel_subchannel_wrapper_work_serializer_orphan
+  description:
+    Client channel subchannel wrapper hops into WorkSerializer at
+    Orphan() time, rather than requiring callers to do it.
   expiry: 2023/11/15
   owner: roth@google.com
   test_tags: ["lb_unit_test", "cpp_lb_end2end_test", "xds_end2end_test"]

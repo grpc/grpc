@@ -1,5 +1,4 @@
 //
-//
 // Copyright 2023 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,23 +13,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-//
 
-#ifndef GRPC_SRC_CPP_EXT_CSM_CSM_OBSERVABILITY_H
-#define GRPC_SRC_CPP_EXT_CSM_CSM_OBSERVABILITY_H
+#ifndef GRPC_SRC_CORE_EXT_XDS_XDS_ENABLED_SERVER_H
+#define GRPC_SRC_CORE_EXT_XDS_XDS_ENABLED_SERVER_H
 
-#include <grpc/support/port_platform.h>
+// EXPERIMENTAL. Bool-valued channel arg used as an indicator that a server is
+// xds enabled.
+#define GRPC_ARG_XDS_ENABLED_SERVER "grpc.experimental.xds_enabled_server"
 
-#include "absl/strings/string_view.h"
-
-namespace grpc {
-namespace internal {
-
-// EXPOSED FOR TESTING PURPOSES ONLY
-// Returns true if the channel is a CSM channel.
-bool CsmChannelTargetSelector(absl::string_view target);
-
-}  // namespace internal
-}  // namespace grpc
-
-#endif  // GRPC_SRC_CPP_EXT_CSM_CSM_OBSERVABILITY_H
+#endif  // GRPC_SRC_CORE_EXT_XDS_XDS_ENABLED_SERVER_H

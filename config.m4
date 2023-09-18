@@ -553,7 +553,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/event_engine/slice_buffer.cc \
     src/core/lib/event_engine/tcp_socket_utils.cc \
     src/core/lib/event_engine/thread_local.cc \
-    src/core/lib/event_engine/thread_pool/original_thread_pool.cc \
     src/core/lib/event_engine/thread_pool/thread_count.cc \
     src/core/lib/event_engine/thread_pool/thread_pool_factory.cc \
     src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc \

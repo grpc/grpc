@@ -36,6 +36,8 @@ class Combiner {
   void Run(grpc_closure* closure, grpc_error_handle error);
   // TODO(yashkt) : Remove this method
   void FinallyRun(grpc_closure* closure, grpc_error_handle error);
+  // Force the next combiner execution to be offloaded
+  void ForceOffload();
   Combiner* next_combiner_on_this_exec_ctx = nullptr;
   MultiProducerSingleConsumerQueue queue;
   // either:

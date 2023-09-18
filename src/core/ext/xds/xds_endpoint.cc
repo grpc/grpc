@@ -223,10 +223,9 @@ absl::optional<EndpointAddresses> EndpointAddressesParse(
   }
   // Convert to EndpointAddresses.
   return EndpointAddresses(
-      grpc_address,
-      ChannelArgs()
-          .Set(GRPC_ARG_ADDRESS_WEIGHT, weight)
-          .Set(GRPC_ARG_XDS_HEALTH_STATUS, status->status()));
+      grpc_address, ChannelArgs()
+                        .Set(GRPC_ARG_ADDRESS_WEIGHT, weight)
+                        .Set(GRPC_ARG_XDS_HEALTH_STATUS, status->status()));
 }
 
 struct ParsedLocality {
@@ -293,8 +292,7 @@ absl::optional<ParsedLocality> LocalityParse(
         if (!inserted) {
           errors->AddError(absl::StrCat(
               "duplicate endpoint address \"",
-              grpc_sockaddr_to_uri(&address).value_or("<unknown>"),
-              "\""));
+              grpc_sockaddr_to_uri(&address).value_or("<unknown>"), "\""));
         }
       }
       parsed_locality.locality.endpoints.push_back(std::move(*endpoint));

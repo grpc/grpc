@@ -34,7 +34,6 @@
 #include "src/core/ext/filters/stateful_session/stateful_session_filter.h"
 #include "src/core/ext/xds/xds_health_status.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
@@ -48,7 +47,7 @@ namespace {
 class XdsOverrideHostTest : public LoadBalancingPolicyTest {
  protected:
   XdsOverrideHostTest()
-      : policy_(MakeLbPolicy("xds_override_host_experimental")) {}
+      : LoadBalancingPolicyTest("xds_override_host_experimental") {}
 
   static RefCountedPtr<LoadBalancingPolicy::Config> MakeXdsOverrideHostConfig(
       absl::Span<const absl::string_view> override_host_status = {"UNKNOWN",
@@ -72,7 +71,7 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
   RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>
   ExpectStartupWithRoundRobin(absl::Span<const absl::string_view> addresses) {
     EXPECT_EQ(ApplyUpdate(BuildUpdate(addresses, MakeXdsOverrideHostConfig()),
-                          policy_.get()),
+                          lb_policy()),
               absl::OkStatus());
     return ExpectRoundRobinStartup(addresses);
   }
@@ -97,7 +96,7 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
       update.addresses->push_back(MakeAddressWithHealthStatus(
           address_and_status.first, address_and_status.second));
     }
-    EXPECT_EQ(ApplyUpdate(update, policy_.get()), absl::OkStatus());
+    EXPECT_EQ(ApplyUpdate(update, lb_policy()), absl::OkStatus());
   }
 
   CallAttributes MakeOverrideHostAttribute(absl::string_view host) {
@@ -106,8 +105,6 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
         std::make_unique<XdsOverrideHostAttribute>(host));
     return override_host_attributes;
   }
-
-  OrphanablePtr<LoadBalancingPolicy> policy_;
 };
 
 TEST_F(XdsOverrideHostTest, DelegatesToChild) {
@@ -119,7 +116,7 @@ TEST_F(XdsOverrideHostTest, NoConfigReportsError) {
   EXPECT_EQ(
       ApplyUpdate(
           BuildUpdate({"ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442"}, nullptr),
-          policy_.get()),
+          lb_policy()),
       absl::InvalidArgumentError("Missing policy config"));
 }
 
@@ -165,7 +162,7 @@ TEST_F(XdsOverrideHostTest, SubchannelsComeAndGo) {
   // Some other address is gone
   EXPECT_EQ(ApplyUpdate(BuildUpdate({kAddresses[0], kAddresses[1]},
                                     MakeXdsOverrideHostConfig()),
-                        policy_.get()),
+                        lb_policy()),
             absl::OkStatus());
   // Wait for LB policy to return a new picker that uses the updated
   // addresses.  We can't use the host override for this, because then
@@ -179,7 +176,7 @@ TEST_F(XdsOverrideHostTest, SubchannelsComeAndGo) {
   // "Our" address is gone so others get returned in round-robin order
   EXPECT_EQ(ApplyUpdate(BuildUpdate({kAddresses[0], kAddresses[2]},
                                     MakeXdsOverrideHostConfig()),
-                        policy_.get()),
+                        lb_policy()),
             absl::OkStatus());
   // Wait for LB policy to return the new picker.
   // In this case, we can pass call_attributes while we wait instead of
@@ -191,7 +188,7 @@ TEST_F(XdsOverrideHostTest, SubchannelsComeAndGo) {
   // And now it is back
   EXPECT_EQ(ApplyUpdate(BuildUpdate({kAddresses[1], kAddresses[2]},
                                     MakeXdsOverrideHostConfig()),
-                        policy_.get()),
+                        lb_policy()),
             absl::OkStatus());
   // Wait for LB policy to return the new picker.
   picker = WaitForRoundRobinListChange({kAddresses[0], kAddresses[2]},
@@ -339,6 +336,7 @@ TEST_F(XdsOverrideHostTest, DrainingSubchannelIsConnecting) {
   // picks where the override host is CONNECTING.  All picks without an
   // override host should not use this host.
   gpr_log(GPR_INFO, "### subchannel starts reconnecting");
+  WaitForWorkSerializerToFlush();
   EXPECT_TRUE(subchannel->ConnectionRequested());
   ExpectQueueEmpty();
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
@@ -470,8 +468,5 @@ TEST_F(XdsOverrideHostTest, OverrideHostStatus) {
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(&argc, argv);
-  grpc_init();
-  int ret = RUN_ALL_TESTS();
-  grpc_shutdown();
-  return ret;
+  return RUN_ALL_TESTS();
 }

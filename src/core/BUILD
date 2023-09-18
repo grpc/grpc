@@ -1564,12 +1564,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "event_engine_thread_pool",
     srcs = [
-        "lib/event_engine/thread_pool/original_thread_pool.cc",
         "lib/event_engine/thread_pool/thread_pool_factory.cc",
         "lib/event_engine/thread_pool/work_stealing_thread_pool.cc",
     ],
     hdrs = [
-        "lib/event_engine/thread_pool/original_thread_pool.h",
         "lib/event_engine/thread_pool/thread_pool.h",
         "lib/event_engine/thread_pool/work_stealing_thread_pool.h",
     ],
@@ -1586,7 +1584,6 @@ grpc_cc_library(
         "event_engine_thread_local",
         "event_engine_trace",
         "event_engine_work_queue",
-        "experiments",
         "forkable",
         "notification",
         "time",
@@ -2371,6 +2368,9 @@ grpc_cc_library(
         "lib/event_engine/default_event_engine.h",
     ],
     external_deps = ["absl/functional:any_invocable"],
+    visibility = [
+        "@grpc:alt_grpc_base_legacy",
+    ],
     deps = [
         "channel_args",
         "context",
@@ -4177,6 +4177,14 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = ["//:gpr_platform"],
+)
+
+grpc_cc_library(
+    name = "xds_enabled_server",
+    hdrs = [
+        "ext/xds/xds_enabled_server.h",
+    ],
+    language = "c++",
 )
 
 grpc_cc_library(

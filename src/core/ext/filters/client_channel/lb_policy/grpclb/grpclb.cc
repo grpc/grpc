@@ -1591,7 +1591,7 @@ absl::Status GrpcLb::UpdateBalancerChannelLocked() {
   // Pass channel creds via channel args, since the fake resolver won't
   // do this automatically.
   result.args = lb_channel_args.SetObject(std::move(channel_credentials));
-  response_generator_->SetResponse(std::move(result));
+  response_generator_->SetResponseAsync(std::move(result));
   // Return status.
   return status;
 }
