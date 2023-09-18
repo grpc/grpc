@@ -78,6 +78,7 @@ grpc_cc_library(
         "//src/core:channel_args_endpoint_config",
         "//src/core:channel_args_preconditioning",
         "//src/core:closure",
+        "//src/core:default_event_engine",
         "//src/core:error",
         "//src/core:iomgr_fwd",
         "//src/core:pollset_set",
