@@ -117,14 +117,12 @@ class GammaXdsKubernetesTestCase(xds_k8s_testcase.RegularXdsKubernetesTestCase):
         )
 
     def startTestClient(
-        self, test_server: XdsTestServer, server_target=None, **kwargs
+        self, test_server: XdsTestServer, **kwargs
     ) -> XdsTestClient:
-        # GammaXdsKuberntesTestCase computes its own unlike the base class.
-        if server_target:
-            raise NotImplementedError(
-                "startTestClient does not accept server_target."
-            )
-        server_target = f"xds:///{self.frontend_service_name}.{self.server_namespace}.svc.cluster.local:8080"  # pylint: disable=line-too-long
-        return super().startTestClient(
-            test_server, generate_mesh_id=True, server_target=server_target
+        server_target = (
+            f"xds:///{self.frontend_service_name}"
+            f".{self.server_namespace}.svc.cluster.local"
+            f":{test_server.rpc_port}"
         )
+        kwargs.setdefault("generate_mesh_id", True)
+        return self._start_test_client(server_target=server_target, **kwargs)

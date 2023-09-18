@@ -806,9 +806,11 @@ class RegularXdsKubernetesTestCase(IsolatedXdsKubernetesTestCase):
         return test_servers
 
     def startTestClient(
-        self, test_server: XdsTestServer, server_target=None, **kwargs
+        self, test_server: XdsTestServer, **kwargs
     ) -> XdsTestClient:
-        server_target = server_target or test_server.xds_uri
+        return self._start_test_client(test_server.xds_uri, **kwargs)
+
+    def _start_test_client(self, server_target: str, **kwargs) -> XdsTestClient:
         test_client = self.client_runner.run(
             server_target=server_target, **kwargs
         )
