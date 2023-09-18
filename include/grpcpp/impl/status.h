@@ -32,7 +32,7 @@ namespace grpc {
 /// Did it work? If it didn't, why?
 ///
 /// See \a grpc::StatusCode for details on the available code and their meaning.
-class GRPC_MUST_USE_RESULT_WHEN_USE_STRICT_WARNING Status {
+class GRPC_MUST_USE_RESULT_WHEN_USE_STRICT_WARNING GRPCXX_DLL Status {
  public:
   /// Construct an OK instance.
   Status() : code_(StatusCode::OK) {

@@ -25,18 +25,16 @@
 
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
+#include "absl/synchronization/notification.h"
 #include "absl/types/optional.h"
 #include "absl/types/span.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
-#include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/json.h>
 
-#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/json/json.h"
@@ -50,7 +48,7 @@ namespace {
 
 class PickFirstTest : public LoadBalancingPolicyTest {
  protected:
-  PickFirstTest() : lb_policy_(MakeLbPolicy("pick_first")) {}
+  PickFirstTest() : LoadBalancingPolicyTest("pick_first") {}
 
   static RefCountedPtr<LoadBalancingPolicy::Config> MakePickFirstConfig(
       absl::optional<bool> shuffle_address_list = absl::nullopt) {
@@ -67,15 +65,24 @@ class PickFirstTest : public LoadBalancingPolicyTest {
   void GetOrderAddressesArePicked(
       absl::Span<const absl::string_view> addresses,
       std::vector<absl::string_view>* out_address_order) {
-    work_serializer_->Run([&]() { lb_policy_->ExitIdleLocked(); },
-                          DEBUG_LOCATION);
     out_address_order->clear();
+    // Note: ExitIdle() will enqueue a bunch of connectivity state
+    // notifications on the WorkSerializer, and we want to wait until
+    // those are delivered to the LB policy.
+    absl::Notification notification;
+    work_serializer_->Run(
+        [&]() {
+          lb_policy()->ExitIdleLocked();
+          work_serializer_->Run([&]() { notification.Notify(); },
+                                DEBUG_LOCATION);
+        },
+        DEBUG_LOCATION);
+    notification.WaitForNotification();
     // Construct a map of subchannel to address.
     // We will remove entries as each subchannel starts to connect.
     std::map<SubchannelState*, absl::string_view> subchannels;
     for (auto address : addresses) {
-      auto* subchannel = FindSubchannel(
-          address, ChannelArgs().Set(GRPC_ARG_INHIBIT_HEALTH_CHECKING, true));
+      auto* subchannel = FindSubchannel(address);
       ASSERT_NE(subchannel, nullptr);
       subchannels.emplace(subchannel, address);
     }
@@ -125,8 +132,6 @@ class PickFirstTest : public LoadBalancingPolicyTest {
       subchannels.erase(subchannel);
     }
   }
-
-  OrphanablePtr<LoadBalancingPolicy> lb_policy_;
 };
 
 TEST_F(PickFirstTest, FirstAddressWorks) {
@@ -134,15 +139,12 @@ TEST_F(PickFirstTest, FirstAddressWorks) {
   constexpr std::array<absl::string_view, 2> kAddresses = {
       "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444"};
   absl::Status status = ApplyUpdate(
-      BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy_.get());
+      BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy());
   EXPECT_TRUE(status.ok()) << status;
-  // LB policy should have created a subchannel for both addresses with
-  // the GRPC_ARG_INHIBIT_HEALTH_CHECKING channel arg.
-  auto* subchannel = FindSubchannel(
-      kAddresses[0], ChannelArgs().Set(GRPC_ARG_INHIBIT_HEALTH_CHECKING, true));
+  // LB policy should have created a subchannel for both addresses.
+  auto* subchannel = FindSubchannel(kAddresses[0]);
   ASSERT_NE(subchannel, nullptr);
-  auto* subchannel2 = FindSubchannel(
-      kAddresses[1], ChannelArgs().Set(GRPC_ARG_INHIBIT_HEALTH_CHECKING, true));
+  auto* subchannel2 = FindSubchannel(kAddresses[1]);
   ASSERT_NE(subchannel2, nullptr);
   // When the LB policy receives the first subchannel's initial connectivity
   // state notification (IDLE), it will request a connection.
@@ -170,15 +172,12 @@ TEST_F(PickFirstTest, FirstAddressFails) {
   constexpr std::array<absl::string_view, 2> kAddresses = {
       "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444"};
   absl::Status status = ApplyUpdate(
-      BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy_.get());
+      BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy());
   EXPECT_TRUE(status.ok()) << status;
-  // LB policy should have created a subchannel for both addresses with
-  // the GRPC_ARG_INHIBIT_HEALTH_CHECKING channel arg.
-  auto* subchannel = FindSubchannel(
-      kAddresses[0], ChannelArgs().Set(GRPC_ARG_INHIBIT_HEALTH_CHECKING, true));
+  // LB policy should have created a subchannel for both addresses.
+  auto* subchannel = FindSubchannel(kAddresses[0]);
   ASSERT_NE(subchannel, nullptr);
-  auto* subchannel2 = FindSubchannel(
-      kAddresses[1], ChannelArgs().Set(GRPC_ARG_INHIBIT_HEALTH_CHECKING, true));
+  auto* subchannel2 = FindSubchannel(kAddresses[1]);
   ASSERT_NE(subchannel2, nullptr);
   // When the LB policy receives the first subchannel's initial connectivity
   // state notification (IDLE), it will request a connection.
@@ -216,28 +215,26 @@ TEST_F(PickFirstTest, FirstTwoAddressesInTransientFailureAtStart) {
   // LB policy gets the update.
   constexpr std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444", "ipv4:127.0.0.1:445"};
-  auto* subchannel = CreateSubchannel(
-      kAddresses[0], ChannelArgs().Set(GRPC_ARG_INHIBIT_HEALTH_CHECKING, true));
+  auto* subchannel = CreateSubchannel(kAddresses[0]);
   subchannel->SetConnectivityState(GRPC_CHANNEL_TRANSIENT_FAILURE,
                                    absl::UnavailableError("failed to connect"),
                                    /*validate_state_transition=*/false);
-  auto* subchannel2 = CreateSubchannel(
-      kAddresses[1], ChannelArgs().Set(GRPC_ARG_INHIBIT_HEALTH_CHECKING, true));
+  auto* subchannel2 = CreateSubchannel(kAddresses[1]);
   subchannel2->SetConnectivityState(GRPC_CHANNEL_TRANSIENT_FAILURE,
                                     absl::UnavailableError("failed to connect"),
                                     /*validate_state_transition=*/false);
   absl::Status status = ApplyUpdate(
-      BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy_.get());
+      BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy());
   EXPECT_TRUE(status.ok()) << status;
-  // LB policy should have created a subchannel for all addresses with
-  // the GRPC_ARG_INHIBIT_HEALTH_CHECKING channel arg.
-  auto* subchannel3 = FindSubchannel(
-      kAddresses[2], ChannelArgs().Set(GRPC_ARG_INHIBIT_HEALTH_CHECKING, true));
+  // LB policy should have created a subchannel for all addresses.
+  auto* subchannel3 = FindSubchannel(kAddresses[2]);
   ASSERT_NE(subchannel3, nullptr);
   // When the LB policy receives the first subchannel's initial connectivity
   // state notification (TRANSIENT_FAILURE), it will move on to the second
-  // subchannel.  The second subchannel is in state IDLE, so the LB
-  // policy will request a connection attempt on it.
+  // subchannel.  The second subchannel is also in state TRANSIENT_FAILURE,
+  // so the LB policy will move on to the third subchannel.  That
+  // subchannel is in state IDLE, so the LB policy will request a connection
+  // attempt on it.
   EXPECT_TRUE(subchannel3->ConnectionRequested());
   // This causes the subchannel to start to connect, so it reports
   // CONNECTING.
@@ -261,18 +258,16 @@ TEST_F(PickFirstTest, AllAddressesInTransientFailureAtStart) {
   // when the LB policy gets the update.
   constexpr std::array<absl::string_view, 2> kAddresses = {
       "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444"};
-  auto* subchannel = CreateSubchannel(
-      kAddresses[0], ChannelArgs().Set(GRPC_ARG_INHIBIT_HEALTH_CHECKING, true));
+  auto* subchannel = CreateSubchannel(kAddresses[0]);
   subchannel->SetConnectivityState(GRPC_CHANNEL_TRANSIENT_FAILURE,
                                    absl::UnavailableError("failed to connect"),
                                    /*validate_state_transition=*/false);
-  auto* subchannel2 = CreateSubchannel(
-      kAddresses[1], ChannelArgs().Set(GRPC_ARG_INHIBIT_HEALTH_CHECKING, true));
+  auto* subchannel2 = CreateSubchannel(kAddresses[1]);
   subchannel2->SetConnectivityState(GRPC_CHANNEL_TRANSIENT_FAILURE,
                                     absl::UnavailableError("failed to connect"),
                                     /*validate_state_transition=*/false);
   absl::Status status = ApplyUpdate(
-      BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy_.get());
+      BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy());
   EXPECT_TRUE(status.ok()) << status;
   // The LB policy should request re-resolution.
   ExpectReresolutionRequest();
@@ -309,18 +304,16 @@ TEST_F(PickFirstTest, StaysInTransientFailureAfterAddressListUpdate) {
   // when the LB policy gets the update.
   constexpr std::array<absl::string_view, 2> kAddresses = {
       "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444"};
-  auto* subchannel = CreateSubchannel(
-      kAddresses[0], ChannelArgs().Set(GRPC_ARG_INHIBIT_HEALTH_CHECKING, true));
+  auto* subchannel = CreateSubchannel(kAddresses[0]);
   subchannel->SetConnectivityState(GRPC_CHANNEL_TRANSIENT_FAILURE,
                                    absl::UnavailableError("failed to connect"),
                                    /*validate_state_transition=*/false);
-  auto* subchannel2 = CreateSubchannel(
-      kAddresses[1], ChannelArgs().Set(GRPC_ARG_INHIBIT_HEALTH_CHECKING, true));
+  auto* subchannel2 = CreateSubchannel(kAddresses[1]);
   subchannel2->SetConnectivityState(GRPC_CHANNEL_TRANSIENT_FAILURE,
                                     absl::UnavailableError("failed to connect"),
                                     /*validate_state_transition=*/false);
   absl::Status status = ApplyUpdate(
-      BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy_.get());
+      BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy());
   EXPECT_TRUE(status.ok()) << status;
   // The LB policy should request re-resolution.
   ExpectReresolutionRequest();
@@ -339,12 +332,10 @@ TEST_F(PickFirstTest, StaysInTransientFailureAfterAddressListUpdate) {
   constexpr std::array<absl::string_view, 2> kAddresses2 = {
       kAddresses[0], "ipv4:127.0.0.1:445"};
   status = ApplyUpdate(BuildUpdate(kAddresses2, MakePickFirstConfig(false)),
-                       lb_policy_.get());
+                       lb_policy());
   EXPECT_TRUE(status.ok()) << status;
   // The LB policy should have created a subchannel for the new address.
-  auto* subchannel3 =
-      FindSubchannel(kAddresses2[1],
-                     ChannelArgs().Set(GRPC_ARG_INHIBIT_HEALTH_CHECKING, true));
+  auto* subchannel3 = FindSubchannel(kAddresses2[1]);
   ASSERT_NE(subchannel3, nullptr);
   // The policy will ask it to connect.
   EXPECT_TRUE(subchannel3->ConnectionRequested());
@@ -366,15 +357,12 @@ TEST_F(PickFirstTest, FirstAddressGoesIdleBeforeSecondOneFails) {
   constexpr std::array<absl::string_view, 2> kAddresses = {
       "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444"};
   absl::Status status = ApplyUpdate(
-      BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy_.get());
+      BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy());
   EXPECT_TRUE(status.ok()) << status;
-  // LB policy should have created a subchannel for both addresses with
-  // the GRPC_ARG_INHIBIT_HEALTH_CHECKING channel arg.
-  auto* subchannel = FindSubchannel(
-      kAddresses[0], ChannelArgs().Set(GRPC_ARG_INHIBIT_HEALTH_CHECKING, true));
+  // LB policy should have created a subchannel for both addresses.
+  auto* subchannel = FindSubchannel(kAddresses[0]);
   ASSERT_NE(subchannel, nullptr);
-  auto* subchannel2 = FindSubchannel(
-      kAddresses[1], ChannelArgs().Set(GRPC_ARG_INHIBIT_HEALTH_CHECKING, true));
+  auto* subchannel2 = FindSubchannel(kAddresses[1]);
   ASSERT_NE(subchannel2, nullptr);
   // When the LB policy receives the first subchannel's initial connectivity
   // state notification (IDLE), it will request a connection.
@@ -430,15 +418,12 @@ TEST_F(PickFirstTest, GoesIdleWhenConnectionFailsThenCanReconnect) {
   constexpr std::array<absl::string_view, 2> kAddresses = {
       "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444"};
   absl::Status status = ApplyUpdate(
-      BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy_.get());
+      BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy());
   EXPECT_TRUE(status.ok()) << status;
-  // LB policy should have created a subchannel for both addresses with
-  // the GRPC_ARG_INHIBIT_HEALTH_CHECKING channel arg.
-  auto* subchannel = FindSubchannel(
-      kAddresses[0], ChannelArgs().Set(GRPC_ARG_INHIBIT_HEALTH_CHECKING, true));
+  // LB policy should have created a subchannel for both addresses.
+  auto* subchannel = FindSubchannel(kAddresses[0]);
   ASSERT_NE(subchannel, nullptr);
-  auto* subchannel2 = FindSubchannel(
-      kAddresses[1], ChannelArgs().Set(GRPC_ARG_INHIBIT_HEALTH_CHECKING, true));
+  auto* subchannel2 = FindSubchannel(kAddresses[1]);
   ASSERT_NE(subchannel2, nullptr);
   // When the LB policy receives the first subchannel's initial connectivity
   // state notification (IDLE), it will request a connection.
@@ -468,6 +453,13 @@ TEST_F(PickFirstTest, GoesIdleWhenConnectionFailsThenCanReconnect) {
   // By checking the picker, we told the LB policy to trigger a new
   // connection attempt, so it should start over with the first
   // subchannel.
+  // Note that the picker will have enqueued the ExitIdle() call in the
+  // WorkSerializer, so the first flush will execute that call.  But
+  // executing that call will result in enqueueing subchannel
+  // connectivity state notifications, so we need to flush again to make
+  // sure all of that work is done before we continue.
+  WaitForWorkSerializerToFlush();
+  WaitForWorkSerializerToFlush();
   EXPECT_TRUE(subchannel->ConnectionRequested());
   // The subchannel starts connecting.
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
@@ -496,7 +488,7 @@ TEST_F(PickFirstTest, WithShuffle) {
   bool shuffled = false;
   for (size_t i = 0; i < kMaxTries; ++i) {
     absl::Status status = ApplyUpdate(
-        BuildUpdate(kAddresses, MakePickFirstConfig(true)), lb_policy_.get());
+        BuildUpdate(kAddresses, MakePickFirstConfig(true)), lb_policy());
     EXPECT_TRUE(status.ok()) << status;
     GetOrderAddressesArePicked(kAddresses, &addresses_after_update);
     if (absl::MakeConstSpan(addresses_after_update) !=
@@ -519,7 +511,7 @@ TEST_F(PickFirstTest, ShufflingDisabled) {
   constexpr static size_t kMaxAttempts = 5;
   for (size_t attempt = 0; attempt < kMaxAttempts; ++attempt) {
     absl::Status status = ApplyUpdate(
-        BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy_.get());
+        BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy());
     EXPECT_TRUE(status.ok()) << status;
     std::vector<absl::string_view> address_order;
     GetOrderAddressesArePicked(kAddresses, &address_order);
@@ -533,8 +525,5 @@ TEST_F(PickFirstTest, ShufflingDisabled) {
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(&argc, argv);
-  grpc_init();
-  int ret = RUN_ALL_TESTS();
-  grpc_shutdown();
-  return ret;
+  return RUN_ALL_TESTS();
 }

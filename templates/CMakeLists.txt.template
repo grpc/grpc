@@ -150,6 +150,20 @@
       private_libs.append("-l" + lib_name)
     return private_libs
 
+  def lib_type_for_lib(lib_name):
+    """Returns STATIC/SHARED to force a static or shared lib build depending on the library."""
+    # grpc_csharp_ext is loaded by C# runtime and it
+    # only makes sense as a shared lib.
+    if lib_name in ['grpc_csharp_ext']:
+      return ' SHARED'
+
+    # upb always compiles as a static library on Windows
+    elif lib_name in ['upb','upb_collections_lib','upb_json_lib','upb_textformat_lib']:
+      return ' ${_gRPC_STATIC_WIN32}'
+
+    else:
+      return ''
+
   def get_deps(target_dict):
     # TODO(jtattermusch): remove special cases based on target names
     deps = []
@@ -235,6 +249,13 @@
 
       return '\n'.join(lines)
     return _func
+
+  def add_dll_annotation_macros(lib, prefix):
+    return """set_target_properties(%s PROPERTIES DEFINE_SYMBOL "%s_DLL_EXPORTS")
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(%s INTERFACE %s_DLL_IMPORTS)
+    endif()""" % (lib, prefix, lib, prefix)
+
   %>
   <%
   # These files are added to a set so that they are not duplicated if multiple
@@ -486,7 +507,32 @@
 
   if(WIN32)
     set(_gRPC_ALLTARGETS_LIBRARIES <%text>${_gRPC_ALLTARGETS_LIBRARIES}</%text> ws2_32 crypt32)
+    set(_gRPC_STATIC_WIN32 STATIC)
   endif()
+
+  if(BUILD_SHARED_LIBS AND WIN32)
+
+  # Currently for shared lib on Windows (i.e. a DLL) certain bits of source code
+  # are generated from protobuf definitions by upbc. This source code does not include
+  # annotations needed to export these functions from gprc.lib so we have to
+  # re-include a small subset of these.
+  #
+  # This is not an ideal situation because these functions will be unavailable
+  # to clients of grpc and the libraries that need this (e.g. grpc++) will
+  # include redundant duplicate code. Hence, the duplication is only activated
+  # for DLL builds - and should be completely removed when source files are
+  # generated with the necessary __declspec annotations.
+  set(gRPC_UPB_GEN_DUPL_SRC
+    src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
+    src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
+    src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
+  )
+  set(gRPC_ADDITIONAL_DLL_SRC
+    src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc
+    src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.cc
+  )
+
+  endif() # BUILD_SHARED_LIBS AND WIN32
 
   # Create directory for proto source files
   set(_gRPC_PROTO_SRCS_DIR <%text>${CMAKE_BINARY_DIR}/protos</%text>)
@@ -727,7 +773,8 @@
   if(gRPC_BUILD_CODEGEN)
   % endif
   % endif
-  add_library(${lib.name}
+
+  add_library(${lib.name}${lib_type_for_lib(lib.name)}
   % for src in lib.src:
   % if not proto_re.match(src):
     ${src}
@@ -741,6 +788,12 @@
     % endif
   % endif
   % endfor
+  % if lib.name in ['grpc++_alts', 'grpc++_unsecure', 'grpc++']:
+    ${'${gRPC_UPB_GEN_DUPL_SRC}'}
+  % endif
+  % if lib.name in ['grpc_unsecure']:
+    ${'${gRPC_ADDITIONAL_DLL_SRC}'}
+  % endif
   )
 
   target_compile_features(${lib.name} PUBLIC cxx_std_14)
@@ -759,6 +812,17 @@
     set_target_properties(${lib.name} PROPERTIES COMPILE_PDB_NAME "${lib.name}"
       COMPILE_PDB_OUTPUT_DIRECTORY <%text>"${CMAKE_BINARY_DIR}</%text>"
     )
+    % if lib.name == 'gpr':
+    ${add_dll_annotation_macros(lib.name, 'GPR')}
+    % elif lib.name == 'grpc':
+    ${add_dll_annotation_macros(lib.name, 'GRPC')}
+    % elif lib.name == 'grpc_unsecure':
+    ${add_dll_annotation_macros(lib.name, 'GRPC')}
+    % elif lib.name == 'grpc++':
+    ${add_dll_annotation_macros(lib.name, 'GRPCXX')}
+    % elif lib.name == 'grpc++_unsecure':
+    ${add_dll_annotation_macros(lib.name, 'GRPCXX')}
+    % endif
     if(gRPC_INSTALL)
       install(FILES <%text>${CMAKE_CURRENT_BINARY_DIR}/</%text>${lib.name}.pdb
         DESTINATION <%text>${gRPC_INSTALL_LIBDIR}</%text> OPTIONAL

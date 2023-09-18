@@ -107,7 +107,8 @@ void ArgsInit(ArgsStruct* args) {
   grpc_pollset_init(args->pollset, &args->mu);
   args->pollset_set = grpc_pollset_set_create();
   grpc_pollset_set_add_pollset(args->pollset_set, args->pollset);
-  args->lock = std::make_shared<grpc_core::WorkSerializer>();
+  args->lock = std::make_shared<grpc_core::WorkSerializer>(
+      grpc_event_engine::experimental::GetDefaultEventEngine());
   gpr_atm_rel_store(&args->done_atm, 0);
   args->channel_args = nullptr;
 }
@@ -195,25 +196,11 @@ class CancelDuringAresQuery : public ::testing::Test {
     grpc_core::ConfigVars::Overrides overrides;
     overrides.dns_resolver = "ares";
     grpc_core::ConfigVars::SetOverrides(overrides);
-    // Sanity check the time that it takes to run the test
-    // including the teardown time (the teardown
-    // part of the test involves cancelling the DNS query,
-    // which is the main point of interest for this test).
-    overall_deadline = grpc_timeout_seconds_to_deadline(4);
     grpc_init();
   }
 
-  static void TearDownTestSuite() {
-    grpc_shutdown();
-    if (gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), overall_deadline) > 0) {
-      grpc_core::Crash("Test took too long");
-    }
-  }
-
- private:
-  static gpr_timespec overall_deadline;
+  static void TearDownTestSuite() { grpc_shutdown(); }
 };
-gpr_timespec CancelDuringAresQuery::overall_deadline;
 
 TEST_F(CancelDuringAresQuery, TestCancelActiveDNSQuery) {
   grpc_core::ExecCtx exec_ctx;
@@ -506,11 +493,6 @@ TEST_F(CancelDuringAresQuery, TestQueryFailsBecauseTcpServerClosesSocket) {
 //      But c-ares will never try to read from that socket again, so we have an
 //      infinite busy loop.
 TEST_F(CancelDuringAresQuery, TestQueryFailsWithDataRemainingInReadBuffer) {
-#ifdef GPR_WINDOWS
-  GTEST_SKIP() << "TODO(apolcyn): try to unskip this test on windows after "
-                  "https://github.com/grpc/grpc/pull/33965";
-  return;
-#endif
   if (grpc_core::IsEventEngineDnsEnabled()) {
     g_event_engine_grpc_ares_test_only_force_tcp = true;
   } else {

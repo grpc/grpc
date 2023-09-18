@@ -228,10 +228,11 @@ libs:
   - src/core/ext/filters/client_channel/connector.h
   - src/core/ext/filters/client_channel/dynamic_filters.h
   - src/core/ext/filters/client_channel/global_subchannel_pool.h
-  - src/core/ext/filters/client_channel/http_proxy.h
+  - src/core/ext/filters/client_channel/http_proxy_mapper.h
   - src/core/ext/filters/client_channel/lb_policy/address_filtering.h
   - src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h
   - src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h
+  - src/core/ext/filters/client_channel/lb_policy/endpoint_list.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h
@@ -696,6 +697,7 @@ libs:
   - src/core/lib/event_engine/grpc_polled_fd.h
   - src/core/lib/event_engine/handle_containers.h
   - src/core/lib/event_engine/memory_allocator_factory.h
+  - src/core/lib/event_engine/nameser.h
   - src/core/lib/event_engine/poller.h
   - src/core/lib/event_engine/posix.h
   - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.h
@@ -722,7 +724,6 @@ libs:
   - src/core/lib/event_engine/resolved_address_internal.h
   - src/core/lib/event_engine/shim.h
   - src/core/lib/event_engine/tcp_socket_utils.h
-  - src/core/lib/event_engine/thread_pool/original_thread_pool.h
   - src/core/lib/event_engine/thread_pool/thread_count.h
   - src/core/lib/event_engine/thread_pool/thread_pool.h
   - src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h
@@ -1044,9 +1045,10 @@ libs:
   - src/core/ext/filters/client_channel/config_selector.cc
   - src/core/ext/filters/client_channel/dynamic_filters.cc
   - src/core/ext/filters/client_channel/global_subchannel_pool.cc
-  - src/core/ext/filters/client_channel/http_proxy.cc
+  - src/core/ext/filters/client_channel/http_proxy_mapper.cc
   - src/core/ext/filters/client_channel/lb_policy/address_filtering.cc
   - src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc
+  - src/core/ext/filters/client_channel/lb_policy/endpoint_list.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc
@@ -1536,7 +1538,6 @@ libs:
   - src/core/lib/event_engine/slice.cc
   - src/core/lib/event_engine/slice_buffer.cc
   - src/core/lib/event_engine/tcp_socket_utils.cc
-  - src/core/lib/event_engine/thread_pool/original_thread_pool.cc
   - src/core/lib/event_engine/thread_pool/thread_count.cc
   - src/core/lib/event_engine/thread_pool/thread_pool_factory.cc
   - src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
@@ -1704,6 +1705,7 @@ libs:
   - src/core/lib/security/credentials/plugin/plugin_credentials.cc
   - src/core/lib/security/credentials/ssl/ssl_credentials.cc
   - src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc
+  - src/core/lib/security/credentials/tls/grpc_tls_certificate_match.cc
   - src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.cc
   - src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.cc
   - src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc
@@ -1974,10 +1976,11 @@ libs:
   - src/core/ext/filters/client_channel/connector.h
   - src/core/ext/filters/client_channel/dynamic_filters.h
   - src/core/ext/filters/client_channel/global_subchannel_pool.h
-  - src/core/ext/filters/client_channel/http_proxy.h
+  - src/core/ext/filters/client_channel/http_proxy_mapper.h
   - src/core/ext/filters/client_channel/lb_policy/address_filtering.h
   - src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h
   - src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h
+  - src/core/ext/filters/client_channel/lb_policy/endpoint_list.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h
@@ -2106,6 +2109,7 @@ libs:
   - src/core/lib/event_engine/grpc_polled_fd.h
   - src/core/lib/event_engine/handle_containers.h
   - src/core/lib/event_engine/memory_allocator_factory.h
+  - src/core/lib/event_engine/nameser.h
   - src/core/lib/event_engine/poller.h
   - src/core/lib/event_engine/posix.h
   - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.h
@@ -2132,7 +2136,6 @@ libs:
   - src/core/lib/event_engine/resolved_address_internal.h
   - src/core/lib/event_engine/shim.h
   - src/core/lib/event_engine/tcp_socket_utils.h
-  - src/core/lib/event_engine/thread_pool/original_thread_pool.h
   - src/core/lib/event_engine/thread_pool/thread_count.h
   - src/core/lib/event_engine/thread_pool/thread_pool.h
   - src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h
@@ -2406,9 +2409,10 @@ libs:
   - src/core/ext/filters/client_channel/config_selector.cc
   - src/core/ext/filters/client_channel/dynamic_filters.cc
   - src/core/ext/filters/client_channel/global_subchannel_pool.cc
-  - src/core/ext/filters/client_channel/http_proxy.cc
+  - src/core/ext/filters/client_channel/http_proxy_mapper.cc
   - src/core/ext/filters/client_channel/lb_policy/address_filtering.cc
   - src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc
+  - src/core/ext/filters/client_channel/lb_policy/endpoint_list.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc
@@ -2562,7 +2566,6 @@ libs:
   - src/core/lib/event_engine/slice.cc
   - src/core/lib/event_engine/slice_buffer.cc
   - src/core/lib/event_engine/tcp_socket_utils.cc
-  - src/core/lib/event_engine/thread_pool/original_thread_pool.cc
   - src/core/lib/event_engine/thread_pool/thread_count.cc
   - src/core/lib/event_engine/thread_pool/thread_pool_factory.cc
   - src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
@@ -3544,6 +3547,7 @@ libs:
   - src/core/ext/transport/binder/wire_format/wire_reader.h
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.h
   - src/core/ext/transport/binder/wire_format/wire_writer.h
+  - src/core/ext/xds/xds_enabled_server.h
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
@@ -4118,6 +4122,7 @@ libs:
   - src/core/lib/event_engine/grpc_polled_fd.h
   - src/core/lib/event_engine/handle_containers.h
   - src/core/lib/event_engine/memory_allocator_factory.h
+  - src/core/lib/event_engine/nameser.h
   - src/core/lib/event_engine/poller.h
   - src/core/lib/event_engine/posix.h
   - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.h
@@ -4144,7 +4149,6 @@ libs:
   - src/core/lib/event_engine/resolved_address_internal.h
   - src/core/lib/event_engine/shim.h
   - src/core/lib/event_engine/tcp_socket_utils.h
-  - src/core/lib/event_engine/thread_pool/original_thread_pool.h
   - src/core/lib/event_engine/thread_pool/thread_count.h
   - src/core/lib/event_engine/thread_pool/thread_pool.h
   - src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h
@@ -4454,7 +4458,6 @@ libs:
   - src/core/lib/event_engine/slice.cc
   - src/core/lib/event_engine/slice_buffer.cc
   - src/core/lib/event_engine/tcp_socket_utils.cc
-  - src/core/lib/event_engine/thread_pool/original_thread_pool.cc
   - src/core/lib/event_engine/thread_pool/thread_count.cc
   - src/core/lib/event_engine/thread_pool/thread_pool_factory.cc
   - src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
@@ -5338,6 +5341,7 @@ targets:
   - test/core/avl/avl_test.cc
   deps:
   - gtest
+  - absl/hash:hash
   - gpr
   uses_polling: false
 - name: aws_request_signer_test
@@ -6484,7 +6488,6 @@ targets:
   - test/core/event_engine/test_suite/tests/timer_test.cc
   deps:
   - gtest
-  - grpc_unsecure
   - grpc_test_util
   platforms:
   - linux
@@ -7774,6 +7777,7 @@ targets:
   - test/core/event_engine/endpoint_config_test.cc
   deps:
   - gtest
+  - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -8642,6 +8646,7 @@ targets:
   - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
   - src/core/lib/promise/for_each.h
   - src/core/lib/promise/if.h
+  - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/interceptor_list.h
   - src/core/lib/promise/join.h
   - src/core/lib/promise/loop.h
@@ -8836,7 +8841,6 @@ targets:
   - test/core/event_engine/test_suite/tests/timer_test.cc
   deps:
   - gtest
-  - grpc_unsecure
   - protobuf
   - grpc_test_util
   platforms:
@@ -9488,7 +9492,6 @@ targets:
   - test/core/event_engine/event_engine_test_utils.cc
   deps:
   - gtest
-  - grpc_unsecure
   - grpc_test_util
 - name: h2_ssl_session_reuse_test
   gtest: true
@@ -9979,6 +9982,36 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+- name: inter_activity_pipe_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/gprpp/atomic_utils.h
+  - src/core/lib/gprpp/orphanable.h
+  - src/core/lib/gprpp/ref_counted.h
+  - src/core/lib/gprpp/ref_counted_ptr.h
+  - src/core/lib/promise/activity.h
+  - src/core/lib/promise/context.h
+  - src/core/lib/promise/detail/basic_seq.h
+  - src/core/lib/promise/detail/promise_factory.h
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/seq_state.h
+  - src/core/lib/promise/detail/status.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/poll.h
+  - src/core/lib/promise/seq.h
+  - test/core/promise/test_wakeup_schedulers.h
+  src:
+  - src/core/lib/promise/activity.cc
+  - test/core/promise/inter_activity_pipe_test.cc
+  deps:
+  - gtest
+  - absl/hash:hash
+  - absl/meta:type_traits
+  - absl/status:statusor
+  - gpr
+  uses_polling: false
 - name: interceptor_list_test
   gtest: true
   build: test
@@ -10430,6 +10463,7 @@ targets:
   - test/core/promise/latch_test.cc
   deps:
   - gtest
+  - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -11240,7 +11274,6 @@ targets:
   - test/core/event_engine/test_suite/tests/server_test.cc
   deps:
   - gtest
-  - grpc_unsecure
   - grpc_test_util
   platforms:
   - linux
@@ -11312,11 +11345,16 @@ targets:
   language: c++
   headers:
   - test/core/client_channel/lb_policy/lb_policy_test_lib.h
-  - test/core/event_engine/mock_event_engine.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - test/core/client_channel/lb_policy/outlier_detection_test.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   deps:
   - gtest
+  - protobuf
   - grpc_test_util
   uses_polling: false
 - name: overload_test
@@ -11538,12 +11576,17 @@ targets:
   language: c++
   headers:
   - test/core/client_channel/lb_policy/lb_policy_test_lib.h
-  - test/core/event_engine/mock_event_engine.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/util/scoped_env_var.h
   src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - test/core/client_channel/lb_policy/pick_first_test.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   deps:
   - gtest
+  - protobuf
   - grpc_test_util
   uses_polling: false
 - name: pid_controller_test
@@ -11808,7 +11851,6 @@ targets:
   - test/core/event_engine/test_suite/posix/oracle_event_engine_posix.cc
   deps:
   - gtest
-  - grpc_unsecure
   - grpc_test_util
   platforms:
   - linux
@@ -11843,7 +11885,6 @@ targets:
   - test/core/event_engine/test_suite/posix/oracle_event_engine_posix.cc
   deps:
   - gtest
-  - grpc_unsecure
   - grpc_test_util
   platforms:
   - linux
@@ -11875,7 +11916,6 @@ targets:
   - test/cpp/util/get_grpc_test_runfile_dir.cc
   deps:
   - gtest
-  - grpc_unsecure
   - grpc++_test_util
   platforms:
   - linux
@@ -13877,11 +13917,16 @@ targets:
   language: c++
   headers:
   - test/core/client_channel/lb_policy/lb_policy_test_lib.h
-  - test/core/event_engine/mock_event_engine.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - test/core/client_channel/lb_policy/round_robin_test.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   deps:
   - gtest
+  - protobuf
   - grpc_test_util
   uses_polling: false
 - name: secure_auth_context_test
@@ -14729,38 +14774,6 @@ targets:
   - gtest
   - grpc_test_util
   uses_polling: false
-- name: ssl_credentials_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - test/core/util/cmdline.h
-  - test/core/util/evaluate_args_test_util.h
-  - test/core/util/fuzzer_util.h
-  - test/core/util/grpc_profiler.h
-  - test/core/util/histogram.h
-  - test/core/util/mock_authorization_endpoint.h
-  - test/core/util/mock_endpoint.h
-  - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
-  - test/core/util/resolve_localhost_ip46.h
-  - test/core/util/slice_splitter.h
-  - test/core/util/tracer_util.h
-  src:
-  - test/core/security/ssl_credentials_test.cc
-  - test/core/util/cmdline.cc
-  - test/core/util/fuzzer_util.cc
-  - test/core/util/grpc_profiler.cc
-  - test/core/util/histogram.cc
-  - test/core/util/mock_endpoint.cc
-  - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
-  - test/core/util/resolve_localhost_ip46.cc
-  - test/core/util/slice_splitter.cc
-  - test/core/util/tracer_util.cc
-  deps:
-  - gtest
-  - grpc_test_util
 - name: ssl_transport_security_test
   gtest: true
   build: test
@@ -15255,10 +15268,12 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/event_engine/event_engine_test_utils.h
   - test/cpp/util/channel_trace_proto_helper.h
   src:
   - src/proto/grpc/channelz/channelz.proto
   - test/core/channel/channelz_test.cc
+  - test/core/event_engine/event_engine_test_utils.cc
   - test/cpp/util/channel_trace_proto_helper.cc
   deps:
   - gtest
@@ -15508,6 +15523,38 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+- name: test_core_security_ssl_credentials_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/tracer_util.h
+  src:
+  - test/core/security/ssl_credentials_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/tracer_util.cc
+  deps:
+  - gtest
+  - grpc_test_util
 - name: test_core_slice_slice_buffer_test
   gtest: true
   build: test
@@ -15599,6 +15646,7 @@ targets:
   - src/core/lib/event_engine/grpc_polled_fd.h
   - src/core/lib/event_engine/handle_containers.h
   - src/core/lib/event_engine/memory_allocator_factory.h
+  - src/core/lib/event_engine/nameser.h
   - src/core/lib/event_engine/poller.h
   - src/core/lib/event_engine/posix.h
   - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.h
@@ -15625,7 +15673,6 @@ targets:
   - src/core/lib/event_engine/resolved_address_internal.h
   - src/core/lib/event_engine/shim.h
   - src/core/lib/event_engine/tcp_socket_utils.h
-  - src/core/lib/event_engine/thread_pool/original_thread_pool.h
   - src/core/lib/event_engine/thread_pool/thread_count.h
   - src/core/lib/event_engine/thread_pool/thread_pool.h
   - src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h
@@ -15917,7 +15964,6 @@ targets:
   - src/core/lib/event_engine/slice.cc
   - src/core/lib/event_engine/slice_buffer.cc
   - src/core/lib/event_engine/tcp_socket_utils.cc
-  - src/core/lib/event_engine/thread_pool/original_thread_pool.cc
   - src/core/lib/event_engine/thread_pool/thread_count.cc
   - src/core/lib/event_engine/thread_pool/thread_pool_factory.cc
   - src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
@@ -16147,6 +16193,22 @@ targets:
   - gtest
   - grpc++
   - grpc_test_util
+- name: test_cpp_end2end_ssl_credentials_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/cpp/end2end/test_service_impl.h
+  src:
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - test/cpp/end2end/ssl_credentials_test.cc
+  - test/cpp/end2end/test_service_impl.cc
+  deps:
+  - gtest
+  - grpc++_test_util
 - name: test_cpp_server_credentials_test
   gtest: true
   build: test
@@ -16229,6 +16291,7 @@ targets:
   - test/core/resource_quota/thread_quota_test.cc
   deps:
   - gtest
+  - absl/hash:hash
   - gpr
   uses_polling: false
 - name: thread_stress_test
@@ -16271,7 +16334,6 @@ targets:
   - test/core/event_engine/test_suite/thready_posix_event_engine_test.cc
   deps:
   - gtest
-  - grpc_unsecure
   - grpc_test_util
   platforms:
   - linux
@@ -16768,6 +16830,7 @@ targets:
   - test/core/promise/wait_for_callback_test.cc
   deps:
   - gtest
+  - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -16803,11 +16866,16 @@ targets:
   language: c++
   headers:
   - test/core/client_channel/lb_policy/lb_policy_test_lib.h
-  - test/core/event_engine/mock_event_engine.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - test/core/client_channel/lb_policy/weighted_round_robin_test.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   deps:
   - gtest
+  - protobuf
   - grpc_test_util
   uses_polling: false
 - name: win_socket_test
@@ -17081,8 +17149,10 @@ targets:
   build: test
   run: false
   language: c++
-  headers: []
+  headers:
+  - test/core/event_engine/event_engine_test_utils.h
   src:
+  - test/core/event_engine/event_engine_test_utils.cc
   - test/core/gprpp/work_serializer_test.cc
   deps:
   - gtest
@@ -18118,11 +18188,16 @@ targets:
   language: c++
   headers:
   - test/core/client_channel/lb_policy/lb_policy_test_lib.h
-  - test/core/event_engine/mock_event_engine.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - test/core/client_channel/lb_policy/xds_override_host_test.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   deps:
   - gtest
+  - protobuf
   - grpc_test_util
   uses_polling: false
 - name: xds_pick_first_end2end_test
