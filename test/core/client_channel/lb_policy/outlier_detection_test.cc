@@ -305,17 +305,23 @@ TEST_F(OutlierDetectionTest, MultipleAddressesPerEndpoint) {
   // Cause the connection to the ejected endpoint to fail, and then
   // have it reconnect to a different address.  The endpoint is still
   // ejected, so the new address should not be used.
-  ExpectEndpointAddressChange(ejected_endpoint_addresses, 0, 1);
+  ExpectEndpointAddressChange(ejected_endpoint_addresses, 0, 1, nullptr);
+  // Need to drain the picker updates before calling
+  // ExpectEndpointAddressChange() again, since that will expect a
+  // re-resolution request in the queue.
   DrainRoundRobinPickerUpdates(
       {sentinel_endpoint_addresses[0], unmodified_endpoint_address});
   gpr_log(GPR_INFO, "### done changing address of ejected endpoint");
   // Do the same thing for the sentinel endpoint, so that we
   // know that the LB policy has seen the address change for the ejected
   // endpoint.
-  ExpectEndpointAddressChange(sentinel_endpoint_addresses, 0, 1);
-  WaitForRoundRobinListChange(
-      {sentinel_endpoint_addresses[0], unmodified_endpoint_address},
-      {unmodified_endpoint_address});
+  ExpectEndpointAddressChange(
+      sentinel_endpoint_addresses, 0, 1,
+      [&]() {
+        WaitForRoundRobinListChange(
+            {sentinel_endpoint_addresses[0], unmodified_endpoint_address},
+            {unmodified_endpoint_address});
+      });
   WaitForRoundRobinListChange(
       {unmodified_endpoint_address},
       {sentinel_endpoint_addresses[1], unmodified_endpoint_address});

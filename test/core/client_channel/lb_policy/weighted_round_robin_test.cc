@@ -943,35 +943,24 @@ TEST_F(WeightedRoundRobinTest, MultipleAddressesPerEndpoint) {
   // reconnect below.
   subchannel1_0->SetConnectivityState(GRPC_CHANNEL_IDLE);
   EXPECT_FALSE(subchannel1_0->ConnectionRequested());
-  // Connection closed for subchannel for endpoint 1.
-  gpr_log(GPR_INFO, "### closing connection to endpoint 1 address 1");
-  subchannel1_1->SetConnectivityState(GRPC_CHANNEL_IDLE);
-  // WRR will request reresolution and remove the endpoint from the rotation.
-  ExpectReresolutionRequest();
-  picker = ExpectState(GRPC_CHANNEL_READY);
-  WaitForWeightedRoundRobinPicks(
-      &picker,
-      {{kEndpoint2Addresses[0],
-        MakeBackendMetricData(/*app_utilization=*/0.9, /*qps=*/100.0,
-                              /*eps=*/0.0)},
-       {kEndpoint3Addresses[0],
-        MakeBackendMetricData(/*app_utilization=*/0.3, /*qps=*/100.0,
-                              /*eps=*/0.0)}},
-      {{kEndpoint2Addresses[0], 1}, {kEndpoint3Addresses[0], 3}});
-  gpr_log(GPR_INFO, "### endpoint removed from rotation");
-  // WRR will start trying to reconnect to this endpoint, beginning again
-  // with the first address.
-  EXPECT_TRUE(subchannel1_0->ConnectionRequested());
-  EXPECT_FALSE(subchannel1_1->ConnectionRequested());
-  EXPECT_FALSE(subchannel2_0->ConnectionRequested());
-  EXPECT_FALSE(subchannel2_1->ConnectionRequested());
-  EXPECT_FALSE(subchannel3_0->ConnectionRequested());
-  EXPECT_FALSE(subchannel3_1->ConnectionRequested());
-  // Subchannel reports CONNECTING.
-  subchannel1_0->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
-  // Subchannel successfully connects.
-  subchannel1_0->SetConnectivityState(GRPC_CHANNEL_READY);
-  // WRR adds it to the rotation.
+  // Endpoint 1 switches to a different address.
+  ExpectEndpointAddressChange(
+      kEndpoint1Addresses, 1, 0,
+      // When the subchannel disconnects, WRR will remove the endpoint from
+      // the rotation.
+      [&]() {
+        picker = ExpectState(GRPC_CHANNEL_READY);
+        WaitForWeightedRoundRobinPicks(
+            &picker,
+            {{kEndpoint2Addresses[0],
+              MakeBackendMetricData(/*app_utilization=*/0.9, /*qps=*/100.0,
+                                    /*eps=*/0.0)},
+             {kEndpoint3Addresses[0],
+              MakeBackendMetricData(/*app_utilization=*/0.3, /*qps=*/100.0,
+                                    /*eps=*/0.0)}},
+            {{kEndpoint2Addresses[0], 1}, {kEndpoint3Addresses[0], 3}});
+      });
+  // When it connects to the new address, WRR adds it to the rotation.
   WaitForWeightedRoundRobinPicks(
       &picker,
       {{kEndpoint1Addresses[0],

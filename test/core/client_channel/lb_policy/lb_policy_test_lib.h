@@ -1233,32 +1233,50 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   // endpoint and expects a reconnection to the specified new address.
   void ExpectEndpointAddressChange(
       absl::Span<const absl::string_view> addresses, size_t current_index,
-      size_t new_index, SourceLocation location = SourceLocation()) {
+      size_t new_index, absl::AnyInvocable<void()> expect_after_disconnect,
+      SourceLocation location = SourceLocation()) {
     gpr_log(GPR_INFO,
             "Expecting endpoint address change: addresses={%s}, "
             "current_index=%" PRIuPTR ", new_index=%" PRIuPTR,
             absl::StrJoin(addresses, ", ").c_str(), current_index, new_index);
     ASSERT_LT(current_index, addresses.size());
     ASSERT_LT(new_index, addresses.size());
-    // Cause current_address to become disconnected.
-    auto* subchannel = FindSubchannel(addresses[current_index]);
-    ASSERT_NE(subchannel, nullptr) << location.file() << ":" << location.line();
-    subchannel->SetConnectivityState(GRPC_CHANNEL_IDLE);
-    ExpectReresolutionRequest(location);
-    // Attempt each address in the list until we hit the desired new address.
-    for (size_t i = 0; i < addresses.size(); ++i) {
-      const absl::string_view address = addresses[i];
-      subchannel = FindSubchannel(address);
-      EXPECT_TRUE(subchannel->ConnectionRequested())
+    // Find all subchannels.
+    std::vector<SubchannelState*> subchannels;
+    subchannels.reserve(addresses.size());
+    for (absl::string_view address : addresses) {
+      SubchannelState* subchannel = FindSubchannel(address);
+      ASSERT_NE(subchannel, nullptr)
+          << "can't find subchannel for " << address << "\n"
           << location.file() << ":" << location.line();
+      subchannels.push_back(subchannel);
+    }
+    // Cause current_address to become disconnected.
+    subchannels[current_index]->SetConnectivityState(GRPC_CHANNEL_IDLE);
+    ExpectReresolutionRequest(location);
+    if (expect_after_disconnect != nullptr) expect_after_disconnect();
+    // Attempt each address in the list until we hit the desired new address.
+    for (size_t i = 0; i < subchannels.size(); ++i) {
+      // A connection should be requested on the subchannel for this
+      // index, and none of the others.
+      for (size_t j = 0; j < addresses.size(); ++j) {
+        EXPECT_EQ(subchannels[j]->ConnectionRequested(), j == i)
+            << location.file() << ":" << location.line();
+      }
+      // Subchannel will report CONNECTING.
+      SubchannelState* subchannel = subchannels[i];
       subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+      // If this is the one we want to stick with, it will report READY.
       if (i == new_index) {
         subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
         break;
       }
+      // Otherwise, report TF.
       subchannel->SetConnectivityState(
           GRPC_CHANNEL_TRANSIENT_FAILURE,
           absl::UnavailableError("connection failed"));
+      // Report IDLE to leave it in the expected state in case the test
+      // interacts with it again.
       subchannel->SetConnectivityState(GRPC_CHANNEL_IDLE);
     }
     gpr_log(GPR_INFO, "Done with endpoint address change");
