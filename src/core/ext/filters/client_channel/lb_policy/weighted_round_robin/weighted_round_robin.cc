@@ -1659,7 +1659,7 @@ void WeightedRoundRobin::WrrEndpointList::WrrEndpoint::OnStateUpdate(
   } else if (new_state == GRPC_CHANNEL_READY) {
     // If we transition back to READY state, restart the blackout period.
     // Skip this if this is the initial notification for this
-    // subchannel (which happens whenever we get updated addresses and
+    // endpoint (which happens whenever we get updated addresses and
     // create a new endpoint list).  Also skip it if the previous state
     // was READY (which should never happen in practice, but we've seen
     // at least one bug that caused this in the outlier_detection

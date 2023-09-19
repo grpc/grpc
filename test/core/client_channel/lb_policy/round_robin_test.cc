@@ -111,7 +111,40 @@ TEST_F(RoundRobinTest, MultipleAddressesPerEndpoint) {
   // This causes RR to add it to the rotation.
   subchannel1_1->SetConnectivityState(GRPC_CHANNEL_READY);
   WaitForRoundRobinListChange({kEndpoint2Addresses[0]},
-                              {kEndpoint2Addresses[0], kEndpoint1Addresses[1]});
+                              {kEndpoint1Addresses[1], kEndpoint2Addresses[0]});
+  // No more connection attempts triggered.
+  EXPECT_FALSE(subchannel1_0->ConnectionRequested());
+  EXPECT_FALSE(subchannel1_1->ConnectionRequested());
+  EXPECT_FALSE(subchannel2_0->ConnectionRequested());
+  EXPECT_FALSE(subchannel2_1->ConnectionRequested());
+  // First endpoint first subchannel finishes backoff, but this doesn't
+  // affect anything -- in fact, PF isn't even watching this subchannel
+  // anymore, since it's connected to the other one.  However, this
+  // ensures that the subchannel is in the right state when we try to
+  // reconnect below.
+  subchannel1_0->SetConnectivityState(GRPC_CHANNEL_IDLE);
+  EXPECT_FALSE(subchannel1_0->ConnectionRequested());
+  // Connection closed for subchannel for endpoint 1.
+  gpr_log(GPR_INFO, "### closing connection to endpoint 1 address 1");
+  subchannel1_1->SetConnectivityState(GRPC_CHANNEL_IDLE);
+  // RR will request reresolution and remove the endpoint from the rotation.
+  ExpectReresolutionRequest();
+  WaitForRoundRobinListChange({kEndpoint1Addresses[1], kEndpoint2Addresses[0]},
+                              {kEndpoint2Addresses[0]});
+  gpr_log(GPR_INFO, "### endpoint removed from rotation");
+  // RR will start trying to reconnect to this endpoint, beginning again
+  // with the first address.
+  EXPECT_TRUE(subchannel1_0->ConnectionRequested());
+  EXPECT_FALSE(subchannel1_1->ConnectionRequested());
+  EXPECT_FALSE(subchannel2_0->ConnectionRequested());
+  EXPECT_FALSE(subchannel2_1->ConnectionRequested());
+  // Subchannel reports CONNECTING.
+  subchannel1_0->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  // Subchannel successfully connects.
+  subchannel1_0->SetConnectivityState(GRPC_CHANNEL_READY);
+  // RR adds it to the rotation.
+  WaitForRoundRobinListChange({kEndpoint2Addresses[0]},
+                              {kEndpoint1Addresses[0], kEndpoint2Addresses[0]});
   // No more connection attempts triggered.
   EXPECT_FALSE(subchannel1_0->ConnectionRequested());
   EXPECT_FALSE(subchannel1_1->ConnectionRequested());
