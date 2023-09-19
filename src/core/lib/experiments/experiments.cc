@@ -121,6 +121,10 @@ const char* const
 const char* const
     additional_constraints_client_channel_subchannel_wrapper_work_serializer_orphan =
         "{}";
+const char* const description_combiner_offload_to_event_engine =
+    "Offload Combiner work onto the EventEngine instead of the Executor.";
+const char* const additional_constraints_combiner_offload_to_event_engine =
+    "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -183,6 +187,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_client_channel_subchannel_wrapper_work_serializer_orphan,
      additional_constraints_client_channel_subchannel_wrapper_work_serializer_orphan,
      true, true},
+    {"combiner_offload_to_event_engine",
+     description_combiner_offload_to_event_engine,
+     additional_constraints_combiner_offload_to_event_engine, true, true},
 };
 
 }  // namespace grpc_core
@@ -288,6 +295,10 @@ const char* const
 const char* const
     additional_constraints_client_channel_subchannel_wrapper_work_serializer_orphan =
         "{}";
+const char* const description_combiner_offload_to_event_engine =
+    "Offload Combiner work onto the EventEngine instead of the Executor.";
+const char* const additional_constraints_combiner_offload_to_event_engine =
+    "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -350,6 +361,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_client_channel_subchannel_wrapper_work_serializer_orphan,
      additional_constraints_client_channel_subchannel_wrapper_work_serializer_orphan,
      true, true},
+    {"combiner_offload_to_event_engine",
+     description_combiner_offload_to_event_engine,
+     additional_constraints_combiner_offload_to_event_engine, true, true},
 };
 
 }  // namespace grpc_core
@@ -455,6 +469,10 @@ const char* const
 const char* const
     additional_constraints_client_channel_subchannel_wrapper_work_serializer_orphan =
         "{}";
+const char* const description_combiner_offload_to_event_engine =
+    "Offload Combiner work onto the EventEngine instead of the Executor.";
+const char* const additional_constraints_combiner_offload_to_event_engine =
+    "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -517,6 +535,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_client_channel_subchannel_wrapper_work_serializer_orphan,
      additional_constraints_client_channel_subchannel_wrapper_work_serializer_orphan,
      true, true},
+    {"combiner_offload_to_event_engine",
+     description_combiner_offload_to_event_engine,
+     additional_constraints_combiner_offload_to_event_engine, true, true},
 };
 
 }  // namespace grpc_core

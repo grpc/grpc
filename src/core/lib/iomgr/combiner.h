@@ -51,6 +51,9 @@ class Combiner {
   gpr_atm state;
   bool time_to_execute_final_list = false;
   grpc_closure_list final_list;
+  // TODO(ctiller): delete this when the combiner_offload_to_event_engine
+  // experiment is removed.
+  grpc_closure offload;
   gpr_refcount refs;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine;
 };
