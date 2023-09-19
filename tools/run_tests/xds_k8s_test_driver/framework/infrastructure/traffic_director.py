@@ -66,7 +66,6 @@ class TrafficDirectorManager:  # pylint: disable=too-many-public-methods
     FORWARDING_RULE_NAME = "forwarding-rule"
     ALTERNATIVE_FORWARDING_RULE_NAME = "forwarding-rule-alt"
     FIREWALL_RULE_NAME = "allow-health-checks"
-    SESSION_AFFINITY_NAME = "session-affinity-policy"
 
     def __init__(
         self,

@@ -643,6 +643,7 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
         name: str,
         grace_period_seconds=DELETE_GRACE_PERIOD_SEC,
     ) -> None:
+        # TODO(sergiitk): Do we need async? Won't it break error handling?
         self._execute(
             self._api.core.delete_namespaced_pod,
             name=name,
