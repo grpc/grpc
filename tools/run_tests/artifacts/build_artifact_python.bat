@@ -41,6 +41,7 @@ set ARTIFACT_DIR=%cd%\%ARTIFACTS_OUT%
 @rem Set up gRPC Python tools
 python tools\distrib\python\make_grpcio_tools.py
 
+set SETUPTOOLS_USE_DISTUTILS=local
 @rem Build gRPC Python extensions
 python setup.py build_ext -c %EXT_COMPILER% || goto :error
 
