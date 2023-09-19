@@ -195,4 +195,10 @@ def lb_stats_pretty(lb: grpc_testing.LoadBalancerStatsResponse) -> str:
         psm-grpc-server-b: 42
     """
     pretty_lb_stats = PrettyLoadBalancerStats.from_response(lb)
-    return yaml.dump(dataclasses.asdict(pretty_lb_stats), sort_keys=False)
+    stats_as_dict = dataclasses.asdict(pretty_lb_stats)
+
+    # Don't print metadatas_by_peer unless it has data
+    if stats_as_dict["metadatas_by_peer"]:
+        stats_as_dict.pop("metadatas_by_peer")
+
+    return yaml.dump(stats_as_dict, sort_keys=False)
