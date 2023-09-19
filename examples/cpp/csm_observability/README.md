@@ -25,13 +25,13 @@ To run the server -
 
 ```
 $ export GRPC_XDS_BOOTSTRAP=/path/to/bootstrap.json
-$ tools/bazel run examples/cpp/xds:greeter_server
+$ tools/bazel run examples/cpp/xds:xds_greeter_server
 ```
 
 To run the client -
 
 ```
 $ export GRPC_XDS_BOOTSTRAP=/path/to/bootstrap.json
-$ tools/bazel run examples/cpp/xds:greeter_client
+$ tools/bazel run examples/cpp/xds:xds_greeter_client
 ```
 
