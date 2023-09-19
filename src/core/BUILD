@@ -702,6 +702,7 @@ grpc_cc_library(
         "poll",
         "promise_factory",
         "promise_like",
+        "promise_trace",
         "//:gpr",
     ],
 )
