@@ -581,15 +581,21 @@ class XdsKubernetesBaseTestCase(base_testcase.BaseTestCase):
             msg=f"Expected all RPCs to fail: {failed} of {num_rpcs} failed",
         )
 
-    @classmethod
     def getClientRpcStats(
-        cls, test_client: XdsTestClient, num_rpcs: int
+        self,
+        test_client: XdsTestClient,
+        num_rpcs: int,
+        *,
+        metadata_keys: Optional[tuple[str, ...]] = None,
     ) -> _LoadBalancerStatsResponse:
-        lb_stats = test_client.get_load_balancer_stats(num_rpcs=num_rpcs)
+        lb_stats = test_client.get_load_balancer_stats(
+            num_rpcs=num_rpcs,
+            metadata_keys=metadata_keys,
+        )
         logger.info(
             "[%s] << Received LoadBalancerStatsResponse:\n%s",
             test_client.hostname,
-            cls._pretty_lb_stats(lb_stats),
+            self._pretty_lb_stats(lb_stats),
         )
         return lb_stats
 

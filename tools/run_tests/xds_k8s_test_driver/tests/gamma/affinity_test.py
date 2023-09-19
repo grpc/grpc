@@ -12,28 +12,44 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import logging
-from typing import List
+from typing import List, Optional
 
 from absl import flags
 from absl.testing import absltest
-from google.protobuf import json_format
 
 from framework import xds_gamma_testcase
 from framework import xds_k8s_testcase
 from framework import xds_url_map_testcase
+from framework.rpc import grpc_testing
+from framework.test_app import client_app
+from framework.test_app import server_app
 from framework.test_cases import session_affinity_util
 
 logger = logging.getLogger(__name__)
 flags.adopt_module_key_flags(xds_k8s_testcase)
 
-_XdsTestServer = xds_k8s_testcase.XdsTestServer
-_XdsTestClient = xds_k8s_testcase.XdsTestClient
+_XdsTestServer = server_app.XdsTestServer
+_XdsTestClient = client_app.XdsTestClient
 RpcTypeUnaryCall = xds_url_map_testcase.RpcTypeUnaryCall
 
 _REPLICA_COUNT = 3
 
 
 class AffinityTest(xds_gamma_testcase.GammaXdsKubernetesTestCase):
+    def getClientRpcStats(
+        self,
+        test_client: _XdsTestClient,
+        num_rpcs: int,
+        *,
+        metadata_keys: Optional[tuple[str, ...]] = None,
+    ) -> grpc_testing.LoadBalancerStatsResponse:
+        """Load all metadata_keys by default."""
+        return super().getClientRpcStats(
+            test_client,
+            num_rpcs,
+            metadata_keys=metadata_keys or client_app.REQ_LB_STATS_METADATA_ALL,
+        )
+
     def test_session_affinity_filter(self):
         test_servers: List[_XdsTestServer]
         with self.subTest("01_run_test_server"):
