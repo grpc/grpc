@@ -16,7 +16,6 @@
 
 #include "test/cpp/interop/pre_stop_hook_server.h"
 
-#include <memory>
 #include <thread>
 
 #include <gmock/gmock.h>
@@ -216,7 +215,8 @@ TEST(PreStopHookService, StartDoRequestStop) {
   request.set_grpc_code_to_return(StatusCode::INTERNAL);
   request.set_grpc_status_description("Just a test");
   Empty response;
-  stub.SetReturnStatus(&ctx, request, &response);
+  ASSERT_EQ(stub.SetReturnStatus(&ctx, request, &response).error_code(),
+            StatusCode::OK);
   auto status = infos[0].WaitForStatus();
   ASSERT_TRUE(status.has_value());
   EXPECT_EQ(status->error_code(), StatusCode::INTERNAL);
