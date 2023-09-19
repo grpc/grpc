@@ -413,7 +413,9 @@ def targets():
             PythonArtifact(
                 "manylinux2014", "aarch64", "cp38-cp38", presubmit=True
             ),
-            PythonArtifact("manylinux2014", "aarch64", "cp39-cp39", presubmit=True),
+            PythonArtifact(
+                "manylinux2014", "aarch64", "cp39-cp39", presubmit=True
+            ),
             PythonArtifact("manylinux2014", "aarch64", "cp310-cp310"),
             PythonArtifact("manylinux2014", "aarch64", "cp311-cp311"),
             PythonArtifact(
