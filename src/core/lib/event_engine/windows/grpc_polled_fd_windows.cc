@@ -14,6 +14,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/iomgr/port.h"  // IWYU pragma: keep
+
 #if GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
 
 #include <winsock2.h>
@@ -32,6 +34,7 @@
 #include "src/core/lib/event_engine/windows/win_socket.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice.h"
 
 namespace grpc_event_engine {
