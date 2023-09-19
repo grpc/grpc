@@ -724,12 +724,9 @@ void Server::Start() {
   if (unregistered_request_matcher_ == nullptr) {
     unregistered_request_matcher_ = std::make_unique<RealRequestMatcher>(this);
   }
-  {
-    MutexLock lock(&registered_methods_mu_);
-    for (auto& rm : registered_methods_) {
-      if (rm.second->matcher == nullptr) {
-        rm.second->matcher = std::make_unique<RealRequestMatcher>(this);
-      }
+  for (auto& rm : registered_methods_) {
+    if (rm.second->matcher == nullptr) {
+      rm.second->matcher = std::make_unique<RealRequestMatcher>(this);
     }
   }
   {
@@ -819,15 +816,17 @@ void Server::RegisterCompletionQueue(grpc_completion_queue* cq) {
 Server::RegisteredMethod* Server::RegisterMethod(
     const char* method, const char* host,
     grpc_server_register_method_payload_handling payload_handling,
-    uint32_t flags) ABSL_LOCKS_EXCLUDED(registered_methods_mu_) {
+    uint32_t flags) {
+  if (started_) {
+    Crash("Attempting to register method after server started");
+  }
   if (!method) {
     gpr_log(GPR_ERROR,
             "grpc_server_register_method method string cannot be NULL");
     return nullptr;
   }
-  auto key = MixHash32((host == nullptr) ? 0 : absl::HashOf(std::string(host)),
-                       absl::HashOf(std::string(method)));
-  MutexLock lock(&registered_methods_mu_);
+  auto key = std::make_pair((host == nullptr) ? "" : absl::string_view(host),
+                            absl::string_view(method));
   if (registered_methods_.contains(key)) {
     gpr_log(GPR_ERROR, "duplicate registration for %s@%s", method,
             host ? host : "*");
@@ -891,7 +890,6 @@ void Server::KillPendingWorkLocked(grpc_error_handle error) {
   if (started_) {
     unregistered_request_matcher_->KillRequests(error);
     unregistered_request_matcher_->ZombifyPending();
-    MutexLock lock(&registered_methods_mu_);
     for (auto& rm : registered_methods_) {
       rm.second->matcher->KillRequests(error);
       rm.second->matcher->ZombifyPending();
@@ -1172,18 +1170,15 @@ void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
 }
 
 Server::RegisteredMethod* Server::ChannelData::GetRegisteredMethod(
-    const absl::string_view& host, const absl::string_view& path)
-    ABSL_LOCKS_EXCLUDED(registered_methods_mu_) {
-  MutexLock lock(&server_->registered_methods_mu_);
+    const absl::string_view& host, const absl::string_view& path) {
   if (server_->registered_methods_.empty()) return nullptr;
   // check for exact match with host
-  auto key = MixHash32(absl::HashOf(host), absl::HashOf(path));
-  ;
+  auto key = std::make_pair(host, path);
   if (server_->registered_methods_.contains(key)) {
     return server_->registered_methods_[key].get();
   }
   // check for wildcard method definition (no host set)
-  key = MixHash32(0, absl::HashOf(path));
+  key = std::make_pair("", path);
   if (server_->registered_methods_.contains(key)) {
     return server_->registered_methods_[key].get();
   }

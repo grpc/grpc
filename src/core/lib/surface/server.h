@@ -433,9 +433,8 @@ class Server : public InternallyRefCounted<Server>,
   // If they are ever required to be nested, you must lock mu_global_
   // before mu_call_. This is currently used in shutdown processing
   // (ShutdownAndNotify() and MaybeFinishShutdown()).
-  Mutex mu_global_;              // mutex for server and channel state
-  Mutex mu_call_;                // mutex for call-specific state
-  Mutex registered_methods_mu_;  // mutex for registered methods map
+  Mutex mu_global_;  // mutex for server and channel state
+  Mutex mu_call_;    // mutex for call-specific state
 
   // startup synchronization: flag, signals whether we are doing the listener
   // start routine or not.
@@ -443,9 +442,10 @@ class Server : public InternallyRefCounted<Server>,
   CondVar starting_cv_;
 
   // Map of registered methods.
-  absl::flat_hash_map<uint32_t /*hash of host and method*/,
-                      std::unique_ptr<RegisteredMethod>>
-      registered_methods_ ABSL_GUARDED_BY(registered_methods_mu_);
+  absl::flat_hash_map<
+      std::pair<absl::string_view, absl::string_view> /*host, method*/,
+      std::unique_ptr<RegisteredMethod>>
+      registered_methods_;
 
   // Request matcher for unregistered methods.
   std::unique_ptr<RequestMatcherInterface> unregistered_request_matcher_;
