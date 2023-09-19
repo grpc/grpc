@@ -44,6 +44,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/event_engine/default_event_engine.h"
+
 #ifdef GPR_LINUX
 #include <sys/syscall.h>
 #include <unistd.h>
@@ -348,6 +350,11 @@ void grpc_ruby_init() {
   grpc_ruby_fork_guard();
   grpc_init();
   grpc_ruby_init_threads();
+  // TODO(apolcyn): this GetDefaultEventEngine hack is to avoid
+  // a deadlock bug that happens when C-core's pthread_atfork pre-fork
+  // handler races with destruction of the default event engine. We
+  // should remove this hack when the underlying race has been fixed.
+  grpc_event_engine::experimental::GetDefaultEventEngine().release();
   // (only gpr_log after logging has been initialized)
   gpr_log(GPR_DEBUG,
           "GRPC_RUBY: grpc_ruby_init - g_enable_fork_support=%d prev "
