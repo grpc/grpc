@@ -229,7 +229,7 @@ absl::optional<grpc::Status> GetStatusForRpcBehaviorMetadata(
 
 void RunServer(bool secure_mode, const int port, const int maintenance_port,
                absl::string_view hostname, absl::string_view server_id,
-               std::function<void(Server*)> server_callback) {
+               const std::function<void(Server*)>& server_callback) {
   std::unique_ptr<Server> xds_enabled_server;
   std::unique_ptr<Server> server;
   TestServiceImpl service(hostname, server_id);
