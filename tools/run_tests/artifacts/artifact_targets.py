@@ -402,8 +402,7 @@ def targets():
             PythonArtifact("manylinux2014", "x64", "cp38-cp38", presubmit=True),
             PythonArtifact("manylinux2014", "x64", "cp39-cp39"),
             PythonArtifact("manylinux2014", "x64", "cp310-cp310"),
-            PythonArtifact(
-                "manylinux2014", "x64", "cp311-cp311"),
+            PythonArtifact("manylinux2014", "x64", "cp311-cp311"),
             PythonArtifact(
                 "manylinux2014", "x64", "cp312-cp312", presubmit=True
             ),
@@ -413,8 +412,7 @@ def targets():
             PythonArtifact("manylinux2014", "x86", "cp38-cp38", presubmit=True),
             PythonArtifact("manylinux2014", "x86", "cp39-cp39"),
             PythonArtifact("manylinux2014", "x86", "cp310-cp310"),
-            PythonArtifact(
-                "manylinux2014", "x86", "cp311-cp311"),
+            PythonArtifact("manylinux2014", "x86", "cp311-cp311"),
             PythonArtifact(
                 "manylinux2014", "x86", "cp312-cp312", presubmit=True
             ),
@@ -427,21 +425,21 @@ def targets():
             PythonArtifact("manylinux2014", "aarch64", "cp39-cp39"),
             PythonArtifact("manylinux2014", "aarch64", "cp310-cp310"),
             PythonArtifact("manylinux2014", "aarch64", "cp311-cp311"),
-            PythonArtifact("manylinux2014", "aarch64", "cp312-cp312", presubmit=True),
+            PythonArtifact(
+                "manylinux2014", "aarch64", "cp312-cp312", presubmit=True
+            ),
             PythonArtifact(
                 "linux_extra", "armv7", "cp37-cp37m", presubmit=True
             ),
             PythonArtifact("linux_extra", "armv7", "cp38-cp38"),
             PythonArtifact("linux_extra", "armv7", "cp39-cp39"),
             PythonArtifact("linux_extra", "armv7", "cp310-cp310"),
-            PythonArtifact(
-                "linux_extra", "armv7", "cp311-cp311"),
+            PythonArtifact("linux_extra", "armv7", "cp311-cp311"),
             PythonArtifact(
                 "linux_extra", "armv7", "cp312-cp312", presubmit=True
             ),
             PythonArtifact("musllinux_1_1", "x64", "cp310-cp310"),
-            PythonArtifact(
-                "musllinux_1_1", "x64", "cp311-cp311"),
+            PythonArtifact("musllinux_1_1", "x64", "cp311-cp311"),
             PythonArtifact(
                 "musllinux_1_1", "x64", "cp312-cp312", presubmit=True
             ),
@@ -451,8 +449,7 @@ def targets():
             PythonArtifact("musllinux_1_1", "x64", "cp38-cp38"),
             PythonArtifact("musllinux_1_1", "x64", "cp39-cp39"),
             PythonArtifact("musllinux_1_1", "x86", "cp310-cp310"),
-            PythonArtifact(
-                "musllinux_1_1", "x86", "cp311-cp311"),
+            PythonArtifact("musllinux_1_1", "x86", "cp311-cp311"),
             PythonArtifact(
                 "musllinux_1_1", "x86", "cp312-cp312", presubmit=True
             ),
