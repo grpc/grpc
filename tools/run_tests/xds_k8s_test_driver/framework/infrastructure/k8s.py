@@ -54,6 +54,10 @@ V1Namespace = client.V1Namespace
 DynResourceInstance = dynamic_res.ResourceInstance
 GammaMesh = DynResourceInstance
 GammaGrpcRoute = DynResourceInstance
+GammaHttpRoute = DynResourceInstance
+GcpSessionAffinityPolicy = DynResourceInstance
+GcpSessionAffinityFilter = DynResourceInstance
+GcpBackendPolicy = DynResourceInstance
 
 _timedelta = datetime.timedelta
 _ApiException = client.ApiException
@@ -138,10 +142,12 @@ class KubernetesApiManager:
         return self._dynamic_client
 
     @functools.cache  # pylint: disable=no-member
-    def gke_tdmesh(self, version: str) -> dynamic_res.Resource:
-        api_name = "net.gke.io"
-        kind = "TDMesh"
-        supported_versions = {"v1alpha1"}
+    def grpc_route(self, version: str) -> dynamic_res.Resource:
+        api_name = "gateway.networking.k8s.io"
+        kind = "GRPCRoute"
+        supported_versions = {
+            "v1alpha2",
+        }
         if version not in supported_versions:
             raise NotImplementedError(
                 f"{kind} {api_name}/{version} not implemented."
@@ -150,10 +156,46 @@ class KubernetesApiManager:
         return self._load_dynamic_api(api_name, version, kind)
 
     @functools.cache  # pylint: disable=no-member
-    def grpc_route(self, version: str) -> dynamic_res.Resource:
+    def http_route(self, version: str) -> dynamic_res.Resource:
         api_name = "gateway.networking.k8s.io"
-        kind = "GRPCRoute"
-        supported_versions = {"v1alpha2"}
+        kind = "HTTPRoute"
+        supported_versions = {"v1alpha2", "v1beta1"}
+        if version not in supported_versions:
+            raise NotImplementedError(
+                f"{kind} {api_name}/{version} not implemented."
+            )
+
+        return self._load_dynamic_api(api_name, version, kind)
+
+    @functools.cache  # pylint: disable=no-member
+    def gcp_session_affinity_filter(self, version: str) -> dynamic_res.Resource:
+        api_name = "networking.gke.io"
+        kind = "GCPSessionAffinityFilter"
+        supported_versions = ("v1",)
+        if version not in supported_versions:
+            raise NotImplementedError(
+                f"{kind} {api_name}/{version} not implemented."
+            )
+
+        return self._load_dynamic_api(api_name, version, kind)
+
+    @functools.cache  # pylint: disable=no-member
+    def gcp_session_affinity_policy(self, version: str) -> dynamic_res.Resource:
+        api_name = "networking.gke.io"
+        kind = "GCPSessionAffinityPolicy"
+        supported_versions = ("v1",)
+        if version not in supported_versions:
+            raise NotImplementedError(
+                f"{kind} {api_name}/{version} not implemented."
+            )
+
+        return self._load_dynamic_api(api_name, version, kind)
+
+    @functools.cache  # pylint: disable=no-member
+    def gcp_backend_policy(self, version: str) -> dynamic_res.Resource:
+        api_name = "networking.gke.io"
+        kind = "GCPBackendPolicy"
+        supported_versions = ("v1",)
         if version not in supported_versions:
             raise NotImplementedError(
                 f"{kind} {api_name}/{version} not implemented."
@@ -243,6 +285,34 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
             "GRPCRoute",
         )
 
+    @functools.cached_property  # pylint: disable=no-member
+    def api_http_route(self) -> dynamic_res.Resource:
+        return self._get_dynamic_api(
+            "gateway.networking.k8s.io/v1beta1",
+            "HTTPRoute",
+        )
+
+    @functools.cached_property  # pylint: disable=no-member
+    def api_session_affinity_filter(self) -> dynamic_res.Resource:
+        return self._get_dynamic_api(
+            "networking.gke.io/v1",
+            "GCPSessionAffinityFilter",
+        )
+
+    @functools.cached_property  # pylint: disable=no-member
+    def api_session_affinity_policy(self) -> dynamic_res.Resource:
+        return self._get_dynamic_api(
+            "networking.gke.io/v1",
+            "GCPSessionAffinityPolicy",
+        )
+
+    @functools.cached_property  # pylint: disable=no-member
+    def api_backend_policy(self) -> dynamic_res.Resource:
+        return self._get_dynamic_api(
+            "networking.gke.io/v1",
+            "GCPBackendPolicy",
+        )
+
     def _refresh_auth(self):
         logger.info("Reloading k8s api client to refresh the auth.")
         self._api.reload()
@@ -269,15 +339,22 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
         # TODO(sergiitk): [GAMMA] Needs to be improved. This all is very clunky
         #  when considered together with _get_dynamic_api and api_gke_mesh,
         #  api_grpc_route.
-        if group == "net.gke.io":
-            if kind == "TDMesh":
-                return self._api.gke_tdmesh(version)
-
+        if group == "networking.gke.io":
+            if kind == "GCPSessionAffinityFilter":
+                return self._api.gcp_session_affinity_filter(version)
+            elif kind == "GCPSessionAffinityPolicy":
+                return self._api.gcp_session_affinity_policy(version)
+            elif kind == "GCPBackendPolicy":
+                return self._api.gcp_backend_policy(version)
         elif group == "gateway.networking.k8s.io":
             if kind == "GRPCRoute":
                 return self._api.grpc_route(version)
+            elif kind == "HTTPRoute":
+                return self._api.http_route(version)
 
-        raise NotImplementedError(f"{kind} {api_version} not implemented.")
+        raise NotImplementedError(
+            f"{kind} ({group}) {api_version} not implemented."
+        )
 
     def _get_resource(self, method: Callable[[Any], object], *args, **kwargs):
         try:
@@ -445,8 +522,21 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
     def get_gamma_mesh(self, name) -> Optional[GammaMesh]:
         return self._get_dyn_resource(self.api_gke_mesh, name)
 
-    def get_gamma_route(self, name) -> Optional[GammaGrpcRoute]:
-        return self._get_dyn_resource(self.api_grpc_route, name)
+    def get_gamma_route(self, name) -> Optional[GammaHttpRoute]:
+        return self._get_dyn_resource(self.api_http_route, name)
+
+    def get_session_affinity_policy(
+        self, name
+    ) -> Optional[GcpSessionAffinityPolicy]:
+        return self._get_dyn_resource(self.api_session_affinity_policy, name)
+
+    def get_session_affinity_filter(
+        self, name
+    ) -> Optional[GcpSessionAffinityFilter]:
+        return self._get_dyn_resource(self.api_session_affinity_filter, name)
+
+    def get_backend_policy(self, name) -> Optional[GcpBackendPolicy]:
+        return self._get_dyn_resource(self.api_backend_policy, name)
 
     def get_service_account(self, name) -> V1Service:
         return self._get_resource(
@@ -502,11 +592,67 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
         # TODO(sergiitk): [GAMMA] Can we call delete on dynamic_res.ResourceList
         #  to avoid no-member issues due to dynamic_res.Resource proxying calls?
         self._execute(
-            self.api_grpc_route.delete,  # pylint: disable=no-member
+            self.api_http_route.delete,  # pylint: disable=no-member
             name=name,
             namespace=self.name,
             propagation_policy="Foreground",
             grace_period_seconds=grace_period_seconds,
+        )
+
+    def delete_session_affinity_policy(
+        self,
+        name: str,
+        grace_period_seconds=DELETE_GRACE_PERIOD_SEC,
+    ) -> None:
+        self._execute(
+            self.api_session_affinity_policy.delete,  # pylint: disable=no-member
+            name=name,
+            namespace=self.name,
+            propagation_policy="Foreground",
+            grace_period_seconds=grace_period_seconds,
+        )
+
+    def delete_session_affinity_filter(
+        self,
+        name: str,
+        grace_period_seconds=DELETE_GRACE_PERIOD_SEC,
+    ) -> None:
+        self._execute(
+            self.api_session_affinity_filter.delete,  # pylint: disable=no-member
+            name=name,
+            namespace=self.name,
+            propagation_policy="Foreground",
+            grace_period_seconds=grace_period_seconds,
+        )
+
+    def delete_backend_policy(
+        self,
+        name: str,
+        grace_period_seconds=DELETE_GRACE_PERIOD_SEC,
+    ) -> None:
+        self._execute(
+            self.api_backend_policy.delete,  # pylint: disable=no-member
+            name=name,
+            namespace=self.name,
+            propagation_policy="Foreground",
+            grace_period_seconds=grace_period_seconds,
+        )
+
+    def delete_pod_async(
+        self,
+        name: str,
+        grace_period_seconds=DELETE_GRACE_PERIOD_SEC,
+    ) -> None:
+        # TODO(sergiitk): Do we need async? Won't it break error handling?
+        self._execute(
+            self._api.core.delete_namespaced_pod,
+            name=name,
+            namespace=self.name,
+            body=client.V1DeleteOptions(
+                propagation_policy="Foreground",
+                grace_period_seconds=grace_period_seconds,
+            ),
+            async_req=True,
         )
 
     def get(self) -> V1Namespace:
@@ -560,6 +706,45 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
             check_result=lambda route: route is None,
         )
         retryer(self.get_gamma_route, name)
+
+    def wait_for_get_session_affinity_policy_deleted(
+        self,
+        name: str,
+        timeout_sec: int = WAIT_MEDIUM_TIMEOUT_SEC,
+        wait_sec: int = WAIT_MEDIUM_SLEEP_SEC,
+    ) -> None:
+        retryer = retryers.constant_retryer(
+            wait_fixed=_timedelta(seconds=wait_sec),
+            timeout=_timedelta(seconds=timeout_sec),
+            check_result=lambda affinity_policy: affinity_policy is None,
+        )
+        retryer(self.get_session_affinity_policy, name)
+
+    def wait_for_get_session_affinity_filter_deleted(
+        self,
+        name: str,
+        timeout_sec: int = WAIT_MEDIUM_TIMEOUT_SEC,
+        wait_sec: int = WAIT_MEDIUM_SLEEP_SEC,
+    ) -> None:
+        retryer = retryers.constant_retryer(
+            wait_fixed=_timedelta(seconds=wait_sec),
+            timeout=_timedelta(seconds=timeout_sec),
+            check_result=lambda affinity_filter: affinity_filter is None,
+        )
+        retryer(self.get_session_affinity_filter, name)
+
+    def wait_for_get_backend_policy_deleted(
+        self,
+        name: str,
+        timeout_sec: int = WAIT_MEDIUM_TIMEOUT_SEC,
+        wait_sec: int = WAIT_MEDIUM_SLEEP_SEC,
+    ) -> None:
+        retryer = retryers.constant_retryer(
+            wait_fixed=_timedelta(seconds=wait_sec),
+            timeout=_timedelta(seconds=timeout_sec),
+            check_result=lambda backend_policy: backend_policy is None,
+        )
+        retryer(self.get_backend_policy, name)
 
     def wait_for_service_account_deleted(
         self,

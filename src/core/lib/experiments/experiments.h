@@ -77,8 +77,6 @@ inline bool IsWorkStealingEnabled() { return true; }
 inline bool IsClientPrivacyEnabled() { return false; }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
 inline bool IsServerPrivacyEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_UNIQUE_METADATA_STRINGS
-inline bool IsUniqueMetadataStringsEnabled() { return true; }
 inline bool IsKeepaliveFixEnabled() { return false; }
 inline bool IsKeepaliveServerFixEnabled() { return false; }
 inline bool IsWorkSerializerDispatchEnabled() { return false; }
@@ -112,8 +110,6 @@ inline bool IsWorkStealingEnabled() { return true; }
 inline bool IsClientPrivacyEnabled() { return false; }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
 inline bool IsServerPrivacyEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_UNIQUE_METADATA_STRINGS
-inline bool IsUniqueMetadataStringsEnabled() { return true; }
 inline bool IsKeepaliveFixEnabled() { return false; }
 inline bool IsKeepaliveServerFixEnabled() { return false; }
 inline bool IsWorkSerializerDispatchEnabled() { return false; }
@@ -147,8 +143,6 @@ inline bool IsWorkStealingEnabled() { return true; }
 inline bool IsClientPrivacyEnabled() { return false; }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
 inline bool IsServerPrivacyEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_UNIQUE_METADATA_STRINGS
-inline bool IsUniqueMetadataStringsEnabled() { return true; }
 inline bool IsKeepaliveFixEnabled() { return false; }
 inline bool IsKeepaliveServerFixEnabled() { return false; }
 inline bool IsWorkSerializerDispatchEnabled() { return false; }
@@ -182,7 +176,6 @@ enum ExperimentIds {
   kExperimentIdClientPrivacy,
   kExperimentIdCanaryClientPrivacy,
   kExperimentIdServerPrivacy,
-  kExperimentIdUniqueMetadataStrings,
   kExperimentIdKeepaliveFix,
   kExperimentIdKeepaliveServerFix,
   kExperimentIdWorkSerializerDispatch,
@@ -263,10 +256,6 @@ inline bool IsCanaryClientPrivacyEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_PRIVACY
 inline bool IsServerPrivacyEnabled() {
   return IsExperimentEnabled(kExperimentIdServerPrivacy);
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_UNIQUE_METADATA_STRINGS
-inline bool IsUniqueMetadataStringsEnabled() {
-  return IsExperimentEnabled(kExperimentIdUniqueMetadataStrings);
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_KEEPALIVE_FIX
 inline bool IsKeepaliveFixEnabled() {

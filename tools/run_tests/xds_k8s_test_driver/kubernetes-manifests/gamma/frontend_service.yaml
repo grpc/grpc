@@ -1,0 +1,10 @@
+---
+apiVersion: v1
+kind: Service          
+metadata:           
+  name: ${service_name}
+  namespace: ${namespace_name}
+spec:                   
+  ports:      
+  - port: 8080
+    targetPort: 8080

@@ -1,4 +1,5 @@
-# Copyright 2017 gRPC authors.
+#!/bin/bash
+# Copyright 2023 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,14 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Config file for the internal CI (in protobuf text format)
+set -ex
 
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/linux/grpc_portability_build_only.sh"
-timeout_mins: 180
-action {
-  define_artifacts {
-    regex: "**/*sponge_log.*"
-    regex: "github/grpc/reports/**"
-  }
-}
+echo "This is an empty C++ distribtest. It acts as a tools/run_tests/task_runner.py"
+echo "placeholder, since the C++ distribtests are now run by tools/bazelify_tests"
+echo "and task_runner.py reports an error when no task match the filter."
