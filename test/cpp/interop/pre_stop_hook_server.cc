@@ -167,7 +167,8 @@ ServerUnaryReactor* HookServiceImpl::SetReturnStatus(
 }
 
 ServerUnaryReactor* HookServiceImpl::ClearReturnStatus(
-    CallbackServerContext* context, const Empty* request, Empty* /* reply */) {
+    CallbackServerContext* context, const Empty* /* request */,
+    Empty* /* reply */) {
   auto reactor = context->DefaultReactor();
   reactor->Finish(Status::OK);
   grpc_core::MutexLock lock(&mu_);
