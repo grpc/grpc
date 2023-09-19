@@ -235,16 +235,6 @@ int main(int argc, char** argv) {
         std::make_shared<opentelemetry::sdk::metrics::MeterProvider>();
     meter_provider->AddMetricReader(std::move(prometheus_exporter));
     grpc::internal::OpenTelemetryPluginBuilder otel_builder;
-    otel_builder.EnableMetric(
-        grpc::internal::OTelClientAttemptStartedInstrumentName());
-    otel_builder.EnableMetric(
-        grpc::internal::OTelClientAttemptDurationInstrumentName());
-    otel_builder.EnableMetric(
-        grpc::internal::
-            OTelClientAttemptSentTotalCompressedMessageSizeInstrumentName());
-    otel_builder.EnableMetric(
-        grpc::internal::
-            OTelClientAttemptRcvdTotalCompressedMessageSizeInstrumentName());
     otel_builder.SetMeterProvider(std::move(meter_provider));
     otel_builder.BuildAndRegisterGlobal();
   }
