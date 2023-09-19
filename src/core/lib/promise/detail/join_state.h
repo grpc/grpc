@@ -25,6 +25,7 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/promise/detail/promise_like.h"

@@ -630,8 +630,10 @@ grpc_cc_library(
         "construct_destruct",
         "poll",
         "promise_like",
+        "promise_trace",
         "//:gpr",
         "//:gpr_platform",
+        "//:grpc_trace",
     ],
 )
 
@@ -704,6 +706,7 @@ grpc_cc_library(
         "promise_like",
         "promise_trace",
         "//:gpr",
+        "//:grpc_trace",
     ],
 )
 
