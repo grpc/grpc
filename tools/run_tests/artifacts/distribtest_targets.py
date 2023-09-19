@@ -380,32 +380,35 @@ def targets():
     """Gets list of supported targets"""
     return [
         # C++
-        CppDistribTest("linux", "x64", "debian10", "cmake", presubmit=True),
+        # The "dummy" C++ distribtest so that the set of tasks to run isn't empty
+        # when grpc_distribtest_standalone runs on PRs.
+        CppDistribTest("linux", "x64", "debian10", "dummy", presubmit=True),
+        CppDistribTest("linux", "x64", "debian10", "cmake", presubmit=False),
         CppDistribTest(
-            "linux", "x64", "debian10", "cmake_as_submodule", presubmit=True
+            "linux", "x64", "debian10", "cmake_as_submodule", presubmit=False
         ),
         CppDistribTest(
             "linux",
             "x64",
             "debian10",
             "cmake_as_externalproject",
-            presubmit=True,
+            presubmit=False,
         ),
         CppDistribTest(
-            "linux", "x64", "debian10", "cmake_fetchcontent", presubmit=True
+            "linux", "x64", "debian10", "cmake_fetchcontent", presubmit=False
         ),
         CppDistribTest(
-            "linux", "x64", "debian10", "cmake_module_install", presubmit=True
+            "linux", "x64", "debian10", "cmake_module_install", presubmit=False
         ),
         CppDistribTest(
-            "linux", "x64", "debian10", "cmake_pkgconfig", presubmit=True
+            "linux", "x64", "debian10", "cmake_pkgconfig", presubmit=False
         ),
         CppDistribTest(
             "linux",
             "x64",
             "debian10_aarch64_cross",
             "cmake_aarch64_cross",
-            presubmit=True,
+            presubmit=False,
         ),
         CppDistribTest("windows", "x86", testcase="cmake", presubmit=True),
         CppDistribTest(
