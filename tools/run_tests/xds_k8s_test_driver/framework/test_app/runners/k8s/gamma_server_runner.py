@@ -30,20 +30,22 @@ KubernetesServerRunner = k8s_xds_server_runner.KubernetesServerRunner
 
 class GammaServerRunner(KubernetesServerRunner):
     # Mutable state.
-    mesh: Optional[k8s.GammaMesh] = None
-    route: Optional[k8s.GammaGrpcRoute] = None
+    route: Optional[k8s.GammaHttpRoute] = None
+    frontend_service: Optional[k8s.V1Service] = None
+    sa_filter: Optional[k8s.GcpSessionAffinityFilter] = None
+    sa_policy: Optional[k8s.GcpSessionAffinityPolicy] = None
+    be_policy: Optional[k8s.GcpBackendPolicy] = None
+    termination_grace_period_seconds: Optional[int] = None
+    pre_stop_hook: bool = False
 
-    # Mesh
-    server_xds_host: str
-    mesh_name: str
     route_name: str
+    frontend_service_name: str
 
     def __init__(
         self,
         k8s_namespace: k8s.KubernetesNamespace,
+        frontend_service_name: str,
         *,
-        mesh_name: str,
-        server_xds_host: str,
         deployment_name: str,
         image_name: str,
         td_bootstrap_image: str,
@@ -64,6 +66,11 @@ class GammaServerRunner(KubernetesServerRunner):
         namespace_template: Optional[str] = None,
         debug_use_port_forwarding: bool = False,
         enable_workload_identity: bool = True,
+        safilter_name: str = "ssa-filter",
+        sapolicy_name: str = "ssa-policy",
+        bepolicy_name: str = "backend-policy",
+        termination_grace_period_seconds: Optional[int] = None,
+        pre_stop_hook: bool = False,
     ):
         # pylint: disable=too-many-locals
         super().__init__(
@@ -89,11 +96,15 @@ class GammaServerRunner(KubernetesServerRunner):
             enable_workload_identity=enable_workload_identity,
         )
 
-        self.server_xds_host = server_xds_host
-        self.mesh_name = mesh_name
+        self.frontend_service_name = frontend_service_name
         self.route_name = route_name or f"route-{deployment_name}"
+        self.safilter_name = safilter_name
+        self.sapolicy_name = sapolicy_name
+        self.bepolicy_name = bepolicy_name
+        self.termination_grace_period_seconds = termination_grace_period_seconds
+        self.pre_stop_hook = pre_stop_hook
 
-    def run(
+    def run(  # pylint: disable=arguments-differ
         self,
         *,
         test_port: int = KubernetesServerRunner.DEFAULT_TEST_PORT,
@@ -102,6 +113,7 @@ class GammaServerRunner(KubernetesServerRunner):
         replica_count: int = 1,
         log_to_stdout: bool = False,
         bootstrap_version: Optional[str] = None,
+        route_template: str = "gamma/route_http.yaml",
     ) -> List[XdsTestServer]:
         if not maintenance_port:
             maintenance_port = self._get_default_maintenance_port(secure_mode)
@@ -128,14 +140,6 @@ class GammaServerRunner(KubernetesServerRunner):
                 self.namespace_template, namespace_name=self.k8s_namespace.name
             )
 
-        # Create gamma mesh.
-        # Note: this will be pre-provisioned per cluster.
-        self.mesh = self._create_gamma_mesh(
-            "gamma/tdmesh.yaml",
-            mesh_name=self.mesh_name,
-            namespace_name=self.k8s_namespace.name,
-        )
-
         # Reuse existing if requested, create a new deployment when missing.
         # Useful for debugging to avoid NEG loosing relation to deleted service.
         if self.reuse_service:
@@ -150,19 +154,22 @@ class GammaServerRunner(KubernetesServerRunner):
                 test_port=test_port,
             )
 
+        # Create the parentref service
+        self.frontend_service = self._create_service(
+            "gamma/frontend_service.yaml",
+            service_name=self.frontend_service_name,
+            namespace_name=self.k8s_namespace.name,
+        )
+
         # Create the route.
         self.route = self._create_gamma_route(
-            "gamma/route_grpc.yaml",
-            xds_server_uri=self.server_xds_host,
+            route_template,
             route_name=self.route_name,
-            mesh_name=self.mesh_name,
             service_name=self.service_name,
             namespace_name=self.k8s_namespace.name,
             test_port=test_port,
+            frontend_service_name=self.frontend_service_name,
         )
-
-        # Surprised this just works.
-        self._wait_service_neg(self.service_name, test_port)
 
         if self.enable_workload_identity:
             # Allow Kubernetes service account to use the GCP service account
@@ -196,14 +203,46 @@ class GammaServerRunner(KubernetesServerRunner):
             maintenance_port=maintenance_port,
             secure_mode=secure_mode,
             bootstrap_version=bootstrap_version,
+            termination_grace_period_seconds=self.termination_grace_period_seconds,
+            pre_stop_hook=self.pre_stop_hook,
         )
 
-        return self._make_servers_for_deployment(
+        servers = self._make_servers_for_deployment(
             replica_count,
             test_port=test_port,
             maintenance_port=maintenance_port,
             log_to_stdout=log_to_stdout,
             secure_mode=secure_mode,
+        )
+
+        # The controller will not populate the NEGs until there are
+        # endpoint slices.
+        self._wait_service_neg(self.service_name, test_port)
+
+        return servers
+
+    def createSessionAffinityPolicy(self, manifest):
+        self.sa_policy = self._create_session_affinity_policy(
+            manifest,
+            session_affinity_policy_name=self.sapolicy_name,
+            namespace_name=self.k8s_namespace.name,
+            route_name=self.route_name,
+            service_name=self.service_name,
+        )
+
+    def createSessionAffinityFilter(self):
+        self.sa_filter = self._create_session_affinity_filter(
+            "gamma/session_affinity_filter.yaml",
+            session_affinity_filter_name=self.safilter_name,
+            namespace_name=self.k8s_namespace.name,
+        )
+
+    def createBackendPolicy(self):
+        self.be_policy = self._create_backend_policy(
+            "gamma/backend_policy.yaml",
+            be_policy_name=self.bepolicy_name,
+            namespace_name=self.k8s_namespace.name,
+            service_name=self.service_name,
         )
 
     # pylint: disable=arguments-differ
@@ -213,8 +252,9 @@ class GammaServerRunner(KubernetesServerRunner):
                 self._delete_gamma_route(self.route_name)
                 self.route = None
 
-            if self.mesh or force:
-                self._delete_gamma_mesh(self.mesh_name)
+            if self.frontend_service or force:
+                self._delete_service(self.frontend_service_name)
+                self.frontend_service = None
 
             if (self.service and not self.reuse_service) or force:
                 self._delete_service(self.service_name)
@@ -223,6 +263,18 @@ class GammaServerRunner(KubernetesServerRunner):
             if self.deployment or force:
                 self._delete_deployment(self.deployment_name)
                 self.deployment = None
+
+            if self.sa_policy or force:
+                self._delete_session_affinity_policy(self.sapolicy_name)
+                self.sa_policy = None
+
+            if self.sa_filter or force:
+                self._delete_session_affinity_filter(self.safilter_name)
+                self.sa_filter = None
+
+            if self.be_policy or force:
+                self._delete_backend_policy(self.bepolicy_name)
+                self.be_policy = None
 
             if self.enable_workload_identity and (
                 self.service_account or force

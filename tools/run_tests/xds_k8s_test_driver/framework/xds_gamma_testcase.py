@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import logging
+from typing import Optional
 
 from framework.infrastructure import k8s
 import framework.infrastructure.traffic_director_gamma as td_gamma
@@ -28,12 +29,16 @@ XdsTestServer = server_app.XdsTestServer
 
 logger = logging.getLogger(__name__)
 
+# We never actually hit this timeout under normal circumstances, so this large
+# value is acceptable.
+_TERMINATION_GRACE_PERIOD_SECONDS = 600
+
 
 # TODO(sergiitk): [GAMMA] Move into framework/test_cases
 class GammaXdsKubernetesTestCase(xds_k8s_testcase.RegularXdsKubernetesTestCase):
     server_runner: GammaServerRunner
-    mesh_name: str
-    mesh_name_td: str
+    frontend_service_name: str
+    pre_stop_hook: Optional[bool] = None
 
     def setUp(self):
         """Hook method for setting up the test fixture before exercising it."""
@@ -47,6 +52,9 @@ class GammaXdsKubernetesTestCase(xds_k8s_testcase.RegularXdsKubernetesTestCase):
         super(xds_k8s_testcase.IsolatedXdsKubernetesTestCase, self).setUp()
         # pylint: enable=bad-super-call
 
+        if self.pre_stop_hook is None:
+            self.pre_stop_hook = False
+
         # Random suffix per test.
         self.createRandomSuffix()
 
@@ -55,12 +63,9 @@ class GammaXdsKubernetesTestCase(xds_k8s_testcase.RegularXdsKubernetesTestCase):
         self.td = self.initTrafficDirectorManager()
 
         # Generate unique mesh name too.
-        self.mesh_name = f"{self.resource_prefix}-mesh-{self.resource_suffix}"
-        self.mesh_name_td = f"gketd-{self.mesh_name}"
-
-        # The gamma mesh doesn't use the port.
-        self.server_xds_host = f"{self.server_xds_host}-{self.resource_suffix}"
-        self.server_xds_port = None
+        self.frontend_service_name = (
+            f"{self.resource_prefix}-{self.resource_suffix.lower()}"
+        )
 
         # Test Server runner
         self.server_namespace = GammaServerRunner.make_namespace_name(
@@ -96,8 +101,7 @@ class GammaXdsKubernetesTestCase(xds_k8s_testcase.RegularXdsKubernetesTestCase):
             k8s.KubernetesNamespace(
                 self.k8s_api_manager, self.server_namespace
             ),
-            mesh_name=self.mesh_name,
-            server_xds_host=self.server_xds_host,
+            self.frontend_service_name,
             deployment_name=self.server_name,
             image_name=self.server_image,
             td_bootstrap_image=self.td_bootstrap_image,
@@ -108,11 +112,17 @@ class GammaXdsKubernetesTestCase(xds_k8s_testcase.RegularXdsKubernetesTestCase):
             network=self.network,
             debug_use_port_forwarding=self.debug_use_port_forwarding,
             enable_workload_identity=self.enable_workload_identity,
+            termination_grace_period_seconds=_TERMINATION_GRACE_PERIOD_SECONDS,
+            pre_stop_hook=self.pre_stop_hook,
         )
 
     def startTestClient(
         self, test_server: XdsTestServer, **kwargs
     ) -> XdsTestClient:
-        return super().startTestClient(
-            test_server, config_mesh=self.mesh_name_td
+        server_target = (
+            f"xds:///{self.frontend_service_name}"
+            f".{self.server_namespace}.svc.cluster.local"
+            f":{test_server.rpc_port}"
         )
+        kwargs.setdefault("generate_mesh_id", True)
+        return self._start_test_client(server_target=server_target, **kwargs)

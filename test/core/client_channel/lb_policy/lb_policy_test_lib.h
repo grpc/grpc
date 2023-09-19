@@ -495,6 +495,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
       void Orphan() override {
         absl::Notification notification;
+        ExecCtx exec_ctx;
         test_->work_serializer_->Run(
             [notification = &notification,
              picker = std::move(picker_)]() mutable {
@@ -699,11 +700,13 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   }
 
   void TearDown() override {
+    ExecCtx exec_ctx;
     fuzzing_ee_->FuzzingDone();
     // Make sure pickers (and transitively, subchannels) are unreffed before
     // destroying the fixture.
     WaitForWorkSerializerToFlush();
     work_serializer_.reset();
+    exec_ctx.Flush();
     // Note: Can't safely trigger this from inside the FakeHelper dtor,
     // because if there is a picker in the queue that is holding a ref
     // to the LB policy, that will prevent the LB policy from being
@@ -1202,6 +1205,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   }
 
   void WaitForWorkSerializerToFlush() {
+    ExecCtx exec_ctx;
     gpr_log(GPR_INFO, "waiting for WorkSerializer to flush...");
     absl::Notification notification;
     work_serializer_->Run([&]() { notification.Notify(); }, DEBUG_LOCATION);
@@ -1210,6 +1214,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   }
 
   void IncrementTimeBy(Duration duration) {
+    ExecCtx exec_ctx;
     fuzzing_ee_->TickForDuration(duration);
     // Flush WorkSerializer, in case the timer callback enqueued anything.
     WaitForWorkSerializerToFlush();

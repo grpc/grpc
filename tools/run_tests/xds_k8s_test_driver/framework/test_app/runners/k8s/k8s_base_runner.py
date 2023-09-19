@@ -399,6 +399,14 @@ class KubernetesBaseRunner(base_runner.BaseRunner, metaclass=ABCMeta):
         )
         return resource
 
+    def delete_pod_async(self, pod_name: str):
+        logger.info(
+            "Initiating deletion of pod %s in namespace %s",
+            pod_name,
+            self.k8s_namespace.name,
+        )
+        self.k8s_namespace.delete_pod_async(pod_name)
+
     def _create_deployment(self, template, **kwargs) -> k8s.V1Deployment:
         # Not making deployment_name an explicit kwarg to be consistent with
         # the rest of the _create_* methods, which pass kwargs as-is
@@ -443,75 +451,114 @@ class KubernetesBaseRunner(base_runner.BaseRunner, metaclass=ABCMeta):
         )
         return deployment
 
-    def _create_gamma_mesh(self, template, **kwargs) -> k8s.GammaMesh:
-        mesh = self._create_from_template(
-            template, custom_object=True, **kwargs
-        )
-        if not (isinstance(mesh, k8s.GammaMesh) and mesh.kind == "TDMesh"):
-            raise _RunnerError(
-                f"Expected ResourceInstance[TDMesh] to be created from"
-                f" manifest {template}"
-            )
-        if mesh.metadata.name != kwargs["mesh_name"]:
-            raise _RunnerError(
-                "ResourceInstance[TDMesh] created with unexpected name: "
-                f"{mesh.metadata.name}"
-            )
-        logger.debug(
-            "ResourceInstance[TDMesh] %s created at %s",
-            mesh.metadata.name,
-            mesh.metadata.creation_timestamp,
-        )
-        return mesh
-
-    def _create_gamma_route(self, template, **kwargs) -> k8s.GammaGrpcRoute:
+    def _create_gamma_route(self, template, **kwargs) -> k8s.GammaHttpRoute:
         route = self._create_from_template(
             template,
             custom_object=True,
             **kwargs,
         )
         if not (
-            isinstance(route, k8s.GammaGrpcRoute) and route.kind == "GRPCRoute"
+            isinstance(route, k8s.GammaHttpRoute) and route.kind == "HTTPRoute"
         ):
             raise _RunnerError(
-                f"Expected ResourceInstance[GRPCRoute] to be created from"
+                f"Expected ResourceInstance[HTTPRoute] to be created from"
                 f" manifest {template}"
             )
         if route.metadata.name != kwargs["route_name"]:
             raise _RunnerError(
-                "ResourceInstance[GRPCRoute] created with unexpected name: "
+                "ResourceInstance[HTTPRoute] created with unexpected name: "
                 f"{route.metadata.name}"
             )
         logger.debug(
-            "ResourceInstance[GRPCRoute] %s created at %s",
+            "ResourceInstance[HTTPRoute] %s created at %s",
             route.metadata.name,
             route.metadata.creation_timestamp,
         )
         return route
 
-    def _delete_gamma_mesh(self, name, wait_for_deletion=True):
-        logger.info("Deleting GAMMA mesh %s", name)
-        try:
-            self.k8s_namespace.delete_gamma_mesh(name)
-        except (retryers.RetryError, k8s.NotFound) as e:
-            logger.info("GAMMA mesh %s deletion failed: %s", name, e)
-            return
+    def _create_session_affinity_policy(
+        self, template, **kwargs
+    ) -> k8s.GcpSessionAffinityPolicy:
+        saPolicy = self._create_from_template(
+            template,
+            custom_object=True,
+            **kwargs,
+        )
+        if not (
+            isinstance(saPolicy, k8s.GcpSessionAffinityPolicy)
+            and saPolicy.kind == "GCPSessionAffinityPolicy"
+        ):
+            raise _RunnerError(
+                f"Expected ResourceInstance[GCPSessionAffinityPolicy] to be"
+                f" created from manifest {template}"
+            )
+        if saPolicy.metadata.name != kwargs["session_affinity_policy_name"]:
+            raise _RunnerError(
+                "ResourceInstance[GCPSessionAffinityPolicy] created with"
+                f" unexpected name: {saPolicy.metadata.name}"
+            )
+        logger.debug(
+            "ResourceInstance[GCPSessionAffinityPolicy] %s created at %s",
+            saPolicy.metadata.name,
+            saPolicy.metadata.creation_timestamp,
+        )
+        return saPolicy
 
-        if wait_for_deletion:
-            self.k8s_namespace.wait_for_get_gamma_mesh_deleted(name)
-        logger.debug("GAMMA mesh %s deleted", name)
+    def _create_session_affinity_filter(
+        self, template, **kwargs
+    ) -> k8s.GcpSessionAffinityFilter:
+        saFilter = self._create_from_template(
+            template,
+            custom_object=True,
+            **kwargs,
+        )
+        if not (
+            isinstance(saFilter, k8s.GcpSessionAffinityFilter)
+            and saFilter.kind == "GCPSessionAffinityFilter"
+        ):
+            raise _RunnerError(
+                f"Expected ResourceInstance[GCPSessionAffinityFilter] to be"
+                f" created from manifest {template}"
+            )
+        if saFilter.metadata.name != kwargs["session_affinity_filter_name"]:
+            raise _RunnerError(
+                "ResourceInstance[GCPSessionAffinityFilter] created with"
+                f" unexpected name: {saFilter.metadata.name}"
+            )
+        logger.debug(
+            "ResourceInstance[GCPSessionAffinityFilter] %s created at %s",
+            saFilter.metadata.name,
+            saFilter.metadata.creation_timestamp,
+        )
+        return saFilter
 
-    def _delete_gamma_route(self, name, wait_for_deletion=True):
-        logger.info("Deleting GRPCRoute %s", name)
-        try:
-            self.k8s_namespace.delete_gamma_route(name)
-        except (retryers.RetryError, k8s.NotFound) as e:
-            logger.info("GRPCRoute %s deletion failed: %s", name, e)
-            return
-
-        if wait_for_deletion:
-            self.k8s_namespace.wait_for_get_gamma_route_deleted(name)
-        logger.debug("GRPCRoute %s deleted", name)
+    def _create_backend_policy(
+        self, template, **kwargs
+    ) -> k8s.GcpBackendPolicy:
+        be_policy = self._create_from_template(
+            template,
+            custom_object=True,
+            **kwargs,
+        )
+        if not (
+            isinstance(be_policy, k8s.GcpBackendPolicy)
+            and be_policy.kind == "GCPBackendPolicy"
+        ):
+            raise _RunnerError(
+                f"Expected ResourceInstance[GCPBackendPolicy] to be"
+                f" created from manifest {template}"
+            )
+        if be_policy.metadata.name != kwargs["be_policy_name"]:
+            raise _RunnerError(
+                "ResourceInstance[GCPBackendPolicy] created with"
+                f" unexpected name: {be_policy.metadata.name}"
+            )
+        logger.debug(
+            "ResourceInstance[GCPBackendPolicy] %s created at %s",
+            be_policy.metadata.name,
+            be_policy.metadata.creation_timestamp,
+        )
+        return be_policy
 
     def _create_service(self, template, **kwargs) -> k8s.V1Service:
         service = self._create_from_template(template, **kwargs)
@@ -530,6 +577,62 @@ class KubernetesBaseRunner(base_runner.BaseRunner, metaclass=ABCMeta):
             service.metadata.creation_timestamp,
         )
         return service
+
+    def _delete_gamma_route(self, name, wait_for_deletion=True):
+        logger.info("Deleting HTTPRoute %s", name)
+        try:
+            self.k8s_namespace.delete_gamma_route(name)
+        except (retryers.RetryError, k8s.NotFound) as e:
+            logger.info("HTTPRoute %s deletion failed: %s", name, e)
+            return
+
+        if wait_for_deletion:
+            self.k8s_namespace.wait_for_get_gamma_route_deleted(name)
+        logger.debug("HTTPRoute %s deleted", name)
+
+    def _delete_session_affinity_policy(self, name, wait_for_deletion=True):
+        logger.info("Deleting GCPSessionAffinityPolicy %s", name)
+        try:
+            self.k8s_namespace.delete_session_affinity_policy(name)
+        except (retryers.RetryError, k8s.NotFound) as e:
+            logger.info(
+                "GCPSessionAffinityPolicy %s deletion failed: %s", name, e
+            )
+            return
+
+        if wait_for_deletion:
+            self.k8s_namespace.wait_for_get_session_affinity_policy_deleted(
+                name
+            )
+        logger.debug("GCPSessionAffinityPolicy %s deleted", name)
+
+    def _delete_session_affinity_filter(self, name, wait_for_deletion=True):
+        logger.info("Deleting GCPSessionAffinityFilter %s", name)
+        try:
+            self.k8s_namespace.delete_session_affinity_filter(name)
+        except (retryers.RetryError, k8s.NotFound) as e:
+            logger.info(
+                "GCPSessionAffinityFilter %s deletion failed: %s", name, e
+            )
+            return
+
+        if wait_for_deletion:
+            self.k8s_namespace.wait_for_get_session_affinity_filter_deleted(
+                name
+            )
+        logger.debug("GCPSessionAffinityFilter %s deleted", name)
+
+    def _delete_backend_policy(self, name, wait_for_deletion=True):
+        logger.info("Deleting GCPBackendPolicy %s", name)
+        try:
+            self.k8s_namespace.delete_backend_policy(name)
+        except (retryers.RetryError, k8s.NotFound) as e:
+            logger.info("GGCPBackendPolicy %s deletion failed: %s", name, e)
+            return
+
+        if wait_for_deletion:
+            self.k8s_namespace.wait_for_get_backend_policy_deleted(name)
+        logger.debug("GCPBackendPolicy %s deleted", name)
 
     def _delete_deployment(self, name, wait_for_deletion=True):
         logger.info("Deleting deployment %s", name)
