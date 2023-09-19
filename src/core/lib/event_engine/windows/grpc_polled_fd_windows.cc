@@ -14,7 +14,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/event_engine/windows/grpc_polled_fd_windows.h"
+#include "src/core/lib/iomgr/port.h"
+
+#if GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
 
 #include <winsock2.h>
 
@@ -28,6 +30,7 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/event_engine/ares_resolver.h"
 #include "src/core/lib/event_engine/grpc_polled_fd.h"
+#include "src/core/lib/event_engine/windows/grpc_polled_fd_windows.h"
 #include "src/core/lib/event_engine/windows/win_socket.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -699,3 +702,5 @@ int GrpcPolledFdFactoryWindows::CloseSocket(SOCKET s, void* user_data) {
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
+
+#endif  // GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)

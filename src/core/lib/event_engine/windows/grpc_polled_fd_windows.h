@@ -17,6 +17,10 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/iomgr/port.h"  // IWYU pragma: keep
+
+#if GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
+
 #include <memory>
 
 #include <ares.h>
@@ -198,5 +202,7 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
+
+#endif  // GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
 
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_WINDOWS_ENGINE_GRPC_POLLED_FD_WINDOWS_H
