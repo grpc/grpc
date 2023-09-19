@@ -65,7 +65,8 @@ class GrpcPolledFdFactory {
   // Optionally initializes the GrpcPolledFdFactory with a grpc_core::Mutex*
   // for synchronization between the AresResolver and the GrpcPolledFds. The
   // Windows implementation overrides this.
-  virtual void Initialize(grpc_core::Mutex* mutex, EventEngine* event_engine) {}
+  virtual void Initialize(grpc_core::Mutex* mutex,
+                          EventEngine* event_engine) = 0;
   // Creates a new wrapped fd for the current platform
   virtual GrpcPolledFd* NewGrpcPolledFdLocked(ares_socket_t as) = 0;
   // Optionally configures the ares channel after creation

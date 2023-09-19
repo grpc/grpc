@@ -104,6 +104,8 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
     }
   }
 
+  void Initialize(grpc_core::Mutex*, EventEngine*) override {}
+
   GrpcPolledFd* NewGrpcPolledFdLocked(ares_socket_t as) override {
     owned_fds_.insert(as);
     return new GrpcPolledFdPosix(
