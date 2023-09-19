@@ -2415,6 +2415,7 @@ grpc_cc_library(
     ],
     deps = [
         "common_event_engine_closures",
+        "error",
         "event_engine_time_util",
         "grpc_sockaddr",
         "iomgr_port",
