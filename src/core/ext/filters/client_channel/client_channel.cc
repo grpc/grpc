@@ -2868,6 +2868,7 @@ absl::optional<absl::Status> ClientChannel::LoadBalancedCall::PickSubchannel(
     grpc_error_handle error;
     bool pick_complete = PickSubchannelImpl(pickers.back().get(), &error);
     if (!pick_complete) {
+      RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> old_picker;
       MutexLock lock(&chand_->lb_mu_);
       // If picker has been swapped out since we grabbed it, try again.
       if (pickers.back() != chand_->picker_) {
@@ -2875,6 +2876,10 @@ absl::optional<absl::Status> ClientChannel::LoadBalancedCall::PickSubchannel(
           gpr_log(GPR_INFO,
                   "chand=%p lb_call=%p: pick not complete, but picker changed",
                   chand_, this);
+        }
+        if (IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled()) {
+          // Don't unref until after we release the mutex.
+          old_picker = std::move(pickers.back());
         }
         set_picker(chand_->picker_);
         continue;
