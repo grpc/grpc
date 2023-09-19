@@ -156,12 +156,9 @@ class MetadataExchangeTest
         EXPECT_EQ(
             absl::get<std::string>(attributes.at("csm.remote_workload_type")),
             "gcp_kubernetes_engine");
-        EXPECT_EQ(absl::get<std::string>(
-                      attributes.at("csm.remote_workload_pod_name")),
-                  "pod");
-        EXPECT_EQ(absl::get<std::string>(
-                      attributes.at("csm.remote_workload_container_name")),
-                  "container");
+        EXPECT_EQ(
+            absl::get<std::string>(attributes.at("csm.remote_workload_name")),
+            "workload");
         EXPECT_EQ(absl::get<std::string>(
                       attributes.at("csm.remote_workload_namespace_name")),
                   "namespace");
@@ -307,6 +304,7 @@ INSTANTIATE_TEST_SUITE_P(
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
-  grpc_core::SetEnv("GSM_CANONICAL_SERVICE_NAME", "canonical_service");
+  grpc_core::SetEnv("CSM_WORKLOAD_NAME", "workload");
+  grpc_core::SetEnv("CSM_CANONICAL_SERVICE_NAME", "canonical_service");
   return RUN_ALL_TESTS();
 }
