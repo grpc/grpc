@@ -32,10 +32,10 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/load_balancing/delegating_helper.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
 #include "src/core/lib/load_balancing/subchannel_interface.h"
-#include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
 namespace grpc_core {

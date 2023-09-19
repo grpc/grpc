@@ -65,6 +65,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
@@ -512,7 +513,7 @@ absl::StatusOr<EndpointAddressesList> XdsOverrideHostLb::UpdateAddressMap(
     }
     return endpoints;
   }
-// FIXME: need to handle multiple addresses per endpoint
+  // FIXME: need to handle multiple addresses per endpoint
   EndpointAddressesList return_value;
   std::map<const std::string, XdsHealthStatus> addresses_for_map;
   for (const auto& endpoint : *endpoints) {

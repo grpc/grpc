@@ -42,11 +42,13 @@
 #include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 #include "test/core/client_channel/lb_policy/lb_policy_test_lib.h"
 #include "test/core/util/test_config.h"
 
@@ -154,9 +156,9 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
     return absl::StrJoin(pick_map, ",", absl::PairFormatter("="));
   }
 
-  static BackendMetricData MakeBackendMetricData(
-      double app_utilization, double qps, double eps,
-      double cpu_utilization = 0) {
+  static BackendMetricData MakeBackendMetricData(double app_utilization,
+                                                 double qps, double eps,
+                                                 double cpu_utilization = 0) {
     BackendMetricData b;
     b.cpu_utilization = cpu_utilization;
     b.application_utilization = app_utilization;
@@ -911,8 +913,7 @@ TEST_F(WeightedRoundRobinTest, MultipleAddressesPerEndpoint) {
   subchannel1_1->SetConnectivityState(GRPC_CHANNEL_READY);
   picker = WaitForRoundRobinListChange(
       {kEndpoint2Addresses[0], kEndpoint3Addresses[0]},
-      {kEndpoint1Addresses[1], kEndpoint2Addresses[0],
-       kEndpoint3Addresses[0]});
+      {kEndpoint1Addresses[1], kEndpoint2Addresses[0], kEndpoint3Addresses[0]});
   // No more connection attempts triggered.
   EXPECT_FALSE(subchannel1_0->ConnectionRequested());
   EXPECT_FALSE(subchannel1_1->ConnectionRequested());

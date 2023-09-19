@@ -49,6 +49,7 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/load_balancing/subchannel_interface.h"
 #include "src/core/lib/resolver/endpoint_addresses.h"
 
