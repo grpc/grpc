@@ -22,7 +22,6 @@
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -129,15 +128,13 @@ TEST_F(RoundRobinTest, MultipleAddressesPerEndpoint) {
   subchannel1_0->SetConnectivityState(GRPC_CHANNEL_IDLE);
   EXPECT_FALSE(subchannel1_0->ConnectionRequested());
   // Endpoint 1 switches to a different address.
-  ExpectEndpointAddressChange(
-      kEndpoint1Addresses, 1, 0,
-      [&]() {
-        // RR will remove the endpoint from the rotation when it becomes
-        // disconnected.
-        WaitForRoundRobinListChange(
-            {kEndpoint1Addresses[1], kEndpoint2Addresses[0]},
-            {kEndpoint2Addresses[0]});
-      });
+  ExpectEndpointAddressChange(kEndpoint1Addresses, 1, 0, [&]() {
+    // RR will remove the endpoint from the rotation when it becomes
+    // disconnected.
+    WaitForRoundRobinListChange(
+        {kEndpoint1Addresses[1], kEndpoint2Addresses[0]},
+        {kEndpoint2Addresses[0]});
+  });
   // Then RR will re-add the endpoint with the new address.
   WaitForRoundRobinListChange({kEndpoint2Addresses[0]},
                               {kEndpoint1Addresses[0], kEndpoint2Addresses[0]});

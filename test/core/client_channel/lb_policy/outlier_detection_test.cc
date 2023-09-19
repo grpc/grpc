@@ -315,13 +315,11 @@ TEST_F(OutlierDetectionTest, MultipleAddressesPerEndpoint) {
   // Do the same thing for the sentinel endpoint, so that we
   // know that the LB policy has seen the address change for the ejected
   // endpoint.
-  ExpectEndpointAddressChange(
-      sentinel_endpoint_addresses, 0, 1,
-      [&]() {
-        WaitForRoundRobinListChange(
-            {sentinel_endpoint_addresses[0], unmodified_endpoint_address},
-            {unmodified_endpoint_address});
-      });
+  ExpectEndpointAddressChange(sentinel_endpoint_addresses, 0, 1, [&]() {
+    WaitForRoundRobinListChange(
+        {sentinel_endpoint_addresses[0], unmodified_endpoint_address},
+        {unmodified_endpoint_address});
+  });
   WaitForRoundRobinListChange(
       {unmodified_endpoint_address},
       {sentinel_endpoint_addresses[1], unmodified_endpoint_address});
