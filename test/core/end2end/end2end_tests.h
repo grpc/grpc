@@ -82,6 +82,8 @@
 #define FEATURE_MASK_IS_MINSTACK (1 << 11)
 #define FEATURE_MASK_IS_SECURE (1 << 12)
 #define FEATURE_MASK_DO_NOT_FUZZ (1 << 13)
+// Exclude this fixture from experiment runs
+#define FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS (1 << 14)
 
 #define FAIL_AUTH_CHECK_SERVER_ARG_NAME "fail_auth_check"
 
