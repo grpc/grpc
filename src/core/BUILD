@@ -2101,6 +2101,7 @@ grpc_cc_library(
         "event_engine_trace",
         "event_engine_utils",
         "init_internally",
+        "iomgr_port",
         "posix_event_engine_timer_manager",
         "time",
         "windows_endpoint",
@@ -2414,7 +2415,6 @@ grpc_cc_library(
     ],
     deps = [
         "common_event_engine_closures",
-        "error",
         "event_engine_time_util",
         "grpc_sockaddr",
         "iomgr_port",
@@ -2422,6 +2422,7 @@ grpc_cc_library(
         "posix_event_engine_event_poller",
         "posix_event_engine_tcp_socket_utils",
         "resolved_address",
+        "slice",
         "windows_iocp",
         "//:debug_location",
         "//:event_engine_base_hdrs",

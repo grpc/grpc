@@ -1469,6 +1469,7 @@ LIBGRPC_SRC = \
     src/core/lib/event_engine/time_util.cc \
     src/core/lib/event_engine/trace.cc \
     src/core/lib/event_engine/utils.cc \
+    src/core/lib/event_engine/windows/grpc_polled_fd_windows.cc \
     src/core/lib/event_engine/windows/iocp.cc \
     src/core/lib/event_engine/windows/win_socket.cc \
     src/core/lib/event_engine/windows/windows_endpoint.cc \
@@ -2036,6 +2037,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/event_engine/time_util.cc \
     src/core/lib/event_engine/trace.cc \
     src/core/lib/event_engine/utils.cc \
+    src/core/lib/event_engine/windows/grpc_polled_fd_windows.cc \
     src/core/lib/event_engine/windows/iocp.cc \
     src/core/lib/event_engine/windows/win_socket.cc \
     src/core/lib/event_engine/windows/windows_endpoint.cc \

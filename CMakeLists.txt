@@ -2208,6 +2208,7 @@ add_library(grpc
   src/core/lib/event_engine/time_util.cc
   src/core/lib/event_engine/trace.cc
   src/core/lib/event_engine/utils.cc
+  src/core/lib/event_engine/windows/grpc_polled_fd_windows.cc
   src/core/lib/event_engine/windows/iocp.cc
   src/core/lib/event_engine/windows/win_socket.cc
   src/core/lib/event_engine/windows/windows_endpoint.cc
@@ -2914,6 +2915,7 @@ add_library(grpc_unsecure
   src/core/lib/event_engine/time_util.cc
   src/core/lib/event_engine/trace.cc
   src/core/lib/event_engine/utils.cc
+  src/core/lib/event_engine/windows/grpc_polled_fd_windows.cc
   src/core/lib/event_engine/windows/iocp.cc
   src/core/lib/event_engine/windows/win_socket.cc
   src/core/lib/event_engine/windows/windows_endpoint.cc
@@ -4825,6 +4827,7 @@ add_library(grpc_authorization_provider
   src/core/lib/event_engine/time_util.cc
   src/core/lib/event_engine/trace.cc
   src/core/lib/event_engine/utils.cc
+  src/core/lib/event_engine/windows/grpc_polled_fd_windows.cc
   src/core/lib/event_engine/windows/iocp.cc
   src/core/lib/event_engine/windows/win_socket.cc
   src/core/lib/event_engine/windows/windows_endpoint.cc
@@ -17598,6 +17601,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     test/core/event_engine/test_suite/tests/timer_test.cc
     test/core/util/fake_udp_and_tcp_server.cc
     test/cpp/util/get_grpc_test_runfile_dir.cc
+    test/cpp/util/windows/manifest_file.cc
   )
   target_compile_features(posix_event_engine_test PUBLIC cxx_std_14)
   target_include_directories(posix_event_engine_test
@@ -23823,6 +23827,7 @@ add_executable(test_core_transport_chaotic_good_frame_test
   src/core/lib/event_engine/time_util.cc
   src/core/lib/event_engine/trace.cc
   src/core/lib/event_engine/utils.cc
+  src/core/lib/event_engine/windows/grpc_polled_fd_windows.cc
   src/core/lib/event_engine/windows/iocp.cc
   src/core/lib/event_engine/windows/win_socket.cc
   src/core/lib/event_engine/windows/windows_endpoint.cc

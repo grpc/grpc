@@ -1157,6 +1157,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/event_engine/trace.h )
   s.files += %w( src/core/lib/event_engine/utils.cc )
   s.files += %w( src/core/lib/event_engine/utils.h )
+  s.files += %w( src/core/lib/event_engine/windows/grpc_polled_fd_windows.cc )
+  s.files += %w( src/core/lib/event_engine/windows/grpc_polled_fd_windows.h )
   s.files += %w( src/core/lib/event_engine/windows/iocp.cc )
   s.files += %w( src/core/lib/event_engine/windows/iocp.h )
   s.files += %w( src/core/lib/event_engine/windows/win_socket.cc )

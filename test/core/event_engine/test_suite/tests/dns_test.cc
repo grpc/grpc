@@ -37,7 +37,6 @@
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "test/core/event_engine/test_suite/event_engine_test_framework.h"

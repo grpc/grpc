@@ -14,8 +14,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/port.h"
-
 #if GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
 
 #include <winsock2.h>
@@ -25,7 +23,7 @@
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 
-#include "grpc/support/log_windows.h"
+#include <grpc/support/log_windows.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/event_engine/ares_resolver.h"

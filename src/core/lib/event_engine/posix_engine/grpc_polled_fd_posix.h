@@ -42,7 +42,6 @@
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
-#include "src/core/lib/iomgr/error.h"
 
 namespace grpc_event_engine {
 namespace experimental {

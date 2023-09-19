@@ -1139,6 +1139,8 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/trace.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/utils.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/utils.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/windows/grpc_polled_fd_windows.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/windows/grpc_polled_fd_windows.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/windows/iocp.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/windows/iocp.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/windows/win_socket.cc" role="src" />

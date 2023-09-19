@@ -17,7 +17,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "grpc/event_engine/event_engine.h"
+#include <grpc/event_engine/event_engine.h>
 
 #if GRPC_ARES == 1
 
@@ -27,7 +27,6 @@
 #include "absl/status/status.h"
 
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/iomgr/error.h"
 
 namespace grpc_event_engine {
 namespace experimental {

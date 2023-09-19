@@ -1151,6 +1151,8 @@ let package = Package(
         "src/core/lib/event_engine/trace.h",
         "src/core/lib/event_engine/utils.cc",
         "src/core/lib/event_engine/utils.h",
+        "src/core/lib/event_engine/windows/grpc_polled_fd_windows.cc",
+        "src/core/lib/event_engine/windows/grpc_polled_fd_windows.h",
         "src/core/lib/event_engine/windows/iocp.cc",
         "src/core/lib/event_engine/windows/iocp.h",
         "src/core/lib/event_engine/windows/win_socket.cc",
