@@ -513,7 +513,8 @@ absl::StatusOr<EndpointAddressesList> XdsOverrideHostLb::UpdateAddressMap(
     }
     return endpoints;
   }
-  // FIXME: need to handle multiple addresses per endpoint
+  // TODO(roth): As we clarify this part of the dualstack design, add
+  // support for multiple addresses per endpoint.
   EndpointAddressesList return_value;
   std::map<const std::string, XdsHealthStatus> addresses_for_map;
   for (const auto& endpoint : *endpoints) {
