@@ -88,6 +88,8 @@ inline bool IsJitterMaxIdleEnabled() { return true; }
 inline bool IsRoundRobinDelegateToPickFirstEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WRR_DELEGATE_TO_PICK_FIRST
 inline bool IsWrrDelegateToPickFirstEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_COMBINER_OFFLOAD_TO_EVENT_ENGINE
+inline bool IsCombinerOffloadToEventEngineEnabled() { return true; }
 
 #elif defined(GPR_WINDOWS)
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -121,6 +123,8 @@ inline bool IsJitterMaxIdleEnabled() { return true; }
 inline bool IsRoundRobinDelegateToPickFirstEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WRR_DELEGATE_TO_PICK_FIRST
 inline bool IsWrrDelegateToPickFirstEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_COMBINER_OFFLOAD_TO_EVENT_ENGINE
+inline bool IsCombinerOffloadToEventEngineEnabled() { return true; }
 
 #else
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -154,6 +158,8 @@ inline bool IsJitterMaxIdleEnabled() { return true; }
 inline bool IsRoundRobinDelegateToPickFirstEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WRR_DELEGATE_TO_PICK_FIRST
 inline bool IsWrrDelegateToPickFirstEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_COMBINER_OFFLOAD_TO_EVENT_ENGINE
+inline bool IsCombinerOffloadToEventEngineEnabled() { return true; }
 #endif
 
 #else
@@ -183,6 +189,7 @@ enum ExperimentIds {
   kExperimentIdJitterMaxIdle,
   kExperimentIdRoundRobinDelegateToPickFirst,
   kExperimentIdWrrDelegateToPickFirst,
+  kExperimentIdCombinerOffloadToEventEngine,
   kNumExperiments
 };
 #define GRPC_EXPERIMENT_IS_INCLUDED_TCP_FRAME_SIZE_TUNING
@@ -284,6 +291,10 @@ inline bool IsRoundRobinDelegateToPickFirstEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_WRR_DELEGATE_TO_PICK_FIRST
 inline bool IsWrrDelegateToPickFirstEnabled() {
   return IsExperimentEnabled(kExperimentIdWrrDelegateToPickFirst);
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_COMBINER_OFFLOAD_TO_EVENT_ENGINE
+inline bool IsCombinerOffloadToEventEngineEnabled() {
+  return IsExperimentEnabled(kExperimentIdCombinerOffloadToEventEngine);
 }
 
 extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];

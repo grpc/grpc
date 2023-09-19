@@ -73,7 +73,7 @@
     # not tested on iOS at all
     ios: broken
     posix: false
-    # TODO(yijiem): resolve when the WindowsEventEngine DNS Resolver is 
+    # TODO(yijiem): resolve when the WindowsEventEngine DNS Resolver is
     # implemented
     windows: broken
 - name: work_stealing
@@ -97,4 +97,6 @@
 - name: round_robin_delegate_to_pick_first
   default: true
 - name: wrr_delegate_to_pick_first
+  default: true
+- name: combiner_offload_to_event_engine
   default: true

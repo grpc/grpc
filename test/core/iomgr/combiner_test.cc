@@ -34,7 +34,9 @@
 
 TEST(CombinerTest, TestNoOp) {
   grpc_core::ExecCtx exec_ctx;
-  GRPC_COMBINER_UNREF(grpc_combiner_create(), "test_no_op");
+  GRPC_COMBINER_UNREF(grpc_combiner_create(
+                          grpc_event_engine::experimental::CreateEventEngine()),
+                      "test_no_op");
 }
 
 static void set_event_to_true(void* value, grpc_error_handle /*error*/) {
@@ -42,7 +44,8 @@ static void set_event_to_true(void* value, grpc_error_handle /*error*/) {
 }
 
 TEST(CombinerTest, TestExecuteOne) {
-  grpc_core::Combiner* lock = grpc_combiner_create();
+  grpc_core::Combiner* lock = grpc_combiner_create(
+      grpc_event_engine::experimental::CreateEventEngine());
   gpr_event done;
   gpr_event_init(&done);
   grpc_core::ExecCtx exec_ctx;
@@ -94,7 +97,8 @@ static void execute_many_loop(void* a) {
 }
 
 TEST(CombinerTest, TestExecuteMany) {
-  grpc_core::Combiner* lock = grpc_combiner_create();
+  grpc_core::Combiner* lock = grpc_combiner_create(
+      grpc_event_engine::experimental::CreateEventEngine());
   grpc_core::Thread thds[10];
   thd_args ta[GPR_ARRAY_SIZE(thds)];
   for (size_t i = 0; i < GPR_ARRAY_SIZE(thds); i++) {
@@ -125,7 +129,8 @@ static void add_finally(void* arg, grpc_error_handle /*error*/) {
 }
 
 TEST(CombinerTest, TestExecuteFinally) {
-  grpc_core::Combiner* lock = grpc_combiner_create();
+  grpc_core::Combiner* lock = grpc_combiner_create(
+      grpc_event_engine::experimental::CreateEventEngine());
   grpc_core::ExecCtx exec_ctx;
   gpr_event_init(&got_in_finally);
   lock->Run(GRPC_CLOSURE_CREATE(add_finally, lock, nullptr), absl::OkStatus());
@@ -137,7 +142,8 @@ TEST(CombinerTest, TestExecuteFinally) {
 }
 
 TEST(CombinerTest, TestForceOffload) {
-  grpc_core::Combiner* lock = grpc_combiner_create();
+  grpc_core::Combiner* lock = grpc_combiner_create(
+      grpc_event_engine::experimental::CreateEventEngine());
   grpc_core::ExecCtx exec_ctx;
   grpc_core::Notification done;
   const auto start_thread = std::this_thread::get_id();
