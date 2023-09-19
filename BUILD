@@ -83,27 +83,27 @@ config_setting(
 
 config_setting(
     name = "android",
-    values = {"crosstool_top": "//external:android/crosstool"},
+    constraint_values = ["@platforms//os:android"],
 )
 
 config_setting(
     name = "macos",
-    values = {"apple_platform_type": "macos"},
+    constraint_values = ["@platforms//os:macos"],
 )
 
 config_setting(
     name = "ios",
-    values = {"apple_platform_type": "ios"},
+    constraint_values = ["@platforms//os:ios"],
 )
 
 config_setting(
     name = "tvos",
-    values = {"apple_platform_type": "tvos"},
+    constraint_values = ["@platforms//os:tvos"],
 )
 
 config_setting(
     name = "watchos",
-    values = {"apple_platform_type": "watchos"},
+    constraint_values = ["@platforms//os:watchos"],
 )
 
 config_setting(
