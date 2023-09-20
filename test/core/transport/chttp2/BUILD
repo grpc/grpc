@@ -32,6 +32,7 @@ grpc_proto_fuzzer(
         "//:grpc",
         "//test/core/util:fuzz_config_vars",
         "//test/core/util:grpc_test_util",
+        "//src/core:random",
     ],
 )
 
@@ -47,6 +48,7 @@ grpc_proto_fuzzer(
         "//:grpc",
         "//test/core/util:fuzz_config_vars",
         "//test/core/util:grpc_test_util",
+        "//src/core:random",
     ],
 )
 

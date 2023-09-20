@@ -15,7 +15,7 @@
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <grpc/support/log.h>
+
 #include <algorithm>
 #include <memory>
 #include <string>
@@ -23,9 +23,13 @@
 #include <utility>
 #include <vector>
 
+#include "absl/random/bit_gen_ref.h"
 #include "absl/status/status.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
+
+#include <grpc/support/log.h>
+
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder_table.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
@@ -45,7 +49,6 @@
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/transport/chttp2/hpack_sync_fuzzer.pb.h"
 #include "test/core/util/fuzz_config_vars.h"
-#include "absl/random/bit_gen_ref.h"
 
 bool squelch = true;
 bool leak_check = true;
