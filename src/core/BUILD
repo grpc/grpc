@@ -4099,6 +4099,7 @@ grpc_cc_library(
     hdrs = [
         "lib/backoff/random_early_detection.h",
     ],
+    external_deps = ["absl/random:distributions"],
     deps = [
         "random",
         "//:gpr_platform",
@@ -5908,6 +5909,7 @@ grpc_cc_library(
         "bitset",
         "chaotic_good_frame_header",
         "no_destruct",
+        "random",
         "slice",
         "slice_buffer",
         "status_helper",

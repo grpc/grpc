@@ -46,6 +46,7 @@ grpc_cc_test(
     name = "frame_test",
     srcs = ["frame_test.cc"],
     external_deps = [
+        "absl/random",
         "absl/status",
         "absl/status:statusor",
         "gtest",
@@ -71,6 +72,7 @@ grpc_fuzzer(
         "//src/core:chaotic_good_frame_header",
         "//src/core:event_engine_memory_allocator",
         "//src/core:memory_quota",
+        "//src/core:random",
         "//src/core:resource_quota",
         "//src/core:slice",
         "//src/core:slice_buffer",
