@@ -539,8 +539,6 @@ def update_test_metadata_with_transitive_metadata(
         if "//external:gtest" in bazel_rule["_TRANSITIVE_DEPS"]:
             # run_tests.py checks the "gtest" property to see if test should be run via gtest.
             lib_dict["gtest"] = True
-            # TODO: this might be incorrect categorization of the test...
-            lib_dict["language"] = "c++"
 
 
 def _get_transitive_protos(bazel_rules, t):
