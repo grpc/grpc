@@ -5518,6 +5518,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       third_party/googletest/googletest
       third_party/googletest/googlemock/include
       third_party/googletest/googlemock
+      ${_gRPC_PROTO_GENS_DIR}
   )
 
   target_link_libraries(alts_concurrent_connectivity_test
@@ -6673,6 +6674,7 @@ target_include_directories(binder_server_test
     third_party/googletest/googletest
     third_party/googletest/googlemock/include
     third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(binder_server_test
@@ -6769,6 +6771,7 @@ target_include_directories(binder_transport_test
     third_party/googletest/googletest
     third_party/googletest/googlemock/include
     third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(binder_transport_test
@@ -7801,6 +7804,7 @@ target_include_directories(channel_trace_test
     third_party/googletest/googletest
     third_party/googletest/googlemock/include
     third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(channel_trace_test
@@ -7834,6 +7838,7 @@ target_include_directories(channelz_registry_test
     third_party/googletest/googletest
     third_party/googletest/googlemock/include
     third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(channelz_registry_test
@@ -8027,6 +8032,7 @@ target_include_directories(client_auth_filter_test
     third_party/googletest/googletest
     third_party/googletest/googlemock/include
     third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(client_auth_filter_test
@@ -8066,6 +8072,7 @@ target_include_directories(client_authority_filter_test
     third_party/googletest/googletest
     third_party/googletest/googlemock/include
     third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(client_authority_filter_test
@@ -8249,6 +8256,7 @@ target_include_directories(client_transport_test
     third_party/googletest/googletest
     third_party/googletest/googlemock/include
     third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(client_transport_test
@@ -9200,6 +9208,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       third_party/googletest/googletest
       third_party/googletest/googlemock/include
       third_party/googletest/googlemock
+      ${_gRPC_PROTO_GENS_DIR}
   )
 
   target_link_libraries(end2end_binder_transport_test
@@ -9297,6 +9306,7 @@ target_include_directories(endpoint_binder_pool_test
     third_party/googletest/googletest
     third_party/googletest/googlemock/include
     third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(endpoint_binder_pool_test
@@ -9900,6 +9910,7 @@ target_include_directories(fake_binder_test
     third_party/googletest/googletest
     third_party/googletest/googlemock/include
     third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(fake_binder_test
@@ -10248,6 +10259,7 @@ target_include_directories(filter_test_test
     third_party/googletest/googletest
     third_party/googletest/googlemock/include
     third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(filter_test_test
@@ -10661,6 +10673,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       third_party/googletest/googletest
       third_party/googletest/googlemock/include
       third_party/googletest/googlemock
+      ${_gRPC_PROTO_GENS_DIR}
   )
 
   target_link_libraries(fuzzing_event_engine_test
@@ -10729,6 +10742,7 @@ target_include_directories(google_c2p_resolver_test
     third_party/googletest/googletest
     third_party/googletest/googlemock/include
     third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(google_c2p_resolver_test
@@ -11918,6 +11932,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       third_party/googletest/googletest
       third_party/googletest/googlemock/include
       third_party/googletest/googlemock
+      ${_gRPC_PROTO_GENS_DIR}
   )
 
   target_link_libraries(httpcli_test
@@ -11954,6 +11969,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       third_party/googletest/googletest
       third_party/googletest/googlemock/include
       third_party/googletest/googlemock
+      ${_gRPC_PROTO_GENS_DIR}
   )
 
   target_link_libraries(httpscli_test
@@ -14011,6 +14027,7 @@ target_include_directories(outlier_detection_test
     third_party/googletest/googletest
     third_party/googletest/googlemock/include
     third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(outlier_detection_test
@@ -14392,6 +14409,7 @@ target_include_directories(pick_first_test
     third_party/googletest/googletest
     third_party/googletest/googlemock/include
     third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(pick_first_test
@@ -14891,6 +14909,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       third_party/googletest/googletest
       third_party/googletest/googlemock/include
       third_party/googletest/googlemock
+      ${_gRPC_PROTO_GENS_DIR}
   )
 
   target_link_libraries(posix_event_engine_test
@@ -17316,6 +17335,7 @@ target_include_directories(round_robin_test
     third_party/googletest/googletest
     third_party/googletest/googlemock/include
     third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(round_robin_test
@@ -19292,6 +19312,7 @@ target_include_directories(test_core_channel_channelz_test
     third_party/googletest/googletest
     third_party/googletest/googlemock/include
     third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(test_core_channel_channelz_test
@@ -20476,6 +20497,7 @@ target_include_directories(too_many_pings_test
     third_party/googletest/googletest
     third_party/googletest/googlemock/include
     third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(too_many_pings_test
@@ -20713,6 +20735,7 @@ target_include_directories(transport_stream_receiver_test
     third_party/googletest/googletest
     third_party/googletest/googlemock/include
     third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(transport_stream_receiver_test
@@ -21185,6 +21208,7 @@ target_include_directories(weighted_round_robin_test
     third_party/googletest/googletest
     third_party/googletest/googlemock/include
     third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(weighted_round_robin_test
@@ -21386,6 +21410,7 @@ target_include_directories(wire_reader_test
     third_party/googletest/googletest
     third_party/googletest/googlemock/include
     third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(wire_reader_test
@@ -21483,6 +21508,7 @@ target_include_directories(wire_writer_test
     third_party/googletest/googletest
     third_party/googletest/googlemock/include
     third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(wire_writer_test
@@ -21702,6 +21728,7 @@ target_include_directories(xds_audit_logger_registry_test
     third_party/googletest/googletest
     third_party/googletest/googlemock/include
     third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(xds_audit_logger_registry_test
@@ -21814,6 +21841,7 @@ target_include_directories(xds_client_test
     third_party/googletest/googletest
     third_party/googletest/googlemock/include
     third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(xds_client_test
@@ -21912,6 +21940,7 @@ target_include_directories(xds_cluster_resource_type_test
     third_party/googletest/googletest
     third_party/googletest/googlemock/include
     third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(xds_cluster_resource_type_test
@@ -21986,6 +22015,7 @@ target_include_directories(xds_common_types_test
     third_party/googletest/googletest
     third_party/googletest/googlemock/include
     third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(xds_common_types_test
@@ -22083,6 +22113,7 @@ target_include_directories(xds_endpoint_resource_type_test
     third_party/googletest/googletest
     third_party/googletest/googlemock/include
     third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(xds_endpoint_resource_type_test
@@ -22205,6 +22236,7 @@ target_include_directories(xds_http_filters_test
     third_party/googletest/googletest
     third_party/googletest/googlemock/include
     third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(xds_http_filters_test
@@ -22312,6 +22344,7 @@ target_include_directories(xds_lb_policy_registry_test
     third_party/googletest/googletest
     third_party/googletest/googlemock/include
     third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(xds_lb_policy_registry_test
@@ -22443,6 +22476,7 @@ target_include_directories(xds_listener_resource_type_test
     third_party/googletest/googletest
     third_party/googletest/googlemock/include
     third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(xds_listener_resource_type_test
@@ -22515,6 +22549,7 @@ target_include_directories(xds_override_host_test
     third_party/googletest/googletest
     third_party/googletest/googlemock/include
     third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(xds_override_host_test
@@ -22625,6 +22660,7 @@ target_include_directories(xds_route_config_resource_type_test
     third_party/googletest/googletest
     third_party/googletest/googlemock/include
     third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(xds_route_config_resource_type_test
