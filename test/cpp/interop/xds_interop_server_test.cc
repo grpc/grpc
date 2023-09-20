@@ -20,7 +20,6 @@
 #include <gtest/gtest.h>
 
 #include "absl/strings/str_format.h"
-#include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
 #include <grpcpp/grpcpp.h>
