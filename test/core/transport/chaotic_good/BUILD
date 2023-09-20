@@ -58,7 +58,10 @@ grpc_fuzzer(
     name = "frame_fuzzer",
     srcs = ["frame_fuzzer.cc"],
     corpus = "frame_fuzzer_corpus",
-    external_deps = ["absl/status:statusor"],
+    external_deps = [
+        "absl/random:mocking_bit_gen",
+        "absl/status:statusor",
+    ],
     language = "C++",
     tags = ["no_windows"],
     deps = [

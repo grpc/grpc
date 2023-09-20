@@ -17,6 +17,7 @@
 
 #include <memory>
 
+#include "absl/random/mocking_bit_gen.h"
 #include "absl/status/statusor.h"
 
 #include <grpc/event_engine/memory_allocator.h>
@@ -41,7 +42,10 @@ bool squelch = false;
 namespace grpc_core {
 namespace chaotic_good {
 
-uint64_t DeterministicBitSource() { return 42; };
+struct DeterministicBitGen : public std::numeric_limits<uint64_t> {
+  using result_type = uint64_t;
+  uint64_t operator()() { return 42; }
+};
 
 template <typename T>
 void AssertRoundTrips(const T& input, FrameType expected_frame_type) {
@@ -56,9 +60,9 @@ void AssertRoundTrips(const T& input, FrameType expected_frame_type) {
   GPR_ASSERT(header->type == expected_frame_type);
   T output;
   HPackParser hpack_parser;
-  auto deser =
-      output.Deserialize(&hpack_parser, header.value(),
-                         BitSourceRef(DeterministicBitSource), serialized);
+  DeterministicBitGen bitgen;
+  auto deser = output.Deserialize(&hpack_parser, header.value(),
+                                  absl::BitGenRef(bitgen), serialized);
   GPR_ASSERT(deser.ok());
   GPR_ASSERT(output == input);
 }
@@ -71,8 +75,9 @@ void FinishParseAndChecks(const FrameHeader& header, const uint8_t* data,
   HPackParser hpack_parser;
   SliceBuffer serialized;
   serialized.Append(Slice::FromCopiedBuffer(data, size));
-  auto deser = parsed.Deserialize(
-      &hpack_parser, header, BitSourceRef(DeterministicBitSource), serialized);
+  DeterministicBitGen bitgen;
+  auto deser = parsed.Deserialize(&hpack_parser, header,
+                                  absl::BitGenRef(bitgen), serialized);
   if (!deser.ok()) return;
   AssertRoundTrips(parsed, header.type);
 }

@@ -75,6 +75,7 @@ grpc_fuzzer(
         "absl/cleanup",
         "absl/status:statusor",
         "absl/status",
+        "absl/random:mocking_bit_gen",
     ],
     tags = ["no_windows"],
     uses_polling = False,

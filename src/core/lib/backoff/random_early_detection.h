@@ -38,7 +38,7 @@ class RandomEarlyDetection {
   bool MustReject(uint64_t size) { return size >= hard_limit_; }
 
   // Returns true if the item should be rejected.
-  bool Reject(uint64_t size, BitSourceRef bitsrc) const;
+  bool Reject(uint64_t size, absl::BitGenRef bitsrc) const;
 
   uint64_t soft_limit() const { return soft_limit_; }
   uint64_t hard_limit() const { return hard_limit_; }

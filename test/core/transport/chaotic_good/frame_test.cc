@@ -39,7 +39,7 @@ void AssertRoundTrips(const T input, FrameType expected_frame_type) {
   T output;
   HPackParser hpack_parser;
   auto deser = output.Deserialize(&hpack_parser, header.value(),
-                                  BitSourceRef(bitgen), serialized);
+                                  absl::BitGenRef(bitgen), serialized);
   EXPECT_TRUE(deser.ok()) << deser;
   EXPECT_EQ(output, input);
 }

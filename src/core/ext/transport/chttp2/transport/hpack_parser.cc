@@ -91,7 +91,7 @@ constexpr Base64InverseTable kBase64InverseTable;
 class HPackParser::Input {
  public:
   Input(grpc_slice_refcount* current_slice_refcount, const uint8_t* begin,
-        const uint8_t* end, BitSourceRef bitsrc, HpackParseResult& error)
+        const uint8_t* end, absl::BitGenRef bitsrc, HpackParseResult& error)
       : current_slice_refcount_(current_slice_refcount),
         begin_(begin),
         end_(end),
@@ -281,7 +281,7 @@ class HPackParser::Input {
   const uint8_t* frontier() const { return frontier_; }
 
   // Access the rng
-  BitSourceRef bitsrc() { return bitsrc_; }
+  absl::BitGenRef bitsrc() { return bitsrc_; }
 
  private:
   // Helper to set the error to out of range for ParseVarint
@@ -329,7 +329,7 @@ class HPackParser::Input {
   // continuing the connection so we need to see future opcodes after this bit).
   size_t skip_bytes_ = 0;
   // Random number generator
-  BitSourceRef bitsrc_;
+  absl::BitGenRef bitsrc_;
 };
 
 absl::string_view HPackParser::String::string_view() const {
@@ -1150,7 +1150,7 @@ void HPackParser::BeginFrame(grpc_metadata_batch* metadata_buffer,
 }
 
 grpc_error_handle HPackParser::Parse(
-    const grpc_slice& slice, bool is_last, BitSourceRef bitsrc,
+    const grpc_slice& slice, bool is_last, absl::BitGenRef bitsrc,
     CallTracerAnnotationInterface* call_tracer) {
   if (GPR_UNLIKELY(!unparsed_bytes_.empty())) {
     unparsed_bytes_.insert(unparsed_bytes_.end(), GRPC_SLICE_START_PTR(slice),

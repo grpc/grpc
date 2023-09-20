@@ -20,55 +20,32 @@
 #include <stddef.h>
 
 #include <cstdint>
+#include <limits>
 #include <vector>
 
+#include "absl/random/bit_gen_ref.h"
 #include "absl/random/random.h"
 
 namespace grpc_core {
 
-// Wrap a random number generator that's compatible with absl::BitGen (same
-// types, range) in a polymorphic reference type.
-// Allows for fuzzing of things that depend on rngs.
-class BitSourceRef {
- public:
-  using result_type = absl::BitGen::result_type;
-
-  BitSourceRef(const BitSourceRef&) = default;
-  BitSourceRef& operator=(const BitSourceRef&) = default;
-
-  BitSourceRef(BitSourceRef& other)
-      : BitSourceRef(const_cast<const BitSourceRef&>(other)) {}
-
-  template <typename T>
-  explicit BitSourceRef(T& source)
-      : ptr_(&source), impl_([](void* p) { return (*static_cast<T*>(p))(); }) {}
-  explicit BitSourceRef(uint64_t (*source)())
-      : ptr_(reinterpret_cast<void*>(source)),
-        impl_([](void* p) { return reinterpret_cast<uint64_t (*)()>(p)(); }) {}
-
-  static constexpr result_type min() { return absl::BitGen::min(); }
-  static constexpr result_type max() { return absl::BitGen::max(); }
-  result_type operator()() { return impl_(ptr_); }
-
- private:
-  void* ptr_;
-  result_type (*impl_)(void* ptr);
-};
-
 // Set of random numbers from a proto file (or other container) forming a bit
-// source.
-class ProtoBitSource {
+// source. Satisfies the requirements for a URNG.
+class ProtoBitSource : public std::numeric_limits<uint64_t> {
  public:
   template <typename SourceContainer>
   explicit ProtoBitSource(const SourceContainer& c) {
     for (auto r : c) {
-      results_.push_back(Clamp(r, BitSourceRef::min(), BitSourceRef::max()));
+      results_.push_back(r);
     }
   }
 
+  using result_type = uint64_t;
+
   uint64_t operator()() {
-    if (current_ == results_.size()) return 0;
-    uint64_t out = results_[current_];
+    // We loop through but increment by one each round, to guarantee to see all
+    // values eventually.
+    uint64_t out =
+        results_[current_ % results_.size()] + (current_ / results_.size());
     ++current_;
     return out;
   }

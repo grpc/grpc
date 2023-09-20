@@ -112,7 +112,8 @@ class FrameDeserializer {
 template <typename Metadata>
 absl::StatusOr<Arena::PoolPtr<Metadata>> ReadMetadata(
     HPackParser* parser, absl::StatusOr<SliceBuffer> maybe_slices,
-    uint32_t stream_id, bool is_header, bool is_client, BitSourceRef bitsrc) {
+    uint32_t stream_id, bool is_header, bool is_client,
+    absl::BitGenRef bitsrc) {
   if (!maybe_slices.ok()) return maybe_slices.status();
   auto& slices = *maybe_slices;
   Arena::PoolPtr<Metadata> metadata;
@@ -137,7 +138,7 @@ absl::StatusOr<Arena::PoolPtr<Metadata>> ReadMetadata(
 }  // namespace
 
 absl::Status SettingsFrame::Deserialize(HPackParser*, const FrameHeader& header,
-                                        BitSourceRef bitsrc,
+                                        absl::BitGenRef bitsrc,
                                         SliceBuffer& slice_buffer) {
   if (header.type != FrameType::kSettings) {
     return absl::InvalidArgumentError("Expected settings frame");
@@ -156,7 +157,7 @@ SliceBuffer SettingsFrame::Serialize(HPackCompressor*) const {
 
 absl::Status ClientFragmentFrame::Deserialize(HPackParser* parser,
                                               const FrameHeader& header,
-                                              BitSourceRef bitsrc,
+                                              absl::BitGenRef bitsrc,
                                               SliceBuffer& slice_buffer) {
   if (header.stream_id == 0) {
     return absl::InvalidArgumentError("Expected non-zero stream id");
@@ -196,7 +197,7 @@ SliceBuffer ClientFragmentFrame::Serialize(HPackCompressor* encoder) const {
 
 absl::Status ServerFragmentFrame::Deserialize(HPackParser* parser,
                                               const FrameHeader& header,
-                                              BitSourceRef bitsrc,
+                                              absl::BitGenRef bitsrc,
                                               SliceBuffer& slice_buffer) {
   if (header.stream_id == 0) {
     return absl::InvalidArgumentError("Expected non-zero stream id");
@@ -233,7 +234,7 @@ SliceBuffer ServerFragmentFrame::Serialize(HPackCompressor* encoder) const {
 }
 
 absl::Status CancelFrame::Deserialize(HPackParser*, const FrameHeader& header,
-                                      BitSourceRef bitsrc,
+                                      absl::BitGenRef bitsrc,
                                       SliceBuffer& slice_buffer) {
   if (header.type != FrameType::kCancel) {
     return absl::InvalidArgumentError("Expected cancel frame");

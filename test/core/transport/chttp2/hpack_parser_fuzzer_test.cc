@@ -119,7 +119,7 @@ DEFINE_PROTO_FUZZER(const hpack_parser_fuzzer::Msg& msg) {
         grpc_slice buffer =
             grpc_slice_from_copied_buffer(parse.data(), parse.size());
         auto err = parser->Parse(buffer, idx == frame.parse_size() - 1,
-                                 grpc_core::BitSourceRef(proto_bit_src),
+                                 absl::BitGenRef(proto_bit_src),
                                  /*call_tracer=*/nullptr);
         grpc_slice_unref(buffer);
         stop_buffering_ctr--;

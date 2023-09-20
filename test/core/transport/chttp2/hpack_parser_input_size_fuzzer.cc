@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <limits>
 #include <memory>
 #include <string>
 
@@ -51,7 +52,10 @@ bool leak_check = true;
 namespace grpc_core {
 namespace {
 
-uint64_t DeterministicBitSource() { return 42; };
+struct DeterministicBitGen : public std::numeric_limits<uint64_t> {
+  using result_type = uint64_t;
+  uint64_t operator()() { return 42; }
+};
 
 class TestEncoder {
  public:
@@ -105,9 +109,10 @@ absl::StatusOr<std::string> TestVector(grpc_slice_split_mode mode,
   absl::Status found_err;
   for (i = 0; i < nslices; i++) {
     ExecCtx exec_ctx;
-    auto err = parser.Parse(slices[i], i == nslices - 1,
-                            BitSourceRef(DeterministicBitSource),
-                            /*call_tracer=*/nullptr);
+    DeterministicBitGen bitgen;
+    auto err =
+        parser.Parse(slices[i], i == nslices - 1, absl::BitGenRef(bitgen),
+                     /*call_tracer=*/nullptr);
     if (!err.ok()) {
       if (!IsStreamError(err)) return err;
       if (found_err.ok()) found_err = err;
