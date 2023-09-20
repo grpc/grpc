@@ -848,7 +848,7 @@
       third_party/googletest/googlemock/include
       third_party/googletest/googlemock
   % endif
-  % if lib.language == 'c++':
+  % if 'protobuf' in lib.transitive_deps or lib.language == 'c++':  # TODO(jtattermusch): can we only rely on the protobuf dependency?
       <%text>${_gRPC_PROTO_GENS_DIR}</%text>
   % endif
   )
@@ -925,7 +925,7 @@
       third_party/googletest/googlemock/include
       third_party/googletest/googlemock
   % endif
-  % if tgt.language == 'c++':
+  % if 'protobuf' in tgt.transitive_deps or tgt.language == 'c++':  # TODO(jtattermusch): can we only rely on the protobuf dependency?
       <%text>${_gRPC_PROTO_GENS_DIR}</%text>
   % endif
   )
