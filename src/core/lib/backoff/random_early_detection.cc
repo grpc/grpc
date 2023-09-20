@@ -18,10 +18,10 @@
 
 namespace grpc_core {
 
-bool RandomEarlyDetection::Reject(uint64_t size) {
+bool RandomEarlyDetection::Reject(uint64_t size, BitSourceRef bitsrc) const {
   if (size <= soft_limit_) return false;
   if (size < hard_limit_) {
-    return absl::Bernoulli(bitgen_,
+    return absl::Bernoulli(bitsrc,
                            static_cast<double>(size - soft_limit_) /
                                static_cast<double>(hard_limit_ - soft_limit_));
   }

@@ -101,6 +101,7 @@ class HPackParser {
   void StopBufferingFrame() { metadata_buffer_ = nullptr; }
   // Parse one slice worth of data
   grpc_error_handle Parse(const grpc_slice& slice, bool is_last,
+                          BitSourceRef bitsrc,
                           CallTracerAnnotationInterface* call_tracer);
   // Reset state ready for the next BeginFrame
   void FinishFrame();

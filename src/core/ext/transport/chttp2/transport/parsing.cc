@@ -869,7 +869,8 @@ grpc_error_handle grpc_chttp2_header_parser_parse(void* hpack_parser,
               .value);
     }
   }
-  grpc_error_handle error = parser->Parse(slice, is_last != 0, call_tracer);
+  grpc_error_handle error = parser->Parse(
+      slice, is_last != 0, grpc_core::BitSourceRef(t->bitgen), call_tracer);
   if (!error.ok()) {
     return error;
   }

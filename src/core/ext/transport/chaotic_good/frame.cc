@@ -112,7 +112,7 @@ class FrameDeserializer {
 template <typename Metadata>
 absl::StatusOr<Arena::PoolPtr<Metadata>> ReadMetadata(
     HPackParser* parser, absl::StatusOr<SliceBuffer> maybe_slices,
-    uint32_t stream_id, bool is_header, bool is_client) {
+    uint32_t stream_id, bool is_header, bool is_client, BitSourceRef bitsrc) {
   if (!maybe_slices.ok()) return maybe_slices.status();
   auto& slices = *maybe_slices;
   Arena::PoolPtr<Metadata> metadata;
@@ -128,7 +128,7 @@ absl::StatusOr<Arena::PoolPtr<Metadata>> ReadMetadata(
                            is_client});
   for (size_t i = 0; i < slices.Count(); i++) {
     GRPC_RETURN_IF_ERROR(parser->Parse(slices.c_slice_at(i),
-                                       i == slices.Count() - 1,
+                                       i == slices.Count() - 1, bitsrc,
                                        /*call_tracer=*/nullptr));
   }
   parser->FinishFrame();
@@ -137,6 +137,7 @@ absl::StatusOr<Arena::PoolPtr<Metadata>> ReadMetadata(
 }  // namespace
 
 absl::Status SettingsFrame::Deserialize(HPackParser*, const FrameHeader& header,
+                                        BitSourceRef bitsrc,
                                         SliceBuffer& slice_buffer) {
   if (header.type != FrameType::kSettings) {
     return absl::InvalidArgumentError("Expected settings frame");
@@ -155,6 +156,7 @@ SliceBuffer SettingsFrame::Serialize(HPackCompressor*) const {
 
 absl::Status ClientFragmentFrame::Deserialize(HPackParser* parser,
                                               const FrameHeader& header,
+                                              BitSourceRef bitsrc,
                                               SliceBuffer& slice_buffer) {
   if (header.stream_id == 0) {
     return absl::InvalidArgumentError("Expected non-zero stream id");
@@ -166,7 +168,7 @@ absl::Status ClientFragmentFrame::Deserialize(HPackParser* parser,
   FrameDeserializer deserializer(header, slice_buffer);
   if (header.flags.is_set(0)) {
     auto r = ReadMetadata<ClientMetadata>(parser, deserializer.ReceiveHeaders(),
-                                          header.stream_id, true, true);
+                                          header.stream_id, true, true, bitsrc);
     if (!r.ok()) return r.status();
   }
   if (header.flags.is_set(1)) {
@@ -194,6 +196,7 @@ SliceBuffer ClientFragmentFrame::Serialize(HPackCompressor* encoder) const {
 
 absl::Status ServerFragmentFrame::Deserialize(HPackParser* parser,
                                               const FrameHeader& header,
+                                              BitSourceRef bitsrc,
                                               SliceBuffer& slice_buffer) {
   if (header.stream_id == 0) {
     return absl::InvalidArgumentError("Expected non-zero stream id");
@@ -204,13 +207,15 @@ absl::Status ServerFragmentFrame::Deserialize(HPackParser* parser,
   }
   FrameDeserializer deserializer(header, slice_buffer);
   if (header.flags.is_set(0)) {
-    auto r = ReadMetadata<ServerMetadata>(parser, deserializer.ReceiveHeaders(),
-                                          header.stream_id, true, false);
+    auto r =
+        ReadMetadata<ServerMetadata>(parser, deserializer.ReceiveHeaders(),
+                                     header.stream_id, true, false, bitsrc);
     if (!r.ok()) return r.status();
   }
   if (header.flags.is_set(1)) {
-    auto r = ReadMetadata<ServerMetadata>(
-        parser, deserializer.ReceiveTrailers(), header.stream_id, false, false);
+    auto r =
+        ReadMetadata<ServerMetadata>(parser, deserializer.ReceiveTrailers(),
+                                     header.stream_id, false, false, bitsrc);
   }
   return deserializer.Finish();
 }
@@ -228,6 +233,7 @@ SliceBuffer ServerFragmentFrame::Serialize(HPackCompressor* encoder) const {
 }
 
 absl::Status CancelFrame::Deserialize(HPackParser*, const FrameHeader& header,
+                                      BitSourceRef bitsrc,
                                       SliceBuffer& slice_buffer) {
   if (header.type != FrameType::kCancel) {
     return absl::InvalidArgumentError("Expected cancel frame");

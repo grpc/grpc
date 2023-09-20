@@ -100,6 +100,13 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "random",
+    external_deps = ["absl/random"],
+    language = "c++",
+    public_hdrs = ["lib/gprpp/random.h"],
+)
+
+grpc_cc_library(
     name = "metadata_compression_traits",
     hdrs = [
         "lib/transport/metadata_compression_traits.h",
@@ -4092,8 +4099,10 @@ grpc_cc_library(
     hdrs = [
         "lib/backoff/random_early_detection.h",
     ],
-    external_deps = ["absl/random"],
-    deps = ["//:gpr_platform"],
+    deps = [
+        "random",
+        "//:gpr_platform",
+    ],
 )
 
 grpc_cc_library(

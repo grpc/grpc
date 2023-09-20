@@ -52,6 +52,7 @@ static void dont_log(gpr_log_func_args* /*args*/) {}
 
 DEFINE_PROTO_FUZZER(const hpack_parser_fuzzer::Msg& msg) {
   if (squelch) gpr_set_log_function(dont_log);
+  grpc_core::ProtoBitSource proto_bit_src(msg.random_numbers());
   grpc_core::ApplyFuzzConfigVars(msg.config_vars());
   grpc_core::TestOnlyReloadExperimentsFromConfigVariables();
   grpc_init();
@@ -117,6 +118,7 @@ DEFINE_PROTO_FUZZER(const hpack_parser_fuzzer::Msg& msg) {
         grpc_slice buffer =
             grpc_slice_from_copied_buffer(parse.data(), parse.size());
         auto err = parser->Parse(buffer, idx == frame.parse_size() - 1,
+                                 grpc_core::BitSourceRef(proto_bit_src),
                                  /*call_tracer=*/nullptr);
         grpc_slice_unref(buffer);
         stop_buffering_ctr--;

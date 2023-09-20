@@ -50,6 +50,8 @@ bool leak_check = true;
 namespace grpc_core {
 namespace {
 
+uint64_t DeterministicBitSource() { return 42; };
+
 class TestEncoder {
  public:
   std::string result() { return out_; }
@@ -102,8 +104,9 @@ absl::StatusOr<std::string> TestVector(grpc_slice_split_mode mode,
   absl::Status found_err;
   for (i = 0; i < nslices; i++) {
     ExecCtx exec_ctx;
-    auto err =
-        parser.Parse(slices[i], i == nslices - 1, /*call_tracer=*/nullptr);
+    auto err = parser.Parse(slices[i], i == nslices - 1,
+                            BitSourceRef(DeterministicBitSource),
+                            /*call_tracer=*/nullptr);
     if (!err.ok()) {
       if (!IsStreamError(err)) return err;
       if (found_err.ok()) found_err = err;
