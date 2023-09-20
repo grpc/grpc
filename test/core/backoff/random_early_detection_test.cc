@@ -26,11 +26,12 @@ TEST(RandomEarlyDetectionTest, NoOp) {
 }
 
 TEST(RandomEarlyDetectionTest, Distribution) {
+  absl::BitGen bitgen;
   RandomEarlyDetection red(100, 200);
   int64_t counts[300] = {};
   for (int round = 0; round < 10000; round++) {
     for (int64_t i = 0; i < 300; i++) {
-      if (red.Reject(i)) counts[i]++;
+      if (red.Reject(i, BitSourceRef(bitgen))) counts[i]++;
     }
   }
   for (int64_t i = 0; i < 100; i++) {
