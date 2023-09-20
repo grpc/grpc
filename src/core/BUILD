@@ -101,10 +101,6 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "random",
-    external_deps = [
-        "absl/random",
-        "absl/random:bit_gen_ref",
-    ],
     language = "c++",
     public_hdrs = ["lib/gprpp/random.h"],
     deps = ["//:gpr_platform"],
@@ -4103,11 +4099,11 @@ grpc_cc_library(
     hdrs = [
         "lib/backoff/random_early_detection.h",
     ],
-    external_deps = ["absl/random:distributions"],
-    deps = [
-        "random",
-        "//:gpr_platform",
+    external_deps = [
+        "absl/random:bit_gen_ref",
+        "absl/random:distributions",
     ],
+    deps = ["//:gpr_platform"],
 )
 
 grpc_cc_library(
@@ -5904,6 +5900,7 @@ grpc_cc_library(
         "ext/transport/chaotic_good/frame.h",
     ],
     external_deps = [
+        "absl/random:bit_gen_ref",
         "absl/status",
         "absl/status:statusor",
         "absl/types:variant",
@@ -5913,7 +5910,6 @@ grpc_cc_library(
         "bitset",
         "chaotic_good_frame_header",
         "no_destruct",
-        "random",
         "slice",
         "slice_buffer",
         "status_helper",

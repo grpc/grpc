@@ -16,12 +16,10 @@
 #define GRPC_SRC_CORE_LIB_BACKOFF_RANDOM_EARLY_DETECTION_H
 
 #include <grpc/support/port_platform.h>
-
 #include <limits.h>
-
 #include <cstdint>
 
-#include "src/core/lib/gprpp/random.h"
+#include "absl/random/bit_gen_ref.h"
 
 namespace grpc_core {
 

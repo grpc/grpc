@@ -59,7 +59,7 @@ grpc_fuzzer(
     srcs = ["frame_fuzzer.cc"],
     corpus = "frame_fuzzer_corpus",
     external_deps = [
-        "absl/random:mocking_bit_gen",
+        "absl/random:bit_gen_ref",
         "absl/status:statusor",
     ],
     language = "C++",
@@ -75,7 +75,6 @@ grpc_fuzzer(
         "//src/core:chaotic_good_frame_header",
         "//src/core:event_engine_memory_allocator",
         "//src/core:memory_quota",
-        "//src/core:random",
         "//src/core:resource_quota",
         "//src/core:slice",
         "//src/core:slice_buffer",
