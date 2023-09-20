@@ -24,12 +24,14 @@
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
+#include "absl/strings/str_split.h"
 #include "opentelemetry/exporters/prometheus/exporter_factory.h"
 #include "opentelemetry/exporters/prometheus/exporter_options.h"
 #include "opentelemetry/sdk/metrics/meter_provider.h"
 
 #include <grpcpp/ext/csm_observability.h>
 #include <grpcpp/grpcpp.h>
+#include <grpcpp/support/string_ref.h>
 
 #ifdef BAZEL_BUILD
 #include "examples/protos/helloworld.grpc.pb.h"
@@ -48,13 +50,63 @@ using helloworld::HelloReply;
 using helloworld::HelloRequest;
 
 class GreeterClient {
+ protected:
+  struct Cookie {
+    std::string name;
+    std::string value;
+    std::set<std::string> attributes;
+
+    std::pair<std::string, std::string> Header() const {
+      return std::make_pair("cookie", absl::StrFormat("%s=%s", name, value));
+    }
+
+    template <typename Sink>
+        friend void AbslStringify(Sink& sink, const Cookie& cookie) {
+      absl::Format(&sink, "(Cookie: %s, value: %s, attributes: {%s})",
+                   cookie.name, cookie.value,
+                   absl::StrJoin(cookie.attributes, ", "));
+    }
+  };
+
+    static Cookie ParseCookie(absl::string_view header) {
+    Cookie cookie;
+    std::pair<absl::string_view, absl::string_view> name_value =
+        absl::StrSplit(header, absl::MaxSplits('=', 1));
+    cookie.name = std::string(name_value.first);
+    std::pair<absl::string_view, absl::string_view> value_attrs =
+        absl::StrSplit(name_value.second, absl::MaxSplits(';', 1));
+    cookie.value = std::string(value_attrs.first);
+    for (absl::string_view segment : absl::StrSplit(value_attrs.second, ';')) {
+      cookie.attributes.emplace(absl::StripAsciiWhitespace(segment));
+    }
+    return cookie;
+  }
+
+  static std::vector<Cookie> GetCookies(
+      const std::multimap<grpc::string_ref, grpc::string_ref>& server_initial_metadata,
+                                absl::string_view cookie_name) {
+    std::vector<Cookie> values;
+    auto pair = server_initial_metadata.equal_range("set-cookie");
+    for (auto it = pair.first; it != pair.second; ++it) {
+      gpr_log(GPR_INFO, "set-cookie header: %s",
+              it->second.data());
+      const auto cookie = ParseCookie(it->second.data());
+      if (cookie.name == cookie_name) {
+        values.emplace_back(cookie);
+      }
+      //ABSL_ASSERT(!(values.back().value.empty()));
+    }
+    return values;
+  }
+
  public:
   GreeterClient(std::shared_ptr<Channel> channel)
       : stub_(Greeter::NewStub(channel)) {}
 
   // Assembles the client's payload, sends it and presents the response back
   // from the server.
-  std::string SayHello(const std::string& user) {
+  std::string SayHello(const std::string& user, Cookie *cookieFromServer,
+                       Cookie *cookieToServer) {
     // Data we are sending to the server.
     HelloRequest request;
     request.set_name(user);
@@ -71,6 +123,10 @@ class GreeterClient {
     std::condition_variable cv;
     bool done = false;
     Status status;
+    if (cookieToServer != NULL) {
+      std::pair<std::string, std::string> cookieHeader = cookieToServer->Header();
+      context.AddMetadata(cookieHeader.first, cookieHeader.second);
+    }
     stub_->async()->SayHello(&context, &request, &reply,
                              [&mu, &cv, &done, &status](Status s) {
                                status = std::move(s);
@@ -86,6 +142,15 @@ class GreeterClient {
 
     // Act upon its status.
     if (status.ok()) {
+      if (cookieFromServer != NULL) {
+        const std::multimap< grpc::string_ref, grpc::string_ref > & server_initial_metadata =
+            context.GetServerInitialMetadata();
+        std::vector<Cookie> cookies = GetCookies(server_initial_metadata,
+                                                  "GSSA");
+        if (!cookies.empty()) {
+          *cookieFromServer = cookies.front();
+        }
+      }
       return reply.message();
     } else {
       std::cout << status.error_code() << ": " << status.error_message()
@@ -122,7 +187,7 @@ int main(int argc, char** argv) {
           ? grpc::XdsCredentials(grpc::InsecureChannelCredentials())
           : grpc::InsecureChannelCredentials()));
   std::string user("world");
-  std::string reply = greeter.SayHello(user);
+  std::string reply = greeter.SayHello(user, NULL, NULL);
   std::cout << "Greeter received: " << reply << std::endl;
   std::this_thread::sleep_for(std::chrono::seconds(100));
   return 0;
