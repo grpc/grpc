@@ -79,7 +79,8 @@ inline bool IsCanaryClientPrivacyEnabled() { return false; }
 inline bool IsServerPrivacyEnabled() { return false; }
 inline bool IsKeepaliveFixEnabled() { return false; }
 inline bool IsKeepaliveServerFixEnabled() { return false; }
-inline bool IsWorkSerializerDispatchEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_DISPATCH
+inline bool IsWorkSerializerDispatchEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_LAZIER_STREAM_UPDATES
 inline bool IsLazierStreamUpdatesEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_JITTER_MAX_IDLE
@@ -114,7 +115,8 @@ inline bool IsCanaryClientPrivacyEnabled() { return false; }
 inline bool IsServerPrivacyEnabled() { return false; }
 inline bool IsKeepaliveFixEnabled() { return false; }
 inline bool IsKeepaliveServerFixEnabled() { return false; }
-inline bool IsWorkSerializerDispatchEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_DISPATCH
+inline bool IsWorkSerializerDispatchEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_LAZIER_STREAM_UPDATES
 inline bool IsLazierStreamUpdatesEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_JITTER_MAX_IDLE
@@ -149,7 +151,8 @@ inline bool IsCanaryClientPrivacyEnabled() { return false; }
 inline bool IsServerPrivacyEnabled() { return false; }
 inline bool IsKeepaliveFixEnabled() { return false; }
 inline bool IsKeepaliveServerFixEnabled() { return false; }
-inline bool IsWorkSerializerDispatchEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_DISPATCH
+inline bool IsWorkSerializerDispatchEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_LAZIER_STREAM_UPDATES
 inline bool IsLazierStreamUpdatesEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_JITTER_MAX_IDLE
