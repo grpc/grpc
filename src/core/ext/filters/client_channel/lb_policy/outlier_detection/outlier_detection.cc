@@ -139,7 +139,7 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
     }
 
     void Orphan() override {
-      if (!IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled()) {
+      if (!IsWorkSerializerDispatchEnabled()) {
         if (subchannel_state_ != nullptr) {
           subchannel_state_->RemoveSubchannel(this);
         }

@@ -114,13 +114,6 @@ const char* const description_wrr_delegate_to_pick_first =
     "Change WRR code to delegate to pick_first as per dualstack backend "
     "design.";
 const char* const additional_constraints_wrr_delegate_to_pick_first = "{}";
-const char* const
-    description_client_channel_subchannel_wrapper_work_serializer_orphan =
-        "Client channel subchannel wrapper hops into WorkSerializer at "
-        "Orphan() time, rather than requiring callers to do it.";
-const char* const
-    additional_constraints_client_channel_subchannel_wrapper_work_serializer_orphan =
-        "{}";
 const char* const description_combiner_offload_to_event_engine =
     "Offload Combiner work onto the EventEngine instead of the Executor.";
 const char* const additional_constraints_combiner_offload_to_event_engine =
@@ -183,10 +176,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_round_robin_delegate_to_pick_first, true, true},
     {"wrr_delegate_to_pick_first", description_wrr_delegate_to_pick_first,
      additional_constraints_wrr_delegate_to_pick_first, true, true},
-    {"client_channel_subchannel_wrapper_work_serializer_orphan",
-     description_client_channel_subchannel_wrapper_work_serializer_orphan,
-     additional_constraints_client_channel_subchannel_wrapper_work_serializer_orphan,
-     true, true},
     {"combiner_offload_to_event_engine",
      description_combiner_offload_to_event_engine,
      additional_constraints_combiner_offload_to_event_engine, true, true},
@@ -288,13 +277,6 @@ const char* const description_wrr_delegate_to_pick_first =
     "Change WRR code to delegate to pick_first as per dualstack backend "
     "design.";
 const char* const additional_constraints_wrr_delegate_to_pick_first = "{}";
-const char* const
-    description_client_channel_subchannel_wrapper_work_serializer_orphan =
-        "Client channel subchannel wrapper hops into WorkSerializer at "
-        "Orphan() time, rather than requiring callers to do it.";
-const char* const
-    additional_constraints_client_channel_subchannel_wrapper_work_serializer_orphan =
-        "{}";
 const char* const description_combiner_offload_to_event_engine =
     "Offload Combiner work onto the EventEngine instead of the Executor.";
 const char* const additional_constraints_combiner_offload_to_event_engine =
@@ -357,10 +339,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_round_robin_delegate_to_pick_first, true, true},
     {"wrr_delegate_to_pick_first", description_wrr_delegate_to_pick_first,
      additional_constraints_wrr_delegate_to_pick_first, true, true},
-    {"client_channel_subchannel_wrapper_work_serializer_orphan",
-     description_client_channel_subchannel_wrapper_work_serializer_orphan,
-     additional_constraints_client_channel_subchannel_wrapper_work_serializer_orphan,
-     true, true},
     {"combiner_offload_to_event_engine",
      description_combiner_offload_to_event_engine,
      additional_constraints_combiner_offload_to_event_engine, true, true},
@@ -462,13 +440,6 @@ const char* const description_wrr_delegate_to_pick_first =
     "Change WRR code to delegate to pick_first as per dualstack backend "
     "design.";
 const char* const additional_constraints_wrr_delegate_to_pick_first = "{}";
-const char* const
-    description_client_channel_subchannel_wrapper_work_serializer_orphan =
-        "Client channel subchannel wrapper hops into WorkSerializer at "
-        "Orphan() time, rather than requiring callers to do it.";
-const char* const
-    additional_constraints_client_channel_subchannel_wrapper_work_serializer_orphan =
-        "{}";
 const char* const description_combiner_offload_to_event_engine =
     "Offload Combiner work onto the EventEngine instead of the Executor.";
 const char* const additional_constraints_combiner_offload_to_event_engine =
@@ -531,10 +502,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_round_robin_delegate_to_pick_first, true, true},
     {"wrr_delegate_to_pick_first", description_wrr_delegate_to_pick_first,
      additional_constraints_wrr_delegate_to_pick_first, true, true},
-    {"client_channel_subchannel_wrapper_work_serializer_orphan",
-     description_client_channel_subchannel_wrapper_work_serializer_orphan,
-     additional_constraints_client_channel_subchannel_wrapper_work_serializer_orphan,
-     true, true},
     {"combiner_offload_to_event_engine",
      description_combiner_offload_to_event_engine,
      additional_constraints_combiner_offload_to_event_engine, true, true},
