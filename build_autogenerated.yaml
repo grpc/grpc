@@ -755,7 +755,6 @@ libs:
   - src/core/lib/gprpp/overload.h
   - src/core/lib/gprpp/packed_table.h
   - src/core/lib/gprpp/per_cpu.h
-  - src/core/lib/gprpp/random.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
   - src/core/lib/gprpp/ref_counted_string.h
@@ -1820,6 +1819,7 @@ libs:
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
+  - absl/random:bit_gen_ref
   - absl/random:distributions
   - absl/status:statusor
   - absl/types:span
@@ -2169,7 +2169,6 @@ libs:
   - src/core/lib/gprpp/overload.h
   - src/core/lib/gprpp/packed_table.h
   - src/core/lib/gprpp/per_cpu.h
-  - src/core/lib/gprpp/random.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
   - src/core/lib/gprpp/ref_counted_string.h
@@ -2794,6 +2793,7 @@ libs:
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
+  - absl/random:bit_gen_ref
   - absl/random:distributions
   - absl/status:statusor
   - absl/types:span
@@ -12243,12 +12243,12 @@ targets:
   language: c++
   headers:
   - src/core/lib/backoff/random_early_detection.h
-  - src/core/lib/gprpp/random.h
   src:
   - src/core/lib/backoff/random_early_detection.cc
   - test/core/backoff/random_early_detection_test.cc
   deps:
   - gtest
+  - absl/random:bit_gen_ref
   - absl/random:distributions
   - absl/random:random
   uses_polling: false
@@ -15744,7 +15744,6 @@ targets:
   - src/core/lib/gprpp/overload.h
   - src/core/lib/gprpp/packed_table.h
   - src/core/lib/gprpp/per_cpu.h
-  - src/core/lib/gprpp/random.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
   - src/core/lib/gprpp/ref_counted_string.h
@@ -16188,6 +16187,7 @@ targets:
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
+  - absl/random:bit_gen_ref
   - absl/random:distributions
   - absl/status:statusor
   - absl/types:span
