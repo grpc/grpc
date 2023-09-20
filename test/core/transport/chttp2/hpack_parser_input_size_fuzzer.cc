@@ -18,18 +18,22 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <grpc/event_engine/memory_allocator.h>
-#include <grpc/slice.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/time.h>
+
 #include <limits>
 #include <memory>
 #include <string>
 
 #include "absl/cleanup/cleanup.h"
+#include "absl/random/bit_gen_ref.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
+
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/slice.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/time.h>
+
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/status_helper.h"
@@ -41,7 +45,6 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "test/core/util/slice_splitter.h"
-#include "absl/random/bit_gen_ref.h"
 
 bool squelch = true;
 bool leak_check = true;

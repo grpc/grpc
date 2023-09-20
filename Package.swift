@@ -1238,7 +1238,6 @@ let package = Package(
         "src/core/lib/gprpp/posix/env.cc",
         "src/core/lib/gprpp/posix/stat.cc",
         "src/core/lib/gprpp/posix/thd.cc",
-        "src/core/lib/gprpp/random.h",
         "src/core/lib/gprpp/ref_counted.h",
         "src/core/lib/gprpp/ref_counted_ptr.h",
         "src/core/lib/gprpp/ref_counted_string.cc",

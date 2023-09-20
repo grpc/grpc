@@ -14,8 +14,8 @@
 
 #include "src/core/lib/backoff/random_early_detection.h"
 
-#include "gtest/gtest.h"
 #include "absl/random/random.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace {

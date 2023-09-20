@@ -1226,7 +1226,6 @@
     <file baseinstalldir="/" name="src/core/lib/gprpp/posix/env.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/posix/stat.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/posix/thd.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gprpp/random.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/ref_counted.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/ref_counted_ptr.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/ref_counted_string.cc" role="src" />
@@ -1960,6 +1959,7 @@
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/profiling/internal/sample_recorder.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/bernoulli_distribution.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/beta_distribution.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/bit_gen_ref.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/discrete_distribution.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/discrete_distribution.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/distributions.h" role="src" />
