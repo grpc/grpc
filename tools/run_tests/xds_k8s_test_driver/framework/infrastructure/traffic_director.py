@@ -42,6 +42,7 @@ _NetworkServicesV1Alpha1 = gcp.network_services.NetworkServicesV1Alpha1
 _NetworkServicesV1Beta1 = gcp.network_services.NetworkServicesV1Beta1
 EndpointPolicy = gcp.network_services.EndpointPolicy
 GrpcRoute = gcp.network_services.GrpcRoute
+HttpRoute = gcp.network_services.HttpRoute
 Mesh = gcp.network_services.Mesh
 
 # Testing metadata consts
@@ -741,6 +742,7 @@ class TrafficDirectorManager:  # pylint: disable=too-many-public-methods
 
 class TrafficDirectorAppNetManager(TrafficDirectorManager):
     GRPC_ROUTE_NAME = "grpc-route"
+    HTTP_ROUTE_NAME = "http-route"
     MESH_NAME = "mesh"
 
     netsvc: _NetworkServicesV1Alpha1
@@ -770,6 +772,7 @@ class TrafficDirectorAppNetManager(TrafficDirectorManager):
         # Managed resources
         # TODO(gnossen) PTAL at the pylint error
         self.grpc_route: Optional[GrpcRoute] = None
+        self.http_route: Optional[HttpRoute] = None
         self.mesh: Optional[Mesh] = None
 
     def create_mesh(self) -> GcpResource:
@@ -819,6 +822,14 @@ class TrafficDirectorAppNetManager(TrafficDirectorManager):
         logger.debug("Loaded GrpcRoute: %s", self.grpc_route)
         return resource
 
+    def create_http_route_with_content(self, body: Any) -> GcpResource:
+        name = self.make_resource_name(self.HTTP_ROUTE_NAME)
+        logger.info("Creating HttpRoute %s", name)
+        resource = self.netsvc.create_http_route(name, body)
+        self.http_route = self.netsvc.get_http_route(name)
+        logger.debug("Loaded HttpRoute: %s", self.http_route)
+        return resource
+
     def delete_grpc_route(self, force=False):
         if force:
             name = self.make_resource_name(self.GRPC_ROUTE_NAME)
@@ -830,7 +841,19 @@ class TrafficDirectorAppNetManager(TrafficDirectorManager):
         self.netsvc.delete_grpc_route(name)
         self.grpc_route = None
 
+    def delete_http_route(self, force=False):
+        if force:
+            name = self.make_resource_name(self.HTTP_ROUTE_NAME)
+        elif self.http_route:
+            name = self.http_route.name
+        else:
+            return
+        logger.info("Deleting HttpRoute %s", name)
+        self.netsvc.delete_http_route(name)
+        self.http_route = None
+
     def cleanup(self, *, force=False):
+        self.delete_http_route(force=force)
         self.delete_grpc_route(force=force)
         self.delete_mesh(force=force)
         super().cleanup(force=force)

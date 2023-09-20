@@ -139,11 +139,18 @@ tail${i}:
     switch (state) {
 % for i in range(0,n-1):
       case State::kState${i}: {
+        if (grpc_trace_promise_primitives.enabled()) {
+          gpr_log(GPR_DEBUG, "seq[%p]: begin poll step ${i+1}/${n}", this);
+        }
         auto result = ${"prior."*(n-1-i)}current_promise();
         PromiseResult${i}* p = result.value_if_ready();
+        if (grpc_trace_promise_primitives.enabled()) {
+          gpr_log(GPR_DEBUG, "seq[%p]: poll step ${i+1}/${n} gets %s", this, 
+                  p != nullptr? (PromiseResultTraits${i}::IsOk(*p)? "ready" : "early-error") : "pending");
+        }
         if (p == nullptr) return Pending{};
         if (!PromiseResultTraits${i}::IsOk(*p)) {
-            return PromiseResultTraits${i}::template ReturnValue<Result>(std::move(*p));
+          return PromiseResultTraits${i}::template ReturnValue<Result>(std::move(*p));
         }
         Destruct(&${"prior."*(n-1-i)}current_promise);
         auto next_promise = PromiseResultTraits${i}::CallFactory(&${"prior."*(n-1-i)}next_factory, std::move(*p));
@@ -155,7 +162,13 @@ tail${i}:
 % endfor
       default:
       case State::kState${n-1}: {
+        if (grpc_trace_promise_primitives.enabled()) {
+          gpr_log(GPR_DEBUG, "seq[%p]: begin poll step ${n}/${n}", this);
+        }
         auto result = current_promise();
+        if (grpc_trace_promise_primitives.enabled()) {
+          gpr_log(GPR_DEBUG, "seq[%p]: poll step ${n}/${n} gets %s", this, result.ready()? "ready" : "pending");
+        }
         auto* p = result.value_if_ready();
         if (p == nullptr) return Pending{};
         return Result(std::move(*p));
@@ -185,6 +198,7 @@ front_matter = """
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/trace.h"
 
 // A sequence under some traits for some set of callables P, Fs.
 // P should be a promise-like object that yields a value.

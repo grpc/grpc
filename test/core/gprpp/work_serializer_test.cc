@@ -23,19 +23,27 @@
 #include <algorithm>
 #include <memory>
 #include <thread>
+#include <utility>
 #include <vector>
 
+#include "absl/functional/any_invocable.h"
 #include "absl/synchronization/barrier.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/debug/histogram_view.h"
+#include "src/core/lib/debug/stats.h"
+#include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/thd.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/util/test_config.h"
 
@@ -241,6 +249,107 @@ TEST(WorkSerializerTest, WorkSerializerDestructionRaceMultipleThreads) {
   for (auto& thread : threads) {
     thread.join();
   }
+}
+
+TEST(WorkSerializerTest, MetricsWork) {
+  if (!IsWorkSerializerDispatchEnabled()) {
+    GTEST_SKIP() << "Work serializer dispatch experiment not enabled";
+  }
+
+  WorkSerializer serializer(GetDefaultEventEngine());
+  auto schedule_sleep = [&serializer](absl::Duration how_long) {
+    ExecCtx exec_ctx;
+    auto n = std::make_shared<Notification>();
+    serializer.Run(
+        [how_long, n]() {
+          absl::SleepFor(how_long);
+          n->Notify();
+        },
+        DEBUG_LOCATION);
+    return n;
+  };
+  auto before = global_stats().Collect();
+  auto stats_diff_from = [&before](absl::AnyInvocable<void()> f) {
+    f();
+    auto after = global_stats().Collect();
+    auto diff = after->Diff(*before);
+    before = std::move(after);
+    return diff;
+  };
+  // Test adding one work item to the queue
+  auto diff = stats_diff_from(
+      [&] { schedule_sleep(absl::Seconds(1))->WaitForNotification(); });
+  EXPECT_EQ(diff->work_serializer_items_enqueued, 1);
+  EXPECT_EQ(diff->work_serializer_items_dequeued, 1);
+  EXPECT_GE(diff->histogram(GlobalStats::Histogram::kWorkSerializerItemsPerRun)
+                .Percentile(0.5),
+            1.0);
+  EXPECT_LE(diff->histogram(GlobalStats::Histogram::kWorkSerializerItemsPerRun)
+                .Percentile(0.5),
+            2.0);
+  EXPECT_GE(diff->histogram(GlobalStats::Histogram::kWorkSerializerRunTimeMs)
+                .Percentile(0.5),
+            800.0);
+  EXPECT_LE(diff->histogram(GlobalStats::Histogram::kWorkSerializerRunTimeMs)
+                .Percentile(0.5),
+            1300.0);
+  EXPECT_GE(diff->histogram(GlobalStats::Histogram::kWorkSerializerWorkTimeMs)
+                .Percentile(0.5),
+            800.0);
+  EXPECT_LE(diff->histogram(GlobalStats::Histogram::kWorkSerializerWorkTimeMs)
+                .Percentile(0.5),
+            1300.0);
+  EXPECT_GE(
+      diff->histogram(GlobalStats::Histogram::kWorkSerializerWorkTimePerItemMs)
+          .Percentile(0.5),
+      800.0);
+  EXPECT_LE(
+      diff->histogram(GlobalStats::Histogram::kWorkSerializerWorkTimePerItemMs)
+          .Percentile(0.5),
+      1300.0);
+  EXPECT_LE(diff->histogram(GlobalStats::Histogram::kWorkSerializerRunTimeMs)
+                .Percentile(0.5),
+            diff->histogram(GlobalStats::Histogram::kWorkSerializerWorkTimeMs)
+                .Percentile(0.5));
+  // Now throw a bunch of work in and see that we get good results
+  diff = stats_diff_from([&] {
+    for (int i = 0; i < 10; i++) {
+      schedule_sleep(absl::Milliseconds(1000));
+    }
+    schedule_sleep(absl::Milliseconds(1000))->WaitForNotification();
+  });
+  EXPECT_EQ(diff->work_serializer_items_enqueued, 11);
+  EXPECT_EQ(diff->work_serializer_items_dequeued, 11);
+  EXPECT_GE(diff->histogram(GlobalStats::Histogram::kWorkSerializerItemsPerRun)
+                .Percentile(0.5),
+            7.0);
+  EXPECT_LE(diff->histogram(GlobalStats::Histogram::kWorkSerializerItemsPerRun)
+                .Percentile(0.5),
+            15.0);
+  EXPECT_GE(diff->histogram(GlobalStats::Histogram::kWorkSerializerRunTimeMs)
+                .Percentile(0.5),
+            7000.0);
+  EXPECT_LE(diff->histogram(GlobalStats::Histogram::kWorkSerializerRunTimeMs)
+                .Percentile(0.5),
+            15000.0);
+  EXPECT_GE(diff->histogram(GlobalStats::Histogram::kWorkSerializerWorkTimeMs)
+                .Percentile(0.5),
+            7000.0);
+  EXPECT_LE(diff->histogram(GlobalStats::Histogram::kWorkSerializerWorkTimeMs)
+                .Percentile(0.5),
+            15000.0);
+  EXPECT_GE(
+      diff->histogram(GlobalStats::Histogram::kWorkSerializerWorkTimePerItemMs)
+          .Percentile(0.5),
+      800.0);
+  EXPECT_LE(
+      diff->histogram(GlobalStats::Histogram::kWorkSerializerWorkTimePerItemMs)
+          .Percentile(0.5),
+      1300.0);
+  EXPECT_LE(diff->histogram(GlobalStats::Histogram::kWorkSerializerRunTimeMs)
+                .Percentile(0.5),
+            diff->histogram(GlobalStats::Histogram::kWorkSerializerWorkTimeMs)
+                .Percentile(0.5));
 }
 
 #ifndef NDEBUG
