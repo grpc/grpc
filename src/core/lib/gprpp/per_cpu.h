@@ -24,6 +24,10 @@
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 
+// Sharded collections of objects
+// This used to be per-cpu, now it's much less so - but still a way to limit
+// contention.
+
 namespace grpc_core {
 
 class PerCpuOptions {
@@ -51,23 +55,31 @@ class PerCpuOptions {
   size_t max_shards_ = std::numeric_limits<size_t>::max();
 };
 
+class PerCpuShardingHelper {
+ protected:
+  size_t GetShardingBits() { return per_thread_id_; }
+
+ private:
+  static thread_local size_t per_thread_id_;
+};
+
 template <typename T>
-class PerCpu {
+class PerCpu : public PerCpuShardingHelper {
  public:
   // Options are not defaulted to try and force consideration of what the
   // options specify.
-  explicit PerCpu(PerCpuOptions options) : cpus_(options.Shards()) {}
+  explicit PerCpu(PerCpuOptions options) : shards_(options.Shards()) {}
 
-  T& this_cpu() { return data_[ExecCtx::Get()->starting_cpu() % cpus_]; }
+  T& this_cpu() { return data_[GetShardingBits() % shards_]; }
 
   T* begin() { return data_.get(); }
-  T* end() { return data_.get() + cpus_; }
+  T* end() { return data_.get() + shards_; }
   const T* begin() const { return data_.get(); }
-  const T* end() const { return data_.get() + cpus_; }
+  const T* end() const { return data_.get() + shards_; }
 
  private:
-  const size_t cpus_;
-  std::unique_ptr<T[]> data_{new T[cpus_]};
+  const size_t shards_;
+  std::unique_ptr<T[]> data_{new T[shards_]};
 };
 
 }  // namespace grpc_core
