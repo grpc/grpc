@@ -4443,7 +4443,6 @@ target_include_directories(grpc++_test_config
     ${_gRPC_UPB_INCLUDE_DIR}
     ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
-    ${_gRPC_PROTO_GENS_DIR}
 )
 target_link_libraries(grpc++_test_config
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -5123,7 +5122,6 @@ target_include_directories(grpc_authorization_provider
     ${_gRPC_UPB_INCLUDE_DIR}
     ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
-    ${_gRPC_PROTO_GENS_DIR}
 )
 target_link_libraries(grpc_authorization_provider
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -24850,7 +24848,6 @@ target_include_directories(lb_get_cpu_stats_test
     third_party/googletest/googletest
     third_party/googletest/googlemock/include
     third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
 )
 
 target_link_libraries(lb_get_cpu_stats_test
