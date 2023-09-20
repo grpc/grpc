@@ -4854,6 +4854,7 @@ grpc_cc_library(
         "//:config",
         "//:debug_location",
         "//:endpoint_addresses",
+        "//:exec_ctx",
         "//:gpr",
         "//:grpc_base",
         "//:grpc_trace",
