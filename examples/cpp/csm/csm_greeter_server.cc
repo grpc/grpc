@@ -27,6 +27,7 @@
 #include "opentelemetry/exporters/prometheus/exporter_options.h"
 #include "opentelemetry/sdk/metrics/meter_provider.h"
 
+#include "src/core/lib/iomgr/gethostname.h"
 #include <grpcpp/ext/admin_services.h>
 #include <grpcpp/ext/csm_observability.h>
 #include <grpcpp/ext/proto_server_reflection_plugin.h>
@@ -59,16 +60,22 @@ class GreeterServiceImpl final : public Greeter::CallbackService {
   ServerUnaryReactor* SayHello(CallbackServerContext* context,
                                const HelloRequest* request,
                                HelloReply* reply) override {
-    std::string prefix("Hello ");
+    std::string prefix("Hello from ");
+    prefix += my_name + " ";
     reply->set_message(prefix + request->name());
 
     ServerUnaryReactor* reactor = context->DefaultReactor();
     reactor->Finish(Status::OK);
     return reactor;
   }
+
+ public:
+   GreeterServiceImpl(const std::string &my_hostname) : my_name(my_hostname) {}
+ private:
+   const std::string &my_name;
 };
 
-void RunServer() {
+void RunServer(const char* hostname) {
   grpc::EnableDefaultHealthCheckService(true);
   grpc::reflection::InitProtoReflectionServerBuilderPlugin();
   int port = absl::GetFlag(FLAGS_port);
@@ -77,7 +84,9 @@ void RunServer() {
   ServerBuilder builder;
   std::unique_ptr<Server> xds_enabled_server;
   std::unique_ptr<Server> server;
-  GreeterServiceImpl service;
+
+  std::string my_hostname(hostname);
+  GreeterServiceImpl service(my_hostname);
   // Register "service" as the instance through which we'll communicate with
   // clients. In this case it corresponds to an *synchronous* service.
   xds_builder.RegisterService(&service);
@@ -128,6 +137,11 @@ int main(int argc, char** argv) {
               << observability.status().ToString() << std::endl;
     return static_cast<int>(observability.status().code());
   }
-  RunServer();
+  const char* hostname = grpc_gethostname();
+  if (hostname == nullptr) {
+    std::cout << "Failed to get hostname, terminating" << std::endl;
+    return 1;
+  }
+  RunServer(hostname);
   return 0;
 }
