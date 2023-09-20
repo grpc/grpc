@@ -1729,7 +1729,7 @@ TEST_F(RoundRobinTest, FailsEmptyResolverUpdate) {
   EXPECT_TRUE(
       WaitForChannelState(channel.get(), predicate, /*try_to_connect=*/true));
   // Callback should have been run.
-  ASSERT_TRUE(notification.HasBeenNotified());
+  notification.WaitForNotification();
   // Return a valid address.
   gpr_log(GPR_INFO, "****** SENDING NEXT RESOLVER RESULT *******");
   StartServers(1);

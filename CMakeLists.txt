@@ -5552,7 +5552,9 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(activity_test
+  src/core/lib/debug/trace.cc
   src/core/lib/promise/activity.cc
+  src/core/lib/promise/trace.cc
   test/core/promise/activity_test.cc
 )
 target_compile_features(activity_test PUBLIC cxx_std_14)
@@ -8765,6 +8767,7 @@ add_executable(chunked_vector_test
   src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/promise/activity.cc
+  src/core/lib/promise/trace.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
@@ -11127,6 +11130,8 @@ add_executable(exec_ctx_wakeup_scheduler_test
   src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
   src/core/ext/upb-generated/google/rpc/status.upb.c
   src/core/lib/debug/trace.cc
+  src/core/lib/experiments/config.cc
+  src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/closure.cc
@@ -11869,6 +11874,7 @@ add_executable(flow_control_test
   src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/promise/activity.cc
+  src/core/lib/promise/trace.cc
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
@@ -14489,7 +14495,9 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(inter_activity_pipe_test
+  src/core/lib/debug/trace.cc
   src/core/lib/promise/activity.cc
+  src/core/lib/promise/trace.cc
   test/core/promise/inter_activity_pipe_test.cc
 )
 target_compile_features(inter_activity_pipe_test PUBLIC cxx_std_14)
@@ -14840,6 +14848,8 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(join_test
+  src/core/lib/debug/trace.cc
+  src/core/lib/promise/trace.cc
   test/core/promise/join_test.cc
 )
 target_compile_features(join_test PUBLIC cxx_std_14)
@@ -14866,6 +14876,7 @@ target_link_libraries(join_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::type_traits
+  absl::statusor
   gpr
 )
 
@@ -15396,6 +15407,8 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(loop_test
+  src/core/lib/debug/trace.cc
+  src/core/lib/promise/trace.cc
   test/core/promise/loop_test.cc
 )
 target_compile_features(loop_test PUBLIC cxx_std_14)
@@ -17093,6 +17106,8 @@ add_executable(periodic_update_test
   src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
   src/core/ext/upb-generated/google/rpc/status.upb.c
   src/core/lib/debug/trace.cc
+  src/core/lib/experiments/config.cc
+  src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/closure.cc
@@ -20887,6 +20902,8 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(seq_test
+  src/core/lib/debug/trace.cc
+  src/core/lib/promise/trace.cc
   test/core/promise/seq_test.cc
 )
 target_compile_features(seq_test PUBLIC cxx_std_14)
@@ -20913,6 +20930,7 @@ target_link_libraries(seq_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::type_traits
+  absl::statusor
   gpr
 )
 
@@ -25171,6 +25189,8 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(try_join_test
+  src/core/lib/debug/trace.cc
+  src/core/lib/promise/trace.cc
   test/core/promise/try_join_test.cc
 )
 target_compile_features(try_join_test PUBLIC cxx_std_14)
@@ -25240,6 +25260,8 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(try_seq_test
+  src/core/lib/debug/trace.cc
+  src/core/lib/promise/trace.cc
   test/core/promise/try_seq_test.cc
 )
 target_compile_features(try_seq_test PUBLIC cxx_std_14)
