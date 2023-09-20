@@ -35,6 +35,9 @@
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/ping_abuse_policy.h"
 
+extern grpc_core::TraceFlag grpc_keepalive_trace;
+extern grpc_core::TraceFlag grpc_http_trace;
+
 grpc_slice grpc_chttp2_ping_create(uint8_t ack, uint64_t opaque_8bytes) {
   grpc_slice slice = GRPC_SLICE_MALLOC(9 + 8);
   uint8_t* p = GRPC_SLICE_START_PTR(slice);
