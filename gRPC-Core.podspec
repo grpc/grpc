@@ -199,6 +199,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/hash/hash', abseil_version
     ss.dependency 'abseil/memory/memory', abseil_version
     ss.dependency 'abseil/meta/type_traits', abseil_version
+    ss.dependency 'abseil/random/bit_gen_ref', abseil_version
     ss.dependency 'abseil/random/distributions', abseil_version
     ss.dependency 'abseil/random/random', abseil_version
     ss.dependency 'abseil/status/status', abseil_version
@@ -1340,7 +1341,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/posix/env.cc',
                       'src/core/lib/gprpp/posix/stat.cc',
                       'src/core/lib/gprpp/posix/thd.cc',
-                      'src/core/lib/gprpp/random.h',
                       'src/core/lib/gprpp/ref_counted.h',
                       'src/core/lib/gprpp/ref_counted_ptr.h',
                       'src/core/lib/gprpp/ref_counted_string.cc',
@@ -2666,7 +2666,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/gprpp/overload.h',
                               'src/core/lib/gprpp/packed_table.h',
                               'src/core/lib/gprpp/per_cpu.h',
-                              'src/core/lib/gprpp/random.h',
                               'src/core/lib/gprpp/ref_counted.h',
                               'src/core/lib/gprpp/ref_counted_ptr.h',
                               'src/core/lib/gprpp/ref_counted_string.h',

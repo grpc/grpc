@@ -17,15 +17,19 @@
 //
 
 #include <stdint.h>
-#include <grpc/grpc.h>
-#include <grpc/slice.h>
-#include <grpc/support/log.h>
+
 #include <algorithm>
 #include <memory>
 #include <string>
 #include <utility>
 
 #include "absl/cleanup/cleanup.h"
+#include "absl/random/bit_gen_ref.h"
+
+#include <grpc/grpc.h>
+#include <grpc/slice.h>
+#include <grpc/support/log.h>
+
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/lib/experiments/config.h"
 #include "src/core/lib/gprpp/random.h"
@@ -40,7 +44,6 @@
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/transport/chttp2/hpack_parser_fuzzer.pb.h"
 #include "test/core/util/fuzz_config_vars.h"
-#include "absl/random/bit_gen_ref.h"
 
 // IWYU pragma: no_include <google/protobuf/repeated_ptr_field.h>
 
