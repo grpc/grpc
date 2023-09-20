@@ -30,9 +30,9 @@ grpc_proto_fuzzer(
     uses_polling = False,
     deps = [
         "//:grpc",
+        "//src/core:random",
         "//test/core/util:fuzz_config_vars",
         "//test/core/util:grpc_test_util",
-        "//src/core:random",
     ],
 )
 
@@ -46,9 +46,9 @@ grpc_proto_fuzzer(
     uses_polling = False,
     deps = [
         "//:grpc",
+        "//src/core:random",
         "//test/core/util:fuzz_config_vars",
         "//test/core/util:grpc_test_util",
-        "//src/core:random",
     ],
 )
 
