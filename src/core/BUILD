@@ -5531,6 +5531,7 @@ grpc_cc_library(
         "channel_fwd",
         "context",
         "dual_ref_counted",
+        "experiments",
         "grpc_lb_policy_ring_hash",
         "grpc_resolver_xds_header",
         "grpc_service_config",
