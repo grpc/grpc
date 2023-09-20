@@ -650,7 +650,7 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
               "chand=%p: destroying subchannel wrapper %p for subchannel %p",
               chand_, this, subchannel_.get());
     }
-    if (!IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled()) {
+    if (!IsWorkSerializerDispatchEnabled()) {
       chand_->subchannel_wrappers_.erase(this);
       if (chand_->channelz_node_ != nullptr) {
         auto* subchannel_node = subchannel_->channelz_node();
@@ -670,9 +670,7 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
   }
 
   void Orphan() override {
-    if (!IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled()) {
-      return;
-    }
+    if (!IsWorkSerializerDispatchEnabled()) return;
     // Make sure we clean up the channel's subchannel maps inside the
     // WorkSerializer.
     // Ref held by callback.
@@ -766,7 +764,7 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
         : watcher_(std::move(watcher)), parent_(std::move(parent)) {}
 
     ~WatcherWrapper() override {
-      if (!IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled()) {
+      if (!IsWorkSerializerDispatchEnabled()) {
         auto* parent = parent_.release();  // ref owned by lambda
         parent->chand_->work_serializer_->Run(
             [parent]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
@@ -2114,7 +2112,7 @@ absl::optional<absl::Status> ClientChannel::CallData::CheckResolution(
   // We have a result.  Apply service config to call.
   grpc_error_handle error = ApplyServiceConfigToCallLocked(config_selector);
   // ConfigSelector must be unreffed inside the WorkSerializer.
-  if (config_selector.ok()) {
+  if (!IsWorkSerializerDispatchEnabled() && config_selector.ok()) {
     chand()->work_serializer_->Run(
         [config_selector = std::move(*config_selector)]() mutable {
           config_selector.reset();
@@ -2824,9 +2822,7 @@ absl::optional<absl::Status> ClientChannel::LoadBalancedCall::PickSubchannel(
   // We need to unref pickers in the WorkSerializer.
   std::vector<RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>> pickers;
   auto cleanup = absl::MakeCleanup([&]() {
-    if (IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled()) {
-      return;
-    }
+    if (IsWorkSerializerDispatchEnabled()) return;
     chand_->work_serializer_->Run(
         [pickers = std::move(pickers)]() mutable {
           for (auto& picker : pickers) {
@@ -2837,7 +2833,7 @@ absl::optional<absl::Status> ClientChannel::LoadBalancedCall::PickSubchannel(
   });
   absl::AnyInvocable<void(RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>)>
       set_picker;
-  if (!IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled()) {
+  if (!IsWorkSerializerDispatchEnabled()) {
     set_picker =
         [&](RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker) {
           pickers.emplace_back(std::move(picker));
@@ -2877,7 +2873,7 @@ absl::optional<absl::Status> ClientChannel::LoadBalancedCall::PickSubchannel(
                   "chand=%p lb_call=%p: pick not complete, but picker changed",
                   chand_, this);
         }
-        if (IsClientChannelSubchannelWrapperWorkSerializerOrphanEnabled()) {
+        if (IsWorkSerializerDispatchEnabled()) {
           // Don't unref until after we release the mutex.
           old_picker = std::move(pickers.back());
         }
