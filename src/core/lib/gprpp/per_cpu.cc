@@ -18,8 +18,6 @@
 
 #include <atomic>
 
-#include "absl/random/random.h"
-
 #include <grpc/support/cpu.h>
 
 #include "src/core/lib/gpr/useful.h"

@@ -22,8 +22,6 @@
 #include <limits>
 #include <memory>
 
-#include "src/core/lib/iomgr/exec_ctx.h"
-
 // Sharded collections of objects
 // This used to be per-cpu, now it's much less so - but still a way to limit
 // contention.
