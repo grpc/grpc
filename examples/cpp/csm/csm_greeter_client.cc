@@ -49,24 +49,26 @@ using helloworld::Greeter;
 using helloworld::HelloReply;
 using helloworld::HelloRequest;
 
+struct Cookie {
+  std::string name;
+  std::string value;
+  std::set<std::string> attributes;
+
+  std::pair<std::string, std::string> Header() const {
+    return std::make_pair("cookie", absl::StrFormat("%s=%s", name, value));
+  }
+
+  template <typename Sink>
+      friend void AbslStringify(Sink& sink, const Cookie& cookie) {
+    absl::Format(&sink, "(Cookie: %s, value: %s, attributes: {%s})",
+                 cookie.name, cookie.value,
+                 absl::StrJoin(cookie.attributes, ", "));
+  }
+};
+
+
 class GreeterClient {
  protected:
-  struct Cookie {
-    std::string name;
-    std::string value;
-    std::set<std::string> attributes;
-
-    std::pair<std::string, std::string> Header() const {
-      return std::make_pair("cookie", absl::StrFormat("%s=%s", name, value));
-    }
-
-    template <typename Sink>
-        friend void AbslStringify(Sink& sink, const Cookie& cookie) {
-      absl::Format(&sink, "(Cookie: %s, value: %s, attributes: {%s})",
-                   cookie.name, cookie.value,
-                   absl::StrJoin(cookie.attributes, ", "));
-    }
-  };
 
     static Cookie ParseCookie(absl::string_view header) {
     Cookie cookie;
@@ -106,7 +108,7 @@ class GreeterClient {
   // Assembles the client's payload, sends it and presents the response back
   // from the server.
   std::string SayHello(const std::string& user, Cookie *cookieFromServer,
-                       Cookie *cookieToServer) {
+                       const Cookie *cookieToServer) {
     // Data we are sending to the server.
     HelloRequest request;
     request.set_name(user);
@@ -163,6 +165,15 @@ class GreeterClient {
   std::unique_ptr<Greeter::Stub> stub_;
 };
 
+static void sayHello(GreeterClient &greeter, Cookie *cookieFromServer,
+                       const Cookie *cookieToServer) {
+  std::string user("world");
+  std::string reply = greeter.SayHello(user, cookieFromServer, cookieToServer);
+  std::cout << "Greeter received: " << reply << std::endl;
+  std::this_thread::sleep_for(std::chrono::seconds(5));
+
+}
+
 int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
   opentelemetry::exporter::metrics::PrometheusExporterOptions opts;
@@ -186,9 +197,11 @@ int main(int argc, char** argv) {
       absl::GetFlag(FLAGS_secure)
           ? grpc::XdsCredentials(grpc::InsecureChannelCredentials())
           : grpc::InsecureChannelCredentials()));
-  std::string user("world");
-  std::string reply = greeter.SayHello(user, NULL, NULL);
-  std::cout << "Greeter received: " << reply << std::endl;
-  std::this_thread::sleep_for(std::chrono::seconds(100));
+
+  Cookie session_cookie;
+  sayHello(greeter, &session_cookie, NULL);
+  while(true) {
+    sayHello(greeter, NULL, &session_cookie);
+  }
   return 0;
 }
