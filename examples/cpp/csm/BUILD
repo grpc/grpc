@@ -16,7 +16,7 @@ licenses(["notice"])
 
 cc_binary(
     name = "csm_greeter_client",
-    srcs = ["xds_greeter_client.cc"],
+    srcs = ["csm_greeter_client.cc"],
     defines = ["BAZEL_BUILD"],
     deps = [
         "//:grpc++",

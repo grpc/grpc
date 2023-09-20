@@ -1,6 +1,6 @@
-# gRPC C++ xDS Hello World Example
+# gRPC C++ CSM Hello World Example
 
-This xDS example builds on the [Hello World Example](https://github.com/grpc/grpc/tree/master/examples/cpp/helloworld) and changes the gRPC client and server to accept configuration from an xDS control plane.
+This CSM example builds on the [Hello World Example](https://github.com/grpc/grpc/tree/master/examples/cpp/helloworld) and changes the gRPC client and server to accept configuration from an xDS control plane and test SSA and CSM observability
 
 ## Configuration
 
@@ -25,13 +25,13 @@ To run the server -
 
 ```
 $ export GRPC_XDS_BOOTSTRAP=/path/to/bootstrap.json
-$ tools/bazel run examples/cpp/xds:xds_greeter_server
+$ tools/bazel run examples/cpp/csm:csm_greeter_server
 ```
 
 To run the client -
 
 ```
 $ export GRPC_XDS_BOOTSTRAP=/path/to/bootstrap.json
-$ tools/bazel run examples/cpp/xds:xds_greeter_client
+$ tools/bazel run examples/cpp/csm:csm_greeter_client
 ```
 
