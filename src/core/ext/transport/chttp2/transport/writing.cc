@@ -277,6 +277,7 @@ class WriteContext {
       t_->force_send_settings = false;
       t_->dirtied_local_settings = false;
       t_->sent_local_settings = true;
+      t_->flow_control.FlushedSettings();
       grpc_core::global_stats().IncrementHttp2SettingsWrites();
     }
   }

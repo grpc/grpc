@@ -513,6 +513,7 @@ grpc_cc_test(
     flaky = True,  # TODO(b/151315347)
     tags = [
         "cpp_end2end_test",
+        "cpp_lb_end2end_test",
         "no_windows",
     ],  # TODO(jtattermusch): fix test on windows
     deps = [
@@ -595,8 +596,10 @@ grpc_cc_test(
         "gtest",
     ],
     flaky = True,  # TODO(b/150567713)
+    shard_count = 20,
     tags = [
         "cpp_end2end_test",
+        "cpp_lb_end2end_test",
         "no_windows",
     ],  # TODO(jtattermusch): fix test on windows
     deps = [
@@ -1020,6 +1023,32 @@ grpc_cc_test(
     deps = [
         "//:grpc++",
         "//src/core:experiments",
+        "//src/proto/grpc/testing:echo_messages_proto",
+        "//src/proto/grpc/testing:echo_proto",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "ssl_credentials_test",
+    srcs = ["ssl_credentials_test.cc"],
+    data = [
+        "//src/core/tsi/test_creds:ca.pem",
+        "//src/core/tsi/test_creds:client.key",
+        "//src/core/tsi/test_creds:client.pem",
+        "//src/core/tsi/test_creds:server1.key",
+        "//src/core/tsi/test_creds:server1.pem",
+    ],
+    external_deps = [
+        "gtest",
+    ],
+    tags = ["ssl_credentials_test"],
+    deps = [
+        ":test_service_impl",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//test/core/util:grpc_test_util",

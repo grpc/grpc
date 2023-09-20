@@ -14,19 +14,36 @@
 // limitations under the License.
 //
 
-#include <memory>
+#include <thread>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include <grpc/grpc.h>
+#include "absl/strings/str_format.h"
 
+#include <grpc/grpc.h>
+#include <grpcpp/grpcpp.h>
+
+#include "src/core/lib/gprpp/sync.h"
+#include "src/proto/grpc/testing/empty.pb.h"
+#include "src/proto/grpc/testing/test.grpc.pb.h"
+#include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/interop/xds_interop_server_lib.h"
 
 namespace grpc {
 namespace testing {
 namespace {
+
+void ServerLoop(int port, grpc_core::Mutex* mutex,
+                grpc_core::CondVar* condition, Server** server) {
+  RunServer(false, port, /* should not be used */ -1, "127.0.0.1",
+            "test_server", [&](Server* s) {
+              grpc_core::MutexLock lock(mutex);
+              *server = s;
+              condition->Signal();
+            });
+}
 
 TEST(GetRpcBehaviorMetadataTest, ErrorCodeNoFilter) {
   auto status = GetStatusForRpcBehaviorMetadata("error-code-16", "hostname");
@@ -67,6 +84,28 @@ TEST(GetRpcBehaviorMetadataTest, ErrorWhenUnsupported) {
   ASSERT_TRUE(status.has_value());
   ASSERT_EQ(status->error_code(), grpc::StatusCode::INVALID_ARGUMENT)
       << status->error_message();
+}
+
+TEST(MaintenanceServerHookServiceTest, HookServiceInstalled) {
+  int port = grpc_pick_unused_port_or_die();
+  grpc_core::Mutex mutex;
+  grpc_core::CondVar condition;
+  Server* server = nullptr;
+  std::thread thread(ServerLoop, port, &mutex, &condition, &server);
+  {
+    grpc_core::MutexLock lock(&mutex);
+    while (server == nullptr) {
+      condition.Wait(&mutex);
+    }
+  }
+  HookService::Stub stub(CreateChannel(absl::StrFormat("127.0.0.1:%d", port),
+                                       InsecureChannelCredentials()));
+  ClientContext ctx;
+  Empty req, res;
+  auto status = stub.ClearReturnStatus(&ctx, req, &res);
+  EXPECT_EQ(status.error_code(), StatusCode::OK);
+  server->Shutdown();
+  thread.join();
 }
 
 }  // namespace

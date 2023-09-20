@@ -21,9 +21,10 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <functional>
 #include <utility>
 #include <vector>
+
+#include "absl/functional/any_invocable.h"
 
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/surface/channel_stack_type.h"
@@ -41,7 +42,7 @@ class ChannelInit {
  public:
   /// One stage of mutation: call functions against \a builder to influence the
   /// finally constructed channel stack
-  using Stage = std::function<bool(ChannelStackBuilder* builder)>;
+  using Stage = absl::AnyInvocable<bool(ChannelStackBuilder* builder) const>;
 
   class Builder {
    public:

@@ -56,9 +56,21 @@ static void exec_ctx_sched(grpc_closure* closure) {
 
 namespace grpc_core {
 
+#if !defined(_WIN32) || !defined(_DLL)
 thread_local ExecCtx* ExecCtx::exec_ctx_;
 thread_local ApplicationCallbackExecCtx*
     ApplicationCallbackExecCtx::callback_exec_ctx_;
+#else   // _WIN32
+ExecCtx*& ExecCtx::exec_ctx() {
+  static thread_local ExecCtx* exec_ctx;
+  return exec_ctx;
+}
+
+ApplicationCallbackExecCtx*& ApplicationCallbackExecCtx::callback_exec_ctx() {
+  static thread_local ApplicationCallbackExecCtx* callback_exec_ctx;
+  return callback_exec_ctx;
+}
+#endif  // _WIN32
 
 bool ExecCtx::Flush() {
   bool did_something = false;

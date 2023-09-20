@@ -421,7 +421,32 @@ endif()
 
 if(WIN32)
   set(_gRPC_ALLTARGETS_LIBRARIES ${_gRPC_ALLTARGETS_LIBRARIES} ws2_32 crypt32)
+  set(_gRPC_STATIC_WIN32 STATIC)
 endif()
+
+if(BUILD_SHARED_LIBS AND WIN32)
+
+# Currently for shared lib on Windows (i.e. a DLL) certain bits of source code
+# are generated from protobuf definitions by upbc. This source code does not include
+# annotations needed to export these functions from gprc.lib so we have to
+# re-include a small subset of these.
+#
+# This is not an ideal situation because these functions will be unavailable
+# to clients of grpc and the libraries that need this (e.g. grpc++) will
+# include redundant duplicate code. Hence, the duplication is only activated
+# for DLL builds - and should be completely removed when source files are
+# generated with the necessary __declspec annotations.
+set(gRPC_UPB_GEN_DUPL_SRC
+  src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
+  src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
+  src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
+)
+set(gRPC_ADDITIONAL_DLL_SRC
+  src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc
+  src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.cc
+)
+
+endif() # BUILD_SHARED_LIBS AND WIN32
 
 # Create directory for proto source files
 set(_gRPC_PROTO_SRCS_DIR ${CMAKE_BINARY_DIR}/protos)
@@ -1294,7 +1319,6 @@ if(gRPC_BUILD_TESTS)
   endif()
   add_dependencies(buildtests_cxx sorted_pack_test)
   add_dependencies(buildtests_cxx spinlock_test)
-  add_dependencies(buildtests_cxx ssl_credentials_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx ssl_transport_security_test)
   endif()
@@ -1348,11 +1372,13 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx test_core_iomgr_load_file_test)
   add_dependencies(buildtests_cxx test_core_iomgr_timer_heap_test)
   add_dependencies(buildtests_cxx test_core_security_credentials_test)
+  add_dependencies(buildtests_cxx test_core_security_ssl_credentials_test)
   add_dependencies(buildtests_cxx test_core_slice_slice_buffer_test)
   add_dependencies(buildtests_cxx test_core_slice_slice_test)
   add_dependencies(buildtests_cxx test_core_transport_chaotic_good_frame_test)
   add_dependencies(buildtests_cxx test_core_transport_chttp2_frame_test)
   add_dependencies(buildtests_cxx test_cpp_client_credentials_test)
+  add_dependencies(buildtests_cxx test_cpp_end2end_ssl_credentials_test)
   add_dependencies(buildtests_cxx test_cpp_server_credentials_test)
   add_dependencies(buildtests_cxx test_cpp_util_slice_test)
   add_dependencies(buildtests_cxx test_cpp_util_time_test)
@@ -1481,6 +1507,7 @@ if(gRPC_BUILD_TESTS)
 endif()
 
 
+
 add_library(address_sorting
   third_party/address_sorting/address_sorting.c
   third_party/address_sorting/address_sorting_posix.c
@@ -1532,6 +1559,7 @@ if(gRPC_INSTALL)
     ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
   )
 endif()
+
 
 
 add_library(gpr
@@ -1594,6 +1622,10 @@ if(WIN32 AND MSVC)
   set_target_properties(gpr PROPERTIES COMPILE_PDB_NAME "gpr"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
   )
+  set_target_properties(gpr PROPERTIES DEFINE_SYMBOL "GPR_DLL_EXPORTS")
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(gpr INTERFACE GPR_DLL_IMPORTS)
+  endif()
   if(gRPC_INSTALL)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/gpr.pdb
       DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
@@ -1692,6 +1724,7 @@ if(gRPC_INSTALL)
 endif()
 
 
+
 add_library(grpc
   src/core/ext/filters/backend_metrics/backend_metric_filter.cc
   src/core/ext/filters/census/grpc_context.cc
@@ -1708,9 +1741,10 @@ add_library(grpc
   src/core/ext/filters/client_channel/config_selector.cc
   src/core/ext/filters/client_channel/dynamic_filters.cc
   src/core/ext/filters/client_channel/global_subchannel_pool.cc
-  src/core/ext/filters/client_channel/http_proxy.cc
+  src/core/ext/filters/client_channel/http_proxy_mapper.cc
   src/core/ext/filters/client_channel/lb_policy/address_filtering.cc
   src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc
+  src/core/ext/filters/client_channel/lb_policy/endpoint_list.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc
@@ -2200,7 +2234,6 @@ add_library(grpc
   src/core/lib/event_engine/slice.cc
   src/core/lib/event_engine/slice_buffer.cc
   src/core/lib/event_engine/tcp_socket_utils.cc
-  src/core/lib/event_engine/thread_pool/original_thread_pool.cc
   src/core/lib/event_engine/thread_pool/thread_count.cc
   src/core/lib/event_engine/thread_pool/thread_pool_factory.cc
   src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
@@ -2369,6 +2402,7 @@ add_library(grpc
   src/core/lib/security/credentials/plugin/plugin_credentials.cc
   src/core/lib/security/credentials/ssl/ssl_credentials.cc
   src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc
+  src/core/lib/security/credentials/tls/grpc_tls_certificate_match.cc
   src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.cc
   src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.cc
   src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc
@@ -2481,6 +2515,10 @@ if(WIN32 AND MSVC)
   set_target_properties(grpc PROPERTIES COMPILE_PDB_NAME "grpc"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
   )
+  set_target_properties(grpc PROPERTIES DEFINE_SYMBOL "GRPC_DLL_EXPORTS")
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(grpc INTERFACE GRPC_DLL_IMPORTS)
+  endif()
   if(gRPC_INSTALL)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/grpc.pdb
       DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
@@ -2619,6 +2657,7 @@ endif()
 
 if(gRPC_BUILD_TESTS)
 
+
 add_library(grpc_test_util
   test/core/event_engine/test_init.cc
   test/core/util/build.cc
@@ -2678,6 +2717,7 @@ endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
+
 add_library(grpc_test_util_unsecure
   test/core/event_engine/test_init.cc
   test/core/util/build.cc
@@ -2735,6 +2775,7 @@ endif()
 
 endif()
 
+
 add_library(grpc_unsecure
   src/core/ext/filters/backend_metrics/backend_metric_filter.cc
   src/core/ext/filters/census/grpc_context.cc
@@ -2751,9 +2792,10 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/config_selector.cc
   src/core/ext/filters/client_channel/dynamic_filters.cc
   src/core/ext/filters/client_channel/global_subchannel_pool.cc
-  src/core/ext/filters/client_channel/http_proxy.cc
+  src/core/ext/filters/client_channel/http_proxy_mapper.cc
   src/core/ext/filters/client_channel/lb_policy/address_filtering.cc
   src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc
+  src/core/ext/filters/client_channel/lb_policy/endpoint_list.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc
@@ -2907,7 +2949,6 @@ add_library(grpc_unsecure
   src/core/lib/event_engine/slice.cc
   src/core/lib/event_engine/slice_buffer.cc
   src/core/lib/event_engine/tcp_socket_utils.cc
-  src/core/lib/event_engine/thread_pool/original_thread_pool.cc
   src/core/lib/event_engine/thread_pool/thread_count.cc
   src/core/lib/event_engine/thread_pool/thread_pool_factory.cc
   src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
@@ -3121,6 +3162,7 @@ add_library(grpc_unsecure
   third_party/upb/upb/mini_descriptor/decode.c
   third_party/upb/upb/mini_descriptor/internal/base92.c
   third_party/upb/upb/mini_descriptor/link.c
+  ${gRPC_ADDITIONAL_DLL_SRC}
 )
 
 target_compile_features(grpc_unsecure PUBLIC cxx_std_14)
@@ -3134,6 +3176,10 @@ if(WIN32 AND MSVC)
   set_target_properties(grpc_unsecure PROPERTIES COMPILE_PDB_NAME "grpc_unsecure"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
   )
+  set_target_properties(grpc_unsecure PROPERTIES DEFINE_SYMBOL "GRPC_DLL_EXPORTS")
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(grpc_unsecure INTERFACE GRPC_DLL_IMPORTS)
+  endif()
   if(gRPC_INSTALL)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/grpc_unsecure.pdb
       DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
@@ -3270,6 +3316,7 @@ endif()
 
 if(gRPC_BUILD_TESTS)
 
+
 add_library(gtest
   third_party/googletest/googlemock/src/gmock-cardinalities.cc
   third_party/googletest/googlemock/src/gmock-internal-utils.cc
@@ -3336,7 +3383,8 @@ target_link_libraries(gtest
 
 endif()
 
-add_library(upb
+
+add_library(upb ${_gRPC_STATIC_WIN32}
   third_party/upb/upb/base/status.c
   third_party/upb/upb/collections/array.c
   third_party/upb/upb/collections/map.c
@@ -3407,7 +3455,8 @@ if(gRPC_INSTALL)
 endif()
 
 
-add_library(upb_collections_lib
+
+add_library(upb_collections_lib ${_gRPC_STATIC_WIN32}
   third_party/upb/upb/base/status.c
   third_party/upb/upb/collections/array.c
   third_party/upb/upb/collections/map.c
@@ -3468,7 +3517,8 @@ if(gRPC_INSTALL)
 endif()
 
 
-add_library(upb_json_lib
+
+add_library(upb_json_lib ${_gRPC_STATIC_WIN32}
   src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
   third_party/upb/upb/json/decode.c
   third_party/upb/upb/json/encode.c
@@ -3545,7 +3595,8 @@ if(gRPC_INSTALL)
 endif()
 
 
-add_library(upb_textformat_lib
+
+add_library(upb_textformat_lib ${_gRPC_STATIC_WIN32}
   src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
   third_party/upb/upb/message/accessors.c
   third_party/upb/upb/mini_descriptor/build_enum.c
@@ -3621,6 +3672,7 @@ if(gRPC_INSTALL)
 endif()
 
 
+
 add_library(utf8_range_lib
   third_party/utf8_range/naive.c
   third_party/utf8_range/range2-neon.c
@@ -3676,6 +3728,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 if(gRPC_BUILD_CODEGEN)
+
 add_library(benchmark_helpers
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
@@ -3751,6 +3804,7 @@ endif()
 
 endif()
 
+
 add_library(grpc++
   src/core/ext/transport/binder/client/binder_connector.cc
   src/core/ext/transport/binder/client/channel_create.cc
@@ -3817,6 +3871,7 @@ add_library(grpc++
   src/cpp/util/status.cc
   src/cpp/util/string_ref.cc
   src/cpp/util/time_cc.cc
+  ${gRPC_UPB_GEN_DUPL_SRC}
 )
 
 target_compile_features(grpc++ PUBLIC cxx_std_14)
@@ -3830,6 +3885,10 @@ if(WIN32 AND MSVC)
   set_target_properties(grpc++ PROPERTIES COMPILE_PDB_NAME "grpc++"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
   )
+  set_target_properties(grpc++ PROPERTIES DEFINE_SYMBOL "GRPCXX_DLL_EXPORTS")
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(grpc++ INTERFACE GRPCXX_DLL_IMPORTS)
+  endif()
   if(gRPC_INSTALL)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/grpc++.pdb
       DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
@@ -4081,9 +4140,11 @@ if(gRPC_INSTALL)
 endif()
 
 
+
 add_library(grpc++_alts
   src/cpp/common/alts_context.cc
   src/cpp/common/alts_util.cc
+  ${gRPC_UPB_GEN_DUPL_SRC}
 )
 
 target_compile_features(grpc++_alts PUBLIC cxx_std_14)
@@ -4143,6 +4204,7 @@ if(gRPC_INSTALL)
     ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
   )
 endif()
+
 
 
 add_library(grpc++_error_details
@@ -4209,6 +4271,7 @@ endif()
 
 
 if(gRPC_BUILD_CODEGEN)
+
 add_library(grpc++_reflection
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.cc
@@ -4281,6 +4344,7 @@ endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
+
 add_library(grpc++_test
   src/cpp/client/channel_test_peer.cc
 )
@@ -4346,6 +4410,7 @@ endforeach()
 endif()
 if(gRPC_BUILD_TESTS)
 
+
 add_library(grpc++_test_config
   test/cpp/util/test_config_cc.cc
 )
@@ -4391,6 +4456,7 @@ target_link_libraries(grpc++_test_config
 
 endif()
 if(gRPC_BUILD_TESTS)
+
 
 add_library(grpc++_test_util
   src/core/lib/gpr/subprocess_posix.cc
@@ -4457,6 +4523,7 @@ target_link_libraries(grpc++_test_util
 
 endif()
 
+
 add_library(grpc++_unsecure
   src/cpp/client/channel_cc.cc
   src/cpp/client/client_callback.cc
@@ -4495,6 +4562,7 @@ add_library(grpc++_unsecure
   src/cpp/util/status.cc
   src/cpp/util/string_ref.cc
   src/cpp/util/time_cc.cc
+  ${gRPC_UPB_GEN_DUPL_SRC}
 )
 
 target_compile_features(grpc++_unsecure PUBLIC cxx_std_14)
@@ -4508,6 +4576,10 @@ if(WIN32 AND MSVC)
   set_target_properties(grpc++_unsecure PROPERTIES COMPILE_PDB_NAME "grpc++_unsecure"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
   )
+  set_target_properties(grpc++_unsecure PROPERTIES DEFINE_SYMBOL "GRPCXX_DLL_EXPORTS")
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(grpc++_unsecure INTERFACE GRPCXX_DLL_IMPORTS)
+  endif()
   if(gRPC_INSTALL)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/grpc++_unsecure.pdb
       DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
@@ -4755,6 +4827,7 @@ if(gRPC_INSTALL)
 endif()
 
 
+
 add_library(grpc_authorization_provider
   src/core/ext/upb-generated/google/protobuf/any.upb.c
   src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
@@ -4819,7 +4892,6 @@ add_library(grpc_authorization_provider
   src/core/lib/event_engine/slice.cc
   src/core/lib/event_engine/slice_buffer.cc
   src/core/lib/event_engine/tcp_socket_utils.cc
-  src/core/lib/event_engine/thread_pool/original_thread_pool.cc
   src/core/lib/event_engine/thread_pool/thread_count.cc
   src/core/lib/event_engine/thread_pool/thread_pool_factory.cc
   src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
@@ -5164,6 +5236,7 @@ if(gRPC_INSTALL)
 endif()
 
 
+
 add_library(grpc_plugin_support
   src/compiler/cpp_generator.cc
   src/compiler/csharp_generator.cc
@@ -5238,6 +5311,7 @@ endif()
 # grpcpp_channelz doesn't build with protobuf-lite
 # See https://github.com/grpc/grpc/issues/19473
 if(gRPC_BUILD_CODEGEN AND NOT gRPC_USE_PROTO_LITE)
+
 add_library(grpcpp_channelz
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.grpc.pb.cc
@@ -5478,7 +5552,9 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(activity_test
+  src/core/lib/debug/trace.cc
   src/core/lib/promise/activity.cc
+  src/core/lib/promise/trace.cc
   test/core/promise/activity_test.cc
 )
 target_compile_features(activity_test PUBLIC cxx_std_14)
@@ -6537,6 +6613,7 @@ target_include_directories(avl_test
 target_link_libraries(avl_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::hash
   gpr
 )
 
@@ -8195,7 +8272,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(cf_event_engine_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc_unsecure
     grpc_test_util
   )
 
@@ -8691,6 +8767,7 @@ add_executable(chunked_vector_test
   src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/promise/activity.cc
+  src/core/lib/promise/trace.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
@@ -10632,6 +10709,7 @@ target_include_directories(endpoint_config_test
 target_link_libraries(endpoint_config_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::hash
   absl::type_traits
   absl::statusor
   gpr
@@ -11052,6 +11130,8 @@ add_executable(exec_ctx_wakeup_scheduler_test
   src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
   src/core/ext/upb-generated/google/rpc/status.upb.c
   src/core/lib/debug/trace.cc
+  src/core/lib/experiments/config.cc
+  src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/closure.cc
@@ -11794,6 +11874,7 @@ add_executable(flow_control_test
   src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/promise/activity.cc
+  src/core/lib/promise/trace.cc
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
@@ -12143,7 +12224,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(fuzzing_event_engine_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc_unsecure
     ${_gRPC_PROTOBUF_LIBRARIES}
     grpc_test_util
   )
@@ -13435,7 +13515,6 @@ target_include_directories(h2_ssl_cert_test
 target_link_libraries(h2_ssl_cert_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -14416,7 +14495,9 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(inter_activity_pipe_test
+  src/core/lib/debug/trace.cc
   src/core/lib/promise/activity.cc
+  src/core/lib/promise/trace.cc
   test/core/promise/inter_activity_pipe_test.cc
 )
 target_compile_features(inter_activity_pipe_test PUBLIC cxx_std_14)
@@ -14442,6 +14523,7 @@ target_include_directories(inter_activity_pipe_test
 target_link_libraries(inter_activity_pipe_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::hash
   absl::type_traits
   absl::statusor
   gpr
@@ -14766,6 +14848,8 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(join_test
+  src/core/lib/debug/trace.cc
+  src/core/lib/promise/trace.cc
   test/core/promise/join_test.cc
 )
 target_compile_features(join_test PUBLIC cxx_std_14)
@@ -14792,6 +14876,7 @@ target_link_libraries(join_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::type_traits
+  absl::statusor
   gpr
 )
 
@@ -15102,6 +15187,7 @@ target_include_directories(latch_test
 target_link_libraries(latch_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::hash
   absl::type_traits
   absl::statusor
   gpr
@@ -15321,6 +15407,8 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(loop_test
+  src/core/lib/debug/trace.cc
+  src/core/lib/promise/trace.cc
   test/core/promise/loop_test.cc
 )
 target_compile_features(loop_test PUBLIC cxx_std_14)
@@ -16499,7 +16587,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(oracle_event_engine_posix_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc_unsecure
     grpc_test_util
   )
 
@@ -16685,7 +16772,13 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(outlier_detection_test
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
   test/core/client_channel/lb_policy/outlier_detection_test.cc
+  test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
 )
 target_compile_features(outlier_detection_test PUBLIC cxx_std_14)
 target_include_directories(outlier_detection_test
@@ -16710,6 +16803,7 @@ target_include_directories(outlier_detection_test
 target_link_libraries(outlier_detection_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 
@@ -17012,6 +17106,8 @@ add_executable(periodic_update_test
   src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
   src/core/ext/upb-generated/google/rpc/status.upb.c
   src/core/lib/debug/trace.cc
+  src/core/lib/experiments/config.cc
+  src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/closure.cc
@@ -17067,7 +17163,13 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(pick_first_test
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
   test/core/client_channel/lb_policy/pick_first_test.cc
+  test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
 )
 target_compile_features(pick_first_test PUBLIC cxx_std_14)
 target_include_directories(pick_first_test
@@ -17092,6 +17194,7 @@ target_include_directories(pick_first_test
 target_link_libraries(pick_first_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 
@@ -17506,7 +17609,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(posix_endpoint_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc_unsecure
     grpc_test_util
   )
 
@@ -17580,7 +17682,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(posix_event_engine_connect_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc_unsecure
     grpc_test_util
   )
 
@@ -17626,7 +17727,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(posix_event_engine_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc_unsecure
     grpc++_test_util
   )
 
@@ -20610,7 +20710,13 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(round_robin_test
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
   test/core/client_channel/lb_policy/round_robin_test.cc
+  test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
 )
 target_compile_features(round_robin_test PUBLIC cxx_std_14)
 target_include_directories(round_robin_test
@@ -20635,6 +20741,7 @@ target_include_directories(round_robin_test
 target_link_libraries(round_robin_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 
@@ -20796,6 +20903,8 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(seq_test
+  src/core/lib/debug/trace.cc
+  src/core/lib/promise/trace.cc
   test/core/promise/seq_test.cc
 )
 target_compile_features(seq_test PUBLIC cxx_std_14)
@@ -20822,6 +20931,7 @@ target_link_libraries(seq_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::type_traits
+  absl::statusor
   gpr
 )
 
@@ -22277,49 +22387,6 @@ target_link_libraries(spinlock_test
 
 endif()
 if(gRPC_BUILD_TESTS)
-
-add_executable(ssl_credentials_test
-  test/core/security/ssl_credentials_test.cc
-  test/core/util/cmdline.cc
-  test/core/util/fuzzer_util.cc
-  test/core/util/grpc_profiler.cc
-  test/core/util/histogram.cc
-  test/core/util/mock_endpoint.cc
-  test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
-  test/core/util/resolve_localhost_ip46.cc
-  test/core/util/slice_splitter.cc
-  test/core/util/tracer_util.cc
-)
-target_compile_features(ssl_credentials_test PUBLIC cxx_std_14)
-target_include_directories(ssl_credentials_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(ssl_credentials_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  gtest
-  grpc_test_util
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(ssl_transport_security_test
@@ -23246,6 +23313,7 @@ add_executable(test_core_channel_channelz_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.grpc.pb.h
   test/core/channel/channelz_test.cc
+  test/core/event_engine/event_engine_test_utils.cc
   test/cpp/util/channel_trace_proto_helper.cc
 )
 target_compile_features(test_core_channel_channelz_test PUBLIC cxx_std_14)
@@ -23675,6 +23743,49 @@ target_link_libraries(test_core_security_credentials_test
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(test_core_security_ssl_credentials_test
+  test/core/security/ssl_credentials_test.cc
+  test/core/util/cmdline.cc
+  test/core/util/fuzzer_util.cc
+  test/core/util/grpc_profiler.cc
+  test/core/util/histogram.cc
+  test/core/util/mock_endpoint.cc
+  test/core/util/parse_hexstring.cc
+  test/core/util/passthru_endpoint.cc
+  test/core/util/resolve_localhost_ip46.cc
+  test/core/util/slice_splitter.cc
+  test/core/util/tracer_util.cc
+)
+target_compile_features(test_core_security_ssl_credentials_test PUBLIC cxx_std_14)
+target_include_directories(test_core_security_ssl_credentials_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(test_core_security_ssl_credentials_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(test_core_slice_slice_buffer_test
   test/core/slice/slice_buffer_test.cc
 )
@@ -23819,7 +23930,6 @@ add_executable(test_core_transport_chaotic_good_frame_test
   src/core/lib/event_engine/slice.cc
   src/core/lib/event_engine/slice_buffer.cc
   src/core/lib/event_engine/tcp_socket_utils.cc
-  src/core/lib/event_engine/thread_pool/original_thread_pool.cc
   src/core/lib/event_engine/thread_pool/thread_count.cc
   src/core/lib/event_engine/thread_pool/thread_pool_factory.cc
   src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
@@ -24114,6 +24224,56 @@ target_link_libraries(test_cpp_client_credentials_test
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(test_cpp_end2end_ssl_credentials_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
+  test/cpp/end2end/ssl_credentials_test.cc
+  test/cpp/end2end/test_service_impl.cc
+)
+target_compile_features(test_cpp_end2end_ssl_credentials_test PUBLIC cxx_std_14)
+target_include_directories(test_cpp_end2end_ssl_credentials_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(test_cpp_end2end_ssl_credentials_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  grpc++_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(test_cpp_server_credentials_test
   test/cpp/server/credentials_test.cc
   test/cpp/util/tls_test_utils.cc
@@ -24343,6 +24503,7 @@ target_include_directories(thread_quota_test
 target_link_libraries(thread_quota_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::hash
   gpr
 )
 
@@ -24438,7 +24599,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(thready_posix_event_engine_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc_unsecure
     grpc_test_util
   )
 
@@ -25031,6 +25191,8 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(try_join_test
+  src/core/lib/debug/trace.cc
+  src/core/lib/promise/trace.cc
   test/core/promise/try_join_test.cc
 )
 target_compile_features(try_join_test PUBLIC cxx_std_14)
@@ -25100,6 +25262,8 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(try_seq_test
+  src/core/lib/debug/trace.cc
+  src/core/lib/promise/trace.cc
   test/core/promise/try_seq_test.cc
 )
 target_compile_features(try_seq_test PUBLIC cxx_std_14)
@@ -25394,6 +25558,7 @@ target_include_directories(wait_for_callback_test
 target_link_libraries(wait_for_callback_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::hash
   absl::type_traits
   absl::statusor
   gpr
@@ -25472,7 +25637,13 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(weighted_round_robin_test
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
   test/core/client_channel/lb_policy/weighted_round_robin_test.cc
+  test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
 )
 target_compile_features(weighted_round_robin_test PUBLIC cxx_std_14)
 target_include_directories(weighted_round_robin_test
@@ -25497,6 +25668,7 @@ target_include_directories(weighted_round_robin_test
 target_link_libraries(weighted_round_robin_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 
@@ -25809,6 +25981,7 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(work_serializer_test
+    test/core/event_engine/event_engine_test_utils.cc
     test/core/gprpp/work_serializer_test.cc
   )
   target_compile_features(work_serializer_test PUBLIC cxx_std_14)
@@ -28508,7 +28681,13 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(xds_override_host_test
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
   test/core/client_channel/lb_policy/xds_override_host_test.cc
+  test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
 )
 target_compile_features(xds_override_host_test PUBLIC cxx_std_14)
 target_include_directories(xds_override_host_test
@@ -28533,6 +28712,7 @@ target_include_directories(xds_override_host_test
 target_link_libraries(xds_override_host_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 

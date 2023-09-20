@@ -24,6 +24,9 @@ spec:
       % if service_account_name:
       serviceAccountName: ${service_account_name}
       % endif
+      % if termination_grace_period_seconds:
+      terminationGracePeriodSeconds: ${termination_grace_period_seconds}
+      % endif
       containers:
       - name: ${deployment_name}
         image: ${image_name}
@@ -44,6 +47,8 @@ spec:
             value: "/tmp/grpc-xds/td-grpc-bootstrap.json"
           - name: GRPC_XDS_EXPERIMENTAL_V3_SUPPORT
             value: "true"
+          - name: GRPC_EXPERIMENTAL_XDS_ENABLE_OVERRIDE_HOST
+            value: "true"
         volumeMounts:
           - mountPath: /tmp/grpc-xds/
             name: grpc-td-conf
@@ -55,6 +60,12 @@ spec:
           requests:
             cpu: 100m
             memory: 512Mi
+        % if pre_stop_hook:
+        lifecycle:
+          preStop:
+            exec:
+              command: ["tail", "-f", "/dev/null"] 
+        % endif
       initContainers:
         - name: grpc-td-init
           image: ${td_bootstrap_image}

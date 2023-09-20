@@ -26,6 +26,7 @@
 #include <memory>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/container/flat_hash_set.h"
@@ -296,7 +297,7 @@ class BasicMemoryQuota final
     size_t max_recommended_allocation_size = 0;
   };
 
-  explicit BasicMemoryQuota(std::string name) : name_(std::move(name)) {}
+  explicit BasicMemoryQuota(std::string name);
 
   // Start the reclamation activity.
   void Start();
@@ -585,6 +586,8 @@ using MemoryQuotaRefPtr = std::shared_ptr<MemoryQuota>;
 inline MemoryQuotaRefPtr MakeMemoryQuota(std::string name) {
   return std::make_shared<MemoryQuota>(std::move(name));
 }
+
+std::vector<std::shared_ptr<BasicMemoryQuota>> AllMemoryQuotas();
 
 }  // namespace grpc_core
 

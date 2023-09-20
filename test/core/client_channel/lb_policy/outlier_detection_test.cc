@@ -21,7 +21,6 @@
 #include <array>
 #include <chrono>
 #include <memory>
-#include <ratio>
 #include <string>
 #include <utility>
 #include <vector>
@@ -31,15 +30,12 @@
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
 
-#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
-#include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/json.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
-#include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/json/json.h"
@@ -51,7 +47,7 @@ namespace grpc_core {
 namespace testing {
 namespace {
 
-class OutlierDetectionTest : public TimeAwareLoadBalancingPolicyTest {
+class OutlierDetectionTest : public LoadBalancingPolicyTest {
  protected:
   class ConfigBuilder {
    public:
@@ -147,7 +143,12 @@ class OutlierDetectionTest : public TimeAwareLoadBalancingPolicyTest {
   };
 
   OutlierDetectionTest()
-      : lb_policy_(MakeLbPolicy("outlier_detection_experimental")) {}
+      : LoadBalancingPolicyTest("outlier_detection_experimental") {}
+
+  void SetUp() override {
+    LoadBalancingPolicyTest::SetUp();
+    SetExpectedTimerDuration(std::chrono::seconds(10));
+  }
 
   absl::optional<std::string> DoPickWithFailedCall(
       LoadBalancingPolicy::SubchannelPicker* picker) {
@@ -165,28 +166,14 @@ class OutlierDetectionTest : public TimeAwareLoadBalancingPolicyTest {
     }
     return address;
   }
-
-  void CheckExpectedTimerDuration(
-      grpc_event_engine::experimental::EventEngine::Duration duration)
-      override {
-    EXPECT_EQ(duration, expected_internal_)
-        << "Expected: " << expected_internal_.count() << "ns"
-        << "\n  Actual: " << duration.count() << "ns";
-  }
-
-  OrphanablePtr<LoadBalancingPolicy> lb_policy_;
-  grpc_event_engine::experimental::EventEngine::Duration expected_internal_ =
-      std::chrono::seconds(10);
 };
 
 TEST_F(OutlierDetectionTest, Basic) {
   constexpr absl::string_view kAddressUri = "ipv4:127.0.0.1:443";
   // Send an update containing one address.
   absl::Status status = ApplyUpdate(
-      BuildUpdate({kAddressUri}, ConfigBuilder().Build()), lb_policy_.get());
+      BuildUpdate({kAddressUri}, ConfigBuilder().Build()), lb_policy());
   EXPECT_TRUE(status.ok()) << status;
-  // LB policy should have reported CONNECTING state.
-  ExpectConnectingUpdate();
   // LB policy should have created a subchannel for the address.
   auto* subchannel = FindSubchannel(kAddressUri);
   ASSERT_NE(subchannel, nullptr);
@@ -195,6 +182,8 @@ TEST_F(OutlierDetectionTest, Basic) {
   EXPECT_TRUE(subchannel->ConnectionRequested());
   // This causes the subchannel to start to connect, so it reports CONNECTING.
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  // LB policy should have reported CONNECTING state.
+  ExpectConnectingUpdate();
   // When the subchannel becomes connected, it reports READY.
   subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
   // The LB policy will report CONNECTING some number of times (doesn't
@@ -217,7 +206,7 @@ TEST_F(OutlierDetectionTest, FailurePercentage) {
                                   .SetFailurePercentageMinimumHosts(1)
                                   .SetFailurePercentageRequestVolume(1)
                                   .Build()),
-      lb_policy_.get());
+      lb_policy());
   EXPECT_TRUE(status.ok()) << status;
   // Expect normal startup.
   auto picker = ExpectRoundRobinStartup(kAddresses);
@@ -228,11 +217,9 @@ TEST_F(OutlierDetectionTest, FailurePercentage) {
   ASSERT_TRUE(address.has_value());
   gpr_log(GPR_INFO, "### failed RPC on %s", address->c_str());
   // Advance time and run the timer callback to trigger ejection.
-  time_cache_.IncrementBy(Duration::Seconds(10));
-  RunTimerCallback();
+  IncrementTimeBy(Duration::Seconds(10));
   gpr_log(GPR_INFO, "### ejection complete");
-  // Expect a re-resolution request.
-  ExpectReresolutionRequest();
+  if (!IsRoundRobinDelegateToPickFirstEnabled()) ExpectReresolutionRequest();
   // Expect a picker update.
   std::vector<absl::string_view> remaining_addresses;
   for (const auto& addr : kAddresses) {
@@ -253,12 +240,10 @@ TEST_F(OutlierDetectionTest, DoesNotWorkWithPickFirst) {
                       .SetFailurePercentageRequestVolume(1)
                       .SetChildPolicy({{"pick_first", Json::FromObject({})}})
                       .Build()),
-      lb_policy_.get());
+      lb_policy());
   EXPECT_TRUE(status.ok()) << status;
-  // LB policy should have created a subchannel for the first address with
-  // the GRPC_ARG_INHIBIT_HEALTH_CHECKING channel arg.
-  auto* subchannel = FindSubchannel(
-      kAddresses[0], ChannelArgs().Set(GRPC_ARG_INHIBIT_HEALTH_CHECKING, true));
+  // LB policy should have created a subchannel for the first address.
+  auto* subchannel = FindSubchannel(kAddresses[0]);
   ASSERT_NE(subchannel, nullptr);
   // When the LB policy receives the subchannel's initial connectivity
   // state notification (IDLE), it will request a connection.
@@ -283,8 +268,7 @@ TEST_F(OutlierDetectionTest, DoesNotWorkWithPickFirst) {
   ASSERT_TRUE(address.has_value());
   gpr_log(GPR_INFO, "### failed RPC on %s", address->c_str());
   // Advance time and run the timer callback to trigger ejection.
-  time_cache_.IncrementBy(Duration::Seconds(10));
-  RunTimerCallback();
+  IncrementTimeBy(Duration::Seconds(10));
   gpr_log(GPR_INFO, "### ejection timer pass complete");
   // Subchannel should not be ejected.
   ExpectQueueEmpty();
@@ -299,8 +283,5 @@ TEST_F(OutlierDetectionTest, DoesNotWorkWithPickFirst) {
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(&argc, argv);
-  grpc_init();
-  int ret = RUN_ALL_TESTS();
-  grpc_shutdown();
-  return ret;
+  return RUN_ALL_TESTS();
 }

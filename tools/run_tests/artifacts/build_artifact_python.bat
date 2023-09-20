@@ -21,7 +21,7 @@ set PATH=C:\msys64\mingw%2\bin;C:\tools\msys64\mingw%2\bin;%PATH%
 
 python -m pip install --upgrade six
 @rem some artifacts are broken for setuptools 38.5.0. See https://github.com/grpc/grpc/issues/14317
-python -m pip install --upgrade setuptools==44.1.1
+python -m pip install --upgrade setuptools==59.6.0
 python -m pip install --upgrade "cython<3.0.0rc1"
 python -m pip install -rrequirements.txt --user
 

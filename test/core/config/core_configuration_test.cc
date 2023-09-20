@@ -16,6 +16,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <functional>
 #include <thread>
 #include <vector>
 
