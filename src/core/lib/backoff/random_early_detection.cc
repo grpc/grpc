@@ -16,6 +16,8 @@
 
 #include "src/core/lib/backoff/random_early_detection.h"
 
+#include "absl/random/distributions.h"
+
 namespace grpc_core {
 
 bool RandomEarlyDetection::Reject(uint64_t size, BitSourceRef bitsrc) const {
