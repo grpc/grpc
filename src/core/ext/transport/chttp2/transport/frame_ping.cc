@@ -24,6 +24,7 @@
 
 #include <algorithm>
 #include <initializer_list>
+#include <string>
 
 #include "absl/container/flat_hash_map.h"
 #include "absl/status/status.h"
@@ -34,6 +35,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/ping_abuse_policy.h"
+#include "src/core/lib/debug/trace.h"
 
 extern grpc_core::TraceFlag grpc_keepalive_trace;
 extern grpc_core::TraceFlag grpc_http_trace;
