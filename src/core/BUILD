@@ -2558,10 +2558,8 @@ grpc_cc_library(
     hdrs = [
         "lib/gprpp/per_cpu.h",
     ],
-    external_deps = ["absl/random"],
     deps = [
         "useful",
-        "//:exec_ctx",
         "//:gpr",
     ],
 )
