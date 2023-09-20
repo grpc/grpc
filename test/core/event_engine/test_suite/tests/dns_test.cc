@@ -37,6 +37,7 @@
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "test/core/event_engine/test_suite/event_engine_test_framework.h"
@@ -132,11 +133,6 @@ class EventEngineDNSTest : public EventEngineTest {
           grpc::testing::NormalizeFilePath(tcp_connect_path + ".exe");
       health_check_path =
           grpc::testing::NormalizeFilePath(health_check_path + ".exe");
-      std::cout << test_records_path << std::endl;
-      std::cout << dns_server_path << std::endl;
-      std::cout << dns_resolver_path << std::endl;
-      std::cout << tcp_connect_path << std::endl;
-      std::cout << health_check_path << std::endl;
 #endif  // GPR_WINDOWS
     } else {
 #ifdef GPR_WINDOWS

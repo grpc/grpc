@@ -89,7 +89,6 @@ void GrpcPolledFdFactoryWindows::GrpcPolledFdWindows::
         absl::AnyInvocable<void(absl::Status)> read_closure) {
   GPR_ASSERT(read_closure_ == nullptr);
   read_closure_ = std::move(read_closure);
-  GPR_ASSERT(GRPC_SLICE_LENGTH(read_buf_) == 0);
   grpc_core::CSliceUnref(read_buf_);
   GPR_ASSERT(!read_buf_has_data_);
   read_buf_ = GRPC_SLICE_MALLOC(4192);
