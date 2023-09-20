@@ -242,6 +242,8 @@ TEST(PreStopHookService, StartDoRequestStop) {
   status = call_hangs.WaitForStatus(absl::Milliseconds(100));
   EXPECT_FALSE(status.has_value()) << status->error_message();
   service.Stop();
+  EXPECT_EQ(call_hangs.WaitForStatus().value_or(Status::CANCELLED).error_code(),
+            StatusCode::ABORTED);
   server->Shutdown();
   server_thread.join();
 }
