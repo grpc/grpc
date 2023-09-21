@@ -916,6 +916,21 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     return final_picker;
   }
 
+  void ExpectTransientFailureUpdate(
+      absl::Status expected_status,
+      SourceLocation location = SourceLocation()) {
+    auto picker =
+        ExpectState(GRPC_CHANNEL_TRANSIENT_FAILURE, expected_status, location);
+    ASSERT_NE(picker, nullptr);
+    ExpectPickFail(
+        picker.get(),
+        [&](const absl::Status& status) {
+          EXPECT_EQ(status, expected_status)
+              << location.file() << ":" << location.line();
+        },
+        location);
+  }
+
   // Waits for the LB policy to fail a connection attempt.  There can be
   // any number of CONNECTING updates, each of which must return a picker
   // that queues picks, followed by one update for state TRANSIENT_FAILURE,
@@ -1228,6 +1243,16 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       ExpectRoundRobinPicks(update->picker.get(), addresses);
     }
     gpr_log(GPR_INFO, "Done draining RR picker updates");
+  }
+
+  // Expects zero or more CONNECTING updates.
+  void DrainConnectingUpdates(
+      SourceLocation location = SourceLocation()) {
+    gpr_log(GPR_INFO, "Draining CONNECTING updates...");
+    while (!helper_->QueueEmpty()) {
+      ExpectConnectingUpdate(location);
+    }
+    gpr_log(GPR_INFO, "Done draining CONNECTING updates");
   }
 
   // Triggers a connection failure for the current address for an
