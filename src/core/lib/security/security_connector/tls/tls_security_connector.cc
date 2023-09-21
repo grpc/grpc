@@ -389,13 +389,7 @@ void TlsChannelSecurityConnector::check_peer(
 }
 
 void TlsChannelSecurityConnector::cancel_check_peer(
-    grpc_closure* on_peer_checked, grpc_error_handle error) {
-  if (!error.ok()) {
-    gpr_log(GPR_ERROR,
-            "TlsChannelSecurityConnector::cancel_check_peer error: %s",
-            StatusToString(error).c_str());
-    return;
-  }
+    grpc_closure* on_peer_checked, grpc_error_handle /*error*/) {
   auto* verifier = options_->certificate_verifier();
   if (verifier != nullptr) {
     grpc_tls_custom_verification_check_request* pending_verifier_request =
@@ -674,13 +668,7 @@ void TlsServerSecurityConnector::check_peer(
 }
 
 void TlsServerSecurityConnector::cancel_check_peer(
-    grpc_closure* on_peer_checked, grpc_error_handle error) {
-  if (!error.ok()) {
-    gpr_log(GPR_ERROR,
-            "TlsServerSecurityConnector::cancel_check_peer error: %s",
-            StatusToString(error).c_str());
-    return;
-  }
+    grpc_closure* on_peer_checked, grpc_error_handle /*error*/) {
   auto* verifier = options_->certificate_verifier();
   if (verifier != nullptr) {
     grpc_tls_custom_verification_check_request* pending_verifier_request =

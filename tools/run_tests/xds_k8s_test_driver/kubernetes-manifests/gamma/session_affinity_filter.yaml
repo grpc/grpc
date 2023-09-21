@@ -1,0 +1,10 @@
+---
+apiVersion: networking.gke.io/v1
+kind: GCPSessionAffinityFilter
+metadata:
+  name: ${session_affinity_filter_name}
+  namespace: ${namespace_name}
+spec:
+  statefulGeneratedCookie:
+    cookieTtlSeconds: 50
+...

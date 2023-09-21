@@ -2663,6 +2663,7 @@ grpc_cc_library(
         "grpc_trace",
         "//src/core:closure",
         "//src/core:error",
+        "//src/core:experiments",
         "//src/core:gpr_atm",
         "//src/core:gpr_spinlock",
         "//src/core:time",
