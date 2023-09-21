@@ -188,9 +188,9 @@ class ClientTransport {
   std::unique_ptr<HPackParser> hpack_parser_;
   std::shared_ptr<FrameHeader> frame_header_;
   MemoryAllocator memory_allocator_;
-  std::shared_ptr<Arena> arena_;
-  promise_detail::Context<Arena>
-      context_;  // Required for fragment frames to parse metadata.
+  ScopedArenaPtr arena_;
+  // Required for segment frames to parse metadata.
+  promise_detail::Context<Arena> context_;
   // Use to synchronize writer_ and reader_ activity with outside activities;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
 };
