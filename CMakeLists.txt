@@ -872,7 +872,6 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_c call_tracer_test)
   add_dependencies(buildtests_c cancel_after_accept_test)
   add_dependencies(buildtests_c cancel_after_client_done_test)
-  add_dependencies(buildtests_c cancel_after_invoke_test)
   add_dependencies(buildtests_c cancel_after_round_trip_test)
   add_dependencies(buildtests_c cancel_before_invoke_test)
   add_dependencies(buildtests_c cancel_callback_test)
@@ -1123,9 +1122,6 @@ if(gRPC_BUILD_TESTS)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_c posix_event_engine_connect_test)
   endif()
-  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_c posix_event_engine_test)
-  endif()
   add_dependencies(buildtests_c prioritized_race_test)
   add_dependencies(buildtests_c promise_endpoint_test)
   add_dependencies(buildtests_c promise_factory_test)
@@ -1283,7 +1279,6 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_c test_core_slice_slice_buffer_test)
   add_dependencies(buildtests_c test_core_slice_slice_test)
   add_dependencies(buildtests_c test_core_transport_chaotic_good_frame_test)
-  add_dependencies(buildtests_c test_core_transport_chttp2_frame_test)
   add_dependencies(buildtests_c thd_test)
   add_dependencies(buildtests_c thread_pool_test)
   add_dependencies(buildtests_c thread_quota_test)
@@ -1363,6 +1358,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx auth_property_iterator_test)
   add_dependencies(buildtests_cxx authorization_policy_provider_test)
   add_dependencies(buildtests_cxx byte_buffer_test)
+  add_dependencies(buildtests_cxx cancel_after_invoke_test)
   add_dependencies(buildtests_cxx cancel_ares_query_test)
   add_dependencies(buildtests_cxx cfstream_test)
   add_dependencies(buildtests_cxx channel_arguments_test)
@@ -1409,6 +1405,9 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx nonblocking_test)
   add_dependencies(buildtests_cxx orca_service_end2end_test)
   add_dependencies(buildtests_cxx port_sharing_end2end_test)
+  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
+    add_dependencies(buildtests_cxx posix_event_engine_test)
+  endif()
   add_dependencies(buildtests_cxx pre_stop_hook_server_test)
   add_dependencies(buildtests_cxx proto_buffer_reader_test)
   add_dependencies(buildtests_cxx proto_buffer_writer_test)
@@ -1439,6 +1438,7 @@ if(gRPC_BUILD_TESTS)
     add_dependencies(buildtests_cxx streaming_throughput_test)
   endif()
   add_dependencies(buildtests_cxx string_ref_test)
+  add_dependencies(buildtests_cxx test_core_transport_chttp2_frame_test)
   add_dependencies(buildtests_cxx test_cpp_client_credentials_test)
   add_dependencies(buildtests_cxx test_cpp_end2end_ssl_credentials_test)
   add_dependencies(buildtests_cxx test_cpp_server_credentials_test)
@@ -7113,49 +7113,6 @@ target_include_directories(cancel_after_client_done_test
 )
 
 target_link_libraries(cancel_after_client_done_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  gtest
-  grpc_authorization_provider
-  grpc_unsecure
-  grpc_test_util
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(cancel_after_invoke_test
-  test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
-  test/core/end2end/end2end_test_suites.cc
-  test/core/end2end/end2end_tests.cc
-  test/core/end2end/fixtures/http_proxy_fixture.cc
-  test/core/end2end/fixtures/local_util.cc
-  test/core/end2end/fixtures/proxy.cc
-  test/core/end2end/tests/cancel_after_invoke.cc
-  test/core/event_engine/event_engine_test_utils.cc
-  test/core/util/test_lb_policies.cc
-)
-target_compile_features(cancel_after_invoke_test PUBLIC cxx_std_14)
-target_include_directories(cancel_after_invoke_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-)
-
-target_link_libraries(cancel_after_invoke_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider
@@ -14876,50 +14833,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
 endif()
 endif()
 if(gRPC_BUILD_TESTS)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
-
-  add_executable(posix_event_engine_test
-    test/core/event_engine/event_engine_test_utils.cc
-    test/core/event_engine/test_suite/event_engine_test_framework.cc
-    test/core/event_engine/test_suite/posix/oracle_event_engine_posix.cc
-    test/core/event_engine/test_suite/posix_event_engine_test.cc
-    test/core/event_engine/test_suite/tests/client_test.cc
-    test/core/event_engine/test_suite/tests/dns_test.cc
-    test/core/event_engine/test_suite/tests/server_test.cc
-    test/core/event_engine/test_suite/tests/timer_test.cc
-    test/core/util/fake_udp_and_tcp_server.cc
-    test/cpp/util/get_grpc_test_runfile_dir.cc
-  )
-  target_compile_features(posix_event_engine_test PUBLIC cxx_std_14)
-  target_include_directories(posix_event_engine_test
-    PRIVATE
-      ${CMAKE_CURRENT_SOURCE_DIR}
-      ${CMAKE_CURRENT_SOURCE_DIR}/include
-      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-      ${_gRPC_RE2_INCLUDE_DIR}
-      ${_gRPC_SSL_INCLUDE_DIR}
-      ${_gRPC_UPB_GENERATED_DIR}
-      ${_gRPC_UPB_GRPC_GENERATED_DIR}
-      ${_gRPC_UPB_INCLUDE_DIR}
-      ${_gRPC_XXHASH_INCLUDE_DIR}
-      ${_gRPC_ZLIB_INCLUDE_DIR}
-      third_party/googletest/googletest/include
-      third_party/googletest/googletest
-      third_party/googletest/googlemock/include
-      third_party/googletest/googlemock
-      ${_gRPC_PROTO_GENS_DIR}
-  )
-
-  target_link_libraries(posix_event_engine_test
-    ${_gRPC_ALLTARGETS_LIBRARIES}
-    gtest
-    grpc++_test_util
-  )
-
-
-endif()
-endif()
-if(gRPC_BUILD_TESTS)
 
 add_executable(prioritized_race_test
   test/core/promise/prioritized_race_test.cc
@@ -20146,47 +20059,6 @@ target_link_libraries(test_core_transport_chaotic_good_frame_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(test_core_transport_chttp2_frame_test
-  src/core/ext/transport/chttp2/transport/frame.cc
-  src/core/lib/debug/trace.cc
-  src/core/lib/slice/slice.cc
-  src/core/lib/slice/slice_buffer.cc
-  src/core/lib/slice/slice_refcount.cc
-  src/core/lib/slice/slice_string_helpers.cc
-  test/core/transport/chttp2/frame_test.cc
-)
-target_compile_features(test_core_transport_chttp2_frame_test PUBLIC cxx_std_14)
-target_include_directories(test_core_transport_chttp2_frame_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-)
-
-target_link_libraries(test_core_transport_chttp2_frame_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  gtest
-  absl::hash
-  absl::statusor
-  absl::span
-  gpr
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
 add_executable(thd_test
   test/core/gprpp/thd_test.cc
 )
@@ -23053,6 +22925,49 @@ target_link_libraries(byte_buffer_test
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(cancel_after_invoke_test
+  test/core/end2end/cq_verifier.cc
+  test/core/end2end/end2end_test_main.cc
+  test/core/end2end/end2end_test_suites.cc
+  test/core/end2end/end2end_tests.cc
+  test/core/end2end/fixtures/http_proxy_fixture.cc
+  test/core/end2end/fixtures/local_util.cc
+  test/core/end2end/fixtures/proxy.cc
+  test/core/end2end/tests/cancel_after_invoke.cc
+  test/core/event_engine/event_engine_test_utils.cc
+  test/core/util/test_lb_policies.cc
+)
+target_compile_features(cancel_after_invoke_test PUBLIC cxx_std_14)
+target_include_directories(cancel_after_invoke_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+)
+
+target_link_libraries(cancel_after_invoke_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  grpc_authorization_provider
+  grpc_unsecure
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(cancel_ares_query_test
   test/core/end2end/cq_verifier.cc
   test/core/util/fake_udp_and_tcp_server.cc
@@ -25187,6 +25102,50 @@ target_link_libraries(port_sharing_end2end_test
 
 endif()
 if(gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
+
+  add_executable(posix_event_engine_test
+    test/core/event_engine/event_engine_test_utils.cc
+    test/core/event_engine/test_suite/event_engine_test_framework.cc
+    test/core/event_engine/test_suite/posix/oracle_event_engine_posix.cc
+    test/core/event_engine/test_suite/posix_event_engine_test.cc
+    test/core/event_engine/test_suite/tests/client_test.cc
+    test/core/event_engine/test_suite/tests/dns_test.cc
+    test/core/event_engine/test_suite/tests/server_test.cc
+    test/core/event_engine/test_suite/tests/timer_test.cc
+    test/core/util/fake_udp_and_tcp_server.cc
+    test/cpp/util/get_grpc_test_runfile_dir.cc
+  )
+  target_compile_features(posix_event_engine_test PUBLIC cxx_std_14)
+  target_include_directories(posix_event_engine_test
+    PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}
+      ${CMAKE_CURRENT_SOURCE_DIR}/include
+      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_RE2_INCLUDE_DIR}
+      ${_gRPC_SSL_INCLUDE_DIR}
+      ${_gRPC_UPB_GENERATED_DIR}
+      ${_gRPC_UPB_GRPC_GENERATED_DIR}
+      ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
+      ${_gRPC_ZLIB_INCLUDE_DIR}
+      third_party/googletest/googletest/include
+      third_party/googletest/googletest
+      third_party/googletest/googlemock/include
+      third_party/googletest/googlemock
+      ${_gRPC_PROTO_GENS_DIR}
+  )
+
+  target_link_libraries(posix_event_engine_test
+    ${_gRPC_ALLTARGETS_LIBRARIES}
+    gtest
+    grpc++_test_util
+  )
+
+
+endif()
+endif()
+if(gRPC_BUILD_TESTS)
 
 add_executable(pre_stop_hook_server_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.pb.cc
@@ -26313,6 +26272,47 @@ target_link_libraries(string_ref_test
   gtest
   grpc++
   grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(test_core_transport_chttp2_frame_test
+  src/core/ext/transport/chttp2/transport/frame.cc
+  src/core/lib/debug/trace.cc
+  src/core/lib/slice/slice.cc
+  src/core/lib/slice/slice_buffer.cc
+  src/core/lib/slice/slice_refcount.cc
+  src/core/lib/slice/slice_string_helpers.cc
+  test/core/transport/chttp2/frame_test.cc
+)
+target_compile_features(test_core_transport_chttp2_frame_test PUBLIC cxx_std_14)
+target_include_directories(test_core_transport_chttp2_frame_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+)
+
+target_link_libraries(test_core_transport_chttp2_frame_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  absl::hash
+  absl::statusor
+  absl::span
+  gpr
 )
 
 

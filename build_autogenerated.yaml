@@ -5728,42 +5728,6 @@ targets:
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
-- name: cancel_after_invoke_test
-  gtest: true
-  build: test
-  language: c
-  headers:
-  - test/core/end2end/cq_verifier.h
-  - test/core/end2end/end2end_tests.h
-  - test/core/end2end/fixtures/h2_oauth2_common.h
-  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
-  - test/core/end2end/fixtures/h2_ssl_tls_common.h
-  - test/core/end2end/fixtures/h2_tls_common.h
-  - test/core/end2end/fixtures/http_proxy_fixture.h
-  - test/core/end2end/fixtures/inproc_fixture.h
-  - test/core/end2end/fixtures/local_util.h
-  - test/core/end2end/fixtures/proxy.h
-  - test/core/end2end/fixtures/secure_fixture.h
-  - test/core/end2end/fixtures/sockpair_fixture.h
-  - test/core/end2end/tests/cancel_test_helpers.h
-  - test/core/event_engine/event_engine_test_utils.h
-  - test/core/util/test_lb_policies.h
-  src:
-  - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
-  - test/core/end2end/end2end_test_suites.cc
-  - test/core/end2end/end2end_tests.cc
-  - test/core/end2end/fixtures/http_proxy_fixture.cc
-  - test/core/end2end/fixtures/local_util.cc
-  - test/core/end2end/fixtures/proxy.cc
-  - test/core/end2end/tests/cancel_after_invoke.cc
-  - test/core/event_engine/event_engine_test_utils.cc
-  - test/core/util/test_lb_policies.cc
-  deps:
-  - gtest
-  - grpc_authorization_provider
-  - grpc_unsecure
-  - grpc_test_util
 - name: cancel_after_round_trip_test
   gtest: true
   build: test
@@ -10958,37 +10922,6 @@ targets:
   platforms:
   - linux
   - posix
-- name: posix_event_engine_test
-  gtest: true
-  build: test
-  language: c
-  headers:
-  - test/core/event_engine/event_engine_test_utils.h
-  - test/core/event_engine/test_suite/event_engine_test_framework.h
-  - test/core/event_engine/test_suite/posix/oracle_event_engine_posix.h
-  - test/core/event_engine/test_suite/tests/client_test.h
-  - test/core/event_engine/test_suite/tests/dns_test.h
-  - test/core/event_engine/test_suite/tests/server_test.h
-  - test/core/event_engine/test_suite/tests/timer_test.h
-  - test/core/util/fake_udp_and_tcp_server.h
-  - test/cpp/util/get_grpc_test_runfile_dir.h
-  src:
-  - test/core/event_engine/event_engine_test_utils.cc
-  - test/core/event_engine/test_suite/event_engine_test_framework.cc
-  - test/core/event_engine/test_suite/posix/oracle_event_engine_posix.cc
-  - test/core/event_engine/test_suite/posix_event_engine_test.cc
-  - test/core/event_engine/test_suite/tests/client_test.cc
-  - test/core/event_engine/test_suite/tests/dns_test.cc
-  - test/core/event_engine/test_suite/tests/server_test.cc
-  - test/core/event_engine/test_suite/tests/timer_test.cc
-  - test/core/util/fake_udp_and_tcp_server.cc
-  - test/cpp/util/get_grpc_test_runfile_dir.cc
-  deps:
-  - gtest
-  - grpc++_test_util
-  platforms:
-  - linux
-  - posix
 - name: prioritized_race_test
   gtest: true
   build: test
@@ -14805,34 +14738,6 @@ targets:
   - absl/utility:utility
   - cares
   - gpr
-- name: test_core_transport_chttp2_frame_test
-  gtest: true
-  build: test
-  language: c
-  headers:
-  - src/core/ext/transport/chttp2/transport/frame.h
-  - src/core/lib/debug/trace.h
-  - src/core/lib/slice/slice.h
-  - src/core/lib/slice/slice_buffer.h
-  - src/core/lib/slice/slice_internal.h
-  - src/core/lib/slice/slice_refcount.h
-  - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/transport/http2_errors.h
-  src:
-  - src/core/ext/transport/chttp2/transport/frame.cc
-  - src/core/lib/debug/trace.cc
-  - src/core/lib/slice/slice.cc
-  - src/core/lib/slice/slice_buffer.cc
-  - src/core/lib/slice/slice_refcount.cc
-  - src/core/lib/slice/slice_string_helpers.cc
-  - test/core/transport/chttp2/frame_test.cc
-  deps:
-  - gtest
-  - absl/hash:hash
-  - absl/status:statusor
-  - absl/types:span
-  - gpr
-  uses_polling: false
 - name: thd_test
   gtest: true
   build: test
@@ -16326,6 +16231,42 @@ targets:
   - gtest
   - grpc++_test_util
   uses_polling: false
+- name: cancel_after_invoke_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/test_lb_policies.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_test_main.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/cancel_after_invoke.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/test_lb_policies.cc
+  deps:
+  - gtest
+  - grpc_authorization_provider
+  - grpc_unsecure
+  - grpc_test_util
 - name: cancel_ares_query_test
   gtest: true
   build: test
@@ -17056,6 +16997,37 @@ targets:
   deps:
   - gtest
   - grpc++_test_util
+- name: posix_event_engine_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/test_suite/event_engine_test_framework.h
+  - test/core/event_engine/test_suite/posix/oracle_event_engine_posix.h
+  - test/core/event_engine/test_suite/tests/client_test.h
+  - test/core/event_engine/test_suite/tests/dns_test.h
+  - test/core/event_engine/test_suite/tests/server_test.h
+  - test/core/event_engine/test_suite/tests/timer_test.h
+  - test/core/util/fake_udp_and_tcp_server.h
+  - test/cpp/util/get_grpc_test_runfile_dir.h
+  src:
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/test_suite/event_engine_test_framework.cc
+  - test/core/event_engine/test_suite/posix/oracle_event_engine_posix.cc
+  - test/core/event_engine/test_suite/posix_event_engine_test.cc
+  - test/core/event_engine/test_suite/tests/client_test.cc
+  - test/core/event_engine/test_suite/tests/dns_test.cc
+  - test/core/event_engine/test_suite/tests/server_test.cc
+  - test/core/event_engine/test_suite/tests/timer_test.cc
+  - test/core/util/fake_udp_and_tcp_server.cc
+  - test/cpp/util/get_grpc_test_runfile_dir.cc
+  deps:
+  - gtest
+  - grpc++_test_util
+  platforms:
+  - linux
+  - posix
 - name: pre_stop_hook_server_test
   gtest: true
   build: test
@@ -17526,6 +17498,34 @@ targets:
   - gtest
   - grpc++
   - grpc_test_util
+  uses_polling: false
+- name: test_core_transport_chttp2_frame_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/ext/transport/chttp2/transport/frame.h
+  - src/core/lib/debug/trace.h
+  - src/core/lib/slice/slice.h
+  - src/core/lib/slice/slice_buffer.h
+  - src/core/lib/slice/slice_internal.h
+  - src/core/lib/slice/slice_refcount.h
+  - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/transport/http2_errors.h
+  src:
+  - src/core/ext/transport/chttp2/transport/frame.cc
+  - src/core/lib/debug/trace.cc
+  - src/core/lib/slice/slice.cc
+  - src/core/lib/slice/slice_buffer.cc
+  - src/core/lib/slice/slice_refcount.cc
+  - src/core/lib/slice/slice_string_helpers.cc
+  - test/core/transport/chttp2/frame_test.cc
+  deps:
+  - gtest
+  - absl/hash:hash
+  - absl/status:statusor
+  - absl/types:span
+  - gpr
   uses_polling: false
 - name: test_cpp_client_credentials_test
   gtest: true
