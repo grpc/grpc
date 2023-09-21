@@ -33,7 +33,7 @@
 
 #include "absl/cleanup/cleanup.h"
 #include "absl/container/flat_hash_map.h"
-#include "absl/hash/hash.h"
+#include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
@@ -53,7 +53,6 @@
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/match.h"
