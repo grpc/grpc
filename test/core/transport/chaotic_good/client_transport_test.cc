@@ -564,16 +564,17 @@ TEST_F(ClientTransportTest, AddOneStreamMultipleMessages) {
 TEST_F(ClientTransportTest, AddMultipleStreams) {
   InitialClientTransport(2);
   auto messages = CreateMessages(2);
-  ClientMetadataHandle md;
+  ClientMetadataHandle first_stream_md;
+  ClientMetadataHandle second_stream_md;
   auto first_stream_args =
-      CallArgs{std::move(md),
+      CallArgs{std::move(first_stream_md),
                ClientInitialMetadataOutstandingToken::Empty(),
                nullptr,
                &pipe_server_intial_metadata_.sender,
                &pipe_client_to_server_messages_.receiver,
                &pipe_server_to_client_messages_.sender};
   auto second_stream_args =
-      CallArgs{std::move(md),
+      CallArgs{std::move(second_stream_md),
                ClientInitialMetadataOutstandingToken::Empty(),
                nullptr,
                &pipe_server_intial_metadata_second_.sender,
@@ -724,16 +725,17 @@ TEST_F(ClientTransportTest, AddMultipleStreams) {
 TEST_F(ClientTransportTest, AddMultipleStreamsMultipleMessages) {
   InitialClientTransport(2);
   auto messages = CreateMessages(6);
-  ClientMetadataHandle md;
+  ClientMetadataHandle first_stream_md;
+  ClientMetadataHandle second_stream_md;
   auto first_stream_args =
-      CallArgs{std::move(md),
+      CallArgs{std::move(first_stream_md),
                ClientInitialMetadataOutstandingToken::Empty(),
                nullptr,
                &pipe_server_intial_metadata_.sender,
                &pipe_client_to_server_messages_.receiver,
                &pipe_server_to_client_messages_.sender};
   auto second_stream_args =
-      CallArgs{std::move(md),
+      CallArgs{std::move(second_stream_md),
                ClientInitialMetadataOutstandingToken::Empty(),
                nullptr,
                &pipe_server_intial_metadata_second_.sender,
