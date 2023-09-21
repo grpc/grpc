@@ -566,8 +566,8 @@ TEST_F(PickFirstTest, HappyEyeballsCompletesWithoutSuccess) {
   EXPECT_FALSE(subchannel3->ConnectionRequested());
   ExpectReresolutionRequest();
   ExpectTransientFailureUpdate(
-    absl::UnavailableError("failed to connect to all addresses; "
-                           "last error: UNAVAILABLE: failed to connect"));
+      absl::UnavailableError("failed to connect to all addresses; "
+                             "last error: UNAVAILABLE: failed to connect"));
   // Now the second subchannel goes IDLE.
   subchannel2->SetConnectivityState(GRPC_CHANNEL_IDLE);
   // The LB policy asks it to connect.

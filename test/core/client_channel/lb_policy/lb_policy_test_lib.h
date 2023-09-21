@@ -1246,8 +1246,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   }
 
   // Expects zero or more CONNECTING updates.
-  void DrainConnectingUpdates(
-      SourceLocation location = SourceLocation()) {
+  void DrainConnectingUpdates(SourceLocation location = SourceLocation()) {
     gpr_log(GPR_INFO, "Draining CONNECTING updates...");
     while (!helper_->QueueEmpty()) {
       ExpectConnectingUpdate(location);

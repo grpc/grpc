@@ -320,11 +320,10 @@ PickFirst::PickFirst(Args args)
               .GetBool(GRPC_ARG_INTERNAL_PICK_FIRST_OMIT_STATUS_MESSAGE_PREFIX)
               .value_or(false)),
       connection_attempt_delay_(Duration::Milliseconds(
-          Clamp(
-              channel_args()
-                  .GetInt(GRPC_ARG_HAPPY_EYEBALLS_CONNECTION_ATTEMPT_DELAY_MS)
-                  .value_or(250),
-              100, 2000))) {
+          Clamp(channel_args()
+                    .GetInt(GRPC_ARG_HAPPY_EYEBALLS_CONNECTION_ATTEMPT_DELAY_MS)
+                    .value_or(250),
+                100, 2000))) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
     gpr_log(GPR_INFO, "Pick First %p created.", this);
   }
@@ -728,8 +727,8 @@ void PickFirst::SubchannelList::SubchannelData::RequestConnectionWithTimer() {
       gpr_log(GPR_INFO,
               "Pick First %p subchannel list %p: starting Connection "
               "Attempt Delay timer for %" PRIdPTR "ms for index %" PRIuPTR,
-              p, subchannel_list_,
-              p->connection_attempt_delay_.millis(), Index());
+              p, subchannel_list_, p->connection_attempt_delay_.millis(),
+              Index());
     }
     subchannel_list_->timer_handle_ =
         p->channel_control_helper()->GetEventEngine()->RunAfter(
@@ -741,22 +740,22 @@ void PickFirst::SubchannelList::SubchannelData::RequestConnectionWithTimer() {
               auto* sl = subchannel_list.get();
               sl->policy_->work_serializer()->Run(
                   [subchannel_list = std::move(subchannel_list)]() {
-                if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
-                  gpr_log(GPR_INFO,
-                          "Pick First %p subchannel list %p: Connection "
-                          "Attempt Delay timer fired (shutting_down=%d, "
-                          "selected=%p)",
-                          subchannel_list->policy_.get(),
-                          subchannel_list.get(),
-                          subchannel_list->shutting_down_,
-                          subchannel_list->policy_->selected_);
-                }
-                if (subchannel_list->shutting_down_) return;
-                if (subchannel_list->policy_->selected_ != nullptr) return;
-                ++subchannel_list->attempting_index_;
-                subchannel_list->StartConnectingNextSubchannel();
-              },
-              DEBUG_LOCATION);
+                    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
+                      gpr_log(GPR_INFO,
+                              "Pick First %p subchannel list %p: Connection "
+                              "Attempt Delay timer fired (shutting_down=%d, "
+                              "selected=%p)",
+                              subchannel_list->policy_.get(),
+                              subchannel_list.get(),
+                              subchannel_list->shutting_down_,
+                              subchannel_list->policy_->selected_);
+                    }
+                    if (subchannel_list->shutting_down_) return;
+                    if (subchannel_list->policy_->selected_ != nullptr) return;
+                    ++subchannel_list->attempting_index_;
+                    subchannel_list->StartConnectingNextSubchannel();
+                  },
+                  DEBUG_LOCATION);
             });
   }
 }
@@ -949,11 +948,11 @@ void PickFirst::SubchannelList::StartConnectingNextSubchannel() {
   // be the current list), re-resolve and report new state.
   if (policy_->subchannel_list_.get() == this) {
     policy_->channel_control_helper()->RequestReresolution();
-    absl::Status status = absl::UnavailableError(absl::StrCat(
-        (policy_->omit_status_message_prefix_
-             ? ""
-             : "failed to connect to all addresses; last error: "),
-        subchannels_.back().connectivity_status().ToString()));
+    absl::Status status = absl::UnavailableError(
+        absl::StrCat((policy_->omit_status_message_prefix_
+                          ? ""
+                          : "failed to connect to all addresses; last error: "),
+                     subchannels_.back().connectivity_status().ToString()));
     policy_->UpdateState(GRPC_CHANNEL_TRANSIENT_FAILURE, status,
                          MakeRefCounted<TransientFailurePicker>(status));
   }
