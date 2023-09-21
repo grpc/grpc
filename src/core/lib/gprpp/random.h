@@ -39,6 +39,10 @@ class ProtoBitSource : public std::numeric_limits<uint64_t> {
   using result_type = uint64_t;
 
   uint64_t operator()() {
+    if (results_.empty()) {
+      ++current_;
+      return current_;
+    }
     // We loop through but increment by one each round, to guarantee to see all
     // values eventually.
     uint64_t out =
