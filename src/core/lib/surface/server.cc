@@ -1204,7 +1204,6 @@ void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
   op->set_accept_stream = true;
   op->set_accept_stream_fn = AcceptStream;
   if (IsRmLookupPointTransportEnabled()) {
-    gpr_log(GPR_ERROR, "setting");
     op->set_registered_method_matcher_fn = SetRegisteredMethodOnMetadata;
   }
   // op->set_registered_method_matcher_fn = Registered
@@ -1246,7 +1245,6 @@ Server::ChannelRegisteredMethod* Server::ChannelData::GetRegisteredMethod(
 
 void Server::ChannelData::SetRegisteredMethodOnMetadata(
     void* arg, ServerMetadata* metadata) {
-  gpr_log(GPR_ERROR, "here");
   auto* chand = static_cast<Server::ChannelData*>(arg);
   auto* authority = metadata->get_pointer(HttpAuthorityMetadata());
   if (authority == nullptr) {
