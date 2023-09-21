@@ -353,9 +353,8 @@ TEST_F(PickFirstTest, AllAddressesInTransientFailureAtStart) {
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   // The connection attempt succeeds.
   subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
-  // The LB policy will report CONNECTING some number of times (doesn't
-  // matter how many) and then report READY.
-  auto picker = WaitForConnected();
+  // The LB policy will report READY.
+  auto picker = ExpectState(GRPC_CHANNEL_READY);
   ASSERT_NE(picker, nullptr);
   // Picker should return the same subchannel repeatedly.
   for (size_t i = 0; i < 3; ++i) {
