@@ -36,6 +36,7 @@
 #include "opentelemetry/metrics/sync_instruments.h"
 #include "opentelemetry/nostd/shared_ptr.h"
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
 namespace grpc {
@@ -99,6 +100,8 @@ struct OTelPluginState {
   std::unique_ptr<LabelsInjector> labels_injector;
   absl::AnyInvocable<bool(absl::string_view /*target*/) const>
       target_attribute_filter;
+  absl::AnyInvocable<bool(const grpc_core::ChannelArgs& /*args*/) const>
+      server_selector;
 };
 
 const struct OTelPluginState& OTelPluginState();
@@ -147,6 +150,13 @@ class OpenTelemetryPluginBuilder {
   OpenTelemetryPluginBuilder& SetTargetSelector(
       absl::AnyInvocable<bool(absl::string_view /*target*/) const>
           target_selector);
+  // If set, \a server_selector is called per incoming call on the server
+  // to decide whether to collect metrics on that call or not.
+  // TODO(yashkt): We should only need to do this per server connection or even
+  // per server. Change this when we have a ServerTracer.
+  OpenTelemetryPluginBuilder& SetServerSelector(
+      absl::AnyInvocable<bool(const grpc_core::ChannelArgs& /*args*/) const>
+          server_selector);
   // If set, \a target_attribute_filter is called per channel to decide whether
   // to record the target attribute on client or to replace it with "other".
   // This helps reduce the cardinality on metrics in cases where many channels
@@ -164,6 +174,8 @@ class OpenTelemetryPluginBuilder {
       target_attribute_filter_;
   absl::flat_hash_set<std::string> metrics_;
   absl::AnyInvocable<bool(absl::string_view /*target*/) const> target_selector_;
+  absl::AnyInvocable<bool(const grpc_core::ChannelArgs& /*args*/) const>
+      server_selector_;
 };
 
 }  // namespace internal

@@ -23,24 +23,39 @@
 #include <algorithm>
 #include <memory>
 #include <thread>
+#include <utility>
 #include <vector>
 
+#include "absl/functional/any_invocable.h"
 #include "absl/synchronization/barrier.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/debug/histogram_view.h"
+#include "src/core/lib/debug/stats.h"
+#include "src/core/lib/debug/stats_data.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/thd.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/util/test_config.h"
 
+using grpc_event_engine::experimental::GetDefaultEventEngine;
+using grpc_event_engine::experimental::WaitForSingleOwner;
+
+namespace grpc_core {
 namespace {
-TEST(WorkSerializerTest, NoOp) { grpc_core::WorkSerializer lock; }
+TEST(WorkSerializerTest, NoOp) { WorkSerializer lock(GetDefaultEventEngine()); }
 
 TEST(WorkSerializerTest, ExecuteOneRun) {
-  grpc_core::WorkSerializer lock;
+  WorkSerializer lock(GetDefaultEventEngine());
   gpr_event done;
   gpr_event_init(&done);
   lock.Run([&done]() { gpr_event_set(&done, reinterpret_cast<void*>(1)); },
@@ -50,7 +65,7 @@ TEST(WorkSerializerTest, ExecuteOneRun) {
 }
 
 TEST(WorkSerializerTest, ExecuteOneScheduleAndDrain) {
-  grpc_core::WorkSerializer lock;
+  WorkSerializer lock(GetDefaultEventEngine());
   gpr_event done;
   gpr_event_init(&done);
   lock.Schedule([&done]() { gpr_event_set(&done, reinterpret_cast<void*>(1)); },
@@ -63,7 +78,7 @@ TEST(WorkSerializerTest, ExecuteOneScheduleAndDrain) {
 
 class TestThread {
  public:
-  explicit TestThread(grpc_core::WorkSerializer* lock)
+  explicit TestThread(WorkSerializer* lock)
       : lock_(lock), thread_("grpc_execute_many", ExecuteManyLoop, this) {
     gpr_event_init(&done_);
     thread_.Start();
@@ -104,14 +119,14 @@ class TestThread {
         DEBUG_LOCATION);
   }
 
-  grpc_core::WorkSerializer* lock_ = nullptr;
-  grpc_core::Thread thread_;
+  WorkSerializer* lock_ = nullptr;
+  Thread thread_;
   size_t counter_ = 0;
   gpr_event done_;
 };
 
 TEST(WorkSerializerTest, ExecuteMany) {
-  grpc_core::WorkSerializer lock;
+  WorkSerializer lock(GetDefaultEventEngine());
   {
     std::vector<std::unique_ptr<TestThread>> threads;
     for (size_t i = 0; i < 10; ++i) {
@@ -122,7 +137,7 @@ TEST(WorkSerializerTest, ExecuteMany) {
 
 class TestThreadScheduleAndDrain {
  public:
-  explicit TestThreadScheduleAndDrain(grpc_core::WorkSerializer* lock)
+  explicit TestThreadScheduleAndDrain(WorkSerializer* lock)
       : lock_(lock), thread_("grpc_execute_many", ExecuteManyLoop, this) {
     gpr_event_init(&done_);
     thread_.Start();
@@ -165,14 +180,14 @@ class TestThreadScheduleAndDrain {
         DEBUG_LOCATION);
   }
 
-  grpc_core::WorkSerializer* lock_ = nullptr;
-  grpc_core::Thread thread_;
+  WorkSerializer* lock_ = nullptr;
+  Thread thread_;
   size_t counter_ = 0;
   gpr_event done_;
 };
 
 TEST(WorkSerializerTest, ExecuteManyScheduleAndDrain) {
-  grpc_core::WorkSerializer lock;
+  WorkSerializer lock(GetDefaultEventEngine());
   {
     std::vector<std::unique_ptr<TestThreadScheduleAndDrain>> threads;
     for (size_t i = 0; i < 10; ++i) {
@@ -182,7 +197,7 @@ TEST(WorkSerializerTest, ExecuteManyScheduleAndDrain) {
 }
 
 TEST(WorkSerializerTest, ExecuteManyMixedRunScheduleAndDrain) {
-  grpc_core::WorkSerializer lock;
+  WorkSerializer lock(GetDefaultEventEngine());
   {
     std::vector<std::unique_ptr<TestThread>> run_threads;
     std::vector<std::unique_ptr<TestThreadScheduleAndDrain>> schedule_threads;
@@ -196,16 +211,17 @@ TEST(WorkSerializerTest, ExecuteManyMixedRunScheduleAndDrain) {
 
 // Tests that work serializers allow destruction from the last callback
 TEST(WorkSerializerTest, CallbackDestroysWorkSerializer) {
-  auto lock = std::make_shared<grpc_core::WorkSerializer>();
+  auto lock = std::make_shared<WorkSerializer>(GetDefaultEventEngine());
   lock->Run([&]() { lock.reset(); }, DEBUG_LOCATION);
+  WaitForSingleOwner(GetDefaultEventEngine());
 }
 
 // Tests additional racy conditions when the last callback triggers work
 // serializer destruction.
 TEST(WorkSerializerTest, WorkSerializerDestructionRace) {
   for (int i = 0; i < 1000; ++i) {
-    auto lock = std::make_shared<grpc_core::WorkSerializer>();
-    grpc_core::Notification notification;
+    auto lock = std::make_shared<WorkSerializer>(GetDefaultEventEngine());
+    Notification notification;
     std::thread t1([&]() {
       notification.WaitForNotification();
       lock.reset();
@@ -218,7 +234,7 @@ TEST(WorkSerializerTest, WorkSerializerDestructionRace) {
 // Tests racy conditions when the last callback triggers work
 // serializer destruction.
 TEST(WorkSerializerTest, WorkSerializerDestructionRaceMultipleThreads) {
-  auto lock = std::make_shared<grpc_core::WorkSerializer>();
+  auto lock = std::make_shared<WorkSerializer>(GetDefaultEventEngine());
   absl::Barrier barrier(11);
   std::vector<std::thread> threads;
   threads.reserve(10);
@@ -235,44 +251,156 @@ TEST(WorkSerializerTest, WorkSerializerDestructionRaceMultipleThreads) {
   }
 }
 
+TEST(WorkSerializerTest, MetricsWork) {
+  if (!IsWorkSerializerDispatchEnabled()) {
+    GTEST_SKIP() << "Work serializer dispatch experiment not enabled";
+  }
+
+  WorkSerializer serializer(GetDefaultEventEngine());
+  auto schedule_sleep = [&serializer](absl::Duration how_long) {
+    ExecCtx exec_ctx;
+    auto n = std::make_shared<Notification>();
+    serializer.Run(
+        [how_long, n]() {
+          absl::SleepFor(how_long);
+          n->Notify();
+        },
+        DEBUG_LOCATION);
+    return n;
+  };
+  auto before = global_stats().Collect();
+  auto stats_diff_from = [&before](absl::AnyInvocable<void()> f) {
+    f();
+    auto after = global_stats().Collect();
+    auto diff = after->Diff(*before);
+    before = std::move(after);
+    return diff;
+  };
+  // Test adding one work item to the queue
+  auto diff = stats_diff_from(
+      [&] { schedule_sleep(absl::Seconds(1))->WaitForNotification(); });
+  EXPECT_EQ(diff->work_serializer_items_enqueued, 1);
+  EXPECT_EQ(diff->work_serializer_items_dequeued, 1);
+  EXPECT_GE(diff->histogram(GlobalStats::Histogram::kWorkSerializerItemsPerRun)
+                .Percentile(0.5),
+            1.0);
+  EXPECT_LE(diff->histogram(GlobalStats::Histogram::kWorkSerializerItemsPerRun)
+                .Percentile(0.5),
+            2.0);
+  EXPECT_GE(diff->histogram(GlobalStats::Histogram::kWorkSerializerRunTimeMs)
+                .Percentile(0.5),
+            800.0);
+  EXPECT_LE(diff->histogram(GlobalStats::Histogram::kWorkSerializerRunTimeMs)
+                .Percentile(0.5),
+            1300.0);
+  EXPECT_GE(diff->histogram(GlobalStats::Histogram::kWorkSerializerWorkTimeMs)
+                .Percentile(0.5),
+            800.0);
+  EXPECT_LE(diff->histogram(GlobalStats::Histogram::kWorkSerializerWorkTimeMs)
+                .Percentile(0.5),
+            1300.0);
+  EXPECT_GE(
+      diff->histogram(GlobalStats::Histogram::kWorkSerializerWorkTimePerItemMs)
+          .Percentile(0.5),
+      800.0);
+  EXPECT_LE(
+      diff->histogram(GlobalStats::Histogram::kWorkSerializerWorkTimePerItemMs)
+          .Percentile(0.5),
+      1300.0);
+  EXPECT_LE(diff->histogram(GlobalStats::Histogram::kWorkSerializerRunTimeMs)
+                .Percentile(0.5),
+            diff->histogram(GlobalStats::Histogram::kWorkSerializerWorkTimeMs)
+                .Percentile(0.5));
+  // Now throw a bunch of work in and see that we get good results
+  diff = stats_diff_from([&] {
+    for (int i = 0; i < 10; i++) {
+      schedule_sleep(absl::Milliseconds(1000));
+    }
+    schedule_sleep(absl::Milliseconds(1000))->WaitForNotification();
+  });
+  EXPECT_EQ(diff->work_serializer_items_enqueued, 11);
+  EXPECT_EQ(diff->work_serializer_items_dequeued, 11);
+  EXPECT_GE(diff->histogram(GlobalStats::Histogram::kWorkSerializerItemsPerRun)
+                .Percentile(0.5),
+            7.0);
+  EXPECT_LE(diff->histogram(GlobalStats::Histogram::kWorkSerializerItemsPerRun)
+                .Percentile(0.5),
+            15.0);
+  EXPECT_GE(diff->histogram(GlobalStats::Histogram::kWorkSerializerRunTimeMs)
+                .Percentile(0.5),
+            7000.0);
+  EXPECT_LE(diff->histogram(GlobalStats::Histogram::kWorkSerializerRunTimeMs)
+                .Percentile(0.5),
+            15000.0);
+  EXPECT_GE(diff->histogram(GlobalStats::Histogram::kWorkSerializerWorkTimeMs)
+                .Percentile(0.5),
+            7000.0);
+  EXPECT_LE(diff->histogram(GlobalStats::Histogram::kWorkSerializerWorkTimeMs)
+                .Percentile(0.5),
+            15000.0);
+  EXPECT_GE(
+      diff->histogram(GlobalStats::Histogram::kWorkSerializerWorkTimePerItemMs)
+          .Percentile(0.5),
+      800.0);
+  EXPECT_LE(
+      diff->histogram(GlobalStats::Histogram::kWorkSerializerWorkTimePerItemMs)
+          .Percentile(0.5),
+      1300.0);
+  EXPECT_LE(diff->histogram(GlobalStats::Histogram::kWorkSerializerRunTimeMs)
+                .Percentile(0.5),
+            diff->histogram(GlobalStats::Histogram::kWorkSerializerWorkTimeMs)
+                .Percentile(0.5));
+}
+
 #ifndef NDEBUG
 TEST(WorkSerializerTest, RunningInWorkSerializer) {
-  grpc_core::WorkSerializer work_serializer1;
-  grpc_core::WorkSerializer work_serializer2;
-  EXPECT_FALSE(work_serializer1.RunningInWorkSerializer());
-  EXPECT_FALSE(work_serializer2.RunningInWorkSerializer());
-  work_serializer1.Run(
-      [&]() {
-        EXPECT_TRUE(work_serializer1.RunningInWorkSerializer());
-        EXPECT_FALSE(work_serializer2.RunningInWorkSerializer());
-        work_serializer2.Run(
-            [&]() {
-              EXPECT_TRUE(work_serializer1.RunningInWorkSerializer());
-              EXPECT_TRUE(work_serializer2.RunningInWorkSerializer());
+  auto work_serializer1 =
+      std::make_shared<WorkSerializer>(GetDefaultEventEngine());
+  auto work_serializer2 =
+      std::make_shared<WorkSerializer>(GetDefaultEventEngine());
+  EXPECT_FALSE(work_serializer1->RunningInWorkSerializer());
+  EXPECT_FALSE(work_serializer2->RunningInWorkSerializer());
+  work_serializer1->Run(
+      [=]() {
+        EXPECT_TRUE(work_serializer1->RunningInWorkSerializer());
+        EXPECT_FALSE(work_serializer2->RunningInWorkSerializer());
+        work_serializer2->Run(
+            [=]() {
+              EXPECT_EQ(work_serializer1->RunningInWorkSerializer(),
+                        !IsWorkSerializerDispatchEnabled());
+              EXPECT_TRUE(work_serializer2->RunningInWorkSerializer());
             },
             DEBUG_LOCATION);
       },
       DEBUG_LOCATION);
-  EXPECT_FALSE(work_serializer1.RunningInWorkSerializer());
-  EXPECT_FALSE(work_serializer2.RunningInWorkSerializer());
-  work_serializer2.Run(
-      [&]() {
-        EXPECT_FALSE(work_serializer1.RunningInWorkSerializer());
-        EXPECT_TRUE(work_serializer2.RunningInWorkSerializer());
-        work_serializer1.Run(
-            [&]() {
-              EXPECT_TRUE(work_serializer1.RunningInWorkSerializer());
-              EXPECT_TRUE(work_serializer2.RunningInWorkSerializer());
+  EXPECT_FALSE(work_serializer1->RunningInWorkSerializer());
+  EXPECT_FALSE(work_serializer2->RunningInWorkSerializer());
+  work_serializer2->Run(
+      [=]() {
+        EXPECT_FALSE(work_serializer1->RunningInWorkSerializer());
+        EXPECT_TRUE(work_serializer2->RunningInWorkSerializer());
+        work_serializer1->Run(
+            [=]() {
+              EXPECT_TRUE(work_serializer1->RunningInWorkSerializer());
+              EXPECT_EQ(work_serializer2->RunningInWorkSerializer(),
+                        !IsWorkSerializerDispatchEnabled());
             },
             DEBUG_LOCATION);
       },
       DEBUG_LOCATION);
-  EXPECT_FALSE(work_serializer1.RunningInWorkSerializer());
-  EXPECT_FALSE(work_serializer2.RunningInWorkSerializer());
+  EXPECT_FALSE(work_serializer1->RunningInWorkSerializer());
+  EXPECT_FALSE(work_serializer2->RunningInWorkSerializer());
+  Notification done1;
+  Notification done2;
+  work_serializer1->Run([&done1]() { done1.Notify(); }, DEBUG_LOCATION);
+  work_serializer2->Run([&done2]() { done2.Notify(); }, DEBUG_LOCATION);
+  done1.WaitForNotification();
+  done2.WaitForNotification();
 }
 #endif
 
 }  // namespace
+}  // namespace grpc_core
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);

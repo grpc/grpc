@@ -426,6 +426,7 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
                     config["name"] = config["name"] + "@experiment=" + experiment
                     env = dict(config["env"])
                     env["GRPC_EXPERIMENTS"] = experiment
+                    env["GRPC_CI_EXPERIMENTS"] = "1"
                     config["env"] = env
                     tags = config["tags"]
                     for tag in must_have_tags + enabled_tags:
@@ -441,6 +442,7 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
                     config["name"] = config["name"] + "@experiment=no_" + experiment
                     env = dict(config["env"])
                     env["GRPC_EXPERIMENTS"] = "-" + experiment
+                    env["GRPC_CI_EXPERIMENTS"] = "1"
                     config["env"] = env
                     tags = config["tags"]
                     for tag in must_have_tags + disabled_tags:

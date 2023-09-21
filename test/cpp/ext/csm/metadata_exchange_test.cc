@@ -150,37 +150,37 @@ class MetadataExchangeTest
       const std::map<std::string,
                      opentelemetry::sdk::common::OwnedAttributeValue>&
           attributes) {
-    EXPECT_EQ(absl::get<std::string>(attributes.at("gsm.mesh_id")), "mesh-id");
+    EXPECT_EQ(absl::get<std::string>(attributes.at("csm.mesh_id")), "mesh-id");
     switch (GetParam().type()) {
       case TestScenario::ResourceType::kGke:
         EXPECT_EQ(
-            absl::get<std::string>(attributes.at("gsm.remote_workload_type")),
+            absl::get<std::string>(attributes.at("csm.remote_workload_type")),
             "gcp_kubernetes_engine");
         EXPECT_EQ(absl::get<std::string>(
-                      attributes.at("gsm.remote_workload_pod_name")),
+                      attributes.at("csm.remote_workload_pod_name")),
                   "pod");
         EXPECT_EQ(absl::get<std::string>(
-                      attributes.at("gsm.remote_workload_container_name")),
+                      attributes.at("csm.remote_workload_container_name")),
                   "container");
         EXPECT_EQ(absl::get<std::string>(
-                      attributes.at("gsm.remote_workload_namespace_name")),
+                      attributes.at("csm.remote_workload_namespace_name")),
                   "namespace");
         EXPECT_EQ(absl::get<std::string>(
-                      attributes.at("gsm.remote_workload_cluster_name")),
+                      attributes.at("csm.remote_workload_cluster_name")),
                   "cluster");
         EXPECT_EQ(absl::get<std::string>(
-                      attributes.at("gsm.remote_workload_location")),
+                      attributes.at("csm.remote_workload_location")),
                   "region");
         EXPECT_EQ(absl::get<std::string>(
-                      attributes.at("gsm.remote_workload_project_id")),
+                      attributes.at("csm.remote_workload_project_id")),
                   "id");
         EXPECT_EQ(absl::get<std::string>(
-                      attributes.at("gsm.remote_workload_canonical_service")),
+                      attributes.at("csm.remote_workload_canonical_service")),
                   "canonical_service");
         break;
       case TestScenario::ResourceType::kUnknown:
         EXPECT_EQ(
-            absl::get<std::string>(attributes.at("gsm.remote_workload_type")),
+            absl::get<std::string>(attributes.at("csm.remote_workload_type")),
             "random");
         break;
     }
@@ -190,7 +190,7 @@ class MetadataExchangeTest
       const std::map<std::string,
                      opentelemetry::sdk::common::OwnedAttributeValue>&
           attributes) {
-    EXPECT_EQ(attributes.find("gsm.remote_workload_type"), attributes.end());
+    EXPECT_EQ(attributes.find("csm.remote_workload_type"), attributes.end());
   }
 
  private:

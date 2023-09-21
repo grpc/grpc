@@ -463,6 +463,7 @@ Subchannel::Subchannel(SubchannelKey key,
       pollset_set_(grpc_pollset_set_create()),
       connector_(std::move(connector)),
       watcher_list_(this),
+      work_serializer_(args_.GetObjectRef<EventEngine>()),
       backoff_(ParseArgsForBackoffValues(args_, &min_connect_timeout_)),
       event_engine_(args_.GetObjectRef<EventEngine>()) {
   // A grpc_init is added here to ensure that grpc_shutdown does not happen

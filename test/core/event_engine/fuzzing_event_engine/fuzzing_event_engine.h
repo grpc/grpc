@@ -79,6 +79,10 @@ class FuzzingEventEngine : public EventEngine {
   // Tick for some grpc_core::Duration
   void TickForDuration(grpc_core::Duration d) ABSL_LOCKS_EXCLUDED(mu_);
 
+  // Sets a callback to be invoked any time RunAfter() is called.
+  // Allows tests to verify the specified duration.
+  void SetRunAfterDurationCallback(absl::AnyInvocable<void(Duration)> callback);
+
   absl::StatusOr<std::unique_ptr<Listener>> CreateListener(
       Listener::AcceptCallback on_accept,
       absl::AnyInvocable<void(absl::Status)> on_shutdown,
@@ -290,6 +294,10 @@ class FuzzingEventEngine : public EventEngine {
   std::queue<std::queue<size_t>> write_sizes_for_future_connections_
       ABSL_GUARDED_BY(mu_);
   grpc_pick_port_functions previous_pick_port_functions_;
+
+  grpc_core::Mutex run_after_duration_callback_mu_;
+  absl::AnyInvocable<void(Duration)> run_after_duration_callback_
+      ABSL_GUARDED_BY(run_after_duration_callback_mu_);
 };
 
 }  // namespace experimental

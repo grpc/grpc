@@ -29,7 +29,7 @@ import sys
 import yaml
 
 with open("src/core/lib/config/config_vars.yaml") as f:
-    attrs = yaml.safe_load(f.read(), Loader=yaml.FullLoader)
+    attrs = yaml.safe_load(f.read())
 
 error = False
 today = datetime.date.today()
@@ -199,7 +199,7 @@ with open("test/core/util/fuzz_config_vars.proto", "w") as P:
         print(
             "  optional %s %s = %d;"
             % (
-                PROTO_TYPE[attr["type"]],
+                attr.get("fuzz_type", PROTO_TYPE[attr["type"]]),
                 attr["name"],
                 binascii.crc32(attr["name"].encode("ascii")) & 0x1FFFFFFF,
             ),

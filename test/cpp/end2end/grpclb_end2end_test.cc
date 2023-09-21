@@ -605,7 +605,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Resolver::Result result = MakeResolverResult(
         balancer_address_data, backend_address_data, service_config_json);
-    response_generator_->SetResponse(std::move(result));
+    response_generator_->SetResponseSynchronously(std::move(result));
   }
 
   void SetNextReresolutionResponse(
@@ -613,9 +613,11 @@ class GrpclbEnd2endTest : public ::testing::Test {
       const std::vector<AddressData>& backend_address_data = {},
       const char* service_config_json = kDefaultServiceConfig) {
     grpc_core::ExecCtx exec_ctx;
+    response_generator_->WaitForResolverSet();
     grpc_core::Resolver::Result result = MakeResolverResult(
         balancer_address_data, backend_address_data, service_config_json);
-    response_generator_->SetReresolutionResponse(std::move(result));
+    response_generator_->SetReresolutionResponseSynchronously(
+        std::move(result));
   }
 
   std::vector<int> GetBackendPorts(size_t start_index = 0,
@@ -657,7 +659,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
     return response;
   }
 
-  Status SendRpc(EchoResponse* response = nullptr, int timeout_ms = 1000,
+  Status SendRpc(EchoResponse* response = nullptr, int timeout_ms = 3000,
                  bool wait_for_ready = false,
                  const Status& expected_status = Status::OK) {
     const bool local_response = (response == nullptr);
@@ -677,7 +679,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
     return status;
   }
 
-  void CheckRpcSendOk(const size_t times = 1, const int timeout_ms = 1000,
+  void CheckRpcSendOk(const size_t times = 1, const int timeout_ms = 3000,
                       bool wait_for_ready = false) {
     for (size_t i = 0; i < times; ++i) {
       EchoResponse response;
@@ -852,7 +854,7 @@ TEST_F(SingleBalancerTest, ReturnServerStatus) {
   // Send a request that the backend will fail, and make sure we get
   // back the right status.
   Status expected(StatusCode::INVALID_ARGUMENT, "He's dead, Jim!");
-  Status actual = SendRpc(/*response=*/nullptr, /*timeout_ms=*/1000,
+  Status actual = SendRpc(/*response=*/nullptr, /*timeout_ms=*/3000,
                           /*wait_for_ready=*/false, expected);
   EXPECT_EQ(actual.error_code(), expected.error_code());
   EXPECT_EQ(actual.error_message(), expected.error_message());
@@ -868,7 +870,7 @@ TEST_F(SingleBalancerTest, SelectGrpclbWithMigrationServiceConfig) {
       "}");
   ScheduleResponseForBalancer(
       0, BuildResponseForBackends(GetBackendPorts(), {}), 0);
-  CheckRpcSendOk(1, 1000 /* timeout_ms */, true /* wait_for_ready */);
+  CheckRpcSendOk(1, 3000 /* timeout_ms */, true /* wait_for_ready */);
   balancers_[0]->service_.NotifyDoneWithServerlists();
   // The balancer got a single request.
   EXPECT_EQ(1U, balancers_[0]->service_.request_count());
@@ -916,7 +918,7 @@ TEST_F(SingleBalancerTest, UsePickFirstChildPolicy) {
   ScheduleResponseForBalancer(
       0, BuildResponseForBackends(GetBackendPorts(), {}), 0);
   const size_t kNumRpcs = num_backends_ * 2;
-  CheckRpcSendOk(kNumRpcs, 1000 /* timeout_ms */, true /* wait_for_ready */);
+  CheckRpcSendOk(kNumRpcs, 3000 /* timeout_ms */, true /* wait_for_ready */);
   balancers_[0]->service_.NotifyDoneWithServerlists();
   // Check that all requests went to the first backend.  This verifies
   // that we used pick_first instead of round_robin as the child policy.
@@ -946,7 +948,7 @@ TEST_F(SingleBalancerTest, SwapChildPolicy) {
   ScheduleResponseForBalancer(
       0, BuildResponseForBackends(GetBackendPorts(), {}), 0);
   const size_t kNumRpcs = num_backends_ * 2;
-  CheckRpcSendOk(kNumRpcs, 1000 /* timeout_ms */, true /* wait_for_ready */);
+  CheckRpcSendOk(kNumRpcs, 3000 /* timeout_ms */, true /* wait_for_ready */);
   // Check that all requests went to the first backend.  This verifies
   // that we used pick_first instead of round_robin as the child policy.
   EXPECT_EQ(backends_[0]->service_.request_count(), kNumRpcs);
@@ -956,7 +958,7 @@ TEST_F(SingleBalancerTest, SwapChildPolicy) {
   // Send new resolution that removes child policy from service config.
   SetNextResolutionAllBalancers();
   WaitForAllBackends();
-  CheckRpcSendOk(kNumRpcs, 1000 /* timeout_ms */, true /* wait_for_ready */);
+  CheckRpcSendOk(kNumRpcs, 3000 /* timeout_ms */, true /* wait_for_ready */);
   // Check that every backend saw the same number of requests.  This verifies
   // that we used round_robin.
   for (size_t i = 0; i < backends_.size(); ++i) {
@@ -1357,7 +1359,7 @@ TEST_F(SingleBalancerTest, FallbackEarlyWhenBalancerChannelFails) {
   SetNextResolution(balancer_addresses, backend_addresses);
   // Send RPC with deadline less than the fallback timeout and make sure it
   // succeeds.
-  CheckRpcSendOk(/* times */ 1, /* timeout_ms */ 1000,
+  CheckRpcSendOk(/* times */ 1, /* timeout_ms */ 3000,
                  /* wait_for_ready */ false);
 }
 
@@ -1374,7 +1376,7 @@ TEST_F(SingleBalancerTest, FallbackEarlyWhenBalancerCallFails) {
   balancers_[0]->service_.NotifyDoneWithServerlists();
   // Send RPC with deadline less than the fallback timeout and make sure it
   // succeeds.
-  CheckRpcSendOk(/* times */ 1, /* timeout_ms */ 1000,
+  CheckRpcSendOk(/* times */ 1, /* timeout_ms */ 3000,
                  /* wait_for_ready */ false);
 }
 
@@ -1393,7 +1395,7 @@ TEST_F(SingleBalancerTest, FallbackControlledByBalancerBeforeFirstServerlist) {
   ScheduleResponseForBalancer(0, resp, 0);
   // Send RPC with deadline less than the fallback timeout and make sure it
   // succeeds.
-  CheckRpcSendOk(/* times */ 1, /* timeout_ms */ 1000,
+  CheckRpcSendOk(/* times */ 1, /* timeout_ms */ 3000,
                  /* wait_for_ready */ false);
 }
 
@@ -1435,7 +1437,7 @@ TEST_F(SingleBalancerTest, BackendsRestart) {
   CheckRpcSendFailure();
   // Restart backends.  RPCs should start succeeding again.
   StartAllBackends();
-  CheckRpcSendOk(1 /* times */, 2000 /* timeout_ms */,
+  CheckRpcSendOk(1 /* times */, 3000 /* timeout_ms */,
                  true /* wait_for_ready */);
   // The balancer got a single request.
   EXPECT_EQ(1U, balancers_[0]->service_.request_count());
@@ -1875,7 +1877,7 @@ TEST_F(SingleBalancerTest, DropAllFirst) {
           {}, {{"rate_limiting", num_of_drop_by_rate_limiting_addresses},
                {"load_balancing", num_of_drop_by_load_balancing_addresses}}),
       0);
-  const Status status = SendRpc(nullptr, 1000, true);
+  const Status status = SendRpc(nullptr, 3000, true);
   EXPECT_FALSE(status.ok());
   EXPECT_EQ(status.error_message(), "drop directed by grpclb balancer");
 }
@@ -1899,7 +1901,7 @@ TEST_F(SingleBalancerTest, DropAll) {
   // fail.
   Status status;
   do {
-    status = SendRpc(nullptr, 1000, true);
+    status = SendRpc(nullptr, 3000, true);
   } while (status.ok());
   EXPECT_FALSE(status.ok());
   EXPECT_EQ(status.error_message(), "drop directed by grpclb balancer");

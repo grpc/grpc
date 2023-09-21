@@ -142,8 +142,7 @@ test_suite(
         ":runtests_cpp_linux_opt_build_only",
         ":runtests_csharp_linux_dbg",
         ":runtests_csharp_linux_opt",
-        # TODO(jtattermusch): reenable the test once not flaky anymore
-        #":runtests_php_linux_dbg",
+        ":runtests_php_linux_dbg",
         ":runtests_php_linux_opt",
         ":runtests_python_linux_opt",
         ":runtests_ruby_linux_dbg",

@@ -317,7 +317,10 @@ void PickFirst::ShutdownLocked() {
 
 void PickFirst::ExitIdleLocked() {
   if (shutdown_) return;
-  if (state_ == GRPC_CHANNEL_IDLE) {
+  // Need to check subchannel_list_ being null here, in case the
+  // application calls channel->GetState(true) again before we
+  // transition to state CONNECTING.
+  if (state_ == GRPC_CHANNEL_IDLE && subchannel_list_ == nullptr) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
       gpr_log(GPR_INFO, "Pick First %p exiting idle", this);
     }

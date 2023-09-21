@@ -13,27 +13,25 @@
 // limitations under the License.
 
 #include <stddef.h>
+#include <stdint.h>
 
-#include <set>
+#include <algorithm>
 #include <string>
+#include <vector>
 
 #include "absl/strings/str_join.h"
-#include "absl/strings/str_split.h"
-#include "absl/strings/string_view.h"
 
 #include "src/core/lib/experiments/config.h"
 #include "src/core/lib/experiments/experiments.h"
 
 namespace grpc_core {
 
-std::string ValidateExperimentsStringForFuzzing(absl::string_view input) {
-  std::set<absl::string_view> experiments;
-  for (absl::string_view experiment : absl::StrSplit(input, ',')) {
-    for (size_t i = 0; i < kNumExperiments; i++) {
-      const auto& metadata = g_experiment_metadata[i];
-      if (metadata.name == experiment && metadata.allow_in_fuzzing_config) {
-        experiments.insert(experiment);
-      }
+std::string ValidateExperimentsStringForFuzzing(uint64_t input) {
+  std::vector<std::string> experiments;
+  for (size_t i = 0; i < std::min<size_t>(kNumExperiments, 64); i++) {
+    const auto& metadata = g_experiment_metadata[i];
+    if ((input & (1ull << i)) && metadata.allow_in_fuzzing_config) {
+      experiments.push_back(metadata.name);
     }
   }
   return absl::StrJoin(experiments, ",");
