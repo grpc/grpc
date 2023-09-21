@@ -114,6 +114,9 @@ const char* const description_wrr_delegate_to_pick_first =
     "Change WRR code to delegate to pick_first as per dualstack backend "
     "design.";
 const char* const additional_constraints_wrr_delegate_to_pick_first = "{}";
+const char* const description_pick_first_happy_eyeballs =
+    "Use Happy Eyeballs in pick_first.";
+const char* const additional_constraints_pick_first_happy_eyeballs = "{}";
 const char* const description_combiner_offload_to_event_engine =
     "Offload Combiner work onto the EventEngine instead of the Executor.";
 const char* const additional_constraints_combiner_offload_to_event_engine =
@@ -176,6 +179,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_round_robin_delegate_to_pick_first, true, true},
     {"wrr_delegate_to_pick_first", description_wrr_delegate_to_pick_first,
      additional_constraints_wrr_delegate_to_pick_first, true, true},
+    {"pick_first_happy_eyeballs", description_pick_first_happy_eyeballs,
+     additional_constraints_pick_first_happy_eyeballs, true, true},
     {"combiner_offload_to_event_engine",
      description_combiner_offload_to_event_engine,
      additional_constraints_combiner_offload_to_event_engine, true, true},
@@ -277,6 +282,9 @@ const char* const description_wrr_delegate_to_pick_first =
     "Change WRR code to delegate to pick_first as per dualstack backend "
     "design.";
 const char* const additional_constraints_wrr_delegate_to_pick_first = "{}";
+const char* const description_pick_first_happy_eyeballs =
+    "Use Happy Eyeballs in pick_first.";
+const char* const additional_constraints_pick_first_happy_eyeballs = "{}";
 const char* const description_combiner_offload_to_event_engine =
     "Offload Combiner work onto the EventEngine instead of the Executor.";
 const char* const additional_constraints_combiner_offload_to_event_engine =
@@ -339,6 +347,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_round_robin_delegate_to_pick_first, true, true},
     {"wrr_delegate_to_pick_first", description_wrr_delegate_to_pick_first,
      additional_constraints_wrr_delegate_to_pick_first, true, true},
+    {"pick_first_happy_eyeballs", description_pick_first_happy_eyeballs,
+     additional_constraints_pick_first_happy_eyeballs, true, true},
     {"combiner_offload_to_event_engine",
      description_combiner_offload_to_event_engine,
      additional_constraints_combiner_offload_to_event_engine, true, true},
@@ -440,6 +450,9 @@ const char* const description_wrr_delegate_to_pick_first =
     "Change WRR code to delegate to pick_first as per dualstack backend "
     "design.";
 const char* const additional_constraints_wrr_delegate_to_pick_first = "{}";
+const char* const description_pick_first_happy_eyeballs =
+    "Use Happy Eyeballs in pick_first.";
+const char* const additional_constraints_pick_first_happy_eyeballs = "{}";
 const char* const description_combiner_offload_to_event_engine =
     "Offload Combiner work onto the EventEngine instead of the Executor.";
 const char* const additional_constraints_combiner_offload_to_event_engine =
@@ -502,6 +515,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_round_robin_delegate_to_pick_first, true, true},
     {"wrr_delegate_to_pick_first", description_wrr_delegate_to_pick_first,
      additional_constraints_wrr_delegate_to_pick_first, true, true},
+    {"pick_first_happy_eyeballs", description_pick_first_happy_eyeballs,
+     additional_constraints_pick_first_happy_eyeballs, true, true},
     {"combiner_offload_to_event_engine",
      description_combiner_offload_to_event_engine,
      additional_constraints_combiner_offload_to_event_engine, true, true},

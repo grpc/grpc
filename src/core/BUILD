@@ -4847,6 +4847,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
+        "experiments",
         "health_check_client",
         "iomgr_fwd",
         "json",
