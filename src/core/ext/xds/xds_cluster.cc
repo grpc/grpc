@@ -58,27 +58,14 @@
 #include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/match.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
-#include "src/core/lib/matchers/matchers.h"
 
 namespace grpc_core {
-
-// TODO(eostroukhov): Remove once this feature is no longer experimental.
-bool XdsOverrideHostEnabled() {
-  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_ENABLE_OVERRIDE_HOST");
-  if (!value.has_value()) return false;
-  bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
-  return parse_succeeded && parsed_value;
-}
 
 //
 // XdsClusterResource
@@ -633,24 +620,22 @@ absl::StatusOr<std::shared_ptr<const XdsClusterResource>> CdsResourceParse(
     cds_update->outlier_detection = outlier_detection_update;
   }
   // Validate override host status.
-  if (XdsOverrideHostEnabled()) {
-    const auto* common_lb_config =
-        envoy_config_cluster_v3_Cluster_common_lb_config(cluster);
-    if (common_lb_config != nullptr) {
-      ValidationErrors::ScopedField field(&errors, ".common_lb_config");
-      const auto* override_host_status =
-          envoy_config_cluster_v3_Cluster_CommonLbConfig_override_host_status(
-              common_lb_config);
-      if (override_host_status != nullptr) {
-        ValidationErrors::ScopedField field(&errors, ".override_host_status");
-        size_t size;
-        const int32_t* statuses = envoy_config_core_v3_HealthStatusSet_statuses(
-            override_host_status, &size);
-        for (size_t i = 0; i < size; ++i) {
-          auto status = XdsHealthStatus::FromUpb(statuses[i]);
-          if (status.has_value()) {
-            cds_update->override_host_statuses.insert(*status);
-          }
+  const auto* common_lb_config =
+      envoy_config_cluster_v3_Cluster_common_lb_config(cluster);
+  if (common_lb_config != nullptr) {
+    ValidationErrors::ScopedField field(&errors, ".common_lb_config");
+    const auto* override_host_status =
+        envoy_config_cluster_v3_Cluster_CommonLbConfig_override_host_status(
+            common_lb_config);
+    if (override_host_status != nullptr) {
+      ValidationErrors::ScopedField field(&errors, ".override_host_status");
+      size_t size;
+      const int32_t* statuses = envoy_config_core_v3_HealthStatusSet_statuses(
+          override_host_status, &size);
+      for (size_t i = 0; i < size; ++i) {
+        auto status = XdsHealthStatus::FromUpb(statuses[i]);
+        if (status.has_value()) {
+          cds_update->override_host_statuses.insert(*status);
         }
       }
     }
