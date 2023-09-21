@@ -728,7 +728,7 @@ void PickFirst::SubchannelList::SubchannelData::RequestConnectionWithTimer() {
       gpr_log(GPR_INFO,
               "Pick First %p subchannel list %p: starting Connection "
               "Attempt Delay timer for %" PRIdPTR "ms for index %" PRIuPTR,
-              p, p->subchannel_list_.get(),
+              p, subchannel_list_,
               p->connection_attempt_delay_.millis(), Index());
     }
     subchannel_list_->timer_handle_ =
@@ -742,16 +742,21 @@ void PickFirst::SubchannelList::SubchannelData::RequestConnectionWithTimer() {
               sl->policy_->work_serializer()->Run(
                   [subchannel_list = std::move(subchannel_list)]() {
                 if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
-                      gpr_log(GPR_INFO,
-                              "Pick First %p subchannel list %p: Connection "
-                              "Attempt Delay timer fired",
-                              subchannel_list->policy_.get(),
-                              subchannel_list->policy_->subchannel_list_.get());
-                    }
-                    ++subchannel_list->attempting_index_;
-                    subchannel_list->StartConnectingNextSubchannel();
-                  },
-                  DEBUG_LOCATION);
+                  gpr_log(GPR_INFO,
+                          "Pick First %p subchannel list %p: Connection "
+                          "Attempt Delay timer fired (shutting_down=%d, "
+                          "selected=%p)",
+                          subchannel_list->policy_.get(),
+                          subchannel_list.get(),
+                          subchannel_list->shutting_down_,
+                          subchannel_list->policy_->selected_);
+                }
+                if (subchannel_list->shutting_down_) return;
+                if (subchannel_list->policy_->selected_ != nullptr) return;
+                ++subchannel_list->attempting_index_;
+                subchannel_list->StartConnectingNextSubchannel();
+              },
+              DEBUG_LOCATION);
             });
   }
 }
@@ -881,6 +886,9 @@ void PickFirst::SubchannelList::Orphan() {
   shutting_down_ = true;
   for (auto& sd : subchannels_) {
     sd.ShutdownLocked();
+  }
+  if (timer_handle_.has_value()) {
+    policy_->channel_control_helper()->GetEventEngine()->Cancel(*timer_handle_);
   }
   Unref();
 }
