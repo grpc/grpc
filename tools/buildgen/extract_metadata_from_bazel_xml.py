@@ -958,6 +958,21 @@ def _generate_build_extra_metadata_for_tests(
         else:
             raise Exception("wrong test" + test)
 
+        if test == "test/core/event_engine/test_suite:posix_event_engine_test":
+            # The test is incorrectly categorized as C-core test
+            # since it depends on c++ test utils such as dns_server and health_check.
+            # Setting the test explicitly as C++ test fixes the problem.
+            test_dict["language"] = "c++"
+
+        if test in [
+            "test/core/end2end:cancel_after_invoke_test",
+            "test/core/transport/chttp2:frame_test",
+        ]:
+            # TODO(jtattermusch): the above tests fail under when built via cmake on windows.
+            # Categorizing the test as C++ tests hides the problem (since we currently don't run
+            # C++ tests via cmake on windows).
+            test_dict["language"] = "c++"
+
         # short test name without the path.
         # There can be name collisions, but we will resolve them later
         simple_test_name = os.path.basename(_try_extract_source_file_path(test))
