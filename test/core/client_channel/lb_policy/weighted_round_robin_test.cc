@@ -852,7 +852,7 @@ TEST_F(WeightedRoundRobinTest, MultipleAddressesPerEndpoint) {
   if (!IsWrrDelegateToPickFirstEnabled()) return;
   // Can't use timer duration expectation here, because the Happy
   // Eyeballs timer inside pick_first will use a different duration than
-  // the timer in outlier_detection.
+  // the timer in WRR.
   SetExpectedTimerDuration(absl::nullopt);
   constexpr std::array<absl::string_view, 2> kEndpoint1Addresses = {
       "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444"};
