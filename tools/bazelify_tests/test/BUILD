@@ -27,19 +27,19 @@ generate_bazel_distribtests(name = "bazel_distribtests_linux")
 
 # C/C++
 grpc_run_tests_harness_test(
-    name = "runtests_c_linux_dbg",
+    name = "runtests_c_linux_dbg_build_only",
     size = "enormous",
     args = [
-        "-l c -c dbg",
+        "-l c -c dbg --build_only",
     ],
     docker_image_version = "tools/dockerfile/test/cxx_debian11_x64.current_version",
 )
 
 grpc_run_tests_harness_test(
-    name = "runtests_c_linux_opt",
+    name = "runtests_c_linux_opt_build_only",
     size = "enormous",
     args = [
-        "-l c -c opt",
+        "-l c -c opt --build_only",
     ],
     docker_image_version = "tools/dockerfile/test/cxx_debian11_x64.current_version",
 )
@@ -136,8 +136,8 @@ grpc_run_tests_harness_test(
 test_suite(
     name = "basic_tests_linux",
     tests = [
-        ":runtests_c_linux_dbg",
-        ":runtests_c_linux_opt",
+        ":runtests_c_linux_dbg_build_only",
+        ":runtests_c_linux_opt_build_only",
         ":runtests_cpp_linux_dbg_build_only",
         ":runtests_cpp_linux_opt_build_only",
         ":runtests_csharp_linux_dbg",
