@@ -30,9 +30,9 @@ grpc_proto_fuzzer(
     uses_polling = False,
     deps = [
         "//:grpc",
-        "//test/core/util:proto_bit_gen",
         "//test/core/util:fuzz_config_vars",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:proto_bit_gen",
     ],
 )
 
@@ -46,9 +46,9 @@ grpc_proto_fuzzer(
     uses_polling = False,
     deps = [
         "//:grpc",
-        "//test/core/util:proto_bit_gen",
         "//test/core/util:fuzz_config_vars",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:proto_bit_gen",
     ],
 )
 
