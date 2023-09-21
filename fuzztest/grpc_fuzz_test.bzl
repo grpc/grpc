@@ -16,7 +16,7 @@
 Rules for using fuzztest.
 """
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test")
+load("//bazel:grpc_build_system_test.bzl", "grpc_cc_test")
 
 def grpc_fuzz_test(name, srcs = [], deps = [], tags = [], external_deps = []):
     grpc_cc_test(
