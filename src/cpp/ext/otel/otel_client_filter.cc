@@ -20,6 +20,8 @@
 
 #include "src/cpp/ext/otel/otel_client_filter.h"
 
+#include <stdint.h>
+
 #include <array>
 #include <functional>
 #include <initializer_list>
@@ -87,12 +89,15 @@ OpenTelemetryClientFilter::MakeCallPromise(
     grpc_core::NextPromiseFactory next_promise_factory) {
   auto* path = call_args.client_initial_metadata->get_pointer(
       grpc_core::HttpPathMetadata());
+  bool registered_method = reinterpret_cast<uintptr_t>(
+      call_args.client_initial_metadata->get(grpc_core::GrpcRegisteredMethod())
+          .value_or(nullptr));
   auto* call_context = grpc_core::GetContext<grpc_call_context_element>();
   auto* tracer =
       grpc_core::GetContext<grpc_core::Arena>()
           ->ManagedNew<OpenTelemetryCallTracer>(
               this, path != nullptr ? path->Ref() : grpc_core::Slice(),
-              grpc_core::GetContext<grpc_core::Arena>());
+              grpc_core::GetContext<grpc_core::Arena>(), registered_method);
   GPR_DEBUG_ASSERT(
       call_context[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE].value ==
       nullptr);
@@ -113,10 +118,8 @@ OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
       start_time_(absl::Now()) {
   if (OTelPluginState().client.attempt.started != nullptr) {
     std::array<std::pair<absl::string_view, absl::string_view>, 2>
-        additional_labels = {
-            {{OTelMethodKey(),
-              absl::StripPrefix(parent_->path_.as_string_view(), "/")},
-             {OTelTargetKey(), parent_->parent_->target()}}};
+        additional_labels = {{{OTelMethodKey(), parent_->MethodForStats()},
+                              {OTelTargetKey(), parent_->parent_->target()}}};
     // We might not have all the injected labels that we want at this point, so
     // avoid recording a subset of injected labels here.
     OTelPluginState().client.attempt.started->Add(
@@ -171,13 +174,11 @@ void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
         absl::Status status, grpc_metadata_batch* /*recv_trailing_metadata*/,
         const grpc_transport_stream_stats* transport_stream_stats) {
   std::array<std::pair<absl::string_view, absl::string_view>, 3>
-      additional_labels = {
-          {{OTelMethodKey(),
-            absl::StripPrefix(parent_->path_.as_string_view(), "/")},
-           {OTelTargetKey(), parent_->parent_->target()},
-           {OTelStatusKey(),
-            grpc_status_code_to_string(
-                static_cast<grpc_status_code>(status.code()))}}};
+      additional_labels = {{{OTelMethodKey(), parent_->MethodForStats()},
+                            {OTelTargetKey(), parent_->parent_->target()},
+                            {OTelStatusKey(), grpc_status_code_to_string(
+                                                  static_cast<grpc_status_code>(
+                                                      status.code()))}}};
   KeyValueIterable labels(injected_labels_.get(), additional_labels);
   if (OTelPluginState().client.attempt.duration != nullptr) {
     OTelPluginState().client.attempt.duration->Record(
@@ -230,8 +231,11 @@ void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::RecordAnnotation(
 
 OpenTelemetryCallTracer::OpenTelemetryCallTracer(
     OpenTelemetryClientFilter* parent, grpc_core::Slice path,
-    grpc_core::Arena* arena)
-    : parent_(parent), path_(std::move(path)), arena_(arena) {}
+    grpc_core::Arena* arena, bool registered_method)
+    : parent_(parent),
+      path_(std::move(path)),
+      arena_(arena),
+      registered_method_(registered_method) {}
 
 OpenTelemetryCallTracer::~OpenTelemetryCallTracer() {}
 
@@ -257,6 +261,16 @@ OpenTelemetryCallTracer::StartNewAttempt(bool is_transparent_retry) {
         this, /*arena_allocated=*/true);
   }
   return new OpenTelemetryCallAttemptTracer(this, /*arena_allocated=*/false);
+}
+
+absl::string_view OpenTelemetryCallTracer::MethodForStats() const {
+  absl::string_view method = absl::StripPrefix(path_.as_string_view(), "/");
+  if (registered_method_ ||
+      (OTelPluginState().generic_method_attribute_filter != nullptr &&
+       OTelPluginState().generic_method_attribute_filter(method))) {
+    return method;
+  }
+  return "other";
 }
 
 void OpenTelemetryCallTracer::RecordAnnotation(

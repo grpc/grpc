@@ -414,6 +414,217 @@ TEST_F(OTelPluginEnd2EndTest, TargetAttributeFilterReturnsFalse) {
   EXPECT_EQ(*target_value, "other");
 }
 
+// Test that generic method names are scrubbed properly on the client side.
+TEST_F(OTelPluginEnd2EndTest, GenericClientRpc) {
+  Init({grpc::internal::OTelClientAttemptStartedInstrumentName()});
+  SendGenericRPC();
+  const char* kMetricName = "grpc.client.attempt.started";
+  auto data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+          /*data*/) { return false; });
+  ASSERT_EQ(data[kMetricName].size(), 1);
+  auto point_data = absl::get_if<opentelemetry::sdk::metrics::SumPointData>(
+      &data[kMetricName][0].point_data);
+  ASSERT_NE(point_data, nullptr);
+  auto client_started_value = absl::get_if<int64_t>(&point_data->value_);
+  ASSERT_NE(client_started_value, nullptr);
+  EXPECT_EQ(*client_started_value, 1);
+  const auto& attributes = data[kMetricName][0].attributes.GetAttributes();
+  EXPECT_EQ(attributes.size(), 2);
+  const auto* method_value =
+      absl::get_if<std::string>(&attributes.at("grpc.method"));
+  ASSERT_NE(method_value, nullptr);
+  EXPECT_EQ(*method_value, "other");
+  const auto* target_value =
+      absl::get_if<std::string>(&attributes.at("grpc.target"));
+  ASSERT_NE(target_value, nullptr);
+  EXPECT_EQ(*target_value, canonical_server_address_);
+}
+
+// Test that generic method names are scrubbed properly on the client side if
+// the method attribute filter is set and it returns false.
+TEST_F(OTelPluginEnd2EndTest,
+       GenericClientRpcWithMethodAttributeFilterReturningFalse) {
+  Init({grpc::internal::OTelClientAttemptStartedInstrumentName()},
+       /*resource=*/opentelemetry::sdk::resource::Resource::Create({}),
+       /*labels_injector=*/nullptr,
+       /*test_no_meter_provider=*/false,
+       /*target_selector=*/absl::AnyInvocable<bool(absl::string_view) const>(),
+       /*target_attribute_filter=*/
+       absl::AnyInvocable<bool(absl::string_view) const>(),
+       /*generic_method_attribute_filter=*/
+       [](absl::string_view /*generic_method*/) { return false; });
+  SendGenericRPC();
+  const char* kMetricName = "grpc.client.attempt.started";
+  auto data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+          /*data*/) { return false; });
+  ASSERT_EQ(data[kMetricName].size(), 1);
+  auto point_data = absl::get_if<opentelemetry::sdk::metrics::SumPointData>(
+      &data[kMetricName][0].point_data);
+  ASSERT_NE(point_data, nullptr);
+  auto client_started_value = absl::get_if<int64_t>(&point_data->value_);
+  ASSERT_NE(client_started_value, nullptr);
+  EXPECT_EQ(*client_started_value, 1);
+  const auto& attributes = data[kMetricName][0].attributes.GetAttributes();
+  EXPECT_EQ(attributes.size(), 2);
+  const auto* method_value =
+      absl::get_if<std::string>(&attributes.at("grpc.method"));
+  ASSERT_NE(method_value, nullptr);
+  EXPECT_EQ(*method_value, "other");
+  const auto* target_value =
+      absl::get_if<std::string>(&attributes.at("grpc.target"));
+  ASSERT_NE(target_value, nullptr);
+  EXPECT_EQ(*target_value, canonical_server_address_);
+}
+
+// Test that generic method names is not scrubbed on the client side if
+// the method attribute filter is set and it returns true.
+TEST_F(OTelPluginEnd2EndTest,
+       GenericClientRpcWithMethodAttributeFilterReturningTrue) {
+  Init({grpc::internal::OTelClientAttemptStartedInstrumentName()},
+       /*resource=*/opentelemetry::sdk::resource::Resource::Create({}),
+       /*labels_injector=*/nullptr,
+       /*test_no_meter_provider=*/false,
+       /*target_selector=*/absl::AnyInvocable<bool(absl::string_view) const>(),
+       /*target_attribute_filter=*/
+       absl::AnyInvocable<bool(absl::string_view) const>(),
+       /*generic_method_attribute_filter=*/
+       [](absl::string_view /*generic_method*/) { return true; });
+  SendGenericRPC();
+  const char* kMetricName = "grpc.client.attempt.started";
+  auto data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+          /*data*/) { return false; });
+  ASSERT_EQ(data[kMetricName].size(), 1);
+  auto point_data = absl::get_if<opentelemetry::sdk::metrics::SumPointData>(
+      &data[kMetricName][0].point_data);
+  ASSERT_NE(point_data, nullptr);
+  auto client_started_value = absl::get_if<int64_t>(&point_data->value_);
+  ASSERT_NE(client_started_value, nullptr);
+  EXPECT_EQ(*client_started_value, 1);
+  const auto& attributes = data[kMetricName][0].attributes.GetAttributes();
+  EXPECT_EQ(attributes.size(), 2);
+  const auto* method_value =
+      absl::get_if<std::string>(&attributes.at("grpc.method"));
+  ASSERT_NE(method_value, nullptr);
+  EXPECT_EQ(*method_value, kGenericMethodName);
+  const auto* target_value =
+      absl::get_if<std::string>(&attributes.at("grpc.target"));
+  ASSERT_NE(target_value, nullptr);
+  EXPECT_EQ(*target_value, canonical_server_address_);
+}
+
+// Test that generic method names are scrubbed properly on the server side.
+TEST_F(OTelPluginEnd2EndTest, GenericServerRpc) {
+  Init({grpc::internal::OTelServerCallDurationInstrumentName()});
+  SendGenericRPC();
+  const char* kMetricName = "grpc.server.call.duration";
+  auto data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) { return !data.contains(kMetricName); });
+  ASSERT_EQ(data[kMetricName].size(), 1);
+  auto point_data =
+      absl::get_if<opentelemetry::sdk::metrics::HistogramPointData>(
+          &data[kMetricName][0].point_data);
+  ASSERT_NE(point_data, nullptr);
+  ASSERT_EQ(point_data->count_, 1);
+  const auto& attributes = data[kMetricName][0].attributes.GetAttributes();
+  EXPECT_EQ(attributes.size(), 2);
+  const auto* method_value =
+      absl::get_if<std::string>(&attributes.at("grpc.method"));
+  ASSERT_NE(method_value, nullptr);
+  EXPECT_EQ(*method_value, "other");
+  const auto* status_value =
+      absl::get_if<std::string>(&attributes.at("grpc.status"));
+  ASSERT_NE(status_value, nullptr);
+  EXPECT_EQ(*status_value, "UNIMPLEMENTED");
+}
+
+// Test that generic method names are scrubbed properly on the server side if
+// the method attribute filter is set and it returns false.
+TEST_F(OTelPluginEnd2EndTest,
+       GenericServerRpcWithMethodAttributeFilterReturningFalse) {
+  Init({grpc::internal::OTelServerCallDurationInstrumentName()},
+       /*resource=*/opentelemetry::sdk::resource::Resource::Create({}),
+       /*labels_injector=*/nullptr,
+       /*test_no_meter_provider=*/false,
+       /*target_selector=*/absl::AnyInvocable<bool(absl::string_view) const>(),
+       /*target_attribute_filter=*/
+       absl::AnyInvocable<bool(absl::string_view) const>(),
+       /*generic_method_attribute_filter=*/
+       [](absl::string_view /*generic_method*/) { return false; });
+  SendGenericRPC();
+  const char* kMetricName = "grpc.server.call.duration";
+  auto data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) { return !data.contains(kMetricName); });
+  ASSERT_EQ(data[kMetricName].size(), 1);
+  auto point_data =
+      absl::get_if<opentelemetry::sdk::metrics::HistogramPointData>(
+          &data[kMetricName][0].point_data);
+  ASSERT_NE(point_data, nullptr);
+  ASSERT_EQ(point_data->count_, 1);
+  const auto& attributes = data[kMetricName][0].attributes.GetAttributes();
+  EXPECT_EQ(attributes.size(), 2);
+  const auto* method_value =
+      absl::get_if<std::string>(&attributes.at("grpc.method"));
+  ASSERT_NE(method_value, nullptr);
+  EXPECT_EQ(*method_value, "other");
+  const auto* status_value =
+      absl::get_if<std::string>(&attributes.at("grpc.status"));
+  ASSERT_NE(status_value, nullptr);
+  EXPECT_EQ(*status_value, "UNIMPLEMENTED");
+}
+
+// Test that generic method names are not scrubbed on the server side if
+// the method attribute filter is set and it returns true.
+TEST_F(OTelPluginEnd2EndTest,
+       GenericServerRpcWithMethodAttributeFilterReturningTrue) {
+  Init({grpc::internal::OTelServerCallDurationInstrumentName()},
+       /*resource=*/opentelemetry::sdk::resource::Resource::Create({}),
+       /*labels_injector=*/nullptr,
+       /*test_no_meter_provider=*/false,
+       /*target_selector=*/absl::AnyInvocable<bool(absl::string_view) const>(),
+       /*target_attribute_filter=*/
+       absl::AnyInvocable<bool(absl::string_view) const>(),
+       /*generic_method_attribute_filter=*/
+       [](absl::string_view /*generic_method*/) { return true; });
+  SendGenericRPC();
+  const char* kMetricName = "grpc.server.call.duration";
+  auto data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) { return !data.contains(kMetricName); });
+  ASSERT_EQ(data[kMetricName].size(), 1);
+  auto point_data =
+      absl::get_if<opentelemetry::sdk::metrics::HistogramPointData>(
+          &data[kMetricName][0].point_data);
+  ASSERT_NE(point_data, nullptr);
+  ASSERT_EQ(point_data->count_, 1);
+  const auto& attributes = data[kMetricName][0].attributes.GetAttributes();
+  EXPECT_EQ(attributes.size(), 2);
+  const auto* method_value =
+      absl::get_if<std::string>(&attributes.at("grpc.method"));
+  ASSERT_NE(method_value, nullptr);
+  EXPECT_EQ(*method_value, kGenericMethodName);
+  const auto* status_value =
+      absl::get_if<std::string>(&attributes.at("grpc.status"));
+  ASSERT_NE(status_value, nullptr);
+  EXPECT_EQ(*status_value, "UNIMPLEMENTED");
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc
