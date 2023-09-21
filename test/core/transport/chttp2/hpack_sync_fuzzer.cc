@@ -35,7 +35,6 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser_table.h"
 #include "src/core/lib/experiments/config.h"
-#include "src/core/lib/gprpp/random.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/error.h"
@@ -49,6 +48,7 @@
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/transport/chttp2/hpack_sync_fuzzer.pb.h"
 #include "test/core/util/fuzz_config_vars.h"
+#include "test/core/util/proto_bit_gen.h"
 
 bool squelch = true;
 bool leak_check = true;
@@ -64,7 +64,7 @@ bool IsStreamError(const absl::Status& status) {
 }
 
 void FuzzOneInput(const hpack_sync_fuzzer::Msg& msg) {
-  ProtoBitSource proto_bit_src(msg.random_numbers());
+  ProtoBitGen proto_bit_src(msg.random_numbers());
 
   // STAGE 1: Encode the fuzzing input into a buffer (encode_output)
   HPackCompressor compressor;

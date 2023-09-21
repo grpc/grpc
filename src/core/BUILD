@@ -100,13 +100,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "random",
-    language = "c++",
-    public_hdrs = ["lib/gprpp/random.h"],
-    deps = ["//:gpr_platform"],
-)
-
-grpc_cc_library(
     name = "metadata_compression_traits",
     hdrs = [
         "lib/transport/metadata_compression_traits.h",

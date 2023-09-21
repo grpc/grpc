@@ -27,10 +27,10 @@ namespace grpc_core {
 
 // Set of random numbers from a proto file (or other container) forming a bit
 // source. Satisfies the requirements for a URNG.
-class ProtoBitSource : public std::numeric_limits<uint64_t> {
+class ProtoBitGen : public std::numeric_limits<uint64_t> {
  public:
   template <typename SourceContainer>
-  explicit ProtoBitSource(const SourceContainer& c) {
+  explicit ProtoBitGen(const SourceContainer& c) {
     for (auto r : c) {
       results_.push_back(r);
     }
