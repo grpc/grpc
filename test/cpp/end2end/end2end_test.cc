@@ -2337,8 +2337,12 @@ INSTANTIATE_TEST_SUITE_P(
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(&argc, argv);
+  // Use this test as a canary to make sure that method lookup in the surface
+  // layer still works when this experiment is off.
+  grpc_core::ForceEnableExperiment("registered_method_lookup_in_transport",
+                                   false);
   ::testing::InitGoogleTest(&argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   int ret = RUN_ALL_TESTS();
   return ret;
 }
