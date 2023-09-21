@@ -16,6 +16,10 @@
 
 verbosity = ENV['GRPC_VERBOSITY']
 STDERR.puts "apolcyn GRPC_VERBOSITY:#{verbosity}"
+apolcyn_travis = ENV['APOLCYN_TRAVIS']
+STDERR.puts "apolcyn APOLCYN_TRAVIS:#{apolcyn_travis}"
+trace = ENV['GRPC_TRACE']
+STDERR.puts "apolcyn GRPC_TRACE:#{trace}"
 exit 1
 ENV['GRPC_ENABLE_FORK_SUPPORT'] = "1"
 fail "forking only supported on linux" unless RUBY_PLATFORM =~ /linux/
