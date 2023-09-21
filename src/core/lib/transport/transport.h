@@ -526,6 +526,8 @@ typedef struct grpc_transport_op {
   bool set_accept_stream = false;
   void (*set_accept_stream_fn)(void* user_data, grpc_transport* transport,
                                const void* server_data) = nullptr;
+  void (*set_registered_method_matcher_fn)(
+      void* user_data, grpc_core::ServerMetadata* metadata) = nullptr;
   void* set_accept_stream_user_data = nullptr;
   /// set the callback for accepting new streams based upon promises;
   /// this is a permanent callback, unlike the other one-shot closures.

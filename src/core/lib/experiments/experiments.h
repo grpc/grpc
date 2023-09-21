@@ -90,6 +90,8 @@ inline bool IsRoundRobinDelegateToPickFirstEnabled() { return true; }
 inline bool IsWrrDelegateToPickFirstEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_COMBINER_OFFLOAD_TO_EVENT_ENGINE
 inline bool IsCombinerOffloadToEventEngineEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_RM_LOOKUP_POINT_TRANSPORT
+inline bool IsRmLookupPointTransportEnabled() { return true; }
 
 #elif defined(GPR_WINDOWS)
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -125,6 +127,8 @@ inline bool IsRoundRobinDelegateToPickFirstEnabled() { return true; }
 inline bool IsWrrDelegateToPickFirstEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_COMBINER_OFFLOAD_TO_EVENT_ENGINE
 inline bool IsCombinerOffloadToEventEngineEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_RM_LOOKUP_POINT_TRANSPORT
+inline bool IsRmLookupPointTransportEnabled() { return true; }
 
 #else
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
@@ -160,6 +164,8 @@ inline bool IsRoundRobinDelegateToPickFirstEnabled() { return true; }
 inline bool IsWrrDelegateToPickFirstEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_COMBINER_OFFLOAD_TO_EVENT_ENGINE
 inline bool IsCombinerOffloadToEventEngineEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_RM_LOOKUP_POINT_TRANSPORT
+inline bool IsRmLookupPointTransportEnabled() { return true; }
 #endif
 
 #else
@@ -190,6 +196,7 @@ enum ExperimentIds {
   kExperimentIdRoundRobinDelegateToPickFirst,
   kExperimentIdWrrDelegateToPickFirst,
   kExperimentIdCombinerOffloadToEventEngine,
+  kExperimentIdRmLookupPointTransport,
   kNumExperiments
 };
 #define GRPC_EXPERIMENT_IS_INCLUDED_TCP_FRAME_SIZE_TUNING
@@ -295,6 +302,10 @@ inline bool IsWrrDelegateToPickFirstEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_COMBINER_OFFLOAD_TO_EVENT_ENGINE
 inline bool IsCombinerOffloadToEventEngineEnabled() {
   return IsExperimentEnabled(kExperimentIdCombinerOffloadToEventEngine);
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_RM_LOOKUP_POINT_TRANSPORT
+inline bool IsRmLookupPointTransportEnabled() {
+  return IsExperimentEnabled(kExperimentIdRmLookupPointTransport);
 }
 
 extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];

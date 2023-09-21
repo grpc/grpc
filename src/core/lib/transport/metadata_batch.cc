@@ -19,10 +19,12 @@
 #include <string.h>
 
 #include <algorithm>
+#include <initializer_list>
 
 #include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 
 #include "src/core/lib/transport/timeout_encoding.h"
 
@@ -290,6 +292,10 @@ std::string GrpcStreamNetworkState::DisplayValue(ValueType x) {
       return "not seen by server";
   }
   GPR_UNREACHABLE_CODE(return "unknown value");
+}
+
+std::string GrpcRegisteredMethod::DisplayValue(void* x) {
+  return absl::StrFormat("%p", x);
 }
 
 std::string PeerString::DisplayValue(const ValueType& x) {

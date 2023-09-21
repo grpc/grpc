@@ -835,6 +835,9 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
       call->send_initial_metadata_.Set(HttpAuthorityMetadata(),
                                        std::move(*args->authority));
     }
+    call->send_initial_metadata_.Set(
+        GrpcRegisteredMethod(), reinterpret_cast<void*>(static_cast<uintptr_t>(
+                                    args->registered_method)));
   } else {
     global_stats().IncrementServerCallsCreated();
     call->final_op_.server.cancelled = nullptr;
@@ -2720,6 +2723,9 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
       send_initial_metadata_->Set(HttpAuthorityMetadata(),
                                   std::move(*args->authority));
     }
+    send_initial_metadata_->Set(GrpcRegisteredMethod(),
+                                reinterpret_cast<void*>(static_cast<uintptr_t>(
+                                    args->registered_method)));
     if (auto* channelz_channel = channel()->channelz_node()) {
       channelz_channel->RecordCallStarted();
     }
