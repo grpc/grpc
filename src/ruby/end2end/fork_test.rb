@@ -14,6 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+verbosity = ENV['GRPC_VERBOSITY']
+STDERR.puts "apolcyn GRPC_VERBOSITY:#{verbosity}"
+exit 1
 ENV['GRPC_ENABLE_FORK_SUPPORT'] = "1"
 fail "forking only supported on linux" unless RUBY_PLATFORM =~ /linux/
 
@@ -73,6 +76,7 @@ def main
   2.times do
     run_client(stub)
   end
+  exit 1
 end
 
 main
