@@ -339,7 +339,6 @@ ares_ssize_t GrpcPolledFdFactoryWindows::GrpcPolledFdWindows::SendVTCP(
   switch (tcp_write_state_) {
     case WRITE_IDLE:
       tcp_write_state_ = WRITE_REQUESTED;
-      // GPR_ASSERT(GRPC_SLICE_LENGTH(write_buf_) == 0);
       grpc_core::CSliceUnref(write_buf_);
       write_buf_ = FlattenIovec(iov, iov_count);
       wsa_error_ctx->SetWSAError(WSAEWOULDBLOCK);
