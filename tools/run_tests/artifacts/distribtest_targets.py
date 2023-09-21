@@ -417,6 +417,12 @@ def targets():
             testcase="cmake_as_externalproject",
             presubmit=True,
         ),
+        CppDistribTest(
+            "windows",
+            "x86",
+            testcase="cmake_for_dll",
+            presubmit=True,
+        ),
         # C#
         CSharpDistribTest(
             "linux", "x64", "debian10", use_dotnet_cli=True, presubmit=True
