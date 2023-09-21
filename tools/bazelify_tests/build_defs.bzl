@@ -173,3 +173,34 @@ def grpc_run_cpp_distribtest_test(name, args = [], data = [], size = "medium", t
     # TODO(jtattermusch): revisit running docker as root (but currently some distribtests need to install stuff inside the docker container)
     env = {}
     _dockerized_sh_test(name = name, srcs = srcs, args = args, data = data, size = size, timeout = timeout, tags = tags, exec_compatible_with = exec_compatible_with, flaky = flaky, docker_image_version = docker_image_version, env = env, docker_run_as_root = True)
+
+def grpc_run_simple_command_test(name, args = [], data = [], size = "medium", timeout = None, tags = [], exec_compatible_with = [], flaky = None, docker_image_version = None):
+    """Execute the specified test command under grpc workspace (and under a docker container)
+
+    Args:
+        name: The name of the test.
+        args: The command to run.
+        data: Data dependencies.
+        size: The size of the test.
+        timeout: The test timeout.
+        tags: The tags for the test.
+        exec_compatible_with: A list of constraint values that must be
+            satisifed for the platform.
+        flaky: Whether this test is flaky.
+        docker_image_version: The docker .current_version file to use for docker containerization.
+    """
+
+    data = [
+        "//tools/bazelify_tests:grpc_repo_archive_with_submodules.tar.gz",
+    ] + data
+
+    args = [
+        "$(location //tools/bazelify_tests:grpc_repo_archive_with_submodules.tar.gz)",
+    ] + args
+
+    srcs = [
+        "//tools/bazelify_tests:grpc_run_simple_command_test.sh",
+    ]
+
+    env = {}
+    _dockerized_sh_test(name = name, srcs = srcs, args = args, data = data, size = size, timeout = timeout, tags = tags, exec_compatible_with = exec_compatible_with, flaky = flaky, docker_image_version = docker_image_version, env = env, docker_run_as_root = False)
