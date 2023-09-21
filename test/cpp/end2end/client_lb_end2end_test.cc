@@ -1823,7 +1823,7 @@ TEST_F(RoundRobinTest, StaysInTransientFailureInSubsequentConnecting) {
 TEST_F(RoundRobinTest, ReportsLatestStatusInTransientFailure) {
   // Start connection injector.
   ConnectionAttemptInjector injector;
-  // Get port.
+  // Get ports.
   const std::vector<int> ports = {grpc_pick_unused_port_or_die(),
                                   grpc_pick_unused_port_or_die()};
   // Create channel.
@@ -1842,7 +1842,6 @@ TEST_F(RoundRobinTest, ReportsLatestStatusInTransientFailure) {
   hold1->Wait();
   hold2->Wait();
   // Inject a custom failure message.
-  hold1->Wait();
   hold1->Fail(GRPC_ERROR_CREATE("Survey says... Bzzzzt!"));
   // Wait until RPC fails with the right message.
   absl::Time deadline =
@@ -1856,6 +1855,7 @@ TEST_F(RoundRobinTest, ReportsLatestStatusInTransientFailure) {
             "Survey says... Bzzzzt!"))(status.error_message())) {
       break;
     }
+    gpr_log(GPR_INFO, "STATUS MESSAGE: %s", status.error_message().c_str());
     EXPECT_THAT(status.error_message(),
                 ::testing::MatchesRegex(MakeConnectionFailureRegex(
                     "connections to all backends failing")));

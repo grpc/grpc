@@ -690,7 +690,7 @@ absl::Status RoundRobin::UpdateLocked(UpdateArgs args) {
   EndpointAddressesList addresses;
   if (args.addresses.ok()) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
-      gpr_log(GPR_INFO, "[RR %p] received update with %" PRIuPTR " addresses",
+      gpr_log(GPR_INFO, "[RR %p] received update with %" PRIuPTR " endpoints",
               this, args.addresses->size());
     }
     addresses = std::move(*args.addresses);

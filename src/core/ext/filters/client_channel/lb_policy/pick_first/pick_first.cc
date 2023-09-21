@@ -666,9 +666,27 @@ void PickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
         subchannel_list_->StartConnectingNextSubchannel();
       } else if (subchannel_list_->attempting_index_ ==
                  subchannel_list_->size()) {
+        // We're done with the initial Happy Eyeballs pass and in a mode
+        // where we're attempting to connect to every subchannel in
+        // parallel.  We count the number of failed connection attempts,
+        // and when that is equal to the number of subchannels, request
+        // re-resolution and report TRANSIENT_FAILURE again, so that the
+        // caller has the most recent status message.  Note that this
+        // isn't necessarily the same as saying that we've seen one
+        // failure for each subchannel in the list, because the backoff
+        // state may be different in each subchannel, so we may have seen
+        // one subchannel fail more than once and another subchannel not
+        // fail at all.  But it's a good enough heuristic.
         ++subchannel_list_->num_failures_;
         if (subchannel_list_->num_failures_ % subchannel_list_->size() == 0) {
           p->channel_control_helper()->RequestReresolution();
+          absl::Status status = absl::UnavailableError(absl::StrCat(
+              (p->omit_status_message_prefix_
+                   ? ""
+                   : "failed to connect to all addresses; last error: "),
+              connectivity_status_.ToString()));
+          p->UpdateState(GRPC_CHANNEL_TRANSIENT_FAILURE, status,
+                         MakeRefCounted<TransientFailurePicker>(status));
         }
       }
       break;
@@ -706,6 +724,13 @@ void PickFirst::SubchannelList::SubchannelData::RequestConnectionWithTimer() {
   // If this is not the last subchannel in the list, start the timer.
   if (Index() != subchannel_list_->size() - 1) {
     PickFirst* p = subchannel_list_->policy_.get();
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
+      gpr_log(GPR_INFO,
+              "Pick First %p subchannel list %p: starting Connection "
+              "Attempt Delay timer for %" PRIdPTR "ms for index %" PRIuPTR,
+              p, p->subchannel_list_.get(),
+              p->connection_attempt_delay_.millis(), Index());
+    }
     subchannel_list_->timer_handle_ =
         p->channel_control_helper()->GetEventEngine()->RunAfter(
             p->connection_attempt_delay_,
@@ -716,6 +741,13 @@ void PickFirst::SubchannelList::SubchannelData::RequestConnectionWithTimer() {
               auto* sl = subchannel_list.get();
               sl->policy_->work_serializer()->Run(
                   [subchannel_list = std::move(subchannel_list)]() {
+                if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
+                      gpr_log(GPR_INFO,
+                              "Pick First %p subchannel list %p: Connection "
+                              "Attempt Delay timer fired",
+                              subchannel_list->policy_.get(),
+                              subchannel_list->policy_->subchannel_list_.get());
+                    }
                     ++subchannel_list->attempting_index_;
                     subchannel_list->StartConnectingNextSubchannel();
                   },
