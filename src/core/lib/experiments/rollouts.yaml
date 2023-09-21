@@ -100,5 +100,5 @@
   default: true
 - name: combiner_offload_to_event_engine
   default: true
-- name: rm_lookup_point_transport
+- name: registered_method_lookup_in_transport
   default: true

@@ -1203,7 +1203,7 @@ void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
   grpc_transport_op* op = grpc_make_transport_op(nullptr);
   op->set_accept_stream = true;
   op->set_accept_stream_fn = AcceptStream;
-  if (IsRmLookupPointTransportEnabled()) {
+  if (IsRegisteredMethodLookupInTransportEnabled()) {
     op->set_registered_method_matcher_fn = SetRegisteredMethodOnMetadata;
   }
   // op->set_registered_method_matcher_fn = Registered
@@ -1332,7 +1332,7 @@ ArenaPromise<ServerMetadataHandle> Server::ChannelData::MakeCallPromise(
   // Find request matcher.
   RequestMatcherInterface* matcher;
   ChannelRegisteredMethod* rm = nullptr;
-  if (IsRmLookupPointTransportEnabled()) {
+  if (IsRegisteredMethodLookupInTransportEnabled()) {
     rm = static_cast<ChannelRegisteredMethod*>(
         call_args.client_initial_metadata->get(GrpcRegisteredMethod())
             .value_or(nullptr));
@@ -1598,7 +1598,7 @@ void Server::CallData::StartNewRpc(grpc_call_element* elem) {
       GRPC_SRM_PAYLOAD_NONE;
   if (path_.has_value() && host_.has_value()) {
     ChannelRegisteredMethod* rm;
-    if (IsRmLookupPointTransportEnabled()) {
+    if (IsRegisteredMethodLookupInTransportEnabled()) {
       rm = static_cast<ChannelRegisteredMethod*>(
           recv_initial_metadata_->get(GrpcRegisteredMethod())
               .value_or(nullptr));
