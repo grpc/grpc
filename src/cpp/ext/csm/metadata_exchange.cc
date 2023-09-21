@@ -59,9 +59,7 @@ namespace {
 
 // The keys that will be used in the Metadata Exchange between local and remote.
 constexpr absl::string_view kMetadataExchangeTypeKey = "type";
-constexpr absl::string_view kMetadataExchangePodNameKey = "pod_name";
-constexpr absl::string_view kMetadataExchangeContainerNameKey =
-    "container_name";
+constexpr absl::string_view kMetadataExchangeWorkloadNameKey = "workload_name";
 constexpr absl::string_view kMetadataExchangeNamespaceNameKey =
     "namespace_name";
 constexpr absl::string_view kMetadataExchangeClusterNameKey = "cluster_name";
@@ -70,13 +68,13 @@ constexpr absl::string_view kMetadataExchangeProjectIdKey = "project_id";
 constexpr absl::string_view kMetadataExchangeCanonicalServiceKey =
     "canonical_service";
 // The keys that will be used for the local attributes when recording metrics.
+constexpr absl::string_view kCanonicalServiceAttribute =
+    "csm.workload_canonical_service";
 constexpr absl::string_view kMeshIdAttribute = "csm.mesh_id";
 // The keys that will be used for the peer attributes when recording metrics.
 constexpr absl::string_view kPeerTypeAttribute = "csm.remote_workload_type";
-constexpr absl::string_view kPeerPodNameAttribute =
-    "csm.remote_workload_pod_name";
-constexpr absl::string_view kPeerContainerNameAttribute =
-    "csm.remote_workload_container_name";
+constexpr absl::string_view kPeerWorkloadNameAttribute =
+    "csm.remote_workload_name";
 constexpr absl::string_view kPeerNamespaceNameAttribute =
     "csm.remote_workload_namespace_name";
 constexpr absl::string_view kPeerClusterNameAttribute =
@@ -270,10 +268,9 @@ class MeshLabelsIterable : public LabelsIterable {
     google_protobuf_Struct* struct_pb = nullptr;
   };
 
-  static constexpr std::array<GkeAttribute, 7> kGkeAttributeList = {
-      GkeAttribute{kPeerPodNameAttribute, kMetadataExchangePodNameKey},
-      GkeAttribute{kPeerContainerNameAttribute,
-                   kMetadataExchangeContainerNameKey},
+  static constexpr std::array<GkeAttribute, 6> kGkeAttributeList = {
+      GkeAttribute{kPeerWorkloadNameAttribute,
+                   kMetadataExchangeWorkloadNameKey},
       GkeAttribute{kPeerNamespaceNameAttribute,
                    kMetadataExchangeNamespaceNameKey},
       GkeAttribute{kPeerClusterNameAttribute, kMetadataExchangeClusterNameKey},
@@ -311,7 +308,7 @@ class MeshLabelsIterable : public LabelsIterable {
   uint32_t pos_ = 0;
 };
 
-constexpr std::array<MeshLabelsIterable::GkeAttribute, 7>
+constexpr std::array<MeshLabelsIterable::GkeAttribute, 6>
     MeshLabelsIterable::kGkeAttributeList;
 
 }  // namespace
@@ -348,11 +345,8 @@ ServiceMeshLabelsInjector::ServiceMeshLabelsInjector(
   // Assume kubernetes for now
   absl::string_view type_value = GetStringValueFromAttributeMap(
       map, opentelemetry::sdk::resource::SemanticConventions::kCloudPlatform);
-  absl::string_view pod_name_value = GetStringValueFromAttributeMap(
-      map, opentelemetry::sdk::resource::SemanticConventions::kK8sPodName);
-  absl::string_view container_name_value = GetStringValueFromAttributeMap(
-      map,
-      opentelemetry::sdk::resource::SemanticConventions::kK8sContainerName);
+  std::string workload_name_value =
+      grpc_core::GetEnv("CSM_WORKLOAD_NAME").value_or("unknown");
   absl::string_view namespace_value = GetStringValueFromAttributeMap(
       map,
       opentelemetry::sdk::resource::SemanticConventions::kK8sNamespaceName);
@@ -369,16 +363,14 @@ ServiceMeshLabelsInjector::ServiceMeshLabelsInjector(
   absl::string_view project_id_value = GetStringValueFromAttributeMap(
       map, opentelemetry::sdk::resource::SemanticConventions::kCloudAccountId);
   std::string canonical_service_value =
-      grpc_core::GetEnv("GSM_CANONICAL_SERVICE_NAME").value_or("unknown");
+      grpc_core::GetEnv("CSM_CANONICAL_SERVICE_NAME").value_or("unknown");
   // Create metadata to be sent over wire.
   AddStringKeyValueToStructProto(metadata, kMetadataExchangeTypeKey, type_value,
                                  arena.ptr());
   // Only handle GKE for now
   if (type_value == kGkeType) {
-    AddStringKeyValueToStructProto(metadata, kMetadataExchangePodNameKey,
-                                   pod_name_value, arena.ptr());
-    AddStringKeyValueToStructProto(metadata, kMetadataExchangeContainerNameKey,
-                                   container_name_value, arena.ptr());
+    AddStringKeyValueToStructProto(metadata, kMetadataExchangeWorkloadNameKey,
+                                   workload_name_value, arena.ptr());
     AddStringKeyValueToStructProto(metadata, kMetadataExchangeNamespaceNameKey,
                                    namespace_value, arena.ptr());
     AddStringKeyValueToStructProto(metadata, kMetadataExchangeClusterNameKey,
@@ -399,6 +391,8 @@ ServiceMeshLabelsInjector::ServiceMeshLabelsInjector(
       absl::Base64Escape(absl::string_view(output, output_length)));
   // Fill up local labels map. The rest we get from the detected Resource and
   // from the peer.
+  local_labels_.emplace_back(kCanonicalServiceAttribute,
+                             canonical_service_value);
   local_labels_.emplace_back(kMeshIdAttribute, GetMeshId());
 }
 
