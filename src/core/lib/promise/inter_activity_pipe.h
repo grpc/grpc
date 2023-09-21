@@ -19,8 +19,8 @@
 
 #include <stdint.h>
 
-#include <array>
 #include <utility>
+#include <vector>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/types/optional.h"
@@ -45,7 +45,7 @@ class InterActivityPipe {
         on_available_ = Activity::current()->MakeNonOwningWaker();
         return Pending{};
       }
-      queue_[(first_ + count_) % kQueueSize] = std::move(value);
+      queue_.push_back(std::move(value));
       ++count_;
       if (count_ == 1) {
         auto on_occupied = std::move(on_occupied_);
@@ -62,8 +62,7 @@ class InterActivityPipe {
         on_occupied_ = Activity::current()->MakeNonOwningWaker();
         return Pending{};
       }
-      auto value = std::move(queue_[first_]);
-      first_ = (first_ + 1) % kQueueSize;
+      auto value = std::move(queue_.front());
       --count_;
       if (count_ == kQueueSize - 1) {
         auto on_available = std::move(on_available_);
@@ -85,7 +84,7 @@ class InterActivityPipe {
 
    private:
     Mutex mu_;
-    std::array<T, kQueueSize> queue_ ABSL_GUARDED_BY(mu_);
+    std::vector<T> queue_ ABSL_GUARDED_BY(mu_);
     bool closed_ ABSL_GUARDED_BY(mu_) = false;
     uint8_t first_ ABSL_GUARDED_BY(mu_) = 0;
     uint8_t count_ ABSL_GUARDED_BY(mu_) = 0;

@@ -148,10 +148,9 @@ ClientTransport::ClientTransport(
           // Discard message padding and only keep message in data read buffer.
           std::get<1>(ret).MoveLastNBytesIntoSliceBuffer(
               frame_header_->message_length, data_endpoint_read_buffer_);
-          ServerFragmentFrame frame;
+          ServerFragmentFrame frame(arena_.get());
           // Initialized to get this_cpu() info in global_stat().
           ExecCtx exec_ctx;
-          frame.SetArena(arena_);
           // Deserialize frame from read buffer.
           auto status = frame.Deserialize(hpack_parser_.get(), *frame_header_,
                                           control_endpoint_read_buffer_);

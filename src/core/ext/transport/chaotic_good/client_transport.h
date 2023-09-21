@@ -19,6 +19,7 @@
 
 #include <stdint.h>
 
+#include <algorithm>
 #include <cstddef>
 #include <initializer_list>  // IWYU pragma: keep
 #include <map>
@@ -97,9 +98,9 @@ class ClientTransport {
                     [stream_id, initial_frame = true,
                      client_initial_metadata =
                          std::move(call_args.client_initial_metadata),
-                     outgoing_frames = outgoing_frames_.MakeSender()](
-                        MessageHandle result) mutable {
-                      ClientFragmentFrame frame;
+                     outgoing_frames = outgoing_frames_.MakeSender(),
+                     this](MessageHandle result) mutable {
+                      ClientFragmentFrame frame(arena_.get());
                       frame.stream_id = stream_id;
                       frame.message = std::move(result);
                       if (initial_frame) {

@@ -113,14 +113,11 @@ class FrameDeserializer {
 template <typename Metadata>
 absl::StatusOr<Arena::PoolPtr<Metadata>> ReadMetadata(
     HPackParser* parser, absl::StatusOr<SliceBuffer> maybe_slices,
-    uint32_t stream_id, bool is_header, bool is_client,
-    std::shared_ptr<Arena> arena) {
+    uint32_t stream_id, bool is_header, bool is_client, Arena* arena) {
   if (!maybe_slices.ok()) return maybe_slices.status();
   auto& slices = *maybe_slices;
-  Arena::PoolPtr<Metadata> metadata;
-  if (arena != nullptr) {
-    metadata = arena->MakePooled<Metadata>(arena.get());
-  }
+  GPR_ASSERT(arena != nullptr);
+  Arena::PoolPtr<Metadata> metadata = arena->MakePooled<Metadata>(arena);
   parser->BeginFrame(
       metadata.get(), std::numeric_limits<uint32_t>::max(),
       std::numeric_limits<uint32_t>::max(),
