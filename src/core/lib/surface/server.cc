@@ -32,6 +32,7 @@
 #include <vector>
 
 #include "absl/cleanup/cleanup.h"
+#include "absl/container/flat_hash_map.h"
 #include "absl/hash/hash.h"
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
@@ -825,9 +826,8 @@ Server::RegisteredMethod* Server::RegisterMethod(
             "grpc_server_register_method method string cannot be NULL");
     return nullptr;
   }
-  auto key = std::make_pair((host == nullptr) ? "" : absl::string_view(host),
-                            absl::string_view(method));
-  if (registered_methods_.contains(key)) {
+  auto key = std::make_pair(host ? host : "", method);
+  if (registered_methods_.find(key) != registered_methods_.end()) {
     gpr_log(GPR_ERROR, "duplicate registration for %s@%s", method,
             host ? host : "*");
     return nullptr;
@@ -837,9 +837,10 @@ Server::RegisteredMethod* Server::RegisterMethod(
             flags);
     return nullptr;
   }
-  registered_methods_[key] =
-      std::make_unique<RegisteredMethod>(method, host, payload_handling, flags);
-  return registered_methods_[key].get();
+  auto it = registered_methods_.emplace(
+      key, std::make_unique<RegisteredMethod>(method, host, payload_handling,
+                                              flags));
+  return it.first->second.get();
 }
 
 void Server::DoneRequestEvent(void* req, grpc_cq_completion* /*c*/) {
@@ -1173,14 +1174,14 @@ Server::RegisteredMethod* Server::ChannelData::GetRegisteredMethod(
     const absl::string_view& host, const absl::string_view& path) {
   if (server_->registered_methods_.empty()) return nullptr;
   // check for exact match with host
-  auto key = std::make_pair(host, path);
-  if (server_->registered_methods_.contains(key)) {
-    return server_->registered_methods_[key].get();
+  auto it = server_->registered_methods_.find(std::make_pair(host, path));
+  if (it != server_->registered_methods_.end()) {
+    return it->second.get();
   }
   // check for wildcard method definition (no host set)
-  key = std::make_pair("", path);
-  if (server_->registered_methods_.contains(key)) {
-    return server_->registered_methods_[key].get();
+  it = server_->registered_methods_.find(std::make_pair("", path));
+  if (it != server_->registered_methods_.end()) {
+    return it->second.get();
   }
   return nullptr;
 }

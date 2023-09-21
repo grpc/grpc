@@ -356,6 +356,17 @@ class Server : public InternallyRefCounted<Server>,
     grpc_cq_completion completion;
   };
 
+  struct StringViewStringViewPairHash
+      : absl::flat_hash_set<
+            std::pair<absl::string_view, absl::string_view>>::hasher {
+    using is_transparent = void;
+  };
+
+  struct StringViewStringViewPairEq
+      : std::equal_to<std::pair<absl::string_view, absl::string_view>> {
+    using is_transparent = void;
+  };
+
   static void ListenerDestroyDone(void* arg, grpc_error_handle error);
 
   static void DoneShutdownEvent(void* server,
@@ -442,9 +453,9 @@ class Server : public InternallyRefCounted<Server>,
   CondVar starting_cv_;
 
   // Map of registered methods.
-  absl::flat_hash_map<
-      std::pair<absl::string_view, absl::string_view> /*host, method*/,
-      std::unique_ptr<RegisteredMethod>>
+  absl::flat_hash_map<std::pair<std::string, std::string> /*host, method*/,
+                      std::unique_ptr<RegisteredMethod>,
+                      StringViewStringViewPairHash, StringViewStringViewPairEq>
       registered_methods_;
 
   // Request matcher for unregistered methods.
