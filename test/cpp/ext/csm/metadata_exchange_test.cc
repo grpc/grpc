@@ -150,8 +150,9 @@ class MetadataExchangeTest
       const std::map<std::string,
                      opentelemetry::sdk::common::OwnedAttributeValue>&
           attributes) {
-    EXPECT_EQ(absl::get<std::string>(attributes.at("csm.canonical_service")),
-              "canonical_service");
+    EXPECT_EQ(
+        absl::get<std::string>(attributes.at("csm.workload_canonical_service")),
+        "canonical_service");
     EXPECT_EQ(absl::get<std::string>(attributes.at("csm.mesh_id")), "mesh-id");
     switch (GetParam().type()) {
       case TestScenario::ResourceType::kGke:

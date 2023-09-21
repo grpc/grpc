@@ -69,7 +69,7 @@ constexpr absl::string_view kMetadataExchangeCanonicalServiceKey =
     "canonical_service";
 // The keys that will be used for the local attributes when recording metrics.
 constexpr absl::string_view kCanonicalServiceAttribute =
-    "csm.canonical_service";
+    "csm.workload_canonical_service";
 constexpr absl::string_view kMeshIdAttribute = "csm.mesh_id";
 // The keys that will be used for the peer attributes when recording metrics.
 constexpr absl::string_view kPeerTypeAttribute = "csm.remote_workload_type";
