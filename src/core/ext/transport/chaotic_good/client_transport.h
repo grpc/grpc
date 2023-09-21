@@ -19,7 +19,6 @@
 
 #include <stdint.h>
 
-#include <algorithm>
 #include <cstddef>
 #include <initializer_list>  // IWYU pragma: keep
 #include <map>
@@ -43,6 +42,7 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/inter_activity_pipe.h"
@@ -98,9 +98,9 @@ class ClientTransport {
                     [stream_id, initial_frame = true,
                      client_initial_metadata =
                          std::move(call_args.client_initial_metadata),
-                     outgoing_frames = outgoing_frames_.MakeSender(),
-                     this](MessageHandle result) mutable {
-                      ClientFragmentFrame frame(arena_.get());
+                     outgoing_frames = outgoing_frames_.MakeSender()](
+                        MessageHandle result) mutable {
+                      ClientFragmentFrame frame;
                       frame.stream_id = stream_id;
                       frame.message = std::move(result);
                       if (initial_frame) {
@@ -188,7 +188,9 @@ class ClientTransport {
   std::unique_ptr<HPackParser> hpack_parser_;
   std::shared_ptr<FrameHeader> frame_header_;
   MemoryAllocator memory_allocator_;
-  std::shared_ptr<Arena> arena_;  // Shared ownership with segment frames.
+  std::shared_ptr<Arena> arena_;
+  promise_detail::Context<Arena>
+      context_;  // Required for fragment frames to parse metadata.
   // Use to synchronize writer_ and reader_ activity with outside activities;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
 };

@@ -61,6 +61,7 @@ ClientTransport::ClientTransport(
           ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
               "client_transport")),
       arena_(MakeScopedArena(1024, &memory_allocator_)),
+      context_(arena_.get()),
       event_engine_(event_engine) {
   auto write_loop = Loop([this] {
     return TrySeq(
@@ -148,7 +149,7 @@ ClientTransport::ClientTransport(
           // Discard message padding and only keep message in data read buffer.
           std::get<1>(ret).MoveLastNBytesIntoSliceBuffer(
               frame_header_->message_length, data_endpoint_read_buffer_);
-          ServerFragmentFrame frame(arena_.get());
+          ServerFragmentFrame frame;
           // Initialized to get this_cpu() info in global_stat().
           ExecCtx exec_ctx;
           // Deserialize frame from read buffer.

@@ -31,6 +31,7 @@
 #include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/status_helper.h"
+#include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
@@ -113,9 +114,10 @@ class FrameDeserializer {
 template <typename Metadata>
 absl::StatusOr<Arena::PoolPtr<Metadata>> ReadMetadata(
     HPackParser* parser, absl::StatusOr<SliceBuffer> maybe_slices,
-    uint32_t stream_id, bool is_header, bool is_client, Arena* arena) {
+    uint32_t stream_id, bool is_header, bool is_client) {
   if (!maybe_slices.ok()) return maybe_slices.status();
   auto& slices = *maybe_slices;
+  auto arena = GetContext<Arena>();
   GPR_ASSERT(arena != nullptr);
   Arena::PoolPtr<Metadata> metadata = arena->MakePooled<Metadata>(arena);
   parser->BeginFrame(
@@ -168,7 +170,7 @@ absl::Status ClientFragmentFrame::Deserialize(HPackParser* parser,
   FrameDeserializer deserializer(header, slice_buffer);
   if (header.flags.is_set(0)) {
     auto r = ReadMetadata<ClientMetadata>(parser, deserializer.ReceiveHeaders(),
-                                          header.stream_id, true, true, arena_);
+                                          header.stream_id, true, true);
     if (!r.ok()) return r.status();
   }
   if (header.flags.is_set(1)) {
@@ -206,18 +208,16 @@ absl::Status ServerFragmentFrame::Deserialize(HPackParser* parser,
   }
   FrameDeserializer deserializer(header, slice_buffer);
   if (header.flags.is_set(0)) {
-    auto r =
-        ReadMetadata<ServerMetadata>(parser, deserializer.ReceiveHeaders(),
-                                     header.stream_id, true, false, arena_);
+    auto r = ReadMetadata<ServerMetadata>(parser, deserializer.ReceiveHeaders(),
+                                          header.stream_id, true, false);
     if (!r.ok()) return r.status();
     if (r.value() != nullptr) {
       headers = std::move(r.value());
     }
   }
   if (header.flags.is_set(1)) {
-    auto r =
-        ReadMetadata<ServerMetadata>(parser, deserializer.ReceiveTrailers(),
-                                     header.stream_id, false, false, arena_);
+    auto r = ReadMetadata<ServerMetadata>(
+        parser, deserializer.ReceiveTrailers(), header.stream_id, false, false);
     if (!r.ok()) return r.status();
     if (r.value() != nullptr) {
       trailers = std::move(r.value());
