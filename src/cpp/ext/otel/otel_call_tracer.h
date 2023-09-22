@@ -124,9 +124,9 @@ class OpenTelemetryCallTracer : public grpc_core::ClientCallTracer {
   void RecordAnnotation(absl::string_view /*annotation*/) override;
   void RecordAnnotation(const Annotation& /*annotation*/) override;
 
+ private:
   absl::string_view MethodForStats() const;
 
- private:
   const OpenTelemetryClientFilter* parent_;
   // Client method.
   grpc_core::Slice path_;

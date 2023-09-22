@@ -32,20 +32,16 @@
 #include "absl/strings/strip.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
+#include "absl/types/optional.h"
 #include "absl/types/span.h"
 #include "opentelemetry/context/context.h"
 #include "opentelemetry/metrics/sync_instruments.h"
 
-#include <grpc/slice.h>
-
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/context.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/promise/context.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/cpp/ext/otel/key_value_iterable.h"
@@ -132,6 +128,7 @@ class OpenTelemetryServerCallTracer : public grpc_core::ServerCallTracer {
     // Not implemented
   }
 
+ private:
   absl::string_view MethodForStats() const {
     absl::string_view method = absl::StripPrefix(path_.as_string_view(), "/");
     if (registered_method_ ||
@@ -142,7 +139,6 @@ class OpenTelemetryServerCallTracer : public grpc_core::ServerCallTracer {
     return "other";
   }
 
- private:
   absl::Time start_time_;
   absl::Duration elapsed_time_;
   grpc_core::Slice path_;
