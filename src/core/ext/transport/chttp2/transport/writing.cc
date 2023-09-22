@@ -105,20 +105,8 @@ static grpc_core::Duration NextAllowedPingInterval(grpc_chttp2_transport* t) {
 }
 
 static void maybe_initiate_ping(grpc_chttp2_transport* t) {
-  grpc_chttp2_ping_queue* pq = &t->ping_queue;
-  if (grpc_closure_list_empty(pq->lists[GRPC_CHTTP2_PCL_NEXT])) {
+  if (!t->ping_callbacks.ping_requested()) {
     // no ping needed: wait
-    return;
-  }
-  if (!grpc_closure_list_empty(pq->lists[GRPC_CHTTP2_PCL_INFLIGHT])) {
-    // ping already in-flight: wait
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
-        GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace) ||
-        GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace)) {
-      gpr_log(GPR_INFO, "%s: Ping delayed [%s]: already pinging",
-              t->is_client ? "CLIENT" : "SERVER",
-              std::string(t->peer_string.as_string_view()).c_str());
-    }
     return;
   }
   // InvalidateNow to avoid getting stuck re-initializing the ping timer
@@ -127,15 +115,20 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
   grpc_core::ExecCtx::Get()->InvalidateNow();
   Match(
       t->ping_rate_policy.RequestSendPing(NextAllowedPingInterval(t)),
-      [pq, t](grpc_core::Chttp2PingRatePolicy::SendGranted) {
-        pq->inflight_id = t->ping_ctr;
-        t->ping_ctr++;
-        grpc_core::ExecCtx::RunList(DEBUG_LOCATION,
-                                    &pq->lists[GRPC_CHTTP2_PCL_INITIATE]);
-        grpc_closure_list_move(&pq->lists[GRPC_CHTTP2_PCL_NEXT],
-                               &pq->lists[GRPC_CHTTP2_PCL_INFLIGHT]);
-        grpc_slice_buffer_add(&t->outbuf,
-                              grpc_chttp2_ping_create(false, pq->inflight_id));
+      [t](grpc_core::Chttp2PingRatePolicy::SendGranted) {
+        const uint64_t id = t->ping_callbacks.StartPing(t->bitgen);
+        grpc_slice_buffer_add(&t->outbuf, grpc_chttp2_ping_create(false, id));
+        if (t->channelz_socket != nullptr) {
+          t->channelz_socket->RecordKeepaliveSent();
+        }
+        auto hdl =
+            t->event_engine->RunAfter(t->keepalive_timeout, [t = t->Ref()] {
+              grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+              grpc_core::ExecCtx exec_ctx;
+              grpc_chttp2_ping_timeout(std::move(t));
+            });
+        t->ping_callbacks.OnPingAck(
+            [hdl, t = t->Ref()]() { t->event_engine->Cancel(hdl); });
         grpc_core::global_stats().IncrementHttp2PingsSent();
         if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
             GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace) ||

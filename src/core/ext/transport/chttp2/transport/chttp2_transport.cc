@@ -1618,13 +1618,37 @@ static void cancel_pings(grpc_chttp2_transport* t, grpc_error_handle error) {
                                  grpc_core::StatusToString(error).c_str()));
   // callback remaining pings: they're not allowed to call into the transport,
   //   and maybe they hold resources that need to be freed
-  grpc_chttp2_ping_queue* pq = &t->ping_queue;
-  GPR_ASSERT(!error.ok());
-  for (size_t j = 0; j < GRPC_CHTTP2_PCL_COUNT; j++) {
-    grpc_closure_list_fail_all(&pq->lists[j], error);
-    grpc_core::ExecCtx::RunList(DEBUG_LOCATION, &pq->lists[j]);
-  }
+  t->ping_callbacks.CancelAll();
 }
+
+namespace {
+class PingClosureWrapper {
+ public:
+  explicit PingClosureWrapper(grpc_closure* closure) : closure_(closure) {}
+  PingClosureWrapper(const PingClosureWrapper&) = delete;
+  PingClosureWrapper& operator=(const PingClosureWrapper&) = delete;
+  PingClosureWrapper(PingClosureWrapper&& other) noexcept
+      : closure_(other.Take()) {}
+  PingClosureWrapper& operator=(PingClosureWrapper&& other) noexcept {
+    std::swap(closure_, other.closure_);
+    return *this;
+  }
+  ~PingClosureWrapper() {
+    if (closure_ != nullptr) {
+      grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure_, absl::CancelledError());
+    }
+  }
+
+  void operator()() {
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, Take(), absl::OkStatus());
+  }
+
+ private:
+  grpc_closure* Take() { return std::exchange(closure_, nullptr); }
+
+  grpc_closure* closure_ = nullptr;
+};
+}  // namespace
 
 static void send_ping_locked(grpc_chttp2_transport* t,
                              grpc_closure* on_initiate, grpc_closure* on_ack) {
@@ -1633,11 +1657,8 @@ static void send_ping_locked(grpc_chttp2_transport* t,
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_ack, t->closed_with_error);
     return;
   }
-  grpc_chttp2_ping_queue* pq = &t->ping_queue;
-  grpc_closure_list_append(&pq->lists[GRPC_CHTTP2_PCL_INITIATE], on_initiate,
-                           absl::OkStatus());
-  grpc_closure_list_append(&pq->lists[GRPC_CHTTP2_PCL_NEXT], on_ack,
-                           absl::OkStatus());
+  t->ping_callbacks.OnPing(PingClosureWrapper(on_initiate),
+                           PingClosureWrapper(on_ack));
 }
 
 // Specialized form of send_ping_locked for keepalive ping. If there is already
@@ -1647,39 +1668,14 @@ static void send_keepalive_ping_locked(
     grpc_core::RefCountedPtr<grpc_chttp2_transport> t) {
   if (!t->closed_with_error.ok()) {
     t->combiner->Run(
-        grpc_core::InitTransportClosure<start_keepalive_ping_locked>(
-            t->Ref(), &t->start_keepalive_ping_locked),
-        t->closed_with_error);
-    t->combiner->Run(
         grpc_core::InitTransportClosure<finish_keepalive_ping_locked>(
             t->Ref(), &t->finish_keepalive_ping_locked),
         t->closed_with_error);
     return;
   }
-  grpc_chttp2_ping_queue* pq = &t->ping_queue;
-  if (!grpc_closure_list_empty(pq->lists[GRPC_CHTTP2_PCL_INFLIGHT])) {
-    // There is a ping in flight. Add yourself to the inflight closure list.
-    t->combiner->Run(
-        grpc_core::InitTransportClosure<start_keepalive_ping_locked>(
-            t->Ref(), &t->start_keepalive_ping_locked),
-        t->closed_with_error);
-    grpc_closure_list_append(
-        &pq->lists[GRPC_CHTTP2_PCL_INFLIGHT],
-        grpc_core::InitTransportClosure<finish_keepalive_ping>(
-            t->Ref(), &t->finish_keepalive_ping_locked),
-        absl::OkStatus());
-    return;
-  }
-  grpc_closure_list_append(
-      &pq->lists[GRPC_CHTTP2_PCL_INITIATE],
-      grpc_core::InitTransportClosure<start_keepalive_ping>(
-          t->Ref(), &t->start_keepalive_ping_locked),
-      absl::OkStatus());
-  grpc_closure_list_append(
-      &pq->lists[GRPC_CHTTP2_PCL_NEXT],
-      grpc_core::InitTransportClosure<finish_keepalive_ping>(
-          t->Ref(), &t->finish_keepalive_ping_locked),
-      absl::OkStatus());
+  t->ping_callbacks.OnPingAck(
+      PingClosureWrapper(grpc_core::InitTransportClosure<finish_keepalive_ping>(
+          t->Ref(), &t->finish_keepalive_ping_locked)));
 }
 
 void grpc_chttp2_retry_initiate_ping(
@@ -1701,17 +1697,29 @@ static void retry_initiate_ping_locked(
 }
 
 void grpc_chttp2_ack_ping(grpc_chttp2_transport* t, uint64_t id) {
-  grpc_chttp2_ping_queue* pq = &t->ping_queue;
-  if (pq->inflight_id != id) {
+  if (!t->ping_callbacks.AckPing(id)) {
     gpr_log(GPR_DEBUG, "Unknown ping response from %s: %" PRIx64,
             std::string(t->peer_string.as_string_view()).c_str(), id);
     return;
   }
-  grpc_core::ExecCtx::RunList(DEBUG_LOCATION,
-                              &pq->lists[GRPC_CHTTP2_PCL_INFLIGHT]);
-  if (!grpc_closure_list_empty(pq->lists[GRPC_CHTTP2_PCL_NEXT])) {
+  if (t->ping_callbacks.ping_requested()) {
     grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_CONTINUE_PINGS);
   }
+}
+
+void grpc_chttp2_ping_timeout(
+    grpc_core::RefCountedPtr<grpc_chttp2_transport> t) {
+  t->combiner->Run(
+      grpc_core::NewClosure([t](grpc_error_handle) {
+        gpr_log(GPR_INFO, "%s: Ping timeout. Closing transport.",
+                std::string(t->peer_string.as_string_view()).c_str());
+        close_transport_locked(
+            t.get(),
+            grpc_error_set_int(GRPC_ERROR_CREATE("ping timeout"),
+                               grpc_core::StatusIntProperty::kRpcStatus,
+                               GRPC_STATUS_UNAVAILABLE));
+      }),
+      absl::OkStatus());
 }
 
 namespace {
