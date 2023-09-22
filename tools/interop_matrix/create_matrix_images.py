@@ -336,6 +336,7 @@ def maybe_apply_patches_on_git_tag(stack_base, lang, release):
 def checkout_grpc_stack(lang, release):
     """Invokes 'git check' for the lang/release and returns directory created."""
     assert args.git_checkout and args.git_checkout_root
+
     if not os.path.exists(args.git_checkout_root):
         os.makedirs(args.git_checkout_root)
 
