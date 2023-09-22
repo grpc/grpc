@@ -33,7 +33,7 @@ void Chttp2PingCallbacks::OnPingAck(Callback on_ack) {
     return;
   }
   ping_requested_ = true;
-  on_ack_.emplace_back(on_ack);
+  on_ack_.emplace_back(std::move(on_ack));
 }
 
 uint64_t Chttp2PingCallbacks::StartPing(absl::BitGenRef bitgen) {
