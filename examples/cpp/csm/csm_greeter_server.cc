@@ -27,13 +27,14 @@
 #include "opentelemetry/exporters/prometheus/exporter_options.h"
 #include "opentelemetry/sdk/metrics/meter_provider.h"
 
-#include "src/core/lib/iomgr/gethostname.h"
 #include <grpcpp/ext/admin_services.h>
 #include <grpcpp/ext/csm_observability.h>
 #include <grpcpp/ext/proto_server_reflection_plugin.h>
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/health_check_service_interface.h>
 #include <grpcpp/xds_server_builder.h>
+
+#include "src/core/lib/iomgr/gethostname.h"
 
 #ifdef BAZEL_BUILD
 #include "examples/protos/helloworld.grpc.pb.h"
@@ -68,9 +69,10 @@ class GreeterServiceImpl final : public Greeter::CallbackService {
   }
 
  public:
-   GreeterServiceImpl(const std::string &my_hostname) : my_name(my_hostname) {}
+  GreeterServiceImpl(const std::string& my_hostname) : my_name(my_hostname) {}
+
  private:
-   const std::string my_name;
+  const std::string my_name;
 };
 
 void RunServer(const char* hostname) {
@@ -87,9 +89,8 @@ void RunServer(const char* hostname) {
   xds_builder.RegisterService(&service);
   // Listen on the given address with XdsServerCredentials and a fallback of
   // InsecureServerCredentials
-  xds_builder.AddListeningPort(
-      absl::StrCat("0.0.0.0:", port),
-      grpc::InsecureServerCredentials());
+  xds_builder.AddListeningPort(absl::StrCat("0.0.0.0:", port),
+                               grpc::InsecureServerCredentials());
   xds_enabled_server = xds_builder.BuildAndStart();
   gpr_log(GPR_INFO, "Server starting on 0.0.0.0:%d", port);
 
