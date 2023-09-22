@@ -16,8 +16,10 @@
 
 #include <stdint.h>
 
+#include <initializer_list>
 #include <limits>
 #include <map>
+#include <memory>
 #include <string>
 #include <utility>
 
