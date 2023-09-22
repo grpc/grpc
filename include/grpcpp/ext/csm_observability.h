@@ -37,24 +37,13 @@ namespace experimental {
 // for performing cleanup.
 class CsmObservability {};
 
+// CsmObservabilityBuilder configures observability for all service mesh traffic
+// for a binary running on CSM.
 class CsmObservabilityBuilder {
  public:
   CsmObservabilityBuilder& SetMeterProvider(
       std::shared_ptr<opentelemetry::sdk::metrics::MeterProvider>
           meter_provider);
-  // Methods to manipulate which instruments are enabled in the OTel Stats
-  // Plugin. The default set of instruments are -
-  // grpc.client.attempt.started
-  // grpc.client.attempt.duration
-  // grpc.client.attempt.sent_total_compressed_message_size
-  // grpc.client.attempt.rcvd_total_compressed_message_size
-  // grpc.server.call.started
-  // grpc.server.call.duration
-  // grpc.server.call.sent_total_compressed_message_size
-  // grpc.server.call.rcvd_total_compressed_message_size
-  CsmObservabilityBuilder& EnableMetric(absl::string_view metric_name);
-  CsmObservabilityBuilder& DisableMetric(absl::string_view metric_name);
-  CsmObservabilityBuilder& DisableAllMetrics();
   // If set, \a target_attribute_filter is called per channel to decide whether
   // to record the target attribute on client or to replace it with "other".
   // This helps reduce the cardinality on metrics in cases where many channels
@@ -65,6 +54,20 @@ class CsmObservabilityBuilder {
           target_attribute_filter);
   // Builds the CsmObservability plugin. The return status shows whether
   // CsmObservability was successfully enabled or not.
+  //
+  // The most common way to use this API is -
+  //
+  // CsmObservabilityBuilder().SetMeterProvider(provider).BuildAndRegister();
+  //
+  // The set of instruments available are -
+  // grpc.client.attempt.started
+  // grpc.client.attempt.duration
+  // grpc.client.attempt.sent_total_compressed_message_size
+  // grpc.client.attempt.rcvd_total_compressed_message_size
+  // grpc.server.call.started
+  // grpc.server.call.duration
+  // grpc.server.call.sent_total_compressed_message_size
+  // grpc.server.call.rcvd_total_compressed_message_size
   absl::StatusOr<CsmObservability> BuildAndRegister();
 
  private:
