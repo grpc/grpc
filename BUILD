@@ -2425,7 +2425,9 @@ grpc_cc_library(
         "gpr",
         "grpc_trace",
         "orphanable",
+        "stats",
         "//src/core:experiments",
+        "//src/core:stats_data",
     ],
 )
 
@@ -2661,6 +2663,7 @@ grpc_cc_library(
         "grpc_trace",
         "//src/core:closure",
         "//src/core:error",
+        "//src/core:experiments",
         "//src/core:gpr_atm",
         "//src/core:gpr_spinlock",
         "//src/core:time",

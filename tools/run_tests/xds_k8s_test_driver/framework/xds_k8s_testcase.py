@@ -74,6 +74,8 @@ _LoadBalancerAccumulatedStatsResponse = (
 _ChannelState = grpc_channelz.ChannelState
 _timedelta = datetime.timedelta
 ClientConfig = grpc_csds.ClientConfig
+RpcMetadata = grpc_testing.LoadBalancerStatsResponse.RpcMetadata
+MetadataByPeer: list[str, RpcMetadata]
 # pylint complains about signal.Signals for some reason.
 _SignalNum = Union[int, signal.Signals]  # pylint: disable=no-member
 _SignalHandler = Callable[[_SignalNum, Optional[FrameType]], Any]
@@ -312,7 +314,7 @@ class XdsKubernetesBaseTestCase(base_testcase.BaseTestCase):
 
     def assertSuccessfulRpcs(
         self, test_client: XdsTestClient, num_rpcs: int = 100
-    ):
+    ) -> _LoadBalancerStatsResponse:
         lb_stats = self.getClientRpcStats(test_client, num_rpcs)
         self.assertAllBackendsReceivedRpcs(lb_stats)
         failed = int(lb_stats.num_failures)
@@ -321,6 +323,7 @@ class XdsKubernetesBaseTestCase(base_testcase.BaseTestCase):
             0,
             msg=f"Expected all RPCs to succeed: {failed} of {num_rpcs} failed",
         )
+        return lb_stats
 
     @staticmethod
     def diffAccumulatedStatsPerMethod(
@@ -578,15 +581,21 @@ class XdsKubernetesBaseTestCase(base_testcase.BaseTestCase):
             msg=f"Expected all RPCs to fail: {failed} of {num_rpcs} failed",
         )
 
-    @classmethod
     def getClientRpcStats(
-        cls, test_client: XdsTestClient, num_rpcs: int
+        self,
+        test_client: XdsTestClient,
+        num_rpcs: int,
+        *,
+        metadata_keys: Optional[tuple[str, ...]] = None,
     ) -> _LoadBalancerStatsResponse:
-        lb_stats = test_client.get_load_balancer_stats(num_rpcs=num_rpcs)
+        lb_stats = test_client.get_load_balancer_stats(
+            num_rpcs=num_rpcs,
+            metadata_keys=metadata_keys,
+        )
         logger.info(
             "[%s] << Received LoadBalancerStatsResponse:\n%s",
             test_client.hostname,
-            cls._pretty_lb_stats(lb_stats),
+            self._pretty_lb_stats(lb_stats),
         )
         return lb_stats
 
@@ -805,8 +814,11 @@ class RegularXdsKubernetesTestCase(IsolatedXdsKubernetesTestCase):
     def startTestClient(
         self, test_server: XdsTestServer, **kwargs
     ) -> XdsTestClient:
+        return self._start_test_client(test_server.xds_uri, **kwargs)
+
+    def _start_test_client(self, server_target: str, **kwargs) -> XdsTestClient:
         test_client = self.client_runner.run(
-            server_target=test_server.xds_uri, **kwargs
+            server_target=server_target, **kwargs
         )
         test_client.wait_for_active_server_channel()
         return test_client

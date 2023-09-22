@@ -23,6 +23,8 @@ from framework.rpc import grpc_testing
 
 # Type aliases
 RpcsByPeer: Dict[str, int]
+RpcMetadata = grpc_testing.LoadBalancerStatsResponse.RpcMetadata
+MetadataByPeer: list[str, RpcMetadata]
 
 
 @functools.cache  # pylint: disable=no-member
@@ -131,6 +133,8 @@ class PrettyLoadBalancerStats:
     # }
     rpcs_by_method: Dict[str, "RpcsByPeer"]
 
+    metadatas_by_peer: Dict[str, "MetadataByPeer"]
+
     @staticmethod
     def _parse_rpcs_by_peer(
         rpcs_by_peer: grpc_testing.RpcsByPeer,
@@ -138,6 +142,21 @@ class PrettyLoadBalancerStats:
         result = dict()
         for peer, count in rpcs_by_peer.items():
             result[peer] = count
+        return result
+
+    @staticmethod
+    def _parse_metadatas_by_peer(
+        metadatas_by_peer: grpc_testing.LoadBalancerStatsResponse.MetadataByPeer,
+    ) -> "MetadataByPeer":
+        result = dict()
+        for peer, metadatas in metadatas_by_peer.items():
+            pretty_metadata = ""
+            for rpc_metadatas in metadatas.rpc_metadata:
+                for metadata in rpc_metadatas.metadata:
+                    pretty_metadata += (
+                        metadata.key + ": " + metadata.value + ", "
+                    )
+            result[peer] = pretty_metadata
         return result
 
     @classmethod
@@ -154,6 +173,9 @@ class PrettyLoadBalancerStats:
             num_failures=lb_stats.num_failures,
             rpcs_by_peer=cls._parse_rpcs_by_peer(lb_stats.rpcs_by_peer),
             rpcs_by_method=rpcs_by_method,
+            metadatas_by_peer=cls._parse_metadatas_by_peer(
+                lb_stats.metadatas_by_peer
+            ),
         )
 
 
@@ -173,4 +195,10 @@ def lb_stats_pretty(lb: grpc_testing.LoadBalancerStatsResponse) -> str:
         psm-grpc-server-b: 42
     """
     pretty_lb_stats = PrettyLoadBalancerStats.from_response(lb)
-    return yaml.dump(dataclasses.asdict(pretty_lb_stats), sort_keys=False)
+    stats_as_dict = dataclasses.asdict(pretty_lb_stats)
+
+    # Don't print metadatas_by_peer unless it has data
+    if not stats_as_dict["metadatas_by_peer"]:
+        stats_as_dict.pop("metadatas_by_peer")
+
+    return yaml.dump(stats_as_dict, sort_keys=False)
