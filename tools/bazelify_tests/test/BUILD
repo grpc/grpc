@@ -13,7 +13,7 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_package")
-load("//tools/bazelify_tests:build_defs.bzl", "grpc_run_cpp_distribtest_test", "grpc_run_simple_command_test", "grpc_run_tests_harness_test")
+load("//tools/bazelify_tests:build_defs.bzl", "grpc_build_artifact_task", "grpc_run_cpp_distribtest_test", "grpc_run_simple_command_test", "grpc_run_tests_harness_test")
 load(":portability_tests.bzl", "generate_run_tests_portability_tests")
 load(":bazel_distribtests.bzl", "generate_bazel_distribtests")
 
@@ -243,9 +243,50 @@ test_suite(
     ],
 )
 
+# protoc artifact build tasks
+grpc_build_artifact_task(
+    name = "artifact_protoc_linux_x64",
+    build_script = "build_artifact_protoc_linux.sh",
+    docker_image_version = "tools/dockerfile/grpc_artifact_centos6_x64.current_version",
+)
+
+grpc_build_artifact_task(
+    name = "artifact_protoc_linux_x86",
+    build_script = "build_artifact_protoc_linux.sh",
+    docker_image_version = "tools/dockerfile/grpc_artifact_centos6_x86.current_version",
+)
+
+grpc_build_artifact_task(
+    name = "artifact_protoc_linux_aarch64",
+    build_script = "build_artifact_protoc_linux.sh",
+    docker_image_version = "tools/dockerfile/grpc_artifact_protoc_aarch64.current_version",
+)
+
+# PHP artifact build tasks
+
+grpc_build_artifact_task(
+    name = "artifact_php_linux_x64",
+    build_script = "build_artifact_php_linux.sh",
+    docker_image_version = "tools/dockerfile/test/php73_zts_debian11_x64.current_version",
+)
+
+# TODO(jtattermusch): add grpc_build_artifact_task targets for python artifacts (but they would require ability to set env)
+# TODO(jtattermusch): add grpc_build_artifact_task targets for ruby artifacts (which is tricky, since ruby artifact builds do not run under docker since they invoke docker themselves)
+
+test_suite(
+    name = "artifact_build_tests_linux",
+    tests = [
+        ":artifact_protoc_linux_aarch64_build_test",
+        ":artifact_protoc_linux_x64_build_test",
+        ":artifact_protoc_linux_x86_build_test",
+        ":artifact_php_linux_x64_build_test",
+    ],
+)
+
 test_suite(
     name = "all_tests_linux",
     tests = [
+        ":artifact_build_tests_linux",
         ":basic_tests_linux",
         ":bazel_build_tests_linux",
         ":bazel_distribtests_linux",

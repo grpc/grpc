@@ -63,6 +63,48 @@ def _dockerized_sh_test(name, srcs = [], args = [], data = [], size = "medium", 
         **test_args
     )
 
+def _dockerized_genrule(name, cmd, outs, srcs = [], timeout = None, tags = [], exec_compatible_with = [], flaky = None, docker_image_version = None, docker_run_as_root = False):
+    """Runs genrule under docker either via RBE or via docker sandbox."""
+    if docker_image_version:
+        image_spec = DOCKERIMAGE_CURRENT_VERSIONS.get(docker_image_version, None)
+        if not image_spec:
+            fail("Version info for docker image '%s' not found in dockerimage_current_versions.bzl" % docker_image_version)
+    else:
+        fail("docker_image_version attribute not set for dockerized test '%s'" % name)
+
+    exec_properties = create_rbe_exec_properties_dict(
+        labels = {
+            "workload": "misc",
+            "machine_size": "misc_large",
+        },
+        docker_network = "standard",
+        container_image = image_spec,
+        # TODO(jtattermusch): note that docker sandbox doesn't currently support "docker_run_as_root"
+        docker_run_as_root = docker_run_as_root,
+    )
+
+    # since the tests require special bazel args, only run them when explicitly requested
+    tags = ["manual"] + tags
+
+    # TODO(jtattermusch): find a way to ensure that action can only run under docker sandbox or remotely
+    # to avoid running it outside of a docker container by accident.
+
+    genrule_args = {
+        "name": name,
+        "cmd": cmd,
+        "srcs": srcs,
+        "tags": tags,
+        "flaky": flaky,
+        "timeout": timeout,
+        "exec_compatible_with": exec_compatible_with,
+        "exec_properties": exec_properties,
+        "outs": outs,
+    }
+
+    native.genrule(
+        **genrule_args
+    )
+
 def grpc_run_tests_harness_test(name, args = [], data = [], size = "medium", timeout = None, tags = [], exec_compatible_with = [], flaky = None, docker_image_version = None, use_login_shell = None, prepare_script = None):
     """Execute an run_tests.py-harness style test under bazel.
 
@@ -204,3 +246,55 @@ def grpc_run_simple_command_test(name, args = [], data = [], size = "medium", ti
 
     env = {}
     _dockerized_sh_test(name = name, srcs = srcs, args = args, data = data, size = size, timeout = timeout, tags = tags, exec_compatible_with = exec_compatible_with, flaky = flaky, docker_image_version = docker_image_version, env = env, docker_run_as_root = False)
+
+def grpc_build_artifact_task(name, timeout = None, tags = [], exec_compatible_with = [], flaky = None, docker_image_version = None, build_script = None):
+    """Execute a build artifact task and a corresponding 'build test'
+
+
+    Args:
+        name: The name of the target.
+        timeout: The test timeout for the build.
+        tags: The tags for the target.
+        exec_compatible_with: A list of constraint values that must be
+            satisifed for the platform.
+        flaky: Whether this artifact build is flaky.
+        docker_image_version: The docker .current_version file to use for docker containerization.
+        build_script: The script that builds the aritfacts.
+    """
+
+    out_exitcode_file = str(name + "_exit_code")
+    out_build_log = str(name + "_build_log.txt")
+    out_archive_name = str(name + ".tar.gz")
+
+    genrule_outs = [
+        out_exitcode_file,
+        out_build_log,
+        out_archive_name,
+    ]
+
+    genrule_srcs = [
+        "//tools/bazelify_tests:grpc_build_artifact_task.sh",
+        "//tools/bazelify_tests:grpc_repo_archive_with_submodules.tar.gz",
+        build_script,
+    ]
+
+    cmd = "$(location //tools/bazelify_tests:grpc_build_artifact_task.sh) $(location //tools/bazelify_tests:grpc_repo_archive_with_submodules.tar.gz) $(location " + build_script + ") $(location " + out_exitcode_file + ") $(location " + out_build_log + ") $(location " + out_archive_name + ")"
+
+    _dockerized_genrule(name = name, cmd = cmd, outs = genrule_outs, srcs = genrule_srcs, timeout = timeout, tags = tags, exec_compatible_with = exec_compatible_with, flaky = flaky, docker_image_version = docker_image_version, docker_run_as_root = False)
+
+    test_name = str(name + "_build_test")
+    test_srcs = [
+        "//tools/bazelify_tests:grpc_build_artifact_task_build_test.sh",
+    ]
+    test_data = [
+        out_exitcode_file,
+        out_build_log,
+        out_archive_name,
+    ]
+    test_env = {}
+    test_args = [
+        "$(location " + out_exitcode_file + ")",
+        "$(location " + out_build_log + ")",
+        "$(location " + out_archive_name + ")",
+    ]
+    _dockerized_sh_test(name = test_name, srcs = test_srcs, args = test_args, data = test_data, size = "small", tags = tags, exec_compatible_with = exec_compatible_with, flaky = flaky, docker_image_version = docker_image_version, env = test_env, docker_run_as_root = False)
