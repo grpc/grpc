@@ -17,12 +17,18 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdint.h>
+
 #include <algorithm>
 #include <cstddef>
 #include <limits>
 #include <memory>
 
-#include "src/core/lib/iomgr/exec_ctx.h"
+#include <grpc/support/cpu.h>
+
+// Sharded collections of objects
+// This used to be per-cpu, now it's much less so - but still a way to limit
+// contention.
 
 namespace grpc_core {
 
@@ -51,23 +57,39 @@ class PerCpuOptions {
   size_t max_shards_ = std::numeric_limits<size_t>::max();
 };
 
+class PerCpuShardingHelper {
+ protected:
+  size_t GetShardingBits() {
+    if (GPR_UNLIKELY(state_.uses_until_refresh == 0)) state_ = State();
+    --state_.uses_until_refresh;
+    return state_.last_seen_cpu;
+  }
+
+ private:
+  struct State {
+    uint16_t last_seen_cpu = gpr_cpu_current_cpu();
+    uint16_t uses_until_refresh = 65535;
+  };
+  static thread_local State state_;
+};
+
 template <typename T>
-class PerCpu {
+class PerCpu : public PerCpuShardingHelper {
  public:
   // Options are not defaulted to try and force consideration of what the
   // options specify.
-  explicit PerCpu(PerCpuOptions options) : cpus_(options.Shards()) {}
+  explicit PerCpu(PerCpuOptions options) : shards_(options.Shards()) {}
 
-  T& this_cpu() { return data_[ExecCtx::Get()->starting_cpu() % cpus_]; }
+  T& this_cpu() { return data_[GetShardingBits() % shards_]; }
 
   T* begin() { return data_.get(); }
-  T* end() { return data_.get() + cpus_; }
+  T* end() { return data_.get() + shards_; }
   const T* begin() const { return data_.get(); }
-  const T* end() const { return data_.get() + cpus_; }
+  const T* end() const { return data_.get() + shards_; }
 
  private:
-  const size_t cpus_;
-  std::unique_ptr<T[]> data_{new T[cpus_]};
+  const size_t shards_;
+  std::unique_ptr<T[]> data_{new T[shards_]};
 };
 
 }  // namespace grpc_core
