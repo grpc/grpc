@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_SRC_CORE_LIB_GPRPP_RANDOM_H
-#define GRPC_SRC_CORE_LIB_GPRPP_RANDOM_H
+#ifndef GRPC_TEST_CORE_UTIL_PROTO_BIT_GEN_H
+#define GRPC_TEST_CORE_UTIL_PROTO_BIT_GEN_H
 
 #include <grpc/support/port_platform.h>
 
@@ -58,4 +58,4 @@ class ProtoBitGen : public std::numeric_limits<uint64_t> {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_GPRPP_RANDOM_H
+#endif  // GRPC_TEST_CORE_UTIL_PROTO_BIT_GEN_H
