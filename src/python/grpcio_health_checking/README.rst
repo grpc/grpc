@@ -5,7 +5,7 @@ Reference package for GRPC Python health checking.
 
 Supported Python Versions
 -------------------------
-Python >= 3.7
+Python >= 3.8
 
 Dependencies
 ------------
