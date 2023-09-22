@@ -135,7 +135,7 @@ grpc_error_handle grpc_ssl_check_alpn(const tsi_peer* peer) {
         "Cannot check peer: missing selected ALPN property.");
   }
   if (!grpc_chttp2_is_alpn_version_supported(p->value.data, p->value.length)) {
-    gpr_log(GPR_INFO, "Cannot check peer: invalid ALPN vlaue.");
+    gpr_log(GPR_INFO, "Cannot check peer: invalid ALPN value.");
     return GRPC_ERROR_CREATE("Cannot check peer: invalid ALPN value.");
   }
 #endif  // TSI_OPENSSL_ALPN_SUPPORT
