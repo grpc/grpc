@@ -17,6 +17,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdint.h>
+
 #include <algorithm>
 #include <cstddef>
 #include <limits>
@@ -57,7 +59,7 @@ class PerCpuOptions {
 
 class PerCpuShardingHelper {
  protected:
-  uint32_t GetShardingBits() {
+  size_t GetShardingBits() {
     if (GPR_UNLIKELY(state_.uses_until_refresh == 0)) state_ = State();
     --state_.uses_until_refresh;
     return state_.last_seen_cpu;
