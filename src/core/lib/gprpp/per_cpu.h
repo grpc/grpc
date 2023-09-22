@@ -58,8 +58,14 @@ class PerCpuOptions {
 };
 
 class PerCpuShardingHelper {
- protected:
+ public:
   size_t GetShardingBits() {
+    // We periodically refresh the last seen cpu to try to ensure that we spread
+    // load evenly over all shards of a per-cpu data structure, even in the
+    // event of shifting thread distributions, load patterns.
+    // Ideally we'd just call gpr_cpu_current_cpu() every call of this function
+    // to get perfect distribution, but that function is currently quite slow on
+    // some platforms and so we need to cache it somewhat.
     if (GPR_UNLIKELY(state_.uses_until_refresh == 0)) state_ = State();
     --state_.uses_until_refresh;
     return state_.last_seen_cpu;
@@ -74,13 +80,13 @@ class PerCpuShardingHelper {
 };
 
 template <typename T>
-class PerCpu : public PerCpuShardingHelper {
+class PerCpu {
  public:
   // Options are not defaulted to try and force consideration of what the
   // options specify.
   explicit PerCpu(PerCpuOptions options) : shards_(options.Shards()) {}
 
-  T& this_cpu() { return data_[GetShardingBits() % shards_]; }
+  T& this_cpu() { return data_[sharding_helper_.GetShardingBits() % shards_]; }
 
   T* begin() { return data_.get(); }
   T* end() { return data_.get() + shards_; }
@@ -88,6 +94,7 @@ class PerCpu : public PerCpuShardingHelper {
   const T* end() const { return data_.get() + shards_; }
 
  private:
+  PerCpuShardingHelper sharding_helper_;
   const size_t shards_;
   std::unique_ptr<T[]> data_{new T[shards_]};
 };
