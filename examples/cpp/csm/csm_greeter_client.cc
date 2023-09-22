@@ -59,18 +59,16 @@ struct Cookie {
   }
 
   template <typename Sink>
-      friend void AbslStringify(Sink& sink, const Cookie& cookie) {
+  friend void AbslStringify(Sink& sink, const Cookie& cookie) {
     absl::Format(&sink, "(Cookie: %s, value: %s, attributes: {%s})",
                  cookie.name, cookie.value,
                  absl::StrJoin(cookie.attributes, ", "));
   }
 };
 
-
 class GreeterClient {
  protected:
-
-    static Cookie ParseCookie(absl::string_view header) {
+  static Cookie ParseCookie(absl::string_view header) {
     Cookie cookie;
     std::pair<absl::string_view, absl::string_view> name_value =
         absl::StrSplit(header, absl::MaxSplits('=', 1));
@@ -85,18 +83,18 @@ class GreeterClient {
   }
 
   static std::vector<Cookie> GetCookies(
-      const std::multimap<grpc::string_ref, grpc::string_ref>& server_initial_metadata,
-                                absl::string_view cookie_name) {
+      const std::multimap<grpc::string_ref, grpc::string_ref>&
+          server_initial_metadata,
+      absl::string_view cookie_name) {
     std::vector<Cookie> values;
     auto pair = server_initial_metadata.equal_range("set-cookie");
     for (auto it = pair.first; it != pair.second; ++it) {
-      gpr_log(GPR_INFO, "set-cookie header: %s",
-              it->second.data());
+      gpr_log(GPR_INFO, "set-cookie header: %s", it->second.data());
       const auto cookie = ParseCookie(it->second.data());
       if (cookie.name == cookie_name) {
         values.emplace_back(cookie);
       }
-      //ABSL_ASSERT(!(values.back().value.empty()));
+      // ABSL_ASSERT(!(values.back().value.empty()));
     }
     return values;
   }
@@ -107,8 +105,8 @@ class GreeterClient {
 
   // Assembles the client's payload, sends it and presents the response back
   // from the server.
-  std::string SayHello(const std::string& user, Cookie *cookieFromServer,
-                       const Cookie *cookieToServer) {
+  std::string SayHello(const std::string& user, Cookie* cookieFromServer,
+                       const Cookie* cookieToServer) {
     // Data we are sending to the server.
     HelloRequest request;
     request.set_name(user);
@@ -126,7 +124,8 @@ class GreeterClient {
     bool done = false;
     Status status;
     if (cookieToServer != NULL) {
-      std::pair<std::string, std::string> cookieHeader = cookieToServer->Header();
+      std::pair<std::string, std::string> cookieHeader =
+          cookieToServer->Header();
       context.AddMetadata(cookieHeader.first, cookieHeader.second);
     }
     stub_->async()->SayHello(&context, &request, &reply,
@@ -145,10 +144,10 @@ class GreeterClient {
     // Act upon its status.
     if (status.ok()) {
       if (cookieFromServer != NULL) {
-        const std::multimap< grpc::string_ref, grpc::string_ref > & server_initial_metadata =
-            context.GetServerInitialMetadata();
-        std::vector<Cookie> cookies = GetCookies(server_initial_metadata,
-                                                  "GSSA");
+        const std::multimap<grpc::string_ref, grpc::string_ref>&
+            server_initial_metadata = context.GetServerInitialMetadata();
+        std::vector<Cookie> cookies =
+            GetCookies(server_initial_metadata, "GSSA");
         if (!cookies.empty()) {
           *cookieFromServer = cookies.front();
         }
@@ -165,13 +164,12 @@ class GreeterClient {
   std::unique_ptr<Greeter::Stub> stub_;
 };
 
-static void sayHello(GreeterClient &greeter, Cookie *cookieFromServer,
-                       const Cookie *cookieToServer) {
+static void sayHello(GreeterClient& greeter, Cookie* cookieFromServer,
+                     const Cookie* cookieToServer) {
   std::string user("world");
   std::string reply = greeter.SayHello(user, cookieFromServer, cookieToServer);
   std::cout << "Greeter received: " << reply << std::endl;
   std::this_thread::sleep_for(std::chrono::seconds(5));
-
 }
 
 int main(int argc, char** argv) {
@@ -200,7 +198,7 @@ int main(int argc, char** argv) {
 
   Cookie session_cookie;
   sayHello(greeter, &session_cookie, NULL);
-  while(true) {
+  while (true) {
     sayHello(greeter, NULL, &session_cookie);
   }
   return 0;

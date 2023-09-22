@@ -16,11 +16,10 @@
 //
 //
 
+#include <grpc/support/port_platform.h>
+
 #include "src/cpp/ext/csm/csm_observability.h"
 
-#include <grpc/support/port_platform.h>
-#include <grpc/support/log.h>
-#include <grpcpp/ext/csm_observability.h>
 #include <memory>
 #include <string>
 #include <utility>
@@ -41,8 +40,6 @@
 #include "src/core/lib/uri/uri_parser.h"
 #include "src/cpp/ext/csm/metadata_exchange.h"
 #include "src/cpp/ext/otel/otel_plugin.h"
-#include "opentelemetry/sdk/resource/resource.h"
-#include "opentelemetry/sdk/resource/resource_detector.h"
 
 namespace grpc {
 namespace experimental {
