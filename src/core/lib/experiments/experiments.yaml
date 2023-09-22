@@ -211,4 +211,4 @@
     Change registered method's lookup point to transport
   expiry: 2024/03/31
   owner: yashkt@google.com
-  test_tags: []
+  test_tags: ["surface_registered_method_lookup"]
