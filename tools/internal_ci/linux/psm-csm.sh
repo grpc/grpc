@@ -106,7 +106,7 @@ run_test() {
   set -x
   python3 -m "tests.${test_name}" \
     --flagfile="${TEST_DRIVER_FLAGFILE}" \
-    --flagfile="config/gamma.cfg" \
+    --flagfile="config/csm.cfg" \
     --kube_context="${KUBE_CONTEXT}" \
     --server_image="${SERVER_IMAGE_NAME}:${GIT_COMMIT}" \
     --client_image="${CLIENT_IMAGE_NAME}:${GIT_COMMIT}" \
@@ -146,7 +146,7 @@ main() {
   echo "Sourcing test driver install script from: ${TEST_DRIVER_INSTALL_SCRIPT_URL}"
   source /dev/stdin <<< "$(curl -s "${TEST_DRIVER_INSTALL_SCRIPT_URL}")"
 
-  activate_gke_cluster GKE_CLUSTER_PSM_GAMMA
+  activate_gke_cluster GKE_CLUSTER_PSM_CSM
 
   set -x
   if [[ -n "${KOKORO_ARTIFACTS_DIR}" ]]; then
