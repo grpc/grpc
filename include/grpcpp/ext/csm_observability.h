@@ -57,7 +57,8 @@ class CsmObservabilityBuilder {
   //
   // The most common way to use this API is -
   //
-  // CsmObservabilityBuilder().SetMeterProvider(provider).BuildAndRegister();
+  // auto observability =
+  //    CsmObservabilityBuilder().SetMeterProvider(provider).BuildAndRegister();
   //
   // The set of instruments available are -
   // grpc.client.attempt.started
