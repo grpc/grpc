@@ -27,7 +27,10 @@
 #include "absl/functional/any_invocable.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
+#include "google/cloud/opentelemetry/resource_detector.h"
 #include "opentelemetry/sdk/metrics/meter_provider.h"
+#include "opentelemetry/sdk/resource/resource.h"
+#include "opentelemetry/sdk/resource/resource_detector.h"
 
 #include <grpc/support/log.h>
 #include <grpcpp/ext/csm_observability.h>
@@ -35,6 +38,7 @@
 #include "src/core/ext/xds/xds_enabled_server.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/uri/uri_parser.h"
+#include "src/cpp/ext/csm/metadata_exchange.h"
 #include "src/cpp/ext/otel/otel_plugin.h"
 
 namespace grpc {
@@ -68,13 +72,6 @@ CsmObservabilityBuilder& CsmObservabilityBuilder::DisableAllMetrics() {
   return *this;
 }
 
-CsmObservabilityBuilder& CsmObservabilityBuilder::SetTargetSelector(
-    absl::AnyInvocable<bool(absl::string_view /*target*/) const>
-        target_selector) {
-  builder_.SetTargetSelector(std::move(target_selector));
-  return *this;
-}
-
 CsmObservabilityBuilder& CsmObservabilityBuilder::SetTargetAttributeFilter(
     absl::AnyInvocable<bool(absl::string_view /*target*/) const>
         target_attribute_filter) {
@@ -87,6 +84,11 @@ absl::StatusOr<CsmObservability> CsmObservabilityBuilder::BuildAndRegister() {
     return args.GetBool(GRPC_ARG_XDS_ENABLED_SERVER).value_or(false);
   });
   builder_.SetTargetSelector(internal::CsmChannelTargetSelector);
+  builder_.SetLabelsInjector(
+      std::make_unique<internal::ServiceMeshLabelsInjector>(
+          google::cloud::otel::MakeResourceDetector()
+              ->Detect()
+              .GetAttributes()));
   builder_.BuildAndRegisterGlobal();
   return CsmObservability();
 }
