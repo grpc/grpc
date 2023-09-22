@@ -379,6 +379,7 @@ grpc_error_handle SecurityHandshaker::OnHandshakeNextDoneLocked(
   grpc_error_handle error;
   // Handshaker was shutdown.
   if (is_shutdown_) {
+    tsi_handshaker_result_destroy(handshaker_result);
     return GRPC_ERROR_CREATE("Handshaker shutdown");
   }
   // Read more if we need to.
