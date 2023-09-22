@@ -73,6 +73,9 @@ EXPERIMENTS = {
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
             ],
+            "surface_registered_method_lookup": [
+                "registered_method_lookup_in_transport",
+            ],
             "xds_end2end_test": [
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
@@ -134,6 +137,9 @@ EXPERIMENTS = {
             "lb_unit_test": [
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
+            ],
+            "surface_registered_method_lookup": [
+                "registered_method_lookup_in_transport",
             ],
             "xds_end2end_test": [
                 "round_robin_delegate_to_pick_first",
@@ -206,6 +212,9 @@ EXPERIMENTS = {
             "lb_unit_test": [
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
+            ],
+            "surface_registered_method_lookup": [
+                "registered_method_lookup_in_transport",
             ],
             "xds_end2end_test": [
                 "round_robin_delegate_to_pick_first",

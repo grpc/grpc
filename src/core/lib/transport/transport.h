@@ -522,10 +522,18 @@ typedef struct grpc_transport_op {
   /// set the callback for accepting new streams;
   /// this is a permanent callback, unlike the other one-shot closures.
   /// If true, the callback is set to set_accept_stream_fn, with its
-  /// user_data argument set to set_accept_stream_user_data
+  /// user_data argument set to set_accept_stream_user_data.
+  /// `set_registered_method_matcher_fn` is also set with its user_data argument
+  /// set to set_accept_stream_user_data. The transport should invoke
+  /// `set_registered_method_matcher_fn` after initial metadata is received but
+  /// before recv_initial_metadata_ready callback is invoked. If the transport
+  /// detects an error in the stream, invoking
+  /// `set_registered_method_matcher_fn` can be skipped.
   bool set_accept_stream = false;
   void (*set_accept_stream_fn)(void* user_data, grpc_transport* transport,
                                const void* server_data) = nullptr;
+  void (*set_registered_method_matcher_fn)(
+      void* user_data, grpc_core::ServerMetadata* metadata) = nullptr;
   void* set_accept_stream_user_data = nullptr;
   /// set the callback for accepting new streams based upon promises;
   /// this is a permanent callback, unlike the other one-shot closures.

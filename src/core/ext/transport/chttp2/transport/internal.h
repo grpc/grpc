@@ -307,6 +307,10 @@ struct grpc_chttp2_transport : public grpc_core::KeepsGrpcInitialized {
   // accept stream callback
   void (*accept_stream_cb)(void* user_data, grpc_transport* transport,
                            const void* server_data);
+  // registered_method_matcher_cb is called before invoking the recv initial
+  // metadata callback.
+  void (*registered_method_matcher_cb)(
+      void* user_data, grpc_core::ServerMetadata* metadata) = nullptr;
   void* accept_stream_cb_user_data;
 
   /// connectivity tracking
