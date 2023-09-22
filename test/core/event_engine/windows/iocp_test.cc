@@ -147,6 +147,8 @@ TEST_F(IOCPTest, SocketShutdownWhenPendingOperation) {
   grpc_core::Notification read_called;
   {
     auto wrapped_client_socket = iocp.Watch(sockpair[0]);
+    std::shared_ptr<WinSocket> shared_client_socket(
+        wrapped_client_socket.release());
     DWORD flags = 0;
     {
       // When the client gets some data, ensure it matches what we expect.
@@ -156,8 +158,8 @@ TEST_F(IOCPTest, SocketShutdownWhenPendingOperation) {
       read_wsabuf.buf = read_char_buffer;
       DWORD bytes_rcvd;
       int status = WSARecv(
-          wrapped_client_socket->raw_socket(), &read_wsabuf, 1, &bytes_rcvd,
-          &flags, wrapped_client_socket->read_info()->overlapped(), NULL);
+          shared_client_socket->raw_socket(), &read_wsabuf, 1, &bytes_rcvd,
+          &flags, shared_client_socket->read_info()->overlapped(), NULL);
       // Expecting error 997, WSA_IO_PENDING
       EXPECT_EQ(status, -1);
       int last_error = WSAGetLastError();
@@ -166,15 +168,15 @@ TEST_F(IOCPTest, SocketShutdownWhenPendingOperation) {
         LogErrorMessage(last_error, "WSARecv");
       }
       on_read = new AnyInvocableClosure(
-          [win_socket = wrapped_client_socket.get(), &read_called]() {
+          [win_socket = shared_client_socket, &read_called]() {
             gpr_log(GPR_DEBUG, "Notified on read");
             EXPECT_EQ(win_socket->read_info()->result().wsa_error,
                       WSA_OPERATION_ABORTED);
             read_called.Notify();
           });
-      wrapped_client_socket->NotifyOnRead(on_read);
+      shared_client_socket->NotifyOnRead(on_read);
     }
-    wrapped_client_socket->Shutdown();
+    shared_client_socket->Shutdown();
   }
   bool cb_invoked = false;
   auto work_result = iocp.Work(std::chrono::seconds(10),
