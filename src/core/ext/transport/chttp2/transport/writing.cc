@@ -49,17 +49,16 @@
 #include "src/core/ext/transport/chttp2/transport/http_trace.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
+#include "src/core/ext/transport/chttp2/transport/ping_callbacks.h"
 #include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -125,7 +124,7 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
             t->event_engine->RunAfter(t->keepalive_timeout, [t = t->Ref()] {
               grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
               grpc_core::ExecCtx exec_ctx;
-              grpc_chttp2_ping_timeout(std::move(t));
+              grpc_chttp2_ping_timeout(t);
             });
         t->ping_callbacks.OnPingAck(
             [hdl, t = t->Ref()]() { t->event_engine->Cancel(hdl); });
