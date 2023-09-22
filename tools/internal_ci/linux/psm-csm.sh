@@ -160,7 +160,8 @@ main() {
   local failed_tests=0
   test_suites=(
     "gamma.gamma_baseline_test"
-    # "gamma.session_affinity_test"
+    "gamma.affinity_test"
+    "app_net_ssa_test"
   )
   for test in "${test_suites[@]}"; do
     run_test $test || (( ++failed_tests ))
