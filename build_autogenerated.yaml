@@ -17457,8 +17457,7 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/util/scoped_env_var.h
+  headers: []
   src:
   - src/proto/grpc/testing/xds/v3/address.proto
   - src/proto/grpc/testing/xds/v3/aggregate_cluster.proto
@@ -17804,8 +17803,7 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - test/core/util/scoped_env_var.h
+  headers: []
   src:
   - src/proto/grpc/testing/xds/v3/address.proto
   - src/proto/grpc/testing/xds/v3/base.proto
@@ -18159,7 +18157,6 @@ targets:
   build: test
   language: c++
   headers:
-  - test/core/util/scoped_env_var.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
@@ -18172,7 +18169,6 @@ targets:
   - src/proto/grpc/testing/simple_messages.proto
   - src/proto/grpc/testing/xds/v3/address.proto
   - src/proto/grpc/testing/xds/v3/ads.proto
-  - src/proto/grpc/testing/xds/v3/aggregate_cluster.proto
   - src/proto/grpc/testing/xds/v3/base.proto
   - src/proto/grpc/testing/xds/v3/cluster.proto
   - src/proto/grpc/testing/xds/v3/config_source.proto
