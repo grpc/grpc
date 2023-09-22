@@ -1853,7 +1853,7 @@ build_config = run_config.build_config
 
 # TODO(jtattermusch): is this setting applied/being used?
 if args.travis:
-    _FORCE_ENVIRON_FOR_WRAPPERS = {"GRPC_TRACE": "api"}
+    _FORCE_ENVIRON_FOR_WRAPPERS.update({"GRPC_TRACE": "api", "APOLCYN_TRAVIS": "3"})
 
 languages = set(_LANGUAGES[l] for l in args.language)
 for l in languages:
