@@ -16,19 +16,13 @@
 
 #include "src/core/lib/gprpp/per_cpu.h"
 
-#include <atomic>
-
 #include <grpc/support/cpu.h>
 
 #include "src/core/lib/gpr/useful.h"
 
 namespace grpc_core {
 
-namespace {
-std::atomic<size_t> g_counter{0};
-}
-thread_local size_t PerCpuShardingHelper::per_thread_id_ =
-    g_counter.fetch_add(1, std::memory_order_relaxed);
+thread_local PerCpuShardingHelper::State PerCpuShardingHelper::state_;
 
 size_t PerCpuOptions::Shards() {
   return ShardsForCpuCount(gpr_cpu_num_cores());

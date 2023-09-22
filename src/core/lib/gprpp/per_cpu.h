@@ -22,6 +22,8 @@
 #include <limits>
 #include <memory>
 
+#include <grpc/support/cpu.h>
+
 // Sharded collections of objects
 // This used to be per-cpu, now it's much less so - but still a way to limit
 // contention.
@@ -55,10 +57,18 @@ class PerCpuOptions {
 
 class PerCpuShardingHelper {
  protected:
-  size_t GetShardingBits() { return per_thread_id_; }
+  uint32_t GetShardingBits() {
+    if (GPR_UNLIKELY(state_.uses_until_refresh == 0)) state_ = State();
+    --state_.uses_until_refresh;
+    return state_.last_seen_cpu;
+  }
 
  private:
-  static thread_local size_t per_thread_id_;
+  struct State {
+    uint16_t last_seen_cpu = gpr_cpu_current_cpu();
+    uint16_t uses_until_refresh = 65535;
+  };
+  static thread_local State state_;
 };
 
 template <typename T>
