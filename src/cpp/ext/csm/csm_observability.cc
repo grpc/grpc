@@ -30,6 +30,12 @@
 #include "absl/types/optional.h"
 #include "google/cloud/opentelemetry/resource_detector.h"
 #include "opentelemetry/sdk/metrics/meter_provider.h"
+#include "opentelemetry/sdk/resource/resource.h"
+#include "opentelemetry/sdk/resource/resource_detector.h"
+
+#include <grpc/support/log.h>
+#include <grpcpp/ext/csm_observability.h>
+
 #include "src/core/ext/xds/xds_enabled_server.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/uri/uri_parser.h"

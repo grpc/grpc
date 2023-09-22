@@ -2560,7 +2560,6 @@ grpc_cc_library(
     ],
     deps = [
         "useful",
-        "//:exec_ctx",
         "//:gpr",
     ],
 )

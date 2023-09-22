@@ -1,5 +1,5 @@
-#!/usr/bin/env bash
-# Copyright 2017 gRPC authors.
+#!/bin/bash
+# Copyright 2023 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,12 +13,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Build all basic targets using the strict warning option which leverages the
-# clang compiler to check if sources can pass a set of warning options.
-# For now //examples/android/binder/ are excluded because it needs Android
-# SDK/NDK to be installed to build
-
 set -ex
 
-echo "The "bazel build C/C++" tests have been migrated to bazelified tests under tools/bazelify_tests."
-echo "This job is now a no-op".
+tools/bazel \
+  build \
+  --define=use_strict_warning=true \
+  -- \
+  :all \
+  //src/core/... \
+  //src/compiler/... \
+  //test/... \
+  //examples/... \
+  -//examples/android/binder/...
+
