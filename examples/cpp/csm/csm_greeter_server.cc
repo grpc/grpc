@@ -78,9 +78,7 @@ void RunServer(const char* hostname) {
   grpc::reflection::InitProtoReflectionServerBuilderPlugin();
   int port = absl::GetFlag(FLAGS_port);
   grpc::XdsServerBuilder xds_builder;
-  ServerBuilder builder;
   std::unique_ptr<Server> xds_enabled_server;
-  std::unique_ptr<Server> server;
 
   std::string my_hostname(hostname);
   GreeterServiceImpl service(my_hostname);
@@ -97,7 +95,7 @@ void RunServer(const char* hostname) {
 
   // Wait for the server to shutdown. Note that some other thread must be
   // responsible for shutting down the server for this call to ever return.
-  server->Wait();
+  xds_enabled_server->Wait();
 }
 
 int main(int argc, char** argv) {

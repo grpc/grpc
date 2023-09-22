@@ -34,4 +34,6 @@ RUN apt-get update \
 
 COPY --from=0 /artifacts ./
 
+ENV GRPC_EXPERIMENTAL_XDS_ENABLE_OVERRIDE_HOST=true
+
 ENTRYPOINT ["/csm_greeter_client"]

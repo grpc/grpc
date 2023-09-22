@@ -10,12 +10,11 @@ The client takes two command-line arguments -
 
 The server takes three command-line arguments -
 * port - Port on which the Hello World service is run. Defaults to 50051.
-* mantenance_port - If secure mode is used (see below), the [Admin](https://github.com/grpc/proposal/blob/master/A38-admin-interface-api.md) service is exposed on this port. If secure mode is not used, `maintenance_port` is unused, and the Admin service is just exposed on `port`. Defaults to 50052.
 * secure - Bool value, defaults to true. When this is set, [XdsServerCredentials](https://github.com/grpc/proposal/blob/master/A29-xds-tls-security.md) will be used with a fallback on `InsecureServerCredentials`. If unset, `InsecureServerCredentials` will be used.
 
 ## Running the example
 
-Currently, this example and some of the gRPC xDS libraries that it depends on only builds with bazel. CMake support will be introduced in the future.
+Currently, this example and some of the gRPC xDS libraries that it depends on only build with bazel. CMake support will be introduced in the future.
 
 To use XDS, you should first deploy the XDS management server in your deployment environment and know its name. You need to set the `GRPC_XDS_BOOTSTRAP` environment variable to point to the gRPC XDS bootstrap file (see [gRFC A27](https://github.com/grpc/proposal/blob/master/A27-xds-global-load-balancing.md#xdsclient-and-bootstrap-file) for the bootstrap format). This is needed by both client and server.
 
