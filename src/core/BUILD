@@ -5679,6 +5679,7 @@ grpc_cc_library(
     external_deps = [
         "absl/container:flat_hash_map",
         "absl/functional:any_invocable",
+        "absl/hash",
         "absl/random:bit_gen_ref",
         "absl/random:distributions",
     ],
