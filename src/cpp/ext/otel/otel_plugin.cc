@@ -161,6 +161,14 @@ OpenTelemetryPluginBuilder::SetTargetAttributeFilter(
   return *this;
 }
 
+OpenTelemetryPluginBuilder&
+OpenTelemetryPluginBuilder::SetGenericMethodAttributeFilter(
+    absl::AnyInvocable<bool(absl::string_view /*generic_method*/) const>
+        generic_method_attribute_filter) {
+  generic_method_attribute_filter_ = std::move(generic_method_attribute_filter);
+  return *this;
+}
+
 OpenTelemetryPluginBuilder& OpenTelemetryPluginBuilder::SetServerSelector(
     absl::AnyInvocable<bool(const grpc_core::ChannelArgs& /*args*/) const>
         server_selector) {
@@ -235,7 +243,8 @@ void OpenTelemetryPluginBuilder::BuildAndRegisterGlobal() {
   g_otel_plugin_state_->labels_injector = std::move(labels_injector_);
   g_otel_plugin_state_->target_attribute_filter =
       std::move(target_attribute_filter_);
-  g_otel_plugin_state_->server_selector = std::move(server_selector_);
+  g_otel_plugin_state_->generic_method_attribute_filter =
+      std::move(generic_method_attribute_filter_);
   g_otel_plugin_state_->meter_provider = std::move(meter_provider);
   grpc_core::ServerCallTracerFactory::RegisterGlobal(
       new grpc::internal::OpenTelemetryServerCallTracerFactory());

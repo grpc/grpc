@@ -62,6 +62,15 @@ CsmObservabilityBuilder& CsmObservabilityBuilder::SetTargetAttributeFilter(
   return *this;
 }
 
+CsmObservabilityBuilder&
+CsmObservabilityBuilder::SetGenericMethodAttributeFilter(
+    absl::AnyInvocable<bool(absl::string_view /*generic_method*/) const>
+        generic_method_attribute_filter) {
+  builder_.SetGenericMethodAttributeFilter(
+      std::move(generic_method_attribute_filter));
+  return *this;
+}
+
 absl::StatusOr<CsmObservability> CsmObservabilityBuilder::BuildAndRegister() {
   builder_.SetServerSelector([](const grpc_core::ChannelArgs& args) {
     return args.GetBool(GRPC_ARG_XDS_ENABLED_SERVER).value_or(false);

@@ -52,6 +52,14 @@ class CsmObservabilityBuilder {
   CsmObservabilityBuilder& SetTargetAttributeFilter(
       absl::AnyInvocable<bool(absl::string_view /*target*/) const>
           target_attribute_filter);
+  // If set, \a generic_method_attribute_filter is called per call with a
+  // generic method type to decide whether to record the method name or to
+  // replace it with "other". Non-generic or pre-registered methods remain
+  // unaffected. If not set, by default, generic method names are replaced with
+  // "other" when recording metrics.
+  CsmObservabilityBuilder& SetGenericMethodAttributeFilter(
+      absl::AnyInvocable<bool(absl::string_view /*generic_method*/) const>
+          generic_method_attribute_filter);
   // Builds the CsmObservability plugin. The return status shows whether
   // CsmObservability was successfully enabled or not.
   //
