@@ -55,23 +55,6 @@ CsmObservabilityBuilder& CsmObservabilityBuilder::SetMeterProvider(
   return *this;
 }
 
-CsmObservabilityBuilder& CsmObservabilityBuilder::EnableMetric(
-    absl::string_view metric_name) {
-  builder_.EnableMetric(metric_name);
-  return *this;
-}
-
-CsmObservabilityBuilder& CsmObservabilityBuilder::DisableMetric(
-    absl::string_view metric_name) {
-  builder_.DisableMetric(metric_name);
-  return *this;
-}
-
-CsmObservabilityBuilder& CsmObservabilityBuilder::DisableAllMetrics() {
-  builder_.DisableAllMetrics();
-  return *this;
-}
-
 CsmObservabilityBuilder& CsmObservabilityBuilder::SetTargetAttributeFilter(
     absl::AnyInvocable<bool(absl::string_view /*target*/) const>
         target_attribute_filter) {
