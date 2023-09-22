@@ -15,6 +15,8 @@
 #include <grpc/support/port_platform.h>
 
 #ifdef GPR_APPLE
+#include <AvailabilityMacros.h>
+#ifdef AVAILABLE_MAC_OS_X_VERSION_10_12_AND_LATER
 
 #include "absl/strings/str_format.h"
 
@@ -226,4 +228,5 @@ void DNSServiceResolverImpl::Shutdown() {
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
+#endif  // AVAILABLE_MAC_OS_X_VERSION_10_12_AND_LATER
 #endif  // GPR_APPLE
